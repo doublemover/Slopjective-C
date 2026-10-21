@@ -1,9 +1,9 @@
-# Native aggregate match results
+# Native match value results
 
-The Objective-C 3.0 compiler now lowers aggregate-valued `match` expressions on
+The Objective-C 3.0 compiler now lowers value-producing `match` expressions on
 Linux x86-64 with GNUstep 2.2. Previously these expressions parsed and type-checked,
-then failed during code generation. A selected arm now initializes the caller's
-result storage directly.
+then failed during code generation. A selected aggregate arm initializes the caller's result storage directly. Scalar
+and complex arms join their native representations.
 
 ```objective-c
 Optional(id) copy = match(input) {
@@ -26,11 +26,18 @@ Managed snapshots retain their active payload and release it after the match;
 branch guards and arm temporaries retain their own cleanup scopes. Discarded
 results still destroy their active values.
 
-The result paths support native records and admitted Optional/Result storage,
+The result paths support native records, admitted Optional/Result storage,
+objects, Blocks, complex values, vectors and C++ data/function member pointers.
+Object and Block results retain/copy the selected value before arm or scrutinee
+cleanup, protect it against exceptional cleanup, then release it at the end of
+the surrounding full-expression. Object/Block scrutinees use owned snapshots,
+including loads from zeroing weak storage and nullable reference patterns.
+
+These paths work
 with separate compilation and semantic interfaces. The existing scrutinee and
-pattern limits remain explicit: integral/enum/C-pointer domains and supported
-carrier cases; broader object type tests, string patterns, mutable/move patterns
-and additional scalar/complex result domains require further implementation.
+pattern limits remain explicit: integral/enum/pointer/reference domains and supported carrier cases; optional
+object type tests, string patterns, and mutable/move patterns require further
+implementation.
 This milestone does not claim a complete Core profile or a public async/actor
 capability.
 

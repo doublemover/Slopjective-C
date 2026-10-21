@@ -1924,14 +1924,15 @@ index bc35ffdaa..e93deff85 100644
    Address SrcPtr = Src.getAddress();
  
 diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
-index 4d98ee995..12e0f7720 100644
+index 4d98ee995..1aae6d8b6 100644
 --- a/clang/lib/CodeGen/CGExprComplex.cpp
 +++ b/clang/lib/CodeGen/CGExprComplex.cpp
-@@ -10,9 +10,11 @@
+@@ -10,9 +10,12 @@
  //
  //===----------------------------------------------------------------------===//
  
 +#include "CGObjC3ABIBoundaries.h"
++#include "CGObjC3Match.h"
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
@@ -1939,13 +1940,12 @@ index 4d98ee995..12e0f7720 100644
  #include "CodeGenModule.h"
  #include "ConstantEmitter.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -102,6 +104,15 @@ public:
+@@ -102,6 +105,14 @@ public:
      llvm_unreachable("Stmt can't have complex result type!");
    }
    ComplexPairTy VisitExpr(Expr *S);
 +  ComplexPairTy VisitObjC3MatchExpr(ObjC3MatchExpr *E) {
-+    CGF.ErrorUnsupported(E, "ObjC3 match complex result type");
-+    return CGF.GetUndefRValue(E->getType()).getComplexVal();
++    return emitObjC3MatchComplexExpr(CGF, E).getComplexVal();
 +  }
 +
 +  ComplexPairTy VisitObjC3TryExpr(ObjC3TryExpr *E) {
@@ -5176,10 +5176,10 @@ index 000000000..fbe5ef7b7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
-index 000000000..4d3bd75fd
+index 000000000..65d25b8ef
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.cpp
-@@ -0,0 +1,443 @@
+@@ -0,0 +1,478 @@
 +//===--- CGObjC3Match.cpp - Native ObjC3 match lowering ------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -5194,6 +5194,7 @@ index 000000000..4d3bd75fd
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/Type.h"
 +#include "llvm/ADT/SmallVector.h"
++#include "llvm/ADT/STLFunctionalExtras.h"
 +#include "llvm/IR/BasicBlock.h"
 +#include "llvm/IR/Constants.h"
 +#include "llvm/IR/Instructions.h"
@@ -5256,19 +5257,10 @@ index 000000000..4d3bd75fd
 +  return IsOptional || IsResult;
 +}
 +
-+bool isPlainNativeMatchScalar(QualType Type) {
-+  if (Type.isNull() || Type->isObjCObjectPointerType() ||
-+      Type->isBlockPointerType() ||
-+      Type.getObjCLifetime() != Qualifiers::OCL_None)
-+    return false;
-+  return Type->isIntegralOrEnumerationType() || Type->isPointerType();
-+}
-+
-+bool isPlainNativeMatchResult(QualType Type) {
-+  return isPlainNativeMatchScalar(Type) ||
-+         (!Type.isNull() && Type->isRealFloatingType() &&
-+          !Type->isObjCObjectPointerType() &&
-+          Type.getObjCLifetime() == Qualifiers::OCL_None);
++bool isNativeMatchScalar(QualType Type) {
++  return !Type.isNull() &&
++         (Type->isIntegralOrEnumerationType() || Type->isPointerType() ||
++          Type->isNullPtrType() || Type->isObjCRetainableType());
 +}
 +
 +bool emitScrutineeOnce(CodeGenFunction &CGF, Expr *Expression,
@@ -5313,11 +5305,18 @@ index 000000000..4d3bd75fd
 +  // Materialize the one scalar evaluation for both lvalues and prvalues.
 +  // A case binding names that immutable snapshot even if a guard or body
 +  // changes the original source through another name.
-+  if (!isPlainNativeMatchScalar(State.Type)) {
++  if (!isNativeMatchScalar(State.Type)) {
 +    CGF.ErrorUnsupported(Owner, "ObjC3 match scrutinee type");
 +    return false;
 +  }
-+  if (Expression->isGLValue()) {
++  if (CGF.getLangOpts().ObjCAutoRefCount &&
++      State.Type->isObjCRetainableType()) {
++    const Expr *Value = Expression;
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Value))
++      Value = Cleanups->getSubExpr();
++    State.Scalar = CGF.EmitARCRetainScalarExpr(Value);
++    CGF.EmitObjCConsumeObject(State.Type, State.Scalar);
++  } else if (Expression->isGLValue()) {
 +    LValue LV = CGF.EmitLValue(Expression);
 +    State.Scalar = CGF.EmitLoadOfLValue(LV, Expression->getExprLoc())
 +                       .getScalarVal();
@@ -5427,11 +5426,10 @@ index 000000000..4d3bd75fd
 +          CGF, State.Storage, State.Type, ObjC3CarrierPayloadArm::Error);
 +    break;
 +  case Binding::Scrutinee:
-+    // The interim native binding path is limited to integral, enum, and
-+    // pointer scrutinees. Carrier identity and borrowed payload bindings use
-+    // their dedicated arm cases above.
++    // Scalar and reference-handle bindings borrow the one stored snapshot.
++    // Carrier payload bindings use their dedicated arm cases above.
 +    if (!State.IsOptional && !State.IsResult &&
-+        isPlainNativeMatchScalar(State.Type))
++        isNativeMatchScalar(State.Type))
 +      Result = State.Storage;
 +    break;
 +  case Binding::None:
@@ -5443,12 +5441,14 @@ index 000000000..4d3bd75fd
 +      CGF.ConvertTypeForMem(Arm.getBindingDecl()->getType()));
 +}
 +
++// The caller owns the result lifetime. Every arm, including an early guard
++// failure, drains only its own temporaries before entering the next block.
 +void emitArmBody(CodeGenFunction &CGF, const MatchScrutinee &State,
 +                 const ObjC3MatchArm &Arm, llvm::BasicBlock *Next,
-+                 llvm::BasicBlock *Exit, llvm::Value *&ExprValue,
-+                 llvm::SmallVectorImpl<llvm::BasicBlock *> *IncomingBlocks,
-+                 AggValueSlot *AggregateResult = nullptr,
-+                 Address ResultInitialized = Address::invalid()) {
++                 llvm::BasicBlock *Exit,
++                 llvm::function_ref<void(const Expr *)> EmitValue,
++                 llvm::BasicBlock *&ValueBlock,
++                 std::initializer_list<llvm::Value **> ValuesToReload = {}) {
 +  const VarDecl *Binding = Arm.getBindingDecl();
 +  if (Binding) {
 +    Address Borrowed = getBorrowedBindingAddress(CGF, State, Arm);
@@ -5464,9 +5464,6 @@ index 000000000..4d3bd75fd
 +  if (const Expr *Guard = Arm.getGuard()) {
 +    llvm::Value *GuardValue = nullptr;
 +    {
-+      // A guard is one full-expression. Materialize its boolean result, then
-+      // run temporary cleanups before either branch is entered. EH cleanup
-+      // remains attached to the normal Clang cleanup stack while evaluating.
 +      CodeGenFunction::RunCleanupsScope GuardScope(CGF);
 +      GuardValue = CGF.EvaluateExprAsBool(Guard);
 +      GuardScope.ForceCleanup({&GuardValue});
@@ -5477,37 +5474,108 @@ index 000000000..4d3bd75fd
 +  }
 +
 +  CGF.EmitBlock(Body);
-+  if (AggregateResult) {
-+    {
-+      CodeGenFunction::RunCleanupsScope ArmScope(CGF);
-+      CGF.EmitAggExpr(cast<Expr>(Arm.getBody()), *AggregateResult);
-+      if (ResultInitialized.isValid() && CGF.HaveInsertPoint())
-+        CGF.Builder.CreateStore(CGF.Builder.getTrue(), ResultInitialized);
++  {
++    CodeGenFunction::RunCleanupsScope ArmScope(CGF);
++    if (EmitValue) {
++      // Establish the result's exception guard before running full-expression
++      // cleanup, even when the AST already wraps the body in cleanups.
++      const Expr *BodyExpr = cast<Expr>(Arm.getBody());
++      if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(BodyExpr))
++        BodyExpr = Cleanups->getSubExpr();
++      EmitValue(BodyExpr);
++    } else if (Arm.getBody()) {
++      CGF.EmitStmt(Arm.getBody());
 +    }
-+    if (CGF.HaveInsertPoint())
-+      CGF.Builder.CreateBr(Exit);
-+  } else if (IncomingBlocks) {
-+    auto *BodyExpr = dyn_cast_or_null<Expr>(Arm.getBody());
-+    {
-+      CodeGenFunction::RunCleanupsScope ArmScope(CGF);
-+      if (BodyExpr)
-+        ExprValue = CGF.EmitScalarExpr(BodyExpr);
-+    }
-+    if (CGF.HaveInsertPoint()) {
-+      IncomingBlocks->push_back(CGF.Builder.GetInsertBlock());
-+      CGF.Builder.CreateBr(Exit);
-+    }
-+  } else {
-+    {
-+      CodeGenFunction::RunCleanupsScope ArmScope(CGF);
-+      if (Arm.getBody())
-+        CGF.EmitStmt(Arm.getBody());
-+    }
-+    if (CGF.HaveInsertPoint())
-+      CGF.Builder.CreateBr(Exit);
++    ArmScope.ForceCleanup(ValuesToReload);
++  }
++  if (CGF.HaveInsertPoint()) {
++    ValueBlock = CGF.Builder.GetInsertBlock();
++    CGF.Builder.CreateBr(Exit);
 +  }
 +  if (Binding)
 +    CGF.UnbindObjC3MatchDecl(Binding);
++}
++
++// ARC results must outlive both arm and scrutinee cleanup. Store the +1 value
++// before either can throw, and release it only on exceptional exit here.
++struct ReleaseCompletedMatchResult final : EHScopeStack::Cleanup {
++  Address Storage;
++  explicit ReleaseCompletedMatchResult(Address Storage) : Storage(Storage) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    CGF.EmitARCRelease(CGF.Builder.CreateLoad(Storage), ARCImpreciseLifetime);
++  }
++};
++
++RValue emitValueMatchExpr(CodeGenFunction &CGF, const ObjC3MatchExpr *Match,
++                          bool Complex) {
++  const QualType Type = Match->getType();
++  const bool Retain = CGF.getLangOpts().ObjCAutoRefCount &&
++                      Type->isObjCRetainableType();
++  CodeGenFunction::RunCleanupsScope ResultScope(CGF);
++  Address OwnedResult = Address::invalid();
++  if (Retain) {
++    OwnedResult = CGF.CreateMemTemp(Type, "objc3.match.owned.result");
++    CGF.Builder.CreateStore(llvm::Constant::getNullValue(CGF.ConvertType(Type)),
++                            OwnedResult);
++    CGF.pushFullExprCleanup<ReleaseCompletedMatchResult>(EHCleanup, OwnedResult);
++  }
++  CodeGenFunction::RunCleanupsScope MatchScope(CGF);
++  MatchScrutinee State;
++  if (!emitScrutineeOnce(CGF, Match->getScrutinee(), State, Match))
++    return CGF.GetUndefRValue(Type);
++
++  llvm::BasicBlock *Exit = CGF.createBasicBlock("objc3.match.expr.end");
++  llvm::SmallVector<llvm::Value *, 8> Values, Imaginary;
++  llvm::SmallVector<llvm::BasicBlock *, 8> IncomingBlocks;
++  CodeGenFunction::ConditionalEvaluation Evaluation(CGF);
++  for (unsigned I = 0; I != Match->getNumArms(); ++I) {
++    const ObjC3MatchArm &Arm = *Match->getArm(I);
++    auto *Next = CGF.createBasicBlock("objc3.match.expr.next");
++    auto *Selected = CGF.createBasicBlock("objc3.match.expr.selected");
++    CGF.Builder.CreateCondBr(emitArmTest(CGF, State, Arm), Selected, Next);
++    CGF.EmitBlock(Selected);
++    llvm::Value *Value = nullptr, *Imag = nullptr;
++    llvm::BasicBlock *ValueBlock = nullptr;
++    Evaluation.begin(CGF);
++    emitArmBody(CGF, State, Arm, Next, Exit, [&](const Expr *Body) {
++      if (Complex) {
++        auto Pair = CGF.EmitComplexExpr(Body);
++        Value = Pair.first;
++        Imag = Pair.second;
++      } else if (Retain) {
++        Value = CGF.EmitARCRetainScalarExpr(Body);
++        CGF.Builder.CreateStore(Value, OwnedResult);
++      } else {
++        Value = CGF.EmitScalarExpr(Body);
++      }
++    }, ValueBlock, {&Value, &Imag});
++    Evaluation.end(CGF);
++    if (ValueBlock) {
++      Values.push_back(Value);
++      if (Complex)
++        Imaginary.push_back(Imag);
++      IncomingBlocks.push_back(ValueBlock);
++    }
++    CGF.EmitBlock(Next);
++  }
++  // Exhaustiveness is checked by Sema; no arm may fabricate a result.
++  CGF.Builder.CreateUnreachable();
++  CGF.EmitBlock(Exit, true);
++  auto Join = [&](llvm::ArrayRef<llvm::Value *> Inputs, llvm::StringRef Name) {
++    llvm::Type *ValueType = Complex ? CGF.ConvertType(Type->getAs<ComplexType>()->getElementType())
++                                    : CGF.ConvertType(Type);
++    auto *Phi = CGF.Builder.CreatePHI(ValueType, Inputs.size(), Name);
++    for (unsigned I = 0; I != Inputs.size(); ++I)
++      Phi->addIncoming(Inputs[I], IncomingBlocks[I]);
++    return static_cast<llvm::Value *>(Phi);
++  };
++  llvm::Value *Value = Join(Values, "objc3.match.value");
++  llvm::Value *Imag = Complex ? Join(Imaginary, "objc3.match.imaginary") : nullptr;
++  MatchScope.ForceCleanup({&Value, &Imag});
++  ResultScope.ForceCleanup({&Value, &Imag});
++  if (Retain)
++    Value = CGF.EmitObjCConsumeObject(Type, Value);
++  return Complex ? RValue::getComplex(Value, Imag) : RValue::get(Value);
 +}
 +
 +} // namespace
@@ -5526,8 +5594,8 @@ index 000000000..4d3bd75fd
 +    llvm::BasicBlock *Selected = createBasicBlock("objc3.match.selected");
 +    Builder.CreateCondBr(Test, Selected, Next);
 +    EmitBlock(Selected);
-+    llvm::Value *Unused = nullptr;
-+    emitArmBody(*this, State, Arm, Next, Exit, Unused, nullptr);
++    llvm::BasicBlock *Unused = nullptr;
++    emitArmBody(*this, State, Arm, Next, Exit, nullptr, Unused);
 +    EmitBlock(Next);
 +  }
 +  Builder.CreateBr(Exit);
@@ -5535,48 +5603,12 @@ index 000000000..4d3bd75fd
 +}
 +
 +llvm::Value *CodeGenFunction::EmitObjC3MatchExpr(const ObjC3MatchExpr *Match) {
-+  RunCleanupsScope MatchScope(*this);
-+  MatchScrutinee State;
-+  if (!emitScrutineeOnce(*this, Match->getScrutinee(), State, Match))
-+    return llvm::PoisonValue::get(ConvertType(Match->getType()));
-+  if (!isPlainNativeMatchResult(Match->getType())) {
-+    ErrorUnsupported(Match, "ObjC3 match expression result type");
-+    return llvm::PoisonValue::get(ConvertType(Match->getType()));
-+  }
++  return emitValueMatchExpr(*this, Match, false).getScalarVal();
++}
 +
-+  llvm::BasicBlock *Exit = createBasicBlock("objc3.match.expr.end");
-+  llvm::SmallVector<llvm::Value *, 8> Values;
-+  llvm::SmallVector<llvm::BasicBlock *, 8> IncomingBlocks;
-+  for (unsigned I = 0; I != Match->getNumArms(); ++I) {
-+    const ObjC3MatchArm &Arm = *Match->getArm(I);
-+    llvm::BasicBlock *Next = createBasicBlock("objc3.match.expr.next");
-+    llvm::Value *Test = emitArmTest(*this, State, Arm);
-+    llvm::BasicBlock *Selected = createBasicBlock("objc3.match.expr.selected");
-+    Builder.CreateCondBr(Test, Selected, Next);
-+    EmitBlock(Selected);
-+    llvm::Value *ArmValue = nullptr;
-+    llvm::SmallVector<llvm::BasicBlock *, 1> ArmBlocks;
-+    emitArmBody(*this, State, Arm, Next, Exit, ArmValue, &ArmBlocks);
-+    if (ArmValue && !ArmBlocks.empty()) {
-+      Values.push_back(ArmValue);
-+      IncomingBlocks.push_back(ArmBlocks.front());
-+    }
-+    EmitBlock(Next);
-+  }
-+
-+  // Sema proves exhaustiveness before constructing this node. Retain verifier-
-+  // valid error recovery if an earlier diagnostic left a missing path.
-+  if (HaveInsertPoint()) {
-+    Values.push_back(llvm::PoisonValue::get(ConvertType(Match->getType())));
-+    IncomingBlocks.push_back(Builder.GetInsertBlock());
-+    Builder.CreateBr(Exit);
-+  }
-+  EmitBlock(Exit, true);
-+  auto *Result = Builder.CreatePHI(ConvertType(Match->getType()),
-+                                   Values.size(), "objc3.match.value");
-+  for (unsigned I = 0; I != Values.size(); ++I)
-+    Result->addIncoming(Values[I], IncomingBlocks[I]);
-+  return Result;
++RValue CodeGen::emitObjC3MatchComplexExpr(CodeGenFunction &CGF,
++                                        const ObjC3MatchExpr *Match) {
++  return emitValueMatchExpr(CGF, Match, true);
 +}
 +
 +void CodeGen::emitObjC3MatchAggregateExpr(CodeGenFunction &CGF,
@@ -5612,10 +5644,13 @@ index 000000000..4d3bd75fd
 +        CGF.createBasicBlock("objc3.match.aggregate.selected");
 +    CGF.Builder.CreateCondBr(Test, Selected, Next);
 +    CGF.EmitBlock(Selected);
-+    llvm::Value *Unused = nullptr;
++    llvm::BasicBlock *Unused = nullptr;
 +    Evaluation.begin(CGF);
-+    emitArmBody(CGF, State, Arm, Next, Exit, Unused, nullptr, &Destination,
-+                ResultInitialized);
++    emitArmBody(CGF, State, Arm, Next, Exit, [&](const Expr *Body) {
++      CGF.EmitAggExpr(Body, Destination);
++      if (ResultInitialized.isValid() && CGF.HaveInsertPoint())
++        CGF.Builder.CreateStore(CGF.Builder.getTrue(), ResultInitialized);
++    }, Unused);
 +    Evaluation.end(CGF);
 +    CGF.EmitBlock(Next);
 +  }
@@ -5625,15 +5660,17 @@ index 000000000..4d3bd75fd
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Match.h b/clang/lib/CodeGen/CGObjC3Match.h
 new file mode 100644
-index 000000000..f042b25da
+index 000000000..fc63348bc
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,21 @@
 +//===--- CGObjC3Match.h - Native ObjC3 match lowering --------*- C++ -*-===//
 +// Private CodeGen adapter. This does not define an ABI for ObjC objects.
 +
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3MATCH_H
 +#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3MATCH_H
++
++#include "CGValue.h"
 +
 +namespace clang {
 +class ObjC3MatchExpr;
@@ -5641,6 +5678,7 @@ index 000000000..f042b25da
 +namespace CodeGen {
 +class CodeGenFunction;
 +class AggValueSlot;
++RValue emitObjC3MatchComplexExpr(CodeGenFunction &, const ObjC3MatchExpr *);
 +void emitObjC3MatchAggregateExpr(CodeGenFunction &, const ObjC3MatchExpr *,
 +                                 AggValueSlot);
 +}
@@ -16908,3 +16946,44 @@ index 000000000..e3069d5b7
 +// CHECK-LABEL: define{{.*}} @{{.*}}aggregate_result
 +// CHECK: objc3.match.aggregate.selected
 +// CHECK: objc3.match.aggregate.end
+diff --git a/clang/test/ObjC3/CodeGen/match-value-results.m b/clang/test/ObjC3/CodeGen/match-value-results.m
+new file mode 100644
+index 000000000..7c13404a4
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/match-value-results.m
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++#ifdef __cplusplus
++extern "C" {
++#endif
++void object_result(int tag, id left, id right) {
++  (void)match(tag) { case 0 => left; default => right; };
++}
++// CHECK-LABEL: define{{.*}} @object_result(
++// CHECK: phi ptr
++// CHECK: call void @llvm.objc.release
++int reference_scrutinee(id object) {
++  return match(object) { case (id)0 => 0; case let snapshot => snapshot != (id)0; };
++}
++// CHECK-LABEL: define{{.*}} @reference_scrutinee(
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: icmp eq ptr
++// CHECK: phi i32
++// CHECK: call void @llvm.objc.release
++_Complex double complex_result(int tag, _Complex double left, _Complex double right) {
++  return match(tag) { case 0 => left; default => right; };
++}
++// CHECK-LABEL: define{{.*}} @complex_result(
++// CHECK: phi double
++// CHECK: phi double
++typedef int IntVector __attribute__((vector_size(16)));
++IntVector vector_result(int tag, IntVector left, IntVector right) {
++  return match(tag) { case 0 => left; default => right; };
++}
++// CHECK-LABEL: define{{.*}} @vector_result(
++// CHECK: phi <4 x i32>
++#ifdef __cplusplus
++}
++#endif

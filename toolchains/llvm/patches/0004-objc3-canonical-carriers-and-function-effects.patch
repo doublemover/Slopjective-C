@@ -4982,10 +4982,10 @@ index 000000000..30b3eef73
 +}
 diff --git a/clang/lib/Sema/ObjC3MatchSemantic.cpp b/clang/lib/Sema/ObjC3MatchSemantic.cpp
 new file mode 100644
-index 000000000..f07788326
+index 000000000..f4be4eda0
 --- /dev/null
 +++ b/clang/lib/Sema/ObjC3MatchSemantic.cpp
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,122 @@
 +#include "clang/AST/ObjC3MatchSemantic.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Expr.h"
@@ -5074,7 +5074,8 @@ index 000000000..f07788326
 +    // `(void *)0` is not an implicit null pointer constant for another type.
 +    Expr::EvalResult Value;
 +    const bool IsNullPointer = Pattern.PatternValue &&
-+        Pattern.PatternValue->getType()->isPointerType() &&
++        (Pattern.PatternValue->getType()->isAnyPointerType() ||
++         Pattern.PatternValue->getType()->isBlockPointerType()) &&
 +        Pattern.PatternValue->EvaluateAsRValue(Value, Context) &&
 +        !Value.HasSideEffects && Value.Val.isLValue() &&
 +        Value.Val.getLValueBase().isNull() &&
@@ -6896,10 +6897,10 @@ index 000000000..c0f59a7b6
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Match.cpp b/clang/lib/Sema/SemaObjC3Match.cpp
 new file mode 100644
-index 000000000..5a62d4256
+index 000000000..563c46251
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Match.cpp
-@@ -0,0 +1,287 @@
+@@ -0,0 +1,307 @@
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
@@ -6987,6 +6988,15 @@ index 000000000..5a62d4256
 +      continue;
 +    }
 +
++    // Identical value types need no composite-pointer probing. In particular,
++    // builtin id has no separate C-pointer redefinition in a header-free TU.
++    // Drop top-level lvalue qualifiers because match always produces a value.
++    if (!Common->isArrayType() && !Common->isFunctionType() &&
++        S.Context.hasSameUnqualifiedType(Common, Next->getType())) {
++      Common = S.Context.getCommonSugaredType(Common.getUnqualifiedType(),
++                                              Next->getType().getUnqualifiedType());
++      continue;
++    }
 +    OpaqueValueExpr Prior(MatchLoc, Common, VK_PRValue);
 +    ExprResult LHS(&Prior), RHS(Next);
 +    ExprResult Cond(IntegerLiteral::Create(
@@ -7081,6 +7091,13 @@ index 000000000..5a62d4256
 +  if (BoundType.isNull() || BoundType->isVoidType()) {
 +    Diag(Pattern.BindingLocation, diag::err_objc3_match_void_binding);
 +    return State;
++  }
++  // The binding names a snapshot, not the source's weak/unsafe storage. An
++  // ARC snapshot keeps the loaded object or copied Block alive for the arm.
++  if (getLangOpts().ObjCAutoRefCount && BoundType->isObjCRetainableType()) {
++    Qualifiers Quals = BoundType.getQualifiers();
++    Quals.setObjCLifetime(Qualifiers::OCL_Strong);
++    BoundType = Context.getQualifiedType(BoundType.getUnqualifiedType(), Quals);
 +  }
 +  State.BindingType = Pattern.MutableBinding
 +                          ? BoundType
@@ -7184,6 +7201,10 @@ index 000000000..5a62d4256
 +                            : joinMatchArmTypes(*this, Arms, KeywordLoc);
 +  if (ResultType.isNull())
 +    return ExprError();
++  // Object and Block results own a temporary through the enclosing full
++  // expression, even when none of their arms introduces another cleanup.
++  if (getLangOpts().ObjCAutoRefCount && ResultType->isObjCRetainableType())
++    Cleanup.setExprNeedsCleanups(true);
 +  return ObjC3MatchExpr::Create(Context, ResultType, Scrutinee, Arms,
 +      KeywordLoc, LParenLoc, RParenLoc, LBraceLoc, RBraceLoc);
 +}

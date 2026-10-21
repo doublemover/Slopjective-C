@@ -57,6 +57,31 @@ static void plain(void) {
     case .None => Err(int, int, -1);
   };
   assert(isOk(result));
+  // Native scalar representations include vectors and complex values.
+  typedef int IntVector __attribute__((vector_size(16)));
+  IntVector vector = match(value) {
+    case .Some(let payload) => ((IntVector){payload, 2, 3, 4});
+    case .None => ((IntVector){-1, -2, -3, -4});
+  };
+  assert(vector[0] == 42 && vector[3] == 4);
+  _Complex double left, right;
+  __real__ left = 12.5; __imag__ left = 3.25;
+  __real__ right = -8.0; __imag__ right = 9.0;
+  _Complex double complex_value = match(value) {
+    case .Some(_) => left;
+    case .None => right;
+  };
+  assert(__real__ complex_value == 12.5 && __imag__ complex_value == 3.25);
+  complex_value = match(None(int)) {
+    case .Some(_) => left;
+    case .None => right;
+  };
+  assert(__real__ complex_value == -8.0 && __imag__ complex_value == 9.0);
+  int (^block)(void) = match(value) {
+    case .Some(_) => ^{ return 42; };
+    case .None => ^{ return -1; };
+  };
+  assert(block() == 42);
 }
 
 #if __has_feature(objc_arc)
@@ -66,6 +91,86 @@ static Optional(id) fail_native(void) {
 static Optional(id) fail_checked(void) throws(id<Error>) {
   throwError((id<Error>)[MatchObject make:72]);
 }
+static void owned_values(void) {
+  id __weak witness = (id)0;
+  @autoreleasepool {
+    MatchObject *object = match(Some(id, [MatchObject make:81])) {
+      case .Some(let payload) => (MatchObject *)payload;
+      case .None => (MatchObject *)(id)0;
+    };
+    witness = object;
+    assert(object->number == 81 && witness != (id)0);
+    object = (id)0;
+    assert(witness == (id)0);
+
+    // Keep an ARC-loaded object alive after its strong arm temporary dies.
+    Optional(id) source = Some(id, [MatchObject make:82]);
+    MatchObject *selected = match(source) {
+      case .Some(let payload) => (source = None(id), (MatchObject *)payload);
+      case .None => (MatchObject *)(id)0;
+    };
+    witness = selected;
+    assert(selected->number == 82 && !hasValue(source));
+    selected = (id)0;
+    assert(witness == (id)0);
+
+    MatchObject *original = [MatchObject make:89];
+    MatchObject *snapshot = match(original) {
+      case (id)0 => (MatchObject *)(id)0;
+      case let bound => (original = (id)0, bound);
+    };
+    witness = snapshot;
+    assert(original == (id)0 && snapshot->number == 89);
+    snapshot = (id)0;
+    assert(witness == (id)0);
+    assert(match((id)0) { case (id)0 => 7; default => 0; } == 7);
+    MatchObject *owner = [MatchObject make:91];
+    MatchObject *__weak weak_source = owner;
+    MatchObject *weak_snapshot = match(weak_source) {
+      case (id)0 => (MatchObject *)(id)0;
+      case let bound => (owner = (id)0, bound);
+    };
+    assert(weak_snapshot->number == 91 && weak_source != (id)0);
+    weak_snapshot = (id)0;
+    assert(weak_source == (id)0);
+
+    int (^original_block)(void) = ^{ return 90; };
+    int (^block_snapshot)(void) = match(original_block) {
+      case (void *)0 => (int (^)(void))0;
+      case let bound => (original_block = (int (^)(void))0, bound);
+    };
+    assert(original_block == (int (^)(void))0 && block_snapshot() == 90);
+    block_snapshot = (int (^)(void))0;
+
+    int (^copied)(void) = match(Some(id, [MatchObject make:83])) {
+      case .Some(let payload) => ^{ return ((MatchObject *)payload)->number; };
+      case .None => ^{ return -1; };
+    };
+    assert(copied() == 83);
+    copied = (int (^)(void))0;
+  }
+  assert(created == destroyed);
+  @autoreleasepool {
+    // The +0 match result survives to the surrounding full-expression.
+    assert(((MatchObject *)match(Some(id, [MatchObject make:84])) {
+      case .Some(let payload) => payload;
+      case .None => (id)0;
+    })->number == 84);
+    (void)match(Some(id, [MatchObject make:85])) {
+      case .Some(let payload) => payload;
+      case .None => (id)0;
+    };
+    assert(created == destroyed);
+    int side = 0;
+    if (side && match(Some(id, [MatchObject make:86])) {
+        case .Some(let payload) => payload;
+        case .None => (id)0;
+      }) ++side;
+    assert(side == 0 && created == destroyed);
+  }
+  assert(created == destroyed);
+}
+
 static void owned(void) {
   id __weak witness = (id)0;
   @autoreleasepool {
@@ -154,6 +259,11 @@ template <class T> T choose(Optional(int) source, const T &left, const T &right)
     case .None => right;
   };
 }
+struct MemberRecord {
+  int first, second;
+  int get_first() const { return first; }
+  int get_second() const { return second; }
+};
 struct Immovable {
   int value;
   explicit Immovable(int v) : value(v) {}
@@ -173,6 +283,17 @@ __attribute__((noinline)) static void match_value_checkpoint(int observed) {
 }
 static void cpp(void) {
   Optional(int) source = Some(int, 42);
+  MemberRecord record{17, 29};
+  int MemberRecord::*data = match(source) {
+    case .Some(_) => &MemberRecord::second;
+    case .None => &MemberRecord::first;
+  };
+  assert(record.*data == 29);
+  int (MemberRecord::*method)() const = match(None(int)) {
+    case .Some(_) => &MemberRecord::get_first;
+    case .None => &MemberRecord::get_second;
+  };
+  assert((record.*method)() == 29);
   {
     Lifetime value = match(source) {
       case .Some(let payload) => Lifetime(payload);
@@ -227,6 +348,30 @@ static void cpp(void) {
     case .None => Immovable(-1);
   };
   assert(direct.value == 42);
+#if __has_feature(objc_arc)
+  @autoreleasepool {
+    int before = created - destroyed;
+    try {
+      MatchObject *value = match(source) {
+        case .Some(_) => ((void)ThrowAfter{}, [MatchObject make:87]);
+        case .None => (MatchObject *)(id)0;
+      };
+      (void)value;
+      assert(0);
+    } catch (int error) { assert(error == 91); }
+    assert(created - destroyed == before);
+    try {
+      MatchObject *value = match(make_source(42, ThrowAfter{})) {
+        case .Some(_) => [MatchObject make:88];
+        case .None => (MatchObject *)(id)0;
+      };
+      (void)value;
+      assert(0);
+    } catch (int error) { assert(error == 91); }
+    assert(created - destroyed == before);
+  }
+#endif
+
   MoveOnly first(17), second(23);
   MoveOnly moved = match(source) {
     case .Some(_) => static_cast<MoveOnly &&>(first);
@@ -240,6 +385,7 @@ static int runtime_contract(void) {
   plain();
 #if __has_feature(objc_arc)
   owned();
+  owned_values();
 #endif
 #ifdef __cplusplus
   cpp();
