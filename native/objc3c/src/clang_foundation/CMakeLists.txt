@@ -216,6 +216,7 @@ if (BUILD_TESTING)
   add_test(NAME objc3_interface_artifact_io COMMAND objc3_interface_artifact_io_test)
   add_executable(objc3_task_services_test
     ../../../../tests/tooling/fixtures/clang_foundation/services/task_services.cpp
+    ../../../../tests/clang_foundation/structured_runtime/actor_scheduling.cpp
     ../runtime/concurrency/service_group.cpp)
   # Only this test translation unit enables deterministic fault hooks; the
   # production service library keeps them out of its ABI and implementation.

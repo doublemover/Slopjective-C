@@ -1613,7 +1613,7 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
   uint32_t executed = 0;
   assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
   assert(executed == 1);
-  assert((trace.sequence == std::vector<int>{1, 2}));
+  assert((trace.sequence == std::vector<int>{1}));
   assert(trace.max_active == 1 && trace.active == 0);
   assert(trace.cross_status == OBJC3_SERVICE_OK);
   assert(trace.cross_facts.actor_hop == 1);
@@ -1621,19 +1621,19 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
   assert(trace.cross_facts.current_actor_identity == actor_identity(first));
   assert(trace.cross_facts.current_executor_identity ==
          actor_executor_identity(first));
-  assert(trace.destroyed == 2);
+  assert(trace.destroyed == 1);
   assert(actor_close(second) == OBJC3_SERVICE_OK);
   assert(actor_join(second) == OBJC3_SERVICE_NOT_READY);
   assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
-  assert((trace.sequence == std::vector<int>{1, 2, 4}));
+  assert((trace.sequence == std::vector<int>{1, 4}));
   assert(trace.resume_status == OBJC3_SERVICE_OK);
   assert(trace.resume_facts.actor_hop == 1 &&
          trace.resume_facts.executor_hop == 0);
   assert(actor_join(second) == OBJC3_SERVICE_OK);
   assert(actor_close(first) == OBJC3_SERVICE_OK);
   assert(actor_join(first) == OBJC3_SERVICE_NOT_READY);
-  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
-  assert((trace.sequence == std::vector<int>{1, 2, 4, 3}));
+  assert(objc3_executor_pump(executor, 2, &executed) == OBJC3_SERVICE_OK);
+  assert((trace.sequence == std::vector<int>{1, 4, 2, 3}));
   assert(trace.destroyed == 4);
   assert(actor_join(first) == OBJC3_SERVICE_OK);
 
@@ -1659,7 +1659,10 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
 
 } // namespace
 
+void test_actor_scheduling();
+
 int main() {
+  test_actor_scheduling();
   test_same_executor_pending_wait_returns_not_ready();
   test_task_pending_self_wait_returns_not_ready();
   test_zero_payload_and_reentry();

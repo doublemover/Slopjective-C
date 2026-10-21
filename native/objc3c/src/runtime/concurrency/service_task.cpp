@@ -1,4 +1,5 @@
 #include "service_internal.h"
+#include "service_autorelease_pool.h"
 #include "service_actor.h"
 
 #include <cstdlib>
@@ -942,6 +943,10 @@ void objc3_service_run_task_resume(void *context) {
   }
   if (resume) {
     CurrentTaskScope current(task);
+    // Drain temporaries before publishing a continuation, including a hop to
+    // another worker that can resume immediately. The destination's outer
+    // callback pool alone would drain too late for that handoff.
+    objc3::services::CallbackAutoreleasePool pool;
     try { resume(task, frame); } catch (...) {}
   }
   void *frame_to_destroy = nullptr;

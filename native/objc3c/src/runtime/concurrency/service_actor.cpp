@@ -1,4 +1,5 @@
 #include "service_actor.h"
+#include "service_autorelease_pool.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -93,40 +94,43 @@ void invoke_destroy(Actor *actor, const ActorContextDestroy destroy,
 
 void drain_mailbox(void *opaque) noexcept {
   auto *actor = static_cast<Actor *>(opaque);
-  for (;;) {
-    Actor::Entry entry{};
-    bool execute_job = false;
-    {
-      std::lock_guard<std::mutex> lock(actor->mutex);
-      if (actor->mailbox.empty()) {
-        actor->active = false;
-        actor->drain_scheduled = false;
-        actor->changed.notify_all();
-        break;
-      }
+  Actor::Entry entry{};
+  bool execute_job = false;
+  {
+    std::lock_guard<std::mutex> lock(actor->mutex);
+    if (!actor->mailbox.empty()) {
       entry = actor->mailbox.front();
       actor->mailbox.pop_front();
       actor->active = true;
       execute_job = !actor->cancelled;
     }
-
+  }
+  if (entry.job) {
+    ActorExecutionScope current(actor);
+    CallbackAutoreleasePool pool;
     if (execute_job) {
-      {
-        ActorExecutionScope current(actor);
-        try {
-          entry.job(entry.context);
-        } catch (...) {
-          std::lock_guard<std::mutex> lock(actor->mutex);
-          actor->callback_failed = true;
-        }
+      try {
+        entry.job(entry.context);
+      } catch (...) {
+        std::lock_guard<std::mutex> lock(actor->mutex);
+        actor->callback_failed = true;
       }
     }
     invoke_destroy(actor, entry.destroy, entry.context);
-    {
-      std::lock_guard<std::mutex> lock(actor->mutex);
-      actor->active = false;
+    // Drain this job's pool while its actor identity and active flag still
+    // hold, before another resume can observe its autoreleased temporaries.
+  }
+  {
+    std::lock_guard<std::mutex> lock(actor->mutex);
+    actor->active = false;
+    if (!actor->mailbox.empty()) {
+      executor_reschedule_current_callback();
+      // Transfer the existing drain reference to the rescheduled callback.
       actor->changed.notify_all();
+      return;
     }
+    actor->drain_scheduled = false;
+    actor->changed.notify_all();
   }
   release_internal(actor);
 }

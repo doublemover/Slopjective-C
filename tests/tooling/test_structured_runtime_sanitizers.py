@@ -31,6 +31,8 @@ def test_instrumented_runtime_failure_replaces_prior_success(tmp_path, monkeypat
     assert report['status'] == 'FAIL' and not report['executions']
     assert len(calls) == 1 and '-fsanitize=address,undefined' in calls[0]
     assert any(str(path).endswith('/concurrency/service_public.cpp') for path in calls[0])
+    assert '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS' in calls[0]
+    assert any(str(path).endswith('/structured_runtime/actor_scheduling.cpp') for path in calls[0])
     executable = Path(calls[0][-1])
     assert executable.parent != output
     assert not executable.parent.exists()

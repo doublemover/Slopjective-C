@@ -24,7 +24,8 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
         'concurrency/service_group.cpp', 'concurrency/service_actor.cpp',
         'concurrency/service_public.cpp')]
     fixture = repo / 'tests/clang_foundation/structured_runtime/worker.cpp'
-    inputs = sources + [fixture, fixture.with_name('contract.c')]
+    inputs = sources + [fixture, fixture.with_name('contract.c'),
+                        fixture.with_name('actor_scheduling.cpp')]
     inputs += sorted((repo / 'native/objc3c/src/runtime').rglob('*.h'))
     cases, commands = [], []
 
@@ -50,6 +51,8 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                     run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
                         '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
                         '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
+                        '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS',
+                        repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
                         '-I' + str(repo / 'native/objc3c/src'),
                         '-I' + str(repo / 'native/objc3c/src/runtime/public'),
                         *sources, fixture, '-o', executable], env)

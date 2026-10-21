@@ -8,7 +8,7 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -21,6 +21,9 @@ namespace objc3::services {
 // thread identity.
 uint64_t executor_current_identity() noexcept;
 bool executor_is_current_identity(uint64_t identity) noexcept;
+// Only inside an executor callback. Reuse its queue node at the back of the
+// queue after callback cleanup, without allocation or public queue admission.
+void executor_reschedule_current_callback() noexcept;
 
 } // namespace objc3::services
 
@@ -40,7 +43,7 @@ struct objc3_executor final {
   // attempted while another pump is active returns NOT_READY.
   std::mutex pump_mutex;
   std::condition_variable ready;
-  std::deque<WorkItem> queue;
+  std::list<WorkItem> queue;
   bool stopping{false};
   std::thread worker;
 
