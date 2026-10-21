@@ -149,6 +149,59 @@ static void mutable_owned(void) {
   assert(created == destroyed);
 }
 
+static void weak_payloads(void) {
+  @autoreleasepool {
+    MatchObject *owner = [MatchObject make:95];
+    MatchObject *__weak witness = owner;
+    Optional(id __weak) source = Some(id __weak, owner);
+    match(source) {
+      case .Some(let payload): {
+        assert(payload == owner && ((MatchObject *)payload)->number == 95);
+        owner = (id)0;
+        assert(witness != (id)0 && ((MatchObject *)payload)->number == 95);
+      }
+      case .None: { assert(0); }
+    }
+    assert(witness == (id)0);
+    // Zeroing the weak field leaves the Optional tag present.
+    match(source) {
+      case .Some(let payload): { assert(payload == (id)0); }
+      case .None: { assert(0); }
+    }
+    owner = [MatchObject make:96];
+    witness = owner;
+    Result(id __weak, int) result = Ok(id __weak, int, owner);
+    match(result) {
+      case .Ok(var payload): {
+        assert(payload == owner && ((MatchObject *)payload)->number == 96);
+        owner = (id)0;
+        assert(witness != (id)0);
+        payload = (id)0;
+        assert(witness == (id)0);
+      }
+      case .Err(let error): { (void)error; assert(0); }
+    }
+    { // The original Block literal owns captures through this native scope.
+    owner = [MatchObject make:97];
+    witness = owner;
+    typedef int (^SnapshotBlock)(void);
+    SnapshotBlock block = ^{ return owner->number; };
+    Optional(SnapshotBlock __weak) weak_block = Some(SnapshotBlock __weak, block);
+    match(weak_block) {
+      case .Some(let captured): {
+        assert(captured == block);
+        block = (SnapshotBlock)0;
+        owner = (id)0;
+        assert(captured() == 97 && witness != (id)0);
+      }
+      case .None: { assert(0); }
+    }
+    }
+    assert(witness == (id)0);
+  }
+  assert(created == destroyed);
+}
+
 static void owned_values(void) {
   id __weak witness = (id)0;
   @autoreleasepool {
@@ -503,6 +556,7 @@ static int runtime_contract(void) {
   owned();
   owned_values();
   mutable_owned();
+  weak_payloads();
 #endif
 #ifdef __cplusplus
   cpp();

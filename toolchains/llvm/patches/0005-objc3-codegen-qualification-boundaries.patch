@@ -5176,7 +5176,7 @@ index 000000000..fbe5ef7b7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
-index 000000000..bf96244a6
+index 000000000..c05bff1a3
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.cpp
 @@ -0,0 +1,532 @@
@@ -5495,10 +5495,10 @@ index 000000000..bf96244a6
 +      CGF.Builder.CreateBr(Next);
 +      return;
 +    }
-+    if (Arm.isMutableBinding()) {
++    if (Binding->hasInit()) {
 +      const auto *Opaque = findBindingSource(Binding->getInit());
 +      if (!Opaque) {
-+        CGF.ErrorUnsupported(&Arm, "ObjC3 mutable match binding initializer");
++        CGF.ErrorUnsupported(&Arm, "ObjC3 owned match binding initializer");
 +        CGF.Builder.CreateBr(Next);
 +        return;
 +      }

@@ -22,7 +22,9 @@ to destroy.
 
 A case binding names a snapshot of the single scrutinee evaluation. Mutating the
 original scalar or carrier through another name does not change that binding.
-Managed snapshots retain their active payload and release it after the match;
+Managed snapshots preserve native field ownership. Reference payload bindings
+initialize independent strong storage, using native atomic weak loads for weak
+fields, and retain their values through the selected arm;
 C++ carrier snapshots resolve their payload copy constructors in Sema and drain
 the active payload on normal and exceptional exits. `var` bindings initialize
 separate case-local storage with native copy/ownership rules. Failed guards
