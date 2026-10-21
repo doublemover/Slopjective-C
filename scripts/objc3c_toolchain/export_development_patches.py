@@ -171,6 +171,7 @@ PACKETS = {
         "clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp",
         "clang/unittests/AST/ObjC3DoCatchPersistenceTest.cpp",
         "clang/unittests/AST/ObjC3TryThrowConsumerTest.cpp",
+        "clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp",
         "clang/unittests/AST/ObjC3CarrierCommonSugarTest.cpp",
         "clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp",
         "clang/unittests/AST/ObjC3CarrierIdentityTest.cpp",
@@ -194,6 +195,7 @@ PACKETS = {
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
         "clang/lib/Analysis/CFG.cpp",
+        "clang/lib/Sema/AnalysisBasedWarnings.cpp",
         "clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp",
         "clang/lib/CodeGen/CGObjC3Carriers.h",
         "clang/lib/CodeGen/CGObjC3ManagedStorage.h",

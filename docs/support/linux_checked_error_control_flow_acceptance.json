@@ -1,0 +1,52 @@
+{
+  "schema": "objc3c.linux-checked-error-control-flow-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-21",
+  "scope": "admitted Linux x86-64 development compiler: checked-error CFG and noreturn error transport",
+  "implementation_commit": "9955714591c75f533e848a91449243f4bad4abf3",
+  "compiler_binding": "admitted-development",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-bf2c7755c283-fd761312",
+  "patch_digest": "bf2c7755c283102167cf68dedfb4ac179efd0887a7cd9c98caaeed9198abbb38",
+  "compiler_sha256": "39dc3118d575223a1da7d7020e57123af07ce0040119a3fce2f560a1cbf6de70",
+  "runtime_sdk_seal": "41c4fa92a870a18616830ea5646ef62dadae46adee68f92fe67aa47884350ea9",
+  "installed_sdk_rebuilt_for_this_milestone": false,
+  "profile_conformance_claimed": false,
+  "guard_syntax_implemented": false,
+  "verification": {
+    "clang_regressions_passed": 229,
+    "clang_regressions_unsupported": 3,
+    "ast_contract_tests_passed": 60,
+    "checked_cfg_reachability_cases": 24,
+    "checked_cfg_cleanup_tests": 2,
+    "experimental_guard_exit_cases_against_admitted_libraries": 34,
+    "runtime_dual_ownership_configurations": 4,
+    "runtime_standards": ["c++20", "c++23"],
+    "runtime_ownership": ["arc", "mrc"],
+    "runtime_optimization": ["O0", "O2"],
+    "runtime_ordinary_and_pch_executions": 8,
+    "runtime_expected_traps": 64,
+    "runtime_commands": 108,
+    "focused_tooling_tests_passed": 32,
+    "runtime_elapsed_seconds": 5.562816,
+    "foundation_elapsed_seconds": 46.802676,
+    "temporary_runtime_binaries_reclaimed": true
+  },
+  "runtime_report_sha256": "92748e2124c196267e29d0e79952903b3251c71c4c09d686b5d628e5405219e3",
+  "foundation_report_sha256": "db6cc7c11b9440560369406dfe716b062d963361211e609d35abd40656d3b805",
+  "experimental_exit_probe_log_sha256": "37cf7404e7ced0fd79d9663594b5539dcedff0a361fa05efd3dff0f4276ef58a",
+  "behavior": [
+    "checked and native exception dispatch remain independent",
+    "checked rethrows use the outer handler",
+    "propagation and unmatched dispatch clean only exited automatic-object scopes",
+    "normal try success remains visible to return warnings",
+    "logical noreturn excludes ordinary success without excluding hidden checked-error ABI return",
+    "nullable Objective-C messaging and returning virtual overrides retain normal continuation edges"
+  ],
+  "remaining_work": [
+    "native guard and optional-binding AST, parsing, scopes, ownership and complete exit validation",
+    "match and carrier-transfer CFG models",
+    "checked-error symbolic static analysis",
+    "a rebuilt installed SDK containing this compiler milestone and subsequent feature batch"
+  ],
+  "activated_sdk_receipt": "docs/support/linux_match_results_acceptance.json"
+}
