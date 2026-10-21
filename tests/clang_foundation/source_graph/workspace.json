@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-workspace.v3",
+  "schema": "objc3c.source-workspace.v4",
   "packages": ["leaf/package.json", "left/package.json", "right/package.json", "top/package.json"],
   "application": {
     "root": "app",

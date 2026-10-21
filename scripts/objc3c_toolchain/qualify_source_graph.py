@@ -66,7 +66,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         warm = run('warm', all_nodes)
         installation = cold['installation']
         expected_mode = {'language': language, 'standard': standard, 'ownership': ownership}
-        if (installation['schema'] != 'objc3c.package-installation.v3' or
+        if (installation['schema'] != 'objc3c.package-installation.v4' or
                 installation['application_mode'] != expected_mode or
                 any(any(package[key] != value for key, value in expected_mode.items())
                     for package in installation['packages'])):
@@ -156,11 +156,11 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
             except Exception as error:
                 failures.append({'mode': case, 'error': str(error)})
     if failures:
-        receipt_path.write_text(json.dumps({'schema': 'objc3c.source-graph-qualification.v3',
+        receipt_path.write_text(json.dumps({'schema': 'objc3c.source-graph-qualification.v4',
             'status': 'FAIL', 'failures': failures, 'builds': records, 'rejections': negatives}, indent=2) + '\n')
         raise ValueError(f'installed graph qualification failed; see {receipt_path}')
     assert len(records) == 112 and len(negatives) == 32
-    result = {'schema': 'objc3c.source-graph-qualification.v3', 'status': 'PASS',
+    result = {'schema': 'objc3c.source-graph-qualification.v4', 'status': 'PASS',
               'outside_checkout': True, 'paths_with_spaces_and_quotes': True,
               'builds': records, 'rejections': negatives}
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n')

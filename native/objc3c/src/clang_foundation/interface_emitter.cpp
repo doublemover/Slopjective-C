@@ -317,13 +317,63 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   return {};
 }
 
+std::string ExportRootName(const clang::NamedDecl *declaration) {
+  while (declaration) {
+    if (IsTopLevel(declaration))
+      return declaration->getQualifiedNameAsString();
+    declaration =
+        llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
+  }
+  return {};
+}
+
+bool SelectedExport(const clang::NamedDecl *declaration,
+                    const std::vector<std::string> &exports) {
+  return exports.empty() ||
+         std::find(exports.begin(), exports.end(), "*") != exports.end() ||
+         std::find(exports.begin(), exports.end(),
+                   ExportRootName(declaration)) != exports.end();
+}
+
+bool ValidateExportNames(const std::vector<std::string> &exports,
+                         InterfaceEmissionArtifact &result) {
+  std::set<std::string> seen;
+  if (exports.size() > 256) {
+    AddDiagnostic(result, "O3IFC155",
+                  "export policy exceeds 256 declaration names");
+    return false;
+  }
+  for (const auto &name : exports)
+    if (name.empty() || name.size() > 256 ||
+        std::any_of(name.begin(), name.end(),
+                    [](unsigned char c) { return c < 33 || c == 127; }) ||
+        !seen.insert(name).second || (name == "*" && exports.size() != 1)) {
+      AddDiagnostic(
+          result, "O3IFC155",
+          "exports require distinct declaration names or a single wildcard");
+      return false;
+    }
+  return true;
+}
+
 class TypeDependencyVisitor final
     : public clang::RecursiveASTVisitor<TypeDependencyVisitor> {
  public:
-  TypeDependencyVisitor(const clang::ASTContext &context,
-                        InterfaceEmissionArtifact &result,
-                        const std::set<std::string> &resolved_ids)
-      : context_(context), result_(result), resolved_ids_(resolved_ids) {}
+   TypeDependencyVisitor(const clang::ASTContext &context,
+                         InterfaceEmissionArtifact &result,
+                         const std::set<std::string> &resolved_ids,
+                         const std::vector<std::string> &exports)
+       : context_(context), result_(result), resolved_ids_(resolved_ids),
+         exports_(exports) {}
+
+   void CheckVisibility(const clang::NamedDecl *declaration) {
+     if (declaration && IsInMainFile(context_, declaration->getLocation()) &&
+         !SelectedExport(declaration, exports_))
+       AddDiagnostic(
+           result_, "O3IFC156",
+           "public API references a declaration excluded by its export policy",
+           declaration->getQualifiedNameAsString());
+   }
 
   bool IsResolved(const clang::NamedDecl *declaration) const {
     const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
@@ -332,6 +382,7 @@ class TypeDependencyVisitor final
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
+    CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",
@@ -356,6 +407,7 @@ class TypeDependencyVisitor final
           return true;
       }
     }
+    CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",
@@ -366,6 +418,7 @@ class TypeDependencyVisitor final
 
   bool VisitObjCInterfaceType(clang::ObjCInterfaceType *type) {
     const auto *declaration = type->getDecl();
+    CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",
@@ -375,11 +428,13 @@ class TypeDependencyVisitor final
   }
 
   bool VisitObjCObjectType(clang::ObjCObjectType *type) {
-    for (const auto *protocol : type->quals())
+    for (const auto *protocol : type->quals()) {
+      CheckVisibility(protocol);
       if (!IsInMainFile(context_, protocol->getLocation()) && !IsResolved(protocol))
         AddDiagnostic(result_, "O3IFC112",
                       "public declaration references a protocol from an unresolved external dependency",
                       protocol->getNameAsString());
+    }
     return true;
   }
 
@@ -397,13 +452,15 @@ class TypeDependencyVisitor final
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
+  const std::vector<std::string> &exports_;
 };
 
 bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const clang::ASTContext &context,
                            InterfaceEmissionArtifact &result,
-                           const std::set<std::string> &resolved_ids) {
-  TypeDependencyVisitor visitor(context, result, resolved_ids);
+                           const std::set<std::string> &resolved_ids,
+                           const std::vector<std::string> &exports = {}) {
+  TypeDependencyVisitor visitor(context, result, resolved_ids, exports);
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -423,6 +480,9 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
       check(method->getParamDecl(i)->getType());
   }
   if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration)) {
+    visitor.CheckVisibility(interface->getSuperClass());
+    for (const auto *protocol : interface->protocols())
+      visitor.CheckVisibility(protocol);
     if (const auto *superclass = interface->getSuperClass())
       if (!IsInMainFile(context, superclass->getLocation()))
         AddDiagnostic(result, "O3IFC112",
@@ -436,11 +496,13 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     for (const auto *ivar : interface->ivars()) check(ivar->getType());
   }
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
-    for (const auto *adopted : protocol->protocols())
+    for (const auto *adopted : protocol->protocols()) {
+      visitor.CheckVisibility(adopted);
       if (!IsInMainFile(context, adopted->getLocation()))
         AddDiagnostic(result, "O3IFC112",
                       "adopted Objective-C protocol dependency has no resolved interface identity",
                       adopted->getNameAsString());
+    }
   return visitor.UsesCanonicalFunctionEffects;
 }
 
@@ -503,10 +565,30 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
 class InterfaceCollector final
     : public clang::RecursiveASTVisitor<InterfaceCollector> {
  public:
-  InterfaceCollector(clang::ASTContext &context,
-                     InterfaceEmissionArtifact &result,
-                     const std::set<std::string> &resolved_ids)
-      : context_(context), result_(result), resolved_ids_(resolved_ids) {}
+   InterfaceCollector(clang::ASTContext &context,
+                      InterfaceEmissionArtifact &result,
+                      const std::set<std::string> &resolved_ids,
+                      const std::vector<std::string> &exports = {})
+       : context_(context), result_(result), resolved_ids_(resolved_ids),
+         exports_(exports) {}
+
+   // Function bodies and initializers do not contribute public declarations.
+   bool TraverseStmt(clang::Stmt *) { return true; }
+
+   void ValidateSelection() {
+     for (const auto &name : exports_) {
+       if (name == "*")
+         continue;
+       if (std::none_of(root_declarations_.begin(), root_declarations_.end(),
+                        [&](const auto *root) {
+                          return root->getQualifiedNameAsString() == name;
+                        }))
+         AddDiagnostic(result_, "O3IFC155",
+                       "export selection does not name an eligible public root "
+                       "declaration",
+                       name);
+     }
+   }
 
   bool VisitImportDecl(clang::ImportDecl *declaration) {
     if (IsInMainFile(context_, declaration->getLocation())) {
@@ -520,6 +602,8 @@ class InterfaceCollector final
 
   bool VisitNamedDecl(clang::NamedDecl *declaration) {
     if (!result_.diagnostics.empty())
+      return true;
+    if (!SelectedExport(declaration, exports_))
       return true;
     if (context_.getLangOpts().CPlusPlus && !declaration->isImplicit() &&
         IsInMainFile(context_, declaration->getLocation()) &&
@@ -542,7 +626,8 @@ class InterfaceCollector final
       if (IsTopLevel(declaration) &&
           IsInMainFile(context_, declaration->getLocation()) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
-        CheckTypeDependencies(declaration, context_, result_, resolved_ids_);
+        CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
+                              exports_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -606,8 +691,8 @@ class InterfaceCollector final
     }
     auto *representative = Representative(declaration);
     const std::string stable_id = identity.stable_id;
-    uses_function_effects_ |=
-        CheckTypeDependencies(representative, context_, result_, resolved_ids_);
+    uses_function_effects_ |= CheckTypeDependencies(
+        representative, context_, result_, resolved_ids_, exports_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||
@@ -642,6 +727,7 @@ class InterfaceCollector final
   clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
+  const std::vector<std::string> exports_;
   std::map<std::string, clang::NamedDecl *> declarations_;
   std::map<std::string, InterfaceDeclarationIdentity> identities_;
   std::vector<clang::NamedDecl *> root_declarations_;
@@ -827,7 +913,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     llvm::StringRef package_identity,
     const std::vector<InterfaceDependency> &resolved_dependencies,
     const std::vector<InterfaceSourceArtifact> &dependency_sources,
-    llvm::StringRef ownership_projection) {
+    llvm::StringRef ownership_projection,
+    const std::vector<std::string> &exports) {
   InterfaceEmissionArtifact result;
   if (canonical_module_name.empty() || package_identity.empty()) {
     AddDiagnostic(result, "O3IFC100",
@@ -876,8 +963,12 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   result.identity.language_profile = ReadInterfaceLanguageProfile(lang);
   result.identity.package_identity = package_identity.str();
 
-  InterfaceCollector collector(context, result, resolved_declaration_ids);
+  if (!ValidateExportNames(exports, result))
+    return result;
+  InterfaceCollector collector(context, result, resolved_declaration_ids,
+                               exports);
   collector.TraverseDecl(context.getTranslationUnitDecl());
+  collector.ValidateSelection();
   if (!result.diagnostics.empty()) return result;
 
   result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
@@ -1072,7 +1163,8 @@ bool ProjectionType(clang::QualType type, bool result) {
 }
 
 bool ProjectionAPI(clang::ASTContext &context,
-                   InterfaceEmissionArtifact &result) {
+                   InterfaceEmissionArtifact &result,
+                   const std::vector<std::string> &exports = {}) {
   if (!ProjectionMode(context)) {
     AddDiagnostic(result, "O3IFC150",
                   "ownership projections require the qualified ObjC3 Linux "
@@ -1080,8 +1172,11 @@ bool ProjectionAPI(clang::ASTContext &context,
     return false;
   }
   const std::set<std::string> no_dependencies;
-  InterfaceCollector collector(context, result, no_dependencies);
+  if (!ValidateExportNames(exports, result))
+    return false;
+  InterfaceCollector collector(context, result, no_dependencies, exports);
   collector.TraverseDecl(context.getTranslationUnitDecl());
+  collector.ValidateSelection();
   if (!result.diagnostics.empty())
     return false;
   const auto roots = collector.RootDeclarations();
@@ -1183,7 +1278,8 @@ InterfaceEmissionArtifact
 EmitOwnershipProjection(clang::ASTContext &producer,
                         llvm::StringRef canonical_module_name,
                         llvm::StringRef package_identity, bool consumer_arc,
-                        const std::vector<InterfaceDependency> &dependencies) {
+                        const std::vector<InterfaceDependency> &dependencies,
+                        const std::vector<std::string> &exports) {
   InterfaceEmissionArtifact result;
   if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
       !dependencies.empty()) {
@@ -1192,11 +1288,11 @@ EmitOwnershipProjection(clang::ASTContext &producer,
                   "a closed provider API");
     return result;
   }
-  if (!ProjectionAPI(producer, result))
+  if (!ProjectionAPI(producer, result, exports))
     return result;
   auto original = EmitSemanticInterface(
       producer, canonical_module_name.str() + ".__ownership_producer",
-      package_identity);
+      package_identity, {}, {}, {}, exports);
   if (!original.success)
     return original;
   auto ast = clang::tooling::buildASTFromCodeWithArgs(

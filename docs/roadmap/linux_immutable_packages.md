@@ -21,7 +21,7 @@ The repository equivalent is `python -B -m scripts.objc3c_toolchain packages`,
 followed by the same `publish`, `install` or `consume` arguments. Select the SDK
 with `--sdk-root` before the subcommand or `OBJC3C_SDK_ROOT`.
 
-A consumer manifest uses `schema: "objc3c.binary-consumer.v2"`, a relative
+A consumer manifest uses `schema: "objc3c.binary-consumer.v3"`, a relative
 `source`, explicit `language`, `standard`, `ownership`, and `dependencies`.
 Dependency entries contain the exact module `name`, `package` identity and
 `visibility` (`public` or `private`), following the
@@ -31,7 +31,7 @@ package and the SDK.
 
 ```json
 {
-  "schema": "objc3c.binary-consumer.v2",
+  "schema": "objc3c.binary-consumer.v3",
   "source": "main.mm",
   "language": "objective-c++",
   "standard": "c++23",
@@ -40,10 +40,10 @@ package and the SDK.
 }
 ```
 
-Publication requires the successful v2 build report and matching installation
+Publication requires the successful v4 build report and matching installation
 inventory. It validates every retained object, interface and sidecar against the
 inventory, preserving full native module identities and dependency visibility.
-A package's `package.json` uses `objc3c.binary-package.v2` and records its exact
+A package's `package.json` uses `objc3c.binary-package.v3` and records its exact
 producing SDK seal, target, optimization and module inventory. The content hash
 covers canonical JSON with sorted object keys; artifact hashes bind every byte.
 Consumers require the producing SDK seal, language, standard, ownership and
@@ -83,8 +83,12 @@ The [source-bound acceptance receipt](../support/linux_immutable_package_accepta
 records the exact producing archive, all-mode source-free consumers, fault tests,
 installed gates, sanitizer/debugger evidence and clean Debian/Ubuntu results.
 
-Binary v2 modules record `provider_ownership` separately from the consumer mode.
+Binary v3 modules record `provider_ownership` separately from the consumer mode.
 Publication, installation and consumption check its agreement with native
 projection provenance before compilation. The compiler reconstructs the exact
 opposite-mode producer contract when it imports the projected interface. Earlier
 binary formats and interfaces require rebuilding with the current SDK.
+
+Binary v3 modules also require their canonical `exports` policy. Named policies
+must agree exactly with the native sidecar root names before consumer compilation.
+Earlier binary formats are rejected.

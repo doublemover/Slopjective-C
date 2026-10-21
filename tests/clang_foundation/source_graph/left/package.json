@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-package.v3",
+  "schema": "objc3c.source-package.v4",
   "name": "fixture.Left",
   "package": "left-v1",
   "source": "module.m",
@@ -13,5 +13,8 @@
   ],
   "language": "objective-c",
   "standard": "c17",
-  "provider_ownership": "arc"
+  "provider_ownership": "arc",
+  "exports": [
+    "*"
+  ]
 }

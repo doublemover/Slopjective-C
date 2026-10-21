@@ -36,6 +36,7 @@ jobs:
           tests/tooling/test_source_graph.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_ownership_projection_qualification.py
+          tests/tooling/test_public_surface_qualification.py
           tests/tooling/test_toolchain_runtime_report.py
           tests/tooling/test_runtime_source_patches.py
           tests/tooling/test_toolchain_facade_identity.py

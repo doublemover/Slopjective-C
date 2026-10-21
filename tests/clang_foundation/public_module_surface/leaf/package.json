@@ -1,0 +1,15 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.SurfaceLeaf",
+  "package": "surface-leaf-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "SurfaceValue",
+    "surface_value"
+  ],
+  "dependencies": []
+}

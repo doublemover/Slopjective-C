@@ -38,13 +38,15 @@ ReadInterfaceLanguageProfile(const clang::LangOptions &language);
     llvm::StringRef package_identity,
     const std::vector<InterfaceDependency> &resolved_dependencies = {},
     const std::vector<InterfaceSourceArtifact> &dependency_sources = {},
-    llvm::StringRef ownership_projection = {});
+    llvm::StringRef ownership_projection = {},
+    const std::vector<std::string> &exports = {});
 
 // Emit a distinct consumer-mode interface, retaining the canonical producer
 // proof. The native object remains compiled under the producer's ownership.
 [[nodiscard]] InterfaceEmissionArtifact EmitOwnershipProjection(
     clang::ASTContext &producer, llvm::StringRef canonical_module_name,
     llvm::StringRef package_identity, bool consumer_arc,
-    const std::vector<InterfaceDependency> &dependencies = {});
+    const std::vector<InterfaceDependency> &dependencies = {},
+    const std::vector<std::string> &exports = {});
 
 }  // namespace objc3::clang_foundation

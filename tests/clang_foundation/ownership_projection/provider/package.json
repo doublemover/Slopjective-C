@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-package.v3",
+  "schema": "objc3c.source-package.v4",
   "name": "fixture.Ownership",
   "package": "ownership-v1",
   "source": "module.m",
@@ -7,5 +7,14 @@
   "provider_ownership": "mrc",
   "language": "objective-c",
   "standard": "c17",
-  "dependencies": []
+  "dependencies": [],
+  "exports": [
+    "projected_new",
+    "projected_borrow",
+    "projected_autoreleased",
+    "projected_clear",
+    "projected_observe",
+    "projected_created",
+    "projected_destroyed"
+  ]
 }

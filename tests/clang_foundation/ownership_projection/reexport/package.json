@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-package.v3",
+  "schema": "objc3c.source-package.v4",
   "name": "fixture.Reexport",
   "package": "reexport-v1",
   "source": "module.m",
@@ -13,5 +13,8 @@
       "package": "ownership-v1",
       "visibility": "public"
     }
+  ],
+  "exports": [
+    "reexport_created"
   ]
 }

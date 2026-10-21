@@ -81,12 +81,13 @@ class ContractConsumer final : public clang::ASTConsumer,
     if (request_.emit_semantic_interface && request_.projected_arc.has_value())
       result_.interface_artifact = EmitOwnershipProjection(
           context, request_.module_name, request_.package_identity,
-          *request_.projected_arc, result_.resolved_interface_dependencies);
+          *request_.projected_arc, result_.resolved_interface_dependencies,
+          request_.interface_exports);
     else if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
           context, request_.module_name, request_.package_identity,
           result_.resolved_interface_dependencies,
-          result_.resolved_interface_sources);
+          result_.resolved_interface_sources, {}, request_.interface_exports);
   }
 
  private:

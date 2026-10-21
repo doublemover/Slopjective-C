@@ -1,0 +1,20 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.SurfaceTop",
+  "package": "surface-top-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "surface_answer"
+  ],
+  "dependencies": [
+    {
+      "name": "fixture.SurfaceLeaf",
+      "package": "surface-leaf-v1",
+      "visibility": "public"
+    }
+  ]
+}

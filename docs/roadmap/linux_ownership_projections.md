@@ -71,11 +71,11 @@ standard, package, return ownership and declaration changes cannot be hidden by
 editing the proof. Projection emission shares the existing transactional object,
 interface and sidecar publication boundary.
 
-Source workspace/package v3 manifests require explicit `provider_ownership` on
+Source workspace/package v4 manifests require explicit `provider_ownership` on
 every package, alongside the consumer `ownership`. Both use `none` for plain C++.
 A closed projection package selects opposite ARC/MRC modes; its dependents keep
 normal consumer-mode locks and may re-export that interface. The build report
-and installation inventory record the actual provider mode. Binary package v2
+and installation inventory record the actual provider mode. Binary package v3
 preserves it through relocation and source-free consumption and checks its
 agreement with native provenance before invoking the compiler. Earlier interface
 and package formats are rejected and must be rebuilt with the current SDK.
