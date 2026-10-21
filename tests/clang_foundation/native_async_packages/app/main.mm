@@ -95,6 +95,38 @@ int checked_values_application(objc3_actor_t *actor) __objc3_async {
   return 0;
 }
 
+int objc_method_application(objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  NativeModuleMethods *receiver = [NativeModuleMethods new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{receiver};
+#endif
+  static_assert(std::is_same_v<decltype([receiver direct:42]), objc3::task<int>>);
+  id<NativeModuleMethodProtocol> protocol = receiver;
+  __objc3_do {
+    int scalar = __objc3_try(__objc3_await [protocol checked:42 fail:false]);
+    auto record = __objc3_try(__objc3_await [receiver record:42 fail:false]);
+    auto present = __objc3_try_optional(__objc3_await [receiver record:42 fail:false]);
+    auto absent = __objc3_try_optional(__objc3_await [receiver record:42 fail:true]);
+    NativeModuleResult *object = __objc3_await [receiver object:42];
+#if !__has_feature(objc_arc)
+    consumer_result_owner result_owner{objc_retain(object)};
+#endif
+    int direct = __objc3_await [receiver direct:42];
+    if (scalar != 42 || record.number != 42 || record.padding[4] != 5 ||
+        !__objc3_has_value(present) || __objc3_has_value(absent) ||
+        [object number] != 42 || direct != 42) return 0;
+    return __objc3_try(__objc3_await [protocol checked:96 fail:true]);
+  } __objc3_catch(id<NativeModuleError> error) {
+    __objc3_await objc3::task_yield;
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts); facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+        facts.actor_identity != objc3_actor_identity(actor)) return 0;
+    return [(NativeModuleResult *)error number] == 96 ? 42 : 0;
+  }
+}
+
 int main() {
   objc3_executor_t *executor = nullptr;
   if (objc3_executor_create(1, &executor) != OBJC3_SERVICE_OK)
@@ -139,6 +171,10 @@ int main() {
   pending = checked_values_application(actor).start(executor);
   if (objc3_executor_pump(executor, 200, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42) return 11;
+  pending = {};
+  pending = objc_method_application(actor).start(executor);
+  if (objc3_executor_pump(executor, 300, &executed) != OBJC3_SERVICE_OK ||
+      pending.result() != 42) return 12;
   pending = {};
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

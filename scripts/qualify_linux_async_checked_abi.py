@@ -78,8 +78,8 @@ def qualify(sdk: Path, output: Path) -> dict:
                 '-std=c++20', '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2', '-fblocks',
                 '-fobjc-arc', '-I' + str(sdk / 'include'), '-fsyntax-only',
                 '-U__OBJC3_EXTENSION_ABI_REVISION__',
-                '-D__OBJC3_EXTENSION_ABI_REVISION__=16', probe], reject=True)
-            if 'task bridge requires Objective-C 3 extension ABI 17' not in rejected:
+                '-D__OBJC3_EXTENSION_ABI_REVISION__=17', probe], reject=True)
+            if 'task bridge requires Objective-C 3 extension ABI 18' not in rejected:
                 raise ValueError('stale ABI rejected without the task header diagnostic')
         report.update(status='PASS', stale_abi_rejected=True,
                       pure_cpp_requires_objc=False)

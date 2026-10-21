@@ -106,6 +106,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 checked_error_debugger_values = None
                 member_debugger_values = None
                 value_result_debugger_values = None
+                objc_method_debugger_values = None
                 if optimization == 'O0':
                     debugger = [sdk / 'bin/lldb', '--batch']
                     for query in ('settings set target.disable-aslr false',
@@ -134,7 +135,13 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                             'expression -- (int)(value == 42 && size == 256)',
                             'frame select 1',
                             'expression -- (int)(value.value == 42 && state->values > 0)',
-                            'breakpoint disable 5', 'continue'):
+                            'breakpoint disable 5',
+                            'breakpoint set -n objc3_native_async_objc_method_checkpoint', 'continue',
+                            'frame select 0',
+                            'expression -- (int)(result == 42 && receiver != 0)',
+                            'frame select 1',
+                            'expression -- (int)(result == 42 && self->bias == 40)',
+                            'breakpoint disable 6', 'continue'):
                         debugger += ['-o', query]
                     log = run(label + '-lldb', [*debugger, executable], root)
                     text = log.read_text()
@@ -142,8 +149,9 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     debugger_values, owned_result_debugger_values = values[:2], values[2:4]
                     checked_error_debugger_values = values[4:6]
                     member_debugger_values = values[6:8]
-                    value_result_debugger_values = values[8:]
-                    if values != [1] * 10 or 'exited with status = 0' not in text:
+                    value_result_debugger_values = values[8:10]
+                    objc_method_debugger_values = values[10:]
+                    if values != [1] * 12 or 'exited with status = 0' not in text:
                         raise ValueError('native coroutine debugger lost resumed frame values: ' + label)
                 cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                               'provider_ownership': provider,
@@ -153,6 +161,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                               'checked_error_debugger_values': checked_error_debugger_values,
                               'member_debugger_values': member_debugger_values,
                               'value_result_debugger_values': value_result_debugger_values,
+                              'objc_method_debugger_values': objc_method_debugger_values,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.native-async-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],

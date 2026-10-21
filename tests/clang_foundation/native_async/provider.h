@@ -194,4 +194,39 @@ using native_checked_member_callback = int (native_async_base::*)(
 int operator+(const native_async_worker &, int) __objc3_async;
 int native_member_apply(const native_async_worker &, native_member_callback,
                         std::shared_ptr<async_state>, int) __objc3_async;
+
+#ifdef __OBJC__
+@protocol NativeAsyncMethodProtocol
+- (int)value:(std::shared_ptr<async_state>)state mode:(int)mode __objc3_async;
+- (int)checked:(std::shared_ptr<async_state>)state fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+@end
+__attribute__((objc_root_class))
+@interface NativeAsyncMethod <NativeAsyncMethodProtocol> {
+  Class isa;
+@public
+  int bias;
+}
++ (id)new;
++ (int)constant:(int)value __objc3_async;
+- (int)value:(std::shared_ptr<async_state>)state mode:(int)mode __objc3_async;
+- (int)checked:(std::shared_ptr<async_state>)state fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+- (int)recover:(std::shared_ptr<async_state>)state fail:(bool)fail __objc3_async;
+- (async_checked_value)record:(std::shared_ptr<async_state>)state fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+- (NativeAsyncResult *)object:(int)value __objc3_async;
+- (native_result_reader)reader:(int)value __objc3_async;
+- (int)direct:(int)value __objc3_async __attribute__((objc_direct));
+- (void)empty __objc3_async;
+- (int)hopped:(objc3_actor_t *)actor state:(std::shared_ptr<async_state>)state __objc3_async;
+@end
+@interface NativeAsyncMethodChild : NativeAsyncMethod
+- (int)value:(std::shared_ptr<async_state>)state mode:(int)mode __objc3_async;
+@end
+unsigned native_method_destructions();
+int native_method_consume(id<NativeAsyncMethodProtocol>, std::shared_ptr<async_state>, bool)
+    __objc3_async;
 #endif
+
+#endif // NATIVE_ASYNC_PROVIDER_H

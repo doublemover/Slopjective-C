@@ -2,8 +2,8 @@
 #define OBJC3_TASK_HPP
 
 #if defined(__OBJC3_EXTENSION_ABI_REVISION__) && \
-    __OBJC3_EXTENSION_ABI_REVISION__ != 17
-#error "The task bridge requires Objective-C 3 extension ABI 17; rebuild the compiler and all providers."
+    __OBJC3_EXTENSION_ABI_REVISION__ != 18
+#error "The task bridge requires Objective-C 3 extension ABI 18; rebuild the compiler and all providers."
 #endif
 
 #include "objc3_runtime_services.h"
@@ -540,6 +540,7 @@ private:
   }
 
 public:
+  basic_task() noexcept = default;
   basic_task(const basic_task &) = delete;
   basic_task &operator=(const basic_task &) = delete;
   basic_task(basic_task &&other) noexcept : frame_(std::exchange(other.frame_, {})) {}

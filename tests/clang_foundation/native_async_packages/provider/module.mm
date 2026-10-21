@@ -118,3 +118,40 @@ native_module_data native_module_data_value(bool fail)
   (void)__objc3_try(__objc3_await native_module_checked(42, fail));
   return &NativeModuleValue::number;
 }
+
+@protocol NativeModuleMethodProtocol
+- (int)checked:(int)value fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeModuleError>);
+@end
+__attribute__((objc_root_class))
+@interface NativeModuleMethods <NativeModuleMethodProtocol> { Class isa; }
++ (id)new;
+- (int)checked:(int)value fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeModuleError>);
+- (NativeModuleValue)record:(int)value fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeModuleError>);
+- (NativeModuleResult *)object:(int)value __objc3_async;
+- (int)direct:(int)value __objc3_async __attribute__((objc_direct));
+@end
+@implementation NativeModuleMethods
++ (id)new { return class_createInstance(self, 0); }
+- (void)dealloc { object_dispose(self); }
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+- (int)checked:(int)value fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  return __objc3_try(__objc3_await native_module_checked(value, fail));
+}
+- (NativeModuleValue)record:(int)value fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  return __objc3_try(__objc3_await native_module_record(value, fail));
+}
+- (NativeModuleResult *)object:(int)value __objc3_async {
+  return __objc3_await native_module_object(value);
+}
+- (int)direct:(int)value __objc3_async __attribute__((objc_direct)) {
+  __objc3_await objc3::task_yield;
+  return value;
+}
+@end

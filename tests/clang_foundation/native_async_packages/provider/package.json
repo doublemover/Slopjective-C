@@ -22,7 +22,9 @@
     "native_module_data",
     "native_module_record",
     "native_module_complex_value",
-    "native_module_data_value"
+    "native_module_data_value",
+    "NativeModuleMethodProtocol",
+    "NativeModuleMethods"
   ],
   "dependencies": []
 }

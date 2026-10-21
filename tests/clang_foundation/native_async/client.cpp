@@ -9,6 +9,116 @@ static void pump(objc3_executor_t *executor, unsigned limit = 100000) {
 }
 
 #ifdef __OBJC__
+extern "C" void objc_release(__unsafe_unretained id);
+static int method_nil_await(std::shared_ptr<async_state> state, bool checked) __objc3_async {
+  NativeAsyncMethod *nil = (NativeAsyncMethod *)0;
+  if (checked) {
+    auto result = __objc3_try_optional(__objc3_await [nil record:state fail:true]);
+    return __objc3_has_value(result);
+  }
+  return __objc3_await [nil value:state mode:0];
+}
+
+static void method_results(objc3_executor_t *executor) {
+  static_assert(std::is_same_v<decltype([NativeAsyncMethod constant:42]), objc3::task<int>>);
+  auto state = std::make_shared<async_state>();
+  auto before = native_method_destructions();
+  {
+    // Unstarted lazy frames own self before this lexical owner disappears.
+    auto lazy = [&] {
+      NativeAsyncMethod *receiver = [NativeAsyncMethod new]; receiver->bias = 40;
+      auto result = [receiver value:state mode:3];
+#if !__has_feature(objc_arc)
+      objc_release(receiver);
+#endif
+      return result;
+    }();
+    assert(native_method_destructions() == before);
+    auto handle = std::move(lazy).start(executor);
+    pump(executor);
+    assert(handle.result() == 42);
+    assert(native_method_destructions() == before + 1);
+  }
+  {
+    NativeAsyncMethod *receiver = [NativeAsyncMethod new]; receiver->bias = 40;
+    auto abandoned = [receiver value:state mode:0];
+#if !__has_feature(objc_arc)
+    objc_release(receiver);
+#endif
+  }
+  assert(native_method_destructions() == before + 2);
+  {
+    NativeAsyncMethod *receiver = [NativeAsyncMethod new]; receiver->bias = 40;
+    auto success = [receiver recover:state fail:false].start(executor);
+    auto recovered = [receiver recover:state fail:true].start(executor);
+    auto protocol = native_method_consume(receiver, state, true).start(executor);
+    auto record = [receiver record:state fail:false].start(executor);
+    auto failed = [receiver record:state fail:true].start(executor);
+    auto object = [receiver object:2].start(executor);
+    auto reader = [receiver reader:2].start(executor);
+    auto empty = [receiver empty].start(executor);
+    auto constant = [NativeAsyncMethod constant:42].start(executor);
+    auto cpp = [receiver value:state mode:1].start(executor);
+    auto objc = [receiver value:state mode:2].start(executor);
+    pump(executor);
+    assert(success.result() == 82 && recovered.result() == 96 && protocol.result() == 96);
+    assert(record.result().value == 42 && constant.result() == 42);
+    empty.result();
+    bool caught = false;
+    try { (void)failed.result(); } catch (const objc3::task_error &) { caught = true; }
+    assert(caught); caught = false;
+    try { (void)cpp.result(); } catch (int value) { caught = value == 73; }
+    assert(caught); caught = false;
+    @try { (void)objc.result(); } @catch (id error) { caught = error == receiver; }
+    assert(caught);
+    @autoreleasepool {
+      assert(native_result_number(object.result()) == 42 && reader.result()(0) == 42);
+    }
+#if !__has_feature(objc_arc)
+    objc_release(receiver);
+#endif
+  }
+  assert(native_method_destructions() == before + 3);
+  assert(state->values == 0);
+  {
+    NativeAsyncMethodChild *receiver = [NativeAsyncMethodChild new]; receiver->bias = 40;
+    auto inherited = [receiver value:state mode:0].start(executor);
+    auto cancelled = [receiver value:state mode:0].start(executor);
+    pump(executor, 2);
+    cancelled.cancel();
+    pump(executor);
+    assert(inherited.result() == 43);
+    bool caught = false;
+    try { (void)cancelled.result(); } catch (const objc3::task_cancelled &) { caught = true; }
+    assert(caught);
+#if !__has_feature(objc_arc)
+    objc_release(receiver);
+#endif
+  }
+  assert(native_method_destructions() == before + 4);
+  {
+    NativeAsyncMethod *nil = (NativeAsyncMethod *)0;
+    (void)[nil value:state mode:0]; // Ignored nil result still destroys a valid empty carrier.
+    (void)[nil direct:42];
+    bool caught = false;
+    try { auto result = [nil value:state mode:0].start(executor); }
+    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
+    assert(caught); caught = false;
+    try { auto result = [nil direct:42].start(executor); }
+    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
+    assert(caught);
+  }
+  for (bool checked : {false, true}) {
+    auto awaited = method_nil_await(state, checked).start(executor);
+    pump(executor);
+    bool caught = false;
+    try { (void)awaited.result(); }
+    catch (const objc3::service_failure &error) { caught = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT; }
+    assert(caught); // Optionalization must not consume a native start failure.
+  }
+  assert(state->entered == state->destroyed);
+}
+
 static void owned_results(objc3_executor_t *executor) {
   static_assert(std::is_same_v<objc3::task_handle<NativeAsyncResult *>,
                                objc3::task_handle<NativeAsyncResult *__unsafe_unretained>>);
@@ -472,6 +582,9 @@ int main() {
 
 
 #endif
+#ifdef __OBJC__
+  method_results(executor);
+#endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.
   assert(objc3_executor_create(0, &executor) == OBJC3_SERVICE_OK);
@@ -541,6 +654,24 @@ int main() {
     checked_workers.push_back(native_checked_hop(first, second, state).start_on(first));
   for (auto &task : checked_workers) { task.wait(); assert(task.result() == 96); }
   checked_workers.clear();
+  auto before_methods = native_method_destructions();
+  std::vector<objc3::task_handle<int>> method_workers;
+  for (unsigned index = 0; index != 64; ++index) {
+    @autoreleasepool {
+      NativeAsyncMethod *receiver = [NativeAsyncMethod new]; receiver->bias = 40;
+      auto pending = [receiver hopped:second state:state].start_on(first);
+      if (index % 2) pending.cancel();
+      method_workers.push_back(std::move(pending));
+#if !__has_feature(objc_arc)
+      objc_release(receiver);
+#endif
+    }
+  }
+  for (auto &task : method_workers) {
+    task.wait();
+    try { assert(task.result() == 42); } catch (const objc3::task_cancelled &) {}
+  }
+  method_workers.clear();
   // Terminal completion can precede the final callback's frame destruction
   // and autorelease-pool drain. Observe both worker queues before counting.
   std::atomic<unsigned> drained{0};
@@ -556,6 +687,8 @@ int main() {
     drained.wait(count, std::memory_order_acquire);
   assert(native_result_destructions() == before_results + 128);
   assert(native_checked_destructions() == before_checked_workers + 64);
+  assert(native_method_destructions() == before_methods + 64);
+  assert(state->entered == state->destroyed);
   objc3_task_group_release(group);
   assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
   assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);
