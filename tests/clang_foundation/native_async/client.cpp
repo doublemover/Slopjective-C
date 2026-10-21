@@ -19,6 +19,92 @@ static int method_nil_await(std::shared_ptr<async_state> state, bool checked) __
   return __objc3_await [nil value:state mode:0];
 }
 
+static void block_results(objc3_executor_t *executor) {
+  auto state = std::make_shared<async_state>();
+  unsigned before = native_object_destructions();
+  {
+    auto lazy = native_block_lazy(state);
+    assert(native_object_destructions() == before && state->entered == 0);
+    auto task = std::move(lazy).start(executor);
+    pump(executor);
+    assert(task.result() == 42);
+  }
+  assert(native_object_destructions() == before + 1);
+  { auto abandoned = native_block_lazy(state); }
+  assert(native_object_destructions() == before + 2);
+  for (int mode : {1, 2}) {
+    auto task = native_block_lazy(state, mode).start(executor);
+    pump(executor);
+    bool caught = false;
+    if (mode == 1) {
+      try { (void)task.result(); } catch (int value) { caught = value == 109; }
+    } else {
+      @try { (void)task.result(); } @catch (id error) {
+        caught = native_exception_number(error) == 40;
+      }
+    }
+    assert(caught);
+  }
+  assert(native_object_destructions() == before + 4);
+  {
+    auto task = native_block_lazy(state).start(executor);
+    pump(executor, 1); task.cancel(); pump(executor);
+    bool caught = false;
+    try { (void)task.result(); } catch (const objc3::task_cancelled &) { caught = true; }
+    assert(caught);
+  }
+  assert(native_object_destructions() == before + 5);
+  assert(native_block_copy_failure(state) && state->values == 0);
+  {
+    auto value = native_block_checked(state, false).start(executor);
+    auto failure = native_block_checked(state, true).start(executor);
+    auto recovered = native_block_recover(state, true).start(executor);
+    auto success = native_block_recover(state, false).start(executor);
+    pump(executor);
+    assert(value.result().value == 42 && recovered.result() == 96 && success.result() == 42);
+    bool caught = false;
+    try { (void)failure.result(); } catch (const objc3::task_error &) { caught = true; }
+    assert(caught);
+  }
+  assert(state->values == 0);
+  @autoreleasepool {
+    auto factory = native_block_factory(40).start(executor);
+    pump(executor);
+    auto block = factory.result();
+    static_assert(std::is_same_v<decltype(block(2)), objc3::task<int>>);
+    auto lazy = block(2);
+    factory = {};
+    auto task = std::move(lazy).start(executor);
+    pump(executor);
+    assert(task.result() == 42);
+  }
+#if __has_feature(objc_arc)
+  const auto before_weak = native_method_destructions();
+  auto weak_lazy = [] {
+    NativeAsyncMethod *receiver = [NativeAsyncMethod new];
+    __weak NativeAsyncMethod *weak = receiver;
+    __unsafe_unretained NativeAsyncMethod *unsafe = receiver;
+    auto __unsafe_unretained block = ^int() __objc3_async {
+      __objc3_await objc3::task_yield;
+      if (weak || !unsafe) __builtin_trap();
+      return 42;
+    };
+    return block();
+  }();
+  assert(native_method_destructions() == before_weak + 1);
+  auto weak_task = std::move(weak_lazy).start(executor);
+  pump(executor); assert(weak_task.result() == 42);
+#endif
+  for (bool method : {false, true}) {
+    auto lazy = native_block_noescape(state, method);
+    auto task = std::move(lazy).start(executor);
+    pump(executor); assert(task.result() == 42);
+  }
+  auto empty = ^void() __objc3_async {};
+  auto done = empty().start(executor); pump(executor); done.result();
+  assert(state->entered == state->destroyed);
+}
+
 static void method_results(objc3_executor_t *executor) {
   static_assert(std::is_same_v<decltype([NativeAsyncMethod constant:42]), objc3::task<int>>);
   auto state = std::make_shared<async_state>();
@@ -584,6 +670,7 @@ int main() {
 #endif
 #ifdef __OBJC__
   method_results(executor);
+  block_results(executor);
 #endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.
@@ -609,6 +696,7 @@ int main() {
   assert(objc3_actor_create(other, &second) == OBJC3_SERVICE_OK);
   objc3_task_group_t *group = nullptr;
   assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  const auto before_hopped = native_object_destructions();
   std::vector<objc3::task_handle<int>> hopped;
   for (unsigned index = 0; index != 32; ++index) {
     auto value = native_actor_owned(first, second, index % 2).start_on(first);
@@ -628,7 +716,7 @@ int main() {
     } catch (const objc3::task_cancelled &) {
     }
   }
-  assert(native_object_destructions() == 36);
+  assert(native_object_destructions() == before_hopped + 32);
   hopped.clear();
   const auto before_results = native_result_destructions();
   std::vector<objc3::task_handle<NativeAsyncResult *>> objects;
@@ -672,6 +760,17 @@ int main() {
     try { assert(task.result() == 42); } catch (const objc3::task_cancelled &) {}
   }
   method_workers.clear();
+  std::vector<objc3::task_handle<int>> block_workers;
+  for (unsigned index = 0; index != 64; ++index) {
+    auto pending = native_block_hopped(second, state).start_on(first);
+    if (index % 2) pending.cancel();
+    block_workers.push_back(std::move(pending));
+  }
+  for (auto &task : block_workers) {
+    task.wait();
+    try { assert(task.result() == 42); } catch (const objc3::task_cancelled &) {}
+  }
+  block_workers.clear();
   // Terminal completion can precede the final callback's frame destruction
   // and autorelease-pool drain. Observe both worker queues before counting.
   std::atomic<unsigned> drained{0};

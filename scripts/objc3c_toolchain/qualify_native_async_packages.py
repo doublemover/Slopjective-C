@@ -75,6 +75,12 @@ def qualify(sdk: Path, output: Path) -> dict:
                              'native_module_data_value'):
                     if name not in names or not has_checked_async(names[name]):
                         raise ValueError('native async value interface lost checked identity: ' + name)
+                for name in ('native_module_async_factory', 'native_module_checked_factory',
+                             'native_module_async_block', 'native_module_checked_block'):
+                    if name not in names or not has_async(names[name]):
+                        raise ValueError('native async Block interface lost effects: ' + name)
+                if not has_checked_async(names['native_module_checked_block']):
+                    raise ValueError('native async Block interface lost checked error identity')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],

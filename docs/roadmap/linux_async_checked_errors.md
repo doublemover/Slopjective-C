@@ -71,21 +71,23 @@ records, complex values and member pointers, including records with deleted
 default constructors. Reference, variadic and undeduced results remain outside
 the lowering contract. [Objective-C async methods](linux_async_objc_methods.md)
 preserve checked errors through dynamic, protocol, superclass and direct sends.
-Async Blocks, pure Objective-C async lowering and compiler actor isolation remain
+[Async Objective-C++ Blocks](linux_async_blocks.md) preserve the same deferred
+checked-error and result-construction rules through owned captures and suspending
+handlers. Pure Objective-C async lowering and compiler actor isolation remain
 future compiler milestones.
 Public async/await and actor capability predicates remain reserved.
 
-Extension ABI 18 requires a full rebuild of every object, provider, PCH,
+Extension ABI 19 requires a full rebuild of every object, provider, PCH,
 semantic interface and package. ABI 16 introduced checked-error promise fields;
 ABI 17 introduced the reserved preflight/resume handshake. ABI 18 adds physical
-task-returning Objective-C messages and owned method frames without changing
-promise layout. The task service remains ABI 3; reserved object-error bridge symbols ship
+task-returning Objective-C messages and owned method frames. ABI 19 adds
+capture-owning async Block frames without changing promise layout. The task service remains ABI 3; reserved object-error bridge symbols ship
 in a separate archive member so ordinary C++ task programs retain their existing
 link dependencies. ARC and MRC providers use the same owned error representation.
 
-The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_blocks_acceptance.json)
 binds this contract to its exact compiler, runtime, source inputs and archive.
-It records 215 compiler tests, 57 AST tests, 318 current tooling tests, all 22
+It records 218 compiler tests, 57 AST tests, 322 current tooling tests, all 22
 installed package gates and 74 instrumented configurations. Native execution
 covers sixteen C++20/23, O0/O2 and ARC/MRC provider/consumer configurations,
 including checked object, Block and void results, copied error handles, native
@@ -95,11 +97,11 @@ checked-handler frames. Source-free package consumers retain combined async and
 typed-error identity after provider source removal and relocation.
 
 The receipt also verifies a standalone C++ task link without libobjc and explicit
-rejection of extension ABI 17 by the installed task header. Fresh Debian 13 and
+rejection of extension ABI 18 by the installed task header. Fresh Debian 13 and
 Ubuntu 26.04 consumers run as ordinary users under the explicit
 `task-destinations` scope: archive integrity, relocation, compiler/ownership,
 debugger/embedding, structured runtime, coroutine and source-free async package
 checks. The full 22 package gates run during SDK publication. Sanitizers
 instrument runtime services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_objc_methods_latency.json) records
+The [latency report](../support/linux_async_blocks_latency.json) records
 five quiet repetitions against the existing release budgets.

@@ -283,7 +283,10 @@ member pointers, with failure checked before result construction.
 protocol, superclass and direct messages, with receivers owned by lazy frames
 under ARC and MRC. Nil sends return empty task carriers; starting or awaiting
 one reports an invalid-argument service failure.
-Extension ABI 18 requires every object, PCH, semantic interface and package to be
+[Async Objective-C++ Blocks](docs/roadmap/linux_async_blocks.md) own their captures
+before suspension, including C++ copies and `__block` forwarding, and preserve
+checked errors through source-free Block interfaces.
+Extension ABI 19 requires every object, PCH, semantic interface and package to be
 rebuilt. Public async/await and compiler actor isolation remain reserved.
 
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
@@ -328,11 +331,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_async_objc_methods_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_async_blocks_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_async_objc_methods_latency.json) records
+The [current latency report](docs/support/linux_async_blocks_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

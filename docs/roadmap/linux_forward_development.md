@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_async_objc_methods_acceptance.json) identifies
+[acceptance receipt](../support/linux_async_blocks_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -10,7 +10,7 @@ public language claims come from [the capability authority](../../schemas/objc3-
 
 The [public Optional/Result contract](linux_public_carriers.md) and
 [synchronous error contract](linux_public_errors.md) now have native compiler
-syntax in Objective-C17 and Objective-C++20/23. Extension ABI 18 requires a full
+syntax in Objective-C17 and Objective-C++20/23. Extension ABI 19 requires a full
 rebuild of objects, PCH files, semantic interfaces and packages. The public
 feature predicates describe the bounded Linux x86-64 GNUstep 2.2 compatibility
 profile; async/await and actors remain reserved.
@@ -74,7 +74,9 @@ The implemented foundations have separate bounded contracts:
   result; direct automatic Optional initialization preserves C++ payload lifetimes.
   [Async Objective-C methods](linux_async_objc_methods.md) add dynamic, protocol,
   superclass and direct messages, owned lazy receivers, checked errors and
-  source-free method interfaces. Public async/await remains reserved.
+  source-free method interfaces. [Async Objective-C++ Blocks](linux_async_blocks.md)
+  add owned suspended captures, checked Block calls, PCH bodies and source-free
+  Block aliases and factories. Public async/await remains reserved.
 
 ## Next compiler milestones
 
@@ -82,15 +84,17 @@ The [task destination bridge](linux_task_hops.md) supplies actor-bound resumes,
 explicit executor/actor hops and inherited child destinations. Compiler isolation
 and the public language contract still require the following work.
 
-1. Extend the Objective-C++ native async stage to pure Objective-C functions and
-   the public language contract.
-   Integrate suspension ownership, checked error propagation, cancellation,
-   callback publication and cleanup into that language contract. Extend the
-   qualified Objective-C++ checked-error and method stage to async Blocks
-   before promoting the language capability.
-   Reuse the public task/group ABI and its resumable coroutine bridge. Require
-   canonical async effect imports, source-free packages, O0/O2
-   native execution, debug information and instrumented runtime/client evidence.
+1. Implement a native Objective-C async milestone with a shared C/C++ frame and
+   typed completion contract. Keep C++ promise storage private and preserve
+   validated result ownership, checked errors, native exceptions and cancellation
+   across language boundaries. Use one hard cutover for that ABI and the native
+   Objective-C lowering of functions, methods and Blocks. Preserve cleanup and
+   owned values across execution-slice autorelease pools.
+   Align public await-required calls and library-recognized task spawning with
+   the language contract before promoting the capability. The qualified
+   Objective-C++ stage already includes checked errors, methods and async Blocks.
+   Require Objective-C17 and Objective-C++20/23 canonical imports, source-free
+   packages, O0/O2 execution, debugger values and instrumented services/clients.
 2. Add compiler actor isolation and awaited executor hops. Preserve isolation in
    callable types and canonical interfaces, diagnose unsynchronized access, and
    retain mailbox serialization, logical identity and cleanup through nested
@@ -112,3 +116,14 @@ Release reuse hashes foundation contents and immutable configure inputs. Mutable
 staging inventories do not participate: reclaiming a duplicate foundation stage
 preserves reuse. Source, bootstrap and build configuration changes still
 invalidate the release identity.
+
+Frontend CTests are built and executed one target at a time. Reclaim only the
+passed generated test executables; preserve failures, compiler binaries, objects
+and libraries. This keeps the complete test inventory affordable as archives
+accumulate in the 32 GiB workspace.
+
+Archive installation verifies a complete staged extraction even when the target
+seal already exists. Reserve space for that extraction. The current acceptance
+receipt verifies release-cache reuse with an existing SDK in a 4 GiB RAM
+filesystem, then releases that filesystem while preserving the host installation
+and every qualified archive.

@@ -64,10 +64,10 @@ ABI contract.
 Owned results introduced extension ABI 15. The
 [checked async error stage](linux_async_checked_errors.md) introduced extension
 ABI 16. [Checked value results](linux_async_value_results.md) introduced ABI 17.
-The current [Objective-C method stage](linux_async_objc_methods.md) advances the
-compiler/header contract to ABI 18 and requires a full rebuild of objects, PCH
-files, semantic interfaces and packages. Its lazy method frames additionally own
-the receiver under ARC and MRC. The task service remains ABI 3. Every provider and
+[Objective-C methods](linux_async_objc_methods.md) introduced ABI 18 and own
+their lazy receivers under ARC and MRC. The current [async Block stage](linux_async_blocks.md)
+advances the compiler/header contract to ABI 19 and owns suspended captures.
+Rebuild objects, PCH files, semantic interfaces and packages. The task service remains ABI 3. Every provider and
 consumer uses the new compiler and runtime header. Native header consumers cover
 all four provider/consumer ARC/MRC pairs; semantic and immutable packages retain
 their explicit ownership-mode identity.
