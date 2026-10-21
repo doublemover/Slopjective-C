@@ -177,7 +177,10 @@ ASan/UBSan and MRC TSan checks passed. Full final-archive qualification of this
 fix remains pending. Commit `e6412ec2b` then normalized the two C17 fixture JSON
 files before the successful final SDK build.
 
-Remaining acceptance work is explicitly paused:
+The previously planned acceptance work is listed below as incomplete evidence,
+not as an instruction to resume it. The user's latest direction prioritizes
+hard cutovers and implementation over rollback retention and repeated broad
+qualification:
 
 1. Complete the final archive's 114 sanitizer configurations and the checked
    ABI, regression and post-hop debugger checks.
@@ -217,9 +220,12 @@ installed SDK (1.5 GiB), earlier Linux packages (698 MiB) and native validation
 evidence (544 MiB). These sizes are rounded and are not a complete filesystem
 inventory.
 
-Qualified archives, source checkpoints, compiler/build objects and diagnostic
-evidence remain preserved. Earlier evidence was compressed with indexed
-recovery information; only duplicate generated installations and rebuildable
-compiler cache data were reclaimed. The temporary foundation RAM filesystem
-was released after the final SDK completed. Further archive retention or
-offloading work is deferred with development.
+The user then reaffirmed the hard-cutover policy. Superseded SDK archives and
+the obsolete Linux 22 source/build checkpoint were removed: 33 archives plus
+the checkpoint reclaimed approximately 16 GiB. Filesystem use fell to 46%,
+with 17 GiB available; the remaining SDK cache occupies 412 MiB. The current SDK
+archive and installed prefix, active compiler source/build tree and small
+diagnostic receipts remain. Historical binary artifacts are no longer retained
+for rollback. The temporary foundation RAM filesystem was released after the
+final SDK completed. Future work follows the
+[current-artifact retention policy](linux_forward_development.md#architecture-and-release-performance).

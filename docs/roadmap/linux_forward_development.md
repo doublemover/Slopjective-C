@@ -129,7 +129,16 @@ and libraries. This keeps the complete test inventory affordable as archives
 accumulate in the 32 GiB workspace.
 
 Archive installation verifies a complete staged extraction even when the target
-seal already exists. Reserve space for that extraction. The current acceptance
-receipt verifies release-cache reuse with an existing SDK in a 4 GiB RAM
-filesystem, then releases that filesystem while preserving the host installation
-and every qualified archive.
+seal already exists. Reserve space for that extraction.
+
+Development uses hard cutovers. Retain the current SDK archive, its installed
+prefix and the active compiler source/build tree. Remove superseded SDK archives
+and obsolete source/build checkpoints after a cutover; do not accumulate local
+rollback snapshots. Git and the pinned source/patch inputs preserve development
+history. Historical receipts describe completed runs without requiring their
+binary artifacts to remain on the development instance.
+
+Keep checks proportional to the changed behavior and reuse completed results
+for unchanged inputs. Do not repeat broad qualification for rollback history or
+make it the default next milestone. The current user-requested pause stops all
+tests and qualification; resuming those requires a subsequent instruction.
