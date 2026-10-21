@@ -26,6 +26,14 @@ def has_async(value):
     return isinstance(value, list) and any(map(has_async, value))
 
 
+def has_checked_async(value):
+    if isinstance(value, dict):
+        return (value.get('async') is True and value.get('throws') is True
+                and value.get('throws_kind') == 'typed') or any(
+                    map(has_checked_async, value.values()))
+    return isinstance(value, list) and any(map(has_checked_async, value))
+
+
 def qualify(sdk: Path, output: Path) -> dict:
     sdk, output = sdk.resolve(strict=True), output.resolve()
     packages.disjoint(output, sdk)
@@ -50,6 +58,8 @@ def qualify(sdk: Path, output: Path) -> dict:
                 metadata = json.loads(metadata_path.read_text())
                 if not has_async(metadata['declarations']):
                     raise ValueError('native async interface erased the callable effect')
+                if not has_checked_async(metadata['declarations']):
+                    raise ValueError('native async interface erased checked error identity')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],

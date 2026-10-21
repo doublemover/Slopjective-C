@@ -352,7 +352,7 @@ index 0683a4937..653efb258 100644
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..e5ebd0173 100644
+index 08cb9860f..427fe42ba 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -393,7 +393,7 @@ index 08cb9860f..e5ebd0173 100644
    RequiredArgs Required = RequiredArgs::forPrototypePlus(FTP, prefix.size());
    appendParameterTypes(CGT, prefix, paramInfos, FTP);
 +  const auto Effects = FTP.getTypePtr()->getObjC3FunctionEffects();
-+  if (Effects.Throws != ObjC3ThrowsKind::None) {
++  if (!Effects.Async && Effects.Throws != ObjC3ThrowsKind::None) {
 +    if (!supportsObjC3ErrorOutFunction(CGT.getCGM(), FTP.getTypePtr(), nullptr, false)) {
 +      CGT.getCGM().Error(SourceLocation(), "unsupported ObjC3 throws function ABI");
 +      return CGT.arrangeNullaryFunction();
@@ -642,13 +642,14 @@ index 08cb9860f..e5ebd0173 100644
            MD, CGM.getTarget().getTriple().isOSWindows());
        ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                        MD->param_type_end());
-@@ -5121,6 +5266,16 @@ void CodeGenFunction::EmitCallArgs(
+@@ -5121,6 +5266,17 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
 +  if (Prototype.P && !isa<const ObjCMethodDecl *>(Prototype.P)) {
 +    const auto *FPT = cast<const FunctionProtoType *>(Prototype.P);
-+    if (FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None) {
++    if (!FPT->getObjC3FunctionEffects().Async &&
++        FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None) {
 +      assert(ObjC3CallErrorOutExpr && ObjC3CallErrorOutStorage.isValid() &&
 +             "throwing call must have its exact try context");
 +      QualType ValueType, ParameterType;
@@ -659,7 +660,7 @@ index 08cb9860f..e5ebd0173 100644
  }
  
  namespace {
-@@ -5205,6 +5360,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5361,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -676,7 +677,7 @@ index 08cb9860f..e5ebd0173 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5227,7 +5392,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5227,7 +5393,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      if (DestroyedInCallee)
        Slot.setExternallyDestructed();
  
@@ -688,7 +689,7 @@ index 08cb9860f..e5ebd0173 100644
      RValue RV = Slot.asRValue();
      args.add(RV, type);
  
-@@ -5577,6 +5745,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5746,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -703,7 +704,7 @@ index 08cb9860f..e5ebd0173 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5886,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5887,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -746,7 +747,7 @@ index 08cb9860f..e5ebd0173 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +5983,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +5984,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -762,7 +763,7 @@ index 08cb9860f..e5ebd0173 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +6003,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +6004,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -771,7 +772,7 @@ index 08cb9860f..e5ebd0173 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6132,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6133,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -1259,7 +1260,7 @@ index e84e05e8e..340e58124 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..ad0e701bb 100644
+index 6a0d127fb..d49202d41 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,11 @@
@@ -1283,7 +1284,7 @@ index 6a0d127fb..ad0e701bb 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -6475,6 +6482,86 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6475,6 +6482,87 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -1309,7 +1310,8 @@ index 6a0d127fb..ad0e701bb 100644
 +            : diagnoseUnsupportedObjC3RuntimeFunction(
 +                  CGM, CalledType, E->getExprLoc());
 +    const auto *FPT = CalledType->getAs<FunctionProtoType>();
-+    if (FPT && FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None &&
++    if (FPT && !FPT->getObjC3FunctionEffects().Async &&
++        FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None &&
 +        (ObjC3CallErrorOutExpr != E || !ObjC3CallErrorOutStorage.isValid() ||
 +         !supportsObjC3ErrorOutCall(*this, E))) {
 +      CGM.ErrorUnsupported(E, "ObjC3 throwing call without an exact qualified try context");
@@ -1370,7 +1372,7 @@ index 6a0d127fb..ad0e701bb 100644
    llvm::CallBase *CallOrInvokeStorage;
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
-@@ -6702,6 +6789,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6702,6 +6790,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -4715,10 +4717,10 @@ index 000000000..c41f46904
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
 new file mode 100644
-index 000000000..a42ddf741
+index 000000000..e97620d7a
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,224 @@
 +//===--- CGObjC3ErrorHandlers.cpp - ObjC3 error handlers
 +//--------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -4765,6 +4767,13 @@ index 000000000..a42ddf741
 +    CGF.EmitTrapCall(llvm::Intrinsic::trap);
 +    CGF.Builder.CreateUnreachable();
 +    CGF.Builder.ClearInsertionPoint();
++    return;
++  }
++  if (isObjC3AsyncThrowingFunction(CGF)) {
++    QualType ErrorType, ParameterType;
++    getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType);
++    CGF.EmitObjC3AsyncErrorReturn(takeOwnedObjC3Error(
++        CGF, CGF.ObjC3PendingErrorStorage, ErrorType));
 +    return;
 +  }
 +  if (!CGF.FnRetTy->isVoidType() && !emitObjC3CarrierARCErrorReturn(CGF))
@@ -5682,10 +5691,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..845cb784a
+index 000000000..dc4bea0db
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,627 @@
+@@ -0,0 +1,652 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -5707,6 +5716,7 @@ index 000000000..845cb784a
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/AST/Type.h"
@@ -5787,12 +5797,16 @@ index 000000000..845cb784a
 +bool isSupportedTryCall(CodeGenFunction &CGF, const ObjC3TryExpr &E,
 +                         const Expr *&Call) {
 +  Call = E.getOperand()->IgnoreParenImpCasts();
++  if (getObjC3CheckedAsyncAdapter(Call))
++    return true;
 +  return supportsObjC3ErrorOutCall(CGF, Call);
 +}
 +
 +RValue emitQualifiedCall(CodeGenFunction &CGF, const Expr *Call) {
 +  if (const auto *Message = dyn_cast<ObjCMessageExpr>(Call))
 +    return CGF.EmitObjCMessageExpr(Message);
++  if (getObjC3CheckedAsyncAdapter(Call))
++    return CGF.EmitAnyExpr(Call);
 +  return CGF.EmitCallExpr(cast<CallExpr>(Call));
 +}
 +
@@ -5801,6 +5815,7 @@ index 000000000..845cb784a
 +  Address PreviousStorage;
 +  QualType PreviousType;
 +  const Expr *PreviousCall;
++  std::unique_ptr<CodeGenFunction::OpaqueValueMapping> AsyncSlot;
 +
 +public:
 +  ScopedObjC3ErrorOutCall(CodeGenFunction &CGF, Address Storage,
@@ -5808,6 +5823,11 @@ index 000000000..845cb784a
 +      : CGF(CGF), PreviousStorage(CGF.ObjC3CallErrorOutStorage),
 +        PreviousType(CGF.ObjC3CallErrorOutValueType),
 +        PreviousCall(CGF.ObjC3CallErrorOutExpr) {
++    if (const auto *Adapter = getObjC3CheckedAsyncAdapter(Call)) {
++      auto *Slot = cast<OpaqueValueExpr>(Adapter->getArg(1)->IgnoreImpCasts());
++      AsyncSlot = std::make_unique<CodeGenFunction::OpaqueValueMapping>(
++          CGF, Slot, RValue::get(Storage.emitRawPointer(CGF)));
++    }
 +    CGF.ObjC3CallErrorOutStorage = Storage;
 +    CGF.ObjC3CallErrorOutValueType = ValueType;
 +    CGF.ObjC3CallErrorOutExpr = Call;
@@ -5820,6 +5840,15 @@ index 000000000..845cb784a
 +};
 +
 +} // namespace
++
++bool CodeGen::isObjC3AsyncThrowingFunction(const CodeGenFunction &CGF) {
++  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
++  if (!FD)
++    return false;
++  const auto Effects = FD->getType()->castAs<FunctionProtoType>()
++                           ->getObjC3FunctionEffects();
++  return Effects.Async && Effects.Throws != ObjC3ThrowsKind::None;
++}
 +
 +bool CodeGen::supportsObjC3ErrorOutMethod(CodeGenModule &CGM,
 +                                         const ObjCMethodDecl *Method) {
@@ -5945,8 +5974,10 @@ index 000000000..845cb784a
 +  // Internal error ownership remains exception-safe even when user ARC locals
 +  // do not request unwind cleanup. Normal cleanup deliberately leaves this
 +  // ownership for the return-block transfer below.
-+  if (CGF.getLangOpts().Exceptions)
-+    CGF.pushDestroy(EHCleanup, CGF.ObjC3PendingErrorStorage, PendingType,
++  if (CGF.getLangOpts().Exceptions || isObjC3AsyncThrowingFunction(CGF))
++    CGF.pushDestroy(isObjC3AsyncThrowingFunction(CGF) ? NormalAndEHCleanup
++                                                     : EHCleanup,
++                    CGF.ObjC3PendingErrorStorage, PendingType,
 +                    CodeGenFunction::destroyARCStrongPrecise, false);
 +
 +}
@@ -6009,6 +6040,8 @@ index 000000000..845cb784a
 +}
 +
 +void CodeGen::emitObjC3ErrorOutEpilog(CodeGenFunction &CGF) {
++  if (!CGF.ObjC3FunctionErrorOutDecl)
++    return;
 +  QualType ErrorType, ParameterType;
 +  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
 +    return;
@@ -6046,7 +6079,8 @@ index 000000000..845cb784a
 +  Address Storage = getObjC3ErrorDestinationStorage(CGF);
 +  if (!Payload || !isErrorBoundObjectPointer(CGF.CGM, Payload->getType()) ||
 +      !Storage.isValid() ||
-+      (!CGF.ObjC3ActiveErrorHandler && !CGF.ObjC3FunctionErrorOutDecl)) {
++      (!CGF.ObjC3ActiveErrorHandler && !CGF.ObjC3FunctionErrorOutDecl &&
++       !isObjC3AsyncThrowingFunction(CGF))) {
 +    CGF.CGM.ErrorUnsupported(&S, "typed Error-object throw lowering");
 +    return false;
 +  }
@@ -6315,10 +6349,10 @@ index 000000000..845cb784a
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.h b/clang/lib/CodeGen/CGObjC3TypedErrors.h
 new file mode 100644
-index 000000000..736fe8cb4
+index 000000000..20ee41201
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.h
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++
 +//-*-===//
 +//
@@ -6354,6 +6388,7 @@ index 000000000..736fe8cb4
 +class CodeGenModule;
 +class RValue;
 +
++bool isObjC3AsyncThrowingFunction(const CodeGenFunction &CGF);
 +bool isObjC3ErrorObjectType(CodeGenModule &CGM, QualType Type);
 +QualType getObjC3OwnedErrorType(CodeGenFunction &CGF, QualType ErrorType);
 +void storeOwnedObjC3Error(CodeGenFunction &CGF, Address Storage,
@@ -6835,7 +6870,7 @@ index 853f038c4..d988e673e 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..8cedc0954 100644
+index 7629b42dd..165d26433 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -19,6 +19,9 @@
@@ -6869,14 +6904,15 @@ index 7629b42dd..8cedc0954 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -1274,7 +1284,14 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1284,15 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
 +  emitObjC3CarrierARCReturnProlog(*this);
 +  // Native adjustment thunks forward the caller's physical error output.
 +  // They do not initialize it or acquire another pending-error reference.
-+  if (ObjC3FunctionErrorOutDecl && !CurFuncIsThunk)
++  if ((ObjC3FunctionErrorOutDecl || isObjC3AsyncThrowingFunction(*this)) &&
++      !CurFuncIsThunk)
 +    emitObjC3PendingErrorProlog(*this);
    EmitFunctionProlog(*CurFnInfo, CurFn, Args);
 +  if (ObjC3FunctionErrorOutDecl && !CurFuncIsThunk)
@@ -6884,7 +6920,7 @@ index 7629b42dd..8cedc0954 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1472,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1473,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -6900,7 +6936,7 @@ index 7629b42dd..8cedc0954 100644
  
    return ResTy;
  }
-@@ -1463,10 +1489,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,10 +1490,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -6919,7 +6955,7 @@ index 7629b42dd..8cedc0954 100644
  
    CGM.getTargetCodeGenInfo().checkFunctionABI(CGM, FD);
  
-@@ -2556,6 +2590,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2591,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -6929,7 +6965,7 @@ index 7629b42dd..8cedc0954 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..c3e50d752 100644
+index e7c24f1f3..42cfffccb 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
@@ -7026,6 +7062,14 @@ index e7c24f1f3..c3e50d752 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
+@@ -3691,6 +3750,7 @@ public:
+ 
+   void EmitCoroutineBody(const CoroutineBodyStmt &S);
+   void EmitCoreturnStmt(const CoreturnStmt &S);
++  bool EmitObjC3AsyncErrorReturn(llvm::Value *OwnedError);
+   RValue EmitCoawaitExpr(const CoawaitExpr &E,
+                          AggValueSlot aggSlot = AggValueSlot::ignored(),
+                          bool ignoreResult = false);
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
 index 313a364e8..2b5a0a98b 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
@@ -7105,7 +7149,7 @@ index 313a364e8..2b5a0a98b 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 55fe21658..f36e3b463 100644
+index 55fe21658..4990abaea 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -11,6 +11,8 @@
@@ -7125,7 +7169,7 @@ index 55fe21658..f36e3b463 100644
  #include "llvm/IR/DataLayout.h"
  #include "llvm/IR/DerivedTypes.h"
  #include "llvm/IR/Module.h"
-@@ -299,9 +302,99 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
+@@ -299,9 +302,103 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
    }
  }
  
@@ -7151,9 +7195,12 @@ index 55fe21658..f36e3b463 100644
 +      const bool SupportedThrows = ErrorOutABI &&
 +          supportsObjC3ErrorOutFunction(CGM, FPT, nullptr, false);
 +      bool SupportedAsync = ErrorOutABI && AsyncABI && Effects.Async &&
-+          Effects.Throws == ObjC3ThrowsKind::None && !FPT->isVariadic() &&
++          !FPT->isVariadic() &&
 +          FPT->getCallConv() == CC_C &&
-+          !Context.getObjC3AsyncTaskType(FPT->getReturnType()).isNull();
++          !Context.getObjC3AsyncTaskType(FPT->getReturnType()).isNull() &&
++          (Effects.Throws == ObjC3ThrowsKind::None ||
++           Effects.Throws == ObjC3ThrowsKind::Untyped ||
++           isObjC3ErrorObjectType(CGM, Effects.ErrorType));
 +      if (auto *FD = dyn_cast_or_null<FunctionDecl>(D)) {
 +        const FunctionDecl *Definition = nullptr;
 +        if (FPT == FD->getType()->getAs<FunctionProtoType>() &&
@@ -7162,7 +7209,8 @@ index 55fe21658..f36e3b463 100644
 +          SupportedAsync = false;
 +      }
 +      if ((Effects.Async && !SupportedAsync) ||
-+          (Effects.Throws != ObjC3ThrowsKind::None && !SupportedThrows)) {
++          (Effects.Throws != ObjC3ThrowsKind::None &&
++           !SupportedThrows && !SupportedAsync)) {
 +        FoundUnsupportedEffect = true;
 +        if (DiagnosedObjC3EffectTypes.insert(Ty).second) {
 +          if (D)
@@ -7225,7 +7273,7 @@ index 55fe21658..f36e3b463 100644
    // First, check whether we can build the full function type.  If the
    // function type depends on an incomplete type (e.g. a struct or enum), we
    // cannot lower the function type.
-@@ -357,6 +450,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -357,6 +454,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
  
    const Type *Ty = T.getTypePtr();
  
@@ -7246,7 +7294,7 @@ index 55fe21658..f36e3b463 100644
    // For the device-side compilation, CUDA device builtin surface/texture types
    // may be represented in different types.
    if (Context.getLangOpts().CUDAIsDevice) {
-@@ -389,6 +496,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -389,6 +500,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
    // If we don't have it in the cache, convert it now.
    llvm::Type *ResultType = nullptr;
    switch (Ty->getTypeClass()) {
@@ -13138,10 +13186,10 @@ index 000000000..51dd68396
 +// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 new file mode 100644
-index 000000000..0005ba6b8
+index 000000000..ef728a77d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,31 @@
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
@@ -13167,7 +13215,9 @@ index 000000000..0005ba6b8
 +  return __objc3_try_force([receiver value:[receiver value:0]]); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#elif TEST_KIND == 3
-+int unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
++int unsupported(Receiver *receiver) {
++  return __objc3_try_force([receiver value]); // expected-error {{requires a throwing call expression}}
++}
 +#else
 +struct Aggregate unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
 +#endif
@@ -15778,10 +15828,10 @@ index 000000000..2aa06c88c
 +// CHECK-DAG: @_ZGR{{[0-9]+}}__objc3_m_reference_ =
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
 new file mode 100644
-index 000000000..61aa55b45
+index 000000000..732b10fa2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,52 @@
 +#ifndef NATIVE_ASYNC_TASK_TEST_H
 +#define NATIVE_ASYNC_TASK_TEST_H
 +#include "../../../CodeGenCoroutines/Inputs/coroutine.h"
@@ -15792,6 +15842,9 @@ index 000000000..61aa55b45
 +  task(task &&);
 +  ~task();
 +  struct promise_type {
++    promise_type() = default;
++    void *__objc3_error = nullptr;
++    bool __objc3_error_raised = false;
 +    task get_return_object();
 +    std::suspend_always initial_suspend() noexcept;
 +    std::suspend_always final_suspend() noexcept;
@@ -15808,14 +15861,27 @@ index 000000000..61aa55b45
 +  task(task &&);
 +  ~task();
 +  struct promise_type {
++    promise_type() = default;
++    void *__objc3_error = nullptr;
++    bool __objc3_error_raised = false;
 +    task get_return_object();
 +    std::suspend_always initial_suspend() noexcept;
 +    std::suspend_always final_suspend() noexcept;
 +    void unhandled_exception();
 +    void return_void();
 +  };
++  bool await_ready() noexcept;
++  void await_suspend(std::coroutine_handle<>) noexcept;
++  void await_resume();
 +};
 +}
++template<class T> struct checked_async_adapter {
++  bool await_ready() noexcept;
++  void await_suspend(std::coroutine_handle<>) noexcept;
++  T await_resume();
++};
++template<class T>
++checked_async_adapter<T> __objc3_async_checked(objc3::task<T>, void **);
 +template<class T> using __objc3_async_task = objc3::task<T>;
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-async-functions.mm b/clang/test/ObjC3/CodeGen/native-async-functions.mm
@@ -15928,3 +15994,95 @@ index 000000000..40774b374
 +using ObjectCallback = Object *(*)(Object *) __objc3_async;
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
+diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
+index bf896f133..e24241585 100644
+--- a/clang/lib/CodeGen/CGCoroutine.cpp
++++ b/clang/lib/CodeGen/CGCoroutine.cpp
+@@ -389,6 +389,40 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
+                                aggSlot, ignoreResult, /*forLValue*/false).RV;
+ }
+ 
++bool CodeGenFunction::EmitObjC3AsyncErrorReturn(llvm::Value *OwnedError) {
++  const auto *FD = dyn_cast_or_null<FunctionDecl>(CurCodeDecl);
++  const auto *Body = FD ? dyn_cast<CoroutineBodyStmt>(FD->getBody()) : nullptr;
++  if (!Body || !CurCoro.Data)
++    return false;
++  VarDecl *Promise = Body->getPromiseDecl();
++  auto *Record = Promise->getType()->getAsCXXRecordDecl();
++  FieldDecl *ErrorField = nullptr, *RaisedField = nullptr;
++  for (FieldDecl *Field : Record->fields()) {
++    if (Field->getName() == "__objc3_error")
++      ErrorField = Field;
++    else if (Field->getName() == "__objc3_error_raised")
++      RaisedField = Field;
++  }
++  if (!ErrorField || !RaisedField) {
++    CGM.ErrorUnsupported(FD, "missing checked async promise ABI");
++    return false;
++  }
++  auto *Type = llvm::FunctionType::get(Int8PtrTy, {Int8PtrTy}, false);
++  llvm::Value *Error = EmitNounwindRuntimeCall(
++      CGM.CreateRuntimeFunction(Type, "__objc3_task_error_create"), {OwnedError});
++  LValue Base = MakeAddrLValue(GetAddrOfLocalVar(Promise), Promise->getType());
++  LValue ErrorSlot = EmitLValueForField(Base, ErrorField);
++  llvm::Value *Previous = EmitLoadOfScalar(ErrorSlot, SourceLocation());
++  EmitStoreOfScalar(Error, ErrorSlot);
++  auto *ReleaseType = llvm::FunctionType::get(VoidTy, {Int8PtrTy}, false);
++  EmitNounwindRuntimeCall(
++      CGM.CreateRuntimeFunction(ReleaseType, "objc3_error_release"), {Previous});
++  EmitStoreOfScalar(Builder.getTrue(), EmitLValueForField(Base, RaisedField));
++  ++CurCoro.Data->CoreturnCount;
++  EmitBranchThroughCleanup(CurCoro.Data->FinalJD);
++  return true;
++}
++
+ void CodeGenFunction::EmitCoreturnStmt(CoreturnStmt const &S) {
+   ++CurCoro.Data->CoreturnCount;
+   const Expr *RV = S.getOperand();
+diff --git a/clang/test/ObjC3/CodeGen/native-async-checked-errors.mm b/clang/test/ObjC3/CodeGen/native-async-checked-errors.mm
+new file mode 100644
+index 000000000..1a957283a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-checked-errors.mm
+@@ -0,0 +1,41 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-async-task.h"
++@protocol Error @end
++@protocol ParseError <Error> @end
++// CHECK-LABEL: define{{.*}} void @_Z5raise
++// CHECK: llvm.coro.id
++// CHECK: call ptr @__objc3_task_error_create
++// CHECK: br label %coro.final
++int raise(id<ParseError> error) __objc3_async __objc3_throws(id<ParseError>) {
++  __objc3_throw(error);
++}
++// CHECK-LABEL: define{{.*}} void @_Z9propagate
++// CHECK: __objc3_async_checked
++// CHECK: objc3.try.failed
++// CHECK: __objc3_task_error_create
++int propagate(id<ParseError> error) __objc3_async __objc3_throws(id<ParseError>) {
++  return __objc3_try(__objc3_await raise(error));
++}
++int plain(int) __objc3_async;
++int recover(id<ParseError> error) __objc3_async {
++  __objc3_do {
++    return __objc3_try(__objc3_await propagate(error));
++  } __objc3_catch(id<ParseError> caught) {
++    int value = __objc3_await plain(42);
++    return caught ? value : 0;
++  }
++}
++void no_value(id<ParseError> error) __objc3_async __objc3_throws(id<ParseError>) {
++  __objc3_throw(error);
++}
++void forward_void(id<ParseError> error) __objc3_async __objc3_throws(id<ParseError>) {
++  __objc3_try(__objc3_await no_value(error));
++  return;
++}
++template<class T>
++int generic(T error) __objc3_async __objc3_throws(id<ParseError>) {
++  return __objc3_try(__objc3_await raise(error));
++}
++template int generic<id<ParseError>>(id<ParseError>)
++    __objc3_async __objc3_throws(id<ParseError>);

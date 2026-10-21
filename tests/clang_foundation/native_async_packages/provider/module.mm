@@ -3,8 +3,11 @@
 #include <objc/objc-arc.h>
 id class_createInstance(Class, size_t) __attribute__((ns_returns_retained));
 
+@protocol Error @end
+@protocol NativeModuleError <Error> @end
+
 __attribute__((objc_root_class))
-@interface NativeModuleResult {
+@interface NativeModuleResult<NativeModuleError> {
   Class isa;
   int value;
 }
@@ -64,4 +67,16 @@ native_module_reader native_module_block(int value) __objc3_async {
 int native_module_value(int value) __objc3_async {
   __objc3_await objc3::task_yield;
   return value + 1;
+}
+
+int native_module_checked(int value, bool fail)
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  NativeModuleResult *error = [NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  module_result_owner owner{error};
+#endif
+  [error setNumber:value];
+  __objc3_await objc3::task_yield;
+  if (fail) __objc3_throw((id<NativeModuleError>)error);
+  return value;
 }

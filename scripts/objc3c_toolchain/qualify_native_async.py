@@ -103,6 +103,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 run(label + '-dwarf', [sdk / 'bin/llvm-dwarfdump', '--verify', executable], root)
                 debugger_values = None
                 owned_result_debugger_values = None
+                checked_error_debugger_values = None
                 if optimization == 'O0':
                     debugger = [sdk / 'bin/lldb', '--batch']
                     for query in ('settings set target.disable-aslr false',
@@ -114,19 +115,26 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                             'frame select 0',
                             "expression -- (int)(value == 73 && kind[0] == 'o')",
                             'frame select 1', 'expression -- (int)(number == 73 && result != 0)',
-                            'breakpoint disable 2', 'continue'):
+                            'breakpoint disable 2',
+                            'breakpoint set -n objc3_native_async_error_checkpoint', 'continue',
+                            'frame select 0',
+                            'expression -- (int)(value == 96 && error != 0)',
+                            'frame select 1', 'expression -- (int)(error != 0)',
+                            'breakpoint disable 3', 'continue'):
                         debugger += ['-o', query]
                     log = run(label + '-lldb', [*debugger, executable], root)
                     text = log.read_text()
                     values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
-                    debugger_values, owned_result_debugger_values = values[:2], values[2:]
-                    if values != [1, 1, 1, 1] or 'exited with status = 0' not in text:
+                    debugger_values, owned_result_debugger_values = values[:2], values[2:4]
+                    checked_error_debugger_values = values[4:]
+                    if values != [1, 1, 1, 1, 1, 1] or 'exited with status = 0' not in text:
                         raise ValueError('native coroutine debugger lost resumed frame values: ' + label)
                 cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                               'provider_ownership': provider,
                               'optimization': optimization, 'provider_source_removed': True, 'pch_consumer': True,
                               'debugger_values': debugger_values,
                               'owned_result_debugger_values': owned_result_debugger_values,
+                              'checked_error_debugger_values': checked_error_debugger_values,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.native-async-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],

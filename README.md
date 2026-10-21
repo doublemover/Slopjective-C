@@ -271,7 +271,9 @@ frames, including nested private children, deferred cleanup and source-free
 package imports. It uses the reserved `__objc3_async` and `__objc3_await` spellings.
 The [owned async result contract](docs/roadmap/linux_async_owned_results.md) adds
 object, protocol, Class and Block results, with canonical task carriers across
-ARC/MRC providers and consumers. Extension ABI 15 requires every object, PCH, semantic interface and package to be
+ARC/MRC providers and consumers. [Checked async errors](docs/roadmap/linux_async_checked_errors.md)
+add owned deferred errors, checked awaits and typed handlers that can suspend.
+Extension ABI 16 requires every object, PCH, semantic interface and package to be
 rebuilt. Public async/await and compiler actor isolation remain reserved.
 
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps

@@ -67,6 +67,7 @@ install(TARGETS clang-scan-deps RUNTIME DESTINATION bin)
 
 add_library(objc3_runtime_services STATIC
   ../runtime/services/error_service.cpp
+  ../runtime/services/objc_task_error.cpp
   ../runtime/services/carrier_service.cpp
   ../runtime/concurrency/service_executor.cpp
   ../runtime/concurrency/service_task.cpp

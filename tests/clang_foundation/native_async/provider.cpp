@@ -300,3 +300,181 @@ int native_result_number(__unsafe_unretained id value) {
 }
 unsigned native_result_destructions() { return result_destructions.load(); }
 #endif
+
+static std::atomic<unsigned> checked_destructions{0};
+__attribute__((objc_root_class))
+@interface NativeAsyncFailure<NativeFirstError> { Class isa; }
++ (id)new;
+@end
+@implementation NativeAsyncFailure
++ (id)new { return class_createInstance(self, 0); }
+- (void)dealloc { ++checked_destructions; object_dispose(self); }
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+unsigned native_checked_destructions() { return checked_destructions.load(); }
+
+int native_checked_leaf(std::shared_ptr<async_state> state, bool fail, int kind)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  frame_guard guard(state);
+  defer { ++state->deferred; }
+  ++state->parents;
+  NativeAsyncFailure *error = [NativeAsyncFailure new];
+#if !__has_feature(objc_arc)
+  result_owner owner{error};
+#endif
+  __objc3_await objc3::task_yield;
+  if (kind == 1) throw 73;
+  if (kind == 2) @throw error;
+  if (fail) __objc3_throw((id<NativeFirstError>)error);
+  return 42;
+}
+int native_checked_parent(std::shared_ptr<async_state> state, bool fail, int kind)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  frame_guard guard(state);
+  return __objc3_try(__objc3_await native_checked_leaf(state, fail, kind));
+}
+int native_checked_recover(std::shared_ptr<async_state> state, bool fail, int kind)
+    __objc3_async {
+  __objc3_do {
+    return __objc3_try(__objc3_await native_checked_parent(state, fail, kind));
+  } __objc3_catch(id<NativeFirstError> error) {
+    if (!error) __builtin_trap();
+    extern void objc3_native_async_error_checkpoint(int, __unsafe_unretained id);
+    objc3_native_async_error_checkpoint(96, error);
+    // The handler owns the payload through another real suspension.
+    __objc3_await objc3::task_yield;
+    return 96;
+  }
+}
+int native_checked_optional(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async {
+  auto result = __objc3_try_optional(
+      __objc3_await native_checked_leaf(state, fail));
+  return __objc3_match(result) { case __objc3_case_some(let value) => value; case __objc3_case_none => 0; };
+}
+int native_checked_force(std::shared_ptr<async_state> state) __objc3_async {
+  return __objc3_try_force(__objc3_await native_checked_leaf(state, false));
+}
+static int checked_sync_failure(id<NativeFirstError> error, bool fail)
+    __objc3_throws(id<NativeFirstError>) {
+  if (fail) __objc3_throw(error);
+  return 42;
+}
+int native_checked_sync(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async {
+  frame_guard guard(state);
+  NativeAsyncFailure *error = [NativeAsyncFailure new];
+#if !__has_feature(objc_arc)
+  result_owner owner{error};
+#endif
+  __objc3_await objc3::task_yield;
+  __objc3_do { return __objc3_try(checked_sync_failure(error, fail)); }
+  __objc3_catch(id<NativeFirstError> caught) { return caught ? 96 : 0; }
+}
+int native_checked_cleanup(std::shared_ptr<async_state> state)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  struct throwing_cleanup { ~throwing_cleanup() noexcept(false) { throw 91; } };
+  throwing_cleanup cleanup;
+  return __objc3_try(__objc3_await native_checked_leaf(state, true));
+}
+int native_checked_native_handlers(std::shared_ptr<async_state> state)
+    __objc3_async {
+  __objc3_do {
+    @try {
+      try {
+        return __objc3_try(__objc3_await native_checked_leaf(state, true));
+      } catch (...) { return -1; }
+    } @catch (id) { return -2; }
+  } __objc3_catch(id<NativeFirstError> error) { return error ? 96 : 0; }
+}
+
+__attribute__((noinline)) void
+objc3_native_async_error_checkpoint(int value, __unsafe_unretained id error) {
+  if (value != 96 || !error) __builtin_trap();
+}
+
+int native_checked_cleanup_caught(std::shared_ptr<async_state> state)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  try {
+    struct cleanup { ~cleanup() noexcept(false) { throw 91; } };
+    cleanup owned;
+    return __objc3_try(__objc3_await native_checked_leaf(state, true));
+  } catch (int value) { return value == 91 ? 42 : 0; }
+}
+
+NativeAsyncResult *native_checked_result_object(std::shared_ptr<async_state> state,
+                                               bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return __objc3_await native_result_object(42);
+}
+native_result_reader native_checked_result_block(std::shared_ptr<async_state> state,
+                                                 bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return __objc3_await native_result_block(42);
+}
+void native_checked_result_void(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return;
+}
+int native_checked_result_kinds(std::shared_ptr<async_state> state, unsigned kind)
+    __objc3_async {
+  __objc3_do {
+    NativeAsyncResult *object = __objc3_try(
+        __objc3_await native_checked_result_object(state, kind == 1));
+#if !__has_feature(objc_arc)
+    result_owner owner{objc_retain(object)};
+#endif
+    native_result_reader block = __objc3_try(
+        __objc3_await native_checked_result_block(state, kind == 2));
+    int value = native_result_number(object) + block(0);
+    __objc3_try(__objc3_await native_checked_result_void(state, kind == 3));
+    return value == 84 ? 42 : 0;
+  } __objc3_catch(id<NativeFirstError> error) {
+    __objc3_await objc3::task_yield;
+    return error ? 96 : 0;
+  }
+}
+int native_checked_untyped(std::shared_ptr<async_state> state)
+    __objc3_async __objc3_throws {
+  frame_guard guard(state);
+  NativeAsyncFailure *error = [NativeAsyncFailure new];
+#if !__has_feature(objc_arc)
+  result_owner owner{error};
+#endif
+  __objc3_await objc3::task_yield;
+  __objc3_throw((id<Error>)error);
+}
+int native_checked_untyped_recover(std::shared_ptr<async_state> state)
+    __objc3_async {
+  __objc3_do {
+    return __objc3_try(__objc3_await native_checked_untyped(std::move(state)));
+  } __objc3_catch(id<Error> error) {
+    __objc3_await objc3::task_yield;
+    return error ? 96 : 0;
+  }
+}
+int native_checked_indirect(std::shared_ptr<async_state> state) __objc3_async {
+  using callback = int (*)(std::shared_ptr<async_state>, bool, int)
+      __objc3_async __objc3_throws(id<NativeFirstError>);
+  callback function = native_checked_leaf;
+  __objc3_do {
+    return __objc3_try(__objc3_await function(std::move(state), true, 0));
+  } __objc3_catch(id<NativeFirstError> error) { return error ? 96 : 0; }
+}
+int native_checked_hop(objc3_actor_t *first, objc3_actor_t *second,
+                        std::shared_ptr<async_state> state) __objc3_async {
+  __objc3_await objc3::hop_to(second);
+  int value = __objc3_await native_checked_recover(std::move(state), true);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+      facts.actor_identity != objc3_actor_identity(second)) __builtin_trap();
+  __objc3_await objc3::hop_to(first);
+  return value;
+}

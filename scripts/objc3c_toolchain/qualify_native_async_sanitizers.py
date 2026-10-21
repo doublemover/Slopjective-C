@@ -32,7 +32,8 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
     receipt = output / 'qualification.json'
     receipt.unlink(missing_ok=True)
     sources = [repo / 'native/objc3c/src/runtime' / name for name in (
-        'services/error_service.cpp', 'services/carrier_service.cpp',
+        'services/error_service.cpp', 'services/objc_task_error.cpp',
+        'services/carrier_service.cpp',
         'concurrency/service_executor.cpp', 'concurrency/service_task.cpp',
         'concurrency/service_group.cpp', 'concurrency/service_actor.cpp',
         'concurrency/service_public.cpp')]

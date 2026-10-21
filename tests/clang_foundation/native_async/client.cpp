@@ -111,6 +111,94 @@ static void owned_results(objc3_executor_t *executor) {
 }
 #endif
 
+static void checked_results(objc3_executor_t *executor) {
+  auto state = std::make_shared<async_state>();
+  const auto before = native_checked_destructions();
+  {
+    auto success = native_checked_recover(state, false).start(executor);
+    auto recovered = native_checked_recover(state, true).start(executor);
+    auto some = native_checked_optional(state, false).start(executor);
+    auto none = native_checked_optional(state, true).start(executor);
+    auto forced = native_checked_force(state).start(executor);
+    auto sync = native_checked_sync(state, true).start(executor);
+    auto boundaries = native_checked_native_handlers(state).start(executor);
+    pump(executor);
+    assert(success.result() == 42 && recovered.result() == 96);
+    assert(some.result() == 42 && none.result() == 0 && forced.result() == 42);
+    assert(sync.result() == 96 && boundaries.result() == 96);
+  }
+  assert(native_checked_destructions() == before + 7);
+  {
+    // Lazy creation does not run or synchronously throw. The completion owns
+    // its error after both private coroutine frames have been reclaimed.
+    auto failed = native_checked_parent(state, true).start(executor);
+    pump(executor);
+    assert(native_checked_destructions() == before + 7);
+    auto copied = failed;
+    bool caught = false;
+    try { (void)failed.result(); }
+    catch (const objc3::task_error &error) {
+      assert(objc3::task_detail::__objc3_task_error_object(error.native_handle()));
+      caught = true;
+    }
+    assert(caught);
+    failed = {};
+    assert(native_checked_destructions() == before + 7);
+    copied = {};
+    assert(native_checked_destructions() == before + 8);
+  }
+  {
+    // Native exceptions bypass typed handlers and retain their native identity.
+    auto cpp = native_checked_recover(state, true, 1).start(executor);
+    auto objc = native_checked_recover(state, true, 2).start(executor);
+    auto cleanup = native_checked_cleanup(state).start(executor);
+    auto recovered_cleanup = native_checked_cleanup_caught(state).start(executor);
+    pump(executor);
+    bool caught = false;
+    try { (void)cpp.result(); } catch (int value) { caught = value == 73; }
+    assert(caught);
+    caught = false;
+    @try { (void)objc.result(); } @catch (id error) { caught = error != (id)0; }
+    assert(caught);
+    caught = false;
+    try { (void)cleanup.result(); } catch (int value) { caught = value == 91; }
+    assert(caught && recovered_cleanup.result() == 42);
+  }
+  assert(native_checked_destructions() == before + 12);
+  {
+    auto cancelled = native_checked_recover(state, true).start(executor);
+    auto abandoned = native_checked_recover(state, true).start(executor);
+    pump(executor, 6);
+    cancelled.cancel();
+    abandoned = {};
+    pump(executor);
+    bool caught = false;
+    try { (void)cancelled.result(); }
+    catch (const objc3::task_cancelled &) { caught = true; }
+    assert(caught);
+  }
+  assert(state->entered == state->destroyed);
+  assert(state->parents == state->deferred);
+  const auto before_kinds = native_checked_destructions();
+  const auto before_objects = native_result_destructions();
+  {
+    std::vector<objc3::task_handle<int>> tasks;
+    for (unsigned kind = 0; kind != 4; ++kind)
+      tasks.push_back(native_checked_result_kinds(state, kind).start(executor));
+    auto untyped = native_checked_untyped_recover(state).start(executor);
+    auto indirect = native_checked_indirect(state).start(executor);
+    auto inlined = native_checked_inline(state).start(executor);
+    pump(executor);
+    assert(tasks[0].result() == 42);
+    for (unsigned kind = 1; kind != 4; ++kind) assert(tasks[kind].result() == 96);
+    assert(untyped.result() == 96 && indirect.result() == 96 && inlined.result() == 42);
+  }
+  assert(native_checked_destructions() == before_kinds + 12);
+  assert(native_result_destructions() == before_objects + 5);
+  assert(state->entered == state->destroyed);
+  assert(state->parents == state->deferred);
+}
+
 int main() {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
@@ -250,6 +338,7 @@ int main() {
   assert(state->parents == state->deferred);
 #ifdef __OBJC__
   owned_results(executor);
+  checked_results(executor);
 #endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.
@@ -314,6 +403,12 @@ int main() {
       assert(native_result_number(value) == index && reader(1) == index + 1);
     }
   }
+  const auto before_checked_workers = native_checked_destructions();
+  std::vector<objc3::task_handle<int>> checked_workers;
+  for (unsigned index = 0; index != 64; ++index)
+    checked_workers.push_back(native_checked_hop(first, second, state).start_on(first));
+  for (auto &task : checked_workers) { task.wait(); assert(task.result() == 96); }
+  checked_workers.clear();
   // Terminal completion can precede the final callback's frame destruction
   // and autorelease-pool drain. Observe both worker queues before counting.
   std::atomic<unsigned> drained{0};
@@ -328,6 +423,7 @@ int main() {
        count = drained.load(std::memory_order_acquire))
     drained.wait(count, std::memory_order_acquire);
   assert(native_result_destructions() == before_results + 128);
+  assert(native_checked_destructions() == before_checked_workers + 64);
   objc3_task_group_release(group);
   assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
   assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);

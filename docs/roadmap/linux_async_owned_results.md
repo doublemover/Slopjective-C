@@ -4,8 +4,9 @@ Native async free functions can return Objective-C object pointers, protocol
 qualified object pointers, `Class` and Block pointers in the Linux x86-64 LP64
 GNUstep 2.2 compatibility profile. This extends the reserved Objective-C++20/23
 `__objc3_async` and `__objc3_await` compiler stage. Public async/await, pure
-Objective-C async lowering, checked async errors and compiler actor isolation
-remain reserved.
+Objective-C async lowering and compiler actor isolation remain reserved.
+[Checked async errors](linux_async_checked_errors.md) extend this stage with
+owned deferred errors and checked awaits.
 
 ```objective-c++
 #include <objc3c/runtime/objc3_task.hpp>
@@ -60,7 +61,9 @@ ABI. Cross-mode signatures require identical C++ types; arbitrary aggregates
 whose Objective-C fields change ownership between modes need their own explicit
 ABI contract.
 
-Extension ABI 15 requires a full rebuild of objects, PCH files, semantic
+Owned results introduced extension ABI 15. The
+[checked async error stage](linux_async_checked_errors.md) advances the current
+extension ABI to 16 and requires a full rebuild of objects, PCH files, semantic
 interfaces and packages. The task service remains ABI 3. Every provider and
 consumer uses the new compiler and runtime header. Native header consumers cover
 all four provider/consumer ARC/MRC pairs; semantic and immutable packages retain
@@ -77,8 +80,8 @@ the task services and clients in all ownership pairs. Source-free package
 consumers preserve imported object and Block result types and execute after
 provider sources and build directories have been removed.
 
-The [acceptance receipt](../support/linux_async_owned_results_acceptance.json)
-binds the exact SDK archive to the compiler and AST tests, 22 installed package
+The [owned-result acceptance receipt](../support/linux_async_owned_results_acceptance.json)
+binds that milestone's exact SDK archive to the compiler and AST tests, 22 installed package
 gates, 74 sanitizer configurations, frame debugging and ordinary-user archive
 consumers on Debian 13 and Ubuntu 26.04. Fresh-distribution qualification uses
 the explicit `task-destinations` scope; the full package matrix runs during SDK

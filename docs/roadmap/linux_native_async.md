@@ -57,11 +57,14 @@ Source and immutable package builders supply the full-frame allocation option
 and link the installed task runtime. Imported function declarations preserve the
 async effect and logical result; providers retain their module-owned native
 symbols after relocation.
-Extension ABI 15 requires a full rebuild of objects, PCH files, semantic
+Extension ABI 16 requires a full rebuild of objects, PCH files, semantic
 interfaces and packages.
 
 This stage supports ordinary free functions with C++ value, void, Objective-C
-object/protocol/Class and Block results and no throws effect. The
+object/protocol/Class and Block results. The
+[checked async error contract](linux_async_checked_errors.md) adds checked
+throws for real scalar, enumeration, C/Objective-C/Block pointer and void results,
+including propagation, optionalization and suspending typed handlers. The
 [owned result contract](linux_async_owned_results.md) retains objects and copies
 Blocks independently of frame cleanup. Successful reads and awaits return +0
 values through the current autorelease pool; ARC locals retain across later
@@ -69,8 +72,7 @@ suspension, while MRC code retains explicitly. Task and handle types normalize
 direct Objective-C pointer ownership for a consistent native C++ ABI.
 
 The remaining language work includes pure Objective-C async lowering, checked
-typed-error propagation across suspension, async methods and async Blocks, and compiler
-actor isolation. These require separate execution and ownership qualification
+C++ record results, async methods and async Blocks, and compiler actor isolation. These require separate execution and ownership qualification
 before the public language capability can be promoted.
 
 The [installed SDK acceptance receipt](../support/linux_async_owned_results_acceptance.json)

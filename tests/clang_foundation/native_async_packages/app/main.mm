@@ -14,6 +14,23 @@ struct consumer_result_owner {
 };
 #endif
 
+int checked_application(objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  __objc3_do {
+    int success = __objc3_try(__objc3_await native_module_checked(42, false));
+    if (success != 42) return 0;
+    return __objc3_try(__objc3_await native_module_checked(96, true));
+  } __objc3_catch(id<NativeModuleError> error) {
+    __objc3_await objc3::task_yield;
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+        facts.actor_identity != objc3_actor_identity(actor)) return 0;
+    return [(NativeModuleResult *)error number] == 96 ? 42 : 0;
+  }
+}
+
 int actor_application(objc3_actor_t *actor) __objc3_async {
   __objc3_await objc3::hop_to(actor);
   auto expected = objc3_actor_identity(actor);
@@ -61,6 +78,11 @@ int main() {
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42)
     return 4;
+  pending = {};
+  pending = checked_application(actor).start(executor);
+  if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
+      pending.result() != 42)
+    return 8;
   pending = {};
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

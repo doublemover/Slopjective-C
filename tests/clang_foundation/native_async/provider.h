@@ -68,6 +68,39 @@ struct callback_owner {
   int choose(native_callback fn) { return native_overload(fn); }
 };
 
+unsigned native_checked_destructions();
+int native_checked_leaf(std::shared_ptr<async_state>, bool, int = 0)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_parent(std::shared_ptr<async_state>, bool, int = 0)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_recover(std::shared_ptr<async_state>, bool, int = 0)
+    __objc3_async;
+int native_checked_optional(std::shared_ptr<async_state>, bool) __objc3_async;
+int native_checked_force(std::shared_ptr<async_state>) __objc3_async;
+int native_checked_sync(std::shared_ptr<async_state>, bool) __objc3_async;
+int native_checked_cleanup(std::shared_ptr<async_state>)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_cleanup_caught(std::shared_ptr<async_state>)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_native_handlers(std::shared_ptr<async_state>) __objc3_async;
+
+NativeAsyncResult *native_checked_result_object(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+native_result_reader native_checked_result_block(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+void native_checked_result_void(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_result_kinds(std::shared_ptr<async_state>, unsigned) __objc3_async;
+int native_checked_untyped(std::shared_ptr<async_state>) __objc3_async __objc3_throws;
+int native_checked_untyped_recover(std::shared_ptr<async_state>) __objc3_async;
+int native_checked_indirect(std::shared_ptr<async_state>) __objc3_async;
+int native_checked_hop(objc3_actor_t *, objc3_actor_t *, std::shared_ptr<async_state>)
+    __objc3_async;
+inline int native_checked_inline(std::shared_ptr<async_state> state)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  return __objc3_try(__objc3_await native_checked_parent(std::move(state), false));
+}
+
 inline int native_inline(std::shared_ptr<async_state> state,
                          int value) __objc3_async {
   return __objc3_await native_leaf(std::move(state), value);

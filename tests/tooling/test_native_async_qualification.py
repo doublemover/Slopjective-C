@@ -106,3 +106,14 @@ def test_native_async_sanitizer_failure_preserves_report(tmp_path, monkeypatch, 
         assert '-fobjc-version=3' in calls[1] and 'objective-c++' in calls[1]
     log = output / report['commands'][-1]['name']
     assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log.with_suffix('.log'))
+
+
+def test_checked_async_package_requires_combined_typed_effect():
+    assert native_packages.has_checked_async({
+        'declarations': [{'effects': {'async': True, 'throws': True,
+                                      'throws_kind': 'typed'}}]})
+    assert not native_packages.has_checked_async([
+        {'effects': {'async': True, 'throws': False, 'throws_kind': ''}},
+        {'effects': {'async': False, 'throws': True, 'throws_kind': 'typed'}}])
+    assert not native_packages.has_checked_async({
+        'async': True, 'throws': True, 'throws_kind': 'untyped'})

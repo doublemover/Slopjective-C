@@ -65,7 +65,9 @@ The implemented foundations have separate bounded contracts:
   results and canonical async effects to Objective-C++20/23 task frames through
   reserved compiler spellings. [Owned async results](linux_async_owned_results.md)
   retain objects and copy Blocks through nested awaits, canonical ARC/MRC task
-  carriers and source-free providers. Public async/await remains reserved.
+  carriers and source-free providers. [Checked async errors](linux_async_checked_errors.md)
+  add owned deferred Error objects, checked awaits and suspending handlers.
+  Public async/await remains reserved.
 
 ## Next compiler milestones
 
@@ -75,8 +77,10 @@ and the public language contract still require the following work.
 
 1. Extend the Objective-C++ native async stage to pure Objective-C functions and
    the public language contract.
-   Define suspension ownership, checked typed-error propagation, cancellation,
-   callback publication and cleanup before promoting the language capability.
+   Integrate suspension ownership, checked error propagation, cancellation,
+   callback publication and cleanup into that language contract. Extend the
+   qualified Objective-C++ checked-error stage to the remaining result and
+   callable forms before promoting the language capability.
    Reuse the public task/group ABI and its resumable coroutine bridge. Require
    canonical async effect imports, source-free packages, O0/O2
    native execution, debug information and instrumented runtime/client evidence.
