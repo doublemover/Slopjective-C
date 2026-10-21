@@ -13,6 +13,7 @@ add_library(objc3c_clang_foundation STATIC
   module_names.cpp
   interface_codec.cpp
   interface_emitter.cpp
+  runtime_interface_types.cpp
   interface_artifact_io.cpp
   interface_validation.cpp
   interface_import.cpp
@@ -23,6 +24,12 @@ set_source_files_properties(source_identity.cpp PROPERTIES
 target_include_directories(objc3c_clang_foundation SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c_clang_foundation PUBLIC objc3c_build_defaults)
+set(_runtime_services_header "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_runtime_services_header}")
+file(SHA256 "${_runtime_services_header}" _runtime_services_header_sha256)
+file(READ "${_runtime_services_header}" _runtime_services_header_source)
+configure_file(runtime_interface_header.h.in runtime_interface_header.h @ONLY)
+target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
 target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
   clangTooling clangFrontend clangCodeGen clangIndex)
@@ -101,8 +108,13 @@ install(TARGETS objc3c_build_defaults EXPORT objc3cTargets)
 set_target_properties(objc3c_frontend_v2 PROPERTIES EXPORT_NAME Frontend)
 set_target_properties(objc3_runtime_services PROPERTIES EXPORT_NAME RuntimeServices)
 install(FILES frontend_api.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c)
-install(FILES ../runtime/public/objc3_runtime_services.h ../runtime/public/objc3_task.hpp
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime)
+install(DIRECTORY ../runtime/public/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(DIRECTORY "${_objc3_repo}/stdlib/include/objc3"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "${_objc3_repo}/stdlib/module_inventory.json"
+  DESTINATION share/objc3c/stdlib)
 target_include_directories(objc3c_frontend_v2 INTERFACE "$<INSTALL_INTERFACE:include>")
 install(EXPORT objc3cTargets NAMESPACE objc3c:: DESTINATION lib/cmake/objc3c)
 include(CMakePackageConfigHelpers)
@@ -111,6 +123,9 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cCon
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
+  add_executable(objc3_stdlib_map_count_test ../../tests/stdlib_map_count_test.cpp)
+  target_link_libraries(objc3_stdlib_map_count_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
   add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)
   target_include_directories(objc3_sdk_identity_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_sdk_identity_test PRIVATE objc3c_clang_foundation)
@@ -209,6 +224,7 @@ if (BUILD_TESTING)
   add_test(NAME objc3_interface_artifact_io COMMAND objc3_interface_artifact_io_test)
   add_executable(objc3_task_services_test
     ../../../../tests/tooling/fixtures/clang_foundation/services/task_services.cpp
+    ../../../../tests/clang_foundation/structured_runtime/actor_scheduling.cpp
     ../runtime/concurrency/service_group.cpp)
   # Only this test translation unit enables deterministic fault hooks; the
   # production service library keeps them out of its ABI and implementation.
@@ -221,9 +237,29 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_structured_runtime_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
   set_tests_properties(objc3_structured_runtime PROPERTIES TIMEOUT 30)
-  add_executable(objc3_task_coroutines_test
-    ../../../../tests/clang_foundation/task_coroutines/provider.cpp
-    ../../../../tests/clang_foundation/task_coroutines/client.cpp)
+  # Task headers require the product compiler's canonical type-identity builtin.
+  # Keep the compiler implementation bootstrapped independently, while compiling
+  # these actual language witnesses with the verified foundation driver.
+  set(_task_coroutine_objects)
+  foreach(_part provider client)
+    set(_object "${CMAKE_CURRENT_BINARY_DIR}/task-coroutines-${_part}.o")
+    set(_source "${_objc3_repo}/tests/clang_foundation/task_coroutines/${_part}.cpp")
+    add_custom_command(OUTPUT "${_object}"
+      COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
+        -O2 -g -UNDEBUG -fcoro-aligned-allocation
+        "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+        -c "${_source}" -o "${_object}"
+      DEPENDS "${_source}"
+        "${_objc3_repo}/tests/clang_foundation/task_coroutines/provider.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
+        "${OBJC3C_FOUNDATION_DRIVER}"
+      VERBATIM)
+    set_source_files_properties("${_object}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+    list(APPEND _task_coroutine_objects "${_object}")
+  endforeach()
+  add_executable(objc3_task_coroutines_test ${_task_coroutine_objects})
+  set_target_properties(objc3_task_coroutines_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_task_coroutines_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
   set_tests_properties(objc3_task_coroutines PROPERTIES TIMEOUT 45)

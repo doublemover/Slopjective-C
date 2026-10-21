@@ -2,12 +2,60 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 
 import pytest
 
 from scripts.objc3c_toolchain import binary_packages as packages
+
+
+def package_cli(tmp_path, root_mode, command):
+    repo = Path(__file__).resolve().parents[2]
+    env = {**os.environ, 'PYTHONPATH': str(repo)}
+    env.pop('OBJC3C_SDK_ROOT', None)
+    selected = tmp_path / 'out/toolchains/linux-sdk/current'
+    arguments = [sys.executable, '-B', '-m', 'scripts.objc3c_toolchain', 'packages']
+    if root_mode == 'explicit':
+        env['OBJC3C_SDK_ROOT'] = str(tmp_path / 'ignored-sdk')
+        selected = tmp_path / 'explicit-sdk'
+        arguments += ['--sdk-root', str(selected)]
+    elif root_mode == 'environment':
+        selected = tmp_path / 'environment-sdk'
+        env['OBJC3C_SDK_ROOT'] = str(selected)
+    selected.parent.mkdir(parents=True, exist_ok=True)
+    return subprocess.run([*arguments, *map(str, command)], cwd=tmp_path,
+                          env=env, capture_output=True, text=True, timeout=30), selected
+
+
+@pytest.mark.parametrize('root_mode', ['explicit', 'environment', 'default'])
+@pytest.mark.parametrize('command', ['publish', 'consume'])
+def test_repository_cli_selects_sdk_with_controlled_diagnostics(tmp_path, root_mode, command):
+    if command == 'publish':
+        args = ['publish', '--build-dir', tmp_path / 'build', '--store', tmp_path / 'store']
+    else:
+        args = ['consume', '--package', tmp_path / 'package', '--content-sha256', 'a' * 64,
+                '--application', tmp_path / 'app.json', '--output-dir', tmp_path / 'output']
+    result, selected = package_cli(tmp_path, root_mode, args)
+    assert result.returncode == 1
+    assert f'binary package {command} failed:' in result.stderr
+    assert str(selected) in result.stderr
+    assert 'Traceback' not in result.stderr and 'NameError' not in result.stderr
+
+
+@pytest.mark.parametrize('root_mode', ['explicit', 'environment', 'default'])
+def test_repository_cli_installs_without_sdk(bundle, tmp_path, root_mode):
+    source, manifest, expected = bundle
+    result, _ = package_cli(tmp_path, root_mode, [
+        'install', '--package', source, '--content-sha256', expected,
+        '--store', tmp_path / 'installed'])
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report['status'] == 'PASS'
+    assert packages.verify_package(Path(report['package']), expected) == manifest
 
 
 @pytest.fixture

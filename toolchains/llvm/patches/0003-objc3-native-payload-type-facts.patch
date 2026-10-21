@@ -173,7 +173,7 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..0cbae1d21
+index 000000000..9e3216ec1
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
 @@ -0,0 +1,455 @@
@@ -535,13 +535,13 @@ index 000000000..0cbae1d21
 +                                           std::string &Encoding) {
 +  const auto &Triple = Ctx.getTargetInfo().getTriple();
 +  const auto &Lang = Ctx.getLangOpts();
-+  if (!Lang.ObjCAutoRefCount || Type.isNull() || Type.isVolatileQualified() ||
++  if (Type.isNull() || Type.isVolatileQualified() ||
 +      Triple.getArch() != llvm::Triple::x86_64 || !Triple.isOSLinux() ||
 +      !Triple.isGNUEnvironment() ||
 +      Lang.ObjCRuntime.getKind() != ObjCRuntime::GNUstep ||
 +      Lang.ObjCRuntime.getVersion() != VersionTuple(2, 2))
 +    return false;
-+  if (!hasObjC3CarrierManagedPayload(Type))
++  if (hasObjC3CarrierManagedPayload(Type) && !Lang.ObjCAutoRefCount)
 +    return false;
 +  unsigned Budget = 256;
 +  auto Encode = [&](auto &&Self, QualType Carrier, std::string &Out,

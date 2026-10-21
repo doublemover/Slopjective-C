@@ -1,91 +1,58 @@
-# objc3c Standard Library
+# Objective-C 3.0 standard library
 
-This directory is the checked-in root for the Objective-C 3 standard-library
-foundation and adoption surface.
+The native Linux library uses Clang header modules. Compile in Objective-C 3.0
+mode with `-fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fmodules`, add the
+SDK's `include` directory, and import the canonical module you need:
 
-## Boundary
+```objective-c
+@import objc3.text;
+@import objc3.errors;
 
-Live stdlib work must stay on these paths:
+int example(Optional(int) value) {
+  Result(int, int) result = okOr(value, ^int { return 7; });
+  return isOk(result);
+}
+```
 
-- `stdlib/README.md`
-- `stdlib/workspace.json`
-- `stdlib/module_inventory.json`
-- `stdlib/stability_policy.json`
-- `stdlib/package_surface.json`
-- `stdlib/core_architecture.json`
-- `stdlib/advanced_architecture.json`
-- `stdlib/semantic_policy.json`
-- `stdlib/compatibility_gates.json`
-- `stdlib/lowering_import_surface.json`
-- `stdlib/advanced_helper_package_surface.json`
-- `stdlib/program_surface.json`
-- `stdlib/modules/`
-- `docs/runbooks/objc3c_stdlib_foundation.md`
-- `docs/runbooks/objc3c_stdlib_core.md`
-- `docs/runbooks/objc3c_stdlib_advanced.md`
-- `docs/runbooks/objc3c_stdlib_program.md`
-- `docs/tutorials/`
-- `showcase/`
-- `site/src/index.body.md`
-- `tmp/artifacts/stdlib/`
-- `tmp/reports/stdlib/`
+Link runtime calls with `libobjc3_runtime_services.a`, the C++ standard library,
+threads and the SDK's GNUstep runtime. The SDK contains the module map, public
+headers, module inventory and a separately compiled runnable qualification.
 
-Authoritative semantic contract:
+[The inventory](module_inventory.json) records each canonical capability,
+version, implemented surface and remaining obligations against the
+[standard-library contract](../spec/STANDARD_LIBRARY_CONTRACT.md). Module version
+2 is a hard cutover from the removed `module`/`fn` frontend. Those source files,
+fake integer helpers and package metadata are no longer library inputs.
 
-- `spec/STANDARD_LIBRARY_CONTRACT.md`
+`objc3.core`, `objc3.errors`, `objc3.text`, `objc3.collections` and
+`objc3.concurrency` are native imports. `objc3.keypath` and `objc3.system` remain
+unimplemented and their imports fail. Module presence does not claim a complete
+Core or Strict profile.
 
-Support truth:
+Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.
+Prefixes count Unicode scalars. Concrete and generic collections use opaque
+runtime identities, explicit ownership and status-returning mutation/iteration.
+Public declarations live in `native/objc3c/src/runtime/public`; the higher-level
+module headers live in `stdlib/include/objc3`.
 
-- `docs/support/capability_matrix.md`
-- `docs/support/evidence_map.md`
-- `docs/support/hard_cutover_capability_truth.md`
+`okOr(value, factory)` and `orThrow(value, factory)` infer the Optional payload,
+evaluate the input once, and evaluate the factory expression only for None.
+`orThrow` is a throwing Block call: use `tryValue`, `tryOptional` or `tryForce` as
+for any checked throwing call. The factory returns `id<Error>` for `orThrow`;
+`okOr` preserves the factory's concrete error type. The helpers support payloads
+admitted by the compiler's Block call ABI; unsupported types are diagnosed.
 
-Stdlib docs describe checked-in modules, package surfaces, and examples. They
-do not claim runtime behavior, alias adapters, alternate imports, or
-stdlib-wide completeness beyond implemented capability rows.
+The concurrency module exposes the shared task/frame, group, cancellation,
+executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
+for the C++ coroutine adapter. Public async/await and actor language capabilities
+remain reserved until compiler lowering and isolation are complete.
 
-## Non-goals
+Run the installed integration gate with:
 
-This root is not a place for:
+```sh
+python3 -B SDK/share/objc3c/source-build/qualify_stdlib.py \
+  --sdk-root SDK --output-dir out/native-validation/stdlib
+```
 
-- milestone-only notes
-- ad hoc package layouts outside `tmp/pkg/`
-- duplicate tutorial text
-- duplicate showcase sources
-- a second stdlib onboarding tree outside `docs/tutorials/` and `showcase/`
-
-## Working model
-
-- canonical module names come from `spec/STANDARD_LIBRARY_CONTRACT.md`
-- stability and allowed cross-module dependencies come from `stdlib/stability_policy.json`
-- compiler-visible import mapping comes from `stdlib/package_surface.json`
-- `stdlib/core_architecture.json` defines the core-stdlib ownership split for
-  foundational utility, text/data, collection, option, and result families
-- `stdlib/advanced_architecture.json` defines the advanced-stdlib ownership split for
-  concurrency, reflection, interop, and runtime-composition helper families
-- `stdlib/semantic_policy.json` defines the observable stability and helper
-  semantics for the current core and advanced stdlib surfaces
-- `stdlib/compatibility_gates.json` binds stdlib major-version `1` ABI,
-  semantic, package, and conformance gates to checked-in runtime-backed
-  evidence; it is the source for fail-closed compatibility decisions
-- `stdlib/lowering_import_surface.json` defines the real smoke-compile artifact
-  names, import identity fields, and machine-owned lowering roots
-- `stdlib/advanced_helper_package_surface.json` defines how the advanced helper
-  subset is expected to appear in the shared stdlib package and runnable bundle
-- `stdlib/program_surface.json` defines the live docs, example, site-routing,
-  and capability-demo boundary that stdlib-program work must stay inside
-- the checked-in module roots will live under `stdlib/modules/`
-- canonical module names map onto compiler-visible module identifiers because
-  the current frontend module declaration syntax is identifier-based rather
-  than dotted
-- machine-owned materializations belong under `tmp/artifacts/stdlib/`
-- validation reports belong under `tmp/reports/stdlib/`
-- runnable package staging stays on the existing
-  `npm run objc3c -- package-runnable-toolchain` flow
-- validation and packaging commands for this root use the public
-  `npm run objc3c -- <action>` surface
-- retired command surfaces, direct helper commands, stdlib-local wrappers,
-  alternate import/package support lanes, and retired-source support claims are not
-  public stdlib entrypoints
-- reader-facing onboarding, comparison, and capability-demo work stays on the
-  live `docs/tutorials/`, `showcase/`, and `site/src/index.body.md` surfaces
+Builds and tests use disposable directories under `TMPDIR`; receipts and logs
+remain in the requested output directory.

@@ -3,7 +3,7 @@
 set -eu
 qualification_scope=${4:-full}
 case "$qualification_scope" in
-  full|task-destinations) ;;
+  full|task-destinations|stdlib) ;;
   *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
 esac
 archive=$1
@@ -85,10 +85,14 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_api_availability.
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --output-dir ./module-spi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" --output-dir ./module-names-evidence
 fi
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_stdlib.py" --output-dir ./stdlib-evidence
+if [ "$qualification_scope" != stdlib ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_async_c_abi.py" --output-dir ./async-c-abi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" --output-dir ./native-async-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
+fi
 if [ "$qualification_scope" = full ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
@@ -130,12 +134,16 @@ fi
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 if [ "$qualification_scope" = full ]; then
   printf 'Unprivileged Linux SDK consumer: PASS\n'
+elif [ "$qualification_scope" = stdlib ]; then
+  printf 'Unprivileged Linux native standard-library consumer: PASS\n'
 else
   printf 'Unprivileged Linux task destination consumer: PASS\n'
 fi
 SH
 if [ "$qualification_scope" = full ]; then
   printf 'Fresh Linux archive qualification: PASS\n'
+elif [ "$qualification_scope" = stdlib ]; then
+  printf 'Fresh Linux native standard-library qualification: PASS\n'
 else
   printf 'Fresh Linux task destination qualification: PASS\n'
 fi

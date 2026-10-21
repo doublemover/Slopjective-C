@@ -110,7 +110,7 @@ completion callbacks; an executor fence can additionally observe the completed
 drain of autoreleased temporaries.
 
 The installed qualification compiles providers, removes their implementation
-source, then builds and runs consumers in twelve C++20/23 and Objective-C++20/23
+source, then builds and runs consumers in twelve C++20/23 and Objective-C++ (C++20/23 mode)
 ARC/MRC O0/O2 configurations. Each verifies linked DWARF; O0 cases also inspect
 resumed values and the coroutine caller frame in LLDB. Contracts cover shared
 dependencies, cancellation, abandonment, queue pressure, foreign and native
@@ -120,7 +120,7 @@ suspension, a 2,048-level await chain, group integration and worker races.
 
 The sanitizer owner builds the task, executor, group, actor and value/error
 service implementations together with provider and consumer frames. It runs
-ASan/LeakSanitizer/UBSan and ThreadSanitizer at O0/O2 in C++20 and Objective-C++20
+ASan/LeakSanitizer/UBSan and ThreadSanitizer at O0/O2 in C++20 and Objective-C++ (C++20 mode)
 ARC/MRC. The underlying GNUstep Objective-C runtime is the selected SDK binary;
 these probes do not claim to rebuild it with instrumentation.
 

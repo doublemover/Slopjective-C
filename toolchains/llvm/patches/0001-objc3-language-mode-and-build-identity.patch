@@ -75,7 +75,7 @@ index 000000000..f9c0321df
 +#endif
 diff --git a/clang/include/clang/Basic/ObjC3Foundation.h.in b/clang/include/clang/Basic/ObjC3Foundation.h.in
 new file mode 100644
-index 000000000..85110cf7c
+index 000000000..dd84796b7
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Foundation.h.in
 @@ -0,0 +1,7 @@
@@ -84,7 +84,7 @@ index 000000000..85110cf7c
 +#define CLANG_OBJC3_UPSTREAM_COMMIT "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
 +#define CLANG_OBJC3_PATCH_DIGEST "@CLANG_OBJC3_PATCH_DIGEST@"
 +#define CLANG_OBJC3_LANGUAGE_REVISION 202610
-+#define CLANG_OBJC3_EXTENSION_ABI_REVISION 19
++#define CLANG_OBJC3_EXTENSION_ABI_REVISION 20
 +#endif
 diff --git a/clang/include/clang/Options/Options.td b/clang/include/clang/Options/Options.td
 index f893d858d..b6d186b5c 100644
@@ -243,26 +243,29 @@ index 8898e63ab..b699a23fa 100644
    if (const Arg *A = Args.getLastArg(OPT_fcf_protection_EQ)) {
      StringRef Name = A->getValue();
 diff --git a/clang/lib/Frontend/InitPreprocessor.cpp b/clang/lib/Frontend/InitPreprocessor.cpp
-index 65b065dc8..f5cd3f76e 100644
+index 65b065dc8..09f5ee622 100644
 --- a/clang/lib/Frontend/InitPreprocessor.cpp
 +++ b/clang/lib/Frontend/InitPreprocessor.cpp
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,8 @@
  #include "clang/Basic/DiagnosticLex.h"
  #include "clang/Basic/HLSLRuntime.h"
  #include "clang/Basic/MacroBuilder.h"
 +#include "clang/Basic/ObjC3Features.h"
++#include "clang/Basic/ObjC3Foundation.h"
  #include "clang/Basic/SourceManager.h"
  #include "clang/Basic/SyncScope.h"
  #include "clang/Basic/TargetInfo.h"
-@@ -511,6 +512,25 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
+@@ -511,6 +513,27 @@ static void InitializeStandardPredefinedMacros(const TargetInfo &TI,
    if (LangOpts.DeferTS)
      Builder.defineMacro("__STDC_DEFER_TS25755__", "1");
  
 +  if (LangOpts.ObjC3) {
 +    Builder.defineMacro("__OBJC3__", "1");
 +    Builder.defineMacro("__OBJC_VERSION__", "3");
-+    Builder.defineMacro("__OBJC3_LANGUAGE_REVISION__", "202610");
-+    Builder.defineMacro("__OBJC3_EXTENSION_ABI_REVISION__", "19");
++    Builder.defineMacro("__OBJC3_LANGUAGE_REVISION__",
++                        llvm::itostr(CLANG_OBJC3_LANGUAGE_REVISION));
++    Builder.defineMacro("__OBJC3_EXTENSION_ABI_REVISION__",
++                        llvm::itostr(CLANG_OBJC3_EXTENSION_ABI_REVISION));
 +    Builder.defineMacro("__OBJC3_PROFILE__", llvm::itostr(LangOpts.ObjC3Profile));
 +    Builder.defineMacro("__OBJC3_STRICT_CONCURRENCY__",
 +                        LangOpts.ObjC3StrictConcurrency ? "1" : "0");
@@ -409,7 +412,7 @@ index 000000000..fd9a42063
 +// MODE-MISMATCH: error:
 diff --git a/clang/test/ObjC3/LanguageMode/profile-macros.m b/clang/test/ObjC3/LanguageMode/profile-macros.m
 new file mode 100644
-index 000000000..7ae12dabb
+index 000000000..c49364a40
 --- /dev/null
 +++ b/clang/test/ObjC3/LanguageMode/profile-macros.m
 @@ -0,0 +1,42 @@
@@ -434,7 +437,7 @@ index 000000000..7ae12dabb
 +#if __OBJC3_LANGUAGE_REVISION__ != 202610
 +#error incorrect Objective-C 3 language revision
 +#endif
-+#if __OBJC3_EXTENSION_ABI_REVISION__ != 19
++#if __OBJC3_EXTENSION_ABI_REVISION__ != 20
 +#error incorrect Objective-C 3 extension ABI revision
 +#endif
 +#if __OBJC3_PROFILE__ != TEST_PROFILE

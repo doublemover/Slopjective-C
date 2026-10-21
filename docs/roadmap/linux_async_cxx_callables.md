@@ -1,6 +1,6 @@
 # Linux async C++ callables
 
-The reserved Objective-C++20/23 async stage extends logical-result task lowering
+The reserved Objective-C++ (C++20/23 mode) async stage extends logical-result task lowering
 to ordinary C++ member functions, static members, const and ref-qualified members,
 member pointers and overloaded operators. Virtual calls preserve the physical
 `objc3::task<R>` return ABI, including secondary-base `this` adjustment thunks.

@@ -16,8 +16,8 @@ ALLOWED_SRC_FILES: set[str] = {
 REQUIRED_POLICY_TOKENS: tuple[str, ...] = (
     "`site/index.md` is generated output",
     "Manual edits are unsupported.",
-    "`npm run objc3c -- build-site`",
-    "`npm run objc3c -- check-site`",
+    "`python -m scripts.build_site_index`",
+    "`python -m scripts.build_site_index --check`",
     "`site/src/index.contract.json`",
     "`site/src/index.body.md`",
 )

@@ -481,6 +481,49 @@ static void member_results(objc3_executor_t *executor) {
   assert(state->parents == state->deferred);
 }
 
+#ifdef __OBJC__
+static void pool_slices() {
+  for (bool manual : {false, true}) {
+    for (unsigned mode = 0; mode != 3; ++mode) {
+      objc3_executor_t *executor = nullptr, *other = nullptr;
+      assert(objc3_executor_create(manual, &executor) == OBJC3_SERVICE_OK);
+      if (mode == 2)
+        assert(objc3_executor_create(manual, &other) == OBJC3_SERVICE_OK);
+      objc3_actor_t *first = nullptr, *second = nullptr;
+      if (mode) {
+        assert(objc3_actor_create(executor, &first) == OBJC3_SERVICE_OK);
+        assert(objc3_actor_create(other ? other : executor, &second) == OBJC3_SERVICE_OK);
+      }
+      auto completed = native_identity(42).start(executor);
+      if (manual) pump(executor);
+      completed.wait();
+      auto destroyed = std::make_shared<std::atomic<unsigned>>(0);
+      auto lazy = native_pool_slices(destroyed, first, second, completed);
+      auto task = first ? std::move(lazy).start_on(first)
+                        : std::move(lazy).start(executor);
+      if (manual) {
+        for (unsigned i = 0; i != 8; ++i) {
+          pump(executor);
+          if (other) pump(other);
+        }
+      }
+      task.wait();
+      assert(task.result() == 42 && *destroyed == (mode ? 4u : 2u));
+      if (first) {
+        assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
+        assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);
+        assert(objc3_actor_join(first) == OBJC3_SERVICE_OK);
+        assert(objc3_actor_join(second) == OBJC3_SERVICE_OK);
+        objc3_actor_release(first);
+        objc3_actor_release(second);
+      }
+      objc3_executor_release(executor);
+      if (other) objc3_executor_release(other);
+    }
+  }
+}
+#endif
+
 int main() {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
@@ -797,5 +840,6 @@ int main() {
   objc3_actor_release(first);
   objc3_executor_release(other);
   objc3_executor_release(executor);
+  pool_slices();
 #endif
 }

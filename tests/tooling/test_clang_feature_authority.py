@@ -1,5 +1,7 @@
 import copy
 import json
+from pathlib import Path
+import re
 
 import pytest
 
@@ -13,6 +15,17 @@ def test_checked_in_feature_views_match_one_authority():
     assert VIEW.read_text(encoding="utf-8") == view
     assert {feature["macro"] for feature in authority["features"]}.issuperset(
         {"DEFER", "OPTIONALS", "THROWS", "ASYNC_AWAIT", "ACTORS"})
+
+
+def test_frontend_interface_and_preprocessor_share_authoritative_revisions():
+    authority = json.loads(AUTHORITY.read_text(encoding="utf-8"))
+    packet = (Path(__file__).resolve().parents[2] / 'toolchains/llvm/patches/'
+              '0001-objc3-language-mode-and-build-identity.patch').read_text()
+    for name, key in (('LANGUAGE_REVISION', 'language_revision'),
+                      ('EXTENSION_ABI_REVISION', 'extension_abi_revision')):
+        value = re.search(r'^\+#define CLANG_OBJC3_' + name + r' (\d+)$', packet, re.M)
+        assert value and int(value[1]) == authority[key]
+        assert 'llvm::itostr(CLANG_OBJC3_' + name + ')' in packet
 
 
 def test_unqualified_feature_cannot_claim_implementation():

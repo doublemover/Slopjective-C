@@ -28,7 +28,10 @@
     "native_module_async_block",
     "native_module_checked_block",
     "native_module_async_factory",
-    "native_module_checked_factory"
+    "native_module_checked_factory",
+    "native_module_frame",
+    "native_module_object_frame",
+    "native_module_block_frame"
   ],
   "dependencies": []
 }

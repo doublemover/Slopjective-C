@@ -558,8 +558,10 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_get(
       CollectionV2Storage().Inspect(map, kMapI32I32V2Kind));
 }
 
-extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert(
-    objc3_map_i32_i32_v2_t map, int32_t key, int32_t value) {
+extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert_count(
+    objc3_map_i32_i32_v2_t map, int32_t key, int32_t value, uint64_t *out_count) {
+  if (!out_count) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  *out_count = 0;
   int status = OBJC3_STDLIB_V2_OK;
   const bool found = CollectionV2Storage().With(map, kMapI32I32V2Kind,
       [&](CollectionV2Value &record) {
@@ -571,6 +573,7 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert(
             item->value = value;
             ++record.mutation_generation;
           }
+          *out_count = record.entries.size();
           return;
         }
         if (record.entries.size() >= kCollectionV2MaxElements) {
@@ -580,12 +583,19 @@ extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert(
         try {
           record.entries.push_back(MapEntryV2{key, value});
           ++record.mutation_generation;
+          *out_count = record.entries.size();
         } catch (const std::bad_alloc &) {
           status = OBJC3_STDLIB_V2_OUT_OF_MEMORY;
         }
       });
   return found ? status : CollectionV2RegistryStatus(
       CollectionV2Storage().Inspect(map, kMapI32I32V2Kind));
+}
+
+extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_insert(
+    objc3_map_i32_i32_v2_t map, int32_t key, int32_t value) {
+  uint64_t count = 0;
+  return objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, key, value, &count);
 }
 
 extern "C" int objc3_runtime_stdlib_map_i32_i32_v2_remove(

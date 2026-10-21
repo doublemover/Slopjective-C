@@ -36,6 +36,7 @@ jobs:
           tests/tooling/test_linux_sdk_publication.py
           tests/tooling/test_source_graph.py
           tests/tooling/test_binary_packages.py
+          tests/tooling/test_current_onboarding.py
           tests/tooling/test_ownership_projection_qualification.py
           tests/tooling/test_public_surface_qualification.py tests/tooling/test_api_availability_qualification.py tests/tooling/test_module_spi_qualification.py
           tests/tooling/test_module_names_qualification.py
@@ -45,6 +46,8 @@ jobs:
           tests/tooling/test_structured_runtime_sanitizers.py
           tests/tooling/test_task_coroutine_qualification.py
           tests/tooling/test_native_async_qualification.py
+          tests/tooling/test_async_c_abi_qualification.py
+          tests/tooling/test_stdlib_qualification.py
           tests/tooling/test_toolchain_runtime_report.py
           tests/tooling/test_runtime_source_patches.py
           tests/tooling/test_toolchain_facade_identity.py

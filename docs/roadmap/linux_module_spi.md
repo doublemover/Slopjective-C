@@ -63,7 +63,7 @@ protocols therefore cannot contribute methods to consumer lookup. Partition
 metadata is compiler visibility, not encryption or a runtime access-control
 boundary.
 
-Installed qualification covers Objective-C17 ARC/MRC, Objective-C++20/23 ARC/MRC
+Installed qualification covers Objective-C 3.0 (C17 base mode) ARC/MRC, Objective-C++ (C++20/23 mode) ARC/MRC
 and C++20/23 at O0/O2. It executes public and privileged source graphs, cache
 reuse, a private edit, an importer grant edit, a partition edit and relocated
 source-free immutable consumers. It checks ordinary and qualified rejections,

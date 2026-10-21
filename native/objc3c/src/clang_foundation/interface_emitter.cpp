@@ -2,6 +2,7 @@
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_module_resolver.h"
 #include "clang_foundation/module_names.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -445,10 +446,14 @@ class TypeDependencyVisitor final
            declaration->getQualifiedNameAsString());
    }
 
-  bool IsResolved(const clang::NamedDecl *declaration) const {
-    const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
-    return !stable_id.empty() && resolved_ids_.count(stable_id);
-  }
+   bool IsResolved(const clang::NamedDecl *declaration) {
+     if (IsQualifiedRuntimeFrameType(declaration, context_)) {
+       UsesRuntimeFrame = true;
+       return true;
+     }
+     const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
+     return !stable_id.empty() && resolved_ids_.count(stable_id);
+   }
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
@@ -517,8 +522,9 @@ class TypeDependencyVisitor final
   }
 
   bool UsesCanonicalFunctionEffects = false;
+  bool UsesRuntimeFrame = false;
 
- private:
+private:
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
@@ -535,6 +541,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const clang::ASTContext &context,
                            InterfaceEmissionArtifact &result,
                            const std::set<std::string> &resolved_ids,
+                           bool &uses_runtime_frame,
                            const std::vector<std::string> &exports = {},
                            const std::string &source_root = {}) {
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
@@ -588,6 +595,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   if (const auto *category =
           llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration))
     visitor.CheckVisibility(category->getClassInterface());
+  uses_runtime_frame |= visitor.UsesRuntimeFrame;
   return visitor.UsesCanonicalFunctionEffects;
 }
 
@@ -727,7 +735,7 @@ class InterfaceCollector final
           IsInMainFile(context_, declaration->getLocation()) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
         CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
-                              exports_, source_root_);
+                              uses_runtime_frame_, exports_, source_root_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -835,7 +843,7 @@ class InterfaceCollector final
     const std::string stable_id = identity.stable_id;
     uses_function_effects_ |=
         CheckTypeDependencies(representative, context_, result_, resolved_ids_,
-                              exports_, source_root_);
+                              uses_runtime_frame_, exports_, source_root_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||
@@ -865,8 +873,9 @@ class InterfaceCollector final
   }
 
   bool UsesCanonicalFunctionEffects() const { return uses_function_effects_; }
+  bool UsesRuntimeFrame() const { return uses_runtime_frame_; }
 
- private:
+private:
   clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
@@ -880,6 +889,7 @@ class InterfaceCollector final
   std::map<std::string, InterfaceDeclarationIdentity> identities_;
   std::vector<clang::NamedDecl *> root_declarations_;
   bool uses_function_effects_ = false;
+  bool uses_runtime_frame_ = false;
 };
 
 void PrintRootDeclaration(clang::NamedDecl *declaration,
@@ -1155,6 +1165,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
   llvm::raw_string_ostream source(result.source_bytes);
+  if (collector.UsesRuntimeFrame())
+    source << "#include <objc3c/runtime/objc3_runtime_services.h>\n";
   auto ordered_dependencies = resolved_dependencies;
   std::sort(ordered_dependencies.begin(), ordered_dependencies.end(),
       [](const auto &a, const auto &b) {
@@ -1191,6 +1203,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
   SemanticInterfaceSidecar sidecar;
+  if (collector.UsesRuntimeFrame())
+    sidecar.required_semantics.push_back(RuntimeInterfaceSemantic().str());
   sidecar.ownership_projection = ownership_projection.str();
   if (!ownership_projection.empty())
     sidecar.required_semantics.push_back("objc3.ownership-projection.v1");
@@ -1246,12 +1260,17 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.canonical_source_sha256 = ComputeInterfaceSourceSha256(result.source_bytes);
 
   const std::vector<llvm::StringRef> supported_semantics = {
-      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
-    "objc3.ownership-projection.v1",
-      "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-      "objc3.module-owned-names.v1"};
+      "objc3.canonical-function-effects.v1",
+      "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1",
+      "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1",
+      "objc3.cxx-member-interfaces.v1",
+      "objc3.ownership-projection.v1",
+      "objc3.api-availability.v1",
+      "objc3.api-partitions.v1",
+      "objc3.module-owned-names.v1",
+      RuntimeInterfaceSemantic()};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -1272,6 +1291,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
             : entry.second->virtual_include_path,
         entry.second->source_bytes);
   auto roundtrip_arguments = RoundTripArguments(context);
+  AddRuntimeInterfaceFiles(virtual_files, roundtrip_arguments);
   // Nested canonical dependencies use the same root-relative include spelling.
   roundtrip_arguments.insert(roundtrip_arguments.end(), {"-iquote", "."});
   auto roundtrip = clang::tooling::buildASTFromCodeWithArgs(
@@ -1327,12 +1347,17 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
 namespace {
 const std::vector<llvm::StringRef> kProjectionSemantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
+    "objc3.canonical-function-effects.v1",
+    "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.cxx-member-interfaces.v1",
     "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.module-owned-names.v1"};
+    "objc3.api-availability.v1",
+    "objc3.api-partitions.v1",
+    "objc3.module-owned-names.v1",
+    RuntimeInterfaceSemantic()};
 
 bool ProjectionMode(const clang::ASTContext &context) {
   const auto &lang = context.getLangOpts();
@@ -1458,11 +1483,16 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
                   "or nesting is invalid");
     return false;
   }
+  auto arguments =
+      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount);
+  clang::tooling::FileContentMappings files;
+  AddRuntimeInterfaceFiles(files, arguments);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      result.source_bytes,
-      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount),
+      result.source_bytes, arguments,
       context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
-                                      : "ownership-producer.m");
+                                      : "ownership-producer.m",
+      "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(), files);
   if (!ast || ast->getDiagnostics().hasErrorOccurred() ||
       !ProjectionAPI(ast->getASTContext(), result)) {
     if (result.diagnostics.empty())
@@ -1504,10 +1534,15 @@ InterfaceEmissionArtifact EmitOwnershipProjection(
       package_identity, {}, {}, {}, exports, source_root);
   if (!original.success)
     return original;
+  auto arguments = ProjectionArguments(producer, consumer_arc);
+  clang::tooling::FileContentMappings files;
+  AddRuntimeInterfaceFiles(files, arguments);
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      original.source_bytes, ProjectionArguments(producer, consumer_arc),
+      original.source_bytes, arguments,
       producer.getLangOpts().CPlusPlus ? "ownership-consumer.mm"
-                                       : "ownership-consumer.m");
+                                       : "ownership-consumer.m",
+      "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(), files);
   if (!ast || ast->getDiagnostics().hasErrorOccurred()) {
     AddDiagnostic(result, "O3IFC153",
                   "ownership projection cannot be parsed in the consumer mode");

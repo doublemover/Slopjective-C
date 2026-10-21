@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -365,15 +366,16 @@ def main(argv=None):
     consumer.add_argument('--application', type=Path, required=True)
     consumer.add_argument('--output-dir', type=Path, required=True)
     args = parser.parse_args(argv)
-    default = Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__ else Path(__file__).resolve().parents[3]
-    sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', default))
     try:
-        if args.command == 'publish':
-            result = publish(sdk, args.build_dir, args.store)
-        elif args.command == 'install':
+        if args.command == 'install':
             result = install(args.package, args.content_sha256, args.store)
         else:
-            result = consume(sdk, args.package, args.content_sha256, args.application, args.output_dir)
+            default = Path.cwd() / 'out/toolchains/linux-sdk/current' if __package__ else Path(__file__).resolve().parents[3]
+            sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT') or default)
+            if args.command == 'publish':
+                result = publish(sdk, args.build_dir, args.store)
+            else:
+                result = consume(sdk, args.package, args.content_sha256, args.application, args.output_dir)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         parser.exit(1, f'binary package {args.command} failed: {error}\n')
     print(json.dumps(result))

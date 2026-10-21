@@ -17,7 +17,7 @@ objc3c provider.mm --objc3 --objcxx --arc --project-ownership mrc \
   --module Projected --package provider-v1 -- -std=c++23
 ```
 
-The qualified boundary is Objective-C17 and Objective-C++20/23 on Linux x86-64,
+The qualified boundary is Objective-C 3.0 (C17 base mode) and Objective-C++ (C++20/23 mode) on Linux x86-64,
 GNUstep 2.2, in the ObjC3 compatibility profile. Objective-C++ functions require
 C linkage. Provider and consumer preserve the same language and standard; only
 the ownership mode changes. A projection must select the opposite mode and have

@@ -1,6 +1,6 @@
 # Linux checked async value results
 
-The reserved Objective-C++20/23 Linux x86-64 GNUstep 2.2 async stage admits
+The reserved Objective-C++ (C++20/23 mode) Linux x86-64 GNUstep 2.2 async stage admits
 checked C++ record, complex and member-pointer results. The canonical callable
 still carries its logical result and exact async/throws effects; the physical
 call returns `objc3::task<R>`.

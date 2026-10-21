@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -20,6 +21,7 @@ def test_instrumented_runtime_failure_replaces_prior_success(tmp_path, monkeypat
     def run(argv, **kwargs):
         calls.append(argv)
         kwargs['stdout'].write('sanitizer compilation failed\n')
+        Path(argv[-1]).write_bytes(b'partial executable')
         return SimpleNamespace(returncode=1)
 
     monkeypatch.setattr(qualification.subprocess, 'run', run)
@@ -29,5 +31,10 @@ def test_instrumented_runtime_failure_replaces_prior_success(tmp_path, monkeypat
     assert report['status'] == 'FAIL' and not report['executions']
     assert len(calls) == 1 and '-fsanitize=address,undefined' in calls[0]
     assert any(str(path).endswith('/concurrency/service_public.cpp') for path in calls[0])
+    assert '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS' in calls[0]
+    assert any(str(path).endswith('/structured_runtime/actor_scheduling.cpp') for path in calls[0])
+    executable = Path(calls[0][-1])
+    assert executable.parent != output
+    assert not executable.parent.exists()
     assert report['commands'][0]['exit_code'] == 1
     assert report['commands'][0]['log_sha256'] == qualification.digest(output / 'address-undefined-O0-build.log')

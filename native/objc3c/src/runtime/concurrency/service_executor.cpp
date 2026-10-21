@@ -1,12 +1,9 @@
 #include "service_internal.h"
+#include "service_autorelease_pool.h"
 
+#include <cassert>
 #include <new>
 #include <utility>
-
-// Pure C/C++ service consumers need no Objective-C runtime dependency. When
-// linked into an Objective-C program, each callback owns an autorelease scope.
-extern "C" void *objc_autoreleasePoolPush(void) __attribute__((weak));
-extern "C" void objc_autoreleasePoolPop(void *) __attribute__((weak));
 
 namespace {
 
@@ -15,6 +12,7 @@ constexpr size_t kMaximumQueuedCallbacks = 1024;
 std::atomic<uint32_t> live_worker_executors{0};
 std::atomic<uint64_t> next_executor_identity{1};
 thread_local uint64_t current_executor_logical_identity = 0;
+thread_local bool *current_callback_reschedule = nullptr;
 
 struct ExecutorIdentityScope {
   uint64_t previous;
@@ -23,12 +21,11 @@ struct ExecutorIdentityScope {
   ~ExecutorIdentityScope() { current_executor_logical_identity = previous; }
 };
 
-struct CallbackAutoreleasePool {
-  bool active = objc_autoreleasePoolPush && objc_autoreleasePoolPop;
-  void *token = active ? objc_autoreleasePoolPush() : nullptr;
-  ~CallbackAutoreleasePool() {
-    if (active) objc_autoreleasePoolPop(token);
-  }
+struct CallbackRescheduleScope {
+  bool *previous;
+  explicit CallbackRescheduleScope(bool &reschedule) noexcept
+      : previous(std::exchange(current_callback_reschedule, &reschedule)) {}
+  ~CallbackRescheduleScope() { current_callback_reschedule = previous; }
 };
 
 bool allocate_executor_identity(uint64_t *out_identity) noexcept {
@@ -56,29 +53,41 @@ bool reserve_worker_slot() noexcept {
 }
 
 void run_callback(objc3_executor_t *executor,
-                  const objc3_executor_t::WorkItem &item) noexcept {
-  ExecutorIdentityScope current(executor->identity);
-  CallbackAutoreleasePool pool;
-  try {
-    item.callback(item.context);
-  } catch (...) {
-    // Exceptions are not permitted to escape a C callback or kill the worker.
+                  std::list<objc3_executor_t::WorkItem> &active) noexcept {
+  bool reschedule = false;
+  {
+    ExecutorIdentityScope current(executor->identity);
+    CallbackRescheduleScope continuation(reschedule);
+    objc3::services::CallbackAutoreleasePool pool;
+    try {
+      active.front().callback(active.front().context);
+    } catch (...) {
+      // Exceptions cannot escape a C callback or kill the worker.
+    }
+  }
+  if (reschedule) {
+    {
+      std::lock_guard<std::mutex> lock(executor->mutex);
+      // Keep the active node rather than allocating a new callback. A full
+      // public queue cannot strand an already-admitted actor continuation.
+      executor->queue.splice(executor->queue.end(), active);
+    }
+    executor->ready.notify_one();
   }
 }
 
 void worker_main(objc3_executor_t *executor) noexcept {
   for (;;) {
-    objc3_executor_t::WorkItem item{};
+    std::list<objc3_executor_t::WorkItem> active;
     {
       std::unique_lock<std::mutex> lock(executor->mutex);
       executor->ready.wait(lock, [executor] {
         return executor->stopping || !executor->queue.empty();
       });
       if (executor->queue.empty() && executor->stopping) break;
-      item = executor->queue.front();
-      executor->queue.pop_front();
+      active.splice(active.end(), executor->queue, executor->queue.begin());
     }
-    run_callback(executor, item);
+    run_callback(executor, active);
   }
   objc3_executor_internal_release(executor);
 }
@@ -91,6 +100,11 @@ uint64_t objc3::services::executor_current_identity() noexcept {
 
 bool objc3::services::executor_is_current_identity(uint64_t identity) noexcept {
   return identity != 0 && current_executor_logical_identity == identity;
+}
+
+void objc3::services::executor_reschedule_current_callback() noexcept {
+  assert(current_callback_reschedule);
+  *current_callback_reschedule = true;
 }
 
 bool objc3_executor_internal_retain(objc3_executor_t *executor) {
@@ -197,14 +211,13 @@ extern "C" objc3_service_status objc3_executor_pump(
   if (!objc3_executor_internal_retain(executor))
     return OBJC3_SERVICE_NOT_READY;
   while (*out_executed < limit) {
-    objc3_executor_t::WorkItem item{};
+    std::list<objc3_executor_t::WorkItem> active;
     {
       std::lock_guard<std::mutex> lock(executor->mutex);
       if (executor->queue.empty()) break;
-      item = executor->queue.front();
-      executor->queue.pop_front();
+      active.splice(active.end(), executor->queue, executor->queue.begin());
     }
-    run_callback(executor, item);
+    run_callback(executor, active);
     ++*out_executed;
   }
   // The final pump reference may destroy the executor when a callback

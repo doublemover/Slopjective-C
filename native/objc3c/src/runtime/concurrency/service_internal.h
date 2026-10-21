@@ -8,9 +8,10 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
+#include <list>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -20,6 +21,9 @@ namespace objc3::services {
 // thread identity.
 uint64_t executor_current_identity() noexcept;
 bool executor_is_current_identity(uint64_t identity) noexcept;
+// Only inside an executor callback. Reuse its queue node at the back of the
+// queue after callback cleanup, without allocation or public queue admission.
+void executor_reschedule_current_callback() noexcept;
 
 } // namespace objc3::services
 
@@ -39,7 +43,7 @@ struct objc3_executor final {
   // attempted while another pump is active returns NOT_READY.
   std::mutex pump_mutex;
   std::condition_variable ready;
-  std::deque<WorkItem> queue;
+  std::list<WorkItem> queue;
   bool stopping{false};
   std::thread worker;
 
@@ -84,6 +88,12 @@ struct objc3_task final {
   void *payload{nullptr};
   objc3_value_ops payload_ops{};
   bool payload_ops_set{false};
+  objc3_async_result_type declared_result_type{};
+  std::string declared_result_identity;
+  bool declared_result_type_set{false};
+  objc3_async_result_type result_type{};
+  std::string result_identity;
+  bool result_type_set{false};
   objc3_error_t *error{nullptr};
   std::vector<Waiter> waiters;
 

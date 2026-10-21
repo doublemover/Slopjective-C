@@ -79,7 +79,7 @@ ordinary C, Objective-C or C++ rules.
 ## Qualification and remaining scope
 
 Installed qualification covers eight language/standard/ownership configurations
-at O0/O2: Objective-C17 ARC/MRC, Objective-C++20/23 ARC/MRC and C++20/23. Sixteen
+at O0/O2: Objective-C 3.0 (C17 base mode) ARC/MRC, Objective-C++ (C++20/23 mode) ARC/MRC and C++20/23. Sixteen
 cases execute cold and reused graphs, a private implementation edit, a public
 policy expansion and a relocated source-free binary consumer. The gate records
 80 executions and 128 rejection checks. It also checks optimization-independent

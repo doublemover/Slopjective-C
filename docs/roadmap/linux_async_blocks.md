@@ -1,6 +1,6 @@
 # Linux async Objective-C++ Blocks
 
-The reserved Linux x86-64 LP64 GNUstep 2.2 Objective-C++20/23 async stage extends
+The reserved Linux x86-64 LP64 GNUstep 2.2 Objective-C++ (C++20/23 mode) async stage extends
 to Blocks with explicit concrete result types. Canonical Block types retain their
 logical result and async/throws effects; evaluated invocations return
 `objc3::task<R>`. Block descriptors encode that physical task result. Async

@@ -43,7 +43,7 @@ ARC/MRC C ABI projections preserve availability alongside the producer's native
 return-ownership contract. A projection cannot remove an annotation from its
 canonical producer proof.
 
-The installed qualification covers Objective-C17 ARC/MRC, Objective-C++20/23
+The installed qualification covers Objective-C 3.0 (C17 base mode) ARC/MRC, Objective-C++ (C++20/23 mode)
 ARC/MRC and C++20/23 at O0/O2. Sixteen cases exercise cold and reused source
 graphs, private edits, public metadata edits, relocated source-free packages,
 native deprecation/unavailability errors and forged interface metadata. Failure

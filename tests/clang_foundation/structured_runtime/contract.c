@@ -239,8 +239,8 @@ static void actors(void) {
   uint32_t executed = 0;
   assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK);
   assert(trace.ran == 3 && trace.destroyed == 3);
-  assert(trace.sequence[0] == 1 && trace.sequence[1] == 3 &&
-         trace.sequence[2] == 2);
+  assert(trace.sequence[0] == 1 && trace.sequence[1] == 2 &&
+         trace.sequence[2] == 3);
   assert(objc3_actor_close(trace.first) == OBJC3_SERVICE_OK);
   assert(objc3_actor_close(trace.second) == OBJC3_SERVICE_OK);
   assert(objc3_actor_join(trace.first) == OBJC3_SERVICE_OK);

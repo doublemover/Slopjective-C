@@ -1,7 +1,7 @@
 # Linux native async function development
 
 The native compiler stage connects logical-result async functions to resumable
-Objective-C++20/23 task frames in the Linux x86-64 LP64 GNUstep 2.2 compatibility
+Objective-C++ (C++20/23 mode) task frames in the Linux x86-64 LP64 GNUstep 2.2 compatibility
 profile. The reserved compiler spellings
 are `__objc3_async` and `__objc3_await`. Public `async`/`await` support and compiler
 actor isolation remain reserved in the capability authority.
@@ -23,7 +23,7 @@ auto pending = parent(41);
 auto running = std::move(pending).start(executor);
 ```
 
-Use the installed compiler in Objective-C++20/23 mode with
+Use the installed compiler in Objective-C++ (C++20/23 mode) mode with
 `-fcoro-aligned-allocation`. Link the runtime through `objc3c::RuntimeServices`
 or use the [direct-link options](linux_task_coroutines.md). Each root task starts
 on an explicit public runtime executor. Native await uses the compiler's

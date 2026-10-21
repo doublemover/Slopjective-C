@@ -139,6 +139,64 @@ int native_object_error() __objc3_async {
 int native_exception_number(__unsafe_unretained id value) {
   return ((NativeAsyncValue *)value)->number;
 }
+// Raw aliases deliberately bypass ARC return-value handshakes: this fixture
+// must enqueue a real autorelease in both ownership modes, not release a local
+// strong reference before suspension and accidentally pass without a pool.
+extern "C" void *pool_create_instance(Class, __SIZE_TYPE__)
+    __asm__("class_createInstance");
+extern "C" void *pool_autorelease(void *) __asm__("objc_autorelease");
+__attribute__((objc_root_class))
+@interface NativeAsyncPoolWitness {
+  Class isa;
+@public
+  std::atomic<unsigned> *counter;
+}
++ (void)temporary:(void *)counter;
+@end
+@implementation NativeAsyncPoolWitness
++ (void)temporary:(void *)counter {
+  void *raw = pool_create_instance(self, 0);
+  ((__bridge NativeAsyncPoolWitness *)raw)->counter =
+      static_cast<std::atomic<unsigned> *>(counter);
+  pool_autorelease(raw);
+}
+- (void)dealloc {
+  ++*counter;
+  object_dispose(self);
+}
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+
+int native_pool_slices(std::shared_ptr<std::atomic<unsigned>> destroyed,
+                       objc3_actor_t *first, objc3_actor_t *second,
+                       objc3::task_handle<int> completed) __objc3_async {
+  NativeAsyncValue *value = [NativeAsyncValue new];
+#if !__has_feature(objc_arc)
+  struct release_owner {
+    NativeAsyncValue *value;
+    ~release_owner() { objc_release(value); }
+  } owner{value};
+#endif
+  value->number = 42;
+  [NativeAsyncPoolWitness temporary:destroyed.get()];
+  __objc3_await objc3::task_yield;
+  if (*destroyed != 1 || value->number != 42) __builtin_trap();
+  [NativeAsyncPoolWitness temporary:destroyed.get()];
+  int result = __objc3_await completed;
+  if (*destroyed != 2 || result != 42) __builtin_trap();
+  if (first) {
+    [NativeAsyncPoolWitness temporary:destroyed.get()];
+    __objc3_await objc3::hop_to(second);
+    if (*destroyed != 3 || value->number != 42) __builtin_trap();
+    [NativeAsyncPoolWitness temporary:destroyed.get()];
+    __objc3_await objc3::hop_to(first);
+    if (*destroyed != 4 || value->number != 42) __builtin_trap();
+  }
+  return value->number;
+}
+
 int native_actor_owned(objc3_actor_t *first, objc3_actor_t *second,
                        bool fail) __objc3_async {
   NativeAsyncValue *value = [NativeAsyncValue new];

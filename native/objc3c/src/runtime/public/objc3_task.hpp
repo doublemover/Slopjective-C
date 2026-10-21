@@ -1,12 +1,17 @@
 #ifndef OBJC3_TASK_HPP
 #define OBJC3_TASK_HPP
 
-#if defined(__OBJC3_EXTENSION_ABI_REVISION__) && \
-    __OBJC3_EXTENSION_ABI_REVISION__ != 19
-#error "The task bridge requires Objective-C 3 extension ABI 19; rebuild the compiler and all providers."
+#if defined(__OBJC3_EXTENSION_ABI_REVISION__) &&                               \
+    __OBJC3_EXTENSION_ABI_REVISION__ != 20
+#error                                                                         \
+    "The task bridge requires Objective-C 3 extension ABI 20; rebuild the compiler and all providers."
 #endif
 
 #include "objc3_runtime_services.h"
+
+#if !__has_builtin(__builtin_objc3_type_identity)
+#error "The task bridge requires the qualified compiler type-identity builtin."
+#endif
 
 #include <coroutine>
 #include <exception>
@@ -61,13 +66,24 @@ inline void check(objc3_service_status status) {
     throw service_failure(status);
 }
 
+template <class T> struct value_ops;
+
 template <class T, class = void> struct result_traits {
   using abi_type = T;
   using storage = T;
-  static T get(const T &value) { return value; }
+  static constexpr auto kind = OBJC3_ASYNC_VALUE;
+  static constexpr size_t storage_size = sizeof(storage);
+  static constexpr size_t storage_alignment = alignof(storage);
+  static const void *address(const storage &value) { return &value; }
+  static T read(const void *value) {
+    return *static_cast<const storage *>(value);
+  }
 };
 template <> struct result_traits<void> {
   using abi_type = void;
+  static constexpr auto kind = OBJC3_ASYNC_VOID;
+  static constexpr size_t storage_size = 0;
+  static constexpr size_t storage_alignment = 1;
 };
 
 #ifdef __OBJC__
@@ -117,6 +133,12 @@ public:
     else
       objc3_task_result_block_release(value_);
   }
+  const void *payload_address() const noexcept { return &value_; }
+  static T read_payload(const void *payload) {
+    void *value;
+    __builtin_memcpy(&value, payload, sizeof(value));
+    return (__bridge T)objc3_task_result_autorelease(copy(value));
+  }
   T get() const {
     // Both ownership modes return a +0 value valid through the current pool.
     // A nested await can therefore release its private child immediately after
@@ -132,7 +154,14 @@ struct result_traits<T, std::enable_if_t<retained_result<T>>> {
   // type and the public handle use an explicit borrowed pointer identity.
   using abi_type = __unsafe_unretained T;
   using storage = retained_result_value<abi_type>;
-  static T get(const storage &value) { return value.get(); }
+  static constexpr auto kind =
+      __objc3_is_object_pointer(T) ? OBJC3_ASYNC_OBJECT : OBJC3_ASYNC_BLOCK;
+  static constexpr size_t storage_size = sizeof(void *);
+  static constexpr size_t storage_alignment = alignof(void *);
+  static const void *address(const storage &value) {
+    return value.payload_address();
+  }
+  static T read(const void *value) { return storage::read_payload(value); }
 };
 #endif
 
@@ -166,6 +195,39 @@ template <class T> struct value_ops {
                                                  destroy};
 };
 
+template <class T> const objc3_async_result_type *result_type() {
+  using traits = result_traits<T>;
+  static constexpr const char *identity =
+      __builtin_objc3_type_identity((typename traits::abi_type *)nullptr);
+  // A mutable per-instantiation object cannot be folded with another type's
+  // token. External types remain interoperable with C using their native key;
+  // local and anonymous types preserve nominal identity without callback IDs.
+  static unsigned char domain;
+  static constexpr bool local =
+      __builtin_strncmp(identity, "objc3.async.local.v1:",
+                        sizeof("objc3.async.local.v1:") - 1) == 0;
+  static const objc3_async_result_type type{sizeof(objc3_async_result_type),
+                                            OBJC3_ASYNC_ABI_VERSION,
+                                            traits::storage_size,
+                                            traits::storage_alignment,
+                                            traits::kind,
+                                            0,
+                                            identity,
+                                            __builtin_strlen(identity),
+                                            local ? &domain : nullptr};
+  return &type;
+}
+
+template <class T> const objc3_value_ops *result_ops() {
+  if constexpr (std::is_void_v<T>)
+    return nullptr;
+  else if constexpr (result_traits<T>::kind == OBJC3_ASYNC_OBJECT ||
+                     result_traits<T>::kind == OBJC3_ASYNC_BLOCK)
+    return objc3_async_reference_ops(result_traits<T>::kind);
+  else
+    return &value_ops<typename result_traits<T>::storage>::descriptor;
+}
+
 inline void rethrow_completion(const objc3_completion &completion) {
   if (completion.kind == OBJC3_COMPLETION_CANCELLED)
     throw task_cancelled();
@@ -187,15 +249,18 @@ template <class T, class Promise> struct result_storage {
   }
   void set_completion(objc3_completion &completion) {
     completion.has_payload = 1;
-    completion.payload = &*value;
-    completion.payload_ops = &value_ops<stored_type>::descriptor;
+    completion.payload = result_traits<T>::address(*value);
+    completion.payload_ops = result_ops<T>();
+    completion.result_type = result_type<T>();
   }
 };
 template <class Promise> struct result_storage<void, Promise> {
   void return_void() noexcept {
     static_cast<Promise *>(this)->__objc3_clear_error();
   }
-  void set_completion(objc3_completion &) noexcept {}
+  void set_completion(objc3_completion &completion) noexcept {
+    completion.result_type = result_type<void>();
+  }
 };
 } // namespace task_detail
 
@@ -238,6 +303,19 @@ public:
   }
   ~basic_task_handle() { objc3_task_release(task_); }
   objc3_task_t *native_handle() const noexcept { return task_; }
+  // Consume one owned C reference only after validating the declared type.
+  static basic_task_handle adopt_native(objc3_task_t **owned) {
+    if (!owned || !*owned)
+      throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    const objc3_async_result_type *type = nullptr;
+    task_detail::check(objc3_task_get_result_type(*owned, &type));
+    if (!objc3_async_result_type_equal(type, task_detail::result_type<T>()))
+      throw service_failure(OBJC3_SERVICE_TYPE_MISMATCH);
+    return basic_task_handle(std::exchange(*owned, nullptr));
+  }
+  objc3_task_t *release_native() && noexcept {
+    return std::exchange(task_, nullptr);
+  }
   explicit operator bool() const noexcept { return task_ != nullptr; }
   void cancel() const noexcept { objc3_task_request_cancel(task_); }
   void wait() const { task_detail::check(objc3_task_wait(task_)); }
@@ -245,17 +323,14 @@ public:
     objc3_completion completion{};
     task_detail::check(objc3_task_get_completion(task_, &completion));
     task_detail::rethrow_completion(completion);
+    if (!objc3_async_result_type_equal(completion.result_type,
+                                       task_detail::result_type<T>()))
+      throw service_failure(OBJC3_SERVICE_TYPE_MISMATCH);
     if constexpr (!std::is_void_v<T>) {
       using traits = task_detail::result_traits<T>;
-      // Handles are created only by the corresponding native promise. Check
-      // the descriptor as well so accidental C-side completion fails closed.
-      const auto *ops = completion.payload_ops;
-      if (!completion.has_payload || !ops ||
-          ops->copy_init !=
-              task_detail::value_ops<typename traits::storage>::copy)
+      if (!completion.has_payload || !completion.payload_ops)
         throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
-      return traits::get(
-          *static_cast<const typename traits::storage *>(completion.payload));
+      return traits::read(completion.payload);
     } else if (completion.has_payload) {
       throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
     }
@@ -515,47 +590,49 @@ public:
 
 private:
   using coroutine = std::coroutine_handle<promise_type>;
-  coroutine frame_;
-  explicit basic_task(coroutine frame) noexcept : frame_(frame) {}
+  objc3_async_frame frame_{};
+  explicit basic_task(coroutine frame) noexcept
+      : frame_{sizeof(objc3_async_frame), OBJC3_ASYNC_ABI_VERSION,
+               frame.address(),           promise_type::resume,
+               promise_type::destroy,     task_detail::result_type<T>()} {}
   template <class> friend class basic_task;
 
   task_handle<T> start_impl(objc3_executor_t *executor, objc3_actor_t *actor,
                             objc3_task_t *parent = nullptr) {
-    if (!frame_)
+    if (!frame_.context)
       throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
-    objc3_task_start_options options{};
-    options.struct_size = sizeof(options);
-    options.version = OBJC3_SERVICE_ABI_VERSION;
-    options.executor = executor;
-    options.actor = actor;
-    options.frame = frame_.address();
-    options.resume = promise_type::resume;
-    options.destroy = promise_type::destroy;
     objc3_task_t *started = nullptr;
-    task_detail::check(parent
-                           ? objc3_task_start_child(parent, &options, &started)
-                           : objc3_task_start(&options, &started));
-    frame_ = {};
+    task_detail::check(
+        parent ? objc3_async_frame_start_child(&frame_, parent, &started)
+               : objc3_async_frame_start(&frame_, executor, actor, &started));
     return task_handle<T>(started);
   }
 
 public:
   basic_task() noexcept = default;
+  static basic_task from_native(objc3_async_frame *owned) {
+    task_detail::check(objc3_async_frame_validate(owned));
+    if (!objc3_async_result_type_equal(owned->result_type,
+                                       task_detail::result_type<T>()))
+      throw service_failure(OBJC3_SERVICE_TYPE_MISMATCH);
+    basic_task result;
+    result.frame_ = std::exchange(*owned, {});
+    return result;
+  }
+  objc3_async_frame release_native() && noexcept {
+    return std::exchange(frame_, {});
+  }
   basic_task(const basic_task &) = delete;
   basic_task &operator=(const basic_task &) = delete;
   basic_task(basic_task &&other) noexcept : frame_(std::exchange(other.frame_, {})) {}
   basic_task &operator=(basic_task &&other) noexcept {
     if (this != &other) {
-      if (frame_)
-        frame_.destroy();
+      (void)objc3_async_frame_dispose(&frame_);
       frame_ = std::exchange(other.frame_, {});
     }
     return *this;
   }
-  ~basic_task() {
-    if (frame_)
-      frame_.destroy();
-  }
+  ~basic_task() { (void)objc3_async_frame_dispose(&frame_); }
   task_handle<T> start(objc3_executor_t *executor) && {
     return start_impl(executor, nullptr);
   }

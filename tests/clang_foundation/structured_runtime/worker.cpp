@@ -147,7 +147,13 @@ void worker_groups(objc3_executor_t *first, objc3_executor_t *second) {
   objc3_task_group_release(group);
 }
 } // namespace
+#ifdef OBJC3_ACTOR_SCHEDULING_REGRESSIONS
+void test_actor_scheduling();
+#endif
 int main() {
+#ifdef OBJC3_ACTOR_SCHEDULING_REGRESSIONS
+  test_actor_scheduling();
+#endif
   assert(deterministic_contract_main() == 0);
   objc3_executor_t *first = nullptr, *second = nullptr;
   assert(objc3_executor_create(0, &first) == OBJC3_SERVICE_OK);

@@ -92,5 +92,5 @@ records the exact producing implementation, archive, installed suites, sanitizer
 configurations, live debugger/editor probes and fresh distribution results.
 
 Six ASan/LSan configurations execute the public typed-error and callable-widening
-programs in Objective-C17 and Objective-C++20/23 at O0/O2. Consumer, provider and
+programs in Objective-C 3.0 (C17 base mode) and Objective-C++ (C++20/23 mode) at O0/O2. Consumer, provider and
 native fixture code is instrumented; the SDK runtime is loaded as shipped.

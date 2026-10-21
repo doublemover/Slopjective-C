@@ -12,6 +12,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/interface_validation.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/ASTImporterSharedState.h"
@@ -48,11 +49,13 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kEffectSemantics,
     "objc3.native-return-ownership.v1",
     "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.cxx-member-interfaces.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
-    "objc3.module-owned-names.v1"};
+    "objc3.module-owned-names.v1",
+    RuntimeInterfaceSemantic()};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -398,6 +401,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     }
     if (!diagnostics.empty()) return nullptr;
     auto ast_arguments = target.ast_arguments;
+    AddRuntimeInterfaceFiles(virtual_files, ast_arguments);
     ast_arguments.push_back("-iquote");
     ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
     module.ast = clang::tooling::buildASTFromCodeWithArgs(

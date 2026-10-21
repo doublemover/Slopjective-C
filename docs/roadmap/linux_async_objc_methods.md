@@ -1,6 +1,6 @@
 # Linux async Objective-C methods
 
-The reserved Linux x86-64 LP64 GNUstep 2.2 Objective-C++20/23 async stage supports
+The reserved Linux x86-64 LP64 GNUstep 2.2 Objective-C++ (C++20/23 mode) async stage supports
 Objective-C instance and class methods. Dynamic messages, protocol-qualified
 receivers, superclass messages and `objc_direct` methods use the same canonical
 logical result and async/throws effects as native async functions.
