@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_module_names_acceptance.json) identifies
+[acceptance receipt](../support/linux_task_coroutines_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -58,13 +58,17 @@ The implemented foundations have separate bounded contracts:
   nested cancellation, completion polling and serial actor mailboxes through the
   installed C ABI. Threaded and sanitizer qualification covers runtime ownership
   and cleanup.
+- [Resumable task bridge](linux_task_coroutines.md) connects native C++20/23 and
+  Objective-C++ coroutine frames to the public task ABI, with queued awaits,
+  cancellation wakeup, retained results and native frame cleanup.
 
 ## Next compiler milestones
 
 1. Lower native async functions and await expressions into resumable task frames.
    Define suspension ownership, checked typed-error propagation, cancellation,
    callback publication and cleanup before promoting the language capability.
-   Reuse the public task and group ABI and require source-free imports, O0/O2
+   Reuse the public task/group ABI and its resumable coroutine bridge. Require
+   canonical async effect imports, source-free packages, O0/O2
    native execution, debug information and instrumented runtime/client evidence.
 2. Add compiler actor isolation and awaited executor hops. Preserve isolation in
    callable types and canonical interfaces, diagnose unsynchronized access, and

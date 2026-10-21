@@ -56,6 +56,7 @@ cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$OBJC3C_SDK_ROOT" \
   -DCMAKE_CXX_COMPILER="$OBJC3C_SDK_ROOT/bin/clang++" -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
 cmake --build build --parallel 2
 ./build/embedding "$OBJC3C_SDK_ROOT"
+"$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./build/embedding
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 useradd --create-home --shell /bin/sh objc3-sdk-user
 runuser -u objc3-sdk-user -- sh -s -- "$install_root-relocated" <<'SH'
@@ -77,6 +78,7 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_api_availability.
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --output-dir ./module-spi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" --output-dir ./module-names-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-runtime-carrier-calls.py" \

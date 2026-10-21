@@ -153,7 +153,8 @@ int RunNativeDriver(int argc, char **raw_argv) {
         // DWARF 5 address pools must distinguish discarded COMDAT helpers
         // from live code at address zero. In particular, separate Block
         // providers commonly emit identical copy/dispose helpers.
-        "-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff"});
+        "-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff",
+        "-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff"});
   }
   for (const auto &arg : forwarded) {
     if (arg == "--version")

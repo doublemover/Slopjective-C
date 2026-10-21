@@ -23,6 +23,46 @@ struct TaskReleaseGuard {
   ~TaskReleaseGuard() { objc3_task_internal_release(task); }
 };
 
+struct AwaitContinuation {
+  std::shared_ptr<objc3_task::AwaitTarget> target;
+  uint64_t generation;
+};
+
+void wake_awaiting_task(objc3_task_t *task) noexcept {
+  const auto status = objc3_task_schedule_resume(task);
+  if (status == OBJC3_SERVICE_OK || status == OBJC3_SERVICE_ALREADY_COMPLETED)
+    return;
+  objc3_completion cancelled{};
+  cancelled.struct_size = sizeof(cancelled);
+  cancelled.version = OBJC3_SERVICE_ABI_VERSION;
+  cancelled.kind = OBJC3_COMPLETION_CANCELLED;
+  (void)objc3_task_complete(task, &cancelled);
+}
+
+void dependency_completed(void *context, const objc3_completion *) {
+  std::unique_ptr<AwaitContinuation> continuation(
+      static_cast<AwaitContinuation *>(context));
+  objc3_task_t *parent = nullptr;
+  {
+    // The token does not retain the parent. Its lock protects the raw pointer
+    // against final deletion; try_retain rejects a record already at zero.
+    std::lock_guard<std::mutex> lock(continuation->target->mutex);
+    parent = continuation->target->task;
+    if (!objc3_task_internal_retain(parent)) return;
+  }
+  TaskReleaseGuard guard{parent};
+  bool wake = false;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (!parent->terminal && parent->awaiting &&
+        parent->await_generation == continuation->generation) {
+      parent->awaiting = false;
+      wake = true;
+    }
+  }
+  if (wake) wake_awaiting_task(parent);
+}
+
 void *allocate_payload(uint64_t size, uint64_t alignment) noexcept {
   if (!alignment || (alignment & (alignment - 1)) != 0 ||
       alignment > static_cast<uint64_t>(SIZE_MAX - sizeof(AllocationHeader)))
@@ -140,6 +180,10 @@ void release_payload(objc3_task_t *task) noexcept {
 } // namespace
 
 objc3_task_t::~objc3_task() {
+  if (await_target) {
+    std::lock_guard<std::mutex> lock(await_target->mutex);
+    await_target->task = nullptr;
+  }
   // A last handle released while suspended becomes an implicit cancellation.
   // The release path normally terminalizes first; this is a defensive fallback.
   release_payload(this);
@@ -277,7 +321,18 @@ extern "C" void objc3_task_release(objc3_task_t *task) {
 }
 
 extern "C" void objc3_task_request_cancel(objc3_task_t *task) {
-  if (task) task->cancel_requested.store(true, std::memory_order_release);
+  if (!task || !objc3_task_internal_retain(task)) return;
+  TaskReleaseGuard guard{task};
+  task->cancel_requested.store(true, std::memory_order_release);
+  bool wake = false;
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    if (!task->terminal && task->awaiting) {
+      task->awaiting = false;
+      wake = true;
+    }
+  }
+  if (wake) wake_awaiting_task(task);
 }
 
 extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {
@@ -288,8 +343,14 @@ extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
-    if (task->terminal || task->completion_claimed)
+    if (task->terminal)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (task->completion_claimed) {
+      // A user payload copy can fail. Preserve the wake until that claim
+      // resolves instead of treating an in-progress copy as terminal success.
+      task->resume_after_completion_claim = true;
+      return OBJC3_SERVICE_OK;
+    }
     if (task->resume_queued) return OBJC3_SERVICE_OK;
     task->resume_queued = true;
   }
@@ -344,8 +405,13 @@ extern "C" objc3_service_status objc3_task_complete(
   if (copy_status != OBJC3_SERVICE_OK) {
     free_payload_storage(copied_payload);
     if (retained_error) objc3_error_release(retained_error);
-    std::lock_guard<std::mutex> lock(task->mutex);
-    task->completion_claimed = false;
+    bool resume = false;
+    {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      task->completion_claimed = false;
+      resume = std::exchange(task->resume_after_completion_claim, false);
+    }
+    if (resume) wake_awaiting_task(task);
     return copy_status;
   }
 
@@ -363,7 +429,9 @@ extern "C" objc3_service_status objc3_task_complete(
     task->payload_ops_set = task->has_payload;
     task->error = retained_error;
     task->terminal = true;
+    task->awaiting = false;
     task->completion_claimed = false;
+    task->resume_after_completion_claim = false;
     waiters.swap(task->waiters);
     task->callbacks_active += static_cast<uint32_t>(waiters.size());
     if (!task->resume_active && task->frame) {
@@ -411,6 +479,58 @@ extern "C" objc3_service_status objc3_task_add_waiter(
     }
     task->completed.notify_all();
   }
+  return OBJC3_SERVICE_OK;
+}
+
+extern "C" objc3_service_status objc3_task_await(
+    objc3_task_t *parent, objc3_task_t *dependency) {
+  if (!parent || !dependency || parent == dependency ||
+      current_service_task != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  std::unique_ptr<AwaitContinuation> continuation;
+  bool cancelled = false;
+  try {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (parent->terminal || parent->completion_claimed)
+      return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (!parent->resume_active || parent->awaiting)
+      return OBJC3_SERVICE_INVALID_ARGUMENT;
+    if (parent->await_generation == UINT64_MAX)
+      return OBJC3_SERVICE_NOT_READY;
+    if (!parent->await_target)
+      parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
+    continuation = std::make_unique<AwaitContinuation>(AwaitContinuation{
+        parent->await_target, ++parent->await_generation});
+    cancelled = parent->cancel_requested.load(std::memory_order_acquire);
+    parent->awaiting = !cancelled;
+  } catch (...) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  if (cancelled) {
+    // Queue the cancellation observation after the active resume returns.
+    wake_awaiting_task(parent);
+    return OBJC3_SERVICE_OK;
+  }
+  // A completed dependency can call back before add_waiter returns. Transfer
+  // the independent token first and never touch it on successful registration.
+  auto *context = continuation.release();
+  const auto status = objc3_task_add_waiter(dependency, dependency_completed,
+                                           context);
+  if (status != OBJC3_SERVICE_OK) {
+    std::unique_ptr<AwaitContinuation> failed(context);
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (parent->await_generation == failed->generation)
+      parent->awaiting = false;
+  }
+  return status;
+}
+
+extern "C" objc3_service_status objc3_task_get_completion(
+    objc3_task_t *task, objc3_completion *out_completion) {
+  if (!task || !out_completion) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  std::lock_guard<std::mutex> lock(task->mutex);
+  if (!task->terminal) return OBJC3_SERVICE_NOT_READY;
+  *out_completion = task_view(task);
   return OBJC3_SERVICE_OK;
 }
 

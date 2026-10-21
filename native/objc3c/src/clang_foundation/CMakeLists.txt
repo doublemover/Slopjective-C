@@ -78,6 +78,13 @@ add_library(objc3_runtime_services STATIC
   ../runtime/stdlib/generic_collection_service.cpp
   ../runtime/stdlib/generic_associative_service.cpp)
 target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
+target_compile_options(objc3_runtime_services INTERFACE
+  "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fcoro-aligned-allocation>"
+  "$<$<COMPILE_LANG_AND_ID:OBJCXX,Clang>:-fcoro-aligned-allocation>")
+target_link_options(objc3_runtime_services INTERFACE
+  "-fuse-ld=lld"
+  "LINKER:-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff"
+  "LINKER:-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff")
 target_include_directories(objc3_runtime_services PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public>"
   "$<INSTALL_INTERFACE:include>")
@@ -93,7 +100,7 @@ install(TARGETS objc3c_build_defaults EXPORT objc3cTargets)
 set_target_properties(objc3c_frontend_v2 PROPERTIES EXPORT_NAME Frontend)
 set_target_properties(objc3_runtime_services PROPERTIES EXPORT_NAME RuntimeServices)
 install(FILES frontend_api.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c)
-install(FILES ../runtime/public/objc3_runtime_services.h
+install(FILES ../runtime/public/objc3_runtime_services.h ../runtime/public/objc3_task.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime)
 target_include_directories(objc3c_frontend_v2 INTERFACE "$<INSTALL_INTERFACE:include>")
 install(EXPORT objc3cTargets NAMESPACE objc3c:: DESTINATION lib/cmake/objc3c)
@@ -213,6 +220,12 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_structured_runtime_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
   set_tests_properties(objc3_structured_runtime PROPERTIES TIMEOUT 30)
+  add_executable(objc3_task_coroutines_test
+    ../../../../tests/clang_foundation/task_coroutines/provider.cpp
+    ../../../../tests/clang_foundation/task_coroutines/client.cpp)
+  target_link_libraries(objc3_task_coroutines_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
+  set_tests_properties(objc3_task_coroutines PROPERTIES TIMEOUT 45)
   add_executable(objc3_generic_collection_service_test
     ../../tests/generic_collection_service_test.cpp)
   target_link_libraries(objc3_generic_collection_service_test PRIVATE objc3_runtime_services)
@@ -236,7 +249,7 @@ if (BUILD_TESTING)
       objc3_ownership_projection_test objc3_module_method_names_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
-      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test
+      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test
       objc3_generic_collection_service_test objc3_generic_associative_service_test
       objc3_text_scalar_boundary_test)
     if (MSVC)

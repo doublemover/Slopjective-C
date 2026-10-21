@@ -170,7 +170,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_module_names.py', 'qualify_module_names.py'),
                                 ('qualify_module_names_debugger.py', 'qualify_module_names_debugger.py'),
                                 ('qualify_module_names_collision_debugger.py', 'qualify_module_names_collision_debugger.py'),
-                                ('qualify_structured_runtime.py', 'qualify_structured_runtime.py')):
+                                ('qualify_structured_runtime.py', 'qualify_structured_runtime.py'),
+                                ('qualify_task_coroutines.py', 'qualify_task_coroutines.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',
                     prefix / 'share/objc3c/examples/packages')
@@ -186,6 +187,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/module-names')
     shutil.copytree(repo / 'tests/clang_foundation/structured_runtime',
                     prefix / 'share/objc3c/examples/structured-runtime')
+    shutil.copytree(repo / 'tests/clang_foundation/task_coroutines',
+                    prefix / 'share/objc3c/examples/task-coroutines')
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
@@ -237,6 +240,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_module_spi import qualify as qualify_spi
     from .qualify_module_names import qualify as qualify_names
     from .qualify_structured_runtime import qualify as qualify_structured
+    from .qualify_task_coroutines import qualify as qualify_coroutines
 
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
@@ -254,6 +258,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_module_spi': partial(qualify_spi, prefix, validation_report.parent / 'installed-module-spi', jobs=1),
         'installed_module_names': partial(qualify_names, prefix, validation_report.parent / 'installed-module-names', jobs=1),
         'installed_structured_runtime': partial(qualify_structured, prefix, validation_report.parent / 'installed-structured-runtime'),
+        'installed_task_coroutines': partial(qualify_coroutines, prefix, validation_report.parent / 'installed-task-coroutines'),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),

@@ -1,7 +1,16 @@
 #include <objc3c/frontend_api.h>
 #include <objc3c/runtime/objc3_runtime_services.h>
+#include <objc3c/runtime/objc3_task.hpp>
 #include <cstring>
 #include <iostream>
+
+objc3::task<int> embedded_value() {
+  co_await objc3::task_yield;
+  co_return 42;
+}
+objc3::task<int> embedded_transform(objc3::task_handle<int> input) {
+  co_return (co_await input) + 1;
+}
 
 int main(int argc, char **argv) {
   if (argc != 2) return 2;
@@ -34,7 +43,13 @@ int main(int argc, char **argv) {
       }, &invoked) != OBJC3_SERVICE_OK) return 1;
   uint32_t count = 0;
   auto pumped = objc3_executor_pump(executor, 1, &count);
-  objc3_executor_release(executor);
   if (pumped != OBJC3_SERVICE_OK || invoked != 1 || count != 1) return 1;
+  {
+    auto child = embedded_value().start(executor);
+    auto parent = embedded_transform(child).start(executor);
+    if (objc3_executor_pump(executor, 16, &count) != OBJC3_SERVICE_OK) return 1;
+    if (parent.result() != 43) return 1;
+  }
+  objc3_executor_release(executor);
   std::cout << "installed embedding and runtime services: PASS\n";
 }

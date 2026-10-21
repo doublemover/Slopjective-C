@@ -110,6 +110,18 @@ objc3_service_status objc3_task_complete(objc3_task_t *task,
 objc3_service_status objc3_task_add_waiter(objc3_task_t *task,
                                           objc3_completion_callback callback,
                                           void *context);
+/* Register one dependency from the parent's active resume. Always suspend
+ * after success, even for a completed dependency: continuation runs on the
+ * parent's executor. Cancellation wakes a suspended parent without cancelling
+ * a shared dependency. Self-await and overlapping awaits are rejected. Keep
+ * the dependency alive while its completion is needed. Dispatch failure
+ * cancels the parent, rather than leaving an unreachable suspended frame. */
+objc3_service_status objc3_task_await(objc3_task_t *parent,
+                                     objc3_task_t *dependency);
+/* Nonblocking terminal view, borrowed until the retained task is released.
+ * NOT_READY and invalid arguments leave out_completion unchanged. */
+objc3_service_status objc3_task_get_completion(
+    objc3_task_t *task, objc3_completion *out_completion);
 /* wait blocks until terminal completion; it does not pump a manual executor.
  * A pending wait from the task itself or its current serial executor returns
  * NOT_READY so queued task work can continue. Completed waits remain valid. */
@@ -117,7 +129,9 @@ objc3_service_status objc3_task_wait(objc3_task_t *task);
 
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own
- * a bounded scheduling thread. enqueue transfers no ownership of context. */
+ * a bounded scheduling thread. enqueue transfers no ownership of context.
+ * When the Objective-C runtime is linked, callbacks have an autorelease pool
+ * that drains after they return. Retain values needed after callback scope. */
 objc3_service_status objc3_executor_create(uint32_t manual,
                                          objc3_executor_t **out_executor);
 objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor);
