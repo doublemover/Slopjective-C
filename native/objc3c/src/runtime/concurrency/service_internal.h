@@ -11,6 +11,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -84,6 +85,12 @@ struct objc3_task final {
   void *payload{nullptr};
   objc3_value_ops payload_ops{};
   bool payload_ops_set{false};
+  objc3_async_result_type declared_result_type{};
+  std::string declared_result_identity;
+  bool declared_result_type_set{false};
+  objc3_async_result_type result_type{};
+  std::string result_identity;
+  bool result_type_set{false};
   objc3_error_t *error{nullptr};
   std::vector<Waiter> waiters;
 

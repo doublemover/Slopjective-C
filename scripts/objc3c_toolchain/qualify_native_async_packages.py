@@ -71,6 +71,10 @@ def qualify(sdk: Path, output: Path) -> dict:
                 if not has_checked_async(objc_methods):
                     raise ValueError('native async interface lost Objective-C method effects')
                 names = {row['qualified_name']: row for row in metadata['declarations']}
+                for name in ('native_module_frame', 'native_module_object_frame',
+                             'native_module_block_frame'):
+                    if name not in names:
+                        raise ValueError('native async C frame factory missing: ' + name)
                 for name in ('native_module_record', 'native_module_complex_value',
                              'native_module_data_value'):
                     if name not in names or not has_checked_async(names[name]):

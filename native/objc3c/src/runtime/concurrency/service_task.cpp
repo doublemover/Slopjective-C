@@ -6,6 +6,50 @@
 #include <new>
 #include <utility>
 
+extern "C" objc3_service_status
+objc3_async_result_type_validate(const objc3_async_result_type *type) {
+  if (!type || type->struct_size < sizeof(*type))
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (type->version != OBJC3_ASYNC_ABI_VERSION)
+    return OBJC3_SERVICE_UNSUPPORTED_VERSION;
+  if (type->reserved || !type->identity || !type->identity_size ||
+      type->identity_size > OBJC3_ASYNC_IDENTITY_LIMIT ||
+      !type->storage_alignment ||
+      (type->storage_alignment & (type->storage_alignment - 1)) ||
+      type->storage_size > SIZE_MAX || type->storage_alignment > SIZE_MAX ||
+      std::memchr(type->identity, 0, type->identity_size) ||
+      type->identity[type->identity_size] != 0)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  switch (type->kind) {
+  case OBJC3_ASYNC_VOID:
+    return type->storage_size == 0 && type->storage_alignment == 1
+               ? OBJC3_SERVICE_OK
+               : OBJC3_SERVICE_INVALID_ARGUMENT;
+  case OBJC3_ASYNC_OBJECT:
+  case OBJC3_ASYNC_BLOCK:
+    return type->storage_size == sizeof(void *) &&
+                   type->storage_alignment == alignof(void *)
+               ? OBJC3_SERVICE_OK
+               : OBJC3_SERVICE_INVALID_ARGUMENT;
+  case OBJC3_ASYNC_VALUE:
+    return type->storage_size ? OBJC3_SERVICE_OK
+                              : OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  return OBJC3_SERVICE_INVALID_ARGUMENT;
+}
+
+extern "C" int
+objc3_async_result_type_equal(const objc3_async_result_type *left,
+                              const objc3_async_result_type *right) {
+  return objc3_async_result_type_validate(left) == OBJC3_SERVICE_OK &&
+         objc3_async_result_type_validate(right) == OBJC3_SERVICE_OK &&
+         left->kind == right->kind &&
+         left->storage_size == right->storage_size &&
+         left->storage_alignment == right->storage_alignment &&
+         left->identity_size == right->identity_size &&
+         std::memcmp(left->identity, right->identity, left->identity_size) == 0;
+}
+
 namespace {
 
 thread_local objc3_task_t *current_service_task = nullptr;
@@ -188,23 +232,37 @@ objc3_service_status validate_completion(const objc3_completion *value) noexcept
   switch (value->kind) {
   case OBJC3_COMPLETION_SUCCESS: {
     if (value->error) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    if (value->result_type) {
+      const auto status = objc3_async_result_type_validate(value->result_type);
+      if (status != OBJC3_SERVICE_OK)
+        return status;
+      if ((value->result_type->kind == OBJC3_ASYNC_VOID) != !value->has_payload)
+        return OBJC3_SERVICE_INVALID_ARGUMENT;
+    }
     if (!value->has_payload)
       return value->payload == nullptr && value->payload_ops == nullptr
                  ? OBJC3_SERVICE_OK : OBJC3_SERVICE_INVALID_ARGUMENT;
     if (value->has_payload != 1) return OBJC3_SERVICE_INVALID_ARGUMENT;
     const objc3_service_status ops_status = validate_ops(value->payload_ops);
     if (ops_status != OBJC3_SERVICE_OK) return ops_status;
+    if (value->result_type &&
+        (value->result_type->storage_size != value->payload_ops->payload_size ||
+         value->result_type->storage_alignment !=
+             value->payload_ops->payload_alignment))
+      return OBJC3_SERVICE_TYPE_MISMATCH;
     return value->payload || value->payload_ops->payload_size == 0
                ? OBJC3_SERVICE_OK : OBJC3_SERVICE_INVALID_ARGUMENT;
   }
   case OBJC3_COMPLETION_ERROR:
-    return !value->has_payload && !value->payload && !value->payload_ops &&
-                   value->error
-               ? OBJC3_SERVICE_OK : OBJC3_SERVICE_INVALID_ARGUMENT;
+    return !value->result_type && !value->has_payload && !value->payload &&
+                   !value->payload_ops && value->error
+               ? OBJC3_SERVICE_OK
+               : OBJC3_SERVICE_INVALID_ARGUMENT;
   case OBJC3_COMPLETION_CANCELLED:
-    return !value->has_payload && !value->payload && !value->payload_ops &&
-                   !value->error
-               ? OBJC3_SERVICE_OK : OBJC3_SERVICE_INVALID_ARGUMENT;
+    return !value->result_type && !value->has_payload && !value->payload &&
+                   !value->payload_ops && !value->error
+               ? OBJC3_SERVICE_OK
+               : OBJC3_SERVICE_INVALID_ARGUMENT;
   }
   return OBJC3_SERVICE_INVALID_ARGUMENT;
 }
@@ -218,6 +276,7 @@ objc3_completion task_view(const objc3_task_t *task) noexcept {
   value.payload = task->payload;
   value.payload_ops = task->payload_ops_set ? &task->payload_ops : nullptr;
   value.error = task->error;
+  value.result_type = task->result_type_set ? &task->result_type : nullptr;
   return value;
 }
 
@@ -348,6 +407,24 @@ extern "C" objc3_service_status objc3_task_start(
                : OBJC3_SERVICE_INVALID_ARGUMENT;
   auto *task = new (std::nothrow) objc3_task;
   if (!task) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  if (options->result_type) {
+    const auto status = objc3_async_result_type_validate(options->result_type);
+    if (status != OBJC3_SERVICE_OK) {
+      delete task;
+      return status;
+    }
+    try {
+      task->declared_result_identity.assign(
+          options->result_type->identity, options->result_type->identity_size);
+    } catch (...) {
+      delete task;
+      return OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+    task->declared_result_type = *options->result_type;
+    task->declared_result_type.identity =
+        task->declared_result_identity.c_str();
+    task->declared_result_type_set = true;
+  }
   if (options->actor)
     task->actor = objc3_actor_retain(options->actor);
   auto *executor = options->actor
@@ -512,6 +589,11 @@ extern "C" objc3_service_status objc3_task_complete(
   TaskReleaseGuard task_guard{task};
   const objc3_service_status validation = validate_completion(completion);
   if (validation != OBJC3_SERVICE_OK) return validation;
+  if (completion->kind == OBJC3_COMPLETION_SUCCESS &&
+      task->declared_result_type_set &&
+      !objc3_async_result_type_equal(&task->declared_result_type,
+                                     completion->result_type))
+    return OBJC3_SERVICE_TYPE_MISMATCH;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     if (task->terminal || task->completion_claimed)
@@ -523,7 +605,18 @@ extern "C" objc3_service_status objc3_task_complete(
   objc3_value_ops copied_ops{};
   objc3_error_t *retained_error = nullptr;
   objc3_service_status copy_status = OBJC3_SERVICE_OK;
-  if (completion->kind == OBJC3_COMPLETION_SUCCESS && completion->has_payload) {
+  objc3_async_result_type copied_type{};
+  std::string copied_identity;
+  if (completion->result_type) {
+    copied_type = *completion->result_type;
+    try {
+      copied_identity.assign(copied_type.identity, copied_type.identity_size);
+    } catch (...) {
+      copy_status = OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+  }
+  if (copy_status == OBJC3_SERVICE_OK &&
+      completion->kind == OBJC3_COMPLETION_SUCCESS && completion->has_payload) {
     copied_ops = *completion->payload_ops;
     copied_payload = allocate_payload(copied_ops.payload_size,
                                       copied_ops.payload_alignment);
@@ -561,6 +654,10 @@ extern "C" objc3_service_status objc3_task_complete(
     task->payload = copied_payload;
     task->payload_ops = copied_ops;
     task->payload_ops_set = task->has_payload;
+    task->result_type_set = completion->result_type != nullptr;
+    task->result_type = copied_type;
+    task->result_identity = std::move(copied_identity);
+    task->result_type.identity = task->result_identity.c_str();
     task->error = retained_error;
     task->terminal = true;
     task->awaiting = false;
@@ -683,6 +780,140 @@ extern "C" objc3_service_status objc3_task_wait(objc3_task_t *task) {
   lock.unlock();
   objc3_task_internal_release(task);
   return OBJC3_SERVICE_OK;
+}
+
+extern "C" objc3_service_status
+objc3_task_get_result_type(objc3_task_t *task,
+                           const objc3_async_result_type **out_type) {
+  if (!task || !out_type)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  std::lock_guard<std::mutex> lock(task->mutex);
+  if (task->declared_result_type_set)
+    *out_type = &task->declared_result_type;
+  else if (task->result_type_set)
+    *out_type = &task->result_type;
+  else
+    return OBJC3_SERVICE_NOT_READY;
+  return OBJC3_SERVICE_OK;
+}
+
+extern "C" objc3_service_status
+objc3_task_copy_result(objc3_task_t *task,
+                       const objc3_async_result_type *expected,
+                       const objc3_value_ops *ops, void *destination) {
+  if (!task)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  const auto validation = objc3_async_result_type_validate(expected);
+  if (validation != OBJC3_SERVICE_OK)
+    return validation;
+  if (expected->kind == OBJC3_ASYNC_VOID) {
+    if (ops || destination)
+      return OBJC3_SERVICE_INVALID_ARGUMENT;
+  } else {
+    const auto status = objc3_value_ops_validate(ops);
+    if (status != OBJC3_SERVICE_OK)
+      return status;
+    if (!destination || (reinterpret_cast<uintptr_t>(destination) &
+                         (expected->storage_alignment - 1)))
+      return OBJC3_SERVICE_INVALID_ARGUMENT;
+    if (ops->payload_size != expected->storage_size ||
+        ops->payload_alignment != expected->storage_alignment)
+      return OBJC3_SERVICE_TYPE_MISMATCH;
+  }
+  if (!objc3_task_internal_retain(task))
+    return OBJC3_SERVICE_NOT_READY;
+  TaskReleaseGuard guard{task};
+  objc3_completion completion{};
+  const auto status = objc3_task_get_completion(task, &completion);
+  if (status != OBJC3_SERVICE_OK)
+    return status;
+  if (completion.kind == OBJC3_COMPLETION_CANCELLED)
+    return OBJC3_SERVICE_CANCELLED;
+  if (completion.kind == OBJC3_COMPLETION_ERROR)
+    return OBJC3_SERVICE_FAILED;
+  if (!objc3_async_result_type_equal(completion.result_type, expected))
+    return OBJC3_SERVICE_TYPE_MISMATCH;
+  if (expected->kind == OBJC3_ASYNC_VOID)
+    return OBJC3_SERVICE_OK;
+  try {
+    return ops->copy_init(destination, completion.payload);
+  } catch (...) {
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+}
+
+extern "C" objc3_service_status
+objc3_async_frame_validate(const objc3_async_frame *frame) {
+  if (!frame || frame->struct_size < sizeof(*frame))
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (frame->version != OBJC3_ASYNC_ABI_VERSION)
+    return OBJC3_SERVICE_UNSUPPORTED_VERSION;
+  if (!frame->context || !frame->resume || !frame->destroy)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  return objc3_async_result_type_validate(frame->result_type);
+}
+
+extern "C" objc3_service_status
+objc3_async_frame_dispose(objc3_async_frame *frame) {
+  if (!frame)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  if (!frame->struct_size && !frame->version && !frame->context &&
+      !frame->resume && !frame->destroy && !frame->result_type)
+    return OBJC3_SERVICE_OK;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK)
+    return status;
+  const auto owned = *frame;
+  *frame = {};
+  objc3_task_destroy_frame(owned.context, owned.destroy);
+  return OBJC3_SERVICE_OK;
+}
+
+namespace {
+objc3_service_status start_async_frame(objc3_async_frame *frame,
+                                       objc3_executor_t *executor,
+                                       objc3_actor_t *actor,
+                                       objc3_task_t *parent,
+                                       objc3_task_t **out_task) {
+  if (!out_task)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK)
+    return status;
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.actor = actor;
+  options.frame = frame->context;
+  options.resume = frame->resume;
+  options.destroy = frame->destroy;
+  options.result_type = frame->result_type;
+  const auto started = parent
+                           ? objc3_task_start_child(parent, &options, out_task)
+                           : objc3_task_start(&options, out_task);
+  if (started == OBJC3_SERVICE_OK)
+    *frame = {};
+  return started;
+}
+} // namespace
+
+extern "C" objc3_service_status
+objc3_async_frame_start(objc3_async_frame *frame, objc3_executor_t *executor,
+                        objc3_actor_t *actor, objc3_task_t **out_task) {
+  return start_async_frame(frame, executor, actor, nullptr, out_task);
+}
+
+extern "C" objc3_service_status
+objc3_async_frame_start_child(objc3_async_frame *frame, objc3_task_t *parent,
+                              objc3_task_t **out_task) {
+  if (!parent) {
+    if (out_task)
+      *out_task = nullptr;
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  return start_async_frame(frame, nullptr, nullptr, parent, out_task);
 }
 
 void objc3_service_run_task_resume(void *context) {

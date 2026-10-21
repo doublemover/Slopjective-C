@@ -80,6 +80,12 @@ The implemented foundations have separate bounded contracts:
 
 ## Next compiler milestones
 
+The [shared C/C++ async frame and result ABI](linux_async_c_abi.md) introduces
+the extension ABI 20 development cutover and service ABI 4. It removes C++
+promise layout from the C frame boundary and copy-function identity from result
+matching. Its Objective-C17 providers use explicit resume callbacks; native
+Objective-C async syntax remains the next compiler step.
+
 The [task destination bridge](linux_task_hops.md) supplies actor-bound resumes,
 explicit executor/actor hops and inherited child destinations. Compiler isolation
 and the public language contract still require the following work.

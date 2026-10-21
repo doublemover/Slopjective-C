@@ -1075,13 +1075,16 @@ index 7671f003c..af92b2d03 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..2e39a2c4b 100644
+index 2cb79b6ba..d68b2cf69 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,46 @@
+@@ -11,7 +11,49 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
++
++def err_objc3_type_identity_pointer : Error<
++  "Objective-C 3 type identity requires a pointer to the result type">;
 +def err_objc3_async_task_unsupported : Error<
 +  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 callable with a concrete value or void result">;
 +def err_objc3_async_covariant_return : Error<
@@ -1125,7 +1128,7 @@ index 2cb79b6ba..2e39a2c4b 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7010,6 +7049,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7052,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1139,7 +1142,7 @@ index 2cb79b6ba..2e39a2c4b 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7072,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7075,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1150,7 +1153,7 @@ index 2cb79b6ba..2e39a2c4b 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -8001,6 +8051,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8054,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1176,7 +1179,7 @@ index 2cb79b6ba..2e39a2c4b 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14436,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14439,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -14127,10 +14130,42 @@ index 0573cdf95..be0805e51 100644
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..81b59c8d3 100644
+index 2a8395e26..8f8990e0c 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
-@@ -10821,6 +10821,9 @@ struct SearchNonTrivialToInitializeField
+@@ -2991,6 +2991,31 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
+ 
+   FPOptions FPO;
+   switch (BuiltinID) {
++  case Builtin::BI__builtin_objc3_type_identity: {
++    if (checkArgCount(TheCall, 1))
++      return ExprError();
++    Expr *Argument = TheCall->getArg(0);
++    if (Argument->isTypeDependent())
++      return TheCall;
++    const auto *Pointer = Argument->getType()->getAs<PointerType>();
++    if (!Pointer) {
++      Diag(Argument->getExprLoc(), diag::err_objc3_type_identity_pointer);
++      return ExprError();
++    }
++    // Reuse Clang's canonical Itanium type identity, independent of source
++    // aliases, C/C++ spelling, callback addresses, and provider ownership mode.
++    QualType Type =
++        Pointer->getPointeeType().getCanonicalType().getUnqualifiedType();
++    std::string Identity = "objc3.async.v1:" +
++                           SYCLUniqueStableNameExpr::ComputeName(Context, Type);
++    QualType Element =
++        Context.adjustStringLiteralBaseType(Context.CharTy.withConst());
++    QualType Array = Context.getConstantArrayType(
++        Element, llvm::APInt(64, Identity.size() + 1), nullptr,
++        ArraySizeModifier::Normal, 0);
++    return StringLiteral::Create(Context, Identity, StringLiteralKind::Ordinary,
++                                 false, Array, TheCall->getExprLoc());
++  }
+   case Builtin::BI__builtin___get_unsafe_stack_start:
+   case Builtin::BI__builtin___get_unsafe_stack_bottom:
+     Diag(TheCall->getBeginLoc(), diag::warn_deprecated_builtin)
+@@ -10821,6 +10846,9 @@ struct SearchNonTrivialToInitializeField
      Super::visitWithKind(PDIK, FT, SL);
    }
  
@@ -14140,7 +14175,7 @@ index 2a8395e26..81b59c8d3 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
    }
-@@ -10863,6 +10866,9 @@ struct SearchNonTrivialToCopyField
+@@ -10863,6 +10891,9 @@ struct SearchNonTrivialToCopyField
      Super::visitWithKind(PCK, FT, SL);
    }
  
@@ -15605,3 +15640,58 @@ index 000000000..2338ccaf7
 +  (void)^() __objc3_async { // expected-error {{native async task lowering requires}}
 +  };
 +}
+diff --git a/clang/include/clang/Basic/Builtins.td b/clang/include/clang/Basic/Builtins.td
+index 344a712dd..a868bc7fe 100644
+--- a/clang/include/clang/Basic/Builtins.td
++++ b/clang/include/clang/Basic/Builtins.td
+@@ -550,6 +550,13 @@ def BuiltinSetFltRounds : Builtin {
+ }
+ 
+ // GCC-compatible C99 CMPLX implementation.
++// A language-independent, unevaluated identity for a pointed-to result type.
++def ObjC3TypeIdentity : Builtin {
++  let Spellings = ["__builtin_objc3_type_identity"];
++  let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
++  let Prototype = "char const*(...)";
++}
++
+ def BuiltinComplex : Builtin {
+   let Spellings = ["__builtin_complex"];
+   let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
+diff --git a/clang/test/ObjC3/Sema/native-async-type-identity.c b/clang/test/ObjC3/Sema/native-async-type-identity.c
+new file mode 100644
+index 000000000..c8d03a904
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-type-identity.c
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c -std=c17 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c++ -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c -std=c17 -DNEGATIVE -fsyntax-only -verify %s
++
++#ifdef NEGATIVE
++const char *bad = __builtin_objc3_type_identity(42); // expected-error {{requires a pointer to the result type}}
++const char *missing = __builtin_objc3_type_identity(); // expected-error {{too few arguments}}
++const char *extra = __builtin_objc3_type_identity((int *)0, (int *)0); // expected-error {{too many arguments}}
++#else
++typedef int Alias;
++struct Pair { int left, right; };
++
++const char *integer_identity = __builtin_objc3_type_identity((int *)0);
++const char *alias_identity = __builtin_objc3_type_identity((Alias *)0);
++const char *record_identity = __builtin_objc3_type_identity((struct Pair *)0);
++const char *void_identity = __builtin_objc3_type_identity((void *)0);
++
++// CHECK-DAG: c"objc3.async.v1:_ZTSi\00"
++// CHECK-DAG: c"objc3.async.v1:_ZTS4Pair\00"
++// CHECK-DAG: c"objc3.async.v1:_ZTSv\00"
++
++#ifdef __cplusplus
++template <class T> constexpr const char *identity() {
++  return __builtin_objc3_type_identity((T *)0);
++}
++static_assert(__builtin_strcmp(identity<Alias>(), identity<int>()) == 0);
++static_assert(__builtin_strcmp(identity<unsigned>(), identity<int>()) != 0);
++static_assert(__builtin_strcmp(identity<Pair>(),
++                              __builtin_objc3_type_identity((Pair *)0)) == 0);
++#endif
++#endif

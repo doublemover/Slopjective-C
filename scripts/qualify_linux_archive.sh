@@ -87,6 +87,7 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" 
 fi
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_async_c_abi.py" --output-dir ./async-c-abi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" --output-dir ./native-async-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
 if [ "$qualification_scope" = full ]; then

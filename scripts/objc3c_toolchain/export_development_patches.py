@@ -73,6 +73,7 @@ PACKETS = {
         "clang/include/clang/AST/NonTrivialTypeVisitor.h",
         "clang/lib/AST/DeclCXX.cpp",
         "clang/lib/Sema/SemaChecking.cpp",
+        "clang/include/clang/Basic/Builtins.td",
         "clang/lib/Sema/SemaLookup.cpp",
         "clang/include/clang/AST/TextNodeDumper.h",
         "clang/include/clang/AST/PropertiesBase.td",

@@ -221,9 +221,29 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_structured_runtime_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
   set_tests_properties(objc3_structured_runtime PROPERTIES TIMEOUT 30)
-  add_executable(objc3_task_coroutines_test
-    ../../../../tests/clang_foundation/task_coroutines/provider.cpp
-    ../../../../tests/clang_foundation/task_coroutines/client.cpp)
+  # Task headers require the product compiler's canonical type-identity builtin.
+  # Keep the compiler implementation bootstrapped independently, while compiling
+  # these actual language witnesses with the verified foundation driver.
+  set(_task_coroutine_objects)
+  foreach(_part provider client)
+    set(_object "${CMAKE_CURRENT_BINARY_DIR}/task-coroutines-${_part}.o")
+    set(_source "${_objc3_repo}/tests/clang_foundation/task_coroutines/${_part}.cpp")
+    add_custom_command(OUTPUT "${_object}"
+      COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
+        -O2 -g -UNDEBUG -fcoro-aligned-allocation
+        "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+        -c "${_source}" -o "${_object}"
+      DEPENDS "${_source}"
+        "${_objc3_repo}/tests/clang_foundation/task_coroutines/provider.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
+        "${OBJC3C_FOUNDATION_DRIVER}"
+      VERBATIM)
+    set_source_files_properties("${_object}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+    list(APPEND _task_coroutine_objects "${_object}")
+  endforeach()
+  add_executable(objc3_task_coroutines_test ${_task_coroutine_objects})
+  set_target_properties(objc3_task_coroutines_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_task_coroutines_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
   set_tests_properties(objc3_task_coroutines PROPERTIES TIMEOUT 45)

@@ -69,6 +69,16 @@ int native_module_value(int value) __objc3_async {
   return value + 1;
 }
 
+objc3_async_frame native_module_frame(int value) {
+  return native_module_value(value).release_native();
+}
+objc3_async_frame native_module_object_frame(int value) {
+  return native_module_object(value).release_native();
+}
+objc3_async_frame native_module_block_frame(int value) {
+  return native_module_block(value).release_native();
+}
+
 int native_module_checked(int value, bool fail)
     __objc3_async __objc3_throws(id<NativeModuleError>) {
   NativeModuleResult *error = [NativeModuleResult new];

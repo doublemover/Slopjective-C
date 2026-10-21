@@ -49,6 +49,24 @@ int actor_application(objc3_actor_t *actor) __objc3_async {
   return result == 42 ? [object number] + reader(0) : 0;
 }
 
+int frame_application(objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  auto frame = native_module_frame(41);
+  int value = __objc3_await objc3::task<int>::from_native(&frame);
+  if (frame.context || value != 42) return 0;
+  frame = native_module_object_frame(21);
+  NativeModuleResult *object =
+      __objc3_await objc3::task<NativeModuleResult *>::from_native(&frame);
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{objc_retain(object)};
+#endif
+  if (frame.context) return 0;
+  frame = native_module_block_frame(21);
+  native_module_reader reader =
+      __objc3_await objc3::task<native_module_reader>::from_native(&frame);
+  return !frame.context ? [object number] + reader(0) : 0;
+}
+
 
 int member_application(NativeModuleWorker &worker, NativeModuleWorker &base,
                        objc3_actor_t *actor) __objc3_async {
@@ -207,6 +225,10 @@ int main() {
   pending = block_application(actor).start(executor);
   if (objc3_executor_pump(executor, 300, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42) return 13;
+  pending = {};
+  pending = frame_application(actor).start(executor);
+  if (objc3_executor_pump(executor, 300, &executed) != OBJC3_SERVICE_OK ||
+      pending.result() != 42) return 14;
   pending = {};
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
