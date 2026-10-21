@@ -7,6 +7,9 @@ GNUstep 2.2 ABI and pinned libobjc2 runtime is the active distribution target.
 
 ## Build and use
 
+Start with the [Linux tutorial](docs/tutorials/getting_started.md), or choose an
+installed example from the [showcase catalog](showcase/README.md).
+
 The authoritative versions are in
 [`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
 foundation is LLVM 23.1.3. Development requires Python 3.15.0, Node 26.12.0,

@@ -114,13 +114,14 @@ both services and clients instrumented. Sanitizer libraries come from the pinned
 LLVM resource directory and are identified in the receipt; GNU libobjc is loaded
 as shipped. Value-only C/C++ bridge clients are checked to link without libobjc.
 
-## Progress at the requested pause — 2026-10-21
+## SDK snapshot at the requested pause — 2026-10-21
 
-Development, builds, tests, acceptance and automatic closeout are stopped at the
-user's request. [PR #8274](https://github.com/doublemover/Slopjective-C/pull/8274)
-remains a draft. The implementation is committed through
-`e6412ec2b776f2e0a83f63518a12f775df7bbf22`; this documentation update records the
-handoff without changing compiler or SDK inputs.
+Development, builds, tests and acceptance were temporarily stopped at the
+user's request. Validation has since been reauthorized for the four open P2/P3
+issues. [PR #8274](https://github.com/doublemover/Slopjective-C/pull/8274)
+contains the ongoing work. The SDK snapshot below was built from
+`e6412ec2b776f2e0a83f63518a12f775df7bbf22`; later runtime and tooling fixes must
+not be attributed to that installation.
 
 The final host SDK build completed successfully before the stop. Its receipt
 reports all 23 installed package gates and the installed driver/embedding gate
@@ -177,10 +178,9 @@ ASan/UBSan and MRC TSan checks passed. Full final-archive qualification of this
 fix remains pending. Commit `e6412ec2b` then normalized the two C17 fixture JSON
 files before the successful final SDK build.
 
-The previously planned acceptance work is listed below as incomplete evidence,
-not as an instruction to resume it. The user's latest direction prioritizes
-hard cutovers and implementation over rollback retention and repeated broad
-qualification:
+The previously planned release acceptance work remains incomplete evidence.
+Focused runtime, sanitizer, tooling and onboarding checks have resumed; those
+checks do not relabel the earlier archive as a newly qualified release:
 
 1. Complete the final archive's 114 sanitizer configurations and the checked
    ABI, regression and post-hop debugger checks.
@@ -243,10 +243,11 @@ retired-staging paths and provide a frontend/runtime-only `linux-dev` CMake
 user preset. Four compile jobs and one link job match the four-CPU quota and
 16 GiB memory limit. See the
 [development setup](linux_forward_development.md#architecture-and-release-performance).
-These settings have not been exercised by a new configuration, build or test.
+The frontend build has now been reconfigured against the current SDK with
+testing enabled, and the runtime regression targets have been built and run.
 
-Tests, validation, automatic acceptance and background indexing remain stopped.
-Thirty-three old compiler/test process entries were confirmed to be zombies,
+Tests and validation have resumed; background indexing remains disabled.
+At cleanup, thirty-three old compiler/test process entries were confirmed to be zombies,
 with no live compiler/test processes and no resident memory. They are adopted
 by PID 1 (`tail`); reaping those records requires proper init handling rather
 than termination of an active project process. No instance restart was made.
@@ -255,6 +256,6 @@ Subsequent tooling now routes compiler temporaries through private RAM-backed
 `TMPDIR` and scopes sanitizer executables, objects and service archives to
 temporary directories cleaned after each case. Durable logs, hashes and receipts
 remain on disk, as do the incremental compiler build, SDK and compilation cache.
-Cleanup/report-preservation test coverage was added but not run under the
-current pause. These tooling changes postdate the qualified SDK snapshot above;
-no rebuilt SDK or new validation result is claimed.
+Cleanup/report-preservation regression coverage now passes as part of the
+current tooling suite. These tooling changes postdate the SDK snapshot above;
+the installed archive has not been rebuilt by the four-issue fix work.

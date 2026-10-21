@@ -212,15 +212,15 @@ receipts stay in the requested output directory on disk. Persistent compiler
 objects, SDK archives/installations and ccache remain on disk. This avoids
 retaining an entire matrix of disposable binaries in RAM or on disk.
 
-Cleanup/report-preservation coverage was added for these runners. It has not
-been executed: project builds, tests and validation remain paused. The current
-SDK receipt still identifies its earlier qualified implementation snapshot;
-these later tooling edits have not been incorporated into a rebuilt SDK.
+Cleanup/report-preservation coverage for these runners now passes in the tooling
+suite. The user reauthorized tests and validation for the four open P2/P3 fixes.
+The current SDK receipt still identifies its earlier implementation snapshot;
+these later edits have not been incorporated into a rebuilt SDK.
 
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
-make it the default next milestone. The current user-requested pause stops all
-tests and qualification; resuming those requires a subsequent instruction.
+make it the default next milestone. Run focused regression and integration
+checks for the current implementation changes.
 
 Long-running development controllers must wait for their child processes during
 shutdown. This instance uses `tail` as PID 1 and retains orphaned zombie process
