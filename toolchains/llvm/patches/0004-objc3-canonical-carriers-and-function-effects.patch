@@ -6896,10 +6896,10 @@ index 000000000..c0f59a7b6
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Match.cpp b/clang/lib/Sema/SemaObjC3Match.cpp
 new file mode 100644
-index 000000000..57cdf7be7
+index 000000000..5a62d4256
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Match.cpp
-@@ -0,0 +1,274 @@
+@@ -0,0 +1,287 @@
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
@@ -6907,11 +6907,12 @@ index 000000000..57cdf7be7
 +#include "clang/AST/ObjC3MatchSemantic.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Overload.h"
 +#include "clang/Sema/Scope.h"
 +#include "clang/Sema/Sema.h"
-+#include "llvm/ADT/SmallVector.h"
 +#include "llvm/ADT/APInt.h"
++#include "llvm/ADT/SmallVector.h"
 +
 +using namespace clang;
 +
@@ -7009,6 +7010,18 @@ index 000000000..57cdf7be7
 +  Common = S.Context.getCanonicalType(Common);
 +  for (ObjC3MatchArm *Arm : Arms) {
 +    auto *Body = cast<Expr>(Arm->getBody());
++    if (S.getLangOpts().CPlusPlus && Common->isRecordType()) {
++      // A match expression produces a value, even when every selected arm is
++      // an lvalue of the same class. Resolve its copy/move and access checks
++      // through ordinary C++ initialization instead of letting CodeGen copy
++      // a nontrivial object's representation.
++      ExprResult Initialized = S.PerformCopyInitialization(
++          InitializedEntity::InitializeTemporary(Common), MatchLoc, Body);
++      if (Initialized.isInvalid())
++        return QualType();
++      Arm->setBody(Initialized.get());
++      continue;
++    }
 +    if (S.Context.hasSameType(Body->getType(), Common))
 +      continue;
 +    ImplicitConversionSequence ICS = S.TryImplicitConversion(
