@@ -238,6 +238,11 @@ The [public module surface contract](docs/roadmap/linux_public_module_surfaces.m
 selects exported roots, rejects private type leaks and preserves dependent build
 reuse across private implementation edits.
 
+The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
+native deprecation, unavailability and platform metadata in semantic identities
+and preserves their diagnostics in source-free consumers. Public metadata edits
+invalidate dependent compilations.
+
 The [ownership projection workflow](docs/roadmap/linux_ownership_projections.md)
 connects closed ARC and MRC C APIs through explicit native return ownership.
 Consumer-mode interfaces bind their original producer contract; source graphs and
@@ -275,11 +280,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_public_surface_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_api_availability_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_public_surface_latency.json) records
+The [current latency report](docs/support/linux_api_availability_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

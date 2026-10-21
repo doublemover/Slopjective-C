@@ -49,7 +49,8 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.native-return-ownership.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
-    "objc3.ownership-projection.v1"};
+    "objc3.ownership-projection.v1",
+    "objc3.api-availability.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -588,8 +589,11 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   }
   for (const auto &id : visible_ids) hidden_ids.erase(id);
   auto *target_tu = target_context.getTranslationUnitDecl();
-  // Build before removing roots so transparent enum constants can be hidden
-  // from TU lookup while remaining intact in their enum's semantic AST.
+  // Keep the lexical declarations and redeclaration chains intact. Imported
+  // C++ forward declarations can share a lookup entry with a later definition;
+  // removeDecl would erase that entry before removing the other redeclaration.
+  // Visibility is controlled only by lookup, including transparent enum
+  // constants.
   auto *lookup = target_tu->buildLookup();
   NamedDeclarationSnapshot all_declarations;
   all_declarations.TraverseDecl(target_tu);
@@ -603,8 +607,6 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       hide.push_back(named);
   }
   for (auto *decl : hide) {
-    if (decl->getLexicalDeclContext() == target_tu)
-      target_tu->removeDecl(decl);
     if (lookup) {
       auto found = lookup->find(decl->getDeclName());
       if (found != lookup->end() && !found->second.isNull()) {

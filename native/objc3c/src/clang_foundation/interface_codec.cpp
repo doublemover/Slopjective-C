@@ -268,6 +268,18 @@ llvm::Error ValidateForEncoding(
                          sidecar.required_semantics.end();
   if (projected != !sidecar.ownership_projection.empty())
     return Invalid("ownership projection provenance and capability must agree");
+  const bool has_availability =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &declaration) {
+                    return declaration.canonical_type_identity.find(
+                               ";api-availability=") != std::string::npos;
+                  });
+  const bool availability_capability =
+      std::find(
+          sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+          "objc3.api-availability.v1") != sidecar.required_semantics.end();
+  if (has_availability != availability_capability)
+    return Invalid("native availability metadata and capability must agree");
   const auto &module = sidecar.module;
   if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
       module.target_triple.empty() || module.runtime_abi.empty() ||
@@ -479,6 +491,8 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
   const bool projected = seen_semantics.count("objc3.ownership-projection.v1");
   if (projected != !result.ownership_projection.empty())
     return Invalid("ownership projection provenance and capability must agree");
+  if (auto error = ValidateForEncoding(result, supported))
+    return std::move(error);
   return result;
 }
 

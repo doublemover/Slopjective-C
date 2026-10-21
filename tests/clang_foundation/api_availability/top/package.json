@@ -1,0 +1,20 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.AvailabilityTop",
+  "package": "availability-top-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "availability_answer"
+  ],
+  "dependencies": [
+    {
+      "name": "fixture.AvailabilityLeaf",
+      "package": "availability-leaf-v1",
+      "visibility": "public"
+    }
+  ]
+}

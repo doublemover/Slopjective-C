@@ -142,6 +142,19 @@ InterfaceContractValidation ValidateSemanticInterface(
   if (projection_semantic != !sidecar.ownership_projection.empty())
     Add(result, "O3IFC017",
         "ownership projection provenance and capability must agree");
+  const bool has_availability =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &declaration) {
+                    return declaration.canonical_type_identity.find(
+                               ";api-availability=") != std::string::npos;
+                  });
+  const bool availability_semantic =
+      std::find(
+          sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+          "objc3.api-availability.v1") != sidecar.required_semantics.end();
+  if (has_availability != availability_semantic)
+    Add(result, "O3IFC018",
+        "native availability metadata and capability must agree");
   auto supported = supported_required_semantics;
   std::sort(supported.begin(), supported.end());
   auto required = sidecar.required_semantics;

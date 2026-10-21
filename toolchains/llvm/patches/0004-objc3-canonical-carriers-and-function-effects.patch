@@ -2642,7 +2642,7 @@ index e0b62591a..549a1ca48 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..99630189a 100644
+index 4be3e977b..bbe2d24ec 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -71,6 +71,7 @@ namespace {
@@ -2653,7 +2653,87 @@ index 4be3e977b..99630189a 100644
      void VisitVarDecl(VarDecl *D);
      void VisitLabelDecl(LabelDecl *D);
      void VisitParmVarDecl(ParmVarDecl *D);
-@@ -818,6 +819,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -269,7 +270,10 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+     if (A->isInherited() || A->isImplicit())
+       continue;
+     // Print out the keyword attributes, they aren't regular attributes.
+-    if (Policy.PolishForDeclaration && !A->isKeywordAttribute())
++    // Availability changes whether clients can name or call an API. Keep its
++    // native attributes when printing a reusable declaration contract.
++    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
++        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr>(A))
+       continue;
+     switch (A->getKind()) {
+ #define ATTR(X)
+@@ -282,7 +286,66 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+              "Default not a valid for an attribute location");
+       if (Pos == AttrPosAsWritten::Default || Pos == APos) {
+         AOut << LS;
+-        A->printPretty(AOut, Policy);
++        auto PrintString = [&](llvm::StringRef Text) {
++          AOut << '"';
++          AOut.write_escaped(Text);
++          AOut << '"';
++        };
++        // Preserve complete native metadata and quote strings as C literals.
++        // A GNU spelling works in each supported C and C++ language mode.
++        if (const auto *Deprecated = dyn_cast<DeprecatedAttr>(A);
++            Policy.PolishForDeclaration && Deprecated) {
++          AOut << "__attribute__((deprecated";
++          if (!Deprecated->getMessage().empty() ||
++              !Deprecated->getReplacement().empty()) {
++            AOut << '(';
++            PrintString(Deprecated->getMessage());
++            if (!Deprecated->getReplacement().empty()) {
++              AOut << ", ";
++              PrintString(Deprecated->getReplacement());
++            }
++            AOut << ')';
++          }
++          AOut << "))";
++        } else if (const auto *Unavailable = dyn_cast<UnavailableAttr>(A);
++                   Policy.PolishForDeclaration && Unavailable) {
++          AOut << "__attribute__((unavailable";
++          if (!Unavailable->getMessage().empty()) {
++            AOut << '(';
++            PrintString(Unavailable->getMessage());
++            AOut << ')';
++          }
++          AOut << "))";
++        } else if (const auto *Availability = dyn_cast<AvailabilityAttr>(A);
++                   Policy.PolishForDeclaration && Availability) {
++          AOut << "__attribute__((availability("
++               << Availability->getPlatform()->getName();
++          if (Availability->getStrict())
++            AOut << ", strict";
++          if (!Availability->getIntroduced().empty())
++            AOut << ", introduced=" << Availability->getIntroduced();
++          if (!Availability->getDeprecated().empty())
++            AOut << ", deprecated=" << Availability->getDeprecated();
++          if (!Availability->getObsoleted().empty())
++            AOut << ", obsoleted=" << Availability->getObsoleted();
++          if (Availability->getUnavailable())
++            AOut << ", unavailable";
++          if (Availability->getEnvironment())
++            AOut << ", environment="
++                 << Availability->getEnvironment()->getName();
++          if (!Availability->getReplacement().empty()) {
++            AOut << ", replacement=";
++            PrintString(Availability->getReplacement());
++          }
++          // Clang's native grammar requires message last.
++          if (!Availability->getMessage().empty()) {
++            AOut << ", message=";
++            PrintString(Availability->getMessage());
++          }
++          AOut << ")))";
++        } else {
++          A->printPretty(AOut, Policy);
++        }
+       }
+       break;
+     }
+@@ -818,6 +881,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -2678,7 +2758,7 @@ index 4be3e977b..99630189a 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -923,8 +942,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1004,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -2691,7 +2771,7 @@ index 4be3e977b..99630189a 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,6 +965,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,6 +1027,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -2710,7 +2790,7 @@ index 4be3e977b..99630189a 100644
  void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
    Out << *D << ":";
  }
-@@ -1485,6 +1518,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1485,6 +1580,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -2731,7 +2811,7 @@ index 4be3e977b..99630189a 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1512,8 +1559,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1621,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2742,7 +2822,7 @@ index 4be3e977b..99630189a 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1568,9 +1615,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1677,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2754,7 +2834,25 @@ index 4be3e977b..99630189a 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1631,9 +1677,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1587,6 +1695,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+ }
+ 
+ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
++  if (std::optional<std::string> Attrs = prettyPrintAttributes(PID))
++    Out << *Attrs << "\n";
+   if (!PID->isThisDeclarationADefinition()) {
+     Out << "@protocol " << *PID << ";\n";
+     return;
+@@ -1619,6 +1729,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+ }
+ 
+ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
++  if (std::optional<std::string> Attrs = prettyPrintAttributes(PID))
++    Out << *Attrs << "\n";
+   Out << "@interface ";
+   if (const auto *CID = PID->getClassInterface())
+     Out << *CID;
+@@ -1631,9 +1743,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -2768,6 +2866,15 @@ index 4be3e977b..99630189a 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
+@@ -1762,6 +1875,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+   if (!StringRef(TypeStr).ends_with("*"))
+     Out << ' ';
+   Out << *PDecl;
++  if (std::optional<std::string> Attrs = prettyPrintAttributes(PDecl))
++    Out << ' ' << *Attrs;
+   if (Policy.PolishForDeclaration)
+     Out << ';';
+ }
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..024ef12a8 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -12477,10 +12584,10 @@ index 000000000..31689c431
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..0376a4c4a
+index 000000000..25ee90b87
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
-@@ -0,0 +1,222 @@
+@@ -0,0 +1,259 @@
 +//===--- ObjC3FunctionEffectTest.cpp - function type effects --------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// See https://llvm.org/LICENSE.txt for license information.
@@ -12700,6 +12807,43 @@ index 000000000..0376a4c4a
 +  FunctionProtoType::ExtProtoInfo InvalidKind;
 +  InvalidKind.ObjC3Effects.Throws = static_cast<ObjC3ThrowsKind>(3);
 +  EXPECT_TRUE(Context.getFunctionType(Context.VoidTy, {}, InvalidKind).isNull());
++}
++
++TEST(ObjC3FunctionEffect, PolishedAvailabilityContractsRoundTrip) {
++  auto AST = parse(R"(
++    int current(void);
++    __attribute__((deprecated("use current", "current"))) int old(void);
++    __attribute__((unavailable("removed API"))) int removed(void);
++    __attribute__((availability(macos,introduced=10.0,deprecated=11.0,
++                                obsoleted=12.0,replacement="current",message="platform API"))) int platform(void);
++    __attribute__((deprecated("old protocol"))) @protocol Protocol
++    - (int)oldMethod __attribute__((deprecated("use new method")));
++    @end
++    __attribute__((objc_root_class)) @interface Root
++    @property(readonly) int oldProperty __attribute__((deprecated("old property")));
++    @end
++    __attribute__((deprecated("old category"))) @interface Root (Old) @end
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  PrintingPolicy Policy(AST->getASTContext().getLangOpts());
++  Policy.PolishForDeclaration = true;
++  std::string Printed;
++  llvm::raw_string_ostream Out(Printed);
++  AST->getASTContext().getTranslationUnitDecl()->print(Out, Policy);
++  Out.flush();
++  EXPECT_NE(Printed.find("deprecated(\"use current\", \"current\")"),
++            std::string::npos);
++  EXPECT_NE(Printed.find("unavailable(\"removed API\")"), std::string::npos);
++  EXPECT_NE(Printed.find("availability(macos"), std::string::npos);
++  EXPECT_NE(Printed.find("platform API"), std::string::npos);
++  EXPECT_NE(Printed.find("old protocol"), std::string::npos);
++  EXPECT_NE(Printed.find("old category"), std::string::npos);
++  EXPECT_NE(Printed.find("old property"), std::string::npos);
++  EXPECT_NE(Printed.find("use new method"), std::string::npos);
++  auto Reparsed = parse(Printed);
++  ASSERT_TRUE(Reparsed);
++  EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred());
 +}
 +
 +} // namespace

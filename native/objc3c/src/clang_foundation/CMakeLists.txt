@@ -154,6 +154,12 @@ if (BUILD_TESTING)
     ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_ownership_projection_test PRIVATE objc3c_clang_foundation clangTooling)
   add_test(NAME objc3_ownership_projection COMMAND objc3_ownership_projection_test)
+  add_executable(objc3_interface_availability_test
+    ../../../../tests/clang_foundation/interface_availability_test.cpp)
+  target_include_directories(objc3_interface_availability_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_availability_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_interface_availability COMMAND objc3_interface_availability_test)
   add_executable(objc3_interface_exports_test
     ../../../../tests/clang_foundation/interface_exports_test.cpp)
   target_include_directories(objc3_interface_exports_test SYSTEM PRIVATE
@@ -201,7 +207,7 @@ if (BUILD_TESTING)
       "$<TARGET_FILE:objc3_text_file_cli>")
   set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
   foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
-      objc3_ownership_projection_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
+      objc3_ownership_projection_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
       objc3_interface_source_import_bridge_test objc3_task_services_test

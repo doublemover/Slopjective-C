@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_public_surface_acceptance.json) identifies
+[acceptance receipt](../support/linux_api_availability_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -43,11 +43,14 @@ The implemented foundations have separate bounded contracts:
   declarations, reject private type leaks and preserve dependent build reuse
   across private implementation edits. Source manifests v4 and binary packages
   v3 require explicit export policies. Semantic interfaces remain schema 2.
+- [Public API availability](linux_api_availability.md) preserves native
+  deprecation, unavailability and platform metadata through imports, ownership
+  projections and source-free packages. Metadata edits invalidate dependents.
 
 ## Next implementation sequence
 
-1. Extend the bounded public module API with privileged SPI, availability
-   metadata and module-owned linker/runtime naming contracts. Native imports,
+1. Extend the bounded public module API with privileged SPI and module-owned
+   linker/runtime naming contracts. Native availability metadata, native imports,
    qualified lookup, explicit export selection and immutable dependency
    identities are implemented. Registry transport is a separate concern.
 2. Build structured task groups, cancellation and actor isolation on that
@@ -65,3 +68,8 @@ Keep retained build timings, compiler concurrency limits, content-addressed
 reuse and archive identities as release inputs. Publication records a verified
 qualified archive before reclaiming its staging prefix; interrupted installation
 resumes from that archive without recompiling or repeating qualification.
+
+Release reuse hashes foundation contents and immutable configure inputs. Mutable
+staging inventories do not participate: reclaiming a duplicate foundation stage
+preserves reuse. Source, bootstrap and build configuration changes still
+invalidate the release identity.
