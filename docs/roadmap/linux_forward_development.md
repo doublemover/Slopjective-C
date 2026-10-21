@@ -162,6 +162,41 @@ Git references before removing their working copies; keep the active checkout
 as the sole persistent worktree. Managed tools in `.cloud-setup` and platform
 directories stay outside this project layout.
 
+The current development instance has a four-CPU quota and 16 GiB of RAM.
+Retain four compile jobs and one link job. The managed activation script now
+caps ccache at 1 GB while retaining content-based compiler checks and default
+compression. This is a bounded compilation cache, separate from SDK archive
+retention.
+
+Local editor configuration uses the current patched SDK's `clangd` through
+`out/bin/clangd`. The launcher limits workers to two, disables background
+indexing and stores open-file preambles in memory. Activation selects this
+launcher without changing the bootstrap compiler. The ignored `.clangd`
+selects the frontend compilation database or the LLVM database according to
+the edited source path. A root `compile_commands.json` symlink follows the
+generated frontend database; stale retired-staging paths in that metadata were
+redirected to the current installed SDK.
+
+The ignored `native/objc3c/CMakeUserPresets.json` supplies a `linux-dev` preset
+using Ninja, LLD, ccache, the current SDK and the existing frontend build tree.
+It disables `BUILD_TESTING` for that local preset and selects only `objc3c`,
+`clang-scan-deps` and `objc3_runtime_services`, with four build jobs. It does not
+change SDK qualification scripts. When development builds are explicitly
+resumed, configure with this preset before rebuilding to replace the old
+staging-root CMake setting:
+
+```sh
+cd native/objc3c
+cmake --preset linux-dev
+cmake --build --preset linux-dev
+```
+
+These settings have been written without running CMake configuration, builds,
+tests, benchmarks or a language server. Instance-specific presets, editor
+configuration and compilation databases remain ignored; the shared ignore rules
+and these instructions are committed. Machine-local configuration details are
+recorded in `out/session/development-configuration.json`.
+
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
 make it the default next milestone. The current user-requested pause stops all

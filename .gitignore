@@ -8,6 +8,11 @@ temp/
 /out/
 /scratch/
 
+# Instance-specific editor metadata and local CMake presets.
+/.clangd
+compile_commands.json
+CMakeUserPresets.json
+
 # Generated report artifacts (local/CI scratch outputs)
 reports/**/*.log
 reports/bootstrap_readiness/**

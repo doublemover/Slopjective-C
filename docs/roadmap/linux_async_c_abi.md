@@ -254,3 +254,12 @@ all generated `out/` contents and pytest caches are excluded by the committed
 The workspace root now contains only the project checkout, managed cloud tools
 and the platform's `shared` and `library-files` directories. Current SDK/build
 state and authored experiment sources remain; tests and validation stay stopped.
+
+Local development settings now cap ccache at 1 GB, select the current patched
+clangd with two workers and background indexing disabled, repair the editor's
+retired-staging include paths and provide a frontend/runtime-only `linux-dev`
+CMake user preset. Compilation databases, editor configuration and user presets
+are covered by shared ignore rules. These are configuration changes only;
+no configuration probes, compilation or validation were run. See the
+[development setup](linux_forward_development.md#architecture-and-release-performance)
+for details.
