@@ -1197,17 +1197,28 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..19417724b
+index 000000000..8d16df694
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,41 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
 +#define LLVM_CLANG_AST_OBJC3ASYNC_H
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
 +namespace clang {
++/// Canonical logical signature shared by functions and Objective-C methods.
++inline const FunctionProtoType *getObjC3CallableFunctionType(const Decl *D) {
++  if (const auto *FD = dyn_cast_or_null<FunctionDecl>(D))
++    return FD->getType()->getAs<FunctionProtoType>();
++  if (const auto *MD = dyn_cast_or_null<ObjCMethodDecl>(D))
++    if (!MD->getObjC3FunctionType().isNull())
++      return MD->getObjC3FunctionType()->castAs<FunctionProtoType>();
++  return nullptr;
++}
++
 +inline const CallExpr *getObjC3CheckedAsyncAdapterCall(const Expr *E) {
 +  const auto *Call = dyn_cast<CallExpr>(E->IgnoreImplicit());
 +  const auto *FD = Call ? Call->getDirectCallee() : nullptr;

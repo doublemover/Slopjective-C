@@ -1,6 +1,6 @@
 # Linux C++ semantic interfaces
 
-Extension ABI 17 defines bounded C++ and Objective-C++ semantic interfaces on
+Extension ABI 18 defines bounded C++ and Objective-C++ semantic interfaces on
 Linux x86-64 with GNUstep 2.2. The module identity includes the language,
 standard, Blocks mode, ownership, semantic profile, runtime, target and compiler
 patch identity. Regenerate every dependent object and interface for this cutover.

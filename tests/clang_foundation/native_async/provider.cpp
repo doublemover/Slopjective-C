@@ -607,3 +607,92 @@ int native_checked_value_discard(std::shared_ptr<async_state> state, bool fail)
   (void)__objc3_try_force(__objc3_await native_checked_value(state, false));
   return 42;
 }
+
+#ifdef __OBJC__
+static std::atomic<unsigned> method_destructions{0};
+extern "C" __attribute__((noinline)) void
+objc3_native_async_objc_method_checkpoint(int result, __unsafe_unretained id receiver) {
+  if (result != 42 || !receiver) __builtin_trap();
+}
+@implementation NativeAsyncMethod
++ (id)new { return class_createInstance(self, 0); }
+- (void)dealloc { ++method_destructions; object_dispose(self); }
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
++ (int)constant:(int)value __objc3_async {
+  __objc3_await objc3::task_yield;
+  return value;
+}
+- (int)value:(std::shared_ptr<async_state>)state mode:(int)mode __objc3_async {
+  frame_guard guard(state);
+  __objc3_await objc3::task_yield;
+  if (mode == 1) throw 73;
+  if (mode == 2) @throw self;
+  int result = bias + __objc3_await [self direct:2];
+  if (mode == 3) objc3_native_async_objc_method_checkpoint(result, self);
+  if (!_cmd) __builtin_trap();
+  return result;
+}
+- (int)checked:(std::shared_ptr<async_state>)state fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  int result = __objc3_try(__objc3_await native_checked_leaf(state, false));
+  if (fail) {
+    NativeAsyncFailure *error = [NativeAsyncFailure new];
+#if !__has_feature(objc_arc)
+    result_owner owner{error};
+#endif
+    __objc3_await objc3::task_yield;
+    __objc3_throw((id<NativeFirstError>)error);
+  }
+  return result + bias;
+}
+- (int)recover:(std::shared_ptr<async_state>)state fail:(bool)fail __objc3_async {
+  __objc3_do {
+    return __objc3_try(__objc3_await [self checked:state fail:fail]);
+  } __objc3_catch(id<NativeFirstError> error) {
+    __objc3_await objc3::task_yield;
+    return error ? bias + 56 : 0;
+  }
+}
+- (async_checked_value)record:(std::shared_ptr<async_state>)state fail:(bool)fail
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  return __objc3_try(__objc3_await native_checked_value(state, fail));
+}
+- (NativeAsyncResult *)object:(int)value __objc3_async {
+  return __objc3_await native_result_object(bias + value);
+}
+- (native_result_reader)reader:(int)value __objc3_async {
+  return __objc3_await native_result_block(bias + value);
+}
+- (int)direct:(int)value __objc3_async __attribute__((objc_direct)) {
+  __objc3_await objc3::task_yield;
+  return value;
+}
+- (void)empty __objc3_async {}
+- (int)hopped:(objc3_actor_t *)actor state:(std::shared_ptr<async_state>)state __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  int result = __objc3_await [self value:state mode:0];
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts); facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+      facts.actor_identity != objc3_actor_identity(actor)) __builtin_trap();
+  return result;
+}
+@end
+@implementation NativeAsyncMethodChild
+- (int)value:(std::shared_ptr<async_state>)state mode:(int)mode __objc3_async {
+  return 1 + __objc3_await [super value:state mode:mode];
+}
+@end
+unsigned native_method_destructions() { return method_destructions.load(); }
+int native_method_consume(id<NativeAsyncMethodProtocol> receiver,
+                           std::shared_ptr<async_state> state, bool fail) __objc3_async {
+  __objc3_do {
+    return __objc3_try(__objc3_await [receiver checked:state fail:fail]);
+  } __objc3_catch(id<NativeFirstError> error) {
+    __objc3_await objc3::task_yield;
+    return error ? 96 : 0;
+  }
+}
+#endif

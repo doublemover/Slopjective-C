@@ -66,6 +66,10 @@ def qualify(sdk: Path, output: Path) -> dict:
                         or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
                         or any(not row.get('native_symbol_name') for row in members)):
                     raise ValueError('native async interface lost owned C++ member contracts')
+                objc_methods = [row for row in metadata['declarations']
+                                if row.get('kind') == 'ObjCMethod']
+                if not has_checked_async(objc_methods):
+                    raise ValueError('native async interface lost Objective-C method effects')
                 names = {row['qualified_name']: row for row in metadata['declarations']}
                 for name in ('native_module_record', 'native_module_complex_value',
                              'native_module_data_value'):

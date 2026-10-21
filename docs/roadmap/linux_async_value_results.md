@@ -31,10 +31,11 @@ matching, arbitrary carrier storage and unqualified carrier copying do not gain
 new lowering support. Complex and member-pointer payloads use their ordinary
 trivial storage operations, including volatile complex transfers.
 
-Extension ABI 17 is a hard compiler/header/interface/PCH/provider cutover. Every
-artifact must be rebuilt. The runtime task service remains ABI 3 and promise
-layout is unchanged; the reserved preflight/resume handshake is the changed
-compiler contract. The installed task header explicitly rejects ABI 16.
+Checked value results introduced extension ABI 17 and its reserved
+preflight/resume handshake. The current [Objective-C method stage](linux_async_objc_methods.md)
+advances the compiler/header/interface/PCH/provider contract to ABI 18. Rebuild
+every artifact. The runtime task service remains ABI 3 and promise layout is
+unchanged. The installed task header explicitly rejects ABI 17.
 
 Source-free packages preserve checked aggregate, complex and member-pointer
 result identities through indirect calls, actor hops, provider removal and
@@ -43,13 +44,14 @@ relocation. Their C++ declarations remain subject to the
 consumers additionally exercise non-default-constructible records and standard
 library values.
 
-Pure Objective-C async lowering, Objective-C async methods and Blocks, compiler
-actor isolation and the public async/await capability remain separate compiler
-milestones. Native AArch64 support requires qualification on a real native host.
+[Objective-C async methods](linux_async_objc_methods.md) use the same checked
+value and Optional lifetime rules through dynamic, protocol, superclass and direct
+messages. Pure Objective-C async lowering, async Blocks, compiler actor isolation
+and the public async/await capability remain separate compiler milestones. Native AArch64 support requires qualification on a real native host.
 
-The [installed SDK acceptance receipt](../support/linux_async_value_results_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
 binds this contract to the exact compiler, runtime, source inputs and sealed
-ABI 17 archive. It records 211 compiler tests, 57 AST tests, 318 current tooling
+ABI 18 archive. It records 215 compiler tests, 57 AST tests, 318 current tooling
 tests, 24 frontend tests, eight GNU runtime tests, 37 installed driver/embedding
 checks and all 22 installed package gates.
 
@@ -65,5 +67,5 @@ C++/extension-ABI checks and six post-hop debugger cases. Fresh Debian 13 and
 Ubuntu 26.04 consumers run as ordinary users under the explicit
 `task-destinations` scope; all 22 package gates run on the publication host.
 Sanitizers instrument services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_value_results_latency.json) records
+The [latency report](../support/linux_async_objc_methods_latency.json) records
 five quiet repetitions against the existing release budgets.
