@@ -2,7 +2,7 @@
   "schema_version": 1,
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 16,
+  "extension_abi_revision": 17,
   "features": [
     {
       "name": "defer",
@@ -28,9 +28,7 @@
     {
       "name": "optionals",
       "macro": "OPTIONALS",
-      "aliases": [
-        "OPTIONAL"
-      ],
+      "aliases": ["OPTIONAL"],
       "state": "implemented",
       "qualified_targets": [
         {
@@ -70,9 +68,7 @@
     {
       "name": "throws",
       "macro": "THROWS",
-      "aliases": [
-        "TYPED_THROWS"
-      ],
+      "aliases": ["TYPED_THROWS"],
       "state": "implemented",
       "qualified_targets": [
         {
@@ -91,9 +87,7 @@
     {
       "name": "async_await",
       "macro": "ASYNC_AWAIT",
-      "aliases": [
-        "ASYNC"
-      ],
+      "aliases": ["ASYNC"],
       "state": "reserved",
       "qualified_targets": []
     },

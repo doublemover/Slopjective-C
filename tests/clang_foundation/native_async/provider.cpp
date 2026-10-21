@@ -527,3 +527,83 @@ int native_async_worker::hopped(objc3_actor_t *actor,
       facts.actor_identity != objc3_actor_identity(actor)) __builtin_trap();
   return result;
 }
+
+async_checked_value native_checked_value(std::shared_ptr<async_state> state,
+                                        bool fail, int kind)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  int value = __objc3_try(__objc3_await native_checked_leaf(state, fail, kind));
+  return async_checked_value(std::move(state), value);
+}
+async_checked_value native_checked_value_relay(std::shared_ptr<async_state> state,
+                                              bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  return __objc3_try(__objc3_await native_checked_value(std::move(state), fail));
+}
+std::string native_checked_text(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return std::string(256, 'v');
+}
+async_checked_complex native_checked_complex(std::shared_ptr<async_state> state,
+                                             bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  async_checked_complex result;
+  __real__ result = 40; __imag__ result = 2;
+  return result;
+}
+async_checked_data native_checked_data(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return &async_checked_target::value;
+}
+async_checked_method native_checked_method(std::shared_ptr<async_state> state,
+                                            bool fail)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  (void)__objc3_try(__objc3_await native_checked_leaf(std::move(state), fail));
+  return &async_checked_target::add;
+}
+__attribute__((noinline))
+void objc3_native_async_value_checkpoint(int value, int size) {
+  asm volatile("" : : "r"(value), "r"(size) : "memory");
+}
+int native_checked_values(std::shared_ptr<async_state> state, unsigned kind)
+    __objc3_async {
+  __objc3_do {
+    auto value = __objc3_try(__objc3_await native_checked_value_relay(state, kind == 1));
+    auto text = __objc3_try(__objc3_await native_checked_text(state, kind == 2));
+    auto number = __objc3_try(__objc3_await native_checked_complex(state, kind == 3));
+    auto data = __objc3_try(__objc3_await native_checked_data(state, kind == 4));
+    auto method = __objc3_try(__objc3_await native_checked_method(state, kind == 5));
+    async_checked_target target;
+    __objc3_await objc3::task_yield;
+    objc3_native_async_value_checkpoint(value.value, (int)text.size());
+    return value.value == 42 && text == std::string(256, 'v') &&
+           __real__ number + __imag__ number == 42 &&
+           target.*data == 40 && (target.*method)(2) == 42 ? 42 : 0;
+  } __objc3_catch(id<NativeFirstError> error) {
+    __objc3_await objc3::task_yield;
+    return error ? 96 : 0;
+  }
+}
+int native_checked_value_optional(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async {
+  auto value = __objc3_try_optional(__objc3_await native_checked_value(state, fail));
+  auto text = __objc3_try_optional(__objc3_await native_checked_text(state, fail));
+  auto number = __objc3_try_optional(__objc3_await native_checked_complex(state, fail));
+  auto data = __objc3_try_optional(__objc3_await native_checked_data(state, fail));
+  auto method = __objc3_try_optional(__objc3_await native_checked_method(state, fail));
+  __objc3_await objc3::task_yield;
+  if (fail) return !__objc3_has_value(value) && !__objc3_has_value(text) &&
+      !__objc3_has_value(number) && !__objc3_has_value(data) &&
+      !__objc3_has_value(method) ? 96 : 0;
+  return __objc3_has_value(value) && __objc3_has_value(text) &&
+      __objc3_has_value(number) && __objc3_has_value(data) &&
+      __objc3_has_value(method) && state->values > 0 ? 42 : 0;
+}
+int native_checked_value_discard(std::shared_ptr<async_state> state, bool fail)
+    __objc3_async {
+  (void)__objc3_try_optional(__objc3_await native_checked_value(state, fail));
+  (void)__objc3_try_force(__objc3_await native_checked_value(state, false));
+  return 42;
+}

@@ -33,20 +33,22 @@ are diagnosed because task carriers are invariant in their logical result.
 Constructors, destructors, conversion functions and allocation/deallocation
 operators do not acquire a task ABI.
 
-The extension ABI remains 16 and the task service remains ABI 3. No promise or
-runtime structure changes in this stage. Rebuild compiler-dependent objects,
-providers, PCH files, semantic interfaces and packages with the new compiler.
-Pure Objective-C async lowering, Objective-C methods, Blocks, the remaining
-checked result forms and compiler actor isolation remain separate milestones.
+The current extension ABI is 17 and the task service remains ABI 3. The
+[checked value result stage](linux_async_value_results.md) adds records, complex
+values and member pointers with a reserved preflight/resume handshake. Rebuild
+compiler-dependent objects, providers, PCH files, semantic interfaces and packages
+with the new compiler. Pure Objective-C async lowering, Objective-C methods,
+Blocks and compiler actor isolation remain separate milestones.
 Public async/await and actor capabilities remain reserved.
 
-The [installed SDK acceptance receipt](../support/linux_async_cxx_callables_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_value_results_acceptance.json)
 binds this contract to the exact compiler, runtime, inputs and sealed archive.
-It records 209 compiler tests, 57 AST tests, 24 frontend tests, eight GNU runtime
+It records 211 compiler tests, 57 AST tests, 24 frontend tests, eight GNU runtime
 tests, 318 current tooling tests, 37 installed driver/embedding checks and all
 22 installed package gates. Sixteen C++20/23 O0/O2 configurations execute every
 ARC/MRC provider-consumer pairing; eight LLDB cases inspect resumed member `this`
-and local values alongside scalar, owned-result and checked-handler frames.
+and local values alongside scalar, owned-result, checked-handler and checked
+C++ value frames.
 Eight source-free package configurations execute 24 times after provider source
 removal, publication and relocation.
 
@@ -55,5 +57,5 @@ standalone C++/extension-ABI checks and six post-hop debugger cases. Fresh Debia
 13 and Ubuntu 26.04 consumers run as ordinary users under the explicit
 `task-destinations` scope; all 22 package gates run on the publication host.
 Sanitizers instrument services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_cxx_callables_latency.json) records
+The [latency report](../support/linux_async_value_results_latency.json) records
 five quiet repetitions against the existing release budgets.

@@ -6573,10 +6573,10 @@ index 000000000..132028f71
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..4e443441d
+index 000000000..d7491fd9a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,87 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6634,11 +6634,6 @@ index 000000000..4e443441d
 +      Function->getReturnType()->isUndeducedType())
 +    return Unsupported();
 +  QualType Result = Function->getReturnType();
-+  if (Function->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None &&
-+      !Result->isDependentType() && !Result->isVoidType() &&
-+      (!Result->isScalarType() || Result->isAnyComplexType() ||
-+       Result->isMemberPointerType()))
-+    return Unsupported();
 +  if (Result->isDependentType())
 +    return Context.DependentTy;
 +  if (QualType Existing = Context.getObjC3AsyncTaskType(Result);
@@ -14602,10 +14597,10 @@ index 76c51b8d9..df916197c 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..7f0223bff 100644
+index 4b99e4454..beb0c242a 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
-@@ -14,6 +14,7 @@
+@@ -14,11 +14,13 @@
  //===----------------------------------------------------------------------===//
  
  #include "CoroutineStmtBuilder.h"
@@ -14613,7 +14608,13 @@ index 4b99e4454..7f0223bff 100644
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/Decl.h"
  #include "clang/AST/Expr.h"
-@@ -56,6 +57,12 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
+ #include "clang/AST/ExprCXX.h"
+ #include "clang/AST/IgnoreExpr.h"
++#include "clang/AST/ObjC3Async.h"
+ #include "clang/AST/StmtCXX.h"
+ #include "clang/Basic/Builtins.h"
+ #include "clang/Basic/TargetInfo.h"
+@@ -56,6 +58,12 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
    const FunctionProtoType *FnType = FD->getType()->castAs<FunctionProtoType>();
    const SourceLocation FuncLoc = FD->getLocation();
  
@@ -14626,7 +14627,7 @@ index 4b99e4454..7f0223bff 100644
    ClassTemplateDecl *CoroTraits =
        S.lookupCoroutineTraits(KwLoc, FuncLoc);
    if (!CoroTraits)
-@@ -68,7 +75,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
+@@ -68,7 +76,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
      Args.addArgument(TemplateArgumentLoc(
          TemplateArgument(T), S.Context.getTrivialTypeSourceInfo(T, KwLoc)));
    };
@@ -14635,7 +14636,7 @@ index 4b99e4454..7f0223bff 100644
    // If the function is a non-static member function, add the type
    // of the implicit object parameter before the formal parameters.
    if (auto *MD = dyn_cast<CXXMethodDecl>(FD)) {
-@@ -697,6 +704,15 @@ static void checkReturnStmtInCoroutine(Sema &S, FunctionScopeInfo *FSI) {
+@@ -697,6 +705,15 @@ static void checkReturnStmtInCoroutine(Sema &S, FunctionScopeInfo *FSI) {
  
  bool Sema::ActOnCoroutineBodyStart(Scope *SC, SourceLocation KWLoc,
                                     StringRef Keyword) {
@@ -14651,7 +14652,30 @@ index 4b99e4454..7f0223bff 100644
    // Ignore previous expr evaluation contexts.
    EnterExpressionEvaluationContextForFunction PotentiallyEvaluated(
        *this, Sema::ExpressionEvaluationContext::PotentiallyEvaluated,
-@@ -1054,6 +1070,51 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
+@@ -970,6 +987,22 @@ ExprResult Sema::BuildResolvedCoawaitExpr(SourceLocation Loc, Expr *Operand,
+   if (RSS.IsInvalid)
+     return ExprError();
+ 
++  // A checked await must inspect completion before materializing its result.
++  // Keep the reserved preflight call in the ordinary serialized expression
++  // tree, using the same opaque awaiter as await_resume. CodeGen branches to
++  // the enclosing checked operation between these two calls.
++  if (getLangOpts().ObjC3 && getObjC3CheckedAsyncAdapterCall(Operand)) {
++    ExprResult Check = buildMemberCall(*this, RSS.OpaqueValue, CallLoc,
++                                       "__objc3_check_error", {});
++    if (Check.isInvalid())
++      return ExprError();
++    ExprResult Resume = CreateBuiltinBinOp(CallLoc, BO_Comma, Check.get(),
++                                           RSS.Results[2]);
++    if (Resume.isInvalid())
++      return ExprError();
++    RSS.Results[2] = Resume.get();
++  }
++
+   Expr *Res = new (Context)
+       CoawaitExpr(Loc, Operand, Awaiter, RSS.Results[0], RSS.Results[1],
+                   RSS.Results[2], RSS.OpaqueValue, IsImplicit);
+@@ -1054,6 +1087,51 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
      E = R.get();
    }
  
@@ -14703,7 +14727,7 @@ index 4b99e4454..7f0223bff 100644
    VarDecl *Promise = FSI->CoroutinePromise;
    ExprResult PC;
    if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
-@@ -1868,7 +1929,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1868,7 +1946,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -14918,7 +14942,7 @@ index 000000000..9c680a775
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm b/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm
 new file mode 100644
-index 000000000..f2de486ab
+index 000000000..259f31a97
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm
 @@ -0,0 +1,31 @@
@@ -14942,7 +14966,7 @@ index 000000000..f2de486ab
 +}
 +struct Record { int number; };
 +Record record() __objc3_async __objc3_throws(id<First>) {
-+  return {}; // expected-error {{native async task lowering requires}}
++  return {};
 +}
 +
 +int plain() __objc3_async;
@@ -15002,3 +15026,31 @@ index 000000000..d098d378c
 +int unchecked(Worker &w) __objc3_async {
 +  return __objc3_await w.checked(); // expected-error 2 {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
+diff --git a/clang/test/ObjC3/AST/native-async-value-pch.mm b/clang/test/ObjC3/AST/native-async-value-pch.mm
+new file mode 100644
+index 000000000..bccba16ec
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-value-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef NATIVE_VALUE_PCH
++#define NATIVE_VALUE_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++struct Value { int number; Value() = delete; Value(int); Value(const Value &); ~Value(); };
++Value produce(bool) __objc3_async __objc3_throws(id<Error>);
++template<class T> T relay(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await produce(fail));
++}
++inline int optional(bool fail) __objc3_async {
++  auto value = __objc3_try_optional(__objc3_await produce(fail));
++  return __objc3_has_value(value);
++}
++#else
++template Value relay<Value>(bool) __objc3_async __objc3_throws(id<Error>);
++Value invoke(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await relay<Value>(fail));
++}
++#endif

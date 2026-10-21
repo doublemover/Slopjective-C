@@ -64,23 +64,25 @@ exposes deferred checked failure as `objc3::task_error` with its retained native
 handlers use checked await. Private child cancellation, inherited destinations,
 actor-bound execution and queued resumes retain the existing task bridge rules.
 
-This stage admits real scalar, enumeration, C pointer, Objective-C object,
-protocol, Class, Block and void results for checked async functions. C++ record,
-complex, member pointer, reference, variadic and undeduced checked results remain
-outside the lowering contract. Ordinary nonthrowing async functions retain their
-existing C++ value result support. Objective-C async methods, async Blocks, pure Objective-C
+Checked async functions admit real scalar, enumeration, C pointer,
+Objective-C object, protocol, Class, Block and void results. The
+[checked value result contract](linux_async_value_results.md) adds copyable C++
+records, complex values and member pointers, including records with deleted
+default constructors. Reference, variadic and undeduced results remain outside
+the lowering contract. Objective-C async methods, async Blocks, pure Objective-C
 async lowering and compiler actor isolation remain future compiler milestones.
 Public async/await and actor capability predicates remain reserved.
 
-Extension ABI 16 requires a full rebuild of every object, provider, PCH,
-semantic interface and package. Promise layout changes for every task result
-type. The task service remains ABI 3; reserved object-error bridge symbols ship
+Extension ABI 17 requires a full rebuild of every object, provider, PCH,
+semantic interface and package. ABI 16 introduced checked-error promise fields;
+ABI 17 changes the reserved preflight/resume handshake without changing promise
+layout. The task service remains ABI 3; reserved object-error bridge symbols ship
 in a separate archive member so ordinary C++ task programs retain their existing
 link dependencies. ARC and MRC providers use the same owned error representation.
 
-The [installed SDK acceptance receipt](../support/linux_async_cxx_callables_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_value_results_acceptance.json)
 binds this contract to its exact compiler, runtime, source inputs and archive.
-It records 209 compiler tests, 57 AST tests, 318 current tooling tests, all 22
+It records 211 compiler tests, 57 AST tests, 318 current tooling tests, all 22
 installed package gates and 74 instrumented configurations. Native execution
 covers sixteen C++20/23, O0/O2 and ARC/MRC provider/consumer configurations,
 including checked object, Block and void results, copied error handles, native
@@ -96,5 +98,5 @@ Ubuntu 26.04 consumers run as ordinary users under the explicit
 debugger/embedding, structured runtime, coroutine and source-free async package
 checks. The full 22 package gates run during SDK publication. Sanitizers
 instrument runtime services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_cxx_callables_latency.json) records
+The [latency report](../support/linux_async_value_results_latency.json) records
 five quiet repetitions against the existing release budgets.

@@ -66,6 +66,11 @@ def qualify(sdk: Path, output: Path) -> dict:
                         or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
                         or any(not row.get('native_symbol_name') for row in members)):
                     raise ValueError('native async interface lost owned C++ member contracts')
+                names = {row['qualified_name']: row for row in metadata['declarations']}
+                for name in ('native_module_record', 'native_module_complex_value',
+                             'native_module_data_value'):
+                    if name not in names or not has_checked_async(names[name]):
+                        raise ValueError('native async value interface lost checked identity: ' + name)
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],

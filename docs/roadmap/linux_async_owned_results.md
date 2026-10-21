@@ -62,9 +62,10 @@ whose Objective-C fields change ownership between modes need their own explicit
 ABI contract.
 
 Owned results introduced extension ABI 15. The
-[checked async error stage](linux_async_checked_errors.md) advances the current
-extension ABI to 16 and requires a full rebuild of objects, PCH files, semantic
-interfaces and packages. The task service remains ABI 3. Every provider and
+[checked async error stage](linux_async_checked_errors.md) introduced extension
+ABI 16. The current [checked value result stage](linux_async_value_results.md)
+advances the compiler/header handshake to ABI 17 and requires a full rebuild of
+objects, PCH files, semantic interfaces and packages. The task service remains ABI 3. Every provider and
 consumer uses the new compiler and runtime header. Native header consumers cover
 all four provider/consumer ARC/MRC pairs; semantic and immutable packages retain
 their explicit ownership-mode identity.

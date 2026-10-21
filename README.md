@@ -276,7 +276,10 @@ add owned deferred errors, checked awaits and typed handlers that can suspend.
 [C++ async callables](docs/roadmap/linux_async_cxx_callables.md) extend this stage
 to members, virtual dispatch, member pointers and awaitable operators, including
 public aggregate methods in source-free packages.
-Extension ABI 16 requires every object, PCH, semantic interface and package to be
+[Checked async value results](docs/roadmap/linux_async_value_results.md) add
+non-default-constructible records, standard library values, complex values and
+member pointers, with failure checked before result construction.
+Extension ABI 17 requires every object, PCH, semantic interface and package to be
 rebuilt. Public async/await and compiler actor isolation remain reserved.
 
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
@@ -321,11 +324,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_async_cxx_callables_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_async_value_results_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_async_cxx_callables_latency.json) records
+The [current latency report](docs/support/linux_async_value_results_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

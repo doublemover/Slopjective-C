@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_async_cxx_callables_acceptance.json) identifies
+[acceptance receipt](../support/linux_async_value_results_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -10,7 +10,7 @@ public language claims come from [the capability authority](../../schemas/objc3-
 
 The [public Optional/Result contract](linux_public_carriers.md) and
 [synchronous error contract](linux_public_errors.md) now have native compiler
-syntax in Objective-C17 and Objective-C++20/23. Extension ABI 16 requires a full
+syntax in Objective-C17 and Objective-C++20/23. Extension ABI 17 requires a full
 rebuild of objects, PCH files, semantic interfaces and packages. The public
 feature predicates describe the bounded Linux x86-64 GNUstep 2.2 compatibility
 profile; async/await and actors remain reserved.
@@ -69,7 +69,10 @@ The implemented foundations have separate bounded contracts:
   add owned deferred Error objects, checked awaits and suspending handlers.
   [C++ async callables](linux_async_cxx_callables.md) extend this compiler work to
   member functions, virtual calls, member pointers and operators, with bounded
-  source-free aggregate method interfaces. Public async/await remains reserved.
+  source-free aggregate method interfaces. [Checked async value results](linux_async_value_results.md)
+  add records, complex values and member pointers without constructing an absent
+  result; direct automatic Optional initialization preserves C++ payload lifetimes.
+  Public async/await remains reserved.
 
 ## Next compiler milestones
 
@@ -81,8 +84,8 @@ and the public language contract still require the following work.
    the public language contract.
    Integrate suspension ownership, checked error propagation, cancellation,
    callback publication and cleanup into that language contract. Extend the
-   qualified Objective-C++ checked-error stage to the remaining result and
-   callable forms before promoting the language capability.
+   qualified Objective-C++ checked-error stage to Objective-C methods and Blocks
+   before promoting the language capability.
    Reuse the public task/group ABI and its resumable coroutine bridge. Require
    canonical async effect imports, source-free packages, O0/O2
    native execution, debug information and instrumented runtime/client evidence.

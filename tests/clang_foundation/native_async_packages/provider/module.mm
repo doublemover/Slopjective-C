@@ -97,3 +97,24 @@ int NativeModuleWorker::checked(int n, bool fail) const
 int NativeModuleWorker::operator()(int n) const __objc3_async {
   return __objc3_await value(n);
 }
+
+struct NativeModuleValue { int number; long padding[5]; };
+using native_module_complex = __complex__ double;
+using native_module_data = int NativeModuleValue::*;
+NativeModuleValue native_module_record(int n, bool fail)
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  int value = __objc3_try(__objc3_await native_module_checked(n, fail));
+  return NativeModuleValue{value, {1, 2, 3, 4, 5}};
+}
+native_module_complex native_module_complex_value(int n, bool fail)
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  int value = __objc3_try(__objc3_await native_module_checked(n, fail));
+  native_module_complex result;
+  __real__ result = value; __imag__ result = 2;
+  return result;
+}
+native_module_data native_module_data_value(bool fail)
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  (void)__objc3_try(__objc3_await native_module_checked(42, fail));
+  return &NativeModuleValue::number;
+}
