@@ -26,5 +26,19 @@ int main(void) {
   assert(destroyed == 1);
   assert(!hasValue(@fixture.MatchResults.match_optional(None(id))));
   assert(isOk(@fixture.MatchResults.match_result(Ok(id, id, (id)0))));
+  @autoreleasepool {
+    Optional(id) source = Some(id, [InterfaceObject new]);
+    assert(!hasValue(@fixture.MatchResults.match_mutable(source)) && hasValue(source));
+    id selected = @fixture.MatchResults.match_object(source);
+    assert(selected != (id)0);
+    int (^block)(void) = @fixture.MatchResults.match_block(source);
+    source = None(id);
+    selected = (id)0;
+    assert(block() == 42);
+    block = (int (^)(void))0;
+  }
+  assert(destroyed == 2);
+  assert(@fixture.MatchResults.match_object(None(id)) == (id)0);
+  assert(@fixture.MatchResults.match_scalar(13) == 17);
   return 0;
 }

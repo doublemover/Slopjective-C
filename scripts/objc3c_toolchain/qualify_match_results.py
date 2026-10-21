@@ -126,7 +126,12 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     '--export-declaration', 'MatchOptional',
                     '--export-declaration', 'MatchResult',
                     '--export-declaration', 'match_optional',
-                    '--export-declaration', 'match_result', *flags], root)
+                    '--export-declaration', 'match_result',
+                    '--export-declaration', 'MatchBlock',
+                    '--export-declaration', 'match_mutable',
+                    '--export-declaration', 'match_object',
+                    '--export-declaration', 'match_block',
+                    '--export-declaration', 'match_scalar', *flags], root)
                 provider.unlink()
                 identity = json.loads(module.with_suffix('.objc3i.json').read_text())['module']
                 run(name + '-consumer', [frontend, consumer, *frontend_common,

@@ -5176,10 +5176,10 @@ index 000000000..fbe5ef7b7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
-index 000000000..65d25b8ef
+index 000000000..bf96244a6
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.cpp
-@@ -0,0 +1,478 @@
+@@ -0,0 +1,532 @@
 +//===--- CGObjC3Match.cpp - Native ObjC3 match lowering ------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -5237,6 +5237,18 @@ index 000000000..65d25b8ef
 +  }
 +};
 +
++struct DestroyCppMatchSnapshot final : EHScopeStack::Cleanup {
++  QualType Type;
++  Address Storage;
++  DestroyCppMatchSnapshot(QualType Type, Address Storage)
++      : Type(Type), Storage(Storage) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    bool Emitted = emitObjC3CarrierDestroyActivePayload(CGF, Type, Storage, false);
++    assert(Emitted && "admitted C++ match snapshot lost its destruction recipe");
++    (void)Emitted;
++  }
++};
++
 +struct MatchScrutinee {
 +  Expr *Expression = nullptr;
 +  QualType Type;
@@ -5273,7 +5285,9 @@ index 000000000..65d25b8ef
 +  if (isObjC3Carrier(CGF.getContext(), State.Type, State.IsOptional,
 +                     State.IsResult)) {
 +    const bool Managed = supportsObjC3CarrierARCLocalLifetime(CGF.CGM, State.Type);
-+    if (!Managed && !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, State.Type)) {
++    const bool Cpp = supportsObjC3CarrierCppLocalLifetime(CGF.CGM, State.Type);
++    if (!Managed && !Cpp &&
++        !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, State.Type)) {
 +      CGF.ErrorUnsupported(Owner, "ObjC3 match with managed carrier payload");
 +      return false;
 +    }
@@ -5290,7 +5304,21 @@ index 000000000..65d25b8ef
 +      Qualifiers TempQualifiers;
 +      if (State.IsVolatile)
 +        TempQualifiers.addVolatile();
-+      CGF.EmitAnyExprToMem(Expression, State.Storage, TempQualifiers, true);
++      {
++        CodeGenFunction::CleanupDeactivationScope Deactivation(CGF);
++        auto Saved = CGF.getObjC3CarrierLocalInitState();
++        Address Initialized = Address::invalid();
++        if (Cpp)
++          Initialized = beginObjC3CarrierInitGuard(
++              CGF, State.Type.getCanonicalType().getUnqualifiedType(),
++              State.Storage, false);
++        CGF.setObjC3CarrierLocalInitState({State.Storage, State.Type, Initialized});
++        CGF.EmitAnyExprToMem(Expression, State.Storage, TempQualifiers, true);
++        CGF.setObjC3CarrierLocalInitState(Saved);
++      }
++      if (Cpp && hasObjC3CarrierCppLocalDestructor(CGF.CGM, State.Type))
++        CGF.pushFullExprCleanup<DestroyCppMatchSnapshot>(
++            NormalAndEHCleanup, State.Type, State.Storage);
 +    }
 +    State.Tag = emitObjC3CarrierLoadTag(CGF, State.Storage, State.Type,
 +                                         Expression->getExprLoc(),
@@ -5402,12 +5430,10 @@ index 000000000..65d25b8ef
 +  llvm_unreachable("unhandled ObjC3 match pattern");
 +}
 +
-+Address getBorrowedBindingAddress(CodeGenFunction &CGF,
++Address getBindingSourceAddress(CodeGenFunction &CGF,
 +                                  const MatchScrutinee &State,
 +                                  const ObjC3MatchArm &Arm) {
 +  using Binding = objc3::MatchBindingKind;
-+  if (Arm.isMutableBinding() || State.IsVolatile)
-+    return Address::invalid();
 +  Address Result = Address::invalid();
 +  switch (Arm.getBindingKind()) {
 +  case Binding::OptionalPayload:
@@ -5428,9 +5454,7 @@ index 000000000..65d25b8ef
 +  case Binding::Scrutinee:
 +    // Scalar and reference-handle bindings borrow the one stored snapshot.
 +    // Carrier payload bindings use their dedicated arm cases above.
-+    if (!State.IsOptional && !State.IsResult &&
-+        isNativeMatchScalar(State.Type))
-+      Result = State.Storage;
++    Result = State.Storage;
 +    break;
 +  case Binding::None:
 +    break;
@@ -5441,6 +5465,18 @@ index 000000000..65d25b8ef
 +      CGF.ConvertTypeForMem(Arm.getBindingDecl()->getType()));
 +}
 +
++const OpaqueValueExpr *findBindingSource(const Stmt *Node) {
++  if (!Node)
++    return nullptr;
++  if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Node))
++    if (!Opaque->getSourceExpr())
++      return Opaque;
++  for (const Stmt *Child : Node->children())
++    if (const auto *Source = findBindingSource(Child))
++      return Source;
++  return nullptr;
++}
++
 +// The caller owns the result lifetime. Every arm, including an early guard
 +// failure, drains only its own temporaries before entering the next block.
 +void emitArmBody(CodeGenFunction &CGF, const MatchScrutinee &State,
@@ -5449,15 +5485,29 @@ index 000000000..65d25b8ef
 +                 llvm::function_ref<void(const Expr *)> EmitValue,
 +                 llvm::BasicBlock *&ValueBlock,
 +                 std::initializer_list<llvm::Value **> ValuesToReload = {}) {
++  auto NextDestination = CGF.getJumpDestInCurrentScope(Next);
++  CodeGenFunction::RunCleanupsScope BindingScope(CGF);
 +  const VarDecl *Binding = Arm.getBindingDecl();
 +  if (Binding) {
-+    Address Borrowed = getBorrowedBindingAddress(CGF, State, Arm);
-+    if (!Borrowed.isValid()) {
++    Address Source = getBindingSourceAddress(CGF, State, Arm);
++    if (!Source.isValid()) {
 +      CGF.ErrorUnsupported(&Arm, "ObjC3 match borrowed binding");
 +      CGF.Builder.CreateBr(Next);
 +      return;
 +    }
-+    CGF.BindObjC3MatchDecl(Binding, Borrowed);
++    if (Arm.isMutableBinding()) {
++      const auto *Opaque = findBindingSource(Binding->getInit());
++      if (!Opaque) {
++        CGF.ErrorUnsupported(&Arm, "ObjC3 mutable match binding initializer");
++        CGF.Builder.CreateBr(Next);
++        return;
++      }
++      CodeGenFunction::OpaqueValueMapping Mapping(
++          CGF, Opaque, CGF.MakeAddrLValue(Source, Opaque->getType()));
++      CGF.EmitDecl(*Binding);
++    } else {
++      CGF.BindObjC3MatchDecl(Binding, Source);
++    }
 +  }
 +
 +  llvm::BasicBlock *Body = CGF.createBasicBlock("objc3.match.body");
@@ -5468,7 +5518,10 @@ index 000000000..65d25b8ef
 +      GuardValue = CGF.EvaluateExprAsBool(Guard);
 +      GuardScope.ForceCleanup({&GuardValue});
 +    }
-+    CGF.Builder.CreateCondBr(GuardValue, Body, Next);
++    auto *Failed = CGF.createBasicBlock("objc3.match.guard.failed");
++    CGF.Builder.CreateCondBr(GuardValue, Body, Failed);
++    CGF.EmitBlock(Failed);
++    CGF.EmitBranchThroughCleanup(NextDestination);
 +  } else {
 +    CGF.Builder.CreateBr(Body);
 +  }
@@ -5488,6 +5541,7 @@ index 000000000..65d25b8ef
 +    }
 +    ArmScope.ForceCleanup(ValuesToReload);
 +  }
++  BindingScope.ForceCleanup(ValuesToReload);
 +  if (CGF.HaveInsertPoint()) {
 +    ValueBlock = CGF.Builder.GetInsertBlock();
 +    CGF.Builder.CreateBr(Exit);
@@ -16984,6 +17038,47 @@ index 000000000..7c13404a4
 +}
 +// CHECK-LABEL: define{{.*}} @vector_result(
 +// CHECK: phi <4 x i32>
++#ifdef __cplusplus
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/match-mutable-bindings.m b/clang/test/ObjC3/CodeGen/match-mutable-bindings.m
+new file mode 100644
+index 000000000..22a680f64
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/match-mutable-bindings.m
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++#ifdef __cplusplus
++extern "C" {
++#endif
++int mutable_scalar(int input) {
++  return match(input) { case var value => (value += 5, value); };
++}
++// CHECK-LABEL: define{{.*}} @mutable_scalar(
++// CHECK: %value = alloca i32
++// CHECK: add nsw i32
++id mutable_object(Optional(id) input) {
++  return match(input) {
++    case .Some(var value) => value;
++    case .None => (id)0;
++  };
++}
++// CHECK-LABEL: define{{.*}} @mutable_object(
++// CHECK: %value = alloca ptr
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: call void @llvm.objc.storeStrong
++int guarded_mutable(Optional(id) input, __typeof__(hasValue(input)) flag) {
++  match(input) {
++    case .Some(var value) where flag: { value = (id)0; return 1; }
++    default: { return 0; }
++  }
++  return -1;
++}
++// CHECK-LABEL: define{{.*}} @guarded_mutable(
++// CHECK: objc3.match.guard.failed:
++// CHECK: call void @llvm.objc.storeStrong
 +#ifdef __cplusplus
 +}
 +#endif

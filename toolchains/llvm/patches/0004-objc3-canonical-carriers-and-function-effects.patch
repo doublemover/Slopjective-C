@@ -6897,12 +6897,13 @@ index 000000000..c0f59a7b6
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Match.cpp b/clang/lib/Sema/SemaObjC3Match.cpp
 new file mode 100644
-index 000000000..563c46251
+index 000000000..72d88544d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Match.cpp
-@@ -0,0 +1,307 @@
+@@ -0,0 +1,354 @@
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ObjC3MatchCoverage.h"
 +#include "clang/AST/ObjC3MatchSemantic.h"
@@ -6960,6 +6961,28 @@ index 000000000..563c46251
 +        << static_cast<unsigned>(Result.Domain) << ExpressionForm;
 +    return;
 +  }
++}
++
++// Native C++ payload copies must carry their use-site constructor resolution
++// into CodeGen. The transfer expression keeps that recipe in serialized AST.
++ExprResult prepareMatchSnapshot(Sema &S, Expr *Source) {
++  if (!S.getLangOpts().CPlusPlus || !Source->isGLValue() ||
++      Source->isTypeDependent())
++    return Source;
++  QualType Type = Source->getType().getCanonicalType();
++  if (!isa<ObjC3OptionalType, ObjC3ResultType>(Type.getTypePtr()))
++    return Source;
++  auto Info = S.Context.getObjC3CarrierRepresentationType(Type);
++  bool HasClassPayload = false;
++  for (FieldDecl *Field : {Info.ValueField, Info.SuccessField, Info.ErrorField})
++    if (Field)
++      if (const auto *Record = Field->getType()->getAs<RecordType>())
++        HasClassPayload |= isa<CXXRecordDecl>(Record->getDecl());
++  if (!HasClassPayload)
++    return Source;
++  return S.ActOnObjC3CarrierTransferExpr(false, Source->getExprLoc(),
++                                         Source->getBeginLoc(), Source,
++                                         Source->getEndLoc());
 +}
 +
 +QualType joinMatchArmTypes(Sema &S, llvm::ArrayRef<ObjC3MatchArm *> Arms,
@@ -7092,6 +7115,8 @@ index 000000000..563c46251
 +    Diag(Pattern.BindingLocation, diag::err_objc3_match_void_binding);
 +    return State;
 +  }
++  if (Pattern.MutableBinding)
++    BoundType = BoundType.getUnqualifiedType();
 +  // The binding names a snapshot, not the source's weak/unsafe storage. An
 +  // ARC snapshot keeps the loaded object or copied Block alive for the arm.
 +  if (getLangOpts().ObjCAutoRefCount && BoundType->isObjCRetainableType()) {
@@ -7107,6 +7132,22 @@ index 000000000..563c46251
 +  State.Binding = VarDecl::Create(Context, CurContext,
 +      Pattern.BindingLocation, Pattern.BindingLocation, Pattern.BindingName,
 +      State.BindingType, TInfo, SC_None);
++  if (Pattern.MutableBinding) {
++    // Keep native initialization and ownership in the AST. CodeGen binds this
++    // opaque lvalue to the selected snapshot/payload without evaluating the
++    // original scrutinee again. PCH and template replay retain real copy rules.
++    auto *Source = new (Context) OpaqueValueExpr(
++        Pattern.BindingLocation, Context.getConstType(BoundType), VK_LValue);
++    ExprResult Prepared = prepareMatchSnapshot(*this, Source);
++    if (Prepared.isInvalid())
++      return State;
++    ExprResult Initialized = PerformCopyInitialization(
++        InitializedEntity::InitializeVariable(State.Binding),
++        Pattern.BindingLocation, Prepared.get());
++    if (Initialized.isInvalid())
++      return State;
++    State.Binding->setInit(Initialized.get());
++  }
 +  PushOnScopeChains(State.Binding, CaseScope);
 +  State.BindingStatement = new (Context) DeclStmt(
 +      DeclGroupRef(State.Binding), Pattern.BindingLocation,
@@ -7164,7 +7205,10 @@ index 000000000..563c46251
 +       !Coverage.IsExhaustive))
 +    diagnoseCoverageIssue(*this, Coverage, Arms, /*ExpressionForm=*/false,
 +                          RBraceLoc);
-+  return ObjC3MatchStmt::Create(Context, Scrutinee, Arms, KeywordLoc,
++  ExprResult Snapshot = prepareMatchSnapshot(*this, Scrutinee);
++  if (Snapshot.isInvalid())
++    return StmtError();
++  return ObjC3MatchStmt::Create(Context, Snapshot.get(), Arms, KeywordLoc,
 +      LParenLoc, RParenLoc, LBraceLoc, RBraceLoc);
 +}
 +
@@ -7205,7 +7249,10 @@ index 000000000..563c46251
 +  // expression, even when none of their arms introduces another cleanup.
 +  if (getLangOpts().ObjCAutoRefCount && ResultType->isObjCRetainableType())
 +    Cleanup.setExprNeedsCleanups(true);
-+  return ObjC3MatchExpr::Create(Context, ResultType, Scrutinee, Arms,
++  ExprResult Snapshot = prepareMatchSnapshot(*this, Scrutinee);
++  if (Snapshot.isInvalid())
++    return ExprError();
++  return ObjC3MatchExpr::Create(Context, ResultType, Snapshot.get(), Arms,
 +      KeywordLoc, LParenLoc, RParenLoc, LBraceLoc, RBraceLoc);
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ModuleLookup.cpp b/clang/lib/Sema/SemaObjC3ModuleLookup.cpp
@@ -15870,3 +15917,34 @@ index 000000000..b8aef2224
 +#else
 +int imported_from_pch() { return objc3_deep_symbol(); }
 +#endif
+diff --git a/clang/test/ObjC3/Sema/match-cxx-snapshot-copy.mm b/clang/test/ObjC3/Sema/match-cxx-snapshot-copy.mm
+new file mode 100644
+index 000000000..bd6d481e8
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/match-cxx-snapshot-copy.mm
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fsyntax-only -verify %s
++struct Uncopyable {
++  Uncopyable();
++  Uncopyable(const Uncopyable &) = delete; // expected-note {{has been explicitly marked deleted here}}
++  ~Uncopyable();
++};
++void deleted_snapshot(Optional(Uncopyable) &input) {
++  match(input) { // expected-error {{call to deleted constructor of 'Uncopyable'}}
++    case .Some(let payload): { (void)payload; }
++    case .None: { }
++  }
++}
++struct PrivateCopy {
++  PrivateCopy();
++  ~PrivateCopy();
++private:
++  PrivateCopy(const PrivateCopy &); // expected-note {{declared private here}}
++};
++void private_snapshot(Optional(PrivateCopy) &input) {
++  match(input) { // expected-error {{field of type 'PrivateCopy' has private copy constructor}}
++    case .Some(let payload): { (void)payload; }
++    case .None: { }
++  }
++}

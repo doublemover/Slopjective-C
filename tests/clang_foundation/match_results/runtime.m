@@ -39,6 +39,23 @@ static void plain(void) {
     case let bound => ((input = 99), bound);
   };
   assert(snapshot == 5 && input == 99);
+  const int immutable = 17;
+  int changed = match(immutable) { case var local => (local += 4, local); };
+  assert(changed == 21 && immutable == 17);
+  input = 5;
+  changed = match(input) { case var local => (local *= 3, local); };
+  assert(changed == 15 && input == 5);
+  source = Some(int, 8);
+  match(source) {
+    case .Some(var payload) where ((payload = 90), (__typeof__(hasValue(source)))0): { assert(0); }
+    case .Some(var payload): { assert(payload == 8); payload += 34; assert(payload == 42); }
+    case .None: { assert(0); }
+  }
+  match(source) { case .Some(let payload): { assert(payload == 8); } case .None: { assert(0); } }
+  assert(hasValue(match(source) { case let whole => whole; }));
+  assert(!hasValue(match(source) { case var whole => (whole = None(int), whole); }));
+  assert(hasValue(source));
+
   source = Some(int, 8);
   match(source) {
     case .Some(let payload) where ((source = None(int)), (__typeof__(hasValue(source)))0): { (void)payload; assert(0); }
@@ -91,6 +108,47 @@ static Optional(id) fail_native(void) {
 static Optional(id) fail_checked(void) throws(id<Error>) {
   throwError((id<Error>)[MatchObject make:72]);
 }
+static int early_mutable(Optional(id) input) {
+  match(input) {
+    case .Some(var payload): { assert(payload != (id)0); return 17; }
+    case .None: { return 0; }
+  }
+  return -1;
+}
+static void mutable_owned(void) {
+  @autoreleasepool {
+    Optional(id) source = Some(id, [MatchObject make:92]);
+    id __weak witness;
+    match(source) {
+      case .Some(let payload): { witness = payload; }
+      case .None: { assert(0); }
+    }
+    assert(early_mutable(source) == 17);
+    match(source) {
+      case .Some(var payload) where ((payload = [MatchObject make:93]), (__typeof__(hasValue(source)))0): { assert(0); }
+      case .Some(var payload): { assert(((MatchObject *)payload)->number == 92); payload = (id)0; }
+      case .None: { assert(0); }
+    }
+    // Failed-guard and selected-arm mutable copies have both drained.
+    assert(created - destroyed == 1 && witness != (id)0);
+    assert(!hasValue(match(source) { case var whole => (whole = None(id), whole); }));
+    assert(hasValue(source));
+    int caught = 0;
+    @autoreleasepool {
+    @try {
+      match(source) {
+        case .Some(var payload): { payload = [MatchObject make:94]; @throw payload; }
+        case .None: { assert(0); }
+      }
+    } @catch(MatchObject *error) { assert(error->number == 94); caught = 1; }
+    }
+    assert(caught && created - destroyed == 1);
+    source = None(id);
+    assert(witness == (id)0);
+  }
+  assert(created == destroyed);
+}
+
 static void owned_values(void) {
   id __weak witness = (id)0;
   @autoreleasepool {
@@ -242,7 +300,7 @@ struct Lifetime {
   static int live, made, removed;
   int value;
   explicit Lifetime(int v) : value(v) { if (v == 99) throw 99; ++live; ++made; }
-  Lifetime(const Lifetime &other) : value(other.value) { ++live; ++made; }
+  Lifetime(const Lifetime &other) : value(other.value) { if (value == 98) throw 98; ++live; ++made; }
   Lifetime(Lifetime &&other) : value(other.value) { ++live; ++made; }
   ~Lifetime() { --live; ++removed; }
 };
@@ -258,6 +316,9 @@ template <class T> T choose(Optional(int) source, const T &left, const T &right)
     case .Some(_) => left;
     case .None => right;
   };
+}
+template <class T> T mutable_choose(T input) {
+  return match(input) { case var value => (value += 2, value); };
 }
 struct MemberRecord {
   int first, second;
@@ -283,6 +344,52 @@ __attribute__((noinline)) static void match_value_checkpoint(int observed) {
 }
 static void cpp(void) {
   Optional(int) source = Some(int, 42);
+  assert(mutable_choose(15) == 17);
+  {
+    Optional(Lifetime) payloads = Some(Lifetime, Lifetime(31));
+    assert(Lifetime::live == 1);
+    match(payloads) {
+      case .Some(var copy) where false: { (void)copy; assert(0); }
+      case .Some(var copy): {
+        assert(copy.value == 31 && Lifetime::live == 3);
+        copy.value = 42;
+      }
+      case .None: { assert(0); }
+    }
+    assert(Lifetime::live == 1);
+    match(payloads) {
+      case .Some(let copy): { assert(copy.value == 31 && Lifetime::live == 2); }
+      case .None: { assert(0); }
+    }
+    try {
+      match(payloads) {
+        case .Some(var copy): { copy.value = 57; throw copy.value; }
+        case .None: { assert(0); }
+      }
+    } catch(int error) { assert(error == 57); }
+    assert(Lifetime::live == 1);
+    match(payloads) { case var whole: { assert(hasValue(whole)); } }
+    assert(Lifetime::live == 1);
+  }
+  assert(Lifetime::live == 0 && Lifetime::made == Lifetime::removed);
+  match(Some(Lifetime, Lifetime(32))) {
+    case .Some(var copy): { assert(copy.value == 32 && Lifetime::live == 2); }
+    case .None: { assert(0); }
+  }
+  assert(Lifetime::live == 0 && Lifetime::made == Lifetime::removed);
+  {
+    Optional(Lifetime) fails_copy = Some(Lifetime, Lifetime(98));
+    try {
+      match(fails_copy) {
+        case .Some(let copy): { (void)copy; assert(0); }
+        case .None: { assert(0); }
+      }
+      assert(0);
+    } catch(int error) { assert(error == 98); }
+    assert(Lifetime::live == 1);
+  }
+  assert(Lifetime::live == 0 && Lifetime::made == Lifetime::removed);
+
   MemberRecord record{17, 29};
   int MemberRecord::*data = match(source) {
     case .Some(_) => &MemberRecord::second;
@@ -294,6 +401,15 @@ static void cpp(void) {
     case .None => &MemberRecord::get_second;
   };
   assert((record.*method)() == 29);
+  Optional(MemberRecord) records = Some(MemberRecord, record);
+  match(records) {
+    case .Some(var copy): { copy.second += 13; assert(copy.second == 42); }
+    case .None: { assert(0); }
+  }
+  match(records) {
+    case .Some(let copy): { assert(copy.second == 29); }
+    case .None: { assert(0); }
+  }
   {
     Lifetime value = match(source) {
       case .Some(let payload) => Lifetime(payload);
@@ -386,6 +502,7 @@ static int runtime_contract(void) {
 #if __has_feature(objc_arc)
   owned();
   owned_values();
+  mutable_owned();
 #endif
 #ifdef __cplusplus
   cpp();

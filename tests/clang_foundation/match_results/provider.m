@@ -12,3 +12,23 @@ MatchResult match_result(MatchResult input) {
     case .Err(let payload) => Err(id, id, payload);
   };
 }
+
+typedef int (^MatchBlock)(void);
+MatchOptional match_mutable(MatchOptional input) {
+  return match(input) { case var whole => (whole = None(id), whole); };
+}
+id match_object(MatchOptional input) {
+  return match(input) {
+    case .Some(let payload) => payload;
+    case .None => (id)0;
+  };
+}
+MatchBlock match_block(MatchOptional input) {
+  return match(input) {
+    case .Some(let payload) => ^{ return payload == (id)0 ? 0 : 42; };
+    case .None => ^{ return -1; };
+  };
+}
+int match_scalar(int input) {
+  return match(input) { case var value => (value += 4, value); };
+}

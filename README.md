@@ -327,6 +327,11 @@ records implemented APIs and remaining conformance obligations; typed key paths,
 strict-system support and public concurrency compiler semantics remain work in
 progress.
 
+The [native match result contract](docs/roadmap/linux_match_results.md) adds
+record, carrier, object, Block, complex, vector and C++ member-pointer results,
+owned scrutinee snapshots and independent mutable case bindings. Its acceptance
+receipt distinguishes development qualification from installed SDK delivery.
+
 ## Validation and development
 
 ```sh

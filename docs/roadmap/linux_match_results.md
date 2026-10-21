@@ -23,7 +23,12 @@ to destroy.
 A case binding names a snapshot of the single scrutinee evaluation. Mutating the
 original scalar or carrier through another name does not change that binding.
 Managed snapshots retain their active payload and release it after the match;
-branch guards and arm temporaries retain their own cleanup scopes. Discarded
+C++ carrier snapshots resolve their payload copy constructors in Sema and drain
+the active payload on normal and exceptional exits. `var` bindings initialize
+separate case-local storage with native copy/ownership rules. Failed guards
+destroy that copy before trying the next arm; mutation leaves the scrutinee
+unchanged. `let` bindings remain immutable. Whole-carrier bindings follow the
+same rules. Branch guards and arm temporaries retain their own cleanup scopes. Discarded
 results still destroy their active values.
 
 The result paths support native records, admitted Optional/Result storage,
@@ -33,15 +38,15 @@ cleanup, protect it against exceptional cleanup, then release it at the end of
 the surrounding full-expression. Object/Block scrutinees use owned snapshots,
 including loads from zeroing weak storage and nullable reference patterns.
 
-These paths work
-with separate compilation and semantic interfaces. The existing scrutinee and
-pattern limits remain explicit: integral/enum/pointer/reference domains and supported carrier cases; optional
-object type tests, string patterns, and mutable/move patterns require further
-implementation.
+These paths work with separate compilation and semantic interfaces. The
+scrutinee domains remain explicit: integral/enum/pointer/reference values and
+admitted carriers, including direct C++ class payloads with resolved copy and
+destruction recipes. General nontrivial C++ carrier call ABI, optional object
+type tests, string patterns and consuming `move` patterns require further work.
 This milestone does not claim a complete Core profile or a public async/actor
 capability.
 
-The installed integration gate compiles ordinary and PCH consumers in Objective-C
+The integration gate compiles ordinary and PCH consumers in Objective-C
 with a C17 base and Objective-C++ in C++20/23 mode, under ARC/MRC and O0/O2.
 Separate ARC interface consumers execute after provider source removal. O0 C++
 debugger checks inspect the copied record and its live-object count in both
@@ -53,6 +58,10 @@ compiler from the last activated SDK.
 python3 -B SDK/share/objc3c/source-build/qualify_match_results.py \
   --sdk-root SDK --output-dir out/native-validation/match-results
 ```
+
+Fresh archive qualification supports a `match-results` scope that runs the
+installed native library and match gates as an ordinary user after installation,
+relocation, embedding and debugger checks.
 
 SDK packaging installs the fixtures and runner and executes this gate. The
 activated native-library SDK remains identified by its own
