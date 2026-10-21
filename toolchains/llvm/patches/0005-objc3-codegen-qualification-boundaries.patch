@@ -5691,10 +5691,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..dc4bea0db
+index 000000000..eaa9648c6
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,652 @@
+@@ -0,0 +1,654 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -5843,10 +5843,12 @@ index 000000000..dc4bea0db
 +
 +bool CodeGen::isObjC3AsyncThrowingFunction(const CodeGenFunction &CGF) {
 +  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
-+  if (!FD)
++  if (!CGF.getLangOpts().ObjC3 || !FD)
 +    return false;
-+  const auto Effects = FD->getType()->castAs<FunctionProtoType>()
-+                           ->getObjC3FunctionEffects();
++  const auto *FPT = FD->getType()->getAs<FunctionProtoType>();
++  if (!FPT)
++    return false;
++  const auto Effects = FPT->getObjC3FunctionEffects();
 +  return Effects.Async && Effects.Throws != ObjC3ThrowsKind::None;
 +}
 +
@@ -16086,3 +16088,17 @@ index 000000000..1a957283a
 +}
 +template int generic<id<ParseError>>(id<ParseError>)
 +    __objc3_async __objc3_throws(id<ParseError>);
+diff --git a/clang/test/ObjC3/CodeGen/ordinary-c-function-context.c b/clang/test/ObjC3/CodeGen/ordinary-c-function-context.c
+new file mode 100644
+index 000000000..942666dcb
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/ordinary-c-function-context.c
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -Wno-deprecated-non-prototype -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-deprecated-non-prototype -emit-llvm -o - %s | FileCheck %s
++// An async context query must accept ordinary C function definitions, including
++// FunctionNoProtoType, both without ObjC3 mode and in an Objective-C 3 unit.
++// CHECK-LABEL: define{{.*}} void @ordinary(
++void ordinary() {}
++// CHECK-LABEL: define{{.*}} i32 @parameters(
++int parameters(value) int value; { return value + 1; }
