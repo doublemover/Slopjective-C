@@ -1,9 +1,7 @@
 #include <objc3c/runtime/objc3_task.hpp>
-
-extern "C" id class_createInstance(Class, __SIZE_TYPE__)
-    __attribute__((ns_returns_retained));
-extern "C" id object_dispose(__unsafe_unretained id);
-extern "C" void objc_release(__unsafe_unretained id);
+#include <objc/runtime.h>
+#include <objc/objc-arc.h>
+id class_createInstance(Class, size_t) __attribute__((ns_returns_retained));
 
 __attribute__((objc_root_class))
 @interface NativeModuleResult {

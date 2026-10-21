@@ -1,4 +1,5 @@
 #include <objc3c/runtime/objc3_task.hpp>
+#include <objc/runtime.h>
 @import fixture.NativeAsync;
 static_assert(std::is_same_v<decltype(native_module_object(1)),
                              objc3::task<NativeModuleResult *>>);
@@ -6,8 +7,7 @@ static_assert(std::is_same_v<decltype(native_module_block(1)),
                              objc3::task<native_module_reader>>);
 
 #if !__has_feature(objc_arc)
-extern "C" id objc_retain(__unsafe_unretained id);
-extern "C" void objc_release(__unsafe_unretained id);
+#include <objc/objc-arc.h>
 struct consumer_result_owner {
   id value;
   ~consumer_result_owner() { objc_release(value); }
