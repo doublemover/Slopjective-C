@@ -24,7 +24,7 @@ def check_drift() -> int:
         print("site-index-check: FAIL", file=sys.stderr)
         print(f"- missing generated output: {config.output_path}", file=sys.stderr)
         print(
-            "- Regenerate with: npm run objc3c -- build-site",
+            "- Regenerate with: python -m scripts.build_site_index",
             file=sys.stderr,
         )
         return 1
@@ -39,7 +39,7 @@ def check_drift() -> int:
             file=sys.stderr,
         )
         print(
-            "- Regenerate with: npm run objc3c -- build-site",
+            "- Regenerate with: python -m scripts.build_site_index",
             file=sys.stderr,
         )
         diff_preview = format_diff(actual, expected)

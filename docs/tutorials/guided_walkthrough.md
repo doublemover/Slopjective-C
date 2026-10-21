@@ -1,109 +1,30 @@
-# Guided Showcase Walkthrough
+# Installed example walkthrough
 
-This file is the live step-by-step walkthrough for the checked-in tutorial assets.
+Complete [Getting started](getting_started.md) and activate the SDK. These
+examples build from installed source, so they also work outside the checkout.
+Choose a fresh working directory and run:
 
-Use it after `docs/tutorials/getting_started.md` and `docs/tutorials/build_run_verify.md` when you want one ordered pass through the runnable examples.
+```sh
+python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" \
+  --output-dir ./managed-sample --optimization O2
+cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/packages" ./packages
+objc3c-build --workspace ./packages/workspace.json \
+  --output-dir ./package-build --optimization O2
+```
 
-## Walkthrough Boundary
+The managed example compiles provider and consumer modules, emits semantic
+interfaces and a locked dependency record, then links and runs the application.
+It writes `managed-sample/build-report.json`. The package example builds a local
+source graph with explicit module dependencies and runs its application.
 
-This walkthrough stays on the same live command and showcase surfaces as the rest of the tutorial path.
+The [managed sources](../../tests/clang_foundation/native_package/) and
+[package workspace](../../tests/clang_foundation/source_graph/workspace.json)
+are the repository owners of these installed examples. They demonstrate managed
+ownership and interface/package boundaries; some features use bounded migration
+intrinsics. Consult [the capability schema](../../schemas/objc3-language-capabilities.json)
+for public feature spellings and qualified scope. Public async/await and actors
+remain reserved.
 
-- no custom tutorial runner
-- no hidden fixture-only commands
-- no step that depends on `tmp/` before the source inputs are named
-
-## Walkthrough Steps
-
-1. Build the native toolchain:
-
-   ```sh
-   npm run objc3c -- build-native-binaries
-   ```
-
-2. Compile `auroraBoard` to see the familiar object-model shape:
-
-   ```sh
-   npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
-   ```
-
-3. Compile `signalMesh` to see the async and executor-facing surface:
-
-   ```sh
-   npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3
-   ```
-
-4. Compile `patchKit` to see the imported-hook and macro-backed interop edge:
-
-   ```sh
-   npm run objc3c -- compile-objc3c showcase/patchKit/main.objc3
-   ```
-
-5. Check the full showcase surface and integrated validation:
-
-   ```sh
-   npm run objc3c -- check-showcase-surface
-   npm run objc3c -- validate-showcase
-   ```
-
-## Why This Order
-
-- `auroraBoard` establishes the familiar ObjC shape first
-- `signalMesh` adds async and executor behavior without changing the command model
-- `patchKit` closes the walkthrough with the current interop and macro surface
-- the final showcase checks prove that the same examples still pass the shared repo validation path
-
-## Walkthrough Assets
-
-The checked-in walkthrough manifest lives at `showcase/tutorial_walkthrough.json`.
-
-That manifest is part of the live showcase surface and should stay aligned with:
-
-- `showcase/portfolio.json`
-- `showcase/README.md`
-- `docs/tutorials/guided_walkthrough.md`
-- `docs/tutorials/build_run_verify.md`
-
-The bounded validation surface for this walkthrough is
-`npm run objc3c -- validate-getting-started`.
-The live smoke integration for the same walkthrough uses the same action.
-Use `npm run objc3c -- validate-getting-started` when you want the public integrated entrypoint for that same flow.
-
-## Canonical Inputs
-
-- `docs/tutorials/guided_walkthrough.md`
-- `docs/tutorials/build_run_verify.md`
-- `showcase/tutorial_walkthrough.json`
-- `showcase/portfolio.json`
-- `showcase/auroraBoard/main.objc3`
-- `showcase/signalMesh/main.objc3`
-- `showcase/patchKit/main.objc3`
-- `npm run objc3c -- validate-getting-started`
-- `docs/runbooks/objc3c_public_command_surface.md`
-
-## Exact Live Paths For Downstream Work
-
-- tutorial narrative:
-  - `docs/tutorials/guided_walkthrough.md`
-  - `docs/tutorials/build_run_verify.md`
-  - `docs/tutorials/getting_started.md`
-- walkthrough contract:
-  - `showcase/tutorial_walkthrough.json`
-  - `showcase/portfolio.json`
-  - `showcase/README.md`
-- example sources:
-  - `showcase/auroraBoard/main.objc3`
-  - `showcase/signalMesh/main.objc3`
-  - `showcase/patchKit/main.objc3`
-- command truth and validation:
-  - `docs/runbooks/objc3c_public_command_surface.md`
-  - `npm run objc3c -- validate-getting-started`
-  - `npm run objc3c -- check-showcase-surface`
-  - `scripts/check_getting_started_surface.py`
-  - `scripts/check_getting_started_integration.py`
-  - `scripts/check_showcase_surface.py`
-
-## Explicit Non-Goals
-
-- no walkthrough asset that bypasses the public command surface
-- no sidecar examples outside `showcase/`
-- no hidden tutorial step rooted only in `tmp/` outputs
+For dependency invalidation and incremental reuse details, see the
+[root README](../../README.md#offline-source-package-graphs). Return to the
+[showcase catalog](../../showcase/README.md) or [tutorial index](README.md).

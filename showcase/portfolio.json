@@ -1,170 +1,26 @@
 {
-  "contract_id": "objc3c.showcase.portfolio.surface.v1",
-  "schema_version": 1,
-  "portfolio_kind": "live-runnable-example-portfolio",
-  "showcase_root": "showcase",
-  "machine_output_root": "tmp/artifacts/showcase",
-  "machine_report_root": "tmp/reports/showcase",
-  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-  "demo_packages_manifest": "showcase/demo_packages.json",
-  "application_framework_samples": {
-    "manifest": "showcase/applicationFrameworkSamples/manifest.json",
-    "readme": "showcase/applicationFrameworkSamples/README.md",
-    "tutorial": "docs/tutorials/application-framework-samples.md",
-    "dependency_evidence": "showcase/applicationFrameworkSamples/dependency-evidence.json",
-    "contract_fixture": "tests/tooling/fixtures/application_framework_samples/contract.json",
-    "checker": "scripts/check_objc3c_application_framework_samples.py",
-    "summary": "tmp/reports/application-framework-samples/summary.json",
-    "validate_action": "validate-application-framework-samples",
-    "validate_command": "npm run objc3c -- validate-application-framework-samples",
-    "package_action": "package-runnable-toolchain",
-    "package_command": "npm run objc3c -- package-runnable-toolchain",
-    "runnable_validation_action": "validate-runnable-application-architecture",
-    "runnable_validation_command": "npm run objc3c -- validate-runnable-application-architecture",
-    "manifest_contract_id": "objc3c.application_framework_samples.v1",
-    "contract_fixture_id": "objc3c.application_framework_samples.contract.v1",
-    "package_manifest_fields": [
-      "application_framework_samples",
-      "application_architecture_public_actions",
-      "command_surfaces",
-      "copied_files"
-    ],
-    "sample_ids": [
-      "routeModelKit",
-      "interopAdapterKit",
-      "workflowStdlibCLI",
-      "asyncRuntimeConsole"
-    ],
-    "capability_rows": [
-      "applications.framework-samples.object-runtime-library",
-      "applications.framework-samples.interop-adapter-library",
-      "applications.framework-samples.stdlib-text-collections-cli",
-      "applications.framework-samples.async-runtime-application"
-    ]
-  },
-  "public_command_model": {
-    "entrypoint_kind": "single-npm-bridge",
-    "canonical_template": "npm run objc3c -- <action>",
-    "authoritative_script": "package.json#scripts.objc3c",
-    "retired_public_semantics": [
-      "retired command surfaces",
-      "direct helper script commands",
-      "showcase-local wrappers",
-      "alternate compile or runtime support lanes",
-      "retired-source support claims"
-    ]
-  },
-  "public_actions": {
-    "build_native": "build-native-binaries",
-    "compile_example": "compile-objc3c",
-    "check_surface": "check-showcase-surface",
-    "validate_showcase": "validate-showcase",
-    "validate_runnable_showcase": "validate-runnable-showcase",
-    "package_runnable_toolchain": "package-runnable-toolchain",
-    "execution_smoke": "test-execution-smoke",
-    "execution_replay": "test-execution-replay"
-  },
-  "command_surfaces": {
-    "build_native": "npm run objc3c -- build-native-binaries",
-    "compile_example": "npm run objc3c -- compile-objc3c",
-    "check_surface": "npm run objc3c -- check-showcase-surface",
-    "validate_showcase": "npm run objc3c -- validate-showcase",
-    "validate_runnable_showcase": "npm run objc3c -- validate-runnable-showcase",
-    "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain",
-    "execution_smoke": "npm run objc3c -- test-execution-smoke",
-    "execution_replay": "npm run objc3c -- test-execution-replay"
-  },
-  "build_run_package_surface": {
-    "emit_prefix": "module",
-    "workspace_layout": "checked-in showcase directories rooted at showcase/<example-id>",
-    "artifact_root": "tmp/artifacts/showcase",
-    "report_root": "tmp/reports/showcase",
-    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-    "build_native_action": "build-native-binaries",
-    "compile_action": "compile-objc3c",
-    "surface_check_action": "check-showcase-surface",
-    "integrated_validation_action": "validate-showcase",
-    "packaged_validation_action": "validate-runnable-showcase",
-    "package_action": "package-runnable-toolchain",
-    "execution_smoke_action": "test-execution-smoke",
-    "execution_replay_action": "test-execution-replay"
-  },
-  "tutorial_build_run_verify_surface": {
-    "getting_started_readme": "docs/tutorials/getting_started.md",
-    "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
-    "objc2_conversion_readme": "docs/tutorials/objc2_to_objc3_migration.md",
-    "build_native_action": "build-native-binaries",
-    "compile_action": "compile-objc3c",
-    "surface_check_action": "check-showcase-surface",
-    "integrated_validation_action": "validate-showcase",
-    "packaged_validation_action": "validate-runnable-showcase",
-    "artifact_root": "tmp/artifacts/showcase",
-    "report_root": "tmp/reports/showcase",
-    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain"
-  },
-  "guided_walkthrough_manifest": "showcase/tutorial_walkthrough.json",
-  "runtime_presentation_surface": {
-    "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
-    "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
-    "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
-    "integrated_validation_action": "validate-showcase",
-    "packaged_validation_action": "validate-runnable-showcase",
-    "shared_execution_smoke_action": "test-execution-smoke",
-    "shared_execution_replay_action": "test-execution-replay",
-    "presentation_readme": "showcase/README.md"
-  },
+  "schema": "objc3c.linux-sdk-examples.v1",
+  "capability_authority": "schemas/objc3-language-capabilities.json",
   "examples": [
     {
-      "id": "auroraBoard",
-      "title": "auroraBoard",
-      "source": "showcase/auroraBoard/main.objc3",
-      "workspace_manifest": "showcase/auroraBoard/workspace.json",
-      "stdlib_followup_modules": [
-        "objc3.core",
-        "objc3.errors",
-        "objc3.keypath"
-      ],
-      "story_capabilities": [
-        "categories",
-        "reflection",
-        "synthesized-behaviors"
-      ]
+      "id": "native-application",
+      "source": "tests/clang_foundation/installed_sdk/main.objc3",
+      "tutorial": "docs/tutorials/getting_started.md",
+      "qualification": "installed_qualification"
     },
     {
-      "id": "signalMesh",
-      "title": "signalMesh",
-      "source": "showcase/signalMesh/main.objc3",
-      "workspace_manifest": "showcase/signalMesh/workspace.json",
-      "stdlib_followup_modules": [
-        "objc3.concurrency",
-        "objc3.system"
-      ],
-      "story_capabilities": [
-        "status-bridging",
-        "actor-shaped-messaging",
-        "runtime-messaging"
-      ]
+      "id": "managed-modules",
+      "source": "tests/clang_foundation/native_package",
+      "installed": "share/objc3c/examples/managed/build.py",
+      "tutorial": "docs/tutorials/guided_walkthrough.md",
+      "qualification": "installed_source_modules"
     },
     {
-      "id": "patchKit",
-      "title": "patchKit",
-      "source": "showcase/patchKit/main.objc3",
-      "workspace_manifest": "showcase/patchKit/workspace.json",
-      "stdlib_followup_modules": [
-        "objc3.keypath",
-        "objc3.system"
-      ],
-      "story_capabilities": [
-        "derives",
-        "macros",
-        "property-behaviors",
-        "interop"
-      ]
+      "id": "package-graph",
+      "source": "tests/clang_foundation/source_graph/workspace.json",
+      "installed": "share/objc3c/examples/packages/workspace.json",
+      "tutorial": "docs/tutorials/guided_walkthrough.md",
+      "qualification": "installed_source_graph"
     }
-  ],
-  "explicit_non_goals": [
-    "no showcase-only compiler wrappers",
-    "no generated example sources under tmp",
-    "no screenshot-only demos"
   ]
 }

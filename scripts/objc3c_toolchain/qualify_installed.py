@@ -10,6 +10,8 @@ import time
 
 
 def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
+    from .check_onboarding import check
+    onboarding = check(repo)
     output.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, 'LD_LIBRARY_PATH': str(prefix / 'lib')}
     records = []
@@ -79,6 +81,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         if any(expected not in debugger for expected in
                ('cleanup_order = 0', ' = 42', 'exited with status = 0')):
             raise ValueError('installed debugger did not inspect, evaluate and run the native application')
-    report = {'status': 'PASS', 'prefix': str(prefix), 'commands': records}
+    report = {'status': 'PASS', 'prefix': str(prefix), 'commands': records,
+              'onboarding': onboarding}
     (output / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
