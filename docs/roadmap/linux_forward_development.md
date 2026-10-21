@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_async_checked_errors_acceptance.json) identifies
+[acceptance receipt](../support/linux_async_cxx_callables_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).

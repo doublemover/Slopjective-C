@@ -52,7 +52,7 @@ ownership transfer, reentry, hop identities, serial mailboxes and cleanup. The
 worker probe demonstrates simultaneous execution on two executors, serialized
 actor queues, 130 actor jobs and 128 group tasks.
 
-The [Linux acceptance receipt](../support/linux_async_checked_errors_acceptance.json)
+The [Linux acceptance receipt](../support/linux_async_cxx_callables_acceptance.json)
 binds 22 installed language/optimization executions, native worker tests,
 instrumented ASan/LeakSanitizer/UBSan/ThreadSanitizer at O0/O2, and fresh
 Debian/Ubuntu archive qualification to the exact implementation and SDK seal.

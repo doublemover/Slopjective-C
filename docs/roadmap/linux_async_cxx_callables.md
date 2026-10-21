@@ -39,3 +39,21 @@ providers, PCH files, semantic interfaces and packages with the new compiler.
 Pure Objective-C async lowering, Objective-C methods, Blocks, the remaining
 checked result forms and compiler actor isolation remain separate milestones.
 Public async/await and actor capabilities remain reserved.
+
+The [installed SDK acceptance receipt](../support/linux_async_cxx_callables_acceptance.json)
+binds this contract to the exact compiler, runtime, inputs and sealed archive.
+It records 209 compiler tests, 57 AST tests, 24 frontend tests, eight GNU runtime
+tests, 318 current tooling tests, 37 installed driver/embedding checks and all
+22 installed package gates. Sixteen C++20/23 O0/O2 configurations execute every
+ARC/MRC provider-consumer pairing; eight LLDB cases inspect resumed member `this`
+and local values alongside scalar, owned-result and checked-handler frames.
+Eight source-free package configurations execute 24 times after provider source
+removal, publication and relocation.
+
+The same SDK passes 74 instrumented configurations and 356 commands, plus
+standalone C++/extension-ABI checks and six post-hop debugger cases. Fresh Debian
+13 and Ubuntu 26.04 consumers run as ordinary users under the explicit
+`task-destinations` scope; all 22 package gates run on the publication host.
+Sanitizers instrument services and clients; GNU libobjc is loaded as shipped.
+The [latency report](../support/linux_async_cxx_callables_latency.json) records
+five quiet repetitions against the existing release budgets.
