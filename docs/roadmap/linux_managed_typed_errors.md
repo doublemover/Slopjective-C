@@ -1,6 +1,6 @@
 # Linux managed typed-error calls
 
-Extension ABI revision 7 composes direct ARC Optional/Result parameters and
+Extension ABI revision 8 composes direct ARC Optional/Result parameters and
 results with the private synchronous typed-error transport on Linux x86-64,
 GNUstep 2.2. Providers, consumers, PCH and semantic interfaces must be rebuilt
 with one sealed SDK. Public Optional/Result/throws predicates remain reserved.
@@ -52,7 +52,8 @@ and error contract under GNUstep 2.2.
 
 The [recursive carrier contract](linux_recursive_carriers.md) adds optionalization
 of managed carrier results, including weak and Block leaves, failure and discarded
-results. Carrier arrays, enclosing records, captures and ivars, MRC,
+results. [Owned Block value captures](linux_owned_block_captures.md) now compose
+with these calls. Carrier arrays, enclosing records, reference captures and ivars, MRC,
 volatile carriers, alternate calling conventions, variadics, plain aggregate
 throws results, typed-error constructors and reference-bound returned temporaries retain their existing
 boundaries. Generic aggregate FFI and invocation adapters need explicit owned

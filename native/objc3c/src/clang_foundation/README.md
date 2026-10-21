@@ -80,7 +80,7 @@ replacement and exact self-aliasing. C++ assignment preserves the destination
 lvalue; snapshots clean up when LHS evaluation throws. Installed O0/O2 witnesses
 and live editor probes cover both languages.
 
-The Linux direct-carrier call contract uses extension ABI revision 7. Ordinary
+The Linux direct-carrier call contract uses extension ABI revision 8. Ordinary
 functions, callbacks and C++ members pass caller-owned argument snapshots by
 pointer; callees borrow and may replace those snapshots. Snapshots clean up at
 the caller's full-expression boundary, including later-argument and callee
@@ -95,8 +95,10 @@ native Objective-C/C++ exceptions, with matching PCH, ThinLTO and module checks.
 Live clangd probes include returned message and Block values. Synchronous typed
 errors and recursive Optional/Result ownership now compose with these calls,
 including owned match snapshots and optionalization of managed results.
-Ivar/captured carrier storage, arrays/enclosing records and volatile managed
-storage remain diagnostic boundaries. The
+[Owned Block value captures](../../../../docs/roadmap/linux_owned_block_captures.md)
+now use active-arm helpers and exception-safe runtime copying. Ivar/reference
+capture storage, arrays/enclosing records and volatile managed storage remain
+diagnostic boundaries. The
 [call contract](../../../../docs/roadmap/linux_managed_call_abi.md) records the
 target and ownership limits; the
 [runtime contract](../../../../docs/roadmap/linux_runtime_call_abi.md) specifies

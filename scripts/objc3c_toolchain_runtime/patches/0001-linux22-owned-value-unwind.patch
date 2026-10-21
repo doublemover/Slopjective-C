@@ -1,0 +1,246 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3f0733757..e6b303498 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -258,7 +258,7 @@ else ()
+ endif ()
+ 
+ add_library(objc SHARED ${libobjc_C_SRCS} ${libobjc_ASM_SRCS} ${libobjc_OBJC_SRCS} ${libobjc_OBJCXX_SRCS} ${libobjc_ASM_OBJS})
+-target_compile_options(objc PRIVATE "$<$<OR:$<COMPILE_LANGUAGE:OBJC>,$<COMPILE_LANGUAGE:OBJCXX>>:-Wno-gnu-folding-constant;-Wno-deprecated-objc-isa-usage;-Wno-objc-root-class;-fobjc-runtime=gnustep-2.0>$<$<COMPILE_LANGUAGE:C>:-Xclang;-fexceptions;-Wno-gnu-folding-constant>")
++target_compile_options(objc PRIVATE "$<$<OR:$<COMPILE_LANGUAGE:OBJC>,$<COMPILE_LANGUAGE:OBJCXX>>:-Wno-gnu-folding-constant;-Wno-deprecated-objc-isa-usage;-Wno-objc-root-class;-fobjc-runtime=gnustep-2.2;-fexceptions;-fobjc-exceptions>$<$<COMPILE_LANGUAGE:C>:-Xclang;-fexceptions;-Wno-gnu-folding-constant>")
+ 
+ list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
+ target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
+diff --git a/blocks_runtime.m b/blocks_runtime.m
+index 91ab85d94..39b18d208 100644
+--- a/blocks_runtime.m
++++ b/blocks_runtime.m
+@@ -252,7 +252,18 @@ OBJC_PUBLIC void *_Block_copy(const void *src)
+ 		ret->isa = &_NSConcreteMallocBlock;
+ 		if(self->flags & BLOCK_HAS_COPY_DISPOSE)
+ 		{
+-			self->descriptor->copy_helper(ret, self);
++			BOOL copied = NO;
++			@try
++			{
++				self->descriptor->copy_helper(ret, self);
++				copied = YES;
++			}
++			@finally
++			{
++				// Generated helpers destroy only completed captures on unwind.
++				// The runtime still owns the uncommitted allocation itself.
++				if (!copied) { gc->free(ret); }
++			}
+ 		}
+ 		// We don't need any atomic operations here, because on-stack blocks
+ 		// can not be aliased across threads (unless you've done something
+@@ -321,4 +332,4 @@ OBJC_PUBLIC bool _Block_tryRetain(const void* arg)
+ 		newVal = __sync_val_compare_and_swap(refCountPtr, refCountVal, newVal + 1);
+ 	} while (newVal != refCountVal);
+ 	return true;
+-}
+\ No newline at end of file
++}
+diff --git a/eh_personality.c b/eh_personality.c
+index d638d9772..24208e04d 100644
+--- a/eh_personality.c
++++ b/eh_personality.c
+@@ -192,15 +192,26 @@ static inline _Unwind_Reason_Code continueUnwinding(struct _Unwind_Exception *ex
+ 	return _URC_CONTINUE_UNWIND;
+ }
+ 
+-static void cleanup(_Unwind_Reason_Code reason, struct _Unwind_Exception *e)
++void objc_delete_exception(struct _Unwind_Exception *e)
+ {
+-	/*
+-  if (header->exceptionDestructor)
+-		  header->exceptionDestructor (e + 1);
++	struct objc_exception *ex = objc_exception_from_header(e);
++	struct thread_data *td = get_thread_data_fast();
++	if (td->caughtExceptions == ex) { td->caughtExceptions = ex->next; }
++	free(ex);
++}
+ 
+-	free((struct objc_exception*) ((char*)e - offsetof(struct objc_exception,
+-					unwindHeader)));
+-					*/
++static void cleanup(_Unwind_Reason_Code reason, struct _Unwind_Exception *e)
++{
++	struct objc_exception *ex = objc_exception_from_header(e);
++	if (ex->cxx_exception)
++	{
++		// The wrapper owns the native header as well as its C++ allocation.
++		objc_discard_cxx_exception(ex->cxx_exception);
++	}
++	else
++	{
++		objc_delete_exception(e);
++	}
+ }
+ 
+ void objc_exception_rethrow(struct _Unwind_Exception *e);
+@@ -252,7 +263,7 @@ void objc_exception_throw(id object)
+ 	td->cxxCaughtException = NO;
+ 
+ 	_Unwind_Reason_Code err = _Unwind_RaiseException(&ex->unwindHeader);
+-	free(ex);
++	cleanup(err, &ex->unwindHeader);
+ 	if (_URC_END_OF_STACK == err && 0 != _objc_unexpected_exception)
+ 	{
+ 		_objc_unexpected_exception(object);
+@@ -546,7 +557,7 @@ static inline _Unwind_Reason_Code internal_objc_personality(int version,
+ 		object = ex->object;
+ 		if (!isNew)
+ 		{
+-			free(ex);
++			cleanup(_URC_FOREIGN_EXCEPTION_CAUGHT, &ex->unwindHeader);
+ 		}
+ 	}
+ 
+@@ -584,7 +595,7 @@ BEGIN_PERSONALITY_FUNCTION(__gnustep_objcxx_personality_v0)
+ 		struct objc_exception *ex = objc_exception_from_header(exceptionObject);
+ 		if (0 == ex->cxx_exception)
+ 		{
+-			ex->cxx_exception = objc_init_cxx_exception(ex->object);
++			ex->cxx_exception = objc_init_cxx_exception(ex->object, exceptionObject);
+ 		}
+ 		// We now have two copies of the _Unwind_Exception object (which stores
+ 		// state for the unwinder) in flight.  Make sure that they're in sync.
+@@ -717,7 +728,7 @@ OBJC_PUBLIC void objc_end_catch(void)
+ 	if (ex->catch_count == 0)
+ 	{
+ 		td->caughtExceptions = ex->next;
+-		free(ex);
++		cleanup(_URC_FOREIGN_EXCEPTION_CAUGHT, &ex->unwindHeader);
+ 	}
+ }
+ 
+@@ -735,10 +746,11 @@ OBJC_PUBLIC void objc_exception_rethrow(struct _Unwind_Exception *e)
+ 		// rethrown exception in objc_end_catch
+ 		ex->catch_count = -ex->catch_count;
+ 		_Unwind_Reason_Code err = _Unwind_Resume_or_Rethrow(e);
+-		free(ex);
++		id object = ex->object;
++		cleanup(err, &ex->unwindHeader);
+ 		if (_URC_END_OF_STACK == err && 0 != _objc_unexpected_exception)
+ 		{
+-			_objc_unexpected_exception(ex->object);
++			_objc_unexpected_exception(object);
+ 		}
+ 		abort();
+ 	}
+diff --git a/fast_paths.m b/fast_paths.m
+index ec2f646a2..97508cbaf 100644
+--- a/fast_paths.m
++++ b/fast_paths.m
+@@ -1,4 +1,5 @@
+ #include "objc/runtime.h"
++#include "objc/message.h"
+ #include "class.h"
+ 
+ typedef struct _NSZone NSZone;
+@@ -25,7 +26,9 @@ objc_alloc(Class cls)
+ 	{
+ 		return class_createInstance(cls, 0);
+ 	}
+-    return [cls alloc];
++    // Do not let the GNUstep 2.2 compiler fold this fallback back into
++    // objc_alloc itself.
++    return ((id(*)(id, SEL))objc_msgSend)((id)cls, @selector(alloc));
+ }
+ 
+ /**
+@@ -47,7 +50,8 @@ objc_allocWithZone(Class cls)
+ 	{
+ 		return class_createInstance(cls, 0);
+ 	}
+-	return [cls allocWithZone: NULL];
++	return ((id(*)(id, SEL, NSZone*))objc_msgSend)(
++		(id)cls, @selector(allocWithZone:), NULL);
+ }
+ 
+ /**
+@@ -63,6 +67,7 @@ objc_alloc_init(Class cls)
+ 		return nil;
+ 	}
+ 	id instance = objc_alloc(cls);
++	if (UNLIKELY(instance == nil)) { return nil; }
+ 	// If +alloc was overwritten, it is not guaranteed that it returns
+ 	// an instance of cls.
+ 	cls = classForObject(instance);
+diff --git a/objcxx_eh.cc b/objcxx_eh.cc
+index 8ef5baf33..67576d48e 100644
+--- a/objcxx_eh.cc
++++ b/objcxx_eh.cc
+@@ -48,6 +48,12 @@ std::atomic<ptrdiff_t> type_info_offset;
+  */
+ std::atomic<size_t> exception_struct_size;
+ 
++struct ObjCExceptionPayload
++{
++	id object;
++	struct _Unwind_Exception *original;
++};
++
+ 
+ /**
+  * Exception cleanup function for C++ exceptions that wrap Objective-C
+@@ -61,6 +67,8 @@ void exception_cleanup(_Unwind_Reason_Code reason,
+ 	// exception structure + padding to the pointer to the generic exception
+ 	// structure field of the enclosing structure.
+ 	auto *cxxEx = pointer_add<__cxa_exception>(ex, exception_struct_size);
++	auto *payload = reinterpret_cast<ObjCExceptionPayload*>(cxxEx);
++	objc_delete_exception(payload->original);
+ 	__cxa_free_exception(cxxEx);
+ }
+ 
+@@ -215,10 +223,13 @@ extern "C"
+  */
+ OBJC_PUBLIC gnustep::libobjc::__objc_id_type_info __objc_id_type_info;
+ 
+-struct _Unwind_Exception *objc_init_cxx_exception(id obj)
++struct _Unwind_Exception *objc_init_cxx_exception(id obj,
++                                                struct _Unwind_Exception *original)
+ {
+-	id *newEx = static_cast<id*>(__cxa_allocate_exception(sizeof(id)));
+-	*newEx = obj;
++	auto *newEx = static_cast<ObjCExceptionPayload*>(
++		__cxa_allocate_exception(sizeof(ObjCExceptionPayload)));
++	newEx->object = obj;
++	newEx->original = original;
+ 	_Unwind_Exception *ex = pointer_add<_Unwind_Exception>(newEx, -exception_struct_size);
+ 	*pointer_add<std::type_info*>(ex, type_info_offset) = &__objc_id_type_info;
+ 	ex->exception_class = cxx_exception_class;
+@@ -227,6 +238,14 @@ struct _Unwind_Exception *objc_init_cxx_exception(id obj)
+ 	return ex;
+ }
+ 
++void objc_discard_cxx_exception(struct _Unwind_Exception *wrapper)
++{
++	// A native Objective-C handler can win after a C++ search frame created
++	// this adapter. No __cxa_begin_catch then balances its in-flight count.
++	__cxa_get_globals()->uncaughtExceptions--;
++	_Unwind_DeleteException(wrapper);
++}
++
+ void* objc_object_for_cxx_exception(void *thrown_exception, int *isValid)
+ {
+ 	ptrdiff_t type_offset = type_info_offset;
+diff --git a/objcxx_eh.h b/objcxx_eh.h
+index 5ac70a39d..c151ab2c5 100644
+--- a/objcxx_eh.h
++++ b/objcxx_eh.h
+@@ -22,7 +22,11 @@ void *__cxa_allocate_exception(size_t thrown_size) CXA_ALLOCATE_EXCEPTION_SPECIF
+  * _Unwind_Exception structure within this structure, and should be passed to
+  * the C++ personality function.
+  */
+-struct _Unwind_Exception *objc_init_cxx_exception(id thrown_exception);
++struct _Unwind_Exception *objc_init_cxx_exception(id thrown_exception,
++                                                struct _Unwind_Exception *original);
++/** Release the native header after its C++ wrapper has finished unwinding. */
++void objc_delete_exception(struct _Unwind_Exception *original);
++void objc_discard_cxx_exception(struct _Unwind_Exception *wrapper);
+ /**
+  * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
+  * libcxxrt (PathScale).

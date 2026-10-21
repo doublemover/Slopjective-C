@@ -148,7 +148,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
             f'-DOBJC3_LIBOBJC2_BUILD_DIR={runtime_stage}',
             f'-DOBJC3_ROBIN_MAP_SOURCE_DIR={runtime_report["robin_map_source"]}', '-DBUILD_TESTING=ON'])
         run('runtime-clients', ['cmake', '--build', clients, '--parallel', '2'])
-        run('runtime-tests', ['ctest', '--test-dir', clients, '--no-tests=error', '--output-on-failure'])
+        run('runtime-tests', ['ctest', '--test-dir', clients, '--no-tests=error',
+                              '--output-on-failure', '--timeout', '30', '--stop-on-failure'])
         run('runtime-install', ['cmake', '--install', clients, '--prefix', prefix])
         frontend = repo / 'out/toolchains/objc3-facade/build-linux-x86_64'
         configure = ['cmake', '-S', repo / 'native/objc3c', '-B', frontend, '-G', 'Ninja',

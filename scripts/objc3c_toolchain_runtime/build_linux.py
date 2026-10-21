@@ -12,9 +12,12 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
+if not __package__:
+    sys.path.insert(0, str(ROOT))
+from scripts.objc3c_toolchain_runtime.source_patches import prepare_source, verify_source
 
 
-def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool) -> None:
+def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool, *, allow_owned_changes=False) -> None:
     if not path.exists():
         if not fetch:
             raise ValueError(f"missing pinned source {path}; use --fetch to acquire it")
@@ -23,7 +26,7 @@ def checkout(path: Path, url: str, revision: str, tag: str, fetch: bool) -> None
     actual = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
     if actual != revision:
         raise ValueError(f"source {path} is at {actual}; expected {revision}")
-    if subprocess.check_output(["git", "-C", str(path), "status", "--porcelain"], text=True).strip():
+    if not allow_owned_changes and subprocess.check_output(["git", "-C", str(path), "status", "--porcelain"], text=True).strip():
         raise ValueError(f"pinned runtime dependency is dirty: {path}; preserving it")
 
 
@@ -55,7 +58,9 @@ def main(argv: list[str] | None = None) -> int:
               "started_utc": datetime.now(timezone.utc).isoformat(),
               "configuration": configuration, "build_key": build_key, "source_commit": profile["runtime_commit"], "robin_map_commit": profile["robin_map_commit"]}
     try:
-        checkout(source, profile["runtime_source"], profile["runtime_commit"], "v" + profile["runtime_release"], args.fetch)
+        checkout(source, profile["runtime_source"], profile["runtime_commit"], "v" + profile["runtime_release"], args.fetch,
+                 allow_owned_changes=True)
+        prepare_source(repo, source, profile)
         checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], args.fetch)
         build.mkdir(parents=True, exist_ok=True)
         configure = ["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja",
@@ -83,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError(f"runtime step {index} exited {result.returncode}; see {build / f'step-{index}.log'}")
         if not (stage / "lib/libobjc.so").is_file():
             raise ValueError("runtime installation did not produce lib/libobjc.so")
+        verify_source(repo, source, profile)
+        checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], False)
         report.update(status="passed", stage=str(stage), robin_map_source=str(robin))
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         report.update(status="failed", error=str(error))

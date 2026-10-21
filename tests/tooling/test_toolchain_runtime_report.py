@@ -16,13 +16,18 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
     config = tmp_path / 'scripts/objc3c_toolchain_runtime/runtime-profile.json'
     config.parent.mkdir(parents=True)
     config.write_bytes(profile.read_bytes())
+    for row in json.loads(profile.read_text())['profiles']['linux-x86_64']['source_patches']:
+        patch = tmp_path / row['file']
+        patch.parent.mkdir(parents=True, exist_ok=True)
+        patch.write_bytes((profile.parents[2] / row['file']).read_bytes())
     compiler = tmp_path / 'compiler/bin/clang'
     compiler.parent.mkdir(parents=True)
     compiler.write_bytes(b'compiler identity')
 
-    def cold_checkout(path, *args):
-        path.mkdir(parents=True)
-        print(f'Cloning into {path}...\nDetached HEAD advice {{not JSON}}', file=sys.stderr)
+    def cold_checkout(path, *args, **kwargs):
+        if not path.exists():
+            path.mkdir(parents=True)
+            print(f'Cloning into {path}...\nDetached HEAD advice {{not JSON}}', file=sys.stderr)
 
     def execute(command, **kwargs):
         if command[:2] == ['cmake', '--install']:
@@ -32,6 +37,8 @@ def test_cold_checkout_noise_cannot_contaminate_the_structured_report(tmp_path, 
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(build_linux, 'checkout', cold_checkout)
+    monkeypatch.setattr(build_linux, 'prepare_source', lambda *args: None)
+    monkeypatch.setattr(build_linux, 'verify_source', lambda *args: True)
     monkeypatch.setattr(build_linux.subprocess, 'run', execute)
     report = tmp_path / 'logs/runtime-report.json'
     assert build_linux.main(['--repo', str(tmp_path), '--compiler-root', str(compiler.parents[1]),

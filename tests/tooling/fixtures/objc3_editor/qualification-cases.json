@@ -89,6 +89,15 @@
       "declaration_name": "nested",
       "hover_type": "__objc3_optional",
       "completion_name": "nested"
+    },
+    {
+      "name": "managed_carrier_capture",
+      "use_line": "return __objc3_has_value(captured);",
+      "use_name": "captured",
+      "declaration_line": "__objc3_optional(id) captured =",
+      "declaration_name": "captured",
+      "hover_type": "__objc3_optional",
+      "completion_name": "captured"
     }
   ],
   "cases": [

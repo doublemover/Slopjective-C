@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_recursive_carrier_acceptance.json) identifies its
+[acceptance receipt](../support/linux_owned_capture_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 7.
+ordinary functions, callbacks and C++ members under extension ABI revision 8.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -48,7 +48,12 @@ profiles and requires a complete rebuild. The
 nested Optional/Result values under ABI 7, including managed matching and
 optionalization of managed call results. Nine installed executions and six traps
 cover imports, PCH, metadata, weak/Block leaves and exceptional cleanup.
-Arrays, enclosing records and captures remain implementation work.
+[Owned Block captures](linux_owned_block_captures.md) now carry these values
+through stack and heap closures under ABI 8. Copy/dispose helpers preserve
+selected arms and weak registrations; compiler and runtime unwinding clean up
+failed copies and Objective-C/C++ exception adapters. Nine installed executions
+and six traps cover separate compilation, imports, PCH and mixed-language frames.
+Arrays and enclosing records remain implementation work.
 The managed public core targets ARC. MRC adaptation remains outside its release
 contract; weak/unsafe Block payloads and enclosing managed storage still need
 explicit semantics and lowering. Define the public bounded contract and
@@ -67,8 +72,8 @@ The next implementation sequence is:
    enclosing records. Cover partial initialization, assignment, destruction and
    exceptions before admitting those storage forms to the callable ABI. Define
    the remaining aggregate forms on these recursive operations. Extend
-   the same operations into ivars/properties and Block value captures, including
-   payload-aware copy/dispose helpers and weak registrations.
+   those operations into ivars/properties and reference/`__block` captures,
+   including partial construction and weak registrations.
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
