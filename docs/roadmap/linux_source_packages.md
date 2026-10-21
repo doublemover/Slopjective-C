@@ -26,23 +26,37 @@ The installed example is copied to an editable workspace above.
 
 ## Workspace and package contracts
 
-A workspace uses `schema: "objc3c.source-workspace.v1"`, a `packages` array of
+A workspace uses `schema: "objc3c.source-workspace.v2"`, a `packages` array of
 relative package-manifest paths, and an `application` object. The application
-specifies a relative `root`, relative `source`, `ownership` (`arc` or `mrc`),
-and `dependencies`.
+specifies a relative `root`, relative `source`, explicit `language`, `standard`,
+`ownership`, and `dependencies`.
 
-Each package manifest uses `schema: "objc3c.source-package.v1"`, a canonical
+Each package manifest uses `schema: "objc3c.source-package.v2"`, a canonical
 module `name`, an exact opaque `package` identity, a relative `source`,
-`ownership`, and `dependencies`. Its source root is the manifest's directory.
+`language`, `standard`, `ownership`, and `dependencies`. Its source root is the manifest's directory.
 Application and package roots must be separate. Source paths and symbolic links
 cannot escape their roots; source directory links are rejected.
 
 Every dependency contains `name`, `package`, and `visibility` (`public` or
 `private`). The package identity must match exactly. All edges currently require
-the same ARC/MRC mode; cross-ownership interface adaptation is separate work.
+the same language, standard and ownership mode. Cross-language and
+cross-ownership projection require explicit adaptation.
 Unknown fields, duplicate modules/edges, unresolved locks and cycles are errors.
 Unused declarations are validated, but only the application's dependency closure
 is built.
+
+The v2 manifests require every mode field and reject v1 input. Supported modes are:
+
+| Language        | Standard         | Ownership      | Source suffix         |
+| --------------- | ---------------- | -------------- | --------------------- |
+| `objective-c`   | `c17`            | `arc` or `mrc` | `.m`, `.objc3`        |
+| `objective-c++` | `c++20`, `c++23` | `arc` or `mrc` | `.mm`                 |
+| `c++`           | `c++20`, `c++23` | `none`         | `.cpp`, `.cc`, `.cxx` |
+
+Regenerate manifests with explicit modes and rebuild package outputs. The compiler
+interface identity must reproduce the requested language, standard, ownership and
+runtime. Objective-C modes use source-directed imports; plain C++ uses the locked
+imports supplied by its manifest.
 
 Native semantic imports enforce visibility. A public edge re-exports its module;
 a private edge remains available to its declaring module. Physical availability
@@ -76,20 +90,32 @@ publication boundary preserves earlier object/interface products on rejected
 compilation. Manifest preflight rejection leaves the prior completed record
 untouched; its retained manifest hashes identify the source state it describes.
 
-`package-installation.json` records each selected module's full identity, direct
+`package-installation.json` v2 records each selected module's full identity,
+explicit language/standard/ownership mode, direct
 visibility locks and relative object/interface/sidecar paths with content hashes.
 Its content identity is reproduced by unchanged builds. The record describes the
 build output; it is not a remote registry, general binary package installer or
 public module-language syntax.
 
-ARC/MRC O0/O2 installed qualification covers cold/warm builds, a shared diamond leaf,
+Installed qualification covers all eight supported mode combinations at O0/O2,
+with 112 builds and 32 rejected package/visibility cases. It verifies cold/warm
+builds, a shared diamond leaf,
 provider body edits with preserved timestamps, private implementation edits,
 damaged objects/interfaces, transitive API changes, wrong package locks and
-private visibility rejection. The suite runs outside the checkout with spaces
+private visibility rejection. Objective-C++ ARC cases also return an owned record
+through the public Leaf/Left/Top chain, copy its strong and weak fields, verify
+one final release and observe weak zeroing. The SDK's runtime headers are available
+as system includes and participate in content-verified dependencies.
+The suite runs outside the checkout with spaces
 and quotes in source paths, and is included in SDK packaging and ordinary-user
-fresh-distribution archive qualification.
+fresh-distribution archive qualification. Independent mode cases have disjoint
+source trees and logs; the standalone qualifier uses two workers by default.
+Packaging reserves graph workers within its global compiler-process budget
+and reduces the number of other concurrent gates accordingly.
+A failed case joins the remaining workers and replaces any prior success receipt
+with a failure report.
 
-The [acceptance receipt](../support/linux_source_graph_acceptance.json) records
+The [acceptance receipt](../support/linux_explicit_source_graph_acceptance.json) records
 the exact shipped archive, implementation hashes, test cases and distribution
 results. Its public workflow check also verifies cold/warm compilation reuse
 and an identical linked executable digest.

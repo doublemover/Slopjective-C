@@ -1,8 +1,10 @@
 {
-  "schema": "objc3c.source-package.v1",
+  "schema": "objc3c.source-package.v2",
   "name": "fixture.Leaf",
   "package": "leaf-v1",
   "source": "module.m",
   "ownership": "arc",
-  "dependencies": []
+  "dependencies": [],
+  "language": "objective-c",
+  "standard": "c17"
 }

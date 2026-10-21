@@ -149,3 +149,95 @@ def test_standalone_builder_does_not_write_bytecode_into_sdk(tmp_path):
                             env=environment, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     assert not (tmp_path / '__pycache__').exists()
+
+
+def set_mode(workspace, language, standard, ownership):
+    suffix = {'objective-c': '.m', 'objective-c++': '.mm', 'c++': '.cpp'}[language]
+    for manifest in workspace.parent.glob('*/package.json'):
+        data = json.loads(manifest.read_text())
+        old = manifest.parent / data['source']
+        new = old.with_suffix(suffix)
+        if old != new:
+            old.rename(new)
+        data.update(language=language, standard=standard, ownership=ownership, source=new.name)
+        manifest.write_text(json.dumps(data))
+    data = json.loads(workspace.read_text())
+    old = workspace.parent / data['application']['root'] / data['application']['source']
+    new = old.with_suffix(suffix)
+    if old != new:
+        old.rename(new)
+    data['application'].update(language=language, standard=standard, ownership=ownership, source=new.name)
+    workspace.write_text(json.dumps(data))
+
+
+@pytest.mark.parametrize('language,standard,ownership', [
+    ('objective-c', 'c17', 'arc'), ('objective-c', 'c17', 'mrc'),
+    ('objective-c++', 'c++20', 'arc'), ('objective-c++', 'c++20', 'mrc'),
+    ('objective-c++', 'c++23', 'arc'), ('objective-c++', 'c++23', 'mrc'),
+    ('c++', 'c++20', 'none'), ('c++', 'c++23', 'none'),
+])
+def test_explicit_language_and_standard_modes_resolve_the_diamond(workspace, language, standard, ownership):
+    set_mode(workspace, language, standard, ownership)
+    graph = load_graph(workspace)
+    assert len(graph['order']) == 4
+    assert all(graph['packages'][name]['language'] == language and
+               graph['packages'][name]['standard'] == standard for name in graph['order'])
+    assert graph['application']['ownership'] == ownership
+
+
+@pytest.mark.parametrize('case,match', [
+    ('old-workspace', 'schema'), ('old-package', 'identity'), ('missing-mode', 'expected fields'),
+    ('unknown-language', 'source language'), ('malformed-language', 'source language'),
+    ('old-standard', 'standard'), ('cpp-arc', 'ownership'),
+    ('language-edge', 'language lock'), ('standard-edge', 'standard lock'),
+])
+def test_mode_cutover_and_incompatible_edges_fail_before_compilation(workspace, case, match):
+    leaf = workspace.parent / 'leaf/package.json'
+    if case == 'old-workspace':
+        edit(workspace, lambda data: data.update(schema='objc3c.source-workspace.v1'))
+    elif case == 'old-package':
+        edit(leaf, lambda data: data.update(schema='objc3c.source-package.v1'))
+    elif case == 'missing-mode':
+        edit(leaf, lambda data: data.pop('language'))
+    elif case == 'unknown-language':
+        edit(leaf, lambda data: data.update(language='automatic'))
+    elif case == 'malformed-language':
+        edit(leaf, lambda data: data.update(language=[]))
+    elif case == 'old-standard':
+        set_mode(workspace, 'c++', 'c++17', 'none')
+    elif case == 'cpp-arc':
+        set_mode(workspace, 'c++', 'c++20', 'arc')
+    elif case == 'language-edge':
+        source = leaf.parent / 'module.m'
+        source.rename(source.with_suffix('.mm'))
+        edit(leaf, lambda data: data.update(source='module.mm', language='objective-c++', standard='c++20'))
+    elif case == 'standard-edge':
+        set_mode(workspace, 'objective-c++', 'c++20', 'arc')
+        edit(leaf, lambda data: data.update(standard='c++23'))
+    with pytest.raises(ValueError, match=match):
+        load_graph(workspace)
+
+
+def test_parallel_graph_failure_replaces_a_stale_receipt_and_joins_cases(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import qualify_source_graph
+
+    sdk = tmp_path / 'sdk'
+    sdk.mkdir()
+    output = tmp_path / 'evidence'
+    output.mkdir()
+    (output / 'qualification.json').write_text('{"status":"PASS"}')
+    completed = []
+
+    def case(sdk, output, language, standard, ownership, optimization):
+        completed.append((language, standard, ownership, optimization))
+        if language == 'objective-c' and ownership == 'arc' and optimization == 'O0':
+            raise ValueError('real compiler gate failed; see compile.log')
+        return [], []
+
+    monkeypatch.setattr(qualify_source_graph, 'qualify_case', case)
+    with pytest.raises(ValueError, match='qualification failed'):
+        qualify_source_graph.qualify(sdk, output, jobs=2)
+    report = json.loads((output / 'qualification.json').read_text())
+    assert report['status'] == 'FAIL' and len(report['failures']) == 1
+    assert len(completed) == 16
+    assert 'compile.log' in report['failures'][0]['error']

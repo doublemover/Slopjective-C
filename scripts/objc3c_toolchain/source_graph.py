@@ -20,9 +20,9 @@ else:
     sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 
-WORKSPACE = 'objc3c.source-workspace.v1'
-PACKAGE = 'objc3c.source-package.v1'
-REPORT = 'objc3c.source-graph-build.v1'
+WORKSPACE = 'objc3c.source-workspace.v2'
+PACKAGE = 'objc3c.source-package.v2'
+REPORT = 'objc3c.source-graph-build.v2'
 APP = '@application'
 NAME = re.compile(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*', re.ASCII)
 
@@ -56,6 +56,20 @@ def locks(values, label: str) -> list[dict]:
     return sorted(values, key=lambda row: row['name'])
 
 
+
+def validate_mode(config: dict, source: Path) -> None:
+    language, standard, ownership = config['language'], config['standard'], config['ownership']
+    suffixes = {'objective-c': ('.m', '.objc3'), 'objective-c++': ('.mm',),
+                'c++': ('.cpp', '.cc', '.cxx')}
+    if not isinstance(language, str) or language not in suffixes or source.suffix not in suffixes[language]:
+        raise ValueError('source language must match its Objective-C, Objective-C++, or C++ suffix')
+    standards = ('c17',) if language == 'objective-c' else ('c++20', 'c++23')
+    if standard not in standards:
+        raise ValueError(f'unsupported standard for {language}: {standard}')
+    if ownership not in (('none',) if language == 'c++' else ('arc', 'mrc')):
+        raise ValueError('ownership must be arc/mrc for Objective-C modes or none for C++')
+
+
 def load_graph(workspace: Path) -> dict:
     workspace = workspace.resolve(strict=True)
     data = json.loads(workspace.read_text())
@@ -69,7 +83,7 @@ def load_graph(workspace: Path) -> dict:
     for name in data['packages']:
         path = within(root, name, 'package manifest')
         config = json.loads(path.read_text())
-        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'dependencies'}, str(path))
+        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'language', 'standard', 'dependencies'}, str(path))
         module = config['name']
         if (config['schema'] != PACKAGE or not isinstance(module, str) or not NAME.fullmatch(module) or
                 module in packages or
@@ -80,24 +94,18 @@ def load_graph(workspace: Path) -> dict:
             raise ValueError('package source roots must be separate')
         source_roots.append(directory)
         source = within(directory, config['source'], 'package source')
-        if source.suffix not in ('.m', '.objc3'):
-            raise ValueError('source packages require Objective-C .m or .objc3 input')
-        if config['ownership'] not in ('arc', 'mrc'):
-            raise ValueError('ownership must be arc or mrc')
+        validate_mode(config, source)
         config['dependencies'] = locks(config['dependencies'], module)
         packages[module] = {**config, 'root': directory, 'input': source, 'manifest': path}
         manifests[path] = digest(path)
     app = data['application']
-    fields(app, {'root', 'source', 'ownership', 'dependencies'}, 'application')
+    fields(app, {'root', 'source', 'ownership', 'language', 'standard', 'dependencies'}, 'application')
     app_root = within(root, app['root'], 'application root', directory=True)
     if any(app_root.is_relative_to(other) or other.is_relative_to(app_root) for other in source_roots):
         raise ValueError('application and package source roots must be separate')
-    if app['ownership'] not in ('arc', 'mrc'):
-        raise ValueError('ownership must be arc or mrc')
     app = {**app, 'root': app_root, 'input': within(app_root, app['source'], 'application source'),
            'dependencies': locks(app['dependencies'], 'application')}
-    if app['input'].suffix not in ('.m', '.objc3'):
-        raise ValueError('applications require Objective-C .m or .objc3 input')
+    validate_mode(app, app['input'])
     ordered, active, visited = [], set(), set()
 
     def visit(config):
@@ -106,6 +114,10 @@ def load_graph(workspace: Path) -> dict:
             if name not in packages or packages[name]['package'] != dependency['package']:
                 raise ValueError(f'package identity lock cannot be resolved: {name}')
             selected = packages[name]
+            if selected['language'] != config['language']:
+                raise ValueError(f'language lock differs across package edge: {name}')
+            if selected['standard'] != config['standard']:
+                raise ValueError(f'standard lock differs across package edge: {name}')
             if selected['ownership'] != config['ownership']:
                 raise ValueError(f'ownership lock differs across package edge: {name}')
             if name in active:
@@ -189,8 +201,12 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     for name, config in [*configs.items(), (APP, app)]:
         directory = directories[name]
         obj, depfile = directory / 'module.o', directory / 'module.d'
-        command = [str(sdk / 'bin/objc3c'), str(config['input']), '--objc3',
-                   '--target', target, '--runtime', 'gnustep-2.2', '--emit-object', str(obj)]
+        command = [str(sdk / 'bin/objc3c'), str(config['input']),
+                   '--target', target, '--emit-object', str(obj)]
+        if config['language'] != 'c++':
+            command += ['--objc3', '--runtime', 'gnustep-2.2']
+        if config['language'] == 'objective-c++':
+            command.append('--objcxx')
         if config['ownership'] == 'arc':
             command.append('--arc')
         products = [obj, depfile]
@@ -204,7 +220,8 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         # roots and native re-export edges grant semantic visibility.
         imported_inputs = []
         if direct:
-            command.append('--source-imports')
+            if config['language'] != 'c++':
+                command.append('--source-imports')
             closure = set()
 
             def include(module):
@@ -227,7 +244,8 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             dependency_record = directory / 'dependencies.json'
             command += ['--emit-dependency-record', str(dependency_record)]
             products.append(dependency_record)
-        command += ['--', '--no-default-config', '-std=c17', '-fblocks', '-' + optimization,
+        command += ['--', '--no-default-config', '-std=' + config['standard'], '-fblocks', '-' + optimization,
+                    '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         # A source implementation edit rebuilds that package. Importers depend
         # on interface contents rather than the implementation object bytes.
@@ -250,9 +268,11 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         nodes[name]['elapsed_seconds'] = round(time.monotonic() - tick, 6)
         if name != APP:
             identity = json.loads(sidecar.read_text())['module']
-            runtime = 'gnustep-2.2;' + ('arc' if config['ownership'] == 'arc' else 'manual-reference-counting')
+            runtime = ('no-objc-runtime' if config['language'] == 'c++' else 'gnustep-2.2') + ';' + ('arc' if config['ownership'] == 'arc' else 'manual-reference-counting')
             if (identity['canonical_name'] != name or identity['package_identity'] != config['package'] or
-                    identity['target_triple'] != target or identity['runtime_abi'] != runtime):
+                    identity['target_triple'] != target or identity['runtime_abi'] != runtime or
+                    ';language=' + config['language'] + ';' not in identity['language_profile'] or
+                    ';standard=' + config['standard'] + ';' not in identity['language_profile']):
                 raise ValueError(f'compiled interface identity differs from package lock: {name}')
             identities[name] = identity
 
@@ -275,9 +295,12 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     verify()
     # Relocatable installation inventory: identities and direct visibility locks
     # accompany content hashes of each installed object/interface/sidecar.
-    inventory = {'schema': 'objc3c.package-installation.v1', 'sdk_seal': seal,
-                 'target': target, 'optimization': optimization, 'packages': [
-                     {'module': identities[name], 'dependencies': packages[name]['dependencies'],
+    inventory = {'schema': 'objc3c.package-installation.v2', 'sdk_seal': seal,
+                 'target': target, 'optimization': optimization,
+                 'application_mode': {key: app[key] for key in ('language', 'standard', 'ownership')}, 'packages': [
+                     {'module': identities[name], 'language': packages[name]['language'],
+                      'standard': packages[name]['standard'], 'ownership': packages[name]['ownership'],
+                      'dependencies': packages[name]['dependencies'],
                       'artifacts': {str(path.relative_to(output)): digest(path) for path in
                                     (directories[name] / 'module.o', paths[name], paths[name].with_suffix('.objc3i.json'))}}
                      for name in graph['order']]}

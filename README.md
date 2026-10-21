@@ -136,8 +136,10 @@ and runs the application. It retains a build report and a content-identified
 package installation inventory. The same operation is exposed through
 `npm run objc3c -- build-packages`.
 
-The current contract uses local Objective-C source packages in one ARC/MRC mode.
-It does not fetch packages, adapt ownership modes or define public module syntax.
+The v2 package contract requires explicit language, standard and ownership locks.
+It supports Objective-C C17 and C++20/C++23 in Objective-C++ or plain C++ mode,
+with exact mode matching across every dependency. Packages use local sources;
+remote fetching, mode adaptation and public module syntax remain separate work.
 See the [source-package contract](docs/roadmap/linux_source_packages.md).
 The [package SDK acceptance receipt](docs/support/linux_source_graph_acceptance.json)
 identifies the archive, code hashes and installed/fresh-distribution evidence.
@@ -255,7 +257,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_cxx_interface_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_explicit_source_graph_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

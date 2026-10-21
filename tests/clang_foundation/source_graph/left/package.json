@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-package.v1",
+  "schema": "objc3c.source-package.v2",
   "name": "fixture.Left",
   "package": "left-v1",
   "source": "module.m",
@@ -10,5 +10,7 @@
       "package": "leaf-v1",
       "visibility": "public"
     }
-  ]
+  ],
+  "language": "objective-c",
+  "standard": "c17"
 }

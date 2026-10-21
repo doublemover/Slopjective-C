@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-workspace.v1",
+  "schema": "objc3c.source-workspace.v2",
   "packages": ["leaf/package.json", "left/package.json", "right/package.json", "top/package.json"],
   "application": {
     "root": "app",
@@ -11,6 +11,8 @@
         "package": "top-v1",
         "visibility": "private"
       }
-    ]
+    ],
+    "language": "objective-c",
+    "standard": "c17"
   }
 }
