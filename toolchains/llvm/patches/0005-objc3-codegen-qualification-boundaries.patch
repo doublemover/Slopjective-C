@@ -1,5 +1,5 @@
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index bb8e98a89..d1ed4acad 100644
+index bb8e98a89..74cb679d7 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
 @@ -66,6 +66,18 @@
@@ -43,11 +43,14 @@ index bb8e98a89..d1ed4acad 100644
    CFGBlock *VisitObjCAtTryStmt(ObjCAtTryStmt *S);
    CFGBlock *VisitObjCAutoreleasePoolStmt(ObjCAutoreleasePoolStmt *S);
    CFGBlock *VisitObjCForCollectionStmt(ObjCForCollectionStmt *S);
-@@ -2349,6 +2369,24 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2349,6 +2369,27 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      default:
        return VisitStmt(S, asc);
  
 +    case Stmt::ObjC3CarrierTransferExprClass:
++    case Stmt::ObjC3BindingConditionClass:
++    case Stmt::ObjC3GuardStmtClass:
++    case Stmt::ObjC3IfBindingStmtClass:
 +    case Stmt::ObjC3MatchArmClass:
 +    case Stmt::ObjC3MatchStmtClass:
 +    case Stmt::ObjC3MatchExprClass:
@@ -68,7 +71,7 @@ index bb8e98a89..d1ed4acad 100644
      case Stmt::ImplicitValueInitExprClass:
        if (BuildOpts.OmitImplicitValueInitializers)
          return Block;
-@@ -2921,6 +2959,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2921,6 +2962,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    if (!CanThrow(C->getCallee(), *Context))
      AddEHEdge = false;
  
@@ -78,7 +81,7 @@ index bb8e98a89..d1ed4acad 100644
    if (OmitArguments) {
      assert(!NoReturn && "noreturn calls with unevaluated args not implemented");
      assert(!AddEHEdge && "EH calls with unevaluated args not implemented");
-@@ -4229,6 +4270,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4229,6 +4273,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    return CatchBlock;
  }
  
@@ -209,7 +212,7 @@ index bb8e98a89..d1ed4acad 100644
  CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // If we were in the middle of a block we stop processing that block.
    if (badCFG)
-@@ -5806,6 +5971,8 @@ public:
+@@ -5806,6 +5974,8 @@ public:
      Terminator->getCond()->printPretty(OS, Helper, Policy);
    }
  
@@ -218,7 +221,7 @@ index bb8e98a89..d1ed4acad 100644
    void VisitCXXTryStmt(CXXTryStmt *) { OS << "try ..."; }
  
    void VisitObjCAtTryStmt(ObjCAtTryStmt *) { OS << "@try ..."; }
-@@ -6230,6 +6397,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
+@@ -6230,6 +6400,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
        else
          OS << "...";
        OS << ")";
@@ -7475,7 +7478,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..75ec7683c 100644
+index 27e74d966..ec646171c 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,10 @@
@@ -7489,7 +7492,7 @@ index 27e74d966..75ec7683c 100644
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
-@@ -159,6 +163,27 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
+@@ -159,6 +163,36 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
    case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
    case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
  
@@ -7497,6 +7500,15 @@ index 27e74d966..75ec7683c 100644
 +    emitObjC3ThrowStmt(*this, *cast<ObjC3ThrowStmt>(S));
 +    break;
 +
++  case Stmt::ObjC3BindingConditionClass:
++    ErrorUnsupported(S, "native guard/optional binding lowering");
++    break;
++  case Stmt::ObjC3GuardStmtClass:
++    ErrorUnsupported(S, "native guard/optional binding lowering");
++    break;
++  case Stmt::ObjC3IfBindingStmtClass:
++    ErrorUnsupported(S, "native guard/optional binding lowering");
++    break;
 +  case Stmt::ObjC3DoCatchStmtClass:
 +    emitObjC3DoCatchStmt(*this, *cast<ObjC3DoCatchStmt>(S));
 +    break;
@@ -7517,7 +7529,7 @@ index 27e74d966..75ec7683c 100644
    case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
-@@ -1697,6 +1722,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -1697,6 +1731,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
@@ -7712,10 +7724,20 @@ index 7629b42dd..25517ae3e 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..0949ef992 100644
+index e7c24f1f3..142901427 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
-@@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
+@@ -57,6 +57,9 @@ class CanonicalLoopInfo;
+ } // namespace llvm
+ 
+ namespace clang {
++class ObjC3GuardStmt;
++class ObjC3IfBindingStmt;
++
+ class ASTContext;
+ class AsmConstraintsInfo;
+ class CXXDestructorDecl;
+@@ -79,6 +82,9 @@ class ObjCForCollectionStmt;
  class ObjCAtTryStmt;
  class ObjCAtThrowStmt;
  class ObjCAtSynchronizedStmt;
@@ -7725,7 +7747,7 @@ index e7c24f1f3..0949ef992 100644
  class ObjCAutoreleasePoolStmt;
  class OMPUseDevicePtrClause;
  class OMPUseDeviceAddrClause;
-@@ -103,6 +106,8 @@ class RegionCodeGenTy;
+@@ -103,6 +109,8 @@ class RegionCodeGenTy;
  class TargetCodeGenInfo;
  struct OMPTaskDataTy;
  struct CGCoroData;
@@ -7734,7 +7756,7 @@ index e7c24f1f3..0949ef992 100644
  
  // clang-format off
  /// The kind of evaluation to perform on values of a particular
-@@ -290,6 +295,56 @@ public:
+@@ -290,6 +298,56 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
@@ -7791,7 +7813,7 @@ index e7c24f1f3..0949ef992 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -657,6 +712,7 @@ public:
+@@ -657,6 +715,7 @@ public:
  
    const CodeGen::CGBlockInfo *BlockInfo = nullptr;
    llvm::Value *BlockPointer = nullptr;
@@ -7799,7 +7821,7 @@ index e7c24f1f3..0949ef992 100644
  
    llvm::DenseMap<const ValueDecl *, FieldDecl *> LambdaCaptureFields;
    FieldDecl *LambdaThisCaptureField = nullptr;
-@@ -2297,6 +2353,7 @@ public:
+@@ -2297,6 +2356,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -7807,7 +7829,7 @@ index e7c24f1f3..0949ef992 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -3641,6 +3698,11 @@ public:
+@@ -3641,6 +3701,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -7819,7 +7841,16 @@ index e7c24f1f3..0949ef992 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3691,6 +3753,7 @@ public:
+@@ -3665,6 +3730,8 @@ public:
+   void EmitAttributedStmt(const AttributedStmt &S);
+   void EmitGotoStmt(const GotoStmt &S);
+   void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
++  void EmitObjC3GuardStmt(const ObjC3GuardStmt *Guard);
++  void EmitObjC3IfBindingStmt(const ObjC3IfBindingStmt *If);
+   void EmitIfStmt(const IfStmt &S);
+ 
+   void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
+@@ -3691,6 +3758,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);
@@ -8123,7 +8154,7 @@ index 9de7e0a83..450c25a10 100644
    const TargetInfo &getTarget() const { return Target; }
    CGCXXABI &getCXXABI() const;
 diff --git a/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp b/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
-index ce44fcd24..54595784c 100644
+index ce44fcd24..370c51bf4 100644
 --- a/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
 +++ b/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
 @@ -36,6 +36,7 @@
@@ -8152,7 +8183,7 @@ index ce44fcd24..54595784c 100644
 +public:
 +  const Stmt *Unsupported = nullptr;
 +  bool VisitStmt(Stmt *S) override {
-+    if (isa<ObjC3CarrierTransferExpr, ObjC3MatchArm, ObjC3MatchStmt, ObjC3MatchExpr, ObjC3TryExpr, ObjC3ThrowStmt, ObjC3CatchStmt, ObjC3DoCatchStmt>(S)) {
++    if (isa<ObjC3BindingCondition, ObjC3GuardStmt, ObjC3IfBindingStmt, ObjC3CarrierTransferExpr, ObjC3MatchArm, ObjC3MatchStmt, ObjC3MatchExpr, ObjC3TryExpr, ObjC3ThrowStmt, ObjC3CatchStmt, ObjC3DoCatchStmt>(S)) {
 +      Unsupported = S;
 +      return false;
 +    }
@@ -8164,7 +8195,7 @@ index ce44fcd24..54595784c 100644
  void AnalysisConsumer::HandleCode(Decl *D, AnalysisMode Mode,
                                    ExprEngine::InliningModes IMode,
                                    SetOfConstDecls *VisitedCallees) {
-@@ -725,6 +742,26 @@ void AnalysisConsumer::HandleCode(Decl *D, AnalysisMode Mode,
+@@ -725,6 +742,29 @@ void AnalysisConsumer::HandleCode(Decl *D, AnalysisMode Mode,
    if (Mode == AM_None)
      return;
  
@@ -8176,7 +8207,10 @@ index ce44fcd24..54595784c 100644
 +    // Syntax and path analysis may both visit a declaration. Reject both
 +    // modes, while reporting the unsupported model once per declaration.
 +    UnsupportedObjC3Decls.insert(D);
-+    unsigned ID = isa<ObjC3CarrierTransferExpr>(ObjC3Nodes.Unsupported)
++    unsigned ID = isa<ObjC3BindingCondition, ObjC3GuardStmt, ObjC3IfBindingStmt>(ObjC3Nodes.Unsupported)
++        ? Ctx->getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++            "Objective-C 3.0 condition binding has no qualified static-analysis model")
++        : isa<ObjC3CarrierTransferExpr>(ObjC3Nodes.Unsupported)
 +        ? Ctx->getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
 +            "ObjC3 carrier transfer has no qualified static-analysis model")
 +        : isa<ObjC3MatchArm, ObjC3MatchStmt, ObjC3MatchExpr>(ObjC3Nodes.Unsupported)

@@ -152,7 +152,7 @@ index 000000000..c0a4d44d6
 +
 +
 diff --git a/clang/lib/AST/CMakeLists.txt b/clang/lib/AST/CMakeLists.txt
-index e3f74d73f..15bac0545 100644
+index e3f74d73f..a4a2a8225 100644
 --- a/clang/lib/AST/CMakeLists.txt
 +++ b/clang/lib/AST/CMakeLists.txt
 @@ -58,6 +58,7 @@ add_clang_library(clangAST
@@ -163,11 +163,12 @@ index e3f74d73f..15bac0545 100644
    ExprClassification.cpp
    ExprConcepts.cpp
    ExprConstant.cpp
-@@ -131,6 +132,7 @@ add_clang_library(clangAST
+@@ -131,6 +132,8 @@ add_clang_library(clangAST
    TemplateName.cpp
    TextNodeDumper.cpp
    Type.cpp
 +  ObjC3TypeContracts.cpp
++  ObjC3ConditionNodes.cpp
    TypeLoc.cpp
    TypePrinter.cpp
    VTableBuilder.cpp

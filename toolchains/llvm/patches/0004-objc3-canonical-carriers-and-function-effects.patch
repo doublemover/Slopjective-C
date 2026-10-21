@@ -471,7 +471,7 @@ index fd3cce10b..e2a8d508a 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index 165c6324c..224339bda 100644
+index 165c6324c..d15227ba7 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -1008,6 +1008,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -538,7 +538,7 @@ index 165c6324c..224339bda 100644
    if (D->getReturnTypeSourceInfo()) {
      TRY_TO(TraverseTypeLoc(D->getReturnTypeSourceInfo()->getTypeLoc()));
    }
-@@ -2946,6 +2975,29 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -2946,6 +2975,32 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -564,21 +564,27 @@ index 165c6324c..224339bda 100644
 +  if (TypeSourceInfo *Info = S->getCatchTypeInfo())
 +    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
 +})
++DEF_TRAVERSE_STMT(ObjC3BindingCondition, {})
++DEF_TRAVERSE_STMT(ObjC3GuardStmt, {})
++DEF_TRAVERSE_STMT(ObjC3IfBindingStmt, {})
 +DEF_TRAVERSE_STMT(ObjC3DoCatchStmt, {})
  DEF_TRAVERSE_STMT(ChooseExpr, {})
  DEF_TRAVERSE_STMT(CompoundLiteralExpr, {
    TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
 diff --git a/clang/include/clang/AST/TextNodeDumper.h b/clang/include/clang/AST/TextNodeDumper.h
-index 41ddd88a8..d1b3d82af 100644
+index 41ddd88a8..cae302445 100644
 --- a/clang/include/clang/AST/TextNodeDumper.h
 +++ b/clang/include/clang/AST/TextNodeDumper.h
-@@ -265,6 +265,10 @@ public:
+@@ -265,6 +265,13 @@ public:
    void VisitCaseStmt(const CaseStmt *Node);
    void VisitReturnStmt(const ReturnStmt *Node);
    void VisitCoawaitExpr(const CoawaitExpr *Node);
 +  void VisitObjC3TryExpr(const ObjC3TryExpr *Node);
 +  void VisitObjC3ThrowStmt(const ObjC3ThrowStmt *Node);
 +  void VisitObjC3CatchStmt(const ObjC3CatchStmt *Node);
++  void VisitObjC3BindingCondition(const ObjC3BindingCondition *Node);
++  void VisitObjC3GuardStmt(const ObjC3GuardStmt *Node);
++  void VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *Node);
 +  void VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *Node);
    void VisitCoreturnStmt(const CoreturnStmt *Node);
    void VisitCompoundStmt(const CompoundStmt *Node);
@@ -1213,7 +1219,7 @@ index a9965a4a8..57bfa0eb8 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..f970dffd6 100644
+index 892715a6d..8af51a043 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1239,7 +1245,7 @@ index 892715a6d..f970dffd6 100644
    void InitCXXThisScopeForDeclaratorIfRelevant(
        const Declarator &D, const DeclSpec &DS,
        std::optional<Sema::CXXThisScopeRAII> &ThisScope);
-@@ -7614,6 +7623,23 @@ public:
+@@ -7614,6 +7623,27 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
@@ -1253,6 +1259,10 @@ index 892715a6d..f970dffd6 100644
 +  StmtResult ParseObjC3DoCatchStatement();
 +  ExprResult ParseObjC3CarrierTransferExpression();
 +
++  bool isObjC3GuardStatementAhead();
++  bool ParseObjC3ConditionList(SmallVectorImpl<Stmt *> &Conditions);
++  StmtResult ParseObjC3GuardStatement();
++  StmtResult ParseObjC3IfBindingStatement();
 +  ExprResult ParseObjC3ResultExpression();
 +  bool isObjC3QualifiedNameAhead();
 +  ExprResult ParseObjC3QualifiedNameExpression(SourceLocation AtLoc);
@@ -1379,7 +1389,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..39ae64a94 100644
+index 11550340a..cb776d4a1 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1443,7 +1453,7 @@ index 11550340a..39ae64a94 100644
    DeclResult ActOnModuleImport(SourceLocation StartLoc,
                                 SourceLocation ExportLoc,
                                 SourceLocation ImportLoc, Module *M,
-@@ -11247,6 +11262,83 @@ public:
+@@ -11247,6 +11262,98 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -1475,6 +1485,21 @@ index 11550340a..39ae64a94 100644
 +      SourceLocation LParenLoc, Expr *Operand, SourceLocation RParenLoc);
 +  void PushObjC3DeferContext();
 +  void PopObjC3DeferContext();
++  ExprResult PrepareObjC3Snapshot(Expr *Source);
++  ExprResult ActOnObjC3BooleanCondition(Scope *ConditionScope, Expr *Value,
++                                       SourceLocation Loc);
++  StmtResult ActOnObjC3BindingCondition(
++      Scope *BindingScope, IdentifierInfo *Name, SourceLocation NameLoc,
++      bool Mutable, SourceLocation KeywordLoc, SourceLocation EqualLoc,
++      Expr *Source);
++  StmtResult ActOnObjC3GuardStmt(
++      Scope *ParentScope, ArrayRef<Stmt *> Conditions, Stmt *ElseBody,
++      SourceLocation KeywordLoc, SourceLocation ElseLoc);
++  StmtResult ActOnObjC3IfBindingStmt(
++      ArrayRef<Stmt *> Conditions, Stmt *Then, Stmt *Else,
++      SourceLocation IfLoc, SourceLocation ElseLoc);
++  bool CheckObjC3Guards(Decl *Callable, Stmt *Body);
++
 +  ObjC3DoCatchContext *ActOnObjC3BeginDoCatch(SourceLocation DoLoc);
 +  void ActOnObjC3EndDoCatchBody(ObjC3DoCatchContext *Context);
 +  void ActOnObjC3AbortDoCatch(ObjC3DoCatchContext *Context);
@@ -1527,7 +1552,7 @@ index 11550340a..39ae64a94 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15449,13 @@ public:
+@@ -15357,6 +15464,13 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -1556,10 +1581,10 @@ index f5cb8ea4b..0e30ab06b 100644
    bool CheckARCMethodDecl(ObjCMethodDecl *method);
  
 diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
-index 671341488..707e5d183 100644
+index 671341488..d2ef7f004 100644
 --- a/clang/include/clang/Serialization/ASTBitCodes.h
 +++ b/clang/include/clang/Serialization/ASTBitCodes.h
-@@ -2091,6 +2091,16 @@ enum StmtCode {
+@@ -2091,6 +2091,19 @@ enum StmtCode {
    EXPR_HLSL_OUT_ARG,
  
    STMT_DEFER,
@@ -1569,6 +1594,9 @@ index 671341488..707e5d183 100644
 +  EXPR_OBJC3_TRY,
 +  STMT_OBJC3_CATCH,
 +  STMT_OBJC3_DO_CATCH,
++  STMT_OBJC3_BINDING_CONDITION,
++  STMT_OBJC3_GUARD,
++  STMT_OBJC3_IF_BINDING,
 +  STMT_OBJC3_MATCH_ARM,
 +  STMT_OBJC3_MATCH,
 +  EXPR_OBJC3_MATCH,
@@ -2091,7 +2119,7 @@ index 222881154..2c4830adb 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..b94ebf6be 100644
+index d743717ad..1fb08dd5c 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,7 @@
@@ -2293,7 +2321,7 @@ index d743717ad..b94ebf6be 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7450,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7450,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2334,6 +2362,43 @@ index d743717ad..b94ebf6be 100644
 +      RParenLoc, CatchType, Binding, Body, S->isCatchAll());
 +}
 +
++ExpectedStmt ASTNodeImporter::VisitObjC3BindingCondition(ObjC3BindingCondition *S) {
++  Error Err = Error::success();
++  auto *Source = importChecked(Err, S->getSource());
++  auto *Binding = importChecked(Err, S->getBindingStatement());
++  auto Keyword = importChecked(Err, S->getKeywordLoc());
++  auto Equal = importChecked(Err, S->getEqualLoc());
++  if (Err) return std::move(Err);
++  return new (Importer.getToContext()) ObjC3BindingCondition(
++      Source, Binding, S->isMutableBinding(), Keyword, Equal);
++}
++ExpectedStmt ASTNodeImporter::VisitObjC3GuardStmt(ObjC3GuardStmt *S) {
++  Error Err = Error::success();
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != S->getNumConditions(); ++I)
++    Conditions.push_back(importChecked(Err, S->getCondition(I)));
++  
++  auto *Else = importChecked(Err, S->getElse());
++  auto Keyword = importChecked(Err, S->getKeywordLoc());
++  auto ElseLoc = importChecked(Err, S->getElseLoc());
++  if (Err) return std::move(Err);
++  return ObjC3GuardStmt::Create(Importer.getToContext(), Conditions,
++      Else, Keyword, ElseLoc);
++}
++ExpectedStmt ASTNodeImporter::VisitObjC3IfBindingStmt(ObjC3IfBindingStmt *S) {
++  Error Err = Error::success();
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != S->getNumConditions(); ++I)
++    Conditions.push_back(importChecked(Err, S->getCondition(I)));
++  auto *Then = importChecked(Err, S->getThen());
++  auto *Else = importChecked(Err, S->getElse());
++  auto Keyword = importChecked(Err, S->getIfLoc());
++  auto ElseLoc = importChecked(Err, S->getElseLoc());
++  if (Err) return std::move(Err);
++  return ObjC3IfBindingStmt::Create(Importer.getToContext(), Conditions,
++      Then, Else, Keyword, ElseLoc);
++}
++
 +ExpectedStmt ASTNodeImporter::VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S) {
 +  Error Err = Error::success();
 +  auto DoLoc = importChecked(Err, S->getDoLoc());
@@ -2354,7 +2419,7 @@ index d743717ad..b94ebf6be 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +7951,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +7988,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2488,7 +2553,7 @@ index d743717ad..b94ebf6be 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10018,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10055,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2588,10 +2653,10 @@ index d743717ad..b94ebf6be 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..549a1ca48 100644
+index e0b62591a..f63a554f9 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -207,6 +207,81 @@ class StmtComparer {
+@@ -207,6 +207,93 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -2664,6 +2729,18 @@ index e0b62591a..549a1ca48 100644
 +    return true;
 +  }
 +
++  bool IsStmtEquivalent(const ObjC3BindingCondition *A, const ObjC3BindingCondition *B) {
++    return A->isMutableBinding() == B->isMutableBinding();
++  }
++
++  bool IsStmtEquivalent(const ObjC3GuardStmt *A, const ObjC3GuardStmt *B) {
++    return A->getNumConditions() == B->getNumConditions();
++  }
++
++  bool IsStmtEquivalent(const ObjC3IfBindingStmt *A, const ObjC3IfBindingStmt *B) {
++    return A->getNumConditions() == B->getNumConditions();
++  }
++
 +  bool IsStmtEquivalent(const ObjC3DoCatchStmt *D1,
 +                        const ObjC3DoCatchStmt *D2) {
 +    // The generic child comparison preserves body and catch-clause order.
@@ -2673,7 +2750,7 @@ index e0b62591a..549a1ca48 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -963,6 +1038,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1050,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -2697,7 +2774,7 @@ index e0b62591a..549a1ca48 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1238,17 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,6 +1250,17 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -3317,10 +3394,10 @@ index 000000000..ee728c92d
 +  return Node;
 +}
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 9799c8651..3ee58bf5b 100644
+index 9799c8651..de64057ef 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
-@@ -1532,6 +1532,37 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
+@@ -1532,6 +1532,49 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
      OS << " implicit";
  }
  
@@ -3351,6 +3428,18 @@ index 9799c8651..3ee58bf5b 100644
 +  }
 +}
 +
++void clang::TextNodeDumper::VisitObjC3BindingCondition(const ObjC3BindingCondition *Node) {
++  OS << (Node->isMutableBinding() ? " var" : " let");
++}
++
++void clang::TextNodeDumper::VisitObjC3GuardStmt(const ObjC3GuardStmt *Node) {
++  OS << " conditions=" << Node->getNumConditions();
++}
++
++void clang::TextNodeDumper::VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *Node) {
++  OS << " conditions=" << Node->getNumConditions();
++}
++
 +void clang::TextNodeDumper::VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *Node) {
 +  OS << " catch_clauses=" << Node->getNumCatchClauses();
 +}
@@ -3358,7 +3447,7 @@ index 9799c8651..3ee58bf5b 100644
  void clang::TextNodeDumper::VisitCoreturnStmt(const CoreturnStmt *Node) {
    if (Node->isImplicit())
      OS << " implicit";
-@@ -2199,6 +2230,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -2199,6 +2242,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
    dumpDeclRef(EPI.ExceptionSpec.SourceDecl, "ExceptionSourceDecl");
    dumpDeclRef(EPI.ExceptionSpec.SourceTemplate, "ExceptionSourceTemplate");
  
@@ -3383,7 +3472,7 @@ index 9799c8651..3ee58bf5b 100644
    // FIXME: Consumed parameters.
    VisitFunctionType(T);
  }
-@@ -3073,6 +3122,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
+@@ -3073,6 +3134,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
      OS << " +";
    dumpName(D);
    dumpType(D->getReturnType());
@@ -4798,7 +4887,7 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..55a41aa67 100644
+index b4a9cc120..0c51d752c 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
 @@ -14,6 +14,7 @@
@@ -4841,10 +4930,22 @@ index b4a9cc120..55a41aa67 100644
          Diags = ScopePair(diag::note_enters_block_captures_non_trivial_c_struct,
                            diag::note_exits_block_captures_non_trivial_c_struct);
          break;
-@@ -406,6 +414,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -406,6 +414,36 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
      return;
    }
  
++  case Stmt::ObjC3BindingConditionClass:
++    for (Stmt *Child : S->children())
++      if (Child) BuildScopeInformation(Child, ParentScope);
++    return;
++  case Stmt::ObjC3GuardStmtClass:
++    for (Stmt *Child : S->children())
++      if (Child) BuildScopeInformation(Child, ParentScope);
++    return;
++  case Stmt::ObjC3IfBindingStmtClass:
++    for (Stmt *Child : S->children())
++      if (Child) BuildScopeInformation(Child, ParentScope);
++    return;
 +  case Stmt::ObjC3DoCatchStmtClass: {
 +    auto *DS = cast<ObjC3DoCatchStmt>(S);
 +    unsigned BodyScope = Scopes.size();
@@ -8165,7 +8266,7 @@ index 3f0a7304d..ed8db7261 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..dedc2cb0c 100644
+index 11cd159c0..d74e0d286 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,7 @@
@@ -8268,7 +8369,7 @@ index 11cd159c0..dedc2cb0c 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8642,12 +8707,98 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8642,12 +8707,135 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -8338,6 +8439,43 @@ index 11cd159c0..dedc2cb0c 100644
 +#include "TreeTransformObjC3Match.inc"
 +
 +template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3BindingCondition(ObjC3BindingCondition *S) {
++  ExprResult Source = getDerived().TransformExpr(S->getSource());
++  StmtResult Binding = getDerived().TransformStmt(S->getBindingStatement());
++  if (Source.isInvalid() || Binding.isInvalid()) return StmtError();
++  return new (SemaRef.Context) ObjC3BindingCondition(Source.get(),
++      cast<DeclStmt>(Binding.get()), S->isMutableBinding(), S->getKeywordLoc(), S->getEqualLoc());
++}
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3GuardStmt(ObjC3GuardStmt *S) {
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != S->getNumConditions(); ++I) {
++    StmtResult Condition = getDerived().TransformStmt(S->getCondition(I));
++    if (Condition.isInvalid()) return StmtError();
++    Conditions.push_back(Condition.get());
++  }
++  
++  StmtResult Else = getDerived().TransformStmt(S->getElse());
++  if (Else.isInvalid()) return StmtError();
++  return ObjC3GuardStmt::Create(SemaRef.Context, Conditions,
++      Else.get(), S->getKeywordLoc(), S->getElseLoc());
++}
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3IfBindingStmt(ObjC3IfBindingStmt *S) {
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != S->getNumConditions(); ++I) {
++    StmtResult Condition = getDerived().TransformStmt(S->getCondition(I));
++    if (Condition.isInvalid()) return StmtError();
++    Conditions.push_back(Condition.get());
++  }
++  StmtResult Then = getDerived().TransformStmt(S->getThen()); if (Then.isInvalid()) return StmtError();
++  StmtResult Else = getDerived().TransformStmt(S->getElse());
++  if (Else.isInvalid()) return StmtError();
++  return ObjC3IfBindingStmt::Create(SemaRef.Context, Conditions,
++      Then.get(), Else.get(), S->getIfLoc(), S->getElseLoc());
++}
++
++template <typename Derived>
 +StmtResult TreeTransform<Derived>::TransformObjC3DoCatchStmt(
 +    ObjC3DoCatchStmt *S) {
 +  ObjC3DoCatchContext *Handler =
@@ -8368,7 +8506,7 @@ index 11cd159c0..dedc2cb0c 100644
  }
  
  template<typename Derived>
-@@ -14566,6 +14717,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14754,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -11929,10 +12067,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..456261e5b 100644
+index 81010e046..90325a170 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,36 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,37 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -11958,6 +12096,7 @@ index 81010e046..456261e5b 100644
 +  ObjC3TryThrowConsumerTest.cpp
 +  ObjC3CheckedErrorCFGTest.cpp
 +  ObjC3GuardExitTest.cpp
++  ObjC3ConditionNodesTest.cpp
 +  ObjC3MatchImporterTest.cpp
 +  CLANG_LIBS
 +  clangAST
@@ -16728,4 +16867,333 @@ index 000000000..c03a755bd
 +    ++Cases;
 +  }
 +  EXPECT_EQ(53u, Cases);
++}
+diff --git a/clang/include/clang/AST/ObjC3ConditionNodes.inc b/clang/include/clang/AST/ObjC3ConditionNodes.inc
+new file mode 100644
+index 000000000..3cdf3c3b6
+--- /dev/null
++++ b/clang/include/clang/AST/ObjC3ConditionNodes.inc
+@@ -0,0 +1,119 @@
++//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++/// One optional-binding condition. The initializer's opaque lvalue is bound to
++/// the single evaluated reference or carrier payload on the successful path.
++class ObjC3BindingCondition final : public Stmt {
++  Stmt *Children[2] = {nullptr, nullptr};
++  SourceLocation KeywordLoc, EqualLoc;
++  bool Mutable = false;
++
++public:
++  friend class ASTStmtReader;
++  ObjC3BindingCondition(EmptyShell E) : Stmt(ObjC3BindingConditionClass, E) {}
++  ObjC3BindingCondition(Expr *Source, DeclStmt *Binding, bool Mutable,
++                        SourceLocation Keyword, SourceLocation Equal);
++  Expr *getSource() const;
++  DeclStmt *getBindingStatement() const;
++  VarDecl *getBindingDecl() const;
++  bool isMutableBinding() const { return Mutable; }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getEqualLoc() const { return EqualLoc; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY;
++  child_range children() { return child_range(Children, Children + 2); }
++  const_child_range children() const {
++    return const_child_range(Children, Children + 2);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3BindingConditionClass;
++  }
++};
++
++/// A guard owns an ordered list of Expr/ObjC3BindingCondition children and one
++/// mandatory else body. Successful declarations belong to the containing scope.
++class ObjC3GuardStmt final
++    : public Stmt,
++      private llvm::TrailingObjects<ObjC3GuardStmt, Stmt *> {
++  friend TrailingObjects;
++  unsigned NumConditions;
++  SourceLocation KeywordLoc, ElseLoc;
++  ObjC3GuardStmt(unsigned N, SourceLocation Keyword, SourceLocation Else)
++      : Stmt(ObjC3GuardStmtClass), NumConditions(N), KeywordLoc(Keyword),
++        ElseLoc(Else) {}
++
++public:
++  friend class ASTStmtReader;
++  static ObjC3GuardStmt *Create(const ASTContext &, llvm::ArrayRef<Stmt *>,
++                                Stmt *ElseBody, SourceLocation Keyword,
++                                SourceLocation Else);
++  static ObjC3GuardStmt *CreateEmpty(const ASTContext &, unsigned);
++  unsigned getNumConditions() const { return NumConditions; }
++  Stmt *getCondition(unsigned I) const {
++    assert(I < NumConditions);
++    return getTrailingObjects()[I];
++  }
++  Stmt *getElse() const { return getTrailingObjects()[NumConditions]; }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getElseLoc() const { return ElseLoc; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY {
++    return getElse()->getEndLoc();
++  }
++  child_range children() {
++    Stmt **Begin = getTrailingObjects();
++    return child_range(Begin, Begin + NumConditions + 1);
++  }
++  const_child_range children() const {
++    Stmt *const *Begin = getTrailingObjects();
++    return const_child_range(Begin, Begin + NumConditions + 1);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3GuardStmtClass;
++  }
++};
++
++/// Native if-let shares condition semantics; its bindings end with the then
++/// branch and are invisible in else. It never extends their cleanup lifetime.
++class ObjC3IfBindingStmt final
++    : public Stmt,
++      private llvm::TrailingObjects<ObjC3IfBindingStmt, Stmt *> {
++  friend TrailingObjects;
++  unsigned NumConditions;
++  SourceLocation IfLoc, ElseLoc;
++  ObjC3IfBindingStmt(unsigned N, SourceLocation If, SourceLocation Else)
++      : Stmt(ObjC3IfBindingStmtClass), NumConditions(N), IfLoc(If),
++        ElseLoc(Else) {}
++
++public:
++  friend class ASTStmtReader;
++  static ObjC3IfBindingStmt *Create(const ASTContext &, llvm::ArrayRef<Stmt *>,
++                                    Stmt *Then, Stmt *Else, SourceLocation If,
++                                    SourceLocation ElseAt);
++  static ObjC3IfBindingStmt *CreateEmpty(const ASTContext &, unsigned);
++  unsigned getNumConditions() const { return NumConditions; }
++  Stmt *getCondition(unsigned I) const {
++    assert(I < NumConditions);
++    return getTrailingObjects()[I];
++  }
++  Stmt *getThen() const { return getTrailingObjects()[NumConditions]; }
++  Stmt *getElse() const { return getTrailingObjects()[NumConditions + 1]; }
++  SourceLocation getIfLoc() const { return IfLoc; }
++  SourceLocation getElseLoc() const { return ElseLoc; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return IfLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY {
++    return getElse() ? getElse()->getEndLoc() : getThen()->getEndLoc();
++  }
++  child_range children() {
++    Stmt **Begin = getTrailingObjects();
++    return child_range(Begin, Begin + NumConditions + 2);
++  }
++  const_child_range children() const {
++    Stmt *const *Begin = getTrailingObjects();
++    return const_child_range(Begin, Begin + NumConditions + 2);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3IfBindingStmtClass;
++  }
++};
+diff --git a/clang/lib/AST/ObjC3ConditionNodes.cpp b/clang/lib/AST/ObjC3ConditionNodes.cpp
+new file mode 100644
+index 000000000..a17807856
+--- /dev/null
++++ b/clang/lib/AST/ObjC3ConditionNodes.cpp
+@@ -0,0 +1,65 @@
++//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/Stmt.h"
++#include <algorithm>
++using namespace clang;
++
++ObjC3BindingCondition::ObjC3BindingCondition(Expr *Source, DeclStmt *Binding,
++                                             bool Mutable,
++                                             SourceLocation Keyword,
++                                             SourceLocation Equal)
++    : Stmt(ObjC3BindingConditionClass), Children{Source, Binding},
++      KeywordLoc(Keyword), EqualLoc(Equal), Mutable(Mutable) {}
++Expr *ObjC3BindingCondition::getSource() const {
++  return cast<Expr>(Children[0]);
++}
++DeclStmt *ObjC3BindingCondition::getBindingStatement() const {
++  return cast<DeclStmt>(Children[1]);
++}
++VarDecl *ObjC3BindingCondition::getBindingDecl() const {
++  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
++}
++SourceLocation ObjC3BindingCondition::getEndLoc() const {
++  return getSource()->getEndLoc();
++}
++ObjC3GuardStmt *ObjC3GuardStmt::Create(const ASTContext &C,
++                                       llvm::ArrayRef<Stmt *> Conditions,
++                                       Stmt *ElseBody, SourceLocation Keyword,
++                                       SourceLocation Else) {
++  void *Memory = C.Allocate(totalSizeToAlloc<Stmt *>(Conditions.size() + 1),
++                            alignof(ObjC3GuardStmt));
++  auto *Node = new (Memory) ObjC3GuardStmt(Conditions.size(), Keyword, Else);
++  std::copy(Conditions.begin(), Conditions.end(), Node->getTrailingObjects());
++  Node->getTrailingObjects()[Conditions.size()] = ElseBody;
++  return Node;
++}
++ObjC3GuardStmt *ObjC3GuardStmt::CreateEmpty(const ASTContext &C, unsigned N) {
++  void *Memory =
++      C.Allocate(totalSizeToAlloc<Stmt *>(N + 1), alignof(ObjC3GuardStmt));
++  auto *Node = new (Memory) ObjC3GuardStmt(N, {}, {});
++  std::fill_n(Node->getTrailingObjects(), N + 1, nullptr);
++  return Node;
++}
++ObjC3IfBindingStmt *ObjC3IfBindingStmt::Create(
++    const ASTContext &C, llvm::ArrayRef<Stmt *> Conditions, Stmt *Then,
++    Stmt *Else, SourceLocation If, SourceLocation ElseAt) {
++  void *Memory = C.Allocate(totalSizeToAlloc<Stmt *>(Conditions.size() + 2),
++                            alignof(ObjC3IfBindingStmt));
++  auto *Node = new (Memory) ObjC3IfBindingStmt(Conditions.size(), If, ElseAt);
++  std::copy(Conditions.begin(), Conditions.end(), Node->getTrailingObjects());
++  Node->getTrailingObjects()[Conditions.size()] = Then;
++  Node->getTrailingObjects()[Conditions.size() + 1] = Else;
++  return Node;
++}
++ObjC3IfBindingStmt *ObjC3IfBindingStmt::CreateEmpty(const ASTContext &C,
++                                                    unsigned N) {
++  void *Memory =
++      C.Allocate(totalSizeToAlloc<Stmt *>(N + 2), alignof(ObjC3IfBindingStmt));
++  auto *Node = new (Memory) ObjC3IfBindingStmt(N, {}, {});
++  std::fill_n(Node->getTrailingObjects(), N + 2, nullptr);
++  return Node;
++}
+diff --git a/clang/unittests/AST/ObjC3ConditionNodesTest.cpp b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
+new file mode 100644
+index 000000000..c4484a243
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
+@@ -0,0 +1,127 @@
++//===--- ObjC3ConditionNodesTest.cpp - Native condition AST consumers ----===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Sema/Initialization.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/ADT/FoldingSet.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++using namespace clang;
++namespace {
++class Conditions : public RecursiveASTVisitor<Conditions> {
++public:
++  unsigned Bindings = 0, Guards = 0, Ifs = 0, Variables = 0;
++  bool VisitObjC3BindingCondition(ObjC3BindingCondition *) {
++    ++Bindings;
++    return true;
++  }
++  bool VisitObjC3GuardStmt(ObjC3GuardStmt *) {
++    ++Guards;
++    return true;
++  }
++  bool VisitObjC3IfBindingStmt(ObjC3IfBindingStmt *) {
++    ++Ifs;
++    return true;
++  }
++  bool VisitVarDecl(VarDecl *) {
++    ++Variables;
++    return true;
++  }
++};
++} // namespace
++TEST(ObjC3Conditions, TraversesProfilesPrintsAndImportsNativeDeclarations) {
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(
++      "int source; void test() { int first = source; int second = source; }",
++      Args, "conditions.mm");
++  auto To = tooling::buildASTFromCodeWithArgs("extern int source; void test();",
++                                              Args, "target.mm");
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  FunctionDecl *Function = nullptr;
++  for (Decl *D : From->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      if (FD->hasBody())
++        Function = FD;
++  ASSERT_TRUE(Function);
++  ASTContext &C = From->getASTContext();
++  auto *Original = cast<CompoundStmt>(Function->getBody());
++  auto *FirstStatement = cast<DeclStmt>(*Original->body_begin());
++  auto *SecondStatement = cast<DeclStmt>(*(Original->body_begin() + 1));
++  auto MakeBinding = [&](DeclStmt *Statement, bool Mutable) {
++    auto *Variable = cast<VarDecl>(Statement->getSingleDecl());
++    Expr *Source = Variable->getInit();
++    if (!Mutable)
++      Variable->setType(C.getConstType(Variable->getType()));
++    auto *Opaque =
++        new (C) OpaqueValueExpr(Variable->getLocation(), C.IntTy, VK_LValue);
++    ExprResult Init = From->getSema().PerformCopyInitialization(
++        InitializedEntity::InitializeVariable(Variable),
++        Variable->getLocation(), Opaque);
++    EXPECT_FALSE(Init.isInvalid());
++    Variable->setInit(Init.get());
++    return new (C)
++        ObjC3BindingCondition(Source, Statement, Mutable,
++                              Variable->getLocation(), Variable->getLocation());
++  };
++  auto *Let = MakeBinding(FirstStatement, false);
++  auto *Var = MakeBinding(SecondStatement, true);
++  SourceLocation Loc = Function->getLocation();
++  auto *Return = ReturnStmt::Create(C, Loc, nullptr, nullptr);
++  Stmt *ReturnBody[] = {Return};
++  auto *Else =
++      CompoundStmt::Create(C, ReturnBody, FPOptionsOverride(), Loc, Loc);
++  auto *Then = CompoundStmt::Create(C, {}, FPOptionsOverride(), Loc, Loc);
++  auto *Truth = new (C) CXXBoolLiteralExpr(true, C.BoolTy, Loc);
++  Stmt *GuardConditions[] = {Let, Truth};
++  auto *Guard = ObjC3GuardStmt::Create(C, GuardConditions, Else, Loc, Loc);
++  Stmt *IfConditions[] = {Var};
++  auto *If = ObjC3IfBindingStmt::Create(C, IfConditions, Then, Else, Loc, Loc);
++  Stmt *Body[] = {Guard, If};
++  Function->setBody(
++      CompoundStmt::Create(C, Body, FPOptionsOverride(), Loc, Loc));
++  Conditions Visitor;
++  EXPECT_TRUE(Visitor.TraverseStmt(Function->getBody()));
++  EXPECT_EQ(2u, Visitor.Bindings);
++  EXPECT_EQ(1u, Visitor.Guards);
++  EXPECT_EQ(1u, Visitor.Ifs);
++  EXPECT_EQ(2u, Visitor.Variables);
++  llvm::FoldingSetNodeID LetID, VarID;
++  Let->Profile(LetID, C, true);
++  Var->Profile(VarID, C, true);
++  EXPECT_NE(LetID, VarID);
++  std::string Printed;
++  llvm::raw_string_ostream Stream(Printed);
++  Function->getBody()->printPretty(Stream, nullptr,
++                                   PrintingPolicy(C.getLangOpts()));
++  EXPECT_NE(std::string::npos,
++            Printed.find("guard let first = source, true else"));
++  EXPECT_NE(std::string::npos, Printed.find("if var second = source"));
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(), C,
++                       From->getFileManager(), false);
++  auto Imported = Importer.Import(Function);
++  if (!Imported) {
++    ADD_FAILURE() << llvm::toString(Imported.takeError());
++    return;
++  }
++  auto *ImportedFunction = cast<FunctionDecl>(*Imported);
++  auto *ImportedGuard = cast<ObjC3GuardStmt>(
++      cast<CompoundStmt>(ImportedFunction->getBody())->body_front());
++  auto *ImportedLet =
++      cast<ObjC3BindingCondition>(ImportedGuard->getCondition(0));
++  EXPECT_NE(Let->getBindingDecl(), ImportedLet->getBindingDecl());
++  EXPECT_EQ("first", ImportedLet->getBindingDecl()->getName());
++  EXPECT_TRUE(ImportedLet->getBindingDecl()->getType().isConstQualified());
++  StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalent;
++  StructuralEquivalenceContext Equivalent(
++      C.getLangOpts(), C, To->getASTContext(), NonEquivalent,
++      StructuralEquivalenceKind::Default, false, false);
++  EXPECT_TRUE(Equivalent.IsEquivalent(Guard, ImportedGuard));
 +}
