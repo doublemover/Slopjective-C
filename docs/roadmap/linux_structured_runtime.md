@@ -94,7 +94,8 @@ O0/O2 configurations pass, including eight debugger runs. ASan/LSan/UBSan and
 TSan pass 16 native async configurations and four structured-runtime
 configurations, including the new scheduling fixture.
 
-These checks use the freshly built runtime with the existing ABI 20 compiler
-SDK. The installed SDK archive predates these fixes; this is development
-validation, not a replacement archive release receipt. Public async/await and
-actors remain reserved.
+The runtime fixes are now included in the rebuilt and activated ABI 20 SDK.
+Its [delivery receipt](../support/linux_sdk_refresh_acceptance.json) records the
+23 installed suites and post-extraction compiler/package checks. The sanitizer
+results above describe the source-level instrumented runs. Public async/await
+and actors remain reserved.

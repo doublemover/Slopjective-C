@@ -214,8 +214,9 @@ retaining an entire matrix of disposable binaries in RAM or on disk.
 
 Cleanup/report-preservation coverage for these runners now passes in the tooling
 suite. The user reauthorized tests and validation for the four open P2/P3 fixes.
-The current SDK receipt still identifies its earlier implementation snapshot;
-these later edits have not been incorporated into a rebuilt SDK.
+The [current SDK delivery receipt](../support/linux_sdk_refresh_acceptance.json)
+now binds these changes and the runtime fixes to a rebuilt, activated archive.
+The superseded installation and archive have been removed.
 
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or

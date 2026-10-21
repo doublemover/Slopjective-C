@@ -10,6 +10,32 @@ lowering. Objective-C17 providers in this milestone implement resume callbacks
 in C; the reserved async syntax still requires Objective-C++20/23. Public
 async/await and actor capability predicates remain reserved.
 
+## Delivered SDK — 2026-10-21
+
+The current local SDK was rebuilt from `3fe616aa2` in 1,431 seconds and activated
+with seal `0098f5c514798351a5900755a85ba8508e96c6fe51e06d31af01bfec0a419703`.
+It includes the actor fairness, autorelease boundary and package CLI fixes.
+The [delivery receipt](../support/linux_sdk_refresh_acceptance.json) records the
+archive path, SHA-256, source identity and installed checks.
+
+All 8 GNU runtime tests, 24 frontend CTests, 37 installed driver/embedding
+commands, 13 native integration nodes and 23 installed suites passed. After
+archive extraction, 13 additional commands exercised the shipped compiler,
+package graph builder and publish/install/consume CLI, including environment
+and default SDK selection. The installed payloads match their source owners,
+and the SDK seal verified before and after those checks.
+
+Activate this installation with:
+
+```sh
+. out/toolchains/linux-sdk/activate.sh
+```
+
+The superseded SDK and archive were removed, reclaiming approximately 1.88 GiB.
+The development build and compilation database now use the current installation.
+This is a local SDK delivery; external release upload and fresh-distribution
+acceptance remain separate from the host checks recorded here.
+
 ## Frame ownership
 
 `objc3_async_frame` carries a context pointer, resume/destruction callbacks and
@@ -126,8 +152,9 @@ not be attributed to that installation.
 The final host SDK build completed successfully before the stop. Its receipt
 reports all 23 installed package gates and the installed driver/embedding gate
 passing. That includes the new C frame package path, which was a failure in an
-earlier candidate and is fixed in this implementation. The installed archive is
-available locally; acceptance of that archive is incomplete.
+earlier candidate and is fixed in this implementation. That binary snapshot has
+since been replaced by the SDK delivery above; its interrupted acceptance remains
+historical evidence.
 
 | Completed coverage                     | Recorded result                                          |
 | -------------------------------------- | -------------------------------------------------------- |
@@ -257,5 +284,5 @@ Subsequent tooling now routes compiler temporaries through private RAM-backed
 temporary directories cleaned after each case. Durable logs, hashes and receipts
 remain on disk, as do the incremental compiler build, SDK and compilation cache.
 Cleanup/report-preservation regression coverage now passes as part of the
-current tooling suite. These tooling changes postdate the SDK snapshot above;
-the installed archive has not been rebuilt by the four-issue fix work.
+current tooling suite. The delivered SDK now includes these changes and the
+four-issue fixes; the paused snapshot above remains a record of the earlier build.
