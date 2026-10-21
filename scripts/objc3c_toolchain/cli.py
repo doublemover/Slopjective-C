@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,6 +14,11 @@ from .core import ToolchainError, build_plan, prepare, seal_development, verify_
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
+    packages = commands.add_parser("build-packages", help="build a locked offline source-package workspace")
+    packages.add_argument("--workspace", type=Path, required=True)
+    packages.add_argument("--output-dir", type=Path, required=True)
+    packages.add_argument("--sdk-root", type=Path)
+    packages.add_argument("--optimization", choices=("O0", "O2"), default="O2")
     sdk = commands.add_parser("build-sdk", help="build, qualify, package and install the native Linux SDK")
     sdk.add_argument("--repo", type=Path, default=Path.cwd())
     sdk.add_argument("--fetch", action="store_true")
@@ -58,12 +64,18 @@ def main(argv: list[str] | None = None) -> int:
                       help="native build host (defaults to the current host)")
     args = parser.parse_args(argv)
     try:
-        if args.command == "build-sdk":
+        if args.command == "build-packages":
+            import os
+            from .source_graph import build_graph
+            sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))
+            report = build_graph(sdk, args.workspace, args.output_dir, args.optimization)
+            result = {'status': report['status'], 'report': str(args.output_dir / 'build-report.json'),
+                      'reused': [name for name, node in report['nodes'].items() if node['reused']]}
+        elif args.command == "build-sdk":
             from .linux_sdk import build_sdk
             result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk)
         elif args.command == "compile":
             import os
-            import subprocess
             root = Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))
             arguments = args.arguments[1:] if args.arguments[:1] == ['--'] else args.arguments
             return subprocess.run([str(root / 'bin/objc3c'), *arguments]).returncode
@@ -95,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             result = build_plan(args.repo, phase=args.phase, manifest_path=args.manifest,
                                 source_dir=args.source_dir, host=args.host)
-    except (ToolchainError, ValueError, OSError, KeyError) as exc:
+    except (ToolchainError, ValueError, OSError, KeyError, subprocess.SubprocessError) as exc:
         print(f"objc3c-toolchain: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2))

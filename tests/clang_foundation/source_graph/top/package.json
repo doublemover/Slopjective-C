@@ -1,0 +1,19 @@
+{
+  "schema": "objc3c.source-package.v1",
+  "name": "fixture.Top",
+  "package": "top-v1",
+  "source": "module.m",
+  "ownership": "arc",
+  "dependencies": [
+    {
+      "name": "fixture.Left",
+      "package": "left-v1",
+      "visibility": "public"
+    },
+    {
+      "name": "fixture.Right",
+      "package": "right-v1",
+      "visibility": "private"
+    }
+  ]
+}

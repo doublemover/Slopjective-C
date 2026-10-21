@@ -1,0 +1,425 @@
+{
+  "schema": "objc3c.source-package-acceptance.v1",
+  "status": "PASS",
+  "accepted_utc": "2026-10-19T02:37:15.794239+00:00",
+  "implementation_commit": "ef449fe9e8f2b865c55a68d8fc978fd0563daaa2",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8f5780415752-fd761312",
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "8f5780415752686f7c7e62b31a7c724dcd8946254ef672995d7ac70af4a7043c",
+  "frontend_inputs": "ca24e4a548544810ef0f41c36142a887724c5c363927bb8d8db6ac66a18a3763",
+  "build_input_identity": "7d88049f0127c831dc6fdef76792ceaa7fcb151caf2ef2f18053e140162e7513",
+  "archive": "out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-8f5780415752-fd761312-linux-x86_64-de413e8578bdb680.tar.zst",
+  "archive_sha256": "433e15a34b2a393ff0cda6cf38099132beb3361eaad3e1c296752345e592acbc",
+  "archive_bytes": 427064538,
+  "seal_sha256": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+  "sdk_entries": 4167,
+  "sdk_files_and_links": 3907,
+  "target": "x86_64-unknown-linux-gnu",
+  "linux_abi": {
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+  },
+  "contract": {
+    "workspace_schema": "objc3c.source-workspace.v1",
+    "package_schema": "objc3c.source-package.v1",
+    "build_record_schema": "objc3c.source-graph-build.v1",
+    "installation_record_schema": "objc3c.package-installation.v1",
+    "resolution": "Explicit local package identities and a single dependency-first shared closure; no fetching.",
+    "visibility": "Native locked semantic imports and public/private transitive edges.",
+    "reuse": "SDK, recipe, source/header contents and membership, interface locks, depfiles and output hashes; always relink and execute.",
+    "output_layout": "Workspace build directories are allowed outside every source root, including unused packages.",
+    "scope": "Objective-C source packages in one ARC/MRC mode; cross-ownership projections, binary publication, registries and public module syntax remain separate work."
+  },
+  "source_hashes": {
+    "scripts/objc3c_toolchain/source_graph.py": "a851c8ac1c35ac3526a5ffd5e73488aab150fded47d9900beb2f1b319b0dd199",
+    "scripts/objc3c_toolchain/sdk_example.py": "5e3bb6ebd17e13fbb9f544778f483397c2abc6eed3373e993c372943c63232cf",
+    "scripts/objc3c_toolchain/qualify_source_graph.py": "eeec61b311e5984f6dc6f35d6e90d105936d508f3ede8757c79501f9366ed846",
+    "tests/clang_foundation/source_graph/app/main.m": "48729ebcf2fd936eb456edeec951a421053cb3fc6157970419076719c7f07581",
+    "tests/clang_foundation/source_graph/leaf/module.m": "e64981d9e6adbb73501db7eef2202545e55481eb316c2a2b84f91aabe1a4bf28",
+    "tests/clang_foundation/source_graph/leaf/package.json": "325d47ee78d2951f57ac80213d2fce3211ae7edcbfea35dceabe087e242fe6c7",
+    "tests/clang_foundation/source_graph/left/module.m": "1fd534e584102207a1c1e72ae3dd2a32751924205c5081d87bca0a4c60e9ebd0",
+    "tests/clang_foundation/source_graph/left/package.json": "868e3817dd9a9d121b9f1dcb155a28b244a82c6c65581f4bf2326938a9200081",
+    "tests/clang_foundation/source_graph/right/module.m": "539ebf31390e59d416731fc19774c717d90277bde587629052bc77ba12526620",
+    "tests/clang_foundation/source_graph/right/package.json": "008a35690a370c1cb11ac1690dc8ef23b31e297f53b8ca300666ebcac7606811",
+    "tests/clang_foundation/source_graph/right/private.h": "dbc9edf7857b7bcea1db426248ff73acbfe505e3831a77db47159fcd8fa7f3d7",
+    "tests/clang_foundation/source_graph/top/module.m": "51c000a5bf77d2e22d5d616a7be07266091cd0de7104e92940ebb84fd41ed413",
+    "tests/clang_foundation/source_graph/top/package.json": "7920642757ae3919fe064a2665cdc946060f5100250630e5632a7e8f895e82b7",
+    "tests/clang_foundation/source_graph/workspace.json": "021cb63215c03a19b05bc62a273d7f05a9304da6211da5db52a22f93bcd6cb18"
+  },
+  "qualification": {
+    "compiler_tests": 162,
+    "compiler_platform_skips": 3,
+    "ast_tests": 46,
+    "frontend_ctests": 16,
+    "runtime_ctests": 5,
+    "native_nodes": 13,
+    "native_runtime_executions": 76,
+    "installed_commands": 20,
+    "tooling_tests": {
+      "passed": 144,
+      "skipped": 1,
+      "subtests": 33
+    },
+    "installed_source_graph": {
+      "schema": "objc3c.source-graph-qualification.v1",
+      "status": "PASS",
+      "outside_checkout": true,
+      "paths_with_spaces_and_quotes": true,
+      "builds": [
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "cold",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "21e3fad1259de7647b8523f359909ba3a0d79eac709b79659ef5c91d2b2b4057"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "warm",
+          "reused": [
+            "@application",
+            "fixture.Leaf",
+            "fixture.Left",
+            "fixture.Right",
+            "fixture.Top"
+          ],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "21e3fad1259de7647b8523f359909ba3a0d79eac709b79659ef5c91d2b2b4057"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "leaf-body-preserved-mtime",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "7f8e5fbe83f7b6ca27d36f928323a2cd5f6c96b4e1addc815981899b9c007f8b"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "private-header-preserved-mtime",
+          "reused": ["@application", "fixture.Leaf", "fixture.Left", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "7f8e5fbe83f7b6ca27d36f928323a2cd5f6c96b4e1addc815981899b9c007f8b"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "damaged-object",
+          "reused": ["@application", "fixture.Leaf", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "7f8e5fbe83f7b6ca27d36f928323a2cd5f6c96b4e1addc815981899b9c007f8b"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "damaged-interface",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "7f8e5fbe83f7b6ca27d36f928323a2cd5f6c96b4e1addc815981899b9c007f8b"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "transitive-public-api",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "8cf282bd7d34f1f8288e6268a4390368df3ee8f4cc5683f5213548b0df79d692"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "cold",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "cdd509b68e1b248e8321f5a3a16912414d59c167bf7032ffba55d894a7aa2304"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "warm",
+          "reused": [
+            "@application",
+            "fixture.Leaf",
+            "fixture.Left",
+            "fixture.Right",
+            "fixture.Top"
+          ],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "cdd509b68e1b248e8321f5a3a16912414d59c167bf7032ffba55d894a7aa2304"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "leaf-body-preserved-mtime",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "5e2330f4f85e52cea1d7a5535e15ff512a586fdcab220c62c85f8c8db590a293"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "private-header-preserved-mtime",
+          "reused": ["@application", "fixture.Leaf", "fixture.Left", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "5e2330f4f85e52cea1d7a5535e15ff512a586fdcab220c62c85f8c8db590a293"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "damaged-object",
+          "reused": ["@application", "fixture.Leaf", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "5e2330f4f85e52cea1d7a5535e15ff512a586fdcab220c62c85f8c8db590a293"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "damaged-interface",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "5e2330f4f85e52cea1d7a5535e15ff512a586fdcab220c62c85f8c8db590a293"
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "transitive-public-api",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "9d896920fa48913b6fbd9965d2df9b3c503fc6b54c82c666ae1a206d826ed220"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "cold",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "a0ebb563035b0985dfafbff52d45f30c90c4b8f3fe43019a5300fc0cc3bdf544"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "warm",
+          "reused": [
+            "@application",
+            "fixture.Leaf",
+            "fixture.Left",
+            "fixture.Right",
+            "fixture.Top"
+          ],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "a0ebb563035b0985dfafbff52d45f30c90c4b8f3fe43019a5300fc0cc3bdf544"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "leaf-body-preserved-mtime",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "e2b46c3d0939c029b36bc73358813bc0229b3d4d4c8b0b383c78736cfefe3127"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "private-header-preserved-mtime",
+          "reused": ["@application", "fixture.Leaf", "fixture.Left", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "e2b46c3d0939c029b36bc73358813bc0229b3d4d4c8b0b383c78736cfefe3127"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "damaged-object",
+          "reused": ["@application", "fixture.Leaf", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "e2b46c3d0939c029b36bc73358813bc0229b3d4d4c8b0b383c78736cfefe3127"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "damaged-interface",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "e2b46c3d0939c029b36bc73358813bc0229b3d4d4c8b0b383c78736cfefe3127"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "transitive-public-api",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "eb54cd910e152bc9e291cf6d27d494f33e4132aa10cafd277b59336b082826b4"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "cold",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "fe04818d535636ec9dc601cbf92e10ee08b5b0abfcded55cd5cd470fc899a65c"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "warm",
+          "reused": [
+            "@application",
+            "fixture.Leaf",
+            "fixture.Left",
+            "fixture.Right",
+            "fixture.Top"
+          ],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "fe04818d535636ec9dc601cbf92e10ee08b5b0abfcded55cd5cd470fc899a65c"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "leaf-body-preserved-mtime",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "07a78e93f0a302689c720827a7734cccc55b13c8789b49431a186caaadf82adc"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "private-header-preserved-mtime",
+          "reused": ["@application", "fixture.Leaf", "fixture.Left", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "07a78e93f0a302689c720827a7734cccc55b13c8789b49431a186caaadf82adc"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "damaged-object",
+          "reused": ["@application", "fixture.Leaf", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "07a78e93f0a302689c720827a7734cccc55b13c8789b49431a186caaadf82adc"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "damaged-interface",
+          "reused": ["@application", "fixture.Left", "fixture.Right", "fixture.Top"],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "07a78e93f0a302689c720827a7734cccc55b13c8789b49431a186caaadf82adc"
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "transitive-public-api",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "installation": "7ffef3c79fe7795b00a2fe1cf52e9b98be99da967a449d3cfe69c94e97efbe59"
+        }
+      ],
+      "rejections": [
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "package-lock",
+          "prior_record_preserved": true
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O0",
+          "case": "private-transitive-visibility",
+          "prior_object_preserved": true,
+          "failed_build_record_removed": true
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "package-lock",
+          "prior_record_preserved": true
+        },
+        {
+          "ownership": "arc",
+          "optimization": "O2",
+          "case": "private-transitive-visibility",
+          "prior_object_preserved": true,
+          "failed_build_record_removed": true
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "package-lock",
+          "prior_record_preserved": true
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O0",
+          "case": "private-transitive-visibility",
+          "prior_object_preserved": true,
+          "failed_build_record_removed": true
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "package-lock",
+          "prior_record_preserved": true
+        },
+        {
+          "ownership": "mrc",
+          "optimization": "O2",
+          "case": "private-transitive-visibility",
+          "prior_object_preserved": true,
+          "failed_build_record_removed": true
+        }
+      ]
+    },
+    "public_workflow_command": {
+      "schema": "objc3c.source-graph-public-command.v1",
+      "status": "PASS",
+      "records": [
+        {
+          "case": "cold",
+          "reused": [],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "executable_sha256": "979e25a56cc9929bc82ba8f7864e291d63cc267bdac443a6ba09c707a13da1d2"
+        },
+        {
+          "case": "warm",
+          "reused": [
+            "@application",
+            "fixture.Leaf",
+            "fixture.Left",
+            "fixture.Right",
+            "fixture.Top"
+          ],
+          "sdk_seal": "de413e8578bdb68095af4033a4cf07e1e1171b52a358afb432a3f645a8a561a9",
+          "executable_sha256": "979e25a56cc9929bc82ba8f7864e291d63cc267bdac443a6ba09c707a13da1d2"
+        }
+      ]
+    },
+    "fresh_distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "log": "/workspace/Slopjective-C/out/toolchains/source-graph-distribution-acceptance/debian13.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 295.23462,
+        "log_sha256": "eb659da275c0a2ab59ba095234d94ca08c83c2aa24afbac728df02b0928c5675",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "log": "/workspace/Slopjective-C/out/toolchains/source-graph-distribution-acceptance/ubuntu2604.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 370.203923,
+        "log_sha256": "fb745c5ade3a9dbebe0c3a3a6170bd7ad57982aa5ba37160a8f524d4f3f72ee2",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true
+      }
+    ]
+  },
+  "cold_bootstrap_fix": "The runtime producer writes an explicit JSON report; SDK assembly keeps clone/build diagnostics in its command log. Cold checkout and source-drift regression tests cover the handoff."
+}

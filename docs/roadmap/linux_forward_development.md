@@ -38,10 +38,16 @@ edits with preserved timestamps, damaged artifacts and rejected package,
 fingerprint and ownership locks outside the checkout. Fresh Debian and Ubuntu
 archive qualification runs this suite as an ordinary user.
 
-Generalize that bounded build graph into explicit multi-package dependency
-resolution, transitive visibility and reproducible installation records. Define
-public module syntax together with its language and interface contract. Keep
-the qualified example distinct from a general package manager.
+The offline source-package builder now resolves explicit multi-package identity
+locks, public/private transitive visibility and a shared dependency closure. It
+retains content-verified compilation records and a reproducible package
+installation inventory; the installed suite covers ARC/MRC at O0/O2. See the
+[source-package contract](linux_source_packages.md). Next, define public module
+syntax together with its language and interface contract, then add immutable
+package publication and explicit cross-ownership adaptation. The
+[package acceptance receipt](../support/linux_source_graph_acceptance.json)
+records the shipped SDK's installed and ordinary-user distribution results.
+Remote registries and general package management remain separate work.
 
 Build task groups, cancellation and actor isolation on that module and ownership
 foundation. Existing independent executor services are useful implementation

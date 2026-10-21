@@ -1,0 +1,16 @@
+{
+  "schema": "objc3c.source-workspace.v1",
+  "packages": ["leaf/package.json", "left/package.json", "right/package.json", "top/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.m",
+    "ownership": "arc",
+    "dependencies": [
+      {
+        "name": "fixture.Top",
+        "package": "top-v1",
+        "visibility": "private"
+      }
+    ]
+  }
+}

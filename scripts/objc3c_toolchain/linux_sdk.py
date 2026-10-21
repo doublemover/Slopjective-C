@@ -135,8 +135,9 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     try:
         runtime = repo / 'out/toolchains/libobjc2-v2.3'
         run('runtime', [sys.executable, '-B', '-m', 'scripts.objc3c_toolchain_runtime.build_linux',
-            '--repo', repo, '--compiler-root', sdk, *(['--fetch'] if fetch else [])])
-        runtime_report = json.loads((directory / 'runtime.log').read_text())
+            '--repo', repo, '--compiler-root', sdk, '--report-file', directory / 'runtime-report.json',
+            *(['--fetch'] if fetch else [])])
+        runtime_report = json.loads((directory / 'runtime-report.json').read_text())
         runtime_stage = Path(runtime_report['stage'])
         clients = runtime / 'client-tests-linux' / runtime_report['build_key']
         run('runtime-configure', ['cmake', '-S', repo / 'tests/clang_foundation/native_runtime',

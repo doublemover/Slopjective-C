@@ -99,8 +99,12 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
 
     def execute(command, **kwargs):
         if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
-            json.dump({'stage': str(sdk), 'build_key': 'runtime', 'robin_map_source': str(sdk)},
-                      kwargs['stdout'])
+            result = {'stage': str(sdk), 'build_key': 'runtime', 'robin_map_source': str(sdk)}
+            destination = Path(command[command.index('--report-file') + 1])
+            destination.write_text(json.dumps(result))
+            # Cold dependency acquisition may emit diagnostics to the combined
+            # command log. Only the explicit report is a machine-readable input.
+            kwargs['stdout'].write('Cloning runtime dependencies...\n')
         return SimpleNamespace(returncode=0)
 
     def package(*args):

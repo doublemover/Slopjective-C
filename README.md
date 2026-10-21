@@ -119,6 +119,29 @@ language module syntax remain future work. The
 [source-module acceptance report](docs/support/linux_source_module_acceptance.json)
 records the qualified invalidation cases and their timing scope.
 
+## Offline source-package graphs
+
+`objc3c-build` extends the installed example into explicit local package graphs:
+
+```sh
+cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/packages" ./packages
+objc3c-build --workspace ./packages/workspace.json \
+  --output-dir ./package-build --optimization O2
+```
+
+Packages carry exact identity locks and public/private dependency edges. The
+builder resolves a shared dependency once, emits locked native interfaces,
+checks transitive visibility, reuses content-verified compilation, and relinks
+and runs the application. It retains a build report and a content-identified
+package installation inventory. The same operation is exposed through
+`npm run objc3c -- build-packages`.
+
+The current contract uses local Objective-C source packages in one ARC/MRC mode.
+It does not fetch packages, adapt ownership modes or define public module syntax.
+See the [source-package contract](docs/roadmap/linux_source_packages.md).
+The [package SDK acceptance receipt](docs/support/linux_source_graph_acceptance.json)
+identifies the archive, code hashes and installed/fresh-distribution evidence.
+
 ## Language status
 
 [`schemas/objc3-language-capabilities.json`](schemas/objc3-language-capabilities.json)
