@@ -68,3 +68,28 @@ Canonical imports and source-free packages preserve async Objective-C method
 and protocol effects, module-owned bindings, direct dispatch and logical result
 identity. Imported checked methods use the same pre-result completion check,
 Optional payload lifetime rules and owned object/Block results as functions.
+
+The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
+binds this contract to its exact compiler, source inputs and sealed ABI 18
+archive. It records 215 compiler tests, 57 AST tests, 318 current tooling tests,
+24 frontend tests, eight GNU runtime tests, 37 installed driver/embedding checks
+and all 22 installed package gates.
+
+Sixteen C++20/23 O0/O2 configurations cover every ARC/MRC provider-consumer pair.
+Eight LLDB cases inspect resumed `self` and local values alongside the earlier
+scalar, owned-result, checked-handler, C++ member and checked-value frames.
+PCH files serialize actual method coroutine bodies with checked throws and
+nested awaits. Native execution covers unstarted frame destruction, copied
+arguments, deferred errors, native exceptions, nil start/await failures,
+Optional boundaries and 64 cross-worker actor-hop/cancellation paths.
+
+Eight source-free package configurations execute 24 times after provider source
+removal and relocation. The same archive passes 74 instrumented configurations
+and 356 commands, four standalone C++/extension-ABI checks and six post-hop
+LLDB cases. Fresh Debian 13 and Ubuntu 26.04 consumers run as ordinary users
+under the explicit `task-destinations` scope. All 22 package gates run on the
+publication host. Fresh containers provide a 4 GiB RAM mount for SDK staging and
+a 2 GiB RAM mount for scratch, within an 8 GiB memory limit. The receipt records
+these resource settings. Sanitizers instrument services and clients; GNU libobjc
+is loaded as shipped. The [latency report](../support/linux_async_objc_methods_latency.json)
+records five quiet repetitions against the existing release budgets.

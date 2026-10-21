@@ -60,7 +60,7 @@ records a real archive installation after an injected interruption.
 
 ## Change the fork
 
-The six canonical patches define the extension source. A development checkout
+The canonical patch series defines the extension source. A development checkout
 lives under `out/toolchains/objc3-development/src`; source changes must be
 exported and sealed before any build is admitted:
 
