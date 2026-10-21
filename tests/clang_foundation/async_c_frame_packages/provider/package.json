@@ -7,6 +7,9 @@
   "standard": "c17",
   "ownership": "arc",
   "provider_ownership": "arc",
-  "exports": ["c_frame_factory", "c_frame_destroyed"],
+  "exports": [
+    "c_frame_factory",
+    "c_frame_destroyed"
+  ],
   "dependencies": []
 }

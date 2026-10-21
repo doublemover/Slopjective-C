@@ -7,8 +7,6 @@
     "language": "objective-c",
     "standard": "c17",
     "ownership": "arc",
-    "dependencies": [
-      {"name": "fixture.CFrame", "package": "c-frame-v1", "visibility": "private"}
-    ]
+    "dependencies": [{ "name": "fixture.CFrame", "package": "c-frame-v1", "visibility": "private" }]
   }
 }
