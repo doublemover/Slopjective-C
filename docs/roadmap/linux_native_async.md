@@ -57,7 +57,7 @@ Source and immutable package builders supply the full-frame allocation option
 and link the installed task runtime. Imported function declarations preserve the
 async effect and logical result; providers retain their module-owned native
 symbols after relocation.
-Extension ABI 18 requires a full rebuild of objects, PCH files, semantic
+Extension ABI 19 requires a full rebuild of objects, PCH files, semantic
 interfaces and packages.
 
 This stage supports free functions, [C++ member callables](linux_async_cxx_callables.md)
@@ -79,15 +79,19 @@ Dynamic, protocol, superclass and direct messages preserve the logical effects
 and return physical task carriers. Nil sends yield empty tasks whose start or
 await reports an invalid-argument service failure.
 
-The remaining language work includes pure Objective-C async lowering,
-async Blocks and compiler actor isolation. These require separate execution and ownership qualification
+[Async Objective-C++ Blocks](linux_async_blocks.md) own a heap copy before
+initial suspension, preserving captures and checked errors after the caller's
+Block leaves scope. Source-free aliases and factories retain their effects.
+
+The remaining language work includes pure Objective-C async lowering and
+compiler actor isolation. These require separate execution and ownership qualification
 before the public language capability can be promoted.
 
-The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_blocks_acceptance.json)
 binds this stage to its exact compiler, runtime, archive and source inputs. It
 records sixteen native execution configurations across all ARC/MRC
 provider/consumer pairs, source-free object and Block package consumption,
 frame debugging, instrumented runtime/client checks and ordinary-user execution
 on fresh Debian 13 and Ubuntu 26.04 systems. The
-[latency report](../support/linux_async_objc_methods_latency.json) retains the measured
+[latency report](../support/linux_async_blocks_latency.json) retains the measured
 command costs and budget comparisons for the qualified SDK.

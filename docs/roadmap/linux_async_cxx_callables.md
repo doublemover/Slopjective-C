@@ -33,20 +33,22 @@ are diagnosed because task carriers are invariant in their logical result.
 Constructors, destructors, conversion functions and allocation/deallocation
 operators do not acquire a task ABI.
 
-The current extension ABI is 18 and the task service remains ABI 3. The
+The current extension ABI is 19 and the task service remains ABI 3. The
 [checked value result stage](linux_async_value_results.md) added records, complex
 values and member pointers with a reserved preflight/resume handshake.
 [Objective-C async methods](linux_async_objc_methods.md) add task-returning
 messages and owned receivers; native C++ `this` remains borrowed. Rebuild
 compiler-dependent objects, providers, PCH files, semantic interfaces and packages
-with the new compiler. Pure Objective-C async lowering, async Blocks and compiler
-actor isolation remain separate milestones.
+with the new compiler. [Async Objective-C++ Blocks](linux_async_blocks.md) own
+captured values across suspension while captured C++ `this` stays borrowed.
+Pure Objective-C async lowering and compiler actor isolation remain separate
+milestones.
 Public async/await and actor capabilities remain reserved.
 
-The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_blocks_acceptance.json)
 binds this contract to the exact compiler, runtime, inputs and sealed archive.
-It records 215 compiler tests, 57 AST tests, 24 frontend tests, eight GNU runtime
-tests, 318 current tooling tests, 37 installed driver/embedding checks and all
+It records 218 compiler tests, 57 AST tests, 24 frontend tests, eight GNU runtime
+tests, 322 current tooling tests, 37 installed driver/embedding checks and all
 22 installed package gates. Sixteen C++20/23 O0/O2 configurations execute every
 ARC/MRC provider-consumer pairing; eight LLDB cases inspect resumed member `this`
 and local values alongside scalar, owned-result, checked-handler and checked
@@ -59,5 +61,5 @@ standalone C++/extension-ABI checks and six post-hop debugger cases. Fresh Debia
 13 and Ubuntu 26.04 consumers run as ordinary users under the explicit
 `task-destinations` scope; all 22 package gates run on the publication host.
 Sanitizers instrument services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_objc_methods_latency.json) records
+The [latency report](../support/linux_async_blocks_latency.json) records
 five quiet repetitions against the existing release budgets.

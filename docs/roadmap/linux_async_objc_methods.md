@@ -54,14 +54,16 @@ and direct-method nil returns use the physical task representation.
 Methods with ownership families such as `init`, `alloc`, `new` and `copy`, related
 result types, consumed receivers or explicit native return-ownership attributes
 remain outside this contract. Variadic methods, reference or volatile results,
-and unsupported calling conventions are rejected. Async Blocks and pure
-Objective-C async lowering remain separate compiler milestones. The installed
+and unsupported calling conventions are rejected. [Async Objective-C++ Blocks](linux_async_blocks.md)
+now own their suspended captures. Pure Objective-C async lowering remains a
+separate compiler milestone. The installed
 runtime header and full-frame allocation option are required, as for native
 async functions.
 
-Extension ABI 18 is a hard compiler/header/interface/PCH/provider cutover. Rebuild
-all participants. Task service ABI 3 and promise storage layout remain unchanged.
-The task header rejects extension ABI 17. Public async/await and actor feature
+This method milestone introduced extension ABI 18. The current [async Block
+stage](linux_async_blocks.md) advances the compiler/header/interface/PCH/provider
+contract to ABI 19. Rebuild all participants. Task service ABI 3 and promise
+storage layout remain unchanged. The task header rejects extension ABI 18. Public async/await and actor feature
 predicates remain reserved.
 
 Canonical imports and source-free packages preserve async Objective-C method
@@ -71,7 +73,7 @@ Optional payload lifetime rules and owned object/Block results as functions.
 
 The [installed SDK acceptance receipt](../support/linux_async_objc_methods_acceptance.json)
 binds this contract to its exact compiler, source inputs and sealed ABI 18
-archive. It records 215 compiler tests, 57 AST tests, 318 current tooling tests,
+archive. It records 215 compiler tests, 57 AST tests, 318 tooling tests,
 24 frontend tests, eight GNU runtime tests, 37 installed driver/embedding checks
 and all 22 installed package gates.
 
