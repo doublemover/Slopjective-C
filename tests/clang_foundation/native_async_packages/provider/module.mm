@@ -155,3 +155,19 @@ __attribute__((objc_root_class))
   return value;
 }
 @end
+
+using native_module_async_block = int (^)(int) __objc3_async;
+using native_module_checked_block = NativeModuleValue (^)(int, bool)
+    __objc3_async __objc3_throws(id<NativeModuleError>);
+native_module_async_block native_module_async_factory(int bias) __objc3_async {
+  __objc3_await objc3::task_yield;
+  return ^int(int delta) __objc3_async {
+    return bias + __objc3_await native_module_value(delta - 1);
+  };
+}
+native_module_checked_block native_module_checked_factory() __objc3_async {
+  __objc3_await objc3::task_yield;
+  return ^NativeModuleValue(int n, bool fail) __objc3_async __objc3_throws(id<NativeModuleError>) {
+    return __objc3_try(__objc3_await native_module_record(n, fail));
+  };
+}

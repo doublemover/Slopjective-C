@@ -696,3 +696,142 @@ int native_method_consume(id<NativeAsyncMethodProtocol> receiver,
   }
 }
 #endif
+
+#ifdef __OBJC__
+extern "C" __attribute__((noinline)) void
+objc3_native_async_block_checkpoint(int result, int bias, int progress) {
+  if (result != 42 || bias != 40 || progress != 1) __builtin_trap();
+}
+objc3::task<int> native_block_lazy(std::shared_ptr<async_state> state, int mode) {
+  NativeAsyncValue *value = [NativeAsyncValue new];
+#if !__has_feature(objc_arc)
+  result_owner owner{value};
+#endif
+  value->number = 40;
+  std::string text = "captured Block survives its caller";
+  __block int progress = 0;
+  int bias = 40;
+  int (^read)(int) = ^int(int delta) { return value->number + delta; };
+  auto __unsafe_unretained block = ^int(int delta) __objc3_async {
+    frame_guard guard(state);
+    __objc3_await objc3::task_yield;
+    ++progress;
+    if (text != "captured Block survives its caller" || progress != 1)
+      __builtin_trap();
+    if (mode == 1) throw 109;
+    if (mode == 2) @throw value;
+    int result = __objc3_await native_leaf(state, read(delta));
+    objc3_native_async_block_checkpoint(result, bias, progress);
+    return result;
+  };
+  // The caller's Block, C++ captures and __block storage leave scope before
+  // the returned lazy frame can resume, in ARC and MRC alike.
+  return block(2);
+}
+objc3::task<async_checked_value>
+native_block_checked(std::shared_ptr<async_state> state, bool fail) {
+  auto __unsafe_unretained block = ^async_checked_value() __objc3_async __objc3_throws(id<NativeFirstError>) {
+    frame_guard guard(state);
+    __objc3_await objc3::task_yield;
+    if (fail) {
+      NativeAsyncFailure *error = [NativeAsyncFailure new];
+#if !__has_feature(objc_arc)
+      result_owner owner{error};
+#endif
+      __objc3_throw((id<NativeFirstError>)error);
+    }
+    return __objc3_try(__objc3_await native_checked_value(state, false));
+  };
+  return block();
+}
+int native_block_recover(std::shared_ptr<async_state> state, bool fail) __objc3_async {
+  auto __unsafe_unretained block = ^int() __objc3_async {
+    __objc3_do {
+      auto checked = ^async_checked_value() __objc3_async __objc3_throws(id<NativeFirstError>) {
+        return __objc3_try(__objc3_await native_checked_value(state, fail));
+      };
+      auto value = __objc3_try(__objc3_await checked());
+      return value.value;
+    } __objc3_catch(id<NativeFirstError> error) {
+      __objc3_await objc3::task_yield;
+      return error ? 96 : 0;
+    }
+  };
+  return __objc3_await block();
+}
+native_async_block native_block_factory(int bias) __objc3_async {
+  __objc3_await objc3::task_yield;
+  return ^int(int delta) __objc3_async {
+    __objc3_await objc3::task_yield;
+    return bias + delta;
+  };
+}
+objc3::task<int> native_block_hopped(objc3_actor_t *actor,
+                                    std::shared_ptr<async_state> state) {
+  std::string captured = "owned across actor hop";
+  auto __unsafe_unretained block = ^int() __objc3_async {
+    frame_guard guard(state);
+    __objc3_await objc3::hop_to(actor);
+    int result = __objc3_await native_leaf(state, 42);
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts); facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    if (captured != "owned across actor hop" ||
+        objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+        facts.actor_identity != objc3_actor_identity(actor)) __builtin_trap();
+    return result;
+  };
+  return block();
+}
+struct native_throwing_block_capture {
+  std::shared_ptr<async_state> state;
+  std::shared_ptr<bool> fail;
+  native_throwing_block_capture(std::shared_ptr<async_state> s, std::shared_ptr<bool> f)
+      : state(std::move(s)), fail(std::move(f)) { ++state->values; }
+  native_throwing_block_capture(const native_throwing_block_capture &other)
+      : state(other.state), fail(other.fail) {
+    if (*fail) throw 109;
+    ++state->values;
+  }
+  ~native_throwing_block_capture() { --state->values; }
+};
+bool native_block_copy_failure(std::shared_ptr<async_state> state) {
+  auto fail = std::make_shared<bool>(false);
+  native_throwing_block_capture capture(state, fail);
+  auto __unsafe_unretained block = ^int() __objc3_async {
+    __objc3_await objc3::task_yield;
+    return capture.state ? 42 : 0;
+  };
+  *fail = true;
+  try { auto lazy = block(); }
+  catch (int value) { return value == 109; }
+  return false;
+}
+#endif
+#ifdef __OBJC__
+static objc3::task<int> invoke_noescape(
+    __attribute__((noescape)) native_async_block block) {
+  return block(2);
+}
+@interface NativeAsyncMethod (AsyncBlocks)
++ (objc3::task<int>)invokeBlock:(native_async_block)__attribute__((noescape))block;
+@end
+@implementation NativeAsyncMethod (AsyncBlocks)
++ (objc3::task<int>)invokeBlock:(native_async_block)__attribute__((noescape))block {
+  return block(2);
+}
+@end
+objc3::task<int> native_block_noescape(std::shared_ptr<async_state> state, bool method) {
+  __block int bias = 40;
+  if (method)
+    return [NativeAsyncMethod invokeBlock:^int(int delta) __objc3_async {
+      frame_guard guard(state);
+      __objc3_await objc3::task_yield;
+      return ++bias + delta - 1;
+    }];
+  return invoke_noescape(^int(int delta) __objc3_async {
+    frame_guard guard(state);
+    __objc3_await objc3::task_yield;
+    return ++bias + delta - 1;
+  });
+}
+#endif

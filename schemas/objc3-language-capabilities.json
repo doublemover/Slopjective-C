@@ -2,7 +2,7 @@
   "schema_version": 1,
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 18,
+  "extension_abi_revision": 19,
   "features": [
     {
       "name": "defer",

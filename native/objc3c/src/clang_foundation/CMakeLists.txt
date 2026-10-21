@@ -260,3 +260,28 @@ if (BUILD_TESTING)
     endif()
   endforeach()
 endif()
+
+# Keep the SDK qualification plan available before test executables exist.
+# CTest's JSON omits commands for missing binaries, so record target paths at
+# generation time and cross-check this inventory before serial qualification.
+if(BUILD_TESTING)
+  get_property(_frontend_tests DIRECTORY PROPERTY TESTS)
+  set(_frontend_test_rows "")
+  foreach(_test IN LISTS _frontend_tests)
+    if(_test STREQUAL "objc3_text_file_cli")
+      set(_target "${_test}")
+    else()
+      set(_target "${_test}_test")
+    endif()
+    if(NOT TARGET "${_target}")
+      message(FATAL_ERROR "Frontend CTest ${_test} has no owned target ${_target}")
+    endif()
+    if(_frontend_test_rows)
+      string(APPEND _frontend_test_rows ",\n")
+    endif()
+    string(APPEND _frontend_test_rows
+      "    {\"name\":\"${_test}\",\"target\":\"${_target}\",\"executable\":\"$<TARGET_FILE:${_target}>\"}")
+  endforeach()
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/frontend-test-targets.json"
+    CONTENT "{\n  \"tests\": [\n${_frontend_test_rows}\n  ]\n}\n")
+endif()

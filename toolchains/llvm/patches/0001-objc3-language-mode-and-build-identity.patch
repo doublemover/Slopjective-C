@@ -75,7 +75,7 @@ index 000000000..f9c0321df
 +#endif
 diff --git a/clang/include/clang/Basic/ObjC3Foundation.h.in b/clang/include/clang/Basic/ObjC3Foundation.h.in
 new file mode 100644
-index 000000000..087a41c18
+index 000000000..85110cf7c
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Foundation.h.in
 @@ -0,0 +1,7 @@
@@ -84,7 +84,7 @@ index 000000000..087a41c18
 +#define CLANG_OBJC3_UPSTREAM_COMMIT "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
 +#define CLANG_OBJC3_PATCH_DIGEST "@CLANG_OBJC3_PATCH_DIGEST@"
 +#define CLANG_OBJC3_LANGUAGE_REVISION 202610
-+#define CLANG_OBJC3_EXTENSION_ABI_REVISION 18
++#define CLANG_OBJC3_EXTENSION_ABI_REVISION 19
 +#endif
 diff --git a/clang/include/clang/Options/Options.td b/clang/include/clang/Options/Options.td
 index f893d858d..b6d186b5c 100644
@@ -243,7 +243,7 @@ index 8898e63ab..b699a23fa 100644
    if (const Arg *A = Args.getLastArg(OPT_fcf_protection_EQ)) {
      StringRef Name = A->getValue();
 diff --git a/clang/lib/Frontend/InitPreprocessor.cpp b/clang/lib/Frontend/InitPreprocessor.cpp
-index 65b065dc8..ca3e1a561 100644
+index 65b065dc8..f5cd3f76e 100644
 --- a/clang/lib/Frontend/InitPreprocessor.cpp
 +++ b/clang/lib/Frontend/InitPreprocessor.cpp
 @@ -14,6 +14,7 @@
@@ -262,7 +262,7 @@ index 65b065dc8..ca3e1a561 100644
 +    Builder.defineMacro("__OBJC3__", "1");
 +    Builder.defineMacro("__OBJC_VERSION__", "3");
 +    Builder.defineMacro("__OBJC3_LANGUAGE_REVISION__", "202610");
-+    Builder.defineMacro("__OBJC3_EXTENSION_ABI_REVISION__", "18");
++    Builder.defineMacro("__OBJC3_EXTENSION_ABI_REVISION__", "19");
 +    Builder.defineMacro("__OBJC3_PROFILE__", llvm::itostr(LangOpts.ObjC3Profile));
 +    Builder.defineMacro("__OBJC3_STRICT_CONCURRENCY__",
 +                        LangOpts.ObjC3StrictConcurrency ? "1" : "0");
@@ -409,7 +409,7 @@ index 000000000..fd9a42063
 +// MODE-MISMATCH: error:
 diff --git a/clang/test/ObjC3/LanguageMode/profile-macros.m b/clang/test/ObjC3/LanguageMode/profile-macros.m
 new file mode 100644
-index 000000000..e0c8a8da0
+index 000000000..7ae12dabb
 --- /dev/null
 +++ b/clang/test/ObjC3/LanguageMode/profile-macros.m
 @@ -0,0 +1,42 @@
@@ -434,7 +434,7 @@ index 000000000..e0c8a8da0
 +#if __OBJC3_LANGUAGE_REVISION__ != 202610
 +#error incorrect Objective-C 3 language revision
 +#endif
-+#if __OBJC3_EXTENSION_ABI_REVISION__ != 18
++#if __OBJC3_EXTENSION_ABI_REVISION__ != 19
 +#error incorrect Objective-C 3 extension ABI revision
 +#endif
 +#if __OBJC3_PROFILE__ != TEST_PROFILE

@@ -14,6 +14,7 @@ import time
 from .build import build_foundation
 from .core import build_plans, verify_development
 from .facade import facade_identity
+from .frontend_tests import qualify as qualify_frontend_tests
 from .install_sdk import install
 from .package import inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
@@ -92,35 +93,6 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': foundation_plan,
                'frontend': facade_identity(repo)['sha256'], 'inputs': inputs}
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
-
-
-def reclaim_frontend_tests(build: Path) -> dict:
-    """Reclaim passed CTest binaries; keep compiler, libraries and object files."""
-    build = build.resolve(strict=True)
-    metadata = json.loads(subprocess.check_output(
-        ['ctest', '--test-dir', str(build), '--show-only=json-v1'], text=True))
-    if not isinstance(metadata.get('tests'), list):
-        raise ValueError('CTest did not describe its test executables')
-    candidates = set()
-    for test in metadata['tests']:
-        command = test.get('command', []) if isinstance(test, dict) else []
-        if not command or not isinstance(command[0], str):
-            continue
-        path = Path(command[0])
-        if not path.is_absolute():
-            path = build / path
-        if (not path.name.startswith('objc3_') or not path.name.endswith('_test') or
-                path.is_symlink() or not path.is_file()):
-            continue
-        path = path.resolve(strict=True)
-        if path.is_relative_to(build) and path.stat().st_mode & 0o111:
-            candidates.add(path)
-    records = [{'path': path.relative_to(build).as_posix(), 'bytes': path.stat().st_size}
-               for path in sorted(candidates)]
-    for path in candidates:
-        path.unlink()
-    return {'test_executables': len(records), 'bytes': sum(row['bytes'] for row in records),
-            'outputs': records}
 
 
 def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None) -> dict:
@@ -257,9 +229,10 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
             configure.append(f'-DCMAKE_CXX_COMPILER_LAUNCHER={ccache}')
         run('frontend-configure', configure)
         jobs = build_plans(repo, host='linux-x86_64')['configure']['host_environment']['resource_limits']['compile_jobs']
-        run('frontend-build', ['cmake', '--build', frontend, '--parallel', str(jobs)])
-        run('frontend-tests', ['ctest', '--test-dir', frontend, '--no-tests=error', '--output-on-failure'])
-        report['frontend_test_output_reclamation'] = reclaim_frontend_tests(frontend)
+        run('frontend-build', ['cmake', '--build', frontend, '--target',
+                               'objc3c', 'clang-scan-deps', '--parallel', str(jobs)])
+        report['frontend_test_output_reclamation'] = qualify_frontend_tests(
+            frontend, directory / 'frontend-tests', run, jobs=jobs)
         run('frontend-install', ['cmake', '--install', frontend, '--prefix', prefix])
         report['installed_qualification'] = qualify_installed(repo, prefix, directory / 'installed-qualification')
         env['OBJC3C_CLANG_FOUNDATION_ROOT'] = str(prefix)

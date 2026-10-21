@@ -78,10 +78,15 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..653efb258 100644
+index 0683a4937..339fc3e0a 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
-@@ -14,6 +14,12 @@
+@@ -1,3 +1,4 @@
++#include "clang/AST/ObjC3Async.h"
+ //===--- CGBlocks.cpp - Emit LLVM Code for declarations ---------*- C++ -*-===//
+ //
+ // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+@@ -14,6 +15,12 @@
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
@@ -94,7 +99,7 @@ index 0683a4937..653efb258 100644
  #include "CGOpenCLRuntime.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
-@@ -32,6 +38,25 @@
+@@ -32,6 +39,25 @@
  using namespace clang;
  using namespace CodeGen;
  
@@ -120,7 +125,7 @@ index 0683a4937..653efb258 100644
  CGBlockInfo::CGBlockInfo(const BlockDecl *block, StringRef name)
      : Name(name), CXXThisIndex(0), CanBeGlobal(false), NeedsCopyDispose(false),
        NoEscape(false), HasCXXObject(false), UsesStret(false),
-@@ -453,6 +478,7 @@ static llvm::Constant *tryCaptureAsConstant(CodeGenModule &CGM,
+@@ -453,6 +479,7 @@ static llvm::Constant *tryCaptureAsConstant(CodeGenModule &CGM,
  
    // We can only do this if the variable is const.
    if (!type.isConstQualified()) return nullptr;
@@ -128,7 +133,7 @@ index 0683a4937..653efb258 100644
  
    // Furthermore, in C++ we have to worry about mutable fields:
    // C++ [dcl.type.cv]p4:
-@@ -762,6 +788,23 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -762,6 +789,23 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
  /// Emit a block literal expression in the current function.
  llvm::Value *CodeGenFunction::EmitBlockLiteral(const BlockExpr *blockExpr) {
@@ -152,7 +157,7 @@ index 0683a4937..653efb258 100644
    // If the block has no captures, we won't have a pre-computed
    // layout for it.
    if (!blockExpr->getBlockDecl()->hasCaptures())
-@@ -997,6 +1040,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -997,6 +1041,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
          EmitSynthesizedCXXCopyCtor(blockField, src, copyExpr);
        }
  
@@ -163,7 +168,7 @@ index 0683a4937..653efb258 100644
      // If it's a reference variable, copy the reference into the block field.
      } else if (type->getAs<ReferenceType>()) {
        Builder.CreateStore(src.emitRawPointer(*this), blockField);
-@@ -1056,9 +1103,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1056,9 +1104,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      if (CI.isByRef())
        continue;
  
@@ -175,7 +180,7 @@ index 0683a4937..653efb258 100644
        continue;
  
      CodeGenFunction::Destroyer *destroyer;
-@@ -1069,7 +1117,9 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1069,7 +1118,9 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      // For const-qualified captures, emit clang.arc.use to ensure the captured
      // object doesn't get released while we are still depending on its validity
      // within the block.
@@ -186,7 +191,7 @@ index 0683a4937..653efb258 100644
          type.getObjCLifetime() == Qualifiers::OCL_Strong &&
          CGM.getCodeGenOpts().OptimizationLevel != 0) {
        assert(CGM.getLangOpts().ObjCAutoRefCount &&
-@@ -1082,7 +1132,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1082,7 +1133,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      }
  
      CleanupKind cleanupKind = NormalCleanup;
@@ -195,7 +200,7 @@ index 0683a4937..653efb258 100644
      if (useArrayEHCleanup)
        cleanupKind = NormalAndEHCleanup;
  
-@@ -1282,6 +1332,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+@@ -1282,6 +1333,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
  llvm::Constant *
  CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
                                      StringRef Name) {
@@ -206,7 +211,21 @@ index 0683a4937..653efb258 100644
    if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
      return Block;
  
-@@ -1501,6 +1555,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1449,7 +1504,12 @@ void CodeGenFunction::setBlockContextParameter(const ImplicitParamDecl *D,
+ Address CodeGenFunction::LoadBlockStruct() {
+   assert(BlockInfo && "not in a block invocation function!");
+   assert(BlockPointer && "no block pointer set!");
+-  return Address(BlockPointer, BlockInfo->StructureType, BlockInfo->BlockAlign);
++  // Make the O0 debug location part of the resumed frame's live storage,
++  // rather than a ramp-only slot which coroutine splitting can discard.
++  llvm::Value *Pointer = ObjC3AsyncBlockDebugAddress.isValid()
++                             ? Builder.CreateLoad(ObjC3AsyncBlockDebugAddress)
++                             : BlockPointer;
++  return Address(Pointer, BlockInfo->StructureType, BlockInfo->BlockAlign);
+ }
+ 
+ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1501,6 +1561,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  
    // Create the function declaration.
    const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
@@ -222,7 +241,33 @@ index 0683a4937..653efb258 100644
    const CGFunctionInfo &fnInfo =
      CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
    if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
-@@ -1569,7 +1632,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1521,8 +1590,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+                      llvm::ConstantExpr::getPointerCast(fn, GenVoidPtrTy));
+   }
+ 
++  const auto *Coroutine = getObjC3CoroutineBody(blockDecl);
++  QualType ResultType = fnType->getReturnType();
++  if (Coroutine) {
++    ShouldEmitLifetimeMarkers = true;
++    Bypasses.Init(CGM, Coroutine);
++    ResultType = getContext().getObjC3AsyncTaskType(ResultType);
++  }
+   // Begin generating the function.
+-  StartFunction(blockDecl, fnType->getReturnType(), fn, fnInfo, args,
++  StartFunction(blockDecl, ResultType, fn, fnInfo, args,
+                 blockDecl->getLocation(),
+                 blockInfo.getBlockExpr()->getBody()->getBeginLoc());
+ 
+@@ -1541,6 +1617,8 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+     auto NL = ApplyDebugLocation::CreateEmpty(*this);
+     Builder.CreateStore(BlockPointer, Alloca);
+     BlockPointerDbgLoc = Alloca.emitRawPointer(*this);
++    if (Coroutine)
++      ObjC3AsyncBlockDebugAddress = Alloca;
+   }
+ 
+   // If we have a C++ 'this' reference, go ahead and force it into
+@@ -1569,22 +1647,34 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    // Save a spot to insert the debug information for all the DeclRefExprs.
    llvm::BasicBlock *entry = Builder.GetInsertBlock();
    llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
@@ -235,7 +280,20 @@ index 0683a4937..653efb258 100644
  
    if (IsLambdaConversionToBlock)
      EmitLambdaBlockInvokeBody();
-@@ -1583,8 +1650,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+   else {
+     PGO->assignRegionCounters(GlobalDecl(blockDecl), fn);
+     incrementProfileCounter(blockDecl->getBody());
+-    EmitStmt(blockDecl->getBody());
++    if (Coroutine) {
++      FnArgs.clear();
++      llvm::append_range(FnArgs, blockDecl->parameters());
++      EmitCoroutineBody(*Coroutine);
++    } else {
++      EmitStmt(blockDecl->getBody());
++    }
+   }
+ 
+   // Remember where we were...
    llvm::BasicBlock *resume = Builder.GetInsertBlock();
  
    // Go back to the entry.
@@ -248,7 +306,7 @@ index 0683a4937..653efb258 100644
    else
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
-@@ -1642,6 +1711,10 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1642,6 +1732,10 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -259,7 +317,7 @@ index 0683a4937..653efb258 100644
    if (T.hasAddressDiscriminatedPointerAuth())
      return std::make_pair(
          BlockCaptureEntityKind::AddressDiscriminatedPointerAuth, Flags);
-@@ -1652,6 +1725,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1652,6 +1746,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      Flags = BLOCK_FIELD_IS_BLOCK;
  
    switch (T.isNonTrivialToPrimitiveCopy()) {
@@ -267,7 +325,7 @@ index 0683a4937..653efb258 100644
    case QualType::PCK_Struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -1766,6 +1840,16 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1766,6 +1861,16 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      Str += llvm::to_string(TyStr.size()) + TyStr.c_str();
      break;
    }
@@ -284,7 +342,7 @@ index 0683a4937..653efb258 100644
    case BlockCaptureEntityKind::ARCWeak:
      Str += "w";
      break;
-@@ -1808,6 +1892,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1808,6 +1913,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      break;
    }
    case BlockCaptureEntityKind::NonTrivialCStruct: {
@@ -300,7 +358,7 @@ index 0683a4937..653efb258 100644
      bool IsVolatile = CaptureTy.isVolatileQualified();
      CharUnits Alignment = BlockAlignment.alignmentAtOffset(Cap.getOffset());
  
-@@ -1865,6 +1958,10 @@ static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
+@@ -1865,6 +1979,10 @@ static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
    bool EHOnly = ForCopyHelper;
  
    switch (CaptureKind) {
@@ -311,7 +369,7 @@ index 0683a4937..653efb258 100644
    case BlockCaptureEntityKind::CXXRecord:
    case BlockCaptureEntityKind::ARCWeak:
    case BlockCaptureEntityKind::NonTrivialCStruct:
-@@ -1980,6 +2077,10 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1980,6 +2098,10 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      Address dstField = Builder.CreateStructGEP(dst, index);
  
      switch (capture.CopyKind) {
@@ -322,7 +380,7 @@ index 0683a4937..653efb258 100644
      case BlockCaptureEntityKind::CXXRecord:
        // If there's an explicit copy expression, we do that.
        assert(CI.getCopyExpr() && "copy expression for variable is missing");
-@@ -2078,6 +2179,10 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2078,6 +2200,10 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -333,7 +391,7 @@ index 0683a4937..653efb258 100644
    switch (T.isDestructedType()) {
    case QualType::DK_cxx_destructor:
      return std::make_pair(BlockCaptureEntityKind::CXXRecord, BlockFieldFlags());
-@@ -2090,6 +2195,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2090,6 +2216,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      // Support __weak direct captures.
      return std::make_pair(BlockCaptureEntityKind::ARCWeak,
                            getBlockFieldFlagsForObjCObjectPointer(CI, T));
@@ -341,7 +399,7 @@ index 0683a4937..653efb258 100644
    case QualType::DK_nontrivial_c_struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -2555,7 +2661,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
+@@ -2555,7 +2682,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
    // If type is a non-trivial C struct type that is non-trivial to
    // destructly move or destroy, build the copy and dispose helpers.
    if (type.isNonTrivialToPrimitiveDestructiveMove() == QualType::PCK_Struct ||
@@ -352,7 +410,7 @@ index 0683a4937..653efb258 100644
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..5d5fbe4a4 100644
+index 08cb9860f..d6aceb1b8 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -559,7 +617,7 @@ index 08cb9860f..5d5fbe4a4 100644
  }
  
  /// Figure out the rules for calling a function with the given formal
-@@ -722,6 +819,9 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
+@@ -722,13 +819,18 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
  const CGFunctionInfo &
  CodeGenTypes::arrangeBlockFunctionDeclaration(const FunctionProtoType *proto,
                                                const FunctionArgList &params) {
@@ -569,7 +627,19 @@ index 08cb9860f..5d5fbe4a4 100644
    ExtParameterInfoList paramInfos =
        getExtParameterInfosForCall(proto, 1, params.size());
    CanQualTypeList argTypes = getArgTypesForDeclaration(Context, params);
-@@ -779,6 +879,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+ 
+-  return arrangeLLVMFunctionInfo(GetReturnType(proto->getReturnType()),
+-                                 FnInfoOpts::None, argTypes,
+-                                 proto->getExtInfo(), paramInfos,
++  QualType Result = proto->getReturnType();
++  if (proto->getObjC3FunctionEffects().Async)
++    Result = Context.getObjC3AsyncTaskType(Result);
++  return arrangeLLVMFunctionInfo(GetReturnType(Result), FnInfoOpts::None,
++                                 argTypes, proto->getExtInfo(), paramInfos,
+                                  RequiredArgs::forPrototypePlus(proto, 1));
+ }
+ 
+@@ -779,6 +881,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
      RequiredArgs required, unsigned numPrefixArgs) {
    assert(numPrefixArgs + 1 <= args.size() &&
           "Emitting a call with less args than the required prefix?");
@@ -579,7 +649,7 @@ index 08cb9860f..5d5fbe4a4 100644
    // Add one to account for `this`. It's a bit awkward here, but we don't count
    // `this` in similar places elsewhere.
    ExtParameterInfoList paramInfos =
-@@ -787,7 +890,10 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+@@ -787,7 +892,10 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
    CanQualTypeList argTypes = getArgTypesForCall(Context, args);
  
    FunctionType::ExtInfo info = proto->getExtInfo();
@@ -591,7 +661,7 @@ index 08cb9860f..5d5fbe4a4 100644
                                   FnInfoOpts::IsInstanceMethod, argTypes, info,
                                   paramInfos, required);
  }
-@@ -1023,6 +1129,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
+@@ -1023,6 +1131,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
    assert(llvm::all_of(argTypes,
                        [](CanQualType T) { return T.isCanonicalAsParam(); }));
  
@@ -609,7 +679,7 @@ index 08cb9860f..5d5fbe4a4 100644
    // Lookup or create unique function info.
    llvm::FoldingSetNodeID ID;
    bool isInstanceMethod =
-@@ -3150,8 +3267,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3150,8 +3269,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
            // This includes trivially-destructible objects, as well as objects
            // whose destruction / clean-up is carried out within the callee
            // (e.g., Obj-C ARC-managed structs, MSVC callee-destroyed objects).
@@ -621,7 +691,7 @@ index 08cb9860f..5d5fbe4a4 100644
              Attrs.addDeadOnReturnAttr(llvm::DeadOnReturnInfo());
          }
        }
-@@ -4369,6 +4487,38 @@ void CodeGenFunction::EmitFunctionEpilog(
+@@ -4369,6 +4489,38 @@ void CodeGenFunction::EmitFunctionEpilog(
  
    case ABIArgInfo::Extend:
    case ABIArgInfo::Direct:
@@ -660,7 +730,7 @@ index 08cb9860f..5d5fbe4a4 100644
      if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
          RetAI.getDirectOffset() == 0) {
        // The internal return value temp always will have pointer-to-return-type
-@@ -4998,7 +5148,7 @@ void CodeGenFunction::EmitCallArgs(
+@@ -4998,7 +5150,7 @@ void CodeGenFunction::EmitCallArgs(
      const auto *MD = dyn_cast<const ObjCMethodDecl *>(Prototype.P);
      if (MD) {
        IsVariadic = MD->isVariadic();
@@ -669,7 +739,7 @@ index 08cb9860f..5d5fbe4a4 100644
            MD, CGM.getTarget().getTriple().isOSWindows());
        ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                        MD->param_type_end());
-@@ -5121,6 +5271,17 @@ void CodeGenFunction::EmitCallArgs(
+@@ -5121,6 +5273,17 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
@@ -687,7 +757,7 @@ index 08cb9860f..5d5fbe4a4 100644
  }
  
  namespace {
-@@ -5205,6 +5366,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5368,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -704,7 +774,7 @@ index 08cb9860f..5d5fbe4a4 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5227,7 +5398,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5227,7 +5400,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      if (DestroyedInCallee)
        Slot.setExternallyDestructed();
  
@@ -716,7 +786,7 @@ index 08cb9860f..5d5fbe4a4 100644
      RValue RV = Slot.asRValue();
      args.add(RV, type);
  
-@@ -5577,6 +5751,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5753,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -731,7 +801,7 @@ index 08cb9860f..5d5fbe4a4 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5892,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5894,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -774,7 +844,7 @@ index 08cb9860f..5d5fbe4a4 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +5989,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +5991,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -790,7 +860,7 @@ index 08cb9860f..5d5fbe4a4 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +6009,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +6011,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -799,7 +869,7 @@ index 08cb9860f..5d5fbe4a4 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6138,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6140,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -2139,10 +2209,10 @@ index c724a063b..28e416bf9 100644
                              CGM.getObjCEntrypoints().objc_retainBlock,
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..cb2cdd0dd
+index 000000000..b51c6b689
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,212 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -2248,7 +2318,8 @@ index 000000000..cb2cdd0dd
 +  if (!FPT)
 +    return diagnoseUnsupportedObjC3CarrierByValue(CGM, FunctionType, Loc);
 +  if (FPT->getObjC3FunctionEffects().Async) {
-+    CGM.Error(Loc, "cannot compile ObjC3 async Block ABI lowering");
++    if (!CGM.getTypes().diagnoseUnsupportedObjC3Effects(FunctionType, nullptr))
++      return false;
 +    return true;
 +  }
 +  auto Check = [&](QualType T) {
@@ -7060,10 +7131,15 @@ index 853f038c4..d988e673e 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..d27432cf8 100644
+index 7629b42dd..25517ae3e 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
-@@ -19,6 +19,9 @@
+@@ -1,3 +1,4 @@
++#include "clang/AST/ObjC3Async.h"
+ //===--- CodeGenFunction.cpp - Emit LLVM Code from ASTs for a Function ----===//
+ //
+ // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+@@ -19,6 +20,9 @@
  #include "CGHLSLRuntime.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenModule.h"
@@ -7073,7 +7149,7 @@ index 7629b42dd..d27432cf8 100644
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
  #include "clang/AST/ASTContext.h"
-@@ -289,6 +292,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
+@@ -289,6 +293,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
      case Type::IncompleteArray:
      case Type::VariableArray:
      case Type::Record:
@@ -7082,7 +7158,7 @@ index 7629b42dd..d27432cf8 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -420,6 +425,11 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -420,6 +426,11 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
  
    // Emit function epilog (to return).
    llvm::DebugLoc Loc = EmitReturnBlock();
@@ -7094,20 +7170,17 @@ index 7629b42dd..d27432cf8 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -884,8 +894,10 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -884,8 +895,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
    // are not aware of how to move the extra UBSan instructions across the split
    // coroutine boundaries.
    if (D && SanOpts.has(SanitizerKind::Null))
 -    if (FD && FD->getBody() &&
 -        FD->getBody()->getStmtClass() == Stmt::CoroutineBodyStmtClass)
-+    if ((FD && isa_and_nonnull<CoroutineBodyStmt>(FD->getBody())) ||
-+        (isa_and_nonnull<ObjCMethodDecl>(D) &&
-+         isa_and_nonnull<CoroutineBodyStmt>(
-+             cast<ObjCMethodDecl>(D)->getBody())))
++    if (getObjC3CoroutineBody(D))
        SanOpts.Mask &= ~SanitizerKind::Null;
  
    // Apply xray attributes to the function (as a string, for now)
-@@ -1274,7 +1286,15 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1284,15 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
@@ -7123,7 +7196,7 @@ index 7629b42dd..d27432cf8 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1475,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1473,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -7139,7 +7212,7 @@ index 7629b42dd..d27432cf8 100644
  
    return ResTy;
  }
-@@ -1463,10 +1492,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,10 +1490,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -7158,7 +7231,7 @@ index 7629b42dd..d27432cf8 100644
  
    CGM.getTargetCodeGenInfo().checkFunctionABI(CGM, FD);
  
-@@ -2556,6 +2593,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2591,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -7168,7 +7241,7 @@ index 7629b42dd..d27432cf8 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..1c1456452 100644
+index e7c24f1f3..0949ef992 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
@@ -7247,7 +7320,15 @@ index e7c24f1f3..1c1456452 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -2297,6 +2352,7 @@ public:
+@@ -657,6 +712,7 @@ public:
+ 
+   const CodeGen::CGBlockInfo *BlockInfo = nullptr;
+   llvm::Value *BlockPointer = nullptr;
++  Address ObjC3AsyncBlockDebugAddress = Address::invalid();
+ 
+   llvm::DenseMap<const ValueDecl *, FieldDecl *> LambdaCaptureFields;
+   FieldDecl *LambdaThisCaptureField = nullptr;
+@@ -2297,6 +2353,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -7255,7 +7336,7 @@ index e7c24f1f3..1c1456452 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -3641,6 +3697,11 @@ public:
+@@ -3641,6 +3698,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -7267,7 +7348,7 @@ index e7c24f1f3..1c1456452 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3691,6 +3752,7 @@ public:
+@@ -3691,6 +3753,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);
@@ -7354,10 +7435,15 @@ index 313a364e8..2b5a0a98b 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 55fe21658..10a9839c7 100644
+index 55fe21658..47f154501 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
-@@ -11,6 +11,8 @@
+@@ -1,3 +1,4 @@
++#include "clang/AST/ObjC3Async.h"
+ //===--- CodeGenTypes.cpp - Type translation for LLVM CodeGen -------------===//
+ //
+ // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+@@ -11,6 +12,8 @@
  //===----------------------------------------------------------------------===//
  
  #include "CodeGenTypes.h"
@@ -7366,7 +7452,7 @@ index 55fe21658..10a9839c7 100644
  #include "CGCXXABI.h"
  #include "CGCall.h"
  #include "CGDebugInfo.h"
-@@ -25,6 +27,7 @@
+@@ -25,6 +28,7 @@
  #include "clang/AST/MatrixUtils.h"
  #include "clang/AST/RecordLayout.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
@@ -7374,7 +7460,7 @@ index 55fe21658..10a9839c7 100644
  #include "llvm/IR/DataLayout.h"
  #include "llvm/IR/DerivedTypes.h"
  #include "llvm/IR/Module.h"
-@@ -299,9 +302,108 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
+@@ -299,9 +303,112 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
    }
  }
  
@@ -7413,6 +7499,10 @@ index 55fe21658..10a9839c7 100644
 +            !isa<CoroutineBodyStmt>(Definition->getBody()))
 +          SupportedAsync = false;
 +      }
++      if (const auto *BD = dyn_cast_or_null<BlockDecl>(D))
++        if (FPT == getObjC3CallableFunctionType(BD) && BD->getBody() &&
++            !getObjC3CoroutineBody(BD))
++          SupportedAsync = false;
 +      if ((Effects.Async && !SupportedAsync) ||
 +          (Effects.Throws != ObjC3ThrowsKind::None &&
 +           !SupportedThrows && !SupportedAsync)) {
@@ -7433,7 +7523,7 @@ index 55fe21658..10a9839c7 100644
 +    } else if (const auto *PT = dyn_cast<PointerType>(Ty)) {
 +      VisitSelf(VisitSelf, PT->getPointeeType(), true, AsyncABI);
 +    } else if (const auto *BPT = dyn_cast<BlockPointerType>(Ty)) {
-+      VisitSelf(VisitSelf, BPT->getPointeeType(), true, false);
++      VisitSelf(VisitSelf, BPT->getPointeeType(), true, true);
 +    } else if (const auto *RefTy = dyn_cast<ReferenceType>(Ty)) {
 +      VisitSelf(VisitSelf, RefTy->getPointeeType(), true, AsyncABI);
 +    } else if (const auto *MPT = dyn_cast<MemberPointerType>(Ty)) {
@@ -7483,7 +7573,7 @@ index 55fe21658..10a9839c7 100644
    // First, check whether we can build the full function type.  If the
    // function type depends on an incomplete type (e.g. a struct or enum), we
    // cannot lower the function type.
-@@ -357,6 +459,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -357,6 +464,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
  
    const Type *Ty = T.getTypePtr();
  
@@ -7504,7 +7594,7 @@ index 55fe21658..10a9839c7 100644
    // For the device-side compilation, CUDA device builtin surface/texture types
    // may be represented in different types.
    if (Context.getLangOpts().CUDAIsDevice) {
-@@ -389,6 +505,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -389,6 +510,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
    // If we don't have it in the cache, convert it now.
    llvm::Type *ResultType = nullptr;
    switch (Ty->getTypeClass()) {
@@ -16136,7 +16226,7 @@ index 000000000..2efab2309
 +auto member_callback(callback fn) { return Caller().call(fn); }
 diff --git a/clang/test/ObjC3/CodeGen/native-async-boundaries.mm b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
 new file mode 100644
-index 000000000..6de89e48a
+index 000000000..09338a888
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
 @@ -0,0 +1,26 @@
@@ -16151,7 +16241,7 @@ index 000000000..6de89e48a
 +#include "Inputs/native-async-task.h"
 +#if TEST_KIND == 1
 +using async_block = int (^)(int) __objc3_async;
-+async_block rejected; // expected-error {{ObjC3 async/throws callable ABI lowering}}
++async_block supported; // expected-no-diagnostics
 +#elif TEST_KIND == 2
 +struct Receiver { int method() __objc3_async; };
 +int Receiver::method() __objc3_async { return 1; } // expected-no-diagnostics
@@ -16207,10 +16297,15 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..75b1fb807 100644
+index bf896f133..870d16afa 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
-@@ -11,6 +11,7 @@
+@@ -1,3 +1,4 @@
++#include "clang/AST/ObjC3Async.h"
+ //===----- CGCoroutine.cpp - Emit LLVM Code for C++ coroutines ------------===//
+ //
+ // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+@@ -11,6 +12,7 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGCleanup.h"
@@ -16218,7 +16313,7 @@ index bf896f133..75b1fb807 100644
  #include "CGDebugInfo.h"
  #include "CodeGenFunction.h"
  #include "clang/AST/StmtCXX.h"
-@@ -366,11 +367,14 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+@@ -366,11 +368,14 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
      return Res;
    }
  
@@ -16235,16 +16330,12 @@ index bf896f133..75b1fb807 100644
  
    return Res;
  }
-@@ -389,6 +393,43 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
+@@ -389,6 +394,39 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
                                 aggSlot, ignoreResult, /*forLValue*/false).RV;
  }
  
 +bool CodeGenFunction::EmitObjC3AsyncErrorReturn(llvm::Value *OwnedError) {
-+  const auto *FD = dyn_cast_or_null<FunctionDecl>(CurCodeDecl);
-+  const Stmt *Statement = FD ? FD->getBody() : nullptr;
-+  if (const auto *MD = dyn_cast_or_null<ObjCMethodDecl>(CurCodeDecl))
-+    Statement = MD->getBody();
-+  const auto *Body = dyn_cast_or_null<CoroutineBodyStmt>(Statement);
++  const auto *Body = getObjC3CoroutineBody(CurCodeDecl);
 +  if (!Body || !CurCoro.Data)
 +    return false;
 +  VarDecl *Promise = Body->getPromiseDecl();
@@ -16279,7 +16370,7 @@ index bf896f133..75b1fb807 100644
  void CodeGenFunction::EmitCoreturnStmt(CoreturnStmt const &S) {
    ++CurCoro.Data->CoreturnCount;
    const Expr *RV = S.getOperand();
-@@ -1008,6 +1049,22 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1008,6 +1046,40 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        // not needed.
      }
  
@@ -16297,6 +16388,24 @@ index bf896f133..75b1fb807 100644
 +      };
 +      EHStack.pushCleanup<ReleaseAsyncReceiver>(NormalAndEHCleanup, Receiver);
 +      (void)MD;
++    }
++
++    // The caller may discard its stack Block immediately after this ramp
++    // returns. Own a heap copy before initial suspension, including __block
++    // forwarding and C++ capture construction. A throwing copy unwinds the
++    // allocated frame; all successful copies are released on every frame exit.
++    if (isa_and_nonnull<BlockDecl>(CurCodeDecl)) {
++      BlockPointer = EmitARCRetainBlock(BlockPointer, /*mandatory=*/true);
++      if (ObjC3AsyncBlockDebugAddress.isValid())
++        Builder.CreateStore(BlockPointer, ObjC3AsyncBlockDebugAddress);
++      struct ReleaseAsyncBlock final : EHScopeStack::Cleanup {
++        llvm::Value *Block;
++        explicit ReleaseAsyncBlock(llvm::Value *Block) : Block(Block) {}
++        void Emit(CodeGenFunction &CGF, Flags) override {
++          CGF.EmitARCRelease(Block, ARCPreciseLifetime);
++        }
++      };
++      EHStack.pushCleanup<ReleaseAsyncBlock>(NormalAndEHCleanup, BlockPointer);
 +    }
 +
      GroManager.EmitGroActive();
@@ -16539,3 +16648,46 @@ index 000000000..109609caa
 +  return __objc3_has_value(result);
 +}
 +void ignored(Worker *worker) { [worker value:42]; [worker direct:42]; }
+diff --git a/clang/test/ObjC3/CodeGen/native-async-blocks.mm b/clang/test/ObjC3/CodeGen/native-async-blocks.mm
+new file mode 100644
+index 000000000..20a145342
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-blocks.mm
+@@ -0,0 +1,37 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-async-task.h"
++@protocol Error @end
++struct Value { int n; Value() = delete; Value(int); Value(const Value &); ~Value(); };
++using Async = int (^)(int) __objc3_async;
++using Checked = Value (^)(id<Error>) __objc3_async __objc3_throws(id<Error>);
++int leaf(int) __objc3_async;
++Async make(int bias) __objc3_async {
++  return ^int(int n) __objc3_async {
++    return bias + __objc3_await leaf(n);
++  };
++}
++Checked checked(int n) __objc3_async {
++  return ^Value(id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++    if (error) __objc3_throw(error);
++    return Value(__objc3_await leaf(n));
++  };
++}
++int invoke(Async block) __objc3_async { return __objc3_await block(2); }
++Value relay(Checked block, id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await block(error));
++}
++void empty() {
++  auto block = ^void() __objc3_async {};
++  (void)block();
++}
++// CHECK-LABEL: define internal void @___Z4makei_block_invoke
++// CHECK: coro.begin
++// CHECK: invoke ptr @_Block_copy
++// CHECK: initial_suspend
++// CHECK: {{(objc_release|llvm.objc.release)}}
++// CHECK-LABEL: define internal void @___Z7checkedi_block_invoke
++// CHECK: coro.begin
++// CHECK: invoke ptr @_Block_copy
++// CHECK: initial_suspend
++// CHECK: __objc3_task_error_create
