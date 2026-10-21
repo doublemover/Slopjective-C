@@ -88,7 +88,7 @@ def reusable(record: dict, key: str) -> bool:
 def environment(sdk: Path) -> dict:
     result = dict(os.environ)
     for name in ('CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH',
-                 'LIBRARY_PATH', 'COMPILER_PATH', 'GCC_EXEC_PREFIX', 'LD_PRELOAD',
+                 'LIBRARY_PATH', 'COMPILER_PATH', 'GCC_EXEC_PREFIX', 'LD_PRELOAD', 'LD_AUDIT',
                  'SDKROOT', 'CCC_OVERRIDE_OPTIONS', 'CLANG_CONFIG_FILE_SYSTEM_DIR',
                  'CLANG_CONFIG_FILE_USER_DIR'):
         result.pop(name, None)

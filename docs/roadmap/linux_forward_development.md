@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_explicit_source_graph_acceptance.json) identifies its
+[acceptance receipt](../support/linux_immutable_package_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -103,15 +103,24 @@ record returns through re-exported Objective-C++ ARC packages. V2 manifests
 require explicit modes and reject v1 input. The active receipt identifies the
 exact implementation and archive.
 
+The [immutable package milestone](linux_immutable_packages.md) now publishes and
+installs verified native closures under content identities. Sixteen consumer
+configurations execute after producer sources are deleted and the store is
+relocated; 128 rejected locks, visibility and damaged-artifact cases bound that
+contract. Debian 13 and Ubuntu 26.04 pass as ordinary users. The active receipt
+also records recovery of the fully qualified archive after host disk exhaustion
+during installation.
+
 The next implementation sequence is:
 
 1. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
    installed Linux suite.
-2. Publish immutable packages from the qualified interface and object inventory,
-   with explicit ownership projections and consumer verification. Keep registry
-   transport separate from content identity and installation correctness.
+2. Qualify [immutable packages](linux_immutable_packages.md) from the native
+   interface and object inventory, including source-free consumer execution and
+   explicit mode locks. Add ownership projections as a separate bounded contract;
+   keep registry transport separate from content identity and installation.
 
 ## Installed module foundation and structured concurrency
 

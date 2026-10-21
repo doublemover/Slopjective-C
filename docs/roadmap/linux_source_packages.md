@@ -94,8 +94,9 @@ untouched; its retained manifest hashes identify the source state it describes.
 explicit language/standard/ownership mode, direct
 visibility locks and relative object/interface/sidecar paths with content hashes.
 Its content identity is reproduced by unchanged builds. The record describes the
-build output; it is not a remote registry, general binary package installer or
-public module-language syntax.
+build output. The [immutable package workflow](linux_immutable_packages.md)
+publishes and installs that inventory for consumers without provider sources.
+Remote registries and public module-language syntax remain separate milestones.
 
 Installed qualification covers all eight supported mode combinations at O0/O2,
 with 112 builds and 32 rejected package/visibility cases. It verifies cold/warm

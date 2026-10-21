@@ -70,6 +70,7 @@ env -u LD_LIBRARY_PATH ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" --output-dir ./module-evidence
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify.py" --output-dir ./package-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_binary_packages.py" --output-dir ./binary-package-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-runtime-carrier-calls.py" \
