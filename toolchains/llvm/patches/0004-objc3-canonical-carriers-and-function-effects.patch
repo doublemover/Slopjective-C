@@ -4738,10 +4738,10 @@ index 5e1fd4df1..7b85a2644 100644
      return nullptr;
  
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index ef729e22c..ff5c21e5d 100644
+index ef729e22c..fa2a19825 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -71,6 +71,18 @@ add_clang_library(clangSema
+@@ -71,6 +71,19 @@ add_clang_library(clangSema
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
@@ -4752,6 +4752,7 @@ index ef729e22c..ff5c21e5d 100644
 +  ObjC3MatchCoverage.cpp
 +  ObjC3MatchSemantic.cpp
 +  SemaObjC3Match.cpp
++  SemaObjC3GuardExit.cpp
 +  SemaObjC3CarrierARC.cpp
 +  SemaObjC3OptionalExpr.cpp
 +  SemaObjC3ResultExpr.cpp
@@ -11928,10 +11929,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..b346d1b6d 100644
+index 81010e046..456261e5b 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,35 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,36 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -11956,6 +11957,7 @@ index 81010e046..b346d1b6d 100644
 +  ObjC3DoCatchPersistenceTest.cpp
 +  ObjC3TryThrowConsumerTest.cpp
 +  ObjC3CheckedErrorCFGTest.cpp
++  ObjC3GuardExitTest.cpp
 +  ObjC3MatchImporterTest.cpp
 +  CLANG_LIBS
 +  clangAST
@@ -16321,3 +16323,409 @@ index 000000000..98428be33
 +int caught_noreturn(void) {
 +  handle { (void)tryValue(stop()); } catch(id<Error> caught) {}
 +} // expected-error {{non-void function does not return a value}}
+diff --git a/clang/include/clang/Sema/ObjC3GuardExit.h b/clang/include/clang/Sema/ObjC3GuardExit.h
+new file mode 100644
+index 000000000..d4653c462
+--- /dev/null
++++ b/clang/include/clang/Sema/ObjC3GuardExit.h
+@@ -0,0 +1,23 @@
++//===--- ObjC3GuardExit.h - Native guard scope-exit proof ---------*- C++
++//-*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_SEMA_OBJC3GUARDEXIT_H
++#define LLVM_CLANG_SEMA_OBJC3GUARDEXIT_H
++namespace clang {
++class Sema;
++class CompoundStmt;
++namespace objc3 {
++enum class GuardExitResult {
++  Proven,
++  MayFallThrough,
++  InvalidTransfer,
++  UnsupportedControlFlow,
++  NoScopeExit
++};
++// Call after the enclosing callable has finished, including forward labels.
++GuardExitResult proveGuardScopeExit(Sema &, const CompoundStmt *Else,
++                                    const CompoundStmt *ContainingScope);
++} // namespace objc3
++} // namespace clang
++#endif
+diff --git a/clang/lib/Sema/SemaObjC3GuardExit.cpp b/clang/lib/Sema/SemaObjC3GuardExit.cpp
+new file mode 100644
+index 000000000..0f137a062
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3GuardExit.cpp
+@@ -0,0 +1,240 @@
++//===--- SemaObjC3GuardExit.cpp - Native guard exit proof ----------------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/Stmt.h"
++#include "clang/AST/StmtObjC.h"
++#include "clang/Analysis/CFG.h"
++#include "clang/Sema/ObjC3GuardExit.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/DenseSet.h"
++#include "llvm/ADT/SmallVector.h"
++#include "llvm/Support/raw_ostream.h"
++using namespace clang;
++using clang::objc3::GuardExitResult;
++namespace {
++bool mayThrowNative(const FunctionDecl *Function) {
++  if (!Function || Function->hasAttr<NoThrowAttr>())
++    return false;
++  const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
++  return !Prototype ||
++         isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) ||
++         !Prototype->isNothrow();
++}
++
++void collectNodes(const Stmt *S, llvm::DenseSet<const Stmt *> &Nodes) {
++  if (!S)
++    return;
++  Nodes.insert(S);
++  if (const auto *Lambda = dyn_cast<LambdaExpr>(S)) {
++    for (const Expr *Init : Lambda->capture_inits())
++      collectNodes(Init, Nodes);
++    return;
++  }
++  if (isa<BlockExpr>(S))
++    return;
++  for (const Stmt *Child : S->children())
++    collectNodes(Child, Nodes);
++}
++void collectNativeHandlers(
++    const Stmt *Node, const Stmt *Handler,
++    llvm::DenseMap<const Stmt *, const Stmt *> &Handlers) {
++  if (!Node)
++    return;
++  Handlers[Node] = Handler;
++  if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++    for (const Expr *Init : Lambda->capture_inits())
++      collectNativeHandlers(Init, Handler, Handlers);
++    return;
++  }
++  if (isa<BlockExpr>(Node))
++    return;
++  if (const auto *Try = dyn_cast<CXXTryStmt>(Node)) {
++    collectNativeHandlers(Try->getTryBlock(), Try, Handlers);
++    for (unsigned I = 0; I != Try->getNumHandlers(); ++I)
++      collectNativeHandlers(Try->getHandler(I), Handler, Handlers);
++    return;
++  }
++  if (const auto *Try = dyn_cast<ObjCAtTryStmt>(Node)) {
++    collectNativeHandlers(Try->getTryBody(), Try, Handlers);
++    for (const ObjCAtCatchStmt *Catch : Try->catch_stmts())
++      collectNativeHandlers(Catch, Handler, Handlers);
++    if (const auto *Finally = Try->getFinallyStmt())
++      collectNativeHandlers(Finally, Handler, Handlers);
++    return;
++  }
++  for (const Stmt *Child : Node->children())
++    collectNativeHandlers(Child, Handler, Handlers);
++}
++
++void collectOuterTransfers(const Stmt *S, unsigned BreakDepth,
++                           unsigned ContinueDepth,
++                           llvm::DenseSet<const Stmt *> &Transfers) {
++  if (!S || isa<LambdaExpr, BlockExpr>(S))
++    return;
++  if ((isa<BreakStmt>(S) && !BreakDepth) ||
++      (isa<ContinueStmt>(S) && !ContinueDepth))
++    Transfers.insert(S);
++  bool Loop =
++      isa<ForStmt, WhileStmt, DoStmt, CXXForRangeStmt, ObjCForCollectionStmt>(
++          S);
++  BreakDepth += Loop || isa<SwitchStmt>(S);
++  ContinueDepth += Loop;
++  for (const Stmt *Child : S->children())
++    collectOuterTransfers(Child, BreakDepth, ContinueDepth, Transfers);
++}
++} // namespace
++
++GuardExitResult
++clang::objc3::proveGuardScopeExit(Sema &SemaRef, const CompoundStmt *Else,
++                                  const CompoundStmt *ContainingScope) {
++  if (!Else || !ContainingScope)
++    return GuardExitResult::UnsupportedControlFlow;
++  ASTContext &C = SemaRef.Context;
++  llvm::DenseSet<const Stmt *> ElseNodes, ScopeNodes, OuterTransfers;
++  collectNodes(Else, ElseNodes);
++  collectNodes(ContainingScope, ScopeNodes);
++  collectOuterTransfers(Else, 0, 0, OuterTransfers);
++  llvm::DenseMap<const Stmt *, const Stmt *> Handlers;
++  collectNativeHandlers(Else, nullptr, Handlers);
++  llvm::DenseMap<const VarDecl *, const Stmt *> VariableHandlers;
++  for (const auto &Entry : Handlers)
++    if (const auto *Declarations = dyn_cast<DeclStmt>(Entry.first))
++      for (const Decl *Declaration : Declarations->decls())
++        if (const auto *Variable = dyn_cast<VarDecl>(Declaration))
++          VariableHandlers[Variable] = Entry.second;
++  for (const Stmt *Node : ElseNodes) {
++    if (isa<DeferStmt>(Node))
++      return GuardExitResult::UnsupportedControlFlow;
++    // These runtime entry/cleanup calls are not represented by expressions in
++    // Clang's CFG. A local native handler could resume if such a call throws.
++    if (Handlers.lookup(Node) &&
++        isa<ObjCAutoreleasePoolStmt, ObjCAtSynchronizedStmt>(Node))
++      return GuardExitResult::UnsupportedControlFlow;
++  }
++  SourceLocation Loc = Else->getEndLoc();
++  // A unique return is the forbidden fallthrough sentinel. The synthetic loop
++  // gives external break/continue valid CFG targets; they are recognized below
++  // as real scope exits before traversing those synthetic successors.
++  auto *Marker = ReturnStmt::Create(C, Loc, nullptr, nullptr);
++  Stmt *Sequence[] = {const_cast<CompoundStmt *>(Else), Marker};
++  auto *Body = CompoundStmt::Create(C, Sequence, FPOptionsOverride(), Loc, Loc);
++  auto *True = IntegerLiteral::Create(C, llvm::APInt(32, 1), C.IntTy, Loc);
++  auto *Loop = WhileStmt::Create(C, nullptr, True, Body, Loc, Loc, Loc);
++  CFG::BuildOptions Options;
++  Options.AddEHEdges = true;
++  Options.AddImplicitDtors = true;
++  Options.AddTemporaryDtors = true;
++  Options.setAllAlwaysAdd();
++  std::unique_ptr<CFG> Graph = CFG::buildCFG(nullptr, Loop, &C, Options);
++  if (!Graph)
++    return GuardExitResult::UnsupportedControlFlow;
++  llvm::DenseMap<const Stmt *, const CFGBlock *> Dispatches;
++  for (const CFGBlock *Block : *Graph)
++    if (const Stmt *Terminator = Block->getTerminatorStmt())
++      if (isa<CXXTryStmt, ObjCAtTryStmt>(Terminator))
++        Dispatches[Terminator] = Block;
++  llvm::SmallVector<const CFGBlock *, 16> Pending{&Graph->getEntry()};
++  llvm::DenseSet<const CFGBlock *> Visited;
++  llvm::DenseSet<const CFGBlock *> Terminals;
++  llvm::DenseMap<const CFGBlock *, llvm::SmallVector<const CFGBlock *, 2>>
++      Predecessors;
++  while (!Pending.empty()) {
++    const CFGBlock *Block = Pending.pop_back_val();
++    if (!Visited.insert(Block).second)
++      continue;
++    for (const CFGElement &Element : *Block) {
++      const Stmt *Handler = nullptr;
++      if (auto Statement = Element.getAs<CFGStmt>()) {
++        const Stmt *Node = Statement->getStmt();
++        if (Node == Marker)
++          return GuardExitResult::MayFallThrough;
++        if (const Stmt *Candidate = Handlers.lookup(Node)) {
++          bool CanThrow = SemaRef.canThrow(Node) != CT_Cannot;
++          // An outward goto has no target block in this synthetic CFG, so its
++          // backpatch cannot materialize all variable cleanups. Account for
++          // cleanup attributes at their declaration, as Sema already does for
++          // C++ destructors, without depending on that backpatch.
++          if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
++            for (const Decl *Declaration : Declarations->decls())
++              if (const auto *Variable = dyn_cast<VarDecl>(Declaration))
++                if (const auto *Cleanup = Variable->getAttr<CleanupAttr>())
++                  CanThrow |= mayThrowNative(Cleanup->getFunctionDecl());
++          if (CanThrow)
++            Handler = Candidate;
++        }
++      } else if (auto Dtor = Element.getAs<CFGImplicitDtor>()) {
++        if (mayThrowNative(Dtor->getDestructorDecl(C))) {
++          if (auto Automatic = Element.getAs<CFGAutomaticObjDtor>())
++            Handler = VariableHandlers.lookup(Automatic->getVarDecl());
++          else if (auto Temporary = Element.getAs<CFGTemporaryDtor>())
++            Handler = Handlers.lookup(Temporary->getBindTemporaryExpr());
++          else if (auto Delete = Element.getAs<CFGDeleteDtor>())
++            Handler = Handlers.lookup(Delete->getDeleteExpr());
++        }
++      } else if (auto Cleanup = Element.getAs<CFGCleanupFunction>()) {
++        if (mayThrowNative(Cleanup->getFunctionDecl()))
++          Handler = VariableHandlers.lookup(Cleanup->getVarDecl());
++      }
++      // Ordinary CFGs omit several native EH edges. Restore expression and
++      // cleanup catches here, before accepting an outward break/goto in this
++      // block. Query only reachable nodes; checked dispatch stays independent.
++      if (Handler) {
++        const CFGBlock *Destination = Dispatches.lookup(Handler);
++        if (!Destination)
++          return GuardExitResult::UnsupportedControlFlow;
++        Pending.push_back(Destination);
++        Predecessors[Destination].push_back(Block);
++      }
++    }
++    const Stmt *Terminator = Block->getTerminatorStmt();
++    if (OuterTransfers.contains(Terminator)) {
++      Terminals.insert(Block);
++      continue;
++    }
++    if (const auto *Goto = dyn_cast_or_null<GotoStmt>(Terminator)) {
++      const LabelStmt *Target = Goto->getLabel()->getStmt();
++      if (!Target)
++        return GuardExitResult::InvalidTransfer;
++      if (!ElseNodes.contains(Target)) {
++        if (ScopeNodes.contains(Target))
++          return GuardExitResult::InvalidTransfer;
++        Terminals.insert(Block);
++        continue;
++      }
++    }
++    if (isa_and_nonnull<IndirectGotoStmt>(Terminator))
++      return GuardExitResult::InvalidTransfer;
++    if (Block == &Graph->getExit()) {
++      Terminals.insert(Block);
++      continue;
++    }
++    for (const auto &Edge : Block->succs())
++      if (const CFGBlock *Next = Edge.getReachableBlock()) {
++        Pending.push_back(Next);
++        Predecessors[Next].push_back(Block);
++      }
++  }
++  // Every reachable region needs a scope-exit witness. In particular, a
++  // closed local loop is not made conforming by a return on another branch.
++  // Loops with a continuation are analyzed by that continuation, without
++  // claiming a general proof of loop termination.
++  Pending.assign(Terminals.begin(), Terminals.end());
++  llvm::DenseSet<const CFGBlock *> CanReachExit;
++  while (!Pending.empty()) {
++    const CFGBlock *Block = Pending.pop_back_val();
++    if (!CanReachExit.insert(Block).second)
++      continue;
++    for (const CFGBlock *Previous : Predecessors[Block])
++      Pending.push_back(Previous);
++  }
++  for (const CFGBlock *Block : Visited)
++    if (!CanReachExit.contains(Block))
++      return GuardExitResult::NoScopeExit;
++  return GuardExitResult::Proven;
++}
+diff --git a/clang/unittests/AST/ObjC3GuardExitTest.cpp b/clang/unittests/AST/ObjC3GuardExitTest.cpp
+new file mode 100644
+index 000000000..c03a755bd
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3GuardExitTest.cpp
+@@ -0,0 +1,125 @@
++//===--- ObjC3GuardExitTest.cpp - Native guard exit-proof tests -----------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/Sema/ObjC3GuardExit.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++using namespace clang;
++namespace {
++const IfStmt *findGuard(const Stmt *S, const CompoundStmt *Current,
++                        const CompoundStmt *&Parent) {
++  if (!S || isa<LambdaExpr, BlockExpr>(S))
++    return nullptr;
++  if (const auto *Compound = dyn_cast<CompoundStmt>(S))
++    Current = Compound;
++  if (const auto *If = dyn_cast<IfStmt>(S))
++    if (If->getElse()) {
++      Parent = Current;
++      return If;
++    }
++  for (const Stmt *Child : S->children())
++    if (auto *Found = findGuard(Child, Current, Parent))
++      return Found;
++  return nullptr;
++}
++} // namespace
++TEST(ObjC3GuardExit, ProvesScopeTransfersAndRejectsLocalFallthrough) {
++  const char *Code = R"cpp(
++extern bool condition;
++@protocol Error @end
++extern id<Error> error;
++[[noreturn]] void stop();
++void pass_return() { if (condition) {} else { return; } }
++void pass_branches() { if (condition) {} else { if (condition) return; else return; } }
++void pass_throw() { if (condition) {} else { throw 1; } }
++void pass_noreturn() { if (condition) {} else { stop(); } }
++void pass_break() { while(condition) { if(condition) {} else { break; } } }
++void pass_continue() { while(condition) { if(condition) {} else { continue; } } }
++void pass_outward_goto() { { if(condition) {} else { goto out; } } out:; }
++void pass_internal_goto() { if(condition) {} else { goto out; out: return; } }
++void pass_loop_then_return() { if(condition) {} else { for(int i=0;i<3;++i) {} return; } }
++void pass_objc_throw() { if(condition) {} else { @throw error; } }
++void pass_objc_pool() { if(condition) {} else { @autoreleasepool { return; } } }
++void pass_checked_throw() throws(id<Error>) { if(condition) {} else { throwError(error); } }
++void fail_objc_caught_throw() { if(condition) {} else { @try { @throw error; } @catch(id ignored) {} } }
++void fail_checked_caught_throw() { if(condition) {} else { handle { throwError(error); } catch(id<Error> ignored) {} } }
++int throwing_value(void) throws(id<Error>);
++[[noreturn]] int throwing_stop(void) throws(id<Error>);
++void pass_checked_handler_returns() { if(condition) {} else { handle { throwError(error); } catch(id<Error> ignored) { return; } } }
++void pass_checked_ignores_native_catch() throws(id<Error>) { if(condition) {} else { try { throwError(error); } catch(...) {} } }
++void pass_native_ignores_checked_catch() { if(condition) {} else { handle { @throw error; } catch(id<Error> ignored) {} } }
++void pass_try_then_return() throws(id<Error>) { if(condition) {} else { (void)tryValue(throwing_value()); return; } }
++void pass_force_then_return() { if(condition) {} else { (void)tryForce(throwing_value()); return; } }
++void fail_try_success_path() throws(id<Error>) { if(condition) {} else { (void)tryValue(throwing_value()); } }
++void fail_optional_swallow() { if(condition) {} else { (void)tryOptional(throwing_value()); } }
++void fail_noreturn_checked_caught() { if(condition) {} else { handle { (void)tryValue(throwing_stop()); } catch(id<Error> ignored) {} } }
++void fail_nested_checked_rethrow() { if(condition) {} else { handle { handle { throwError(error); } catch(id<Error> ignored) { throwError(error); } } catch(id<Error> ignored) {} } }
++void fail_optional_still_native_throws() { if(condition) {} else { try { (void)tryOptional(throwing_value()); return; } catch(...) {} } }
++struct ThrowingCleanup { ~ThrowingCleanup() noexcept(false); };
++struct ThrowingNoReturnCleanup { [[noreturn]] ~ThrowingNoReturnCleanup() noexcept(false); };
++void fail_return_cleanup_caught() { if(condition) {} else { try { ThrowingCleanup value; return; } catch(...) {} } }
++void fail_noreturn_cleanup_caught() { if(condition) {} else { try { ThrowingNoReturnCleanup value; } catch(...) {} } }
++void fail_temporary_cleanup_caught() { if(condition) {} else { try { (void)ThrowingCleanup{}; return; } catch(...) {} } }
++void fail_noreturn_temporary_caught() { if(condition) {} else { try { (void)ThrowingNoReturnCleanup{}; } catch(...) {} } }
++void fail_closed_loop_other_return() { if(condition) {} else { if(condition) return; else while(true) {} } }
++void fail_closed_goto_other_return() { if(condition) {} else { if(condition) return; out: goto out; } }
++void native_cleanup(int *);
++void fail_attribute_cleanup_caught() { if(condition) {} else { try { int value __attribute__((cleanup(native_cleanup))) = 0; return; } catch(...) {} } }
++void fail_unmodeled_defer() { if(condition) {} else { defer { (void)condition; } return; } }
++struct Constructor { Constructor(); ~Constructor() noexcept; };
++struct Polymorphic { virtual ~Polymorphic(); };
++struct Derived : Polymorphic {};
++__attribute__((objc_root_class)) @interface Receiver
++- (void)message;
++@end
++void fail_constructor_caught() { if(condition) {} else { try { Constructor value; return; } catch(...) {} } }
++void fail_allocator_caught() { if(condition) {} else { try { (void)new int; return; } catch(...) {} } }
++void fail_reference_cast_caught(Polymorphic &base) { if(condition) {} else { try { (void)dynamic_cast<Derived &>(base); return; } catch(...) {} } }
++void fail_message_caught(Receiver *receiver) { if(condition) {} else { @try { [receiver message]; return; } @catch(...) {} } }
++void fail_pool_cleanup_caught() { if(condition) {} else { @try { @autoreleasepool { return; } } @catch(...) {} } }
++void fail_break_constructor_caught() { while(condition) { if(condition) {} else { try { Constructor value; break; } catch(...) {} } } }
++void fail_goto_constructor_caught() { { if(condition) {} else { try { Constructor value; goto out; } catch(...) {} } } out:; }
++void fail_caught_noreturn() { if(condition) {} else { try { stop(); } catch(...) {} } }
++void pass_constructor_handler_returns() { if(condition) {} else { try { Constructor value; return; } catch(...) { return; } } }
++void pass_destructor_handler_returns() { if(condition) {} else { try { ThrowingCleanup value; return; } catch(...) { return; } } }
++void fail_goto_cleanup_caught() { { if(condition) {} else { try { int value __attribute__((cleanup(native_cleanup))) = 0; goto out; } catch(...) {} } } out:; }
++void fail_empty() { if(condition) {} else {} }
++void fail_one_branch() { if(condition) {} else { if(condition) return; } }
++void fail_same_scope_goto() { if(condition) {} else { goto out; } out:; }
++void fail_internal_goto() { if(condition) {} else { goto out; out:; } }
++void fail_nested_break() { if(condition) {} else { while(condition) { break; } } }
++void fail_switch_break() { if(condition) {} else { switch(0) { default: break; } } }
++void fail_caught_throw() { if(condition) {} else { try { throw 1; } catch(int) {} } }
++void fail_lambda_return() { if(condition) {} else { auto f=[] { return; }; f(); } }
++void fail_conditional_stop() { if(condition) {} else { if(condition) stop(); } }
++void fail_local_infinite_loop() { if(condition) {} else { while(true) {} } }
++)cpp";
++
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      Code,
++      {"-std=c++20", "-x", "objective-c++", "-fobjc-version=3",
++       "-fobjc-runtime=gnustep-2.2", "-fobjc-exceptions", "-fexceptions",
++       "-fblocks"},
++      "guard-proof.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    const CompoundStmt *Parent = nullptr;
++    auto *Guard = findGuard(Function->getBody(), nullptr, Parent);
++    ASSERT_TRUE(Guard);
++    ASSERT_TRUE(Parent);
++    bool Actual = objc3::proveGuardScopeExit(
++                      AST->getSema(), cast<CompoundStmt>(Guard->getElse()),
++                      Parent) == objc3::GuardExitResult::Proven;
++    EXPECT_EQ(Function->getName().starts_with("pass_"), Actual);
++    ++Cases;
++  }
++  EXPECT_EQ(53u, Cases);
++}
