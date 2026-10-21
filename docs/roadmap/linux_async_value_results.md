@@ -11,7 +11,9 @@ operation without calling `await_resume`. No default value, record constructor,
 copy or destructor runs for an absent result. Records with a deleted default
 constructor use their ordinary native copy/move and destruction rules on
 success. Task completion and copied task handles retain the existing copyable
-value contract; this does not add move-only task completions.
+value contract; this does not add move-only task completions. Cross-mode
+aggregate signatures must agree on native C++ ownership and special-member
+semantics; direct object-pointer normalization does not rewrite aggregate fields.
 
 The compiler serializes the reserved awaiter preflight alongside the ordinary
 resume expression. The checked operation owns its awaiter and argument
@@ -45,5 +47,23 @@ Pure Objective-C async lowering, Objective-C async methods and Blocks, compiler
 actor isolation and the public async/await capability remain separate compiler
 milestones. Native AArch64 support requires qualification on a real native host.
 
-Qualification is in progress; this document does not yet declare a qualified
-ABI 17 archive.
+The [installed SDK acceptance receipt](../support/linux_async_value_results_acceptance.json)
+binds this contract to the exact compiler, runtime, source inputs and sealed
+ABI 17 archive. It records 211 compiler tests, 57 AST tests, 318 current tooling
+tests, 24 frontend tests, eight GNU runtime tests, 37 installed driver/embedding
+checks and all 22 installed package gates.
+
+Sixteen C++20/23, O0/O2 configurations cover every ARC/MRC provider-consumer
+pair. Eight LLDB cases inspect resumed record and string values in addition to
+the scalar, owned-result, checked-handler and member frames. Real PCH consumers
+exercise inline checked record relays, over-alignment, copied handles, checked
+failure before result construction, optional lifetimes, native exception boundaries and
+cancellation. Source-free packages execute 24 times in eight configurations.
+
+The same archive passes 74 instrumented configurations and 356 commands, four
+C++/extension-ABI checks and six post-hop debugger cases. Fresh Debian 13 and
+Ubuntu 26.04 consumers run as ordinary users under the explicit
+`task-destinations` scope; all 22 package gates run on the publication host.
+Sanitizers instrument services and clients; GNU libobjc is loaded as shipped.
+The [latency report](../support/linux_async_value_results_latency.json) records
+five quiet repetitions against the existing release budgets.
