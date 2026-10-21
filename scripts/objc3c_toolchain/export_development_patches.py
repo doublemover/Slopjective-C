@@ -226,6 +226,22 @@ def git(*arguments: str) -> bytes:
     return subprocess.check_output(["git", "-C", str(SOURCE), *arguments])
 
 
+def stable_packet(current: bytes, previous: bytes) -> bytes:
+    """Keep packet identity independent of intent-to-add and existing ordering."""
+    def sections(data: bytes) -> dict[bytes, bytes]:
+        return {part.split(b"\n", 1)[0].split(b" b/", 1)[1]: b"diff --git " + part
+                for part in data.split(b"diff --git ")[1:]}
+    old, new = sections(previous), sections(current)
+    for path, section in new.items():
+        # Older packets contain both forms of Git's optional new-file index
+        # metadata. Preserve that choice to avoid changing unrelated identities.
+        if path in old and b"\nnew file mode " in section and b"\nindex " not in old[path]:
+            new[path] = b"".join(line for line in section.splitlines(keepends=True)
+                                  if not line.startswith(b"index "))
+    order = [path for path in old if path in new] + sorted(new.keys() - old.keys())
+    return b"".join(new[path] for path in order)
+
+
 def export() -> None:
     expected_table, _ = generated(json.loads(AUTHORITY.read_text(encoding="utf-8")))
     native_table = SOURCE / "clang/include/clang/Basic/ObjC3Features.def"
@@ -249,7 +265,7 @@ def export() -> None:
             raise RuntimeError(f"Source path requires exactly one patch owner: {relative}: {owners}")
     records = []
     for name, paths in PACKETS.items():
-        patch = git("diff", "--binary", "--no-ext-diff", "HEAD", "--", *paths)
+        patch = git("diff", "--binary", "--abbrev=9", "--no-ext-diff", "HEAD", "--", *paths)
         for relative in sorted(untracked_paths):
             if not any(relative == p or relative.startswith(p + "/") for p in paths):
                 continue
@@ -259,11 +275,13 @@ def export() -> None:
             lines = data.splitlines(keepends=True)
             header = (
                 f"diff --git a/{relative} b/{relative}\n"
-                "new file mode 100644\n"
-                "--- /dev/null\n"
-                f"+++ b/{relative}\n"
-                f"@@ -0,0 +1,{len(lines)} @@\n"
+                f"new file mode {'100755' if (SOURCE / relative).stat().st_mode & 0o111 else '100644'}\n"
+                f"index 000000000..{git('hash-object', '--', relative).decode().strip()[:9]}\n"
             ).encode()
+            if lines:
+                count = '' if len(lines) == 1 else f',{len(lines)}'
+                header += (f"--- /dev/null\n+++ b/{relative}\n"
+                           f"@@ -0,0 +1{count} @@\n").encode()
             patch += header
             for line in lines:
                 patch += b"+" + line
@@ -271,7 +289,9 @@ def export() -> None:
                     patch += b"\n\\ No newline at end of file\n"
         if not patch:
             raise RuntimeError(f"Refusing empty patch packet: {name}")
-        (STACK / name).write_bytes(patch)
+        packet = STACK / name
+        patch = stable_packet(patch, packet.read_bytes() if packet.exists() else b"")
+        packet.write_bytes(patch)
         records.append({"file": name, "sha256": hashlib.sha256(patch).hexdigest()})
     (STACK / "series").write_text("\n".join(PACKETS) + "\n", encoding="utf-8")
     manifest["patches"] = records

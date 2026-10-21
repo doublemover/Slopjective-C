@@ -39,6 +39,14 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
             run(f'carrier-transfer-compile-{optimize}', [compiler, 'carrier-transfer.mm',
                 '-std=c++20', '-fexceptions', '-fobjc-arc-exceptions', f'-{optimize}', '-g', '-o', transfer])
             run(f'carrier-transfer-run-{optimize}', [transfer])
+            for language in ('objective-c', 'objective-c++'):
+                assignment = client / ('carrier-assignment-' + language + '-' + optimize)
+                flags = ['-std=c++20'] if language.endswith('++') else ['-std=c17']
+                mode = ['-x' + language] if optimize == 'O2' else ['-x', language]
+                run(f'carrier-assignment-compile-{language}-{optimize}',
+                    [compiler, *mode, 'carrier-assignment.m', *flags,
+                     '-fexceptions', '-fobjc-arc-exceptions', f'-{optimize}', '-g', '-o', assignment])
+                run(f'carrier-assignment-run-{language}-{optimize}', [assignment])
         (client / 'arguments.rsp').write_text('main.objc3 -O2 -o "response app"')
         run('response-file', [compiler, '@arguments.rsp'])
         run('run-response', [client / 'response app'])
@@ -51,6 +59,9 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('embedding-run', [client / 'build/embedding', prefix])
         run('dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'application-O0'])
         run('carrier-transfer-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'carrier-transfer-O0'])
+        for language in ('objective-c', 'objective-c++'):
+            run(f'carrier-assignment-dwarf-{language}',
+                [prefix / 'bin/llvm-dwarfdump', '--verify', client / ('carrier-assignment-' + language + '-O0')])
         run('debugger', [prefix / 'bin/lldb', '--batch', '-o', 'settings set target.disable-aslr false',
                         '-o', 'breakpoint set --name main', '-o', 'run',
                         '-o', 'frame variable cleanup_order', '-o', 'expression -- cleanup_order + 42',

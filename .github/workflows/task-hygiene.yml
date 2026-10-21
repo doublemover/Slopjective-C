@@ -28,6 +28,7 @@ jobs:
           tests/tooling/test_toolchain_host_tools.py
           tests/tooling/test_toolchain_build.py
           tests/tooling/test_objc3c_toolchain_prepare.py
+          tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
           tests/tooling/test_linux_sdk_reuse.py

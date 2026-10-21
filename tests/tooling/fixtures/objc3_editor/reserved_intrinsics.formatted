@@ -65,3 +65,11 @@ void managed_transfer_probe(id input) {
   (void)__objc3_has_value(moved);
 }
 #endif
+
+void managed_assignment_probe(id input) {
+  __objc3_optional(id) original = __objc3_some(id, input);
+  __objc3_optional(id) implicit = original;
+  implicit = __objc3_none(id);
+  implicit = original;
+  (void)__objc3_has_value(implicit);
+}

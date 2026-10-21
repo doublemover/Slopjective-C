@@ -74,6 +74,14 @@ for optimization in O0 O2; do
   objc3c carrier-transfer.mm -std=c++20 -fexceptions -fobjc-arc-exceptions \
     -"$optimization" -g -o carrier-transfer
   env -u LD_LIBRARY_PATH ./carrier-transfer
+  for language in objective-c objective-c++; do
+    if [ "$language" = objective-c++ ]; then standard=c++20; else standard=c17; fi
+    objc3c -x "$language" carrier-assignment.m -std="$standard" \
+      -fexceptions -fobjc-arc-exceptions -"$optimization" -g -o carrier-assignment
+    env -u LD_LIBRARY_PATH ./carrier-assignment
+    "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-assignment
+    printf 'Installed ARC assignment (%s, %s): PASS\n' "$language" "$optimization"
+  done
 done
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-transfer
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \

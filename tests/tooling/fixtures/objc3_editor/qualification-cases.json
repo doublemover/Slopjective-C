@@ -44,6 +44,15 @@
       "declaration_name": "object",
       "hover_type": "__objc3_optional",
       "completion_name": "object"
+    },
+    {
+      "name": "managed_implicit_copy_assignment",
+      "use_line": "(void)__objc3_has_value(implicit);",
+      "use_name": "implicit",
+      "declaration_line": "__objc3_optional(id) implicit = original;",
+      "declaration_name": "implicit",
+      "hover_type": "__objc3_optional",
+      "completion_name": "implicit"
     }
   ],
   "cases": [

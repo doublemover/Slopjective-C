@@ -170,10 +170,19 @@ and unsafe object payloads and strong Block payloads. Copies preserve their
 source; mutable strong and weak moves clear its payload while preserving the
 carrier tag. Moving a const strong payload copies it. Inactive arms are never
 read, and native ARC cleanup applies on normal exits and exception unwinding.
-Implicit managed copies, assignment, by-value returns, nested managed carriers
-and managed MRC transfers remain outside this bounded contract. The installed
+Objective-C and Objective-C++ ARC locals also support implicit copies and
+assignment of these direct carriers. Assignment preserves the selected RHS
+before evaluating the destination and releasing its old active payload, so
+self-assignment, overlapping aliases and Result arm changes are safe. Copies
+preserve the source, including const sources. Objective-C++ assignment returns
+the destination lvalue and cleans up its snapshot if evaluating that destination
+throws. Volatile carriers, by-value returns, nested managed carriers and managed
+MRC transfers remain outside this bounded contract. The installed
 `share/objc3c/examples/native/carrier-transfer.mm` witness exercises these
 rules together with typed-error optionalization and `defer` at O0 and O2.
+`share/objc3c/examples/native/carrier-assignment.m` qualifies implicit copying,
+replacement, weak zeroing, Blocks, sequencing and native exceptions in both
+Objective-C and Objective-C++ at O0 and O2.
 
 Public Optional/Result and synchronous throws syntax, managed payload
 generalization, async/await and actors still require further implementation and qualification. Private native
@@ -201,7 +210,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_sdk_release_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_arc_assignment_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

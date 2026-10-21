@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_sdk_release_acceptance.json) identifies its
+[acceptance receipt](../support/linux_arc_assignment_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -15,9 +15,14 @@ Explicit local ARC copy/move construction is now qualified for direct strong,
 weak and unsafe object leaves and strong Blocks, including const copies, weak
 zeroing, typed-error optionalization and native unwinding. Source tags survive
 moves; mutable strong/weak payloads are cleared by native ARC initialization.
-Implicit managed copies, assignment, by-value returns and nested storage remain
-separate implementation work. The installed ownership witness and live clangd
-probe cover the supported Objective-C++ construction contract.
+Implicit direct-carrier copies and assignment now extend that ownership contract
+to Objective-C and Objective-C++. Assignment snapshots the selected RHS before
+evaluating the LHS or releasing old storage, preserves source values under
+copying, and returns the actual destination lvalue in Objective-C++. Installed
+O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
+zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
+Live clangd probes cover both languages. By-value returns and nested storage
+remain separate implementation work.
 Managed MRC `try?`, weak/unsafe Block carriers and nested managed carriers still
 need explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
@@ -28,6 +33,24 @@ members and Objective-C messages; ARC/MRC cleanup and native unwinding; installe
 semantic interface identity; and live Linux editor behavior. Extend the installed
 imports/managed-values/errors/cleanup sample as the public syntax becomes ready.
 Private migration intrinsics do not justify a public feature claim.
+
+The next implementation sequence is:
+
+1. Define managed parameter and return ownership together with the physical
+   callable ABI. Qualify caller/callee cleanup, consumed and borrowed values,
+   retained/autoreleased results and typed-error success/error paths across
+   functions, callbacks, Blocks, C++ members and Objective-C messages. Reject
+   unsupported conventions before emitting a call.
+2. Extend active-arm lifetime operations through nested carriers, arrays and
+   enclosing records. Cover partial initialization, assignment, destruction and
+   exceptions before admitting those storage forms to the callable ABI.
+3. Finish the bounded public Optional/Result and synchronous throws contract,
+   including ownership and module interface identity. Add public syntax and
+   promote its feature predicates only after that complete contract passes the
+   installed Linux suite.
+4. Publish immutable packages from the qualified interface and object inventory,
+   with explicit ownership projections and consumer verification. Keep registry
+   transport separate from content identity and installation correctness.
 
 ## Installed module foundation and structured concurrency
 
