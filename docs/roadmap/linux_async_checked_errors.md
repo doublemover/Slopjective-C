@@ -77,3 +77,24 @@ semantic interface and package. Promise layout changes for every task result
 type. The task service remains ABI 3; reserved object-error bridge symbols ship
 in a separate archive member so ordinary C++ task programs retain their existing
 link dependencies. ARC and MRC providers use the same owned error representation.
+
+The [installed SDK acceptance receipt](../support/linux_async_checked_errors_acceptance.json)
+binds this contract to its exact compiler, runtime, source inputs and archive.
+It records 206 compiler tests, 57 AST tests, 318 current tooling tests, all 22
+installed package gates and 74 instrumented configurations. Native execution
+covers sixteen C++20/23, O0/O2 and ARC/MRC provider/consumer configurations,
+including checked object, Block and void results, copied error handles, native
+exception boundaries, cancellation, deferred cleanup and 64 cross-worker actor
+error paths. Eight LLDB configurations inspect resumed scalar, owned-result and
+checked-handler frames. Source-free package consumers retain combined async and
+typed-error identity after provider source removal and relocation.
+
+The receipt also verifies a standalone C++ task link without libobjc and explicit
+rejection of extension ABI 15 by the installed task header. Fresh Debian 13 and
+Ubuntu 26.04 consumers run as ordinary users under the explicit
+`task-destinations` scope: archive integrity, relocation, compiler/ownership,
+debugger/embedding, structured runtime, coroutine and source-free async package
+checks. The full 22 package gates run during SDK publication. Sanitizers
+instrument runtime services and clients; GNU libobjc is loaded as shipped.
+The [latency report](../support/linux_async_checked_errors_latency.json) records
+five quiet repetitions against the existing release budgets.
