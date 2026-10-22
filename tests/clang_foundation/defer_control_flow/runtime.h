@@ -254,7 +254,101 @@ template<int Value> static int resource_template_take(void) {
   return take(value);
 }
 #endif
+// Plain cleanup is unconditional and preserves the callback's final mutation.
+static int cleanup_zero_calls;
+static void cleanup_zero(int value) {
+  if(value != 0)bad=70;
+  ++cleanup_zero_calls;
+}
+static void cleanup_value_actions(bool fail) {
+  @cleanup(close_resource) int older = 1;
+  defer { second(); }
+  @cleanup(close_resource_status) int newer = 0;
+  newer = 3;
+  if(fail)@throw token;
+}
+static void cleanup_unconditional(void) {
+  @cleanup(cleanup_zero) int value = 0;
+}
+static void cleanup_address_final(void) {
+  defer { if(*resource_observed != 9)bad=71; second(); }
+  @cleanup(close_resource_address) int value = 3;
+  resource_observed = &value;
+}
+static void cleanup_initialization(bool fail) {
+  @cleanup(close_resource) int older = 1;
+  @cleanup(close_resource) int newer = resource_acquire(fail);
+}
+static void cleanup_checked(void) {
+  handle {
+    @cleanup(close_resource) int value = 1;
+    throwError(token);
+  } catch(id<Error> error) { if(error != token)bad=72; second(); }
+}
+static void cleanup_throwing_callback(void) {
+  @cleanup(close_resource) int older = 1;
+  @cleanup(close_resource_throwing) int newer = 3;
+}
+static void cleanup_byref(bool keep) {
+  __block @cleanup(close_resource_address) int value = 3;
+#if __has_feature(objc_arc)
+  resource_block=^{ return value; };
+#else
+  resource_block=(__typeof__(resource_block))_Block_copy((const void *)^{ return value; });
+#endif
+  value=4;
+  if(!keep) {
+#if !__has_feature(objc_arc)
+    _Block_release((const void *)resource_block);
+#endif
+    resource_block=(id)0;
+  }
+}
+#ifdef __cplusplus
+struct CleanupUncopyable {
+  CleanupUncopyable() = default;
+  CleanupUncopyable(const CleanupUncopyable &) = delete;
+  ~CleanupUncopyable() { second(); }
+};
+static void cleanup_reference(CleanupUncopyable &) { record(3); }
+static void cleanup_cpp_actions(bool fail) {
+  defer { first(); }
+  @cleanup(cleanup_reference) CleanupUncopyable value;
+  if(fail)throw 42;
+}
+#endif
+static void cleanup_ordering(void) {
+  cleanup_unconditional();
+  if(cleanup_zero_calls != 1)bad=73;
+  cleanup_value_actions(0); expect(321);
+  @try { cleanup_value_actions(1); }
+  @catch(id error) { if(error != token)bad=74; record(4); }
+  expect(3214);
+  cleanup_address_final(); expect(32);
+  cleanup_initialization(0); expect(231);
+  @try { cleanup_initialization(1); }
+  @catch(id error) { if(error != token)bad=75; record(4); }
+  expect(214);
+  cleanup_checked(); expect(12);
+  @try { cleanup_throwing_callback(); }
+  @catch(id error) { if(error != token)bad=76; second(); }
+  expect(312);
+  cleanup_byref(0); expect(4);
+  cleanup_byref(1); expect(4);
+  if(resource_block() != 9)bad=77;
+#if !__has_feature(objc_arc)
+  _Block_release((const void *)resource_block);
+#endif
+  resource_block=(id)0;
+#ifdef __cplusplus
+  cleanup_cpp_actions(0); expect(321);
+  try { cleanup_cpp_actions(1); }
+  catch(int value) { if(value != 42)bad=78; record(4); }
+  expect(3214);
+#endif
+}
 static void resource_ordering(void) {
+  cleanup_ordering();
   resource_take_operation(); expect(23);
   resource_discard_operation(); expect(32);
   resource_reset_operation(); expect(123);
@@ -510,6 +604,11 @@ static void arc_cleanup_attribute(void) {
 static void close_resource_observed(int value) {
   if(!observed)bad=56;
   record(value);
+}
+static void arc_cleanup_value_only(bool fail) {
+  @cleanup(close_resource_observed) int marker = 1;
+  DeferredProbe *value=[DeferredProbe newWithDigit:3]; observe(value);
+  if(fail)@throw token;
 }
 static void arc_resource_only(bool fail) {
   int resource __attribute__((objc_resource(close=close_resource_observed, invalid=0))) = 1;
@@ -828,6 +927,10 @@ static void arc_ordering(void) {
   @try { arc_carrier_array(1); } @catch(id error) { if(error != token)bad=33; second(); }
   expect(132);
   arc_cleanup_attribute(); expect(213);
+  arc_cleanup_value_only(0); expect(13);
+  @try { arc_cleanup_value_only(1); }
+  @catch(id error) { if(error != token)bad=79; second(); }
+  expect(132);
   arc_resource_only(0); expect(13);
   @try { arc_resource_only(1); }
   @catch(id error) { if(error != token)bad=57; second(); }

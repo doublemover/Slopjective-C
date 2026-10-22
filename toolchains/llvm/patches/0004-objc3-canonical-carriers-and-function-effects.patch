@@ -1363,7 +1363,7 @@ index a9965a4a8..4ec0b3a0c 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..57f182324 100644
+index 892715a6d..ff8a359a4 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1430,7 +1430,7 @@ index 892715a6d..57f182324 100644
 +  StmtResult ParseObjC3DoCatchStatement();
 +  ExprResult ParseObjC3CarrierTransferExpression();
 +  ExprResult ParseObjC3ResourceExpression();
-+  bool ParseObjC3ResourcePrefix(ParsedAttributes &Attrs);
++  bool ParseObjC3ScopeCleanupPrefix(ParsedAttributes &Attrs);
 +
 +  bool isObjC3GuardStatementAhead();
 +  bool isObjC3IfBindingStatementAhead();
@@ -5309,7 +5309,7 @@ index 000000000..05f2cfb69
 +      SecondType.get(), Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
-index eb50b0e85..7152da492 100644
+index eb50b0e85..f7374088d 100644
 --- a/clang/lib/Parse/ParseObjc.cpp
 +++ b/clang/lib/Parse/ParseObjc.cpp
 @@ -25,6 +25,7 @@
@@ -5320,13 +5320,15 @@ index eb50b0e85..7152da492 100644
  
  using namespace clang;
  
-@@ -45,6 +46,15 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -45,6 +46,17 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
                                ParsedAttributes &DeclSpecAttrs) {
    DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
  
 +  if (getLangOpts().ObjC3 && NextToken().is(tok::identifier) &&
-+      NextToken().getIdentifierInfo()->isStr("resource")) {
-+    if (ParseObjC3ResourcePrefix(DeclAttrs))
++      (NextToken().getIdentifierInfo()->isStr("resource") ||
++       NextToken().getIdentifierInfo()->isStr("cleanup")) &&
++      GetLookAheadToken(2).is(tok::l_paren)) {
++    if (ParseObjC3ScopeCleanupPrefix(DeclAttrs))
 +      return nullptr;
 +    SourceLocation DeclEnd;
 +    return ParseDeclaration(DeclaratorContext::File, DeclEnd, DeclSpecAttrs,
@@ -5336,7 +5338,7 @@ index eb50b0e85..7152da492 100644
    SourceLocation AtLoc = ConsumeToken(); // the "@"
  
    if (Tok.is(tok::code_completion)) {
-@@ -88,7 +98,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -88,7 +100,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
      SingleDecl = ParseObjCPropertyDynamic(AtLoc);
      break;
    case tok::objc_import:
@@ -5346,7 +5348,7 @@ index eb50b0e85..7152da492 100644
        Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
        SingleDecl = ParseModuleImport(AtLoc, IS);
        break;
-@@ -1206,8 +1217,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1206,8 +1219,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      return nullptr;
    }
  
@@ -5370,7 +5372,7 @@ index eb50b0e85..7152da492 100644
      // If attributes exist after the method, parse them.
      MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
                           methodAttrs);
-@@ -1216,7 +1242,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1216,7 +1244,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
          getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
          selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
@@ -5379,7 +5381,7 @@ index eb50b0e85..7152da492 100644
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1306,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1280,6 +1308,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
        return nullptr;
      }
  
@@ -5395,7 +5397,7 @@ index eb50b0e85..7152da492 100644
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
      if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1370,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1335,6 +1372,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      ObjCParamInfo.push_back(Param);
    }
  
@@ -5404,7 +5406,7 @@ index eb50b0e85..7152da492 100644
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1385,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1348,7 +1387,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -5413,7 +5415,7 @@ index eb50b0e85..7152da492 100644
  
    PD.complete(Result);
    return Result;
-@@ -2515,6 +2552,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
+@@ -2515,6 +2554,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -5422,7 +5424,7 @@ index eb50b0e85..7152da492 100644
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2771,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
+@@ -2732,6 +2773,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5436,7 +5438,7 @@ index eb50b0e85..7152da492 100644
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2868,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2822,6 +2870,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5453,7 +5455,7 @@ index eb50b0e85..7152da492 100644
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3034,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2978,10 +3036,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -5717,7 +5719,7 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..dac7a9850 100644
+index b4a9cc120..922e21a77 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
 @@ -14,6 +14,7 @@
@@ -5728,7 +5730,12 @@ index b4a9cc120..dac7a9850 100644
  #include "clang/AST/StmtCXX.h"
  #include "clang/AST/StmtObjC.h"
  #include "clang/AST/StmtOpenACC.h"
-@@ -157,7 +158,16 @@ static ScopePair GetDiagForGotoScopeDecl(Sema &S, const Decl *D) {
+@@ -153,11 +154,20 @@ static ScopePair GetDiagForGotoScopeDecl(Sema &S, const Decl *D) {
+       return ScopePair(diag::note_protected_by___block,
+                        diag::note_exits___block);
+ 
+-    if (VD->hasAttr<CleanupAttr>())
++    if (VD->hasAttr<CleanupAttr>() || VD->hasAttr<ObjCCleanupAttr>())
        return ScopePair(diag::note_protected_by_cleanup,
                         diag::note_exits_cleanup);
  
@@ -6089,7 +6096,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..9dc97127b 100644
+index 6a25a799a..44d406d7b 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,8 @@
@@ -6110,26 +6117,28 @@ index 6a25a799a..9dc97127b 100644
  #include "clang/AST/Randstruct.h"
  #include "clang/AST/StmtCXX.h"
  #include "clang/AST/Type.h"
-@@ -2046,7 +2050,7 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
+@@ -2046,7 +2050,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
      return false;
  
    if (D->hasAttr<UnusedAttr>() || D->hasAttr<ObjCPreciseLifetimeAttr>() ||
 -      D->hasAttr<CleanupAttr>())
-+      D->hasAttr<CleanupAttr>() || D->hasAttr<ObjCResourceAttr>())
++      D->hasAttr<CleanupAttr>() || D->hasAttr<ObjCCleanupAttr>() ||
++      D->hasAttr<ObjCResourceAttr>())
      return false;
  
    if (isa<LabelDecl>(D))
-@@ -2208,7 +2212,8 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
+@@ -2208,7 +2213,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
                                      DiagReceiverTy DiagReceiver) {
    // If it's not referenced, it can't be set. If it has the Cleanup attribute,
    // it's not really unused.
 -  if (!VD->isReferenced() || !VD->getDeclName() || VD->hasAttr<CleanupAttr>())
 +  if (!VD->isReferenced() || !VD->getDeclName() || VD->hasAttr<CleanupAttr>() ||
++      VD->hasAttr<ObjCCleanupAttr>() ||
 +      VD->hasAttr<ObjCResourceAttr>())
      return;
  
    //  In C++, `_` variables behave as if they were maybe_unused
-@@ -4025,6 +4030,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4025,6 +4032,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
      return true;
    }
  
@@ -6156,15 +6165,16 @@ index 6a25a799a..9dc97127b 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -9118,6 +9143,7 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
+@@ -9118,6 +9145,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
  
    bool isVM = T->isVariablyModifiedType();
    if (isVM || NewVD->hasAttr<CleanupAttr>() ||
++      NewVD->hasAttr<ObjCCleanupAttr>() ||
 +      NewVD->hasAttr<ObjCResourceAttr>() ||
        NewVD->hasAttr<BlocksAttr>())
      setFunctionHasBranchProtectedScope();
  
-@@ -10772,6 +10798,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
+@@ -10772,6 +10801,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
              Previous.getResultKind() != LookupResultKind::FoundOverloaded) &&
             "previous declaration set still overloaded");
  
@@ -6175,7 +6185,7 @@ index 6a25a799a..9dc97127b 100644
      // Diagnose no-prototype function declarations with calling conventions that
      // don't support variadic calls. Only do this in C and do it after merging
      // possibly prototyped redeclarations.
-@@ -12615,10 +12645,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12615,10 +12648,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
@@ -6227,7 +6237,7 @@ index 6a25a799a..9dc97127b 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13670,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13673,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -6239,7 +6249,7 @@ index 6a25a799a..9dc97127b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13741,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13744,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -6251,7 +6261,7 @@ index 6a25a799a..9dc97127b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13811,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13814,11 @@ struct DiagNonTrivalCUnionCopyVisitor
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -6263,7 +6273,7 @@ index 6a25a799a..9dc97127b 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15028,67 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15031,67 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -6331,7 +6341,7 @@ index 6a25a799a..9dc97127b 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16857,31 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16860,31 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -6363,7 +6373,7 @@ index 6a25a799a..9dc97127b 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16896,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16899,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -6378,7 +6388,7 @@ index 6a25a799a..9dc97127b 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20392,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20395,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -17653,10 +17663,10 @@ index 000000000..c6e1d3870
 +} // expected-error {{non-void function does not return a value}}
 diff --git a/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp b/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp
 new file mode 100644
-index 000000000..40c6e3471
+index 000000000..2094541d9
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,340 @@
 +//===--- ObjC3CheckedErrorCFGTest.cpp - Checked-error CFG paths -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17950,6 +17960,53 @@ index 000000000..40c6e3471
 +  EXPECT_EQ(0u, OuterDtors);
 +  EXPECT_EQ(1u, Dispatches);
 +}
++
++TEST(ObjC3CheckedErrorCFG, PlainCleanupSharesRegistrationOrderWithDefer) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    void older(int) __attribute__((nothrow));
++    void newer(int *) __attribute__((nothrow));
++    void marker() __attribute__((nothrow));
++    void exercise() {
++      @cleanup(older) int first = 1;
++      defer { marker(); }
++      @cleanup(newer) int last = 2;
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++       "-fobjc-runtime=gnustep-2.2"}, "cleanup-actions.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *FD = nullptr;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *Candidate = dyn_cast<FunctionDecl>(D))
++      if (Candidate->getName() == "exercise") FD = Candidate;
++  ASSERT_TRUE(FD);
++  CFG::BuildOptions Options;
++  Options.AddImplicitDtors = true;
++  Options.setAllAlwaysAdd();
++  auto Graph = CFG::buildCFG(FD, FD->getBody(), &AST->getASTContext(), Options);
++  ASSERT_TRUE(Graph);
++  llvm::SmallVector<std::string, 3> Actions;
++  llvm::DenseSet<const CFGBlock *> Seen;
++  const CFGBlock *Block = &Graph->getEntry();
++  while (Block) {
++    ASSERT_TRUE(Seen.insert(Block).second);
++    for (const CFGElement &Element : *Block) {
++      if (auto Cleanup = Element.getAs<CFGCleanupFunction>())
++        Actions.push_back(Cleanup->getFunctionDecl()->getNameAsString());
++      if (auto Statement = Element.getAs<CFGStmt>())
++        if (const auto *Call = dyn_cast<CallExpr>(Statement->getStmt()))
++          if (const auto *Callee = Call->getDirectCallee())
++            if (Callee->getName() == "marker") Actions.push_back("marker");
++    }
++    if (Block->succ_empty()) break;
++    ASSERT_EQ(1u, Block->succ_size());
++    Block = Block->succ_begin()->getReachableBlock();
++  }
++  ASSERT_EQ(3u, Actions.size());
++  EXPECT_EQ("newer", Actions[0]);
++  EXPECT_EQ("marker", Actions[1]);
++  EXPECT_EQ("older", Actions[2]);
++}
 diff --git a/clang/test/ObjC3/Sema/checked-error-fallthrough.m b/clang/test/ObjC3/Sema/checked-error-fallthrough.m
 new file mode 100644
 index 000000000..98428be33
@@ -18011,10 +18068,10 @@ index 000000000..382497aa1
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3GuardExit.cpp b/clang/lib/Sema/SemaObjC3GuardExit.cpp
 new file mode 100644
-index 000000000..7495fe4ff
+index 000000000..aa24f7061
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3GuardExit.cpp
-@@ -0,0 +1,262 @@
+@@ -0,0 +1,265 @@
 +//===--- SemaObjC3GuardExit.cpp - Native guard exit proof ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -18131,7 +18188,8 @@ index 000000000..7495fe4ff
 +    if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
 +      for (const Decl *Declaration : Declarations->decls())
 +        if (const auto *Variable = dyn_cast<VarDecl>(Declaration))
-+          HasNativeScopeCleanup |= Variable->hasAttr<ObjCResourceAttr>();
++          HasNativeScopeCleanup |= Variable->hasAttr<ObjCResourceAttr>() ||
++                                   Variable->hasAttr<ObjCCleanupAttr>();
 +    // These runtime entry/cleanup calls are not represented by expressions in
 +    // Clang's CFG. A local native handler could resume if such a call throws.
 +    if (Handlers.lookup(Node) &&
@@ -18186,8 +18244,10 @@ index 000000000..7495fe4ff
 +          if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
 +            for (const Decl *Declaration : Declarations->decls())
 +              if (const auto *Variable = dyn_cast<VarDecl>(Declaration)) {
-+                if (const auto *Cleanup = Variable->getAttr<CleanupAttr>())
-+                  CanThrow |= mayThrowNative(Cleanup->getFunctionDecl());
++                if (Variable->hasAttr<CleanupAttr>() ||
++                    Variable->hasAttr<ObjCCleanupAttr>())
++                  CanThrow |= mayThrowNative(
++                      CFGCleanupFunction(Variable).getFunctionDecl());
 +                SmallVector<const CXXDestructorDecl *, 4> Destructors;
 +                CFGObjC3CarrierDtor(Variable, Declarations)
 +                    .getPossibleDestructors(Destructors);
@@ -22580,10 +22640,10 @@ index 000000000..772213cf8
 +}
 diff --git a/clang/include/clang/AST/ObjC3SourceScopes.h b/clang/include/clang/AST/ObjC3SourceScopes.h
 new file mode 100644
-index 000000000..58cd1fcb5
+index 000000000..6b7c89104
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3SourceScopes.h
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,158 @@
 +//===--- ObjC3SourceScopes.h - Scope owners for source actions -----*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -22657,6 +22717,7 @@ index 000000000..58cd1fcb5
 +          if (Variable->hasLocalStorage() && !Variable->isImplicit()) {
 +            Variables[Variable] = Owner;
 +            if (Variable->hasAttr<CleanupAttr>() ||
++                Variable->hasAttr<ObjCCleanupAttr>() ||
 +                Variable->hasAttr<ObjCResourceAttr>())
 +              CleanupScopes.insert(Owner);
 +          }
@@ -24204,10 +24265,10 @@ index fb0b3c150..0ff03bcf5 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..8c951ac4b
+index 000000000..272a4328b
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,411 @@
+@@ -0,0 +1,452 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -24618,6 +24679,47 @@ index 000000000..8c951ac4b
 +  EXPECT_NE(std::string::npos, Printed.find("reset(slot, 2)"));
 +  EXPECT_NE(std::string::npos, Printed.find("take(slot)"));
 +  EXPECT_NE(std::string::npos, Printed.find("discard(slot)"));
++}
++
++TEST(ObjC3ResourceTooling, ImportsCleanupCallbackAndCanonicalHeaderSpelling) {
++  constexpr llvm::StringLiteral Source = R"(
++    void close_value(int) __attribute__((nothrow));
++    void exercise() { @cleanup(close_value) int value = 0; value = 3; }
++  )";
++  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                               "cleanup-import.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", conditionArgs(), "cleanup-target.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"cleanup-import.mm", Source.str()}});
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *FD = findExercise(*From);
++  ASSERT_TRUE(FD);
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(FD);
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  const auto *Body = cast<CompoundStmt>(Function->getBody());
++  const auto *Declaration = cast<DeclStmt>(*Body->body_begin());
++  const auto *Variable = cast<VarDecl>(Declaration->getSingleDecl());
++  const auto *Cleanup = Variable->getAttr<ObjCCleanupAttr>();
++  ASSERT_TRUE(Cleanup);
++  EXPECT_FALSE(Cleanup->getByAddress());
++  const auto *Call = cast<CallExpr>(Cleanup->getCall());
++  ASSERT_TRUE(Call->getDirectCallee());
++  EXPECT_EQ(&To->getASTContext(), &Call->getDirectCallee()->getASTContext());
++  const auto *Operand = cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());
++  EXPECT_TRUE(Operand->isLValue());
++  std::string Printed;
++  llvm::raw_string_ostream OS(Printed);
++  Function->getBody()->printPretty(OS, nullptr,
++                                   To->getASTContext().getPrintingPolicy());
++  EXPECT_NE(std::string::npos, Printed.find("__attribute__((cleanup(close_value)))"));
++  EXPECT_EQ(std::string::npos, Printed.find("objc_cleanup"));
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
 new file mode 100644
@@ -25912,7 +26014,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..130dbe7ff 100644
+index 2c62f46d4..14a0e70a6 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -25925,10 +26027,19 @@ index 2c62f46d4..130dbe7ff 100644
  class DeclArgument<DeclNode kind, string name, bit opt = 0, bit fake = 0>
      : Argument<name, opt, fake> {
    DeclNode Kind = kind;
-@@ -1450,6 +1453,16 @@ def OSConsumesThis : InheritableAttr {
+@@ -1450,6 +1453,25 @@ def OSConsumesThis : InheritableAttr {
    let SimpleHandler = 1;
  }
  
++def ObjCCleanup : InheritableAttr {
++  let Spellings = [GNU<"objc_cleanup">];
++  let Subjects = SubjectList<[LocalVar], ErrorDiag>;
++  let Args = [ExprArgument<"Close">,
++              BoolArgument<"ByAddress", /*opt=*/0, /*fake=*/1>,
++              FakeExprArgument<"Call">];
++  let Documentation = [ObjCCleanupDocs];
++}
++
 +def ObjCResource : InheritableAttr {
 +  let Spellings = [GNU<"objc_resource">];
 +  let Subjects = SubjectList<[LocalVar], ErrorDiag>;
@@ -25942,7 +26053,7 @@ index 2c62f46d4..130dbe7ff 100644
  def Cleanup : InheritableAttr {
    let Spellings = [GCC<"cleanup">];
    let Args = [DeclArgument<Function, "FunctionDecl">];
-@@ -1469,6 +1482,8 @@ public:
+@@ -1469,6 +1491,8 @@ public:
    }];
  }
  
@@ -25952,13 +26063,36 @@ index 2c62f46d4..130dbe7ff 100644
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
 diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
-index 0fe41671c..2774a8f39 100644
+index 0fe41671c..3251f9676 100644
 --- a/clang/include/clang/Basic/AttrDocs.td
 +++ b/clang/include/clang/Basic/AttrDocs.td
-@@ -9502,6 +9502,29 @@ this usage is debugger-dependent.
+@@ -9502,6 +9502,52 @@ this usage is debugger-dependent.
    }];
  }
  
++def ObjCCleanupDocs : Documentation {
++  let Category = DocCatVariable;
++  let Content = [{
++In Objective-C 3.0, ``cleanup(F)`` and the prefix ``@cleanup(F)`` register a
++native scope-exit call after an automatic variable's successful initialization.
++The callback receives the final value, a directly bound reference, or the
++variable's address according to ordinary parameter initialization. An exact
++address parameter takes precedence; otherwise value/reference passing wins
++when both are applicable. Cleanup runs unconditionally, including zero values,
++and does not invalidate the variable. It shares LIFO action order with
++``defer`` and resource cleanup, before deferred managed source-scope releases.
++
++The callback must name a nondependent, synchronous function with one parameter
++and a scalar or void result. Scalar values, direct references, and addresses of
++complete fixed-size objects are supported. Record copying, dependent or variable
++size storage, checked-error callbacks, asynchronous callbacks, and competing
++cleanup owners are diagnosed. Native exception unwinding uses ordinary Clang
++cleanup machinery; profile conformance is not implied by this attribute.
++The native AST stores the checked call in ``ObjCCleanupAttr``; emitted headers
++use the canonical ``cleanup(F)`` spelling.
++  }];
++}
++
 +def ObjCResourceDocs : Documentation {
 +  let Category = DocCatVariable;
 +  let Content = [{
@@ -26104,7 +26238,7 @@ index d5085ca6d..d76f1ee46 100644
    case '[':
      Kind = tok::l_square;
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index 1b272b541..3f02ebd75 100644
+index 1b272b541..a8ae24eca 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
 @@ -43,6 +43,7 @@
@@ -26115,10 +26249,24 @@ index 1b272b541..3f02ebd75 100644
  #include "clang/Sema/SemaAMDGPU.h"
  #include "clang/Sema/SemaARM.h"
  #include "clang/Sema/SemaAVR.h"
-@@ -8114,6 +8115,9 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
+@@ -3839,6 +3840,10 @@ static void handleMinVectorWidthAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+ }
+ 
+ static void handleCleanupAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
++  if (S.getLangOpts().ObjC3) {
++    handleObjC3CleanupAttr(S, D, AL);
++    return;
++  }
+   Expr *E = AL.getArgAsExpr(0);
+   SourceLocation Loc = E->getExprLoc();
+   FunctionDecl *FD = nullptr;
+@@ -8114,6 +8119,12 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
    case ParsedAttr::AT_Sentinel:
      handleSentinelAttr(S, D, AL);
      break;
++  case ParsedAttr::AT_ObjCCleanup:
++    handleObjC3CleanupAttr(S, D, AL);
++    break;
 +  case ParsedAttr::AT_ObjCResource:
 +    handleObjC3ResourceAttr(S, D, AL);
 +    break;
@@ -26306,10 +26454,10 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..846cf037c
+index 000000000..3d3669d09
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,334 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership ---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
@@ -26337,6 +26485,114 @@ index 000000000..846cf037c
 +}
 +} // namespace
 +
++void clang::handleObjC3CleanupAttr(Sema &S, Decl *D,
++                                   const ParsedAttr &Attribute) {
++  auto Reject = [&](SourceLocation Loc, StringRef Message) {
++    S.Diag(Loc, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                    DiagnosticIDs::Error, Message));
++    D->setInvalidDecl();
++  };
++  auto *Variable = dyn_cast<VarDecl>(D);
++  if (!S.getLangOpts().ObjC3 || !Variable || !Variable->isLocalVarDecl() ||
++      !Variable->hasLocalStorage() || Variable->hasGlobalStorage()) {
++    Reject(Attribute.getLoc(),
++           "objc_cleanup requires an automatic local in Objective-C 3.0");
++    return;
++  }
++  if (Variable->hasAttr<ObjCCleanupAttr>() || Variable->hasAttr<CleanupAttr>() ||
++      Variable->hasAttr<ObjCResourceAttr>()) {
++    Reject(Attribute.getLoc(), "a variable may have only one cleanup owner");
++    return;
++  }
++  QualType Type = Variable->getType();
++  if (Type->isDependentType() || Type->isVariablyModifiedType() ||
++      Type->isReferenceType() || Type->isAtomicType() ||
++      Type.getAddressSpace() != LangAS::Default) {
++    Reject(Attribute.getLoc(),
++           "objc_cleanup requires complete nondependent fixed-size storage");
++    return;
++  }
++  if (S.RequireCompleteType(Attribute.getLoc(), Type,
++                            diag::err_typecheck_decl_incomplete_type)) {
++    D->setInvalidDecl();
++    return;
++  }
++  if (Attribute.getNumArgs() != 1 || !Attribute.isArgExpr(0)) {
++    Reject(Attribute.getLoc(), "objc_cleanup requires one cleanup function");
++    return;
++  }
++  Expr *Close = Attribute.getArgAsExpr(0);
++  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
++  auto *Function = Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
++  const auto *Prototype = Function
++      ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  if (!Function || !Prototype || Function->getNumParams() != 1 ||
++      Prototype->isVariadic() || Function->isDependentContext() ||
++      (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      (!Prototype->getReturnType()->isVoidType() &&
++       !Prototype->getReturnType()->isScalarType())) {
++    Reject(Close->getExprLoc(),
++           "objc_cleanup must name a nondependent function with one parameter "
++           "and a scalar or void result");
++    return;
++  }
++  const auto &Effects = Prototype->getObjC3FunctionEffects();
++  if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++    Reject(Close->getExprLoc(),
++           "objc_cleanup callback cannot be async or use checked throws");
++    return;
++  }
++  auto *Value = DeclRefExpr::Create(
++      S.Context, NestedNameSpecifierLoc{}, SourceLocation(), Variable, false,
++      DeclarationNameInfo(Variable->getDeclName(), Variable->getLocation()),
++      Type, VK_LValue);
++  auto *Address = UnaryOperator::Create(
++      S.Context, Value, UO_AddrOf, S.Context.getPointerType(Type), VK_PRValue,
++      OK_Ordinary, Attribute.getLoc(), false, FPOptionsOverride{});
++  QualType ParameterType = Function->getParamDecl(0)->getType();
++  auto Parameter = InitializedEntity::InitializeParameter(
++      S.Context, Function->getParamDecl(0));
++  auto CanPass = [&](Expr *Argument) {
++    if (Argument == Value && !Type->isScalarType() &&
++        !(ParameterType->isReferenceType() &&
++          S.Context.hasSameUnqualifiedType(
++              ParameterType.getNonReferenceType(), Type)))
++      return false; // Do not synthesize record copies or converting temporaries.
++    if (!S.CanPerformCopyInitialization(Parameter, Argument))
++      return false;
++    if (S.getLangOpts().CPlusPlus)
++      return true;
++    ExprResult Converted = Argument;
++    return S.CheckSingleAssignmentConstraints(
++        ParameterType, Converted, false, false, false) ==
++        AssignConvertType::Compatible;
++  };
++  bool ByAddress = S.Context.hasSameUnqualifiedType(ParameterType, Address->getType()) &&
++                   !S.Context.hasSameUnqualifiedType(ParameterType, Type);
++  if (ByAddress ? !CanPass(Address) : !CanPass(Value)) {
++    if (ByAddress || !CanPass(Address)) {
++      Reject(Close->getExprLoc(),
++             "objc_cleanup callback cannot accept the value, a direct "
++             "reference, or its address without record copying");
++      return;
++    }
++    ByAddress = true;
++  }
++  auto *Operand = new (S.Context) OpaqueValueExpr(
++      Attribute.getLoc(), ByAddress ? Address->getType() : Type,
++      ByAddress ? VK_PRValue : VK_LValue);
++  Expr *Arguments[] = {Operand};
++  ExprResult Call = S.BuildCallExpr(nullptr, Close, Close->getExprLoc(),
++                                   Arguments, Close->getEndLoc());
++  if (Call.isInvalid()) {
++    D->setInvalidDecl();
++    return;
++  }
++  Variable->addAttr(ObjCCleanupAttr::Create(
++      S.Context, Close, ByAddress, Call.get(), Attribute.getRange()));
++  Variable->markUsed(S.Context);
++}
++
 +void clang::handleObjC3ResourceAttr(Sema &S, Decl *D,
 +                                    const ParsedAttr &Attribute) {
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) {
@@ -26361,7 +26617,7 @@ index 000000000..846cf037c
 +           "a resource variable may have only one objc_resource attribute");
 +    return;
 +  }
-+  if (Variable->hasAttr<CleanupAttr>()) {
++  if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>()) {
 +    Reject(Attribute.getLoc(),
 +           "objc_resource and cleanup cannot own the same variable");
 +    return;
@@ -26505,6 +26761,13 @@ index 000000000..846cf037c
 +  ObjC3SourceScopes Scopes(Body);
 +  for (auto [Variable, Owner] : Scopes.Variables) {
 +    (void)Owner;
++    if (const auto *Cleanup = Variable->getAttr<ObjCCleanupAttr>())
++      if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCResourceAttr>()) {
++        S.Diag(Cleanup->getLocation(), S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error, "a variable may have only one cleanup owner"));
++        const_cast<VarDecl *>(Variable)->setInvalidDecl();
++        Invalid = true;
++      }
 +    const auto *Resource = Variable->getAttr<ObjCResourceAttr>();
 +    if (!Resource || Variable->isInvalidDecl())
 +      continue;
@@ -26518,7 +26781,7 @@ index 000000000..846cf037c
 +      const_cast<VarDecl *>(Variable)->setInvalidDecl();
 +      Invalid = true;
 +    }
-+    if (Variable->hasAttr<CleanupAttr>()) {
++    if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>()) {
 +      S.Diag(Resource->getLocation(),
 +             S.getDiagnostics().getCustomDiagID(
 +                 DiagnosticsEngine::Error,
@@ -26531,10 +26794,10 @@ index 000000000..846cf037c
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resources.h
 new file mode 100644
-index 000000000..9561d30b6
+index 000000000..2011b61f1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -26544,6 +26807,7 @@ index 000000000..9561d30b6
 +class ParsedAttr;
 +class Sema;
 +class Stmt;
++void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +bool checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body);
 +bool checkObjC3ResourceFlow(Sema &S, Decl *Callable, Stmt *Body);
@@ -26551,10 +26815,10 @@ index 000000000..9561d30b6
 +#endif
 diff --git a/clang/test/ObjC3/AST/Inputs/resource-ownership.h b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
 new file mode 100644
-index 000000000..61ba2fa4d
+index 000000000..19a5c8736
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,38 @@
 +#ifndef OBJC3_RESOURCE_OWNERSHIP_PCH_H
 +#define OBJC3_RESOURCE_OWNERSHIP_PCH_H
 +#ifdef __cplusplus
@@ -26579,6 +26843,13 @@ index 000000000..61ba2fa4d
 +  discard(value);
 +  return result;
 +}
++static inline void cleanup_pch_value(int input) {
++  @cleanup(close_resource) int value = input;
++  value = input + 1;
++}
++static inline void cleanup_pch_address(int input) {
++  int value __attribute__((cleanup(close_resource_address))) = input;
++}
 +#ifdef __cplusplus
 +template<int Value> int resource_template_transfer() {
 +  @resource(close_resource, invalid: -1) int value = Value;
@@ -26588,10 +26859,10 @@ index 000000000..61ba2fa4d
 +#endif
 diff --git a/clang/test/ObjC3/AST/resource-ownership-pch.m b/clang/test/ObjC3/AST/resource-ownership-pch.m
 new file mode 100644
-index 000000000..93bf984c7
+index 000000000..76b07c5d6
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/resource-ownership-pch.m
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/resource-ownership.h
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
@@ -26599,6 +26870,8 @@ index 000000000..93bf984c7
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
 +int resource_consumer(int input) {
++  cleanup_pch_value(input);
++  cleanup_pch_address(input);
 +  resource_pch_address(input);
 +  (void)resource_pch_transfer(input);
 +#ifdef __cplusplus
@@ -26616,6 +26889,9 @@ index 000000000..93bf984c7
 +// PRINT: reset(value, input + 1)
 +// PRINT: take(value)
 +// PRINT: discard(value)
++
++// PRINT: __attribute__((cleanup(close_resource)))
++// PRINT: __attribute__((cleanup(close_resource_address)))
 diff --git a/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm
 new file mode 100644
 index 000000000..362fd7e57
@@ -26960,9 +27236,18 @@ index 000000000..afd780ae7
 +}
 +#endif
 diff --git a/clang/utils/TableGen/ClangAttrEmitter.cpp b/clang/utils/TableGen/ClangAttrEmitter.cpp
-index 5987cb4a0..6356c3435 100644
+index 5987cb4a0..406fc30bb 100644
 --- a/clang/utils/TableGen/ClangAttrEmitter.cpp
 +++ b/clang/utils/TableGen/ClangAttrEmitter.cpp
+@@ -1739,7 +1739,7 @@ writePrettyPrintFunction(const Record &R,
+       llvm_unreachable("Unknown attribute syntax variety!");
+     }
+ 
+-    Spelling += Name;
++    Spelling += R.getName() == "ObjCCleanup" ? "cleanup" : Name;
+ 
+     OS << "  case " << Idx << " : {\n"
+        << "    OS << \"" << Prefix << Spelling << "\";\n";
 @@ -1752,7 +1752,13 @@ writePrettyPrintFunction(const Record &R,
        continue;
      }
@@ -29197,3 +29482,58 @@ index 000000000..6da053850
 +  [self ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
 +}
 +@end
+diff --git a/clang/test/ObjC3/Sema/cleanup-ownership.m b/clang/test/ObjC3/Sema/cleanup-ownership.m
+new file mode 100644
+index 000000000..93c640c2f
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/cleanup-ownership.m
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++void close_value(int);
++void close_address(int *);
++void wrong_address(long *);
++void no_parameters(void);
++@protocol Error @end
++void checked_close(int) throws(id<Error>);
++void async_close(int) async;
++struct Record { int member; };
++void copy_record(struct Record);
++void valid(void) {
++  @cleanup(close_value) const int immutable = 0;
++  @cleanup(close_address) int addressed = 1;
++  int canonical __attribute__((cleanup(close_value))) = 2;
++  canonical = 3;
++}
++@cleanup(close_value) int global = 1; // expected-error {{only applies to local variables}}
++void static_storage(void) {
++  @cleanup(close_value) static int value = 1; // expected-error {{automatic local}}
++}
++void bad_callback(void) {
++  @cleanup(wrong_address) int wrong = 1; // expected-error {{cannot accept the value}}
++  @cleanup(no_parameters) int arity = 1; // expected-error {{must name a nondependent function with one parameter}}
++  @cleanup(checked_close) int checked = 1; // expected-error {{cannot be async or use checked throws}}
++  @cleanup(async_close) int async_value = 1; // expected-error {{cannot be async or use checked throws}}
++  @cleanup(copy_record) struct Record copied = {}; // expected-error {{cannot accept the value}}
++}
++void duplicate_owner(void) {
++  @cleanup(close_value) int value __attribute__((cleanup(close_address))) = 1; // expected-error {{may have only one cleanup owner}}
++}
++void competing_owner(void) {
++  @cleanup(close_value) int value __attribute__((objc_resource(close=close_value, invalid=0))) = 1; // expected-error {{cleanup cannot own the same variable|may have only one cleanup owner}}
++}
++void jump_into_cleanup(void) {
++  goto after; // expected-error {{cannot jump from this goto statement to its label}}
++  @cleanup(close_value) int value = 1; // expected-note {{jump bypasses initialization}}
++after:;
++}
++#ifdef __cplusplus
++template<class T> void dependent_storage(void) {
++  @cleanup(close_value) T value = {}; // expected-error {{requires complete nondependent fixed-size storage}}
++}
++#else
++void variable_storage(int size) {
++  @cleanup(close_address) int values[size]; // expected-error {{requires complete nondependent fixed-size storage}}
++}
++#endif

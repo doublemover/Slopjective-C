@@ -85,12 +85,21 @@ optional access follows Part 3 v1, which deliberately excludes scalar/struct
 optional chaining. Resource cleanup still lacks the complete type-directed and
 borrow/lifetime surface from Part 8.
 
-The next unvalidated implementation batch adds contextual public `take`, `reset`
+The unvalidated implementation batch adds contextual public `take`, `reset`
 and `discard`, prefix `@resource(F, invalid: X)` declarations, resource AST import
 and structural identity, strict proofs for unspecified receivers, and C++ error
 factory thunks that avoid eager copies and construct factories only on failure.
 New parser, PCH, strict-flow, import/index and execution fixtures accompany the
-implementation. Combined validation is deferred until a larger batch is ready.
+implementation. The next chunk implements prefix `@cleanup(F)` and canonical `cleanup(F)`
+headers with checked native value, direct reference and address calls. Cleanup
+is unconditional, reads the final value, preserves callback mutations, and
+shares registration order with defer and resources. Native unwinding, CFG
+cleanup elements, protected jumps, AST import, PCH and deferred ARC source
+release scopes are integrated. Forwarded block storage remains alive until the
+callback returns. Path-sensitive analysis remains explicitly unsupported for
+these native cleanup nodes. New semantic, IR, CFG, import/PCH and runtime
+fixtures are authored; no post-batch compiler build or execution is claimed.
+Combined validation is deferred until a larger batch is ready.
 
 ## Active completion sequence
 

@@ -86,6 +86,7 @@ PACKETS = {
         "clang/utils/TableGen/ClangAttrEmitter.cpp",
         "clang/test/ObjC3/Parser/resource-attribute.m",
         "clang/test/ObjC3/Parser/resource-operations.m",
+        "clang/test/ObjC3/Sema/cleanup-ownership.m",
         "clang/test/ObjC3/Sema/guard-unspecified-receivers.m",
         "clang/test/ObjC3/Parser/optional-coalescing.mm",
         "clang/test/ObjC3/Parser/optional-coalescing-pch.mm",
@@ -276,6 +277,9 @@ PACKETS = {
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
         "clang/test/ObjC3/Analysis/optional-access-unsupported.m",
+        "clang/test/ObjC3/Analysis/cleanup-unsupported.m",
+        "clang/test/ObjC3/CodeGen/cleanup-ownership.m",
+        "clang/lib/Analysis/CalledOnceCheck.cpp",
         "clang/lib/CodeGen/CGObjC3ResourceOperations.cpp",
         "clang/lib/CodeGen/CGObjC3OptionalAccess.h",
         "clang/lib/CodeGen/CGObjC3OptionalAccess.cpp",

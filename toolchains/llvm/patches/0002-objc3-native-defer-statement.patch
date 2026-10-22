@@ -471,10 +471,10 @@ index 9a97d52fd..dfe345f2f 100644
    PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
-index 000000000..e1e164be0
+index 000000000..83923ed01
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,382 @@
+@@ -0,0 +1,393 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -736,41 +736,52 @@ index 000000000..e1e164be0
 +  return Result;
 +}
 +
-+bool Parser::ParseObjC3ResourcePrefix(ParsedAttributes &Attrs) {
++bool Parser::ParseObjC3ScopeCleanupPrefix(ParsedAttributes &Attrs) {
 +  SourceLocation AtLoc = ConsumeToken();
-+  ConsumeToken(); // contextual 'resource'
++  bool CleanupOnly = Tok.getIdentifierInfo()->isStr("cleanup");
++  ConsumeToken();
 +  BalancedDelimiterTracker Parens(*this, tok::l_paren);
-+  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "@resource",
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
++                              CleanupOnly ? "@cleanup" : "@resource",
 +                              tok::r_paren))
 +    return true;
 +  ExprResult Close = ParseAssignmentExpression();
-+  if (Close.isInvalid() || ExpectAndConsume(tok::comma)) {
++  if (Close.isInvalid()) {
 +    Parens.skipToEnd();
 +    return true;
 +  }
-+  if (!Tok.is(tok::identifier) || !Tok.getIdentifierInfo()->isStr("invalid")) {
-+    Diag(Tok, PP.getDiagnostics().getCustomDiagID(
-+                  DiagnosticsEngine::Error,
-+                  "expected 'invalid: value' in @resource"));
-+    Parens.skipToEnd();
-+    return true;
-+  }
-+  ConsumeToken();
-+  if (ExpectAndConsume(tok::colon)) {
-+    Parens.skipToEnd();
-+    return true;
-+  }
-+  ExprResult Invalid = ParseAssignmentExpression();
-+  if (Invalid.isInvalid()) {
-+    Parens.skipToEnd();
-+    return true;
++  ExprResult Invalid;
++  if (!CleanupOnly) {
++    if (ExpectAndConsume(tok::comma)) {
++      Parens.skipToEnd();
++      return true;
++    }
++    if (!Tok.is(tok::identifier) || !Tok.getIdentifierInfo()->isStr("invalid")) {
++      Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                    DiagnosticsEngine::Error,
++                    "expected 'invalid: value' in @resource"));
++      Parens.skipToEnd();
++      return true;
++    }
++    ConsumeToken();
++    if (ExpectAndConsume(tok::colon)) {
++      Parens.skipToEnd();
++      return true;
++    }
++    Invalid = ParseAssignmentExpression();
++    if (Invalid.isInvalid()) {
++      Parens.skipToEnd();
++      return true;
++    }
 +  }
 +  if (Parens.consumeClose())
 +    return true;
 +  ArgsUnion Arguments[] = {Close.get(), Invalid.get()};
-+  Attrs.addNew(&PP.getIdentifierTable().get("objc_resource"),
++  Attrs.addNew(&PP.getIdentifierTable().get(
++                   CleanupOnly ? "objc_cleanup" : "objc_resource"),
 +               SourceRange(AtLoc, Parens.getCloseLocation()),
-+               AttributeScopeInfo(nullptr, SourceLocation()), Arguments, 2,
++               AttributeScopeInfo(nullptr, SourceLocation()), Arguments,
++               CleanupOnly ? 1 : 2,
 +               AttributeCommonInfo::Form(AttributeCommonInfo::AS_GNU));
 +  return false;
 +}
@@ -858,7 +869,7 @@ index 000000000..e1e164be0
 +  return Result;
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..916ddf7dc 100644
+index 44b51a985..132cb1eb2 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,8 +11,10 @@
@@ -872,7 +883,7 @@ index 44b51a985..916ddf7dc 100644
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/Basic/TokenKinds.h"
-@@ -138,16 +140,29 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
+@@ -138,16 +140,31 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
    const char *SemiError = nullptr;
    StmtResult Res;
    SourceLocation GNUAttributeLoc;
@@ -893,16 +904,18 @@ index 44b51a985..916ddf7dc 100644
 +      if (getLangOpts().ObjC3 && isObjC3QualifiedTypeNameAhead())
 +        goto ParseDeclarationOrExpression;
 +      if (getLangOpts().ObjC3 && NextToken().is(tok::identifier) &&
-+          NextToken().getIdentifierInfo()->isStr("resource")) {
++          (NextToken().getIdentifierInfo()->isStr("resource") ||
++           NextToken().getIdentifierInfo()->isStr("cleanup")) &&
++          GetLookAheadToken(2).is(tok::l_paren)) {
 +        GNUAttributeLoc = Tok.getLocation();
-+        if (ParseObjC3ResourcePrefix(GNUAttrs))
++        if (ParseObjC3ScopeCleanupPrefix(GNUAttrs))
 +          return StmtError();
 +        goto ParseDeclarationOrExpression;
 +      }
        AtLoc = ConsumeToken();  // consume @
        return ParseObjCAtStatement(AtLoc, StmtCtx);
      }
-@@ -161,6 +176,31 @@ Retry:
+@@ -161,6 +178,31 @@ Retry:
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
@@ -934,7 +947,7 @@ index 44b51a985..916ddf7dc 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +213,19 @@ Retry:
+@@ -173,7 +215,19 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -955,7 +968,7 @@ index 44b51a985..916ddf7dc 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +248,7 @@ Retry:
+@@ -196,6 +250,7 @@ Retry:
    }
  
    default: {
@@ -963,7 +976,7 @@ index 44b51a985..916ddf7dc 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +261,8 @@ Retry:
+@@ -208,7 +263,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -973,7 +986,7 @@ index 44b51a985..916ddf7dc 100644
           (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
-@@ -296,6 +350,8 @@ Retry:
+@@ -296,6 +352,8 @@ Retry:
    }
  
    case tok::kw_if:                  // C99 6.8.4.1: if-statement
@@ -982,7 +995,7 @@ index 44b51a985..916ddf7dc 100644
      return ParseIfStatement(TrailingElseLoc);
    case tok::kw_switch:              // C99 6.8.4.2: switch-statement
      return ParseSwitchStatement(TrailingElseLoc, PrecedingLabel);
-@@ -2464,6 +2520,15 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -2464,6 +2522,15 @@ StmtResult Parser::ParseReturnStatement() {
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);
