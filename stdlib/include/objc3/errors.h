@@ -48,29 +48,21 @@
  * the original status value. The caller supplies the API's domain-specific
  * error representation, rather than losing it in an integer error box. */
 #define resultFromStatus(status, successValue, makeError) \
-  ({ __typeof__(status) __objc3_stdlib_saved_status = (status); \
-  (^Result(__typeof__(successValue), __typeof__((makeError)(status))) \
-      (__typeof__(status) __objc3_stdlib_status) { \
-    if (__objc3_stdlib_status == 0) \
-      return Ok(__typeof__(successValue), __typeof__((makeError)(status)), \
-                (successValue)); \
-    return Err(__typeof__(successValue), __typeof__((makeError)(status)), \
-               (makeError)(__objc3_stdlib_status)); \
-  })(__objc3_stdlib_saved_status); })
+  ({ __typeof__(status) __objc3_stdlib_status = (status); \
+    __objc3_stdlib_status == 0 \
+      ? Ok(__typeof__(successValue), __typeof__((makeError)(status)), (successValue)) \
+      : Err(__typeof__(successValue), __typeof__((makeError)(status)), \
+            (makeError)(__objc3_stdlib_status)); })
 
-/* NSError-style BOOL/error-out bridge. Run the API before capturing its
- * outputs. A domain adapter maps the raw error (including a missing error on
- * failure) into the caller's Error representation; success ignores it. */
+/* NSError-style BOOL/error-out bridge. Run the API before reading its outputs.
+ * A domain adapter maps the raw error (including a missing error on failure)
+ * into the caller's Error representation. Success never reads error storage. */
 #define resultFromErrorOut(success, successValue, errorValue, makeError) \
-  ({ __typeof__(success) __objc3_stdlib_succeeded = (success); \
-  (^Result(__typeof__(successValue), __typeof__((makeError)(errorValue))) \
-      (__typeof__(success) __objc3_stdlib_success) { \
-    if (__objc3_stdlib_success) \
-      return Ok(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
-                (successValue)); \
-    return Err(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
-               (makeError)(errorValue)); \
-  })(__objc3_stdlib_succeeded); })
+  ({ __typeof__(success) __objc3_stdlib_success = (success); \
+    __objc3_stdlib_success \
+      ? Ok(__typeof__(successValue), __typeof__((makeError)(errorValue)), (successValue)) \
+      : Err(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
+            (makeError)(errorValue)); })
 
 #ifdef __OBJC__
 /* Checked-error counterpart for status APIs whose successful result is void. */

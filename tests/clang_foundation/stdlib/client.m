@@ -32,6 +32,15 @@ static int error_out_api(int *value, int *error, int success) {
   *value = success ? 42 : -1; *error = success ? 0 : 17; return success;
 }
 
+#ifdef __cplusplus
+static int error_out_copies;
+struct ErrorOutProbe {
+  int value = 17;
+  ErrorOutProbe() = default;
+  ErrorOutProbe(const ErrorOutProbe &other) : value(other.value) { ++error_out_copies; }
+};
+#endif
+
 int main(void) {
   assert(OBJC3_LANGUAGE_REVISION >= 202610);
   assert(OBJC3_STDLIB_VERSION_MAJOR == 2);
@@ -85,6 +94,12 @@ int main(void) {
   assert(isOk(stdlib_status(0, 42, status_error)));
   assert(!isOk(stdlib_status(9, 0, status_error)) && error_calls == 2);
 
+#ifdef __cplusplus
+  ErrorOutProbe probe;
+  Result(int, int) no_error_read = resultFromErrorOut(1, 42, probe,
+      ^int(const ErrorOutProbe &raw) { return raw.value; });
+  assert(isOk(no_error_read) && error_out_copies == 0);
+#endif
   int raw_error = 0, raw_value = 0;
   int before_error_calls = error_calls;
   Result(int, int) out_good = resultFromErrorOut(
