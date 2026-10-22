@@ -20388,10 +20388,10 @@ index 977f81a64..0ce2baecd 100644
        llvm::BasicBlock *NormalExit = Builder.GetInsertBlock();
 diff --git a/clang/lib/CodeGen/CGObjC3Defer.h b/clang/lib/CodeGen/CGObjC3Defer.h
 new file mode 100644
-index 000000000..7acf57569
+index 000000000..2fced3064
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Defer.h
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,93 @@
 +//===--- CGObjC3Defer.h - Native source-scope release ordering ------*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20404,32 +20404,46 @@ index 000000000..7acf57569
 +namespace clang::CodeGen {
 +/// Identify destruction that only releases implicit managed subobjects. User
 +/// C++ destructors are source actions and retain their native stack position.
-+/// This also covers C records whose managed fields use primitive destruction.
++/// Constructors and access control do not affect implicit destruction. This
++/// includes nonaggregate classes and lambda capture storage, as well as C
++/// records whose managed fields use primitive destruction.
 +inline bool hasOnlyObjC3ImplicitManagedDestruction(ASTContext &Context,
 +                                                 QualType Type) {
-+  Type = Context.getBaseElementType(Type);
-+  if (Type->isObjCRetainableType())
-+    return true;
-+  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
-+    return hasOnlyObjC3ImplicitManagedDestruction(Context,
-+                                                 Optional->getElementType());
-+  if (const auto *Result = Type->getAs<ObjC3ResultType>())
-+    return hasOnlyObjC3ImplicitManagedDestruction(Context,
-+                                                 Result->getSuccessType()) &&
-+           hasOnlyObjC3ImplicitManagedDestruction(Context,
-+                                                 Result->getErrorType());
-+  if (const auto *Record = Type->getAs<RecordType>()) {
-+    const RecordDecl *Declaration = Record->getDecl();
-+    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Declaration))
-+      if (!CXXRecord->isAggregate() || CXXRecord->getNumBases() ||
-+          CXXRecord->hasUserDeclaredDestructor())
++  llvm::SmallVector<QualType, 8> Pending{Type};
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  // Shared field types form a DAG. Inspect each type once, without recursive
++  // stack growth or exponential work for repeated aggregate subobjects.
++  while (!Pending.empty()) {
++    QualType Current = Context.getBaseElementType(Pending.pop_back_val());
++    if (!Seen.insert(Current.getCanonicalType().getTypePtr()).second)
++      continue;
++    if (Current->isObjCRetainableType())
++      continue;
++    if (const auto *Optional = Current->getAs<ObjC3OptionalType>()) {
++      Pending.push_back(Optional->getElementType());
++      continue;
++    }
++    if (const auto *Result = Current->getAs<ObjC3ResultType>()) {
++      Pending.push_back(Result->getSuccessType());
++      Pending.push_back(Result->getErrorType());
++      continue;
++    }
++    if (const auto *Record = Current->getAs<RecordType>()) {
++      const RecordDecl *Declaration = Record->getDecl()->getDefinition();
++      if (!Declaration)
 +        return false;
-+    for (const FieldDecl *Field : Declaration->fields())
-+      if (!hasOnlyObjC3ImplicitManagedDestruction(Context, Field->getType()))
-+        return false;
-+    return true;
++      if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Declaration))
++        if (CXXRecord->getNumBases() ||
++            CXXRecord->hasUserDeclaredDestructor())
++          return false;
++      for (const FieldDecl *Field : Declaration->fields())
++        Pending.push_back(Field->getType());
++      continue;
++    }
++    if (Current.isDestructedType() != QualType::DK_none)
++      return false;
 +  }
-+  return Type.isDestructedType() == QualType::DK_none;
++  return true;
 +}
 +
 +struct ObjC3ReleaseScope;
@@ -20597,3 +20611,70 @@ index 000000000..90ac5653e
 +  if (exit)
 +    return;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/cleanup-cxx-implicit-ownership.mm b/clang/test/ObjC3/CodeGen/cleanup-cxx-implicit-ownership.mm
+new file mode 100644
+index 000000000..7eb0290dc
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/cleanup-cxx-implicit-ownership.mm
+@@ -0,0 +1,61 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -std=c++23 -O2 -emit-obj -o %t.o %s
++// REQUIRES: x86-registered-target
++
++extern "C" {
++id make_owner(void) __attribute__((ns_returns_retained));
++void observe(id) __attribute__((nothrow));
++void release_marker(int *) __attribute__((nothrow));
++void may_throw(void);
++}
++
++// An implicit destructor only releases the ARC field. Private fields and a
++// user constructor do not introduce a user destructor action.
++class PrivateOwner {
++  id value;
++public:
++  PrivateOwner() : value(make_owner()) { may_throw(); }
++  void visit() const { observe(value); }
++};
++
++extern "C" void cleanup_private_owner(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  PrivateOwner value;
++  value.visit();
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_private_owner(
++// CHECK: invoke void @_ZN12PrivateOwnerC1Ev(
++// CHECK: call void @release_marker(
++// CHECK: scope.release:
++// CHECK: call void @_ZN12PrivateOwnerD1Ev(
++// CHECK: ret void
++
++extern "C" void cleanup_lambda_capture(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  id value = make_owner();
++  auto closure = [value] { observe(value); };
++  value = (id)0;
++  closure();
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_lambda_capture(
++// CHECK: call void @release_marker(
++// CHECK: scope.release:
++// CHECK: call void {{.*}}D1Ev(
++// CHECK: ret void
++
++// A user destructor remains a registered native action. Its observable work
++// precedes the older cleanup attribute even when it owns a strong field.
++class UserOwner {
++  id value;
++public:
++  UserOwner() : value(make_owner()) {}
++  ~UserOwner() { observe(value); }
++};
++extern "C" void cleanup_user_destructor(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  UserOwner value;
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_user_destructor(
++// CHECK: call void @_ZN9UserOwnerD1Ev(
++// CHECK: call void @release_marker(
++// CHECK: ret void

@@ -431,6 +431,55 @@ static void arc_copied_body(void) {
 }
 #ifdef __cplusplus
 struct DeferredAction { int digit; ~DeferredAction() { record(digit); } };
+class ImplicitPrivateOwner {
+  DeferredProbe *value;
+public:
+  explicit ImplicitPrivateOwner(bool fail) : value([DeferredProbe newWithDigit:3]) {
+    second();
+    if(fail)throw 42;
+  }
+  void visit() const { observe(value); }
+};
+static void arc_cleanup_nonaggregate(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  ImplicitPrivateOwner value(false);
+  value.visit();
+  if(fail)throw 42;
+}
+static void arc_defer_nonaggregate(void) {
+  defer { assert_alive(); }
+  ImplicitPrivateOwner value(false);
+  value.visit();
+}
+static void arc_cleanup_failed_constructor(void) {
+  int marker __attribute__((cleanup(release_marker))) = 1;
+  ImplicitPrivateOwner value(true);
+  value.visit();
+}
+static void arc_cleanup_byref_nonaggregate(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  __block ImplicitPrivateOwner value(false);
+  saved_block = ^{ value.visit(); };
+  saved_block(); saved_block = (id)0;
+  if(fail)throw 42;
+}
+static void arc_cleanup_lambda_capture(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *source = [DeferredProbe newWithDigit:3];
+  auto closure = [source] { observe(source); };
+  source = (id)0;
+  second();
+  closure();
+  if(fail)throw 42;
+}
+static void arc_defer_lambda_capture(void) {
+  defer { assert_alive(); }
+  DeferredProbe *source = [DeferredProbe newWithDigit:3];
+  auto closure = [source] { observe(source); };
+  source = (id)0;
+  second();
+  closure();
+}
 static void arc_cleanup_if_initializer(bool flag) {
   if(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
          [DeferredProbe newWithDigit:3],
@@ -596,6 +645,23 @@ static void arc_ordering(void) {
   arc_cleanup_for_initializer(); expect(2143);
   arc_copied_body(); expect(213);
 #ifdef __cplusplus
+  arc_cleanup_nonaggregate(0); expect(213);
+  try { arc_cleanup_nonaggregate(1); }
+  catch(int value) { if(value != 42)bad=46; record(4); }
+  expect(2134);
+  arc_defer_nonaggregate(); expect(213);
+  try { arc_cleanup_failed_constructor(); }
+  catch(int value) { if(value != 42)bad=47; record(4); }
+  expect(2314);
+  arc_cleanup_byref_nonaggregate(0); expect(213);
+  try { arc_cleanup_byref_nonaggregate(1); }
+  catch(int value) { if(value != 42)bad=48; record(4); }
+  expect(2134);
+  arc_cleanup_lambda_capture(0); expect(213);
+  try { arc_cleanup_lambda_capture(1); }
+  catch(int value) { if(value != 42)bad=49; record(4); }
+  expect(2134);
+  arc_defer_lambda_capture(); expect(213);
   arc_cleanup_if_initializer(0); expect(2143);
   arc_cleanup_if_initializer(1); expect(2143);
   arc_cleanup_switch_initializer(1); expect(2143);
