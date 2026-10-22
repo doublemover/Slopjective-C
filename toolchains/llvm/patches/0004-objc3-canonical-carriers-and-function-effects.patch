@@ -87,9 +87,18 @@ index 7ed6509c3..69a765fda 100644
    /// the specified type.
    QualType getPointerType(QualType T) const;
 diff --git a/clang/include/clang/AST/ASTNodeTraverser.h b/clang/include/clang/AST/ASTNodeTraverser.h
-index a8a73c5b7..0303a973d 100644
+index a8a73c5b7..321906d70 100644
 --- a/clang/include/clang/AST/ASTNodeTraverser.h
 +++ b/clang/include/clang/AST/ASTNodeTraverser.h
+@@ -159,7 +159,7 @@ public:
+ 
+       // Some statements have custom mechanisms for dumping their children.
+       if (isa<DeclStmt, GenericSelectionExpr, RequiresExpr,
+-              OpenACCWaitConstruct, SYCLKernelCallStmt,
++              ObjC3BindingCondition, OpenACCWaitConstruct, SYCLKernelCallStmt,
+               UnresolvedSYCLKernelCallStmt>(S))
+         return;
+ 
 @@ -383,6 +383,13 @@ public:
    }
  
@@ -104,7 +113,7 @@ index a8a73c5b7..0303a973d 100644
    void VisitLocInfoType(const LocInfoType *T) {
      Visit(T->getTypeSourceInfo()->getTypeLoc());
    }
-@@ -896,6 +903,24 @@ public:
+@@ -896,6 +903,36 @@ public:
      }
    }
  
@@ -124,6 +133,18 @@ index a8a73c5b7..0303a973d 100644
 +  void VisitObjC3OptionalExpr(const ObjC3OptionalExpr *Node) {
 +    if (TypeSourceInfo *Info = Node->getPayloadTypeInfo())
 +      Visit(Info->getTypeLoc());
++  }
++
++  void VisitObjC3BindingCondition(const ObjC3BindingCondition *Node) {
++    if (Traversal == TK_IgnoreUnlessSpelledInSource) {
++      // The written initializer lives in an implicit snapshot. Hiding the
++      // snapshot must not also hide references and calls in that expression.
++      Visit(Node->getSource());
++      Visit(Node->getBindingStatement());
++      return;
++    }
++    Visit(Node->getSnapshotStatement());
++    Visit(Node->getBindingStatement());
 +  }
 +
    void VisitBlockExpr(const BlockExpr *Node) { Visit(Node->getBlockDecl()); }
@@ -471,7 +492,7 @@ index fd3cce10b..e2a8d508a 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index 165c6324c..cb98b900b 100644
+index 165c6324c..209812177 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -1008,6 +1008,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -538,7 +559,7 @@ index 165c6324c..cb98b900b 100644
    if (D->getReturnTypeSourceInfo()) {
      TRY_TO(TraverseTypeLoc(D->getReturnTypeSourceInfo()->getTypeLoc()));
    }
-@@ -2946,6 +2975,35 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -2946,6 +2975,45 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -565,8 +586,18 @@ index 165c6324c..cb98b900b 100644
 +    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
 +})
 +DEF_TRAVERSE_STMT(ObjC3BindingCondition, {
-+  if (!getDerived().shouldVisitImplicitCode() && S->getSnapshotDecl()->isImplicit())
-+    TRY_TO(TraverseStmt(S->getSource()));
++  if (!getDerived().shouldVisitImplicitCode() &&
++      S->getSnapshotDecl()->isImplicit()) {
++    // The snapshot declaration is an implementation detail, but its
++    // initializer is the source expression written after '='. Traverse that
++    // expression once, followed by the user declaration, without exposing an
++    // empty implicit DeclStmt to source-oriented visitors. Use the active
++    // recursion queue so preorder, postorder and traversal cancellation keep
++    // the same behavior as ordinary statement children.
++    TRY_TO_TRAVERSE_OR_ENQUEUE_STMT(S->getSource());
++    TRY_TO_TRAVERSE_OR_ENQUEUE_STMT(S->getBindingStatement());
++    ShouldVisitChildren = false;
++  }
 +})
 +DEF_TRAVERSE_STMT(ObjC3GuardStmt, {})
 +DEF_TRAVERSE_STMT(ObjC3IfBindingStmt, {})
@@ -3247,18 +3278,198 @@ index 172a19f8f..f8db3cd90 100644
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
 diff --git a/clang/lib/AST/JSONNodeDumper.cpp b/clang/lib/AST/JSONNodeDumper.cpp
-index 8373dd8e3..b68684d50 100644
+index 8373dd8e3..41731fd60 100644
 --- a/clang/lib/AST/JSONNodeDumper.cpp
 +++ b/clang/lib/AST/JSONNodeDumper.cpp
-@@ -1167,6 +1167,8 @@ void JSONNodeDumper::VisitObjCIvarDecl(const ObjCIvarDecl *D) {
+@@ -639,6 +639,7 @@ void JSONNodeDumper::VisitFunctionType(const FunctionType *T) {
+ 
+ void JSONNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
+   FunctionProtoType::ExtProtoInfo E = T->getExtProtoInfo();
++  writeObjC3FunctionEffects(T->getObjC3FunctionEffects());
+   attributeOnlyIfTrue("trailingReturn", E.HasTrailingReturn);
+   attributeOnlyIfTrue("const", T->isConst());
+   attributeOnlyIfTrue("volatile", T->isVolatile());
+@@ -979,6 +980,8 @@ void JSONNodeDumper::VisitFieldDecl(const FieldDecl *FD) {
+ void JSONNodeDumper::VisitFunctionDecl(const FunctionDecl *FD) {
+   VisitNamedDecl(FD);
+   JOS.attribute("type", createQualType(FD->getType()));
++  if (const auto *FPT = FD->getType()->getAs<FunctionProtoType>())
++    writeObjC3FunctionEffects(FPT->getObjC3FunctionEffects());
+   StorageClass SC = FD->getStorageClass();
+   if (SC != SC_None)
+     JOS.attribute("storageClass", VarDecl::getStorageClassSpecifierString(SC));
+@@ -1167,6 +1170,12 @@ void JSONNodeDumper::VisitObjCIvarDecl(const ObjCIvarDecl *D) {
  void JSONNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
    VisitNamedDecl(D);
    JOS.attribute("returnType", createQualType(D->getReturnType()));
-+  if (!D->getObjC3FunctionType().isNull())
++  if (!D->getObjC3FunctionType().isNull()) {
 +    JOS.attribute("objc3CallableType", createQualType(D->getObjC3FunctionType()));
++    if (const auto *FPT =
++            D->getObjC3FunctionType()->getAs<FunctionProtoType>())
++      writeObjC3FunctionEffects(FPT->getObjC3FunctionEffects());
++  }
    JOS.attribute("instance", D->isInstanceMethod());
    attributeOnlyIfTrue("variadic", D->isVariadic());
  }
+@@ -1711,6 +1720,118 @@ void JSONNodeDumper::VisitCXXBoolLiteralExpr(const CXXBoolLiteralExpr *BLE) {
+   JOS.attribute("value", BLE->getValue());
+ }
+ 
++void JSONNodeDumper::writeObjC3FunctionEffects(ObjC3FunctionEffectInfo Effects) {
++  if (!Effects.Async && Effects.Throws == ObjC3ThrowsKind::None)
++    return;
++  JOS.attributeObject("objc3Effects", [=, this] {
++    attributeOnlyIfTrue("async", Effects.Async);
++    switch (Effects.Throws) {
++    case ObjC3ThrowsKind::None:
++      break;
++    case ObjC3ThrowsKind::Untyped:
++      JOS.attribute("throws", "untyped");
++      break;
++    case ObjC3ThrowsKind::Typed:
++      JOS.attribute("throws", "typed");
++      JOS.attribute("errorType", createQualType(Effects.ErrorType));
++      break;
++    }
++  });
++}
++
++void JSONNodeDumper::VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E) {
++  StringRef Operation;
++  switch (E->getKind()) {
++  case ObjC3OptionalExpr::Kind::Some: Operation = "some"; break;
++  case ObjC3OptionalExpr::Kind::None: Operation = "none"; break;
++  case ObjC3OptionalExpr::Kind::HasValue: Operation = "hasValue"; break;
++  }
++  JOS.attribute("operation", Operation);
++  JOS.attribute("carrierType", createQualType(E->getCarrierType()));
++}
++
++void JSONNodeDumper::VisitObjC3ResultExpr(const ObjC3ResultExpr *E) {
++  StringRef Operation;
++  switch (E->getKind()) {
++  case ObjC3ResultExpr::Kind::Ok: Operation = "ok"; break;
++  case ObjC3ResultExpr::Kind::Err: Operation = "err"; break;
++  case ObjC3ResultExpr::Kind::IsOk: Operation = "isOk"; break;
++  }
++  JOS.attribute("operation", Operation);
++  JOS.attribute("carrierType", createQualType(E->getCarrierType()));
++}
++
++void JSONNodeDumper::VisitObjC3CarrierTransferExpr(
++    const ObjC3CarrierTransferExpr *E) {
++  JOS.attribute("operation", E->isMove() ? "move" : "copy");
++  JOS.attribute("carrierType", createQualType(E->getCarrierType()));
++}
++
++void JSONNodeDumper::VisitObjC3TryExpr(const ObjC3TryExpr *E) {
++  StringRef Operation;
++  switch (E->getKind()) {
++  case ObjC3TryExpr::Kind::Propagate: Operation = "propagate"; break;
++  case ObjC3TryExpr::Kind::Optionalize: Operation = "optionalize"; break;
++  case ObjC3TryExpr::Kind::Force: Operation = "force"; break;
++  }
++  JOS.attribute("operation", Operation);
++}
++
++void JSONNodeDumper::VisitObjC3ThrowStmt(const ObjC3ThrowStmt *) {
++  JOS.attribute("typedErrorTransfer", true);
++}
++
++void JSONNodeDumper::VisitObjC3CatchStmt(const ObjC3CatchStmt *S) {
++  attributeOnlyIfTrue("isCatchAll", S->isCatchAll());
++  if (TypeSourceInfo *Info = S->getCatchTypeInfo())
++    JOS.attribute("catchType", createQualType(Info->getType()));
++  if (const auto *Binding = S->getBindingDeclStmt())
++    JOS.attribute("bindingDecl", createBareDeclRef(Binding->getSingleDecl()));
++}
++
++void JSONNodeDumper::VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S) {
++  JOS.attribute("numCatchClauses", S->getNumCatchClauses());
++}
++
++void JSONNodeDumper::VisitObjC3MatchArm(const ObjC3MatchArm *S) {
++  StringRef Pattern;
++  switch (S->getPatternKind()) {
++  case objc3::MatchPatternKind::BooleanTrue: Pattern = "true"; break;
++  case objc3::MatchPatternKind::BooleanFalse: Pattern = "false"; break;
++  case objc3::MatchPatternKind::OptionalSome: Pattern = "some"; break;
++  case objc3::MatchPatternKind::OptionalNone: Pattern = "none"; break;
++  case objc3::MatchPatternKind::ResultOK: Pattern = "ok"; break;
++  case objc3::MatchPatternKind::ResultErr: Pattern = "err"; break;
++  case objc3::MatchPatternKind::IntegerLiteral: Pattern = "integer"; break;
++  case objc3::MatchPatternKind::CharacterLiteral: Pattern = "character"; break;
++  case objc3::MatchPatternKind::NilLiteral: Pattern = "nil"; break;
++  case objc3::MatchPatternKind::StringLiteral: Pattern = "string"; break;
++  case objc3::MatchPatternKind::Wildcard: Pattern = "wildcard"; break;
++  case objc3::MatchPatternKind::Binding: Pattern = "binding"; break;
++  case objc3::MatchPatternKind::Default: Pattern = "default"; break;
++  case objc3::MatchPatternKind::TypeTest: Pattern = "typeTest"; break;
++  case objc3::MatchPatternKind::MoveBinding: Pattern = "moveBinding"; break;
++  }
++  JOS.attribute("patternKind", Pattern);
++  attributeOnlyIfTrue("hasGuard", S->getGuard() != nullptr);
++  attributeOnlyIfTrue("hasExpressionBody", S->hasExpressionBody());
++  if (const VarDecl *Binding = S->getBindingDecl()) {
++    JOS.attribute("bindingDecl", createBareDeclRef(Binding));
++    JOS.attribute("bindingKind", S->isMutableBinding() ? "var" : "let");
++  }
++  if (!S->getCanonicalPatternType().isNull())
++    JOS.attribute("patternCarrierType",
++                  createQualType(S->getCanonicalPatternType()));
++}
++
++void JSONNodeDumper::VisitObjC3MatchStmt(const ObjC3MatchStmt *S) {
++  JOS.attribute("numArms", S->getNumArms());
++}
++
++void JSONNodeDumper::VisitObjC3MatchExpr(const ObjC3MatchExpr *E) {
++  JOS.attribute("numArms", E->getNumArms());
++}
++
+ void JSONNodeDumper::VisitIfStmt(const IfStmt *IS) {
+   attributeOnlyIfTrue("hasInit", IS->hasInitStorage());
+   attributeOnlyIfTrue("hasVar", IS->hasVarStorage());
+@@ -1720,6 +1841,39 @@ void JSONNodeDumper::VisitIfStmt(const IfStmt *IS) {
+   attributeOnlyIfTrue("constevalIsNegated", IS->isNegatedConsteval());
+ }
+ 
++void JSONNodeDumper::VisitObjC3BindingCondition(
++    const ObjC3BindingCondition *S) {
++  JOS.attribute("bindingKind", S->isMutableBinding() ? "var" : "let");
++  JOS.attribute("bindingDecl", createBareDeclRef(S->getBindingDecl()));
++  JOS.attribute("snapshotDecl", createBareDeclRef(S->getSnapshotDecl()));
++  JOS.attributeObject("keywordLoc", [=, this] {
++    writeSourceLocation(S->getKeywordLoc());
++  });
++  JOS.attributeObject("equalLoc", [=, this] {
++    writeSourceLocation(S->getEqualLoc());
++  });
++}
++
++void JSONNodeDumper::VisitObjC3GuardStmt(const ObjC3GuardStmt *S) {
++  JOS.attribute("numConditions", S->getNumConditions());
++  // A guard has no synthetic continuation child: successful source statements
++  // are siblings in the enclosing compound.
++  JOS.attribute("bindingScope", "continuation");
++  JOS.attributeObject("elseLoc", [=, this] {
++    writeSourceLocation(S->getElseLoc());
++  });
++}
++
++void JSONNodeDumper::VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *S) {
++  JOS.attribute("numConditions", S->getNumConditions());
++  JOS.attribute("bindingScope", "then");
++  attributeOnlyIfTrue("hasElse", S->getElse() != nullptr);
++  if (S->getElseLoc().isValid())
++    JOS.attributeObject("elseLoc", [=, this] {
++      writeSourceLocation(S->getElseLoc());
++    });
++}
++
+ void JSONNodeDumper::VisitSwitchStmt(const SwitchStmt *SS) {
+   attributeOnlyIfTrue("hasInit", SS->hasInitStorage());
+   attributeOnlyIfTrue("hasVar", SS->hasVarStorage());
 diff --git a/clang/lib/AST/MicrosoftMangle.cpp b/clang/lib/AST/MicrosoftMangle.cpp
 index 59732ff0f..862409aa6 100644
 --- a/clang/lib/AST/MicrosoftMangle.cpp
@@ -12102,10 +12313,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..ce9cd5afd 100644
+index 81010e046..8d5e8771c 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,40 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,41 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -12132,6 +12343,7 @@ index 81010e046..ce9cd5afd 100644
 +  ObjC3CheckedErrorCFGTest.cpp
 +  ObjC3GuardExitTest.cpp
 +  ObjC3ConditionNodesTest.cpp
++  ObjC3ConditionToolingTest.cpp
 +  ObjC3ConditionScopeTest.cpp
 +  ObjC3ConditionCodeGenTest.cpp
 +  ObjC3MatchImporterTest.cpp
@@ -20694,3 +20906,873 @@ index 000000000..34da6ee82
 +// CHECK: ObjC3GuardStmt {{.*}} conditions=2
 +// CHECK: FunctionDecl {{.*}} binding_used_in_later_lambda
 +// CHECK: ObjC3GuardStmt {{.*}} conditions=2
+diff --git a/clang/include/clang/AST/JSONNodeDumper.h b/clang/include/clang/AST/JSONNodeDumper.h
+index 4e8d1649b..eef7e1e6c 100644
+--- a/clang/include/clang/AST/JSONNodeDumper.h
++++ b/clang/include/clang/AST/JSONNodeDumper.h
+@@ -161,6 +161,7 @@ class JSONNodeDumper
+   std::string createPointerRepresentation(const void *Ptr);
+   llvm::json::Object createQualType(QualType QT, bool Desugar = true);
+   llvm::json::Object createBareDeclRef(const Decl *D);
++  void writeObjC3FunctionEffects(ObjC3FunctionEffectInfo Effects);
+   llvm::json::Object createFPOptions(FPOptionsOverride FPO);
+   void writeBareDeclRef(const Decl *D);
+   llvm::json::Object createCXXRecordDefinitionData(const CXXRecordDecl *RD);
+@@ -329,6 +330,16 @@ public:
+   void VisitObjCSubscriptRefExpr(const ObjCSubscriptRefExpr *OSRE);
+   void VisitObjCIvarRefExpr(const ObjCIvarRefExpr *OIRE);
+   void VisitObjCBoolLiteralExpr(const ObjCBoolLiteralExpr *OBLE);
++  void VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E);
++  void VisitObjC3ResultExpr(const ObjC3ResultExpr *E);
++  void VisitObjC3CarrierTransferExpr(const ObjC3CarrierTransferExpr *E);
++  void VisitObjC3TryExpr(const ObjC3TryExpr *E);
++  void VisitObjC3ThrowStmt(const ObjC3ThrowStmt *S);
++  void VisitObjC3CatchStmt(const ObjC3CatchStmt *S);
++  void VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S);
++  void VisitObjC3MatchArm(const ObjC3MatchArm *S);
++  void VisitObjC3MatchStmt(const ObjC3MatchStmt *S);
++  void VisitObjC3MatchExpr(const ObjC3MatchExpr *E);
+ 
+   void VisitIntegerLiteral(const IntegerLiteral *IL);
+   void VisitCharacterLiteral(const CharacterLiteral *CL);
+@@ -339,6 +350,9 @@ public:
+ 
+   void VisitLoopControlStmt(const LoopControlStmt *LS);
+   void VisitIfStmt(const IfStmt *IS);
++  void VisitObjC3BindingCondition(const ObjC3BindingCondition *S);
++  void VisitObjC3GuardStmt(const ObjC3GuardStmt *S);
++  void VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *S);
+   void VisitSwitchStmt(const SwitchStmt *SS);
+   void VisitCaseStmt(const CaseStmt *CS);
+   void VisitLabelStmt(const LabelStmt *LS);
+diff --git a/clang/test/Index/objc3-condition-cursors.mm b/clang/test/Index/objc3-condition-cursors.mm
+new file mode 100644
+index 000000000..9b1ce88ca
+--- /dev/null
++++ b/clang/test/Index/objc3-condition-cursors.mm
+@@ -0,0 +1,46 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s --check-prefix=CURSORS
++// RUN: c-index-test -test-annotate-tokens=%s:5:1:16:1 %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s --check-prefix=TOKENS
++
++using Maybe = __objc3_optional(int);
++int condition_cursors(Maybe source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source, second > first {
++    second += first;
++    return second;
++  } else {
++    return first;
++  }
++}
++
++// CURSORS: FunctionDecl=condition_cursors:
++// CURSORS: UnexposedStmt=
++// CURSORS: UnexposedStmt=
++// CURSORS: VarDecl=first:
++// CURSORS: DeclRefExpr=source:
++// CURSORS: DeclRefExpr=enabled:
++// CURSORS: IfStmt=
++// CURSORS: UnexposedStmt=
++// CURSORS: VarDecl=second:
++// CURSORS: DeclRefExpr=source:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS: DeclRefExpr=second:
++// CURSORS: DeclRefExpr=first:
++// CURSORS-NOT: NotImplemented
++
++// TOKENS: Identifier: "guard" {{.*}} UnexposedStmt=
++// TOKENS: Identifier: "first" {{.*}} VarDecl=first:
++// TOKENS: Identifier: "source" {{.*}} DeclRefExpr=source:
++// TOKENS: Identifier: "enabled" {{.*}} DeclRefExpr=enabled:
++// TOKENS: Keyword: "if" {{.*}} IfStmt=
++// TOKENS: Identifier: "second" {{.*}} VarDecl=second:
++// TOKENS: Identifier: "source" {{.*}} DeclRefExpr=source:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++// TOKENS: Identifier: "second" {{.*}} DeclRefExpr=second:
++// TOKENS: Identifier: "first" {{.*}} DeclRefExpr=first:
++
+diff --git a/clang/test/Index/objc3-native-expression-cursors.mm b/clang/test/Index/objc3-native-expression-cursors.mm
+new file mode 100644
+index 000000000..dd1d9af24
+--- /dev/null
++++ b/clang/test/Index/objc3-native-expression-cursors.mm
+@@ -0,0 +1,50 @@
++// RUN: c-index-test -test-load-source all %s -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++using Count = int;
++using Failure = long;
++using Maybe = __objc3_optional(Count);
++using Outcome = __objc3_result(Count, Failure);
++int typed(Count value) __objc3_throws(Failure);
++
++void constructors(Maybe source) {
++  Maybe present = __objc3_some(Count, 7);
++  Outcome success = __objc3_ok(Count, Failure, 9);
++  Maybe copied = __objc3_copy(source);
++  __objc3_do {
++    (void)__objc3_try(typed(4));
++  } __objc3_catch(Failure error) {
++    (void)error;
++  }
++}
++
++// CHECK: TypeAliasDecl=Maybe:
++// CHECK: TypeRef=Count:
++// CHECK: TypeAliasDecl=Outcome:
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: FunctionDecl=typed:
++// CHECK: ParmDecl=value:
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: FunctionDecl=constructors:
++// CHECK: VarDecl=present:
++// CHECK: UnexposedExpr=
++// CHECK: TypeRef=Count:
++// CHECK: IntegerLiteral=
++// CHECK: VarDecl=success:
++// CHECK: UnexposedExpr=
++// CHECK: TypeRef=Count:
++// CHECK: TypeRef=Failure:
++// CHECK: IntegerLiteral=
++// CHECK: VarDecl=copied:
++// CHECK: UnexposedExpr=
++// CHECK: DeclRefExpr=source:
++// CHECK: UnexposedStmt=
++// CHECK: UnexposedExpr=
++// CHECK: CallExpr=typed:
++// CHECK: UnexposedStmt=
++// CHECK: TypeRef=Failure:
++// CHECK: VarDecl=error:
++// CHECK: DeclRefExpr=error:
++// CHECK-NOT: NotImplemented
++
+diff --git a/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h b/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h
+new file mode 100644
+index 000000000..d3dacc3b0
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/condition-module/conditions.h
+@@ -0,0 +1,21 @@
++#ifndef OBJC3_CONDITION_MODULE_H
++#define OBJC3_CONDITION_MODULE_H
++
++typedef Optional(int) ModuleMaybe;
++
++static inline int imported_guard(ModuleMaybe source, bool enabled) {
++  guard let first = source, enabled,
++        var second = Some(int, first + 1) else { return -1; }
++  second += first;
++  return second;
++}
++
++static inline int imported_if(ModuleMaybe source) {
++  if let first = source, second = Some(int, first + 1) {
++    return first + second;
++  } else {
++    return 0;
++  }
++}
++
++#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap b/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap
+new file mode 100644
+index 000000000..741c605cb
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/condition-module/module.modulemap
+@@ -0,0 +1,4 @@
++module ConditionBindings {
++  header "conditions.h"
++  export *
++}
+diff --git a/clang/test/ObjC3/AST/condition-json.mm b/clang/test/ObjC3/AST/condition-json.mm
+new file mode 100644
+index 000000000..54640f276
+--- /dev/null
++++ b/clang/test/ObjC3/AST/condition-json.mm
+@@ -0,0 +1,62 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump=json %s | FileCheck %s
++
++using Maybe = __objc3_optional(int);
++int condition_json(Maybe source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source, second > first {
++    second += first;
++    return second;
++  } else {
++    return first;
++  }
++}
++
++// CHECK: "kind": "ObjC3GuardStmt"
++// CHECK: "numConditions": 2
++// CHECK: "bindingScope": "continuation"
++// CHECK: "elseLoc": {
++// CHECK: "kind": "ObjC3BindingCondition"
++// CHECK: "bindingKind": "let"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "first"
++// CHECK: "snapshotDecl": {
++// CHECK: "keywordLoc": {
++// CHECK: "equalLoc": {
++// CHECK: "kind": "VarDecl"
++// CHECK: "isImplicit": true
++// CHECK: "kind": "DeclRefExpr"
++// CHECK: "name": "source"
++// CHECK: "kind": "VarDecl"
++// CHECK: "name": "first"
++// CHECK: "kind": "ObjC3IfBindingStmt"
++// CHECK: "numConditions": 2
++// CHECK: "bindingScope": "then"
++// CHECK: "hasElse": true
++// CHECK: "elseLoc": {
++// CHECK: "kind": "ObjC3BindingCondition"
++// CHECK: "bindingKind": "var"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "second"
++// CHECK: "snapshotDecl": {
++// CHECK: "keywordLoc": {
++// CHECK: "equalLoc": {
++// CHECK: "kind": "VarDecl"
++// CHECK: "isImplicit": true
++// CHECK: "kind": "DeclRefExpr"
++// CHECK: "name": "source"
++// CHECK: "kind": "VarDecl"
++// CHECK: "name": "second"
++
++int if_without_else(Maybe source) {
++  if let value = source { return value; }
++  return 0;
++}
++
++// CHECK: "name": "if_without_else"
++// CHECK: "kind": "ObjC3IfBindingStmt"
++// CHECK: "numConditions": 1
++// CHECK: "bindingScope": "then"
++// CHECK-NOT: "hasElse"
++// CHECK-NOT: "elseLoc"
++// CHECK: "kind": "ObjC3BindingCondition"
++
+diff --git a/clang/test/ObjC3/AST/condition-module.mm b/clang/test/ObjC3/AST/condition-module.mm
+new file mode 100644
+index 000000000..9bb0bc170
+--- /dev/null
++++ b/clang/test/ObjC3/AST/condition-module.mm
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-name=ConditionBindings -emit-module %S/Inputs/condition-module/module.modulemap -o %t.pcm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-file=ConditionBindings=%t.pcm -I %S/Inputs/condition-module -ast-dump-all %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fmodules -fmodule-file=ConditionBindings=%t.pcm -I %S/Inputs/condition-module -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
++
++@import ConditionBindings;
++
++int module_condition_consumer(int value, bool enabled) {
++  return imported_guard(Some(int, value), enabled) +
++         imported_if(Some(int, value));
++}
++
++// AST-LABEL: FunctionDecl {{.*}} imported_guard
++// AST: ObjC3GuardStmt {{.*}} conditions=3
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} first 'const int'
++// AST: ObjC3BindingCondition {{.*}} var
++// AST: VarDecl {{.*}} second 'int'
++// AST: DeclRefExpr {{.*}} Var {{.*}} 'second' 'int'
++// AST: DeclRefExpr {{.*}} Var {{.*}} 'first' 'const int'
++// AST-LABEL: FunctionDecl {{.*}} imported_if
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} first 'const int'
++// AST: ObjC3BindingCondition {{.*}} let
++// AST: VarDecl {{.*}} second 'const int'
++
++// IR-LABEL: define{{.*}}module_condition_consumer
++// IR: call{{.*}}imported_guard
++// IR: call{{.*}}imported_if
++// IR-LABEL: define internal{{.*}}imported_guard
++// IR: objc3.guard.conditions:
++// IR-LABEL: define internal{{.*}}imported_if
++// IR: objc3.if.conditions:
++
+diff --git a/clang/test/ObjC3/AST/native-expression-json.mm b/clang/test/ObjC3/AST/native-expression-json.mm
+new file mode 100644
+index 000000000..eafa8e821
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-expression-json.mm
+@@ -0,0 +1,100 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump=json %s | FileCheck %s
++
++using Count = int;
++using Failure = long;
++using Maybe = __objc3_optional(Count);
++using Outcome = __objc3_result(Count, Failure);
++
++void carriers(Maybe source) {
++  Maybe present = __objc3_some(Count, 7);
++  Maybe absent = __objc3_none(Count);
++  bool available = __objc3_has_value(source);
++  Outcome success = __objc3_ok(Count, Failure, 9);
++  Outcome failure = __objc3_err(Count, Failure, 4L);
++  bool accepted = __objc3_is_ok(success);
++  Maybe copied = __objc3_copy(source);
++  Maybe moved = __objc3_move(source);
++}
++
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "some"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "none"
++// CHECK: "kind": "ObjC3OptionalExpr"
++// CHECK: "operation": "hasValue"
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "ok"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "err"
++// CHECK: "kind": "ObjC3ResultExpr"
++// CHECK: "operation": "isOk"
++// CHECK: "kind": "ObjC3CarrierTransferExpr"
++// CHECK: "operation": "copy"
++// CHECK: "carrierType": {
++// CHECK: "kind": "ObjC3CarrierTransferExpr"
++// CHECK: "operation": "move"
++
++struct Error {};
++int throwing() __objc3_throws(Error);
++int propagate() __objc3_throws(Error) { return __objc3_try(throwing()); }
++Maybe optionalize() { return __objc3_try_optional(throwing()); }
++int force() { return __objc3_try_force(throwing()); }
++
++// CHECK: "name": "throwing"
++// CHECK: "objc3Effects": {
++// CHECK: "throws": "typed"
++// CHECK: "errorType": {
++// CHECK: "qualType": "Error"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "propagate"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "optionalize"
++// CHECK: "kind": "ObjC3TryExpr"
++// CHECK: "operation": "force"
++
++void handled() {
++  __objc3_do {
++    __objc3_throw(Error{});
++  } __objc3_catch(Error error) {
++    (void)error;
++  } __objc3_catch {
++  }
++}
++
++// CHECK: "kind": "ObjC3DoCatchStmt"
++// CHECK: "numCatchClauses": 2
++// CHECK: "kind": "ObjC3ThrowStmt"
++// CHECK: "typedErrorTransfer": true
++// CHECK: "kind": "ObjC3CatchStmt"
++// CHECK: "catchType": {
++// CHECK: "qualType": "Error"
++// CHECK: "bindingDecl": {
++// CHECK: "name": "error"
++// CHECK: "kind": "ObjC3CatchStmt"
++// CHECK: "isCatchAll": true
++
++int choose(Maybe source) {
++  return __objc3_match(source) {
++    case .Some(let value) where value > 0 => value;
++    case .Some(let value) => -value;
++    case .None => 0;
++  };
++}
++
++// CHECK: "kind": "ObjC3MatchExpr"
++// CHECK: "numArms": 3
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "some"
++// CHECK: "hasGuard": true
++// CHECK: "hasExpressionBody": true
++// CHECK: "bindingDecl": {
++// CHECK: "name": "value"
++// CHECK: "bindingKind": "let"
++// CHECK: "patternCarrierType": {
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "some"
++// CHECK: "kind": "ObjC3MatchArm"
++// CHECK: "patternKind": "none"
++
+diff --git a/clang/tools/libclang/CIndex.cpp b/clang/tools/libclang/CIndex.cpp
+index 6e30ffd6b..0b8d2d84d 100644
+--- a/clang/tools/libclang/CIndex.cpp
++++ b/clang/tools/libclang/CIndex.cpp
+@@ -1766,6 +1766,26 @@ bool CursorVisitor::VisitFunctionTypeLoc(FunctionTypeLoc TL,
+       if (Visit(MakeCXCursor(D, TU, RegionOfInterest)))
+         return true;
+ 
++  if (auto FPTL = TL.getAs<FunctionProtoTypeLoc>())
++    if (TypeSourceInfo *Error = FPTL.getObjC3ThrowsPayloadInfo())
++      if (Visit(Error->getTypeLoc()))
++        return true;
++
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3OptionalTypeLoc(ObjC3OptionalTypeLoc TL) {
++  if (TypeSourceInfo *Element = TL.getElementLoc())
++    return Visit(Element->getTypeLoc());
++  return false;
++}
++
++bool CursorVisitor::VisitObjC3ResultTypeLoc(ObjC3ResultTypeLoc TL) {
++  if (TypeSourceInfo *Success = TL.getSuccessLoc())
++    if (Visit(Success->getTypeLoc()))
++      return true;
++  if (TypeSourceInfo *Error = TL.getErrorLoc())
++    return Visit(Error->getTypeLoc());
+   return false;
+ }
+ 
+@@ -2112,6 +2132,11 @@ public:
+   void VisitForStmt(const ForStmt *FS);
+   void VisitGotoStmt(const GotoStmt *GS);
+   void VisitIfStmt(const IfStmt *If);
++  void VisitObjC3BindingCondition(const ObjC3BindingCondition *S);
++  void VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E);
++  void VisitObjC3ResultExpr(const ObjC3ResultExpr *E);
++  void VisitObjC3CarrierTransferExpr(const ObjC3CarrierTransferExpr *E);
++  void VisitObjC3CatchStmt(const ObjC3CatchStmt *S);
+   void VisitInitListExpr(const InitListExpr *IE);
+   void VisitMemberExpr(const MemberExpr *M);
+   void VisitOffsetOfExpr(const OffsetOfExpr *E);
+@@ -3172,6 +3197,40 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
+   AddStmt(If->getInit());
+   AddDecl(If->getConditionVariable());
+ }
++
++void EnqueueVisitor::VisitObjC3BindingCondition(
++    const ObjC3BindingCondition *S) {
++  // Libclang exposes written source. The implicit snapshot owns the source
++  // initializer, and the binding initializer is only a semantic extraction
++  // recipe. Expose the user declaration and source expression once each.
++  // Worklist entries are consumed in reverse order.
++  AddStmt(S->getSource());
++  AddDecl(S->getBindingDecl());
++}
++
++void EnqueueVisitor::VisitObjC3OptionalExpr(const ObjC3OptionalExpr *E) {
++  AddStmt(E->getPayload());
++  AddTypeLoc(E->getPayloadTypeInfo());
++}
++
++void EnqueueVisitor::VisitObjC3ResultExpr(const ObjC3ResultExpr *E) {
++  AddStmt(E->getPayload());
++  AddTypeLoc(E->getErrorTypeInfo());
++  AddTypeLoc(E->getSuccessTypeInfo());
++}
++
++void EnqueueVisitor::VisitObjC3CarrierTransferExpr(
++    const ObjC3CarrierTransferExpr *E) {
++  // Initialization recipes contain compiler-generated operations sharing the
++  // source location. They must not shadow the written source in token queries.
++  AddStmt(E->getSource());
++}
++
++void EnqueueVisitor::VisitObjC3CatchStmt(const ObjC3CatchStmt *S) {
++  AddStmt(S->getHandlerBody());
++  AddStmt(S->getBindingDeclStmt());
++  AddTypeLoc(S->getCatchTypeInfo());
++}
+ void EnqueueVisitor::VisitInitListExpr(const InitListExpr *IE) {
+   // We care about the syntactic form of the initializer list, only.
+   if (InitListExpr *Syntactic = IE->getSyntacticForm())
+diff --git a/clang/tools/libclang/CXCursor.cpp b/clang/tools/libclang/CXCursor.cpp
+index fb0b3c150..559b54e9b 100644
+--- a/clang/tools/libclang/CXCursor.cpp
++++ b/clang/tools/libclang/CXCursor.cpp
+@@ -185,9 +185,29 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
+     break;
+ 
+   case Stmt::IfStmtClass:
++  case Stmt::ObjC3IfBindingStmtClass:
+     K = CXCursor_IfStmt;
+     break;
+ 
++  case Stmt::ObjC3BindingConditionClass:
++  case Stmt::ObjC3GuardStmtClass:
++  case Stmt::ObjC3MatchArmClass:
++  case Stmt::ObjC3MatchStmtClass:
++  case Stmt::ObjC3ThrowStmtClass:
++  case Stmt::ObjC3CatchStmtClass:
++  case Stmt::ObjC3DoCatchStmtClass:
++    // Preserve the existing C API while retaining traversable native nodes.
++    K = CXCursor_UnexposedStmt;
++    break;
++
++  case Stmt::ObjC3CarrierTransferExprClass:
++  case Stmt::ObjC3OptionalExprClass:
++  case Stmt::ObjC3ResultExprClass:
++  case Stmt::ObjC3MatchExprClass:
++  case Stmt::ObjC3TryExprClass:
++    K = CXCursor_UnexposedExpr;
++    break;
++
+   case Stmt::SwitchStmtClass:
+     K = CXCursor_SwitchStmt;
+     break;
+diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
+new file mode 100644
+index 000000000..bb61b54b7
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
+@@ -0,0 +1,348 @@
++//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/JSONNodeDumper.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Frontend/CompilerInstance.h"
++#include "clang/Index/IndexDataConsumer.h"
++#include "clang/Index/IndexSymbol.h"
++#include "clang/Index/IndexingAction.h"
++#include "clang/Lex/HeaderSearchOptions.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/Support/Error.h"
++#include "llvm/Support/FileSystem.h"
++#include "llvm/Support/JSON.h"
++#include "llvm/Support/ToolOutputFile.h"
++#include "llvm/Support/VirtualFileSystem.h"
++#include "gtest/gtest.h"
++
++#include <algorithm>
++#include <string>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++constexpr llvm::StringLiteral ConditionSource = R"(
++  using Maybe = __objc3_optional(int);
++  int exercise(Maybe source, bool enabled) {
++    guard let first = source, enabled else { return -1; }
++    if var second = source, second > first {
++      second += first;
++      return second;
++    } else {
++      return first;
++    }
++  }
++)";
++
++std::vector<std::string> conditionArgs() {
++  return {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"};
++}
++
++FunctionDecl *findExercise(ASTUnit &AST) {
++  for (Decl *D : AST.getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      if (FD->getName() == "exercise" && FD->hasBody())
++        return FD;
++  return nullptr;
++}
++
++class SourceVisitor : public RecursiveASTVisitor<SourceVisitor> {
++public:
++  bool Implicit = false, PostOrder = false, StopAtSource = false;
++  unsigned DeclStatements = 0, Snapshots = 0, SourceReferences = 0;
++  SmallVector<ObjC3BindingCondition *, 4> Bindings;
++  std::vector<std::string> Events;
++
++  bool shouldVisitImplicitCode() const { return Implicit; }
++  bool shouldTraversePostOrder() const { return PostOrder; }
++  bool VisitObjC3BindingCondition(ObjC3BindingCondition *S) {
++    Bindings.push_back(S);
++    Events.push_back("binding:" + S->getBindingDecl()->getNameAsString());
++    return true;
++  }
++  bool VisitDeclStmt(DeclStmt *) {
++    ++DeclStatements;
++    return true;
++  }
++  bool VisitVarDecl(VarDecl *D) {
++    Snapshots += D->isImplicit();
++    if (D->getName() == "first" || D->getName() == "second")
++      Events.push_back("decl:" + D->getNameAsString());
++    return true;
++  }
++  bool VisitDeclRefExpr(DeclRefExpr *E) {
++    if (E->getDecl()->getName() == "source") {
++      ++SourceReferences;
++      Events.push_back("source");
++      return !StopAtSource;
++    }
++    return true;
++  }
++};
++
++class BindingReferences : public RecursiveASTVisitor<BindingReferences> {
++public:
++  std::vector<const ValueDecl *> First, Second;
++  bool VisitDeclRefExpr(DeclRefExpr *E) {
++    if (E->getDecl()->getName() == "first")
++      First.push_back(E->getDecl());
++    if (E->getDecl()->getName() == "second")
++      Second.push_back(E->getDecl());
++    return true;
++  }
++};
++
++void findJSONNodes(const llvm::json::Object &Node, StringRef Kind,
++                   SmallVectorImpl<const llvm::json::Object *> &Found) {
++  if (Node.getString("kind") == Kind)
++    Found.push_back(&Node);
++  if (const auto *Inner = Node.getArray("inner"))
++    for (const auto &Child : *Inner)
++      if (const auto *Object = Child.getAsObject())
++        findJSONNodes(*Object, Kind, Found);
++}
++
++std::string dumpJSON(FunctionDecl *FD, TraversalKind Kind) {
++  std::string Buffer;
++  llvm::raw_string_ostream OS(Buffer);
++  ASTContext &C = FD->getASTContext();
++  JSONDumper Dumper(OS, C.getSourceManager(), C, C.getPrintingPolicy(), nullptr);
++  Dumper.SetTraversalKind(Kind);
++  Dumper.Visit(FD->getBody());
++  return Buffer;
++}
++
++class Occurrences : public index::IndexDataConsumer {
++public:
++  struct Occurrence {
++    const NamedDecl *Declaration;
++    index::SymbolRoleSet Roles;
++    SourceLocation Location;
++  };
++  std::vector<Occurrence> Items;
++  bool handleDeclOccurrence(const Decl *D, index::SymbolRoleSet Roles,
++                            ArrayRef<index::SymbolRelation>, SourceLocation Loc,
++                            ASTNodeInfo) override {
++    if (const auto *ND = dyn_cast<NamedDecl>(D))
++      Items.push_back({ND, Roles, Loc});
++    return true;
++  }
++  unsigned count(StringRef Name, index::SymbolRole Role) const {
++    return std::count_if(Items.begin(), Items.end(), [&](const auto &Item) {
++      return Item.Declaration->getName() == Name &&
++             (Item.Roles & static_cast<unsigned>(Role));
++    });
++  }
++};
++
++} // namespace
++
++TEST(ObjC3ConditionTooling, TraversesWrittenInitializersInBothOrders) {
++  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
++                                              "condition-tooling.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *FD = findExercise(*AST);
++  ASSERT_TRUE(FD);
++  for (bool PostOrder : {false, true}) {
++    for (bool Implicit : {false, true}) {
++      SCOPED_TRACE(PostOrder);
++      SCOPED_TRACE(Implicit);
++      SourceVisitor Visitor;
++      Visitor.PostOrder = PostOrder;
++      Visitor.Implicit = Implicit;
++      ASSERT_TRUE(Visitor.TraverseStmt(FD->getBody()));
++      EXPECT_EQ(2u, Visitor.Bindings.size());
++      EXPECT_EQ(2u, Visitor.SourceReferences);
++      EXPECT_EQ(Implicit ? 4u : 2u, Visitor.DeclStatements);
++      EXPECT_EQ(Implicit ? 2u : 0u, Visitor.Snapshots);
++      auto FirstSource = std::find(Visitor.Events.begin(), Visitor.Events.end(),
++                                   "source");
++      auto FirstDecl = std::find(Visitor.Events.begin(), Visitor.Events.end(),
++                                 "decl:first");
++      EXPECT_LT(FirstSource, FirstDecl);
++      auto Binding = std::find(Visitor.Events.begin(), Visitor.Events.end(),
++                               "binding:first");
++      if (PostOrder)
++        EXPECT_LT(FirstDecl, Binding);
++      else
++        EXPECT_LT(Binding, FirstSource);
++    }
++  }
++  SourceVisitor Cancelled;
++  Cancelled.StopAtSource = true;
++  EXPECT_FALSE(Cancelled.TraverseStmt(FD->getBody()));
++  EXPECT_EQ(1u, Cancelled.SourceReferences);
++  EXPECT_EQ(1u, Cancelled.Bindings.size());
++  EXPECT_EQ(Cancelled.Events.end(),
++            std::find(Cancelled.Events.begin(), Cancelled.Events.end(),
++                      "decl:first"));
++}
++
++TEST(ObjC3ConditionTooling, JSONPreservesScopeMetadataAndSourceReferences) {
++  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
++                                              "condition-json.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *FD = findExercise(*AST);
++  ASSERT_TRUE(FD);
++  for (TraversalKind Kind : {TK_AsIs, TK_IgnoreUnlessSpelledInSource}) {
++    SCOPED_TRACE(Kind);
++    auto JSON = llvm::json::parse(dumpJSON(FD, Kind));
++    ASSERT_TRUE(static_cast<bool>(JSON)) << llvm::toString(JSON.takeError());
++    const auto *Root = JSON->getAsObject();
++    ASSERT_TRUE(Root);
++    SmallVector<const llvm::json::Object *, 4> Guards, Ifs, Bindings, Variables,
++        References;
++    findJSONNodes(*Root, "ObjC3GuardStmt", Guards);
++    findJSONNodes(*Root, "ObjC3IfBindingStmt", Ifs);
++    findJSONNodes(*Root, "ObjC3BindingCondition", Bindings);
++    findJSONNodes(*Root, "VarDecl", Variables);
++    findJSONNodes(*Root, "DeclRefExpr", References);
++    ASSERT_EQ(1u, Guards.size());
++    EXPECT_EQ(2, Guards.front()->getInteger("numConditions"));
++    EXPECT_EQ("continuation", Guards.front()->getString("bindingScope"));
++    ASSERT_EQ(1u, Ifs.size());
++    EXPECT_EQ(2, Ifs.front()->getInteger("numConditions"));
++    EXPECT_EQ("then", Ifs.front()->getString("bindingScope"));
++    EXPECT_EQ(true, Ifs.front()->getBoolean("hasElse"));
++    ASSERT_EQ(2u, Bindings.size());
++    EXPECT_EQ("let", Bindings[0]->getString("bindingKind"));
++    EXPECT_EQ("var", Bindings[1]->getString("bindingKind"));
++    ASSERT_TRUE(Bindings[0]->getObject("bindingDecl"));
++    EXPECT_EQ("first",
++              Bindings[0]->getObject("bindingDecl")->getString("name"));
++    EXPECT_EQ(Kind == TK_AsIs ? 4u : 2u, Variables.size());
++    unsigned Sources = 0;
++    for (const auto *Reference : References)
++      if (const auto *Target = Reference->getObject("referencedDecl"))
++        Sources += Target->getString("name") == "source";
++    EXPECT_EQ(2u, Sources);
++  }
++}
++
++TEST(ObjC3ConditionTooling, ImportKeepsConditionAndContinuationBindingIdentity) {
++  auto From = tooling::buildASTFromCodeWithArgs(
++      ConditionSource, conditionArgs(), "condition-import.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", conditionArgs(), "condition-target.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"condition-import.mm", ConditionSource.str()}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  auto *FD = findExercise(*From);
++  ASSERT_TRUE(FD);
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(FD);
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *ImportedFunction = cast<FunctionDecl>(*Imported);
++  SourceVisitor Visitor;
++  ASSERT_TRUE(Visitor.TraverseStmt(ImportedFunction->getBody()));
++  ASSERT_EQ(2u, Visitor.Bindings.size());
++  auto *First = Visitor.Bindings[0]->getBindingDecl();
++  auto *Second = Visitor.Bindings[1]->getBindingDecl();
++  EXPECT_TRUE(First->getType().isConstQualified());
++  EXPECT_FALSE(Second->getType().isConstQualified());
++  EXPECT_EQ(&To->getASTContext(), &First->getASTContext());
++  BindingReferences References;
++  ASSERT_TRUE(References.TraverseStmt(ImportedFunction->getBody()));
++  ASSERT_EQ(3u, References.First.size());
++  ASSERT_EQ(3u, References.Second.size());
++  for (const ValueDecl *D : References.First)
++    EXPECT_EQ(First, D);
++  for (const ValueDecl *D : References.Second)
++    EXPECT_EQ(Second, D);
++  Occurrences Index;
++  index::IndexingOptions Options;
++  Options.IndexFunctionLocals = true;
++  const Decl *ImportedDecls[] = {ImportedFunction};
++  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(),
++                           ImportedDecls, Index, Options);
++  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
++  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
++  for (const auto &Item : Index.Items) {
++    if (Item.Declaration->getName() == "first")
++      EXPECT_EQ(First, Item.Declaration);
++    if (Item.Declaration->getName() == "second")
++      EXPECT_EQ(Second, Item.Declaration);
++  }
++  // A repeated import must reuse declarations already attached to references.
++  auto Reimported = Importer.Import(FD);
++  ASSERT_TRUE(static_cast<bool>(Reimported))
++      << llvm::toString(Reimported.takeError());
++  EXPECT_EQ(*Imported, *Reimported);
++}
++
++TEST(ObjC3ConditionTooling, IndexesSourcesAndUserBindingsExactlyOnce) {
++  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
++                                              "condition-index.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  Occurrences Index;
++  index::IndexingOptions Options;
++  Options.IndexFunctionLocals = true;
++  index::indexASTUnit(*AST, Index, Options);
++  EXPECT_EQ(2u, Index.count("source", index::SymbolRole::Reference));
++  EXPECT_EQ(1u, Index.count("first", index::SymbolRole::Definition));
++  EXPECT_EQ(1u, Index.count("second", index::SymbolRole::Definition));
++  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
++  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
++  EXPECT_EQ(1u, Index.count("second", index::SymbolRole::Write));
++  for (const auto &Item : Index.Items)
++    EXPECT_FALSE(Item.Declaration->isImplicit());
++}
++
++TEST(ObjC3ConditionTooling, PersistedASTKeepsNativeBindingsAndSourceOccurrences) {
++  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
++                                              "condition-persistence.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  llvm::SmallString<256> Path;
++  int Descriptor;
++  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile(
++      "objc3-condition-tooling", "ast", Descriptor, Path));
++  llvm::ToolOutputFile File(Path, Descriptor);
++  ASSERT_FALSE(AST->Save(Path));
++  auto VFS = AST->getFileManager().getVirtualFileSystemPtr();
++  auto DiagnosticOpts = std::make_shared<DiagnosticOptions>();
++  auto Diagnostics = CompilerInstance::createDiagnostics(*VFS, *DiagnosticOpts);
++  auto Containers = std::make_shared<PCHContainerOperations>();
++  HeaderSearchOptions HeaderOptions;
++  auto Reloaded = ASTUnit::LoadFromASTFile(
++      Path, Containers->getRawReader(), ASTUnit::LoadEverything, VFS,
++      DiagnosticOpts, Diagnostics, AST->getFileSystemOpts(), HeaderOptions);
++  ASSERT_TRUE(Reloaded);
++  auto *FD = findExercise(*Reloaded);
++  ASSERT_TRUE(FD);
++  auto *Body = cast<CompoundStmt>(FD->getBody());
++  ASSERT_EQ(2u, Body->size());
++  auto *Guard = cast<ObjC3GuardStmt>(Body->body_front());
++  auto *If = cast<ObjC3IfBindingStmt>(*(Body->body_begin() + 1));
++  ASSERT_EQ(2u, Guard->getNumConditions());
++  ASSERT_EQ(2u, If->getNumConditions());
++  EXPECT_TRUE(Guard->getElseLoc().isValid());
++  EXPECT_TRUE(If->getElseLoc().isValid());
++  EXPECT_TRUE(If->getElse());
++  SourceVisitor Visitor;
++  EXPECT_TRUE(Visitor.TraverseStmt(Body));
++  EXPECT_EQ(2u, Visitor.SourceReferences);
++  EXPECT_EQ(2u, Visitor.DeclStatements);
++  Occurrences Index;
++  index::IndexingOptions Options;
++  Options.IndexFunctionLocals = true;
++  index::indexASTUnit(*Reloaded, Index, Options);
++  EXPECT_EQ(2u, Index.count("source", index::SymbolRole::Reference));
++  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
++  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
++}

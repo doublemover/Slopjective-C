@@ -528,3 +528,72 @@ index 000000000..81a3347a9
 +}
 +} // namespace lldb_private
 +#endif
+diff --git a/lldb/test/Shell/Expr/objc3-condition-locals.mm b/lldb/test/Shell/Expr/objc3-condition-locals.mm
+new file mode 100644
+index 000000000..242dd50fd
+--- /dev/null
++++ b/lldb/test/Shell/Expr/objc3-condition-locals.mm
+@@ -0,0 +1,63 @@
++// REQUIRES: native, system-linux
++// UNSUPPORTED: remote-linux
++// RUN: %clangxx_host -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -g -O0 %s -o %t
++// RUN: %lldb -b -x %t \
++// RUN:   -o "settings set target.disable-aslr false" \
++// RUN:   -o "breakpoint set -n condition_then_stop" \
++// RUN:   -o "breakpoint set -n condition_else_stop" \
++// RUN:   -o "breakpoint set -n condition_continuation_stop" \
++// RUN:   -o run -o up -o "frame variable stable branch" \
++// RUN:   -o "expression stable + branch" \
++// RUN:   -o continue -o up -o "frame variable" \
++// RUN:   -o continue -o up -o "frame variable" \
++// RUN:   -o "expression stable + 1" \
++// RUN:   -o continue 2>&1 | FileCheck %s
++
++// Native source bindings must be usable as ordinary locals in LLDB. A guard's
++// binding survives through the compound continuation; the if binding belongs
++// only to its successful branch. The compiler's snapshot must stay unnamed.
++
++__attribute__((noinline)) void condition_then_stop() {
++  __asm__ volatile("" ::: "memory");
++}
++__attribute__((noinline)) void condition_else_stop() {
++  __asm__ volatile("" ::: "memory");
++}
++__attribute__((noinline)) void condition_continuation_stop() {
++  __asm__ volatile("" ::: "memory");
++}
++
++int exercise_conditions(bool takeThen) {
++  auto source = __objc3_some(int, 41);
++  guard let stable = source else { return -1; }
++  if var branch = __objc3_some(int, 1), takeThen {
++    branch += stable;
++    condition_then_stop();
++    return branch;
++  } else {
++    condition_else_stop();
++  }
++  condition_continuation_stop();
++  return stable;
++}
++
++int main() {
++  return exercise_conditions(true) != 42 || exercise_conditions(false) != 41;
++}
++
++// CHECK: (lldb) frame variable stable branch
++// CHECK: (const int) stable = 41
++// CHECK: (int) branch = 42
++// CHECK: (lldb) expression stable + branch
++// CHECK: (int) $0 = 83
++// CHECK: (lldb) frame variable
++// CHECK: (const int) stable = 41
++// CHECK-NOT: branch =
++// CHECK: (lldb) continue
++// CHECK: (lldb) frame variable
++// CHECK: (const int) stable = 41
++// CHECK-NOT: branch =
++// CHECK: (lldb) expression stable + 1
++// CHECK: (int) $1 = 42
++// CHECK: exited with status = 0
++

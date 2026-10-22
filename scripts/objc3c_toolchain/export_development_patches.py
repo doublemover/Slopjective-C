@@ -62,6 +62,12 @@ PACKETS = {
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
+        "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/unittests/AST/ObjC3ConditionToolingTest.cpp",
+        "clang/tools/libclang/CXCursor.cpp",
+        "clang/tools/libclang/CIndex.cpp",
+        "clang/include/clang/AST/JSONNodeDumper.h",
         "clang/CMakeLists.txt",
         "clang/include/clang/Basic/ObjC3Syntax.h",
         "clang/include/clang/Basic/TokenKinds.def",
@@ -292,6 +298,7 @@ PACKETS = {
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
     ],
     "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "lldb/test/Shell/Expr/objc3-condition-locals.mm",
         "lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h",
         "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",
         "lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp",
