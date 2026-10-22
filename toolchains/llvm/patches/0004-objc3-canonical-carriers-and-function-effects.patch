@@ -1164,7 +1164,7 @@ index 7671f003c..16e56e1ce 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..80b7cfb6a 100644
+index 2cb79b6ba..6aaeeed5d 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,63 @@
@@ -1340,13 +1340,13 @@ index 2cb79b6ba..80b7cfb6a 100644
 +def warn_objc3_match_unreachable : Warning<"unreachable match case">,
 +  InGroup<ObjC3MatchUnreachable>;
 +
- } // end of sema component.
-+
 +// Objective-C 3 constrained standard-library Error factories.
 +def err_objc3_error_factory_mode : Error<
-+  "Error factory validation requires Objective-C 3.0 language mode">;
++  "error factory validation requires Objective-C 3.0 language mode">;
 +def err_objc3_error_factory_result : Error<
 +  "error factory result of type %0 must conform to Objective-C protocol 'Error' in this profile">;
++
+ } // end of sema component.
 diff --git a/clang/include/clang/Basic/TypeNodes.td b/clang/include/clang/Basic/TypeNodes.td
 index a9965a4a8..4ec0b3a0c 100644
 --- a/clang/include/clang/Basic/TypeNodes.td
