@@ -48,6 +48,7 @@
  * the original status value. The caller supplies the API's domain-specific
  * error representation, rather than losing it in an integer error box. */
 #define resultFromStatus(status, successValue, makeError) \
+  ({ __typeof__(status) __objc3_stdlib_saved_status = (status); \
   (^Result(__typeof__(successValue), __typeof__((makeError)(status))) \
       (__typeof__(status) __objc3_stdlib_status) { \
     if (__objc3_stdlib_status == 0) \
@@ -55,12 +56,12 @@
                 (successValue)); \
     return Err(__typeof__(successValue), __typeof__((makeError)(status)), \
                (makeError)(__objc3_stdlib_status)); \
-  })(status)
+  })(__objc3_stdlib_saved_status); })
 
 #ifdef __OBJC__
 /* Checked-error counterpart for status APIs whose successful result is void. */
 #define statusOrThrow(status, makeError) \
-  (^( __typeof__(status) __objc3_stdlib_status) throws(id<Error>) { \
+  (^(__typeof__(status) __objc3_stdlib_status) throws(id<Error>) { \
     if (__objc3_stdlib_status != 0) \
       throwError((makeError)(__objc3_stdlib_status)); \
   })(status)

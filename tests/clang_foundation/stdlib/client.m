@@ -26,6 +26,8 @@ static Optional(int) input(int *calls, int present) {
   return present ? Some(int, 42) : None(int);
 }
 
+static int status_output(int *output, int value) { *output = value; return 0; }
+
 int main(void) {
   assert(OBJC3_LANGUAGE_REVISION >= 202610);
   assert(OBJC3_STDLIB_VERSION_MAJOR == 2);
@@ -68,6 +70,13 @@ int main(void) {
   match(status_bad) {
     case .Ok(let value): { (void)value; assert(0); }
     case .Err(let error): { assert(error == 93); }
+  }
+  int status_out = 0;
+  Result(int, int) output_result = resultFromStatus(status_output(&status_out, 42),
+                                                  status_out, status_error);
+  match(output_result) {
+    case .Ok(let value): { assert(value == 42 && status_out == 42); }
+    case .Err(let error): { (void)error; assert(0); }
   }
   assert(isOk(stdlib_status(0, 42, status_error)));
   assert(!isOk(stdlib_status(9, 0, status_error)) && error_calls == 2);
