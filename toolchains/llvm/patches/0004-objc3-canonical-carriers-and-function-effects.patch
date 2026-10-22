@@ -27718,10 +27718,10 @@ index 000000000..2e7f9ebae
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3OptionalAccess.cpp b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
 new file mode 100644
-index 000000000..fdc5ea08a
+index 000000000..ef0b1bc0a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,156 @@
 +//===--- SemaObjC3OptionalAccess.cpp - Reference-only optional access -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27745,11 +27745,20 @@ index 000000000..fdc5ea08a
 +      Nonnull ? attr::TypeNonNull : attr::TypeNullable, Type, Type);
 +}
 +
-+ExprResult prepareReceiver(Sema &S, Expr *Receiver, SourceLocation Loc) {
-+  ExprResult Checked = S.CheckPlaceholderExpr(Receiver);
++ExprResult prepareReceiver(Sema &S, Scope *Scope, Expr *&WrittenReceiver,
++                           SourceLocation Loc) {
++  // C++ disambiguation can leave a parenthesized operand as a ParenListExpr,
++  // which has no type. Normalize it just as ordinary postfix member access
++  // does, before checking placeholder types or retaining a written operand.
++  ExprResult Normalized =
++      S.MaybeConvertParenListExprToParenExpr(Scope, WrittenReceiver);
++  if (Normalized.isInvalid())
++    return ExprError();
++  WrittenReceiver = Normalized.get();
++  ExprResult Checked = S.CheckPlaceholderExpr(WrittenReceiver);
 +  if (Checked.isInvalid())
 +    return ExprError();
-+  Receiver = Checked.get();
++  Expr *Receiver = Checked.get();
 +  if (!Receiver->isTypeDependent() &&
 +      !Receiver->getType()->isObjCObjectPointerType()) {
 +    S.Diag(Loc, diag::err_objc3_optional_access_receiver)
@@ -27836,7 +27845,7 @@ index 000000000..fdc5ea08a
 +ExprResult Sema::ActOnObjC3OptionalMemberExpr(
 +    Scope *Scope, Expr *Base, SourceLocation OperatorLoc, IdentifierInfo *Member,
 +    SourceLocation MemberLoc, Decl *ObjCImplementation) {
-+  ExprResult Source = prepareReceiver(*this, Base, OperatorLoc);
++  ExprResult Source = prepareReceiver(*this, Scope, Base, OperatorLoc);
 +  if (Source.isInvalid())
 +    return ExprError();
 +  auto *Receiver = makeReceiver(*this, Source.get(), OperatorLoc);
@@ -27857,7 +27866,7 @@ index 000000000..fdc5ea08a
 +    Scope *Scope, Expr *Base, Selector Sel, SourceLocation LBracketLoc,
 +    ArrayRef<SourceLocation> SelectorLocs, SourceLocation RBracketLoc,
 +    MultiExprArg Args, SourceLocation OperatorLoc) {
-+  ExprResult Source = prepareReceiver(*this, Base, OperatorLoc);
++  ExprResult Source = prepareReceiver(*this, Scope, Base, OperatorLoc);
 +  if (Source.isInvalid())
 +    return ExprError();
 +  auto *Receiver = makeReceiver(*this, Source.get(), OperatorLoc);
@@ -28503,20 +28512,21 @@ index 000000000..7b6ada9b7
 +objc3_async_frame empty(void) { return pch_empty(); }
 diff --git a/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm
 new file mode 100644
-index 000000000..243ceca81
+index 000000000..6958e7565
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,5 @@
 +// expected-no-diagnostics
 +id consume_access_pch(AccessReceiver *receiver) {
-+  return access_from_pch(receiver) ?? dependent_access_from_pch(receiver);
++  return access_from_pch(receiver) ?? dependent_access_from_pch(receiver) ??
++         parenthesized_access_from_pch(receiver);
 +}
 diff --git a/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h b/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h
 new file mode 100644
-index 000000000..5b0956cb5
+index 000000000..87911d138
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/Inputs/optional-access-pch.h
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,16 @@
 +#ifndef OBJC3_OPTIONAL_ACCESS_PCH_H
 +#define OBJC3_OPTIONAL_ACCESS_PCH_H
 +@interface AccessReceiver
@@ -28528,6 +28538,9 @@ index 000000000..5b0956cb5
 +}
 +template<class T> auto dependent_access_from_pch(T receiver) {
 +  return [receiver? take:43];
++}
++template<class T> auto parenthesized_access_from_pch(T receiver) {
++  return (receiver)?.next ?? [(receiver)? take:44];
 +}
 +#endif
 diff --git a/clang/test/ObjC3/Parser/optional-access-pch.mm b/clang/test/ObjC3/Parser/optional-access-pch.mm
@@ -28549,10 +28562,10 @@ index 000000000..be9c077e5
 +// IR: phi ptr
 diff --git a/clang/test/ObjC3/Parser/optional-access.mm b/clang/test/ObjC3/Parser/optional-access.mm
 new file mode 100644
-index 000000000..80d11d826
+index 000000000..b9d2008b1
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/optional-access.mm
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,65 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -ast-print %s > %t.mm
@@ -28584,12 +28597,24 @@ index 000000000..80d11d826
 +  return [(first ? first : second)? take:result other:argument()];
 +}
 +
++id parenthesized_receivers(Receiver *receiver) {
++  id result = (receiver)?.next;
++  result = ((receiver))?.next;
++  result = (argument(), receiver)?.next;
++  (void)(receiver)?.callback;
++  return [(receiver)? take:result other:argument()];
++}
++
 +template<class T> auto dependent_member(T source) { return source?.next; }
++template<class T> auto dependent_parenthesized(T source) {
++  return (source)?.next;
++}
 +template<class T> auto dependent_message(T source) {
 +  return [source? take:argument() other:argument()];
 +}
 +void instantiate(Receiver *receiver) {
 +  (void)dependent_member(receiver);
++  (void)dependent_parenthesized(receiver);
 +  (void)dependent_message(receiver);
 +}
 +

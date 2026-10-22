@@ -51,9 +51,9 @@ static AccessObject *access_source(AccessObject *object) {
 }
 static int access_argument(int value) { ++access_arguments; return value; }
 #ifdef __cplusplus
-template<class T> static auto access_template_member(T object) { return object?.next; }
+template<class T> static auto access_template_member(T object) { return (object)?.next; }
 template<class T> static auto access_template_send(T object) {
-  return [object? take:access_argument(1) other:access_argument(2)];
+  return [(object)? take:access_argument(1) other:access_argument(2)];
 }
 #endif
 #if __has_feature(objc_arc)
@@ -99,6 +99,22 @@ static void optional_access_suite(void) {
   result = access_template_send(owner);
   ACCESS_CHECK(result == owner && access_arguments == 7);
 #endif
+  int receivers_before = access_receivers, getters_before = access_getters;
+  int arguments_before = access_arguments;
+  result = (access_source(absent))?.next;
+  ACCESS_CHECK(result == (id)0 && access_receivers == receivers_before + 1 &&
+               access_getters == getters_before);
+  result = ((access_source(owner)))?.next;
+  ACCESS_CHECK(result == owner && access_receivers == receivers_before + 2 &&
+               access_getters == getters_before + 1);
+  (void)(owner)?.callback;
+  ACCESS_CHECK(access_getters == getters_before + 2);
+  result = [(access_source(absent))? take:access_argument(1) other:access_argument(2)];
+  ACCESS_CHECK(result == (id)0 && access_receivers == receivers_before + 3 &&
+               access_arguments == arguments_before);
+  result = (access_argument(9), owner)?.next;
+  ACCESS_CHECK(result == owner && access_arguments == arguments_before + 1 &&
+               access_getters == getters_before + 3);
 #if __has_feature(objc_arc)
   AccessObject * __weak witness;
   {

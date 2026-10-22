@@ -213,7 +213,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                             'MIXED_VOLATILE': 'volatile carrier copy and move construction is not supported',
                             'MIXED_CAPTURE': 'by-value call ABI',
                             'MIXED_RECORD': 'mixed ARC/C++ carrier enclosing storage',
-                            'MIXED_LAMBDA': 'mixed ARC/C++ carrier enclosing storage',
+                            'MIXED_LAMBDA': 'mixed ARC/C++ carrier local initialization',
                             'MIXED_NEW': 'nontrivial carrier allocation or storage reuse',
                             'MIXED_NEW_VALUE': 'nontrivial carrier allocation or storage reuse',
                             'MIXED_NEW_ARRAY': 'nontrivial carrier allocation or storage reuse',
