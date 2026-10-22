@@ -17747,10 +17747,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..61570aa02
+index 000000000..fc39c48c5
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,760 @@
+@@ -0,0 +1,789 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18185,7 +18185,16 @@ index 000000000..61570aa02
 +    if (!Condition)
 +      return;
 +    if (const auto *Full = dyn_cast<ExprWithCleanups>(Condition)) {
++      llvm::BitVector Before = Facts;
 +      refine(Full->getSubExpr(), Truth, Facts);
++      // The branch tests the previously computed Boolean result. A temporary
++      // destructor can change exposed source storage before the branch runs.
++      if (Full->cleanupsHaveSideEffects())
++        for (const VarDecl *Variable : Escaped) {
++          auto Found = Variables.find(Variable);
++          if (Found != Variables.end() && !Before.test(Found->second))
++            Facts.reset(Found->second);
++        }
 +      return;
 +    }
 +    Condition = Condition->IgnoreParenImpCasts();
@@ -18218,6 +18227,17 @@ index 000000000..61570aa02
 +          assign(variable(Value), Truth == (Operation->getOpcode() == BO_NE),
 +                 Facts);
 +          return;
++        }
++        // Equality to another proved nonnull value is also a null proof. A
++        // side effect between the two loads can change the source storage.
++        if (Truth == (Operation->getOpcode() == BO_EQ) &&
++            !Operation->HasSideEffects(Context)) {
++          bool LeftNonnull = nonnull(Operation->getLHS(), Facts);
++          bool RightNonnull = nonnull(Operation->getRHS(), Facts);
++          if (LeftNonnull)
++            assign(variable(Operation->getRHS()), true, Facts);
++          if (RightNonnull)
++            assign(variable(Operation->getLHS()), true, Facts);
 +        }
 +      }
 +    }
@@ -18292,6 +18312,9 @@ index 000000000..61570aa02
 +      : Actions(Actions), Context(Actions.Context) {}
 +
 +  bool check(Decl *Callable, Stmt *Body) {
++    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
++      for (const CXXCtorInitializer *Initializer : Constructor->inits())
++        collect(Initializer->getInit());
 +    collect(Body);
 +    if (Messages.empty())
 +      return false;
@@ -18351,8 +18374,14 @@ index 000000000..61570aa02
 +          continue;
 +        }
 +        llvm::BitVector Edge = Output;
-+        if (Block->succ_size() == 2 &&
-+            !isa_and_nonnull<SwitchStmt>(Block->getTerminatorStmt())) {
++        const Stmt *Terminator = Block->getTerminatorStmt();
++        bool BooleanBranch =
++            Block->getTerminator().getKind() ==
++                CFGTerminator::ObjC3ConditionBranch ||
++            isa_and_nonnull<IfStmt, ForStmt, WhileStmt, DoStmt,
++                            AbstractConditionalOperator, BinaryOperator,
++                            ChooseExpr>(Terminator);
++        if (Block->succ_size() == 2 && BooleanBranch) {
 +          const Expr *Condition = Block->getLastCondition();
 +          if (!Condition)
 +            Condition = dyn_cast_or_null<Expr>(Block->getTerminatorCondition());
@@ -22846,3 +22875,76 @@ index 000000000..5d9e25fb2
 +void record_boundary(__objc3_optional(OrdinaryRecord) &source) {
 +  auto copied = __objc3_copy(source); // expected-error {{is not supported in an Objective-C 3 value carrier}}
 +}
+diff --git a/clang/test/ObjC3/Sema/guard-nullable-flow-cxx.mm b/clang/test/ObjC3/Sema/guard-nullable-flow-cxx.mm
+new file mode 100644
+index 000000000..719fa93ff
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-nullable-flow-cxx.mm
+@@ -0,0 +1,67 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -Wno-nullability-completeness -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-nullability-completeness -fsyntax-only -verify %s
++
++@interface FlowReceiver
++- (void)ping;
++- (int)number;
++@end
++typedef FlowReceiver * _Nullable Nullable;
++typedef FlowReceiver * _Nonnull Nonnull;
++
++void equality_with_nonnull_peer(Nullable candidate, Nonnull peer) {
++  guard candidate == peer else { return; }
++  [candidate ping];
++}
++
++void negative_inequality_with_nonnull_peer(Nullable candidate, Nonnull peer) {
++  guard !(candidate != peer) else { return; }
++  [candidate ping];
++}
++
++void unequal_to_nonnull_still_allows_nil(Nullable candidate, Nonnull peer) {
++  guard candidate != peer else { return; }
++  [candidate ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++struct UnprovenInitializer {
++  int value;
++  UnprovenInitializer(Nullable source)
++      : value([source number]) {} // expected-error {{ordinary message send requires a nonnull receiver}}
++};
++
++struct ProvenInitializer {
++  int value;
++  ProvenInitializer(Nullable source)
++      : value(source ? [source number] : 0) {}
++};
++
++struct DefaultInitializer {
++  Nullable source;
++  int value = [source number]; // expected-error {{ordinary message send requires a nonnull receiver}}
++  DefaultInitializer() : source((id)0) {}
++};
++
++struct ResetAtFullExpressionEnd {
++  Nullable __strong *slot;
++  explicit ResetAtFullExpressionEnd(Nullable __strong *slot) : slot(slot) {}
++  ~ResetAtFullExpressionEnd() { *slot = (id)0; }
++};
++Nullable source_with_temporary(ResetAtFullExpressionEnd);
++
++void a_condition_cleanup_can_change_tested_storage(Nullable value) {
++  guard (value = source_with_temporary(ResetAtFullExpressionEnd(&value))) != (id)0
++      else { return; }
++  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++Nullable next_source(void);
++void assignment_test_without_cleanup_refines(Nullable value) {
++  guard (value = next_source()) != (id)0 else { return; }
++  [value ping];
++}
++
++template <class T> struct TemplateInitializer {
++  int value;
++  TemplateInitializer(T source) : value(source ? [source number] : 0) {}
++};
++template struct TemplateInitializer<Nullable>;
