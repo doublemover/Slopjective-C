@@ -213,7 +213,63 @@ static void resource_cpp_actions(bool fail) {
   if(fail)throw 42;
 }
 #endif
+static void resource_take_operation(void) {
+  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+  int taken = __builtin_objc3_resource_take(value);
+  if(taken != 3 || value != 0)bad=60;
+  second(); record(taken);
+}
+static void resource_discard_operation(void) {
+  int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
+  __builtin_objc3_resource_discard(value);
+  if(value != -1)bad=61;
+  second();
+}
+static int resource_replacement(int *value) {
+  if(*value != -1)bad=62;
+  second(); return 3;
+}
+static void resource_reset_operation(void) {
+  int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 1;
+  __builtin_objc3_resource_reset(value, resource_replacement(&value));
+  if(value != 3)bad=63;
+}
+static int resource_replacement_throw(void) { second(); @throw token; }
+static void resource_reset_rhs_exception(void) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 4;
+  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  __builtin_objc3_resource_reset(value, resource_replacement_throw());
+  bad=64;
+}
+static void resource_immediate_close_exception(bool reset) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  int value __attribute__((objc_resource(close=close_resource_throwing, invalid=0))) = 3;
+  if(reset)__builtin_objc3_resource_reset(value, 4);
+  else __builtin_objc3_resource_discard(value);
+  bad=65;
+}
+#ifdef __cplusplus
+template<int Value> static int resource_template_take(void) {
+  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = Value;
+  return __builtin_objc3_resource_take(value);
+}
+#endif
 static void resource_ordering(void) {
+  resource_take_operation(); expect(23);
+  resource_discard_operation(); expect(32);
+  resource_reset_operation(); expect(123);
+  @try { resource_reset_rhs_exception(); }
+  @catch(id error) { if(error != token)bad=66; record(5); }
+  expect(1245);
+  for(int reset=0; reset!=2; ++reset) {
+    @try { resource_immediate_close_exception(reset); }
+    @catch(id error) { if(error != token)bad=67; second(); }
+    expect(312);
+  }
+#ifdef __cplusplus
+  if(resource_template_take<3>() != 3)bad=68;
+  expect(0);
+#endif
   resource_normal(); expect(21);
   resource_invalid(); expect(0);
   resource_final_value(); expect(3);

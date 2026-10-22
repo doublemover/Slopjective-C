@@ -26102,7 +26102,7 @@ index 000000000..ac5a5b4df
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..759c08ef7
+index 000000000..e923166d4
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
 @@ -0,0 +1,217 @@
@@ -26136,8 +26136,8 @@ index 000000000..759c08ef7
 +void clang::handleObjC3ResourceAttr(Sema &S, Decl *D,
 +                                    const ParsedAttr &Attribute) {
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) {
-+    S.Diag(Loc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
-+                                                  Message));
++    S.Diag(Loc, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++        DiagnosticIDs::Error, Message));
 +    D->setInvalidDecl();
 +  };
 +  if (!S.getLangOpts().ObjC3) {
@@ -27764,7 +27764,7 @@ index 000000000..dcbf35eda
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..891512fe8
+index 000000000..2cc9d7822
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 @@ -0,0 +1,478 @@
@@ -27816,8 +27816,8 @@ index 000000000..891512fe8
 +  void diagnose(const Stmt *Node, const VarDecl *Variable, StringRef Message) {
 +    if (!Diagnosed.insert(Node).second)
 +      return;
-+    Actions.Diag(Node->getBeginLoc(), Actions.getDiagnostics().getCustomDiagID(
-+                                         DiagnosticsEngine::Error, Message))
++    Actions.Diag(Node->getBeginLoc(), Actions.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                                         DiagnosticIDs::Error, Message))
 +        << Variable;
 +    Invalid = true;
 +  }
@@ -28248,7 +28248,7 @@ index 000000000..891512fe8
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceOperations.cpp b/clang/lib/Sema/SemaObjC3ResourceOperations.cpp
 new file mode 100644
-index 000000000..3ce9799cf
+index 000000000..0e4277c34
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceOperations.cpp
 @@ -0,0 +1,63 @@
@@ -28265,8 +28265,8 @@ index 000000000..3ce9799cf
 +    unsigned Operation, Expr *Operand, Expr *Replacement,
 +    SourceLocation BuiltinLoc, SourceLocation RParenLoc) {
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) -> ExprResult {
-+    Diag(Loc, getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
-+                                               Message));
++    Diag(Loc, getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++        DiagnosticIDs::Error, Message));
 +    return ExprError();
 +  };
 +  if (!getLangOpts().ObjC3)
@@ -28735,4 +28735,56 @@ index 000000000..eb6065df6
 +  (void)[receiver?]; // expected-error {{expected identifier}}
 +  id accepted = receiver?.next;
 +  (void)accepted;
++}
+diff --git a/clang/test/ObjC3/Sema/resource-operations.m b/clang/test/ObjC3/Sema/resource-operations.m
+new file mode 100644
+index 000000000..d2a21e948
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/resource-operations.m
+@@ -0,0 +1,46 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
++// compat-no-diagnostics
++void close_handle(int) __attribute__((nothrow));
++void consume_handle(int) __attribute__((nothrow));
++#define RESOURCE __attribute__((objc_resource(close=close_handle, invalid=0)))
++void legal_transfer(void) {
++  int value RESOURCE = 0;
++  __builtin_objc3_resource_reset(value, 7);
++  int owned = __builtin_objc3_resource_take(value);
++  consume_handle(owned);
++  close_handle(owned);
++  if(value != 0)consume_handle(value);
++  value = 8;
++  __builtin_objc3_resource_discard(value);
++  __builtin_objc3_resource_reset(value, 9);
++}
++void moved_use(void) {
++  int value RESOURCE = 3;
++  int owned = __builtin_objc3_resource_take(value);
++  consume_handle(owned);
++  consume_handle(value); // strict-error {{may have been moved or discarded}}
++}
++void overwrite(void) {
++  int value RESOURCE = 3;
++  value = 4; // strict-error {{may overwrite live resource}}
++}
++void copy_owner(void) {
++  int value RESOURCE = 3;
++  int other RESOURCE = value; // strict-error {{copies ownership}}
++  (void)other;
++}
++void manual_close(void) {
++  int value RESOURCE = 3;
++  close_handle(value); // strict-error {{manual close of registered resource}}
++}
++void lost_take(void) {
++  int value RESOURCE = 3;
++  __builtin_objc3_resource_take(value); // strict-error {{discards its ownership result}}
++}
++void escaped_storage(void) {
++  int value RESOURCE = 3;
++  int *escaped = &value; // strict-error {{cannot track escaped storage}}
++  (void)escaped;
 +}

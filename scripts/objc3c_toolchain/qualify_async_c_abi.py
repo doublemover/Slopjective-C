@@ -63,12 +63,27 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             raise ValueError('typed async C ABI failed: ' + label)
         return log
 
+    def inputs():
+        return {
+            'compiler_sha256': packages.digest(compiler.resolve()),
+            'runtime_library_sha256': packages.digest(runtime_library),
+            'objc_runtime_sha256': packages.digest(objc_runtime),
+            'sdk_manifest_sha256': packages.digest(sdk / 'objc3-sdk.json'),
+            'qualification_script_sha256': packages.digest(Path(__file__).resolve()),
+            'header_hashes': {name: packages.digest(headers / name)
+                             for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
+            'source_hashes': {name: packages.digest(fixture / name) for name in
+                             ('bridge.h', 'bridge.c', 'client.cpp',
+                              'logical_calls.h', 'logical_calls.m')},
+        }
+
     try:
+        initial_inputs = inputs()
         with tempfile.TemporaryDirectory(prefix="objc3 C async 'outside checkout ") as temporary:
             root = Path(temporary)
             for plang, powner, clang, standard, cowner, opt in configurations():
                 label = '-'.join((plang, powner, standard, cowner, opt))
-                for name in ('bridge.h', 'bridge.c', 'client.cpp'):
+                for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
                     shutil.copyfile(fixture / name, root / name)
                 common = ['--no-default-config', '-' + opt, '-g', '-UNDEBUG',
                           '-Wall', '-Wextra', '-Werror', '-Wno-unused-command-line-argument',
@@ -90,9 +105,24 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 (root / 'bridge.c').unlink()
                 run(label + '-consumer', [compiler, *consumer_flags, root / 'client.cpp',
                                          '-c', '-o', root / 'client.o'], root)
+                logical_objects = []
+                logical_pch = plang == 'objective-c' and opt == 'O2'
+                if plang == 'objective-c':
+                    logical_flags = [*provider_flags]
+                    if logical_pch:
+                        pch = root / 'logical-calls.pch'
+                        run(label + '-logical-header', [compiler, *logical_flags,
+                            '-x', 'objective-c-header', root / 'logical_calls.h',
+                            '-o', pch], root)
+                        logical_flags += ['-include-pch', pch]
+                    logical_object = root / 'logical-calls.o'
+                    run(label + '-logical-calls', [compiler, *logical_flags,
+                        root / 'logical_calls.m', '-c', '-o', logical_object], root)
+                    (root / 'logical_calls.m').unlink()
+                    logical_objects.append(logical_object)
                 executable = root / 'client'
                 link = [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
-                        root / 'bridge.o', root / 'client.o', runtime_library,
+                        root / 'bridge.o', root / 'client.o', *logical_objects, runtime_library,
                         '-pthread', '-L' + str(sdk / 'lib'),
                         '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
                         '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff']
@@ -128,19 +158,18 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                               'provider_ownership': powner, 'consumer_language': clang,
                               'consumer_standard': standard, 'consumer_ownership': cowner,
                               'optimization': opt, 'provider_source_removed': True,
+                              'logical_frame_calls': plang == 'objective-c',
+                              'logical_frame_input': 'PCH' if logical_pch else 'ordinary',
                               'debugger_values': debugger_values,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.async-c-abi-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'], 'service_abi': 4, 'async_abi': 1,
                   'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
-                  'compiler_sha256': packages.digest(compiler.resolve()),
-                  'runtime_library_sha256': packages.digest(runtime_library),
-                  'objc_runtime_sha256': packages.digest(objc_runtime),
-                  'header_hashes': {name: packages.digest(headers / name)
-                      for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
+                  **initial_inputs,
                   'sanitizer': sanitizer, 'executions': len(cases), 'cases': cases,
-                  'commands': commands, 'source_hashes': {name: packages.digest(fixture / name)
-                      for name in ('bridge.h', 'bridge.c', 'client.cpp')}}
+                  'profile_conformance_claimed': False, 'commands': commands}
+        if inputs() != initial_inputs:
+            raise ValueError('typed async C ABI inputs changed during qualification')
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.async-c-abi-qualification.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'], 'cases': cases,
