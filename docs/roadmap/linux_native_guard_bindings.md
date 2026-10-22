@@ -25,6 +25,15 @@ Unmodeled constructs fail closed. Deferred cleanup and locally handled
 pool/synchronization runtime cleanup need explicit modeling before admission.
 The proof does not claim a general theorem about loop termination.
 
+## Qualified AST foundation
+
+The [development receipt](../support/linux_guard_ast_acceptance.json) records
+229 passing Clang regressions, 62 AST contract tests and 53 production exit-proof
+cases. The native condition nodes pass traversal, printing, profiling, structural
+comparison, cross-context import and save/reload serialization, including both
+binding kinds and an absent if-binding else. Compiler, clangd and LLDB rebuilds
+pass. Source parsing and ownership lowering remain under implementation.
+
 ## Implementation still to complete
 
 - Native AST nodes and contextual parser recognition, preserving base-language
