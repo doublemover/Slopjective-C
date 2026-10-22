@@ -25,26 +25,27 @@ Unmodeled constructs fail closed. Deferred cleanup and locally handled
 pool/synchronization runtime cleanup need explicit modeling before admission.
 The proof does not claim a general theorem about loop termination.
 
-## Qualified AST foundation
+## Qualified development foundation
 
-The last qualified [development receipt](../support/linux_guard_ast_acceptance.json) records
-229 passing Clang regressions, 62 AST contract tests and 53 production exit-proof
-cases. The native condition nodes pass traversal, printing, profiling, structural
-comparison, cross-context import and save/reload serialization, including both
-binding kinds and an absent if-binding else. Compiler, clangd and LLDB rebuilds
-pass. Source parsing and ownership lowering remain under implementation. That receipt
-binds the earlier AST revision; the snapshot/continuation revision below is
-under fresh development validation. The first full rebuild passed all 229
-Clang regressions and exposed a payload-nullability erasure in the new semantic
-tests; the revision below addresses it and remains unqualified until rerun.
+The [development receipt](../support/linux_guard_ast_acceptance.json) binds
+229 passing Clang regressions, 68 AST contract tests, 53 production exit-proof
+cases and eight focused tooling tests to the exact sealed inputs. Compiler,
+clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
+profiling, structural comparison, AST import and save/reload serialization.
+Payload aliases and nullable/nonnull annotations survive import and persistence.
+
+The private CodeGen gate exports 16 verified native modules. All 32 O0/O2
+executions pass across C17/C++20/23, ARC/MRC modes for integer payloads and
+nontrivial C++ records in MRC. The C++ runs include 40 expected constructor,
+temporary-cleanup and snapshot-destructor exceptions. This does not qualify
+managed-reference ownership, public parsing or an installed guard compiler.
 
 ## Source and lifetime lowering
 
-The current development revision adds semantic construction shared with match
-snapshots and normalizes guard continuations without changing label or case
-identity. Its expanded tests cover C17/C++20/23, ARC/MRC, nullable references,
-tagged nullable payloads and C++ copy recipes. These additions are not yet
-qualified by the earlier receipt.
+Semantic construction shares snapshot preparation with match and normalizes
+guard continuations without changing label or case identity. Maintained tests
+cover C17/C++20/23, ARC/MRC, nullable references, tagged nullable payloads and
+C++ copy recipes.
 
 Carrier nodes now retain payload spelling and nullability annotations while
 sharing canonical type identity and physical representation. This follows
@@ -69,8 +70,8 @@ construction guard protects a completed binding while source temporaries and
 the snapshot finish; it reads the binding address only after initialization.
 
 Private AST lowering now emits ordered tests, snapshots, guard continuations
-and if-binding branches. Its new CodeGen gate verifies native modules and can
-export those exact modules for execution across optimization levels. C++ cases
+and if-binding branches. Its CodeGen gate verifies and executes exact native modules across optimization
+levels. C++ cases
 include failed snapshot/binding construction and throwing temporary/snapshot
 destructors. Run the maintained runtime gate after a passing admitted build:
 

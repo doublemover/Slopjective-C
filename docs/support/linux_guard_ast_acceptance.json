@@ -2,24 +2,25 @@
   "schema": "objc3c.linux-guard-ast-acceptance.v1",
   "status": "PASS",
   "date": "2026-10-22",
-  "scope": "private native condition AST and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "42afb0edefaef99faa3ec0f99071311507b84706",
+  "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
+  "implementation_commit": "e2690d562b04c6af14ec3db43a29a2246933ea68",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-bdc356b6df98-fd761312",
-  "patch_digest": "bdc356b6df982cfe738a3c074c3a4c9d50286c18648abbb0e7b10aaa20db91fc",
-  "compiler_sha256": "97176d307bd88aa088271847626da6b8241884853544b8e5c8140521bd93af16",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-c232bdfa7ebf-fd761312",
+  "patch_digest": "c232bdfa7ebf3d23155d3fabefb2b8cd6555f346ad7d52bc5cec36ec8e058665",
+  "compiler_sha256": "60ce90202ed04c558f7348b9727b81a55eb7969a4891fb3e5af0eb1815769b67",
+  "ast_tests_sha256": "cabd5415ac7391ca143eb8e30b80e81e114214925fb821b2fa5e58ca1a8e32a9",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
   "verification": {
     "clang_regressions_passed": 229,
     "clang_regressions_unsupported": 3,
-    "ast_contract_tests_passed": 62,
+    "ast_contract_tests_passed": 68,
     "production_guard_exit_cases": 53,
-    "focused_tooling_tests_passed": 20,
+    "focused_tooling_tests_passed": 8,
     "compiler_clangd_lldb_rebuilt": true,
     "native_ast_consumers": [
-      "recursive traversal",
+      "recursive traversal with/without implicit declarations",
       "source printing",
       "semantic profiling",
       "structural comparison",
@@ -27,20 +28,68 @@
       "save/reload serialization"
     ],
     "serialization_cases": [
-      "immutable binding",
-      "mutable binding",
-      "ordered guard conditions",
-      "mandatory guard failure body",
-      "if-binding with absent else"
+      "immutable/mutable bindings",
+      "implicit source snapshots",
+      "ordered conditions",
+      "transparent guard continuation",
+      "if-binding with absent else",
+      "payload aliases and nullable/nonnull annotations"
     ],
+    "runtime": {
+      "verified_native_modules": 16,
+      "configurations_passed": 32,
+      "commands_passed": 65,
+      "standards": [
+        "c17",
+        "c++20",
+        "c++23"
+      ],
+      "optimization": [
+        "O0",
+        "O2"
+      ],
+      "plain_payload_ownership_modes": [
+        "ARC",
+        "MRC"
+      ],
+      "cpp_payload_ownership_modes": [
+        "MRC"
+      ],
+      "expected_cpp_exception_scenarios_executed": 40,
+      "payloads": [
+        "plain integer",
+        "C++ record with nontrivial copy/destruction"
+      ],
+      "cases": [
+        "Some(0) and None",
+        "single source evaluation",
+        "mutable binding",
+        "guard continuation",
+        "if-binding branches",
+        "failed snapshot construction",
+        "failed binding construction",
+        "throwing binding initializer temporary",
+        "throwing source initializer temporary",
+        "throwing snapshot destructor"
+      ],
+      "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
+      "executable_model": "non-PIE private native AST modules",
+      "runtime_sdk_seal": "41c4fa92a870a18616830ea5646ef62dadae46adee68f92fe67aa47884350ea9",
+      "runtime_library_sha256": "c1a99737a1d0ab49f3a76fdd9424330585f4134fa44b1f7ec4ec720abe826012",
+      "temporary_artifacts_reclaimed": true
+    },
     "temporary_ast_files_reclaimed_on_success": true
   },
-  "foundation_report_sha256": "46d5f0e1638de65c7562c1fd247b1010b6314a111d4312ec4ddf13062e31133f",
-  "ast_consumer_test_sha256": "853d929bb4ba9cc9c3ebc3f2e9216ab783cbf9bc500f8883d409a0abf73036e3",
+  "foundation_report_sha256": "20f862d814b3de22e94918d5be8f391a43d530491837d3341163931db809f450",
+  "runtime_report_sha256": "da08370fb253776753558e90284e2e3d3f988230597abca9826fe8fe7bb6bf1f",
+  "ast_consumer_test_sha256": "85e6a44242029d43936ca10d1a25b16598d2db59295036cd8be09b8824292d37",
+  "ast_codegen_test_sha256": "5f2b8083b2bf4515cd4f7e1d1c91756a3c21d1d9d79b09caf642ad950b8023a9",
+  "qualification_script_sha256": "ea6cf824fe47fca8d06459614876ccb6d88003d04a79eb8e0c1da3fb910c579f",
+  "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
-    "final source-level guard and optional-binding semantics and scope ownership",
-    "parser recognition and Sema declaration/type integration",
-    "owned source snapshots and binding lifetime/debug scopes",
+    "ordered multi-binding runtime and partial failure cases",
+    "managed-reference, weak and Block ownership matrix",
+    "contextual parser admission, complete scope restoration and nullable flow refinements",
     "nested CFG and deferred/runtime cleanup exit models",
     "complete template replay and jump protection",
     "source/PCH/interface/debugger runtime gates and SDK delivery"
