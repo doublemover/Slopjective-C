@@ -681,9 +681,12 @@ int main() {
     group_frame_result_outcomes(executor);
     actor_and_worker(executor);
 #ifdef __OBJC__
-    assert(bridge_logical_c_calls(executor));
     references(executor);
     group_reference_results(executor);
+    // Run worker reference consumers after the exact manual lifetime checks.
+    // A terminal task can still have its worker's final callback reference;
+    // releasing the caller's executor handle does not join that owner.
+    assert(bridge_logical_c_calls(executor));
   }
 #endif
   objc3_executor_release(executor);
