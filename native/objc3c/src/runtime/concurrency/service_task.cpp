@@ -162,11 +162,6 @@ void release_rejected_dispatch(ResumeDispatch *dispatch) {
   objc3_task_internal_release(task);
 }
 
-struct AwaitContinuation {
-  std::shared_ptr<objc3_task::AwaitTarget> target;
-  uint64_t generation;
-};
-
 void wake_awaiting_task(objc3_task_t *task) noexcept {
   const auto status = objc3_task_schedule_resume(task);
   if (status == OBJC3_SERVICE_OK || status == OBJC3_SERVICE_ALREADY_COMPLETED)
@@ -179,27 +174,9 @@ void wake_awaiting_task(objc3_task_t *task) noexcept {
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
-  std::unique_ptr<AwaitContinuation> continuation(
-      static_cast<AwaitContinuation *>(context));
-  objc3_task_t *parent = nullptr;
-  {
-    // The token does not retain the parent. Its lock protects the raw pointer
-    // against final deletion; try_retain rejects a record already at zero.
-    std::lock_guard<std::mutex> lock(continuation->target->mutex);
-    parent = continuation->target->task;
-    if (!objc3_task_internal_retain(parent)) return;
-  }
-  TaskReleaseGuard guard{parent};
-  bool wake = false;
-  {
-    std::lock_guard<std::mutex> lock(parent->mutex);
-    if (!parent->terminal && parent->awaiting &&
-        parent->await_generation == continuation->generation) {
-      parent->awaiting = false;
-      wake = true;
-    }
-  }
-  if (wake) wake_awaiting_task(parent);
+  std::unique_ptr<ObjC3TaskAwaitContinuation> continuation(
+      static_cast<ObjC3TaskAwaitContinuation *>(context));
+  objc3_task_finish_await(*continuation);
 }
 
 void *allocate_payload(uint64_t size, uint64_t alignment) noexcept {
@@ -292,6 +269,27 @@ objc3_completion task_view(const objc3_task_t *task) noexcept {
   return value;
 }
 
+bool task_quiescent_locked(const objc3_task_t *task) noexcept {
+  return task->terminal && task->frame_destroyed && !task->frame_destroying &&
+         !task->resume_active && task->callbacks_active == 0;
+}
+
+void notify_quiescence(objc3_task_t *task) noexcept {
+  std::shared_ptr<ObjC3TaskQuiescenceObserver> observer;
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    if (!task_quiescent_locked(task)) return;
+    observer = task->quiescence_observers;
+  }
+  // These are scheduler notifications, not completion callbacks. Counting them
+  // as active completion callbacks would make a notified group temporarily
+  // unjoinable on a different worker. The caller retains the task throughout.
+  for (; observer; observer = observer->next) {
+    CurrentTaskScope current(task);
+    try { observer->notify(observer->context.get()); } catch (...) {}
+  }
+}
+
 void invoke_waiters(objc3_task_t *task,
                     const std::vector<objc3_task::Waiter> &waiters,
                     const objc3_completion &value) noexcept {
@@ -306,6 +304,7 @@ void invoke_waiters(objc3_task_t *task,
     }
     task->completed.notify_all();
   }
+  notify_quiescence(task);
 }
 
 void finish_frame_destruction(objc3_task_t *task, void *frame,
@@ -320,6 +319,7 @@ void finish_frame_destruction(objc3_task_t *task, void *frame,
     task->frame_destroyed = true;
   }
   task->completed.notify_all();
+  notify_quiescence(task);
 }
 
 void release_payload(objc3_task_t *task) noexcept {
@@ -362,8 +362,7 @@ objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task) {
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   auto quiescent = [task] {
-    return task->terminal && task->frame_destroyed && !task->frame_destroying &&
-           !task->resume_active && task->callbacks_active == 0;
+    return task_quiescent_locked(task);
   };
   // A task can hop to any executor after this check. Never block an executor
   // callback on pending task work, even when its current destination differs.
@@ -519,6 +518,8 @@ bool objc3_task_mark_cancel(objc3_task_t *task) {
   task->cancel_requested.store(true, std::memory_order_release);
   std::lock_guard<std::mutex> lock(task->mutex);
   if (!task->terminal && task->awaiting) {
+    if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
+    task->await_status = nullptr;
     task->awaiting = false;
     return true;
   }
@@ -673,6 +674,7 @@ extern "C" objc3_service_status objc3_task_complete(
     task->error = retained_error;
     task->terminal = true;
     task->awaiting = false;
+    task->await_status = nullptr;
     task->completion_claimed = false;
     task->resume_after_completion_claim = false;
     task->resume_requested = false;
@@ -722,17 +724,58 @@ extern "C" objc3_service_status objc3_task_add_waiter(
       --task->callbacks_active;
     }
     task->completed.notify_all();
+    notify_quiescence(task);
   }
   return OBJC3_SERVICE_OK;
 }
 
-extern "C" objc3_service_status objc3_task_await(
-    objc3_task_t *parent, objc3_task_t *dependency) {
-  if (!parent || !dependency || parent == dependency ||
-      current_service_task != parent)
+objc3_service_status objc3_task_add_group_observers(
+    objc3_task_t *task, objc3_completion_callback completion, void *context,
+    std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence) {
+  if (!task || !completion || !quiescence || !quiescence->notify)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
-  std::unique_ptr<AwaitContinuation> continuation;
-  bool cancelled = false;
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
+  TaskReleaseGuard guard{task};
+  objc3_completion borrowed{};
+  bool call_now = false;
+  try {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    // Allocate the completion slot before publishing either observer. A
+    // completed task cannot consume context and then fail registration.
+    if (!task->terminal)
+      task->waiters.reserve(task->waiters.size() + 1);
+    quiescence->next = task->quiescence_observers;
+    task->quiescence_observers = std::move(quiescence);
+    if (!task->terminal) {
+      task->waiters.push_back({completion, context});
+    } else {
+      borrowed = task_view(task);
+      ++task->callbacks_active;
+      call_now = true;
+    }
+  } catch (...) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  if (call_now) {
+    {
+      CurrentTaskScope current(task);
+      try { completion(context, &borrowed); } catch (...) {}
+    }
+    {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      --task->callbacks_active;
+    }
+    task->completed.notify_all();
+    notify_quiescence(task);
+  }
+  return OBJC3_SERVICE_OK;
+}
+
+objc3_service_status objc3_task_prepare_await(
+    objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
+    objc3_service_status *status) {
+  if (!parent || current_service_task != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
   try {
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (parent->terminal || parent->completion_claimed)
@@ -743,16 +786,63 @@ extern "C" objc3_service_status objc3_task_await(
       return OBJC3_SERVICE_NOT_READY;
     if (!parent->await_target)
       parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
-    continuation = std::make_unique<AwaitContinuation>(AwaitContinuation{
-        parent->await_target, ++parent->await_generation});
-    cancelled = parent->cancel_requested.load(std::memory_order_acquire);
-    parent->awaiting = !cancelled;
+    continuation = {parent->await_target, ++parent->await_generation};
+    parent->await_status = status;
+    parent->awaiting = true;
   } catch (...) {
     return OBJC3_SERVICE_OUT_OF_MEMORY;
   }
-  if (cancelled) {
+  return OBJC3_SERVICE_OK;
+}
+
+void objc3_task_finish_await(const ObjC3TaskAwaitContinuation &continuation,
+                            objc3_service_status status) {
+  objc3_task_t *parent = nullptr;
+  {
+    // The token does not retain the parent. Its lock protects the raw pointer
+    // against final deletion; try_retain rejects a record already at zero.
+    std::lock_guard<std::mutex> lock(continuation.target->mutex);
+    parent = continuation.target->task;
+    if (!objc3_task_internal_retain(parent)) return;
+  }
+  TaskReleaseGuard guard{parent};
+  bool wake = false;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (!parent->terminal && parent->awaiting &&
+        parent->await_generation == continuation.generation) {
+      if (parent->await_status)
+        *parent->await_status = parent->cancel_requested.load(std::memory_order_acquire)
+                                    ? OBJC3_SERVICE_CANCELLED : status;
+      parent->await_status = nullptr;
+      parent->awaiting = false;
+      wake = true;
+    }
+  }
+  if (wake) wake_awaiting_task(parent);
+}
+
+void objc3_task_abort_await(
+    objc3_task_t *parent, const ObjC3TaskAwaitContinuation &continuation) {
+  std::lock_guard<std::mutex> lock(parent->mutex);
+  if (parent->await_generation == continuation.generation) {
+    parent->awaiting = false;
+    parent->await_status = nullptr;
+  }
+}
+
+extern "C" objc3_service_status objc3_task_await(
+    objc3_task_t *parent, objc3_task_t *dependency) {
+  if (!parent || !dependency || parent == dependency)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  auto continuation = std::unique_ptr<ObjC3TaskAwaitContinuation>(
+      new (std::nothrow) ObjC3TaskAwaitContinuation);
+  if (!continuation) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  const auto preparation = objc3_task_prepare_await(parent, *continuation);
+  if (preparation != OBJC3_SERVICE_OK) return preparation;
+  if (objc3_task_is_cancel_requested(parent)) {
     // Queue the cancellation observation after the active resume returns.
-    wake_awaiting_task(parent);
+    objc3_task_finish_await(*continuation);
     return OBJC3_SERVICE_OK;
   }
   // A completed dependency can call back before add_waiter returns. Transfer
@@ -761,10 +851,8 @@ extern "C" objc3_service_status objc3_task_await(
   const auto status = objc3_task_add_waiter(dependency, dependency_completed,
                                            context);
   if (status != OBJC3_SERVICE_OK) {
-    std::unique_ptr<AwaitContinuation> failed(context);
-    std::lock_guard<std::mutex> lock(parent->mutex);
-    if (parent->await_generation == failed->generation)
-      parent->awaiting = false;
+    std::unique_ptr<ObjC3TaskAwaitContinuation> failed(context);
+    objc3_task_abort_await(parent, *failed);
   }
   return status;
 }
@@ -969,6 +1057,7 @@ void objc3_service_run_task_resume(void *context) {
     finish_frame_destruction(task, frame_to_destroy, frame_destructor);
   else
     task->completed.notify_all();
+  notify_quiescence(task);
   release_rejected_dispatch(rejected);
   if (dispatch_status != OBJC3_SERVICE_OK) cancel_task(task);
 }

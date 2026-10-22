@@ -337,6 +337,48 @@ public:
   }
 };
 
+/* A retained shared group, with explicit close and cancellation. Awaiting a
+ * closed handle joins its complete task tree without blocking a worker. This
+ * is a library handle, not a compiler-recognized structured task-group scope:
+ * destruction releases ownership, and abandoning one await does not cancel
+ * the shared tasks. Close and join before releasing the last caller owner. */
+class [[nodiscard]] task_group_handle {
+  objc3_task_group_t *group_ = nullptr;
+  explicit task_group_handle(objc3_task_group_t *owned) noexcept
+      : group_(owned) {}
+
+public:
+  task_group_handle() noexcept = default;
+  static task_group_handle create() {
+    objc3_task_group_t *group = nullptr;
+    task_detail::check(objc3_task_group_create(nullptr, &group));
+    return task_group_handle(group);
+  }
+  task_group_handle child() const {
+    if (!group_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    objc3_task_group_t *group = nullptr;
+    task_detail::check(objc3_task_group_create(group_, &group));
+    return task_group_handle(group);
+  }
+  task_group_handle(const task_group_handle &other) noexcept
+      : group_(objc3_task_group_retain(other.group_)) {}
+  task_group_handle(task_group_handle &&other) noexcept
+      : group_(std::exchange(other.group_, nullptr)) {}
+  task_group_handle &operator=(task_group_handle other) noexcept {
+    std::swap(group_, other.group_);
+    return *this;
+  }
+  ~task_group_handle() { objc3_task_group_release(group_); }
+  objc3_task_group_t *native_handle() const noexcept { return group_; }
+  explicit operator bool() const noexcept { return group_ != nullptr; }
+  template <class U> void add(const basic_task_handle<U> &task) const {
+    task_detail::check(objc3_task_group_add(group_, task.native_handle()));
+  }
+  void close() const { task_detail::check(objc3_task_group_close(group_)); }
+  void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
+  void wait() const { task_detail::check(objc3_task_group_join(group_)); }
+};
+
 struct task_checkpoint_t {};
 struct task_yield_t {};
 inline constexpr task_checkpoint_t task_checkpoint{};
@@ -457,6 +499,25 @@ public:
       return dependency_awaiter<U>{
           owner, std::move(dependency).start_impl(nullptr, nullptr, owner),
           true};
+    }
+
+    struct group_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        task_detail::check(objc3_task_group_await(group.native_handle(), parent,
+                                                  &status));
+      }
+      void await_resume() {
+        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        task_detail::check(status);
+      }
+    };
+    auto await_transform(task_group_handle group) {
+      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      return group_awaiter{owner, std::move(group)};
     }
 
 #ifdef __OBJC__

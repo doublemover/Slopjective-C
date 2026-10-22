@@ -101,9 +101,24 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     debugger_values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
                     if debugger_values != [1, 1] or 'exited with status = 0' not in text:
                         raise ValueError('native coroutine debugger lost resumed frame values: ' + label)
+                shutil.copyfile(fixture / 'group_await.cpp', root / 'group_await.cpp')
+                group_executable = root / 'group-await'
+                run(label + '-group-await-compile', [compiler, *flags,
+                    root / 'group_await.cpp', '-c', '-o', root / 'group_await.o'], root)
+                run(label + '-group-await-link', [sdk / 'bin/clang++', '--no-default-config',
+                    '-fuse-ld=lld', root / 'group_await.o', '-L' + str(sdk / 'lib'),
+                    runtime_library, objc_runtime, '-pthread',
+                    '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
+                    '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff',
+                    '-Wl,-rpath,' + str(objc_runtime.parent), '-o', group_executable], root)
+                (root / 'group_await.cpp').unlink()
+                run(label + '-group-await-execute', [group_executable], root)
+                run(label + '-group-await-dwarf', [sdk / 'bin/llvm-dwarfdump',
+                    '--verify', group_executable], root)
                 cases.append({'language': language, 'standard': standard, 'ownership': ownership,
                               'optimization': optimization, 'provider_source_removed': True,
                               'debugger_values': debugger_values,
+                              'group_await_executable_sha256': packages.digest(group_executable),
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.task-coroutine-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],
@@ -115,7 +130,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                       for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
                   'executions': len(cases), 'cases': cases,
                   'commands': commands, 'source_hashes': {name: packages.digest(fixture / name)
-                      for name in ('provider.cpp', 'provider.h', 'client.cpp')}}
+                      for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp')}}
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.task-coroutine-qualification.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'], 'cases': cases,

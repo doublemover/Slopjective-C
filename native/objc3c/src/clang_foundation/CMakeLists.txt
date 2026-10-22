@@ -263,6 +263,26 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_task_coroutines_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_task_coroutines COMMAND objc3_task_coroutines_test)
   set_tests_properties(objc3_task_coroutines PROPERTIES TIMEOUT 45)
+  set(_task_group_await_source
+    "${_objc3_repo}/tests/clang_foundation/task_coroutines/group_await.cpp")
+  set(_task_group_await_object "${CMAKE_CURRENT_BINARY_DIR}/task-group-await.o")
+  add_custom_command(OUTPUT "${_task_group_await_object}"
+    COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
+      -O2 -g -UNDEBUG -fcoro-aligned-allocation
+      "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+      -c "${_task_group_await_source}" -o "${_task_group_await_object}"
+    DEPENDS "${_task_group_await_source}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
+      "${OBJC3C_FOUNDATION_DRIVER}"
+    VERBATIM)
+  set_source_files_properties("${_task_group_await_object}"
+    PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  add_executable(objc3_task_group_await_test "${_task_group_await_object}")
+  set_target_properties(objc3_task_group_await_test PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(objc3_task_group_await_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_task_group_await COMMAND objc3_task_group_await_test)
+  set_tests_properties(objc3_task_group_await PROPERTIES TIMEOUT 45)
   add_executable(objc3_generic_collection_service_test
     ../../tests/generic_collection_service_test.cpp)
   target_link_libraries(objc3_generic_collection_service_test PRIVATE objc3_runtime_services)
@@ -286,7 +306,7 @@ if (BUILD_TESTING)
       objc3_ownership_projection_test objc3_module_method_names_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
-      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test
+      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test objc3_task_group_await_test
       objc3_generic_collection_service_test objc3_generic_associative_service_test
       objc3_text_scalar_boundary_test)
     if (MSVC)

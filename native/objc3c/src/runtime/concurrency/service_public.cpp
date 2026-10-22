@@ -79,6 +79,14 @@ objc3_service_status objc3_task_group_join(objc3_task_group_t *group) {
     return services::task_group_join(handle<services::TaskGroup>(group));
   });
 }
+objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
+                                           objc3_task_t *parent,
+                                           objc3_service_status *out_status) {
+  return status([&] {
+    return services::task_group_await(handle<services::TaskGroup>(group), parent,
+                                      out_status);
+  });
+}
 objc3_service_status objc3_actor_create(objc3_executor_t *executor,
                                         objc3_actor_t **out_actor) {
   if (!out_actor)

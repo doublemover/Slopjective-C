@@ -76,6 +76,18 @@ objc3_current_actor_facts current_destination() {
   assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
   return facts;
 }
+objc3::task<int> group_join(objc3::task_group_handle group,
+                            std::shared_ptr<coroutine_state> state) {
+  cleanup guard{state};
+  ++state->entered;
+  const auto before = current_destination();
+  co_await group;
+  const auto after = current_destination();
+  assert(before.executor_identity == after.executor_identity);
+  assert(before.actor_identity == after.actor_identity);
+  ++state->continued;
+  co_return 42;
+}
 objc3::task<int> actor_child(uint64_t actor) {
   assert(current_destination().actor_identity == actor);
   co_await objc3::task_yield;
@@ -129,6 +141,11 @@ objc3::task_handle<int> start_parent(objc3_executor_t *executor,
 objc3::task_handle<int> start_chain(objc3_executor_t *executor,
                                     unsigned depth) {
   return chain(depth).start(executor);
+}
+objc3::task_handle<int> start_group_join(
+    objc3_executor_t *executor, objc3::task_group_handle group,
+    std::shared_ptr<coroutine_state> state) {
+  return group_join(std::move(group), std::move(state)).start(executor);
 }
 objc3::task_handle<int> start_owned_child(
     objc3_executor_t *executor, std::shared_ptr<coroutine_state> state) {

@@ -40,6 +40,7 @@ struct TaskGroup final {
   std::condition_variable changed;
   std::vector<TaskEntry> tasks;
   std::vector<TaskGroup *> children;
+  std::vector<ObjC3TaskAwaitContinuation> join_waiters;
   uint32_t registrations_inflight{0};
   uint32_t child_closures_inflight{0};
   uint64_t next_completion_order{1};
@@ -184,6 +185,99 @@ bool all_tasks_complete_locked(const TaskGroup *group) {
                      [](const auto &entry) { return entry.completed; });
 }
 
+enum class JoinState { Pending, Ready, Failed };
+
+bool closed_tree_locked(const TaskGroup *group) {
+  if (!group->closed || group->child_closures_inflight) return false;
+  for (auto *child : group->children) {
+    std::lock_guard<std::mutex> lock(child->mutex);
+    if (!closed_tree_locked(child)) return false;
+  }
+  return true;
+}
+
+// The immutable closed tree uses the same parent-to-child lock order as group
+// cancellation. Failure wins over pending work, so an observer never remains
+// unreachable after failure-publication resource exhaustion.
+JoinState join_state_locked(const TaskGroup *group) {
+  if (group->failure_propagation_failed) return JoinState::Failed;
+  bool pending = !group->closed || group->registrations_inflight ||
+                 group->child_closures_inflight;
+  for (const auto &entry : group->tasks) {
+    std::lock_guard<std::mutex> lock(entry.task->mutex);
+    if (!entry.completed || !entry.task->terminal ||
+        !entry.task->frame_destroyed || entry.task->frame_destroying ||
+        entry.task->resume_active || entry.task->callbacks_active)
+      pending = true;
+  }
+  for (auto *child : group->children) {
+    std::lock_guard<std::mutex> lock(child->mutex);
+    switch (join_state_locked(child)) {
+    case JoinState::Failed: return JoinState::Failed;
+    case JoinState::Pending: pending = true; break;
+    case JoinState::Ready: break;
+    }
+  }
+  return pending ? JoinState::Pending : JoinState::Ready;
+}
+
+std::shared_ptr<GroupParentLink> take_join_notifications(
+    TaskGroup *group, std::vector<ObjC3TaskAwaitContinuation> &waiters,
+    objc3_service_status &status) {
+  std::lock_guard<std::mutex> lock(group->mutex);
+  if (!group->join_waiters.empty()) {
+    const auto state = join_state_locked(group);
+    if (state != JoinState::Pending) {
+      status = state == JoinState::Failed ? OBJC3_SERVICE_NOT_READY
+                                          : OBJC3_SERVICE_OK;
+      waiters.swap(group->join_waiters);
+    }
+  }
+  group->changed.notify_all();
+  return group->parent_link;
+}
+
+void notify_ancestors(std::shared_ptr<GroupParentLink> parent_link) {
+  std::vector<ObjC3TaskAwaitContinuation> waiters;
+  while (parent_link) {
+    waiters.clear();
+    objc3_service_status status = OBJC3_SERVICE_OK;
+    std::shared_ptr<GroupParentLink> next;
+    {
+      // The link protects a raw ancestor through its destruction boundary.
+      // No callbacks run under it, and no saturated reference count can lose
+      // the final readiness notification.
+      std::lock_guard<std::mutex> link_lock(parent_link->mutex);
+      if (parent_link->group)
+        next = take_join_notifications(parent_link->group, waiters, status);
+    }
+    for (const auto &waiter : waiters) objc3_task_finish_await(waiter, status);
+    parent_link = std::move(next);
+  }
+}
+
+void notify_group_changed(TaskGroup *group) {
+  std::vector<ObjC3TaskAwaitContinuation> waiters;
+  objc3_service_status status = OBJC3_SERVICE_OK;
+  auto parent_link = take_join_notifications(group, waiters, status);
+  for (const auto &waiter : waiters) objc3_task_finish_await(waiter, status);
+  notify_ancestors(std::move(parent_link));
+}
+
+void task_quiescent(void *opaque) {
+  auto *link = static_cast<GroupParentLink *>(opaque);
+  std::vector<ObjC3TaskAwaitContinuation> waiters;
+  std::shared_ptr<GroupParentLink> parent_link;
+  objc3_service_status status = OBJC3_SERVICE_OK;
+  {
+    std::lock_guard<std::mutex> lock(link->mutex);
+    if (link->group)
+      parent_link = take_join_notifications(link->group, waiters, status);
+  }
+  for (const auto &waiter : waiters) objc3_task_finish_await(waiter, status);
+  notify_ancestors(std::move(parent_link));
+}
+
 objc3_service_status take_completed_locked(TaskGroup *group,
                                              objc3_task_t **out_task,
                                              bool *available = nullptr) {
@@ -289,7 +383,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
     }
   }
   if (failure_order.owns_lock()) failure_order.unlock();
-  group->changed.notify_all();
+  notify_group_changed(group);
   delete observer;
   task_group_release(group);
 }
@@ -360,6 +454,15 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
   if (!group || !task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   auto *observer = new (std::nothrow) ObserverContext{group, task};
   if (!observer) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence;
+  try {
+    quiescence = std::make_shared<ObjC3TaskQuiescenceObserver>();
+    quiescence->notify = task_quiescent;
+    quiescence->context = group->self_link;
+  } catch (...) {
+    delete observer;
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
   if (!objc3_task_retain(task)) {
     delete observer;
     return OBJC3_SERVICE_NOT_READY;
@@ -395,7 +498,8 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
   }
   if (cancelled) objc3_task_request_cancel(task);
   const objc3_service_status status =
-      objc3_task_add_waiter(task, task_completed, observer);
+      objc3_task_add_group_observers(task, task_completed, observer,
+                                     std::move(quiescence));
   if (status != OBJC3_SERVICE_OK) {
     objc3_task_t *removed_task = nullptr;
     {
@@ -410,7 +514,7 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
       }
       --group->registrations_inflight;
     }
-    group->changed.notify_all();
+    notify_group_changed(group);
     if (removed_task) objc3_task_release(removed_task);
     delete observer;
     task_group_release(group);
@@ -428,7 +532,7 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
       cancel_after_registration = true;
   }
   if (cancel_after_registration) objc3_task_request_cancel(task);
-  group->changed.notify_all();
+  notify_group_changed(group);
   return OBJC3_SERVICE_OK;
 }
 
@@ -449,7 +553,8 @@ objc3_service_status task_group_close(TaskGroup *group) {
     group->changed.notify_all();
     if (status != OBJC3_SERVICE_OK) return status;
   }
-  group->changed.notify_all();
+  lock.unlock();
+  notify_group_changed(group);
   return OBJC3_SERVICE_OK;
 }
 
@@ -584,6 +689,44 @@ objc3_service_status task_group_join(TaskGroup *group) {
       status = OBJC3_SERVICE_NOT_READY;
   }
   return status;
+}
+
+objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
+                                      objc3_service_status *out_status) {
+  if (!group || !parent || !out_status || objc3_task_current_callback() != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  ObjC3TaskAwaitContinuation continuation;
+  bool notify = false;
+  objc3_service_status result = OBJC3_SERVICE_OK;
+  {
+    std::lock_guard<std::mutex> lock(group->mutex);
+    // Closing fixes membership before checking for a cyclic dependency. A
+    // concurrent recursive close is safe: child locks serialize membership.
+    if (!closed_tree_locked(group)) return OBJC3_SERVICE_NOT_READY;
+    for (const auto &entry : group->tasks)
+      if (entry.task == parent) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    for (auto *child : group->children)
+      if (contains_task(child, parent)) return OBJC3_SERVICE_INVALID_ARGUMENT;
+    const auto state = join_state_locked(group);
+    notify = objc3_task_is_cancel_requested(parent) || state != JoinState::Pending;
+    if (state == JoinState::Failed) result = OBJC3_SERVICE_NOT_READY;
+    if (!notify) {
+      // Reserve before publishing a suspension or its output slot. There is
+      // no fallible allocation after prepare_await, so a rejected registration
+      // cannot race cancellation into modifying the caller's unchanged slot.
+      try { group->join_waiters.reserve(group->join_waiters.size() + 1); }
+      catch (...) {
+        return OBJC3_SERVICE_OUT_OF_MEMORY;
+      }
+    }
+    const auto status = objc3_task_prepare_await(parent, continuation, out_status);
+    if (status != OBJC3_SERVICE_OK) return status;
+    if (!notify) group->join_waiters.push_back(continuation);
+  }
+  // Even an empty or previously joined group queues the continuation. Native
+  // resumes remain serialized and keep the caller's selected destination.
+  if (notify) objc3_task_finish_await(continuation, result);
+  return OBJC3_SERVICE_OK;
 }
 
 } // namespace objc3::services

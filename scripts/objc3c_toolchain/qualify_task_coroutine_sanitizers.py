@@ -70,13 +70,26 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                     *sources, *flags, fixture / 'provider.cpp', fixture / 'client.cpp',
                     '-x', 'none', objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable], env)
                 run(label + '-execute', [executable], env)
+                group_executable = work / (label + '-group-await')
+                run(label + '-group-await-build', [compiler_root / 'bin/clang++',
+                    '--no-default-config', '-std=c++20', '-g', '-' + optimization,
+                    '-UNDEBUG', '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
+                    '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
+                    '-pthread', '-fuse-ld=lld',
+                    '-I' + str(repo / 'native/objc3c/src'),
+                    '-I' + str(repo / 'native/objc3c/src/runtime/public'),
+                    *sources, *flags, fixture / 'group_await.cpp',
+                    '-x', 'none', objc_runtime,
+                    '-Wl,-rpath,' + str(objc_runtime.parent), '-o', group_executable], env)
+                run(label + '-group-await-execute', [group_executable], env)
                 cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,
+                              'group_await_executable_sha256': digest(group_executable),
                               'executable_sha256': digest(executable)})
         report = {'schema': 'objc3c.task-coroutine-sanitizers.v1', 'status': 'PASS',
                   'compiler_root': str(compiler_root), 'compiler_sha256': digest(compiler_root / 'bin/clang'),
                   'sanitizer_resource_root': str(resource_root),
                   'objc_runtime_sha256': digest(objc_runtime),
-                  'instrumentation': 'native coroutine provider/client, task await, executor, group, actor, value/error services',
+                  'instrumentation': 'native coroutine provider/client, task/group await, quiescence, executor, group, actor, value/error services',
                   'executions': cases, 'commands': commands,
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)

@@ -51,6 +51,15 @@ struct objc3_executor final {
       : identity(logical_identity), manual(is_manual) {}
 };
 
+// Immutable after publication. A shared linked snapshot lets notification run
+// without allocation or runtime locks; a group context holds only its weak
+// lifetime link, so persistent observations cannot retain a task/group cycle.
+struct ObjC3TaskQuiescenceObserver {
+  void (*notify)(void *context);
+  std::shared_ptr<void> context;
+  std::shared_ptr<ObjC3TaskQuiescenceObserver> next;
+};
+
 struct objc3_task final {
   struct AwaitTarget {
     std::mutex mutex;
@@ -79,6 +88,7 @@ struct objc3_task final {
   bool resume_requested{false};
   bool awaiting{false};
   uint64_t await_generation{0};
+  objc3_service_status *await_status{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
   uint32_t callbacks_active{0};
   bool frame_destroying{false};
@@ -96,6 +106,9 @@ struct objc3_task final {
   bool result_type_set{false};
   objc3_error_t *error{nullptr};
   std::vector<Waiter> waiters;
+  // Internal observers run after terminal publication, native frame cleanup,
+  // and completion callbacks. They never execute while holding the task lock.
+  std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence_observers;
 
   ~objc3_task();
 };
@@ -108,6 +121,27 @@ void objc3_service_run_task_resume(void *context);
 void objc3_task_destroy_frame(void *frame, objc3_frame_destroy destroy);
 objc3_task_t *objc3_task_current_callback() noexcept;
 objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task);
+// Atomically register both observations. A failed registration invokes neither
+// callback. Completion consumes context; quiescence is a persistent, weak
+// notification, including callbacks added after terminal publication.
+objc3_service_status objc3_task_add_group_observers(
+    objc3_task_t *task, objc3_completion_callback completion, void *context,
+    std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence);
+
+// Suspension tokens never own the suspended task or its native frame. Late
+// notifications use generation identity and cannot revive an abandoned await.
+struct ObjC3TaskAwaitContinuation {
+  std::shared_ptr<objc3_task::AwaitTarget> target;
+  uint64_t generation{0};
+};
+objc3_service_status objc3_task_prepare_await(
+    objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
+    objc3_service_status *status = nullptr);
+void objc3_task_finish_await(
+    const ObjC3TaskAwaitContinuation &continuation,
+    objc3_service_status status = OBJC3_SERVICE_OK);
+void objc3_task_abort_await(objc3_task_t *parent,
+                           const ObjC3TaskAwaitContinuation &continuation);
 // Marking cannot invoke callbacks. Wake only after releasing group/publication
 // locks; failed dispatch can synchronously complete the task and its observers.
 bool objc3_task_mark_cancel(objc3_task_t *task);

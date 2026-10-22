@@ -274,6 +274,23 @@ objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
  * A wait that would block a runtime executor callback or a manual task returns
  * NOT_READY. The caller can pump a manual executor and retry. */
 objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
+/* Register a nonblocking join from parent's active resume. The group must be
+ * closed, and parent must not belong to its task tree. Always suspend after
+ * success, including an empty group. The parent's selected destination is
+ * preserved. Completion callbacks and native frame cleanup finish before the
+ * continuation is queued. out_status points to a frame-resident slot retained
+ * until resumption. Before queueing, the runtime writes OK, CANCELLED, or
+ * NOT_READY for failed failure publication. Rejected registration leaves the
+ * slot unchanged. A successful join covers callbacks registered before its
+ * quiescence observation; later callbacks do not invalidate the stored result.
+ * Cancellation wakes the parent without cancelling this shared group. A late
+ * notification cannot revive a cancelled or abandoned await. No group results
+ * are consumed, and several independent parents may await the same group.
+ * This additive entrypoint requires a runtime exporting it; no fallback to a
+ * blocking join is provided. The ABI 4 data layouts are unchanged. */
+objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
+                                           objc3_task_t *parent,
+                                           objc3_service_status *out_status);
 
 #define OBJC3_ACTOR_SERVICE_VERSION 1u
 typedef void (*objc3_actor_job)(void *context);
