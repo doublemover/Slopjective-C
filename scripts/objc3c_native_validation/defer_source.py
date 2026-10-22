@@ -48,14 +48,15 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> No
                 for pch in (False, True):
                     name = f"defer-source-{standard}-{'arc' if arc else 'mrc'}-{optimization}-{'pch' if pch else 'ordinary'}"
                     executable = directory / "defer-application"
+                    unit_common = [*common, *(["-fextend-variable-liveness=all"] if pch else [])]
                     arguments = []
                     if pch:
                         cache = directory / "defer-runtime.pch"
-                        run(name + "-header", [*common, "-x", language + "-header",
+                        run(name + "-header", [*unit_common, "-x", language + "-header",
                                               FIXTURES / "runtime.h", "-o", cache])
                         arguments = ["-include-pch", cache, "-DDEFER_RUNTIME_PCH=1"]
                     run(name + "-compile", [
-                        *common, "-x", language, *arguments, FIXTURES / "main.m",
+                        *unit_common, "-x", language, *arguments, FIXTURES / "main.m",
                         "-fuse-ld=lld", "-no-pie", "-L" + str(sdk / "lib"), "-lobjc",
                         "-Wl,-rpath," + str(sdk / "lib"), "-o", executable,
                     ])
@@ -70,6 +71,7 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> No
                     result["configurations"].append({
                         "standard": standard, "ownership": "ARC" if arc else "MRC",
                         "optimization": optimization, "input": "PCH" if pch else "ordinary",
+                        "variable_liveness": "all" if pch else "default",
                     })
     result["commands_passed"] = len(report["commands"]) - started_commands
     result["status"] = "PASS"
