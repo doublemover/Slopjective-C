@@ -291,6 +291,24 @@ objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
 objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
                                            objc3_task_t *parent,
                                            objc3_service_status *out_status);
+/* Reserve the next direct child task from a closed group tree, from parent's
+ * active resume. Parent must not belong to the tree. Output slots must reside
+ * in the parent frame until resumption; *out_task must initially be null.
+ * Successful registration always suspends, including a ready task or drained
+ * group. FIFO waiters reserve tasks in completion order, including failed and
+ * cancelled tasks. OK transfers one retained task into *out_task; CLOSED means
+ * all direct tasks were consumed. Nested groups are not flattened. An optional
+ * expected_type is copied and checked before consumption. TYPE_MISMATCH leaves
+ * the task available. Rejected registration leaves both slots unchanged.
+ * Cancellation before reservation consumes nothing; after reservation the
+ * frame owns its task even if cancellation or dispatch failure prevents normal
+ * result access. Frame cleanup must release a nonnull result slot. Failed
+ * failure publication wakes pending consumers with NOT_READY. As for group
+ * await, dispatch preserves the parent's destination and never runs inline. */
+objc3_service_status objc3_task_group_await_next(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    const objc3_async_result_type *expected_type,
+    objc3_service_status *out_status, objc3_task_t **out_task);
 
 #define OBJC3_ACTOR_SERVICE_VERSION 1u
 typedef void (*objc3_actor_job)(void *context);

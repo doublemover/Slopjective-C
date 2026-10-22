@@ -337,6 +337,8 @@ public:
   }
 };
 
+template <class T> struct task_group_next_request;
+
 /* A retained shared group, with explicit close and cancellation. Awaiting a
  * closed handle joins its complete task tree without blocking a worker. This
  * is a library handle, not a compiler-recognized structured task-group scope:
@@ -377,7 +379,19 @@ public:
   void close() const { task_detail::check(objc3_task_group_close(group_)); }
   void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
   void wait() const { task_detail::check(objc3_task_group_join(group_)); }
+  template <class U = void>
+  task_group_next_request<typename task_detail::result_traits<U>::abi_type>
+  next() const;
 };
+
+template <class T> struct task_group_next_request {
+  task_group_handle group;
+};
+template <class U>
+task_group_next_request<typename task_detail::result_traits<U>::abi_type>
+task_group_handle::next() const {
+  return {*this};
+}
 
 struct task_checkpoint_t {};
 struct task_yield_t {};
@@ -518,6 +532,36 @@ public:
     auto await_transform(task_group_handle group) {
       if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
       return group_awaiter{owner, std::move(group)};
+    }
+
+    template <class U> struct group_next_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      objc3_task_t *result = nullptr;
+      group_next_awaiter(objc3_task_t *parent, task_group_handle group)
+          : parent(parent), group(std::move(group)) {}
+      group_next_awaiter(const group_next_awaiter &) = delete;
+      group_next_awaiter(group_next_awaiter &&other) noexcept
+          : parent(other.parent), group(std::move(other.group)),
+            status(other.status), result(std::exchange(other.result, nullptr)) {}
+      ~group_next_awaiter() { objc3_task_release(result); }
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        task_detail::check(objc3_task_group_await_next(
+            group.native_handle(), parent, task_detail::result_type<U>(),
+            &status, &result));
+      }
+      task_handle<U> await_resume() {
+        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        if (status == OBJC3_SERVICE_CLOSED) return {};
+        task_detail::check(status);
+        return task_handle<U>::adopt_native(&result);
+      }
+    };
+    template <class U> auto await_transform(task_group_next_request<U> request) {
+      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      return group_next_awaiter<U>{owner, std::move(request.group)};
     }
 
 #ifdef __OBJC__

@@ -89,6 +89,7 @@ struct objc3_task final {
   bool awaiting{false};
   uint64_t await_generation{0};
   objc3_service_status *await_status{nullptr};
+  objc3_task_t **await_result_task{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
   uint32_t callbacks_active{0};
   bool frame_destroying{false};
@@ -136,7 +137,18 @@ struct ObjC3TaskAwaitContinuation {
 };
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
-    objc3_service_status *status = nullptr);
+    objc3_service_status *status = nullptr, objc3_task_t **result_task = nullptr);
+struct ObjC3TaskAwaitClaim {
+  objc3_task_t *parent{nullptr};
+  bool wake{false};
+  bool transferred_result{false};
+};
+// Claiming invokes no callbacks and releases no task references. Dispatch and
+// its retained parent release must happen after all group/publication locks.
+ObjC3TaskAwaitClaim objc3_task_claim_await(
+    const ObjC3TaskAwaitContinuation &continuation, objc3_service_status status,
+    objc3_task_t *owned_result = nullptr);
+void objc3_task_dispatch_await(ObjC3TaskAwaitClaim claim);
 void objc3_task_finish_await(
     const ObjC3TaskAwaitContinuation &continuation,
     objc3_service_status status = OBJC3_SERVICE_OK);

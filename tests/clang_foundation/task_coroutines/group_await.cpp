@@ -4,8 +4,12 @@
 #include <cassert>
 #include <chrono>
 #include <condition_variable>
+#include <initializer_list>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace {
 void pump(objc3_executor_t *executor, uint32_t limit = UINT32_MAX) {
@@ -71,7 +75,9 @@ void held_destroy(void *opaque) {
   if (frame.destruction_gate) frame.destruction_gate->arrive();
   ++frame.destroyed;
 }
-objc3_task_t *start_held(objc3_executor_t *destination, HeldFrame &frame) {
+objc3_task_t *start_held(
+    objc3_executor_t *destination, HeldFrame &frame,
+    const objc3_async_result_type *type = nullptr) {
   objc3_task_start_options options{};
   options.struct_size = sizeof(options);
   options.version = OBJC3_SERVICE_ABI_VERSION;
@@ -79,6 +85,7 @@ objc3_task_t *start_held(objc3_executor_t *destination, HeldFrame &frame) {
   options.frame = &frame;
   options.resume = held_resume;
   options.destroy = held_destroy;
+  options.result_type = type;
   objc3_task_t *task = nullptr;
   assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
   return task;
@@ -260,6 +267,361 @@ objc3::task<int> join_group(objc3::task_group_handle group,
 }
 objc3::task<void> value() { co_return; }
 
+template <class T>
+objc3::task<objc3::task_handle<T>> next_task(objc3::task_group_handle group,
+                                           uint64_t expected_actor = 0) {
+  objc3_current_actor_facts before{};
+  before.struct_size = sizeof(before);
+  before.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&before) == OBJC3_SERVICE_OK);
+  assert(before.actor_identity == expected_actor);
+  auto result = co_await group.next<T>();
+  objc3_current_actor_facts after{};
+  after.struct_size = sizeof(after);
+  after.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&after) == OBJC3_SERVICE_OK);
+  assert(after.actor_identity == expected_actor &&
+         after.executor_identity == before.executor_identity);
+  co_return result;
+}
+
+template <class T> void complete_value(objc3_task_t *task, const T &value) {
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_SUCCESS;
+  completion.has_payload = 1;
+  completion.payload = &value;
+  completion.payload_ops = &objc3::task_detail::value_ops<T>::descriptor;
+  completion.result_type = objc3::task_detail::result_type<T>();
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+}
+
+void next_completion_order_and_type_reservation() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  HeldFrame frames[3];
+  objc3_task_t *tasks[3];
+  for (unsigned index = 0; index != 3; ++index) {
+    tasks[index] = start_held(destination, frames[index],
+                              objc3::task_detail::result_type<int>());
+    assert(objc3_task_group_add(group.native_handle(), tasks[index]) == OBJC3_SERVICE_OK);
+  }
+  group.close();
+  auto wrong = next_task<unsigned>(group).start(destination);
+  auto first = next_task<int>(group).start(destination);
+  auto second = next_task<int>(group).start(destination);
+  pump(destination);
+  pending(first.native_handle());
+  pending(second.native_handle());
+  complete_value(tasks[1], 20);
+  objc3_task_t *polled = nullptr;
+  assert(objc3_task_group_next(group.native_handle(), &polled) == OBJC3_SERVICE_NOT_READY);
+  assert(!polled); // A poll cannot steal an async waiter's reserved task.
+  complete_value(tasks[0], 10);
+  pump(destination);
+  bool mismatch = false;
+  try { (void)wrong.result(); }
+  catch (const objc3::service_failure &failure) {
+    mismatch = failure.status() == OBJC3_SERVICE_TYPE_MISMATCH;
+  }
+  assert(mismatch);
+  assert(first.result().native_handle() == tasks[1] && first.result().result() == 20);
+  assert(second.result().native_handle() == tasks[0] && second.result().result() == 10);
+  complete_value(tasks[2], 30);
+  auto third = next_task<int>(group).start(destination);
+  pump(destination, 1);
+  pending(third.native_handle()); // Ready iteration still queues a continuation.
+  pump(destination);
+  assert(third.result().native_handle() == tasks[2] && third.result().result() == 30);
+  auto drained = next_task<int>(group).start(destination);
+  pump(destination, 1);
+  pending(drained.native_handle());
+  pump(destination);
+  assert(!drained.result());
+  group.wait();
+  for (auto *task : tasks) objc3_task_release(task);
+  objc3_executor_release(destination);
+}
+
+void next_cancellation_ownership() {
+  auto *destination = executor();
+  for (unsigned mode = 0; mode != 4; ++mode) {
+    auto group = objc3::task_group_handle::create();
+    HeldFrame frame;
+    auto *child = start_held(destination, frame,
+                             objc3::task_detail::result_type<std::shared_ptr<int>>());
+    assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
+    group.close();
+    auto parent = next_task<std::shared_ptr<int>>(group).start(destination);
+    pump(destination);
+    auto value = std::make_shared<int>(42);
+    std::weak_ptr<int> lifetime = value;
+    if (mode == 0) parent.cancel(); // Cancellation precedes reservation.
+    if (mode == 3) parent = {}; // Abandonment invalidates both output slots.
+    complete_value(child, value);
+    value.reset();
+    if (mode == 1) parent.cancel(); // The retained task is already in the frame.
+    if (mode == 2) {
+      // A queued consumer may finish without any caller handle. Its native
+      // frame and completion payload must release the reserved task owner.
+      parent = {};
+    }
+    pump(destination);
+    if (mode < 2) {
+      bool caught = false;
+      try { (void)parent.result(); }
+      catch (const objc3::task_cancelled &) { caught = true; }
+      assert(caught);
+    }
+    objc3_task_t *polled = nullptr;
+    const auto status = objc3_task_group_next(group.native_handle(), &polled);
+    assert(status == (mode == 0 || mode == 3 ? OBJC3_SERVICE_OK
+                                            : OBJC3_SERVICE_CLOSED));
+    if (polled) objc3_task_release(polled);
+    objc3_task_release(child);
+    group = {};
+    parent = {};
+    assert(lifetime.expired());
+  }
+  objc3_executor_release(destination);
+}
+
+void next_dispatch_failure_cleanup() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  HeldFrame frame;
+  auto *child = start_held(destination, frame,
+                           objc3::task_detail::result_type<std::shared_ptr<int>>());
+  assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
+  group.close();
+  auto parent = next_task<std::shared_ptr<int>>(group).start(destination);
+  pump(destination);
+  for (unsigned index = 0; index != 1024; ++index)
+    assert(objc3_executor_enqueue(destination, [](void *) {}, nullptr) == OBJC3_SERVICE_OK);
+  auto value = std::make_shared<int>(42);
+  std::weak_ptr<int> lifetime = value;
+  complete_value(child, value);
+  value.reset();
+  objc3_completion completion{};
+  assert(objc3_task_get_completion(parent.native_handle(), &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+  objc3_task_t *polled = nullptr;
+  assert(objc3_task_group_next(group.native_handle(), &polled) == OBJC3_SERVICE_CLOSED);
+  objc3_task_release(child);
+  group = {};
+  assert(lifetime.expired());
+  pump(destination);
+  objc3_executor_release(destination);
+}
+
+struct NextFrame {
+  objc3_task_group_t *group;
+  objc3_async_result_type expected{};
+  std::string identity;
+  objc3_service_status status = OBJC3_SERVICE_UNSUPPORTED_VERSION;
+  objc3_task_t *result = nullptr;
+  unsigned resumes = 0, destroyed = 0;
+  int observed = 0;
+};
+void next_resume(objc3_task_t *task, void *opaque) {
+  auto &frame = *static_cast<NextFrame *>(opaque);
+  if (frame.resumes++ == 0) {
+    objc3_task_t *occupied = task;
+    auto rejected_status = OBJC3_SERVICE_UNSUPPORTED_VERSION;
+    assert(objc3_task_group_await_next(frame.group, task, &frame.expected,
+                                       &rejected_status, &occupied) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    assert(occupied == task && rejected_status == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+    assert(objc3_task_group_await_next(frame.group, task, &frame.expected,
+                                       &frame.status, &frame.result) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_await_next(frame.group, task, &frame.expected,
+                                       &frame.status, &frame.result) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    return;
+  }
+  if (objc3_task_is_cancel_requested(task)) {
+    assert(frame.status == OBJC3_SERVICE_CANCELLED && !frame.result);
+    complete(task, OBJC3_COMPLETION_CANCELLED);
+  } else {
+    assert(frame.status == OBJC3_SERVICE_OK && frame.result);
+    assert(objc3_task_copy_result(frame.result, objc3::task_detail::result_type<int>(),
+                                  &objc3::task_detail::value_ops<int>::descriptor,
+                                  &frame.observed) == OBJC3_SERVICE_OK);
+    complete(task);
+  }
+}
+objc3_task_t *start_next(objc3_executor_t *destination, NextFrame &frame) {
+  frame.expected = *objc3::task_detail::result_type<int>();
+  frame.identity = frame.expected.identity;
+  frame.expected.identity = frame.identity.c_str();
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = destination;
+  options.frame = &frame;
+  options.resume = next_resume;
+  options.destroy = [](void *opaque) {
+    auto &frame = *static_cast<NextFrame *>(opaque);
+    objc3_task_release(std::exchange(frame.result, nullptr));
+    ++frame.destroyed;
+  };
+  objc3_task_t *task = nullptr;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  return task;
+}
+void next_c_slots_and_descriptor_copy() {
+  auto *destination = executor();
+  for (bool precancelled : {false, true}) {
+    auto group = objc3::task_group_handle::create();
+    HeldFrame child_frame;
+    auto *child = start_held(destination, child_frame,
+                             objc3::task_detail::result_type<int>());
+    assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
+    group.close();
+    NextFrame frame{group.native_handle()};
+    auto *parent = start_next(destination, frame);
+    if (precancelled) objc3_task_request_cancel(parent);
+    pump(destination);
+    if (!precancelled) {
+      assert(frame.resumes == 1 && !frame.result);
+      frame.identity[0] = '!';
+      ++frame.expected.storage_size;
+    }
+    complete_value(child, 42);
+    pump(destination);
+    assert(frame.resumes == 2 && frame.destroyed == 1 && !frame.result);
+    assert(frame.observed == (precancelled ? 0 : 42));
+    objc3_task_t *polled = nullptr;
+    assert(objc3_task_group_next(group.native_handle(), &polled) ==
+           (precancelled ? OBJC3_SERVICE_OK : OBJC3_SERVICE_CLOSED));
+    objc3_task_release(polled);
+    group.wait();
+    objc3_task_release(parent);
+    objc3_task_release(child);
+  }
+  objc3_executor_release(destination);
+}
+
+void next_nested_and_actor_destinations() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  auto nested = group.child();
+  HeldFrame child_frame;
+  auto *child = start_held(destination, child_frame,
+                           objc3::task_detail::result_type<int>());
+  assert(objc3_task_group_add(nested.native_handle(), child) == OBJC3_SERVICE_OK);
+  group.close();
+  auto root_next = next_task<int>(group).start(destination);
+  pump(destination);
+  assert(!root_next.result()); // Nested children are not direct iteration results.
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(destination, &actor) == OBJC3_SERVICE_OK);
+  auto actor_next = next_task<int>(nested, objc3_actor_identity(actor)).start_on(actor);
+  pump(destination);
+  pending(actor_next.native_handle());
+  complete_value(child, 42);
+  pump(destination);
+  assert(actor_next.result().result() == 42);
+  group.wait();
+  assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+  objc3_actor_release(actor);
+  objc3_task_release(child);
+  objc3_executor_release(destination);
+}
+
+void next_worker_registration_races() {
+  auto *producer = executor(false);
+  auto *consumer = executor(false);
+  for (unsigned iteration = 0; iteration != 64; ++iteration) {
+    auto group = objc3::task_group_handle::create();
+    auto child = value().start(producer);
+    if (iteration % 2) child.wait();
+    group.add(child);
+    group.close();
+    auto next = next_task<void>(group).start(consumer);
+    next.wait();
+    auto result = next.result();
+    assert(result.native_handle() == child.native_handle());
+    result.result();
+    auto closed = next_task<void>(group).start(consumer);
+    closed.wait();
+    assert(!closed.result());
+    group.wait();
+  }
+  objc3_executor_release(producer);
+  objc3_executor_release(consumer);
+}
+
+void next_failed_and_cancelled_results() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  HeldFrame failed_frame, cancelled_frame;
+  auto *failed = start_held(destination, failed_frame,
+                            objc3::task_detail::result_type<int>());
+  auto *cancelled = start_held(destination, cancelled_frame,
+                               objc3::task_detail::result_type<int>());
+  assert(objc3_task_group_add(group.native_handle(), failed) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(group.native_handle(), cancelled) == OBJC3_SERVICE_OK);
+  group.close();
+  auto first = next_task<int>(group).start(destination);
+  pump(destination);
+  int payload = 73;
+  objc3_error_t *error = nullptr;
+  assert(objc3_error_create(&payload, &objc3::task_detail::value_ops<int>::descriptor,
+                             &error) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_ERROR;
+  completion.error = error;
+  assert(objc3_task_complete(failed, &completion) == OBJC3_SERVICE_OK);
+  objc3_error_release(error);
+  assert(objc3_task_is_cancel_requested(cancelled));
+  complete(cancelled, OBJC3_COMPLETION_CANCELLED);
+  pump(destination);
+  auto failed_result = first.result();
+  bool caught = false;
+  try { (void)failed_result.result(); }
+  catch (const objc3::task_error &failure) {
+    caught = *static_cast<const int *>(objc3_error_payload(failure.native_handle())) == 73;
+  }
+  assert(caught);
+  auto second = next_task<int>(group).start(destination);
+  pump(destination);
+  auto cancelled_result = second.result();
+  caught = false;
+  try { (void)cancelled_result.result(); }
+  catch (const objc3::task_cancelled &) { caught = true; }
+  assert(caught && cancelled_result.native_handle() == cancelled);
+  group.wait();
+  objc3_task_release(failed);
+  objc3_task_release(cancelled);
+  objc3_executor_release(destination);
+}
+
+void many_group_observation_lifetimes() {
+  auto *destination = executor();
+  HeldFrame frame;
+  auto *child = start_held(destination, frame);
+  std::vector<objc3::task_group_handle> groups;
+  groups.reserve(4096);
+  for (unsigned index = 0; index != 4096; ++index) {
+    auto group = objc3::task_group_handle::create();
+    assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
+    group.close();
+    groups.push_back(std::move(group));
+  }
+  pump(destination);
+  complete(child);
+  for (const auto &group : groups) group.wait();
+  groups.clear();
+  objc3_task_release(child); // Final release must have bounded native stack use.
+  assert(frame.destroyed == 1);
+  objc3_executor_release(destination);
+}
+
 void late_callback_snapshot() {
   auto *destination = executor();
   auto group = objc3::task_group_handle::create();
@@ -409,4 +771,12 @@ int main() {
   late_callback_snapshot();
   actor_destination_and_dispatch_failure();
   worker_registration_races();
+  next_completion_order_and_type_reservation();
+  next_cancellation_ownership();
+  next_dispatch_failure_cleanup();
+  next_c_slots_and_descriptor_copy();
+  next_nested_and_actor_destinations();
+  next_worker_registration_races();
+  next_failed_and_cancelled_results();
+  many_group_observation_lifetimes();
 }

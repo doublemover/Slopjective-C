@@ -87,6 +87,16 @@ objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
                                       out_status);
   });
 }
+objc3_service_status objc3_task_group_await_next(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    const objc3_async_result_type *expected_type,
+    objc3_service_status *out_status, objc3_task_t **out_task) {
+  return status([&] {
+    return services::task_group_await_next(handle<services::TaskGroup>(group),
+                                           parent, expected_type, out_status,
+                                           out_task);
+  });
+}
 objc3_service_status objc3_actor_create(objc3_executor_t *executor,
                                         objc3_actor_t **out_actor) {
   if (!out_actor)

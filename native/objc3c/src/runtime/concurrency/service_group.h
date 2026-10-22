@@ -22,6 +22,10 @@ objc3_service_status task_group_try_next_completed(TaskGroup *group,
 objc3_service_status task_group_join(TaskGroup *group);
 objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
                                       objc3_service_status *out_status);
+objc3_service_status task_group_await_next(
+    TaskGroup *group, objc3_task_t *parent,
+    const objc3_async_result_type *expected_type,
+    objc3_service_status *out_status, objc3_task_t **out_task);
 
 #if defined(OBJC3_RUNTIME_SERVICE_TESTING)
 using TaskGroupFailurePropagationHook = void (*)(void *context);

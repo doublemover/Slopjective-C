@@ -20,6 +20,9 @@ objc3::task_handle<int> start_chain(objc3_executor_t *, unsigned);
 objc3::task_handle<int> start_group_join(
     objc3_executor_t *, objc3::task_group_handle,
     std::shared_ptr<coroutine_state>);
+objc3::task_handle<int> start_group_next(
+    objc3_executor_t *, objc3::task_group_handle,
+    std::shared_ptr<coroutine_state>);
 objc3::task_handle<int> start_owned_child(objc3_executor_t *,
                                          std::shared_ptr<coroutine_state>);
 objc3::task_handle<std::string> start_failure(objc3_executor_t *);

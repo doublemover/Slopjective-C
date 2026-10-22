@@ -808,6 +808,27 @@ void source_free_group_await_contract() {
   assert(joined.result() == 42 && parent_state->continued == 1);
   assert(child_state->destroyed == 1 && parent_state->destroyed == 1);
   group.wait();
+  auto results = objc3::task_group_handle::create();
+  child_state = std::make_shared<coroutine_state>();
+  parent_state = std::make_shared<coroutine_state>();
+  auto next_child = start_leaf(executor, child_state);
+  results.add(next_child);
+  results.close();
+  auto next = start_group_next(executor, results, parent_state);
+  pump(executor, 2);
+  pending(next);
+  assert(child_state->entered == 1 && parent_state->entered == 1);
+  child_state->ready = true;
+  pump(executor, 100);
+  assert(next.result() == 42 && parent_state->continued == 1);
+  assert(child_state->destroyed == 1 && parent_state->destroyed == 1);
+  auto drained_state = std::make_shared<coroutine_state>();
+  auto drained = start_group_next(executor, results, drained_state);
+  pump(executor, 1);
+  pending(drained);
+  pump(executor, 100);
+  assert(drained.result() == -1 && drained_state->destroyed == 1);
+  results.wait();
   objc3_executor_release(executor);
 }
 } // namespace

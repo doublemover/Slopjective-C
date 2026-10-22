@@ -338,6 +338,13 @@ objc3_task_t::~objc3_task() {
     std::lock_guard<std::mutex> lock(await_target->mutex);
     await_target->task = nullptr;
   }
+  // One task can be registered in many independent groups. Drop the immutable
+  // observation chain iteratively: shared_ptr's recursive next destruction
+  // would otherwise make final task release consume unbounded native stack.
+  while (quiescence_observers) {
+    auto observer = std::move(quiescence_observers);
+    quiescence_observers = std::move(observer->next);
+  }
   // A last handle released while suspended becomes an implicit cancellation.
   // The release path normally terminalizes first; this is a defensive fallback.
   release_payload(this);
@@ -520,6 +527,7 @@ bool objc3_task_mark_cancel(objc3_task_t *task) {
   if (!task->terminal && task->awaiting) {
     if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
     task->await_status = nullptr;
+    task->await_result_task = nullptr;
     task->awaiting = false;
     return true;
   }
@@ -675,6 +683,7 @@ extern "C" objc3_service_status objc3_task_complete(
     task->terminal = true;
     task->awaiting = false;
     task->await_status = nullptr;
+    task->await_result_task = nullptr;
     task->completion_claimed = false;
     task->resume_after_completion_claim = false;
     task->resume_requested = false;
@@ -773,7 +782,7 @@ objc3_service_status objc3_task_add_group_observers(
 
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
-    objc3_service_status *status) {
+    objc3_service_status *status, objc3_task_t **result_task) {
   if (!parent || current_service_task != parent)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   try {
@@ -788,6 +797,7 @@ objc3_service_status objc3_task_prepare_await(
       parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
     continuation = {parent->await_target, ++parent->await_generation};
     parent->await_status = status;
+    parent->await_result_task = result_task;
     parent->awaiting = true;
   } catch (...) {
     return OBJC3_SERVICE_OUT_OF_MEMORY;
@@ -795,31 +805,48 @@ objc3_service_status objc3_task_prepare_await(
   return OBJC3_SERVICE_OK;
 }
 
-void objc3_task_finish_await(const ObjC3TaskAwaitContinuation &continuation,
-                            objc3_service_status status) {
+ObjC3TaskAwaitClaim objc3_task_claim_await(
+    const ObjC3TaskAwaitContinuation &continuation, objc3_service_status status,
+    objc3_task_t *owned_result) {
+  ObjC3TaskAwaitClaim claim;
   objc3_task_t *parent = nullptr;
   {
     // The token does not retain the parent. Its lock protects the raw pointer
     // against final deletion; try_retain rejects a record already at zero.
     std::lock_guard<std::mutex> lock(continuation.target->mutex);
     parent = continuation.target->task;
-    if (!objc3_task_internal_retain(parent)) return;
+    if (!objc3_task_internal_retain(parent)) return claim;
   }
-  TaskReleaseGuard guard{parent};
-  bool wake = false;
+  claim.parent = parent;
   {
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (!parent->terminal && parent->awaiting &&
         parent->await_generation == continuation.generation) {
-      if (parent->await_status)
-        *parent->await_status = parent->cancel_requested.load(std::memory_order_acquire)
-                                    ? OBJC3_SERVICE_CANCELLED : status;
+      if (parent->cancel_requested.load(std::memory_order_acquire))
+        status = OBJC3_SERVICE_CANCELLED;
+      if (parent->await_status) *parent->await_status = status;
+      if (status == OBJC3_SERVICE_OK && owned_result && parent->await_result_task) {
+        *parent->await_result_task = owned_result;
+        claim.transferred_result = true;
+      }
       parent->await_status = nullptr;
+      parent->await_result_task = nullptr;
       parent->awaiting = false;
-      wake = true;
+      claim.wake = true;
     }
   }
-  if (wake) wake_awaiting_task(parent);
+  return claim;
+}
+
+void objc3_task_dispatch_await(ObjC3TaskAwaitClaim claim) {
+  if (!claim.parent) return;
+  TaskReleaseGuard guard{claim.parent};
+  if (claim.wake) wake_awaiting_task(claim.parent);
+}
+
+void objc3_task_finish_await(const ObjC3TaskAwaitContinuation &continuation,
+                            objc3_service_status status) {
+  objc3_task_dispatch_await(objc3_task_claim_await(continuation, status));
 }
 
 void objc3_task_abort_await(
@@ -828,6 +855,7 @@ void objc3_task_abort_await(
   if (parent->await_generation == continuation.generation) {
     parent->awaiting = false;
     parent->await_status = nullptr;
+    parent->await_result_task = nullptr;
   }
 }
 
