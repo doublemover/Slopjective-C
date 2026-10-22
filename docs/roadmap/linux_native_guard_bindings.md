@@ -28,15 +28,15 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 70 AST contract tests, 53 production exit-proof
+229 passing Clang regressions, 74 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 40 verified native modules. All 80 O0/O2
+The private CodeGen gate exports 52 verified native modules. All 104 O0/O2
 executions pass across C17/C++20/23, ARC/MRC modes for integer payloads and
-nontrivial C++ records in MRC. The C++ runs include 92 expected constructor,
+nontrivial C++ records in MRC. The C++ runs include 164 expected constructor,
 temporary-cleanup and snapshot-destructor exceptions. This does not qualify
 managed-reference ownership, public parsing or an installed guard compiler.
 Ordered cases verify short-circuiting, earlier-binding access in later sources,
@@ -91,7 +91,7 @@ hashes, replaces stale receipts before checking admission and reclaims temporary
 IR/executables. The gate uses the existing foundation lock and checks inputs
 again after execution. Source syntax is still disabled.
 
-## Scope integration under validation
+## Qualified scope integration
 
 Completed function, method and Block bodies now run mandatory-exit checking
 with resolved labels and real source regions, including unbraced control bodies.
@@ -104,8 +104,9 @@ through Sema and maps old local declarations to their concrete replacements.
 Source full expressions are rebuilt after the new snapshot, preserving temporary
 lifetime through successful binding construction. New maintained tests cover
 scope exits, initialization bypass, sibling else isolation and dependent replay.
-These changes are under fresh validation; the receipt above binds the preceding
-checkpoint.
+Instantiated template runtime cases also verify native owned construction,
+source temporary lifetimes and ordered partial-failure cleanup. The receipt above
+binds this completed scope and template checkpoint.
 
 ## Implementation still to complete
 
