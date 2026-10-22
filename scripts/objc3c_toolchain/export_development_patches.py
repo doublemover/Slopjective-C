@@ -105,6 +105,7 @@ PACKETS = {
         "clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp",
         "clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp",
         "clang/unittests/ASTMatchers/CMakeLists.txt",
+        "clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt",
         "clang/lib/AST/ParentMapContext.cpp",
         "clang/lib/ASTMatchers/Dynamic/Registry.cpp",
         "clang/lib/ASTMatchers/ASTMatchFinder.cpp",

@@ -1164,7 +1164,7 @@ index 7671f003c..16e56e1ce 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..6aaeeed5d 100644
+index 2cb79b6ba..144b1f9e9 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,63 @@
@@ -1312,11 +1312,11 @@ index 2cb79b6ba..6aaeeed5d 100644
 +def err_objc3_binding_requires_optional : Error<"binding requires an Optional or Objective-C reference, not %0">;
 +def err_objc3_binding_void_payload : Error<"a void payload cannot be bound in a condition">;
 +def err_objc3_coalesce_requires_optional : Error<
-+  "left operand of '??' must be an Optional or Objective-C reference, not %0">;
++  "left operand of coalescing operator must be an Optional or Objective-C reference, not %0">;
 +def err_objc3_coalesce_fallback_type : Error<
 +  "fallback type %0 is not compatible with unwrapped type %1">;
 +def err_objc3_coalesce_void_payload : Error<
-+  "a void payload cannot be unwrapped by '??'">;
++  "a void payload cannot be unwrapped by coalescing operator">;
 +def err_objc3_optional_access_receiver : Error<
 +  "optional access requires an Objective-C object receiver, not %0">;
 +def err_objc3_optional_access_result : Error<
@@ -25296,16 +25296,17 @@ index a04070971..29d303b64 100644
    REGISTER_MATCHER(ignoringImpCasts);
    REGISTER_MATCHER(ignoringImplicit);
 diff --git a/clang/unittests/ASTMatchers/CMakeLists.txt b/clang/unittests/ASTMatchers/CMakeLists.txt
-index 955566cf6..17e9220a7 100644
+index 955566cf6..5be63dc02 100644
 --- a/clang/unittests/ASTMatchers/CMakeLists.txt
 +++ b/clang/unittests/ASTMatchers/CMakeLists.txt
-@@ -20,3 +20,22 @@ add_clang_unittest(ASTMatchersTests
+@@ -20,3 +20,23 @@ add_clang_unittest(ASTMatchersTests
    )
  
  add_subdirectory(Dynamic)
 +
 +# Keep Objective-C 3 source traversal qualification independently buildable.
-+add_clang_unittest(ObjC3MatchersTests
++add_distinct_clang_unittest(ObjC3MatchersTests
++  PARTIAL_SOURCES_INTENDED
 +  ObjC3MatchersTest.cpp
 +  CLANG_LIBS
 +  clangAST
@@ -26621,7 +26622,7 @@ index 000000000..fa58f2c59
 +}
 diff --git a/clang/test/ObjC3/Sema/optional-coalescing.m b/clang/test/ObjC3/Sema/optional-coalescing.m
 new file mode 100644
-index 000000000..d6e84fff1
+index 000000000..cbf58da1e
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/optional-coalescing.m
 @@ -0,0 +1,40 @@
@@ -26631,14 +26632,14 @@ index 000000000..d6e84fff1
 +typedef Optional(int) Maybe;
 +struct Record { int value; };
 +void rejects_scalar(int scalar, int *pointer) {
-+  (void)(scalar ?? 1); // expected-error {{left operand of '??' must be an Optional or Objective-C reference}}
-+  (void)(pointer ?? pointer); // expected-error {{left operand of '??' must be an Optional or Objective-C reference}}
++  (void)(scalar ?? 1); // expected-error {{left operand of coalescing operator must be an Optional or Objective-C reference}}
++  (void)(pointer ?? pointer); // expected-error {{left operand of coalescing operator must be an Optional or Objective-C reference}}
 +}
 +
 +void rejects_unrelated_fallback(Maybe source, struct Record record) {
 +  (void)(source ?? record); // expected-error {{fallback type .* is not compatible with unwrapped type 'int'}}
 +  (void)(source ?? None(long)); // expected-error {{fallback type}}
-+  (void)(None(void) ?? 1); // expected-error {{a void payload cannot be unwrapped by '??'}}
++  (void)(None(void) ?? 1); // expected-error {{a void payload cannot be unwrapped by coalescing operator}}
 +}
 +
 +void rejects_nonreference_object_fallback(id object) {
@@ -28812,3 +28813,13 @@ index 000000000..358143eee
 +  (void)closure;
 +}
 +#endif
+diff --git a/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt b/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
+index b6db7ce62..a3da6b338 100644
+--- a/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
++++ b/clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_clang_unittest(DynamicASTMatchersTests
++add_distinct_clang_unittest(DynamicASTMatchersTests
+   VariantValueTest.cpp
+   ParserTest.cpp
+   RegistryTest.cpp
