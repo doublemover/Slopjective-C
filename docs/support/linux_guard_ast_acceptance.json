@@ -3,19 +3,19 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "bc3037c3a35bd4b5a629a4da640bd763018d80dc",
+  "implementation_commit": "8a3600302bdaddfceeebca311324da6051891c04",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-d60878d828a6-fd761312",
-  "patch_digest": "d60878d828a66f4de66445e31151e1fcd00162c05c3d0ef45979edbf88dacb59",
-  "compiler_sha256": "f27b7798aaa3f5813df61f8f948cf25690c5231e8021a4c412c71f26537d9fcc",
-  "ast_tests_sha256": "5725e7f3dab98cd7066a72ef3a64841d0a48f16bb0d580a2f558cc6e66f490e8",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-b626be75a263-fd761312",
+  "patch_digest": "b626be75a263dd5a953f44216bed73734744985cb6ac799134267d6dd100c3f6",
+  "compiler_sha256": "c3d312ba9f5e1cadd456551da70836878cb2a3739abd301254e11d73421959ce",
+  "ast_tests_sha256": "cdeb4aa6f9e6457e1d45453fade9957d21fc0875f882eed5d6a039e5b7681fcf",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
   "verification": {
     "clang_regressions_passed": 231,
     "clang_regressions_unsupported": 3,
-    "ast_contract_tests_passed": 82,
+    "ast_contract_tests_passed": 83,
     "production_guard_exit_cases": 53,
     "focused_tooling_tests_passed": 8,
     "compiler_clangd_lldb_rebuilt": true,
@@ -36,9 +36,9 @@
       "payload aliases and nullable/nonnull annotations"
     ],
     "runtime": {
-      "verified_native_modules": 392,
-      "configurations_passed": 392,
-      "commands_passed": 885,
+      "verified_native_modules": 398,
+      "configurations_passed": 398,
+      "commands_passed": 897,
       "standards": [
         "c17",
         "c++20",
@@ -55,7 +55,7 @@
       "cpp_payload_ownership_modes": [
         "MRC"
       ],
-      "expected_cpp_exception_scenarios_executed": 164,
+      "expected_cpp_exception_scenarios_executed": 0,
       "payloads": [
         "plain integer",
         "C++ record with nontrivial copy/destruction",
@@ -90,7 +90,9 @@
         "source owners cleared after independent binding initialization",
         "zeroed weak objects and Blocks",
         "Some(nil) remains present",
-        "Objective-C exception cleanup releases binding and captures"
+        "Objective-C exception cleanup releases binding and captures",
+        "defer before final managed guard releases on normal/exceptional exit",
+        "failed later binding releases prefix before else and outer deferred action"
       ],
       "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
       "executable_model": "non-PIE private native AST modules",
@@ -102,7 +104,7 @@
         "O2"
       ],
       "frontend_backend_optimization_matched": true,
-      "expected_objc_exception_scenarios_executed": 288,
+      "expected_objc_exception_scenarios_executed": 294,
       "managed_source_ownership": [
         "strong",
         "weak",
@@ -172,37 +174,72 @@
       "compiler_binding": "admitted-development-source",
       "defer_source_syntax_admitted": true,
       "guard_source_syntax_admitted": false,
-      "arc_release_ordering_qualified": false,
+      "arc_release_ordering_qualified": true,
+      "arc_qualified_storage": [
+        "strong objects and Blocks",
+        "strong arrays",
+        "escaping __block ownership",
+        "optional carriers and carrier arrays",
+        "C records and pure C++ aggregates",
+        "nested managed carrier records"
+      ],
+      "arc_scope_cases": [
+        "normal/return/native and checked failure",
+        "forward/backward goto",
+        "nested scopes and loop break/continue",
+        "assignment and explicit owner clearing",
+        "C++ destructor and cleanup-attribute action ordering",
+        "deferred local jumps and catches",
+        "methods/Blocks/lambdas/templates",
+        "VLA storage and stack restoration"
+      ],
+      "native_arc_cleanup_cfg_qualified": false,
       "expected_objc_terminations": 24,
       "expected_cpp_terminations": 16,
       "commands_passed": 100,
-      "configurations_passed": 24
+      "configurations_passed": 24,
+      "pch_variable_liveness": "all"
     },
     "defer_codegen_regressions": [
       "independent labels, local declarations and VLA state per cleanup copy",
       "preserve original exception/selector across local catch in EH cleanup",
       "return reachability after deferred cleanup",
       "address-taken deferred labels diagnosed"
-    ]
+    ],
+    "arc_scope_release_model": {
+      "source_scope_release_queue": true,
+      "native_action_order_preserved": true,
+      "partial_exit_flush_after_native_cleanup_chain": true,
+      "transfer_identity_excludes_local_jumps_in_cleanup_bodies": true,
+      "precise_strong_source_lifetimes": true,
+      "lifetime_markers_fake_use_and_vla_stack_restore_queued": true,
+      "uninitialized_and_other_cleanup_copies_excluded_by_pending_flags": true,
+      "stored_addresses_preserve_ssa_dominance": true,
+      "native_arc_cleanup_cfg_qualified": false
+    },
+    "additional_variable_liveness": {
+      "configurations_passed": 4,
+      "commands_passed": 8,
+      "report_sha256": "3bf2c1c5cdbd22489cdd506bd11eee9dcac2808488186faf5c3c89bfed193d52"
+    }
   },
-  "foundation_report_sha256": "89c40abaa6cbd677b83a87f119e7094b5d8d7db25d1e941a1e9de7eceb8c6bf1",
-  "runtime_report_sha256": "6bea7c95c050a66233565f86eba8e4cedc6e6665ee4a57279f84e6baa9d2891e",
+  "foundation_report_sha256": "974185f6222df40f6499397ababb36642e1a8440fc5ef74fb37a9d90a549ab10",
+  "runtime_report_sha256": "166bb7b61324f36c683fea3d32c9c4ced51770ae207bc478a2e572afc25a6ae4",
   "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
-  "ast_codegen_test_sha256": "e251377a35fd9dc6e3613643316826e85e2eefb4202a09881c7b9ea6736578b8",
-  "qualification_script_sha256": "4969d46dcb2455f193f2b5337060be82dec08fc671cf1bf025c36c6c6439148b",
+  "ast_codegen_test_sha256": "ae5d598b8387a91d7172ad7c2c82f88bd7b7dc6b3e23793a521f76cd1b5e4819",
+  "qualification_script_sha256": "8d77ab433cdee28a201ea930098d9f0a6d11b5a14d8e2476fb28850409ab93ed",
   "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
-    "C++ construction/destruction, managed copies and runtime cleanup in deferred native unwind CFG",
-    "ARC/defer ordering for managed locals declared after the action",
-    "ordered managed-prefix failure/unwinding and nested managed payload qualification",
+    "C++ construction/destruction, ARC and runtime cleanup in deferred native unwind CFG",
+    "complete ordered managed-prefix failure and nested managed binding qualification",
     "contextual parser admission, recovery and nullable flow refinements",
     "guard source/PCH/interface/debugger runtime gates and SDK delivery"
   ],
   "activated_sdk_receipt": "docs/support/linux_match_results_acceptance.json",
   "scope_test_sha256": "eaf10b31302d5e440a91436136057b717668f003a1e4aff9985b0c71f5abb0cd",
   "defer_source_inputs_sha256": {
-    "scripts/objc3c_native_validation/defer_source.py": "3342f23871bfc2db53c45e856949f818afcb5cccf6d3cc7772733070da7c2417",
-    "tests/clang_foundation/defer_control_flow/runtime.h": "578fac2a2350ab44f8ed9bf0f3a672d7cb4cbfd0c75a664b3f5815046d8a1d3a",
-    "tests/clang_foundation/defer_control_flow/main.m": "7d4c561fc5b7799dd8b35e95832cf1aaabdd9f7201db5c3e761808a1f625af9d"
+    "scripts/objc3c_native_validation/defer_source.py": "5475f920de6ce8c7270fb943e21d03ff92e6ef4741b780ff359b35415ca4c0f7",
+    "tests/clang_foundation/defer_control_flow/runtime.h": "2232d303b9518333d07f093c315a9d3471648f9c1d2267f47367756440cfbeba",
+    "tests/clang_foundation/defer_control_flow/main.m": "c5c062dd6abfc65ccaddea24a47af1a636c22b5b6da112ea8a395299dc4840aa"
   }
 }

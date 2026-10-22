@@ -28,17 +28,17 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-231 passing Clang regressions, 82 AST contract tests, 53 production exit-proof
+231 passing Clang regressions, 83 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 392 verified native modules, each generated and
-executed with matching O0 or O2 frontend/backend settings. All 392 executions
+The private CodeGen gate exports 398 verified native modules, each generated and
+executed with matching O0 or O2 frontend/backend settings. All 398 executions
 pass across C17/C++20/23, ARC/MRC modes for integer payloads, nontrivial C++
 records in MRC, and managed objects/Blocks in ARC. The runs include 164 expected
-C++ exceptions and 288 expected Objective-C exceptions.
+C++ exceptions and 294 expected Objective-C exceptions.
 
 Managed cases cross strong/weak/unsafe sources, direct nullable references versus
 tagged optionals, immutable/mutable bindings and both branch forms. Clearing the
@@ -49,7 +49,7 @@ earlier-binding access, source mutation, temporary/snapshot lifetime, cleanup
 before else, reverse final destruction and partial-failure unwinding.
 A separate public defer source/PCH gate passes 24 configurations and 100 commands,
 including 24 expected Objective-C and 16 expected C++ terminations. Together the
-gates pass 885 commands. This does not qualify public guard parsing or an
+gates pass 897 commands. This does not qualify public guard parsing or an
 installed guard compiler.
 
 ## Source and lifetime lowering
@@ -164,9 +164,32 @@ Source/PCH regressions reproduce the former duplicate-label assertion and unwind
 crash at O0/O2 across C17/C++20/23 and ARC/MRC. Address-taken labels in deferred
 bodies receive an explicit diagnostic; direct local gotos are supported. Return
 markers also preserve native fallthrough diagnostics after cleanup.
-An execution probe also confirms an existing ARC ordering defect at O0/O2:
-a managed local declared after a defer can release before the action. That must
-be corrected with destination-aware scope cleanup before source feature delivery.
+
+## ARC scope-exit release ordering
+
+Native source scopes with defer now queue implicit managed releases until their
+registered actions finish. Native defer, C++ destructor and cleanup-attribute
+ordering is preserved. Normal transfers that retain the source scope drain their
+pending releases after the native cleanup chain, including late forward-label
+fixups and backward gotos across registrations. Destination identities prevent
+local jumps inside a deferred body from draining an enclosing transfer's queue.
+
+Precise strong lifetimes prevent early optimizer releases. Runtime pointer slots
+and pending flags exclude uninitialized locals and unrelated cleanup copies.
+Lifetime-end/fake-use operations and VLA stack restoration follow destruction;
+LLVM lifetime intrinsics retain their required original alloca operand. Native
+ARC exception policy and original destruction recipes remain in force.
+
+Source/PCH execution covers objects, Blocks, strong arrays, escaping `__block`
+ownership, carriers/arrays, C records, pure C++ aggregates and nested carrier
+records. Cases include normal/return/loop/goto, assignment, checked/native errors,
+throwing actions, local catches/jumps, native C++ and cleanup-attribute ordering,
+VLA storage, methods, Blocks, lambdas and templates. PCH cases enable extended
+variable liveness to keep fake-use cleanup coverage in the maintained gate.
+Private guard modules also
+verify prefix release before else versus defer-before-release on success/unwind.
+This qualifies the maintained CodeGen cases; a complete native ARC cleanup CFG
+model and public guard source admission remain separate work.
 
 ## Implementation still to complete
 
