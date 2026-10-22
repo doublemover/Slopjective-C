@@ -1305,7 +1305,7 @@ index 7421733ef..f382865e8 100644
    } else if (isa<VarDecl>(D) &&
               GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..3e30b2251 100644
+index e84e05e8e..bf09f5fee 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,16 @@
@@ -1466,7 +1466,7 @@ index e84e05e8e..3e30b2251 100644
 +std::optional<CodeGenFunction::AutoVarEmission>
 +CodeGenFunction::EmitAutoVarInitialized(const VarDecl &D,
 +                                       const Expr *InitializerOverride,
-+                                       bool DeferStorageCleanups) {
++                                       bool DeferScopeRegistrations) {
 +  QualType Canonical = getContext().getCanonicalType(D.getType());
 +  const bool IsManagedRecord = Canonical->isRecordType() &&
 +      supportsObjC3ManagedRecordLifetime(CGM, Canonical);
@@ -1507,7 +1507,7 @@ index e84e05e8e..3e30b2251 100644
 +      (void)EmitAutoVarAlloca(D);
 +    return std::nullopt;
 +  }
-+  AutoVarEmission emission = EmitAutoVarAlloca(D, DeferStorageCleanups);
++  AutoVarEmission emission = EmitAutoVarAlloca(D, DeferScopeRegistrations);
 +  {
 +    CleanupDeactivationScope Deactivation(*this);
 +    if (IsARCArray || IsManagedRecord) {
@@ -1555,11 +1555,21 @@ index e84e05e8e..3e30b2251 100644
  CodeGenFunction::AutoVarEmission
 -CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
 +CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D,
-+                                  bool DeferStorageCleanups) {
++                                  bool DeferScopeRegistrations) {
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1532,7 +1711,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1684,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+     EmitVariablyModifiedType(Ty);
+ 
+   auto *DI = getDebugInfo();
+-  bool EmitDebugInfo = DI && CGM.getCodeGenOpts().hasReducedDebugInfo();
++  bool EmitDebugInfo = !DeferScopeRegistrations && DI &&
++                       CGM.getCodeGenOpts().hasReducedDebugInfo();
+ 
+   Address address = Address::invalid();
+   RawAddress AllocaAddr = RawAddress::invalid();
+@@ -1532,7 +1712,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -1569,11 +1579,21 @@ index e84e05e8e..3e30b2251 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1743,6 +1923,15 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1726,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+       // in OpenCL.
+       bool NeedsDtor =
+           D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
+-      if ((!getLangOpts().OpenCL ||
++      if (!DeferScopeRegistrations &&
++          (!getLangOpts().OpenCL ||
+            Ty.getAddressSpace() == LangAS::opencl_constant) &&
+           (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
+            !isEscapingByRef &&
+@@ -1743,6 +1925,15 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
-+  if (!DeferStorageCleanups)
++  if (!DeferScopeRegistrations)
 +    EmitAutoVarStorageCleanups(emission);
 +  return emission;
 +}
@@ -1585,7 +1605,7 @@ index e84e05e8e..3e30b2251 100644
    // Make sure we call @llvm.lifetime.end.
    if (emission.useLifetimeMarkers())
      EHStack.pushCleanup<CallLifetimeEnd>(
-@@ -1760,7 +1949,6 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1760,7 +1951,6 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
                                     emission.getAllocatedAddress());
    }
  
@@ -1593,7 +1613,7 @@ index e84e05e8e..3e30b2251 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2137,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2139,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -1603,7 +1623,7 @@ index e84e05e8e..3e30b2251 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2150,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2152,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -1621,7 +1641,7 @@ index e84e05e8e..3e30b2251 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2199,6 +2397,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2399,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -1629,7 +1649,7 @@ index e84e05e8e..3e30b2251 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2234,8 +2433,35 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2435,35 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -1667,7 +1687,7 @@ index e84e05e8e..3e30b2251 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2285,6 +2511,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2513,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -1676,7 +1696,7 @@ index e84e05e8e..3e30b2251 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +2924,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +2926,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -7798,7 +7818,7 @@ index 7629b42dd..25517ae3e 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..80568f908 100644
+index e7c24f1f3..ddf1306bb 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -57,6 +57,9 @@ class CanonicalLoopInfo;
@@ -7830,7 +7850,7 @@ index e7c24f1f3..80568f908 100644
  
  // clang-format off
  /// The kind of evaluation to perform on values of a particular
-@@ -290,6 +298,56 @@ public:
+@@ -290,6 +298,57 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
@@ -7869,7 +7889,8 @@ index e7c24f1f3..80568f908 100644
 +        !ObjC3CarrierLocalInit.Storage.isValid() ||
 +        ObjC3CarrierLocalInit.Storage.isSigned() || Storage.hasOffset() ||
 +        ObjC3CarrierLocalInit.Storage.hasOffset() ||
-+        CarrierType != ObjC3CarrierLocalInit.CarrierType)
++        !getContext().hasSameType(CarrierType,
++                                  ObjC3CarrierLocalInit.CarrierType))
 +      return false;
 +    // A byref field may be reached by independently emitted GEPs. Compare the
 +    // complete constant offset, never just the allocation root: sibling fields
@@ -7887,7 +7908,7 @@ index e7c24f1f3..80568f908 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -657,6 +715,7 @@ public:
+@@ -657,6 +716,7 @@ public:
  
    const CodeGen::CGBlockInfo *BlockInfo = nullptr;
    llvm::Value *BlockPointer = nullptr;
@@ -7895,7 +7916,7 @@ index e7c24f1f3..80568f908 100644
  
    llvm::DenseMap<const ValueDecl *, FieldDecl *> LambdaCaptureFields;
    FieldDecl *LambdaThisCaptureField = nullptr;
-@@ -2297,6 +2356,7 @@ public:
+@@ -2297,6 +2357,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -7903,26 +7924,28 @@ index e7c24f1f3..80568f908 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -3537,8 +3597,16 @@ public:
+@@ -3537,8 +3598,18 @@ public:
        return CGF.emitBlockByrefAddress(Addr, Variable, /*forward*/ false);
      }
    };
 -  AutoVarEmission EmitAutoVarAlloca(const VarDecl &var);
 -  void EmitAutoVarInit(const AutoVarEmission &emission);
 +  AutoVarEmission EmitAutoVarAlloca(const VarDecl &var,
-+                                     bool DeferStorageCleanups = false);
++                                     bool DeferScopeRegistrations = false);
 +  void EmitAutoVarStorageCleanups(const AutoVarEmission &);
 +  // Initialize a native local without registering its final lexical cleanup.
 +  // Override may only remove outer ExprWithCleanups from the same initializer.
++  // Deferred scope registration also suppresses the initial debug declaration;
++  // its caller emits that in the final native lexical scope after temporaries.
 +  std::optional<AutoVarEmission> EmitAutoVarInitialized(
 +      const VarDecl &D, const Expr *InitializerOverride = nullptr,
-+      bool DeferStorageCleanups = false);
++      bool DeferScopeRegistrations = false);
 +  void EmitAutoVarInit(const AutoVarEmission &emission,
 +                       const Expr *InitializerOverride = nullptr);
    void EmitAutoVarCleanups(const AutoVarEmission &emission);
    void emitAutoVarTypeCleanup(const AutoVarEmission &emission,
                                QualType::DestructionKind dtorKind);
-@@ -3641,6 +3709,11 @@ public:
+@@ -3641,6 +3712,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -7934,7 +7957,7 @@ index e7c24f1f3..80568f908 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3665,6 +3738,8 @@ public:
+@@ -3665,6 +3741,8 @@ public:
    void EmitAttributedStmt(const AttributedStmt &S);
    void EmitGotoStmt(const GotoStmt &S);
    void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
@@ -7943,7 +7966,7 @@ index e7c24f1f3..80568f908 100644
    void EmitIfStmt(const IfStmt &S);
  
    void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
-@@ -3691,6 +3766,7 @@ public:
+@@ -3691,6 +3769,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);
@@ -17627,10 +17650,10 @@ index 000000000..bff3f2e04
 +// CHECK: attributes #[[TRANSPORT]] = { {{(mustprogress )?}}noinline {{(nounwind )?}}optnone
 diff --git a/clang/lib/CodeGen/CGObjC3Conditions.cpp b/clang/lib/CodeGen/CGObjC3Conditions.cpp
 new file mode 100644
-index 000000000..faceb5b5d
+index 000000000..0f1ac8e1c
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Conditions.cpp
-@@ -0,0 +1,221 @@
+@@ -0,0 +1,217 @@
 +//===--- CGObjC3Conditions.cpp - Ordered condition ownership ---------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGDebugInfo.h"
@@ -17701,21 +17724,6 @@ index 000000000..faceb5b5d
 +  }
 +};
 +
-+// Keep debug visibility open while source temporaries finish, without saving a
-+// cleanup-stack depth underneath those temporaries. The native lifetime scope
-+// is installed only after they have been popped.
-+struct BindingDebugScope {
-+  CodeGenFunction &CGF;
-+  SourceLocation End;
-+  BindingDebugScope(CodeGenFunction &CGF, SourceLocation Begin, SourceLocation End)
-+      : CGF(CGF), End(End) {
-+    if (auto *DI = CGF.getDebugInfo()) DI->EmitLexicalBlockStart(CGF.Builder, Begin);
-+  }
-+  ~BindingDebugScope() {
-+    if (auto *DI = CGF.getDebugInfo()) DI->EmitLexicalBlockEnd(CGF.Builder, End);
-+  }
-+};
-+
 +void emitConditions(CodeGenFunction &CGF, ArrayRef<Stmt *> Conditions,
 +                    unsigned Index, CodeGenFunction::JumpDest Failed,
 +                    SourceLocation End, llvm::function_ref<void()> Success) {
@@ -17782,7 +17790,6 @@ index 000000000..faceb5b5d
 +  CGF.EmitBlock(Absent);
 +  CGF.EmitBranchThroughCleanup(Failed);
 +  CGF.EmitBlock(Present);
-+  BindingDebugScope Debug(CGF, Variable->getLocation(), End);
 +  std::optional<CodeGenFunction::AutoVarEmission> Emission;
 +  {
 +    const auto *Opaque = findBindingSource(Variable->getInit());
@@ -17791,7 +17798,7 @@ index 000000000..faceb5b5d
 +        CGF, Opaque, CGF.MakeAddrLValue(Payload, Opaque->getType()));
 +    Emission = CGF.EmitAutoVarInitialized(
 +        *Variable, withoutFullExpression(Variable->getInit()),
-+        /*DeferStorageCleanups=*/true);
++        /*DeferScopeRegistrations=*/true);
 +  }
 +  if (!Emission) return;
 +  Address BindingStorage = CGF.GetAddrOfLocalVar(Variable);
@@ -17803,6 +17810,18 @@ index 000000000..faceb5b5d
 +  // of the user binding. Labels are rescaled as each native lexical scope ends.
 +  CodeGenFunction::LexicalScope Lifetime(
 +      CGF, SourceRange(Variable->getLocation(), End));
++  // Complete the declaration's debug visibility only after its full condition
++  // succeeds. Shared source cleanup blocks also run on absent paths and must
++  // not inherit a successful binding's lexical debug scope.
++  assert(!Variable->isNRVOVariable() && !Variable->isEscapingByref() &&
++         !Variable->getType()->isVariablyModifiedType());
++  if (auto *DI = CGF.getDebugInfo())
++    if (CGF.CGM.getCodeGenOpts().hasReducedDebugInfo() && CGF.HaveInsertPoint()) {
++      DI->setLocation(Variable->getLocation());
++      DI->EmitDeclareOfAutoVariable(
++          Variable, Emission->getOriginalAllocatedAddress().getPointer(),
++          CGF.Builder, /*UsePointerValue=*/false);
++    }
 +  CGF.EmitAutoVarStorageCleanups(*Emission);
 +  CGF.EmitAutoVarCleanups(*Emission);
 +  Next();

@@ -9333,7 +9333,7 @@ index 000000000..e9e92f26f
 +
 diff --git a/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
 new file mode 100644
-index 000000000..5cbf60e43
+index 000000000..ffea1408a
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
 @@ -0,0 +1,13 @@
@@ -9342,12 +9342,12 @@ index 000000000..5cbf60e43
 +
 +void use_persisted_nested_carriers();
 +
-+// CHECK: using PersistedNestedOptional = Optional(Optional(int));
-+// CHECK: using PersistedNestedResult = Result(Result(int, long), Optional(Optional(int)));
++// CHECK: using PersistedNestedOptional = Optional(PersistedCountOptional);
++// CHECK: using PersistedNestedResult = Result(PersistedResult, PersistedNestedOptional);
 +// CHECK: Some(PersistedCountOptional, Some(PersistedCount, 0))
 +// CHECK: Err(PersistedResult, PersistedNestedOptional,
 +// CHECK: Some(Inner, Some(T, value))
-+// CHECK: Optional(Optional(int)) persisted_dependent_nested<int>(int value)
++// CHECK: Optional(Inner) persisted_dependent_nested<int>(int value)
 +
 +
 diff --git a/clang/test/ObjC3/AST/carrier-expression-module.m b/clang/test/ObjC3/AST/carrier-expression-module.m
@@ -9421,7 +9421,7 @@ index 000000000..30bc00226
 +// CHECK: moveValue(source)
 diff --git a/clang/test/ObjC3/AST/carrier-types-pch.mm b/clang/test/ObjC3/AST/carrier-types-pch.mm
 new file mode 100644
-index 000000000..4aa3df794
+index 000000000..ef50cd2a7
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/carrier-types-pch.mm
 @@ -0,0 +1,8 @@
@@ -9430,8 +9430,8 @@ index 000000000..4aa3df794
 +
 +using PchInstantiated = PchGenericOptional<const long *>;
 +
-+// CHECK: TypedefDecl {{.*}} PchOptional 'Optional(int)'
-+// CHECK: TypedefDecl {{.*}} PchResult 'Result(Optional(int), CarrierFailure)'
++// CHECK: TypedefDecl {{.*}} PchOptional 'Optional(CarrierIntAlias)'
++// CHECK: TypedefDecl {{.*}} PchResult 'Result(PchOptional, CarrierFailure)'
 +// CHECK: TypeAliasDecl {{.*}} PchInstantiated 'PchGenericOptional<const long *>':'Optional(const long *)'
 diff --git a/clang/test/ObjC3/AST/do-catch-pch.mm b/clang/test/ObjC3/AST/do-catch-pch.mm
 new file mode 100644
@@ -9711,7 +9711,7 @@ index 000000000..cd90dd949
 +// JSON: "qualType": "int (void) throws(E)"
 diff --git a/clang/test/ObjC3/AST/optional-expressions-pch.mm b/clang/test/ObjC3/AST/optional-expressions-pch.mm
 new file mode 100644
-index 000000000..e4c61fbe9
+index 000000000..e117bccfb
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/optional-expressions-pch.mm
 @@ -0,0 +1,15 @@
@@ -9722,7 +9722,7 @@ index 000000000..e4c61fbe9
 +
 +// Verify the PCH retains each expression kind and the source spelling of the
 +// explicit payload type, including aliases that canonicalize to one carrier.
-+// CHECK: typedef Optional(int) PchAliasOptional;
++// CHECK: typedef Optional(PchCount) PchAliasOptional;
 +// CHECK-NEXT: typedef Optional(int) PchIntOptional;
 +// CHECK: Some(PchCount, 0)
 +// CHECK: Some(int, 1)
@@ -9732,7 +9732,7 @@ index 000000000..e4c61fbe9
 +
 diff --git a/clang/test/ObjC3/AST/result-expressions-pch.mm b/clang/test/ObjC3/AST/result-expressions-pch.mm
 new file mode 100644
-index 000000000..d06b72740
+index 000000000..ae03be451
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/result-expressions-pch.mm
 @@ -0,0 +1,14 @@
@@ -9741,7 +9741,7 @@ index 000000000..d06b72740
 +
 +void consume_pch_result();
 +
-+// CHECK: using PchAliasResult = Result(int, long);
++// CHECK: using PchAliasResult = Result(PchSuccess, PchFailure);
 +// CHECK: using PchCanonicalResult = Result(int, long);
 +// CHECK: Ok(PchSuccess, PchFailure, 0)
 +// CHECK: Err(PchSuccess, PchFailure, 0L)
@@ -17182,7 +17182,7 @@ index 000000000..9fc7780fc
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionNodesTest.cpp b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
 new file mode 100644
-index 000000000..395ff7679
+index 000000000..4d751e629
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
 @@ -0,0 +1,418 @@
@@ -17584,7 +17584,7 @@ index 000000000..395ff7679
 +  ASTImporter Importer(Target->getASTContext(), Target->getFileManager(),
 +                       AST->getASTContext(), AST->getFileManager(), false);
 +  auto Imported = Importer.Import(Find(AST->getASTContext()));
-+  ASSERT_TRUE(Imported) << llvm::toString(Imported.takeError());
++  ASSERT_TRUE(static_cast<bool>(Imported)) << llvm::toString(Imported.takeError());
 +  Check(Target->getASTContext(), cast<FunctionDecl>(*Imported));
 +
 +  llvm::SmallString<256> Path;
@@ -17606,10 +17606,10 @@ index 000000000..395ff7679
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..9c2160b0c
+index 000000000..54e1c4ac2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,202 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
@@ -17695,7 +17695,15 @@ index 000000000..9c2160b0c
 +      Diag(NameLoc, diag::err_objc3_binding_void_payload);
 +      return StmtError();
 +    }
-+    SourceType = Context.getObjC3CarrierRepresentationType(OriginalType).ValueField->getType();
++    if (RequireCompleteType(NameLoc, Payload, diag::err_typecheck_decl_incomplete_type))
++      return StmtError();
++    auto Representation = Context.getObjC3CarrierRepresentationType(OriginalType);
++    if (Representation.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
++        !Representation.ValueField) {
++      Diag(NameLoc, diag::err_objc3_carrier_payload_unsupported) << OriginalType;
++      return StmtError();
++    }
++    SourceType = Representation.ValueField->getType();
 +  } else if (OriginalType->isObjCRetainableType()) {
 +    Payload = SourceType = OriginalType;
 +    ReferenceOptional = true;
@@ -17806,10 +17814,10 @@ index 000000000..9c2160b0c
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..37dcd434c
+index 000000000..131b548e7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,210 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17818,7 +17826,8 @@ index 000000000..37dcd434c
 +#include "clang/Basic/CodeGenOptions.h"
 +#include "clang/CodeGen/ModuleBuilder.h"
 +#include "clang/Frontend/ASTUnit.h"
-+#include "clang/Lex/HeaderSearchOptions.h"
++#include "clang/Lex/HeaderSearch.h"
++#include "clang/Lex/Preprocessor.h"
 +#include "clang/Sema/Sema.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "llvm/IR/LLVMContext.h"
@@ -17903,15 +17912,15 @@ index 000000000..37dcd434c
 +  }
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  llvm::LLVMContext IRContext;
-+  HeaderSearchOptions Headers;
 +  CodeGenOptions Options;
 +  Options.OptimizationLevel = 2; // Exercise native storage lifetime markers.
 +  Options.ObjCAutoRefCountExceptions = ARC;
 +  Options.setDebugInfo(llvm::codegenoptions::FullDebugInfo);
 +  auto Generator = CreateLLVMCodeGen(
 +      AST->getDiagnostics(), Name,
-+      AST->getFileManager().getVirtualFileSystemPtr(), Headers,
-+      AST->getPreprocessorOpts(), Options, IRContext);
++      AST->getFileManager().getVirtualFileSystemPtr(),
++      AST->getPreprocessor().getHeaderSearchInfo().getHeaderSearchOpts(),
++      AST->getPreprocessor().getPreprocessorOpts(), Options, IRContext);
 +  Generator->Initialize(C);
 +  for (Decl *D : C.getTranslationUnitDecl()->decls())
 +    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));

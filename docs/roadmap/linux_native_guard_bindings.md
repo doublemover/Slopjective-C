@@ -49,7 +49,8 @@ qualified by the earlier receipt.
 Carrier nodes now retain payload spelling and nullability annotations while
 sharing canonical type identity and physical representation. This follows
 native composite-type construction and carries annotations through aliases,
-AST import and serialization.
+AST import and serialization. Initialization permissions compare canonical
+type identity while retaining their exact storage-address checks.
 
 A binding owns an implicit native snapshot declaration and a user declaration.
 Their initializers retain native ARC/C++ initialization recipes. The snapshot
@@ -61,7 +62,9 @@ normal cleanup and debugger scopes span the remaining source block while the
 failure branch uses its incoming scope. The continuation adds no source-level
 compound scope. Native local initialization is shared with ordinary declarations;
 conditional binding cleanup is registered after source temporary cleanup.
-Storage lifetime-end/fake-use registrations are deferred with it. An EH-only
+Storage lifetime-end/fake-use registrations and the binding debug declaration
+are deferred with it. Shared source-cleanup blocks retain their incoming debug
+scope, including paths where the binding was absent. An EH-only
 construction guard protects a completed binding while source temporaries and
 the snapshot finish; it reads the binding address only after initialization.
 
