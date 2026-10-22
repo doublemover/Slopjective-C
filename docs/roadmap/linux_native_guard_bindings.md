@@ -25,9 +25,27 @@ Unmodeled constructs fail closed. C++ construction/destruction and locally handl
 runtime cleanup with defer still need explicit modeling before admission.
 The proof does not claim a general theorem about loop termination.
 
+## Current implementation wave
+
+The contextual source parser is now implemented in the tracked patch stack,
+including ordered guard lists, single-head if bindings, lexical scopes,
+recovery, macro/contextual identifier preservation, templates and PCH fixtures.
+Native CFG nullable-receiver analysis covers explicitly nullable references,
+aliases, native nil values, source mutation, cleanup effects, constructors and
+templates. This development wave has not been built or validated yet; the user
+requested implementation first and deferred validation. Unspecified receiver
+policy and complete strict-profile enforcement remain open.
+
+Native tooling now includes libclang cursor/type references, source-aware
+traversal and parent maps, JSON metadata, AST matchers and clang-query predicates.
+The foundation plan includes dedicated matcher tests, dynamic matcher tests and
+index/query source regressions. A public source/PCH execution matrix and installed
+SDK gate cover guard bindings. These are implementation and test enrollment,
+not passing evidence or feature admission.
+
 ## Qualified development foundation
 
-The [development receipt](../support/linux_guard_ast_acceptance.json) binds
+The pre-wave [development receipt](../support/linux_guard_ast_acceptance.json) binds
 232 passing Clang regressions, 84 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,

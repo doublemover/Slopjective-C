@@ -44,6 +44,21 @@ through reserved spellings. Public async/await and actors remain reserved.
 The [shared ABI contract](linux_async_c_abi.md) no longer exposes C++ promise
 layout at the C frame boundary.
 
+## Implementation in progress
+
+Development is advancing in the shared native source tree across guard parsing
+and flow, C++/ARC cleanup, recursive carriers, resource annotations, lazy
+coalescing, task-group suspension/result iteration and debugger tooling. Completed
+spans are exported into the canonical patch stack, committed and pushed; each
+span keeps its implementation separate from the delivered SDK evidence above.
+
+The current wave deliberately precedes validation. Public guard source/PCH,
+recursive carrier and installed SDK suites are enrolled for the next checkpoint;
+passing receipts are not updated from unexecuted fixtures. The runtime now has
+nonblocking group completion and typed result reservation, with C17 frame and
+source-free provider integration. Native Objective-C async lowering, public
+spawn/isolation/Sendable and complete strict profiles remain outstanding.
+
 ## Active completion sequence
 
 Each milestone includes implementation, diagnostics, imports, ownership,
