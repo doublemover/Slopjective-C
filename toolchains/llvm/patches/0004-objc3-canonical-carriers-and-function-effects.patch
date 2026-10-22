@@ -19571,10 +19571,10 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..0a9de983f
+index 000000000..6974376a6
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,961 @@
+@@ -0,0 +1,1143 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -20400,6 +20400,9 @@ index 000000000..0a9de983f
 +    void scalar_allocation() {
 +      try { defer { first(); } (void)new int; } catch (...) { caught(); }
 +    }
++    void initialized_allocation() {
++      try { defer { first(); } (void)new Lifetime; } catch (...) { caught(); }
++    }
 +    void scalar_deallocation(Deallocation *value) {
 +      try { defer { first(); } delete value; } catch (...) { caught(); }
 +    }
@@ -20428,6 +20431,8 @@ index 000000000..0a9de983f
 +      {"reference_cast", {"cast,first,", "cast,first,caught,"}},
 +      {"type_query", {"typeid,first,", "typeid,first,caught,"}},
 +      {"scalar_allocation", {"allocate,first,", "allocate,first,caught,"}},
++      {"initialized_allocation",
++       {"allocate,construct,first,", "allocate,first,caught,"}},
 +      {"scalar_deallocation",
 +       {"delete-dtor,delete,first,", "delete-dtor,delete,first,caught,"}},
 +      {"unmatched_inner_handler",
@@ -20503,7 +20508,17 @@ index 000000000..0a9de983f
 +    void first() noexcept;
 +    struct Lifetime { Lifetime(); ~Lifetime() noexcept(false); };
 +    void consume(const Lifetime &);
-+    void argument_temporary() { defer { first(); } consume(Lifetime()); }
++    void consumeTwo(const Lifetime &, const Lifetime &);
++    int number(const Lifetime &);
++    void unordered_arguments() {
++      defer { first(); } consumeTwo(Lifetime(), Lifetime());
++    }
++    void conditional_temporary(bool condition) {
++      defer { first(); } consume(condition ? Lifetime() : Lifetime());
++    }
++    void unordered_operands() {
++      defer { first(); } (void)(number(Lifetime()) + number(Lifetime()));
++    }
 +    void array_prefix() { defer { first(); } Lifetime values[2]; }
 +    void failed_initializer() { defer { first(); } (void)new Lifetime; }
 +    void allocated_array() { defer { first(); } (void)new int[2]; }
@@ -20534,7 +20549,174 @@ index 000000000..0a9de983f
 +                              &AST->getASTContext(), Options));
 +    ++Cases;
 +  }
-+  EXPECT_EQ(8u, Cases);
++  EXPECT_EQ(10u, Cases);
++}
++
++TEST(ObjC3ConditionCFG, DeferredConsumedTemporariesUnwindCompletedPrefix) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    void first() noexcept;
++    void caught() noexcept;
++    void work();
++    struct First { First() noexcept; ~First() noexcept; };
++    struct Second { Second(); ~Second() noexcept(false); };
++    struct Local { Local(const Second &); ~Local() noexcept; };
++    struct Element { Element() noexcept; ~Element() noexcept; };
++    void useFirst(const First &);
++    void useSecond(const Second &);
++    void single_consumed() {
++      try { defer { first(); } useFirst(First()); }
++      catch (...) { caught(); }
++    }
++    void consumed_throwing_destructor() {
++      try { defer { first(); } useSecond(Second()); }
++      catch (...) { caught(); }
++    }
++    void prefix_constructor_failure() {
++      try { defer { first(); } (void)First(), (void)Second(); }
++      catch (...) { caught(); }
++    }
++    void prefix_call_failure() {
++      try { defer { first(); } (void)First(), useSecond(Second()); }
++      catch (...) { caught(); }
++    }
++    void declaration_initializer() {
++      try { defer { first(); } Local local(Second{}); }
++      catch (...) { caught(); }
++    }
++    void nonthrowing_array() {
++      try { defer { first(); } Element elements[2]; work(); }
++      catch (...) { caught(); }
++    }
++    void singleton_array() {
++      try { defer { first(); } Second elements[1]; }
++      catch (...) { caught(); }
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  const std::map<std::string, std::set<std::string>> Expected = {
++      {"single_consumed",
++       {"+First,useFirst,-First,first,",
++        "+First,useFirst,-First,first,caught,"}},
++      {"consumed_throwing_destructor",
++       {"+Second,first,caught,", "+Second,useSecond,-Second,first,",
++        "+Second,useSecond,-Second,first,caught,",
++        "+Second,useSecond,-Second,terminate,"}},
++      {"prefix_constructor_failure",
++       {"+First,+Second,-First,first,caught,",
++        "+First,+Second,-Second,-First,first,",
++        "+First,+Second,-Second,-First,first,caught,"}},
++      {"prefix_call_failure",
++       {"+First,+Second,-First,first,caught,",
++        "+First,+Second,useSecond,-Second,-First,first,",
++        "+First,+Second,useSecond,-Second,-First,first,caught,",
++        "+First,+Second,useSecond,-Second,terminate,"}},
++      {"declaration_initializer",
++       {"+Second,first,caught,", "+Second,+Local,-Second,terminate,",
++        "+Second,+Local,-Second,first,caught,",
++        "+Second,+Local,-Second,-Local,first,",
++        "+Second,+Local,-Second,-Local,first,caught,"}},
++      {"nonthrowing_array",
++       {"+Element,work,-Element,first,",
++        "+Element,work,-Element,first,caught,"}},
++      {"singleton_array",
++       {"+Second,first,caught,", "+Second,-Second,first,",
++        "+Second,-Second,first,caught,"}}};
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    for (bool Rich : {false, true}) {
++      SCOPED_TRACE(Rich);
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = Options.AddImplicitDtors =
++          Options.AddTemporaryDtors = true;
++      Options.AddRichCXXConstructors = Rich;
++      Options.setAllAlwaysAdd();
++      auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                                 &AST->getASTContext(), Options);
++      ASSERT_TRUE(Graph);
++      std::set<std::string> Paths;
++      std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++          [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++            ASSERT_LT(Depth, 140u);
++            for (const auto &Entry : *Block) {
++              if (auto Destructor = Entry.getAs<CFGImplicitDtor>()) {
++                const CXXDestructorDecl *Function =
++                    Destructor->getDestructorDecl(AST->getASTContext());
++                ASSERT_TRUE(Function);
++                Events += "-" + Function->getParent()->getNameAsString() + ",";
++              } else if (auto Statement = Entry.getAs<CFGStmt>()) {
++                if (const auto *Constructor =
++                        dyn_cast<CXXConstructExpr>(Statement->getStmt()))
++                  Events += "+" + Constructor->getConstructor()
++                                      ->getParent()->getNameAsString() + ",";
++                else if (const auto *Call =
++                             dyn_cast<CallExpr>(Statement->getStmt()))
++                  if (const auto *Callee = Call->getDirectCallee())
++                    Events += Callee->getNameAsString() + ",";
++              }
++            }
++            if (Block->isNativeExceptionExit())
++              Events += "unwind,";
++            if (Block->hasNoReturnElement())
++              Events += "terminate,";
++            if (Block == &Graph->getExit())
++              Paths.insert(Events);
++            else
++              for (const auto &Edge : Block->succs())
++                if (const auto *Next = Edge.getReachableBlock())
++                  Visit(Next, Events, Depth + 1);
++          };
++      Visit(&Graph->getEntry(), "", 0);
++      EXPECT_EQ(Expected.at(Function->getNameAsString()), Paths);
++    }
++    ++Cases;
++  }
++  EXPECT_EQ(Expected.size(), Cases);
++}
++
++TEST(ObjC3ConditionCFG, ResourceCleanupRequiresAnExplicitCFGModel) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    void first() noexcept;
++    void closeResource(int) noexcept;
++    void ordinary_resource() {
++      int resource __attribute__((objc_resource(closeResource, -1))) = 1;
++    }
++    void deferred_resource() {
++      defer { first(); }
++      int resource __attribute__((objc_resource(closeResource, -1))) = 1;
++    }
++    void independent_callable() {
++      auto operation = [] {
++        int resource __attribute__((objc_resource(closeResource, -1))) = 1;
++      };
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    for (bool EH : {false, true}) {
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = EH;
++      Options.AddImplicitDtors = Options.AddTemporaryDtors = true;
++      Options.setAllAlwaysAdd();
++      auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                                 &AST->getASTContext(), Options);
++      EXPECT_EQ(Function->getName() == "independent_callable", bool(Graph));
++    }
++    ++Cases;
++  }
++  EXPECT_EQ(3u, Cases);
 +}
 diff --git a/clang/test/ObjC3/Sema/defer-address-taken.m b/clang/test/ObjC3/Sema/defer-address-taken.m
 new file mode 100644
