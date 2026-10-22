@@ -136,6 +136,7 @@ PACKETS = {
         "clang/lib/Sema/ObjC3MatchSemantic.cpp",
         "clang/lib/Sema/SemaObjC3Match.cpp",
         "clang/lib/Sema/SemaObjC3GuardExit.cpp",
+        "clang/lib/Sema/SemaObjC3Conditions.cpp",
         "clang/lib/Sema/TreeTransformObjC3Match.inc",
         "clang/lib/Sema/SemaObjC3CarrierARC.h",
         "clang/lib/Sema/SemaObjC3CarrierARC.cpp",

@@ -27,12 +27,33 @@ The proof does not claim a general theorem about loop termination.
 
 ## Qualified AST foundation
 
-The [development receipt](../support/linux_guard_ast_acceptance.json) records
+The last qualified [development receipt](../support/linux_guard_ast_acceptance.json) records
 229 passing Clang regressions, 62 AST contract tests and 53 production exit-proof
 cases. The native condition nodes pass traversal, printing, profiling, structural
 comparison, cross-context import and save/reload serialization, including both
 binding kinds and an absent if-binding else. Compiler, clangd and LLDB rebuilds
-pass. Source parsing and ownership lowering remain under implementation.
+pass. Source parsing and ownership lowering remain under implementation. That receipt
+binds the earlier AST revision; the snapshot/continuation revision below is
+under fresh development validation.
+
+## Source and lifetime lowering
+
+The current development revision adds semantic construction shared with match
+snapshots and normalizes guard continuations without changing label or case
+identity. Its expanded tests cover C17/C++20/23, ARC/MRC, nullable references,
+tagged nullable payloads and C++ copy recipes. These additions are not yet
+qualified by the earlier receipt.
+
+A binding owns an implicit native snapshot declaration and a user declaration.
+Their initializers retain native ARC/C++ initialization recipes. The snapshot
+initializer stays visible to AST traversal even when implicit declarations are
+hidden. Source temporaries remain alive through successful binding initialization.
+
+A guard owns the following statements as a transparent continuation. This lets
+normal cleanup and debugger scopes span the remaining source block while the
+failure branch uses its incoming scope. The continuation adds no source-level
+compound scope. Native local initialization is shared with ordinary declarations;
+conditional binding cleanup is registered after source temporary cleanup.
 
 ## Implementation still to complete
 

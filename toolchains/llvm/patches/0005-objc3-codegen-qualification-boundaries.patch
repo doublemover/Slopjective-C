@@ -1305,7 +1305,7 @@ index 7421733ef..f382865e8 100644
    } else if (isa<VarDecl>(D) &&
               GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..340e58124 100644
+index e84e05e8e..65072381a 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,16 @@
@@ -1452,10 +1452,17 @@ index e84e05e8e..340e58124 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -1354,8 +1448,84 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1448,92 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
++  if (auto Emission = EmitAutoVarInitialized(D))
++    EmitAutoVarCleanups(*Emission);
++}
++
++std::optional<CodeGenFunction::AutoVarEmission>
++CodeGenFunction::EmitAutoVarInitialized(const VarDecl &D,
++                                       const Expr *InitializerOverride) {
 +  QualType Canonical = getContext().getCanonicalType(D.getType());
 +  const bool IsManagedRecord = Canonical->isRecordType() &&
 +      supportsObjC3ManagedRecordLifetime(CGM, Canonical);
@@ -1471,7 +1478,7 @@ index e84e05e8e..340e58124 100644
 +        CGM, D.getLocation(), getContext().getBaseElementType(Canonical),
 +        "ARC array local initialization");
 +    (void)EmitAutoVarAlloca(D);
-+    return;
++    return std::nullopt;
 +  }
 +  const bool IsCarrier = isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
 +                         isa<ObjC3ResultType>(Canonical.getTypePtr());
@@ -1494,10 +1501,11 @@ index e84e05e8e..340e58124 100644
 +    if (getContext().getObjC3CarrierRepresentationType(Canonical).State ==
 +        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      (void)EmitAutoVarAlloca(D);
-+    return;
++    return std::nullopt;
 +  }
    AutoVarEmission emission = EmitAutoVarAlloca(D);
 -  EmitAutoVarInit(emission);
+-  EmitAutoVarCleanups(emission);
 +  {
 +    CleanupDeactivationScope Deactivation(*this);
 +    if (IsARCArray || IsManagedRecord) {
@@ -1508,7 +1516,7 @@ index e84e05e8e..340e58124 100644
 +          *this, emission.getObjectAddress(*this), Canonical, Initialized);
 +      Address Saved = ObjC3ManagedStorageInitRoot;
 +      ObjC3ManagedStorageInitRoot = emission.getObjectAddress(*this);
-+      EmitAutoVarInit(emission);
++      EmitAutoVarInit(emission, InitializerOverride);
 +      ObjC3ManagedStorageInitRoot = Saved;
 +    } else if (IsDirectCppLocal || IsDirectARCLocal ||
 +               (IsPlainCarrier &&
@@ -1530,15 +1538,16 @@ index e84e05e8e..340e58124 100644
 +      ScopedObjC3CarrierLocalInit Context(*this,
 +                                          emission.getObjectAddress(*this),
 +                                          InitCarrierType, Initialized);
-+      EmitAutoVarInit(emission);
++      EmitAutoVarInit(emission, InitializerOverride);
 +    } else {
-+      EmitAutoVarInit(emission);
++      EmitAutoVarInit(emission, InitializerOverride);
 +    }
 +  }
-   EmitAutoVarCleanups(emission);
++  return emission;
  }
  
-@@ -1532,7 +1702,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+ /// Emit a lifetime.begin marker if some criteria are satisfied.
+@@ -1532,7 +1709,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -1548,7 +1557,35 @@ index e84e05e8e..340e58124 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -2199,6 +2370,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -1949,7 +2127,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+   }
+ }
+ 
+-void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
++void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission,
++                                     const Expr *InitializerOverride) {
+   assert(emission.Variable && "emission was not valid!");
+ 
+   // If this was emitted as a global constant, we're done.
+@@ -1961,7 +2140,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+   QualType type = D.getType();
+ 
+   // If this local has an initializer, emit it now.
+-  const Expr *Init = D.getInit();
++  const Expr *Init = InitializerOverride ? InitializerOverride : D.getInit();
++#ifndef NDEBUG
++  if (InitializerOverride) {
++    const Expr *Original = D.getInit();
++    while (const auto *Cleanups = dyn_cast_or_null<ExprWithCleanups>(Original))
++      Original = Cleanups->getSubExpr();
++    assert(Original == InitializerOverride && "initializer override changed value semantics");
++  }
++#endif
++
+ 
+   // If we are at an unreachable point, we don't need to emit the initializer
+   // unless it contains a label.
+@@ -2199,6 +2387,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -1556,7 +1593,7 @@ index e84e05e8e..340e58124 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2234,8 +2406,35 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2423,35 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -1594,7 +1631,7 @@ index e84e05e8e..340e58124 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2285,6 +2484,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2501,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -1603,7 +1640,7 @@ index e84e05e8e..340e58124 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +2897,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +2914,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -7724,7 +7761,7 @@ index 7629b42dd..25517ae3e 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..142901427 100644
+index e7c24f1f3..278050e61 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -57,6 +57,9 @@ class CanonicalLoopInfo;
@@ -7829,7 +7866,21 @@ index e7c24f1f3..142901427 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -3641,6 +3701,11 @@ public:
+@@ -3538,7 +3598,12 @@ public:
+     }
+   };
+   AutoVarEmission EmitAutoVarAlloca(const VarDecl &var);
+-  void EmitAutoVarInit(const AutoVarEmission &emission);
++  // Initialize a native local without registering its final lexical cleanup.
++  // Override may only remove outer ExprWithCleanups from the same initializer.
++  std::optional<AutoVarEmission> EmitAutoVarInitialized(
++      const VarDecl &D, const Expr *InitializerOverride = nullptr);
++  void EmitAutoVarInit(const AutoVarEmission &emission,
++                       const Expr *InitializerOverride = nullptr);
+   void EmitAutoVarCleanups(const AutoVarEmission &emission);
+   void emitAutoVarTypeCleanup(const AutoVarEmission &emission,
+                               QualType::DestructionKind dtorKind);
+@@ -3641,6 +3706,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -7841,7 +7892,7 @@ index e7c24f1f3..142901427 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3665,6 +3730,8 @@ public:
+@@ -3665,6 +3735,8 @@ public:
    void EmitAttributedStmt(const AttributedStmt &S);
    void EmitGotoStmt(const GotoStmt &S);
    void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
@@ -7850,7 +7901,7 @@ index e7c24f1f3..142901427 100644
    void EmitIfStmt(const IfStmt &S);
  
    void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
-@@ -3691,6 +3758,7 @@ public:
+@@ -3691,6 +3763,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);

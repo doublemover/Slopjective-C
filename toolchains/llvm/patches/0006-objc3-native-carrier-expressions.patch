@@ -631,10 +631,10 @@ index 120af89a9..9ea54ff0c 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..579c326a9 100644
+index fdefb6d6b..cdb787db0 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1653,6 +1653,88 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1653,6 +1653,89 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -701,6 +701,7 @@ index fdefb6d6b..579c326a9 100644
 +void StmtProfiler::VisitObjC3GuardStmt(const ObjC3GuardStmt *S) {
 +  VisitStmtNoChildren(S);
 +  ID.AddInteger(S->getNumConditions());
++  ID.AddInteger(S->getNumContinuationStmts());
 +  for (const Stmt *Child : S->children())
 +    if (Child) VisitStmt(Child);
 +}
