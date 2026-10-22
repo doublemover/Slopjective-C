@@ -21754,7 +21754,7 @@ index 000000000..ca8056212
 +#endif
 diff --git a/clang/test/ObjC3/Analysis/defer-native-cxx.mm b/clang/test/ObjC3/Analysis/defer-native-cxx.mm
 new file mode 100644
-index 000000000..d54acdc66
+index 000000000..45ad2a626
 --- /dev/null
 +++ b/clang/test/ObjC3/Analysis/defer-native-cxx.mm
 @@ -0,0 +1,76 @@
@@ -21828,7 +21828,7 @@ index 000000000..d54acdc66
 +
 +// CHECK-LABEL: void nonthrowing_array()
 +// CHECK-DAG: Element elements[2];
-+// CHECK-DAG: ~Element() (Implicit destructor)
++// CHECK-DAG: ~Element[2]() (Implicit destructor)
 +// CHECK-DAG: first
 +void nonthrowing_array() {
 +  defer { first(); }
@@ -22637,7 +22637,7 @@ index 000000000..9c2d08d67
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
 new file mode 100644
-index 000000000..46866beaf
+index 000000000..2e659a64a
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
 @@ -0,0 +1,33 @@
@@ -22660,7 +22660,7 @@ index 000000000..46866beaf
 +  return new Mixed{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
 +}
 +Wrapper *allocate_wrapper() {
-+  return new Wrapper{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
++  return new Wrapper{}; // expected-error {{native C++ carrier field must be explicitly initialized}}
 +}
 +#elif defined(TEST_PLACEMENT)
 +void replace(Mixed &value) {
@@ -23270,10 +23270,10 @@ index 000000000..22ea2119e
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-source-records.mm b/clang/test/ObjC3/CodeGen/carrier-source-records.mm
 new file mode 100644
-index 000000000..44bfc5d5b
+index 000000000..e9b870beb
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-source-records.mm
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,76 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --implicit-check-not=llvm.memcpy
 +
 +struct Leaf {
@@ -23308,7 +23308,7 @@ index 000000000..44bfc5d5b
 +
 +void copy_owner(const NativeOwner &source) { NativeOwner copied(source); }
 +// CHECK-LABEL: define{{.*}} @_Z10copy_ownerRK11NativeOwner
-+// CHECK: invoke void @_ZN11NativeOwnerC{{[12]}}ERKS_
++// CHECK: {{call|invoke}} void @_ZN11NativeOwnerC1ERKS_
 +// CHECK: call void @_ZN11NativeOwnerD{{[12]}}Ev
 +
 +void move_owner(NativeOwner &source) {
@@ -23333,21 +23333,23 @@ index 000000000..44bfc5d5b
 +// CHECK: invoke void @_ZN4LeafC1Ei
 +// CHECK: call void @_ZN14AggregateOwnerD{{[12]}}Ev
 +
-+// CHECK-LABEL: define{{.*}} @_ZN11NativeOwnerC{{[12]}}ERKS_
++
++void storage_owner() {
++  NativeOwner *value = new NativeOwner(7);
++  delete value;
++}
++
++// CHECK-LABEL: define{{.*}} @_ZN11NativeOwnerC2ERKS_
 +// CHECK: load i8
 +// CHECK: load i8
 +// CHECK: load i8
 +// CHECK: invoke void @_ZN4LeafC1ERKS_
 +// CHECK: invoke void @_ZN4LeafC1ERKS_
 +// CHECK: call void @_ZN4LeafD1Ev
-+// CHECK-LABEL: define{{.*}} @_ZN11NativeOwnerC{{[12]}}EOS_
++// CHECK-LABEL: define{{.*}} @_ZN11NativeOwnerC2EOS_
 +// CHECK: load i8
 +// CHECK: call void @_ZN4LeafC1EOS_
 +
-+void storage_owner() {
-+  NativeOwner *value = new NativeOwner(7);
-+  delete value;
-+}
 diff --git a/clang/test/ObjC3/CodeGen/error-factory-identity.m b/clang/test/ObjC3/CodeGen/error-factory-identity.m
 new file mode 100644
 index 000000000..9138a749d
@@ -23429,12 +23431,12 @@ index 000000000..ae5e54df3
 +objc3_async_frame checked_result(void) { return checked(); }
 diff --git a/clang/test/ObjC3/CodeGen/optional-access.m b/clang/test/ObjC3/CodeGen/optional-access.m
 new file mode 100644
-index 000000000..409c6ac87
+index 000000000..4dd498e7b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/optional-access.m
 @@ -0,0 +1,56 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-arc -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s --check-prefix=ARC
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-arc -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s --check-prefix=ARC
 +// REQUIRES: x86-registered-target
 +
 +@interface Receiver

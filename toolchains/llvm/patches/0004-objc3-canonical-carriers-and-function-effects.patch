@@ -3087,7 +3087,7 @@ index e0b62591a..dbc2e0aa2 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..aba51c758 100644
+index 4be3e977b..f1f3c62f2 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -22,6 +22,8 @@
@@ -3354,10 +3354,19 @@ index 4be3e977b..aba51c758 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1762,6 +1897,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
-   if (!StringRef(TypeStr).ends_with("*"))
-     Out << ' ';
-   Out << *PDecl;
+@@ -1756,12 +1891,11 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+     (void) first; // Silence dead store warning due to idiomatic code.
+     Out << ")";
+   }
+-  std::string TypeStr = PDecl->getASTContext().getUnqualifiedObjCPointerType(T).
+-      getAsString(Policy);
+-  Out << ' ' << TypeStr;
+-  if (!StringRef(TypeStr).ends_with("*"))
+-    Out << ' ';
+-  Out << *PDecl;
++  Out << ' ';
++  PDecl->getASTContext().getUnqualifiedObjCPointerType(T).print(
++      Out, Policy, PDecl->getNameAsString());
 +  if (std::optional<std::string> Attrs = prettyPrintAttributes(PDecl))
 +    Out << ' ' << *Attrs;
    if (Policy.PolishForDeclaration)
@@ -10596,7 +10605,7 @@ index 000000000..e9e92f26f
 +
 diff --git a/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
 new file mode 100644
-index 000000000..ffea1408a
+index 000000000..aee3056d3
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
 @@ -0,0 +1,13 @@
@@ -10610,7 +10619,7 @@ index 000000000..ffea1408a
 +// CHECK: Some(PersistedCountOptional, Some(PersistedCount, 0))
 +// CHECK: Err(PersistedResult, PersistedNestedOptional,
 +// CHECK: Some(Inner, Some(T, value))
-+// CHECK: Optional(Inner) persisted_dependent_nested<int>(int value)
++// CHECK: auto persisted_template_instance = persisted_dependent_nested(0);
 +
 +
 diff --git a/clang/test/ObjC3/AST/carrier-expression-module.m b/clang/test/ObjC3/AST/carrier-expression-module.m
@@ -18940,10 +18949,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..239a6ece0
+index 000000000..19c831982
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,874 @@
+@@ -0,0 +1,881 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19380,10 +19389,16 @@ index 000000000..239a6ece0
 +        if (const auto *Variable = dyn_cast<VarDecl>(D)) {
 +          registerVariable(Variable);
 +          if (Variable->getType()->isReferenceType()) {
-+            if (const VarDecl *Source = variable(Variable->getInit()))
-+              Aliases.try_emplace(Variable, Source);
-+            else
-+              escape(Variable->getInit());
++            const Expr *Initializer = Variable->getInit();
++            while (const auto *Full = dyn_cast_or_null<ExprWithCleanups>(Initializer))
++              Initializer = Full->getSubExpr();
++            // A reference extending a temporary owns an independent slot.
++            if (!isa_and_nonnull<MaterializeTemporaryExpr>(Initializer)) {
++              if (const VarDecl *Source = variable(Initializer))
++                Aliases.try_emplace(Variable, Source);
++              else
++                escape(Initializer);
++            }
 +          }
 +          collect(Variable->getInit());
 +        }
@@ -19599,6 +19614,7 @@ index 000000000..239a6ece0
 +    Options.setAllAlwaysAdd();
 +    Options.AddEHEdges = true;
 +    Options.AddInitializers = true;
++    Options.AddCXXDefaultInitExprInCtors = true;
 +    Options.AddImplicitDtors = true;
 +    Options.AddTemporaryDtors = true;
 +    std::unique_ptr<CFG> Graph = CFG::buildCFG(Callable, Body, &Context, Options);
@@ -19820,10 +19836,10 @@ index 000000000..239a6ece0
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..88b9b8ca8
+index 000000000..d6c2d433f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,872 @@
+@@ -0,0 +1,878 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -19888,7 +19904,7 @@ index 000000000..88b9b8ca8
 +                   llvm::StringRef Standard, bool ARC, bool IfBinding,
 +                   bool Ordered = false, bool StatementExpression = false,
 +                   bool TemplateReplay = false, bool Mutable = true,
-+                   bool PrefixDefer = false) {
++                   bool PrefixDefer = false, bool NativeEHCFG = true) {
 +  std::vector<std::string> Args = {"-x",
 +                                   Standard == "c17" ? "objective-c"
 +                                                     : "objective-c++",
@@ -20053,6 +20069,12 @@ index 000000000..88b9b8ca8
 +      true;
 +  FlowOptions.setAllAlwaysAdd();
 +  FunctionDecl *Emitted = Concrete ? Concrete : Function;
++  if (!NativeEHCFG) {
++    // Managed scope release queues have qualified CodeGen execution, but not
++    // a native-EH CFG ownership model. Keep that boundary explicitly closed.
++    EXPECT_FALSE(CFG::buildCFG(Emitted, Emitted->getBody(), &C, FlowOptions));
++    FlowOptions.AddEHEdges = false;
++  }
 +  ASSERT_TRUE(CFG::buildCFG(Emitted, Emitted->getBody(), &C, FlowOptions));
 +  // Run each module through the matching native frontend/backend mode. ARC
 +  // frontend intrinsics emitted at O2 require the optimizing ARC pipeline.
@@ -20684,7 +20706,7 @@ index 000000000..88b9b8ca8
 +    SCOPED_TRACE(Standard);
 +    checkLowering(ManagedPrefixDefer,
 +                  std::string(Standard) + "-arc-prefix-defer", Standard,
-+                  true, false, true, false, false, true, true);
++                  true, false, true, false, false, true, true, false);
 +  }
 +}
 +
@@ -20693,7 +20715,7 @@ index 000000000..88b9b8ca8
 +    SCOPED_TRACE(Standard);
 +    checkLowering(ManagedPrefixDefer,
 +                  std::string(Standard) + "-arc-if-defer", Standard,
-+                  true, true, true);
++                  true, true, true, false, false, true, false, false);
 +  }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
@@ -23332,7 +23354,7 @@ index 000000000..56f6492fe
 +// PRINT: if let third = source, fourth = source
 diff --git a/clang/test/ObjC3/Parser/guard-recovery.mm b/clang/test/ObjC3/Parser/guard-recovery.mm
 new file mode 100644
-index 000000000..06efbfbe1
+index 000000000..442e604ec
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/guard-recovery.mm
 @@ -0,0 +1,91 @@
@@ -23407,7 +23429,7 @@ index 000000000..06efbfbe1
 +  if var first = source, var second = source { // expected-error {{a binding list has only one 'let' or 'var' introducer}}
 +    use(first + second);
 +  }
-+  if let first = source, true { // expected-error {{expected an optional binding of the form 'identifier = expression'}}
++  if let first = source, 42 { // expected-error {{condition must have Bool type}}
 +    use(first);
 +  }
 +  use(1);
@@ -25985,10 +26007,10 @@ index 1b272b541..3f02ebd75 100644
      break;
 diff --git a/clang/lib/Sema/SemaObjC3OptionalOperators.cpp b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
 new file mode 100644
-index 000000000..23de4acc1
+index 000000000..bd0292ed3
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,173 @@
 +//===--- SemaObjC3OptionalOperators.cpp - Optional operator semantics ----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26137,8 +26159,9 @@ index 000000000..23de4acc1
 +    // source to a nonnull fallback before this operator computes its own join.
 +    QualType LoadedType = LHS->getType();
 +    (void)AttributedType::stripOuterNullability(LoadedType);
-+    Expr *Loaded = ImpCastExprToType(LHS, LoadedType, CK_NoOp,
-+                                     LHS->getValueKind()).get();
++    Expr *Loaded = ImplicitCastExpr::Create(
++        Context, LoadedType, CK_NoOp, LHS, nullptr, LHS->getValueKind(),
++        FPOptionsOverride());
 +    Semantic = ActOnConditionalOp(OperatorLoc, OperatorLoc, Loaded,
 +                                   /*Middle=*/nullptr, RHS);
 +    if (!Semantic.isInvalid()) {
@@ -27190,7 +27213,7 @@ index d596ba77e..bfa65d4f3 100644
    ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 new file mode 100644
-index 000000000..9cfbb6c29
+index 000000000..6d4d0863a
 --- /dev/null
 +++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 @@ -0,0 +1,248 @@
@@ -27312,7 +27335,7 @@ index 000000000..9cfbb6c29
 +    - (Box *)choose:(Box *)value;
 +    @end
 +    Box *select(Box *[[b^ox]], Box *fallback) {
-+      return [[box]]?.child ?? [[[box]]? choose:fallback];
++      return [[box]]?.child ?? [ [[box]]? choose:fallback];
 +    }
 +  )objc");
 +  auto TU = objc3TU(A.code());
@@ -27325,8 +27348,8 @@ index 000000000..9cfbb6c29
 +        if (Ref.IsDecl)
 +          return;
 +        for (const auto *Target : Ref.Targets) {
-+          ReceiverReferences += Target->getName() == "box";
-+          FallbackReferences += Target->getName() == "fallback";
++          ReceiverReferences += Target->getIdentifier() && Target->getName() == "box";
++          FallbackReferences += Target->getIdentifier() && Target->getName() == "fallback";
 +        }
 +      },
 +      AST.getHeuristicResolver());
@@ -27353,7 +27376,7 @@ index 000000000..9cfbb6c29
 +      [&](ReferenceLoc Ref) {
 +        if (!Ref.IsDecl)
 +          for (const auto *Target : Ref.Targets)
-+            References += Target->getName() == "close_handle";
++            References += Target->getIdentifier() && Target->getName() == "close_handle";
 +      },
 +      AST.getHeuristicResolver());
 +  EXPECT_EQ(References, 1u);
@@ -27695,10 +27718,10 @@ index 000000000..2e7f9ebae
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3OptionalAccess.cpp b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
 new file mode 100644
-index 000000000..713e8ee53
+index 000000000..fdc5ea08a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,147 @@
 +//===--- SemaObjC3OptionalAccess.cpp - Reference-only optional access -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27783,12 +27806,18 @@ index 000000000..713e8ee53
 +  if (ResultType->isVoidType())
 +    Absent = ImplicitCastExpr::Create(Context, Context.VoidTy, CK_ToVoid, Zero,
 +        nullptr, VK_PRValue, FPOptionsOverride());
-+  if (ResultType->isObjCRetainableType())
-+    Absent = ImplicitCastExpr::Create(
-+        Context, nullableType(Context, ResultType, /*Nonnull=*/false),
-+        CK_NullToPointer, Zero, nullptr, VK_PRValue, FPOptionsOverride());
++  Expr *SelectedAccess = Access;
++  if (ResultType->isObjCRetainableType()) {
++    QualType JoinedType = ResultType;
++    (void)AttributedType::stripOuterNullability(JoinedType);
++    SelectedAccess = ImplicitCastExpr::Create(
++        Context, JoinedType, CK_NoOp, Access, nullptr, Access->getValueKind(),
++        FPOptionsOverride());
++    Absent = ImplicitCastExpr::Create(Context, JoinedType, CK_NullToPointer,
++        Zero, nullptr, VK_PRValue, FPOptionsOverride());
++  }
 +  ExprResult Joined = ActOnConditionalOp(OperatorLoc, OperatorLoc, Receiver,
-+                                          Access, Absent);
++                                          SelectedAccess, Absent);
 +  if (Joined.isInvalid())
 +    return ExprError();
 +  auto *Conditional = cast<ConditionalOperator>(Joined.get());
@@ -28725,10 +28754,10 @@ index 000000000..8e42f951a
 +}
 diff --git a/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
 new file mode 100644
-index 000000000..fb5f552e2
+index 000000000..b768edfba
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,40 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DCASE=1 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DCASE=2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DCASE=3 -fsyntax-only -verify %s
@@ -28750,7 +28779,8 @@ index 000000000..fb5f552e2
 +id owned(void) __objc3_async __asm__("owned_frame") __attribute__((ns_returns_retained)); // expected-error {{cannot use object return ownership attributes}}
 +_Noreturn void never(void) __objc3_async __asm__("never_frame"); // expected-error {{cannot be noreturn}}
 +#elif CASE == 4
-+int definition(void) __objc3_async __asm__("definition_frame") { // expected-error {{definitions require suspension-frame lowering}}
++int definition(void) __objc3_async __asm__("definition_frame");
++int definition(void) __objc3_async { // expected-error {{definitions require suspension-frame lowering}}
 +  return 42;
 +}
 +#elif CASE == 5
@@ -28819,14 +28849,13 @@ index 000000000..eb6065df6
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-operations.m b/clang/test/ObjC3/Sema/resource-operations.m
 new file mode 100644
-index 000000000..160b280c9
+index 000000000..5e5302f50
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-operations.m
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,53 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
-+// compat-no-diagnostics
 +void close_handle(int) __attribute__((nothrow));
 +void consume_handle(int) __attribute__((nothrow));
 +#define RESOURCE __attribute__((objc_resource(close=close_handle, invalid=0)))
