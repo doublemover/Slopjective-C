@@ -16516,10 +16516,10 @@ index 000000000..382497aa1
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3GuardExit.cpp b/clang/lib/Sema/SemaObjC3GuardExit.cpp
 new file mode 100644
-index 000000000..455d9e659
+index 000000000..88d3c8031
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3GuardExit.cpp
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,258 @@
 +//===--- SemaObjC3GuardExit.cpp - Native guard exit proof ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -16630,9 +16630,9 @@ index 000000000..455d9e659
 +      for (const Decl *Declaration : Declarations->decls())
 +        if (const auto *Variable = dyn_cast<VarDecl>(Declaration))
 +          VariableHandlers[Variable] = Entry.second;
++  bool HasDeferredCleanup = false;
 +  for (const Stmt *Node : ElseNodes) {
-+    if (isa<DeferStmt>(Node))
-+      return GuardExitResult::UnsupportedControlFlow;
++    HasDeferredCleanup |= isa<DeferStmt>(Node);
 +    // These runtime entry/cleanup calls are not represented by expressions in
 +    // Clang's CFG. A local native handler could resume if such a call throws.
 +    if (Handlers.lookup(Node) &&
@@ -16676,6 +16676,8 @@ index 000000000..455d9e659
 +        const Stmt *Node = Statement->getStmt();
 +        if (Node == Marker)
 +          return GuardExitResult::MayFallThrough;
++        if (HasDeferredCleanup)
++          continue;
 +        if (const Stmt *Candidate = Handlers.lookup(Node)) {
 +          bool CanThrow = SemaRef.canThrow(Node) != CT_Cannot;
 +          // An outward goto has no target block in this synthetic CFG, so its
@@ -16696,6 +16698,10 @@ index 000000000..455d9e659
 +          if (CanThrow)
 +            Handler = Candidate;
 +        }
++      } else if (HasDeferredCleanup) {
++        // Deferred native EH graphs are admitted only for explicitly modeled
++        // operations. A direct restoration here would bypass their cleanups.
++        continue;
 +      } else if (auto Dtor = Element.getAs<CFGImplicitDtor>()) {
 +        if (mayThrowNative(Dtor->getDestructorDecl(C))) {
 +          if (auto Automatic = Element.getAs<CFGAutomaticObjDtor>())
@@ -16774,7 +16780,7 @@ index 000000000..455d9e659
 +}
 diff --git a/clang/unittests/AST/ObjC3GuardExitTest.cpp b/clang/unittests/AST/ObjC3GuardExitTest.cpp
 new file mode 100644
-index 000000000..c03a755bd
+index 000000000..dadeb6606
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3GuardExitTest.cpp
 @@ -0,0 +1,125 @@
@@ -16847,7 +16853,7 @@ index 000000000..c03a755bd
 +void fail_closed_goto_other_return() { if(condition) {} else { if(condition) return; out: goto out; } }
 +void native_cleanup(int *);
 +void fail_attribute_cleanup_caught() { if(condition) {} else { try { int value __attribute__((cleanup(native_cleanup))) = 0; return; } catch(...) {} } }
-+void fail_unmodeled_defer() { if(condition) {} else { defer { (void)condition; } return; } }
++void pass_registered_defer() { if(condition) {} else { defer { (void)condition; } return; } }
 +struct Constructor { Constructor(); ~Constructor() noexcept; };
 +struct Polymorphic { virtual ~Polymorphic(); };
 +struct Derived : Polymorphic {};
@@ -17491,25 +17497,27 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..53ddbc537
+index 000000000..a4e1a3308
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,267 @@
-+//===--- SemaObjC3Conditions.cpp - Native binding semantics ----------------===//
+@@ -0,0 +1,360 @@
++//===--- SemaObjC3Conditions.cpp - Native binding semantics
++//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprCXX.h"
-+#include "clang/AST/StmtObjC.h"
-+#include "clang/Sema/ObjC3GuardExit.h"
 +#include "clang/AST/Stmt.h"
++#include "clang/AST/StmtObjC.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Lookup.h"
++#include "clang/Sema/ObjC3GuardExit.h"
 +#include "clang/Sema/Scope.h"
 +#include "clang/Sema/Sema.h"
++#include "llvm/ADT/SmallPtrSet.h"
 +using namespace clang;
 +
 +namespace {
@@ -17522,11 +17530,12 @@ index 000000000..53ddbc537
 +  // Variables may hide tag names, as in ordinary C/C++ local declarations.
 +  auto Filter = Previous.makeFilter();
 +  while (Filter.hasNext())
-+    if (isa<TagDecl>(Filter.next())) Filter.erase();
++    if (isa<TagDecl>(Filter.next()))
++      Filter.erase();
 +  Filter.done();
 +  S.CheckVariableDeclaration(Binding, Previous);
 +}
-+}
++} // namespace
 +
 +ExprResult Sema::PrepareObjC3Snapshot(Expr *Source) {
 +  if (!getLangOpts().CPlusPlus || !Source->isGLValue() ||
@@ -17544,15 +17553,17 @@ index 000000000..53ddbc537
 +  if (!HasClassPayload)
 +    return Source;
 +  return ActOnObjC3CarrierTransferExpr(false, Source->getExprLoc(),
-+                                     Source->getBeginLoc(), Source,
-+                                     Source->getEndLoc());
++                                       Source->getBeginLoc(), Source,
++                                       Source->getEndLoc());
 +}
 +
 +ExprResult Sema::ActOnObjC3BooleanCondition(Scope *ConditionScope, Expr *Value,
-+                                           SourceLocation Loc) {
-+  if (!Value) return ExprError();
++                                            SourceLocation Loc) {
++  if (!Value)
++    return ExprError();
 +  ExprResult Checked = CheckPlaceholderExpr(Value);
-+  if (Checked.isInvalid()) return ExprError();
++  if (Checked.isInvalid())
++    return ExprError();
 +  Value = Checked.get();
 +  if (!Value->isTypeDependent() &&
 +      !Context.getCanonicalType(Value->getType())->isBooleanType()) {
@@ -17560,17 +17571,21 @@ index 000000000..53ddbc537
 +    return ExprError();
 +  }
 +  ExprResult Boolean = CheckBooleanCondition(Loc, Value);
-+  if (Boolean.isInvalid()) return ExprError();
++  if (Boolean.isInvalid())
++    return ExprError();
 +  return ActOnFinishFullExpr(Boolean.get(), Loc, /*DiscardedValue=*/false);
 +}
 +
-+StmtResult Sema::ActOnObjC3BindingCondition(
-+    Scope *BindingScope, IdentifierInfo *Name, SourceLocation NameLoc,
-+    bool Mutable, SourceLocation KeywordLoc, SourceLocation EqualLoc,
-+    Expr *Source) {
-+  if (!Source || !Name) return StmtError();
++StmtResult
++Sema::ActOnObjC3BindingCondition(Scope *BindingScope, IdentifierInfo *Name,
++                                 SourceLocation NameLoc, bool Mutable,
++                                 SourceLocation KeywordLoc,
++                                 SourceLocation EqualLoc, Expr *Source) {
++  if (!Source || !Name)
++    return StmtError();
 +  ExprResult Checked = CheckPlaceholderExpr(Source);
-+  if (Checked.isInvalid()) return StmtError();
++  if (Checked.isInvalid())
++    return StmtError();
 +  Source = Checked.get();
 +  QualType OriginalType = Source->getType();
 +  bool ReferenceOptional = false;
@@ -17583,12 +17598,16 @@ index 000000000..53ddbc537
 +      Diag(NameLoc, diag::err_objc3_binding_void_payload);
 +      return StmtError();
 +    }
-+    if (RequireCompleteType(NameLoc, Payload, diag::err_typecheck_decl_incomplete_type))
++    if (RequireCompleteType(NameLoc, Payload,
++                            diag::err_typecheck_decl_incomplete_type))
 +      return StmtError();
-+    auto Representation = Context.getObjC3CarrierRepresentationType(OriginalType);
-+    if (Representation.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
++    auto Representation =
++        Context.getObjC3CarrierRepresentationType(OriginalType);
++    if (Representation.State !=
++            ObjC3CarrierRepresentationInfo::Status::Materialized ||
 +        !Representation.ValueField) {
-+      Diag(NameLoc, diag::err_objc3_carrier_payload_unsupported) << OriginalType;
++      Diag(NameLoc, diag::err_objc3_carrier_payload_unsupported)
++          << OriginalType;
 +      return StmtError();
 +    }
 +    SourceType = Representation.ValueField->getType();
@@ -17596,13 +17615,16 @@ index 000000000..53ddbc537
 +    Payload = SourceType = OriginalType;
 +    ReferenceOptional = true;
 +  } else {
-+    Diag(Source->getExprLoc(), diag::err_objc3_binding_requires_optional) << OriginalType;
++    Diag(Source->getExprLoc(), diag::err_objc3_binding_requires_optional)
++        << OriginalType;
 +    return StmtError();
 +  }
 +
-+  QualType SnapshotType = OriginalType.getNonReferenceType().getUnqualifiedType();
++  QualType SnapshotType =
++      OriginalType.getNonReferenceType().getUnqualifiedType();
 +  if (getLangOpts().ObjCAutoRefCount && SnapshotType->isObjCRetainableType())
-+    SnapshotType = Context.getLifetimeQualifiedType(SnapshotType, Qualifiers::OCL_Strong);
++    SnapshotType =
++        Context.getLifetimeQualifiedType(SnapshotType, Qualifiers::OCL_Strong);
 +  SnapshotType = Context.getConstType(SnapshotType);
 +  auto *Snapshot = VarDecl::Create(
 +      Context, CurContext, NameLoc, NameLoc, nullptr, SnapshotType,
@@ -17611,13 +17633,17 @@ index 000000000..53ddbc537
 +  if (getLangOpts().ObjCAutoRefCount && SnapshotType->isObjCRetainableType())
 +    Snapshot->addAttr(ObjCPreciseLifetimeAttr::CreateImplicit(Context));
 +  ExprResult PreparedSource = PrepareObjC3Snapshot(Source);
-+  if (PreparedSource.isInvalid()) return StmtError();
-+  ExprResult SnapshotInit = PerformCopyInitialization(
-+      InitializedEntity::InitializeVariable(Snapshot), EqualLoc, PreparedSource.get());
-+  if (SnapshotInit.isInvalid()) return StmtError();
-+  ExprResult FullSource = ActOnFinishFullExpr(
-+      SnapshotInit.get(), EqualLoc, /*DiscardedValue=*/false);
-+  if (FullSource.isInvalid()) return StmtError();
++  if (PreparedSource.isInvalid())
++    return StmtError();
++  ExprResult SnapshotInit =
++      PerformCopyInitialization(InitializedEntity::InitializeVariable(Snapshot),
++                                EqualLoc, PreparedSource.get());
++  if (SnapshotInit.isInvalid())
++    return StmtError();
++  ExprResult FullSource = ActOnFinishFullExpr(SnapshotInit.get(), EqualLoc,
++                                              /*DiscardedValue=*/false);
++  if (FullSource.isInvalid())
++    return StmtError();
 +  Snapshot->setInit(FullSource.get());
 +  CurContext->addDecl(Snapshot);
 +  auto *SnapshotStatement = new (Context) DeclStmt(
@@ -17630,10 +17656,12 @@ index 000000000..53ddbc537
 +      Payload = Context.getAttributedType(attr::TypeNonNull, Payload, Payload);
 +    }
 +    if (getLangOpts().ObjCAutoRefCount)
-+      Payload = Context.getLifetimeQualifiedType(Payload, Qualifiers::OCL_Strong);
++      Payload =
++          Context.getLifetimeQualifiedType(Payload, Qualifiers::OCL_Strong);
 +    // Direct references have already been loaded into owned strong snapshot
 +    // storage. Their successful path is nonnull; tagged Some(nil) is different.
-+    if (ReferenceOptional) SourceType = Payload;
++    if (ReferenceOptional)
++      SourceType = Payload;
 +  }
 +  QualType BindingType = Mutable ? Payload : Context.getConstType(Payload);
 +  auto *Binding = VarDecl::Create(
@@ -17644,31 +17672,38 @@ index 000000000..53ddbc537
 +  if (BindingScope) {
 +    LookupResult Previous(*this, Name, NameLoc, LookupOrdinaryName);
 +    findBindingRedeclaration(*this, Binding, BindingScope, Previous);
-+    if (Binding->isInvalidDecl()) return StmtError();
++    if (Binding->isInvalidDecl())
++      return StmtError();
 +  }
-+  auto *Value = new (Context) OpaqueValueExpr(
-+      NameLoc, Context.getConstType(SourceType), VK_LValue);
++  auto *Value = new (Context)
++      OpaqueValueExpr(NameLoc, Context.getConstType(SourceType), VK_LValue);
 +  ExprResult Prepared = PrepareObjC3Snapshot(Value);
-+  if (Prepared.isInvalid()) return StmtError();
++  if (Prepared.isInvalid())
++    return StmtError();
 +  ExprResult Init = PerformCopyInitialization(
 +      InitializedEntity::InitializeVariable(Binding), EqualLoc, Prepared.get());
-+  if (Init.isInvalid()) return StmtError();
++  if (Init.isInvalid())
++    return StmtError();
 +  ExprResult FullInit = ActOnFinishFullExpr(Init.get(), EqualLoc,
-+                                           /*DiscardedValue=*/false);
-+  if (FullInit.isInvalid()) return StmtError();
++                                            /*DiscardedValue=*/false);
++  if (FullInit.isInvalid())
++    return StmtError();
 +  Binding->setInit(FullInit.get());
-+  if (BindingScope) PushOnScopeChains(Binding, BindingScope);
-+  else CurContext->addDecl(Binding);
-+  auto *Declaration = new (Context) DeclStmt(
-+      DeclGroupRef(Binding), KeywordLoc, Source->getEndLoc());
++  if (BindingScope)
++    PushOnScopeChains(Binding, BindingScope);
++  else
++    CurContext->addDecl(Binding);
++  auto *Declaration = new (Context)
++      DeclStmt(DeclGroupRef(Binding), KeywordLoc, Source->getEndLoc());
 +  setFunctionHasBranchProtectedScope();
-+  return new (Context) ObjC3BindingCondition(
-+      SnapshotStatement, Declaration, Mutable, KeywordLoc, EqualLoc);
++  return new (Context) ObjC3BindingCondition(SnapshotStatement, Declaration,
++                                             Mutable, KeywordLoc, EqualLoc);
 +}
 +
-+StmtResult Sema::ActOnObjC3GuardStmt(
-+    Scope *ParentScope, llvm::ArrayRef<Stmt *> Conditions, Stmt *ElseBody,
-+    SourceLocation KeywordLoc, SourceLocation ElseLoc) {
++StmtResult Sema::ActOnObjC3GuardStmt(Scope *ParentScope,
++                                     llvm::ArrayRef<Stmt *> Conditions,
++                                     Stmt *ElseBody, SourceLocation KeywordLoc,
++                                     SourceLocation ElseLoc) {
 +  if (Conditions.empty() || !isa_and_nonnull<CompoundStmt>(ElseBody))
 +    return StmtError();
 +  // Check every conflict before restoring any successful binding. Templates
@@ -17678,27 +17713,32 @@ index 000000000..53ddbc537
 +    for (Stmt *Condition : Conditions)
 +      if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Condition)) {
 +        VarDecl *Variable = Binding->getBindingDecl();
-+        LookupResult Previous(*this, Variable->getDeclName(), Variable->getLocation(),
-+                              LookupOrdinaryName);
++        LookupResult Previous(*this, Variable->getDeclName(),
++                              Variable->getLocation(), LookupOrdinaryName);
 +        findBindingRedeclaration(*this, Variable, ParentScope, Previous);
 +        Invalid |= Variable->isInvalidDecl();
 +      }
-+    if (Invalid) return StmtError();
++    if (Invalid)
++      return StmtError();
 +    for (Stmt *Condition : Conditions)
 +      if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Condition))
 +        PushOnScopeChains(Binding->getBindingDecl(), ParentScope, false);
 +  }
 +  setFunctionHasBranchProtectedScope();
-+  return ObjC3GuardStmt::Create(Context, Conditions, ElseBody, KeywordLoc, ElseLoc);
++  return ObjC3GuardStmt::Create(Context, Conditions, ElseBody, KeywordLoc,
++                                ElseLoc);
 +}
 +
-+StmtResult Sema::ActOnObjC3IfBindingStmt(
-+    llvm::ArrayRef<Stmt *> Conditions, Stmt *Then, Stmt *Else,
-+    SourceLocation IfLoc, SourceLocation ElseLoc) {
++StmtResult Sema::ActOnObjC3IfBindingStmt(llvm::ArrayRef<Stmt *> Conditions,
++                                         Stmt *Then, Stmt *Else,
++                                         SourceLocation IfLoc,
++                                         SourceLocation ElseLoc) {
 +  if (Conditions.empty() || !isa_and_nonnull<CompoundStmt>(Then) ||
-+      (Else && !isa<CompoundStmt>(Else))) return StmtError();
++      (Else && !isa<CompoundStmt>(Else)))
++    return StmtError();
 +  setFunctionHasBranchProtectedScope();
-+  return ObjC3IfBindingStmt::Create(Context, Conditions, Then, Else, IfLoc, ElseLoc);
++  return ObjC3IfBindingStmt::Create(Context, Conditions, Then, Else, IfLoc,
++                                    ElseLoc);
 +}
 +
 +// Completed callables provide resolved labels and native source scope owners.
@@ -17709,51 +17749,110 @@ index 000000000..53ddbc537
 +};
 +void collectGuards(Stmt *Statement, const Stmt *Owner,
 +                   SmallVectorImpl<GuardSourceScope> &Guards) {
-+  if (!Statement) return;
++  if (!Statement)
++    return;
 +  if (auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
 +    for (Expr *Capture : Lambda->capture_inits())
 +      collectGuards(Capture, Owner, Guards);
 +    return;
 +  }
-+  if (isa<BlockExpr>(Statement)) return;
-+  if (isa<CompoundStmt>(Statement)) Owner = Statement;
++  if (isa<BlockExpr>(Statement))
++    return;
++  if (isa<CompoundStmt>(Statement))
++    Owner = Statement;
 +  if (auto *Guard = dyn_cast<ObjC3GuardStmt>(Statement))
 +    Guards.push_back({Guard, Owner});
 +  if (auto *If = dyn_cast<IfStmt>(Statement)) {
 +    // An unbraced control body still creates a source lexical region. Its
 +    // containing compound cannot serve as the goto-exit boundary.
 +    for (Stmt *Child : If->children())
-+      collectGuards(Child, Child == If->getThen() || Child == If->getElse()
-+                              ? Child : Owner, Guards);
++      collectGuards(Child,
++                    Child == If->getThen() || Child == If->getElse() ? Child
++                                                                     : Owner,
++                    Guards);
 +    return;
 +  }
 +  Stmt *Body = nullptr;
-+  if (auto *Loop = dyn_cast<ForStmt>(Statement)) Body = Loop->getBody();
-+  else if (auto *Loop = dyn_cast<WhileStmt>(Statement)) Body = Loop->getBody();
-+  else if (auto *Loop = dyn_cast<DoStmt>(Statement)) Body = Loop->getBody();
-+  else if (auto *Loop = dyn_cast<CXXForRangeStmt>(Statement)) Body = Loop->getBody();
-+  else if (auto *Loop = dyn_cast<ObjCForCollectionStmt>(Statement)) Body = Loop->getBody();
-+  else if (auto *Switch = dyn_cast<SwitchStmt>(Statement)) Body = Switch->getBody();
++  if (auto *Loop = dyn_cast<ForStmt>(Statement))
++    Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<WhileStmt>(Statement))
++    Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<DoStmt>(Statement))
++    Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<CXXForRangeStmt>(Statement))
++    Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<ObjCForCollectionStmt>(Statement))
++    Body = Loop->getBody();
++  else if (auto *Switch = dyn_cast<SwitchStmt>(Statement))
++    Body = Switch->getBody();
 +  for (Stmt *Child : Statement->children())
 +    collectGuards(Child, Child && Child == Body ? Body : Owner, Guards);
 +}
++// Direct local labels can be copied with the body. An address-taken label
++// has one externally observable target and needs a distinct qualified model.
++bool checkDeferredLabelAddresses(Sema &Actions, Stmt *Body) {
++  llvm::SmallPtrSet<const LabelDecl *, 8> DeferredLabels;
++  SmallVector<const AddrLabelExpr *, 8> Addresses;
++  auto Collect = [&](auto &&Self, const Stmt *Statement, bool InDefer) -> void {
++    if (!Statement)
++      return;
++    if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement)) {
++      Self(Self, Argument->getExpr(), InDefer);
++      return;
++    }
++    if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement)) {
++      Self(Self, Initializer->getExpr(), InDefer);
++      return;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
++      for (const Expr *Capture : Lambda->capture_inits())
++        Self(Self, Capture, InDefer);
++      return;
++    }
++    if (isa<BlockExpr>(Statement))
++      return;
++    InDefer |= isa<DeferStmt>(Statement);
++    if (InDefer)
++      if (const auto *Label = dyn_cast<LabelStmt>(Statement))
++        DeferredLabels.insert(Label->getDecl());
++    if (const auto *Address = dyn_cast<AddrLabelExpr>(Statement))
++      Addresses.push_back(Address);
++    for (const Stmt *Child : Statement->children())
++      Self(Self, Child, InDefer);
++  };
++  Collect(Collect, Body, false);
++  bool Invalid = false;
++  for (const auto *Address : Addresses)
++    if (DeferredLabels.contains(Address->getLabel())) {
++      Invalid = true;
++      Actions.Diag(
++          Address->getExprLoc(),
++          Actions.getDiagnostics().getCustomDiagID(
++              DiagnosticsEngine::Error,
++              "address-taken labels in a deferred body are not supported"));
++    }
++  return Invalid;
++}
 +} // namespace
 +bool Sema::CheckObjC3Guards(Decl *Callable, Stmt *Body) {
-+  if (!getLangOpts().ObjC3 || !Body) return false;
++  if (!getLangOpts().ObjC3 || !Body)
++    return false;
 +  if (auto *FunctionTemplate = dyn_cast_or_null<FunctionTemplateDecl>(Callable))
 +    Callable = FunctionTemplate->getTemplatedDecl();
 +  if (Callable)
 +    if (auto *Context = dyn_cast<DeclContext>(Callable))
-+      if (Context->isDependentContext()) return false;
++      if (Context->isDependentContext())
++        return false;
 +  SmallVector<GuardSourceScope, 8> Guards;
 +  collectGuards(Body, Body, Guards);
-+  bool Invalid = false;
++  bool Invalid = checkDeferredLabelAddresses(*this, Body);
 +  // Nested guards get their own mandatory-exit diagnostic before an outer
 +  // proof needs to consume their CFG. Labels are complete at this point.
 +  for (auto Entry : llvm::reverse(Guards)) {
 +    auto Result = objc3::proveGuardScopeExit(
 +        *this, cast<CompoundStmt>(Entry.Guard->getElse()), Entry.Owner);
-+    if (Result == objc3::GuardExitResult::Proven) continue;
++    if (Result == objc3::GuardExitResult::Proven)
++      continue;
 +    Invalid = true;
 +    Diag(Entry.Guard->getElseLoc(),
 +         Result == objc3::GuardExitResult::UnsupportedControlFlow
@@ -18614,10 +18713,10 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..c83d3f00f
+index 000000000..ab89ffdbe
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,640 @@
+@@ -0,0 +1,755 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -19250,11 +19349,152 @@ index 000000000..c83d3f00f
 +        Visit(&Graph->getEntry(), "", 0);
 +        EXPECT_EQ(Expected.at(Function->getNameAsString()), Paths);
 +        Options.AddEHEdges = true;
-+        EXPECT_FALSE(CFG::buildCFG(Function, Function->getBody(),
-+                                   &AST->getASTContext(), Options));
++        EXPECT_TRUE(CFG::buildCFG(Function, Function->getBody(),
++                                  &AST->getASTContext(), Options));
 +        ++Cases;
 +      }
 +    }
 +    EXPECT_EQ(22u, Cases);
 +  }
++}
++
++TEST(ObjC3ConditionCFG, DeferredNativeEdgesPreserveLexicalHandlersAndUnwind) {
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
++    void work() noexcept;
++    void mayThrow();
++    __attribute__((noreturn)) void stop() noexcept;
++    __attribute__((noreturn)) void stopOrThrow();
++    __attribute__((objc_root_class)) @interface Receiver
++    - (void)run;
++    @end
++    struct Payload { Payload() noexcept; ~Payload() noexcept(false); };
++    void pass_defer_return(bool accept) { if(accept){}else{defer{work();}return;} }
++    void pass_deferred_noreturn(bool accept) { if(accept){}else{defer{stop();}} }
++    void fail_deferred_loop(bool accept) { if(accept){}else{defer{for(;;){}}return;} }
++    void fail_caught_defer(bool accept) { if(accept){}else{try{defer{mayThrow();}return;}catch(...) {}} }
++    void pass_outer_registration(bool accept) { if(accept){}else{defer{mayThrow();}try{return;}catch(...) {}} }
++    void fail_outer_handler(bool accept) { if(accept){}else{try{defer{mayThrow();}try{return;}catch(...){return;}}catch(...) {}} }
++    void fail_noreturn_caught(bool accept) { if(accept){}else{try{defer{work();}stopOrThrow();}catch(...) {}} }
++    void pass_noreturn_suppressed(bool accept) { if(accept){}else{try{defer{stop();}stopOrThrow();}catch(...) {}} }
++    void fail_throw_cleanup_loop(bool accept) { if(accept){}else{try{defer{for(;;){}}throw 1;}catch(...){return;}} }
++    void pass_local_catch_during_unwind(bool accept) { if(accept){}else{defer{try{mayThrow();}catch(...){work();}}throw 1;} }
++    void pass_throwing_cleanup_terminates(bool accept) { if(accept){}else{try{defer{mayThrow();}throw 1;}catch(...){return;}} }
++    void fail_native_catch_after_cleanup(bool accept) { if(accept){}else{try{defer{work();}throw 1;}catch(...) {}} }
++    void fail_objc_catch(bool accept, id value) { if(accept){}else{@try{defer{work();}@throw value;}@catch(id error){}} }
++    void fail_message_catch(bool accept, Receiver *receiver) { if(accept){}else{@try{defer{work();}[receiver run];return;}@catch(id error){}} }
++    void pass_objc_throw_suppressed(bool accept, id value) { if(accept){}else{@try{defer{stop();}@throw value;}@catch(id error){}} }
++    void pass_goto_after_cleanup(bool accept) { {if(accept){}else{defer{work();}goto outside;}}outside:; }
++    void fail_goto_cleanup_loop(bool accept) { {if(accept){}else{defer{for(;;){}}goto outside;}}outside:; }
++    void pass_unwind_noreturn_cleanup(bool accept) { if(accept){}else{try{defer{stopOrThrow();}throw 1;}catch(...) {}} }
++    void fail_normal_noreturn_cleanup(bool accept) { if(accept){}else{try{defer{stopOrThrow();}return;}catch(...) {}} }
++    void fail_outward_goto_caught_defer(bool accept) { {if(accept){}else{try{defer{mayThrow();}goto outside;}catch(...) {}}}outside:; }
++    void fail_unmodeled_cpp(bool accept) { if(accept){}else{defer{work();}Payload local;return;} }
++    void fail_unmodeled_pool(bool accept) { if(accept){}else{@autoreleasepool{defer{work();}return;}} }
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++       "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fobjc-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Messages = new Diagnostics;
++  AST->getDiagnostics().setClient(Messages, true);
++  unsigned Cases = 0, Invalid = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function));
++    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
++    bool Bad = AST->getSema().CheckObjC3Guards(Function, Function->getBody());
++    EXPECT_EQ(Function->getName().starts_with("fail_"), Bad);
++    Invalid += Bad;
++    ++Cases;
++  }
++  EXPECT_EQ(22u, Cases);
++  EXPECT_EQ(Invalid, Messages->Errors);
++}
++
++TEST(ObjC3ConditionCFG, DeferredUnwindAllowsLocalCatchesAndTerminatesEscapes) {
++  auto AST =
++      tooling::buildASTFromCodeWithArgs(R"(
++    __attribute__((noreturn)) void stopOrThrow();
++    void caught() noexcept;
++    void normal_cleanup() {
++      try { defer { stopOrThrow(); } return; } catch(...) { caught(); }
++    }
++    void unwind_termination() {
++      try { defer { stopOrThrow(); } throw 1; } catch(...) { caught(); }
++    }
++    void local_catch() {
++      defer { try { stopOrThrow(); } catch(...) { caught(); } }
++      throw 1;
++    }
++  )",
++                                        {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3", "-fexceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    CFG::BuildOptions Options;
++    Options.AddEHEdges = true;
++    Options.setAllAlwaysAdd();
++    auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                               &AST->getASTContext(), Options);
++    ASSERT_TRUE(Graph);
++    std::set<std::string> Paths;
++    std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++        [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++          ASSERT_LT(Depth, 80u);
++          for (const auto &Element : *Block)
++            if (auto Statement = Element.getAs<CFGStmt>())
++              if (auto *Call = dyn_cast<CallExpr>(Statement->getStmt()))
++                if (auto *Callee = Call->getDirectCallee())
++                  Events += Callee->getNameAsString() + ",";
++          if (Block == &Graph->getExit())
++            Paths.insert(Events);
++          else
++            for (const auto &Edge : Block->succs())
++              if (const auto *Next = Edge.getReachableBlock())
++                Visit(Next, Events, Depth + 1);
++        };
++    Visit(&Graph->getEntry(), "", 0);
++    std::set<std::string> Expected{"stopOrThrow,"};
++    if (Function->getName() != "unwind_termination")
++      Expected.insert("stopOrThrow,caught,");
++    EXPECT_EQ(Expected, Paths);
++    ++Cases;
++  }
++  EXPECT_EQ(3u, Cases);
++}
+diff --git a/clang/test/ObjC3/Sema/defer-address-taken.m b/clang/test/ObjC3/Sema/defer-address-taken.m
+new file mode 100644
+index 000000000..772213cf8
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/defer-address-taken.m
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fsyntax-only -verify %s
++void inside(void) {
++  defer {
++    void *target = &&label; // expected-error {{address-taken labels in a deferred body are not supported}}
++  label:
++    (void)target;
++  }
++}
++void outside(void) {
++  void *target = &&label; // expected-error {{address-taken labels in a deferred body are not supported}}
++  defer { label:; }
++  (void)target;
++}
++void ordinary_labels(void) {
++  void *target = &&label;
++label:
++  (void)target;
 +}

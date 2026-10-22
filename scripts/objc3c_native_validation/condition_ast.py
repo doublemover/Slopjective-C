@@ -20,6 +20,7 @@ import time
 
 from scripts.objc3c_toolchain.build import foundation_lock
 from scripts.objc3c_toolchain.core import verify_development
+from scripts.objc3c_native_validation import defer_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,7 +83,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
-        "schema": "objc3c.condition-ast-runtime.v2", "status": "running",
+        "schema": "objc3c.condition-ast-runtime.v3", "status": "running",
         "compiler_binding": "admitted-development-native-ast",
         "source_syntax_admitted": False, "installed_compiler_qualified": False,
         "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -93,7 +94,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
     def persist():
         receipt.write_text(json.dumps(report, indent=2) + "\n")
 
-    def run(name: str, command: list, *, environment=None):
+    def run(name: str, command: list, *, environment=None, expected_exit_code=0):
         log = output / f"{name}.log"
         command_started = time.monotonic()
 
@@ -124,13 +125,14 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
                 process.wait()
                 raise
         report["commands"].append({
-            "name": name, "exit_code": code, "timed_out": timed_out,
+            "name": name, "exit_code": code, "expected_exit_code": expected_exit_code,
+            "timed_out": timed_out,
             "command": list(map(str, command)),
             "elapsed_seconds": round(time.monotonic() - command_started, 6),
             "log_sha256": digest(log),
         })
         persist()
-        if code or timed_out:
+        if code != expected_exit_code or timed_out:
             raise RuntimeError(f"{name} failed (exit {code}); see {log}")
 
     try:
@@ -148,7 +150,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
             runtime = (sdk / "lib/libobjc.so").resolve(strict=True)
             inputs = {str(path): digest(path) for path in
                       (foundation, compiler, tests, runtime, sdk / "objc3-sdk.json",
-                       Path(__file__).resolve())}
+                       Path(__file__).resolve(), *defer_source.INPUTS)}
             report.update(
                 source_build_id=source["build_id"],
                 source_tree_sha256=source["tree_sha256"],
@@ -191,6 +193,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
                     report["configurations"].append({
                         **expected[name], "module_sha256": report["verified_modules"][name],
                     })
+                defer_source.qualify(run, directory, compiler, sdk, report)
                 if any(digest(path) != report["verified_modules"][name]
                        for name, path in modules.items()):
                     raise RuntimeError("a verified module changed during execution")
@@ -222,7 +225,8 @@ def main() -> None:
         (options.sdk or repo / "out/toolchains/linux-sdk/current").resolve(),
         (options.output or repo / "out/native-validation/guard-bindings-ast").resolve(),
     )
-    print(f"{result['status']}: {len(result['configurations'])} configurations, "
+    print(f"{result['status']}: {len(result['configurations'])} native AST configurations, "
+          f"{len(result['defer_source']['configurations'])} defer source/PCH configurations, "
           f"{len(result['commands'])} commands")
 
 
