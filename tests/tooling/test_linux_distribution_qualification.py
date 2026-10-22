@@ -65,3 +65,31 @@ def test_archive_mismatch_fails_before_container_creation(tmp_path, monkeypatch)
         qualification.qualify(release, output, distributions=['debian13'])
     report = json.loads((output / 'qualification.json').read_text())
     assert report['status'] == 'FAIL' and not report['distributions']
+
+
+def test_both_distributions_run_with_bounded_parallelism_and_clean_up(tmp_path, monkeypatch):
+    import threading
+    archive, release, output = release_inputs(tmp_path)
+    started = threading.Barrier(2)
+    commands = []
+    lock = threading.Lock()
+
+    def run(argv, **kwargs):
+        with lock:
+            commands.append(argv)
+        if 'exec' in argv:
+            started.wait(timeout=5)
+            kwargs['stdout'].write('Unprivileged Linux native feature consumer: PASS\n'
+                                   'Fresh Linux native feature qualification: PASS\n')
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(qualification.subprocess, 'run', run)
+    result = qualification.qualify(release, output)
+    assert result['status'] == 'PASS'
+    records = result['distributions']
+    assert {r['distribution'] for r in records} == set(qualification.IMAGES)
+    assert all(r['status'] == 'PASS' and r['container_removed'] for r in records)
+    creates = [command for command in commands if '--cpus' in command]
+    assert len(creates) == 2
+    assert all(command[command.index('--cpus') + 1] == '2' for command in creates)
+    assert json.loads((output / 'qualification.json').read_text()) == result

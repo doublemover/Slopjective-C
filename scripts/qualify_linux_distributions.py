@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import io
 import json
@@ -10,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+import threading
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,9 +41,17 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
     report = {'schema': 'objc3c.fresh-linux-distributions.v1', 'status': 'running',
               'scope': 'native-features', 'distributions': []}
     started = time.monotonic()
+    receipt_lock = threading.RLock()
 
     def persist():
-        receipt.write_text(json.dumps(report, indent=2) + '\n')
+        with receipt_lock:
+            temporary = receipt.with_suffix('.json.tmp')
+            temporary.write_text(json.dumps(report, indent=2) + '\n')
+            temporary.replace(receipt)
+
+    def update_record(record, **fields):
+        with receipt_lock:
+            record.update(fields)
 
     persist()  # Never leave an earlier PASS visible during admission or failure.
     qualifier = ROOT / 'scripts/qualify_linux_archive.sh'
@@ -69,18 +79,19 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
         report.update(archive=str(archive), archive_sha256=archive_hash,
                       sdk_seal=release['seal_sha256'],
                       release_sha256=release_hash, qualifier_sha256=qualifier_hash)
-        for distribution in distributions or IMAGES:
+        def one_distribution(distribution):
             image = IMAGES[distribution]
             name = 'objc3-features-' + distribution + '-' + uuid.uuid4().hex[:12]
             record = {'distribution': distribution, 'image': image, 'container': name,
                       'status': 'running', 'ordinary_user': True}
-            report['distributions'].append(record)
+            with receipt_lock:
+                report['distributions'].append(record)
             persist()
             print(distribution + ': qualifying native features', flush=True)
             create_log = output / (distribution + '-create.log')
             run_log = output / (distribution + '.log')
             cleanup_log = output / (distribution + '-cleanup.log')
-            command = [*docker, 'run', '--detach', '--name', name, '--cpus', '1',
+            command = [*docker, 'run', '--detach', '--name', name, '--cpus', '2',
                        '--memory', '5g', '--cap-add', 'SYS_PTRACE',
                        '--tmpfs', '/opt:rw,exec,nosuid,nodev,size=3g',
                        '--tmpfs', '/tmp:rw,exec,nosuid,nodev,size=1g',
@@ -104,24 +115,36 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                          'exec sh /qualify.sh /release.tar.zst "$1" /opt/objc3 native-features')
                 code = run([*docker, 'exec', name, 'sh', '-ec', setup, 'qualify',
                             archive_hash], run_log, 1800)
-                record.update(exit_code=code, log_sha256=digest(run_log))
+                update_record(record, exit_code=code, log_sha256=digest(run_log))
                 text = run_log.read_text(errors='replace')
                 markers = ('Unprivileged Linux native feature consumer: PASS',
                            'Fresh Linux native feature qualification: PASS')
                 if code or any(marker not in text for marker in markers):
                     raise ValueError(distribution + ': fresh archive qualification failed')
-                record.update(status='PASS', tmpfs_execution_verified=True)
+                update_record(record, status='PASS', tmpfs_execution_verified=True)
             except BaseException:
-                record['status'] = 'FAIL'
+                update_record(record, status='FAIL')
                 raise
             finally:
                 cleanup = run([*docker, 'container', 'rm', '--force', name], cleanup_log, 60)
-                record['container_removed'] = cleanup == 0
+                update_record(record, container_removed=cleanup == 0)
                 if cleanup:
-                    record['status'] = 'FAIL'
+                    update_record(record, status='FAIL')
                     raise ValueError(distribution + ': container cleanup failed')
                 persist()
             print(distribution + ': PASS', flush=True)
+
+        selected = list(distributions or IMAGES)
+        failures = []
+        with ThreadPoolExecutor(max_workers=min(2, len(selected))) as executor:
+            futures = [executor.submit(one_distribution, name) for name in selected]
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as error:
+                    failures.append(str(error))
+        if failures:
+            raise ValueError('; '.join(failures))
         if (digest(archive) != archive_hash or digest(qualifier) != qualifier_hash or
                 digest(release_file) != release_hash):
             raise ValueError('fresh-distribution inputs changed during execution')
