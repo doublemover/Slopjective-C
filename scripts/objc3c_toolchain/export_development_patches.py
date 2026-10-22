@@ -224,6 +224,7 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/test/ObjC3/Analysis/defer-native-cxx.mm",
         "clang/include/clang/Analysis/CFG.h",
         "clang/lib/Analysis/CFG.cpp",
         "clang/lib/Analysis/PathDiagnostic.cpp",

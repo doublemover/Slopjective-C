@@ -19056,10 +19056,10 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..ab89ffdbe
+index 000000000..0a9de983f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,755 @@
+@@ -0,0 +1,961 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -19712,6 +19712,11 @@ index 000000000..ab89ffdbe
 +    - (void)run;
 +    @end
 +    struct Payload { Payload() noexcept; ~Payload() noexcept(false); };
++    struct Constructor { Constructor(); ~Constructor() noexcept; };
++    struct Base { virtual ~Base() noexcept; };
++    struct Derived : Base {};
++    namespace std { class type_info; }
++    void cleanup(int *);
 +    void pass_defer_return(bool accept) { if(accept){}else{defer{work();}return;} }
 +    void pass_deferred_noreturn(bool accept) { if(accept){}else{defer{stop();}} }
 +    void fail_deferred_loop(bool accept) { if(accept){}else{defer{for(;;){}}return;} }
@@ -19732,8 +19737,18 @@ index 000000000..ab89ffdbe
 +    void pass_unwind_noreturn_cleanup(bool accept) { if(accept){}else{try{defer{stopOrThrow();}throw 1;}catch(...) {}} }
 +    void fail_normal_noreturn_cleanup(bool accept) { if(accept){}else{try{defer{stopOrThrow();}return;}catch(...) {}} }
 +    void fail_outward_goto_caught_defer(bool accept) { {if(accept){}else{try{defer{mayThrow();}goto outside;}catch(...) {}}}outside:; }
-+    void fail_unmodeled_cpp(bool accept) { if(accept){}else{defer{work();}Payload local;return;} }
++    void pass_native_cpp_cleanup(bool accept) { if(accept){}else{defer{work();}Payload local;return;} }
 +    void fail_unmodeled_pool(bool accept) { if(accept){}else{@autoreleasepool{defer{work();}return;}} }
++    void fail_caught_cpp_constructor(bool accept) { if(accept){}else{try{defer{work();}Constructor local;return;}catch(...) {}} }
++    void pass_cpp_constructor_outward(bool accept) { if(accept){}else{defer{work();}Constructor local;return;} }
++    void fail_caught_cpp_destructor(bool accept) { if(accept){}else{try{defer{work();}Payload local;return;}catch(...) {}} }
++    void pass_cpp_destructor_during_unwind(bool accept) { if(accept){}else{try{defer{work();}Payload local;throw 1;}catch(...){return;}} }
++    void fail_caught_cleanup_attribute(bool accept) { if(accept){}else{try{defer{work();}int local __attribute__((cleanup(cleanup)));return;}catch(...) {}} }
++    void fail_caught_reference_cast(bool accept, Base *value) { if(accept){}else{try{defer{work();}(void)dynamic_cast<Derived &>(*value);return;}catch(...) {}} }
++    void pass_pointer_cast(bool accept, Base *value) { if(accept){}else{try{defer{work();}(void)dynamic_cast<Derived *>(value);return;}catch(...) {}} }
++    void fail_caught_type_query(bool accept, Base *value) { if(accept){}else{try{defer{work();}(void)typeid(*value);return;}catch(...) {}} }
++    void pass_unevaluated_type_query(bool accept) { if(accept){}else{try{defer{work();}(void)typeid(Payload());return;}catch(...) {}} }
++    void fail_caught_allocation(bool accept) { if(accept){}else{try{defer{work();}(void)new int;return;}catch(...) {}} }
 +  )",
 +      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
 +       "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fobjc-exceptions"});
@@ -19754,7 +19769,7 @@ index 000000000..ab89ffdbe
 +    Invalid += Bad;
 +    ++Cases;
 +  }
-+  EXPECT_EQ(22u, Cases);
++  EXPECT_EQ(32u, Cases);
 +  EXPECT_EQ(Invalid, Messages->Errors);
 +}
 +
@@ -19814,6 +19829,197 @@ index 000000000..ab89ffdbe
 +    ++Cases;
 +  }
 +  EXPECT_EQ(3u, Cases);
++}
++
++TEST(ObjC3ConditionCFG, DeferredCXXOperationsPreserveRegistrationAndHandlers) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    void first() noexcept;
++    void second() noexcept;
++    void caught() noexcept;
++    void work();
++    void cleanup(int *);
++    struct Lifetime { Lifetime() noexcept; ~Lifetime() noexcept(false); };
++    struct Construction { Construction(); ~Construction() noexcept; };
++    struct Base { virtual ~Base() noexcept; };
++    struct Derived : Base {};
++    namespace std { class type_info; }
++    struct Deallocation {
++      ~Deallocation() noexcept;
++      static void operator delete(void *) noexcept(false);
++    };
++    void constructor_failure() {
++      try { defer { first(); } Construction value; defer { second(); } }
++      catch (...) { caught(); }
++    }
++    void destructor_normal() {
++      try { defer { first(); } Lifetime value; } catch (...) { caught(); }
++    }
++    void destructor_unwind() {
++      try { defer { first(); } Lifetime value; throw 1; }
++      catch (...) { caught(); }
++    }
++    void destructor_outward_goto() {
++      try { defer { first(); } Lifetime value; goto outside; }
++      catch (...) { caught(); }
++    outside:;
++    }
++    void attributed_cleanup() {
++      try { defer { first(); } int value __attribute__((cleanup(cleanup))); }
++      catch (...) { caught(); }
++    }
++    void result_temporary() {
++      try { defer { first(); } (void)Lifetime(); } catch (...) { caught(); }
++    }
++    void temporary_construction_failure() {
++      try { defer { first(); } (void)Construction(); }
++      catch (...) { caught(); }
++    }
++    void reference_cast(Base *value) {
++      try { defer { first(); } (void)dynamic_cast<Derived &>(*value); }
++      catch (...) { caught(); }
++    }
++    void type_query(Base *value) {
++      try { defer { first(); } (void)typeid(*value); }
++      catch (...) { caught(); }
++    }
++    void scalar_allocation() {
++      try { defer { first(); } (void)new int; } catch (...) { caught(); }
++    }
++    void scalar_deallocation(Deallocation *value) {
++      try { defer { first(); } delete value; } catch (...) { caught(); }
++    }
++    void unmatched_inner_handler() {
++      defer { first(); }
++      try { defer { second(); } work(); } catch (int) { caught(); }
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  const std::map<std::string, std::set<std::string>> Expected = {
++      {"constructor_failure",
++       {"construct,first,caught,", "construct,second,destroy,first,"}},
++      {"destructor_normal",
++       {"construct,destroy,first,", "construct,destroy,first,caught,"}},
++      {"destructor_unwind",
++       {"construct,destroy,first,caught,", "construct,destroy,terminate,"}},
++      {"destructor_outward_goto",
++       {"construct,destroy,first,", "construct,destroy,first,caught,"}},
++      {"attributed_cleanup", {"cleanup,first,", "cleanup,first,caught,"}},
++      {"result_temporary",
++       {"construct,temporary,first,", "construct,temporary,first,caught,"}},
++      {"temporary_construction_failure",
++       {"construct,first,caught,", "construct,temporary,first,"}},
++      {"reference_cast", {"cast,first,", "cast,first,caught,"}},
++      {"type_query", {"typeid,first,", "typeid,first,caught,"}},
++      {"scalar_allocation", {"allocate,first,", "allocate,first,caught,"}},
++      {"scalar_deallocation",
++       {"delete-dtor,delete,first,", "delete-dtor,delete,first,caught,"}},
++      {"unmatched_inner_handler",
++       {"work,second,first,", "work,second,caught,first,",
++        "work,second,first,unwind,"}}};
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    for (bool Rich : {false, true}) {
++      SCOPED_TRACE(Rich);
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = Options.AddImplicitDtors =
++          Options.AddTemporaryDtors = true;
++      Options.AddRichCXXConstructors = Rich;
++      Options.setAllAlwaysAdd();
++      auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                                 &AST->getASTContext(), Options);
++      ASSERT_TRUE(Graph);
++      std::set<std::string> Paths;
++      std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++          [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++            ASSERT_LT(Depth, 100u);
++            for (const auto &Element : *Block) {
++              if (Element.getAs<CFGAutomaticObjDtor>())
++                Events += "destroy,";
++              else if (Element.getAs<CFGTemporaryDtor>())
++                Events += "temporary,";
++              else if (Element.getAs<CFGDeleteDtor>())
++                Events += "delete-dtor,";
++              else if (Element.getAs<CFGCleanupFunction>())
++                Events += "cleanup,";
++              else if (Element.getAs<CFGNewAllocator>())
++                Events += "allocate,";
++              else if (auto Statement = Element.getAs<CFGStmt>()) {
++                const Stmt *Node = Statement->getStmt();
++                if (isa<CXXConstructExpr>(Node))
++                  Events += "construct,";
++                else if (isa<CXXDynamicCastExpr>(Node))
++                  Events += "cast,";
++                else if (isa<CXXTypeidExpr>(Node))
++                  Events += "typeid,";
++                else if (isa<CXXDeleteExpr>(Node))
++                  Events += "delete,";
++                else if (const auto *Call = dyn_cast<CallExpr>(Node))
++                  if (const auto *Callee = Call->getDirectCallee())
++                    Events += Callee->getNameAsString() + ",";
++              }
++            }
++            if (Block->isNativeExceptionExit())
++              Events += "unwind,";
++            if (Block->hasNoReturnElement())
++              Events += "terminate,";
++            if (Block == &Graph->getExit())
++              Paths.insert(Events);
++            else
++              for (const auto &Edge : Block->succs())
++                if (const auto *Next = Edge.getReachableBlock())
++                  Visit(Next, Events, Depth + 1);
++          };
++      Visit(&Graph->getEntry(), "", 0);
++      EXPECT_EQ(Expected.at(Function->getNameAsString()), Paths);
++    }
++    ++Cases;
++  }
++  EXPECT_EQ(Expected.size(), Cases);
++}
++
++TEST(ObjC3ConditionCFG, DeferredNativeEHRefusesUnmodeledPartialCleanup) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    void first() noexcept;
++    struct Lifetime { Lifetime(); ~Lifetime() noexcept(false); };
++    void consume(const Lifetime &);
++    void argument_temporary() { defer { first(); } consume(Lifetime()); }
++    void array_prefix() { defer { first(); } Lifetime values[2]; }
++    void failed_initializer() { defer { first(); } (void)new Lifetime; }
++    void allocated_array() { defer { first(); } (void)new int[2]; }
++    void throwing_deleted_destructor(Lifetime *value) {
++      defer { first(); } delete value;
++    }
++    void pool_cleanup() { defer { first(); } @autoreleasepool {} }
++    void synchronization_cleanup(id value) {
++      defer { first(); } @synchronized(value) {}
++    }
++    void finally_cleanup() { defer { first(); } @try {} @finally {} }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fcxx-exceptions",
++         "-fobjc-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    CFG::BuildOptions Options;
++    Options.AddEHEdges = Options.AddImplicitDtors =
++        Options.AddTemporaryDtors = true;
++    Options.setAllAlwaysAdd();
++    EXPECT_FALSE(CFG::buildCFG(Function, Function->getBody(),
++                              &AST->getASTContext(), Options));
++    ++Cases;
++  }
++  EXPECT_EQ(8u, Cases);
 +}
 diff --git a/clang/test/ObjC3/Sema/defer-address-taken.m b/clang/test/ObjC3/Sema/defer-address-taken.m
 new file mode 100644

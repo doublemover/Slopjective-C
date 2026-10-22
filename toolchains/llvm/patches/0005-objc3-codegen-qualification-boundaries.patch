@@ -1,5 +1,5 @@
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index bb8e98a89..5c5198188 100644
+index bb8e98a89..194da0a8f 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
 @@ -21,6 +21,7 @@
@@ -18,7 +18,7 @@ index bb8e98a89..5c5198188 100644
  #include "llvm/ADT/SmallVector.h"
  #include "llvm/Support/Allocator.h"
  #include "llvm/Support/Compiler.h"
-@@ -66,6 +68,18 @@
+@@ -66,6 +68,58 @@
  
  using namespace clang;
  
@@ -34,10 +34,50 @@ index bb8e98a89..5c5198188 100644
 +  return !Member || !Member->hasQualifier();
 +}
 +
++static bool mayThrowNative(const FunctionDecl *Function) {
++  if (!Function)
++    return true;
++  if (Function->hasAttr<NoThrowAttr>())
++    return false;
++  const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
++  return !Prototype ||
++         isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) ||
++         !Prototype->isNothrow();
++}
++
++// Allocation failure is an operation boundary. A throwing initializer needs a
++// separate deallocation-on-failure path; admit initialized new only when that
++// path is impossible. Keep this query deliberately structural and bounded.
++static bool isNonThrowingNewInitializer(const Stmt *Statement) {
++  if (!Statement)
++    return true;
++  if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement))
++    return isNonThrowingNewInitializer(Argument->getExpr());
++  if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement))
++    return isNonThrowingNewInitializer(Initializer->getExpr());
++  if (const auto *Call = dyn_cast<CallExpr>(Statement)) {
++    if (mayThrowNative(Call->getDirectCallee()))
++      return false;
++  } else if (const auto *Constructor = dyn_cast<CXXConstructExpr>(Statement)) {
++    if (mayThrowNative(Constructor->getConstructor()))
++      return false;
++  } else if (!isa<IntegerLiteral, CharacterLiteral, FloatingLiteral,
++                  StringLiteral, CXXBoolLiteralExpr, CXXNullPtrLiteralExpr,
++                  GNUNullExpr, ImplicitValueInitExpr, CXXScalarValueInitExpr,
++                  DeclRefExpr, CXXThisExpr, ParenExpr, ImplicitCastExpr,
++                  InitListExpr, MemberExpr, UnaryOperator, BinaryOperator>(
++                 Statement))
++    return false;
++  for (const Stmt *Child : Statement->children())
++    if (!isNonThrowingNewInitializer(Child))
++      return false;
++  return true;
++}
++
  static SourceLocation GetEndLoc(Decl *D) {
    if (VarDecl *VD = dyn_cast<VarDecl>(D))
      if (Expr *Ex = VD->getInit())
-@@ -227,14 +241,16 @@ private:
+@@ -227,14 +281,16 @@ private:
  ///   (adding any variable that doesn't need constructor to be called to
  ///   LocalScope can break this assumption),
  ///
@@ -56,7 +96,7 @@ index bb8e98a89..5c5198188 100644
  
      /// VarIter is guaranteed to be greater then 0 for every valid iterator.
      /// Invalid iterator (with null Scope) has VarIter equal to 0.
-@@ -248,15 +264,14 @@ public:
+@@ -248,15 +304,14 @@ public:
  
      /// Create valid iterator. In case when S.Prev is an invalid iterator and
      /// I is equal to 0, this will create invalid iterator.
@@ -74,7 +114,7 @@ index bb8e98a89..5c5198188 100644
        assert(Scope && "Dereferencing invalid iterator is not allowed");
        assert(VarIter != 0 && "Iterator has invalid value of VarIter member");
        return &Scope->Vars[VarIter - 1];
-@@ -265,13 +280,19 @@ public:
+@@ -265,13 +320,19 @@ public:
      const VarDecl *getFirstVarInScope() const {
        assert(Scope && "Dereferencing invalid iterator is not allowed");
        assert(VarIter != 0 && "Iterator has invalid value of VarIter member");
@@ -97,7 +137,7 @@ index bb8e98a89..5c5198188 100644
      const_iterator &operator++() {
        if (!Scope)
          return *this;
-@@ -291,17 +312,15 @@ public:
+@@ -291,17 +352,15 @@ public:
      bool operator==(const const_iterator &rhs) const {
        return Scope == rhs.Scope && VarIter == rhs.VarIter;
      }
@@ -120,7 +160,7 @@ index bb8e98a89..5c5198188 100644
      bool inSameLocalScope(const_iterator rhs) { return Scope == rhs.Scope; }
    };
  
-@@ -323,9 +342,15 @@ public:
+@@ -323,9 +382,15 @@ public:
    /// Begin of scope in direction of CFG building (backwards).
    const_iterator begin() const { return const_iterator(*this, Vars.size()); }
  
@@ -139,7 +179,7 @@ index bb8e98a89..5c5198188 100644
  };
  
  } // namespace
-@@ -531,9 +556,17 @@ class CFGBuilder {
+@@ -531,9 +596,27 @@ class CFGBuilder {
    // The frontend forbids mixing SEH __try with either try or @try.
    // So having one for all three is enough.
    CFGBlock *TryTerminatedBlock = nullptr;
@@ -154,10 +194,29 @@ index bb8e98a89..5c5198188 100644
    // Current position in local scope.
    LocalScope::const_iterator ScopePos;
 +  bool HasDefer = false;
++
++  struct AutomaticObjectContext {
++    LocalScope::const_iterator Before;
++    CFGBlock *NativeHandler;
++    LocalScope::const_iterator NativeHandlerScope;
++  };
++  // Cleanup copies may be built after leaving their lexical try statement,
++  // notably when backpatching an outward goto. Keep the declaration's handler
++  // and the position before registration instead of using the transfer site.
++  llvm::DenseMap<const VarDecl *, AutomaticObjectContext> AutomaticObjectContexts;
  
    // LabelMap records the mapping from Label expressions to their jump targets.
    using LabelMapTy = llvm::DenseMap<LabelDecl *, JumpTarget>;
-@@ -608,7 +641,21 @@ private:
+@@ -599,6 +682,8 @@ private:
+   CFGBlock *VisitCXXConstructExpr(CXXConstructExpr *C, AddStmtChoice asc);
+   CFGBlock *VisitCXXNewExpr(CXXNewExpr *DE, AddStmtChoice asc);
+   CFGBlock *VisitCXXDeleteExpr(CXXDeleteExpr *DE, AddStmtChoice asc);
++  CFGBlock *VisitCXXDynamicCastExpr(CXXDynamicCastExpr *Cast,
++                                    AddStmtChoice asc);
+   CFGBlock *VisitCXXForRangeStmt(CXXForRangeStmt *S);
+   CFGBlock *VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *E,
+                                        AddStmtChoice asc);
+@@ -608,7 +693,24 @@ private:
    CFGBlock *VisitCXXTryStmt(CXXTryStmt *S);
    CFGBlock *VisitCXXTypeidExpr(CXXTypeidExpr *S, AddStmtChoice asc);
    CFGBlock *VisitDeclStmt(DeclStmt *DS);
@@ -165,6 +224,9 @@ index bb8e98a89..5c5198188 100644
 +  CFGBlock *VisitDeferStmt(DeferStmt *Statement);
 +  void emitDeferredScopeAction(const DeferredScopeAction &Action);
 +  bool supportsDeferredNativeEH(const Stmt *Statement) const;
++  bool deferredNativeEHEdgesEnabled() const;
++  void addDeferredNativeOperation(const Stmt *Operation, bool CanThrow,
++                                  bool NoReturn = false);
 +  CFGBlock *deferredNativeExceptionEntry(const Stmt *Operation);
 +  CFGBlock *getDeferredTerminateBlock();
 +  LocalScope *addLocalScopeForDefer(DeferStmt *Statement, LocalScope *Scope);
@@ -180,7 +242,7 @@ index bb8e98a89..5c5198188 100644
    CFGBlock *VisitDefaultStmt(DefaultStmt *D);
    CFGBlock *VisitDoStmt(DoStmt *D);
    CFGBlock *VisitExprWithCleanups(ExprWithCleanups *E,
-@@ -634,6 +681,10 @@ private:
+@@ -634,6 +736,10 @@ private:
    CFGBlock *VisitObjCAtCatchStmt(ObjCAtCatchStmt *S);
    CFGBlock *VisitObjCAtSynchronizedStmt(ObjCAtSynchronizedStmt *S);
    CFGBlock *VisitObjCAtThrowStmt(ObjCAtThrowStmt *S);
@@ -191,7 +253,7 @@ index bb8e98a89..5c5198188 100644
    CFGBlock *VisitObjCAtTryStmt(ObjCAtTryStmt *S);
    CFGBlock *VisitObjCAutoreleasePoolStmt(ObjCAutoreleasePoolStmt *S);
    CFGBlock *VisitObjCForCollectionStmt(ObjCForCollectionStmt *S);
-@@ -746,6 +797,9 @@ private:
+@@ -746,6 +852,9 @@ private:
    VisitConditionalOperatorForTemporaries(AbstractConditionalOperator *E,
                                           bool ExternallyDestructed,
                                           TempDtorContext &Context);
@@ -201,7 +263,18 @@ index bb8e98a89..5c5198188 100644
    void InsertTempDecisionBlock(const TempDtorContext &Context,
                                 CFGBlock *FalseSucc = nullptr);
  
-@@ -1667,7 +1721,52 @@ void CFGBuilder::cleanupConstructionContext(Expr *E) {
+@@ -856,7 +965,9 @@ private:
+ 
+   void appendConstructor(CXXConstructExpr *CE) {
+     CXXConstructorDecl *C = CE->getConstructor();
+-    if (C && C->isNoReturn())
++    if (HasDefer && BuildOpts.AddEHEdges)
++      addDeferredNativeOperation(CE, mayThrowNative(C), C && C->isNoReturn());
++    else if (C && C->isNoReturn())
+       Block = createNoReturnBlock();
+     else
+       autoCreateBlock();
+@@ -1667,7 +1778,57 @@ void CFGBuilder::cleanupConstructionContext(Expr *E) {
  ///  body (compound statement).  The ownership of the returned CFG is
  ///  transferred to the caller.  If CFG construction fails, this method returns
  ///  NULL.
@@ -251,10 +324,15 @@ index bb8e98a89..5c5198188 100644
 +  if (HasDefer && containsUnmodeledDeferredJump(Statement)) return nullptr;
 +  if (HasDefer && BuildOpts.AddEHEdges && !supportsDeferredNativeEH(Statement))
 +    return nullptr;
++  // Constructor failure and destructor exit also destroy base/member objects.
++  // Their partial-object EH sequence is not yet represented by this model.
++  if (HasDefer && BuildOpts.AddEHEdges &&
++      isa_and_nonnull<CXXConstructorDecl, CXXDestructorDecl>(D))
++    return nullptr;
    assert(cfg.get());
    if (!Statement)
      return nullptr;
-@@ -1745,23 +1844,26 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1745,23 +1906,26 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
  
    // Backpatch the gotos whose label -> block mappings we didn't know when we
    // encountered them.
@@ -288,7 +366,7 @@ index bb8e98a89..5c5198188 100644
        for (auto *L : G->labels()) {
          LabelMapTy::iterator LI = LabelMap.find(L->getLabel());
          // If there is no target for the goto, then we are looking at an
-@@ -1774,7 +1876,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
+@@ -1774,7 +1938,7 @@ std::unique_ptr<CFG> CFGBuilder::buildCFG(const Decl *D, Stmt *Statement) {
            continue;
          addSuccessor(B, JT.block);
        }
@@ -297,7 +375,7 @@ index bb8e98a89..5c5198188 100644
      }
    }
  
-@@ -1838,8 +1940,7 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
+@@ -1838,8 +2002,7 @@ CFGBlock *CFGBuilder::addInitializer(CXXCtorInitializer *I) {
  
      HasTemporaries = isa<ExprWithCleanups>(ActualInit);
  
@@ -307,7 +385,7 @@ index bb8e98a89..5c5198188 100644
        // Generate destructors for temporaries in initialization expression.
        TempDtorContext Context;
        auto *FullExprWithCleanups = cast<ExprWithCleanups>(ActualInit);
-@@ -1944,7 +2045,7 @@ void CFGBuilder::addLoopExit(const Stmt *LoopStmt){
+@@ -1944,7 +2107,7 @@ void CFGBuilder::addLoopExit(const Stmt *LoopStmt){
  void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
                                           LocalScope::const_iterator E,
                                           Stmt *S) {
@@ -316,7 +394,7 @@ index bb8e98a89..5c5198188 100644
        !BuildOpts.AddLifetime)
      return;
  
-@@ -1984,20 +2085,27 @@ void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
+@@ -1984,46 +2147,69 @@ void CFGBuilder::addAutomaticObjHandling(LocalScope::const_iterator B,
  void CFGBuilder::addAutomaticObjDestruction(LocalScope::const_iterator B,
                                              LocalScope::const_iterator E,
                                              Stmt *S) {
@@ -342,26 +420,76 @@ index bb8e98a89..5c5198188 100644
 +  }
  
 -  for (VarDecl *VD : llvm::reverse(DeclsNeedDestruction)) {
+-    if (BuildOpts.AddImplicitDtors) {
+-      // If this destructor is marked as a no-return destructor, we need to
+-      // create a new block for the destructor which does not have as a
+-      // successor anything built thus far: control won't flow out of this
+-      // block.
+-      QualType Ty = VD->getType();
+-      if (Ty->isReferenceType())
+-        Ty = getReferenceInitTemporaryType(VD->getInit());
+-      Ty = Context->getBaseElementType(Ty);
+-
+-      const CXXRecordDecl *CRD = Ty->getAsCXXRecordDecl();
+-      if (CRD && CRD->isAnyDestructorNoReturn())
+-        Block = createNoReturnBlock();
 +  for (auto Action : llvm::reverse(Cleanups)) {
 +    if (auto *Deferred = dyn_cast<DeferredScopeAction *>(Action)) {
 +      emitDeferredScopeAction(*Deferred);
 +      if (badCFG) return;
 +      continue;
-+    }
+     }
+-
+-    autoCreateBlock();
 +    VarDecl *VD = cast<VarDecl *>(Action);
-     if (BuildOpts.AddImplicitDtors) {
-       // If this destructor is marked as a no-return destructor, we need to
-       // create a new block for the destructor which does not have as a
-@@ -2020,6 +2128,8 @@ void CFGBuilder::addAutomaticObjDestruction(LocalScope::const_iterator B,
++    QualType Ty = VD->getType();
++    if (Ty->isReferenceType())
++      Ty = getReferenceInitTemporaryType(VD->getInit());
++    const CXXRecordDecl *CRD =
++        Context->getBaseElementType(Ty)->getAsCXXRecordDecl();
++    const CXXDestructorDecl *Destructor =
++        CRD ? CRD->getDestructor() : nullptr;
++
++    // These are registration-time contexts, including when an outward goto
++    // creates this cleanup after the lexical try has already been visited.
++    auto Found = AutomaticObjectContexts.find(VD);
++    AutomaticObjectContext CleanupContext =
++        Found == AutomaticObjectContexts.end()
++            ? AutomaticObjectContext{ScopePos, TryTerminatedBlock,
++                                     NativeExceptionScope}
++            : Found->second;
++    SaveAndRestore SaveScope(ScopePos, CleanupContext.Before);
++    SaveAndRestore SaveHandler(TryTerminatedBlock,
++                                CleanupContext.NativeHandler);
++    SaveAndRestore SaveHandlerScope(NativeExceptionScope,
++                                     CleanupContext.NativeHandlerScope);
++    bool HasDestructor = BuildOpts.AddImplicitDtors && !hasTrivialDestructor(VD);
++    bool NoReturn = HasDestructor && CRD && CRD->isAnyDestructorNoReturn();
++    addDeferredNativeOperation(S, HasDestructor && mayThrowNative(Destructor),
++                                NoReturn);
+ 
+     // Add LifetimeEnd after automatic obj with non-trivial destructors,
+     // as they end their lifetime when the destructor returns. For trivial
      // objects, we end lifetime with scope end.
      if (BuildOpts.AddLifetime)
        appendLifetimeEnds(Block, VD, S);
+-    if (BuildOpts.AddImplicitDtors && !hasTrivialDestructor(VD))
 +    if (BuildOpts.AddImplicitDtors && hasObjC3CarrierDestructor(VD))
 +      Block->appendObjC3CarrierDtor(VD, S, cfg->getBumpVectorContext());
-     if (BuildOpts.AddImplicitDtors && !hasTrivialDestructor(VD))
++    if (HasDestructor)
        appendAutomaticObjDtor(Block, VD, S);
-     if (VD->hasAttr<CleanupAttr>())
-@@ -2040,7 +2150,8 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
+-    if (VD->hasAttr<CleanupAttr>())
++    if (const auto *Cleanup = VD->getAttr<CleanupAttr>()) {
++      const FunctionDecl *Function = Cleanup->getFunctionDecl();
++      addDeferredNativeOperation(S, mayThrowNative(Function),
++                                 Function->isNoReturn() ||
++                                     Function->isAnalyzerNoReturn());
+       appendCleanupFunction(Block, VD);
++    }
+   }
+ }
+ 
+@@ -2040,7 +2226,8 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
  
    if (BuildOpts.AddScopes) {
      autoCreateBlock();
@@ -371,7 +499,7 @@ index bb8e98a89..5c5198188 100644
    }
  
    if (!BuildOpts.AddLifetime)
-@@ -2053,9 +2164,9 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
+@@ -2053,9 +2240,9 @@ void CFGBuilder::addScopeExitHandling(LocalScope::const_iterator B,
    // Objects with trivial destructor ends their lifetime when their storage
    // is destroyed, for automatic variables, this happens when the end of the
    // scope is added.
@@ -384,7 +512,7 @@ index bb8e98a89..5c5198188 100644
  
    if (DeclsTrivial.empty())
      return;
-@@ -2074,7 +2185,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
+@@ -2074,7 +2261,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
                                           LocalScope::const_iterator DstPos,
                                           Stmt *S) {
    assert(Block && "Source block should be always crated");
@@ -393,7 +521,7 @@ index bb8e98a89..5c5198188 100644
        !BuildOpts.AddScopes) {
      return;
    }
-@@ -2090,7 +2201,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
+@@ -2090,7 +2277,7 @@ void CFGBuilder::addScopeChangesHandling(LocalScope::const_iterator SrcPos,
    if (BuildOpts.AddScopes && !DstPos.inSameLocalScope(BasePos)) {
      for (LocalScope::const_iterator I = DstPos; I != BasePos; ++I)
        if (I.pointsToFirstDeclaredVar())
@@ -402,7 +530,7 @@ index bb8e98a89..5c5198188 100644
    }
  
    // Append scopeEnds, destructor and lifetime with the terminator for
-@@ -2125,7 +2236,7 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
+@@ -2125,7 +2312,7 @@ CFGBlock *CFGBuilder::createScopeChangesHandlingBlock(
    if (SrcPos == DstPos)
      return DstBlk;
  
@@ -411,7 +539,7 @@ index bb8e98a89..5c5198188 100644
        (!BuildOpts.AddScopes || SrcPos.inSameLocalScope(DstPos)))
      return DstBlk;
  
-@@ -2209,7 +2320,7 @@ LocalScope* CFGBuilder::createOrReuseLocalScope(LocalScope* Scope) {
+@@ -2209,7 +2396,7 @@ LocalScope* CFGBuilder::createOrReuseLocalScope(LocalScope* Scope) {
  /// addLocalScopeForStmt - Add LocalScope to local scopes tree for statement
  /// that should create implicit scope (e.g. if/else substatements).
  void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
@@ -420,7 +548,7 @@ index bb8e98a89..5c5198188 100644
        !BuildOpts.AddScopes)
      return;
  
-@@ -2219,16 +2330,28 @@ void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
+@@ -2219,16 +2406,28 @@ void CFGBuilder::addLocalScopeForStmt(Stmt *S) {
    if (CompoundStmt *CS = dyn_cast<CompoundStmt>(S)) {
      for (auto *BI : CS->body()) {
        Stmt *SI = BI->stripLabelLikeStatements();
@@ -451,7 +579,7 @@ index bb8e98a89..5c5198188 100644
  }
  
  /// addLocalScopeForDeclStmt - Add LocalScope for declaration statement. Will
-@@ -2246,7 +2369,8 @@ LocalScope* CFGBuilder::addLocalScopeForDeclStmt(DeclStmt *DS,
+@@ -2246,7 +2445,8 @@ LocalScope* CFGBuilder::addLocalScopeForDeclStmt(DeclStmt *DS,
  }
  
  bool CFGBuilder::needsAutomaticDestruction(const VarDecl *VD) const {
@@ -461,7 +589,17 @@ index bb8e98a89..5c5198188 100644
  }
  
  bool CFGBuilder::hasTrivialDestructor(const VarDecl *VD) const {
-@@ -2328,6 +2452,399 @@ void CFGBuilder::addLocalScopeAndDtors(Stmt *S) {
+@@ -2314,6 +2514,9 @@ LocalScope* CFGBuilder::addLocalScopeForVarDecl(VarDecl *VD,
+   }
+ 
+   // Add the variable to scope
++  if (HasDefer)
++    AutomaticObjectContexts[VD] = {ScopePos, TryTerminatedBlock,
++                                    NativeExceptionScope};
+   Scope = createOrReuseLocalScope(Scope);
+   Scope->addVar(VD);
+   ScopePos = Scope->begin();
+@@ -2328,6 +2531,493 @@ void CFGBuilder::addLocalScopeAndDtors(Stmt *S) {
    addAutomaticObjHandling(ScopePos, scopeBeginPos, S);
  }
  
@@ -676,30 +814,100 @@ index bb8e98a89..5c5198188 100644
 +bool CFGBuilder::supportsDeferredNativeEH(const Stmt *Statement) const {
 +  if (!Statement)
 +    return true;
-+  // These operations need explicit construction/destruction or runtime-call
-+  // models. Refuse them instead of routing an unwind around a pending action.
-+  if (isa<CXXConstructExpr, CXXNewExpr, CXXDeleteExpr, CXXBindTemporaryExpr,
-+          CXXDynamicCastExpr, CXXTypeidExpr, CXXPseudoDestructorExpr,
-+          ObjCAutoreleasePoolStmt, ObjCAtSynchronizedStmt, ObjCAtFinallyStmt,
++  // Partial arrays, full-expression temporaries and managed runtime cleanups
++  // still need registration-aware unwind models. Refuse them rather than
++  // routing an unwind around their cleanup or an already registered action.
++  if (isa<CXXBindTemporaryExpr, ObjCAutoreleasePoolStmt,
++          ObjCAtSynchronizedStmt, ObjCAtFinallyStmt, ObjCForCollectionStmt,
 +          SEHTryStmt>(Statement))
 +    return false;
++  if (const auto *Typeid = dyn_cast<CXXTypeidExpr>(Statement))
++    return !Typeid->isPotentiallyEvaluated() ||
++           supportsDeferredNativeEH(Typeid->getExprOperand());
 +  if (const auto *Expression = dyn_cast<Expr>(Statement)) {
 +    QualType Type = Expression->getType();
 +    if (Expression->isTypeDependent() || Type->isBlockPointerType() ||
 +        containsObjC3CarrierThrowingCopy(Type))
 +      return false;
-+    if (const auto *Record = Type->getAsCXXRecordDecl())
-+      if (!Record->hasDefinition() || !Record->hasTrivialDestructor())
-+        return false;
 +  }
++  if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Statement)) {
++    // A single discarded result temporary has no later operand evaluation
++    // that could throw while it is alive. Its constructor and full-expression
++    // destructor therefore have complete independent operation boundaries.
++    // Temporaries consumed by another call or operator remain gated: their
++    // unwind needs the set of already constructed full-expression objects.
++    const Expr *Result = Cleanups->getSubExpr()->IgnoreParenImpCasts();
++    while (true) {
++      if (const auto *Materialized = dyn_cast<MaterializeTemporaryExpr>(Result))
++        Result = Materialized->getSubExpr()->IgnoreParenImpCasts();
++      else if (const auto *Cast = dyn_cast<CastExpr>(Result)) {
++        if (Cast->getCastKind() != CK_ToVoid &&
++            !isa<CXXFunctionalCastExpr>(Cast))
++          break;
++        Result = Cast->getSubExpr()->IgnoreParenImpCasts();
++      } else
++        break;
++    }
++    if (const auto *Temporary = dyn_cast<CXXBindTemporaryExpr>(Result))
++      return BuildOpts.AddImplicitDtors && BuildOpts.AddTemporaryDtors &&
++             supportsDeferredNativeEH(Temporary->getSubExpr());
++  }
++  if (const auto *New = dyn_cast<CXXNewExpr>(Statement)) {
++    // A failed initializer must call the matching deallocator; arrays must
++    // additionally destroy their constructed prefix. Neither sequence is yet
++    // represented. Plain scalar allocation has a complete operation boundary.
++    if (New->isArray() ||
++        !isNonThrowingNewInitializer(New->getInitializer()) ||
++        (New->getInitializer() && New->shouldNullCheckAllocation()))
++      return false;
++  }
++  if (const auto *Delete = dyn_cast<CXXDeleteExpr>(Statement)) {
++    QualType Type = Delete->getDestroyedType();
++    if (Type.isNull() || Type->isDependentType() ||
++        (Delete->isArrayForm() &&
++         Context->getBaseElementType(Type)->isRecordType()))
++      return false;
++    if (const auto *Record = Type->getAsCXXRecordDecl())
++      if (const CXXDestructorDecl *Destructor = Record->getDestructor())
++        if (Destructor->isCalledByDelete(Delete->getOperatorDelete()) &&
++            mayThrowNative(Destructor))
++          return false; // Deallocation after a failed destructor is implicit.
++  }
++  if (const auto *Catch = dyn_cast<CXXCatchStmt>(Statement))
++    if (const VarDecl *Exception = Catch->getExceptionDecl())
++      if (!Exception->getType()->isReferenceType())
++        if (const auto *Record = Exception->getType()->getAsCXXRecordDecl())
++          if (!hasTrivialDestructor(Exception) ||
++              !Record->hasTrivialCopyConstructor())
++            return false; // The handler's exception-object copy is implicit.
++  if (const auto *Catch = dyn_cast<ObjCAtCatchStmt>(Statement))
++    if (const VarDecl *Exception = Catch->getCatchParamDecl())
++      if (Exception->getType().isDestructedType() != QualType::DK_none)
++        return false; // ARC's implicit catch binding cleanup is not a call.
++  if (const auto *Throw = dyn_cast<CXXThrowExpr>(Statement))
++    if (const Expr *Operand = Throw->getSubExpr())
++      if (const auto *Record = Operand->getType()->getAsCXXRecordDecl())
++        if (!Record->hasTrivialDestructor())
++          return false; // Exception-object destruction is not a local action.
 +  if (const auto *Declarations = dyn_cast<DeclStmt>(Statement))
 +    for (const Decl *Declaration : Declarations->decls())
 +      if (const auto *Variable = dyn_cast<VarDecl>(Declaration)) {
 +        QualType Type = Variable->getType();
-+        if (Type->isDependentType() || Variable->hasAttr<CleanupAttr>() ||
-+            hasObjC3CarrierDestructor(Variable) ||
-+            !hasTrivialDestructor(Variable) || Type->isBlockPointerType() ||
++        if (Type->isDependentType() || hasObjC3CarrierDestructor(Variable) ||
++            (Variable->hasAttr<CleanupAttr>() &&
++             !hasTrivialDestructor(Variable)) ||
++            (needsAutomaticDestruction(Variable) &&
++             !BuildOpts.AddImplicitDtors) ||
++            (Type->isArrayType() && !hasTrivialDestructor(Variable)) ||
++            (Type->isReferenceType() && !hasTrivialDestructor(Variable)) ||
++            Type->isBlockPointerType() ||
 +            containsObjC3CarrierThrowingCopy(Type))
++          return false;
++        // Native C++ cleanup is modeled below. ARC releases and managed C
++        // record cleanup have their own recipes and remain explicitly gated.
++        auto Destruction = Type.isDestructedType();
++        if (Destruction != QualType::DK_none &&
++            Destruction != QualType::DK_cxx_destructor)
 +          return false;
 +      }
 +  if (const auto *Call = dyn_cast<CallExpr>(Statement))
@@ -709,10 +917,14 @@ index bb8e98a89..5c5198188 100644
 +                                      Callee->getName() == "__builtin_longjmp"))
 +        return false;
 +  if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement))
-+    return supportsDeferredNativeEH(Argument->getExpr());
++    return isNonThrowingNewInitializer(Argument->getExpr()) &&
++           supportsDeferredNativeEH(Argument->getExpr());
 +  if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement))
-+    return supportsDeferredNativeEH(Initializer->getExpr());
++    return isNonThrowingNewInitializer(Initializer->getExpr()) &&
++           supportsDeferredNativeEH(Initializer->getExpr());
 +  if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
++    if (!Lambda->getLambdaClass()->hasTrivialDestructor())
++      return false; // A failed capture must destroy its completed prefix.
 +    for (const Expr *Capture : Lambda->capture_inits())
 +      if (!supportsDeferredNativeEH(Capture))
 +        return false;
@@ -724,6 +936,26 @@ index bb8e98a89..5c5198188 100644
 +    if (!supportsDeferredNativeEH(Child))
 +      return false;
 +  return true;
++}
++
++bool CFGBuilder::deferredNativeEHEdgesEnabled() const {
++  return HasDefer && BuildOpts.AddEHEdges &&
++         (Context->getLangOpts().Exceptions ||
++          Context->getLangOpts().ObjCExceptions);
++}
++
++void CFGBuilder::addDeferredNativeOperation(const Stmt *Operation, bool CanThrow,
++                                           bool NoReturn) {
++  const bool AddEHEdge = CanThrow && deferredNativeEHEdgesEnabled();
++  if (AddEHEdge || NoReturn) {
++    Succ = Block ? Block : Succ;
++    Block = NoReturn ? createNoReturnBlock() : createBlock();
++  } else
++    autoCreateBlock();
++  if (AddEHEdge)
++    addSuccessor(Block, EmittingNativeUnwind
++                            ? getDeferredTerminateBlock()
++                            : deferredNativeExceptionEntry(Operation));
 +}
 +
 +CFGBlock *CFGBuilder::getDeferredTerminateBlock() {
@@ -861,7 +1093,7 @@ index bb8e98a89..5c5198188 100644
  /// Visit - Walk the subtree of a statement and add extra
  ///   blocks for ternary operators, &&, and ||.  We also process "," and
  ///   DeclStmts (which may contain nested control-flow).
-@@ -2349,6 +2866,33 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2349,6 +3039,33 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      default:
        return VisitStmt(S, asc);
  
@@ -895,7 +1127,17 @@ index bb8e98a89..5c5198188 100644
      case Stmt::ImplicitValueInitExprClass:
        if (BuildOpts.OmitImplicitValueInitializers)
          return Block;
-@@ -2840,8 +3384,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
+@@ -2427,6 +3144,9 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+     case Stmt::CXXDeleteExprClass:
+       return VisitCXXDeleteExpr(cast<CXXDeleteExpr>(S), asc);
+ 
++    case Stmt::CXXDynamicCastExprClass:
++      return VisitCXXDynamicCastExpr(cast<CXXDynamicCastExpr>(S), asc);
++
+     case Stmt::CXXFunctionalCastExprClass:
+       return VisitCXXFunctionalCastExpr(cast<CXXFunctionalCastExpr>(S), asc);
+ 
+@@ -2840,8 +3560,8 @@ CFGBlock *CFGBuilder::VisitBreakStmt(BreakStmt *B) {
    // If there is no target for the break, then we are looking at an incomplete
    // AST.  This means that the CFG cannot be constructed.
    if (BreakJumpTarget.block) {
@@ -905,7 +1147,22 @@ index bb8e98a89..5c5198188 100644
    } else
      badCFG = true;
  
-@@ -2890,7 +3434,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2874,6 +3594,14 @@ static bool isBuiltinAssumeWithSideEffects(const ASTContext &Ctx,
+ }
+ 
+ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
++  // A scalar pseudo-destructor call ends an object's lifetime without calling
++  // a function. In particular its BoundMember type is not a callable type and
++  // must not be used to infer an exceptional edge.
++  if (isa<CXXPseudoDestructorExpr>(C->getCallee()->IgnoreParens())) {
++    autoCreateBlock();
++    appendCall(Block, C);
++    return VisitCallExprChildren(C);
++  }
+   // Compute the callee type.
+   QualType calleeType = C->getCallee()->getType();
+   if (calleeType == Context->BoundMemberTy) {
+@@ -2890,7 +3618,8 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    bool AddEHEdge = false;
  
    // Languages without exceptions are assumed to not throw.
@@ -915,7 +1172,7 @@ index bb8e98a89..5c5198188 100644
      if (BuildOpts.AddEHEdges)
        AddEHEdge = true;
    }
-@@ -2921,6 +3466,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2921,6 +3650,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    if (!CanThrow(C->getCallee(), *Context))
      AddEHEdge = false;
  
@@ -925,7 +1182,7 @@ index bb8e98a89..5c5198188 100644
    if (OmitArguments) {
      assert(!NoReturn && "noreturn calls with unevaluated args not implemented");
      assert(!AddEHEdge && "EH calls with unevaluated args not implemented");
-@@ -2951,7 +3499,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2951,7 +3683,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
  
    if (AddEHEdge) {
      // Add exceptional edges.
@@ -936,7 +1193,7 @@ index bb8e98a89..5c5198188 100644
        addSuccessor(Block, TryTerminatedBlock);
      else
        addSuccessor(Block, &cfg->getExit());
-@@ -3120,7 +3670,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
+@@ -3120,7 +3854,8 @@ CFGBlock *CFGBuilder::VisitDeclStmt(DeclStmt *DS) {
  
  /// VisitDeclSubExpr - Utility method to add block-level expressions for
  /// DeclStmts and initializers in them.
@@ -946,7 +1203,7 @@ index bb8e98a89..5c5198188 100644
    assert(DS->isSingleDecl() && "Can handle single declarations only.");
  
    if (const auto *TND = dyn_cast<TypedefNameDecl>(DS->getSingleDecl())) {
-@@ -3172,7 +3723,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3172,7 +3907,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    if (Init) {
      HasTemporaries = isa<ExprWithCleanups>(Init);
  
@@ -955,7 +1212,7 @@ index bb8e98a89..5c5198188 100644
          (BuildOpts.AddTemporaryDtors || BuildOpts.AddLifetime)) {
        // Generate destructors for temporaries in initialization expression.
        TempDtorContext Context;
-@@ -3214,6 +3765,13 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3214,6 +3949,13 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // statement-expression.
    CFGBlock *LastBlock = Block;
  
@@ -969,7 +1226,7 @@ index bb8e98a89..5c5198188 100644
    if (Init) {
      if (HasTemporaries) {
        // For expression with temporaries go directly to subexpression to omit
-@@ -3221,8 +3779,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3221,8 +3963,7 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
        ExprWithCleanups *EC = cast<ExprWithCleanups>(Init);
        if (CFGBlock *newBlock = Visit(EC->getSubExpr()))
          LastBlock = newBlock;
@@ -979,7 +1236,7 @@ index bb8e98a89..5c5198188 100644
        if (CFGBlock *newBlock = Visit(Init))
          LastBlock = newBlock;
      }
-@@ -3231,17 +3788,14 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
+@@ -3231,17 +3972,14 @@ CFGBlock *CFGBuilder::VisitDeclSubExpr(DeclStmt *DS) {
    // If the type of VD is a VLA, then we must process its size expressions.
    // FIXME: This does not find the VLA if it is embedded in other types,
    // like here: `int (*p_vla)[x];`
@@ -1000,7 +1257,7 @@ index bb8e98a89..5c5198188 100644
  
    CFGBlock *B = LastBlock;
    if (blockAfterStaticInit) {
-@@ -3407,6 +3961,8 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3407,6 +4145,8 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -1009,7 +1266,7 @@ index bb8e98a89..5c5198188 100644
    addAutomaticObjHandling(ScopePos, LocalScope::const_iterator(), S);
  
    if (auto *R = dyn_cast<ReturnStmt>(S))
-@@ -3414,13 +3970,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
+@@ -3414,13 +4154,10 @@ CFGBlock *CFGBuilder::VisitReturnStmt(Stmt *S) {
          ConstructionContextLayer::create(cfg->getBumpVectorContext(), R),
          R->getRetValue());
  
@@ -1027,7 +1284,7 @@ index bb8e98a89..5c5198188 100644
  
    // Visit children
    if (ReturnStmt *RS = dyn_cast<ReturnStmt>(S)) {
-@@ -3561,6 +4114,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
+@@ -3561,6 +4298,7 @@ CFGBlock *CFGBuilder::VisitSEHTryStmt(SEHTryStmt *Terminator) {
  
    // Save the current "__try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -1035,7 +1292,7 @@ index bb8e98a89..5c5198188 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    // Save the current value for the __leave target.
-@@ -4229,6 +4783,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4229,6 +4967,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    return CatchBlock;
  }
  
@@ -1166,7 +1423,7 @@ index bb8e98a89..5c5198188 100644
  CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // If we were in the middle of a block we stop processing that block.
    if (badCFG)
-@@ -4237,7 +4915,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
+@@ -4237,7 +5099,9 @@ CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -1177,7 +1434,19 @@ index bb8e98a89..5c5198188 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4301,6 +4981,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+@@ -4290,7 +5154,10 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
+ 
+   // FIXME: This needs updating when @finally support is added.
+   if (!HasCatchAll) {
+-    if (PrevTryTerminatedBlock)
++    if (HasDefer)
++      addSuccessor(NewTryTerminatedBlock,
++                   deferredNativeExceptionEntry(Terminator));
++    else if (PrevTryTerminatedBlock)
+       addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
+     else
+       addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
+@@ -4301,6 +5168,7 @@ CFGBlock *CFGBuilder::VisitObjCAtTryStmt(ObjCAtTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -1185,7 +1454,7 @@ index bb8e98a89..5c5198188 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBody() && "try must contain a non-NULL body");
-@@ -4312,7 +4993,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
+@@ -4312,7 +5180,13 @@ CFGBlock *CFGBuilder::VisitObjCMessageExpr(ObjCMessageExpr *ME,
                                             AddStmtChoice asc) {
    findConstructionContextsForArguments(ME);
  
@@ -1200,7 +1469,7 @@ index bb8e98a89..5c5198188 100644
    appendObjCMessage(Block, ME);
  
    return VisitChildren(ME);
-@@ -4326,7 +5013,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+@@ -4326,7 +5200,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
    // Create the new block.
    Block = createBlock(false);
  
@@ -1211,7 +1480,19 @@ index bb8e98a89..5c5198188 100644
      // The current try statement is the only successor.
      addSuccessor(Block, TryTerminatedBlock);
    else
-@@ -4474,8 +5163,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
+@@ -4339,8 +5215,9 @@ CFGBlock *CFGBuilder::VisitCXXThrowExpr(CXXThrowExpr *T) {
+ }
+ 
+ CFGBlock *CFGBuilder::VisitCXXTypeidExpr(CXXTypeidExpr *S, AddStmtChoice asc) {
+-  if (asc.alwaysAdd(*this, S)) {
+-    autoCreateBlock();
++  if (asc.alwaysAdd(*this, S) ||
++      (deferredNativeEHEdgesEnabled() && S->hasNullCheck())) {
++    addDeferredNativeOperation(S, S->hasNullCheck());
+     appendStmt(Block, S);
+   }
+ 
+@@ -4474,8 +5351,8 @@ CFGBlock *CFGBuilder::VisitContinueStmt(ContinueStmt *C) {
    // If there is no target for the continue, then we are looking at an
    // incomplete AST.  This means the CFG cannot be constructed.
    if (ContinueJumpTarget.block) {
@@ -1221,7 +1502,19 @@ index bb8e98a89..5c5198188 100644
    } else
      badCFG = true;
  
-@@ -4804,6 +5493,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+@@ -4793,7 +5670,10 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
+     addSuccessor(NewTryTerminatedBlock, CatchBlock);
+   }
+   if (!HasCatchAll) {
+-    if (PrevTryTerminatedBlock)
++    if (HasDefer)
++      addSuccessor(NewTryTerminatedBlock,
++                   deferredNativeExceptionEntry(Terminator));
++    else if (PrevTryTerminatedBlock)
+       addSuccessor(NewTryTerminatedBlock, PrevTryTerminatedBlock);
+     else
+       addSuccessor(NewTryTerminatedBlock, &cfg->getExit());
+@@ -4804,6 +5684,7 @@ CFGBlock *CFGBuilder::VisitCXXTryStmt(CXXTryStmt *Terminator) {
  
    // Save the current "try" context.
    SaveAndRestore SaveTry(TryTerminatedBlock, NewTryTerminatedBlock);
@@ -1229,7 +1522,67 @@ index bb8e98a89..5c5198188 100644
    cfg->addTryDispatchBlock(TryTerminatedBlock);
  
    assert(Terminator->getTryBlock() && "try must contain a non-NULL body");
-@@ -5143,6 +5833,9 @@ tryAgain:
+@@ -5045,8 +5926,12 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+   if (NE->getInitializer())
+     Block = Visit(NE->getInitializer());
+ 
+-  if (BuildOpts.AddCXXNewAllocator)
++  if (BuildOpts.AddCXXNewAllocator || deferredNativeEHEdgesEnabled()) {
++    FunctionDecl *Allocator = NE->getOperatorNew();
++    addDeferredNativeOperation(NE, mayThrowNative(Allocator),
++                               Allocator && Allocator->isNoReturn());
+     appendNewAllocator(Block, NE);
++  }
+ 
+   if (NE->isArray() && *NE->getArraySize())
+     Block = Visit(*NE->getArraySize());
+@@ -5060,21 +5945,43 @@ CFGBlock *CFGBuilder::VisitCXXNewExpr(CXXNewExpr *NE,
+ 
+ CFGBlock *CFGBuilder::VisitCXXDeleteExpr(CXXDeleteExpr *DE,
+                                          AddStmtChoice asc) {
+-  autoCreateBlock();
++  FunctionDecl *Deallocator = DE->getOperatorDelete();
++  addDeferredNativeOperation(DE, mayThrowNative(Deallocator),
++                             Deallocator && Deallocator->isNoReturn());
+   appendStmt(Block, DE);
+   QualType DTy = DE->getDestroyedType();
+   if (!DTy.isNull()) {
+     DTy = DTy.getNonReferenceType();
+     CXXRecordDecl *RD = Context->getBaseElementType(DTy)->getAsCXXRecordDecl();
+     if (RD) {
+-      if (RD->isCompleteDefinition() && !RD->hasTrivialDestructor())
++      if (RD->isCompleteDefinition() && !RD->hasTrivialDestructor() &&
++          RD->getDestructor()->isCalledByDelete(Deallocator)) {
++        // The throwing-destructor case remains gated until its mandatory
++        // deallocation-on-failure path has a dedicated CFG representation.
++        addDeferredNativeOperation(
++            DE, mayThrowNative(RD->getDestructor()),
++            RD->isAnyDestructorNoReturn());
+         appendDeleteDtor(Block, RD, DE);
++      }
+     }
+   }
+ 
+   return VisitChildren(DE);
+ }
+ 
++CFGBlock *CFGBuilder::VisitCXXDynamicCastExpr(CXXDynamicCastExpr *Cast,
++                                             AddStmtChoice asc) {
++  bool CanThrow = !Cast->isTypeDependent() &&
++                  Cast->getTypeAsWritten()->isReferenceType() &&
++                  Cast->getCastKind() == CK_Dynamic;
++  if (asc.alwaysAdd(*this, Cast) ||
++      (deferredNativeEHEdgesEnabled() && CanThrow)) {
++    addDeferredNativeOperation(Cast, CanThrow);
++    appendStmt(Block, Cast);
++  }
++  return Visit(Cast->getSubExpr(), asc.withAlwaysAdd(false));
++}
++
+ CFGBlock *CFGBuilder::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *E,
+                                                  AddStmtChoice asc) {
+   if (asc.alwaysAdd(*this, E)) {
+@@ -5143,6 +6050,9 @@ tryAgain:
      return nullptr;
    }
    switch (E->getStmtClass()) {
@@ -1239,7 +1592,21 @@ index bb8e98a89..5c5198188 100644
      default:
        return VisitChildrenForTemporaries(E, false, Context);
  
-@@ -5521,6 +6214,7 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
+@@ -5328,7 +6238,12 @@ CFGBlock *CFGBuilder::VisitCXXBindTemporaryExprForTemporaryDtors(
+ 
+     const CXXDestructorDecl *Dtor = E->getTemporary()->getDestructor();
+ 
+-    if (Dtor->getParent()->isAnyDestructorNoReturn()) {
++    if (HasDefer && BuildOpts.AddEHEdges) {
++      if (B)
++        Succ = B;
++      addDeferredNativeOperation(E, mayThrowNative(Dtor),
++                                 Dtor->getParent()->isAnyDestructorNoReturn());
++    } else if (Dtor->getParent()->isAnyDestructorNoReturn()) {
+       // If the destructor is marked as a no-return destructor, we need to
+       // create a new block for the destructor which does not have as a
+       // successor anything built thus far. Control won't flow out of this
+@@ -5521,6 +6436,7 @@ CFGImplicitDtor::getDestructorDecl(ASTContext &astContext) const {
      case CFGElement::ScopeEnd:
      case CFGElement::FullExprCleanup:
      case CFGElement::CleanupFunction:
@@ -1247,7 +1614,7 @@ index bb8e98a89..5c5198188 100644
        llvm_unreachable("getDestructorDecl should only be used with "
                         "ImplicitDtors");
      case CFGElement::AutomaticObjectDtor: {
-@@ -5806,6 +6500,8 @@ public:
+@@ -5806,6 +6722,8 @@ public:
      Terminator->getCond()->printPretty(OS, Helper, Policy);
    }
  
@@ -1256,7 +1623,7 @@ index bb8e98a89..5c5198188 100644
    void VisitCXXTryStmt(CXXTryStmt *) { OS << "try ..."; }
  
    void VisitObjCAtTryStmt(ObjCAtTryStmt *) { OS << "@try ..."; }
-@@ -5866,6 +6562,10 @@ public:
+@@ -5866,6 +6784,10 @@ public:
        OS << "(Temp Dtor) ";
        Visit(T.getStmt());
        break;
@@ -1267,7 +1634,7 @@ index bb8e98a89..5c5198188 100644
      case CFGTerminator::VirtualBaseBranch:
        OS << "(See if most derived ctor has already initialized vbases)";
        break;
-@@ -6074,6 +6774,11 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
+@@ -6074,6 +6996,11 @@ static void print_elem(raw_ostream &OS, StmtPrinterHelper &Helper,
      break;
    }
  
@@ -1279,7 +1646,7 @@ index bb8e98a89..5c5198188 100644
    case CFGElement::Kind::CleanupFunction:
      OS << "CleanupFunction ("
         << E.castAs<CFGCleanupFunction>().getFunctionDecl()->getName() << ")";
-@@ -6230,6 +6935,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
+@@ -6230,6 +7157,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
        else
          OS << "...";
        OS << ")";
@@ -1293,7 +1660,7 @@ index bb8e98a89..5c5198188 100644
      } else if (SEHExceptStmt *ES = dyn_cast<SEHExceptStmt>(Label)) {
        OS << "__except (";
        ES->getFilterExpr()->printPretty(OS, &Helper,
-@@ -6523,6 +7235,11 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
+@@ -6523,6 +7457,11 @@ const Stmt *CFGBlock::getTerminatorCondition(bool StripParens) const {
      return nullptr;
  
    const Expr *E = nullptr;
@@ -19685,7 +20052,7 @@ index 7b2b35429..da904d96c 100644
      if (!Result)
        return false;
 diff --git a/clang/include/clang/Analysis/CFG.h b/clang/include/clang/Analysis/CFG.h
-index 749ed3fc7..4a33f106b 100644
+index 749ed3fc7..465c3c131 100644
 --- a/clang/include/clang/Analysis/CFG.h
 +++ b/clang/include/clang/Analysis/CFG.h
 @@ -52,6 +52,17 @@ class LangOptions;
@@ -19736,7 +20103,7 @@ index 749ed3fc7..4a33f106b 100644
      x |= Data1.getInt();
      return (Kind) x;
    }
-@@ -459,6 +471,28 @@ private:
+@@ -459,9 +471,34 @@ private:
    }
  };
  
@@ -19765,7 +20132,13 @@ index 749ed3fc7..4a33f106b 100644
  /// Represents C++ object destructor implicitly generated for automatic object
  /// or temporary bound to const reference at the point of leaving its local
  /// scope.
-@@ -594,7 +628,8 @@ public:
++/// With registered defer actions and native EH edges, scalar automatic object
++/// cleanup has separate normal and exceptional successors. The exceptional
++/// path excludes the object being destroyed and uses its lexical handler.
+ class CFGAutomaticObjDtor: public CFGImplicitDtor {
+ public:
+   CFGAutomaticObjDtor(const VarDecl *var, const Stmt *stmt)
+@@ -594,7 +631,8 @@ public:
      /// Number of different kinds, for assertions. We subtract 1 so that
      /// to keep receiving compiler warnings when we don't cover all enum values
      /// in a switch.
@@ -19775,7 +20148,7 @@ index 749ed3fc7..4a33f106b 100644
    };
  
  private:
-@@ -935,13 +970,19 @@ private:
+@@ -935,13 +973,19 @@ private:
    LLVM_PREFERRED_TYPE(bool)
    unsigned HasNoReturnElement : 1;
  
@@ -19796,7 +20169,7 @@ index 749ed3fc7..4a33f106b 100644
  
    // Statement iterators
    using iterator = ElementList::iterator;
-@@ -1124,6 +1165,7 @@ public:
+@@ -1124,6 +1168,7 @@ public:
    void setLabel(Stmt *Statement) { Label = Statement; }
    void setLoopTarget(const Stmt *loopTarget) { LoopTarget = loopTarget; }
    void setHasNoReturnElement() { HasNoReturnElement = true; }
@@ -19804,7 +20177,7 @@ index 749ed3fc7..4a33f106b 100644
  
    /// Returns true if the block would eventually end with a sink (a noreturn
    /// node).
-@@ -1150,6 +1192,7 @@ public:
+@@ -1150,6 +1195,7 @@ public:
    const Stmt *getLabel() const { return Label; }
  
    bool hasNoReturnElement() const { return HasNoReturnElement; }
@@ -19812,7 +20185,7 @@ index 749ed3fc7..4a33f106b 100644
  
    unsigned getBlockID() const { return BlockID; }
  
-@@ -1218,6 +1261,11 @@ public:
+@@ -1218,6 +1264,11 @@ public:
      Elements.push_back(CFGTemporaryDtor(E), C);
    }
  
@@ -19824,6 +20197,17 @@ index 749ed3fc7..4a33f106b 100644
    void appendAutomaticObjDtor(VarDecl *VD, Stmt *S, BumpVectorContext &C) {
      Elements.push_back(CFGAutomaticObjDtor(VD, S), C);
    }
+@@ -1285,6 +1336,10 @@ public:
+     ForcedBlkExprs **forcedBlkExprs = nullptr;
+     CFGCallback *Observer = nullptr;
+     bool PruneTriviallyFalseEdges = true;
++    // Include native exceptional successors. When defer is present, supported
++    // operations unwind registered actions before entering their lexical
++    // handler. Unsupported partial-object, temporary or managed cleanup
++    // sequences cause buildCFG to return nullptr instead of dropping cleanup.
+     bool AddEHEdges = false;
+     bool AddInitializers = false;
+     bool AddImplicitDtors = false;
 diff --git a/clang/lib/Analysis/PathDiagnostic.cpp b/clang/lib/Analysis/PathDiagnostic.cpp
 index a95ef4582..f017d88ac 100644
 --- a/clang/lib/Analysis/PathDiagnostic.cpp
@@ -20156,3 +20540,60 @@ index 000000000..ca8056212
 +#ifdef __cplusplus
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Analysis/defer-native-cxx.mm b/clang/test/ObjC3/Analysis/defer-native-cxx.mm
+new file mode 100644
+index 000000000..90ac5653e
+--- /dev/null
++++ b/clang/test/ObjC3/Analysis/defer-native-cxx.mm
+@@ -0,0 +1,51 @@
++// RUN: %clang_analyze_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fcxx-exceptions -fexceptions -analyzer-checker=debug.DumpCFG -analyzer-config cfg-rich-constructors=false %s 2>&1 | FileCheck %s
++// RUN: %clang_analyze_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fcxx-exceptions -fexceptions -analyzer-checker=debug.DumpCFG -analyzer-config cfg-rich-constructors=true %s 2>&1 | FileCheck %s
++
++// The path-sensitive native-EH contracts live in ObjC3ConditionScopeTest.
++// These public-source cases also require the analyzer's ordinary CFG to keep
++// construction, implicit cleanup and copied deferred bodies visible.
++
++void first() noexcept;
++void second() noexcept;
++void cleanup(int *);
++struct Lifetime {
++  Lifetime() noexcept;
++  ~Lifetime() noexcept(false);
++};
++
++// CHECK-LABEL: void local_destruction()
++// CHECK-DAG: Lifetime value;
++// CHECK-DAG: ~Lifetime() (Implicit destructor)
++// CHECK-DAG: first
++void local_destruction() {
++  defer { first(); }
++  Lifetime value;
++}
++
++// CHECK-LABEL: void result_temporary()
++// CHECK-DAG: ~Lifetime() (Temporary object destructor)
++// CHECK-DAG: first
++void result_temporary() {
++  defer { first(); }
++  (void)Lifetime();
++}
++
++// CHECK-LABEL: void attributed_cleanup()
++// CHECK-DAG: CleanupFunction (cleanup)
++// CHECK-DAG: first
++void attributed_cleanup() {
++  defer { first(); }
++  int value __attribute__((cleanup(cleanup)));
++}
++
++// CHECK-LABEL: void copied_native_cleanup(bool exit)
++// CHECK-DAG: second
++// CHECK-DAG: ~Lifetime() (Implicit destructor)
++// CHECK-DAG: first
++void copied_native_cleanup(bool exit) {
++  defer { first(); }
++  Lifetime value;
++  defer { second(); }
++  if (exit)
++    return;
++}
