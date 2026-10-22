@@ -28,17 +28,20 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 68 AST contract tests, 53 production exit-proof
+229 passing Clang regressions, 70 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 16 verified native modules. All 32 O0/O2
+The private CodeGen gate exports 32 verified native modules. All 64 O0/O2
 executions pass across C17/C++20/23, ARC/MRC modes for integer payloads and
-nontrivial C++ records in MRC. The C++ runs include 40 expected constructor,
+nontrivial C++ records in MRC. The C++ runs include 72 expected constructor,
 temporary-cleanup and snapshot-destructor exceptions. This does not qualify
 managed-reference ownership, public parsing or an installed guard compiler.
+Ordered cases verify short-circuiting, earlier-binding access in later sources,
+source mutation, snapshot/temporary lifetime through binding construction,
+cleanup before else, reverse final destruction and partial-failure unwinding.
 
 ## Source and lifetime lowering
 
@@ -79,7 +82,7 @@ destructors. Run the maintained runtime gate after a passing admitted build:
 python -B -m scripts.objc3c_native_validation.condition_ast
 ```
 
-It compiles the 16 exported modules at O0/O2, binds exact compiler/test/runtime
+It compiles the 32 exported modules at O0/O2, binds exact compiler/test/runtime
 hashes, replaces stale receipts before checking admission and reclaims temporary
 IR/executables. The gate uses the existing foundation lock and checks inputs
 again after execution. Source syntax is still disabled.
