@@ -1,6 +1,6 @@
-"""Execute verified private condition AST modules from an admitted Linux build.
+"""Execute native condition AST and optional public source/PCH matrices.
 
-This gate does not admit guard source syntax or qualify an installed compiler.
+Public source matrices are opt-in; this gate does not qualify an installed compiler.
 It binds the development compiler, AST test binary, source seal and runtime,
 then compiles the exact modules exported by the maintained CodeGen tests.
 """
@@ -20,7 +20,7 @@ import time
 
 from scripts.objc3c_toolchain.build import foundation_lock
 from scripts.objc3c_toolchain.core import verify_development
-from scripts.objc3c_native_validation import defer_source, guard_source
+from scripts.objc3c_native_validation import defer_source, guard_source, optional_access_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -91,13 +91,17 @@ def cases() -> dict[str, dict]:
     return result
 
 
-def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: bool = False) -> dict:
+def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: bool = False,
+            public_optional_access: bool = False) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
         "schema": "objc3c.condition-ast-runtime.v3", "status": "running",
         "compiler_binding": "admitted-development-native-ast",
         "source_syntax_admitted": False, "installed_compiler_qualified": False,
+        "requested_source_matrices": ["defer",
+            *(["guard"] if public_guard else []),
+            *(["optional-access"] if public_optional_access else [])],
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "commands": [], "configurations": [],
     }
@@ -163,7 +167,8 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
             inputs = {str(path): digest(path) for path in
                       (foundation, compiler, tests, runtime, sdk / "objc3-sdk.json",
                        Path(__file__).resolve(), *defer_source.INPUTS,
-                       *(guard_source.INPUTS if public_guard else ()))}
+                       *(guard_source.INPUTS if public_guard else ()),
+                       *(optional_access_source.INPUTS if public_optional_access else ()))}
             report.update(
                 source_build_id=source["build_id"],
                 source_tree_sha256=source["tree_sha256"],
@@ -217,6 +222,12 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
                         for path in guard_source.INPUTS
                     }
                     guard_source.qualify(run, directory, compiler, sdk, report)
+                if public_optional_access:
+                    report["optional_access_source_inputs_sha256"] = {
+                        str(path.relative_to(repo)): inputs[str(path)]
+                        for path in optional_access_source.INPUTS
+                    }
+                    optional_access_source.qualify(run, directory, compiler, sdk, report)
                 if any(digest(path) != report["verified_modules"][name]
                        for name, path in modules.items()):
                     raise RuntimeError("a verified module changed during execution")
@@ -243,16 +254,18 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--public-guard", action="store_true",
                         help="also execute the public guard source/PCH implementation matrix")
+    parser.add_argument("--public-optional-access", action="store_true",
+                        help="also execute reference optional member/send source/PCH matrices")
     options = parser.parse_args()
     repo = options.repo.resolve()
     result = qualify(
         repo, (options.build or repo / "out/toolchains/objc3-development/build-linux-x86_64").resolve(),
         (options.sdk or repo / "out/toolchains/linux-sdk/current").resolve(),
         (options.output or repo / "out/native-validation/guard-bindings-ast").resolve(),
-        public_guard=options.public_guard,
+        public_guard=options.public_guard, public_optional_access=options.public_optional_access,
     )
     print(f"{result['status']}: {len(result['configurations'])} native AST configurations, "
-          f"{len(result['defer_source']['configurations'])} defer source/PCH configurations, "
+          f"{sum(len(result.get(key, {}).get('configurations', [])) for key in ('defer_source', 'guard_source', 'optional_access_source'))} source/PCH configurations, "
           f"{len(result['commands'])} commands")
 
 
