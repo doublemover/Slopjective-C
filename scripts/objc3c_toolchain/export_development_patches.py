@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -124,6 +125,7 @@ PACKETS = {
         "clang/lib/Parse/ParseTentative.cpp",
         "clang/lib/Parse/Parser.cpp",
         "clang/lib/Parse/ParseObjc.cpp",
+        "clang/lib/Parse/ParseObjC3Conditions.cpp",
         "clang/lib/Parse/ParseObjC3Match.cpp",
         "clang/lib/Parse/ParseObjC3QualifiedName.cpp",
         "clang/lib/Parse/ParseObjC3Type.cpp",
@@ -295,12 +297,14 @@ def git(*arguments: str) -> bytes:
     return subprocess.check_output(["git", "-C", str(SOURCE), *arguments])
 
 
+def packet_sections(data: bytes) -> dict[bytes, bytes]:
+    return {part.split(b"\n", 1)[0].split(b" b/", 1)[1]: b"diff --git " + part
+            for part in data.split(b"diff --git ")[1:]}
+
+
 def stable_packet(current: bytes, previous: bytes) -> bytes:
     """Keep packet identity independent of intent-to-add and existing ordering."""
-    def sections(data: bytes) -> dict[bytes, bytes]:
-        return {part.split(b"\n", 1)[0].split(b" b/", 1)[1]: b"diff --git " + part
-                for part in data.split(b"diff --git ")[1:]}
-    old, new = sections(previous), sections(current)
+    old, new = packet_sections(previous), packet_sections(current)
     for path, section in new.items():
         # Older packets contain both forms of Git's optional new-file index
         # metadata. Preserve that choice to avoid changing unrelated identities.
@@ -311,7 +315,22 @@ def stable_packet(current: bytes, previous: bytes) -> bytes:
     return b"".join(new[path] for path in order)
 
 
-def export() -> None:
+def export(selected_paths: list[str] | None = None) -> None:
+    """Export all source edits, or replace only explicitly completed file sections.
+
+    Selected files are exact repository-relative paths, never directory selectors.
+    Other packet sections retain their previously committed contents, allowing
+    independent development in one source tree without exporting unfinished work.
+    """
+    selected = set(selected_paths) if selected_paths is not None else None
+    if selected is not None:
+        if not selected:
+            raise RuntimeError("Selective export requires at least one source file")
+        for relative in selected:
+            path = Path(relative)
+            if (path.is_absolute() or ".." in path.parts or
+                    path.as_posix() != relative or (SOURCE / path).is_dir()):
+                raise RuntimeError(f"Selective export requires an exact relative file: {relative}")
     expected_table, _ = generated(json.loads(AUTHORITY.read_text(encoding="utf-8")))
     native_table = SOURCE / "clang/include/clang/Basic/ObjC3Features.def"
     if native_table.read_text(encoding="utf-8") != expected_table:
@@ -325,7 +344,7 @@ def export() -> None:
     untracked_paths = [p.decode() for p in untracked.split(b"\0") if p]
     changed = git("diff", "--name-only", "-z", "HEAD").split(b"\0")
     changed_paths = [p.decode() for p in changed if p] + untracked_paths
-    for relative in changed_paths:
+    for relative in (changed_paths if selected is None else sorted(selected)):
         if relative == ".objc3c-prepared-source.json":
             continue
         owners = [name for name, paths in PACKETS.items()
@@ -334,9 +353,17 @@ def export() -> None:
             raise RuntimeError(f"Source path requires exactly one patch owner: {relative}: {owners}")
     records = []
     for name, paths in PACKETS.items():
-        patch = git("diff", "--binary", "--abbrev=9", "--no-ext-diff", "HEAD", "--", *paths)
+        packet = STACK / name
+        previous = packet.read_bytes() if packet.exists() else b""
+        export_paths = paths if selected is None else sorted(
+            relative for relative in selected
+            if any(relative == p or relative.startswith(p + "/") for p in paths))
+        if not export_paths:
+            records.append({"file": name, "sha256": hashlib.sha256(previous).hexdigest()})
+            continue
+        patch = git("diff", "--binary", "--abbrev=9", "--no-ext-diff", "HEAD", "--", *export_paths)
         for relative in sorted(untracked_paths):
-            if not any(relative == p or relative.startswith(p + "/") for p in paths):
+            if not any(relative == p or relative.startswith(p + "/") for p in export_paths):
                 continue
             data = (SOURCE / relative).read_bytes().replace(b"\r\n", b"\n")
             if b"\0" in data:
@@ -356,10 +383,19 @@ def export() -> None:
                 patch += b"+" + line
                 if not line.endswith(b"\n"):
                     patch += b"\n\\ No newline at end of file\n"
+        if selected is not None:
+            replacement = packet_sections(patch)
+            retained = packet_sections(previous)
+            for relative in export_paths:
+                key = relative.encode()
+                if key in replacement:
+                    retained[key] = replacement[key]
+                else:
+                    retained.pop(key, None)
+            patch = b"".join(retained.values())
         if not patch:
             raise RuntimeError(f"Refusing empty patch packet: {name}")
-        packet = STACK / name
-        patch = stable_packet(patch, packet.read_bytes() if packet.exists() else b"")
+        patch = stable_packet(patch, previous)
         packet.write_bytes(patch)
         records.append({"file": name, "sha256": hashlib.sha256(patch).hexdigest()})
     (STACK / "series").write_text("\n".join(PACKETS) + "\n", encoding="utf-8")
@@ -369,4 +405,7 @@ def export() -> None:
 
 
 if __name__ == "__main__":
-    export()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--paths", nargs="+", metavar="SOURCE_FILE",
+                        help="export only completed files; preserve other packet sections")
+    export(parser.parse_args().paths)

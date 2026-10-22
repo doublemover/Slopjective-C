@@ -20,7 +20,7 @@ import time
 
 from scripts.objc3c_toolchain.build import foundation_lock
 from scripts.objc3c_toolchain.core import verify_development
-from scripts.objc3c_native_validation import defer_source
+from scripts.objc3c_native_validation import defer_source, guard_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -91,7 +91,7 @@ def cases() -> dict[str, dict]:
     return result
 
 
-def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
+def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: bool = False) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
@@ -162,7 +162,8 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
             runtime = (sdk / "lib/libobjc.so").resolve(strict=True)
             inputs = {str(path): digest(path) for path in
                       (foundation, compiler, tests, runtime, sdk / "objc3-sdk.json",
-                       Path(__file__).resolve(), *defer_source.INPUTS)}
+                       Path(__file__).resolve(), *defer_source.INPUTS,
+                       *(guard_source.INPUTS if public_guard else ()))}
             report.update(
                 source_build_id=source["build_id"],
                 source_tree_sha256=source["tree_sha256"],
@@ -210,6 +211,12 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
                         **expected[name], "module_sha256": report["verified_modules"][name],
                     })
                 defer_source.qualify(run, directory, compiler, sdk, report)
+                if public_guard:
+                    report["guard_source_inputs_sha256"] = {
+                        str(path.relative_to(repo)): inputs[str(path)]
+                        for path in guard_source.INPUTS
+                    }
+                    guard_source.qualify(run, directory, compiler, sdk, report)
                 if any(digest(path) != report["verified_modules"][name]
                        for name, path in modules.items()):
                     raise RuntimeError("a verified module changed during execution")
@@ -234,12 +241,15 @@ def main() -> None:
     parser.add_argument("--build", type=Path)
     parser.add_argument("--sdk", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--public-guard", action="store_true",
+                        help="also execute the public guard source/PCH implementation matrix")
     options = parser.parse_args()
     repo = options.repo.resolve()
     result = qualify(
         repo, (options.build or repo / "out/toolchains/objc3-development/build-linux-x86_64").resolve(),
         (options.sdk or repo / "out/toolchains/linux-sdk/current").resolve(),
         (options.output or repo / "out/native-validation/guard-bindings-ast").resolve(),
+        public_guard=options.public_guard,
     )
     print(f"{result['status']}: {len(result['configurations'])} native AST configurations, "
           f"{len(result['defer_source']['configurations'])} defer source/PCH configurations, "
