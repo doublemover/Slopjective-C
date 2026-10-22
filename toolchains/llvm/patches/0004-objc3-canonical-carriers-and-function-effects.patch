@@ -17497,10 +17497,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..21e7735e8
+index 000000000..9924d3182
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,370 @@
+@@ -0,0 +1,371 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17848,7 +17848,8 @@ index 000000000..21e7735e8
 +    ObjC3SourceScopes Sources(Body);
 +    for (auto [Variable, Owner] : Sources.Variables)
 +      if (Sources.DeferredScopes.contains(Owner) &&
-+          Variable->getType().getObjCLifetime() == Qualifiers::OCL_Strong &&
++          Context.getBaseElementType(Variable->getType()).getObjCLifetime() ==
++              Qualifiers::OCL_Strong &&
 +          !Variable->hasAttr<ObjCPreciseLifetimeAttr>())
 +        const_cast<VarDecl *>(Variable)->addAttr(
 +            ObjCPreciseLifetimeAttr::CreateImplicit(Context));
@@ -19585,11 +19586,12 @@ index 000000000..772213cf8
 +}
 diff --git a/clang/include/clang/AST/ObjC3SourceScopes.h b/clang/include/clang/AST/ObjC3SourceScopes.h
 new file mode 100644
-index 000000000..9aa10817c
+index 000000000..d46f370b2
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3SourceScopes.h
-@@ -0,0 +1,117 @@
-+//===--- ObjC3SourceScopes.h - Scope owners for source actions -----*- C++ -*-===//
+@@ -0,0 +1,128 @@
++//===--- ObjC3SourceScopes.h - Scope owners for source actions -----*- C++
++//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3SOURCESCOPES_H
 +#define LLVM_CLANG_AST_OBJC3SOURCESCOPES_H
@@ -19624,7 +19626,8 @@ index 000000000..9aa10817c
 +    }
 +  }
 +  void collect(const Stmt *S, const Stmt *Owner) {
-+    if (!S) return;
++    if (!S)
++      return;
 +    if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(S)) {
 +      collect(Argument->getExpr(), Owner);
 +      return;
@@ -19634,11 +19637,14 @@ index 000000000..9aa10817c
 +      return;
 +    }
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(S)) {
-+      for (const Expr *Capture : Lambda->capture_inits()) collect(Capture, Owner);
++      for (const Expr *Capture : Lambda->capture_inits())
++        collect(Capture, Owner);
 +      return;
 +    }
-+    if (isa<BlockExpr>(S)) return;
-+    if (isa<CompoundStmt>(S)) Owner = S;
++    if (isa<BlockExpr>(S))
++      return;
++    if (isa<CompoundStmt>(S))
++      Owner = S;
 +    if (const auto *Defer = dyn_cast<DeferStmt>(S)) {
 +      Defers[Defer] = Owner;
 +      DeferredScopes.insert(Owner);
@@ -19689,17 +19695,23 @@ index 000000000..9aa10817c
 +    }
 +    if (const auto *If = dyn_cast<IfStmt>(S)) {
 +      for (const Stmt *Child : If->children())
-+        collect(Child, Child == If->getThen() || Child == If->getElse()
-+                           ? Child : If);
++        collect(Child,
++                Child == If->getThen() || Child == If->getElse() ? Child : If);
 +      return;
 +    }
 +    const Stmt *Body = nullptr;
-+    if (const auto *Loop = dyn_cast<ForStmt>(S)) Body = Loop->getBody();
-+    else if (const auto *Loop = dyn_cast<WhileStmt>(S)) Body = Loop->getBody();
-+    else if (const auto *Loop = dyn_cast<DoStmt>(S)) Body = Loop->getBody();
-+    else if (const auto *Loop = dyn_cast<CXXForRangeStmt>(S)) Body = Loop->getBody();
-+    else if (const auto *Loop = dyn_cast<ObjCForCollectionStmt>(S)) Body = Loop->getBody();
-+    else if (const auto *Switch = dyn_cast<SwitchStmt>(S)) Body = Switch->getBody();
++    if (const auto *Loop = dyn_cast<ForStmt>(S))
++      Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<WhileStmt>(S))
++      Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<DoStmt>(S))
++      Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<CXXForRangeStmt>(S))
++      Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<ObjCForCollectionStmt>(S))
++      Body = Loop->getBody();
++    else if (const auto *Switch = dyn_cast<SwitchStmt>(S))
++      Body = Switch->getBody();
 +    for (const Stmt *Child : S->children())
 +      collect(Child, Body ? (Child == Body ? Body : S) : Owner);
 +  }

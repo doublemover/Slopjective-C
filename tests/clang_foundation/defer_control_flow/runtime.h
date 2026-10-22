@@ -254,7 +254,155 @@ static void arc_cpp_unwind(void) {
   } catch(int error) { if(error != 42)bad=26; second(); }
 }
 #endif
+static void (^saved_block)(void);
+static void arc_array(bool fail) {
+  defer { assert_alive(); }
+  DeferredProbe *values[2] = {[DeferredProbe newWithDigit:3],
+                             [DeferredProbe newWithDigit:4]};
+  observe(values[1]);
+  if(fail)@throw token;
+}
+static void arc_byref(bool fail) {
+  defer { assert_alive(); }
+  __block DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  saved_block = ^{ observe(value); };
+  saved_block(); saved_block = (id)0;
+  if(fail)@throw token;
+}
+static void arc_carrier(bool fail) {
+  defer { assert_alive(); }
+  DeferredProbe *source = [DeferredProbe newWithDigit:3]; observe(source);
+  __objc3_optional(DeferredProbe *) value = __objc3_some(DeferredProbe *, source);
+  source = (id)0;
+  (void)&value;
+  if(fail)@throw token;
+}
+struct DeferredHolder { DeferredProbe *value; };
+static void arc_record(bool fail) {
+  defer { assert_alive(); }
+  struct DeferredHolder holder = {[DeferredProbe newWithDigit:3]};
+  observe(holder.value);
+  if(fail)@throw token;
+}
+struct DeferredCarrierHolder { __objc3_optional(DeferredProbe *) value; };
+static void arc_nested_carrier(bool fail) {
+  defer { assert_alive(); }
+  DeferredProbe *source = [DeferredProbe newWithDigit:3]; observe(source);
+  struct DeferredCarrierHolder holder = {__objc3_some(DeferredProbe *, source)};
+  source = (id)0;
+  (void)&holder;
+  if(fail)@throw token;
+}
+static void arc_carrier_array(bool fail) {
+  defer { assert_alive(); }
+  DeferredProbe *source = [DeferredProbe newWithDigit:3]; observe(source);
+  __objc3_optional(DeferredProbe *) values[2] = {
+      __objc3_none(DeferredProbe *), __objc3_some(DeferredProbe *, source)};
+  source = (id)0;
+  (void)&values;
+  if(fail)@throw token;
+}
+static void release_marker(int *value) { record(*value); }
+static void arc_cleanup_attribute(void) {
+  defer { assert_alive(); }
+  int marker __attribute__((cleanup(release_marker))) = 2;
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+}
+static void arc_copied_body(void) {
+  defer { assert_alive(); }
+  defer {
+    int local = 0;
+  again:
+    if(local++ == 0)goto again;
+    second();
+  }
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+}
+#ifdef __cplusplus
+struct DeferredAction { int digit; ~DeferredAction() { record(digit); } };
+static void arc_cpp_action(bool fail) {
+  defer { assert_alive(); }
+  DeferredAction action{2};
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  if(fail)throw 42;
+}
+static void arc_cpp_partial_exit(void) {
+  int count = 0;
+again:;
+  DeferredAction action{2};
+  defer { first(); }
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  if(count++ == 0)goto again;
+  record(4);
+}
+#endif
+static int *deferred_values;
+static void arc_vla(int count) {
+  defer { if(deferred_values[0] != 42)bad=35; first(); }
+  int values[count]; values[0] = 42; deferred_values = values;
+}
+@interface DeferredProbe (Actions)
++ (void)exerciseOrdering;
+@end
+@implementation DeferredProbe (Actions)
++ (void)exerciseOrdering {
+  defer { assert_alive(); }
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+}
+@end
+static void arc_callable_block(void) {
+  void (^body)(void) = ^{
+    defer { assert_alive(); }
+    DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  };
+  body();
+}
+#ifdef __cplusplus
+template<class T> static void arc_template(void) {
+  defer { assert_alive(); }
+  T value = [DeferredProbe newWithDigit:3]; observe(value);
+}
+static void arc_lambda(void) {
+  [] {
+    defer { assert_alive(); }
+    DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  }();
+}
+#endif
 static void arc_ordering(void) {
+  arc_vla(7); expect(1);
+  [DeferredProbe exerciseOrdering]; expect(13);
+  arc_callable_block(); expect(13);
+#ifdef __cplusplus
+  arc_template<DeferredProbe *>(); expect(13);
+  arc_lambda(); expect(13);
+#endif
+  arc_array(0); expect(143);
+  @try { arc_array(1); } @catch(id error) { if(error != token)bad=28; second(); }
+  expect(1432);
+  arc_byref(0); expect(13);
+  @try { arc_byref(1); } @catch(id error) { if(error != token)bad=29; second(); }
+  expect(132);
+  arc_carrier(0); expect(13);
+  @try { arc_carrier(1); } @catch(id error) { if(error != token)bad=30; second(); }
+  expect(132);
+  arc_record(0); expect(13);
+  @try { arc_record(1); } @catch(id error) { if(error != token)bad=31; second(); }
+  expect(132);
+  arc_nested_carrier(0); expect(13);
+  @try { arc_nested_carrier(1); } @catch(id error) { if(error != token)bad=32; second(); }
+  expect(132);
+  arc_carrier_array(0); expect(13);
+  @try { arc_carrier_array(1); } @catch(id error) { if(error != token)bad=33; second(); }
+  expect(132);
+  arc_cleanup_attribute(); expect(213);
+  arc_copied_body(); expect(213);
+#ifdef __cplusplus
+  arc_cpp_action(0); expect(213);
+  try { arc_cpp_action(1); } catch(int value) { if(value != 42)bad=34; record(4); }
+  expect(2134);
+  arc_cpp_partial_exit(); expect(1234123);
+#endif
   arc_normal(); expect(13);
   arc_precise_return(); expect(13);
   arc_before(); expect(13);

@@ -1,6 +1,6 @@
 """Source/PCH execution coverage for admitted deferred control flow.
 
-This does not admit guard parsing, C++ cleanup CFGs or ARC release ordering.
+This does not admit guard parsing or C++/ARC cleanup CFG conformance.
 """
 from __future__ import annotations
 
@@ -16,7 +16,20 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> No
     result = {
         "status": "running", "compiler_binding": "admitted-development-source",
         "defer_source_syntax_admitted": True, "guard_source_syntax_admitted": False,
-        "arc_release_ordering_qualified": False, "configurations": [],
+        "arc_release_ordering_qualified": True,
+        "arc_qualified_storage": [
+            "strong objects and Blocks", "strong arrays", "escaping __block ownership",
+            "optional carriers and carrier arrays", "C records and pure C++ aggregates",
+            "nested managed carrier records",
+        ],
+        "arc_scope_cases": [
+            "normal/return/native and checked failure", "forward/backward goto",
+            "nested scopes and loop break/continue", "assignment and explicit owner clearing",
+            "C++ destructor and cleanup-attribute action ordering",
+            "deferred local jumps and catches", "methods/Blocks/lambdas/templates",
+            "VLA storage and stack restoration",
+        ],
+        "native_arc_cleanup_cfg_qualified": False, "configurations": [],
         "expected_objc_terminations": 0, "expected_cpp_terminations": 0,
     }
     report["defer_source"] = result
