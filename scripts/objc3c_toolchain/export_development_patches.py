@@ -204,7 +204,11 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/include/clang/Analysis/CFG.h",
         "clang/lib/Analysis/CFG.cpp",
+        "clang/lib/Analysis/PathDiagnostic.cpp",
+        "clang/lib/StaticAnalyzer/Core/SymbolManager.cpp",
+        "clang/lib/StaticAnalyzer/Core/ExprEngine.cpp",
         "clang/lib/Sema/AnalysisBasedWarnings.cpp",
         "clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp",
         "clang/lib/CodeGen/CGObjC3Carriers.h",

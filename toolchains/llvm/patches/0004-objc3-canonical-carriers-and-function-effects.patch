@@ -16516,10 +16516,10 @@ index 000000000..382497aa1
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3GuardExit.cpp b/clang/lib/Sema/SemaObjC3GuardExit.cpp
 new file mode 100644
-index 000000000..ba9988097
+index 000000000..455d9e659
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3GuardExit.cpp
-@@ -0,0 +1,240 @@
+@@ -0,0 +1,252 @@
 +//===--- SemaObjC3GuardExit.cpp - Native guard exit proof ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -16684,9 +16684,15 @@ index 000000000..ba9988097
 +          // C++ destructors, without depending on that backpatch.
 +          if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
 +            for (const Decl *Declaration : Declarations->decls())
-+              if (const auto *Variable = dyn_cast<VarDecl>(Declaration))
++              if (const auto *Variable = dyn_cast<VarDecl>(Declaration)) {
 +                if (const auto *Cleanup = Variable->getAttr<CleanupAttr>())
 +                  CanThrow |= mayThrowNative(Cleanup->getFunctionDecl());
++                SmallVector<const CXXDestructorDecl *, 4> Destructors;
++                CFGObjC3CarrierDtor(Variable, Declarations)
++                    .getPossibleDestructors(Destructors);
++                for (const auto *Destructor : Destructors)
++                  CanThrow |= mayThrowNative(Destructor);
++              }
 +          if (CanThrow)
 +            Handler = Candidate;
 +        }
@@ -16699,6 +16705,12 @@ index 000000000..ba9988097
 +          else if (auto Delete = Element.getAs<CFGDeleteDtor>())
 +            Handler = Handlers.lookup(Delete->getDeleteExpr());
 +        }
++      } else if (auto Carrier = Element.getAs<CFGObjC3CarrierDtor>()) {
++        SmallVector<const CXXDestructorDecl *, 4> Destructors;
++        Carrier->getPossibleDestructors(Destructors);
++        for (const auto *Destructor : Destructors)
++          if (mayThrowNative(Destructor))
++            Handler = VariableHandlers.lookup(Carrier->getVarDecl());
 +      } else if (auto Cleanup = Element.getAs<CFGCleanupFunction>()) {
 +        if (mayThrowNative(Cleanup->getFunctionDecl()))
 +          Handler = VariableHandlers.lookup(Cleanup->getVarDecl());
@@ -16893,10 +16905,10 @@ index 000000000..c03a755bd
 +}
 diff --git a/clang/include/clang/AST/ObjC3ConditionNodes.inc b/clang/include/clang/AST/ObjC3ConditionNodes.inc
 new file mode 100644
-index 000000000..cf2c8db3c
+index 000000000..516e9f809
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ConditionNodes.inc
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,129 @@
 +//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16952,6 +16964,9 @@ index 000000000..cf2c8db3c
 +                                SourceLocation Else);
 +  static ObjC3GuardStmt *CreateEmpty(const ASTContext &, unsigned);
 +  unsigned getNumConditions() const { return NumConditions; }
++  llvm::ArrayRef<Stmt *> getConditions() const {
++    return {getTrailingObjects(), NumConditions};
++  }
 +  Stmt *getCondition(unsigned I) const {
 +    assert(I < NumConditions);
 +    return getTrailingObjects()[I];
@@ -16996,6 +17011,9 @@ index 000000000..cf2c8db3c
 +                                    SourceLocation ElseAt);
 +  static ObjC3IfBindingStmt *CreateEmpty(const ASTContext &, unsigned);
 +  unsigned getNumConditions() const { return NumConditions; }
++  llvm::ArrayRef<Stmt *> getConditions() const {
++    return {getTrailingObjects(), NumConditions};
++  }
 +  Stmt *getCondition(unsigned I) const {
 +    assert(I < NumConditions);
 +    return getTrailingObjects()[I];
@@ -17746,10 +17764,10 @@ index 000000000..53ddbc537
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..17095d55b
+index 000000000..885e514fb
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,713 @@
+@@ -0,0 +1,771 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17757,6 +17775,7 @@ index 000000000..17095d55b
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Analysis/CFG.h"
 +#include "clang/Basic/CodeGenOptions.h"
 +#include "clang/CodeGen/ModuleBuilder.h"
 +#include "clang/Frontend/ASTUnit.h"
@@ -17783,14 +17802,20 @@ index 000000000..17095d55b
 +    return true;
 +  }
 +};
-+class StatementExpressionFinder : public RecursiveASTVisitor<StatementExpressionFinder> {
++class StatementExpressionFinder
++    : public RecursiveASTVisitor<StatementExpressionFinder> {
 +public:
 +  StmtExpr *Expression = nullptr;
-+  bool VisitStmtExpr(StmtExpr *E) { if (!Expression) Expression = E; return true; }
++  bool VisitStmtExpr(StmtExpr *E) {
++    if (!Expression)
++      Expression = E;
++    return true;
++  }
 +};
 +class Rebind : public RecursiveASTVisitor<Rebind> {
 +  Sema &Actions;
 +  VarDecl *Old, *New;
++
 +public:
 +  Rebind(Sema &Actions, VarDecl *Old, VarDecl *New)
 +      : Actions(Actions), Old(Old), New(New) {}
@@ -17804,15 +17829,23 @@ index 000000000..17095d55b
 +  }
 +};
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
-+                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false, bool TemplateReplay = false, bool Mutable = true) {
-+  std::vector<std::string> Args = {
-+      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
-+      ("-std=" + Standard).str(), "-fobjc-version=3",
-+      "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fobjc-exceptions",
-+      "-fobjc-arc-exceptions", "-fblocks"};
++                   llvm::StringRef Standard, bool ARC, bool IfBinding,
++                   bool Ordered = false, bool StatementExpression = false,
++                   bool TemplateReplay = false, bool Mutable = true) {
++  std::vector<std::string> Args = {"-x",
++                                   Standard == "c17" ? "objective-c"
++                                                     : "objective-c++",
++                                   ("-std=" + Standard).str(),
++                                   "-fobjc-version=3",
++                                   "-fobjc-runtime=gnustep-2.2",
++                                   "-fexceptions",
++                                   "-fobjc-exceptions",
++                                   "-fobjc-arc-exceptions",
++                                   "-fblocks"};
 +  Args.push_back(ARC ? "-fobjc-arc" : "-fno-objc-arc");
 +  std::string Input = Ordered && IfBinding
-+      ? "#define ORDERED_IF_BINDING 1\n" + Code.str() : Code.str();
++                          ? "#define ORDERED_IF_BINDING 1\n" + Code.str()
++                          : Code.str();
 +  if (TemplateReplay) {
 +    auto Definition = Input.find("int exercise(");
 +    ASSERT_NE(std::string::npos, Definition);
@@ -17823,21 +17856,24 @@ index 000000000..17095d55b
 +    auto End = Opening;
 +    unsigned Depth = 0;
 +    do {
-+      if (Input[End] == '{') ++Depth;
-+      else if (Input[End] == '}') --Depth;
++      if (Input[End] == '{')
++        ++Depth;
++      else if (Input[End] == '}')
++        --Depth;
 +      ++End;
 +    } while (Depth && End < Input.size());
 +    ASSERT_EQ(0u, Depth);
-+    std::string Explicit = "\nextern template int exercise<int>" +
++    std::string Explicit =
++        "\nextern template int exercise<int>" +
 +        Input.substr(Parameters, ParameterEnd - Parameters + 1) + ";\n";
 +    Input.insert(End, Explicit);
 +    for (auto Call = Input.find("exercise(", End + Explicit.size());
-+         Call != std::string::npos;
-+         Call = Input.find("exercise(", Call + 14))
++         Call != std::string::npos; Call = Input.find("exercise(", Call + 14))
 +      Input.insert(Call + 8, "<int>");
 +    Input.insert(Definition, "template<class GuardInstantiation> ");
 +  }
-+  auto AST = tooling::buildASTFromCodeWithArgs(Input, Args, "condition-codegen.m");
++  auto AST =
++      tooling::buildASTFromCodeWithArgs(Input, Args, "condition-codegen.m");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  ExerciseFunction Finder;
@@ -17866,15 +17902,16 @@ index 000000000..17095d55b
 +  auto *SourceStatement = cast<DeclStmt>(Body->body_front());
 +  auto *Source = cast<VarDecl>(SourceStatement->getSingleDecl());
 +  auto *If = cast<IfStmt>(*(Body->body_begin() + 1));
-+  auto *User = cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
++  auto *User =
++      cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
 +  ASTContext &C = AST->getASTContext();
 +  {
 +    Sema &S = AST->getSema();
 +    Sema::SynthesizedFunctionScope Scope(S, Function);
 +    SourceLocation Loc = Source->getLocation();
 +    StmtResult Result = S.ActOnObjC3BindingCondition(
-+        nullptr, User->getIdentifier(), User->getLocation(), Mutable, Loc,
-+        Loc, Source->getInit());
++        nullptr, User->getIdentifier(), User->getLocation(), Mutable, Loc, Loc,
++        Source->getInit());
 +    ASSERT_FALSE(Result.isInvalid());
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
 +    SmallVector<Stmt *, 4> Conditions{Binding};
@@ -17886,12 +17923,17 @@ index 000000000..17095d55b
 +          cast<DeclStmt>(*(Body->body_begin() + 3))->getSingleDecl());
 +      SecondUser = cast<VarDecl>(
 +          cast<DeclStmt>(*(Body->body_begin() + 4))->getSingleDecl());
-+      auto *Boolean = cast<CStyleCastExpr>(*(Body->body_begin() + 5))->getSubExpr();
-+      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Boolean));
-+      ExprResult Checked = S.ActOnObjC3BooleanCondition(nullptr, Boolean, Boolean->getExprLoc());
++      auto *Boolean =
++          cast<CStyleCastExpr>(*(Body->body_begin() + 5))->getSubExpr();
++      ASSERT_TRUE(
++          Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Boolean));
++      ExprResult Checked =
++          S.ActOnObjC3BooleanCondition(nullptr, Boolean, Boolean->getExprLoc());
 +      ASSERT_FALSE(Checked.isInvalid());
-+      if (!IfBinding) Conditions.push_back(Checked.get());
-+      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(SecondSource->getInit()));
++      if (!IfBinding)
++        Conditions.push_back(Checked.get());
++      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl())
++                      .TraverseStmt(SecondSource->getInit()));
 +      StmtResult Next = S.ActOnObjC3BindingCondition(
 +          nullptr, SecondUser->getIdentifier(), SecondUser->getLocation(), true,
 +          Loc, Loc, SecondSource->getInit());
@@ -17899,96 +17941,114 @@ index 000000000..17095d55b
 +      SecondBinding = cast<ObjC3BindingCondition>(Next.get());
 +      Conditions.push_back(SecondBinding);
 +    }
-+    SmallVector<Stmt *, 8> Tail(Body->body_begin() + (Ordered ? 6 : 3), Body->body_end());
++    SmallVector<Stmt *, 8> Tail(Body->body_begin() + (Ordered ? 6 : 3),
++                                Body->body_end());
 +    for (Stmt *Statement : Tail) {
-+      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Statement));
++      ASSERT_TRUE(
++          Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Statement));
 +      if (SecondUser)
-+        ASSERT_TRUE(Rebind(S, SecondUser, SecondBinding->getBindingDecl()).TraverseStmt(Statement));
++        ASSERT_TRUE(Rebind(S, SecondUser, SecondBinding->getBindingDecl())
++                        .TraverseStmt(Statement));
 +    }
 +    Stmt *Statement;
 +    if (IfBinding) {
-+      auto *Then = CompoundStmt::Create(C, Tail, FPOptionsOverride(),
-+                                         Body->getLBracLoc(), Body->getRBracLoc());
-+      Statement = ObjC3IfBindingStmt::Create(
-+          C, Conditions, Then, If->getElse(), Loc, If->getElseLoc());
++      auto *Then =
++          CompoundStmt::Create(C, Tail, FPOptionsOverride(),
++                               Body->getLBracLoc(), Body->getRBracLoc());
++      Statement = ObjC3IfBindingStmt::Create(C, Conditions, Then, If->getElse(),
++                                             Loc, If->getElseLoc());
 +    } else {
-+      Statement = ObjC3GuardStmt::Create(
-+          C, Conditions, If->getElse(), Loc, If->getElseLoc());
++      Statement = ObjC3GuardStmt::Create(C, Conditions, If->getElse(), Loc,
++                                         If->getElseLoc());
 +    }
 +    SmallVector<Stmt *, 8> Statements{Statement};
-+    if (!IfBinding) Statements.append(Tail);
-+    auto *Rebuilt = CompoundStmt::Create(
-+        C, Statements, FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc());
-+    if (StatementExpressionNode) StatementExpressionNode->setSubStmt(Rebuilt);
-+    else Function->setBody(Rebuilt);
++    if (!IfBinding)
++      Statements.append(Tail);
++    auto *Rebuilt =
++        CompoundStmt::Create(C, Statements, FPOptionsOverride(),
++                             Body->getLBracLoc(), Body->getRBracLoc());
++    if (StatementExpressionNode)
++      StatementExpressionNode->setSubStmt(Rebuilt);
++    else
++      Function->setBody(Rebuilt);
 +  }
 +  FunctionDecl *Concrete = nullptr;
 +  if (Template) {
 +    ASSERT_EQ(1u, std::distance(Template->spec_begin(), Template->spec_end()));
 +    Concrete = *Template->spec_begin();
 +    Concrete->setTemplateSpecializationKind(TSK_ImplicitInstantiation);
-+    AST->getSema().InstantiateFunctionDefinition(
-+        Concrete->getLocation(), Concrete, true, true, false);
++    AST->getSema().InstantiateFunctionDefinition(Concrete->getLocation(),
++                                                 Concrete, true, true, false);
 +    ASSERT_TRUE(Concrete->doesThisDeclarationHaveABody());
 +  }
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  CFG::BuildOptions FlowOptions;
++  FlowOptions.AddImplicitDtors = FlowOptions.AddTemporaryDtors = true;
++  FlowOptions.AddEHEdges = FlowOptions.AddLifetime = FlowOptions.AddScopes =
++      true;
++  FlowOptions.setAllAlwaysAdd();
++  FunctionDecl *Emitted = Concrete ? Concrete : Function;
++  ASSERT_TRUE(CFG::buildCFG(Emitted, Emitted->getBody(), &C, FlowOptions));
 +  // Run each module through the matching native frontend/backend mode. ARC
 +  // frontend intrinsics emitted at O2 require the optimizing ARC pipeline.
 +  for (unsigned Optimization : {0u, 2u}) {
-+  llvm::LLVMContext IRContext;
-+  CodeGenOptions Options;
-+  Options.OptimizationLevel = Optimization;
-+  Options.ObjCAutoRefCountExceptions = ARC;
-+  // Match the Linux GNUstep 2.2 driver contract for registration and sends.
-+  Options.UseInitArray = true;
-+  Options.setObjCDispatchMethod(CodeGenOptions::NonLegacy);
-+  Options.setDebugInfo(llvm::codegenoptions::FullDebugInfo);
-+  auto Generator = CreateLLVMCodeGen(
-+      AST->getDiagnostics(), Name,
-+      AST->getFileManager().getVirtualFileSystemPtr(),
-+      AST->getPreprocessor().getHeaderSearchInfo().getHeaderSearchOpts(),
-+      AST->getPreprocessor().getPreprocessorOpts(), Options, IRContext);
-+  Generator->Initialize(C);
-+  for (Decl *D : C.getTranslationUnitDecl()->decls()) {
-+    // The parser reports method definitions before the implementation metadata;
-+    // they are children of the implementation, not translation-unit siblings.
-+    if (auto *Implementation = dyn_cast<ObjCImplDecl>(D))
-+      for (ObjCMethodDecl *Method : Implementation->methods())
-+        if (Method->hasBody())
-+          ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Method)));
-+    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
-+  }
-+  // Forced instantiations are not translation-unit declarations. Replay the
-+  // normal definition notification as well as the top-level pattern.
-+  if (Concrete)
-+    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Concrete)));
-+  // A parsed C AST still needs the normal end-of-translation-unit callback
-+  // when replayed into a new CodeGenerator (for globals such as `int calls;`).
-+  if (!C.getLangOpts().CPlusPlus)
-+    for (Decl *D : C.getTranslationUnitDecl()->decls())
-+      if (auto *Variable = dyn_cast<VarDecl>(D))
-+        if (Variable->getActingDefinition() == Variable)
-+          Generator->CompleteTentativeDefinition(Variable);
-+  Generator->HandleTranslationUnit(C);
-+  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
-+  ASSERT_TRUE(Generator->GetModule());
-+  EXPECT_FALSE(llvm::verifyModule(*Generator->GetModule(), &llvm::errs()));
-+  std::string IR;
-+  llvm::raw_string_ostream Stream(IR);
-+  Generator->GetModule()->print(Stream, nullptr);
-+  EXPECT_NE(std::string::npos, IR.find("objc3.binding.present"));
-+  EXPECT_NE(std::string::npos, IR.find("objc3.binding.absent"));
-+  // Optional artifact emission belongs to this test harness, not the compiler.
-+  // External qualification compiles and executes these exact verified modules.
-+  if (const char *Directory = std::getenv("OBJC3_CONDITION_TEST_IR_DIR")) {
-+    llvm::SmallString<256> Path(Directory);
-+    llvm::sys::path::append(Path,
-+        (Name + "-O" + std::to_string(Optimization) + ".ll").str());
-+    std::error_code Error;
-+    llvm::raw_fd_ostream File(Path, Error, llvm::sys::fs::OF_Text);
-+    ASSERT_FALSE(Error) << Error.message();
-+    File << IR;
-+  }
++    llvm::LLVMContext IRContext;
++    CodeGenOptions Options;
++    Options.OptimizationLevel = Optimization;
++    Options.ObjCAutoRefCountExceptions = ARC;
++    // Match the Linux GNUstep 2.2 driver contract for registration and sends.
++    Options.UseInitArray = true;
++    Options.setObjCDispatchMethod(CodeGenOptions::NonLegacy);
++    Options.setDebugInfo(llvm::codegenoptions::FullDebugInfo);
++    auto Generator = CreateLLVMCodeGen(
++        AST->getDiagnostics(), Name,
++        AST->getFileManager().getVirtualFileSystemPtr(),
++        AST->getPreprocessor().getHeaderSearchInfo().getHeaderSearchOpts(),
++        AST->getPreprocessor().getPreprocessorOpts(), Options, IRContext);
++    Generator->Initialize(C);
++    for (Decl *D : C.getTranslationUnitDecl()->decls()) {
++      // The parser reports method definitions before the implementation
++      // metadata; they are children of the implementation, not translation-unit
++      // siblings.
++      if (auto *Implementation = dyn_cast<ObjCImplDecl>(D))
++        for (ObjCMethodDecl *Method : Implementation->methods())
++          if (Method->hasBody())
++            ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Method)));
++      ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
++    }
++    // Forced instantiations are not translation-unit declarations. Replay the
++    // normal definition notification as well as the top-level pattern.
++    if (Concrete)
++      ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Concrete)));
++    // A parsed C AST still needs the normal end-of-translation-unit callback
++    // when replayed into a new CodeGenerator (for globals such as `int
++    // calls;`).
++    if (!C.getLangOpts().CPlusPlus)
++      for (Decl *D : C.getTranslationUnitDecl()->decls())
++        if (auto *Variable = dyn_cast<VarDecl>(D))
++          if (Variable->getActingDefinition() == Variable)
++            Generator->CompleteTentativeDefinition(Variable);
++    Generator->HandleTranslationUnit(C);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    ASSERT_TRUE(Generator->GetModule());
++    EXPECT_FALSE(llvm::verifyModule(*Generator->GetModule(), &llvm::errs()));
++    std::string IR;
++    llvm::raw_string_ostream Stream(IR);
++    Generator->GetModule()->print(Stream, nullptr);
++    EXPECT_NE(std::string::npos, IR.find("objc3.binding.present"));
++    EXPECT_NE(std::string::npos, IR.find("objc3.binding.absent"));
++    // Optional artifact emission belongs to this test harness, not the
++    // compiler. External qualification compiles and executes these exact
++    // verified modules.
++    if (const char *Directory = std::getenv("OBJC3_CONDITION_TEST_IR_DIR")) {
++      llvm::SmallString<256> Path(Directory);
++      llvm::sys::path::append(
++          Path, (Name + "-O" + std::to_string(Optimization) + ".ll").str());
++      std::error_code Error;
++      llvm::raw_fd_ostream File(Path, Error, llvm::sys::fs::OF_Text);
++      ASSERT_FALSE(Error) << Error.message();
++      File << IR;
++    }
 +  }
 +}
 +const char Plain[] = R"(
@@ -18223,7 +18283,7 @@ index 000000000..17095d55b
 +    for (bool ARC : {false, true})
 +      for (bool If : {false, true}) {
 +        std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") +
-+                            (If ? "-if" : "-guard");
++                           (If ? "-if" : "-guard");
 +        SCOPED_TRACE(Name);
 +        checkLowering(Plain, Name, Standard, ARC, If);
 +      }
@@ -18231,33 +18291,37 @@ index 000000000..17095d55b
 +TEST(ObjC3ConditionCodeGen, NativeCppPartialConstructionAndThrowingCleanups) {
 +  for (const char *Standard : {"c++20", "c++23"})
 +    for (bool If : {false, true}) {
-+      std::string Name = std::string(Standard) + (If ? "-cpp-if" : "-cpp-guard");
++      std::string Name =
++          std::string(Standard) + (If ? "-cpp-if" : "-cpp-guard");
 +      SCOPED_TRACE(Name);
 +      checkLowering(Cpp, Name, Standard, false, If);
 +    }
 +}
 +
-+TEST(ObjC3ConditionCodeGen, OrderedBindingsShortCircuitAndKeepIndependentValues) {
++TEST(ObjC3ConditionCodeGen,
++     OrderedBindingsShortCircuitAndKeepIndependentValues) {
 +  for (const char *Standard : {"c17", "c++20", "c++23"})
 +    for (bool ARC : {false, true})
 +      for (bool If : {false, true}) {
 +        std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") +
-+                            (If ? "-ordered-if" : "-ordered-guard");
++                           (If ? "-ordered-if" : "-ordered-guard");
 +        SCOPED_TRACE(Name);
 +        checkLowering(OrderedPlain, Name, Standard, ARC, If, true);
 +      }
 +}
-+TEST(ObjC3ConditionCodeGen, OrderedCppBindingsUnwindPrefixesAndDestroyInReverse) {
++TEST(ObjC3ConditionCodeGen,
++     OrderedCppBindingsUnwindPrefixesAndDestroyInReverse) {
 +  for (const char *Standard : {"c++20", "c++23"})
 +    for (bool If : {false, true}) {
 +      std::string Name = std::string(Standard) +
-+                            (If ? "-cpp-ordered-if" : "-cpp-ordered-guard");
++                         (If ? "-cpp-ordered-if" : "-cpp-ordered-guard");
 +      SCOPED_TRACE(Name);
 +      checkLowering(OrderedCpp, Name, Standard, false, If, true);
 +    }
 +}
 +
-+TEST(ObjC3ConditionCodeGen, GuardKeepsNativeStatementExpressionResultsAndLifetimes) {
++TEST(ObjC3ConditionCodeGen,
++     GuardKeepsNativeStatementExpressionResultsAndLifetimes) {
 +  auto StatementExpression = [](std::string Code, bool IsCpp) {
 +    std::string Original = IsCpp ? R"(
 +  int exercise(Maybe *input) {
@@ -18266,7 +18330,8 @@ index 000000000..17095d55b
 +    Payload value(0);
 +    return value.number;
 +  }
-+)" : R"(
++)"
++                                 : R"(
 +  int exercise(Maybe *input) {
 +    Maybe source = *counted(input);
 +    if (1) {} else { return -1; }
@@ -18284,7 +18349,8 @@ index 000000000..17095d55b
 +      value.number;
 +    });
 +  }
-+)" : R"(
++)"
++                                    : R"(
 +  int exercise(Maybe *input) {
 +    return ({
 +      Maybe source = *counted(input);
@@ -18297,19 +18363,23 @@ index 000000000..17095d55b
 +)";
 +    auto Position = Code.find(Original);
 +    EXPECT_NE(std::string::npos, Position);
-+    if (Position != std::string::npos) Code.replace(Position, Original.size(), Replacement);
++    if (Position != std::string::npos)
++      Code.replace(Position, Original.size(), Replacement);
 +    return Code;
 +  };
 +  for (const char *Standard : {"c17", "c++20", "c++23"})
 +    for (bool ARC : {false, true}) {
-+      std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") + "-stmtexpr-guard";
++      std::string Name =
++          std::string(Standard) + (ARC ? "-arc" : "-mrc") + "-stmtexpr-guard";
 +      SCOPED_TRACE(Name);
-+      checkLowering(StatementExpression(Plain, false), Name, Standard, ARC, false, false, true);
++      checkLowering(StatementExpression(Plain, false), Name, Standard, ARC,
++                    false, false, true);
 +    }
 +  for (const char *Standard : {"c++20", "c++23"}) {
 +    std::string Name = std::string(Standard) + "-cpp-stmtexpr-guard";
 +    SCOPED_TRACE(Name);
-+    checkLowering(StatementExpression(Cpp, true), Name, Standard, false, false, false, true);
++    checkLowering(StatementExpression(Cpp, true), Name, Standard, false, false,
++                  false, true);
 +  }
 +}
 +
@@ -18319,12 +18389,13 @@ index 000000000..17095d55b
 +      std::string Prefix = std::string(Standard);
 +      for (bool CppPayload : {false, true}) {
 +        std::string Name = Prefix + (CppPayload ? "-cpp" : "-mrc") +
-+                            (If ? "-template-if" : "-template-guard");
++                           (If ? "-template-if" : "-template-guard");
 +        SCOPED_TRACE(Name);
 +        checkLowering(CppPayload ? Cpp : Plain, Name, Standard, false, If,
-+                       false, false, true);
++                      false, false, true);
 +      }
-+      std::string Name = Prefix + (If ? "-cpp-ordered-template-if" : "-cpp-ordered-template-guard");
++      std::string Name = Prefix + (If ? "-cpp-ordered-template-if"
++                                      : "-cpp-ordered-template-guard");
 +      SCOPED_TRACE(Name);
 +      checkLowering(OrderedCpp, Name, Standard, false, If, true, false, true);
 +    }
@@ -18442,25 +18513,30 @@ index 000000000..17095d55b
 +  return failed;
 +}
 +)";
-+TEST(ObjC3ConditionCodeGen, ManagedBindingsOwnObjectsAndBlocksAcrossScopeExits) {
++TEST(ObjC3ConditionCodeGen,
++     ManagedBindingsOwnObjectsAndBlocksAcrossScopeExits) {
 +  for (const char *Standard : {"c17", "c++20", "c++23"})
 +    for (bool Block : {false, true})
-+      for (const char *Ownership : {"__strong", "__weak", "__unsafe_unretained"})
++      for (const char *Ownership :
++           {"__strong", "__weak", "__unsafe_unretained"})
 +        for (bool Tagged : {false, true})
 +          for (bool Mutable : {false, true})
 +            for (bool If : {false, true}) {
-+              std::string Name = std::string(Standard) + "-arc-" +
++              std::string Name =
++                  std::string(Standard) + "-arc-" +
 +                  (Block ? "block" : "object") + "-" + (Ownership + 2) +
 +                  (Tagged ? "-tagged" : "-direct") +
 +                  (Mutable ? "-var" : "-let") + (If ? "-if" : "-guard");
 +              SCOPED_TRACE(Name);
-+              std::string Code = std::string("#define GUARD_BLOCK ") +
++              std::string Code =
++                  std::string("#define GUARD_BLOCK ") +
 +                  (Block ? "1\n" : "0\n") + "#define GUARD_TAGGED " +
 +                  (Tagged ? "1\n" : "0\n") + "#define GUARD_OWNERSHIP " +
 +                  Ownership + "\n#define GUARD_WEAK " +
-+                  (llvm::StringRef(Ownership) == "__weak" ? "1\n" : "0\n") + Managed;
-+              checkLowering(Code, Name, Standard, true, If,
-+                            false, false, false, Mutable);
++                  (llvm::StringRef(Ownership) == "__weak" ? "1\n" : "0\n") +
++                  Managed;
++              checkLowering(Code, Name, Standard, true, If, false, false, false,
++                            Mutable);
 +            }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
@@ -18538,26 +18614,30 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..ae5e7b661
+index 000000000..3c1d1c5c3
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,536 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Analysis/CFG.h"
 +#include "clang/Basic/Diagnostic.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Sema/Sema.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "gtest/gtest.h"
++#include <functional>
++#include <set>
 +using namespace clang;
 +namespace {
 +class Diagnostics final : public DiagnosticConsumer {
 +public:
 +  unsigned Errors = 0;
-+  void HandleDiagnostic(DiagnosticsEngine::Level Level, const Diagnostic &) override {
++  void HandleDiagnostic(DiagnosticsEngine::Level Level,
++                        const Diagnostic &) override {
 +    Errors += Level >= DiagnosticsEngine::Error;
 +  }
 +};
@@ -18572,34 +18652,40 @@ index 000000000..ae5e7b661
 +};
 +void replaceStatement(Stmt *Root, Stmt *Old, Stmt *New) {
 +  for (Stmt *&Child : Root->children()) {
-+    if (Child == Old) Child = New;
-+    else if (Child) replaceStatement(Child, Old, New);
++    if (Child == Old)
++      Child = New;
++    else if (Child)
++      replaceStatement(Child, Old, New);
 +  }
 +}
 +ObjC3GuardStmt *replacePlaceholder(ASTContext &C, FunctionDecl *Function,
 +                                   ArrayRef<Stmt *> Conditions = {}) {
 +  Placeholder Find;
 +  Find.TraverseStmt(Function->getBody());
-+  if (!Find.Statement) return nullptr;
++  if (!Find.Statement)
++    return nullptr;
 +  auto *If = Find.Statement;
 +  SmallVector<Stmt *, 4> Native(Conditions.begin(), Conditions.end());
-+  if (Native.empty()) Native.push_back(If->getCond());
-+  auto *Guard = ObjC3GuardStmt::Create(C, Native, If->getElse(),
-+                                       If->getIfLoc(), If->getElseLoc());
++  if (Native.empty())
++    Native.push_back(If->getCond());
++  auto *Guard = ObjC3GuardStmt::Create(C, Native, If->getElse(), If->getIfLoc(),
++                                       If->getElseLoc());
 +  replaceStatement(Function->getBody(), If, Guard);
 +  return Guard;
 +}
 +} // namespace
 +
 +TEST(ObjC3ConditionScope, CompletedCallableUsesRealImplicitAndCompoundScopes) {
-+  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
 +    bool condition;
 +    void pass_return() { if(condition) {} else { return; } }
 +    void pass_implicit() { if(condition) if(condition) {} else { goto out; } out:; }
 +    void pass_outer_label() { { if(condition) {} else { goto out; } } out:; }
 +    void fail_same_scope() { if(condition) {} else { goto out; } out:; }
 +    void fail_fallthrough() { if(condition) {} else {} }
-+  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  auto *Messages = new Diagnostics;
@@ -18607,11 +18693,13 @@ index 000000000..ae5e7b661
 +  unsigned Cases = 0;
 +  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
 +    auto *Function = dyn_cast<FunctionDecl>(D);
-+    if (!Function || !Function->hasBody()) continue;
++    if (!Function || !Function->hasBody())
++      continue;
 +    SCOPED_TRACE(Function->getNameAsString());
 +    ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function));
 +    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
-+    bool Invalid = AST->getSema().CheckObjC3Guards(Function, Function->getBody());
++    bool Invalid =
++        AST->getSema().CheckObjC3Guards(Function, Function->getBody());
 +    EXPECT_EQ(Function->getName().starts_with("fail_"), Invalid);
 +    ++Cases;
 +  }
@@ -18619,10 +18707,12 @@ index 000000000..ae5e7b661
 +  EXPECT_EQ(2u, Messages->Errors);
 +}
 +
-+TEST(ObjC3ConditionScope, ProtectsBindingInitializationWithoutLeakingIntoSiblingElse) {
++TEST(ObjC3ConditionScope,
++     ProtectsBindingInitializationWithoutLeakingIntoSiblingElse) {
 +  for (const char *Standard : {"c17", "c++20", "c++23"}) {
 +    SCOPED_TRACE(Standard);
-+    auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    auto AST = tooling::buildASTFromCodeWithArgs(
++        R"(
 +      typedef __objc3_optional(int) Maybe;
 +      void fail_bypass(Maybe source) {
 +        goto target;
@@ -18634,7 +18724,8 @@ index 000000000..ae5e7b661
 +        if(1) if(1) {} else { return; }
 +        else { target:; }
 +      }
-+    )", {"-x", Standard[1] == '+' ? "objective-c++" : "objective-c",
++    )",
++        {"-x", Standard[1] == '+' ? "objective-c++" : "objective-c",
 +         std::string("-std=") + Standard, "-fobjc-version=3"});
 +    ASSERT_TRUE(AST);
 +    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
@@ -18642,18 +18733,22 @@ index 000000000..ae5e7b661
 +    AST->getDiagnostics().setClient(Messages, true);
 +    for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
 +      auto *Function = dyn_cast<FunctionDecl>(D);
-+      if (!Function || !Function->hasBody()) continue;
++      if (!Function || !Function->hasBody())
++        continue;
 +      SCOPED_TRACE(Function->getNameAsString());
 +      Sema &Actions = AST->getSema();
 +      Sema::SynthesizedFunctionScope Scope(Actions, Function);
 +      auto *Parameter = Function->getParamDecl(0);
 +      SourceLocation Loc = Parameter->getLocation();
-+      Expr *Source = Actions.BuildDeclRefExpr(Parameter, Parameter->getType(), VK_LValue, Loc);
++      Expr *Source = Actions.BuildDeclRefExpr(Parameter, Parameter->getType(),
++                                              VK_LValue, Loc);
 +      StmtResult Result = Actions.ActOnObjC3BindingCondition(
-+          nullptr, &AST->getASTContext().Idents.get("value"), Loc, false, Loc, Loc, Source);
++          nullptr, &AST->getASTContext().Idents.get("value"), Loc, false, Loc,
++          Loc, Source);
 +      ASSERT_FALSE(Result.isInvalid());
 +      Stmt *Conditions[] = {Result.get()};
-+      ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function, Conditions));
++      ASSERT_TRUE(
++          replacePlaceholder(AST->getASTContext(), Function, Conditions));
 +      unsigned Before = Messages->Errors;
 +      Actions.DiagnoseInvalidJumps(Function->getBody());
 +      EXPECT_EQ(Function->getName().starts_with("fail_") ? 1u : 0u,
@@ -18662,8 +18757,10 @@ index 000000000..ae5e7b661
 +  }
 +}
 +
-+TEST(ObjC3ConditionScope, TemplateReplayBuildsConcreteBindingsAndRemapsLaterUses) {
-+  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++TEST(ObjC3ConditionScope,
++     TemplateReplayBuildsConcreteBindingsAndRemapsLaterUses) {
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
 +    typedef __objc3_optional(int) Maybe;
 +    template<class T> int exercise(T input) {
 +      T &source = input;
@@ -18672,45 +18769,51 @@ index 000000000..ae5e7b661
 +      return value;
 +    }
 +    extern template int exercise<Maybe>(Maybe);
-+  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  FunctionTemplateDecl *Template = nullptr;
 +  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
-+    if (auto *Candidate = dyn_cast<FunctionTemplateDecl>(D)) Template = Candidate;
++    if (auto *Candidate = dyn_cast<FunctionTemplateDecl>(D))
++      Template = Candidate;
 +  ASSERT_TRUE(Template);
 +  FunctionDecl *Pattern = Template->getTemplatedDecl();
 +  auto *Body = cast<CompoundStmt>(Pattern->getBody());
 +  ASSERT_EQ(4u, Body->size());
-+  auto *Source = cast<VarDecl>(cast<DeclStmt>(Body->body_front())->getSingleDecl());
++  auto *Source =
++      cast<VarDecl>(cast<DeclStmt>(Body->body_front())->getSingleDecl());
 +  auto *If = cast<IfStmt>(*(Body->body_begin() + 1));
-+  auto *OldValue = cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
++  auto *OldValue =
++      cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
 +  Sema &Actions = AST->getSema();
 +  {
 +    Sema::SynthesizedFunctionScope Scope(Actions, Pattern);
 +    SourceLocation Loc = Source->getLocation();
 +    StmtResult Result = Actions.ActOnObjC3BindingCondition(
-+        nullptr, OldValue->getIdentifier(), OldValue->getLocation(), false,
-+        Loc, Loc, Source->getInit());
++        nullptr, OldValue->getIdentifier(), OldValue->getLocation(), false, Loc,
++        Loc, Source->getInit());
 +    ASSERT_FALSE(Result.isInvalid());
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
 +    auto *Return = cast<ReturnStmt>(Body->body_back());
 +    auto *Reference = Actions.BuildDeclRefExpr(
-+        Binding->getBindingDecl(), Binding->getBindingDecl()->getType(), VK_LValue,
-+        Return->getRetValue()->getExprLoc());
++        Binding->getBindingDecl(), Binding->getBindingDecl()->getType(),
++        VK_LValue, Return->getRetValue()->getExprLoc());
 +    Return->setRetValue(Reference);
 +    Stmt *Conditions[] = {Binding};
-+    auto *Guard = ObjC3GuardStmt::Create(AST->getASTContext(), Conditions,
-+        If->getElse(), If->getIfLoc(), If->getElseLoc());
++    auto *Guard =
++        ObjC3GuardStmt::Create(AST->getASTContext(), Conditions, If->getElse(),
++                               If->getIfLoc(), If->getElseLoc());
 +    Stmt *Statements[] = {Guard, Return};
-+    Pattern->setBody(CompoundStmt::Create(AST->getASTContext(), Statements,
-+        FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc()));
++    Pattern->setBody(CompoundStmt::Create(
++        AST->getASTContext(), Statements, FPOptionsOverride(),
++        Body->getLBracLoc(), Body->getRBracLoc()));
 +  }
 +  ASSERT_EQ(1u, std::distance(Template->spec_begin(), Template->spec_end()));
 +  FunctionDecl *Concrete = *Template->spec_begin();
 +  Concrete->setTemplateSpecializationKind(TSK_ImplicitInstantiation);
-+  Actions.InstantiateFunctionDefinition(Concrete->getLocation(), Concrete,
-+                                         true, true, false);
++  Actions.InstantiateFunctionDefinition(Concrete->getLocation(), Concrete, true,
++                                        true, false);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  ASSERT_TRUE(Concrete->doesThisDeclarationHaveABody());
 +  auto *Instantiated = cast<CompoundStmt>(Concrete->getBody());
@@ -18719,7 +18822,335 @@ index 000000000..ae5e7b661
 +  EXPECT_TRUE(Binding->getBindingDecl()->getType()->isIntegerType());
 +  EXPECT_TRUE(Binding->getBindingDecl()->getType().isConstQualified());
 +  auto *Return = cast<ReturnStmt>(Instantiated->body_back());
-+  auto *Reference = cast<DeclRefExpr>(Return->getRetValue()->IgnoreParenImpCasts());
++  auto *Reference =
++      cast<DeclRefExpr>(Return->getRetValue()->IgnoreParenImpCasts());
 +  EXPECT_EQ(Binding->getBindingDecl(), Reference->getDecl());
 +  EXPECT_NE(OldValue, Reference->getDecl());
++}
++
++TEST(ObjC3ConditionCFG, OrderedSourcesShortCircuitAndKeepBranchBoundaries) {
++  for (const char *Standard : {"c17", "c++20", "c++23"})
++    for (bool Cpp : {false, true})
++      for (bool IfBinding : {false, true}) {
++        if (Cpp && llvm::StringRef(Standard) == "c17")
++          continue;
++        SCOPED_TRACE(Cpp);
++        SCOPED_TRACE(Standard);
++        SCOPED_TRACE(IfBinding);
++        std::string Input =
++            std::string("#define CPP_PAYLOAD ") + (Cpp ? "1\n" : "0\n");
++        auto AST = tooling::buildASTFromCodeWithArgs(
++            Input + R"(
++        #ifndef __cplusplus
++        #define bool _Bool
++        #endif
++        #if CPP_PAYLOAD
++        struct Temporary { ~Temporary() noexcept; };
++        struct Payload {
++          Payload(const Payload &, Temporary = Temporary()) noexcept;
++          ~Payload() noexcept;
++        };
++        typedef __objc3_optional(Payload) Maybe;
++        #define LOCAL_SOURCE Maybe &
++        #else
++        typedef __objc3_optional(int) Maybe;
++        #define LOCAL_SOURCE Maybe
++        #endif
++        Maybe *source1(Maybe *input);
++        Maybe *source2(Maybe *input);
++        void failed(void);
++        void succeeded(void);
++        void exercise(Maybe *input, bool accept) {
++          LOCAL_SOURCE first = *source1(input);
++          LOCAL_SOURCE second = *source2(input);
++          if (accept) {} else { failed(); return; }
++          succeeded();
++        }
++      )",
++            {"-x", Standard[1] == '+' ? "objective-c++" : "objective-c",
++             std::string("-std=") + Standard, "-fobjc-version=3"});
++        ASSERT_TRUE(AST);
++        ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++        ASTContext &C = AST->getASTContext();
++        FunctionDecl *Function = nullptr;
++        for (Decl *D : C.getTranslationUnitDecl()->decls())
++          if (auto *FD = dyn_cast<FunctionDecl>(D))
++            if (FD->hasBody())
++              Function = FD;
++        ASSERT_TRUE(Function);
++        auto *Body = cast<CompoundStmt>(Function->getBody());
++        auto *First = cast<VarDecl>(
++            cast<DeclStmt>(Body->body_begin()[0])->getSingleDecl());
++        auto *Second = cast<VarDecl>(
++            cast<DeclStmt>(Body->body_begin()[1])->getSingleDecl());
++        auto *Placeholder = cast<IfStmt>(Body->body_begin()[2]);
++        Sema &S = AST->getSema();
++        Sema::SynthesizedFunctionScope FunctionScope(S, Function);
++        auto Bind = [&](VarDecl *Source) {
++          return S.ActOnObjC3BindingCondition(
++              nullptr, Source->getIdentifier(), Source->getLocation(), false,
++              Source->getLocation(), Source->getLocation(), Source->getInit());
++        };
++        StmtResult FirstBinding = Bind(First), SecondBinding = Bind(Second);
++        ASSERT_FALSE(FirstBinding.isInvalid());
++        ASSERT_FALSE(SecondBinding.isInvalid());
++        SmallVector<Stmt *, 3> Conditions{FirstBinding.get()};
++        if (!IfBinding)
++          Conditions.push_back(Placeholder->getCond());
++        Conditions.push_back(SecondBinding.get());
++        Stmt *Replacement;
++        Stmt *Success = Body->body_begin()[3];
++        if (IfBinding) {
++          auto *Then =
++              CompoundStmt::Create(C, {Success}, FPOptionsOverride(),
++                                   Body->getLBracLoc(), Body->getRBracLoc());
++          Replacement = ObjC3IfBindingStmt::Create(
++              C, Conditions, Then, Placeholder->getElse(),
++              Placeholder->getIfLoc(), Placeholder->getElseLoc());
++        } else
++          Replacement = ObjC3GuardStmt::Create(
++              C, Conditions, Placeholder->getElse(), Placeholder->getIfLoc(),
++              Placeholder->getElseLoc());
++        SmallVector<Stmt *, 2> Statements{Replacement};
++        if (!IfBinding)
++          Statements.push_back(Success);
++        Function->setBody(
++            CompoundStmt::Create(C, Statements, FPOptionsOverride(),
++                                 Body->getLBracLoc(), Body->getRBracLoc()));
++        CFG::BuildOptions Options;
++        Options.AddScopes = Options.AddLifetime = Options.AddImplicitDtors =
++            true;
++        Options.AddTemporaryDtors = true;
++        Options.setAllAlwaysAdd();
++        auto Graph = CFG::buildCFG(Function, Function->getBody(), &C, Options);
++        ASSERT_TRUE(Graph);
++        std::set<std::string> Paths;
++        std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++            [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++              ASSERT_LT(Depth, 40u);
++              auto *FirstNode = cast<ObjC3BindingCondition>(FirstBinding.get());
++              auto *SecondNode =
++                  cast<ObjC3BindingCondition>(SecondBinding.get());
++              for (const CFGElement &Element : *Block) {
++                if (auto Statement = Element.getAs<CFGStmt>()) {
++                  if (auto *Call = dyn_cast<CallExpr>(Statement->getStmt()))
++                    if (auto *Callee = Call->getDirectCallee())
++                      Events += Callee->getNameAsString() + ",";
++                  if (Cpp)
++                    if (auto *DS = dyn_cast<DeclStmt>(Statement->getStmt())) {
++                      if (DS->getSingleDecl() == FirstNode->getBindingDecl())
++                        Events += "bind1,";
++                      if (DS->getSingleDecl() == SecondNode->getBindingDecl())
++                        Events += "bind2,";
++                    }
++                } else if (auto Dtor = Element.getAs<CFGObjC3CarrierDtor>()) {
++                  EXPECT_EQ(CFGElement::ObjC3CarrierDtor, Element.getKind());
++                  if (Dtor->getVarDecl() == FirstNode->getSnapshotDecl())
++                    Events += "snapshot1,";
++                  if (Dtor->getVarDecl() == SecondNode->getSnapshotDecl())
++                    Events += "snapshot2,";
++                } else if (auto Dtor = Element.getAs<CFGAutomaticObjDtor>()) {
++                  if (Dtor->getVarDecl() == FirstNode->getBindingDecl())
++                    Events += "destroy1,";
++                  if (Dtor->getVarDecl() == SecondNode->getBindingDecl())
++                    Events += "destroy2,";
++                }
++              }
++              if (Block == &Graph->getExit())
++                Paths.insert(Events);
++              else
++                for (const auto &Edge : Block->succs())
++                  if (auto *Next = Edge.getReachableBlock())
++                    Visit(Next, Events, Depth + 1);
++            };
++        Visit(&Graph->getEntry(), "", 0);
++        if (Cpp) {
++          std::set<std::string> Expected{
++              "source1,snapshot1,failed,",
++              "source1,bind1,snapshot1,source2,snapshot2,destroy1,failed,",
++              "source1,bind1,snapshot1,source2,bind2,snapshot2,succeeded,"
++              "destroy2,destroy1,"};
++          if (!IfBinding)
++            Expected.insert("source1,bind1,snapshot1,destroy1,failed,");
++          EXPECT_EQ(Expected, Paths);
++        } else
++          EXPECT_EQ((std::set<std::string>{"source1,failed,",
++                                           "source1,source2,failed,",
++                                           "source1,source2,succeeded,"}),
++                    Paths);
++        unsigned Branches = 0;
++        for (const CFGBlock *Block : *Graph)
++          if (Block->getTerminator().getKind() ==
++              CFGTerminator::ObjC3ConditionBranch) {
++            ++Branches;
++            if (isa<ObjC3BindingCondition, ObjC3CarrierTransferExpr>(
++                    Block->getTerminatorStmt()))
++              EXPECT_EQ(nullptr, Block->getTerminatorCondition());
++            else
++              EXPECT_TRUE(isa<Expr>(Block->getTerminatorCondition()));
++          }
++        EXPECT_EQ((IfBinding ? 2u : 3u) + (Cpp ? 2u : 0u), Branches);
++      }
++}
++
++TEST(ObjC3ConditionCFG, NestedGuardProofUsesSuccessfulSourceContinuation) {
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
++    void pass_nested(bool accept) {
++      if (accept) {} else { if (accept) {} else { return; } return; }
++    }
++    void fail_nested(bool accept) {
++      if (accept) {} else { if (accept) {} else { return; } }
++    }
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Messages = new Diagnostics;
++  AST->getDiagnostics().setClient(Messages, true);
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    class Convert : public RecursiveASTVisitor<Convert> {
++      ASTContext &Context;
++
++    public:
++      Convert(ASTContext &Context) : Context(Context) {}
++      bool VisitCompoundStmt(CompoundStmt *Body) {
++        for (Stmt *&Child : Body->body())
++          if (auto *If = dyn_cast<IfStmt>(Child))
++            Child =
++                ObjC3GuardStmt::Create(Context, {If->getCond()}, If->getElse(),
++                                       If->getIfLoc(), If->getElseLoc());
++        return true;
++      }
++    } Convert(AST->getASTContext());
++    ASSERT_TRUE(Convert.TraverseStmt(Function->getBody()));
++    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
++    EXPECT_EQ(Function->getName().starts_with("fail_"),
++              AST->getSema().CheckObjC3Guards(Function, Function->getBody()));
++  }
++  EXPECT_EQ(1u, Messages->Errors);
++}
++
++TEST(ObjC3ConditionCFG, CarrierDestructionKeepsLexicallyCaughtExceptionPaths) {
++  auto AST =
++      tooling::buildASTFromCodeWithArgs(R"(
++    struct Payload {
++      Payload() noexcept;
++      Payload(const Payload &) noexcept;
++      ~Payload() noexcept(false);
++    };
++    typedef __objc3_optional(Payload) Maybe;
++    void fail_caught(bool accept, Maybe &input) {
++      if (accept) {} else {
++        try { Maybe local = __objc3_copy(input); return; }
++        catch (...) {}
++      }
++    }
++    void fail_outward_goto(bool accept, Maybe &input) {
++      {
++        if (accept) {} else {
++          try { Maybe local = __objc3_copy(input); goto outside; }
++          catch (...) {}
++        }
++      }
++      outside:;
++    }
++  )",
++                                        {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3", "-fexceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Messages = new Diagnostics;
++  AST->getDiagnostics().setClient(Messages, true);
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    ++Cases;
++    auto *Guard = replacePlaceholder(AST->getASTContext(), Function);
++    ASSERT_TRUE(Guard);
++    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
++    EXPECT_TRUE(AST->getSema().CheckObjC3Guards(Function, Function->getBody()));
++    CFG::BuildOptions Options;
++    Options.AddImplicitDtors = true;
++    Options.setAllAlwaysAdd();
++    auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                               &AST->getASTContext(), Options);
++    ASSERT_TRUE(Graph);
++    unsigned CarrierCleanups = 0, CarrierBranches = 0;
++    for (const auto *Block : *Graph) {
++      for (const auto &Element : *Block)
++        if (auto Dtor = Element.getAs<CFGObjC3CarrierDtor>()) {
++          ++CarrierCleanups;
++          EXPECT_EQ(CFGElement::ObjC3CarrierDtor, Element.getKind());
++          SmallVector<const CXXDestructorDecl *, 2> Destructors;
++          Dtor->getPossibleDestructors(Destructors);
++          ASSERT_EQ(1u, Destructors.size());
++          EXPECT_EQ("~Payload", Destructors.front()->getNameAsString());
++        }
++      if (isa_and_nonnull<ObjC3CarrierTransferExpr>(Block->getTerminatorStmt()))
++        ++CarrierBranches;
++    }
++    EXPECT_GT(CarrierCleanups, 0u);
++    EXPECT_EQ(1u, CarrierBranches);
++  }
++  EXPECT_EQ(2u, Cases);
++  EXPECT_EQ(2u, Messages->Errors);
++}
++TEST(ObjC3ConditionCFG, CheckedInitializerFailureDestroysOnlyCompletedLocals) {
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
++    @protocol Error @end
++    int number() throws(id<Error>);
++    struct Local {
++      Local(int);
++      ~Local();
++    };
++    void exercise() throws(id<Error>) {
++      Local previous(0);
++      Local current(tryValue(number()));
++    }
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++       "-fobjc-runtime=gnustep-2.2"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *Function = nullptr;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      if (FD->hasBody())
++        Function = FD;
++  ASSERT_TRUE(Function);
++  CFG::BuildOptions Options;
++  Options.AddImplicitDtors = Options.AddLifetime = Options.AddScopes = true;
++  Options.setAllAlwaysAdd();
++  auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                             &AST->getASTContext(), Options);
++  ASSERT_TRUE(Graph);
++  const CFGBlock *Failure = nullptr;
++  for (const auto *Block : *Graph)
++    if (isa_and_nonnull<ObjC3TryExpr>(Block->getTerminatorStmt()) &&
++        Block->succ_size() == 2)
++      Failure = (Block->succ_begin() + 1)->getReachableBlock();
++  ASSERT_TRUE(Failure);
++  llvm::SmallPtrSet<const CFGBlock *, 8> Visited;
++  SmallVector<const CFGBlock *, 8> Pending{Failure};
++  SmallVector<std::string, 2> Destroyed;
++  while (!Pending.empty()) {
++    const auto *Block = Pending.pop_back_val();
++    if (!Visited.insert(Block).second)
++      continue;
++    for (const auto &Element : *Block)
++      if (auto Dtor = Element.getAs<CFGAutomaticObjDtor>())
++        Destroyed.push_back(Dtor->getVarDecl()->getNameAsString());
++    for (const auto &Edge : Block->succs())
++      if (auto *Next = Edge.getReachableBlock())
++        Pending.push_back(Next);
++  }
++  EXPECT_EQ((SmallVector<std::string, 2>{"previous"}), Destroyed);
 +}
