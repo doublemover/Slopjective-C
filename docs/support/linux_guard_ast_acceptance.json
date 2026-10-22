@@ -3,12 +3,12 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "2bc39700e5700c8e260ee9273cd587f2bd6b74a9",
+  "implementation_commit": "040f3de7d7692e9e8c80fd3680a763735d5dea46",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8fe8c1977337-fd761312",
-  "patch_digest": "8fe8c1977337cf4c9aa0d0ff30833fddf2caa6f8c8644ea289321891a05a4adf",
-  "compiler_sha256": "a9787ca58f8c1358413bfdd7886b4923bb05b55bf373bda716e13c1493160358",
-  "ast_tests_sha256": "5f111549b1a8f163481e9959759e13683daed6c3ec2fdcaee9a46a5f5a08001e",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a9893ea652dd-fd761312",
+  "patch_digest": "a9893ea652dd9c731bffca4dbca07434d91405ba509a3ec05594e466821d8d04",
+  "compiler_sha256": "73ca67123699dd6e2fc6efe040a80fe5c2c39b84816f41ecec4e0d1ea3a91e1d",
+  "ast_tests_sha256": "7e27ebb23ee577d63af4f63734219cb6908368695dab529227fca27ead025eac",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
@@ -31,14 +31,14 @@
       "immutable/mutable bindings",
       "implicit source snapshots",
       "ordered conditions",
-      "transparent guard continuation",
+      "native sibling statements after guard",
       "if-binding with absent else",
       "payload aliases and nullable/nonnull annotations"
     ],
     "runtime": {
-      "verified_native_modules": 32,
-      "configurations_passed": 64,
-      "commands_passed": 129,
+      "verified_native_modules": 40,
+      "configurations_passed": 80,
+      "commands_passed": 161,
       "standards": [
         "c17",
         "c++20",
@@ -55,7 +55,7 @@
       "cpp_payload_ownership_modes": [
         "MRC"
       ],
-      "expected_cpp_exception_scenarios_executed": 72,
+      "expected_cpp_exception_scenarios_executed": 92,
       "payloads": [
         "plain integer",
         "C++ record with nontrivial copy/destruction"
@@ -80,7 +80,8 @@
         "source temporaries/snapshots survive binding construction",
         "cleanup completes before later conditions and else",
         "successful bindings destroy in reverse order",
-        "later constructor/temporary failure destroys completed prefixes"
+        "later constructor/temporary failure destroys completed prefixes",
+        "GNU statement-expression result values and cleanup lifetimes"
       ],
       "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
       "executable_model": "non-PIE private native AST modules",
@@ -90,11 +91,11 @@
     },
     "temporary_ast_files_reclaimed_on_success": true
   },
-  "foundation_report_sha256": "41513c605b448ce6dde540764b5ada0bbbf4c36ca7d245f6e604f8668f84b8cd",
-  "runtime_report_sha256": "65e8df4891dfa2f60c24e4ea11d151d1604d1d6ede6ed5b5d3714114095e9088",
-  "ast_consumer_test_sha256": "85e6a44242029d43936ca10d1a25b16598d2db59295036cd8be09b8824292d37",
-  "ast_codegen_test_sha256": "3d7fe9c3cde7cd561f6530a3654ae601a07c11f8640c236f1a3ff3b70e5e3cf2",
-  "qualification_script_sha256": "d929db6c8d97c05cd8f5029a151b5904aefb93eea1f12f5a671d745a6267021f",
+  "foundation_report_sha256": "faf45ea8c82d18b45ae73964b1613b6275627a3d5dd049d3bd2ea82256b8bbaa",
+  "runtime_report_sha256": "c02da5066a66a86299246f4095c546ad71bc3f9808f74ffbc30b1f0290613f02",
+  "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
+  "ast_codegen_test_sha256": "cec62def2298d317a0d022be91e2623151927fa81c4abe635232217feea01780",
+  "qualification_script_sha256": "7d07fd065dbd5e461cb84b79a09bfb6cdfd5a8bc4229228b9514c615bc554efd",
   "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
     "managed-reference, weak and Block ownership matrix",

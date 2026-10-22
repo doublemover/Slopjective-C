@@ -27,16 +27,16 @@ The proof does not claim a general theorem about loop termination.
 
 ## Qualified development foundation
 
-The last qualified [development receipt](../support/linux_guard_ast_acceptance.json) binds
+The [development receipt](../support/linux_guard_ast_acceptance.json) binds
 229 passing Clang regressions, 70 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 32 verified native modules. All 64 O0/O2
+The private CodeGen gate exports 40 verified native modules. All 80 O0/O2
 executions pass across C17/C++20/23, ARC/MRC modes for integer payloads and
-nontrivial C++ records in MRC. The C++ runs include 72 expected constructor,
+nontrivial C++ records in MRC. The C++ runs include 92 expected constructor,
 temporary-cleanup and snapshot-destructor exceptions. This does not qualify
 managed-reference ownership, public parsing or an installed guard compiler.
 Ordered cases verify short-circuiting, earlier-binding access in later sources,
@@ -47,11 +47,10 @@ cleanup before else, reverse final destruction and partial-failure unwinding.
 
 Semantic construction shares snapshot preparation with match. The current
 revision keeps following statements in the native source compound and carries
-successful lifetime scopes through a synchronous CodeGen continuation. It
-removes the earlier AST-owned tail, preserving native statement-expression
-result discovery, source ranges and ordinary sibling traversal. This revision
-is under fresh validation, including GNU statement-expression runtime cases;
-the receipt above binds the preceding checkpoint. Maintained tests
+successful lifetime scopes through a synchronous CodeGen continuation. This
+preserves native statement-expression result discovery, source ranges and
+ordinary sibling traversal. GNU statement-expression runtime cases verify the
+result and cleanup lifetime boundary. Maintained tests
 cover C17/C++20/23, ARC/MRC, nullable references, tagged nullable payloads and
 C++ copy recipes.
 
