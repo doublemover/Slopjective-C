@@ -21,15 +21,13 @@ __attribute__((objc_root_class))
 }
 @end
 
+#if __has_feature(objc_arc)
 static int objc_error_out(id<Error> __autoreleasing *error, int success) {
   if (success) return 1;
-#if __has_feature(objc_arc)
   *error = [TestError new];
-#else
-  *error = objc_autorelease([TestError new]);
-#endif
   return 0;
 }
+#endif
 
 static Optional(int) input(int *calls, int present) {
   ++*calls;
@@ -219,16 +217,15 @@ int main(void) {
 #if __has_feature(objc_arc)
   assert(errors_created == errors_destroyed);
 #endif
+#if __has_feature(objc_arc)
+  // Managed native carrier ownership is qualified under ARC. MRC consumers
+  // above exercise scalar bridges and the explicit throwing error boundary.
   @autoreleasepool {
     __block int object_status_calls = 0, object_factory_calls = 0;
     id<Error> (^status_object_error)(int) = ^id<Error>(int code) {
       assert(code == -17);
       ++object_factory_calls;
-#if __has_feature(objc_arc)
       return [TestError new];
-#else
-      return objc_autorelease([TestError new]);
-#endif
     };
     Result(int, id<Error>) status_good_object = resultFromStatus(
         (++object_status_calls, 0), 42, status_object_error);
@@ -252,7 +249,6 @@ int main(void) {
       case .Err(let error): { assert(error == raw_error_object && error != (id)0); }
     }
   }
-#if __has_feature(objc_arc)
   assert(errors_created == errors_destroyed);
 #endif
   return 0;
