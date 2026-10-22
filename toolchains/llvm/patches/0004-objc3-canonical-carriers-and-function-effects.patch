@@ -17069,10 +17069,10 @@ index 000000000..a17807856
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionNodesTest.cpp b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
 new file mode 100644
-index 000000000..c4484a243
+index 000000000..d38847f38
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,177 @@
 +//===--- ObjC3ConditionNodesTest.cpp - Native condition AST consumers ----===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
@@ -17081,11 +17081,16 @@ index 000000000..c4484a243
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
++#include "clang/Frontend/CompilerInstance.h"
++#include "clang/Lex/HeaderSearchOptions.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Sema.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "llvm/ADT/FoldingSet.h"
 +#include "llvm/Support/Error.h"
++#include "llvm/Support/FileSystem.h"
++#include "llvm/Support/ToolOutputFile.h"
++#include "llvm/Support/VirtualFileSystem.h"
 +#include "gtest/gtest.h"
 +using namespace clang;
 +namespace {
@@ -17110,7 +17115,8 @@ index 000000000..c4484a243
 +  }
 +};
 +} // namespace
-+TEST(ObjC3Conditions, TraversesProfilesPrintsAndImportsNativeDeclarations) {
++TEST(ObjC3Conditions,
++     TraversesProfilesPrintsImportsAndPersistsNativeDeclarations) {
 +  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
 +                                         "-fobjc-version=3"};
 +  auto From = tooling::buildASTFromCodeWithArgs(
@@ -17158,7 +17164,8 @@ index 000000000..c4484a243
 +  Stmt *GuardConditions[] = {Let, Truth};
 +  auto *Guard = ObjC3GuardStmt::Create(C, GuardConditions, Else, Loc, Loc);
 +  Stmt *IfConditions[] = {Var};
-+  auto *If = ObjC3IfBindingStmt::Create(C, IfConditions, Then, Else, Loc, Loc);
++  auto *If = ObjC3IfBindingStmt::Create(C, IfConditions, Then, nullptr, Loc,
++                                        SourceLocation());
 +  Stmt *Body[] = {Guard, If};
 +  Function->setBody(
 +      CompoundStmt::Create(C, Body, FPOptionsOverride(), Loc, Loc));
@@ -17199,4 +17206,47 @@ index 000000000..c4484a243
 +      C.getLangOpts(), C, To->getASTContext(), NonEquivalent,
 +      StructuralEquivalenceKind::Default, false, false);
 +  EXPECT_TRUE(Equivalent.IsEquivalent(Guard, ImportedGuard));
++
++  llvm::SmallString<256> ASTPath;
++  int Descriptor;
++  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("objc3-conditions", "ast",
++                                                  Descriptor, ASTPath));
++  llvm::ToolOutputFile ASTFile(ASTPath, Descriptor);
++  ASSERT_FALSE(From->Save(ASTPath));
++  auto VFS = From->getFileManager().getVirtualFileSystemPtr();
++  auto DiagnosticOpts = std::make_shared<DiagnosticOptions>();
++  auto Diagnostics = CompilerInstance::createDiagnostics(*VFS, *DiagnosticOpts);
++  auto Containers = std::make_shared<PCHContainerOperations>();
++  HeaderSearchOptions HeaderOptions;
++  auto Reloaded = ASTUnit::LoadFromASTFile(
++      ASTPath, Containers->getRawReader(), ASTUnit::LoadEverything, VFS,
++      DiagnosticOpts, Diagnostics, From->getFileSystemOpts(), HeaderOptions);
++  ASSERT_TRUE(Reloaded);
++  FunctionDecl *ReloadedFunction = nullptr;
++  for (Decl *D : Reloaded->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      if (FD->hasBody())
++        ReloadedFunction = FD;
++  ASSERT_TRUE(ReloadedFunction);
++  auto *ReloadedBody = cast<CompoundStmt>(ReloadedFunction->getBody());
++  ASSERT_EQ(2u, ReloadedBody->size());
++  auto *ReloadedGuard = cast<ObjC3GuardStmt>(ReloadedBody->body_front());
++  auto *ReloadedIf = cast<ObjC3IfBindingStmt>(ReloadedBody->body_back());
++  ASSERT_EQ(2u, ReloadedGuard->getNumConditions());
++  ASSERT_EQ(1u, ReloadedIf->getNumConditions());
++  auto *ReloadedLet =
++      cast<ObjC3BindingCondition>(ReloadedGuard->getCondition(0));
++  auto *ReloadedVar = cast<ObjC3BindingCondition>(ReloadedIf->getCondition(0));
++  EXPECT_FALSE(ReloadedLet->isMutableBinding());
++  EXPECT_TRUE(ReloadedVar->isMutableBinding());
++  EXPECT_EQ("first", ReloadedLet->getBindingDecl()->getName());
++  EXPECT_EQ("second", ReloadedVar->getBindingDecl()->getName());
++  EXPECT_TRUE(ReloadedLet->getBindingDecl()->getType().isConstQualified());
++  EXPECT_FALSE(ReloadedVar->getBindingDecl()->getType().isConstQualified());
++  EXPECT_NE(nullptr, ReloadedGuard->getElse());
++  EXPECT_EQ(nullptr, ReloadedIf->getElse());
++  Conditions ReloadedVisitor;
++  EXPECT_TRUE(ReloadedVisitor.TraverseStmt(ReloadedBody));
++  EXPECT_EQ(2u, ReloadedVisitor.Bindings);
++  EXPECT_EQ(2u, ReloadedVisitor.Variables);
 +}
