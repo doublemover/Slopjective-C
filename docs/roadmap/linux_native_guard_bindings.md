@@ -28,17 +28,17 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-231 passing Clang regressions, 83 AST contract tests, 53 production exit-proof
+231 passing Clang regressions, 84 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 398 verified native modules, each generated and
-executed with matching O0 or O2 frontend/backend settings. All 398 executions
+The private CodeGen gate exports 404 verified native modules, each generated and
+executed with matching O0 or O2 frontend/backend settings. All 404 executions
 pass across C17/C++20/23, ARC/MRC modes for integer payloads, nontrivial C++
 records in MRC, and managed objects/Blocks in ARC. The runs include 164 expected
-C++ exceptions and 294 expected Objective-C exceptions.
+C++ exceptions and 312 expected Objective-C exceptions.
 
 Managed cases cross strong/weak/unsafe sources, direct nullable references versus
 tagged optionals, immutable/mutable bindings and both branch forms. Clearing the
@@ -49,7 +49,7 @@ earlier-binding access, source mutation, temporary/snapshot lifetime, cleanup
 before else, reverse final destruction and partial-failure unwinding.
 A separate public defer source/PCH gate passes 24 configurations and 100 commands,
 including 24 expected Objective-C and 16 expected C++ terminations. Together the
-gates pass 897 commands. This does not qualify public guard parsing or an
+gates pass 909 commands. This does not qualify public guard parsing or an
 installed guard compiler.
 
 ## Source and lifetime lowering
@@ -186,8 +186,10 @@ records. Cases include normal/return/loop/goto, assignment, checked/native error
 throwing actions, local catches/jumps, native C++ and cleanup-attribute ordering,
 VLA storage, methods, Blocks, lambdas and templates. PCH cases enable extended
 variable liveness to keep fake-use cleanup coverage in the maintained gate.
-Private guard modules also
-verify prefix release before else versus defer-before-release on success/unwind.
+Private guard/if modules also verify prefix release before else versus
+defer-before-release on success/unwind. Exceptions in a later source unwind
+only the completed prefix, and if-body actions remain unregistered until every
+condition succeeds.
 This qualifies the maintained CodeGen cases; a complete native ARC cleanup CFG
 model and public guard source admission remain separate work.
 

@@ -3,19 +3,19 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "8a3600302bdaddfceeebca311324da6051891c04",
+  "implementation_commit": "7fdeb6bca6dfc816754998f7d1edd833e1784cca",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-b626be75a263-fd761312",
-  "patch_digest": "b626be75a263dd5a953f44216bed73734744985cb6ac799134267d6dd100c3f6",
-  "compiler_sha256": "c3d312ba9f5e1cadd456551da70836878cb2a3739abd301254e11d73421959ce",
-  "ast_tests_sha256": "cdeb4aa6f9e6457e1d45453fade9957d21fc0875f882eed5d6a039e5b7681fcf",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-607ba21b4b56-fd761312",
+  "patch_digest": "607ba21b4b566e8640f1fb9754145192e73577eb7ef1c24662c6c1543471267c",
+  "compiler_sha256": "f984f75cd17c9db5f6d0a96ffa84c37a0eedefe32ad3b33666cd40554825f22a",
+  "ast_tests_sha256": "9d7636be2ed32917834dc7613539c9c64a1b1ca805c92f9f8079bfb319aecb95",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
   "verification": {
     "clang_regressions_passed": 231,
     "clang_regressions_unsupported": 3,
-    "ast_contract_tests_passed": 83,
+    "ast_contract_tests_passed": 84,
     "production_guard_exit_cases": 53,
     "focused_tooling_tests_passed": 8,
     "compiler_clangd_lldb_rebuilt": true,
@@ -36,9 +36,9 @@
       "payload aliases and nullable/nonnull annotations"
     ],
     "runtime": {
-      "verified_native_modules": 398,
-      "configurations_passed": 398,
-      "commands_passed": 897,
+      "verified_native_modules": 404,
+      "configurations_passed": 404,
+      "commands_passed": 909,
       "standards": [
         "c17",
         "c++20",
@@ -55,7 +55,7 @@
       "cpp_payload_ownership_modes": [
         "MRC"
       ],
-      "expected_cpp_exception_scenarios_executed": 0,
+      "expected_cpp_exception_scenarios_executed": 164,
       "payloads": [
         "plain integer",
         "C++ record with nontrivial copy/destruction",
@@ -92,7 +92,9 @@
         "Some(nil) remains present",
         "Objective-C exception cleanup releases binding and captures",
         "defer before final managed guard releases on normal/exceptional exit",
-        "failed later binding releases prefix before else and outer deferred action"
+        "failed later binding releases prefix before else and outer deferred action",
+        "if-binding actions register only after all conditions succeed",
+        "native exception in a later managed source unwinds only the completed prefix"
       ],
       "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
       "executable_model": "non-PIE private native AST modules",
@@ -104,7 +106,7 @@
         "O2"
       ],
       "frontend_backend_optimization_matched": true,
-      "expected_objc_exception_scenarios_executed": 294,
+      "expected_objc_exception_scenarios_executed": 312,
       "managed_source_ownership": [
         "strong",
         "weak",
@@ -217,17 +219,13 @@
       "stored_addresses_preserve_ssa_dominance": true,
       "native_arc_cleanup_cfg_qualified": false
     },
-    "additional_variable_liveness": {
-      "configurations_passed": 4,
-      "commands_passed": 8,
-      "report_sha256": "3bf2c1c5cdbd22489cdd506bd11eee9dcac2808488186faf5c3c89bfed193d52"
-    }
+    "sdk_packaging_tooling_tests_passed": 41
   },
-  "foundation_report_sha256": "974185f6222df40f6499397ababb36642e1a8440fc5ef74fb37a9d90a549ab10",
-  "runtime_report_sha256": "166bb7b61324f36c683fea3d32c9c4ced51770ae207bc478a2e572afc25a6ae4",
+  "foundation_report_sha256": "4ddb26b0f90a4534c2d3049f1d96ae3f7208ab63a8527ee8bfd54349dc1e17ea",
+  "runtime_report_sha256": "152da119c7754212ed332e63a4f96a1ccad65708b8f33122a70d33062a78a86c",
   "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
-  "ast_codegen_test_sha256": "ae5d598b8387a91d7172ad7c2c82f88bd7b7dc6b3e23793a521f76cd1b5e4819",
-  "qualification_script_sha256": "8d77ab433cdee28a201ea930098d9f0a6d11b5a14d8e2476fb28850409ab93ed",
+  "ast_codegen_test_sha256": "c7d0b29c36e6e0e85cac2ffc8855f1378354aec4c2bec6e7c73ddd52cc2a4572",
+  "qualification_script_sha256": "c415ff847f137dcf0510b0d5a0abc2a2a38bc5f4570df0fe816b5a33f2293204",
   "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
     "C++ construction/destruction, ARC and runtime cleanup in deferred native unwind CFG",
@@ -238,7 +236,7 @@
   "activated_sdk_receipt": "docs/support/linux_match_results_acceptance.json",
   "scope_test_sha256": "eaf10b31302d5e440a91436136057b717668f003a1e4aff9985b0c71f5abb0cd",
   "defer_source_inputs_sha256": {
-    "scripts/objc3c_native_validation/defer_source.py": "5475f920de6ce8c7270fb943e21d03ff92e6ef4741b780ff359b35415ca4c0f7",
+    "scripts/objc3c_native_validation/defer_source.py": "d3ab922ac042ba9ec83ae04abe8aa5b2cfe25b07dd29ce63c6d34c98b86765e3",
     "tests/clang_foundation/defer_control_flow/runtime.h": "2232d303b9518333d07f093c315a9d3471648f9c1d2267f47367756440cfbeba",
     "tests/clang_foundation/defer_control_flow/main.m": "c5c062dd6abfc65ccaddea24a47af1a636c22b5b6da112ea8a395299dc4840aa"
   }
