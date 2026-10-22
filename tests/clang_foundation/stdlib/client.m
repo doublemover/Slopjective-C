@@ -52,6 +52,26 @@ int main(void) {
   assert(isOk(stdlib_optional(Some(int, 42), factory)));
   assert(!isOk(stdlib_optional(None(int), factory)) && factory_calls == 2);
 
+  __block int status_calls = 0, success_calls = 0, error_calls = 0;
+  __block int status_factory_constructions = 0;
+  int (^status_error)(int) = ^int(int code) { ++error_calls; return code + 100; };
+  Result(int, int) status_good = resultFromStatus(
+      (++status_calls, 0), (++success_calls, 42),
+      (++status_factory_constructions, status_error));
+  assert(isOk(status_good) && status_calls == 1 && success_calls == 1);
+  assert(error_calls == 0 && status_factory_constructions == 0);
+  Result(int, int) status_bad = resultFromStatus(
+      (++status_calls, -7), (++success_calls, 99),
+      (++status_factory_constructions, status_error));
+  assert(!isOk(status_bad) && status_calls == 2 && success_calls == 1);
+  assert(error_calls == 1 && status_factory_constructions == 1);
+  match(status_bad) {
+    case .Ok(let value): { (void)value; assert(0); }
+    case .Err(let error): { assert(error == 93); }
+  }
+  assert(isOk(stdlib_status(0, 42, status_error)));
+  assert(!isOk(stdlib_status(9, 0, status_error)) && error_calls == 2);
+
   __block int factory_constructions = 0;
   Result(int, int) lazy = okOr(Some(int, 1), (++factory_constructions, factory));
   assert(isOk(lazy) && factory_constructions == 0);
@@ -103,6 +123,33 @@ int main(void) {
     }
   }
   assert(observed == (id)0 && errors_created == errors_destroyed);
+#endif
+  @autoreleasepool {
+    __block int bridged_status = 0;
+    __block int bridge_factory_calls = 0;
+    id<Error> (^bridge_error)(int) = ^id<Error>(int code) {
+      bridged_status = code;
+      ++bridge_factory_calls;
+#if __has_feature(objc_arc)
+      return [TestError new];
+#else
+      return objc_autorelease([TestError new]);
+#endif
+    };
+    tryForce(stdlib_status_throwing(0, bridge_error));
+    assert(bridge_factory_calls == 0);
+    int caught_status = 0;
+    handle {
+      tryValue(stdlib_status_throwing(-17, bridge_error));
+      assert(0);
+    } catch(id<Error> error) {
+      assert(error != (id)0 && bridged_status == -17 && bridge_factory_calls == 1);
+      caught_status = 1;
+    }
+    assert(caught_status);
+  }
+#if __has_feature(objc_arc)
+  assert(errors_created == errors_destroyed);
 #endif
   return 0;
 }

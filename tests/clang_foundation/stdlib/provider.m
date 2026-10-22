@@ -4,6 +4,12 @@
 Result(int, int) stdlib_optional(Optional(int) value, int (^factory)(void)) {
   return okOr(value, factory);
 }
+Result(int, int) stdlib_status(int status, int value, int (^factory)(int)) {
+  return resultFromStatus(status, value, factory);
+}
+void stdlib_status_throwing(int status, id<Error> (^factory)(int)) throws(id<Error>) {
+  tryValue(statusOrThrow(status, factory));
+}
 int stdlib_throwing(Optional(int) value, id<Error> (^factory)(void))
     throws(id<Error>) {
   return tryValue(orThrow(value, factory));

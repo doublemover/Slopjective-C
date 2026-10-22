@@ -39,10 +39,11 @@
         "native Result constructors and inspection",
         "lazy generic okOr",
         "checked generic orThrow",
-        "typed runtime error boxes"
+        "typed runtime error boxes",
+        "lazy zero-success status Result and checked throws adapters"
       ],
       "remaining": [
-        "general status/NSError adapters",
+        "NSError-style object/error-out adapters",
         "Error-constrained generic factory validation for Core/Strict"
       ]
     },
@@ -125,7 +126,11 @@
       "header": null,
       "status": "unimplemented",
       "implemented": [],
-      "remaining": ["typed literals", "typed application", "component metadata"]
+      "remaining": [
+        "typed literals",
+        "typed application",
+        "component metadata"
+      ]
     },
     {
       "module": "objc3.system",
@@ -139,7 +144,11 @@
       "header": null,
       "status": "unimplemented",
       "implemented": [],
-      "remaining": ["resource cleanup", "borrow/lifetime intrinsics", "strict-system diagnostics"]
+      "remaining": [
+        "resource cleanup",
+        "borrow/lifetime intrinsics",
+        "strict-system diagnostics"
+      ]
     }
   ]
 }

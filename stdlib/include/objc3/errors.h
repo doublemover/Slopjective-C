@@ -42,6 +42,30 @@
     } \
   })(value)
 
+/* Bridge zero-success status APIs without eagerly constructing either arm.
+ * status is evaluated exactly once. successValue is evaluated only on success;
+ * makeError (including its construction) is evaluated only on failure and sees
+ * the original status value. The caller supplies the API's domain-specific
+ * error representation, rather than losing it in an integer error box. */
+#define resultFromStatus(status, successValue, makeError) \
+  (^Result(__typeof__(successValue), __typeof__((makeError)(status))) \
+      (__typeof__(status) __objc3_stdlib_status) { \
+    if (__objc3_stdlib_status == 0) \
+      return Ok(__typeof__(successValue), __typeof__((makeError)(status)), \
+                (successValue)); \
+    return Err(__typeof__(successValue), __typeof__((makeError)(status)), \
+               (makeError)(__objc3_stdlib_status)); \
+  })(status)
+
+#ifdef __OBJC__
+/* Checked-error counterpart for status APIs whose successful result is void. */
+#define statusOrThrow(status, makeError) \
+  (^( __typeof__(status) __objc3_stdlib_status) throws(id<Error>) { \
+    if (__objc3_stdlib_status != 0) \
+      throwError((makeError)(__objc3_stdlib_status)); \
+  })(status)
+#endif
+
 #ifdef __OBJC__
 #define orThrow(value, makeError) \
   (^(__typeof__(value) __objc3_stdlib_input) throws(id<Error>) { \

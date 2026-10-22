@@ -42,6 +42,14 @@ for any checked throwing call. The factory returns `id<Error>` for `orThrow`;
 `okOr` preserves the factory's concrete error type. The helpers support payloads
 admitted by the compiler's Block call ABI; unsupported types are diagnosed.
 
+The development headers also provide `resultFromStatus(status, successValue,
+makeError)` for zero-success status APIs. The status runs once; the success
+expression runs only for zero, and the error factory is constructed/called only
+for nonzero with the original status. `statusOrThrow(status, makeError)` bridges
+void-success operations to checked `id<Error>` propagation. Domain-specific
+factories retain the API's error meaning. These additions require the next SDK
+build and installed validation; the current released archive predates them.
+
 The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
 for the C++ coroutine adapter. Public async/await and actor language capabilities
