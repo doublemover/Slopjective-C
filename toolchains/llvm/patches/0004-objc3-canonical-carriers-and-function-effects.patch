@@ -17021,10 +17021,10 @@ index 000000000..bc2e6a4b2
 +};
 diff --git a/clang/lib/AST/ObjC3ConditionNodes.cpp b/clang/lib/AST/ObjC3ConditionNodes.cpp
 new file mode 100644
-index 000000000..b4f37089d
+index 000000000..9fc7780fc
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3ConditionNodes.cpp
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,140 @@
 +//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17101,7 +17101,8 @@ index 000000000..b4f37089d
 +  }
 +  for (Stmt *W : llvm::reverse(Wrappers)) {
 +    if (auto *L = dyn_cast<LabelStmt>(W)) L->setSubStmt(New);
-+    else if (auto *SC = dyn_cast<SwitchCase>(W)) SC->setSubStmt(New);
++    else if (auto *SC = dyn_cast<CaseStmt>(W)) SC->setSubStmt(New);
++    else if (auto *DS = dyn_cast<DefaultStmt>(W)) DS->setSubStmt(New);
 +    else {
 +      auto *A = cast<AttributedStmt>(W);
 +      W = AttributedStmt::Create(C, A->getAttrLoc(), A->getAttrs(), New);
