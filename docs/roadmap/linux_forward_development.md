@@ -63,13 +63,18 @@ regressions enrolled in the foundation build. Raw PCH/PCM identity now rejects
 incompatible Objective-C 3 artifacts even when ordinary validation is disabled.
 
 The consolidated development foundation now passes: compiler, facade libraries,
-editor tools and LLDB build successfully; 292 Clang regressions pass with three
+editor tools and LLDB build successfully; 293 Clang regressions pass with three
 unsupported, alongside 148 native AST/CFG/CodeGen, matcher and clangd contract
 tests. Eighteen focused tooling tests and eight coroutine harness tests pass.
 The admitted execution matrix also passes 1,045 commands: 404 native AST
 configurations, 24 defer, 24 guard, 24 optional-access and eight coalescing
-source/PCH configurations. The Linux SDK rebuild is now running; installed SDK
-qualification remains required before new release receipts or capability claims. The active
+source/PCH configurations. The Linux SDK rebuild is running with failing feature suites scheduled first.
+The repaired standard-library overlay passes 40 executions / 198 commands, and
+the async C ABI MRC lifetime witness passes 100 repeated executions. Strict
+factory contracts check all three profiles: ARC additionally compiles the
+managed carrier ABI; MRC checks Sema without admitting unsupported managed
+carrier code generation. Installed SDK qualification remains required before
+new release receipts or capability claims. The active
 SDK above still predates this wave. Managed release queues retain an explicit
 native-EH CFG ownership boundary while normal CFG and native execution checks
 remain independent.
@@ -147,6 +152,13 @@ activation. `/tmp` already uses RAM; no extra ramdisk reservation is needed.
 Keep persistent compiler objects, SDKs and ccache on disk. Disposable integration
 executables and service archives use case-scoped temporary directories and are
 reclaimed on success or failure; logs and receipts remain on disk.
+
+Installed SDK consumers run with bounded concurrency and stop scheduling later
+suites after a failure. The maintained fresh-distribution runner binds the exact
+archive digest and qualifies Debian 13 and Ubuntu 26.04 concurrently with two
+CPUs per container, executable tmpfs and guaranteed container cleanup. Its
+`native-features` scope includes guard, optional access, recursive carrier and
+LLDB witnesses alongside defer, standard-library and async/task consumers.
 
 The ignored local `linux-dev` CMake preset targets the current frontend build.
 The SDK pipeline enables all required qualification independently. Frontend
