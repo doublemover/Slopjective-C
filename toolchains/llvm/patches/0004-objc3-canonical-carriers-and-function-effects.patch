@@ -25385,7 +25385,7 @@ index 013bb912d..f9d8cd8a8 100644
        "varDecl", constructMatcher("hasInitializer", constructMatcher("stmt")))
 diff --git a/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
 new file mode 100644
-index 000000000..2e455d274
+index 000000000..c3195afc0
 --- /dev/null
 +++ b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
 @@ -0,0 +1,185 @@
@@ -25440,7 +25440,7 @@ index 000000000..2e455d274
 +                     unless(isObjC3MutableBinding()),
 +                     hasObjC3Binding(varDecl(hasName("first")).bind("binding")))
 +                     .bind("condition")),
-+          hasObjC3Condition(1, Enabled))
++          hasObjC3Condition(1, expr(Enabled)))
 +          .bind("guard"),
 +      AST->getASTContext());
 +  ASSERT_EQ(1u, Results.size());
@@ -27132,10 +27132,10 @@ index d596ba77e..bfa65d4f3 100644
    ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 new file mode 100644
-index 000000000..1f5467a20
+index 000000000..f71621a5e
 --- /dev/null
 +++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,247 @@
 +//===--- ObjC3SourceToolsTests.cpp - Native Objective-C editor contracts ----===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -27159,6 +27159,7 @@ index 000000000..1f5467a20
 +#include "refactor/Rename.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/Basic/Diagnostic.h"
++#include "clang/Format/Format.h"
 +#include "llvm/Support/Error.h"
 +#include "gmock/gmock.h"
 +#include "gtest/gtest.h"
@@ -27212,7 +27213,7 @@ index 000000000..1f5467a20
 +      AST.getASTContext(), AST.getTokens(), Offset, Offset);
 +  ASSERT_TRUE(Selection.commonAncestor());
 +  ASSERT_TRUE(Selection.commonAncestor()->ASTNode.get<VarDecl>());
-+  auto Hover = getHover(AST, A.point());
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
 +  ASSERT_TRUE(Hover);
 +  EXPECT_EQ(Hover->Name, "value");
 +  EXPECT_EQ(Hover->Definition, "let value = source");
@@ -27237,7 +27238,7 @@ index 000000000..1f5467a20
 +  )objc");
 +  auto TU = objc3TU(A.code());
 +  auto AST = TU.build();
-+  auto Hover = getHover(AST, A.point());
++  auto Hover = getHover(AST, A.point(), format::getLLVMStyle(), nullptr);
 +  ASSERT_TRUE(Hover);
 +  EXPECT_EQ(Hover->Definition, "var value = source");
 +  ASSERT_TRUE(Hover->Type);
@@ -27310,11 +27311,11 @@ index 000000000..1f5467a20
 +    }
 +  )objc");
 +  auto AST = objc3TU(A.code()).build();
-+  auto Slot = getHover(AST, A.point("slot"));
++  auto Slot = getHover(AST, A.point("slot"), format::getLLVMStyle(), nullptr);
 +  ASSERT_TRUE(Slot);
 +  EXPECT_THAT(Slot->Documentation, HasSubstr("closes with `close_handle`"));
 +  EXPECT_THAT(Slot->Documentation, HasSubstr("invalid value is `-1`"));
-+  auto Take = getHover(AST, A.point("take"));
++  auto Take = getHover(AST, A.point("take"), format::getLLVMStyle(), nullptr);
 +  ASSERT_TRUE(Take);
 +  EXPECT_EQ(Take->Name, "__builtin_objc3_resource_take");
 +  EXPECT_EQ(Take->Definition, "__builtin_objc3_resource_take(handle)");
