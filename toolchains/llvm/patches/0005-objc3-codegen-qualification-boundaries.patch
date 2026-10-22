@@ -1361,7 +1361,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..7383df6bc 100644
+index 0683a4937..3be626b64 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -1,3 +1,4 @@
@@ -1695,7 +1695,7 @@ index 0683a4937..7383df6bc 100644
      return ::buildByrefHelpers(
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
-@@ -2866,9 +2995,22 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
+@@ -2866,9 +2995,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
  
  void CodeGenFunction::enterByrefCleanup(CleanupKind Kind, Address Addr,
                                          BlockFieldFlags Flags,
@@ -1705,7 +1705,12 @@ index 0683a4937..7383df6bc 100644
 +                                        bool LoadBlockVarAddr, bool CanThrow,
 +                                        const VarDecl *SourceVariable) {
 +  CallBlockRelease Release(Addr, Flags, LoadBlockVarAddr, CanThrow);
-+  if (SourceVariable && SourceVariable->getType()->isObjCRetainableType() &&
++  // The heap forwarding cell can own a managed record or carrier as well as
++  // a direct object pointer. Keep it alive through all source cleanup actions;
++  // a user C++ destructor still runs at its native registration point.
++  if (SourceVariable &&
++      hasOnlyObjC3ImplicitManagedDestruction(getContext(),
++                                             SourceVariable->getType()) &&
 +      hasObjC3DeferredSourceOwner(SourceVariable))
 +    EHStack.pushCleanup<EmitObjC3OrderedRelease>(
 +        Kind, registerObjC3SourceRelease(
@@ -2404,7 +2409,7 @@ index 7421733ef..f382865e8 100644
    } else if (isa<VarDecl>(D) &&
               GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..dadc51fc1 100644
+index e84e05e8e..1ff306a14 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,17 @@
@@ -2797,38 +2802,7 @@ index e84e05e8e..dadc51fc1 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2154,6 +2387,30 @@ void CodeGenFunction::EmitExprAsInit(const Expr *init, const ValueDecl *D,
-   llvm_unreachable("bad evaluation kind");
- }
- 
-+namespace {
-+// Pure aggregate special members only perform implicit subobject destruction.
-+// Keep user C++ destructor actions in the native registration order.
-+bool onlyImplicitManagedDestruction(ASTContext &Context, QualType Type) {
-+  Type = Context.getBaseElementType(Type);
-+  if (Type->isObjCRetainableType()) return true;
-+  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
-+    return onlyImplicitManagedDestruction(Context, Optional->getElementType());
-+  if (const auto *Result = Type->getAs<ObjC3ResultType>())
-+    return onlyImplicitManagedDestruction(Context, Result->getSuccessType()) &&
-+           onlyImplicitManagedDestruction(Context, Result->getErrorType());
-+  if (const auto *Record = Type->getAsCXXRecordDecl()) {
-+    if (!Record->isAggregate() || Record->getNumBases() ||
-+        Record->hasUserDeclaredDestructor())
-+      return false;
-+    for (const FieldDecl *Field : Record->fields())
-+      if (!onlyImplicitManagedDestruction(Context, Field->getType()))
-+        return false;
-+    return true;
-+  }
-+  return Type.isDestructedType() == QualType::DK_none;
-+}
-+} // namespace
-+
- /// Enter a destroy cleanup for the given local variable.
- void CodeGenFunction::emitAutoVarTypeCleanup(
-                             const CodeGenFunction::AutoVarEmission &emission,
-@@ -2199,6 +2456,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2432,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -2836,7 +2810,7 @@ index e84e05e8e..dadc51fc1 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2476,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2452,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -2847,7 +2821,7 @@ index e84e05e8e..dadc51fc1 100644
 +       dtorKind == QualType::DK_objc_weak_lifetime ||
 +       dtorKind == QualType::DK_nontrivial_c_struct ||
 +       (dtorKind == QualType::DK_cxx_destructor &&
-+        onlyImplicitManagedDestruction(getContext(), type))))
++        hasOnlyObjC3ImplicitManagedDestruction(getContext(), type))))
 +    EHStack.pushCleanup<EmitObjC3OrderedRelease>(
 +        cleanupKind, registerObjC3SourceRelease(
 +            var, addr, useEHCleanup,
@@ -2861,7 +2835,7 @@ index e84e05e8e..dadc51fc1 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2506,70 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2482,70 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -2934,7 +2908,7 @@ index e84e05e8e..dadc51fc1 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2271,7 +2605,7 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,7 +2581,7 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -2943,7 +2917,7 @@ index e84e05e8e..dadc51fc1 100644
    }
  }
  
-@@ -2285,6 +2619,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2595,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -2952,7 +2926,7 @@ index e84e05e8e..dadc51fc1 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3032,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3008,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -3650,7 +3624,7 @@ index 6f7b7e7d6..98213d9b0 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..28e416bf9 100644
+index c724a063b..aca94625f 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,6 +12,10 @@
@@ -3818,7 +3792,24 @@ index c724a063b..28e416bf9 100644
      // constructor returns 'self'.
      CodeGenTypes &Types = CGM.getTypes();
      QualType IdTy(CGM.getContext().getObjCIdType());
-@@ -2380,6 +2455,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+@@ -1996,6 +2071,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+ 
+   // Initialize the element variable.
+   RunCleanupsScope elementVariableScope(*this);
++  enterObjC3SourceScope(S.getElement());
+   bool elementIsVariable;
+   LValue elementLValue;
+   QualType elementType;
+@@ -2091,6 +2167,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+   BreakContinueStack.push_back(BreakContinue(S, LoopEnd, AfterBody));
+   {
+     RunCleanupsScope Scope(*this);
++    if (!isa<CompoundStmt>(S.getBody()))
++      enterObjC3SourceScope(S.getBody());
+     EmitStmt(S.getBody());
+   }
+   BreakContinueStack.pop_back();
+@@ -2380,6 +2458,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
  /// if it can prove that the block never escapes except down the stack.
  llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
                                                   bool mandatory) {
@@ -8827,7 +8818,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..02e480cfe 100644
+index 27e74d966..02e46e746 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,11 @@
@@ -8913,7 +8904,115 @@ index 27e74d966..02e480cfe 100644
  
    Address RetAlloca = Address::invalid();
    if (GetLast) {
-@@ -1697,6 +1750,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -888,6 +941,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+   // C99 6.8.4.1: The first substatement is executed if the expression compares
+   // unequal to 0.  The condition must be a scalar type.
+   LexicalScope ConditionScope(*this, S.getCond()->getSourceRange());
++  enterObjC3SourceScope(&S);
+   ApplyDebugLocation DL(*this, S.getCond());
+ 
+   if (S.getInit()) {
+@@ -920,6 +974,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+       if (Executed) {
+         MaybeEmitDeferredVarDeclInit(S.getConditionVariable());
+         RunCleanupsScope ExecutedScope(*this);
++        if (!isa<CompoundStmt>(Executed))
++          enterObjC3SourceScope(Executed);
+         EmitStmt(Executed);
+       }
+       PGO->markStmtMaybeUsed(Skipped);
+@@ -973,6 +1029,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+   incrementProfileCounter(UseExecPath, &S);
+   {
+     RunCleanupsScope ThenScope(*this);
++    if (!isa<CompoundStmt>(S.getThen()))
++      enterObjC3SourceScope(S.getThen());
+     EmitStmt(S.getThen());
+   }
+   EmitBranch(ContBlock);
+@@ -989,6 +1047,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+       incrementProfileCounter(UseSkipPath, &S);
+     {
+       RunCleanupsScope ElseScope(*this);
++      if (!isa<CompoundStmt>(Else))
++        enterObjC3SourceScope(Else);
+       EmitStmt(Else);
+     }
+     {
+@@ -1096,6 +1156,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
+   //   with each iteration of the loop.
+   RunCleanupsScope ConditionScope(*this);
+ 
++  enterObjC3SourceScope(&S);
++
+   if (S.getConditionVariable())
+     EmitDecl(*S.getConditionVariable());
+ 
+@@ -1158,6 +1220,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
+     RunCleanupsScope BodyScope(*this);
+     EmitBlock(LoopBody);
+     incrementProfileCounter(UseExecPath, &S);
++    if (!isa<CompoundStmt>(S.getBody()))
++      enterObjC3SourceScope(S.getBody());
+     EmitStmt(S.getBody());
+   }
+ 
+@@ -1206,6 +1270,8 @@ void CodeGenFunction::EmitDoStmt(const DoStmt &S,
+ 
+   {
+     RunCleanupsScope BodyScope(*this);
++    if (!isa<CompoundStmt>(S.getBody()))
++      enterObjC3SourceScope(S.getBody());
+     EmitStmt(S.getBody());
+   }
+ 
+@@ -1279,6 +1345,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+   if (getLangOpts().C99 || getLangOpts().CPlusPlus)
+     ForScope.emplace(*this, S.getSourceRange());
+ 
++  enterObjC3SourceScope(&S);
++
+   // Evaluate the first part before the loop.
+   if (S.getInit())
+     EmitStmt(S.getInit());
+@@ -1301,6 +1369,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+ 
+   // Create a cleanup scope for the condition variable cleanups.
+   LexicalScope ConditionScope(*this, S.getSourceRange());
++  if (S.getConditionVariableDeclStmt())
++    enterObjC3SourceScope(S.getConditionVariableDeclStmt());
+ 
+   // If the for loop doesn't have an increment we can just use the condition as
+   // the continue block. Otherwise, if there is no condition variable, we can
+@@ -1377,6 +1447,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+     // Create a separate cleanup scope for the body, in case it is not
+     // a compound statement.
+     RunCleanupsScope BodyScope(*this);
++    if (!isa<CompoundStmt>(S.getBody()))
++      enterObjC3SourceScope(S.getBody());
+     EmitStmt(S.getBody());
+   }
+ 
+@@ -1421,6 +1493,7 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
+   JumpDest LoopExit = getJumpDestInCurrentScope("for.end");
+ 
+   LexicalScope ForScope(*this, S.getSourceRange());
++  enterObjC3SourceScope(&S);
+ 
+   // Evaluate the first pieces before the loop.
+   if (S.getInit())
+@@ -1487,7 +1560,10 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
+   {
+     // Create a separate cleanup scope for the loop variable and body.
+     LexicalScope BodyScope(*this, S.getSourceRange());
++    enterObjC3SourceScope(S.getLoopVarStmt());
+     EmitStmt(S.getLoopVarStmt());
++    if (!isa<CompoundStmt>(S.getBody()))
++      enterObjC3SourceScope(S.getBody());
+     EmitStmt(S.getBody());
+   }
+   // The last block in the loop's body (which unconditionally branches to the
+@@ -1697,6 +1773,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
@@ -8927,7 +9026,7 @@ index 27e74d966..02e480cfe 100644
        EmitAggExpr(RV, AggValueSlot::forAddr(
                            ReturnValue, Qualifiers(),
                            AggValueSlot::IsDestructed,
-@@ -1995,7 +2055,7 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -1995,7 +2078,7 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
    const DeferStmt &Stmt;
    EmitDeferredStatement(const DeferStmt *Stmt) : Stmt(*Stmt) {}
  
@@ -8936,7 +9035,7 @@ index 27e74d966..02e480cfe 100644
      // Take care that any cleanups pushed by the body of a '_Defer' statement
      // don't clobber the current cleanup slot value.
      //
-@@ -2056,10 +2116,23 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -2056,10 +2139,23 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
        SavedCleanupDest =
            CGF.Builder.CreateLoad(CGF.NormalCleanupDest, "cleanup.dest.saved");
  
@@ -8964,7 +9063,7 @@ index 27e74d966..02e480cfe 100644
  
      // Cleanups must end with an insert point.
      CGF.EnsureInsertPoint();
-@@ -2067,10 +2140,208 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -2067,10 +2163,208 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
  };
  } // namespace
  
@@ -8989,7 +9088,7 @@ index 27e74d966..02e480cfe 100644
 +
 +void CodeGenFunction::enterObjC3SourceScope(const Stmt *Owner) {
 +  auto *State = getObjC3DeferState();
-+  if (!State || !State->Sources.DeferredScopes.contains(Owner)) return;
++  if (!State || !State->Sources.CleanupScopes.contains(Owner)) return;
 +  for (const auto &Scope : llvm::reverse(State->Scopes))
 +    if (Scope->Active && Scope->Owner == Owner) return;
 +  auto Scope = std::make_unique<ObjC3ReleaseScope>();
@@ -9173,6 +9272,35 @@ index 27e74d966..02e480cfe 100644
  /// CollectStatementsForCase - Given the body of a 'switch' statement and a
  /// constant value that is being switched on, see if we can dead code eliminate
  /// the body of the switch to a simple series of statements to emit.  Basically,
+@@ -2378,6 +2672,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+         incrementProfileCounter(Case);
+       RunCleanupsScope ExecutedScope(*this);
+ 
++      enterObjC3SourceScope(&S);
++
+       if (S.getInit())
+         EmitStmt(S.getInit());
+ 
+@@ -2386,6 +2682,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+       if (S.getConditionVariable())
+         EmitDecl(*S.getConditionVariable(), /*EvaluateConditionDecl=*/true);
+ 
++      // Constant folding emits selected statements without visiting the
++      // original compound body, so enter that source owner explicitly.
++      enterObjC3SourceScope(S.getBody());
++
+       // At this point, we are no longer "within" a switch instance, so
+       // we can temporarily enforce this to ensure that any embedded case
+       // statements are not emitted.
+@@ -2410,6 +2710,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+ 
+   RunCleanupsScope ConditionScope(*this);
+ 
++  enterObjC3SourceScope(&S);
++
+   if (S.getInit()) {
+     EmitStmt(S.getInit());
+ 
 diff --git a/clang/lib/CodeGen/CGVTables.cpp b/clang/lib/CodeGen/CGVTables.cpp
 index 9e4218646..fb44979a0 100644
 --- a/clang/lib/CodeGen/CGVTables.cpp
@@ -19876,10 +20004,10 @@ index 977f81a64..0ce2baecd 100644
        llvm::BasicBlock *NormalExit = Builder.GetInsertBlock();
 diff --git a/clang/lib/CodeGen/CGObjC3Defer.h b/clang/lib/CodeGen/CGObjC3Defer.h
 new file mode 100644
-index 000000000..c8d61c5da
+index 000000000..7acf57569
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Defer.h
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,79 @@
 +//===--- CGObjC3Defer.h - Native source-scope release ordering ------*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19890,6 +20018,36 @@ index 000000000..c8d61c5da
 +#include "llvm/ADT/SmallSet.h"
 +#include <functional>
 +namespace clang::CodeGen {
++/// Identify destruction that only releases implicit managed subobjects. User
++/// C++ destructors are source actions and retain their native stack position.
++/// This also covers C records whose managed fields use primitive destruction.
++inline bool hasOnlyObjC3ImplicitManagedDestruction(ASTContext &Context,
++                                                 QualType Type) {
++  Type = Context.getBaseElementType(Type);
++  if (Type->isObjCRetainableType())
++    return true;
++  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
++    return hasOnlyObjC3ImplicitManagedDestruction(Context,
++                                                 Optional->getElementType());
++  if (const auto *Result = Type->getAs<ObjC3ResultType>())
++    return hasOnlyObjC3ImplicitManagedDestruction(Context,
++                                                 Result->getSuccessType()) &&
++           hasOnlyObjC3ImplicitManagedDestruction(Context,
++                                                 Result->getErrorType());
++  if (const auto *Record = Type->getAs<RecordType>()) {
++    const RecordDecl *Declaration = Record->getDecl();
++    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Declaration))
++      if (!CXXRecord->isAggregate() || CXXRecord->getNumBases() ||
++          CXXRecord->hasUserDeclaredDestructor())
++        return false;
++    for (const FieldDecl *Field : Declaration->fields())
++      if (!hasOnlyObjC3ImplicitManagedDestruction(Context, Field->getType()))
++        return false;
++    return true;
++  }
++  return Type.isDestructedType() == QualType::DK_none;
++}
++
 +struct ObjC3ReleaseScope;
 +using ObjC3ReleaseEmitter = std::function<void(CodeGenFunction &, Address,
 +                                               EHScopeStack::Cleanup::Flags)>;
@@ -19928,4 +20086,73 @@ index 000000000..c8d61c5da
 +  }
 +};
 +} // namespace clang::CodeGen
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/cleanup-source-ownership.m b/clang/test/ObjC3/CodeGen/cleanup-source-ownership.m
+new file mode 100644
+index 000000000..ca8056212
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/cleanup-source-ownership.m
+@@ -0,0 +1,63 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -std=c17 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++23 -fcxx-exceptions -O2 -emit-obj -o %t.o %s
++// REQUIRES: x86-registered-target
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++id make_owner(void) __attribute__((ns_returns_retained));
++void observe(id) __attribute__((nothrow));
++void release_marker(int *) __attribute__((nothrow));
++void may_throw(void);
++void (^saved_block)(void);
++
++// A cleanup attribute is itself a source action. Implicit ARC destruction
++// must be delayed even when there is no defer anywhere in this function.
++void cleanup_only(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  id value = make_owner();
++  observe(value);
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_only(
++// CHECK: scope.release.pending
++// CHECK: call void @release_marker(
++// CHECK: scope.release:
++// CHECK: call void @llvm.objc.storeStrong(
++// CHECK: ret void
++
++// Moving a byref record onto the heap transfers its ownership out of the
++// original stack storage. Ordering only the stack destructor is insufficient.
++struct ManagedRecord { id value; };
++void cleanup_byref_record(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  __block struct ManagedRecord value = {make_owner()};
++  saved_block = ^{ observe(value.value); };
++  saved_block();
++  saved_block = (id)0;
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_byref_record(
++// CHECK: call void @release_marker(
++// CHECK: scope.release:
++// CHECK: call void @_Block_object_dispose(
++// CHECK: ret void
++
++void cleanup_byref_carrier(void) {
++  int marker __attribute__((cleanup(release_marker))) = 1;
++  id source = make_owner();
++  __block __objc3_optional(id) value = __objc3_some(id, source);
++  source = (id)0;
++  saved_block = ^{ (void)__objc3_has_value(value); };
++  saved_block();
++  saved_block = (id)0;
++  may_throw();
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_byref_carrier(
++// CHECK: invoke void @may_throw(
++// CHECK: call void @release_marker(
++// CHECK: scope.release:
++// CHECK: call void @_Block_object_dispose(
++// CHECK: ret void
++#ifdef __cplusplus
++}
 +#endif

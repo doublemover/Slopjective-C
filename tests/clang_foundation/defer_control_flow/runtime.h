@@ -308,6 +308,117 @@ static void arc_cleanup_attribute(void) {
   int marker __attribute__((cleanup(release_marker))) = 2;
   DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
 }
+// Cleanup attributes register source actions in their own right. None of
+// these scopes contains a defer to supply an incidental release-queue owner.
+static void release_observed_marker(int *value) {
+  if(!observed)bad=36;
+  record(*value);
+}
+static void arc_cleanup_only(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  if(fail)@throw token;
+}
+static void arc_cleanup_only_multiple(void) {
+  int first_marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *first_value = [DeferredProbe newWithDigit:3];
+  int last_marker __attribute__((cleanup(release_observed_marker))) = 2;
+  DeferredProbe *last_value = [DeferredProbe newWithDigit:4]; observe(last_value);
+  (void)first_value;
+}
+static void arc_cleanup_only_mutated(void) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 2;
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  marker = 1;
+}
+static void arc_cleanup_only_backward(void) {
+  int count = 0;
+again:;
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  if(count++ == 0)goto again;
+  second();
+}
+static void arc_cleanup_only_forward(void) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  goto after;
+after: second();
+}
+static void arc_cleanup_only_nested(void) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *outer = [DeferredProbe newWithDigit:3];
+  {
+    int inner_marker __attribute__((cleanup(release_observed_marker))) = 2;
+    DeferredProbe *inner = [DeferredProbe newWithDigit:4]; observe(inner);
+  }
+  observe(outer);
+  record(5);
+}
+static void arc_cleanup_only_loop(void) {
+  for(int index=0; index!=2; ++index) {
+    int marker __attribute__((cleanup(release_observed_marker))) = 1;
+    DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+    if(index == 0)continue;
+    break;
+  }
+}
+static void arc_cleanup_only_array(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *values[2] = {[DeferredProbe newWithDigit:3],
+                             [DeferredProbe newWithDigit:4]};
+  observe(values[1]);
+  if(fail)@throw token;
+}
+static void arc_cleanup_only_checked(void) {
+  handle {
+    int marker __attribute__((cleanup(release_observed_marker))) = 1;
+    DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+    throwError(token);
+  } catch(id<Error> error) { if(error != token)bad=37; second(); }
+}
+static void arc_cleanup_only_byref_carrier(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredProbe *source = [DeferredProbe newWithDigit:3];
+  observe(source);
+  __block __objc3_optional(DeferredProbe *) value =
+      __objc3_some(DeferredProbe *, source);
+  source = (id)0;
+  saved_block = ^{ if(!__objc3_has_value(value))bad=38; };
+  saved_block(); saved_block = (id)0;
+  // Copying the block transfers the payload out of the stack cell. The
+  // forwarding-cell owner must survive until the marker has run.
+  if(fail)@throw token;
+}
+static void arc_cleanup_only_byref_record(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  __block struct DeferredHolder value = {[DeferredProbe newWithDigit:3]};
+  saved_block = ^{ observe(value.value); };
+  saved_block(); saved_block = (id)0;
+  if(fail)@throw token;
+}
+static void arc_defer_byref_record(bool fail) {
+  defer { assert_alive(); }
+  __block struct DeferredHolder value = {[DeferredProbe newWithDigit:3]};
+  saved_block = ^{ observe(value.value); };
+  saved_block(); saved_block = (id)0;
+  if(fail)@throw token;
+}
+static void release_observed_probe(DeferredProbe *__strong *value) {
+  (void)value;
+  if(!observed)bad=45;
+  first();
+}
+static void arc_cleanup_for_initializer(void) {
+  int count = 0;
+  for(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
+          [DeferredProbe newWithDigit:3],
+      *last_value = [DeferredProbe newWithDigit:4]; count != 1; ++count) {
+    (void)first_value;
+    observe(last_value);
+    second();
+  }
+}
 static void arc_copied_body(void) {
   defer { assert_alive(); }
   defer {
@@ -320,6 +431,70 @@ static void arc_copied_body(void) {
 }
 #ifdef __cplusplus
 struct DeferredAction { int digit; ~DeferredAction() { record(digit); } };
+static void arc_cleanup_if_initializer(bool flag) {
+  if(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
+         [DeferredProbe newWithDigit:3],
+     *last_value = [DeferredProbe newWithDigit:4]; flag) {
+    (void)first_value; observe(last_value); second();
+  } else {
+    observe(last_value); second();
+  }
+}
+static void arc_cleanup_switch_initializer(int choice) {
+  switch(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
+             [DeferredProbe newWithDigit:3],
+         *last_value = [DeferredProbe newWithDigit:4]; choice) {
+  case 1: (void)first_value; observe(last_value); second(); break;
+  default: observe(last_value); second(); break;
+  }
+}
+static void arc_cleanup_folded_switch_initializer(void) {
+  switch(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
+             [DeferredProbe newWithDigit:3],
+         *last_value = [DeferredProbe newWithDigit:4]; 1) {
+  case 1: (void)first_value; observe(last_value); second(); break;
+  }
+}
+static void arc_cleanup_range_initializer(void) {
+  int values[2] = {0, 1};
+  for(DeferredProbe *first_value __attribute__((cleanup(release_observed_probe))) =
+          [DeferredProbe newWithDigit:3],
+      *last_value = [DeferredProbe newWithDigit:4]; int value : values) {
+    (void)first_value;
+    observe(last_value);
+    if(value == 0)continue;
+    second();
+  }
+}
+struct CleanupTruth {
+  DeferredProbe *value;
+  explicit operator bool() const { return value != (id)0; }
+};
+static void release_truth(CleanupTruth *value) {
+  if(value->value) { observe(value->value); first(); }
+}
+static void arc_cleanup_while_condition(void) {
+  int count = 0;
+  while(CleanupTruth value __attribute__((cleanup(release_truth))) =
+            {count++ < 2 ? [DeferredProbe newWithDigit:3] : (id)0}) {
+    if(count == 1)continue;
+    second();
+  }
+}
+static void arc_cleanup_for_condition(void) {
+  int count = 0;
+  for(; CleanupTruth value __attribute__((cleanup(release_truth))) =
+            {count++ < 2 ? [DeferredProbe newWithDigit:3] : (id)0};) {
+    if(count == 1)continue;
+    second();
+  }
+}
+static void arc_cleanup_only_cpp_action(bool fail) {
+  int marker __attribute__((cleanup(release_observed_marker))) = 1;
+  DeferredAction action{2};
+  DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+  if(fail)throw 42;
+}
 static void arc_cpp_action(bool fail) {
   defer { assert_alive(); }
   DeferredAction action{2};
@@ -396,8 +571,43 @@ static void arc_ordering(void) {
   @try { arc_carrier_array(1); } @catch(id error) { if(error != token)bad=33; second(); }
   expect(132);
   arc_cleanup_attribute(); expect(213);
+  arc_cleanup_only(0); expect(13);
+  @try { arc_cleanup_only(1); } @catch(id error) { if(error != token)bad=39; second(); }
+  expect(132);
+  arc_cleanup_only_multiple(); expect(2143);
+  arc_cleanup_only_mutated(); expect(13);
+  arc_cleanup_only_backward(); expect(13213);
+  arc_cleanup_only_forward(); expect(213);
+  arc_cleanup_only_nested(); expect(24513);
+  arc_cleanup_only_loop(); expect(1313);
+  arc_cleanup_only_array(0); expect(143);
+  @try { arc_cleanup_only_array(1); } @catch(id error) { if(error != token)bad=40; second(); }
+  expect(1432);
+  arc_cleanup_only_checked(); expect(132);
+  arc_cleanup_only_byref_carrier(0); expect(13);
+  @try { arc_cleanup_only_byref_carrier(1); } @catch(id error) { if(error != token)bad=41; second(); }
+  expect(132);
+  arc_cleanup_only_byref_record(0); expect(13);
+  @try { arc_cleanup_only_byref_record(1); } @catch(id error) { if(error != token)bad=42; second(); }
+  expect(132);
+  arc_defer_byref_record(0); expect(13);
+  @try { arc_defer_byref_record(1); } @catch(id error) { if(error != token)bad=43; second(); }
+  expect(132);
+  arc_cleanup_for_initializer(); expect(2143);
   arc_copied_body(); expect(213);
 #ifdef __cplusplus
+  arc_cleanup_if_initializer(0); expect(2143);
+  arc_cleanup_if_initializer(1); expect(2143);
+  arc_cleanup_switch_initializer(1); expect(2143);
+  arc_cleanup_switch_initializer(0); expect(2143);
+  arc_cleanup_folded_switch_initializer(); expect(2143);
+  arc_cleanup_range_initializer(); expect(2143);
+  arc_cleanup_while_condition(); expect(13213);
+  arc_cleanup_for_condition(); expect(13213);
+  arc_cleanup_only_cpp_action(0); expect(213);
+  try { arc_cleanup_only_cpp_action(1); }
+  catch(int value) { if(value != 42)bad=44; record(4); }
+  expect(2134);
   arc_cpp_action(0); expect(213);
   try { arc_cpp_action(1); } catch(int value) { if(value != 42)bad=34; record(4); }
   expect(2134);
