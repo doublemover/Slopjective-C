@@ -12,7 +12,9 @@ FIXTURES = ROOT / "tests/clang_foundation/defer_control_flow"
 INPUTS = (Path(__file__).resolve(), FIXTURES / "runtime.h", FIXTURES / "main.m")
 
 
-def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> None:
+def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict,
+            *, fixtures: Path | None = None) -> None:
+    fixtures = fixtures or FIXTURES
     result = {
         "status": "running", "compiler_binding": "admitted-development-source",
         "defer_source_syntax_admitted": True, "guard_source_syntax_admitted": False,
@@ -53,10 +55,10 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> No
                     if pch:
                         cache = directory / "defer-runtime.pch"
                         run(name + "-header", [*unit_common, "-x", language + "-header",
-                                              FIXTURES / "runtime.h", "-o", cache])
+                                              fixtures / "runtime.h", "-o", cache])
                         arguments = ["-include-pch", cache, "-DDEFER_RUNTIME_PCH=1"]
                     run(name + "-compile", [
-                        *unit_common, "-x", language, *arguments, FIXTURES / "main.m",
+                        *unit_common, "-x", language, *arguments, fixtures / "main.m",
                         "-fuse-ld=lld", "-no-pie", "-L" + str(sdk / "lib"), "-lobjc",
                         "-Wl,-rpath," + str(sdk / "lib"), "-o", executable,
                     ])

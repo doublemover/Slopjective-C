@@ -17874,10 +17874,10 @@ index 000000000..9924d3182
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..f804c8c23
+index 000000000..88b9b8ca8
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,846 @@
+@@ -0,0 +1,872 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -18687,13 +18687,26 @@ index 000000000..f804c8c23
 +}
 +- (void)dealloc { if(key == 42)record(3); object_dispose(self); }
 +@end
++static PrefixProbe *prepare_second(PrefixProbe *value, int mode, id token)
++    __attribute__((ns_returns_retained));
++static PrefixProbe *prepare_second(PrefixProbe *value, int mode, id token) {
++  if(mode == 3)@throw token;
++  return value;
++}
++#ifdef ORDERED_IF_BINDING
++#define FAILED_PREFIX_TRACE 34
++#define THROWING_PREFIX_TRACE 32
++#else
++#define FAILED_PREFIX_TRACE 341
++#define THROWING_PREFIX_TRACE 132
++#endif
 +typedef __objc3_optional(PrefixProbe *) Source;
 +int exercise(int mode, id token) {
 +  Source source = __objc3_some(PrefixProbe *, [PrefixProbe newWithKey:42]);
 +  if(1) {} else { record(4); return -1; }
 +  PrefixProbe *value = (id)0;
 +  Source second_source = mode == 1 ? __objc3_none(PrefixProbe *)
-+                                  : __objc3_some(PrefixProbe *, value);
++                                  : __objc3_some(PrefixProbe *, prepare_second(value, mode, token));
 +  PrefixProbe *second_value = (id)0;
 +  (void)(bool)1;
 +  defer { record(1); }
@@ -18705,12 +18718,16 @@ index 000000000..f804c8c23
 +  @autoreleasepool {
 +    if(exercise(0, (id)0) || events != 13)return 1;
 +    events = 0;
-+    if(exercise(1, (id)0) != -1 || events != 341)return 2;
++    if(exercise(1, (id)0) != -1 || events != FAILED_PREFIX_TRACE)return 2;
 +    events = 0;
 +    id token = [PrefixProbe newWithKey:7];
 +    @try { exercise(2, token); return 3; }
 +    @catch(id error) { if(error != token)return 4; record(2); }
 +    if(events != 132)return 5;
++    events = 0;
++    @try { exercise(3, token); return 6; }
++    @catch(id error) { if(error != token)return 7; record(2); }
++    if(events != THROWING_PREFIX_TRACE)return 8;
 +  }
 +  return 0;
 +}
@@ -18722,6 +18739,15 @@ index 000000000..f804c8c23
 +    checkLowering(ManagedPrefixDefer,
 +                  std::string(Standard) + "-arc-prefix-defer", Standard,
 +                  true, false, true, false, false, true, true);
++  }
++}
++
++TEST(ObjC3ConditionCodeGen, DeferredIfActionsBeginOnlyAfterAllBindingsSucceed) {
++  for (const char *Standard : {"c17", "c++20", "c++23"}) {
++    SCOPED_TRACE(Standard);
++    checkLowering(ManagedPrefixDefer,
++                  std::string(Standard) + "-arc-if-defer", Standard,
++                  true, true, true);
 +  }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc

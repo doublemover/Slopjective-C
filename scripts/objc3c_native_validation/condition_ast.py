@@ -80,7 +80,13 @@ def cases() -> dict[str, dict]:
         result[f"{standard}-arc-prefix-defer"] = {
             "standard": standard, "ownership": "arc", "kind": "guard",
             "payload": "object", "ordered_bindings": 2,
-            "defer_prefix_failure": True, "expected_objc_exception_scenarios": 1,
+            "defer_prefix_failure": True, "expected_objc_exception_scenarios": 2,
+        }
+    for standard in ("c17", "c++20", "c++23"):
+        result[f"{standard}-arc-if-defer"] = {
+            "standard": standard, "ownership": "arc", "kind": "if",
+            "payload": "object", "ordered_bindings": 2,
+            "defer_prefix_failure": True, "expected_objc_exception_scenarios": 2,
         }
     return result
 
