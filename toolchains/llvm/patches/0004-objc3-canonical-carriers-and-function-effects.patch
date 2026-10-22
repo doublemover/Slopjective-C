@@ -6641,10 +6641,10 @@ index 000000000..6cf24a68c
 +}
 diff --git a/clang/lib/Sema/SemaObjC3DoCatch.cpp b/clang/lib/Sema/SemaObjC3DoCatch.cpp
 new file mode 100644
-index 000000000..132028f71
+index 000000000..80bc420b7
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3DoCatch.cpp
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,279 @@
 +#include "SemaObjC3ErrorContext.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
@@ -6841,6 +6841,9 @@ index 000000000..132028f71
 +  if (getLangOpts().ObjCAutoRefCount &&
 +      ObjC().inferObjCARCLifetime(Binding))
 +    Binding->setInvalidDecl();
++  // A selected checked payload initializes this handler-local binding just
++  // like a native catch parameter. Preserve that fact for dataflow and PCH.
++  Binding->setExceptionVariable(true);
 +  PushOnScopeChains(Binding, CatchScope);
 +  auto *BindingStmt = new (Context) DeclStmt(DeclGroupRef(Binding), CatchLoc,
 +                                              NameLoc);
@@ -19743,4 +19746,51 @@ index 000000000..d46f370b2
 +  }
 +};
 +} // namespace clang
++#endif
+diff --git a/clang/test/ObjC3/Sema/defer-native-diagnostics.m b/clang/test/ObjC3/Sema/defer-native-diagnostics.m
+new file mode 100644
+index 000000000..53c21685a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/defer-native-diagnostics.m
+@@ -0,0 +1,41 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -Werror=return-type -Werror=uninitialized -fsyntax-only -verify %s
++#ifndef __cplusplus
++#define bool _Bool
++#endif
++@protocol Error @end
++void cleanup(void) __attribute__((nothrow));
++int native_exception(bool fail, id token) {
++  defer { cleanup(); }
++  if(fail)@throw token;
++  return 42;
++}
++int native_exception_only(id token) {
++  defer { cleanup(); }
++  @throw token;
++}
++int handler_binding(id<Error> token) {
++  handle { throwError(token); }
++  catch(id<Error> error) { return error ? 1 : 0; }
++}
++int ordinary_uninitialized(id<Error> token) {
++  int value; // expected-note {{initialize the variable 'value' to silence this warning}}
++  handle { throwError(token); }
++  catch(id<Error> error) {
++    return error ? value : 0; // expected-error {{variable 'value' is uninitialized when used here}}
++  }
++}
++int ordinary_fallthrough(void) {
++  defer { cleanup(); }
++} // expected-error {{non-void function does not return a value}}
++#ifdef __cplusplus
++int cxx_exception(bool fail) {
++  defer { cleanup(); }
++  if(fail)throw 73;
++  return 42;
++}
 +#endif
