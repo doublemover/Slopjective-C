@@ -23,7 +23,8 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict,
         "scope": ["ordered bindings and short-circuiting", "snapshot independence",
                   "let/var and source mutation", "guard/if lexical scope",
                   "loop transfers", "source defer ordering", "Block captures",
-                  "GNU statement expressions", "C++ template replay"],
+                  "GNU statement expressions", "C++ template replay",
+                  "ARC object/Block snapshots", "weak source absence and Some(nil)"],
     }
     report["guard_source"] = result
     started_commands = len(report["commands"])

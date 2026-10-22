@@ -1,6 +1,8 @@
 #pragma once
 #ifndef __cplusplus
 #define bool _Bool
+#define true 1
+#define false 0
 #endif
 static int guard_failures, guard_calls, guard_events;
 #define GUARD_CHECK(value) do { if (!(value)) ++guard_failures; } while (0)
@@ -75,6 +77,54 @@ static void guard_cpp(void) {
   GUARD_CHECK(first == 1 && second == 2 && counter == 2);
 }
 #endif
+#if __has_feature(objc_arc)
+#ifdef __cplusplus
+extern "C" {
+#endif
+id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
+id object_dispose(__unsafe_unretained id);
+#ifdef __cplusplus
+}
+#endif
+static int guard_created, guard_destroyed;
+__attribute__((objc_root_class))
+@interface GuardObject { Class isa; @public int number; }
++ (instancetype)make:(int)value __attribute__((ns_returns_retained));
+@end
+@implementation GuardObject
++ (instancetype)make:(int)value {
+  GuardObject *object = class_createInstance(self, 0);
+  object->number = value;
+  ++guard_created;
+  return object;
+}
+- (void)dealloc { ++guard_destroyed; object_dispose(self); }
+@end
+static void guard_managed(void) {
+  GuardObject * __weak witness;
+  {
+    GuardObject *owner = [GuardObject make:42];
+    witness = owner;
+    guard let value = owner else { ++guard_failures; return; }
+    owner = (id)0;
+    GUARD_CHECK(witness != (id)0 && value->number == 42);
+    int (^capture)(void) = ^{ return value->number; };
+    GUARD_CHECK(capture() == 42);
+  }
+  GUARD_CHECK(witness == (id)0);
+  GUARD_CHECK(guard_created == guard_destroyed);
+  Optional(id) tagged = Some(id, (id)0);
+  guard let present_nil = tagged else { ++guard_failures; return; }
+  GUARD_CHECK(present_nil == (id)0);
+  id __weak absent = (id)0;
+  if let unexpected = absent { (void)unexpected; ++guard_failures; }
+  else { GUARD_CHECK(absent == (id)0); }
+  int (^source)(int) = ^(int value) { return value + 3; };
+  guard let bound = source else { ++guard_failures; return; }
+  source = (id)0;
+  GUARD_CHECK(bound(4) == 7);
+}
+#endif
 static void guard_plain_suite(void) {
   guard_calls = 0; GUARD_CHECK(guard_ordered(false, true, true) == -1);
   guard_calls = 0; GUARD_CHECK(guard_ordered(true, false, true) == -2);
@@ -88,5 +138,8 @@ static void guard_plain_suite(void) {
   GUARD_CHECK(guard_statement_expression(true) == 10);
 #ifdef __cplusplus
   guard_cpp();
+#endif
+#if __has_feature(objc_arc)
+  guard_managed();
 #endif
 }

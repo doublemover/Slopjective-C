@@ -176,11 +176,16 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_stdlib.py', 'qualify_stdlib.py'),
                                 ('qualify_match_results.py', 'qualify_match_results.py'),
                                 ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
+                                ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),
                                 ('qualify_native_async.py', 'qualify_native_async.py'),
                                 ('qualify_native_async_packages.py', 'qualify_native_async_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copyfile(repo / 'scripts/objc3c_native_validation/defer_source.py',
                     builder / 'defer_source.py')
+    shutil.copyfile(repo / 'scripts/objc3c_native_validation/guard_source.py',
+                    builder / 'guard_source.py')
+    shutil.copytree(repo / 'tests/clang_foundation/guard_bindings',
+                    prefix / 'share/objc3c/examples/guard-bindings')
     shutil.copytree(repo / 'tests/clang_foundation/defer_control_flow',
                     prefix / 'share/objc3c/examples/defer-control-flow')
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',
@@ -267,6 +272,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_stdlib import qualify as qualify_stdlib
     from .qualify_match_results import qualify as qualify_match_results
     from .qualify_defer_control_flow import qualify as qualify_defer_control_flow
+    from .qualify_guard_bindings import qualify as qualify_guard_bindings
     from .qualify_native_async import qualify as qualify_async
     from .qualify_native_async_packages import qualify as qualify_async_packages
 
@@ -288,6 +294,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_structured_runtime': partial(qualify_structured, prefix, validation_report.parent / 'installed-structured-runtime'),
         'installed_task_coroutines': partial(qualify_coroutines, prefix, validation_report.parent / 'installed-task-coroutines'),
         'installed_match_results': partial(qualify_match_results, prefix, validation_report.parent / 'installed-match-results'),
+        'installed_guard_bindings': partial(qualify_guard_bindings, prefix, validation_report.parent / 'installed-guard-bindings'),
         'installed_defer_control_flow': partial(qualify_defer_control_flow, prefix, validation_report.parent / 'installed-defer-control-flow'),
         'installed_stdlib': partial(qualify_stdlib, prefix, validation_report.parent / 'installed-stdlib'),
         'installed_async_c_abi': partial(qualify_async_c_abi, prefix, validation_report.parent / 'installed-async-c-abi'),
