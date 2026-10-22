@@ -34,7 +34,9 @@ comparison, cross-context import and save/reload serialization, including both
 binding kinds and an absent if-binding else. Compiler, clangd and LLDB rebuilds
 pass. Source parsing and ownership lowering remain under implementation. That receipt
 binds the earlier AST revision; the snapshot/continuation revision below is
-under fresh development validation.
+under fresh development validation. The first full rebuild passed all 229
+Clang regressions and exposed a payload-nullability erasure in the new semantic
+tests; the revision below addresses it and remains unqualified until rerun.
 
 ## Source and lifetime lowering
 
@@ -43,6 +45,11 @@ snapshots and normalizes guard continuations without changing label or case
 identity. Its expanded tests cover C17/C++20/23, ARC/MRC, nullable references,
 tagged nullable payloads and C++ copy recipes. These additions are not yet
 qualified by the earlier receipt.
+
+Carrier nodes now retain payload spelling and nullability annotations while
+sharing canonical type identity and physical representation. This follows
+native composite-type construction and carries annotations through aliases,
+AST import and serialization.
 
 A binding owns an implicit native snapshot declaration and a user declaration.
 Their initializers retain native ARC/C++ initialization recipes. The snapshot
@@ -54,15 +61,24 @@ normal cleanup and debugger scopes span the remaining source block while the
 failure branch uses its incoming scope. The continuation adds no source-level
 compound scope. Native local initialization is shared with ordinary declarations;
 conditional binding cleanup is registered after source temporary cleanup.
+Storage lifetime-end/fake-use registrations are deferred with it. An EH-only
+construction guard protects a completed binding while source temporaries and
+the snapshot finish; it reads the binding address only after initialization.
+
+Private AST lowering now emits ordered tests, snapshots, guard continuations
+and if-binding branches. Its new CodeGen gate verifies native modules and can
+export those exact modules for execution across optimization levels. C++ cases
+include failed snapshot/binding construction and throwing temporary/snapshot
+destructors. This gate is under validation; source syntax is still disabled.
 
 ## Implementation still to complete
 
-- Native AST nodes and contextual parser recognition, preserving base-language
+- Contextual parser recognition, preserving base-language
   identifiers/macros and recovering cleanly from invalid condition lists.
 - Ordered condition typing, independent strong reference/carrier initialization,
   immutable `let`, mutable `var` and correct visibility in later conditions,
   success scopes and failure branches.
-- Ownership lowering with single source evaluation, native weak loads, C++ copy
+- Complete ownership qualification with single source evaluation, native weak loads, C++ copy
   rules, partial-failure cleanup, throwing temporaries and full lexical lifetime.
 - Complete guard exit checking, jump protection, nested condition CFGs, deferred
   cleanup, templates, AST import/identity, PCH, source-free interfaces and tooling.

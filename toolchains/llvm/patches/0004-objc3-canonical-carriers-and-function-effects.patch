@@ -593,7 +593,7 @@ index 41ddd88a8..cae302445 100644
    void VisitCompoundStmt(const CompoundStmt *Node);
    void VisitCXXExpansionStmtPattern(const CXXExpansionStmtPattern *Node);
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
-index c9658775f..1c8a4a52a 100644
+index c9658775f..9cc0f792a 100644
 --- a/clang/include/clang/AST/TypeBase.h
 +++ b/clang/include/clang/AST/TypeBase.h
 @@ -1490,7 +1490,10 @@ public:
@@ -642,8 +642,8 @@ index c9658775f..1c8a4a52a 100644
 +
 +  QualType ElementType;
 +
-+  explicit ObjC3OptionalType(QualType Element)
-+      : Type(ObjC3Optional, QualType(), Element->getDependence()),
++  ObjC3OptionalType(QualType Element, QualType Canonical)
++      : Type(ObjC3Optional, Canonical, Element->getDependence()),
 +        ElementType(Element) {}
 +
 +public:
@@ -670,8 +670,8 @@ index c9658775f..1c8a4a52a 100644
 +  QualType SuccessType;
 +  QualType ErrorType;
 +
-+  ObjC3ResultType(QualType Success, QualType Error)
-+      : Type(ObjC3Result, QualType(), Success->getDependence() |
++  ObjC3ResultType(QualType Success, QualType Error, QualType Canonical)
++      : Type(ObjC3Result, Canonical, Success->getDependence() |
 +                                      Error->getDependence()),
 +        SuccessType(Success), ErrorType(Error) {}
 +
@@ -1211,17 +1211,17 @@ index 2cb79b6ba..5717957b8 100644
 +
  } // end of sema component.
 diff --git a/clang/include/clang/Basic/TypeNodes.td b/clang/include/clang/Basic/TypeNodes.td
-index a9965a4a8..57bfa0eb8 100644
+index a9965a4a8..4ec0b3a0c 100644
 --- a/clang/include/clang/Basic/TypeNodes.td
 +++ b/clang/include/clang/Basic/TypeNodes.td
 @@ -45,6 +45,10 @@ class AlwaysCanonical {}
  def Type : TypeNode<?, 1>;
  def BuiltinType : TypeNode<Type>, AlwaysCanonical;
  def ComplexType : TypeNode<Type>;
-+// ObjC3 carriers are canonical semantic types. Their native record-backed
-+// representation is target-contextual and is queried from ASTContext.
-+def ObjC3OptionalType : TypeNode<Type>, AlwaysCanonical;
-+def ObjC3ResultType : TypeNode<Type>, AlwaysCanonical;
++// Carrier nodes retain payload spelling/annotations. Canonical nodes contain
++// canonical payloads and own the target-contextual native representation.
++def ObjC3OptionalType : TypeNode<Type>;
++def ObjC3ResultType : TypeNode<Type>;
  def PointerType : TypeNode<Type>;
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
@@ -1624,7 +1624,7 @@ index 9f1da65e0..ba3f05189 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index 222881154..2c4830adb 100644
+index 222881154..906723abd 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -11,6 +11,7 @@
@@ -1709,14 +1709,12 @@ index 222881154..2c4830adb 100644
    case Type::Record: {
      const RecordDecl *RD = T->castAsCanonical<RecordType>()->getDecl();
      const IdentifierInfo *II = RD->getIdentifier();
-@@ -3968,6 +4001,179 @@ QualType ASTContext::getComplexType(QualType T) const {
+@@ -3968,6 +4001,190 @@ QualType ASTContext::getComplexType(QualType T) const {
    return QualType(New, 0);
  }
  
 +QualType ASTContext::getObjC3OptionalType(QualType ElementType) const {
 +  assert(!ElementType.isNull() && "optional element type must be non-null");
-+  ElementType = getCanonicalType(ElementType);
-+
 +  llvm::FoldingSetNodeID ID;
 +  ObjC3OptionalType::Profile(ID, ElementType);
 +  void *InsertPos = nullptr;
@@ -1724,7 +1722,15 @@ index 222881154..2c4830adb 100644
 +          ObjC3OptionalTypes.FindNodeOrInsertPos(ID, InsertPos))
 +    return QualType(T, 0);
 +
-+  auto *T = new (*this, alignof(ObjC3OptionalType)) ObjC3OptionalType(ElementType);
++  QualType Canonical;
++  if (!ElementType.isCanonical()) {
++    Canonical = getObjC3OptionalType(getCanonicalType(ElementType));
++    auto *Existing = ObjC3OptionalTypes.FindNodeOrInsertPos(ID, InsertPos);
++    assert(!Existing && "carrier unexpectedly inserted during canonicalization");
++    (void)Existing;
++  }
++  auto *T = new (*this, alignof(ObjC3OptionalType))
++      ObjC3OptionalType(ElementType, Canonical);
 +  Types.push_back(T);
 +  ObjC3OptionalTypes.InsertNode(T, InsertPos);
 +  return QualType(T, 0);
@@ -1734,17 +1740,22 @@ index 222881154..2c4830adb 100644
 +                                       QualType ErrorType) const {
 +  assert(!SuccessType.isNull() && !ErrorType.isNull() &&
 +         "result arm types must be non-null");
-+  SuccessType = getCanonicalType(SuccessType);
-+  ErrorType = getCanonicalType(ErrorType);
-+
 +  llvm::FoldingSetNodeID ID;
 +  ObjC3ResultType::Profile(ID, SuccessType, ErrorType);
 +  void *InsertPos = nullptr;
 +  if (ObjC3ResultType *T = ObjC3ResultTypes.FindNodeOrInsertPos(ID, InsertPos))
 +    return QualType(T, 0);
 +
++  QualType Canonical;
++  if (!SuccessType.isCanonical() || !ErrorType.isCanonical()) {
++    Canonical = getObjC3ResultType(getCanonicalType(SuccessType),
++                                    getCanonicalType(ErrorType));
++    auto *Existing = ObjC3ResultTypes.FindNodeOrInsertPos(ID, InsertPos);
++    assert(!Existing && "carrier unexpectedly inserted during canonicalization");
++    (void)Existing;
++  }
 +  auto *T = new (*this, alignof(ObjC3ResultType))
-+      ObjC3ResultType(SuccessType, ErrorType);
++      ObjC3ResultType(SuccessType, ErrorType, Canonical);
 +  Types.push_back(T);
 +  ObjC3ResultTypes.InsertNode(T, InsertPos);
 +  return QualType(T, 0);
@@ -1889,7 +1900,7 @@ index 222881154..2c4830adb 100644
  /// getPointerType - Return the uniqued reference to the type for a pointer to
  /// the specified type.
  QualType ASTContext::getPointerType(QualType T) const {
-@@ -4359,12 +4565,15 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
+@@ -4359,12 +4576,15 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
      llvm_unreachable("type should never be variably-modified");
  
    // These types can be variably-modified but should never need to
@@ -1906,7 +1917,7 @@ index 222881154..2c4830adb 100644
      return type;
  
    // These types can be variably-modified.  All these modifications
-@@ -5052,6 +5261,12 @@ static bool isCanonicalExceptionSpecification(
+@@ -5052,6 +5272,12 @@ static bool isCanonicalExceptionSpecification(
  QualType ASTContext::getFunctionTypeInternal(
      QualType ResultTy, ArrayRef<QualType> ArgArray,
      const FunctionProtoType::ExtProtoInfo &EPI, bool OnlyWantCanonical) const {
@@ -1919,7 +1930,7 @@ index 222881154..2c4830adb 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -5090,7 +5305,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5090,7 +5316,9 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
@@ -1930,7 +1941,7 @@ index 222881154..2c4830adb 100644
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -5111,6 +5328,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5111,6 +5339,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
@@ -1940,7 +1951,7 @@ index 222881154..2c4830adb 100644
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5176,14 +5396,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5176,14 +5407,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -1958,7 +1969,7 @@ index 222881154..2c4830adb 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -8907,6 +9128,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8907,6 +9139,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
    QualType BlockTy =
        Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
    QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
@@ -1972,7 +1983,7 @@ index 222881154..2c4830adb 100644
    // Encode result type.
    if (getLangOpts().EncodeExtendedBlockSig)
      getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
-@@ -8926,6 +9154,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8926,6 +9165,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      assert(sz.isPositive() && "BlockExpr - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1981,7 +1992,7 @@ index 222881154..2c4830adb 100644
    // Size of the argument frame
    S += charUnitsToString(ParmOffset);
    // Block pointer and offset.
-@@ -8952,6 +9182,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8952,6 +9193,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
  
@@ -1992,7 +2003,7 @@ index 222881154..2c4830adb 100644
    return S;
  }
  
-@@ -9019,8 +9253,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9019,8 +9264,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
    // FIXME: This is not very efficient.
    // Encode return type.
    std::string S;
@@ -2010,7 +2021,7 @@ index 222881154..2c4830adb 100644
    // Compute size of all parameters.
    // Start with computing size of a pointer in number of bytes.
    // FIXME: There might(should) be a better way of doing this computation!
-@@ -9039,6 +9280,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9039,6 +9291,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
             "getObjCEncodingForMethodDecl - Incomplete param type");
      ParmOffset += sz;
    }
@@ -2019,7 +2030,7 @@ index 222881154..2c4830adb 100644
    S += charUnitsToString(ParmOffset);
    S += "@0:";
    S += charUnitsToString(PtrSize);
-@@ -9062,6 +9305,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9062,6 +9316,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
      S += charUnitsToString(ParmOffset);
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
@@ -2030,7 +2041,7 @@ index 222881154..2c4830adb 100644
  
    return S;
  }
-@@ -9764,6 +10011,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9764,6 +10022,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -2047,7 +2058,7 @@ index 222881154..2c4830adb 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11694,6 +11951,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11694,6 +11962,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -2065,7 +2076,7 @@ index 222881154..2c4830adb 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11772,6 +12040,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11772,6 +12051,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -2077,7 +2088,7 @@ index 222881154..2c4830adb 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -12047,6 +12320,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -12047,6 +12331,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::OverflowBehavior:
      llvm_unreachable("Types are eliminated above");
  
@@ -2091,7 +2102,7 @@ index 222881154..2c4830adb 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14464,6 +14744,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14464,6 +14755,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -2116,7 +2127,7 @@ index 222881154..2c4830adb 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14743,6 +15041,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14743,6 +15052,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -12079,10 +12090,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..90325a170 100644
+index 81010e046..5648c0844 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,37 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,39 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -12109,9 +12120,11 @@ index 81010e046..90325a170 100644
 +  ObjC3CheckedErrorCFGTest.cpp
 +  ObjC3GuardExitTest.cpp
 +  ObjC3ConditionNodesTest.cpp
++  ObjC3ConditionCodeGenTest.cpp
 +  ObjC3MatchImporterTest.cpp
 +  CLANG_LIBS
 +  clangAST
++  clangCodeGen
 +  clangFrontend
 +  clangIndex
 +  clangTooling
@@ -12810,10 +12823,10 @@ index 000000000..87b89d30f
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3CarrierTypeTest.cpp b/clang/unittests/AST/ObjC3CarrierTypeTest.cpp
 new file mode 100644
-index 000000000..b7ff154de
+index 000000000..6e9e29b26
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3CarrierTypeTest.cpp
-@@ -0,0 +1,286 @@
+@@ -0,0 +1,288 @@
 +//===--- ObjC3CarrierTypeTest.cpp - Canonical carrier AST tests
 +//------------===//
 +//
@@ -12861,7 +12874,9 @@ index 000000000..b7ff154de
 +  QualType ByCanonical = Ctx.getObjC3OptionalType(Ctx.IntTy);
 +  EXPECT_EQ(BySpelling.getCanonicalType().getAsOpaquePtr(),
 +            ByCanonical.getCanonicalType().getAsOpaquePtr());
-+  EXPECT_EQ(cast<ObjC3OptionalType>(BySpelling)->getElementType(), Ctx.IntTy);
++  EXPECT_EQ(cast<ObjC3OptionalType>(BySpelling)->getElementType(), AliasType);
++  EXPECT_EQ(cast<ObjC3OptionalType>(BySpelling.getCanonicalType())
++                ->getElementType(), Ctx.IntTy);
 +
 +  QualType ResultA = Ctx.getObjC3ResultType(AliasType, Ctx.IntTy);
 +  QualType ResultB = Ctx.getObjC3ResultType(Ctx.IntTy, AliasType);
@@ -17167,10 +17182,10 @@ index 000000000..9fc7780fc
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionNodesTest.cpp b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
 new file mode 100644
-index 000000000..3139c406e
+index 000000000..395ff7679
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
-@@ -0,0 +1,348 @@
+@@ -0,0 +1,418 @@
 +//===--- ObjC3ConditionNodesTest.cpp - Native condition AST consumers ----===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
@@ -17514,10 +17529,80 @@ index 000000000..3139c406e
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
 +    EXPECT_TRUE(isa<ObjC3CarrierTransferExpr>(
 +        Binding->getSource()->IgnoreUnlessSpelledInSource()));
-+    EXPECT_TRUE(isa<CXXConstructExpr>(
-+        Binding->getBindingDecl()->getInit()->IgnoreUnlessSpelledInSource()));
++    Expr *BindingInit = Binding->getBindingDecl()->getInit();
++    while (auto *Cleanups = dyn_cast<ExprWithCleanups>(BindingInit))
++      BindingInit = Cleanups->getSubExpr();
++    auto *Construction = dyn_cast<CXXConstructExpr>(BindingInit->IgnoreParenImpCasts());
++    ASSERT_TRUE(Construction);
++    EXPECT_TRUE(Construction->getConstructor()->isCopyConstructor());
 +    EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  }
++}
++
++TEST(ObjC3Conditions, PayloadAnnotationsSurviveAliasesImportAndPersistence) {
++  const std::vector<std::string> Args = {
++      "-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++      "-fobjc-runtime=gnustep-2.2", "-fobjc-arc", "-Wno-nullability-completeness"};
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    typedef id _Nullable Nullable;
++    typedef id _Nonnull Nonnull;
++    typedef __objc3_optional(Nullable) MaybeNullable;
++    typedef __objc3_optional(Nonnull) MaybeNonnull;
++    typedef __objc3_result(Nullable, Nonnull) Outcome;
++    void test(MaybeNullable a, MaybeNonnull b, Outcome c) {}
++  )", Args, "carrier-annotations.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto Check = [](ASTContext &C, FunctionDecl *Function) {
++    ASSERT_TRUE(Function);
++    QualType A = Function->getParamDecl(0)->getType();
++    QualType B = Function->getParamDecl(1)->getType();
++    auto *OptionalA = A->getAs<ObjC3OptionalType>();
++    auto *OptionalB = B->getAs<ObjC3OptionalType>();
++    ASSERT_TRUE(OptionalA);
++    ASSERT_TRUE(OptionalB);
++    EXPECT_EQ(NullabilityKind::Nullable, OptionalA->getElementType()->getNullability());
++    EXPECT_EQ(NullabilityKind::NonNull, OptionalB->getElementType()->getNullability());
++    // Native nullability annotations do not create a different physical type.
++    EXPECT_TRUE(C.hasSameType(A, B));
++    EXPECT_EQ(C.getObjC3CarrierRepresentationType(A).Type,
++              C.getObjC3CarrierRepresentationType(B).Type);
++    auto *Result = Function->getParamDecl(2)->getType()->getAs<ObjC3ResultType>();
++    ASSERT_TRUE(Result);
++    EXPECT_EQ(NullabilityKind::Nullable, Result->getSuccessType()->getNullability());
++    EXPECT_EQ(NullabilityKind::NonNull, Result->getErrorType()->getNullability());
++  };
++  auto Find = [](ASTContext &C) -> FunctionDecl * {
++    for (Decl *D : C.getTranslationUnitDecl()->decls())
++      if (auto *FD = dyn_cast<FunctionDecl>(D))
++        if (FD->getName() == "test") return FD;
++    return nullptr;
++  };
++  Check(AST->getASTContext(), Find(AST->getASTContext()));
++  auto Target = tooling::buildASTFromCodeWithArgs("", Args, "annotation-target.mm");
++  ASSERT_TRUE(Target);
++  ASTImporter Importer(Target->getASTContext(), Target->getFileManager(),
++                       AST->getASTContext(), AST->getFileManager(), false);
++  auto Imported = Importer.Import(Find(AST->getASTContext()));
++  ASSERT_TRUE(Imported) << llvm::toString(Imported.takeError());
++  Check(Target->getASTContext(), cast<FunctionDecl>(*Imported));
++
++  llvm::SmallString<256> Path;
++  int Descriptor;
++  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("carrier-annotations", "ast",
++                                                  Descriptor, Path));
++  llvm::ToolOutputFile File(Path, Descriptor);
++  ASSERT_FALSE(AST->Save(Path));
++  auto VFS = AST->getFileManager().getVirtualFileSystemPtr();
++  auto DiagnosticOpts = std::make_shared<DiagnosticOptions>();
++  auto Diagnostics = CompilerInstance::createDiagnostics(*VFS, *DiagnosticOpts);
++  auto Containers = std::make_shared<PCHContainerOperations>();
++  HeaderSearchOptions Headers;
++  auto Reloaded = ASTUnit::LoadFromASTFile(
++      Path, Containers->getRawReader(), ASTUnit::LoadEverything, VFS,
++      DiagnosticOpts, Diagnostics, AST->getFileSystemOpts(), Headers);
++  ASSERT_TRUE(Reloaded);
++  Check(Reloaded->getASTContext(), Find(Reloaded->getASTContext()));
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
@@ -17718,4 +17803,219 @@ index 000000000..9c2160b0c
 +      (Else && !isa<CompoundStmt>(Else))) return StmtError();
 +  setFunctionHasBranchProtectedScope();
 +  return ObjC3IfBindingStmt::Create(Context, Conditions, Then, Else, IfLoc, ElseLoc);
++}
+diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
+new file mode 100644
+index 000000000..37dcd434c
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
+@@ -0,0 +1,209 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++// Exercise the native AST lowering without admitting unqualified source syntax.
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Basic/CodeGenOptions.h"
++#include "clang/CodeGen/ModuleBuilder.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Lex/HeaderSearchOptions.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/IR/LLVMContext.h"
++#include "llvm/IR/Module.h"
++#include "llvm/IR/Verifier.h"
++#include "llvm/Support/FileSystem.h"
++#include "llvm/Support/Path.h"
++#include "llvm/Support/raw_ostream.h"
++#include "gtest/gtest.h"
++#include <cstdlib>
++using namespace clang;
++namespace {
++class ExerciseFunction : public RecursiveASTVisitor<ExerciseFunction> {
++public:
++  FunctionDecl *Function = nullptr;
++  bool VisitFunctionDecl(FunctionDecl *FD) {
++    if (FD->hasBody() && FD->getIdentifier() && FD->getName() == "exercise")
++      Function = FD;
++    return true;
++  }
++};
++class Rebind : public RecursiveASTVisitor<Rebind> {
++  VarDecl *Old, *New;
++public:
++  Rebind(VarDecl *Old, VarDecl *New) : Old(Old), New(New) {}
++  bool VisitDeclRefExpr(DeclRefExpr *E) {
++    if (E->getDecl() == Old) {
++      E->setDecl(New);
++      E->setType(New->getType().getNonReferenceType());
++    }
++    return true;
++  }
++};
++void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
++                   llvm::StringRef Standard, bool ARC, bool IfBinding) {
++  std::vector<std::string> Args = {
++      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
++      ("-std=" + Standard).str(), "-fobjc-version=3",
++      "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fobjc-exceptions",
++      "-fobjc-arc-exceptions", "-fblocks"};
++  Args.push_back(ARC ? "-fobjc-arc" : "-fno-objc-arc");
++  auto AST = tooling::buildASTFromCodeWithArgs(Code, Args, "condition-codegen.m");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ExerciseFunction Finder;
++  Finder.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++  FunctionDecl *Function = Finder.Function;
++  ASSERT_TRUE(Function);
++  auto *Body = cast<CompoundStmt>(Function->getBody());
++  ASSERT_GE(Body->size(), 4u);
++  auto *SourceStatement = cast<DeclStmt>(Body->body_front());
++  auto *Source = cast<VarDecl>(SourceStatement->getSingleDecl());
++  auto *If = cast<IfStmt>(*(Body->body_begin() + 1));
++  auto *User = cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
++  ASTContext &C = AST->getASTContext();
++  {
++    Sema &S = AST->getSema();
++    Sema::SynthesizedFunctionScope Scope(S, Function);
++    SourceLocation Loc = Source->getLocation();
++    StmtResult Result = S.ActOnObjC3BindingCondition(
++        nullptr, User->getIdentifier(), User->getLocation(), true, Loc,
++        Loc, Source->getInit());
++    ASSERT_FALSE(Result.isInvalid());
++    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
++    SmallVector<Stmt *, 8> Tail(Body->body_begin() + 3, Body->body_end());
++    for (Stmt *Statement : Tail)
++      ASSERT_TRUE(Rebind(User, Binding->getBindingDecl()).TraverseStmt(Statement));
++    Stmt *Conditions[] = {Binding};
++    Stmt *Statement;
++    if (IfBinding) {
++      auto *Then = CompoundStmt::Create(C, Tail, FPOptionsOverride(),
++                                         Body->getLBracLoc(), Body->getRBracLoc());
++      Statement = ObjC3IfBindingStmt::Create(
++          C, Conditions, Then, If->getElse(), Loc, If->getElseLoc());
++    } else {
++      Statement = ObjC3GuardStmt::Create(
++          C, Conditions, If->getElse(), Loc, If->getElseLoc(), Tail);
++    }
++    Stmt *Statements[] = {Statement};
++    Function->setBody(CompoundStmt::Create(
++        C, Statements, FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc()));
++  }
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  llvm::LLVMContext IRContext;
++  HeaderSearchOptions Headers;
++  CodeGenOptions Options;
++  Options.OptimizationLevel = 2; // Exercise native storage lifetime markers.
++  Options.ObjCAutoRefCountExceptions = ARC;
++  Options.setDebugInfo(llvm::codegenoptions::FullDebugInfo);
++  auto Generator = CreateLLVMCodeGen(
++      AST->getDiagnostics(), Name,
++      AST->getFileManager().getVirtualFileSystemPtr(), Headers,
++      AST->getPreprocessorOpts(), Options, IRContext);
++  Generator->Initialize(C);
++  for (Decl *D : C.getTranslationUnitDecl()->decls())
++    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
++  Generator->HandleTranslationUnit(C);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASSERT_TRUE(Generator->GetModule());
++  EXPECT_FALSE(llvm::verifyModule(*Generator->GetModule(), &llvm::errs()));
++  std::string IR;
++  llvm::raw_string_ostream Stream(IR);
++  Generator->GetModule()->print(Stream, nullptr);
++  EXPECT_NE(std::string::npos, IR.find("objc3.binding.present"));
++  EXPECT_NE(std::string::npos, IR.find("objc3.binding.absent"));
++  // Optional artifact emission belongs to this test harness, not the compiler.
++  // External qualification compiles and executes these exact verified modules.
++  if (const char *Directory = std::getenv("OBJC3_CONDITION_TEST_IR_DIR")) {
++    llvm::SmallString<256> Path(Directory);
++    llvm::sys::path::append(Path, (Name + ".ll").str());
++    std::error_code Error;
++    llvm::raw_fd_ostream File(Path, Error, llvm::sys::fs::OF_Text);
++    ASSERT_FALSE(Error) << Error.message();
++    File << IR;
++  }
++}
++const char Plain[] = R"(
++  typedef __objc3_optional(int) Maybe;
++  int calls;
++  Maybe *counted(Maybe *value) { ++calls; return value; }
++  int exercise(Maybe *input) {
++    Maybe source = *counted(input);
++    if (1) {} else { return -1; }
++    int value = 0;
++    value += 5;
++    return value;
++  }
++  int main(void) {
++    Maybe some = __objc3_some(int, 0);
++    Maybe none = __objc3_none(int);
++    if (exercise(&some) != 5 || calls != 1) return 1;
++    if (exercise(&none) != -1 || calls != 2) return 2;
++    return 0;
++  }
++)";
++const char Cpp[] = R"(
++  int copies, live, tempDestructions, throwTemp, throwCopy, payloadDestructions,
++      throwPayload, calls;
++  struct Temporary {
++    ~Temporary() noexcept(false) { if (++tempDestructions == throwTemp) throw 41; }
++  };
++  struct Payload {
++    int number;
++    Payload(int value) : number(value) { ++live; }
++    Payload(const Payload &other, Temporary = Temporary()) : number(other.number) {
++      if (++copies == throwCopy) throw 42;
++      ++live;
++    }
++    ~Payload() noexcept(false) {
++      --live;
++      if (++payloadDestructions == throwPayload) throw 43;
++    }
++  };
++  typedef __objc3_optional(Payload) Maybe;
++  Maybe *counted(Maybe *value) { ++calls; return value; }
++  int exercise(Maybe *input) {
++    Maybe &source = *counted(input);
++    if (true) {} else { return -1; }
++    Payload value(0);
++    return value.number;
++  }
++  int main() {
++    Maybe some = __objc3_some(Payload, Payload(7));
++    if (live != 1) return 1;
++    copies = tempDestructions = payloadDestructions = 0;
++    if (exercise(&some) != 7 || copies != 2 || live != 1 || calls != 1) return 2;
++    for (int failure = 1; failure <= 5; ++failure) {
++      copies = tempDestructions = payloadDestructions = 0;
++      throwCopy = failure == 1 ? 2 : failure == 5 ? 1 : 0;
++      throwTemp = failure == 2 ? 1 : failure == 3 ? 2 : 0;
++      throwPayload = failure == 4 ? 1 : 0;
++      bool caught = false;
++      try { (void)exercise(&some); } catch (int) { caught = true; }
++      if (!caught || live != 1) return 3 + failure;
++    }
++    throwCopy = throwTemp = throwPayload = 0;
++    Maybe none = __objc3_none(Payload);
++    if (exercise(&none) != -1 || live != 1) return 9;
++    return 0;
++  }
++)";
++} // namespace
++TEST(ObjC3ConditionCodeGen, NativePlainGuardAndIfBinding) {
++  for (const char *Standard : {"c17", "c++20", "c++23"})
++    for (bool ARC : {false, true})
++      for (bool If : {false, true}) {
++        std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") +
++                            (If ? "-if" : "-guard");
++        SCOPED_TRACE(Name);
++        checkLowering(Plain, Name, Standard, ARC, If);
++      }
++}
++TEST(ObjC3ConditionCodeGen, NativeCppPartialConstructionAndThrowingCleanups) {
++  for (const char *Standard : {"c++20", "c++23"})
++    for (bool If : {false, true}) {
++      std::string Name = std::string(Standard) + (If ? "-cpp-if" : "-cpp-guard");
++      SCOPED_TRACE(Name);
++      checkLowering(Cpp, Name, Standard, false, If);
++    }
 +}
