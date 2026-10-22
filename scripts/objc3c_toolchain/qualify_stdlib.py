@@ -155,6 +155,8 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
             'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
             **initial_inputs,
             'executions': len(cases), 'strict_factory_configurations': 18,
+            'strict_factory_codegen_configurations': 9,
+            'strict_factory_sema_configurations': 9,
             'strict_factory_rejections': 18, 'profile_conformance_claimed': False,
             'cases': cases, 'commands': commands}
     except Exception as error:
