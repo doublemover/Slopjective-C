@@ -28,20 +28,26 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 74 AST contract tests, 53 production exit-proof
+229 passing Clang regressions, 75 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
 Payload aliases and nullable/nonnull annotations survive import and persistence.
 
-The private CodeGen gate exports 52 verified native modules. All 104 O0/O2
-executions pass across C17/C++20/23, ARC/MRC modes for integer payloads and
-nontrivial C++ records in MRC. The C++ runs include 164 expected constructor,
-temporary-cleanup and snapshot-destructor exceptions. This does not qualify
-managed-reference ownership, public parsing or an installed guard compiler.
-Ordered cases verify short-circuiting, earlier-binding access in later sources,
-source mutation, snapshot/temporary lifetime through binding construction,
-cleanup before else, reverse final destruction and partial-failure unwinding.
+The private CodeGen gate exports 392 verified native modules, each generated and
+executed with matching O0 or O2 frontend/backend settings. All 392 executions
+pass across C17/C++20/23, ARC/MRC modes for integer payloads, nontrivial C++
+records in MRC, and managed objects/Blocks in ARC. The runs include 164 expected
+C++ exceptions and 288 expected Objective-C exceptions.
+
+Managed cases cross strong/weak/unsafe sources, direct nullable references versus
+tagged optionals, immutable/mutable bindings and both branch forms. Clearing the
+original owners preserves the bound value until normal or exceptional scope
+exit, including Block captures. Zeroed weak references distinguish absent direct
+sources from present tagged Some(nil). Ordered C++ cases verify short-circuiting,
+earlier-binding access, source mutation, temporary/snapshot lifetime, cleanup
+before else, reverse final destruction and partial-failure unwinding.
+This does not qualify public parsing or an installed guard compiler.
 
 ## Source and lifetime lowering
 

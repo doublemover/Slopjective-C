@@ -3,19 +3,19 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "2b5e7540a8ea5c711dc45792f00bac2b29edd376",
+  "implementation_commit": "dfb1f9c68b28d871c931ebb0293219f8fc3c4855",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2434c23bf4e5-fd761312",
-  "patch_digest": "2434c23bf4e59111e542252d26a038caee38bfd4add6b3df30ea181ac955924a",
-  "compiler_sha256": "c8666b4ea8f662926c875e27a51f724d5596c22c02aede279fbede9162c97bb8",
-  "ast_tests_sha256": "c85a069dddd443fa16ced976ab7d04efca0d0932e626d7ae2ff865a23caa5e7d",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-975220dd4b75-fd761312",
+  "patch_digest": "975220dd4b75cead612cfe5f6cc11f440d8810116f66af823ba61e2e98fe93ff",
+  "compiler_sha256": "2830e9245ef8a1adbc63bd292af421dc2f77151bbb86713412bf00e843a4a602",
+  "ast_tests_sha256": "945b966c1107ad30e8cd0c99460735713c35761d47076d08c21080ad7db105b5",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
   "verification": {
     "clang_regressions_passed": 229,
     "clang_regressions_unsupported": 3,
-    "ast_contract_tests_passed": 74,
+    "ast_contract_tests_passed": 75,
     "production_guard_exit_cases": 53,
     "focused_tooling_tests_passed": 8,
     "compiler_clangd_lldb_rebuilt": true,
@@ -36,9 +36,9 @@
       "payload aliases and nullable/nonnull annotations"
     ],
     "runtime": {
-      "verified_native_modules": 52,
-      "configurations_passed": 104,
-      "commands_passed": 209,
+      "verified_native_modules": 392,
+      "configurations_passed": 392,
+      "commands_passed": 785,
       "standards": [
         "c17",
         "c++20",
@@ -58,7 +58,9 @@
       "expected_cpp_exception_scenarios_executed": 164,
       "payloads": [
         "plain integer",
-        "C++ record with nontrivial copy/destruction"
+        "C++ record with nontrivial copy/destruction",
+        "Objective-C objects (ARC)",
+        "captured Blocks (ARC)"
       ],
       "cases": [
         "Some(0) and None",
@@ -82,13 +84,30 @@
         "successful bindings destroy in reverse order",
         "later constructor/temporary failure destroys completed prefixes",
         "GNU statement-expression result values and cleanup lifetimes",
-        "instantiated guard/if templates with native owned construction and ordered prefix cleanup"
+        "instantiated guard/if templates with native owned construction and ordered prefix cleanup",
+        "immutable and mutable managed bindings",
+        "direct nullable reference versus tagged optional presence",
+        "source owners cleared after independent binding initialization",
+        "zeroed weak objects and Blocks",
+        "Some(nil) remains present",
+        "Objective-C exception cleanup releases binding and captures"
       ],
       "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
       "executable_model": "non-PIE private native AST modules",
       "runtime_sdk_seal": "41c4fa92a870a18616830ea5646ef62dadae46adee68f92fe67aa47884350ea9",
       "runtime_library_sha256": "c1a99737a1d0ab49f3a76fdd9424330585f4134fa44b1f7ec4ec720abe826012",
-      "temporary_artifacts_reclaimed": true
+      "temporary_artifacts_reclaimed": true,
+      "frontend_optimization": [
+        "O0",
+        "O2"
+      ],
+      "frontend_backend_optimization_matched": true,
+      "expected_objc_exception_scenarios_executed": 288,
+      "managed_source_ownership": [
+        "strong",
+        "weak",
+        "unsafe_unretained"
+      ]
     },
     "temporary_ast_files_reclaimed_on_success": true,
     "scope_integration": [
@@ -100,14 +119,14 @@
       "dependent template initialization and declaration remapping"
     ]
   },
-  "foundation_report_sha256": "cf0e49b935994ac422aa3e4bc8dbeaa93b0ac64bf1c15706000d04829c8c1e39",
-  "runtime_report_sha256": "a8b62a056e74111ae05c05ba308a17649c79b06f5f8734f17eca0715268b25e8",
+  "foundation_report_sha256": "5ae35e9d0664dc74d8ae689ebc22ff45d3820e5534c52c72f9cbdc5b5f2e1ff7",
+  "runtime_report_sha256": "83a29b52e65d34b69780a571c59084da1da9d0e06cade6a05d9d0b8ae3d120b5",
   "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
-  "ast_codegen_test_sha256": "f39b9a4be2cda511c5c26c1e309fad968c9766e6468547435444b51a1209f8d4",
-  "qualification_script_sha256": "38a48d54833860426f8ae72b4c2080eef22fafd77cad8b6b33034352dba9f7b1",
+  "ast_codegen_test_sha256": "a662354296942c0511c963501c75b53f4304f530154edefff63347e0c680a8c8",
+  "qualification_script_sha256": "9abd5015dc62e17648510d0411b0e6ae7eaac018f6ad0e97526a5a346c6c4bbd",
   "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
-    "managed-reference, weak and Block ownership matrix",
+    "ordered managed-prefix failure/unwinding and nested managed payload qualification",
     "contextual parser admission, recovery and nullable flow refinements",
     "nested CFG and deferred/runtime cleanup exit models",
     "source/PCH/interface/debugger runtime gates and SDK delivery"
