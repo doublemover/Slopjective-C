@@ -18836,7 +18836,7 @@ index 000000000..1d8544e7a
 +// CHECK: objc3.try.failure
 diff --git a/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
 new file mode 100644
-index 000000000..88421fc82
+index 000000000..40dda7a3e
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
 @@ -0,0 +1,52 @@
@@ -18863,6 +18863,7 @@ index 000000000..88421fc82
 +// CHECK: br i1
 +// CHECK: br i1
 +// CHECK: call void @llvm.objc.storeStrong
++// CHECK: call void @llvm.objc.destroyWeak
 +
 +int statement_result(int status, id object) {
 +  __objc3_result(int, id) result = ({
@@ -18875,7 +18876,6 @@ index 000000000..88421fc82
 +// CHECK: br i1
 +// CHECK: call ptr @llvm.objc.retain
 +// CHECK: call void @llvm.objc.storeStrong
-+// CHECK: call void @llvm.objc.destroyWeak
 +
 +int match_snapshot(__objc3_optional(Strong) value) {
 +  __objc3_match_stmt(value) {

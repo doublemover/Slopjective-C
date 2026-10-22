@@ -56,6 +56,15 @@ static objc3_task_t *start(objc3_async_frame *frame, objc3_executor_t *executor,
     assert(count != 0);
   }
   assert(objc3_task_wait(task) == OBJC3_SERVICE_OK);
+  // Terminal completion publishes the result before the worker destroys its
+  // frame. Join a closed group before inspecting stack-owned destruction
+  // counters or allowing those counters to leave scope.
+  objc3_task_group_t *cleanup = 0;
+  assert(objc3_task_group_create(0, &cleanup) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add_task(cleanup, task) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_close(cleanup) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_join(cleanup) == OBJC3_SERVICE_OK);
+  objc3_task_group_release(cleanup);
   return task;
 }
 
