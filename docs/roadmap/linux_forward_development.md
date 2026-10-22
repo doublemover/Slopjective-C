@@ -90,15 +90,23 @@ and `discard`, prefix `@resource(F, invalid: X)` declarations, resource AST impo
 and structural identity, strict proofs for unspecified receivers, and C++ error
 factory thunks that avoid eager copies and construct factories only on failure.
 New parser, PCH, strict-flow, import/index and execution fixtures accompany the
-implementation. The next chunk implements prefix `@cleanup(F)` and canonical `cleanup(F)`
-headers with checked native value, direct reference and address calls. Cleanup
-is unconditional, reads the final value, preserves callback mutations, and
-shares registration order with defer and resources. Native unwinding, CFG
+implementation. A further chunk implements prefix `@cleanup(F)` and canonical
+`cleanup(F)` headers with checked native value, direct reference and address
+calls. Cleanup is unconditional, reads the final value, preserves callback
+mutations, and shares registration order with defer and resources. Native unwinding, CFG
 cleanup elements, protected jumps, AST import, PCH and deferred ARC source
 release scopes are integrated. Forwarded block storage remains alive until the
 callback returns. Path-sensitive analysis remains explicitly unsupported for
 these native cleanup nodes. New semantic, IR, CFG, import/PCH and runtime
 fixtures are authored; no post-batch compiler build or execution is claimed.
+Strict profiles also diagnose direct non-local transfers that may bypass a
+registered defer, cleanup or resource action, including signal jumps and
+`-fno-builtin` C library declarations. A unique automatic jump buffer used only
+by jump primitives can preserve existing registrations at its local save point;
+actions registered afterward remain diagnosed. Initializer calls, completed
+inner scopes, control-statement scopes and nested callable ownership retain
+separate registration boundaries. This is a local direct-call analysis; it does
+not claim interprocedural wrapper or arbitrary jump-buffer alias analysis.
 Combined validation is deferred until a larger batch is ready.
 
 ## Active completion sequence

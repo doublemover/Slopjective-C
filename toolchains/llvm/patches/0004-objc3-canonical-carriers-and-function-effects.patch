@@ -5653,10 +5653,10 @@ index 5e1fd4df1..7b85a2644 100644
      return nullptr;
  
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index ef729e22c..02cc2f39a 100644
+index ef729e22c..a8a922efd 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -71,6 +71,25 @@ add_clang_library(clangSema
+@@ -71,6 +71,26 @@ add_clang_library(clangSema
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
@@ -5670,6 +5670,7 @@ index ef729e22c..02cc2f39a 100644
 +  SemaObjC3GuardExit.cpp
 +  SemaObjC3Conditions.cpp
 +  SemaObjC3Resources.cpp
++  SemaObjC3NonlocalJumps.cpp
 +  SemaObjC3ResourceOperations.cpp
 +  SemaObjC3ResourceFlow.cpp
 +  SemaObjC3CarrierARC.cpp
@@ -19056,10 +19057,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..addfe9324
+index 000000000..1bd78ba63
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,891 @@
+@@ -0,0 +1,892 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19934,6 +19935,7 @@ index 000000000..addfe9324
 +  collectGuards(Body, Body, Guards);
 +  bool Invalid = checkObjC3ResourceDeclarations(*this, Body);
 +  Invalid |= checkObjC3ResourceFlow(*this, Callable, Body);
++  Invalid |= checkObjC3NonlocalJumps(*this, Body);
 +  Invalid |= checkDeferredLabelAddresses(*this, Body);
 +  Invalid |= NullableReceiverFlow(*this).check(Callable, Body);
 +  // Nested guards get their own mandatory-exit diagnostic before an outer
@@ -26063,10 +26065,10 @@ index 2c62f46d4..14a0e70a6 100644
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
 diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
-index 0fe41671c..3251f9676 100644
+index 0fe41671c..99a0f43b2 100644
 --- a/clang/include/clang/Basic/AttrDocs.td
 +++ b/clang/include/clang/Basic/AttrDocs.td
-@@ -9502,6 +9502,52 @@ this usage is debugger-dependent.
+@@ -9502,6 +9502,53 @@ this usage is debugger-dependent.
    }];
  }
  
@@ -26083,8 +26085,9 @@ index 0fe41671c..3251f9676 100644
 +``defer`` and resource cleanup, before deferred managed source-scope releases.
 +
 +The callback must name a nondependent, synchronous function with one parameter
-+and a scalar or void result. Scalar values, direct references, and addresses of
-+complete fixed-size objects are supported. Record copying, dependent or variable
++and an ordinary scalar or void result. Scalar values, direct references, and
++addresses of complete fixed-size objects are supported. Retainable results,
++argument temporaries and ARC writeback are rejected. Record copying, dependent or variable
 +size storage, checked-error callbacks, asynchronous callbacks, and competing
 +cleanup owners are diagnosed. Native exception unwinding uses ordinary Clang
 +cleanup machinery; profile conformance is not implied by this attribute.
@@ -26454,10 +26457,10 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..3d3669d09
+index 000000000..6837c5b65
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,343 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership ---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
@@ -26530,10 +26533,11 @@ index 000000000..3d3669d09
 +      Prototype->isVariadic() || Function->isDependentContext() ||
 +      (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
 +      (!Prototype->getReturnType()->isVoidType() &&
-+       !Prototype->getReturnType()->isScalarType())) {
++       !Prototype->getReturnType()->isScalarType()) ||
++      Prototype->getReturnType()->isObjCRetainableType()) {
 +    Reject(Close->getExprLoc(),
 +           "objc_cleanup must name a nondependent function with one parameter "
-+           "and a scalar or void result");
++           "and an ordinary scalar or void result");
 +    return;
 +  }
 +  const auto &Effects = Prototype->getObjC3FunctionEffects();
@@ -26586,6 +26590,14 @@ index 000000000..3d3669d09
 +                                   Arguments, Close->getEndLoc());
 +  if (Call.isInvalid()) {
 +    D->setInvalidDecl();
++    return;
++  }
++  const auto *NativeCall = dyn_cast<CallExpr>(Call.get());
++  if (!NativeCall || !isa<OpaqueValueExpr>(
++                         NativeCall->getArg(0)->IgnoreParenImpCasts())) {
++    Reject(Close->getExprLoc(),
++           "objc_cleanup callback argument requires an unsupported temporary "
++           "or ARC writeback; use a direct value, reference, or address");
 +    return;
 +  }
 +  Variable->addAttr(ObjCCleanupAttr::Create(
@@ -26794,10 +26806,10 @@ index 000000000..3d3669d09
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resources.h
 new file mode 100644
-index 000000000..2011b61f1
+index 000000000..57950511a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -26810,6 +26822,7 @@ index 000000000..2011b61f1
 +void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +bool checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body);
++bool checkObjC3NonlocalJumps(Sema &S, const Stmt *Body);
 +bool checkObjC3ResourceFlow(Sema &S, Decl *Callable, Stmt *Body);
 +} // namespace clang
 +#endif
@@ -29484,10 +29497,10 @@ index 000000000..6da053850
 +@end
 diff --git a/clang/test/ObjC3/Sema/cleanup-ownership.m b/clang/test/ObjC3/Sema/cleanup-ownership.m
 new file mode 100644
-index 000000000..93c640c2f
+index 000000000..b994669e2
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/cleanup-ownership.m
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,53 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
@@ -29529,11 +29542,307 @@ index 000000000..93c640c2f
 +after:;
 +}
 +#ifdef __cplusplus
++void converted_reference(const double &);
++void temporary_argument(void) {
++  @cleanup(converted_reference) int value = 1; // expected-error {{requires an unsupported temporary}}
++}
 +template<class T> void dependent_storage(void) {
 +  @cleanup(close_value) T value = {}; // expected-error {{requires complete nondependent fixed-size storage}}
 +}
 +#else
 +void variable_storage(int size) {
 +  @cleanup(close_address) int values[size]; // expected-error {{requires complete nondependent fixed-size storage}}
++}
++#endif
+diff --git a/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp b/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp
+new file mode 100644
+index 000000000..06fe27dec
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp
+@@ -0,0 +1,194 @@
++//===--- SemaObjC3NonlocalJumps.cpp - Scope-exit nonlocal transfers --------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "SemaObjC3Resources.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3SourceScopes.h"
++#include "clang/AST/StmtCXX.h"
++#include "clang/Basic/Builtins.h"
++#include "clang/Basic/SourceManager.h"
++#include "clang/Sema/Sema.h"
++#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/ADT/SmallVector.h"
++#include "llvm/ADT/STLExtras.h"
++
++using namespace clang;
++
++namespace {
++enum class JumpKind { None, Save, Restore };
++JumpKind jumpKind(const CallExpr *Call) {
++  const FunctionDecl *Function = Call->getDirectCallee();
++  if (!Function)
++    return JumpKind::None;
++  switch (Function->getBuiltinID()) {
++  case Builtin::BI__builtin_setjmp:
++  case Builtin::BI__sigsetjmp:
++  case Builtin::BI_setjmp:
++  case Builtin::BIsetjmp:
++  case Builtin::BIsigsetjmp:
++    return JumpKind::Save;
++  case Builtin::BI__builtin_longjmp:
++  case Builtin::BI_longjmp:
++  case Builtin::BIlongjmp:
++  case Builtin::BIsiglongjmp:
++    return JumpKind::Restore;
++  default:
++    break;
++  }
++  // -fno-builtin does not change the C library's nonlocal-transfer contract.
++  // A C++ member or namespace function with the same name has no such contract.
++  if (Function->getIdentifier() &&
++      (Function->isExternC() ||
++       (!Function->getASTContext().getLangOpts().CPlusPlus &&
++        Function->getDeclContext()->getRedeclContext()->isTranslationUnit()))) {
++    StringRef Name = Function->getName();
++    if (Name == "setjmp" || Name == "_setjmp" || Name == "sigsetjmp" ||
++        Name == "__sigsetjmp")
++      return JumpKind::Save;
++    if (Name == "longjmp" || Name == "_longjmp" || Name == "siglongjmp")
++      return JumpKind::Restore;
++  }
++  return JumpKind::None;
++}
++
++class NonlocalJumpCheck {
++  struct Action {
++    const Stmt *Owner;
++    const Stmt *Initializer;
++    SourceLocation Registration;
++  };
++  Sema &Actions;
++  ObjC3SourceScopes Scopes;
++  llvm::DenseMap<const Stmt *, const Stmt *> Parents;
++  llvm::DenseMap<const VarDecl *, unsigned> References, JumpReferences;
++  llvm::SmallPtrSet<const VarDecl *, 16> Captured;
++  SmallVector<const CallExpr *, 8> Saves, Restores;
++  SmallVector<Action, 16> Registrations;
++
++  void collect(const Stmt *Node, const Stmt *Parent = nullptr) {
++    if (!Node)
++      return;
++    Parents[Node] = Parent;
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Node))
++      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()))
++        ++References[Variable];
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      for (const LambdaCapture &Capture : Lambda->captures())
++        if (Capture.capturesVariable())
++          if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
++            Captured.insert(Variable);
++      for (const Expr *Initializer : Lambda->capture_inits())
++        collect(Initializer, Node);
++      return;
++    }
++    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
++      for (const BlockDecl::Capture &Capture : Block->getBlockDecl()->captures())
++        Captured.insert(Capture.getVariable());
++      return; // The nested callable has its own completed-body check.
++    }
++    if (const auto *Call = dyn_cast<CallExpr>(Node)) {
++      JumpKind Kind = jumpKind(Call);
++      if (Kind != JumpKind::None) {
++        (Kind == JumpKind::Save ? Saves : Restores).push_back(Call);
++        if (const VarDecl *Variable = buffer(Call))
++          ++JumpReferences[Variable];
++      }
++    }
++    for (const Stmt *Child : Node->children())
++      collect(Child, Node);
++  }
++
++  const VarDecl *buffer(const CallExpr *Call) const {
++    if (Call->getNumArgs() == 0)
++      return nullptr;
++    const auto *Reference =
++        dyn_cast<DeclRefExpr>(Call->getArg(0)->IgnoreParenImpCasts());
++    return Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
++  }
++  bool within(const Stmt *Node, const Stmt *Owner) const {
++    for (; Node; Node = Parents.lookup(Node))
++      if (Node == Owner)
++        return true;
++    return false;
++  }
++  const Stmt *owner(const Stmt *SourceOwner) const {
++    // A for-condition declaration owns the per-iteration release queue, but
++    // its cleanup remains registered while the condition and body execute.
++    if (isa<DeclStmt>(SourceOwner))
++      if (const auto *Loop = dyn_cast_or_null<ForStmt>(Parents.lookup(SourceOwner)))
++        if (Loop->getConditionVariableDeclStmt() == SourceOwner)
++          return Loop;
++    return SourceOwner;
++  }
++  bool pending(const Action &Action, const CallExpr *Call) const {
++    return within(Call, Action.Owner) &&
++           (!Action.Initializer || !within(Call, Action.Initializer)) &&
++           Actions.getSourceManager().isBeforeInTranslationUnit(
++               Action.Registration, Call->getExprLoc());
++  }
++  const CallExpr *localTarget(const CallExpr *Restore) const {
++    const VarDecl *Buffer = buffer(Restore);
++    if (!Buffer || !Buffer->hasLocalStorage() || Buffer->hasAttr<BlocksAttr>() ||
++        !Buffer->getType()->isArrayType() || Captured.contains(Buffer) ||
++        References.lookup(Buffer) != JumpReferences.lookup(Buffer))
++      return nullptr;
++    const CallExpr *Target = nullptr;
++    for (const CallExpr *Save : Saves)
++      if (buffer(Save) == Buffer) {
++        if (Target)
++          return nullptr; // Multiple saves require dynamic target analysis.
++        Target = Save;
++      }
++    return Target;
++  }
++
++public:
++  NonlocalJumpCheck(Sema &Actions, const Stmt *Body)
++      : Actions(Actions), Scopes(Body) {
++    collect(Body);
++    for (auto [Deferred, Owner] : Scopes.Defers)
++      Registrations.push_back({owner(Owner), nullptr, Deferred->getBeginLoc()});
++    for (auto [Variable, Owner] : Scopes.Variables)
++      if (!Variable->isInvalidDecl() &&
++          (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>() ||
++           Variable->hasAttr<ObjCResourceAttr>()))
++        Registrations.push_back({owner(Owner), Variable->getInit(),
++                                 Variable->getLocation()});
++    llvm::stable_sort(Registrations, [&](const Action &Left, const Action &Right) {
++      return Actions.getSourceManager().isBeforeInTranslationUnit(
++          Right.Registration, Left.Registration);
++    });
++  }
++  bool check() {
++    bool Invalid = false;
++    for (const CallExpr *Restore : Restores) {
++      const CallExpr *Target = localTarget(Restore);
++      for (const Action &Registration : Registrations) {
++        if (!pending(Registration, Restore) ||
++            (Target && pending(Registration, Target)))
++          continue;
++        Actions.Diag(Restore->getExprLoc(),
++                     Actions.getDiagnostics().getCustomDiagID(
++                         DiagnosticsEngine::Error,
++                         "non-local jump may bypass a registered cleanup action "
++                         "in a strict profile"));
++        Actions.Diag(Registration.Registration,
++                     Actions.getDiagnostics().getCustomDiagID(
++                         DiagnosticsEngine::Note,
++                         "scope-exit action registered here"));
++        Invalid = true;
++        break; // One action explains this transfer; do not duplicate errors.
++      }
++    }
++    return Invalid;
++  }
++};
++} // namespace
++
++bool clang::checkObjC3NonlocalJumps(Sema &S, const Stmt *Body) {
++  if (!S.getLangOpts().ObjC3 || S.getLangOpts().ObjC3Profile == 0 || !Body)
++    return false;
++  return NonlocalJumpCheck(S, Body).check();
++}
+diff --git a/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
+new file mode 100644
+index 000000000..4870a5922
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
+@@ -0,0 +1,86 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc3-profile=strict-concurrency -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fno-builtin -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
++// compat-no-diagnostics
++void close_value(int) __attribute__((nothrow));
++void escape_buffer(void **);
++#ifdef __cplusplus
++extern "C" {
++#endif
++void siglongjmp(void **, int) __attribute__((noreturn));
++#ifdef __cplusplus
++}
++#endif
++void skips_defer(void **target) {
++  defer { close_value(1); } // strict-note {{scope-exit action registered here}}
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void skips_cleanup(void **target) {
++  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void skips_resource(void **target) {
++  @resource(close_value, invalid: 0) int value = 1; // strict-note {{scope-exit action registered here}}
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void signal_jump(void **target) {
++  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
++  siglongjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void before_registration(void **target) {
++  __builtin_longjmp(target, 1);
++  @cleanup(close_value) int value = 1;
++}
++void initializer_not_yet_registered(void **target) {
++  int value __attribute__((cleanup(close_value))) = (__builtin_longjmp(target, 1), 1);
++}
++void after_inner_scope(void **target) {
++  { @cleanup(close_value) int value = 1; }
++  __builtin_longjmp(target, 1);
++}
++void local_preserves_actions(void) {
++  void *target[5];
++  @cleanup(close_value) int value = 1;
++  defer { close_value(2); }
++  if(__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
++}
++void local_skips_new_action(void) {
++  void *target[5];
++  (void)__builtin_setjmp(target);
++  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void escaped_target(void) {
++  void *target[5];
++  @cleanup(close_value) int value = 1; // strict-note {{scope-exit action registered here}}
++  (void)__builtin_setjmp(target);
++  escape_buffer(target);
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void loop_initializer(void **target) {
++  for(int value __attribute__((cleanup(close_value))) = 1;;) { // strict-note {{scope-exit action registered here}}
++    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  }
++}
++void before_nested_callable_runs(void **target) {
++  void (^body)(void) = ^{ @cleanup(close_value) int nested = 1; };
++  (void)body;
++  __builtin_longjmp(target, 1);
++}
++#ifdef __cplusplus
++void condition_initializer(void **target) {
++  if(int value __attribute__((cleanup(close_value))) = 1) { // strict-note {{scope-exit action registered here}}
++    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  }
++}
++namespace user {
++void longjmp(void **, int);
++void ordinary_name(void **target) {
++  @cleanup(close_value) int value = 1;
++  longjmp(target, 1);
++}
 +}
 +#endif

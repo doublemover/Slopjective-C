@@ -317,7 +317,15 @@ static void cleanup_cpp_actions(bool fail) {
   if(fail)throw 42;
 }
 #endif
+static void cleanup_local_jump(void) {
+  void *target[5];
+  @cleanup(close_resource) int value = 1;
+  defer { second(); }
+  if(__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
+  record(3);
+}
 static void cleanup_ordering(void) {
+  cleanup_local_jump(); expect(321);
   cleanup_unconditional();
   if(cleanup_zero_calls != 1)bad=73;
   cleanup_value_actions(0); expect(321);

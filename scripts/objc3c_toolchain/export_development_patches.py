@@ -68,6 +68,8 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm",
         "clang/lib/Sema/SemaObjC3ResourceOperations.cpp",
         "clang/lib/Sema/SemaObjC3ResourceFlow.cpp",
+        "clang/lib/Sema/SemaObjC3NonlocalJumps.cpp",
+        "clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m",
         "clang/lib/Sema/SemaObjC3OptionalAccess.cpp",
         "clang/lib/Sema/SemaObjC3Effects.h",
         "clang/lib/Index/IndexBody.cpp",
