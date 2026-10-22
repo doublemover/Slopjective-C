@@ -126,9 +126,13 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
                 arguments = [compiler, *common, '-x', language, '-std=' + standard,
                              '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc',
                              '-fobjc3-profile=' + profile,
-                             '-c', root / 'factory-contract.m', '-o', object_file]
+                             '-c' if ownership == 'arc' else '-fsyntax-only',
+                             root / 'factory-contract.m', '-o', object_file]
+                # MRC managed carrier code generation is deliberately gated.
+                # Its factory constraints remain independently checkable in
+                # Sema; ARC additionally exercises the qualified object ABI.
                 run(label + '-accepted', arguments, root)
-                object_file.unlink()
+                object_file.unlink(missing_ok=True)
                 run(label + '-rejected', [*arguments, '-DINVALID_ERROR_FACTORY=1'], root,
                     failure="must conform to Objective-C protocol 'Error'")
                 if object_file.exists():
