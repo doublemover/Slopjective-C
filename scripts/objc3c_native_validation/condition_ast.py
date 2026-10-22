@@ -62,6 +62,19 @@ def cases() -> dict[str, dict]:
             if not facts.get("ordered_bindings") or facts["payload"] == "cpp":
                 prefix, kind = name.rsplit("-", 1)
                 result[prefix + "-template-" + kind] = {**facts, "template_replay": True}
+    for standard in ("c17", "c++20", "c++23"):
+        for payload in ("object", "block"):
+            for source_ownership in ("strong", "weak", "unsafe_unretained"):
+                for source_form in ("direct", "tagged"):
+                    for binding in ("let", "var"):
+                        for kind in ("guard", "if"):
+                            name = f"{standard}-arc-{payload}-{source_ownership}-{source_form}-{binding}-{kind}"
+                            result[name] = {
+                                "standard": standard, "ownership": "arc", "kind": kind,
+                                "payload": payload, "source_ownership": source_ownership,
+                                "source_form": source_form, "binding": binding,
+                                "expected_objc_exception_scenarios": 1,
+                            }
     return result
 
 
@@ -69,7 +82,7 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
-        "schema": "objc3c.condition-ast-runtime.v1", "status": "running",
+        "schema": "objc3c.condition-ast-runtime.v2", "status": "running",
         "compiler_binding": "admitted-development-native-ast",
         "source_syntax_admitted": False, "installed_compiler_qualified": False,
         "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -153,27 +166,31 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
                 run("native-ast-codegen", [tests, "--gtest_filter=ObjC3ConditionCodeGen.*"],
                     environment=environment)
                 modules = {path.stem: path for path in directory.glob("*.ll")}
-                expected = cases()
+                expected = {
+                    f"{name}-{optimization}": {**facts, "optimization": optimization,
+                                               "frontend_optimization": optimization}
+                    for name, facts in cases().items()
+                    for optimization in ("O0", "O2")
+                }
                 if modules.keys() != expected.keys():
                     raise RuntimeError("AST gate did not export the exact expected module set")
                 report["verified_modules"] = {
                     name: digest(path) for name, path in sorted(modules.items())
                 }
                 for name, module in sorted(modules.items()):
-                    for optimization in ("O0", "O2"):
-                        key = f"{name}-{optimization}"
-                        executable = directory / "application"
-                        run(key + "-compile", [
-                            compiler, "--driver-mode=g++", "--no-default-config",
-                            "-x", "ir", module, "-" + optimization, "-fuse-ld=lld", "-no-pie",
-                            "-L" + str(sdk / "lib"), "-lobjc",
-                            "-Wl,-rpath," + str(sdk / "lib"), "-o", executable,
-                        ])
-                        run(key + "-execute", [executable])
-                        report["configurations"].append({
-                            **expected[name], "optimization": optimization,
-                            "module_sha256": report["verified_modules"][name],
-                        })
+                    optimization = expected[name]["optimization"]
+                    executable = directory / "application"
+                    run(name + "-compile", [
+                        compiler, "--driver-mode=g++", "--no-default-config",
+                        "-x", "ir", module, "-" + optimization, "-fno-crash-diagnostics",
+                        "-fuse-ld=lld", "-no-pie",
+                        "-L" + str(sdk / "lib"), "-lobjc",
+                        "-Wl,-rpath," + str(sdk / "lib"), "-o", executable,
+                    ])
+                    run(name + "-execute", [executable])
+                    report["configurations"].append({
+                        **expected[name], "module_sha256": report["verified_modules"][name],
+                    })
                 if any(digest(path) != report["verified_modules"][name]
                        for name, path in modules.items()):
                     raise RuntimeError("a verified module changed during execution")

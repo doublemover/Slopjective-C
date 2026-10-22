@@ -17473,10 +17473,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..aba9a9044
+index 000000000..53ddbc537
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,267 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
@@ -17683,8 +17683,7 @@ index 000000000..aba9a9044
 +  return ObjC3IfBindingStmt::Create(Context, Conditions, Then, Else, IfLoc, ElseLoc);
 +}
 +
-+// Draft: append to SemaObjC3Conditions.cpp, add AST/ExprCXX, AST/StmtObjC and
-+// Sema/ObjC3GuardExit includes. Wire completed function/method/Block hooks.
++// Completed callables provide resolved labels and native source scope owners.
 +namespace {
 +struct GuardSourceScope {
 +  ObjC3GuardStmt *Guard;
@@ -17747,13 +17746,14 @@ index 000000000..aba9a9044
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..50a19c5a1
+index 000000000..17095d55b
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,563 @@
+@@ -0,0 +1,713 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
@@ -17804,7 +17804,7 @@ index 000000000..50a19c5a1
 +  }
 +};
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
-+                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false, bool TemplateReplay = false) {
++                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false, bool TemplateReplay = false, bool Mutable = true) {
 +  std::vector<std::string> Args = {
 +      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
 +      ("-std=" + Standard).str(), "-fobjc-version=3",
@@ -17873,7 +17873,7 @@ index 000000000..50a19c5a1
 +    Sema::SynthesizedFunctionScope Scope(S, Function);
 +    SourceLocation Loc = Source->getLocation();
 +    StmtResult Result = S.ActOnObjC3BindingCondition(
-+        nullptr, User->getIdentifier(), User->getLocation(), true, Loc,
++        nullptr, User->getIdentifier(), User->getLocation(), Mutable, Loc,
 +        Loc, Source->getInit());
 +    ASSERT_FALSE(Result.isInvalid());
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
@@ -17932,10 +17932,16 @@ index 000000000..50a19c5a1
 +    ASSERT_TRUE(Concrete->doesThisDeclarationHaveABody());
 +  }
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  // Run each module through the matching native frontend/backend mode. ARC
++  // frontend intrinsics emitted at O2 require the optimizing ARC pipeline.
++  for (unsigned Optimization : {0u, 2u}) {
 +  llvm::LLVMContext IRContext;
 +  CodeGenOptions Options;
-+  Options.OptimizationLevel = 2; // Exercise native storage lifetime markers.
++  Options.OptimizationLevel = Optimization;
 +  Options.ObjCAutoRefCountExceptions = ARC;
++  // Match the Linux GNUstep 2.2 driver contract for registration and sends.
++  Options.UseInitArray = true;
++  Options.setObjCDispatchMethod(CodeGenOptions::NonLegacy);
 +  Options.setDebugInfo(llvm::codegenoptions::FullDebugInfo);
 +  auto Generator = CreateLLVMCodeGen(
 +      AST->getDiagnostics(), Name,
@@ -17943,8 +17949,15 @@ index 000000000..50a19c5a1
 +      AST->getPreprocessor().getHeaderSearchInfo().getHeaderSearchOpts(),
 +      AST->getPreprocessor().getPreprocessorOpts(), Options, IRContext);
 +  Generator->Initialize(C);
-+  for (Decl *D : C.getTranslationUnitDecl()->decls())
++  for (Decl *D : C.getTranslationUnitDecl()->decls()) {
++    // The parser reports method definitions before the implementation metadata;
++    // they are children of the implementation, not translation-unit siblings.
++    if (auto *Implementation = dyn_cast<ObjCImplDecl>(D))
++      for (ObjCMethodDecl *Method : Implementation->methods())
++        if (Method->hasBody())
++          ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Method)));
 +    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
++  }
 +  // Forced instantiations are not translation-unit declarations. Replay the
 +  // normal definition notification as well as the top-level pattern.
 +  if (Concrete)
@@ -17969,11 +17982,13 @@ index 000000000..50a19c5a1
 +  // External qualification compiles and executes these exact verified modules.
 +  if (const char *Directory = std::getenv("OBJC3_CONDITION_TEST_IR_DIR")) {
 +    llvm::SmallString<256> Path(Directory);
-+    llvm::sys::path::append(Path, (Name + ".ll").str());
++    llvm::sys::path::append(Path,
++        (Name + "-O" + std::to_string(Optimization) + ".ll").str());
 +    std::error_code Error;
 +    llvm::raw_fd_ostream File(Path, Error, llvm::sys::fs::OF_Text);
 +    ASSERT_FALSE(Error) << Error.message();
 +    File << IR;
++  }
 +  }
 +}
 +const char Plain[] = R"(
@@ -18313,6 +18328,140 @@ index 000000000..50a19c5a1
 +      SCOPED_TRACE(Name);
 +      checkLowering(OrderedCpp, Name, Standard, false, If, true, false, true);
 +    }
++}
++
++const char Managed[] = R"(
++#ifdef __cplusplus
++extern "C" {
++#endif
++id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
++id object_dispose(__unsafe_unretained id);
++#ifdef __cplusplus
++}
++#endif
++static int destroyed, calls, failed;
++__attribute__((objc_root_class))
++@interface GuardProbe { Class isa; int key; }
+++ (id)newWithKey:(int)value;
++- (int)key;
++@end
++@implementation GuardProbe
+++ (id)newWithKey:(int)value {
++  GuardProbe *object = class_createInstance(self, 0);
++  object->key = value;
++  return object;
++}
++- (int)key { return key; }
++- (void)dealloc { if (key == 42) ++destroyed; object_dispose(self); }
++@end
++#if GUARD_BLOCK
++  typedef int (^Value)(void);
++#else
++  typedef GuardProbe *Value;
++#endif
++#if GUARD_TAGGED
++  typedef __objc3_optional(Value GUARD_OWNERSHIP) Source;
++  #define EMPTY __objc3_none(Value GUARD_OWNERSHIP)
++  #define PRESENT(x) __objc3_some(Value GUARD_OWNERSHIP, x)
++#else
++  typedef Value GUARD_OWNERSHIP Source;
++  #define EMPTY ((Value)0)
++  #define PRESENT(x) (x)
++#endif
++static GuardProbe * __weak witness;
++static Source *counted(Source *input) { ++calls; return input; }
++int exercise(Source *input, Value __strong *owner, id token, int exceptional) {
++  Source source = *counted(input);
++  if (1) {} else { return -1; }
++  Value value = (Value)0;
++  *input = EMPTY;
++  *owner = (Value)0;
++  if (value) {
++    if (!witness || destroyed != exceptional) failed = 1;
++#if GUARD_BLOCK
++    if (value() != 42) failed = 2;
++#else
++    if ([value key] != 42) failed = 3;
++#endif
++  }
++  if (exceptional) @throw token;
++  return value ? 42 : 0;
++}
++int main(void) {
++  @autoreleasepool {
++    Value owner;
++    {
++      GuardProbe *object = [GuardProbe newWithKey:42];
++      witness = object;
++#if GUARD_BLOCK
++      owner = ^{ return [object key]; };
++#else
++      owner = object;
++#endif
++    }
++    Source input = PRESENT(owner);
++    if (exercise(&input, &owner, (id)0, 0) != 42 || calls != 1 || failed) return 1;
++    if (witness || destroyed != 1 || owner) return 2;
++    input = EMPTY;
++    if (exercise(&input, &owner, (id)0, 0) != -1 || calls != 2) return 3;
++#if GUARD_TAGGED
++    input = PRESENT((Value)0);
++    if (exercise(&input, &owner, (id)0, 0) != 0 || calls != 3) return 4;
++#endif
++#if GUARD_WEAK
++    {
++      GuardProbe *object = [GuardProbe newWithKey:41];
++#if GUARD_BLOCK
++      Value expired = ^{ return [object key]; };
++#else
++      Value expired = object;
++#endif
++      input = PRESENT(expired);
++    }
++    // A zeroed weak payload remains Some(nil); a direct weak source is absent.
++    if (exercise(&input, &owner, (id)0, 0) != (GUARD_TAGGED ? 0 : -1)) return 7;
++#endif
++    {
++      GuardProbe *object = [GuardProbe newWithKey:42];
++      witness = object;
++#if GUARD_BLOCK
++      owner = ^{ return [object key]; };
++#else
++      owner = object;
++#endif
++    }
++    input = PRESENT(owner);
++    id token = [GuardProbe newWithKey:99];
++    @try {
++      exercise(&input, &owner, token, 1);
++      return 5;
++    } @catch (id caught) {
++      if (caught != token || failed || witness || destroyed != 2 || owner) return 6;
++    }
++  }
++  return failed;
++}
++)";
++TEST(ObjC3ConditionCodeGen, ManagedBindingsOwnObjectsAndBlocksAcrossScopeExits) {
++  for (const char *Standard : {"c17", "c++20", "c++23"})
++    for (bool Block : {false, true})
++      for (const char *Ownership : {"__strong", "__weak", "__unsafe_unretained"})
++        for (bool Tagged : {false, true})
++          for (bool Mutable : {false, true})
++            for (bool If : {false, true}) {
++              std::string Name = std::string(Standard) + "-arc-" +
++                  (Block ? "block" : "object") + "-" + (Ownership + 2) +
++                  (Tagged ? "-tagged" : "-direct") +
++                  (Mutable ? "-var" : "-let") + (If ? "-if" : "-guard");
++              SCOPED_TRACE(Name);
++              std::string Code = std::string("#define GUARD_BLOCK ") +
++                  (Block ? "1\n" : "0\n") + "#define GUARD_TAGGED " +
++                  (Tagged ? "1\n" : "0\n") + "#define GUARD_OWNERSHIP " +
++                  Ownership + "\n#define GUARD_WEAK " +
++                  (llvm::StringRef(Ownership) == "__weak" ? "1\n" : "0\n") + Managed;
++              checkLowering(Code, Name, Standard, true, If,
++                            false, false, false, Mutable);
++            }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
