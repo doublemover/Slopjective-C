@@ -21,14 +21,14 @@ lexical handler information without changing the general CFG's cleanup model.
 Queries run only on reachable nodes and preserve exceptional paths before
 accepting an outward transfer in the same block.
 
-Unmodeled constructs fail closed. Deferred cleanup and locally handled
-pool/synchronization runtime cleanup need explicit modeling before admission.
+Unmodeled constructs fail closed. C++ construction/destruction and locally handled pool/synchronization
+runtime cleanup with defer still need explicit modeling before admission.
 The proof does not claim a general theorem about loop termination.
 
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 80 AST contract tests, 53 production exit-proof
+231 passing Clang regressions, 82 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
@@ -47,7 +47,10 @@ exit, including Block captures. Zeroed weak references distinguish absent direct
 sources from present tagged Some(nil). Ordered C++ cases verify short-circuiting,
 earlier-binding access, source mutation, temporary/snapshot lifetime, cleanup
 before else, reverse final destruction and partial-failure unwinding.
-This does not qualify public parsing or an installed guard compiler.
+A separate public defer source/PCH gate passes 24 configurations and 100 commands,
+including 24 expected Objective-C and 16 expected C++ terminations. Together the
+gates pass 885 commands. This does not qualify public guard parsing or an
+installed guard compiler.
 
 ## Source and lifetime lowering
 
@@ -95,7 +98,9 @@ python -B -m scripts.objc3c_native_validation.condition_ast
 It compiles the exported modules at O0/O2, binds exact compiler/test/runtime
 hashes, replaces stale receipts before checking admission and reclaims temporary
 IR/executables. The gate uses the existing foundation lock and checks inputs
-again after execution. Source syntax is still disabled.
+again after execution. Public guard syntax is still disabled. Defer fixtures and their helper are also
+bound by persisted input hashes; source/PCH execution uses the same admitted
+compiler and runtime.
 
 ## Qualified scope integration
 
@@ -144,8 +149,21 @@ remain after the cleanup subgraph. The 66 trace cases cross all three source mod
 and native marker options, including early exits, nested scopes, loop transfers,
 gotos, copied labels, noreturn calls and matched/unmatched checked handlers.
 
-Native exception unwinding and computed/asm jumps remain gated. The mandatory
-exit proof still rejects defer until its complete unwind model is admitted.
+Bounded native unwinding now routes calls, Objective-C messages and explicit
+Objective-C/C++ throws through pending actions to their registration-time lexical
+handler. Local catches inside a deferred body remain valid during unwinding; a
+second exception escaping that body terminates. Twenty-two production exit-proof
+cases and three trace cases qualify this model, including unknown outward goto.
+C++ construction/destruction, managed copies, pool/synchronization/finally cleanup
+and computed/asm jumps remain gated. The mandatory-exit proof admits only the
+bounded model.
+
+Native CodeGen copies now isolate labels, local declarations and VLA state.
+EH copies preserve the original exception and selector around body-local catches.
+Source/PCH regressions reproduce the former duplicate-label assertion and unwind
+crash at O0/O2 across C17/C++20/23 and ARC/MRC. Address-taken labels in deferred
+bodies receive an explicit diagnostic; direct local gotos are supported. Return
+markers also preserve native fallthrough diagnostics after cleanup.
 An execution probe also confirms an existing ARC ordering defect at O0/O2:
 a managed local declared after a defer can release before the action. That must
 be corrected with destination-aware scope cleanup before source feature delivery.
