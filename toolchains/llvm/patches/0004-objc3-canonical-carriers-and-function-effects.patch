@@ -1128,7 +1128,7 @@ index 7671f003c..7ea80c2ab 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..76a378707 100644
+index 2cb79b6ba..11bb5d4cc 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,49 @@
@@ -1232,7 +1232,7 @@ index 2cb79b6ba..76a378707 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14439,25 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14439,30 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -1243,6 +1243,11 @@ index 2cb79b6ba..76a378707 100644
 +def err_objc3_condition_type : Error<"condition must have Bool type, not %0">;
 +def err_objc3_binding_requires_optional : Error<"binding requires an Optional or Objective-C reference, not %0">;
 +def err_objc3_binding_void_payload : Error<"a void payload cannot be bound in a condition">;
++def err_objc3_nullable_receiver : Error<
++  "ordinary message send requires a nonnull receiver; use an optional send or 'guard let'">;
++def warn_objc3_nullable_receiver : Warning<
++  "ordinary message send on a nullable receiver; use an optional send or 'guard let'">,
++  InGroup<DiagGroup<"objc3-nullable-receiver">>;
 +
 +def err_objc3_match_pattern_type : Error<"pattern does not match scrutinee type %0">;
 +def err_objc3_match_type_test_disabled : Error<"type-test patterns are optional and disabled">;
@@ -17728,28 +17733,34 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..9924d3182
+index 000000000..61570aa02
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,371 @@
+@@ -0,0 +1,760 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
-+#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
++#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/AST/Stmt.h"
++#include "clang/AST/StmtCXX.h"
 +#include "clang/AST/StmtObjC.h"
++#include "clang/Analysis/CFG.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/Lookup.h"
 +#include "clang/Sema/ObjC3GuardExit.h"
 +#include "clang/Sema/Scope.h"
 +#include "clang/Sema/Sema.h"
++#include "llvm/ADT/BitVector.h"
++#include "llvm/ADT/DenseMap.h"
 +#include "llvm/ADT/SmallPtrSet.h"
++#include <vector>
 +using namespace clang;
 +
 +namespace {
@@ -17797,6 +17808,13 @@ index 000000000..9924d3182
 +  if (Checked.isInvalid())
 +    return ExprError();
 +  Value = Checked.get();
++  // C comparisons and logical operators have type int even though their
++  // language-defined result is Boolean. Normalize those expressions at this
++  // boundary without admitting arbitrary scalar truth conversions.
++  if (!getLangOpts().CPlusPlus && !Value->isTypeDependent() &&
++      !Value->getType()->isBooleanType() &&
++      Value->isKnownToHaveBooleanValue())
++    Value = ImpCastExprToType(Value, Context.BoolTy, CK_IntegralToBoolean).get();
 +  if (!Value->isTypeDependent() &&
 +      !Context.getCanonicalType(Value->getType())->isBooleanType()) {
 +    Diag(Loc, diag::err_objc3_condition_type) << Value->getType();
@@ -17877,6 +17895,11 @@ index 000000000..9924d3182
 +  if (FullSource.isInvalid())
 +    return StmtError();
 +  Snapshot->setInit(FullSource.get());
++  // These are real automatic objects, including when the carrier is empty at
++  // runtime. Require accessible destruction in the original use-site context.
++  CheckCompleteVariableDeclaration(Snapshot);
++  if (Snapshot->isInvalidDecl())
++    return StmtError();
 +  CurContext->addDecl(Snapshot);
 +  auto *SnapshotStatement = new (Context) DeclStmt(
 +      DeclGroupRef(Snapshot), Source->getBeginLoc(), Source->getEndLoc());
@@ -17921,6 +17944,9 @@ index 000000000..9924d3182
 +  if (FullInit.isInvalid())
 +    return StmtError();
 +  Binding->setInit(FullInit.get());
++  CheckCompleteVariableDeclaration(Binding);
++  if (Binding->isInvalidDecl())
++    return StmtError();
 +  if (BindingScope)
 +    PushOnScopeChains(Binding, BindingScope);
 +  else
@@ -17975,6 +18001,373 @@ index 000000000..9924d3182
 +
 +// Completed callables provide resolved labels and native source scope owners.
 +namespace {
++/// Nullability is a property of a value at its evaluation point, rather than a
++/// permanent change to the declaration's type. In particular, refining a weak
++/// load, a property getter, or a prior call result cannot refine a later load.
++class NullableReceiverFlow {
++  Sema &Actions;
++  ASTContext &Context;
++  llvm::DenseMap<const VarDecl *, unsigned> Variables;
++  llvm::DenseMap<const VarDecl *, const VarDecl *> Aliases;
++  llvm::DenseMap<const Expr *, unsigned> Receivers;
++  llvm::SmallPtrSet<const VarDecl *, 16> Escaped;
++  llvm::SmallPtrSet<const ObjCMessageExpr *, 16> Messages;
++  SmallVector<const ObjCMessageExpr *, 16> OrderedMessages;
++  llvm::SmallPtrSet<const ObjCMessageExpr *, 16> Diagnosed;
++  bool Invalid = false;
++
++  static bool isNullable(QualType Type) {
++    auto Nullability = Type->getNullability();
++    return Nullability && (*Nullability == NullabilityKind::Nullable ||
++                           *Nullability == NullabilityKind::NullableResult);
++  }
++
++  const VarDecl *variable(const Expr *Value) const {
++    if (!Value)
++      return nullptr;
++    Value = Value->IgnoreParenImpCasts();
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Value)) {
++      const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl());
++      auto Alias = Aliases.find(Variable);
++      return Alias == Aliases.end() ? Variable : Alias->second;
++    }
++    if (const auto *Operation = dyn_cast<BinaryOperator>(Value))
++      if (Operation->getOpcode() == BO_Assign)
++        return variable(Operation->getLHS());
++    return nullptr;
++  }
++
++  void registerVariable(const VarDecl *Variable) {
++    if (!Variable)
++      return;
++    QualType Type = Variable->getType().getNonReferenceType();
++    if (!Type->isObjCRetainableType())
++      return;
++    // A second weak/volatile read need not produce the tested value.
++    if (Type.isVolatileQualified() ||
++        Type.getObjCLifetime() == Qualifiers::OCL_Weak)
++      return;
++    Variables.try_emplace(Variable, Variables.size());
++    if (!Variable->hasLocalStorage() || Variable->hasAttr<BlocksAttr>() ||
++        Variable->getType()->isReferenceType())
++      Escaped.insert(Variable);
++  }
++
++  void escape(const Expr *Value) {
++    if (const VarDecl *Variable = variable(Value)) {
++      registerVariable(Variable);
++      Escaped.insert(Variable);
++    }
++  }
++
++  void collect(const Stmt *Statement) {
++    if (!Statement)
++      return;
++    if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement)) {
++      collect(Argument->getExpr());
++      return;
++    }
++    if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement)) {
++      collect(Initializer->getExpr());
++      return;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
++      for (const LambdaCapture &Capture : Lambda->captures())
++        if (Capture.capturesVariable() &&
++            Capture.getCaptureKind() == LCK_ByRef)
++          Escaped.insert(Capture.getCapturedVar());
++      for (const Expr *Capture : Lambda->capture_inits())
++        collect(Capture);
++      return;
++    }
++    if (const auto *Block = dyn_cast<BlockExpr>(Statement)) {
++      for (const BlockDecl::Capture &Capture : Block->getBlockDecl()->captures())
++        if (Capture.isByRef())
++          Escaped.insert(Capture.getVariable());
++      return;
++    }
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Statement))
++      registerVariable(dyn_cast<VarDecl>(Reference->getDecl()));
++    if (const auto *Declaration = dyn_cast<DeclStmt>(Statement))
++      for (const Decl *D : Declaration->decls())
++        if (const auto *Variable = dyn_cast<VarDecl>(D)) {
++          registerVariable(Variable);
++          if (Variable->getType()->isReferenceType()) {
++            escape(Variable->getInit());
++            if (const VarDecl *Source = variable(Variable->getInit()))
++              Aliases.try_emplace(Variable, Source);
++          }
++          collect(Variable->getInit());
++        }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Statement))
++      if (Unary->getOpcode() == UO_AddrOf)
++        escape(Unary->getSubExpr());
++    if (const auto *Call = dyn_cast<CallExpr>(Statement)) {
++      // C++ reference arguments can expose storage without an '&' expression.
++      // Inspect value kinds so indirect calls and overloaded operators retain
++      // the same rules as calls to a directly named function.
++      for (const Expr *Argument : Call->arguments())
++        if (Argument->isGLValue())
++          escape(Argument);
++    }
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(Statement))
++      for (const Expr *Argument : Construction->arguments())
++        if (Argument->isGLValue())
++          escape(Argument);
++    if (const auto *Assembly = dyn_cast<AsmStmt>(Statement))
++      for (unsigned I = 0; I != Assembly->getNumOutputs(); ++I)
++        escape(Assembly->getOutputExpr(I));
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Statement))
++      if (const Expr *Receiver = Message->getInstanceReceiver())
++        if (isNullable(Receiver->getType())) {
++          if (Messages.insert(Message).second)
++            OrderedMessages.push_back(Message);
++          Receivers.try_emplace(Receiver, 0);
++        }
++    for (const Stmt *Child : Statement->children())
++      collect(Child);
++  }
++
++  bool nonnull(const Expr *Value, const llvm::BitVector &Facts) const {
++    if (!Value)
++      return false;
++    if (Value->getType()->getNullability() == NullabilityKind::NonNull)
++      return true;
++    if (const auto *Full = dyn_cast<ExprWithCleanups>(Value))
++      return nonnull(Full->getSubExpr(), Facts);
++    Value = Value->IgnoreParenCasts();
++    if (Value->getType()->getNullability() == NullabilityKind::NonNull)
++      return true;
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Value))
++      return nonnull(Conditional->getTrueExpr(), Facts) &&
++             nonnull(Conditional->getFalseExpr(), Facts);
++    if (const auto *Operation = dyn_cast<BinaryOperator>(Value))
++      if (Operation->getOpcode() == BO_Assign ||
++          Operation->getOpcode() == BO_Comma)
++        return nonnull(Operation->getRHS(), Facts);
++    if (const VarDecl *Variable = variable(Value)) {
++      auto Found = Variables.find(Variable);
++      return Found != Variables.end() && Facts.test(Found->second);
++    }
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value))
++      return nonnull(Opaque->getSourceExpr(), Facts);
++    return false;
++  }
++
++  void assign(const VarDecl *Variable, bool Nonnull,
++              llvm::BitVector &Facts) const {
++    auto Found = Variables.find(Variable);
++    if (Found != Variables.end())
++      Facts[Found->second] = Nonnull;
++  }
++
++  void invalidateEscaped(llvm::BitVector &Facts) const {
++    for (const VarDecl *Variable : Escaped)
++      assign(Variable, false, Facts);
++  }
++
++  void refine(const Expr *Condition, bool Truth,
++              llvm::BitVector &Facts) const {
++    if (!Condition)
++      return;
++    if (const auto *Full = dyn_cast<ExprWithCleanups>(Condition)) {
++      refine(Full->getSubExpr(), Truth, Facts);
++      return;
++    }
++    Condition = Condition->IgnoreParenImpCasts();
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Condition)) {
++      if (Unary->getOpcode() == UO_LNot)
++        refine(Unary->getSubExpr(), !Truth, Facts);
++      return;
++    }
++    if (const auto *Operation = dyn_cast<BinaryOperator>(Condition)) {
++      if ((Operation->getOpcode() == BO_LAnd && Truth) ||
++          (Operation->getOpcode() == BO_LOr && !Truth)) {
++        // A later operand can invalidate a test in an earlier operand. The
++        // CFG's individual short-circuit branches already preserve the safe
++        // facts; do not resurrect an earlier fact at the confluence.
++        if (Operation->HasSideEffects(Context))
++          return;
++        refine(Operation->getLHS(), Truth, Facts);
++        refine(Operation->getRHS(), Truth, Facts);
++        return;
++      }
++      if (Operation->isEqualityOp()) {
++        const Expr *Value = nullptr;
++        if (Operation->getRHS()->isNullPointerConstant(
++                Context, Expr::NPC_ValueDependentIsNotNull))
++          Value = Operation->getLHS();
++        else if (Operation->getLHS()->isNullPointerConstant(
++                     Context, Expr::NPC_ValueDependentIsNotNull))
++          Value = Operation->getRHS();
++        if (Value) {
++          assign(variable(Value), Truth == (Operation->getOpcode() == BO_NE),
++                 Facts);
++          return;
++        }
++      }
++    }
++    if (Condition->getType()->isObjCRetainableType())
++      assign(variable(Condition), Truth, Facts);
++  }
++
++  void diagnose(const ObjCMessageExpr *Message, bool Nonnull) {
++    if (Nonnull || !Messages.contains(Message) ||
++        !Diagnosed.insert(Message).second)
++      return;
++    Invalid |= Actions.getLangOpts().ObjC3Profile != 0;
++  }
++
++  void emitDiagnostics() {
++    bool Strict = Actions.getLangOpts().ObjC3Profile != 0;
++    // CFG blocks and copied cleanup bodies need not be in source order.
++    for (const ObjCMessageExpr *Message : OrderedMessages)
++      if (Diagnosed.contains(Message))
++        Actions.Diag(Message->getInstanceReceiver()->getExprLoc(),
++                     Strict ? diag::err_objc3_nullable_receiver
++                            : diag::warn_objc3_nullable_receiver)
++            << Message->getReceiverRange();
++  }
++
++  void transfer(const CFGBlock &Block, llvm::BitVector &Facts, bool Diagnose) {
++    for (const CFGElement &Element : Block) {
++      auto Statement = Element.getAs<CFGStmt>();
++      if (!Statement) {
++        // Destructors and cleanup functions can write exposed storage too.
++        invalidateEscaped(Facts);
++        continue;
++      }
++      const Stmt *Node = Statement->getStmt();
++      if (const auto *Expression = dyn_cast<Expr>(Node)) {
++        auto Receiver = Receivers.find(Expression);
++        if (Receiver != Receivers.end())
++          Facts[Receiver->second] = nonnull(Expression, Facts);
++      }
++      if (const auto *Message = dyn_cast<ObjCMessageExpr>(Node)) {
++        if (Diagnose && Messages.contains(Message)) {
++          const Expr *Receiver = Message->getInstanceReceiver();
++          auto Saved = Receivers.find(Receiver);
++          diagnose(Message, Saved != Receivers.end()
++                                ? Facts.test(Saved->second)
++                                : nonnull(Receiver, Facts));
++        }
++      }
++      if (const auto *Declaration = dyn_cast<DeclStmt>(Node))
++        for (const Decl *D : Declaration->decls())
++          if (const auto *Variable = dyn_cast<VarDecl>(D))
++            assign(Variable, nonnull(Variable->getInit(), Facts), Facts);
++      if (const auto *Operation = dyn_cast<BinaryOperator>(Node))
++        if (Operation->isAssignmentOp()) {
++          if (!Variables.count(variable(Operation->getLHS())))
++            invalidateEscaped(Facts);
++          assign(variable(Operation->getLHS()),
++                 Operation->getOpcode() == BO_Assign &&
++                     nonnull(Operation->getRHS(), Facts), Facts);
++        }
++      if (const auto *Unary = dyn_cast<UnaryOperator>(Node))
++        if (Unary->isIncrementDecrementOp())
++          assign(variable(Unary->getSubExpr()), false, Facts);
++      if (isa<CallExpr, ObjCMessageExpr, CXXConstructExpr, CXXNewExpr,
++              CXXDeleteExpr, ObjCAtThrowStmt, CXXThrowExpr, AsmStmt>(Node))
++        invalidateEscaped(Facts);
++    }
++  }
++
++public:
++  NullableReceiverFlow(Sema &Actions)
++      : Actions(Actions), Context(Actions.Context) {}
++
++  bool check(Decl *Callable, Stmt *Body) {
++    collect(Body);
++    if (Messages.empty())
++      return false;
++    CFG::BuildOptions Options;
++    Options.setAllAlwaysAdd();
++    Options.AddEHEdges = true;
++    Options.AddInitializers = true;
++    Options.AddImplicitDtors = true;
++    Options.AddTemporaryDtors = true;
++    std::unique_ptr<CFG> Graph = CFG::buildCFG(Callable, Body, &Context, Options);
++    if (!Graph) {
++      // An unmodeled control-flow form cannot establish a proof of nonnull.
++      for (const ObjCMessageExpr *Message : OrderedMessages)
++        diagnose(Message, false);
++      emitDiagnostics();
++      return Invalid;
++    }
++
++    // Save a receiver's loaded value before arguments execute. An argument may
++    // mutate its source variable without changing the already loaded receiver.
++    llvm::SmallPtrSet<const Expr *, 16> Emitted;
++    for (const CFGBlock *Block : *Graph)
++      for (const CFGElement &Element : *Block)
++        if (auto Statement = Element.getAs<CFGStmt>())
++          if (const auto *Expression = dyn_cast<Expr>(Statement->getStmt()))
++            if (Receivers.count(Expression))
++              Emitted.insert(Expression);
++    unsigned NumFacts = Variables.size();
++    for (auto I = Receivers.begin(); I != Receivers.end();) {
++      if (!Emitted.contains(I->first)) {
++        auto Removed = I++;
++        Receivers.erase(Removed);
++        continue;
++      }
++      I->second = NumFacts++;
++      ++I;
++    }
++
++    struct State {
++      llvm::BitVector Facts;
++      bool Reachable = false;
++    };
++    std::vector<State> Inputs(Graph->getNumBlockIDs());
++    SmallVector<const CFGBlock *, 16> Work;
++    const CFGBlock *Entry = &Graph->getEntry();
++    Inputs[Entry->getBlockID()] = {llvm::BitVector(NumFacts), true};
++    Work.push_back(Entry);
++    while (!Work.empty()) {
++      const CFGBlock *Block = Work.pop_back_val();
++      llvm::BitVector Output = Inputs[Block->getBlockID()].Facts;
++      transfer(*Block, Output, false);
++      unsigned Index = 0;
++      for (auto Successor : Block->succs()) {
++        const CFGBlock *Next = Successor.getReachableBlock();
++        if (!Next) {
++          ++Index;
++          continue;
++        }
++        llvm::BitVector Edge = Output;
++        if (Block->succ_size() == 2 &&
++            !isa_and_nonnull<SwitchStmt>(Block->getTerminatorStmt())) {
++          const Expr *Condition = Block->getLastCondition();
++          if (!Condition)
++            Condition = dyn_cast_or_null<Expr>(Block->getTerminatorCondition());
++          refine(Condition, Index == 0, Edge);
++        }
++        ++Index;
++        State &Input = Inputs[Next->getBlockID()];
++        if (!Input.Reachable) {
++          Input = {std::move(Edge), true};
++          Work.push_back(Next);
++        } else {
++          Edge &= Input.Facts;
++          if (Edge != Input.Facts) {
++            Input.Facts = std::move(Edge);
++            Work.push_back(Next);
++          }
++        }
++      }
++    }
++    for (const CFGBlock *Block : *Graph) {
++      State &Input = Inputs[Block->getBlockID()];
++      if (Input.Reachable)
++        transfer(*Block, Input.Facts, true);
++    }
++    emitDiagnostics();
++    return Invalid;
++  }
++};
++
 +struct GuardSourceScope {
 +  ObjC3GuardStmt *Guard;
 +  const Stmt *Owner;
@@ -18078,7 +18471,7 @@ index 000000000..9924d3182
 +  if (getLangOpts().ObjCAutoRefCount) {
 +    ObjC3SourceScopes Sources(Body);
 +    for (auto [Variable, Owner] : Sources.Variables)
-+      if (Sources.DeferredScopes.contains(Owner) &&
++      if (Sources.CleanupScopes.contains(Owner) &&
 +          Context.getBaseElementType(Variable->getType()).getObjCLifetime() ==
 +              Qualifiers::OCL_Strong &&
 +          !Variable->hasAttr<ObjCPreciseLifetimeAttr>())
@@ -18088,6 +18481,7 @@ index 000000000..9924d3182
 +  SmallVector<GuardSourceScope, 8> Guards;
 +  collectGuards(Body, Body, Guards);
 +  bool Invalid = checkDeferredLabelAddresses(*this, Body);
++  Invalid |= NullableReceiverFlow(*this).check(Callable, Body);
 +  // Nested guards get their own mandatory-exit diagnostic before an outer
 +  // proof needs to consume their CFG. Labels are complete at this point.
 +  for (auto Entry : llvm::reverse(Guards)) {
@@ -21982,3 +22376,337 @@ index 000000000..bb61b54b7
 +  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
 +  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
 +}
+diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
+new file mode 100644
+index 000000000..9f55af3f8
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-binding-c.m
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++
++typedef __objc3_optional(int) MaybeInt;
++typedef __objc3_optional(MaybeInt) Nested;
++
++void boolean_operator_results_are_bool(int left, int right, _Bool enabled) {
++  // Native C comparison/logical operators return int. The condition boundary
++  // admits their Boolean meaning, preserving strict rejection of raw scalars.
++  guard left != right, !left, left && right, enabled else { return; }
++  guard left else { return; } // expected-error {{condition must have Bool type}}
++}
++
++void independent_let_and_var(MaybeInt source) {
++  if var value = source {
++    value = 2;
++  }
++  guard let value = source else { return; } // expected-note {{variable 'value' declared const here}}
++  value = 3; // expected-error {{cannot assign to variable 'value' with const-qualified type}}
++}
++
++void nested_optional_binding(Nested source) {
++  guard let inner = source, payload = inner else { return; }
++  _Static_assert(_Generic(payload, int: 1, default: 0), "integer payload");
++  (void)payload;
++}
+diff --git a/clang/test/ObjC3/Sema/guard-binding-semantics.mm b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
+new file mode 100644
+index 000000000..accfd73e4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
+@@ -0,0 +1,84 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++
++typedef __objc3_optional(int) MaybeInt;
++typedef __objc3_optional(void) MaybeVoid;
++typedef __objc3_optional(MaybeInt) Nested;
++
++void binding_types(MaybeInt source, Nested nested) {
++  if let immutable = source {
++    static_assert(__is_same(decltype(immutable), const int));
++  }
++  if var mutable_value = source {
++    static_assert(__is_same(decltype(mutable_value), int));
++    mutable_value = 9;
++  }
++  guard let inner = nested, payload = inner else { return; }
++  static_assert(__is_same(decltype(inner), const MaybeInt));
++  static_assert(__is_same(decltype(payload), const int));
++}
++
++void let_is_immutable(MaybeInt source) {
++  guard let value = source else { return; } // expected-note {{variable 'value' declared const here}}
++  value = 7; // expected-error {{cannot assign to variable 'value' with const-qualified type}}
++}
++
++void invalid_sources(int scalar, int *pointer, MaybeVoid absent) {
++  if let value = scalar {} // expected-error {{binding requires an Optional or Objective-C reference}}
++  if var value = pointer {} // expected-error {{binding requires an Optional or Objective-C reference}}
++  guard let value = absent else { return; } // expected-error {{a void payload cannot be bound in a condition}}
++}
++
++void strict_boolean_conditions(MaybeInt source, int integer) {
++  guard integer else { return; } // expected-error {{condition must have Bool type}}
++  guard let value = source, integer != 0 else { return; }
++  (void)value;
++}
++
++struct CopyOnly {
++  CopyOnly(const CopyOnly &);
++  ~CopyOnly();
++};
++typedef __objc3_optional(CopyOnly) MaybeCopy;
++
++void native_copy_and_destruction(MaybeCopy &source) {
++  guard let value = source else { return; }
++  static_assert(__is_same(decltype(value), const CopyOnly));
++  (void)value;
++}
++
++struct InaccessibleDestruction {
++  InaccessibleDestruction(const InaccessibleDestruction &);
++private:
++  ~InaccessibleDestruction(); // expected-note {{declared private here}}
++};
++typedef __objc3_optional(InaccessibleDestruction) HiddenDestructor;
++
++void hidden_snapshot_requires_destruction(HiddenDestructor &source) {
++  guard let value = source else { return; } // expected-error {{variable of type 'InaccessibleDestruction' has private destructor}}
++}
++
++template <class T> int dependent_binding(T source) {
++  guard let value = source else { return -1; }
++  return value;
++}
++template int dependent_binding<MaybeInt>(MaybeInt);
++
++template <class T> int dependent_ordered_bindings(T source) {
++  guard let inner = source, payload = inner else { return -1; }
++  return payload;
++}
++template int dependent_ordered_bindings<Nested>(Nested);
++
++template <class T> int dependent_invalid_source(T source) {
++  guard let value = source else { return -1; } // expected-error {{binding requires an Optional or Objective-C reference}}
++  return value;
++}
++template int dependent_invalid_source<int>(int); // expected-note {{in instantiation of function template specialization}}
++
++template <class T> int dependent_boolean(T condition) {
++  guard condition else { return -1; } // expected-error {{condition must have Bool type}}
++  return 1;
++}
++template int dependent_boolean<bool>(bool);
++template int dependent_boolean<int>(int); // expected-note {{in instantiation of function template specialization}}
+diff --git a/clang/test/ObjC3/Sema/guard-nullable-flow.m b/clang/test/ObjC3/Sema/guard-nullable-flow.m
+new file mode 100644
+index 000000000..eb458267e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-nullable-flow.m
+@@ -0,0 +1,206 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-concurrency -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Wno-nullability-completeness -fsyntax-only -verify=compat %s
++
++#ifdef __cplusplus
++typedef bool Bool;
++#else
++typedef _Bool Bool;
++#endif
++
++@interface GuardReceiver
++- (void)ping;
++- (Bool)alive;
++- (void)argument:(id _Nullable)value;
++- (GuardReceiver * _Nullable)child;
++@end
++
++typedef GuardReceiver * _Nullable Nullable;
++typedef GuardReceiver * _Nonnull Nonnull;
++typedef __objc3_optional(Nullable) Tagged;
++
++void unknown_call(void);
++id _Nullable clear_receiver(Nullable * _Nonnull);
++
++void unproven_receiver(Nullable value) {
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void ordered_guard(Nullable value) {
++  guard value != (id)0, [value alive] else { return; }
++  [value ping];
++}
++
++void negative_guard(Nullable value) {
++  guard !((id)0 == value) else { return; }
++  [value ping];
++}
++
++void failure_has_no_success_fact(Nullable value) {
++  guard value != (id)0 else {
++    [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++    return;
++  }
++  [value ping];
++}
++
++void ordinary_branch_refinement(Nullable value) {
++  if (value != (id)0) {
++    [value ping];
++  } else {
++    [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++  }
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void short_circuit_and(Nullable value) {
++  if (value != (id)0 && [value alive])
++    [value ping];
++}
++
++void short_circuit_or(Nullable value, Bool other) {
++  guard value != (id)0 || other else { return; }
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void loop_test_refines_each_iteration(Nullable value) {
++  while (value != (id)0) {
++    [value ping];
++    value = (id)0;
++  }
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void assignment_invalidates(Nullable value) {
++  guard value != (id)0 else { return; }
++  value = (id)0;
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void both_join_paths_preserve(Nullable value, Nonnull replacement, Bool choose) {
++  if (choose)
++    value = replacement;
++  else
++    value = replacement;
++  [value ping];
++}
++
++void calls_preserve_unexposed_local(Nullable value) {
++  guard value != (id)0 else { return; }
++  unknown_call();
++  [value ping];
++}
++
++void calls_invalidate_exposed_storage(Nullable value) {
++  guard value != (id)0 else { return; }
++  clear_receiver(&value);
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void stores_invalidate_exposed_storage(Nullable value) {
++  Nullable *alias = &value;
++  guard value != (id)0 else { return; }
++  *alias = (id)0;
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void receiver_is_loaded_before_arguments(Nullable value) {
++  guard value != (id)0 else { return; }
++  [value argument:clear_receiver(&value)];
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void later_operand_cannot_restore_an_invalidated_fact(Nullable value) {
++  guard value != (id)0 && clear_receiver(&value) != (id)0 else { return; }
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void source_is_not_a_binding(Nullable source) {
++  if let owned = source {
++    [owned ping];
++  }
++  [source ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void owned_snapshot_survives_source_assignment(Nullable source,
++                                               Nonnull replacement) {
++  guard let owned = source else { return; }
++  source = (id)0;
++  [owned ping];
++  void (^captured)(void) = ^{ [owned ping]; };
++  (void)captured;
++  if var mutable_value = replacement {
++    mutable_value = replacement;
++    [mutable_value ping];
++  }
++}
++
++void a_jump_can_bypass_a_boolean_guard(Nullable value, Bool skip) {
++  if (skip)
++    goto after_guard;
++  guard value != (id)0 else { return; }
++after_guard:
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void tagged_some_nil_does_not_refine_payload(Tagged source) {
++  guard let payload = source else { return; }
++  [payload ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++  guard payload != (id)0 else { return; }
++  [payload ping];
++}
++
++void a_second_getter_is_a_new_value(Nonnull owner) {
++  guard [owner child] != (id)0 else { return; }
++  [[owner child] ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void separate_block_callable(Nullable value) {
++  guard value != (id)0 else { return; }
++  void (^body)(void) = ^{
++    [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++  };
++  (void)body;
++}
++
++void unmodeled_native_flow_does_not_admit_nullable_sends(Nullable value) {
++  @try {
++  } @finally {
++    [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++  }
++}
++
++#ifdef __cplusplus
++template <class T> void instantiated_refinement(Nullable value, T condition) {
++  guard condition, value != (id)0 else { return; }
++  [value ping];
++}
++template void instantiated_refinement<bool>(Nullable, bool);
++
++void reference_arguments_expose_storage(Nullable value,
++                                        void (*mutate)(Nullable &)) {
++  guard value != (id)0 else { return; }
++  mutate(value);
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++
++void a_reference_alias_names_the_same_storage(Nullable value) {
++  Nullable &alias = value;
++  guard alias != (id)0 else { return; }
++  [value ping];
++  alias = (id)0;
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++}
++#endif
++
++#if __has_feature(objc_arc)
++void weak_load_requires_an_owned_binding(__weak Nullable source) {
++  guard source != (id)0 else { return; }
++  [source ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
++  guard let owned = source else { return; }
++  source = (id)0;
++  [owned ping];
++}
++#endif
