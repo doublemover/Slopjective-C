@@ -28,7 +28,7 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 75 AST contract tests, 53 production exit-proof
+229 passing Clang regressions, 79 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
@@ -114,6 +114,26 @@ Instantiated template runtime cases also verify native owned construction,
 source temporary lifetimes and ordered partial-failure cleanup. The receipt above
 binds this completed scope and template checkpoint.
 
+## Qualified native CFG
+
+Guard and if-binding now build native branches in source order. Failure skips
+later sources and destroys only completed bindings before else. Snapshot and
+source temporary cleanup finishes before the next condition; successful bindings
+remain active through the native continuation and destroy in reverse order.
+Carrier-copy recipes branch on the selected arm, including conditional temporary
+cleanup. Explicit selected-payload destructor elements preserve lexical native
+exception handlers, including outward goto paths with unresolved synthetic CFG
+targets.
+
+The CFG kind tag now has five bits in the same two-word element, with alignment
+assertions for supported 64-bit hosts. Every runtime fixture must build a native
+CFG before its IR is emitted. Ten C/C++ path cases independently check source
+ordering, branch boundaries and C++ prefix/snapshot destruction. Nested exit
+proofs and caught carrier-destruction cases exercise the production checker.
+A checked-error regression also verifies that initializer failure destroys
+previously completed locals while excluding the local still under construction.
+The source statement list and public static-analysis gates remain explicit.
+
 ## Implementation still to complete
 
 - Contextual parser recognition, preserving base-language
@@ -123,8 +143,8 @@ binds this completed scope and template checkpoint.
   success scopes and failure branches.
 - Complete ownership qualification with single source evaluation, native weak loads, C++ copy
   rules, partial-failure cleanup, throwing temporaries and full lexical lifetime.
-- Complete guard exit checking, jump protection, nested condition CFGs, deferred
-  cleanup, templates, AST import/identity, PCH, source-free interfaces and tooling.
+- Complete guard exit checking, jump protection, deferred/runtime
+  cleanup and match CFGs, templates, AST import/identity, PCH, source-free interfaces and tooling.
 - Runtime, diagnostic, interface and debugger gates across C17/C++20/23,
   ARC/MRC and O0/O2, followed by a rebuilt and activated SDK.
 

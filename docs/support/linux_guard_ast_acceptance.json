@@ -3,19 +3,19 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "dfb1f9c68b28d871c931ebb0293219f8fc3c4855",
+  "implementation_commit": "0d6c1875431eef9fd92338fff6380026ee1a35d3",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-975220dd4b75-fd761312",
-  "patch_digest": "975220dd4b75cead612cfe5f6cc11f440d8810116f66af823ba61e2e98fe93ff",
-  "compiler_sha256": "2830e9245ef8a1adbc63bd292af421dc2f77151bbb86713412bf00e843a4a602",
-  "ast_tests_sha256": "945b966c1107ad30e8cd0c99460735713c35761d47076d08c21080ad7db105b5",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-0997ccd7f745-fd761312",
+  "patch_digest": "0997ccd7f74502db4db8fb786db011520b5fc7f741c0616f20687deb25fe4fe8",
+  "compiler_sha256": "1a3140f11345bab89ab78ff636b63a91bfa37e26b82dd09716873cb00325558d",
+  "ast_tests_sha256": "39a43c3ee986769fe9728349da46b7c958717764818231d82bc5bb175444fd39",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
   "installed_sdk_rebuilt_for_this_milestone": false,
   "verification": {
     "clang_regressions_passed": 229,
     "clang_regressions_unsupported": 3,
-    "ast_contract_tests_passed": 75,
+    "ast_contract_tests_passed": 79,
     "production_guard_exit_cases": 53,
     "focused_tooling_tests_passed": 8,
     "compiler_clangd_lldb_rebuilt": true,
@@ -117,20 +117,43 @@
       "unbraced sibling-branch isolation",
       "native variable-bypass detection",
       "dependent template initialization and declaration remapping"
-    ]
+    ],
+    "native_cfg": {
+      "condition_branching": true,
+      "all_runtime_fixture_cfgs_built": true,
+      "ordered_plain_and_cpp_path_cases": 10,
+      "nested_mandatory_exit_cases": 2,
+      "caught_carrier_destruction_cases": 2,
+      "checked_initializer_failure_case": true,
+      "cases": [
+        "failure short circuits later condition sources",
+        "completed bindings destroy before else",
+        "snapshots finish before subsequent conditions",
+        "guard bindings remain active through native source continuation",
+        "if bindings end at then boundary",
+        "reverse successful binding destruction",
+        "selected carrier copy arms and conditional temporary cleanup",
+        "lexically caught carrier destruction on return and outward goto",
+        "checked initializer failure excludes the uninitialized local"
+      ],
+      "cfg_element_words": 2,
+      "cfg_kind_bits": 5,
+      "supported_host_pointer_bits": 64,
+      "static_analyzer_conformance_claimed": false
+    }
   },
-  "foundation_report_sha256": "5ae35e9d0664dc74d8ae689ebc22ff45d3820e5534c52c72f9cbdc5b5f2e1ff7",
-  "runtime_report_sha256": "83a29b52e65d34b69780a571c59084da1da9d0e06cade6a05d9d0b8ae3d120b5",
+  "foundation_report_sha256": "96df3ae47babe577a4a7ac0d1e815b31cdfc64f80af2922da4cf374f08b03f9c",
+  "runtime_report_sha256": "801a90de8ddffdf61dc99349f1c3e1147c4c4f6eb2df7192d85c2ffd0893a4b0",
   "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
-  "ast_codegen_test_sha256": "a662354296942c0511c963501c75b53f4304f530154edefff63347e0c680a8c8",
+  "ast_codegen_test_sha256": "e251377a35fd9dc6e3613643316826e85e2eefb4202a09881c7b9ea6736578b8",
   "qualification_script_sha256": "9abd5015dc62e17648510d0411b0e6ae7eaac018f6ad0e97526a5a346c6c4bbd",
   "reproduce_runtime": "python -B -m scripts.objc3c_native_validation.condition_ast",
   "remaining_work": [
     "ordered managed-prefix failure/unwinding and nested managed payload qualification",
     "contextual parser admission, recovery and nullable flow refinements",
-    "nested CFG and deferred/runtime cleanup exit models",
+    "defer, runtime cleanup and match CFG integration",
     "source/PCH/interface/debugger runtime gates and SDK delivery"
   ],
   "activated_sdk_receipt": "docs/support/linux_match_results_acceptance.json",
-  "scope_test_sha256": "360beb5e7af17a928565880661ce36f06288c748d40810dab528c6ab34a80858"
+  "scope_test_sha256": "f0931dc89155cf5bc9c5a225e6f12629fbe515a6b43bd36abaad8c21ac609d52"
 }
