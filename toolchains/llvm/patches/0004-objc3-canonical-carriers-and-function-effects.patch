@@ -1084,7 +1084,7 @@ index 7671f003c..af92b2d03 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..5717957b8 100644
+index 2cb79b6ba..76a378707 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,49 @@
@@ -1188,10 +1188,14 @@ index 2cb79b6ba..5717957b8 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14439,21 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14439,25 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
++def err_objc3_guard_must_exit : Error<"guard else body must exit the current scope on every reachable path">;
++def err_objc3_guard_exit_unsupported : Error<"cannot prove guard scope exit for this cleanup or control-flow construct">;
++def note_protected_by_objc3_binding : Note<"jump bypasses initialization of an optional binding">;
++def note_exits_objc3_binding : Note<"jump exits an initialized optional binding">;
 +def err_objc3_condition_type : Error<"condition must have Bool type, not %0">;
 +def err_objc3_binding_requires_optional : Error<"binding requires an Optional or Objective-C reference, not %0">;
 +def err_objc3_binding_void_payload : Error<"a void payload cannot be bound in a condition">;
@@ -4909,7 +4913,7 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..0c51d752c 100644
+index b4a9cc120..b6ede12f1 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
 @@ -14,6 +14,7 @@
@@ -4952,22 +4956,48 @@ index b4a9cc120..0c51d752c 100644
          Diags = ScopePair(diag::note_enters_block_captures_non_trivial_c_struct,
                            diag::note_exits_block_captures_non_trivial_c_struct);
          break;
-@@ -406,6 +414,36 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -406,6 +414,62 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
      return;
    }
  
-+  case Stmt::ObjC3BindingConditionClass:
-+    for (Stmt *Child : S->children())
-+      if (Child) BuildScopeInformation(Child, ParentScope);
++  case Stmt::ObjC3BindingConditionClass: {
++    auto *Binding = cast<ObjC3BindingCondition>(S);
++    unsigned SourceScope = origParentScope;
++    BuildScopeInformation(Binding->getSource(), SourceScope);
++    auto *Variable = Binding->getBindingDecl();
++    unsigned Out = Variable->needsDestruction(this->S.Context)
++                       ? diag::note_exits_objc3_binding : 0;
++    Scopes.emplace_back(origParentScope, diag::note_protected_by_objc3_binding,
++                         Out, Variable->getLocation());
++    origParentScope = Scopes.size() - 1;
++    unsigned InitScope = origParentScope;
++    BuildScopeInformation(Variable->getInit(), InitScope);
 +    return;
-+  case Stmt::ObjC3GuardStmtClass:
-+    for (Stmt *Child : S->children())
-+      if (Child) BuildScopeInformation(Child, ParentScope);
++  }
++  case Stmt::ObjC3GuardStmtClass: {
++    auto *Guard = cast<ObjC3GuardStmt>(S);
++    unsigned FailureScope = origParentScope;
++    for (unsigned I = 0; I != Guard->getNumConditions(); ++I) {
++      Stmt *Condition = Guard->getCondition(I);
++      if (isa<ObjC3BindingCondition>(Condition))
++        BuildScopeInformation(Condition, origParentScope);
++      else {
++        unsigned TemporaryScope = origParentScope;
++        BuildScopeInformation(Condition, TemporaryScope);
++      }
++    }
++    BuildScopeInformation(Guard->getElse(), FailureScope);
 +    return;
-+  case Stmt::ObjC3IfBindingStmtClass:
-+    for (Stmt *Child : S->children())
-+      if (Child) BuildScopeInformation(Child, ParentScope);
++  }
++  case Stmt::ObjC3IfBindingStmtClass: {
++    auto *If = cast<ObjC3IfBindingStmt>(S);
++    unsigned SuccessScope = ParentScope, FailureScope = ParentScope;
++    for (unsigned I = 0; I != If->getNumConditions(); ++I)
++      BuildScopeInformation(If->getCondition(I), SuccessScope);
++    BuildScopeInformation(If->getThen(), SuccessScope);
++    if (Stmt *Else = If->getElse()) BuildScopeInformation(Else, FailureScope);
 +    return;
++  }
 +  case Stmt::ObjC3DoCatchStmtClass: {
 +    auto *DS = cast<ObjC3DoCatchStmt>(S);
 +    unsigned BodyScope = Scopes.size();
@@ -4989,6 +5019,23 @@ index b4a9cc120..0c51d752c 100644
    case Stmt::CXXTryStmtClass: {
      CXXTryStmt *TS = cast<CXXTryStmt>(S);
      {
+@@ -695,8 +759,14 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+       SubStmt = Next;
+     }
+ 
+-    // Recursively walk the AST.
+-    BuildScopeInformation(SubStmt, ParentScope);
++    // A single unbraced guard body has its own implicit source scope. Its
++    // successful declarations cannot protect a sibling control-flow arm.
++    if (isa<ObjC3GuardStmt>(SubStmt) && !isa<CompoundStmt>(S)) {
++      unsigned BodyScope = ParentScope;
++      BuildScopeInformation(SubStmt, BodyScope);
++    } else {
++      BuildScopeInformation(SubStmt, ParentScope);
++    }
+   }
+ }
+ 
 diff --git a/clang/lib/Sema/ObjC3MatchCoverage.cpp b/clang/lib/Sema/ObjC3MatchCoverage.cpp
 new file mode 100644
 index 000000000..30b3eef73
@@ -5233,7 +5280,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..8e47dacd1 100644
+index 6a25a799a..86dd85e9a 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,7 @@
@@ -5424,7 +5471,7 @@ index 6a25a799a..8e47dacd1 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16838,26 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16838,28 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -5446,12 +5493,14 @@ index 6a25a799a..8e47dacd1 100644
 +      }
 +    }
 +  }
++  if (dcl && !dcl->isInvalidDecl() && CheckObjC3Guards(dcl, Body))
++    dcl->setInvalidDecl();
 +  if (dcl && !dcl->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
 +    dcl->setInvalidDecl();
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16872,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16874,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -5466,7 +5515,7 @@ index 6a25a799a..8e47dacd1 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20368,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20370,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -5789,7 +5838,7 @@ index 04ba52809..8f8448568 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..d4c12291b 100644
+index 5d4c5ff7d..e370c2f85 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,4 @@
@@ -6068,7 +6117,7 @@ index 5d4c5ff7d..d4c12291b 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -17047,6 +17225,38 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17225,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -6094,6 +6143,8 @@ index 5d4c5ff7d..d4c12291b 100644
 +      }
 +    }
 +  }
++  if (!BD->isInvalidDecl() && CheckObjC3Guards(BD, Body))
++    BD->setInvalidDecl();
 +  if (!BD->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
 +    BD->setInvalidDecl();
 +  if (!BD->isInvalidDecl() && BSI->isCoroutine()) {
@@ -6107,7 +6158,7 @@ index 5d4c5ff7d..d4c12291b 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17264,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17266,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -6117,7 +6168,7 @@ index 5d4c5ff7d..d4c12291b 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17218,7 +17425,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17427,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -8266,7 +8317,7 @@ index 3f0a7304d..ed8db7261 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..f72ee505f 100644
+index 11cd159c0..f1e8be7ef 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,7 @@
@@ -8369,7 +8420,7 @@ index 11cd159c0..f72ee505f 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8642,12 +8707,135 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8642,12 +8707,100 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -8438,42 +8489,7 @@ index 11cd159c0..f72ee505f 100644
 +
 +#include "TreeTransformObjC3Match.inc"
 +
-+template <typename Derived>
-+StmtResult TreeTransform<Derived>::TransformObjC3BindingCondition(ObjC3BindingCondition *S) {
-+  StmtResult Snapshot = getDerived().TransformStmt(S->getSnapshotStatement());
-+  StmtResult Binding = getDerived().TransformStmt(S->getBindingStatement());
-+  if (Snapshot.isInvalid() || Binding.isInvalid()) return StmtError();
-+  return new (SemaRef.Context) ObjC3BindingCondition(cast<DeclStmt>(Snapshot.get()),
-+      cast<DeclStmt>(Binding.get()), S->isMutableBinding(), S->getKeywordLoc(), S->getEqualLoc());
-+}
-+template <typename Derived>
-+StmtResult TreeTransform<Derived>::TransformObjC3GuardStmt(ObjC3GuardStmt *S) {
-+  SmallVector<Stmt *, 4> Conditions;
-+  for (unsigned I = 0; I != S->getNumConditions(); ++I) {
-+    StmtResult Condition = getDerived().TransformStmt(S->getCondition(I));
-+    if (Condition.isInvalid()) return StmtError();
-+    Conditions.push_back(Condition.get());
-+  }
-+  
-+  StmtResult Else = getDerived().TransformStmt(S->getElse());
-+  if (Else.isInvalid()) return StmtError();
-+  return ObjC3GuardStmt::Create(SemaRef.Context, Conditions,
-+      Else.get(), S->getKeywordLoc(), S->getElseLoc());
-+}
-+template <typename Derived>
-+StmtResult TreeTransform<Derived>::TransformObjC3IfBindingStmt(ObjC3IfBindingStmt *S) {
-+  SmallVector<Stmt *, 4> Conditions;
-+  for (unsigned I = 0; I != S->getNumConditions(); ++I) {
-+    StmtResult Condition = getDerived().TransformStmt(S->getCondition(I));
-+    if (Condition.isInvalid()) return StmtError();
-+    Conditions.push_back(Condition.get());
-+  }
-+  StmtResult Then = getDerived().TransformStmt(S->getThen()); if (Then.isInvalid()) return StmtError();
-+  StmtResult Else = getDerived().TransformStmt(S->getElse());
-+  if (Else.isInvalid()) return StmtError();
-+  return ObjC3IfBindingStmt::Create(SemaRef.Context, Conditions,
-+      Then.get(), Else.get(), S->getIfLoc(), S->getElseLoc());
-+}
++#include "TreeTransformObjC3Conditions.inc"
 +
 +template <typename Derived>
 +StmtResult TreeTransform<Derived>::TransformObjC3DoCatchStmt(
@@ -8506,7 +8522,7 @@ index 11cd159c0..f72ee505f 100644
  }
  
  template<typename Derived>
-@@ -14566,6 +14754,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14719,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -12067,10 +12083,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..5648c0844 100644
+index 81010e046..ce9cd5afd 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,39 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,40 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -12097,6 +12113,7 @@ index 81010e046..5648c0844 100644
 +  ObjC3CheckedErrorCFGTest.cpp
 +  ObjC3GuardExitTest.cpp
 +  ObjC3ConditionNodesTest.cpp
++  ObjC3ConditionScopeTest.cpp
 +  ObjC3ConditionCodeGenTest.cpp
 +  ObjC3MatchImporterTest.cpp
 +  CLANG_LIBS
@@ -17456,16 +17473,19 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..54e1c4ac2
+index 000000000..aba9a9044
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,268 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics ----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/StmtObjC.h"
++#include "clang/Sema/ObjC3GuardExit.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Initialization.h"
@@ -17661,6 +17681,69 @@ index 000000000..54e1c4ac2
 +      (Else && !isa<CompoundStmt>(Else))) return StmtError();
 +  setFunctionHasBranchProtectedScope();
 +  return ObjC3IfBindingStmt::Create(Context, Conditions, Then, Else, IfLoc, ElseLoc);
++}
++
++// Draft: append to SemaObjC3Conditions.cpp, add AST/ExprCXX, AST/StmtObjC and
++// Sema/ObjC3GuardExit includes. Wire completed function/method/Block hooks.
++namespace {
++struct GuardSourceScope {
++  ObjC3GuardStmt *Guard;
++  const Stmt *Owner;
++};
++void collectGuards(Stmt *Statement, const Stmt *Owner,
++                   SmallVectorImpl<GuardSourceScope> &Guards) {
++  if (!Statement) return;
++  if (auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
++    for (Expr *Capture : Lambda->capture_inits())
++      collectGuards(Capture, Owner, Guards);
++    return;
++  }
++  if (isa<BlockExpr>(Statement)) return;
++  if (isa<CompoundStmt>(Statement)) Owner = Statement;
++  if (auto *Guard = dyn_cast<ObjC3GuardStmt>(Statement))
++    Guards.push_back({Guard, Owner});
++  if (auto *If = dyn_cast<IfStmt>(Statement)) {
++    // An unbraced control body still creates a source lexical region. Its
++    // containing compound cannot serve as the goto-exit boundary.
++    for (Stmt *Child : If->children())
++      collectGuards(Child, Child == If->getThen() || Child == If->getElse()
++                              ? Child : Owner, Guards);
++    return;
++  }
++  Stmt *Body = nullptr;
++  if (auto *Loop = dyn_cast<ForStmt>(Statement)) Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<WhileStmt>(Statement)) Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<DoStmt>(Statement)) Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<CXXForRangeStmt>(Statement)) Body = Loop->getBody();
++  else if (auto *Loop = dyn_cast<ObjCForCollectionStmt>(Statement)) Body = Loop->getBody();
++  else if (auto *Switch = dyn_cast<SwitchStmt>(Statement)) Body = Switch->getBody();
++  for (Stmt *Child : Statement->children())
++    collectGuards(Child, Child && Child == Body ? Body : Owner, Guards);
++}
++} // namespace
++bool Sema::CheckObjC3Guards(Decl *Callable, Stmt *Body) {
++  if (!getLangOpts().ObjC3 || !Body) return false;
++  if (auto *FunctionTemplate = dyn_cast_or_null<FunctionTemplateDecl>(Callable))
++    Callable = FunctionTemplate->getTemplatedDecl();
++  if (Callable)
++    if (auto *Context = dyn_cast<DeclContext>(Callable))
++      if (Context->isDependentContext()) return false;
++  SmallVector<GuardSourceScope, 8> Guards;
++  collectGuards(Body, Body, Guards);
++  bool Invalid = false;
++  // Nested guards get their own mandatory-exit diagnostic before an outer
++  // proof needs to consume their CFG. Labels are complete at this point.
++  for (auto Entry : llvm::reverse(Guards)) {
++    auto Result = objc3::proveGuardScopeExit(
++        *this, cast<CompoundStmt>(Entry.Guard->getElse()), Entry.Owner);
++    if (Result == objc3::GuardExitResult::Proven) continue;
++    Invalid = true;
++    Diag(Entry.Guard->getElseLoc(),
++         Result == objc3::GuardExitResult::UnsupportedControlFlow
++             ? diag::err_objc3_guard_exit_unsupported
++             : diag::err_objc3_guard_must_exit);
++  }
++  return Invalid;
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
@@ -18166,4 +18249,264 @@ index 000000000..f284971cb
 +    SCOPED_TRACE(Name);
 +    checkLowering(StatementExpression(Cpp, true), Name, Standard, false, false, false, true);
 +  }
++}
+diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
+new file mode 100644
+index 000000000..b9ffeb885
+--- /dev/null
++++ b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
+@@ -0,0 +1,67 @@
++// Native condition reconstruction must rerun use-site initialization. Include
++// after TreeTransform declarations and before explicit instantiation sites.
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3BindingCondition(
++    ObjC3BindingCondition *Old) {
++  // Rebuild the full expression only after constructing the new snapshot.
++  // Nesting an already completed source expression would end its temporaries
++  // before successful binding initialization.
++  Expr *Initializer = Old->getSource();
++  while (auto *Cleanups = dyn_cast<ExprWithCleanups>(Initializer))
++    Initializer = Cleanups->getSubExpr();
++  ExprResult Source = getDerived().TransformExpr(Initializer);
++  if (Source.isInvalid()) return StmtError();
++  VarDecl *Variable = Old->getBindingDecl();
++  StmtResult Result = SemaRef.ActOnObjC3BindingCondition(
++      nullptr, Variable->getIdentifier(), Variable->getLocation(),
++      Old->isMutableBinding(), Old->getKeywordLoc(), Old->getEqualLoc(),
++      Source.get());
++  if (Result.isInvalid()) return StmtError();
++  auto *New = cast<ObjC3BindingCondition>(Result.get());
++  getDerived().transformedLocalDecl(Old->getSnapshotDecl(), {New->getSnapshotDecl()});
++  getDerived().transformedLocalDecl(Variable, {New->getBindingDecl()});
++  return New;
++}
++
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3GuardStmt(ObjC3GuardStmt *Old) {
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != Old->getNumConditions(); ++I) {
++    Stmt *Condition = Old->getCondition(I);
++    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Condition)) {
++      StmtResult New = getDerived().TransformObjC3BindingCondition(Binding);
++      if (New.isInvalid()) return StmtError();
++      Conditions.push_back(New.get());
++    } else {
++      auto *Initializer = cast<Expr>(Condition);
++      while (auto *Cleanups = dyn_cast<ExprWithCleanups>(Initializer))
++        Initializer = Cleanups->getSubExpr();
++      ExprResult Value = getDerived().TransformExpr(Initializer);
++      if (Value.isInvalid()) return StmtError();
++      Value = SemaRef.ActOnObjC3BooleanCondition(
++          nullptr, Value.get(), Initializer->getExprLoc());
++      if (Value.isInvalid()) return StmtError();
++      Conditions.push_back(Value.get());
++    }
++  }
++  StmtResult Else = getDerived().TransformStmt(Old->getElse());
++  if (Else.isInvalid()) return StmtError();
++  return SemaRef.ActOnObjC3GuardStmt(nullptr, Conditions, Else.get(),
++                                   Old->getKeywordLoc(), Old->getElseLoc());
++}
++
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3IfBindingStmt(
++    ObjC3IfBindingStmt *Old) {
++  SmallVector<Stmt *, 4> Conditions;
++  for (unsigned I = 0; I != Old->getNumConditions(); ++I) {
++    StmtResult Condition = getDerived().TransformStmt(Old->getCondition(I));
++    if (Condition.isInvalid()) return StmtError();
++    Conditions.push_back(Condition.get());
++  }
++  StmtResult Then = getDerived().TransformStmt(Old->getThen());
++  StmtResult Else = getDerived().TransformStmt(Old->getElse());
++  if (Then.isInvalid() || Else.isInvalid()) return StmtError();
++  return SemaRef.ActOnObjC3IfBindingStmt(Conditions, Then.get(), Else.get(),
++                                       Old->getIfLoc(), Old->getElseLoc());
++}
+diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
+new file mode 100644
+index 000000000..ae5e7b661
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
+@@ -0,0 +1,181 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Basic/Diagnostic.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++using namespace clang;
++namespace {
++class Diagnostics final : public DiagnosticConsumer {
++public:
++  unsigned Errors = 0;
++  void HandleDiagnostic(DiagnosticsEngine::Level Level, const Diagnostic &) override {
++    Errors += Level >= DiagnosticsEngine::Error;
++  }
++};
++class Placeholder : public RecursiveASTVisitor<Placeholder> {
++public:
++  IfStmt *Statement = nullptr;
++  bool VisitIfStmt(IfStmt *If) {
++    if (!Statement && If->getElse() && isa<CompoundStmt>(If->getThen()))
++      Statement = If;
++    return true;
++  }
++};
++void replaceStatement(Stmt *Root, Stmt *Old, Stmt *New) {
++  for (Stmt *&Child : Root->children()) {
++    if (Child == Old) Child = New;
++    else if (Child) replaceStatement(Child, Old, New);
++  }
++}
++ObjC3GuardStmt *replacePlaceholder(ASTContext &C, FunctionDecl *Function,
++                                   ArrayRef<Stmt *> Conditions = {}) {
++  Placeholder Find;
++  Find.TraverseStmt(Function->getBody());
++  if (!Find.Statement) return nullptr;
++  auto *If = Find.Statement;
++  SmallVector<Stmt *, 4> Native(Conditions.begin(), Conditions.end());
++  if (Native.empty()) Native.push_back(If->getCond());
++  auto *Guard = ObjC3GuardStmt::Create(C, Native, If->getElse(),
++                                       If->getIfLoc(), If->getElseLoc());
++  replaceStatement(Function->getBody(), If, Guard);
++  return Guard;
++}
++} // namespace
++
++TEST(ObjC3ConditionScope, CompletedCallableUsesRealImplicitAndCompoundScopes) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    bool condition;
++    void pass_return() { if(condition) {} else { return; } }
++    void pass_implicit() { if(condition) if(condition) {} else { goto out; } out:; }
++    void pass_outer_label() { { if(condition) {} else { goto out; } } out:; }
++    void fail_same_scope() { if(condition) {} else { goto out; } out:; }
++    void fail_fallthrough() { if(condition) {} else {} }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Messages = new Diagnostics;
++  AST->getDiagnostics().setClient(Messages, true);
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody()) continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function));
++    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
++    bool Invalid = AST->getSema().CheckObjC3Guards(Function, Function->getBody());
++    EXPECT_EQ(Function->getName().starts_with("fail_"), Invalid);
++    ++Cases;
++  }
++  EXPECT_EQ(5u, Cases);
++  EXPECT_EQ(2u, Messages->Errors);
++}
++
++TEST(ObjC3ConditionScope, ProtectsBindingInitializationWithoutLeakingIntoSiblingElse) {
++  for (const char *Standard : {"c17", "c++20", "c++23"}) {
++    SCOPED_TRACE(Standard);
++    auto AST = tooling::buildASTFromCodeWithArgs(R"(
++      typedef __objc3_optional(int) Maybe;
++      void fail_bypass(Maybe source) {
++        goto target;
++        if(1) {} else { return; }
++        target:;
++      }
++      void pass_else(Maybe source) {
++        goto target;
++        if(1) if(1) {} else { return; }
++        else { target:; }
++      }
++    )", {"-x", Standard[1] == '+' ? "objective-c++" : "objective-c",
++         std::string("-std=") + Standard, "-fobjc-version=3"});
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto *Messages = new Diagnostics;
++    AST->getDiagnostics().setClient(Messages, true);
++    for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto *Function = dyn_cast<FunctionDecl>(D);
++      if (!Function || !Function->hasBody()) continue;
++      SCOPED_TRACE(Function->getNameAsString());
++      Sema &Actions = AST->getSema();
++      Sema::SynthesizedFunctionScope Scope(Actions, Function);
++      auto *Parameter = Function->getParamDecl(0);
++      SourceLocation Loc = Parameter->getLocation();
++      Expr *Source = Actions.BuildDeclRefExpr(Parameter, Parameter->getType(), VK_LValue, Loc);
++      StmtResult Result = Actions.ActOnObjC3BindingCondition(
++          nullptr, &AST->getASTContext().Idents.get("value"), Loc, false, Loc, Loc, Source);
++      ASSERT_FALSE(Result.isInvalid());
++      Stmt *Conditions[] = {Result.get()};
++      ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function, Conditions));
++      unsigned Before = Messages->Errors;
++      Actions.DiagnoseInvalidJumps(Function->getBody());
++      EXPECT_EQ(Function->getName().starts_with("fail_") ? 1u : 0u,
++                Messages->Errors - Before);
++    }
++  }
++}
++
++TEST(ObjC3ConditionScope, TemplateReplayBuildsConcreteBindingsAndRemapsLaterUses) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    typedef __objc3_optional(int) Maybe;
++    template<class T> int exercise(T input) {
++      T &source = input;
++      if(true) {} else { return -1; }
++      auto value = dependent_value(input);
++      return value;
++    }
++    extern template int exercise<Maybe>(Maybe);
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionTemplateDecl *Template = nullptr;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *Candidate = dyn_cast<FunctionTemplateDecl>(D)) Template = Candidate;
++  ASSERT_TRUE(Template);
++  FunctionDecl *Pattern = Template->getTemplatedDecl();
++  auto *Body = cast<CompoundStmt>(Pattern->getBody());
++  ASSERT_EQ(4u, Body->size());
++  auto *Source = cast<VarDecl>(cast<DeclStmt>(Body->body_front())->getSingleDecl());
++  auto *If = cast<IfStmt>(*(Body->body_begin() + 1));
++  auto *OldValue = cast<VarDecl>(cast<DeclStmt>(*(Body->body_begin() + 2))->getSingleDecl());
++  Sema &Actions = AST->getSema();
++  {
++    Sema::SynthesizedFunctionScope Scope(Actions, Pattern);
++    SourceLocation Loc = Source->getLocation();
++    StmtResult Result = Actions.ActOnObjC3BindingCondition(
++        nullptr, OldValue->getIdentifier(), OldValue->getLocation(), false,
++        Loc, Loc, Source->getInit());
++    ASSERT_FALSE(Result.isInvalid());
++    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
++    auto *Return = cast<ReturnStmt>(Body->body_back());
++    auto *Reference = Actions.BuildDeclRefExpr(
++        Binding->getBindingDecl(), Binding->getBindingDecl()->getType(), VK_LValue,
++        Return->getRetValue()->getExprLoc());
++    Return->setRetValue(Reference);
++    Stmt *Conditions[] = {Binding};
++    auto *Guard = ObjC3GuardStmt::Create(AST->getASTContext(), Conditions,
++        If->getElse(), If->getIfLoc(), If->getElseLoc());
++    Stmt *Statements[] = {Guard, Return};
++    Pattern->setBody(CompoundStmt::Create(AST->getASTContext(), Statements,
++        FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc()));
++  }
++  ASSERT_EQ(1u, std::distance(Template->spec_begin(), Template->spec_end()));
++  FunctionDecl *Concrete = *Template->spec_begin();
++  Concrete->setTemplateSpecializationKind(TSK_ImplicitInstantiation);
++  Actions.InstantiateFunctionDefinition(Concrete->getLocation(), Concrete,
++                                         true, true, false);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASSERT_TRUE(Concrete->doesThisDeclarationHaveABody());
++  auto *Instantiated = cast<CompoundStmt>(Concrete->getBody());
++  auto *Guard = cast<ObjC3GuardStmt>(Instantiated->body_front());
++  auto *Binding = cast<ObjC3BindingCondition>(Guard->getCondition(0));
++  EXPECT_TRUE(Binding->getBindingDecl()->getType()->isIntegerType());
++  EXPECT_TRUE(Binding->getBindingDecl()->getType().isConstQualified());
++  auto *Return = cast<ReturnStmt>(Instantiated->body_back());
++  auto *Reference = cast<DeclRefExpr>(Return->getRetValue()->IgnoreParenImpCasts());
++  EXPECT_EQ(Binding->getBindingDecl(), Reference->getDecl());
++  EXPECT_NE(OldValue, Reference->getDecl());
 +}

@@ -17922,3 +17922,57 @@ index 000000000..417be8af6
 +  EmitBranch(End);
 +  EmitBlock(End, true);
 +}
+diff --git a/clang/lib/CodeGen/VarBypassDetector.cpp b/clang/lib/CodeGen/VarBypassDetector.cpp
+index 7b2b35429..da904d96c 100644
+--- a/clang/lib/CodeGen/VarBypassDetector.cpp
++++ b/clang/lib/CodeGen/VarBypassDetector.cpp
+@@ -84,6 +84,35 @@ bool VarBypassDetector::BuildScopeInformation(CodeGenModule &CGM, const Stmt *S,
+     FromScopes.push_back({S, ParentScope});
+     break;
+ 
++  case Stmt::ObjC3BindingConditionClass: {
++    auto *Binding = cast<ObjC3BindingCondition>(S);
++    unsigned SourceScope = origParentScope;
++    if (!BuildScopeInformation(CGM, Binding->getSource(), SourceScope)) return false;
++    return BuildScopeInformation(CGM, Binding->getBindingDecl(), origParentScope);
++  }
++  case Stmt::ObjC3GuardStmtClass: {
++    auto *Guard = cast<ObjC3GuardStmt>(S);
++    unsigned FailureScope = origParentScope;
++    for (unsigned I = 0; I != Guard->getNumConditions(); ++I) {
++      const Stmt *Condition = Guard->getCondition(I);
++      if (isa<ObjC3BindingCondition>(Condition)) {
++        if (!BuildScopeInformation(CGM, Condition, origParentScope)) return false;
++      } else {
++        unsigned TemporaryScope = origParentScope;
++        if (!BuildScopeInformation(CGM, Condition, TemporaryScope)) return false;
++      }
++    }
++    return BuildScopeInformation(CGM, Guard->getElse(), FailureScope);
++  }
++  case Stmt::ObjC3IfBindingStmtClass: {
++    auto *If = cast<ObjC3IfBindingStmt>(S);
++    unsigned SuccessScope = ParentScope, FailureScope = ParentScope;
++    for (unsigned I = 0; I != If->getNumConditions(); ++I)
++      if (!BuildScopeInformation(CGM, If->getCondition(I), SuccessScope)) return false;
++    if (!BuildScopeInformation(CGM, If->getThen(), SuccessScope)) return false;
++    return !If->getElse() || BuildScopeInformation(CGM, If->getElse(), FailureScope);
++  }
++
+   case Stmt::DeclStmtClass: {
+     const DeclStmt *DS = cast<DeclStmt>(S);
+     for (auto *I : DS->decls())
+@@ -129,7 +158,12 @@ bool VarBypassDetector::BuildScopeInformation(CodeGenModule &CGM, const Stmt *S,
+     // Recursively walk the AST.
+     bool Result;
+     CGM.runWithSufficientStackSpace(S->getEndLoc(), [&] {
+-      Result = BuildScopeInformation(CGM, SubStmt, ParentScope);
++      if (isa<ObjC3GuardStmt>(SubStmt) && !isa<CompoundStmt>(S)) {
++        unsigned BodyScope = ParentScope;
++        Result = BuildScopeInformation(CGM, SubStmt, BodyScope);
++      } else {
++        Result = BuildScopeInformation(CGM, SubStmt, ParentScope);
++      }
+     });
+     if (!Result)
+       return false;

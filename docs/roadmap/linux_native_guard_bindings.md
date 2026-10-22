@@ -91,6 +91,22 @@ hashes, replaces stale receipts before checking admission and reclaims temporary
 IR/executables. The gate uses the existing foundation lock and checks inputs
 again after execution. Source syntax is still disabled.
 
+## Scope integration under validation
+
+Completed function, method and Block bodies now run mandatory-exit checking
+with resolved labels and real source regions, including unbraced control bodies.
+Jump analysis protects initialized bindings through subsequent source statements
+while keeping failure/sibling branches in the incoming scope. The native bypass
+detector follows the same declaration boundaries.
+
+Template reconstruction replays source snapshot and binding initialization
+through Sema and maps old local declarations to their concrete replacements.
+Source full expressions are rebuilt after the new snapshot, preserving temporary
+lifetime through successful binding construction. New maintained tests cover
+scope exits, initialization bypass, sibling else isolation and dependent replay.
+These changes are under fresh validation; the receipt above binds the preceding
+checkpoint.
+
 ## Implementation still to complete
 
 - Contextual parser recognition, preserving base-language
