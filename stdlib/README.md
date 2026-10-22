@@ -39,8 +39,10 @@ module headers live in `stdlib/include/objc3`.
 evaluate the input once, and evaluate the factory expression only for None.
 `orThrow` is a throwing Block call: use `tryValue`, `tryOptional` or `tryForce` as
 for any checked throwing call. The factory returns `id<Error>` for `orThrow`;
-`okOr` preserves the factory's concrete error type. The helpers support payloads
-admitted by the compiler's Block call ABI; unsupported types are diagnosed.
+`okOr` preserves the factory's concrete error type and lowers directly through
+native matching, so a success path does not copy an inactive C++ callable.
+`orThrow` supports payloads admitted by the compiler's Block call ABI; unsupported
+types are diagnosed.
 
 The development headers also provide `resultFromStatus(status, successValue,
 makeError)` for zero-success status APIs. The status runs once; the success

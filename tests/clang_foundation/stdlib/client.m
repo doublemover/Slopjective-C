@@ -59,6 +59,12 @@ static int error_out_api(int *value, int *error, int success) {
 }
 
 #ifdef __cplusplus
+static int lazy_factory_copies, lazy_factory_calls;
+struct LazyErrorFactory {
+  LazyErrorFactory() = default;
+  LazyErrorFactory(const LazyErrorFactory &) { ++lazy_factory_copies; }
+  int operator()() const { ++lazy_factory_calls; return 71; }
+};
 static int error_out_copies;
 struct ErrorOutProbe {
   int value = 17;
@@ -121,6 +127,11 @@ int main(void) {
   assert(!isOk(stdlib_status(9, 0, status_error)) && error_calls == 2);
 
 #ifdef __cplusplus
+  LazyErrorFactory lazy_factory;
+  Result(int, int) uncaptured_factory = okOr(Some(int, 42), lazy_factory);
+  assert(isOk(uncaptured_factory) && lazy_factory_copies == 0 && lazy_factory_calls == 0);
+  uncaptured_factory = okOr(None(int), lazy_factory);
+  assert(!isOk(uncaptured_factory) && lazy_factory_copies == 0 && lazy_factory_calls == 1);
   ErrorOutProbe probe;
   Result(int, int) no_error_read = resultFromErrorOut(1, 42, probe,
       ^int(const ErrorOutProbe &raw) { return raw.value; });

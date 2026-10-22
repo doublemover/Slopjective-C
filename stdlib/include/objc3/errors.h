@@ -28,19 +28,14 @@
   })(value))
 
 #define okOr(value, makeError) \
-  (^Result(__OBJC3_STDLIB_PAYLOAD_TYPE(value), __typeof__((makeError)())) \
-      (__typeof__(value) __objc3_stdlib_input) { \
-    match(__objc3_stdlib_input) { \
-      case .Some(let __objc3_stdlib_payload): { \
-        return Ok(__OBJC3_STDLIB_PAYLOAD_TYPE(value), \
-                  __typeof__((makeError)()), __objc3_stdlib_payload); \
-      } \
-      case .None: { \
-        return Err(__OBJC3_STDLIB_PAYLOAD_TYPE(value), \
-                   __typeof__((makeError)()), (makeError)()); \
-      } \
-    } \
-  })(value)
+  (match(value) { \
+    case .Some(let __objc3_stdlib_payload) => \
+      Ok(__OBJC3_STDLIB_PAYLOAD_TYPE(value), __typeof__((makeError)()), \
+         __objc3_stdlib_payload); \
+    case .None => \
+      Err(__OBJC3_STDLIB_PAYLOAD_TYPE(value), __typeof__((makeError)()), \
+          (makeError)()); \
+  })
 
 /* Bridge zero-success status APIs without eagerly constructing either arm.
  * status is evaluated exactly once. successValue is evaluated only on success;
