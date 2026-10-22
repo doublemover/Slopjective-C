@@ -25935,7 +25935,7 @@ index 1b272b541..3f02ebd75 100644
      break;
 diff --git a/clang/lib/Sema/SemaObjC3OptionalOperators.cpp b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
 new file mode 100644
-index 000000000..ac5a5b4df
+index 000000000..ae9e9a4ab
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
 @@ -0,0 +1,165 @@
@@ -25968,8 +25968,8 @@ index 000000000..ac5a5b4df
 +  return Context.getAttributedType(Attribute, Type, Type);
 +}
 +
-+bool isNonnullFallback(ASTContext &Context, Expr *Value) {
-+  if (auto Kind = Value->getType()->getNullability(Context))
++bool isNonnullFallback(Expr *Value) {
++  if (auto Kind = Value->getType()->getNullability())
 +    return *Kind == NullabilityKind::NonNull;
 +  // These literals have no nullable dynamic case even when their builtin type
 +  // carries no explicit nullability sugar.
@@ -26037,10 +26037,10 @@ index 000000000..ac5a5b4df
 +    // Carrier presence proves the tag, not the payload's pointer value.
 +    // Some(nil) remains successful even with a nonnull fallback. Native
 +    // match joins canonical types, so restore this operator's nullable join.
-+    auto Left = Payload->getNullability(S.Context);
-+    auto Right = RHS->getType()->getNullability(S.Context);
++    auto Left = Payload->getNullability();
++    auto Right = RHS->getType()->getNullability();
 +    NullabilityKind L = Left ? *Left : NullabilityKind::Nullable;
-+    NullabilityKind R = isNonnullFallback(S.Context, RHS)
++    NullabilityKind R = isNonnullFallback(RHS)
 +                            ? NullabilityKind::NonNull
 +                            : Right ? *Right : NullabilityKind::Nullable;
 +    NullabilityKind Joined = NullabilityKind::NonNull;
@@ -26086,10 +26086,10 @@ index 000000000..ac5a5b4df
 +                                   /*Middle=*/nullptr, RHS);
 +    if (!Semantic.isInvalid()) {
 +      NullabilityKind Nullability = NullabilityKind::Nullable;
-+      if (LHS->getType()->getNullability(Context) == NullabilityKind::NonNull ||
-+          isNonnullFallback(Context, RHS))
++      if (LHS->getType()->getNullability() == NullabilityKind::NonNull ||
++          isNonnullFallback(RHS))
 +        Nullability = NullabilityKind::NonNull;
-+      else if (auto Written = RHS->getType()->getNullability(Context))
++      else if (auto Written = RHS->getType()->getNullability())
 +        Nullability = *Written;
 +      Semantic.get()->setType(
 +          withNullability(Context, Semantic.get()->getType(), Nullability));
