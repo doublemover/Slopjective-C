@@ -52,6 +52,11 @@ def cases() -> dict[str, dict]:
             "mixed_boolean_condition": facts["kind"] == "guard",
             **({"expected_exception_scenarios": 4} if facts["payload"] == "cpp" else {}),
         }
+    for name, facts in list(result.items()):
+        if facts["kind"] == "guard" and not facts.get("ordered_bindings"):
+            result[name.removesuffix("guard") + "stmtexpr-guard"] = {
+                **facts, "source_form": "GNU statement expression",
+            }
     return result
 
 

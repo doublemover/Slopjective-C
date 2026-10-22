@@ -203,7 +203,7 @@ index 15d0e6435..ff84dd3d9 100644
  DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
      : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..d6e18a1da 100644
+index 9a97d52fd..3a2789d68 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -524,7 +524,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -215,7 +215,7 @@ index 9a97d52fd..d6e18a1da 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1939,6 +1939,195 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1939,191 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -374,10 +374,6 @@ index 9a97d52fd..d6e18a1da 100644
 +  }
 +  OS << " else ";
 +  PrintStmt(Node->getElse());
-+  for (Stmt *Statement : Node->getContinuation()) {
-+    OS << NL;
-+    PrintStmt(Statement);
-+  }
 +}
 +void StmtPrinter::VisitObjC3IfBindingStmt(ObjC3IfBindingStmt *Node) {
 +  OS << "if ";
@@ -849,10 +845,10 @@ index 44b51a985..38e87ad2a 100644
  
    ExprResult R;
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
-index 87cec16a7..767b7adca 100644
+index 87cec16a7..b6473abc5 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp
 +++ b/clang/lib/Serialization/ASTReaderStmt.cpp
-@@ -342,9 +342,113 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
+@@ -342,9 +342,111 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
  void ASTStmtReader::VisitDeferStmt(DeferStmt *S) {
    VisitStmt(S);
    S->setDeferLoc(readSourceLocation());
@@ -937,8 +933,6 @@ index 87cec16a7..767b7adca 100644
 +  VisitStmt(S);
 +  assert(Record.peekInt() == S->NumConditions);
 +  Record.skipInts(1);
-+  assert(Record.peekInt() == S->NumContinuationStmts);
-+  Record.skipInts(1);
 +  S->KeywordLoc = Record.readSourceLocation();
 +  S->ElseLoc = Record.readSourceLocation();
 +  for (Stmt *&Child : S->children()) Child = Record.readSubStmt();
@@ -966,7 +960,7 @@ index 87cec16a7..767b7adca 100644
  void ASTStmtReader::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1414,6 +1518,58 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
+@@ -1414,6 +1516,58 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
    E->StmtExprBits.TemplateDepth = Record.readInt();
  }
  
@@ -1025,7 +1019,7 @@ index 87cec16a7..767b7adca 100644
  void ASTStmtReader::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    E->setCond(Record.readSubExpr());
-@@ -3234,6 +3390,44 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3234,6 +3388,43 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = DeferStmt::CreateEmpty(Context, Empty);
        break;
  
@@ -1050,8 +1044,7 @@ index 87cec16a7..767b7adca 100644
 +  break;
 +
 +    case STMT_OBJC3_GUARD:
-+      S = ObjC3GuardStmt::CreateEmpty(Context, Record[ASTStmtReader::NumStmtFields],
-+                                     Record[ASTStmtReader::NumStmtFields + 1]);
++      S = ObjC3GuardStmt::CreateEmpty(Context, Record[ASTStmtReader::NumStmtFields]);
 +      break;
 +
 +    case STMT_OBJC3_IF_BINDING:
@@ -1070,7 +1063,7 @@ index 87cec16a7..767b7adca 100644
      case STMT_RETURN:
        S = ReturnStmt::CreateEmpty(
            Context, /* HasNRVOCandidate=*/Record[ASTStmtReader::NumStmtFields]);
-@@ -3505,6 +3699,22 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3505,6 +3696,22 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = new (Context) StmtExpr(Empty);
        break;
  
@@ -1094,10 +1087,10 @@ index 87cec16a7..767b7adca 100644
        S = new (Context) ChooseExpr(Empty);
        break;
 diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
-index 70477f4cf..77def82ed 100644
+index 70477f4cf..8a37d9b9f 100644
 --- a/clang/lib/Serialization/ASTWriterStmt.cpp
 +++ b/clang/lib/Serialization/ASTWriterStmt.cpp
-@@ -334,10 +334,113 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
+@@ -334,10 +334,112 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
  void ASTStmtWriter::VisitDeferStmt(DeferStmt *S) {
    VisitStmt(S);
    Record.AddSourceLocation(S->getDeferLoc());
@@ -1183,7 +1176,6 @@ index 70477f4cf..77def82ed 100644
 +void ASTStmtWriter::VisitObjC3GuardStmt(ObjC3GuardStmt *S) {
 +  VisitStmt(S);
 +  Record.push_back(S->getNumConditions());
-+  Record.push_back(S->getNumContinuationStmts());
 +  Record.AddSourceLocation(S->getKeywordLoc());
 +  Record.AddSourceLocation(S->getElseLoc());
 +  for (Stmt *Child : S->children()) Record.AddStmt(Child);
@@ -1211,7 +1203,7 @@ index 70477f4cf..77def82ed 100644
  void ASTStmtWriter::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1363,6 +1466,62 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
+@@ -1363,6 +1465,62 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
    Code = serialization::EXPR_STMT;
  }
  

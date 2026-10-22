@@ -27,7 +27,7 @@ The proof does not claim a general theorem about loop termination.
 
 ## Qualified development foundation
 
-The [development receipt](../support/linux_guard_ast_acceptance.json) binds
+The last qualified [development receipt](../support/linux_guard_ast_acceptance.json) binds
 229 passing Clang regressions, 70 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
@@ -45,8 +45,13 @@ cleanup before else, reverse final destruction and partial-failure unwinding.
 
 ## Source and lifetime lowering
 
-Semantic construction shares snapshot preparation with match and normalizes
-guard continuations without changing label or case identity. Maintained tests
+Semantic construction shares snapshot preparation with match. The current
+revision keeps following statements in the native source compound and carries
+successful lifetime scopes through a synchronous CodeGen continuation. It
+removes the earlier AST-owned tail, preserving native statement-expression
+result discovery, source ranges and ordinary sibling traversal. This revision
+is under fresh validation, including GNU statement-expression runtime cases;
+the receipt above binds the preceding checkpoint. Maintained tests
 cover C17/C++20/23, ARC/MRC, nullable references, tagged nullable payloads and
 C++ copy recipes.
 
@@ -61,10 +66,10 @@ Their initializers retain native ARC/C++ initialization recipes. The snapshot
 initializer stays visible to AST traversal even when implicit declarations are
 hidden. Source temporaries remain alive through successful binding initialization.
 
-A guard owns the following statements as a transparent continuation. This lets
-normal cleanup and debugger scopes span the remaining source block while the
-failure branch uses its incoming scope. The continuation adds no source-level
-compound scope. Native local initialization is shared with ordinary declarations;
+A guard's successful CodeGen continuation spans the following native source
+statements. Normal cleanup and debugger scopes stay open through the remaining
+source block while failure uses the incoming scope. No extra source compound
+or AST-owned suffix is introduced. Native local initialization is shared with ordinary declarations;
 conditional binding cleanup is registered after source temporary cleanup.
 Storage lifetime-end/fake-use registrations and the binding debug declaration
 are deferred with it. Shared source-cleanup blocks retain their incoming debug
@@ -72,7 +77,7 @@ scope, including paths where the binding was absent. An EH-only
 construction guard protects a completed binding while source temporaries and
 the snapshot finish; it reads the binding address only after initialization.
 
-Private AST lowering now emits ordered tests, snapshots, guard continuations
+Private AST lowering emits ordered tests, snapshots, scoped guard continuations
 and if-binding branches. Its CodeGen gate verifies and executes exact native modules across optimization
 levels. C++ cases
 include failed snapshot/binding construction and throwing temporary/snapshot
@@ -82,7 +87,7 @@ destructors. Run the maintained runtime gate after a passing admitted build:
 python -B -m scripts.objc3c_native_validation.condition_ast
 ```
 
-It compiles the 32 exported modules at O0/O2, binds exact compiler/test/runtime
+It compiles the exported modules at O0/O2, binds exact compiler/test/runtime
 hashes, replaces stale receipts before checking admission and reclaims temporary
 IR/executables. The gate uses the existing foundation lock and checks inputs
 again after execution. Source syntax is still disabled.

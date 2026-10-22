@@ -7571,7 +7571,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..6b6474522 100644
+index 27e74d966..394d2edb4 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,10 @@
@@ -7622,7 +7622,40 @@ index 27e74d966..6b6474522 100644
    case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
-@@ -1697,6 +1731,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -576,12 +610,29 @@ Address CodeGenFunction::EmitCompoundStmt(const CompoundStmt &S, bool GetLast,
+ Address
+ CodeGenFunction::EmitCompoundStmtWithoutScope(const CompoundStmt &S,
+                                               bool GetLast,
+-                                              AggValueSlot AggSlot) {
++                                              AggValueSlot AggSlot,
++                                              unsigned StartIndex) {
+ 
+-  for (CompoundStmt::const_body_iterator I = S.body_begin(),
++  for (CompoundStmt::const_body_iterator I = S.body_begin() + StartIndex,
+                                          E = S.body_end() - GetLast;
+-       I != E; ++I)
++       I != E; ++I) {
++    if (const auto *Guard = dyn_cast<ObjC3GuardStmt>((*I)->stripLabelLikeStatements())) {
++      // Preserve native source statement lists and their final value. The
++      // synchronous continuation keeps successful binding cleanup/debug scopes
++      // open through the rest of this compound, including GNU statement exprs.
++      Address Result = Address::invalid();
++      auto EmitRemainder = [&] {
++        Result = EmitCompoundStmtWithoutScope(S, GetLast, AggSlot,
++                                               I - S.body_begin() + 1);
++      };
++      llvm::SaveAndRestore Saved(ObjC3GuardContinuation);
++      ObjC3GuardContinuation = ObjC3GuardContinuationState{
++          Guard, S.getRBracLoc(), EmitRemainder};
++      EmitStmt(*I);
++      return Result;
++    }
+     EmitStmt(*I);
++  }
+ 
+   Address RetAlloca = Address::invalid();
+   if (GetLast) {
+@@ -1697,6 +1748,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
@@ -7818,7 +7851,7 @@ index 7629b42dd..25517ae3e 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..ddf1306bb 100644
+index e7c24f1f3..b4cf4f6de 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -57,6 +57,9 @@ class CanonicalLoopInfo;
@@ -7957,7 +7990,24 @@ index e7c24f1f3..ddf1306bb 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3665,6 +3741,8 @@ public:
+@@ -3655,7 +3731,15 @@ public:
+                            AggValueSlot AVS = AggValueSlot::ignored());
+   Address
+   EmitCompoundStmtWithoutScope(const CompoundStmt &S, bool GetLast = false,
+-                               AggValueSlot AVS = AggValueSlot::ignored());
++                               AggValueSlot AVS = AggValueSlot::ignored(),
++                               unsigned StartIndex = 0);
++
++  struct ObjC3GuardContinuationState {
++    const ObjC3GuardStmt *Statement;
++    SourceLocation End;
++    llvm::function_ref<void()> Emit;
++  };
++  std::optional<ObjC3GuardContinuationState> ObjC3GuardContinuation;
+ 
+   /// EmitLabel - Emit the block for the given label. It is legal to call this
+   /// function even if there is no current insertion point.
+@@ -3665,6 +3749,8 @@ public:
    void EmitAttributedStmt(const AttributedStmt &S);
    void EmitGotoStmt(const GotoStmt &S);
    void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
@@ -7966,7 +8016,7 @@ index e7c24f1f3..ddf1306bb 100644
    void EmitIfStmt(const IfStmt &S);
  
    void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
-@@ -3691,6 +3769,7 @@ public:
+@@ -3691,6 +3777,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);
@@ -17650,10 +17700,10 @@ index 000000000..bff3f2e04
 +// CHECK: attributes #[[TRANSPORT]] = { {{(mustprogress )?}}noinline {{(nounwind )?}}optnone
 diff --git a/clang/lib/CodeGen/CGObjC3Conditions.cpp b/clang/lib/CodeGen/CGObjC3Conditions.cpp
 new file mode 100644
-index 000000000..0f1ac8e1c
+index 000000000..417be8af6
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Conditions.cpp
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,218 @@
 +//===--- CGObjC3Conditions.cpp - Ordered condition ownership ---------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGDebugInfo.h"
@@ -17840,14 +17890,15 @@ index 000000000..0f1ac8e1c
 +    Builder.ClearInsertionPoint();
 +  }
 +  EmitBlock(ConditionsBlock);
-+  SourceLocation End = Guard->getContinuation().empty()
-+      ? Guard->getEndLoc() : Guard->getContinuation().back()->getEndLoc();
++  auto Continuation = ObjC3GuardContinuation;
++  bool HasContinuation = Continuation && Continuation->Statement == Guard;
++  SourceLocation End = HasContinuation ? Continuation->End : Guard->getEndLoc();
 +  LexicalScope Scope(*this, SourceRange(Guard->getKeywordLoc(), End));
 +  SmallVector<Stmt *, 4> Conditions;
 +  for (unsigned I = 0; I != Guard->getNumConditions(); ++I)
 +    Conditions.push_back(Guard->getCondition(I));
 +  emitConditions(*this, Conditions, 0, Failed, End, [&] {
-+    for (const Stmt *Statement : Guard->getContinuation()) EmitStmt(Statement);
++    if (HasContinuation) Continuation->Emit();
 +  });
 +}
 +

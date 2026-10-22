@@ -2137,7 +2137,7 @@ index 222881154..906723abd 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..31e79918a 100644
+index d743717ad..d18889552 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,7 @@
@@ -2342,7 +2342,7 @@ index d743717ad..31e79918a 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7453,100 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7453,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2399,15 +2399,12 @@ index d743717ad..31e79918a 100644
 +  for (unsigned I = 0; I != S->getNumConditions(); ++I)
 +    Conditions.push_back(importChecked(Err, S->getCondition(I)));
 +  
-+  SmallVector<Stmt *, 8> Continuation;
-+  for (Stmt *Statement : S->getContinuation())
-+    Continuation.push_back(importChecked(Err, Statement));
 +  auto *Else = importChecked(Err, S->getElse());
 +  auto Keyword = importChecked(Err, S->getKeywordLoc());
 +  auto ElseLoc = importChecked(Err, S->getElseLoc());
 +  if (Err) return std::move(Err);
 +  return ObjC3GuardStmt::Create(Importer.getToContext(), Conditions,
-+      Else, Keyword, ElseLoc, Continuation);
++      Else, Keyword, ElseLoc);
 +}
 +ExpectedStmt ASTNodeImporter::VisitObjC3IfBindingStmt(ObjC3IfBindingStmt *S) {
 +  Error Err = Error::success();
@@ -2443,7 +2440,7 @@ index d743717ad..31e79918a 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +7994,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +7991,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2577,7 +2574,7 @@ index d743717ad..31e79918a 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10061,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10058,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2677,10 +2674,10 @@ index d743717ad..31e79918a 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..41566b6ed 100644
+index e0b62591a..f63a554f9 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -207,6 +207,94 @@ class StmtComparer {
+@@ -207,6 +207,93 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -2758,8 +2755,7 @@ index e0b62591a..41566b6ed 100644
 +  }
 +
 +  bool IsStmtEquivalent(const ObjC3GuardStmt *A, const ObjC3GuardStmt *B) {
-+    return A->getNumConditions() == B->getNumConditions() &&
-+           A->getNumContinuationStmts() == B->getNumContinuationStmts();
++    return A->getNumConditions() == B->getNumConditions();
 +  }
 +
 +  bool IsStmtEquivalent(const ObjC3IfBindingStmt *A, const ObjC3IfBindingStmt *B) {
@@ -2775,7 +2771,7 @@ index e0b62591a..41566b6ed 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -963,6 +1051,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1050,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -2799,7 +2795,7 @@ index e0b62591a..41566b6ed 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1251,17 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,6 +1250,17 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -3419,10 +3415,10 @@ index 000000000..ee728c92d
 +  return Node;
 +}
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 9799c8651..2364c1fbd 100644
+index 9799c8651..de64057ef 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
-@@ -1532,6 +1532,50 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
+@@ -1532,6 +1532,49 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
      OS << " implicit";
  }
  
@@ -3458,8 +3454,7 @@ index 9799c8651..2364c1fbd 100644
 +}
 +
 +void clang::TextNodeDumper::VisitObjC3GuardStmt(const ObjC3GuardStmt *Node) {
-+  OS << " conditions=" << Node->getNumConditions()
-+     << " continuation=" << Node->getNumContinuationStmts();
++  OS << " conditions=" << Node->getNumConditions();
 +}
 +
 +void clang::TextNodeDumper::VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *Node) {
@@ -3473,7 +3468,7 @@ index 9799c8651..2364c1fbd 100644
  void clang::TextNodeDumper::VisitCoreturnStmt(const CoreturnStmt *Node) {
    if (Node->isImplicit())
      OS << " implicit";
-@@ -2199,6 +2243,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -2199,6 +2242,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
    dumpDeclRef(EPI.ExceptionSpec.SourceDecl, "ExceptionSourceDecl");
    dumpDeclRef(EPI.ExceptionSpec.SourceTemplate, "ExceptionSourceTemplate");
  
@@ -3498,7 +3493,7 @@ index 9799c8651..2364c1fbd 100644
    // FIXME: Consumed parameters.
    VisitFunctionType(T);
  }
-@@ -3073,6 +3135,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
+@@ -3073,6 +3134,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
      OS << " +";
    dumpName(D);
    dumpType(D->getReturnType());
@@ -8018,7 +8013,7 @@ index eafda3219..6f85a6608 100644
    ResultTy = ResultTy.getNonLValueExprType(Context);
  
 diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
-index 4d12b6c72..2cacc0d32 100644
+index 4d12b6c72..85cf4bf77 100644
 --- a/clang/lib/Sema/SemaStmt.cpp
 +++ b/clang/lib/Sema/SemaStmt.cpp
 @@ -1,3 +1,5 @@
@@ -8027,19 +8022,7 @@ index 4d12b6c72..2cacc0d32 100644
  //===--- SemaStmt.cpp - Semantic Analysis for Statements ------------------===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -479,6 +481,11 @@ StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R,
-                       : getCurCompoundScope().InitialFPFeatures;
-   FPOptionsOverride FPDiff = getCurFPFeatures().getChangesFrom(FPO);
- 
-+  if (getLangOpts().ObjC3) {
-+    SmallVector<Stmt *, 16> Statements(Elts.begin(), Elts.end());
-+    ObjC3GuardStmt::FoldContinuations(Context, Statements);
-+    return CompoundStmt::Create(Context, Statements, FPDiff, L, R);
-+  }
-   return CompoundStmt::Create(Context, Elts, FPDiff, L, R);
- }
- 
-@@ -4031,17 +4038,20 @@ Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4031,17 +4033,20 @@ Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
  
  void Sema::ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope) {
    CurrentDefer.emplace_back(CurScope, DeferLoc);
@@ -8060,7 +8043,7 @@ index 4d12b6c72..2cacc0d32 100644
    DiagnoseEmptyStmtBody(DeferLoc, Body, diag::warn_empty_defer_body);
    setFunctionHasBranchProtectedScope();
    return DeferStmt::Create(Context, DeferLoc, Body);
-@@ -4076,9 +4086,18 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4076,9 +4081,18 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
        RetValExp, SupressSimplerImplicitMoves ? SimplerImplicitMoveMode::ForceOff
                                               : SimplerImplicitMoveMode::Normal);
  
@@ -8080,7 +8063,7 @@ index 4d12b6c72..2cacc0d32 100644
  
    QualType FnRetType;
    QualType RelatedRetType;
-@@ -4088,6 +4107,9 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4088,6 +4102,9 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
    FunctionDecl *FD = getCurFunctionDecl();
    if (FD) {
      FnRetType = FD->getReturnType();
@@ -8090,7 +8073,7 @@ index 4d12b6c72..2cacc0d32 100644
      if (FD->hasAttrs())
        Attrs = &FD->getAttrs();
      if (FD->isNoReturn() && !getCurFunction()->isCoroutine())
-@@ -4104,7 +4126,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4104,7 +4121,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
      }
    } else if (ObjCMethodDecl *MD = getCurMethodDecl()) {
      FnRetType = MD->getReturnType();
@@ -8283,7 +8266,7 @@ index 3f0a7304d..ed8db7261 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..ee7ab46d6 100644
+index 11cd159c0..f72ee505f 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,7 @@
@@ -8386,7 +8369,7 @@ index 11cd159c0..ee7ab46d6 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8642,12 +8707,141 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8642,12 +8707,135 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -8474,14 +8457,8 @@ index 11cd159c0..ee7ab46d6 100644
 +  
 +  StmtResult Else = getDerived().TransformStmt(S->getElse());
 +  if (Else.isInvalid()) return StmtError();
-+  SmallVector<Stmt *, 8> Continuation;
-+  for (Stmt *Statement : S->getContinuation()) {
-+    StmtResult Transformed = getDerived().TransformStmt(Statement);
-+    if (Transformed.isInvalid()) return StmtError();
-+    Continuation.push_back(Transformed.get());
-+  }
 +  return ObjC3GuardStmt::Create(SemaRef.Context, Conditions,
-+      Else.get(), S->getKeywordLoc(), S->getElseLoc(), Continuation);
++      Else.get(), S->getKeywordLoc(), S->getElseLoc());
 +}
 +template <typename Derived>
 +StmtResult TreeTransform<Derived>::TransformObjC3IfBindingStmt(ObjC3IfBindingStmt *S) {
@@ -8529,7 +8506,7 @@ index 11cd159c0..ee7ab46d6 100644
  }
  
  template<typename Derived>
-@@ -14566,6 +14760,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14754,107 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -16899,10 +16876,10 @@ index 000000000..c03a755bd
 +}
 diff --git a/clang/include/clang/AST/ObjC3ConditionNodes.inc b/clang/include/clang/AST/ObjC3ConditionNodes.inc
 new file mode 100644
-index 000000000..bc2e6a4b2
+index 000000000..cf2c8db3c
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ConditionNodes.inc
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,123 @@
 +//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16938,40 +16915,31 @@ index 000000000..bc2e6a4b2
 +  }
 +};
 +
-+/// A guard owns ordered conditions, its mandatory else, and the transparent
-+/// source continuation. Bindings and native cleanup scopes span that continuation
-+/// without adding a source-level compound scope.
++/// A guard owns its ordered conditions and mandatory else. Following source
++/// statements remain siblings in their native compound; CodeGen carries the
++/// successful binding scopes through that statement sequence.
 +class ObjC3GuardStmt final
 +    : public Stmt,
 +      private llvm::TrailingObjects<ObjC3GuardStmt, Stmt *> {
 +  friend TrailingObjects;
-+  unsigned NumConditions, NumContinuationStmts;
++  unsigned NumConditions;
 +  SourceLocation KeywordLoc, ElseLoc;
-+  ObjC3GuardStmt(unsigned N, unsigned M, SourceLocation Keyword,
-+                 SourceLocation Else)
-+      : Stmt(ObjC3GuardStmtClass), NumConditions(N), NumContinuationStmts(M),
++  ObjC3GuardStmt(unsigned N, SourceLocation Keyword, SourceLocation Else)
++      : Stmt(ObjC3GuardStmtClass), NumConditions(N),
 +        KeywordLoc(Keyword), ElseLoc(Else) {}
 +
 +public:
 +  friend class ASTStmtReader;
 +  static ObjC3GuardStmt *Create(const ASTContext &, llvm::ArrayRef<Stmt *>,
 +                                Stmt *ElseBody, SourceLocation Keyword,
-+                                SourceLocation Else,
-+                                llvm::ArrayRef<Stmt *> Continuation = {});
-+  static ObjC3GuardStmt *CreateEmpty(const ASTContext &, unsigned, unsigned);
-+  /// Normalize an enclosing source statement list. Labels and switch-case
-+  /// identities survive; existing continuations are flattened before folding.
-+  static void FoldContinuations(const ASTContext &, SmallVectorImpl<Stmt *> &);
++                                SourceLocation Else);
++  static ObjC3GuardStmt *CreateEmpty(const ASTContext &, unsigned);
 +  unsigned getNumConditions() const { return NumConditions; }
 +  Stmt *getCondition(unsigned I) const {
 +    assert(I < NumConditions);
 +    return getTrailingObjects()[I];
 +  }
 +  Stmt *getElse() const { return getTrailingObjects()[NumConditions]; }
-+  unsigned getNumContinuationStmts() const { return NumContinuationStmts; }
-+  llvm::ArrayRef<Stmt *> getContinuation() const {
-+    return {getTrailingObjects() + NumConditions + 1, NumContinuationStmts};
-+  }
 +  SourceLocation getKeywordLoc() const { return KeywordLoc; }
 +  SourceLocation getElseLoc() const { return ElseLoc; }
 +  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
@@ -16980,12 +16948,12 @@ index 000000000..bc2e6a4b2
 +  }
 +  child_range children() {
 +    Stmt **Begin = getTrailingObjects();
-+    return child_range(Begin, Begin + NumConditions + 1 + NumContinuationStmts);
++    return child_range(Begin, Begin + NumConditions + 1);
 +  }
 +  const_child_range children() const {
 +    Stmt *const *Begin = getTrailingObjects();
 +    return const_child_range(Begin,
-+                             Begin + NumConditions + 1 + NumContinuationStmts);
++                             Begin + NumConditions + 1);
 +  }
 +  static bool classof(const Stmt *S) {
 +    return S->getStmtClass() == ObjC3GuardStmtClass;
@@ -17037,10 +17005,10 @@ index 000000000..bc2e6a4b2
 +};
 diff --git a/clang/lib/AST/ObjC3ConditionNodes.cpp b/clang/lib/AST/ObjC3ConditionNodes.cpp
 new file mode 100644
-index 000000000..9fc7780fc
+index 000000000..14d5c529f
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3ConditionNodes.cpp
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,70 @@
 +//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17078,90 +17046,20 @@ index 000000000..9fc7780fc
 +ObjC3GuardStmt *ObjC3GuardStmt::Create(const ASTContext &C,
 +                                       llvm::ArrayRef<Stmt *> Conditions,
 +                                       Stmt *ElseBody, SourceLocation Keyword,
-+                                       SourceLocation Else,
-+                                       llvm::ArrayRef<Stmt *> Continuation) {
-+  const unsigned N = Conditions.size(), M = Continuation.size();
-+  void *Memory =
-+      C.Allocate(totalSizeToAlloc<Stmt *>(N + 1 + M), alignof(ObjC3GuardStmt));
-+  auto *Node = new (Memory) ObjC3GuardStmt(N, M, Keyword, Else);
++                                       SourceLocation Else) {
++  const unsigned N = Conditions.size();
++  void *Memory = C.Allocate(totalSizeToAlloc<Stmt *>(N + 1), alignof(ObjC3GuardStmt));
++  auto *Node = new (Memory) ObjC3GuardStmt(N, Keyword, Else);
 +  std::copy(Conditions.begin(), Conditions.end(), Node->getTrailingObjects());
 +  Node->getTrailingObjects()[N] = ElseBody;
-+  std::copy(Continuation.begin(), Continuation.end(),
-+            Node->getTrailingObjects() + N + 1);
 +  return Node;
 +}
-+ObjC3GuardStmt *ObjC3GuardStmt::CreateEmpty(const ASTContext &C, unsigned N,
-+                                            unsigned M) {
-+  void *Memory =
-+      C.Allocate(totalSizeToAlloc<Stmt *>(N + 1 + M), alignof(ObjC3GuardStmt));
-+  auto *Node = new (Memory) ObjC3GuardStmt(N, M, {}, {});
-+  std::fill_n(Node->getTrailingObjects(), N + 1 + M, nullptr);
++ObjC3GuardStmt *ObjC3GuardStmt::CreateEmpty(const ASTContext &C, unsigned N) {
++  void *Memory = C.Allocate(totalSizeToAlloc<Stmt *>(N + 1), alignof(ObjC3GuardStmt));
++  auto *Node = new (Memory) ObjC3GuardStmt(N, {}, {});
++  std::fill_n(Node->getTrailingObjects(), N + 1, nullptr);
 +  return Node;
 +}
-+namespace {
-+Stmt *unwrapGuard(Stmt *S) {
-+  for (;;) {
-+    if (auto *L = dyn_cast<LabelStmt>(S)) S = L->getSubStmt();
-+    else if (auto *C = dyn_cast<SwitchCase>(S)) S = C->getSubStmt();
-+    else if (auto *A = dyn_cast<AttributedStmt>(S)) S = A->getSubStmt();
-+    else return S;
-+  }
-+}
-+Stmt *replaceWrappedGuard(const ASTContext &C, Stmt *Wrapped, Stmt *New) {
-+  SmallVector<Stmt *, 4> Wrappers;
-+  for (Stmt *S = Wrapped; !isa<ObjC3GuardStmt>(S);) {
-+    Wrappers.push_back(S);
-+    if (auto *L = dyn_cast<LabelStmt>(S)) S = L->getSubStmt();
-+    else if (auto *SC = dyn_cast<SwitchCase>(S)) S = SC->getSubStmt();
-+    else S = cast<AttributedStmt>(S)->getSubStmt();
-+  }
-+  for (Stmt *W : llvm::reverse(Wrappers)) {
-+    if (auto *L = dyn_cast<LabelStmt>(W)) L->setSubStmt(New);
-+    else if (auto *SC = dyn_cast<CaseStmt>(W)) SC->setSubStmt(New);
-+    else if (auto *DS = dyn_cast<DefaultStmt>(W)) DS->setSubStmt(New);
-+    else {
-+      auto *A = cast<AttributedStmt>(W);
-+      W = AttributedStmt::Create(C, A->getAttrLoc(), A->getAttrs(), New);
-+    }
-+    New = W;
-+  }
-+  return New;
-+}
-+} // namespace
-+
-+void ObjC3GuardStmt::FoldContinuations(const ASTContext &C,
-+                                       SmallVectorImpl<Stmt *> &Statements) {
-+  // Each source statement enters Flat and Segment exactly once. Do not copy an
-+  // ever-growing suffix for every guard or recurse down a long sequence.
-+  SmallVector<Stmt *, 16> Pending(Statements.rbegin(), Statements.rend()), Flat;
-+  bool HasGuard = false;
-+  while (!Pending.empty()) {
-+    Stmt *S = Pending.pop_back_val();
-+    Flat.push_back(S);
-+    if (auto *G = dyn_cast<ObjC3GuardStmt>(unwrapGuard(S))) {
-+      HasGuard = true;
-+      auto Tail = G->getContinuation();
-+      Pending.append(Tail.rbegin(), Tail.rend());
-+    }
-+  }
-+  if (!HasGuard) return;
-+  SmallVector<Stmt *, 16> Segment;
-+  for (Stmt *S : llvm::reverse(Flat)) {
-+    if (auto *G = dyn_cast<ObjC3GuardStmt>(unwrapGuard(S))) {
-+      SmallVector<Stmt *, 4> Conditions;
-+      for (unsigned I = 0; I != G->getNumConditions(); ++I)
-+        Conditions.push_back(G->getCondition(I));
-+      std::reverse(Segment.begin(), Segment.end());
-+      auto *New = Create(C, Conditions, G->getElse(), G->getKeywordLoc(),
-+                          G->getElseLoc(), Segment);
-+      S = replaceWrappedGuard(C, S, New);
-+      Segment.clear();
-+    }
-+    Segment.push_back(S);
-+  }
-+  Statements.assign(Segment.rbegin(), Segment.rend());
-+}
-+
 +ObjC3IfBindingStmt *ObjC3IfBindingStmt::Create(
 +    const ASTContext &C, llvm::ArrayRef<Stmt *> Conditions, Stmt *Then,
 +    Stmt *Else, SourceLocation If, SourceLocation ElseAt) {
@@ -17183,10 +17081,10 @@ index 000000000..9fc7780fc
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionNodesTest.cpp b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
 new file mode 100644
-index 000000000..4d751e629
+index 000000000..7b0a0db24
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionNodesTest.cpp
-@@ -0,0 +1,418 @@
+@@ -0,0 +1,369 @@
 +//===--- ObjC3ConditionNodesTest.cpp - Native condition AST consumers ----===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
@@ -17296,10 +17194,9 @@ index 000000000..4d751e629
 +  Stmt *IfConditions[] = {Var};
 +  auto *If = ObjC3IfBindingStmt::Create(C, IfConditions, Then, nullptr, Loc,
 +                                        SourceLocation());
-+  Stmt *Continuation[] = {If};
 +  auto *Guard =
-+      ObjC3GuardStmt::Create(C, GuardConditions, Else, Loc, Loc, Continuation);
-+  Stmt *Body[] = {Guard};
++      ObjC3GuardStmt::Create(C, GuardConditions, Else, Loc, Loc);
++  Stmt *Body[] = {Guard, If};
 +  Function->setBody(
 +      CompoundStmt::Create(C, Body, FPOptionsOverride(), Loc, Loc));
 +  Conditions Visitor;
@@ -17369,11 +17266,9 @@ index 000000000..4d751e629
 +        ReloadedFunction = FD;
 +  ASSERT_TRUE(ReloadedFunction);
 +  auto *ReloadedBody = cast<CompoundStmt>(ReloadedFunction->getBody());
-+  ASSERT_EQ(1u, ReloadedBody->size());
++  ASSERT_EQ(2u, ReloadedBody->size());
 +  auto *ReloadedGuard = cast<ObjC3GuardStmt>(ReloadedBody->body_front());
-+  ASSERT_EQ(1u, ReloadedGuard->getNumContinuationStmts());
-+  auto *ReloadedIf =
-+      cast<ObjC3IfBindingStmt>(ReloadedGuard->getContinuation()[0]);
++  auto *ReloadedIf = cast<ObjC3IfBindingStmt>(*(ReloadedBody->body_begin() + 1));
 +  ASSERT_EQ(2u, ReloadedGuard->getNumConditions());
 +  ASSERT_EQ(1u, ReloadedIf->getNumConditions());
 +  auto *ReloadedLet =
@@ -17394,52 +17289,6 @@ index 000000000..4d751e629
 +  EXPECT_EQ(2u, ReloadedVisitor.Bindings);
 +  EXPECT_EQ(2u, ReloadedVisitor.Variables);
 +  EXPECT_EQ(2u, ReloadedVisitor.SourceReferences);
-+}
-+
-+TEST(ObjC3Conditions, FoldsSourceTailsWithoutChangingLabelOrCaseIdentity) {
-+  auto AST = tooling::buildASTFromCodeWithArgs(
-+      "void test(int n) { label:; switch(n) { case 0:; default:; } }",
-+      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"});
-+  ASSERT_TRUE(AST);
-+  FunctionDecl *Function = nullptr;
-+  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
-+    if (auto *FD = dyn_cast<FunctionDecl>(D)) Function = FD;
-+  ASSERT_TRUE(Function);
-+  ASTContext &C = AST->getASTContext();
-+  auto *Body = cast<CompoundStmt>(Function->getBody());
-+  auto *Label = cast<LabelStmt>(Body->body_front());
-+  auto *Switch = cast<SwitchStmt>(*(Body->body_begin() + 1));
-+  auto *Case = cast<CaseStmt>(cast<CompoundStmt>(Switch->getBody())->body_front());
-+  LabelDecl *Identity = Label->getDecl();
-+  SourceLocation Loc = Function->getLocation();
-+  auto *Else = CompoundStmt::Create(C, {}, FPOptionsOverride(), Loc, Loc);
-+  Stmt *Conditions[] = {new (C) CXXBoolLiteralExpr(true, C.BoolTy, Loc)};
-+  auto Null = [&]() -> Stmt * { return new (C) NullStmt(Loc); };
-+  Stmt *Before = Null(), *Between = Null(), *Last = Null(), *Extra = Null();
-+  Stmt *InnerTail[] = {Last};
-+  auto *Inner = ObjC3GuardStmt::Create(C, Conditions, Else, Loc, Loc, InnerTail);
-+  Case->setSubStmt(Inner);
-+  Stmt *OuterTail[] = {Between, Case};
-+  Label->setSubStmt(ObjC3GuardStmt::Create(C, Conditions, Else, Loc, Loc, OuterTail));
-+  SmallVector<Stmt *, 4> Statements = {Before, Label, Extra};
-+  for (unsigned Pass = 0; Pass != 2; ++Pass) {
-+    ObjC3GuardStmt::FoldContinuations(C, Statements);
-+    ASSERT_EQ(2u, Statements.size());
-+    EXPECT_EQ(Before, Statements[0]);
-+    ASSERT_EQ(Label, Statements[1]);
-+    EXPECT_EQ(Identity, Label->getDecl());
-+    EXPECT_EQ(Label, Identity->getStmt());
-+    auto *Outer = cast<ObjC3GuardStmt>(Label->getSubStmt());
-+    ASSERT_EQ(2u, Outer->getNumContinuationStmts());
-+    EXPECT_EQ(Between, Outer->getContinuation()[0]);
-+    EXPECT_EQ(Case, Outer->getContinuation()[1]);
-+    EXPECT_EQ(Case, cast<CompoundStmt>(Switch->getBody())->body_front());
-+    auto *Nested = cast<ObjC3GuardStmt>(Case->getSubStmt());
-+    ASSERT_EQ(2u, Nested->getNumContinuationStmts());
-+    EXPECT_EQ(Last, Nested->getContinuation()[0]);
-+    EXPECT_EQ(Extra, Nested->getContinuation()[1]);
-+    EXPECT_EQ(Else->getEndLoc(), Outer->getEndLoc());
-+  }
 +}
 +
 +TEST(ObjC3Conditions, BuildsOwnedSnapshotsAndPreservesTaggedNullablePayloads) {
@@ -17815,10 +17664,10 @@ index 000000000..54e1c4ac2
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..73072bad0
+index 000000000..f284971cb
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,427 @@
+@@ -0,0 +1,499 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17850,6 +17699,11 @@ index 000000000..73072bad0
 +    return true;
 +  }
 +};
++class StatementExpressionFinder : public RecursiveASTVisitor<StatementExpressionFinder> {
++public:
++  StmtExpr *Expression = nullptr;
++  bool VisitStmtExpr(StmtExpr *E) { if (!Expression) Expression = E; return true; }
++};
 +class Rebind : public RecursiveASTVisitor<Rebind> {
 +  Sema &Actions;
 +  VarDecl *Old, *New;
@@ -17866,7 +17720,7 @@ index 000000000..73072bad0
 +  }
 +};
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
-+                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false) {
++                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false) {
 +  std::vector<std::string> Args = {
 +      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
 +      ("-std=" + Standard).str(), "-fobjc-version=3",
@@ -17883,6 +17737,14 @@ index 000000000..73072bad0
 +  FunctionDecl *Function = Finder.Function;
 +  ASSERT_TRUE(Function);
 +  auto *Body = cast<CompoundStmt>(Function->getBody());
++  StmtExpr *StatementExpressionNode = nullptr;
++  if (StatementExpression) {
++    StatementExpressionFinder Expressions;
++    Expressions.TraverseStmt(Body);
++    StatementExpressionNode = Expressions.Expression;
++    ASSERT_TRUE(StatementExpressionNode);
++    Body = StatementExpressionNode->getSubStmt();
++  }
 +  ASSERT_GE(Body->size(), 4u);
 +  auto *SourceStatement = cast<DeclStmt>(Body->body_front());
 +  auto *Source = cast<VarDecl>(SourceStatement->getSingleDecl());
@@ -17934,11 +17796,14 @@ index 000000000..73072bad0
 +          C, Conditions, Then, If->getElse(), Loc, If->getElseLoc());
 +    } else {
 +      Statement = ObjC3GuardStmt::Create(
-+          C, Conditions, If->getElse(), Loc, If->getElseLoc(), Tail);
++          C, Conditions, If->getElse(), Loc, If->getElseLoc());
 +    }
-+    Stmt *Statements[] = {Statement};
-+    Function->setBody(CompoundStmt::Create(
-+        C, Statements, FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc()));
++    SmallVector<Stmt *, 8> Statements{Statement};
++    if (!IfBinding) Statements.append(Tail);
++    auto *Rebuilt = CompoundStmt::Create(
++        C, Statements, FPOptionsOverride(), Body->getLBracLoc(), Body->getRBracLoc());
++    if (StatementExpressionNode) StatementExpressionNode->setSubStmt(Rebuilt);
++    else Function->setBody(Rebuilt);
 +  }
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  llvm::LLVMContext IRContext;
@@ -18245,4 +18110,60 @@ index 000000000..73072bad0
 +      SCOPED_TRACE(Name);
 +      checkLowering(OrderedCpp, Name, Standard, false, If, true);
 +    }
++}
++
++TEST(ObjC3ConditionCodeGen, GuardKeepsNativeStatementExpressionResultsAndLifetimes) {
++  auto StatementExpression = [](std::string Code, bool IsCpp) {
++    std::string Original = IsCpp ? R"(
++  int exercise(Maybe *input) {
++    Maybe &source = *counted(input);
++    if (true) {} else { return -1; }
++    Payload value(0);
++    return value.number;
++  }
++)" : R"(
++  int exercise(Maybe *input) {
++    Maybe source = *counted(input);
++    if (1) {} else { return -1; }
++    int value = 0;
++    value += 5;
++    return value;
++  }
++)";
++    std::string Replacement = IsCpp ? R"(
++  int exercise(Maybe *input) {
++    return ({
++      Maybe &source = *counted(input);
++      if (true) {} else { return -1; }
++      Payload value(0);
++      value.number;
++    });
++  }
++)" : R"(
++  int exercise(Maybe *input) {
++    return ({
++      Maybe source = *counted(input);
++      if (1) {} else { return -1; }
++      int value = 0;
++      value += 5;
++      value;
++    });
++  }
++)";
++    auto Position = Code.find(Original);
++    EXPECT_NE(std::string::npos, Position);
++    if (Position != std::string::npos) Code.replace(Position, Original.size(), Replacement);
++    return Code;
++  };
++  for (const char *Standard : {"c17", "c++20", "c++23"})
++    for (bool ARC : {false, true}) {
++      std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") + "-stmtexpr-guard";
++      SCOPED_TRACE(Name);
++      checkLowering(StatementExpression(Plain, false), Name, Standard, ARC, false, false, true);
++    }
++  for (const char *Standard : {"c++20", "c++23"}) {
++    std::string Name = std::string(Standard) + "-cpp-stmtexpr-guard";
++    SCOPED_TRACE(Name);
++    checkLowering(StatementExpression(Cpp, true), Name, Standard, false, false, false, true);
++  }
 +}
