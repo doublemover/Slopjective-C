@@ -18614,10 +18614,10 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..3c1d1c5c3
+index 000000000..c83d3f00f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,640 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -18630,6 +18630,7 @@ index 000000000..3c1d1c5c3
 +#include "clang/Tooling/Tooling.h"
 +#include "gtest/gtest.h"
 +#include <functional>
++#include <map>
 +#include <set>
 +using namespace clang;
 +namespace {
@@ -19153,4 +19154,107 @@ index 000000000..3c1d1c5c3
 +        Pending.push_back(Next);
 +  }
 +  EXPECT_EQ((SmallVector<std::string, 2>{"previous"}), Destroyed);
++}
++
++TEST(ObjC3ConditionCFG, DeferredBodiesRunAtRegisteredNormalAndCheckedExits) {
++  const char *Code = R"(
++    #ifndef __cplusplus
++    #define bool _Bool
++    #endif
++    @protocol Error @end
++    extern id<Error> error;
++    void work(void); void after(void); void first(void); void second(void); void caught(void);
++    __attribute__((noreturn)) void stop(void);
++    void lifo(void) { defer { first(); } work(); defer { second(); } after(); }
++    void early(bool condition) { defer { first(); } if(condition)return; defer { second(); } work(); }
++    void nested(void) { defer { first(); } {defer { second(); } work();} after(); }
++    void breaking(bool condition) { do { defer { first(); } if(condition)break; work(); } while(0); after(); }
++    void continuing(bool condition) { do { defer { first(); } if(condition)continue; work(); } while(0); after(); }
++    void jumping(bool condition) { {defer { first(); } if(condition)goto outside; work();} outside:after(); }
++    void copies(bool condition) {
++      defer { goto end; label: first(); goto done; end: goto label; done:second(); }
++      if(condition)return;
++      work();
++    }
++    void delayed_stop(void) { defer { stop(); } work(); }
++    void before_registration(bool condition) { if(condition)stop(); defer { first(); } work(); }
++    void checked(bool condition) throws(id<Error>) {
++      defer { first(); }
++      handle { defer { second(); } if(condition)throwError(error); work(); }
++      catch(id<Error> e) { caught(); }
++      after();
++    }
++    void checked_all(bool condition) {
++      defer { first(); }
++      handle { defer { second(); } if(condition)throwError(error); work(); }
++      catch { caught(); }
++      after();
++    }
++  )";
++  const std::map<std::string, std::set<std::string>> Expected{
++      {"lifo", {"work,after,second,first,"}},
++      {"early", {"first,", "work,second,first,"}},
++      {"nested", {"work,second,after,first,"}},
++      {"breaking", {"first,after,", "work,first,after,"}},
++      {"continuing", {"first,after,", "work,first,after,"}},
++      {"jumping", {"first,after,", "work,first,after,"}},
++      {"copies", {"first,second,", "work,first,second,"}},
++      {"delayed_stop", {"work,stop,"}},
++      {"before_registration", {"stop,", "work,first,"}},
++      // Typed dispatch retains a conservative unmatched edge. Both handler and
++      // propagation paths must release exactly the registrations they leave.
++      {"checked",
++       {"second,caught,after,first,", "second,first,",
++        "work,second,after,first,"}},
++      {"checked_all",
++       {"second,caught,after,first,", "work,second,after,first,"}}};
++  for (const char *Standard : {"c17", "c++20", "c++23"}) {
++    auto AST = tooling::buildASTFromCodeWithArgs(
++        Code, {"-x", Standard[1] == '+' ? "objective-c++" : "objective-c",
++               std::string("-std=") + Standard, "-fobjc-version=3",
++               "-fobjc-runtime=gnustep-2.2"});
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    unsigned Cases = 0;
++    for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto *Function = dyn_cast<FunctionDecl>(D);
++      if (!Function || !Function->hasBody())
++        continue;
++      for (bool Markers : {false, true}) {
++        SCOPED_TRACE(Standard);
++        SCOPED_TRACE(Function->getNameAsString());
++        SCOPED_TRACE(Markers);
++        CFG::BuildOptions Options;
++        Options.AddImplicitDtors = Options.AddLifetime = Options.AddScopes =
++            Markers;
++        Options.setAllAlwaysAdd();
++        auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                                   &AST->getASTContext(), Options);
++        ASSERT_TRUE(Graph);
++        std::set<std::string> Paths;
++        std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++            [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++              ASSERT_LT(Depth, 80u);
++              for (const auto &Element : *Block)
++                if (auto Statement = Element.getAs<CFGStmt>())
++                  if (auto *Call = dyn_cast<CallExpr>(Statement->getStmt()))
++                    if (auto *Callee = Call->getDirectCallee())
++                      Events += Callee->getNameAsString() + ",";
++              if (Block == &Graph->getExit())
++                Paths.insert(Events);
++              else
++                for (const auto &Edge : Block->succs())
++                  if (const auto *Next = Edge.getReachableBlock())
++                    Visit(Next, Events, Depth + 1);
++            };
++        Visit(&Graph->getEntry(), "", 0);
++        EXPECT_EQ(Expected.at(Function->getNameAsString()), Paths);
++        Options.AddEHEdges = true;
++        EXPECT_FALSE(CFG::buildCFG(Function, Function->getBody(),
++                                   &AST->getASTContext(), Options));
++        ++Cases;
++      }
++    }
++    EXPECT_EQ(22u, Cases);
++  }
 +}
