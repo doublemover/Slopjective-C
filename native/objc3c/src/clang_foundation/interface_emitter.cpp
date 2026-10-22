@@ -515,6 +515,12 @@ class TypeDependencyVisitor final
 
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
     const auto effects = type->getObjC3FunctionEffects();
+    // A C async declaration names a frame-returning entry point. Reprinting
+    // its logical return type as Objective-C++ would instead select task<T>.
+    // The interface schema must model that physical ABI before exporting it.
+    if (effects.Async && !context_.getLangOpts().CPlusPlus)
+      AddDiagnostic(result_, "O3IFC161",
+                    "Objective-C async frame entry ABI is not yet modeled in semantic interfaces");
     UsesCanonicalFunctionEffects |=
         effects.Async || effects.Throws != clang::ObjC3ThrowsKind::None;
     if (!effects.ErrorType.isNull()) TraverseType(effects.ErrorType);

@@ -41,7 +41,7 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
             'compiler_sha256': packages.digest(compiler.resolve()),
             'runtime_library_sha256': packages.digest(runtime_library),
             'source_hashes': {name: packages.digest(fixture / name)
-                              for name in ('provider.h', 'provider.m', 'client.m')},
+                              for name in ('provider.h', 'provider.m', 'client.m', 'factory-contract.m')},
             'include_hashes': {path.relative_to(include_root).as_posix(): packages.digest(path)
                               for directory in ('objc3', 'objc3c/runtime')
                               for path in sorted((include_root / directory).rglob('*'))
@@ -116,6 +116,23 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
                     '-std=c17', '-O2', root / 'provider.o', runtime_library,
                     '-lstdc++', '-pthread', '-o', root / 'launcher-client'], root)
                 run('launcher-execute', [root / 'launcher-client'], root)
+            # Check Error-constrained factories in every strict profile without
+            # inferring whole-profile conformance from these focused contracts.
+            shutil.copyfile(fixture / 'factory-contract.m', root / 'factory-contract.m')
+            for (language, standard), ownership, profile in itertools.product(
+                    modes, ('arc', 'mrc'), ('strict', 'strict-concurrency', 'strict-system')):
+                label = '-'.join(('factory', standard, ownership, profile))
+                object_file = root / 'factory-contract.o'
+                arguments = [compiler, *common, '-x', language, '-std=' + standard,
+                             '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc',
+                             '-fobjc3-profile=' + profile,
+                             '-c', root / 'factory-contract.m', '-o', object_file]
+                run(label + '-accepted', arguments, root)
+                object_file.unlink()
+                run(label + '-rejected', [*arguments, '-DINVALID_ERROR_FACTORY=1'], root,
+                    failure="must conform to Objective-C protocol 'Error'")
+                if object_file.exists():
+                    raise ValueError('invalid Error factory emitted an object: ' + label)
             invalid = root / 'invalid.m'
             invalid.write_text('@import objc3.core;\n')
             run('major-version-mismatch', [compiler, *common, '-x', 'objective-c',
@@ -133,7 +150,9 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
             'sdk_seal': manifest['seal_sha256'],
             'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
             **initial_inputs,
-            'executions': len(cases), 'cases': cases, 'commands': commands}
+            'executions': len(cases), 'strict_factory_configurations': 18,
+            'strict_factory_rejections': 18, 'profile_conformance_claimed': False,
+            'cases': cases, 'commands': commands}
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.stdlib-qualification.v1', 'status': 'FAIL',
             'sdk_seal': manifest['seal_sha256'], 'cases': cases,

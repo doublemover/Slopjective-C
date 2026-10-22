@@ -27,6 +27,10 @@
     } \
   })(value))
 
+/* Preserve the concrete error type and value recipe; strict profiles enforce
+ * the Error bound even when a particular execution selects the success arm. */
+#define __OBJC3_STDLIB_CHECK_ERROR(value) __builtin_objc3_checked_error(value)
+
 #define okOr(value, makeError) \
   (match(value) { \
     case .Some(let __objc3_stdlib_payload) => \
@@ -34,7 +38,7 @@
          __objc3_stdlib_payload); \
     case .None => \
       Err(__OBJC3_STDLIB_PAYLOAD_TYPE(value), __typeof__((makeError)()), \
-          (makeError)()); \
+          __OBJC3_STDLIB_CHECK_ERROR((makeError)())); \
   })
 
 /* Bridge zero-success status APIs without eagerly constructing either arm.
@@ -47,7 +51,7 @@
     __objc3_stdlib_status == 0 \
       ? Ok(__typeof__(successValue), __typeof__((makeError)(status)), (successValue)) \
       : Err(__typeof__(successValue), __typeof__((makeError)(status)), \
-            (makeError)(__objc3_stdlib_status)); })
+            __OBJC3_STDLIB_CHECK_ERROR((makeError)(__objc3_stdlib_status))); })
 
 /* NSError-style BOOL/error-out bridge. Run the API before reading its outputs.
  * A domain adapter maps the raw error (including a missing error on failure)
@@ -57,14 +61,14 @@
     __objc3_stdlib_success \
       ? Ok(__typeof__(successValue), __typeof__((makeError)(errorValue)), (successValue)) \
       : Err(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
-            (makeError)(errorValue)); })
+            __OBJC3_STDLIB_CHECK_ERROR((makeError)(errorValue))); })
 
 #ifdef __OBJC__
 /* Checked-error counterpart for status APIs whose successful result is void. */
 #define statusOrThrow(status, makeError) \
   (^(__typeof__(status) __objc3_stdlib_status) throws(id<Error>) { \
     if (__objc3_stdlib_status != 0) \
-      throwError((makeError)(__objc3_stdlib_status)); \
+      throwError(__OBJC3_STDLIB_CHECK_ERROR((makeError)(__objc3_stdlib_status))); \
   })(status)
 #endif
 
@@ -73,7 +77,7 @@
   (^(__typeof__(value) __objc3_stdlib_input) throws(id<Error>) { \
     match(__objc3_stdlib_input) { \
       case .Some(let __objc3_stdlib_payload): { return __objc3_stdlib_payload; } \
-      case .None: { throwError((makeError)()); } \
+      case .None: { throwError(__OBJC3_STDLIB_CHECK_ERROR((makeError)())); } \
     } \
   })(value)
 #endif

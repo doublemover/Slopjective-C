@@ -37,7 +37,9 @@ def qualify(sdk: Path, output: Path) -> dict:
                         'separately compiled reference boundaries and PCH replay',
                         'mixed ARC/C++ selected-leaf lifetime partitions',
                         'strong, weak, unsafe and Block ownership with C++ alternatives',
-                        'native destructor actions and deferred managed releases']}
+                        'native destructor actions and deferred managed releases',
+                        'source C++ class and aggregate selected-field special members',
+                        'native class by-value ABI, field rollback and storage reconstruction']}
 
     def persist():
         receipt.write_text(json.dumps(report, indent=2) + '\n')
@@ -52,7 +54,9 @@ def qualify(sdk: Path, output: Path) -> dict:
     for name in ('main.mm', 'boundary.h', 'provider.mm', 'consumer.mm',
                  'pch.h', 'pch.mm', 'rejections.mm', 'mixed-boundary.h',
                  'mixed-provider.mm', 'mixed-main.mm', 'mixed-consumer.mm',
-                 'mixed-pch.h', 'mixed-pch.mm'):
+                 'mixed-pch.h', 'mixed-pch.mm', 'records.h', 'records-provider.mm',
+                 'records-main.mm', 'records-consumer.mm', 'records-pch.h',
+                 'records-pch.mm', 'records-rejections.mm'):
         inputs.append(fixtures / name)
 
     def run(name, command, *, cwd=None, expected_exit_code=0):
@@ -135,6 +139,29 @@ def qualify(sdk: Path, output: Path) -> dict:
                         execute(name + '-pch-execute', executable, client)
                         report['configurations'].append({'standard': standard, 'ownership': ownership,
                                                           'optimization': optimization})
+                        record_flags = [*compile_flags, '-fno-elide-constructors']
+                        record_provider = client / (name + '-records-provider.o')
+                        run(name + '-records-provider', [*record_flags, '-x', 'objective-c++', '-c',
+                            source / 'records-provider.mm', '-o', record_provider], cwd=client)
+                        for fixture in ('main', 'consumer'):
+                            record_object = client / (name + '-records-' + fixture + '.o')
+                            run(name + '-records-' + fixture + '-compile', [
+                                *record_flags, '-x', 'objective-c++', '-c',
+                                source / ('records-' + fixture + '.mm'), '-o', record_object], cwd=client)
+                            executable = client / (name + '-records-' + fixture)
+                            run(name + '-records-' + fixture + '-link', [
+                                *common, record_provider, record_object, *link, '-o', executable], cwd=client)
+                            execute(name + '-records-' + fixture + '-execute', executable, client)
+                        record_pch = client / (name + '-records.pch')
+                        run(name + '-records-pch-header', [*record_flags, '-x', 'objective-c++-header',
+                            source / 'records-pch.h', '-o', record_pch], cwd=client)
+                        record_object = client / (name + '-records-pch.o')
+                        run(name + '-records-pch-consumer', [*record_flags, '-x', 'objective-c++', '-c',
+                            '-include-pch', record_pch, source / 'records-pch.mm', '-o', record_object], cwd=client)
+                        executable = client / (name + '-records-pch')
+                        run(name + '-records-pch-link', [*common, record_provider, record_object,
+                            *link, '-o', executable], cwd=client)
+                        execute(name + '-records-pch-execute', executable, client)
                         if arc:
                             mixed_provider = client / (name + '-mixed-provider.o')
                             run(name + '-mixed-provider', [*compile_flags, '-x', 'objective-c++', '-c',
@@ -163,6 +190,11 @@ def qualify(sdk: Path, output: Path) -> dict:
                     run(name + '-driver-compile', [frontend, *flags, '-O2',
                         source / 'main.mm', '-o', executable], cwd=client)
                     execute(name + '-driver-execute', executable, client)
+                    executable = client / (name + '-records-driver')
+                    run(name + '-records-driver-compile', [frontend, *flags, '-O2',
+                        '-fno-elide-constructors', source / 'records-provider.mm',
+                        source / 'records-main.mm', '-o', executable], cwd=client)
+                    execute(name + '-records-driver-execute', executable, client)
                     rejections = {
                         'PRIVATE': 'has private destructor',
                         'DELETED_COPY': 'deleted constructor',
@@ -203,10 +235,32 @@ def qualify(sdk: Path, output: Path) -> dict:
                         if diagnostic not in log or rejected.exists():
                             raise ValueError(f'rejection {macro} lost its diagnostic or emitted an object')
                         report['rejections'] += 1
+                    record_rejections = {
+                        'ASSIGNMENT': 'deleted',
+                        'DEFAULT': 'deleted',
+                        'OMITTED': 'native C++ carrier',
+                        'EMPTY': 'native C++ carrier',
+                        'PACKED': 'native C++ carrier record field initialization',
+                        'VOLATILE': 'native C++ carrier record field initialization',
+                        'UNION': 'native C++ carrier record field initialization',
+                        'ARRAY': 'deleted',
+                        'BLOCK_ABI': 'runtime callable type encoding',
+                        'OBJC_ABI': 'Objective-C runtime type encoding',
+                        'MIXED': 'native C++ carrier record field initialization',
+                    }
+                    for macro, diagnostic in record_rejections.items():
+                        rejected = client / (name + '-records-' + macro + '.o')
+                        log = run(name + '-records-reject-' + macro,
+                            [*common, '-x', 'objective-c++', '-DREJECT_RECORD_' + macro,
+                             '-c', source / 'records-rejections.mm', '-o', rejected],
+                            cwd=client, expected_exit_code=1)
+                        if diagnostic not in log or rejected.exists():
+                            raise ValueError(f'record rejection {macro} lost its diagnostic or emitted an object')
+                        report['rejections'] += 1
         if hashes != {str(path): packages.digest(path) for path in inputs}:
             raise ValueError('installed recursive carrier inputs changed during execution')
         if (len(report['configurations']), report['executions'], report['rejections'],
-                len(report['commands'])) != (8, 42, 56, 193):
+                len(report['commands'])) != (8, 70, 100, 333):
             raise ValueError('installed recursive carrier execution matrix is incomplete')
         report.update(status='PASS', temporary_artifacts_reclaimed=True,
                       commands_passed=len(report['commands']))

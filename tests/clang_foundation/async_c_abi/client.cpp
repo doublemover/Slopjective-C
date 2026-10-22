@@ -681,6 +681,7 @@ int main() {
     group_frame_result_outcomes(executor);
     actor_and_worker(executor);
 #ifdef __OBJC__
+    assert(bridge_logical_c_calls(executor));
     references(executor);
     group_reference_results(executor);
   }

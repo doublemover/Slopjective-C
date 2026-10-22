@@ -44,6 +44,12 @@ native matching, so a success path does not copy an inactive C++ callable.
 `orThrow` supports payloads admitted by the compiler's Block call ABI; unsupported
 types are diagnosed.
 
+Strict profiles also check that error-factory results statically conform to
+`Error`, including inherited protocols, class adoption and categories. Native
+checking preserves the factory expression and its value/ownership recipe; it
+introduces no runtime wrapper. Compatibility helpers retain their concrete error
+types without claiming the constrained Core library contract.
+
 The development headers also provide `resultFromStatus(status, successValue,
 makeError)` for zero-success status APIs. The status runs once; the success
 expression runs only for zero, and the error factory is constructed/called only

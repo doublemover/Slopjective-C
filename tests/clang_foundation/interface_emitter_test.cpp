@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTImporter.h"
 #include "clang/Tooling/Tooling.h"
 
 using namespace objc3::clang_foundation;
@@ -59,6 +60,92 @@ void TestUnmodeledAttributesFailClosed() {
   for (const auto &diagnostic : emitted.diagnostics)
     found_attribute_diagnostic |= diagnostic.code == "O3IFC116";
   assert(found_attribute_diagnostic);
+}
+
+void TestCAsyncPhysicalABIExportFailsClosed() {
+  // Cover direct declarations and nested pointer contracts, including types
+  // that have not yet materialized a physical return carrier in this AST.
+  for (const char *source : {
+           "int fetch(int) __objc3_async;",
+           "typedef int (*AsyncCallback)(int) __objc3_async;",
+           "struct Callbacks { int (*fetch)(int) __objc3_async; };",
+           "void accepts(int (*callback)(int) __objc3_async);"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        source,
+        {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+        "async_frame_interface.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                         "fixture.async_frame", "test-package");
+    assert(!emitted.success && emitted.source_bytes.empty() &&
+           emitted.sidecar_json.empty());
+    assert(std::any_of(emitted.diagnostics.begin(), emitted.diagnostics.end(),
+                       [](const auto &diagnostic) {
+                         return diagnostic.code == "O3IFC161";
+                       }));
+  }
+}
+
+void TestCAsyncPhysicalABIImportBoundaries() {
+  constexpr llvm::StringRef c_source = R"(
+    typedef struct objc3_task objc3_task_t;
+    typedef struct objc3_async_result_type objc3_async_result_type;
+    typedef struct objc3_async_frame {
+      unsigned struct_size, version;
+      void *context;
+      void (*resume)(objc3_task_t *, void *);
+      void (*destroy)(void *);
+      const objc3_async_result_type *result_type;
+    } objc3_async_frame;
+    int fetch(int) __objc3_async __asm__("fetch_frame");
+  )";
+  constexpr llvm::StringRef cpp_source = R"(
+    template<class T> struct TaskCarrier { void *context; };
+    template<class T> using __objc3_async_task = TaskCarrier<T>;
+    int fetch(int) __objc3_async;
+  )";
+  auto build = [](llvm::StringRef source, bool cpp) {
+    return clang::tooling::buildASTFromCodeWithArgs(
+        source,
+        {"-x", cpp ? "objective-c++" : "objective-c",
+         cpp ? "-std=c++20" : "-std=c17", "-fobjc-version=3",
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+        cpp ? "async_import.mm" : "async_import.m");
+  };
+  auto function = [](clang::ASTContext &context) {
+    for (auto *decl : context.getTranslationUnitDecl()->decls())
+      if (auto *fd = llvm::dyn_cast<clang::FunctionDecl>(decl))
+        if (fd->getName() == "fetch") return fd;
+    return static_cast<clang::FunctionDecl *>(nullptr);
+  };
+  for (bool source_cpp : {false, true}) {
+    for (bool target_cpp : {false, true}) {
+      auto from = build(source_cpp ? cpp_source : c_source, source_cpp);
+      auto to = build(target_cpp ? cpp_source : c_source, target_cpp);
+      assert(from && to && !from->getDiagnostics().hasErrorOccurred() &&
+             !to->getDiagnostics().hasErrorOccurred());
+      auto *from_function = function(from->getASTContext());
+      auto *to_function = function(to->getASTContext());
+      assert(from_function && to_function);
+      auto &context = to->getASTContext();
+      auto existing = context.getObjC3AsyncTaskType(to_function->getReturnType());
+      assert(!existing.isNull());
+      clang::ASTImporter importer(context, to->getFileManager(),
+                                  from->getASTContext(), from->getFileManager(),
+                                  /*MinimalImport=*/false);
+      auto imported = importer.Import(from_function->getType());
+      if (source_cpp == target_cpp) {
+        assert(imported && context.hasSameType(*imported, to_function->getType()));
+      } else {
+        assert(!imported);
+        llvm::consumeError(imported.takeError());
+      }
+      // A rejected import must not replace either context's physical carrier.
+      assert(context.hasSameType(existing, context.getObjC3AsyncTaskType(
+                                              to_function->getReturnType())));
+    }
+  }
 }
 
 void TestObjectiveCContainerRoundTrips() {
@@ -431,6 +518,8 @@ void TestBoundedCxxSemanticInterfaces() {
 int main() {
   TestOrdinaryCDeclarationsRoundTrip();
   TestUnmodeledAttributesFailClosed();
+  TestCAsyncPhysicalABIExportFailsClosed();
+  TestCAsyncPhysicalABIImportBoundaries();
   TestObjectiveCContainerRoundTrips();
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();

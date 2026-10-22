@@ -27,6 +27,9 @@ objc3_async_frame bridge_c_group_next(objc3_task_group_t *group,
                                       uint64_t expected_actor, int *destroyed);
 int bridge_c_copy_count(void);
 int bridge_c_consume_cpp(objc3_executor_t *executor);
+#ifdef __OBJC__
+int bridge_logical_c_calls(objc3_executor_t *executor);
+#endif
 objc3_async_frame bridge_cpp_int(int value);
 objc3_async_frame bridge_cpp_pair(struct bridge_pair);
 objc3_async_frame bridge_cpp_void(void);
