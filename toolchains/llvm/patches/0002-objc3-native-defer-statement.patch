@@ -203,7 +203,7 @@ index 15d0e6435..ff84dd3d9 100644
  DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
      : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..3a2789d68 100644
+index 9a97d52fd..0be7cc17a 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -524,7 +524,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -215,7 +215,7 @@ index 9a97d52fd..3a2789d68 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1939,6 +1939,191 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1939,195 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -379,9 +379,13 @@ index 9a97d52fd..3a2789d68 100644
 +  OS << "if ";
 +  for (unsigned I = 0; I != Node->getNumConditions(); ++I) {
 +    if (I) OS << ", ";
-+    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Node->getCondition(I)))
-+      VisitObjC3BindingCondition(Binding);
-+    else PrintExpr(cast<Expr>(Node->getCondition(I)));
++    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Node->getCondition(I))) {
++      if (!I)
++        OS << (Binding->isMutableBinding() ? "var " : "let ");
++      OS << Binding->getBindingDecl()->getName() << " = ";
++      PrintExpr(Binding->getSource());
++    } else
++      PrintExpr(cast<Expr>(Node->getCondition(I)));
 +  }
 +  OS << " ";
 +  PrintStmt(Node->getThen());
@@ -722,7 +726,7 @@ index 000000000..b6b085f25
 +  return Result;
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..38e87ad2a 100644
+index 44b51a985..250b678c3 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,8 +11,10 @@
@@ -759,10 +763,12 @@ index 44b51a985..38e87ad2a 100644
        AtLoc = ConsumeToken();  // consume @
        return ParseObjCAtStatement(AtLoc, StmtCtx);
      }
-@@ -161,6 +169,29 @@ Retry:
+@@ -161,6 +169,31 @@ Retry:
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
++    if (isObjC3GuardStatementAhead())
++      return ParseObjC3GuardStatement();
 +    // The public spelling is contextual only before a compound statement.
 +    // Ordinary identifiers, calls, selectors and macro expansions keep their
 +    // inherited parse; the implementation spelling also diagnoses a missing body.
@@ -789,7 +795,7 @@ index 44b51a985..38e87ad2a 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +204,19 @@ Retry:
+@@ -173,7 +206,19 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -810,7 +816,7 @@ index 44b51a985..38e87ad2a 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +239,7 @@ Retry:
+@@ -196,6 +241,7 @@ Retry:
    }
  
    default: {
@@ -818,7 +824,7 @@ index 44b51a985..38e87ad2a 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +252,8 @@ Retry:
+@@ -208,7 +254,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -828,7 +834,16 @@ index 44b51a985..38e87ad2a 100644
           (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
-@@ -2464,6 +2509,15 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -296,6 +343,8 @@ Retry:
+   }
+ 
+   case tok::kw_if:                  // C99 6.8.4.1: if-statement
++    if (isObjC3IfBindingStatementAhead())
++      return ParseObjC3IfBindingStatement();
+     return ParseIfStatement(TrailingElseLoc);
+   case tok::kw_switch:              // C99 6.8.4.2: switch-statement
+     return ParseSwitchStatement(TrailingElseLoc, PrecedingLabel);
+@@ -2464,6 +2513,15 @@ StmtResult Parser::ParseReturnStatement() {
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);

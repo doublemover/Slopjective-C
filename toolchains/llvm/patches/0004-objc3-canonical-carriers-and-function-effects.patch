@@ -1050,7 +1050,7 @@ index b3c3b25aa..5bc4502a8 100644
 +def ObjC3MatchDuplicate : DiagGroup<"objc3-match-duplicate">;
 +def ObjC3MatchUnreachable : DiagGroup<"objc3-match-unreachable">;
 diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
-index 7671f003c..af92b2d03 100644
+index 7671f003c..7ea80c2ab 100644
 --- a/clang/include/clang/Basic/DiagnosticParseKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticParseKinds.td
 @@ -11,7 +11,19 @@
@@ -1073,7 +1073,7 @@ index 7671f003c..af92b2d03 100644
  // C++11 compatibility with C++98.
  defm enum_fixed_underlying_type : CXX11Compat<
    "enumeration types with a fixed underlying type are",
-@@ -1920,4 +1932,9 @@ def err_hlsl_number_literal_underflow : Error<
+@@ -1920,4 +1932,22 @@ def err_hlsl_number_literal_underflow : Error<
    "float literal has a magnitude that is too small to be represented as a float type">;
  def err_hlsl_rootsig_non_zero_flag : Error<"flag value is neither a literal 0 nor a named value">;
  
@@ -1081,6 +1081,19 @@ index 7671f003c..af92b2d03 100644
 +def err_objc3_match_invalid_pattern : Error<"invalid match pattern">;
 +def err_objc3_match_malformed_guard : Error<"guarded patterns require a condition">;
 +def err_objc3_match_form_delimiter : Error<"expected the %0-form match delimiter">;
++
++def err_objc3_guard_expected_condition : Error<
++  "expected a condition in guard statement">;
++def err_objc3_expected_binding : Error<
++  "expected an optional binding of the form 'identifier = expression'">;
++def err_objc3_if_binding_repeated_head : Error<
++  "a binding list has only one 'let' or 'var' introducer">;
++def err_objc3_guard_expected_else : Error<
++  "expected 'else' after guard conditions">;
++def err_objc3_condition_expected_separator : Error<
++  "expected ',' or %select{'{'|'else'}0 after condition">;
++def err_objc3_condition_expected_compound : Error<
++  "expected a compound statement after %select{guard 'else'|if binding conditions|if binding 'else'}0">;
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
@@ -1230,7 +1243,7 @@ index a9965a4a8..4ec0b3a0c 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..5005ebb64 100644
+index 892715a6d..19a5179e4 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1256,7 +1269,7 @@ index 892715a6d..5005ebb64 100644
    void InitCXXThisScopeForDeclaratorIfRelevant(
        const Declarator &D, const DeclSpec &DS,
        std::optional<Sema::CXXThisScopeRAII> &ThisScope);
-@@ -7614,6 +7623,27 @@ public:
+@@ -7614,6 +7623,29 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
@@ -1271,6 +1284,8 @@ index 892715a6d..5005ebb64 100644
 +  ExprResult ParseObjC3CarrierTransferExpression();
 +
 +  bool isObjC3GuardStatementAhead();
++  bool isObjC3IfBindingStatementAhead();
++  void RecoverObjC3Condition();
 +  bool ParseObjC3ConditionList(SmallVectorImpl<Stmt *> &Conditions, bool GuardMode);
 +  StmtResult ParseObjC3GuardStatement();
 +  StmtResult ParseObjC3IfBindingStatement();
@@ -3796,14 +3811,15 @@ index e8fbffb9f..54bd53b21 100644
      OS << " __attribute__((cfi_unchecked_callee))";
  
 diff --git a/clang/lib/Parse/CMakeLists.txt b/clang/lib/Parse/CMakeLists.txt
-index 8dd120f52..90be9a2ca 100644
+index 8dd120f52..f0b6e722a 100644
 --- a/clang/lib/Parse/CMakeLists.txt
 +++ b/clang/lib/Parse/CMakeLists.txt
-@@ -18,6 +18,10 @@ add_clang_library(clangParse
+@@ -18,6 +18,11 @@ add_clang_library(clangParse
    ParseHLSLRootSignature.cpp
    ParseInit.cpp
    ParseObjc.cpp
 +  ParseObjC3.cpp
++  ParseObjC3Conditions.cpp
 +  ParseObjC3QualifiedName.cpp
 +  ParseObjC3Type.cpp
 +  ParseObjC3Match.cpp
@@ -19794,3 +19810,859 @@ index 000000000..53c21685a
 +  return 42;
 +}
 +#endif
+diff --git a/clang/lib/Parse/ParseObjC3Conditions.cpp b/clang/lib/Parse/ParseObjC3Conditions.cpp
+new file mode 100644
+index 000000000..585bffffe
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3Conditions.cpp
+@@ -0,0 +1,288 @@
++//===--- ParseObjC3Conditions.cpp - Native optional-binding statements ------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/Basic/DiagnosticParse.h"
++#include "clang/Parse/Parser.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
++#include "clang/Sema/Scope.h"
++#include "clang/Sema/SemaCodeCompletion.h"
++#include "llvm/ADT/SmallVector.h"
++
++using namespace clang;
++
++namespace {
++bool isWord(const Token &Token, StringRef Word) {
++  return Token.is(tok::identifier) && Token.getIdentifierInfo() &&
++         Token.getIdentifierInfo()->isStr(Word);
++}
++
++bool isBindingHead(const Token &Token) {
++  return isWord(Token, "let") || isWord(Token, "var");
++}
++
++bool isConditionBoundary(const Token &Token) {
++  return Token.isOneOf(tok::kw_else, tok::l_brace, tok::r_brace, tok::semi,
++                       tok::eof);
++}
++} // namespace
++
++bool Parser::isObjC3GuardStatementAhead() {
++  if (!getLangOpts().ObjC3 || !isWord(Tok, "guard") ||
++      NextToken().is(tok::colon))
++    return false;
++
++  // No ordinary expression or declaration begins "guard let name". Recognize
++  // this head even without '=' or 'else', so malformed bindings get their own
++  // diagnostics. A variable named let/var, a call, and a label remain ordinary.
++  if (isBindingHead(NextToken()) &&
++      GetLookAheadToken(2).is(tok::identifier))
++    return true;
++  // These starts cannot continue an ordinary use of the identifier guard.
++  // Keeping them contextual also diagnoses a missing mandatory else without
++  // reinterpreting a call or a declaration whose type is named guard.
++  if (NextToken().isOneOf(tok::kw_true, tok::kw_false, tok::exclaim))
++    return true;
++
++  // Boolean guards have no dedicated leading punctuation. Commit only when
++  // there is an else at condition-list depth. Nested lambdas, statement
++  // expressions, Objective-C messages, and braced initializers can all contain
++  // semicolons or else tokens; match delimiters in order, rather than counting
++  // each delimiter kind independently. This lookahead never consumes tokens.
++  SmallVector<tok::TokenKind, 8> Delimiters;
++  for (unsigned I = 1;; ++I) {
++    const Token &Look = GetLookAheadToken(I);
++    if (Look.isOneOf(tok::eof, tok::annot_repl_input_end))
++      return false;
++    if (Delimiters.empty()) {
++      if (Look.is(tok::kw_else))
++        return true;
++      if (Look.isOneOf(tok::semi, tok::r_brace))
++        return false;
++    }
++    switch (Look.getKind()) {
++    case tok::l_paren:
++      Delimiters.push_back(tok::r_paren);
++      break;
++    case tok::l_square:
++      Delimiters.push_back(tok::r_square);
++      break;
++    case tok::l_brace:
++      Delimiters.push_back(tok::r_brace);
++      break;
++    case tok::r_paren:
++    case tok::r_square:
++    case tok::r_brace:
++      if (Delimiters.empty() || Delimiters.pop_back_val() != Look.getKind())
++        return false;
++      break;
++    default:
++      break;
++    }
++  }
++}
++
++bool Parser::isObjC3IfBindingStatementAhead() {
++  return getLangOpts().ObjC3 && Tok.is(tok::kw_if) &&
++         isBindingHead(NextToken());
++}
++
++void Parser::RecoverObjC3Condition() {
++  // Leave structural tokens for the statement parser. SkipUntil balances
++  // nested expressions and preserves the containing compound's closing brace.
++  const tok::TokenKind Stops[] = {tok::comma, tok::kw_else, tok::l_brace,
++                                  tok::r_brace};
++  SkipUntil(Stops, StopAtSemi | StopBeforeMatch);
++}
++
++bool Parser::ParseObjC3ConditionList(SmallVectorImpl<Stmt *> &Conditions,
++                                      bool GuardMode) {
++  bool Invalid = false;
++  bool InBindingList = false;
++  bool Mutable = false;
++  bool SeenBindingHead = false;
++  for (;;) {
++    const SourceLocation Begin = Tok.getLocation();
++    if (Tok.is(tok::code_completion)) {
++      cutOffParsing();
++      Actions.CodeCompletion().CodeCompleteOrdinaryName(
++          getCurScope(), SemaCodeCompletion::PCC_Expression);
++      return false;
++    }
++    if (isConditionBoundary(Tok) || Tok.is(tok::comma)) {
++      Diag(Tok, GuardMode ? diag::err_objc3_guard_expected_condition
++                          : diag::err_objc3_expected_binding);
++      Invalid = true;
++      if (Tok.isNot(tok::comma))
++        return false;
++      ConsumeToken();
++      InBindingList = false;
++      continue;
++    }
++
++    // In a guard, let/var is contextual only before a binding name. In an
++    // if-binding statement the first head has already selected this grammar.
++    // A Boolean condition ends the preceding binding list, so a later bare
++    // assignment is an expression until another explicit let/var head appears.
++    bool ExplicitHead = isBindingHead(Tok) &&
++                        ((!GuardMode && !SeenBindingHead) ||
++                         NextToken().is(tok::identifier));
++    bool ContinuedBinding = InBindingList && Tok.is(tok::identifier) &&
++                            NextToken().is(tok::equal);
++    if (ExplicitHead || ContinuedBinding) {
++      if (ExplicitHead) {
++        if (!GuardMode && SeenBindingHead) {
++          Diag(Tok, diag::err_objc3_if_binding_repeated_head);
++          Invalid = true;
++        }
++        Mutable = isWord(Tok, "var");
++        SeenBindingHead = true;
++        ConsumeToken();
++      }
++      InBindingList = true;
++      if (Tok.isNot(tok::identifier)) {
++        Diag(Tok, diag::err_objc3_expected_binding);
++        Invalid = true;
++        RecoverObjC3Condition();
++      } else {
++        IdentifierInfo *Name = Tok.getIdentifierInfo();
++        SourceLocation NameLoc = ConsumeToken();
++        if (Tok.isNot(tok::equal)) {
++          Diag(Tok, diag::err_expected) << tok::equal;
++          Invalid = true;
++          RecoverObjC3Condition();
++        } else {
++          SourceLocation EqualLoc = ConsumeToken();
++          ExprResult Source;
++          if (isConditionBoundary(Tok) || Tok.is(tok::comma)) {
++            Diag(Tok, diag::err_expected_expression);
++            Source = ExprError();
++          } else {
++            Source = ParseAssignmentExpression();
++          }
++          if (Source.isInvalid()) {
++            Invalid = true;
++            RecoverObjC3Condition();
++          } else {
++            StmtResult Binding = Actions.ActOnObjC3BindingCondition(
++                getCurScope(), Name, NameLoc, Mutable, Begin, EqualLoc,
++                Source.get());
++            if (Binding.isInvalid())
++              Invalid = true;
++            else
++              Conditions.push_back(Binding.get());
++          }
++        }
++      }
++    } else if (GuardMode) {
++      InBindingList = false;
++      ExprResult Value = ParseAssignmentExpression();
++      if (Value.isInvalid()) {
++        Invalid = true;
++        RecoverObjC3Condition();
++      } else {
++        ExprResult Condition = Actions.ActOnObjC3BooleanCondition(
++            getCurScope(), Value.get(), Begin);
++        if (Condition.isInvalid())
++          Invalid = true;
++        else
++          Conditions.push_back(Condition.get());
++      }
++    } else {
++      Diag(Tok, diag::err_objc3_expected_binding);
++      Invalid = true;
++      RecoverObjC3Condition();
++    }
++
++    if (Tok.isNot(tok::comma) && !isConditionBoundary(Tok)) {
++      Diag(Tok, diag::err_objc3_condition_expected_separator) << GuardMode;
++      Invalid = true;
++      RecoverObjC3Condition();
++    }
++    if (Tok.isNot(tok::comma))
++      return !Invalid && !Conditions.empty();
++    ConsumeToken();
++  }
++}
++
++StmtResult Parser::ParseObjC3GuardStatement() {
++  assert(isWord(Tok, "guard") && "not a guard statement");
++  SourceLocation KeywordLoc = ConsumeToken();
++  SmallVector<Stmt *, 4> Conditions;
++
++  // Each successful binding enters lookup before the next initializer. Exit
++  // this temporary scope before parsing failure, then Sema installs the same
++  // declarations in the source parent after the entire guard is accepted.
++  ParseScope Bindings(this, Scope::DeclScope | Scope::CompoundStmtScope);
++  bool Invalid = !ParseObjC3ConditionList(Conditions, /*GuardMode=*/true);
++  Bindings.Exit();
++
++  SourceLocation ElseLoc;
++  if (Tok.is(tok::kw_else)) {
++    ElseLoc = ConsumeToken();
++  } else {
++    Diag(Tok, diag::err_objc3_guard_expected_else);
++    Invalid = true;
++    // A missing else immediately before a compound is recoverable without
++    // losing the following source siblings or leaking any success binding.
++    if (Tok.isNot(tok::l_brace))
++      return StmtError();
++  }
++
++  if (Tok.isNot(tok::l_brace)) {
++    Diag(Tok, diag::err_objc3_condition_expected_compound) << 0;
++    if (!Tok.isOneOf(tok::r_brace, tok::eof, tok::kw_else)) {
++      ParseScope Recovery(this, Scope::DeclScope);
++      (void)ParseStatement();
++    }
++    return StmtError();
++  }
++  StmtResult ElseBody = ParseCompoundStatement();
++  if (Invalid || ElseBody.isInvalid())
++    return StmtError();
++  return Actions.ActOnObjC3GuardStmt(getCurScope(), Conditions, ElseBody.get(),
++                                     KeywordLoc, ElseLoc);
++}
++
++StmtResult Parser::ParseObjC3IfBindingStatement() {
++  assert(Tok.is(tok::kw_if) && "not an if binding statement");
++  SourceLocation IfLoc = ConsumeToken();
++  SmallVector<Stmt *, 4> Conditions;
++  ParseScope Bindings(this, Scope::DeclScope | Scope::ControlScope);
++  bool Invalid = !ParseObjC3ConditionList(Conditions, /*GuardMode=*/false);
++  StmtResult Then;
++  if (Tok.is(tok::l_brace)) {
++    Then = ParseCompoundStatement();
++  } else {
++    Diag(Tok, diag::err_objc3_condition_expected_compound) << 1;
++    Invalid = true;
++    if (!Tok.isOneOf(tok::kw_else, tok::r_brace, tok::eof)) {
++      ParseScope Recovery(this, Scope::DeclScope);
++      (void)ParseStatement();
++    }
++  }
++  Bindings.Exit();
++
++  SourceLocation ElseLoc;
++  StmtResult ElseBody;
++  if (Tok.is(tok::kw_else)) {
++    ElseLoc = ConsumeToken();
++    if (Tok.is(tok::l_brace)) {
++      ElseBody = ParseCompoundStatement();
++    } else {
++      Diag(Tok, diag::err_objc3_condition_expected_compound) << 2;
++      Invalid = true;
++      if (!Tok.isOneOf(tok::kw_else, tok::r_brace, tok::eof)) {
++        ParseScope Recovery(this, Scope::DeclScope);
++        (void)ParseStatement();
++      }
++    }
++  }
++  if (Invalid || Then.isInvalid() || ElseBody.isInvalid())
++    return StmtError();
++  return Actions.ActOnObjC3IfBindingStmt(Conditions, Then.get(), ElseBody.get(),
++                                         IfLoc, ElseLoc);
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm
+new file mode 100644
+index 000000000..80604db66
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm
+@@ -0,0 +1,7 @@
++// expected-no-diagnostics
++int pch_condition_consumer(GuardMaybe source) {
++  OBJC3_PCH_REQUIRE OBJC3_PCH_BIND first = source,
++      second = Some(int, first) else { return 0; }
++  return pch_guard(source, true) + pch_if_binding(source) +
++         pch_dependent_conditions(source) + first + second;
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/guard-pch.h b/clang/test/ObjC3/Parser/Inputs/guard-pch.h
+new file mode 100644
+index 000000000..d2fad4ad8
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/guard-pch.h
+@@ -0,0 +1,33 @@
++#ifndef OBJC3_NATIVE_GUARD_PCH_H
++#define OBJC3_NATIVE_GUARD_PCH_H
++
++typedef Optional(int) GuardMaybe;
++
++inline int pch_guard(GuardMaybe source, bool flag) {
++  guard let first = source, second = Some(int, first),
++        flag, var third = Some(int, second) else { return 0; }
++  third += first;
++  return first + second + third;
++}
++
++inline int pch_if_binding(GuardMaybe source) {
++  if var first = source, second = Some(int, first) {
++    first += second;
++    return first;
++  } else {
++    return 0;
++  }
++}
++
++template <class T> int pch_dependent_conditions(T source) {
++  guard let first = source, second = source else { return 0; }
++  if let third = source, fourth = source {
++    return first + second + third + fourth;
++  }
++  return first + second;
++}
++
++#define OBJC3_PCH_REQUIRE guard
++#define OBJC3_PCH_BIND let
++
++#endif
+diff --git a/clang/test/ObjC3/Parser/guard-c-mode.m b/clang/test/ObjC3/Parser/guard-c-mode.m
+new file mode 100644
+index 000000000..ab4d2dba4
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-c-mode.m
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++typedef Optional(int) Maybe;
++typedef __typeof__(hasValue(None(int))) Bool;
++Maybe make(int);
++void use(int);
++
++void native_c_conditions(Maybe source, Bool flag) {
++  guard let first = source, second = make(first),
++        flag, var third = make(second), fourth = make(third) else {
++    return;
++  }
++  third += fourth;
++  use(first + second + third + fourth);
++  if let local = make(first), dependent = make(local) {
++    use(local + dependent);
++  } else {
++    use(first);
++  }
++  if var local = make(second), dependent = make(local) {
++    local += dependent;
++    use(local);
++  }
++}
+diff --git a/clang/test/ObjC3/Parser/guard-conditions.mm b/clang/test/ObjC3/Parser/guard-conditions.mm
+new file mode 100644
+index 000000000..66f1ffae0
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-conditions.mm
+@@ -0,0 +1,57 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++// expected-no-diagnostics
++
++typedef Optional(int) Maybe;
++Maybe next_value(int);
++bool check(int);
++void use(int);
++
++void ordered_bindings(Maybe source) {
++  guard let first = source, second = next_value(first),
++        check(second), var third = next_value(second), fourth = next_value(third)
++  else { return; }
++  third += first;
++  fourth += second;
++  use(first + second + third + fourth);
++}
++
++void assignment_after_boolean(Maybe source, bool flag) {
++  // A Boolean ends binding continuation. Assigning to the ordinary bool flag
++  // is a Boolean condition, rather than an attempt to bind a bool payload.
++  guard let value = source, check(value), flag = check(value) else { return; }
++  use(value);
++}
++
++void if_lists(Maybe source) {
++  if let first = source, second = next_value(first) {
++    use(first + second);
++  } else {
++    use(0);
++  }
++  if var first = source, second = next_value(first) {
++    first += second;
++    second += first;
++    use(first + second);
++  }
++}
++
++// AST-LABEL: FunctionDecl {{.*}} ordered_bindings
++// AST: ObjC3GuardStmt
++// AST: ObjC3BindingCondition
++// AST: ObjC3BindingCondition
++// AST: CallExpr
++// AST: ObjC3BindingCondition
++// AST: ObjC3BindingCondition
++// AST-LABEL: FunctionDecl {{.*}} assignment_after_boolean
++// AST: ObjC3GuardStmt
++// AST: BinaryOperator {{.*}} '='
++// AST-LABEL: FunctionDecl {{.*}} if_lists
++// AST: ObjC3IfBindingStmt
++// AST: ObjC3IfBindingStmt
++// PRINT: guard let first = source, let second = next_value(first), check(second), var third = next_value(second), var fourth = next_value(third) else
++// PRINT: if let first = source, second = next_value(first)
++// PRINT: if var first = source, second = next_value(first)
+diff --git a/clang/test/ObjC3/Parser/guard-contextual.mm b/clang/test/ObjC3/Parser/guard-contextual.mm
+new file mode 100644
+index 000000000..cfbce1951
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-contextual.mm
+@@ -0,0 +1,69 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s
++// expected-no-diagnostics
++
++bool guard(bool value) { return value; }
++bool let(bool value) { return value; }
++bool var(bool value) { return value; }
++struct Names { int guard, let, var; };
++
++int ordinary_identifiers(bool value) {
++  int let = 1;
++  int var = 2;
++  if (guard(value)) {
++    Names object = {let, var, 3};
++    if (object.guard)
++      goto guard;
++    goto let;
++  }
++guard:
++  if (value) goto var;
++let:
++  return let;
++var:
++  return var;
++}
++
++void contextual_boolean_names(bool value) {
++  guard let(value), var(value), guard(value) else { return; }
++}
++
++void contextual_bare_names(bool let, bool var) {
++  guard let, var else { return; }
++}
++
++#define guard(value) (value)
++#define let(value) (value)
++#define var(value) (value)
++bool ordinary_function_macros(bool value) {
++  return guard(let(var(value)));
++}
++#undef guard
++#undef let
++#undef var
++
++#define REQUIRE guard
++#define BIND let
++#define NAMED(name) name
++#define SOURCE(value) Some(int, value)
++int expanded_binding_heads(int input) {
++  REQUIRE BIND NAMED(first) = SOURCE(input), second = SOURCE(first) else {
++    return 0;
++  }
++  if BIND third = SOURCE(second), fourth = SOURCE(third) {
++    return first + second + third + fourth;
++  }
++  return 0;
++}
++
++// CHECK-LABEL: FunctionDecl {{.*}} ordinary_identifiers
++// CHECK-NOT: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} contextual_boolean_names
++// CHECK: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} contextual_bare_names
++// CHECK: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} ordinary_function_macros
++// CHECK-NOT: ObjC3GuardStmt
++// CHECK-LABEL: FunctionDecl {{.*}} expanded_binding_heads
++// CHECK: ObjC3GuardStmt
++// CHECK: ObjC3IfBindingStmt
+diff --git a/clang/test/ObjC3/Parser/guard-disabled.mm b/clang/test/ObjC3/Parser/guard-disabled.mm
+new file mode 100644
+index 000000000..b942442b2
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-disabled.mm
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++bool guard(bool value) { return value; }
++bool let(bool value) { return value; }
++bool var(bool value) { return value; }
++void ordinary_names(bool value) {
++  bool local = guard(let(var(value)));
++  if (local) goto guard;
++guard:
++  local = true;
++}
++
++#define guard(value) (value)
++#define let(value) (value)
++#define var(value) (value)
++bool macro_names(bool value) { return guard(let(var(value))); }
+diff --git a/clang/test/ObjC3/Parser/guard-lookahead.mm b/clang/test/ObjC3/Parser/guard-lookahead.mm
+new file mode 100644
+index 000000000..1af590702
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-lookahead.mm
+@@ -0,0 +1,48 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++template <class T, class U> bool predicate(T value, U other) {
++  return value == other;
++}
++struct Truth {
++  bool value;
++  bool get() const { return value; }
++};
++struct Obj;
++@interface Receiver
++- (bool)check:(int)value other:(int)other;
++@end
++
++void nested_delimiters(Receiver *receiver, bool flag) {
++  guard ([&] {
++    if (flag) { return true; } else { return false; }
++  }()), predicate<int, int>(1, 1), Truth{flag}.get(),
++  [receiver check:1 other:2] else { return; }
++
++  guard ({ bool local = flag; if (!flag) local = true; local; }) else {
++    return;
++  }
++  guard []() -> bool {
++    int values[2] = {1, 2};
++    return values[0] < values[1];
++  }() else { return; }
++}
++
++bool guard(bool);
++void ordinary_calls_stop_at_semicolon(bool flag) {
++  guard([&] { if (flag) return true; else return false; }());
++  if (flag) {
++    guard(flag);
++  } else {
++    guard(false);
++  }
++}
++
++// Template commas and a braced initializer are parsed by the ordinary
++// expression parser after lookahead identifies the outer else.
++void bound_template_expressions() {
++  guard let value = Some(int, predicate<int, int>(1, 1)),
++        another = Some(int, Truth{true}.get()) else { return; }
++  (void)value;
++  (void)another;
++}
+diff --git a/clang/test/ObjC3/Parser/guard-pch.mm b/clang/test/ObjC3/Parser/guard-pch.mm
+new file mode 100644
+index 000000000..56f6492fe
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -emit-pch -o %t.pch %S/Inputs/guard-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only -verify %S/Inputs/guard-pch-consumer.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-dump-all %S/Inputs/guard-pch-consumer.mm | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -ast-print %S/Inputs/guard-pch-consumer.mm > %t.mm
++// RUN: FileCheck %s --check-prefix=PRINT < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only %t.mm
++
++// AST-LABEL: FunctionDecl {{.*}} pch_guard
++// AST: ObjC3GuardStmt {{.*}} conditions=4
++// AST-LABEL: FunctionDecl {{.*}} pch_if_binding
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST-LABEL: FunctionTemplateDecl {{.*}} pch_dependent_conditions
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST: FunctionDecl {{.*}} pch_dependent_conditions
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// AST: ObjC3IfBindingStmt {{.*}} conditions=2
++// AST-LABEL: FunctionDecl {{.*}} pch_condition_consumer
++// AST: ObjC3GuardStmt {{.*}} conditions=2
++// PRINT: guard let first = source, let second = Some(int, first), flag, var third = Some(int, second) else
++// PRINT: if var first = source, second = Some(int, first)
++// PRINT: if let third = source, fourth = source
+diff --git a/clang/test/ObjC3/Parser/guard-recovery.mm b/clang/test/ObjC3/Parser/guard-recovery.mm
+new file mode 100644
+index 000000000..06efbfbe1
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-recovery.mm
+@@ -0,0 +1,91 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++typedef Optional(int) Maybe;
++void use(int);
++
++void missing_else(Maybe source) {
++  guard let rejected = source { // expected-error {{expected 'else' after guard conditions}}
++    return;
++  }
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void boolean_missing_else(bool flag) {
++  guard true { return; } // expected-error {{expected 'else' after guard conditions}}
++  guard !flag; // expected-error {{expected 'else' after guard conditions}}
++  use(1);
++}
++
++void missing_guard_compound(Maybe source) {
++  guard let rejected = source else use(0); // expected-error {{expected a compound statement after guard 'else'}}
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void missing_if_compound(Maybe source) {
++  if let rejected = source use(0); // expected-error {{expected ',' or '{' after condition}} expected-error {{expected a compound statement after if binding conditions}}
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++  use(1);
++}
++
++void missing_then_before_else(Maybe source) {
++  if let rejected = source else { // expected-error {{expected a compound statement after if binding conditions}}
++    use(0);
++  }
++  use(rejected); // expected-error {{use of undeclared identifier 'rejected'}}
++}
++
++void missing_if_else_compound(Maybe source) {
++  if let value = source { use(value); }
++  else use(0); // expected-error {{expected a compound statement after if binding 'else'}}
++  use(1);
++}
++
++void missing_equal(Maybe source) {
++  guard let rejected source else { return; } // expected-error {{expected '='}}
++  if let rejected source { use(0); } // expected-error {{expected '='}}
++  use(1);
++}
++
++void missing_source(Maybe source) {
++  guard let rejected = else { return; } // expected-error {{expected expression}}
++  if let rejected = { use(0); } // expected-error {{expected expression}}
++  use(1);
++}
++
++void empty_lists() {
++  guard else { return; } // expected-error {{expected a condition in guard statement}}
++  guard true, else { return; } // expected-error {{expected a condition in guard statement}}
++  guard true, , true else { return; } // expected-error {{expected a condition in guard statement}}
++  if let { use(0); } // expected-error {{expected an optional binding of the form 'identifier = expression'}}
++  use(1);
++}
++
++void repeated_if_heads(Maybe source) {
++  if let first = source, let second = source { // expected-error {{a binding list has only one 'let' or 'var' introducer}}
++    use(first + second);
++  }
++  if var first = source, var second = source { // expected-error {{a binding list has only one 'let' or 'var' introducer}}
++    use(first + second);
++  }
++  if let first = source, true { // expected-error {{expected an optional binding of the form 'identifier = expression'}}
++    use(first);
++  }
++  use(1);
++}
++
++void missing_separator(Maybe source) {
++  guard let first = source let second = source else { return; } // expected-error {{expected ',' or 'else' after condition}}
++  if let first = source second = source { use(0); } // expected-error {{expected ',' or '{' after condition}}
++  use(1);
++}
++
++void preserve_enclosing_compound(Maybe source) {
++  if let rejected = // expected-error@+1 {{expected expression}} expected-error@+1 {{expected a compound statement after if binding conditions}}
++}
++
++void following_function_remains_parseable(Maybe source) {
++  guard let accepted = source else { return; }
++  use(accepted);
++}
+diff --git a/clang/test/ObjC3/Parser/guard-scopes.mm b/clang/test/ObjC3/Parser/guard-scopes.mm
+new file mode 100644
+index 000000000..02fe20813
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-scopes.mm
+@@ -0,0 +1,62 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++typedef Optional(int) Maybe;
++void use(int);
++
++void scope_after_success(Maybe source) {
++  guard let persistent = source else { return; }
++  use(persistent);
++  {
++    guard var inner = Some(int, persistent) else { return; }
++    inner += persistent;
++    use(inner);
++  }
++  use(inner); // expected-error {{use of undeclared identifier 'inner'}}
++}
++
++void guard_failure_has_outer_lookup(Maybe source) {
++  int failure_value = 4;
++  {
++    guard let failure_value = source else {
++      // The newly bound failure_value is not in this branch. Assignment is
++      // valid because lookup reaches the mutable outer declaration instead.
++      failure_value += 1;
++      return;
++    }
++    use(failure_value);
++  }
++}
++
++void unavailable_in_guard_failure(Maybe source) {
++  guard let only_in_success = source else {
++    use(only_in_success); // expected-error {{use of undeclared identifier 'only_in_success'}}
++    return;
++  }
++}
++
++void if_binding_scope(Maybe source) {
++  int outer = 7;
++  if let outer = source, later = Some(int, outer) {
++    use(outer + later);
++  } else {
++    outer += 1;
++  }
++  outer += 1;
++  if let only_in_success = source { use(only_in_success); }
++  else { use(only_in_success); } // expected-error {{use of undeclared identifier 'only_in_success'}}
++  use(only_in_success); // expected-error {{use of undeclared identifier 'only_in_success'}}
++}
++
++void boolean_resets_bare_binding(Maybe source) {
++  Maybe assignment = None(int);
++  guard let first = source, true, assignment = Some(int, first) // expected-error {{condition must have Bool type}}
++  else { return; }
++}
++
++void explicit_head_restarts_binding(Maybe source) {
++  guard let first = source, true, var second = Some(int, first),
++        third = Some(int, second) else { return; }
++  second += first;
++  third += second;
++  use(first + second + third);
++}
+diff --git a/clang/test/ObjC3/Parser/guard-template.mm b/clang/test/ObjC3/Parser/guard-template.mm
+new file mode 100644
+index 000000000..34da6ee82
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/guard-template.mm
+@@ -0,0 +1,63 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s
++// expected-no-diagnostics
++
++template <class T> bool accepts(T value) { return value != 0; }
++
++template <class T> int dependent_guard(T source) {
++  guard let first = source, second = source, accepts(first),
++        var third = source, fourth = source else { return 0; }
++  third += first;
++  fourth += second;
++  if let local = source, next = source {
++    return local + next + third + fourth;
++  } else {
++    return first + second;
++  }
++}
++
++template <class T> int dependent_if(T source) {
++  if var first = source, second = source {
++    first += second;
++    auto capture = [first] { return first; };
++    return capture();
++  }
++  return 0;
++}
++
++template <class T> int binding_used_in_later_lambda(T source) {
++  guard let first = source,
++        second = Some(int, [&] { return first; }()) else { return 0; }
++  return second;
++}
++
++template <class T> struct Holder {
++  int run(T source) {
++    guard let first = source else { return 0; }
++    if var second = source, third = source {
++      second += first + third;
++      return second;
++    }
++    return first;
++  }
++};
++
++template int dependent_guard<Optional(int)>(Optional(int));
++template int dependent_if<Optional(int)>(Optional(int));
++template int binding_used_in_later_lambda<Optional(int)>(Optional(int));
++template struct Holder<Optional(int)>;
++
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} dependent_guard
++// CHECK: ObjC3GuardStmt {{.*}} conditions=5
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} dependent_guard
++// CHECK: ObjC3GuardStmt {{.*}} conditions=5
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} dependent_if
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} dependent_if
++// CHECK: ObjC3IfBindingStmt {{.*}} conditions=2
++// CHECK-LABEL: FunctionTemplateDecl {{.*}} binding_used_in_later_lambda
++// CHECK: ObjC3GuardStmt {{.*}} conditions=2
++// CHECK: FunctionDecl {{.*}} binding_used_in_later_lambda
++// CHECK: ObjC3GuardStmt {{.*}} conditions=2
