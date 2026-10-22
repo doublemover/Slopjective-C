@@ -3,17 +3,17 @@
   "status": "PASS",
   "date": "2026-10-22",
   "scope": "private native condition AST, binding semantics/ownership lowering and mandatory-exit foundation in the admitted development compiler",
-  "implementation_commit": "7fdeb6bca6dfc816754998f7d1edd833e1784cca",
+  "implementation_commit": "503b1d2bc17d71bd132cf92f92ce539a2393a3e7",
   "compiler_binding": "admitted-development",
-  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-607ba21b4b56-fd761312",
-  "patch_digest": "607ba21b4b566e8640f1fb9754145192e73577eb7ef1c24662c6c1543471267c",
-  "compiler_sha256": "f984f75cd17c9db5f6d0a96ffa84c37a0eedefe32ad3b33666cd40554825f22a",
-  "ast_tests_sha256": "9d7636be2ed32917834dc7613539c9c64a1b1ca805c92f9f8079bfb319aecb95",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-686e86262b48-fd761312",
+  "patch_digest": "686e86262b489ed8da24cfc0e3f44d11a23eb7a6e979296373aa43e53b9dafed",
+  "compiler_sha256": "6b7453898ed3fccfca922bf807a1e0ba2bc2a1886d00a04f499a57f6ce968704",
+  "ast_tests_sha256": "32ed89966e43f3cca411e59806b8c13608d0f3b5925a1ca14caf561a67cef976",
   "guard_source_syntax_admitted": false,
   "profile_conformance_claimed": false,
-  "installed_sdk_rebuilt_for_this_milestone": false,
+  "installed_sdk_rebuilt_for_this_milestone": true,
   "verification": {
-    "clang_regressions_passed": 231,
+    "clang_regressions_passed": 232,
     "clang_regressions_unsupported": 3,
     "ast_contract_tests_passed": 84,
     "production_guard_exit_cases": 53,
@@ -98,8 +98,8 @@
       ],
       "module_input": "maintained native AST CodeGen tests; public parsing is disabled",
       "executable_model": "non-PIE private native AST modules",
-      "runtime_sdk_seal": "41c4fa92a870a18616830ea5646ef62dadae46adee68f92fe67aa47884350ea9",
-      "runtime_library_sha256": "c1a99737a1d0ab49f3a76fdd9424330585f4134fa44b1f7ec4ec720abe826012",
+      "runtime_sdk_seal": "184b163ea997412606ef3614ba0f3be55179298c3e1699de461fcb52263c3f6f",
+      "runtime_library_sha256": "c2cce11d1c7ff3f41dc7e1a44765e5098c97340cb52d9aad5e502521c66be2d1",
       "temporary_artifacts_reclaimed": true,
       "frontend_optimization": [
         "O0",
@@ -219,10 +219,19 @@
       "stored_addresses_preserve_ssa_dominance": true,
       "native_arc_cleanup_cfg_qualified": false
     },
-    "sdk_packaging_tooling_tests_passed": 41
+    "sdk_packaging_tooling_tests_passed": 41,
+    "analysis_diagnostic_regressions": [
+      "checked handler runtime initialization survives dataflow/PCH",
+      "synthetic native unwind exits are not ordinary fallthrough",
+      "genuine uninitialized locals and missing return remain errors"
+    ],
+    "native_async_development_overlay": {
+      "commands_passed": 104,
+      "report_sha256": "1def12beb988eeac68b18cbd9a2eddc5bfac1cb97212154da329371de1f73e6f"
+    }
   },
-  "foundation_report_sha256": "4ddb26b0f90a4534c2d3049f1d96ae3f7208ab63a8527ee8bfd54349dc1e17ea",
-  "runtime_report_sha256": "152da119c7754212ed332e63a4f96a1ccad65708b8f33122a70d33062a78a86c",
+  "foundation_report_sha256": "4e8b95975c6a91e1f18398fb718e84d831bd46ac554cf04d64c918dda23efcde",
+  "runtime_report_sha256": "6d570ad5beb42e0c50368998a496e08d1af6f709740072a7a670018183d01481",
   "ast_consumer_test_sha256": "2873894a083ee48f5afaaed2043184bbc7ff40a3a31890f3d8e813f6253a6af6",
   "ast_codegen_test_sha256": "c7d0b29c36e6e0e85cac2ffc8855f1378354aec4c2bec6e7c73ddd52cc2a4572",
   "qualification_script_sha256": "c415ff847f137dcf0510b0d5a0abc2a2a38bc5f4570df0fe816b5a33f2293204",
@@ -233,11 +242,12 @@
     "contextual parser admission, recovery and nullable flow refinements",
     "guard source/PCH/interface/debugger runtime gates and SDK delivery"
   ],
-  "activated_sdk_receipt": "docs/support/linux_match_results_acceptance.json",
+  "activated_sdk_receipt": "docs/support/linux_defer_scope_release_acceptance.json",
   "scope_test_sha256": "eaf10b31302d5e440a91436136057b717668f003a1e4aff9985b0c71f5abb0cd",
   "defer_source_inputs_sha256": {
     "scripts/objc3c_native_validation/defer_source.py": "d3ab922ac042ba9ec83ae04abe8aa5b2cfe25b07dd29ce63c6d34c98b86765e3",
     "tests/clang_foundation/defer_control_flow/runtime.h": "2232d303b9518333d07f093c315a9d3471648f9c1d2267f47367756440cfbeba",
     "tests/clang_foundation/defer_control_flow/main.m": "c5c062dd6abfc65ccaddea24a47af1a636c22b5b6da112ea8a395299dc4840aa"
-  }
+  },
+  "installed_sdk_public_guard_qualified": false
 }

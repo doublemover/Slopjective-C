@@ -28,7 +28,7 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-231 passing Clang regressions, 84 AST contract tests, 53 production exit-proof
+232 passing Clang regressions, 84 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
@@ -208,5 +208,7 @@ model and public guard source admission remain separate work.
   ARC/MRC and O0/O2, followed by a rebuilt and activated SDK.
 
 This is development work; public guard syntax and profile conformance are not
-claimed by the scope-exit foundation alone. The activated SDK remains the
-[qualified match release](../support/linux_match_results_acceptance.json).
+claimed by the scope-exit foundation alone. The activated SDK now delivers the deferred cleanup and analysis fixes through
+the [qualified scope-release archive](../support/linux_defer_scope_release_acceptance.json).
+All 26 installed suites and fresh Debian 13 / Ubuntu 26.04 consumers pass. Public
+guard syntax and installed guard qualification remain gated.

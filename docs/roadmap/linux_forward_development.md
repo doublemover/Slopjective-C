@@ -14,11 +14,14 @@ historical milestone checklists do not establish current Clang conformance.
 
 ## Delivered foundations
 
-The [current SDK receipt](../support/linux_match_results_acceptance.json) identifies
-the activated archive, its 25 installed suites and fresh Debian 13 / Ubuntu 26.04 checks. That release includes
+The [current SDK receipt](../support/linux_defer_scope_release_acceptance.json) identifies
+the activated archive, its 26 installed suites and fresh Debian 13 / Ubuntu 26.04 checks. That release includes
 extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract, native standard-library modules,
 per-callback and per-resume autorelease pools, fair actor scheduling and the
-current SDK-independent package install command. New development must produce a
+current SDK-independent package install command. Deferred cleanup now preserves
+managed source-scope releases and native action order, copied bodies and original
+exception state; checked-handler initialization and unwind diagnostics also
+pass the coroutine gate. New development must produce a
 new archive and receipt before it is described as delivered in that SDK.
 
 The public synchronous compiler supports native `defer`, `Optional`, `Result`
