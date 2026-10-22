@@ -27087,16 +27087,25 @@ index 5d9336fa6..a4b01245b 100644
        break;
      default:
 diff --git a/clang-tools-extra/clangd/unittests/CMakeLists.txt b/clang-tools-extra/clangd/unittests/CMakeLists.txt
-index d596ba77e..3e936f5b1 100644
+index d596ba77e..bfa65d4f3 100644
 --- a/clang-tools-extra/clangd/unittests/CMakeLists.txt
 +++ b/clang-tools-extra/clangd/unittests/CMakeLists.txt
-@@ -200,6 +200,25 @@ if (CLANGD_BUILD_XPC)
+@@ -31,6 +31,7 @@ gen_decision_forest(${CMAKE_CURRENT_SOURCE_DIR}/decision_forest_model DecisionFo
+ add_custom_target(ClangdUnitTests)
+ set_target_properties(ClangdUnitTests PROPERTIES FOLDER "Clang Tools Extra/Tests")
+ add_unittest(ClangdUnitTests ClangdTests
++  PARTIAL_SOURCES_INTENDED
+   Annotations.cpp
+   ASTTests.cpp
+   ASTSignalsTests.cpp
+@@ -200,6 +201,26 @@ if (CLANGD_BUILD_XPC)
    add_subdirectory(xpc)
  endif ()
  
 +# Keep the native source-tooling contract runnable without the broad clangd
 +# suite, while exercising the production rename, references and hover paths.
 +add_unittest(ClangdUnitTests ObjC3SourceToolsTests
++  PARTIAL_SOURCES_INTENDED
 +  ObjC3SourceToolsTests.cpp
 +  Annotations.cpp
 +  TestFS.cpp
