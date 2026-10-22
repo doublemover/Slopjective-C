@@ -597,3 +597,404 @@ index 000000000..242dd50fd
 +// CHECK: (int) $1 = 42
 +// CHECK: exited with status = 0
 +
+diff --git a/lldb/source/DataFormatters/FormatManager.cpp b/lldb/source/DataFormatters/FormatManager.cpp
+index e9f0e51e3..6bff5c7f1 100644
+--- a/lldb/source/DataFormatters/FormatManager.cpp
++++ b/lldb/source/DataFormatters/FormatManager.cpp
+@@ -576,6 +576,7 @@ ConstString FormatManager::GetTypeForCache(ValueObject &valobj,
+ std::vector<lldb::LanguageType>
+ FormatManager::GetCandidateLanguages(lldb::LanguageType lang_type) {
+   switch (lang_type) {
++  case lldb::eLanguageTypeObjC_plus_plus:
+   case lldb::eLanguageTypeC:
+   case lldb::eLanguageTypeC89:
+   case lldb::eLanguageTypeC99:
+diff --git a/lldb/source/Plugins/Language/ObjC/CMakeLists.txt b/lldb/source/Plugins/Language/ObjC/CMakeLists.txt
+index 5e554b220..b3520afd3 100644
+--- a/lldb/source/Plugins/Language/ObjC/CMakeLists.txt
++++ b/lldb/source/Plugins/Language/ObjC/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ add_lldb_library(lldbPluginObjCLanguage PLUGIN
+   ObjCLanguage.cpp
++  ObjC3Carriers.cpp
+   CF.cpp
+   CFBasicHash.cpp
+   Cocoa.cpp
+diff --git a/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.cpp b/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.cpp
+new file mode 100644
+index 000000000..de833a5b5
+--- /dev/null
++++ b/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.cpp
+@@ -0,0 +1,258 @@
++//===-- ObjC3Carriers.cpp - Native Optional/Result inspection ---------------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "ObjC3Carriers.h"
++#include "lldb/DataFormatters/FormattersHelpers.h"
++#include "lldb/Symbol/CompilerType.h"
++#include "lldb/Utility/Stream.h"
++#include "lldb/ValueObject/ValueObject.h"
++#include "llvm/ADT/StringRef.h"
++#include <string>
++
++using namespace lldb;
++using namespace lldb_private;
++
++namespace {
++
++enum class CarrierKind { Unknown, Optional, Result };
++enum class CarrierState { InvalidLayout, Unavailable, InvalidTag, None, Some,
++                          Ok, Err };
++
++CarrierKind GetCarrierKind(CompilerType type) {
++  type = type.GetNonReferenceType().GetFullyUnqualifiedType();
++  // DWARF preserves the canonical source spelling as a typedef over the
++  // compiler-owned representation. User typedefs can wrap that identity.
++  for (unsigned depth = 0; type && depth != 64; ++depth) {
++    llvm::StringRef name = type.GetTypeName().GetStringRef();
++    if (name.starts_with("Optional(") && name.ends_with(")"))
++      return CarrierKind::Optional;
++    if (name.starts_with("Result(") && name.ends_with(")"))
++      return CarrierKind::Result;
++    if (!type.IsTypedefType())
++      break;
++    type = type.GetTypedefedType().GetFullyUnqualifiedType();
++  }
++  return CarrierKind::Unknown;
++}
++
++struct CarrierInspection {
++  CarrierKind kind = CarrierKind::Unknown;
++  CarrierState state = CarrierState::InvalidLayout;
++  uint64_t tag = 0;
++  bool has_selected_storage = false;
++  llvm::StringRef selected_member;
++  llvm::StringRef selected_name;
++
++  llvm::StringRef GetCaseName() const {
++    switch (state) {
++    case CarrierState::None: return "None";
++    case CarrierState::Some: return "Some";
++    case CarrierState::Ok: return "Ok";
++    case CarrierState::Err: return "Err";
++    default: return {};
++    }
++  }
++};
++
++CarrierInspection InspectCarrier(ValueObject &value) {
++  CarrierInspection result;
++  result.kind = GetCarrierKind(value.GetCompilerType());
++  if (result.kind == CarrierKind::Unknown)
++    return result;
++
++  CompilerType record = value.GetCompilerType().GetNonReferenceType()
++                            .GetCanonicalType();
++  unsigned fields = record.GetNumFields();
++  if (fields != 1 && fields != 2)
++    return result;
++  std::string name;
++  CompilerType tag_type = record.GetFieldAtIndex(0, name, nullptr, nullptr,
++                                                 nullptr);
++  if (name != "__objc3_state" || !tag_type.IsBoolean())
++    return result;
++
++  bool has_value = false, has_success = false, has_error = false;
++  if (fields == 2) {
++    CompilerType payload = record.GetFieldAtIndex(1, name, nullptr, nullptr,
++                                                 nullptr).GetCanonicalType();
++    if (name != "__objc3_payload" ||
++        payload.GetTypeClass() != eTypeClassUnion)
++      return result;
++    unsigned arms = payload.GetNumFields();
++    if (!arms || arms > 2)
++      return result;
++    for (unsigned index = 0; index != arms; ++index) {
++      if (!payload.GetFieldAtIndex(index, name, nullptr, nullptr, nullptr))
++        return result;
++      if (name == "__objc3_value" && !has_value)
++        has_value = true;
++      else if (name == "__objc3_success" && !has_success)
++        has_success = true;
++      else if (name == "__objc3_error" && !has_error)
++        has_error = true;
++      else
++        return result;
++    }
++    if (result.kind == CarrierKind::Optional ?
++            (!has_value || has_success || has_error) : has_value)
++      return result;
++  }
++
++  // Only the tag is read before selecting an arm. Inspecting types above
++  // neither reads nor materializes either union member's value.
++  ValueObjectSP tag = value.GetChildMemberWithName("__objc3_state");
++  bool readable = false;
++  result.tag = tag ? tag->GetValueAsUnsigned(0, &readable) : 0;
++  if (!readable) {
++    result.state = CarrierState::Unavailable;
++    return result;
++  }
++  if (result.tag > 1) {
++    result.state = CarrierState::InvalidTag;
++    return result;
++  }
++  if (result.kind == CarrierKind::Optional) {
++    result.state = result.tag ? CarrierState::Some : CarrierState::None;
++    result.has_selected_storage = result.tag && has_value;
++    result.selected_member = "__objc3_value";
++    result.selected_name = "value";
++  } else {
++    result.state = result.tag ? CarrierState::Ok : CarrierState::Err;
++    result.has_selected_storage = result.tag ? has_success : has_error;
++    result.selected_member = result.tag ? "__objc3_success" : "__objc3_error";
++    result.selected_name = result.tag ? "success" : "error";
++  }
++  return result;
++}
++
++ValueObjectSP GetSelectedPayload(ValueObject &value,
++                                  const CarrierInspection &inspection) {
++  if (!inspection.has_selected_storage)
++    return nullptr;
++  ValueObjectSP payload = value.GetChildMemberWithName("__objc3_payload");
++  return payload ? payload->GetChildMemberWithName(inspection.selected_member)
++                 : nullptr;
++}
++
++bool CarrierSummary(ValueObject &value, Stream &stream,
++                     const TypeSummaryOptions &) {
++  ValueObjectSP raw = value.GetNonSyntheticValue();
++  if (!raw)
++    return false;
++  CarrierInspection inspection = InspectCarrier(*raw);
++  if (inspection.kind == CarrierKind::Unknown)
++    return false;
++  switch (inspection.state) {
++  case CarrierState::InvalidLayout:
++    stream.PutCString("<invalid native carrier layout>");
++    return true;
++  case CarrierState::Unavailable:
++    stream.PutCString("<carrier tag unavailable>");
++    return true;
++  case CarrierState::InvalidTag:
++    stream.Printf("<invalid carrier tag %llu>",
++                  static_cast<unsigned long long>(inspection.tag));
++    return true;
++  default:
++    break;
++  }
++  stream.PutCString(inspection.GetCaseName());
++  if (inspection.state == CarrierState::None)
++    return true;
++  stream.PutChar('(');
++  if (!inspection.has_selected_storage) {
++    stream.PutCString("void");
++  } else if (ValueObjectSP payload = GetSelectedPayload(*raw, inspection)) {
++    CompilerType payload_type = payload->GetCompilerType();
++    uint32_t info = payload_type.GetTypeInfo();
++    bool readable = false;
++    if ((info & eTypeIsObjC) && (info & eTypeIsPointer) &&
++        payload->GetValueAsUnsigned(1, &readable) == 0 && readable) {
++      // Some(nil) is an engaged carrier. Its tag, never its pointer value,
++      // determines whether it has a synthetic payload child.
++      stream.PutCString("nil");
++    } else if (GetCarrierKind(payload_type) != CarrierKind::Unknown) {
++      if (const char *summary = payload->GetSummaryAsCString())
++        stream.PutCString(summary);
++      else
++        stream.PutCString("<unavailable>");
++    } else if (const char *scalar = payload->GetValueAsCString()) {
++      stream.PutCString(scalar);
++    } else {
++      // Aggregate payloads are expanded through the selected synthetic child.
++      // Do not invoke an object description or execute code in the target.
++      stream.PutCString("{...}");
++    }
++  } else {
++    stream.PutCString("<unavailable>");
++  }
++  stream.PutChar(')');
++  return true;
++}
++
++class CarrierFrontEnd final : public SyntheticChildrenFrontEnd {
++  CarrierInspection m_inspection;
++
++public:
++  explicit CarrierFrontEnd(ValueObject &value)
++      : SyntheticChildrenFrontEnd(value) {
++    Update();
++  }
++
++  llvm::Expected<uint32_t> CalculateNumChildren() override {
++    return m_inspection.has_selected_storage ? 1U : 0U;
++  }
++
++  bool MightHaveChildren() override {
++    return m_inspection.has_selected_storage;
++  }
++
++  ValueObjectSP GetChildAtIndex(uint32_t index) override {
++    if (index != 0)
++      return nullptr;
++    ValueObjectSP payload = GetSelectedPayload(m_backend, m_inspection);
++    return payload ? payload->Clone(m_inspection.selected_name) : nullptr;
++  }
++
++  llvm::Expected<size_t> GetIndexOfChildWithName(ConstString name) override {
++    if (m_inspection.has_selected_storage &&
++        name.GetStringRef() == m_inspection.selected_name)
++      return 0;
++    return llvm::createStringErrorV("carrier has no active child named '{0}'",
++                                   name);
++  }
++
++  ChildCacheState Update() override {
++    m_inspection = InspectCarrier(m_backend);
++    // A stop, a debugger write or an arm transition can invalidate every
++    // previously selected child, even when the carrier's address is stable.
++    return ChildCacheState::eRefetch;
++  }
++};
++
++SyntheticChildrenFrontEnd *CreateCarrierFrontEnd(CXXSyntheticChildren *,
++                                                ValueObjectSP value) {
++  if (!value || GetCarrierKind(value->GetCompilerType()) == CarrierKind::Unknown)
++    return nullptr;
++  return new CarrierFrontEnd(*value);
++}
++
++} // namespace
++
++void formatters::LoadObjC3CarrierFormatters(TypeCategoryImplSP category) {
++  if (!category)
++    return;
++  constexpr llvm::StringLiteral pattern =
++      "^(const |volatile )*(Optional|Result)\\(.+\\)( (&|&&))?$";
++  TypeSummaryImpl::Flags summary;
++  summary.SetCascades(true).SetSkipPointers(true).SetSkipReferences(false)
++      .SetDontShowValue(true).SetDontShowChildren(false);
++  AddCXXSummary(category, CarrierSummary, "native ObjC3 carrier selected arm",
++                pattern, summary, true);
++  SyntheticChildren::Flags synthetic;
++  synthetic.SetCascades(true).SetSkipPointers(true).SetSkipReferences(false);
++  AddCXXSynthetic(category, CreateCarrierFrontEnd,
++                  "native ObjC3 carrier active payload", pattern, synthetic,
++                  true);
++}
+diff --git a/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.h b/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.h
+new file mode 100644
+index 000000000..1c3a67f57
+--- /dev/null
++++ b/lldb/source/Plugins/Language/ObjC/ObjC3Carriers.h
+@@ -0,0 +1,20 @@
++//===-- ObjC3Carriers.h - Native Optional/Result inspection -------*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#ifndef LLDB_SOURCE_PLUGINS_LANGUAGE_OBJC_OBJC3CARRIERS_H
++#define LLDB_SOURCE_PLUGINS_LANGUAGE_OBJC_OBJC3CARRIERS_H
++
++#include "lldb/lldb-forward.h"
++
++namespace lldb_private {
++namespace formatters {
++
++/// Register native C++ providers; these do not require Python or an ObjC
++/// runtime expression to inspect a carrier.
++void LoadObjC3CarrierFormatters(lldb::TypeCategoryImplSP category);
++
++} // namespace formatters
++} // namespace lldb_private
++
++#endif
+diff --git a/lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp b/lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp
+index 42c53e1b8..ad5b85043 100644
+--- a/lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp
++++ b/lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp
+@@ -33,6 +33,7 @@
+ #include "NSDictionary.h"
+ #include "NSSet.h"
+ #include "NSString.h"
++#include "ObjC3Carriers.h"
+ 
+ using namespace lldb;
+ using namespace lldb_private;
+@@ -246,6 +247,8 @@ static void LoadObjCFormatters(TypeCategoryImplSP objc_category_sp) {
+   if (!objc_category_sp)
+     return;
+ 
++  LoadObjC3CarrierFormatters(objc_category_sp);
++
+   TypeSummaryImpl::Flags objc_flags;
+   objc_flags.SetCascades(false)
+       .SetSkipPointers(true)
+diff --git a/lldb/test/Shell/Expr/objc3-carrier-summaries.mm b/lldb/test/Shell/Expr/objc3-carrier-summaries.mm
+new file mode 100644
+index 000000000..ccbd3f5bf
+--- /dev/null
++++ b/lldb/test/Shell/Expr/objc3-carrier-summaries.mm
+@@ -0,0 +1,61 @@
++// REQUIRES: native, system-linux
++// UNSUPPORTED: remote-linux
++// RUN: %clangxx_host -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -g -O0 %s -o %t
++// RUN: %lldb -b -x %t \
++// RUN:   -o "settings set target.disable-aslr false" \
++// RUN:   -o "breakpoint set -n carrier_first_stop" \
++// RUN:   -o "breakpoint set -n carrier_second_stop" \
++// RUN:   -o run -o up \
++// RUN:   -o "frame variable number absent nested result unit" \
++// RUN:   -o "frame variable number.value result.success" \
++// RUN:   -o "expression number.__objc3_payload.__objc3_value + result.__objc3_payload.__objc3_success" \
++// RUN:   -o continue -o up -o "frame variable number result" \
++// RUN:   -o "frame variable result.error" -o continue 2>&1 | FileCheck %s
++
++typedef Optional(int) Number;
++typedef Optional(Number) Nested;
++typedef Result(int, long) Outcome;
++
++__attribute__((noinline)) void carrier_first_stop() {
++  __asm__ volatile("" ::: "memory");
++}
++__attribute__((noinline)) void carrier_second_stop() {
++  __asm__ volatile("" ::: "memory");
++}
++
++int main() {
++  Number number = Some(int, 7);
++  Number absent = None(int);
++  Nested nested = Some(Number, Some(int, 9));
++  Outcome result = Ok(int, long, 42);
++  Optional(void) unit = Some(void, (void)0);
++  carrier_first_stop();
++  number = None(int);
++  result = Err(int, long, -5L);
++  carrier_second_stop();
++  return hasValue(number) || isOk(result);
++}
++
++// CHECK: (lldb) frame variable number absent nested result unit
++// CHECK: number = Some(7)
++// CHECK: value = 7
++// CHECK: absent = None
++// CHECK-NOT: __objc3_
++// CHECK: nested = Some(Some(9))
++// CHECK: result = Ok(42)
++// CHECK: success = 42
++// CHECK-NOT: error =
++// CHECK: unit = Some(void)
++// CHECK: (lldb) frame variable number.value result.success
++// CHECK: number.value = 7
++// CHECK: result.success = 42
++// CHECK: (int) $0 = 49
++// CHECK: (lldb) frame variable number result
++// CHECK: number = None
++// CHECK-NOT: value =
++// CHECK: result = Err(-5)
++// CHECK: error = -5
++// CHECK-NOT: success =
++// CHECK: (lldb) frame variable result.error
++// CHECK: result.error = -5
++// CHECK: exited with status = 0
