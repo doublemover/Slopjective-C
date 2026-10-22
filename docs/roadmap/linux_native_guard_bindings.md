@@ -28,7 +28,7 @@ The proof does not claim a general theorem about loop termination.
 ## Qualified development foundation
 
 The [development receipt](../support/linux_guard_ast_acceptance.json) binds
-229 passing Clang regressions, 79 AST contract tests, 53 production exit-proof
+229 passing Clang regressions, 80 AST contract tests, 53 production exit-proof
 cases and eight focused tooling tests to the exact sealed inputs. Compiler,
 clangd and LLDB rebuilds pass. Native condition nodes pass traversal, printing,
 profiling, structural comparison, AST import and save/reload serialization.
@@ -133,6 +133,22 @@ proofs and caught carrier-destruction cases exercise the production checker.
 A checked-error regression also verifies that initializer failure destroys
 previously completed locals while excluding the local still under construction.
 The source statement list and public static-analysis gates remain explicit.
+
+## Registered deferred cleanup CFG
+
+Normal and checked-error exits now execute registered deferred bodies in LIFO
+order. The source registration does not execute its body. Cleanup copies preserve
+their lexical checked/native context, isolate local labels and finish local goto
+backpatches before restoring another copy. Return, break and continue destinations
+remain after the cleanup subgraph. The 66 trace cases cross all three source modes
+and native marker options, including early exits, nested scopes, loop transfers,
+gotos, copied labels, noreturn calls and matched/unmatched checked handlers.
+
+Native exception unwinding and computed/asm jumps remain gated. The mandatory
+exit proof still rejects defer until its complete unwind model is admitted.
+An execution probe also confirms an existing ARC ordering defect at O0/O2:
+a managed local declared after a defer can release before the action. That must
+be corrected with destination-aware scope cleanup before source feature delivery.
 
 ## Implementation still to complete
 
