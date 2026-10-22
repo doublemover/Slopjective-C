@@ -15,7 +15,7 @@
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
-      "sha256": "f41442d8f8ef9379c80aa0aee9ebc575fc7c6a586f16bd2566c4c1e662a225da"
+      "sha256": "42cf1b8081ad1d17718f50a95793147be96acadf53c762cafe6393ade465da85"
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
@@ -23,11 +23,11 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "3ecda79c7e30bf32732dbb507b82ac1488637c7540dc870da36d26cadd1fd7cb"
+      "sha256": "ffc9c4321ec3055119780cabeaa34b32fa0efea49df40295e244d0c82863c0a5"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "426effae4be0c996f0951ee78c5e1c2d7aeb0d60f43ef4abdb3ed015886b31a6"
+      "sha256": "af6f8fa23dedc052b93c39da7f2c5cc455efb2276bb6b0c5ab42fee4e98050f4"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

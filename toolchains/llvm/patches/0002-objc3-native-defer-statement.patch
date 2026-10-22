@@ -203,7 +203,7 @@ index 15d0e6435..ff84dd3d9 100644
  DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
      : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..26cef9bb4 100644
+index 9a97d52fd..1cb582f65 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -524,7 +524,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -215,7 +215,7 @@ index 9a97d52fd..26cef9bb4 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1939,6 +1939,250 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1939,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -260,8 +260,11 @@ index 9a97d52fd..26cef9bb4 100644
 +void StmtPrinter::VisitObjC3OptionalAccessExpr(ObjC3OptionalAccessExpr *Node) {
 +  if (!Node->isMessage()) {
 +    OS << "(";
++    bool Nested = isa<ObjC3OptionalAccessExpr>(Node->getReceiver());
++    if (!Nested) OS << "(";
 +    PrintExpr(Node->getReceiver());
-+    OS << ")?." << Node->getMember()->getName();
++    if (!Nested) OS << ")";
++    OS << "?." << Node->getMember()->getName() << ")";
 +    return;
 +  }
 +  OS << "[(";

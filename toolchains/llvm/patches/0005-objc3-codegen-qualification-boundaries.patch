@@ -22637,7 +22637,7 @@ index 000000000..9c2d08d67
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
 new file mode 100644
-index 000000000..2e659a64a
+index 000000000..5e4c0de73
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
 @@ -0,0 +1,33 @@
@@ -22664,7 +22664,7 @@ index 000000000..2e659a64a
 +}
 +#elif defined(TEST_PLACEMENT)
 +void replace(Mixed &value) {
-+  new (&value) Mixed{}; // expected-error {{native C++ carrier field must be explicitly initialized}}
++  new (&value) Mixed{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
 +}
 +#else
 +void destroy(Mixed *value) {

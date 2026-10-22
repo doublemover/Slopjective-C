@@ -25647,7 +25647,7 @@ index 000000000..c3195afc0
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-aliases.mm b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
 new file mode 100644
-index 000000000..f81d8808e
+index 000000000..9e52a88b8
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
 @@ -0,0 +1,88 @@
@@ -25659,10 +25659,10 @@ index 000000000..f81d8808e
 +@end
 +typedef AliasReceiver * _Nullable Nullable;
 +
-+void mutate_reference(Nullable &);
++void mutate_reference(Nullable __strong &);
 +
 +void conditional_reference_store(Nullable first, Nullable second, bool choose) {
-+  Nullable &alias = choose ? first : second;
++  Nullable __strong &alias = choose ? first : second;
 +  guard first != (id)0, second != (id)0 else { return; }
 +  alias = (id)0;
 +  [first ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
@@ -25677,21 +25677,21 @@ index 000000000..f81d8808e
 +}
 +
 +void comma_reference_alias(Nullable value) {
-+  Nullable &alias = ((void)0, value);
++  Nullable __strong &alias = ((void)0, value);
 +  guard value != (id)0 else { return; }
 +  alias = (id)0;
 +  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
 +}
 +
 +void statement_expression_reference_alias(Nullable value) {
-+  Nullable &alias = *({ &value; });
++  Nullable __strong &alias = *({ &value; });
 +  guard value != (id)0 else { return; }
 +  alias = (id)0;
 +  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
 +}
 +
 +void explicit_reference_cast_alias(Nullable value) {
-+  Nullable &alias = static_cast<Nullable &>(value);
++  Nullable __strong &alias = static_cast<Nullable __strong &>(value);
 +  guard value != (id)0 else { return; }
 +  alias = (id)0;
 +  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
@@ -25707,14 +25707,14 @@ index 000000000..f81d8808e
 +}
 +
 +void direct_alias_preserves_exact_source_identity(Nullable value) {
-+  Nullable &alias = value;
++  Nullable __strong &alias = value;
 +  guard alias != (id)0 else { return; }
 +  [value ping];
 +  [alias ping];
 +}
 +
 +void a_materialized_copy_has_independent_storage(Nullable value) {
-+  Nullable &&copy = Nullable(value);
++  Nullable __strong &&copy = Nullable(value);
 +  value = (id)0;
 +  guard copy != (id)0 else { return; }
 +  [copy ping];
@@ -27871,7 +27871,7 @@ index 000000000..fdc5ea08a
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..3b80caff0
+index 000000000..749587f0b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 @@ -0,0 +1,481 @@
@@ -28352,7 +28352,7 @@ index 000000000..3b80caff0
 +
 +bool clang::checkObjC3ResourceFlow(Sema &S, Decl *Callable, Stmt *Body) {
 +  if (!S.getLangOpts().ObjC3 || S.getLangOpts().ObjC3Profile != 3 || !Body ||
-+      S.getDiagnostics().hasErrorOccurred())
++      (Callable && Callable->isInvalidDecl()))
 +    return false;
 +  return ResourceFlow(S).check(Callable, Body);
 +}
@@ -28754,7 +28754,7 @@ index 000000000..8e42f951a
 +}
 diff --git a/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
 new file mode 100644
-index 000000000..b768edfba
+index 000000000..10dcc953c
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
 @@ -0,0 +1,40 @@
@@ -28794,13 +28794,13 @@ index 000000000..b768edfba
 +int (*sync)(int) = bound; // expected-error {{incompatible function pointer types}}
 +AsyncInt valid = bound;
 +int invalid_value(void) {
-+  return bound(0); // expected-error {{returning 'objc3_async_frame'}}
++  return bound(0); // expected-error {{returning 'struct objc3_async_frame'}}
 +}
 +#endif
 +#endif
 diff --git a/clang/test/ObjC3/Sema/optional-access.m b/clang/test/ObjC3/Sema/optional-access.m
 new file mode 100644
-index 000000000..eb6065df6
+index 000000000..5f532bc86
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/optional-access.m
 @@ -0,0 +1,43 @@
@@ -28821,7 +28821,7 @@ index 000000000..eb6065df6
 +void nonnull(id _Nonnull);
 +
 +void result_types(Receiver * _Nullable receiver, Receiver * _Nonnull fallback) {
-+  nonnull(receiver?.next); // expected-warning {{implicit conversion from nullable pointer}}
++  nonnull(receiver?.next); // expected-warning 2 {{implicit conversion from nullable pointer}}
 +  nonnull(receiver?.next ?? fallback);
 +  (void)receiver?.number; // expected-error {{optional member access cannot return 'int'}}
 +  (void)receiver?.record; // expected-error {{optional member access cannot return}}
