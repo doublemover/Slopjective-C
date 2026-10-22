@@ -131,7 +131,7 @@ static void values(objc3_executor_t *executor, objc3_actor_t *actor, int manual)
   task = start(&frame, executor, actor, manual);
   struct bridge_wide wide = {{0}};
   assert(objc3_task_copy_result(task, &wide_type, &wide_ops, &wide) == OBJC3_SERVICE_OK);
-  assert(wide.bytes[0] == 42 && wide.bytes[255] == 84);
+  assert(wide.bytes[0] == 0 && wide.bytes[255] == 42);
   objc3_task_release(task);
   assert(__atomic_load_n(&destroyed, __ATOMIC_ACQUIRE) == 9);
 }

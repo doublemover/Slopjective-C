@@ -67,21 +67,39 @@ def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
 
 
 def _run_qualifications(tasks: dict, workers: int) -> dict:
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
     results, failures = {}, []
-    # Always join every independent gate before reporting failure. Each gate owns
-    # a disjoint output directory, so its receipt and logs survive other failures.
+    remaining = iter(tasks.items())
+    # Drain already running gates and preserve their evidence on failure. Stop
+    # starting more work against a candidate that already needs repair.
     with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-        futures = {name: executor.submit(task) for name, task in tasks.items()}
-        for name, future in futures.items():
-            try:
-                results[name] = future.result()
-            except Exception as error:
-                failures.append(f'{name}: {error}')
+        active = {}
+
+        def fill():
+            while len(active) < max(1, workers):
+                try:
+                    name, task = next(remaining)
+                except StopIteration:
+                    return
+                active[executor.submit(task)] = name
+
+        fill()
+        while active:
+            done, _ = wait(active, return_when=FIRST_COMPLETED)
+            for future in done:
+                name = active.pop(future)
+                try:
+                    results[name] = future.result()
+                except Exception as error:
+                    failures.append(f'{name}: {error}')
+            if not failures:
+                fill()
     if failures:
-        raise ValueError('installed SDK qualification failed: ' + '; '.join(failures))
-    return results
+        skipped = len(tasks) - len(results) - len(failures)
+        raise ValueError('installed SDK qualification failed: ' + '; '.join(failures)
+                         + f'; {skipped} later suites not started')
+    return {name: results[name] for name in tasks}
 
 
 def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, counts: dict) -> dict:
@@ -333,6 +351,13 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
                              data['seal_sha256'], suite, counts)
+    priority = ('installed_recursive_carriers', 'installed_async_c_abi',
+                'installed_stdlib', 'installed_match_results',
+                'installed_task_coroutines', 'installed_native_async',
+                'installed_carrier_debugger', 'installed_optional_access',
+                'installed_guard_bindings', 'installed_defer_control_flow')
+    tasks = {**{name: tasks[name] for name in priority},
+             **{name: task for name, task in tasks.items() if name not in priority}}
     qualification = _run_qualifications(tasks, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')

@@ -3,7 +3,10 @@
 int main() {
   {
     CarrierRecord source = record_make(70);
-    if (record_live != 2 || record_inspect(source) != 4 || record_live != 2)
+    if (record_live != 2)
+      return 1;
+    int observed = record_inspect(source);
+    if (observed != 4 || record_live != 2)
       return 1;
     CarrierRecord copied = record_roundtrip(source);
     if (record_live != 4 || record_copies != 4 || record_moves != 2 ||

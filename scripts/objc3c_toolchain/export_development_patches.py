@@ -288,6 +288,7 @@ PACKETS = {
         "clang/test/ObjC3/Analysis/defer-native-cxx.mm",
         "clang/include/clang/Analysis/CFG.h",
         "clang/lib/Analysis/CFG.cpp",
+        "clang/lib/Analysis/UninitializedValues.cpp",
         "clang/lib/Analysis/PathDiagnostic.cpp",
         "clang/lib/StaticAnalyzer/Core/SymbolManager.cpp",
         "clang/lib/StaticAnalyzer/Core/ExprEngine.cpp",

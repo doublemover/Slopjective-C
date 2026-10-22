@@ -1,6 +1,5 @@
 """Fresh release failures cannot retain passing evidence or owned containers."""
 import json
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest

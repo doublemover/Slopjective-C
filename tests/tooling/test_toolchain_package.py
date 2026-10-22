@@ -139,7 +139,8 @@ def test_release_failure_joins_other_gates_and_preserves_their_evidence(tmp_path
         return {'status': 'PASS'}
 
     with pytest.raises(ValueError, match='import: failed source import; see import.log'):
-        _run_qualifications({'import': failed, 'calls': completed}, 2)
+        _run_qualifications({'import': failed, 'calls': completed,
+                             'queued': lambda: pytest.fail('started after failure')}, 2)
     assert (tmp_path / 'qualification.json').read_text() == 'PASS'
 
 

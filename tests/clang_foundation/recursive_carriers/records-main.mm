@@ -6,8 +6,10 @@ int main() {
   { CarrierDefaulted empty; if (hasValue(empty.field)) return 18; }
   {
     CarrierRecord source(1, 2);
-    if (record_live != 2 || record_inspect(source) != 4 ||
-        record_live != 2 || record_copies != 2 || record_bodies != 1)
+    if (record_live != 2)
+      return 1;
+    int observed = record_inspect(source);
+    if (observed != 4 || record_live != 2 || record_copies != 2 || record_bodies != 1)
       return 1;
     CarrierRecord copied(source);
     CarrierRecord moved(static_cast<CarrierRecord &&>(copied));

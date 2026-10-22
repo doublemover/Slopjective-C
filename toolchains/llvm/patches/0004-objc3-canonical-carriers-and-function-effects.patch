@@ -28916,3 +28916,40 @@ index b6db7ce62..a3da6b338 100644
    VariantValueTest.cpp
    ParserTest.cpp
    RegistryTest.cpp
+diff --git a/clang/test/ObjC3/Sema/match-initialized-bindings.m b/clang/test/ObjC3/Sema/match-initialized-bindings.m
+new file mode 100644
+index 000000000..02e2cb01a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/match-initialized-bindings.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fblocks -Wuninitialized -Werror -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -Wuninitialized -Werror -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fblocks -Wuninitialized -Werror -fsyntax-only -verify %s
++
++int expression_binding(Optional(int) source) {
++  return match(source) {
++    case .Some(let payload) => payload + 1;
++    case .None => 0;
++  };
++}
++int statement_binding(Optional(int) source) {
++  match(source) {
++    case .Some(let payload): { return payload; }
++    case .None: { return 0; }
++  }
++}
++int block_binding(Optional(int) source) {
++  return (^(Optional(int) input) {
++    match(input) {
++      case .Some(let payload): { return payload; }
++      case .None: { return 0; }
++    }
++  })(source);
++}
++int unrelated_uninitialized(Optional(int) source) {
++  int missing; // expected-note {{initialize the variable 'missing' to silence this warning}}
++  return match(source) {
++    case .Some(let payload) => payload + missing; // expected-error {{variable 'missing' is uninitialized when used here}}
++    case .None => 0;
++  };
++}

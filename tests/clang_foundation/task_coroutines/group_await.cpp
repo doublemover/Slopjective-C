@@ -479,7 +479,8 @@ void next_c_slots_and_descriptor_copy() {
                              objc3::task_detail::result_type<int>());
     assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
     group.close();
-    NextFrame frame{group.native_handle()};
+    NextFrame frame{};
+    frame.group = group.native_handle();
     auto *parent = start_next(destination, frame);
     if (precancelled) objc3_task_request_cancel(parent);
     pump(destination);
