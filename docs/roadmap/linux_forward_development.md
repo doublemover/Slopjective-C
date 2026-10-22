@@ -62,12 +62,17 @@ libclang indexing, AST matchers, clang-query and focused clangd consumers have
 regressions enrolled in the foundation build. Raw PCH/PCM identity now rejects
 incompatible Objective-C 3 artifacts even when ordinary validation is disabled.
 
-Solo integration is now building these implementations and their enrolled gates.
-The compiler and facade libraries have linked; Clang 23 API and independent-test
-target integration fixes are committed. Eighteen focused tooling/qualification
-harness tests pass. Full foundation, source/PCH runtime and installed SDK
-qualification remain required before new passing release receipts or capability
-claims. The active SDK above still predates this wave.
+The consolidated development foundation now passes: compiler, facade libraries,
+editor tools and LLDB build successfully; 292 Clang regressions pass with three
+unsupported, alongside 148 native AST/CFG/CodeGen, matcher and clangd contract
+tests. Eighteen focused tooling tests and eight coroutine harness tests pass.
+The admitted execution matrix also passes 1,045 commands: 404 native AST
+configurations, 24 defer, 24 guard, 24 optional-access and eight coalescing
+source/PCH configurations. The Linux SDK rebuild is now running; installed SDK
+qualification remains required before new release receipts or capability claims. The active
+SDK above still predates this wave. Managed release queues retain an explicit
+native-EH CFG ownership boundary while normal CFG and native execution checks
+remain independent.
 
 Native Objective-C async definitions, public spawn/isolation/Sendable, complete
 strict profiles and native AArch64 qualification remain outstanding. Reference
