@@ -56,7 +56,22 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             raise ValueError('installed task coroutines failed: ' + label)
         return log
 
+    def inputs():
+        return {
+            'compiler_sha256': packages.digest(native_compiler.resolve()),
+            'compiler_entrypoint_sha256': packages.digest(compiler.resolve()),
+            'runtime_library_sha256': packages.digest(runtime_library),
+            'objc_runtime_sha256': packages.digest(objc_runtime),
+            'sdk_manifest_sha256': packages.digest(sdk / 'objc3-sdk.json'),
+            'qualification_script_sha256': packages.digest(Path(__file__).resolve()),
+            'header_hashes': {name: packages.digest(headers / name)
+                for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
+            'source_hashes': {name: packages.digest(fixture / name)
+                for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp')},
+        }
+
     try:
+        initial_inputs = inputs()
         with tempfile.TemporaryDirectory(prefix="objc3 coroutines 'outside checkout ") as temporary:
             root = Path(temporary)
             for language, standard, ownership, optimization in configurations():
@@ -122,15 +137,12 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.task-coroutine-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],
-                  'compiler_sha256': packages.digest(native_compiler.resolve()),
+                  **initial_inputs,
                   'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
-                  'runtime_library_sha256': packages.digest(runtime_library),
-                  'objc_runtime_sha256': packages.digest(objc_runtime),
-                  'header_hashes': {name: packages.digest(headers / name)
-                      for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
                   'executions': len(cases), 'cases': cases,
-                  'commands': commands, 'source_hashes': {name: packages.digest(fixture / name)
-                      for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp')}}
+                  'commands': commands}
+        if inputs() != initial_inputs:
+            raise ValueError('task coroutine inputs changed during qualification')
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.task-coroutine-qualification.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'], 'cases': cases,

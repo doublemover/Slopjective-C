@@ -8,6 +8,15 @@ from scripts.objc3c_toolchain import qualify_task_coroutines as qualification
 from scripts.objc3c_toolchain import qualify_task_coroutine_sanitizers as sanitizers
 
 
+def _write_bound_inputs(sdk):
+    for relative in ('bin/clang', 'bin/objc3c', 'lib/libobjc3_runtime_services.a',
+                     'lib/libobjc.so', 'include/objc3c/runtime/objc3_task.hpp',
+                     'include/objc3c/runtime/objc3_runtime_services.h'):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('bound input')
+
+
 def test_native_coroutine_matrix_covers_ownership_and_optimization():
     modes = qualification.configurations()
     assert len(modes) == len(set(modes)) == 12
@@ -21,7 +30,8 @@ def test_failed_native_provider_replaces_stale_success(tmp_path, monkeypatch):
     fixture = sdk / 'share/objc3c/examples/task-coroutines'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
-    for name in ('provider.cpp', 'provider.h', 'client.cpp'):
+    _write_bound_inputs(sdk)
+    for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp'):
         (fixture / name).write_text('int main() {}')
     output = tmp_path / 'evidence'
     output.mkdir()
@@ -84,6 +94,7 @@ def test_failed_group_await_witness_cannot_publish_success(tmp_path, monkeypatch
     fixture = sdk / 'share/objc3c/examples/task-coroutines'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'b' * 64}))
+    _write_bound_inputs(sdk)
     for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp'):
         (fixture / name).write_text('int main() {}')
     output = tmp_path / 'evidence'
@@ -111,3 +122,45 @@ def test_failed_group_await_witness_cannot_publish_success(tmp_path, monkeypatch
     # The original source-free provider path must still run before this witness.
     assert len(calls) == 6
     assert not Path(calls[-1][calls[-1].index('-o') + 1]).parent.exists()
+
+
+@pytest.mark.parametrize('changed_input', ['runtime', 'compiler', 'fixture'])
+def test_coroutine_input_mutation_replaces_stale_pass(tmp_path, monkeypatch, changed_input):
+    sdk, fixture, output = (tmp_path / name for name in ('sdk', 'fixtures', 'evidence'))
+    fixture.mkdir()
+    output.mkdir()
+    for name in ('provider.cpp', 'provider.h', 'client.cpp', 'group_await.cpp'):
+        (fixture / name).write_text('original fixture')
+    for relative in ('bin/clang', 'lib/libobjc3_runtime_services.a', 'lib/libobjc.so',
+                     'include/objc3c/runtime/objc3_task.hpp',
+                     'include/objc3c/runtime/objc3_runtime_services.h'):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('original input')
+    (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
+    receipt = output / 'qualification.json'
+    receipt.write_text('{"status":"PASS"}')
+    target = {'runtime': sdk / 'lib/libobjc3_runtime_services.a',
+              'compiler': sdk / 'bin/clang',
+              'fixture': fixture / 'group_await.cpp'}[changed_input]
+    commands = []
+
+    def run(argv, **kwargs):
+        commands.append(argv)
+        kwargs['stdout'].write('successful simulated command\n')
+        if '-o' in argv:
+            Path(argv[argv.index('-o') + 1]).write_text('compiled artifact')
+        if len(argv) == 1 and str(argv[0]).endswith('/group-await'):
+            target.write_text('changed input')
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(qualification, 'configurations',
+                        lambda: [('c++', 'c++20', 'none', 'O2')])
+    monkeypatch.setattr(qualification.subprocess, 'run', run)
+    with pytest.raises(ValueError, match='inputs changed during qualification'):
+        qualification.qualify(sdk, output, fixture=fixture, compiler=sdk / 'bin/clang')
+    report = json.loads(receipt.read_text())
+    assert report['status'] == 'FAIL'
+    assert len(commands) == len(report['commands']) == 9
+    assert len(report['cases']) == 1
+    assert all(command['exit_code'] == 0 for command in report['commands'])
