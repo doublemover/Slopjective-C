@@ -5512,7 +5512,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..86dd85e9a 100644
+index 6a25a799a..046f7680c 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,7 @@
@@ -5647,7 +5647,7 @@ index 6a25a799a..86dd85e9a 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15021,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15021,67 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -5665,17 +5665,27 @@ index 6a25a799a..86dd85e9a 100644
 +  const Type *Ty = Carrier.getTypePtr();
 +  if (!isa<ObjC3OptionalType>(Ty) && !isa<ObjC3ResultType>(Ty))
 +    return;
-+  auto Info = S.Context.getObjC3CarrierRepresentationType(Carrier);
-+  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
-+    return;
-+
 +  // The synthetic carrier record describes layout only. Reference actual
 +  // payload destructors in the user's access context, including empty/inactive
-+  // arms, without binding a stored member as a full-expression temporary.
-+  for (FieldDecl *Field : {Info.ValueField, Info.SuccessField, Info.ErrorField}) {
-+    if (!Field)
++  // arms and nested carrier trees, without binding a stored member as a
++  // full-expression temporary. Shared payload types need only one check.
++  SmallVector<QualType, 8> Pending{Carrier};
++  llvm::SmallPtrSet<const Type *, 16> Seen;
++  while (!Pending.empty()) {
++    QualType Payload = Pending.pop_back_val();
++    const Type *PayloadTy = Payload.getCanonicalType().getTypePtr();
++    if (!Seen.insert(PayloadTy).second)
 +      continue;
-+    QualType Payload = Field->getType();
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(PayloadTy)) {
++      auto Info = S.Context.getObjC3CarrierRepresentationType(Payload);
++      if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++        continue;
++      for (FieldDecl *Field : {Info.ValueField, Info.SuccessField,
++                               Info.ErrorField})
++        if (Field)
++          Pending.push_back(Field->getType());
++      continue;
++    }
 +    CXXRecordDecl *RD = Payload->getAsCXXRecordDecl();
 +    if (!RD || RD->isDependentContext())
 +      continue;
@@ -5684,9 +5694,11 @@ index 6a25a799a..86dd85e9a 100644
 +      VD->setInvalidDecl();
 +      continue;
 +    }
-+    S.CheckDestructorAccess(VD->getLocation(), Dtor,
-+                            S.PDiag(diag::err_access_dtor_var)
-+                                << VD->getDeclName() << Payload);
++    if (S.CheckDestructorAccess(VD->getLocation(), Dtor,
++                                S.PDiag(diag::err_access_dtor_var)
++                                    << VD->getDeclName() << Payload) ==
++        Sema::AR_inaccessible)
++      VD->setInvalidDecl();
 +    S.MarkFunctionReferenced(VD->getLocation(), Dtor);
 +    if (S.DiagnoseUseOfDecl(Dtor, VD->getLocation()))
 +      VD->setInvalidDecl();
@@ -5703,7 +5715,7 @@ index 6a25a799a..86dd85e9a 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16838,28 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16850,28 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -5732,7 +5744,7 @@ index 6a25a799a..86dd85e9a 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16874,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16886,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -5747,7 +5759,7 @@ index 6a25a799a..86dd85e9a 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20370,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20382,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -6529,10 +6541,10 @@ index 000000000..547b8c20d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
 new file mode 100644
-index 000000000..1e13acaad
+index 000000000..4c6f8d9df
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,216 @@
 +//===--- SemaObjC3CarrierTransfer.cpp - carrier transfer semantics -------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
@@ -6600,8 +6612,7 @@ index 000000000..1e13acaad
 +    return ExprResult();
 +  if (!SourceLeaf)
 +    return ExprError();
-+  if (S.getLangOpts().ObjCAutoRefCount &&
-+      isa<ObjC3OptionalType, ObjC3ResultType>(
++  if (isa<ObjC3OptionalType, ObjC3ResultType>(
 +          DestinationField->getType().getCanonicalType().getTypePtr()))
 +    return S.ActOnObjC3CarrierTransferExpr(SourceLeaf->isXValue(), Loc, Loc,
 +                                          SourceLeaf, Loc);
@@ -6681,12 +6692,15 @@ index 000000000..1e13acaad
 +    if (!Field || Field->getType()->isVoidType())
 +      continue;
 +    QualType Payload = Field->getType();
-+    if (getLangOpts().ObjCAutoRefCount &&
-+        isa<ObjC3OptionalType, ObjC3ResultType>(Payload.getCanonicalType().getTypePtr()))
++    // A direct nested carrier has its own discriminant and selected-arm
++    // operation recipes. Resolve those recursively rather than asking the
++    // layout-only synthetic record for a copy/move constructor.
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(
++            Payload.getCanonicalType().getTypePtr()))
 +      continue;
 +    // A direct ARC leaf uses the same native member-initialization recipe as
 +    // an ordinary strong, weak or unsafe Objective-C/Block field. Do not admit
-+    // managed subobjects hidden inside a C/C++ aggregate or nested carrier.
++    // managed subobjects hidden inside an ordinary C/C++ aggregate.
 +    const bool IsARCPointer = getLangOpts().ObjCAutoRefCount &&
 +        (Payload->isObjCObjectPointerType() || Payload->isBlockPointerType()) &&
 +        (Payload.getObjCLifetime() == Qualifiers::OCL_Strong ||
@@ -22710,3 +22724,125 @@ index 000000000..eb458267e
 +  [owned ping];
 +}
 +#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h
+new file mode 100644
+index 000000000..9f84d2d73
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-recursive-cxx-pch.h
+@@ -0,0 +1,15 @@
++struct RecursiveItem {
++  explicit RecursiveItem(int);
++  RecursiveItem(const RecursiveItem &);
++  RecursiveItem(RecursiveItem &&);
++  ~RecursiveItem();
++};
++using RecursiveInner = __objc3_optional(RecursiveItem);
++using RecursiveOuter = __objc3_optional(RecursiveInner);
++template <class T> void copy_recursive_from_pch(const T &source) {
++  T value = __objc3_copy(source);
++}
++inline void construct_recursive_from_pch() {
++  RecursiveOuter value = __objc3_some(
++      RecursiveInner, __objc3_some(RecursiveItem, RecursiveItem(1)));
++}
+diff --git a/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm b/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm
+new file mode 100644
+index 000000000..f48397312
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-recursive-cxx-pch.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -emit-pch -o %t.pch %S/Inputs/carrier-recursive-cxx-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++
++template void copy_recursive_from_pch<RecursiveOuter>(const RecursiveOuter &);
++void use_recursive_pch() { construct_recursive_from_pch(); }
++
++// CHECK-LABEL: define{{.*}} @_Z23copy_recursive_from_pch
++// CHECK: load i8
++// CHECK: load i8
++// CHECK: invoke void @_ZN13RecursiveItemC1ERKS_
++// CHECK: call void @_ZN13RecursiveItemD1Ev
++// CHECK-LABEL: define{{.*}} @_Z28construct_recursive_from_pchv
++// CHECK: invoke void @_ZN13RecursiveItemC1Ei
++// CHECK: store i8 1
++// CHECK: store i8 1
++// CHECK: call void @_ZN13RecursiveItemD1Ev
+diff --git a/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp b/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp
+new file mode 100644
+index 000000000..5d9e25fb2
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-recursive-cxx.cpp
+@@ -0,0 +1,73 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++
++struct CopyMove {
++  CopyMove();
++  CopyMove(const CopyMove &);
++  CopyMove(CopyMove &&);
++  ~CopyMove();
++};
++using Inner = __objc3_optional(CopyMove);
++using Outer = __objc3_optional(Inner);
++using Tree = __objc3_result(Outer, Inner);
++
++void recursive_transfers(Tree &source, const Tree &constant) {
++  Tree copied = __objc3_copy(source);
++  Tree moved = __objc3_move(source);
++  Tree copiedConst = __objc3_copy(constant);
++  Tree movedConst = __objc3_move(constant);
++  Outer constructed = __objc3_some(Inner, __objc3_none(CopyMove));
++  (void)copied;
++  (void)moved;
++  (void)copiedConst;
++  (void)movedConst;
++  (void)constructed;
++}
++
++template <class T> void instantiate_transfer(T &source) {
++  T copied = __objc3_copy(source);
++  T moved = __objc3_move(source);
++}
++template void instantiate_transfer<Tree>(Tree &);
++
++struct MoveOnly {
++  MoveOnly(const MoveOnly &) = delete; // expected-note {{explicitly marked deleted here}}
++  MoveOnly(MoveOnly &&);
++  ~MoveOnly();
++};
++using MoveInner = __objc3_optional(MoveOnly);
++using MoveOuter = __objc3_result(int, MoveInner);
++void nested_deleted_copy(MoveOuter &source) {
++  MoveOuter moved = __objc3_move(source);
++  // Both possible selected-arm operations must be legal, even if a caller
++  // happens to know that source currently contains an integer success.
++  MoveOuter copied = __objc3_copy(source); // expected-error {{deleted constructor}}
++}
++
++class PrivateDestructor {
++  ~PrivateDestructor(); // expected-note {{declared private here}}
++};
++using PrivateInner = __objc3_optional(PrivateDestructor);
++using PrivateOuter = __objc3_optional(PrivateInner);
++void inaccessible_nested_destructor() {
++  PrivateOuter value = __objc3_none(PrivateInner); // expected-error {{variable of type 'PrivateDestructor' has private destructor}}
++}
++
++struct DeletedDestructor {
++  ~DeletedDestructor() = delete; // expected-note {{explicitly marked deleted here}}
++};
++using DeletedInner = __objc3_optional(DeletedDestructor);
++void deleted_inactive_destructor() {
++  __objc3_result(int, DeletedInner) value = __objc3_ok(int, DeletedInner, 1); // expected-error {{attempt to use a deleted function}}
++}
++
++using VolatileInner = volatile Inner;
++void nested_volatile_transfer(__objc3_optional(VolatileInner) &source) {
++  auto copied = __objc3_copy(source); // expected-error {{volatile carrier copy and move construction is not supported}}
++}
++
++struct OrdinaryRecord {
++  Inner hidden;
++};
++void record_boundary(__objc3_optional(OrdinaryRecord) &source) {
++  auto copied = __objc3_copy(source); // expected-error {{is not supported in an Objective-C 3 value carrier}}
++}
