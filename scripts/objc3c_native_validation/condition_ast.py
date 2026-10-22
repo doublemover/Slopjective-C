@@ -57,6 +57,11 @@ def cases() -> dict[str, dict]:
             result[name.removesuffix("guard") + "stmtexpr-guard"] = {
                 **facts, "source_form": "GNU statement expression",
             }
+    for name, facts in list(result.items()):
+        if facts["standard"] != "c17" and facts["ownership"] == "mrc" and not facts.get("source_form"):
+            if not facts.get("ordered_bindings") or facts["payload"] == "cpp":
+                prefix, kind = name.rsplit("-", 1)
+                result[prefix + "-template-" + kind] = {**facts, "template_replay": True}
     return result
 
 

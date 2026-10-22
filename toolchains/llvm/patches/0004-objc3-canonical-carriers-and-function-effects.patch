@@ -17747,13 +17747,14 @@ index 000000000..aba9a9044
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..f284971cb
+index 000000000..50a19c5a1
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,499 @@
+@@ -0,0 +1,563 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Basic/CodeGenOptions.h"
@@ -17803,7 +17804,7 @@ index 000000000..f284971cb
 +  }
 +};
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
-+                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false) {
++                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false, bool StatementExpression = false, bool TemplateReplay = false) {
 +  std::vector<std::string> Args = {
 +      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
 +      ("-std=" + Standard).str(), "-fobjc-version=3",
@@ -17812,13 +17813,46 @@ index 000000000..f284971cb
 +  Args.push_back(ARC ? "-fobjc-arc" : "-fno-objc-arc");
 +  std::string Input = Ordered && IfBinding
 +      ? "#define ORDERED_IF_BINDING 1\n" + Code.str() : Code.str();
++  if (TemplateReplay) {
++    auto Definition = Input.find("int exercise(");
++    ASSERT_NE(std::string::npos, Definition);
++    auto Parameters = Input.find('(', Definition);
++    auto ParameterEnd = Input.find(')', Parameters);
++    auto Opening = Input.find('{', ParameterEnd);
++    ASSERT_NE(std::string::npos, Opening);
++    auto End = Opening;
++    unsigned Depth = 0;
++    do {
++      if (Input[End] == '{') ++Depth;
++      else if (Input[End] == '}') --Depth;
++      ++End;
++    } while (Depth && End < Input.size());
++    ASSERT_EQ(0u, Depth);
++    std::string Explicit = "\nextern template int exercise<int>" +
++        Input.substr(Parameters, ParameterEnd - Parameters + 1) + ";\n";
++    Input.insert(End, Explicit);
++    for (auto Call = Input.find("exercise(", End + Explicit.size());
++         Call != std::string::npos;
++         Call = Input.find("exercise(", Call + 14))
++      Input.insert(Call + 8, "<int>");
++    Input.insert(Definition, "template<class GuardInstantiation> ");
++  }
 +  auto AST = tooling::buildASTFromCodeWithArgs(Input, Args, "condition-codegen.m");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  ExerciseFunction Finder;
 +  Finder.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
 +  FunctionDecl *Function = Finder.Function;
++  FunctionTemplateDecl *Template = nullptr;
++  if (TemplateReplay)
++    for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++      if (auto *Candidate = dyn_cast<FunctionTemplateDecl>(D))
++        if (Candidate->getName() == "exercise") {
++          Template = Candidate;
++          Function = Candidate->getTemplatedDecl();
++        }
 +  ASSERT_TRUE(Function);
++  ASSERT_EQ(TemplateReplay, Template != nullptr);
 +  auto *Body = cast<CompoundStmt>(Function->getBody());
 +  StmtExpr *StatementExpressionNode = nullptr;
 +  if (StatementExpression) {
@@ -17888,6 +17922,15 @@ index 000000000..f284971cb
 +    if (StatementExpressionNode) StatementExpressionNode->setSubStmt(Rebuilt);
 +    else Function->setBody(Rebuilt);
 +  }
++  FunctionDecl *Concrete = nullptr;
++  if (Template) {
++    ASSERT_EQ(1u, std::distance(Template->spec_begin(), Template->spec_end()));
++    Concrete = *Template->spec_begin();
++    Concrete->setTemplateSpecializationKind(TSK_ImplicitInstantiation);
++    AST->getSema().InstantiateFunctionDefinition(
++        Concrete->getLocation(), Concrete, true, true, false);
++    ASSERT_TRUE(Concrete->doesThisDeclarationHaveABody());
++  }
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  llvm::LLVMContext IRContext;
 +  CodeGenOptions Options;
@@ -17902,6 +17945,10 @@ index 000000000..f284971cb
 +  Generator->Initialize(C);
 +  for (Decl *D : C.getTranslationUnitDecl()->decls())
 +    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
++  // Forced instantiations are not translation-unit declarations. Replay the
++  // normal definition notification as well as the top-level pattern.
++  if (Concrete)
++    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(Concrete)));
 +  // A parsed C AST still needs the normal end-of-translation-unit callback
 +  // when replayed into a new CodeGenerator (for globals such as `int calls;`).
 +  if (!C.getLangOpts().CPlusPlus)
@@ -18249,6 +18296,23 @@ index 000000000..f284971cb
 +    SCOPED_TRACE(Name);
 +    checkLowering(StatementExpression(Cpp, true), Name, Standard, false, false, false, true);
 +  }
++}
++
++TEST(ObjC3ConditionCodeGen, TemplatesReplayOwnedConstructionAndOrderedCleanup) {
++  for (const char *Standard : {"c++20", "c++23"})
++    for (bool If : {false, true}) {
++      std::string Prefix = std::string(Standard);
++      for (bool CppPayload : {false, true}) {
++        std::string Name = Prefix + (CppPayload ? "-cpp" : "-mrc") +
++                            (If ? "-template-if" : "-template-guard");
++        SCOPED_TRACE(Name);
++        checkLowering(CppPayload ? Cpp : Plain, Name, Standard, false, If,
++                       false, false, true);
++      }
++      std::string Name = Prefix + (If ? "-cpp-ordered-template-if" : "-cpp-ordered-template-guard");
++      SCOPED_TRACE(Name);
++      checkLowering(OrderedCpp, Name, Standard, false, If, true, false, true);
++    }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
