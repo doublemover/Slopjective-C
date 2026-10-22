@@ -203,7 +203,7 @@ index 15d0e6435..ff84dd3d9 100644
  DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
      : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..1cb582f65 100644
+index 9a97d52fd..dfe345f2f 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -524,7 +524,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -293,11 +293,11 @@ index 9a97d52fd..1cb582f65 100644
 +void StmtPrinter::VisitObjC3ResourceExpr(ObjC3ResourceExpr *Node) {
 +  switch (Node->getKind()) {
 +  case ObjC3ResourceExpr::Kind::Take:
-+    OS << "__builtin_objc3_resource_take("; break;
++    OS << "take("; break;
 +  case ObjC3ResourceExpr::Kind::Reset:
-+    OS << "__builtin_objc3_resource_reset("; break;
++    OS << "reset("; break;
 +  case ObjC3ResourceExpr::Kind::Discard:
-+    OS << "__builtin_objc3_resource_discard("; break;
++    OS << "discard("; break;
 +  }
 +  PrintExpr(Node->getOperand());
 +  if (Expr *Replacement = Node->getReplacement()) {
@@ -471,10 +471,10 @@ index 9a97d52fd..1cb582f65 100644
    PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
-index 000000000..b6b085f25
+index 000000000..e1e164be0
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,308 @@
+@@ -0,0 +1,382 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -736,6 +736,80 @@ index 000000000..b6b085f25
 +  return Result;
 +}
 +
++bool Parser::ParseObjC3ResourcePrefix(ParsedAttributes &Attrs) {
++  SourceLocation AtLoc = ConsumeToken();
++  ConsumeToken(); // contextual 'resource'
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "@resource",
++                              tok::r_paren))
++    return true;
++  ExprResult Close = ParseAssignmentExpression();
++  if (Close.isInvalid() || ExpectAndConsume(tok::comma)) {
++    Parens.skipToEnd();
++    return true;
++  }
++  if (!Tok.is(tok::identifier) || !Tok.getIdentifierInfo()->isStr("invalid")) {
++    Diag(Tok, PP.getDiagnostics().getCustomDiagID(
++                  DiagnosticsEngine::Error,
++                  "expected 'invalid: value' in @resource"));
++    Parens.skipToEnd();
++    return true;
++  }
++  ConsumeToken();
++  if (ExpectAndConsume(tok::colon)) {
++    Parens.skipToEnd();
++    return true;
++  }
++  ExprResult Invalid = ParseAssignmentExpression();
++  if (Invalid.isInvalid()) {
++    Parens.skipToEnd();
++    return true;
++  }
++  if (Parens.consumeClose())
++    return true;
++  ArgsUnion Arguments[] = {Close.get(), Invalid.get()};
++  Attrs.addNew(&PP.getIdentifierTable().get("objc_resource"),
++               SourceRange(AtLoc, Parens.getCloseLocation()),
++               AttributeScopeInfo(nullptr, SourceLocation()), Arguments, 2,
++               AttributeCommonInfo::Form(AttributeCommonInfo::AS_GNU));
++  return false;
++}
++
++ExprResult Parser::ParseObjC3ResourceExpression() {
++  ObjC3Syntax Syntax = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName());
++  using Kind = ObjC3ResourceExpr::Kind;
++  Kind Operation = Syntax == ObjC3Syntax::Take ? Kind::Take
++                   : Syntax == ObjC3Syntax::Reset ? Kind::Reset : Kind::Discard;
++  const char *Name = Tok.getIdentifierInfo()->getNameStart();
++  SourceLocation Keyword = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, Name,
++                              tok::r_paren))
++    return ExprError();
++  ExprResult Operand = ParseAssignmentExpression();
++  if (Operand.isInvalid()) {
++    Parens.skipToEnd();
++    return ExprError();
++  }
++  ExprResult Replacement;
++  if (Operation == Kind::Reset) {
++    if (ExpectAndConsume(tok::comma)) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++    Replacement = ParseAssignmentExpression();
++    if (Replacement.isInvalid()) {
++      Parens.skipToEnd();
++      return ExprError();
++    }
++  }
++  if (Parens.consumeClose())
++    return ExprError();
++  return Actions.ActOnObjC3ResourceExpr(
++      static_cast<unsigned>(Operation), Operand.get(), Replacement.get(),
++      Keyword, Parens.getCloseLocation());
++}
++
 +ExprResult Parser::ParseObjC3CarrierTransferExpression() {
 +  const bool IsMove = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName()) ==
 +                      ObjC3Syntax::Move;
@@ -784,7 +858,7 @@ index 000000000..b6b085f25
 +  return Result;
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..250b678c3 100644
+index 44b51a985..916ddf7dc 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,8 +11,10 @@
@@ -798,7 +872,7 @@ index 44b51a985..250b678c3 100644
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/Basic/TokenKinds.h"
-@@ -138,16 +140,22 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
+@@ -138,16 +140,29 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
    const char *SemiError = nullptr;
    StmtResult Res;
    SourceLocation GNUAttributeLoc;
@@ -818,10 +892,17 @@ index 44b51a985..250b678c3 100644
 +      // normal declaration-versus-statement context checks below.
 +      if (getLangOpts().ObjC3 && isObjC3QualifiedTypeNameAhead())
 +        goto ParseDeclarationOrExpression;
++      if (getLangOpts().ObjC3 && NextToken().is(tok::identifier) &&
++          NextToken().getIdentifierInfo()->isStr("resource")) {
++        GNUAttributeLoc = Tok.getLocation();
++        if (ParseObjC3ResourcePrefix(GNUAttrs))
++          return StmtError();
++        goto ParseDeclarationOrExpression;
++      }
        AtLoc = ConsumeToken();  // consume @
        return ParseObjCAtStatement(AtLoc, StmtCtx);
      }
-@@ -161,6 +169,31 @@ Retry:
+@@ -161,6 +176,31 @@ Retry:
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
@@ -853,7 +934,7 @@ index 44b51a985..250b678c3 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +206,19 @@ Retry:
+@@ -173,7 +213,19 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -874,7 +955,7 @@ index 44b51a985..250b678c3 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +241,7 @@ Retry:
+@@ -196,6 +248,7 @@ Retry:
    }
  
    default: {
@@ -882,7 +963,7 @@ index 44b51a985..250b678c3 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +254,8 @@ Retry:
+@@ -208,7 +261,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -892,7 +973,7 @@ index 44b51a985..250b678c3 100644
           (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
-@@ -296,6 +343,8 @@ Retry:
+@@ -296,6 +350,8 @@ Retry:
    }
  
    case tok::kw_if:                  // C99 6.8.4.1: if-statement
@@ -901,7 +982,7 @@ index 44b51a985..250b678c3 100644
      return ParseIfStatement(TrailingElseLoc);
    case tok::kw_switch:              // C99 6.8.4.2: switch-statement
      return ParseSwitchStatement(TrailingElseLoc, PrecedingLabel);
-@@ -2464,6 +2513,15 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -2464,6 +2520,15 @@ StmtResult Parser::ParseReturnStatement() {
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);

@@ -1363,7 +1363,7 @@ index a9965a4a8..4ec0b3a0c 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..e1931a3d1 100644
+index 892715a6d..57f182324 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1415,7 +1415,7 @@ index 892715a6d..e1931a3d1 100644
  
    /// True if we are within an Objective-C container while parsing C-like decls.
    ///
-@@ -7614,6 +7635,30 @@ public:
+@@ -7614,6 +7635,32 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
@@ -1429,6 +1429,8 @@ index 892715a6d..e1931a3d1 100644
 +  StmtResult ParseObjC3ThrowStatement();
 +  StmtResult ParseObjC3DoCatchStatement();
 +  ExprResult ParseObjC3CarrierTransferExpression();
++  ExprResult ParseObjC3ResourceExpression();
++  bool ParseObjC3ResourcePrefix(ParsedAttributes &Attrs);
 +
 +  bool isObjC3GuardStatementAhead();
 +  bool isObjC3IfBindingStatementAhead();
@@ -2346,7 +2348,7 @@ index 222881154..906723abd 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..5318b3b9b 100644
+index d743717ad..d63a0d60e 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,7 @@
@@ -2371,7 +2373,7 @@ index d743717ad..5318b3b9b 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -627,6 +635,17 @@ namespace clang {
+@@ -627,6 +635,18 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -2386,10 +2388,11 @@ index d743717ad..5318b3b9b 100644
 +    ExpectedStmt VisitObjC3TryExpr(ObjC3TryExpr *E);
 +    ExpectedStmt VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E);
 +    ExpectedStmt VisitObjC3OptionalAccessExpr(ObjC3OptionalAccessExpr *E);
++    ExpectedStmt VisitObjC3ResourceExpr(ObjC3ResourceExpr *E);
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -1426,6 +1445,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1446,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2417,7 +2420,7 @@ index d743717ad..5318b3b9b 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1666,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1667,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2454,7 +2457,7 @@ index d743717ad..5318b3b9b 100644
    if (Err)
      return std::move(Err);
  
-@@ -2559,6 +2629,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2630,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2481,7 +2484,7 @@ index d743717ad..5318b3b9b 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -4120,6 +4210,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4211,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2489,7 +2492,7 @@ index d743717ad..5318b3b9b 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4266,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4267,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2536,7 +2539,7 @@ index d743717ad..5318b3b9b 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5193,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5194,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2551,7 +2554,7 @@ index d743717ad..5318b3b9b 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5263,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5264,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2559,7 +2562,7 @@ index d743717ad..5318b3b9b 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5278,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5279,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2568,7 +2571,7 @@ index d743717ad..5318b3b9b 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7470,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7471,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2666,7 +2669,7 @@ index d743717ad..5318b3b9b 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8008,165 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8009,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2714,6 +2717,19 @@ index d743717ad..5318b3b9b 100644
 +    return std::move(Err);
 +  return ObjC3CoalesceExpr::Create(Importer.getToContext(), Type, LHS, RHS,
 +                                    Semantic, Operator);
++}
++
++ExpectedStmt ASTNodeImporter::VisitObjC3ResourceExpr(ObjC3ResourceExpr *E) {
++  Error Err = Error::success();
++  auto Type = importChecked(Err, E->getType());
++  auto *Operand = importChecked(Err, E->getOperand());
++  auto *Replacement = importChecked(Err, E->getReplacement());
++  auto Keyword = importChecked(Err, E->getBuiltinLoc());
++  auto RParen = importChecked(Err, E->getRParenLoc());
++  if (Err)
++    return std::move(Err);
++  return ObjC3ResourceExpr::Create(Importer.getToContext(), E->getKind(), Type,
++                                    Operand, Replacement, Keyword, RParen);
 +}
 +
 +ExpectedStmt ASTNodeImporter::VisitObjC3OptionalAccessExpr(
@@ -2832,7 +2848,7 @@ index d743717ad..5318b3b9b 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10107,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10121,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2932,10 +2948,10 @@ index d743717ad..5318b3b9b 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..dbc2e0aa2 100644
+index e0b62591a..955f7efee 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -207,6 +207,108 @@ class StmtComparer {
+@@ -207,6 +207,117 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -2952,6 +2968,15 @@ index e0b62591a..dbc2e0aa2 100644
 +    return IsStructurallyEquivalent(Context, E1->getType(), E2->getType()) &&
 +           IsStructurallyEquivalent(Context, E1->getLHS(), E2->getLHS()) &&
 +           IsStructurallyEquivalent(Context, E1->getRHS(), E2->getRHS());
++  }
++
++  bool IsStmtEquivalent(const ObjC3ResourceExpr *A,
++                        const ObjC3ResourceExpr *B) {
++    return A->getKind() == B->getKind() &&
++           IsStructurallyEquivalent(Context, A->getType(), B->getType()) &&
++           IsStructurallyEquivalent(Context, A->getOperand(), B->getOperand()) &&
++           IsStructurallyEquivalent(Context, A->getReplacement(),
++                                    B->getReplacement());
 +  }
 +
 +  bool IsStmtEquivalent(const ObjC3OptionalAccessExpr *A,
@@ -3044,7 +3069,7 @@ index e0b62591a..dbc2e0aa2 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -963,6 +1065,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1074,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -3068,7 +3093,7 @@ index e0b62591a..dbc2e0aa2 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1265,17 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,6 +1274,17 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -5284,7 +5309,7 @@ index 000000000..05f2cfb69
 +      SecondType.get(), Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
-index eb50b0e85..5f5621e9a 100644
+index eb50b0e85..7152da492 100644
 --- a/clang/lib/Parse/ParseObjc.cpp
 +++ b/clang/lib/Parse/ParseObjc.cpp
 @@ -25,6 +25,7 @@
@@ -5295,7 +5320,23 @@ index eb50b0e85..5f5621e9a 100644
  
  using namespace clang;
  
-@@ -88,7 +89,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -45,6 +46,15 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+                               ParsedAttributes &DeclSpecAttrs) {
+   DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
+ 
++  if (getLangOpts().ObjC3 && NextToken().is(tok::identifier) &&
++      NextToken().getIdentifierInfo()->isStr("resource")) {
++    if (ParseObjC3ResourcePrefix(DeclAttrs))
++      return nullptr;
++    SourceLocation DeclEnd;
++    return ParseDeclaration(DeclaratorContext::File, DeclEnd, DeclSpecAttrs,
++                            DeclAttrs);
++  }
++
+   SourceLocation AtLoc = ConsumeToken(); // the "@"
+ 
+   if (Tok.is(tok::code_completion)) {
+@@ -88,7 +98,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
      SingleDecl = ParseObjCPropertyDynamic(AtLoc);
      break;
    case tok::objc_import:
@@ -5305,7 +5346,7 @@ index eb50b0e85..5f5621e9a 100644
        Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
        SingleDecl = ParseModuleImport(AtLoc, IS);
        break;
-@@ -1206,8 +1208,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1206,8 +1217,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      return nullptr;
    }
  
@@ -5329,7 +5370,7 @@ index eb50b0e85..5f5621e9a 100644
      // If attributes exist after the method, parse them.
      MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
                           methodAttrs);
-@@ -1216,7 +1233,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1216,7 +1242,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
          getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
          selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
@@ -5338,7 +5379,7 @@ index eb50b0e85..5f5621e9a 100644
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1297,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1280,6 +1306,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
        return nullptr;
      }
  
@@ -5354,7 +5395,7 @@ index eb50b0e85..5f5621e9a 100644
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
      if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1361,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1335,6 +1370,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      ObjCParamInfo.push_back(Param);
    }
  
@@ -5363,7 +5404,7 @@ index eb50b0e85..5f5621e9a 100644
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1376,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1348,7 +1385,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -5372,7 +5413,7 @@ index eb50b0e85..5f5621e9a 100644
  
    PD.complete(Result);
    return Result;
-@@ -2515,6 +2543,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
+@@ -2515,6 +2552,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -5381,7 +5422,7 @@ index eb50b0e85..5f5621e9a 100644
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2762,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
+@@ -2732,6 +2771,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5395,7 +5436,7 @@ index eb50b0e85..5f5621e9a 100644
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2859,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2822,6 +2868,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5412,7 +5453,7 @@ index eb50b0e85..5f5621e9a 100644
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3025,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2978,10 +3034,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -16132,10 +16173,10 @@ index 49bd9596f..360694978 100644
    for(size_t i = 0; i < Sources.size(); ++i)
 diff --git a/clang/include/clang/Basic/ObjC3Syntax.h b/clang/include/clang/Basic/ObjC3Syntax.h
 new file mode 100644
-index 000000000..4cc12b347
+index 000000000..d0ffe9837
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Syntax.h
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,68 @@
 +//===--- ObjC3Syntax.h - Contextual native carrier syntax ---------*- C++
 +//-*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -16157,6 +16198,9 @@ index 000000000..4cc12b347
 +  IsOk,
 +  Copy,
 +  Move,
++  Take,
++  Reset,
++  Discard,
 +  MatchExpression,
 +  MatchStatement,
 +  TryValue,
@@ -16180,6 +16224,9 @@ index 000000000..4cc12b347
 +      .Cases({"isOk", "__objc3_is_ok"}, ObjC3Syntax::IsOk)
 +      .Cases({"copyValue", "__objc3_copy"}, ObjC3Syntax::Copy)
 +      .Cases({"moveValue", "__objc3_move"}, ObjC3Syntax::Move)
++      .Case("take", ObjC3Syntax::Take)
++      .Case("reset", ObjC3Syntax::Reset)
++      .Case("discard", ObjC3Syntax::Discard)
 +      .Cases({"match", "__objc3_match"}, ObjC3Syntax::MatchExpression)
 +      .Case("__objc3_match_stmt", ObjC3Syntax::MatchStatement)
 +      .Cases({"tryValue", "__objc3_try"}, ObjC3Syntax::TryValue)
@@ -18949,10 +18996,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..19c831982
+index 000000000..addfe9324
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,881 @@
+@@ -0,0 +1,891 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19422,7 +19469,9 @@ index 000000000..19c831982
 +        escape(Assembly->getOutputExpr(I));
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Statement))
 +      if (const Expr *Receiver = Message->getInstanceReceiver())
-+        if (isNullable(Receiver->getType())) {
++        if (isNullable(Receiver->getType()) ||
++            (Actions.getLangOpts().ObjC3Profile != 0 &&
++             Receiver->getType()->getNullability() != NullabilityKind::NonNull)) {
 +          if (Messages.insert(Message).second)
 +            OrderedMessages.push_back(Message);
 +          Receivers.try_emplace(Receiver, 0);
@@ -19437,6 +19486,9 @@ index 000000000..19c831982
 +    if (Value->getType()->getNullability() == NullabilityKind::NonNull)
 +      return true;
 +    Value = Value->IgnoreParens();
++    if (isa<ObjCStringLiteral, ObjCArrayLiteral, ObjCDictionaryLiteral,
++            ObjCBoxedExpr, ObjCProtocolExpr>(Value))
++      return true;
 +    if (const auto *Full = dyn_cast<ExprWithCleanups>(Value))
 +      return nonnull(Full->getSubExpr(), Facts);
 +    if (const auto *Cast = dyn_cast<CastExpr>(Value))
@@ -19652,7 +19704,12 @@ index 000000000..19c831982
 +    std::vector<State> Inputs(Graph->getNumBlockIDs());
 +    SmallVector<const CFGBlock *, 16> Work;
 +    const CFGBlock *Entry = &Graph->getEntry();
-+    Inputs[Entry->getBlockID()] = {llvm::BitVector(NumFacts), true};
++    llvm::BitVector Initial(NumFacts);
++    // A live method starts with a nonnull receiver. Keep self in the ordinary
++    // mutable-slot lattice so assigning nil invalidates that initial proof.
++    if (const auto *Method = dyn_cast_or_null<ObjCMethodDecl>(Callable))
++      assign(Method->getSelfDecl(), true, Initial);
++    Inputs[Entry->getBlockID()] = {std::move(Initial), true};
 +    Work.push_back(Entry);
 +    while (!Work.empty()) {
 +      const CFGBlock *Block = Work.pop_back_val();
@@ -24147,16 +24204,17 @@ index fb0b3c150..0ff03bcf5 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..bb61b54b7
+index 000000000..8c951ac4b
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,348 @@
+@@ -0,0 +1,411 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/AST/Attr.h"
 +#include "clang/AST/JSONNodeDumper.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
@@ -24498,6 +24556,68 @@ index 000000000..bb61b54b7
 +  EXPECT_EQ(2u, Index.count("source", index::SymbolRole::Reference));
 +  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
 +  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
++}
++
++TEST(ObjC3ResourceTooling, ImportsPublicOperationsAndKeepsSlotIdentity) {
++  constexpr llvm::StringLiteral Source = R"(
++    void close_handle(int) __attribute__((nothrow));
++    int exercise(int input) {
++      @resource(close_handle, invalid: -1) int slot = input;
++      reset(slot, 2);
++      int owner = take(slot);
++      reset(slot, 3);
++      discard(slot);
++      return owner;
++    }
++  )";
++  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                               "resource-import.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", conditionArgs(), "resource-target.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"resource-import.mm", Source.str()}});
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *FD = findExercise(*From);
++  ASSERT_TRUE(FD);
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(FD);
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  class Collector : public RecursiveASTVisitor<Collector> {
++  public:
++    SmallVector<ObjC3ResourceExpr *, 4> Operations;
++    bool VisitObjC3ResourceExpr(ObjC3ResourceExpr *E) {
++      Operations.push_back(E);
++      return true;
++    }
++  } Visitor;
++  ASSERT_TRUE(Visitor.TraverseStmt(Function->getBody()));
++  ASSERT_EQ(4u, Visitor.Operations.size());
++  const VarDecl *Slot = Visitor.Operations[0]->getResourceVariable();
++  ASSERT_TRUE(Slot);
++  EXPECT_TRUE(Slot->hasAttr<ObjCResourceAttr>());
++  EXPECT_EQ(&To->getASTContext(), &Slot->getASTContext());
++  for (auto *Operation : Visitor.Operations)
++    EXPECT_EQ(Slot, Operation->getResourceVariable());
++  EXPECT_EQ(ObjC3ResourceExpr::Kind::Take, Visitor.Operations[1]->getKind());
++  Occurrences Index;
++  index::IndexingOptions Options;
++  Options.IndexFunctionLocals = true;
++  const Decl *Declarations[] = {Function};
++  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(),
++                           Declarations, Index, Options);
++  EXPECT_EQ(4u, Index.count("slot", index::SymbolRole::Reference));
++  std::string Printed;
++  llvm::raw_string_ostream OS(Printed);
++  Function->getBody()->printPretty(OS, nullptr,
++                                   To->getASTContext().getPrintingPolicy());
++  EXPECT_NE(std::string::npos, Printed.find("reset(slot, 2)"));
++  EXPECT_NE(std::string::npos, Printed.find("take(slot)"));
++  EXPECT_NE(std::string::npos, Printed.find("discard(slot)"));
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
 new file mode 100644
@@ -26431,10 +26551,10 @@ index 000000000..9561d30b6
 +#endif
 diff --git a/clang/test/ObjC3/AST/Inputs/resource-ownership.h b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
 new file mode 100644
-index 000000000..57169f48d
+index 000000000..61ba2fa4d
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/Inputs/resource-ownership.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,31 @@
 +#ifndef OBJC3_RESOURCE_OWNERSHIP_PCH_H
 +#define OBJC3_RESOURCE_OWNERSHIP_PCH_H
 +#ifdef __cplusplus
@@ -26452,13 +26572,26 @@ index 000000000..57169f48d
 +#ifdef __cplusplus
 +}
 +#endif
++static inline int resource_pch_transfer(int input) {
++  @resource(close_resource, invalid: -1) int value = input;
++  reset(value, input + 1);
++  int result = take(value);
++  discard(value);
++  return result;
++}
++#ifdef __cplusplus
++template<int Value> int resource_template_transfer() {
++  @resource(close_resource, invalid: -1) int value = Value;
++  return take(value);
++}
++#endif
 +#endif
 diff --git a/clang/test/ObjC3/AST/resource-ownership-pch.m b/clang/test/ObjC3/AST/resource-ownership-pch.m
 new file mode 100644
-index 000000000..aafffdc6a
+index 000000000..93bf984c7
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/resource-ownership-pch.m
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,24 @@
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/resource-ownership.h
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o - %s | FileCheck %s --check-prefix=IR
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
@@ -26467,6 +26600,10 @@ index 000000000..aafffdc6a
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -ast-print %s | FileCheck %s --check-prefix=PRINT
 +int resource_consumer(int input) {
 +  resource_pch_address(input);
++  (void)resource_pch_transfer(input);
++#ifdef __cplusplus
++  (void)resource_template_transfer<7>();
++#endif
 +  return resource_pch_value(input);
 +}
 +// IR: call void @close_resource_address(ptr
@@ -26475,6 +26612,10 @@ index 000000000..aafffdc6a
 +// IR: store i32 -1
 +// PRINT: __attribute__((objc_resource(close=close_resource, invalid=-1)))
 +// PRINT: __attribute__((objc_resource(close=close_resource_address, invalid=0)))
++
++// PRINT: reset(value, input + 1)
++// PRINT: take(value)
++// PRINT: discard(value)
 diff --git a/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm
 new file mode 100644
 index 000000000..362fd7e57
@@ -28874,7 +29015,7 @@ index 000000000..c12549591
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-operations.m b/clang/test/ObjC3/Sema/resource-operations.m
 new file mode 100644
-index 000000000..5e5302f50
+index 000000000..7346de9f3
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-operations.m
 @@ -0,0 +1,53 @@
@@ -28886,18 +29027,18 @@ index 000000000..5e5302f50
 +#define RESOURCE __attribute__((objc_resource(close=close_handle, invalid=0)))
 +void legal_transfer(void) {
 +  int value RESOURCE = 0;
-+  __builtin_objc3_resource_reset(value, 7);
-+  int owned = __builtin_objc3_resource_take(value);
++  reset(value, 7);
++  int owned = take(value);
 +  consume_handle(owned);
 +  close_handle(owned);
 +  if(value != 0)consume_handle(value);
 +  value = 8;
-+  __builtin_objc3_resource_discard(value);
-+  __builtin_objc3_resource_reset(value, 9);
++  discard(value);
++  reset(value, 9);
 +}
 +void moved_use(void) {
 +  int value RESOURCE = 3;
-+  int owned = __builtin_objc3_resource_take(value);
++  int owned = take(value);
 +  consume_handle(owned);
 +  consume_handle(value); // strict-error {{may have been moved or discarded}}
 +}
@@ -28916,7 +29057,7 @@ index 000000000..5e5302f50
 +}
 +void lost_take(void) {
 +  int value RESOURCE = 3;
-+  __builtin_objc3_resource_take(value); // strict-error {{discards its ownership result}} compat-warning {{expression result unused}} strict-warning {{expression result unused}}
++  take(value); // strict-error {{discards its ownership result}} compat-warning {{expression result unused}} strict-warning {{expression result unused}}
 +}
 +void escaped_storage(void) {
 +  int value RESOURCE = 3;
@@ -28978,3 +29119,81 @@ index 000000000..02e2cb01a
 +    case .None => 0;
 +  };
 +}
+diff --git a/clang/test/ObjC3/Parser/resource-operations.m b/clang/test/ObjC3/Parser/resource-operations.m
+new file mode 100644
+index 000000000..ad5d10456
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/resource-operations.m
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -ast-print -verify %s | FileCheck %s
++void close_handle(int);
++void ordinary_names(void) {
++  int take = 1, reset = 2, discard = 3;
++  (void)take; (void)reset; (void)discard;
++}
++void public_ownership(void) {
++  @resource(close_handle, invalid: -1) int handle = 1;
++  reset(handle, 2);
++  int owner = take((handle));
++  discard(handle);
++  close_handle(owner);
++}
++// CHECK: reset(handle, 2)
++// CHECK: take(handle)
++// CHECK: discard(handle)
++void invalid_ownership(int plain) {
++  (void)take(plain); // expected-error {{resource operation requires a direct reference}}
++  reset(plain, 2); // expected-error {{resource operation requires a direct reference}}
++  discard(plain); // expected-error {{resource operation requires a direct reference}}
++}
++void malformed_ownership(void) {
++  @resource(close_handle, invalid: 0) int handle = 0;
++  reset(handle); // expected-error {{expected ','}}
++  discard(handle, 1); // expected-error {{expected ')'}} expected-note {{to match this '('}}
++  reset(handle, ); // expected-error {{expected expression}}
++  discard(handle);
++}
+diff --git a/clang/test/ObjC3/Sema/guard-unspecified-receivers.m b/clang/test/ObjC3/Sema/guard-unspecified-receivers.m
+new file mode 100644
+index 000000000..6da053850
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-unspecified-receivers.m
+@@ -0,0 +1,36 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -Wno-nullability-completeness -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -Wno-nullability-completeness -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -Wno-nullability-completeness -verify=compat %s
++// compat-no-diagnostics
++__attribute__((objc_root_class)) @interface Receiver
++- (void)ping;
++- (void)self_proof;
++@end
++void unknown_receiver(Receiver *value) {
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
++}
++void unspecified_receiver(Receiver * _Null_unspecified value) {
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
++  guard value else { return; }
++  [value ping];
++  value = (id)0;
++  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
++}
++void known_receiver(Receiver * _Nonnull value) { [value ping]; }
++void refined_receiver(Receiver *value) {
++  guard let proved = value else { return; }
++  [proved ping];
++  [value ping];
++}
++void literal_receiver(void) {
++  id value = @"nonnull";
++  [value ping];
++}
++@implementation Receiver
++- (void)ping {}
++- (void)self_proof {
++  [self ping];
++  self = (id)0;
++  [self ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
++}
++@end

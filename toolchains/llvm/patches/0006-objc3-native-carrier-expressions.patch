@@ -788,7 +788,7 @@ index fdefb6d6b..982f53a36 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..cb45757ad 100644
+index 74209f579..189a4fa3b 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -836,7 +836,7 @@ index 74209f579..cb45757ad 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,64 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,73 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -856,6 +856,15 @@ index 74209f579..cb45757ad 100644
 +      if (!Res.isInvalid())
 +        Res = Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get());
 +      return Res;
++    }
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        NextToken().is(tok::l_paren)) {
++      ObjC3Syntax Syntax = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName());
++      if (Syntax == ObjC3Syntax::Take || Syntax == ObjC3Syntax::Reset ||
++          Syntax == ObjC3Syntax::Discard) {
++        Res = ParseObjC3ResourceExpression();
++        break;
++      }
 +    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
@@ -901,7 +910,7 @@ index 74209f579..cb45757ad 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1700,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1709,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -909,7 +918,7 @@ index 74209f579..cb45757ad 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2003,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2012,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }

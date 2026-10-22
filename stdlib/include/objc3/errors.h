@@ -64,15 +64,38 @@
             __OBJC3_STDLIB_CHECK_ERROR((makeError)(errorValue))); })
 
 #ifdef __OBJC__
-/* Checked-error counterpart for status APIs whose successful result is void. */
+#ifdef __cplusplus
+/* A reference-capturing thunk is cheap to construct and does not copy the
+ * user's C++ factory. Its body, including a factory temporary's construction,
+ * is evaluated only on the failing arm. Keep the outer expression a direct
+ * checked call so tryValue/tryForce retain their ordinary effect semantics. */
+template<class Payload, class Factory>
+static inline Payload __objc3_stdlib_or_throw(Optional(Payload) value,
+                                               Factory &&factory) throws(id<Error>) {
+  match(value) {
+    case .Some(let payload): { return payload; }
+    case .None: { throwError(__OBJC3_STDLIB_CHECK_ERROR(factory())); }
+  }
+}
+template<class Status, class Factory>
+static inline void __objc3_stdlib_status_or_throw(Status status,
+                                                 Factory &&factory) throws(id<Error>) {
+  if (status != 0)
+    throwError(__OBJC3_STDLIB_CHECK_ERROR(factory(status)));
+}
+#define statusOrThrow(status, makeError) \
+  __objc3_stdlib_status_or_throw((status), \
+    [&](auto __objc3_stdlib_status) { return (makeError)(__objc3_stdlib_status); })
+#define orThrow(value, makeError) \
+  __objc3_stdlib_or_throw((value), [&]() { return (makeError)(); })
+#else
+/* C has no user-defined capture copy constructors. A throwing Block keeps
+ * propagation local to the native checked-call boundary. */
 #define statusOrThrow(status, makeError) \
   (^(__typeof__(status) __objc3_stdlib_status) throws(id<Error>) { \
     if (__objc3_stdlib_status != 0) \
       throwError(__OBJC3_STDLIB_CHECK_ERROR((makeError)(__objc3_stdlib_status))); \
   })(status)
-#endif
-
-#ifdef __OBJC__
 #define orThrow(value, makeError) \
   (^(__typeof__(value) __objc3_stdlib_input) throws(id<Error>) { \
     match(__objc3_stdlib_input) { \
@@ -80,6 +103,7 @@
       case .None: { throwError(__OBJC3_STDLIB_CHECK_ERROR((makeError)())); } \
     } \
   })(value)
+#endif
 #endif
 
 #endif

@@ -135,7 +135,7 @@ static void resource_defer_actions(void) {
 }
 static void resource_invalidated(void) {
   defer { if(*resource_observed != -1)bad=50; second(); }
-  int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
+  @resource(close_resource_address, invalid: -1) int value = 3;
   resource_observed=&value;
 }
 static void resource_pointer(void) {
@@ -150,20 +150,20 @@ static void resource_storage(int count) {
 static void resource_backward(void) {
   int count=0;
 again:;
-  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+  @resource(close_resource, invalid: 0) int value = 3;
   if(count++ == 0)goto again;
   second();
 }
 static void resource_forward(void) {
   {
-    int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+    @resource(close_resource, invalid: 0) int value = 3;
     goto after;
   }
 after: second();
 }
 static void resource_loop(void) {
   for(int index=0; index!=2; ++index) {
-    int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+    @resource(close_resource, invalid: 0) int value = 3;
     if(index == 0)continue;
     break;
   }
@@ -190,7 +190,7 @@ static void resource_throwing_close(void) {
 }
 static int (^resource_block)(void);
 static void resource_byref(bool keep) {
-  __block int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
+  __block @resource(close_resource_address, invalid: -1) int value = 3;
 #if __has_feature(objc_arc)
   resource_block=^{ return value; };
 #else
@@ -214,14 +214,14 @@ static void resource_cpp_actions(bool fail) {
 }
 #endif
 static void resource_take_operation(void) {
-  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
-  int taken = __builtin_objc3_resource_take(value);
+  @resource(close_resource, invalid: 0) int value = 3;
+  int taken = take(value);
   if(taken != 3 || value != 0)bad=60;
   second(); record(taken);
 }
 static void resource_discard_operation(void) {
-  int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
-  __builtin_objc3_resource_discard(value);
+  @resource(close_resource_address, invalid: -1) int value = 3;
+  discard(value);
   if(value != -1)bad=61;
   second();
 }
@@ -231,27 +231,27 @@ static int resource_replacement(int *value) {
 }
 static void resource_reset_operation(void) {
   int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 1;
-  __builtin_objc3_resource_reset(value, resource_replacement(&value));
+  reset(value, resource_replacement(&value));
   if(value != 3)bad=63;
 }
 static int resource_replacement_throw(void) { second(); @throw token; }
 static void resource_reset_rhs_exception(void) {
   int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 4;
   int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
-  __builtin_objc3_resource_reset(value, resource_replacement_throw());
+  reset(value, resource_replacement_throw());
   bad=64;
 }
 static void resource_immediate_close_exception(bool reset) {
   int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
   int value __attribute__((objc_resource(close=close_resource_throwing, invalid=0))) = 3;
-  if(reset)__builtin_objc3_resource_reset(value, 4);
-  else __builtin_objc3_resource_discard(value);
+  if(reset)reset(value, 4);
+  else discard(value);
   bad=65;
 }
 #ifdef __cplusplus
 template<int Value> static int resource_template_take(void) {
   int value __attribute__((objc_resource(close=close_resource, invalid=0))) = Value;
-  return __builtin_objc3_resource_take(value);
+  return take(value);
 }
 #endif
 static void resource_ordering(void) {

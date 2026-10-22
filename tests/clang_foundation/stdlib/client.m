@@ -48,6 +48,26 @@ struct LazyErrorFactory {
   int operator()() const { ++lazy_factory_calls; return 71; }
 };
 static int error_out_copies;
+struct NonCopyableErrorFactory {
+  int *calls;
+  NonCopyableErrorFactory(int *constructions, int *invocations) : calls(invocations) {
+    ++*constructions;
+  }
+  NonCopyableErrorFactory(const NonCopyableErrorFactory &) = delete;
+  NonCopyableErrorFactory(NonCopyableErrorFactory &&) = delete;
+  id<Error> operator()() const {
+    ++*calls;
+#if __has_feature(objc_arc)
+    return [TestError new];
+#else
+    return objc_autorelease([TestError new]);
+#endif
+  }
+  id<Error> operator()(int status) const {
+    assert(status == -17);
+    return (*this)();
+  }
+};
 struct ErrorOutProbe {
   int value = 17;
   ErrorOutProbe() = default;
@@ -216,6 +236,38 @@ int main(void) {
   }
 #if __has_feature(objc_arc)
   assert(errors_created == errors_destroyed);
+#endif
+#ifdef __cplusplus
+  @autoreleasepool {
+    int constructions = 0, calls = 0, statuses = 0;
+    NonCopyableErrorFactory factory(&constructions, &calls);
+    assert(tryForce(orThrow(Some(int, 42), factory)) == 42);
+    assert(tryForce(orThrow(Some(int, 43),
+        NonCopyableErrorFactory(&constructions, &calls))) == 43);
+    tryForce(statusOrThrow((++statuses, 0),
+        NonCopyableErrorFactory(&constructions, &calls)));
+    assert(constructions == 1 && calls == 0 && statuses == 1);
+    int caught = 0;
+    handle {
+      (void)tryValue(orThrow(None(int), factory));
+      assert(0);
+    } catch(id<Error> error) {
+      assert(error != (id)0);
+      ++caught;
+    }
+    handle {
+      tryValue(statusOrThrow((++statuses, -17),
+          NonCopyableErrorFactory(&constructions, &calls)));
+      assert(0);
+    } catch(id<Error> error) {
+      assert(error != (id)0);
+      ++caught;
+    }
+    assert(caught == 2 && constructions == 2 && calls == 2 && statuses == 2);
+  }
+#if __has_feature(objc_arc)
+  assert(errors_created == errors_destroyed);
+#endif
 #endif
 #if __has_feature(objc_arc)
   // Managed native carrier ownership is qualified under ARC. MRC consumers

@@ -43,9 +43,7 @@
         "lazy zero-success status Result and checked throws adapters",
         "NSError-style success/error-out Result adapter with explicit domain factory"
       ],
-      "remaining": [
-        "Error-constrained generic factory validation for Core/Strict"
-      ]
+      "remaining": ["Error-constrained generic factory validation for Core/Strict"]
     },
     {
       "module": "objc3.text",
@@ -126,11 +124,7 @@
       "header": null,
       "status": "unimplemented",
       "implemented": [],
-      "remaining": [
-        "typed literals",
-        "typed application",
-        "component metadata"
-      ]
+      "remaining": ["typed literals", "typed application", "component metadata"]
     },
     {
       "module": "objc3.system",
@@ -144,11 +138,7 @@
       "header": null,
       "status": "unimplemented",
       "implemented": [],
-      "remaining": [
-        "resource cleanup",
-        "borrow/lifetime intrinsics",
-        "strict-system diagnostics"
-      ]
+      "remaining": ["resource cleanup", "borrow/lifetime intrinsics", "strict-system diagnostics"]
     }
   ]
 }

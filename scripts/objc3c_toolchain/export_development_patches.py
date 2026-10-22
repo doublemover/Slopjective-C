@@ -85,6 +85,8 @@ PACKETS = {
         "clang-tools-extra/clangd/FindTarget.cpp",
         "clang/utils/TableGen/ClangAttrEmitter.cpp",
         "clang/test/ObjC3/Parser/resource-attribute.m",
+        "clang/test/ObjC3/Parser/resource-operations.m",
+        "clang/test/ObjC3/Sema/guard-unspecified-receivers.m",
         "clang/test/ObjC3/Parser/optional-coalescing.mm",
         "clang/test/ObjC3/Parser/optional-coalescing-pch.mm",
         "clang/test/ObjC3/Parser/optional-coalescing-lex.m",

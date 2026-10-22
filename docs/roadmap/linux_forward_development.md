@@ -68,7 +68,7 @@ unsupported, alongside 148 native AST/CFG/CodeGen, matcher and clangd contract
 tests. Eighteen focused tooling tests and eight coroutine harness tests pass.
 The admitted execution matrix also passes 1,045 commands: 404 native AST
 configurations, 24 defer, 24 guard, 24 optional-access and eight coalescing
-source/PCH configurations. The Linux SDK rebuild is running with failing feature suites scheduled first.
+source/PCH configurations. SDK/archive qualification is stopped while the next implementation batch is developed.
 The repaired standard-library overlay passes 40 executions / 198 commands, and
 the async C ABI MRC lifetime witness passes 100 repeated executions. Strict
 factory contracts check all three profiles: ARC additionally compiles the
@@ -81,8 +81,16 @@ remain independent.
 
 Native Objective-C async definitions, public spawn/isolation/Sendable, complete
 strict profiles and native AArch64 qualification remain outstanding. Reference
-optional access and resource builtins are bounded implementation slices, not
-complete optional chaining or the full public ownership surface.
+optional access follows Part 3 v1, which deliberately excludes scalar/struct
+optional chaining. Resource cleanup still lacks the complete type-directed and
+borrow/lifetime surface from Part 8.
+
+The next unvalidated implementation batch adds contextual public `take`, `reset`
+and `discard`, prefix `@resource(F, invalid: X)` declarations, resource AST import
+and structural identity, strict proofs for unspecified receivers, and C++ error
+factory thunks that avoid eager copies and construct factories only on failure.
+New parser, PCH, strict-flow, import/index and execution fixtures accompany the
+implementation. Combined validation is deferred until a larger batch is ready.
 
 ## Active completion sequence
 
