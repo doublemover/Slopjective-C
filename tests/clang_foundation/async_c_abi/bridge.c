@@ -83,6 +83,8 @@ struct frame {
   objc3_task_group_t *group;
   objc3_service_status join_status;
   uint64_t expected_actor;
+  int group_next;
+  objc3_task_t *group_result;
   void *reference;
 };
 
@@ -101,6 +103,7 @@ static void destroy_frame(void *context) {
   }
   assert(objc3_async_frame_dispose(&frame->child) == OBJC3_SERVICE_OK);
   objc3_task_group_release(frame->group);
+  objc3_task_release(frame->group_result);
 #ifdef __OBJC__
   if (frame->type->kind == OBJC3_ASYNC_OBJECT)
     bridge_release(frame->reference);
@@ -145,8 +148,10 @@ static void resume_frame(objc3_task_t *task, void *context) {
   }
   if (frame->step++ == 0) {
     if (frame->group) {
-      objc3_service_status status =
-          objc3_task_group_await(frame->group, task, &frame->join_status);
+      objc3_service_status status = frame->group_next
+          ? objc3_task_group_await_next(frame->group, task, &int_type,
+                                         &frame->join_status, &frame->group_result)
+          : objc3_task_group_await(frame->group, task, &frame->join_status);
       if (status != OBJC3_SERVICE_OK) {
         assert(frame->join_status == OBJC3_SERVICE_UNSUPPORTED_VERSION);
         complete_service_failure(task, status);
@@ -160,9 +165,26 @@ static void resume_frame(objc3_task_t *task, void *context) {
     }
     return;
   }
-  if (frame->group && frame->join_status != OBJC3_SERVICE_OK) {
+  if (frame->group_next && frame->join_status == OBJC3_SERVICE_CLOSED) {
+    assert(!frame->group_result);
+    frame->value = -1;
+  } else if (frame->group && frame->join_status != OBJC3_SERVICE_OK) {
     complete_service_failure(task, frame->join_status);
     return;
+  }
+  if (frame->group_result) {
+    objc3_completion child = {0};
+    assert(objc3_task_get_completion(frame->group_result, &child) == OBJC3_SERVICE_OK);
+    if (child.kind != OBJC3_COMPLETION_SUCCESS) {
+      assert(objc3_task_complete(task, &child) == OBJC3_SERVICE_OK);
+      return;
+    }
+    objc3_service_status status = objc3_task_copy_result(
+        frame->group_result, &int_type, &int_ops, &frame->value);
+    if (status != OBJC3_SERVICE_OK) {
+      complete_service_failure(task, status);
+      return;
+    }
   }
   if (frame->dependency) {
     assert(objc3_task_copy_result(frame->dependency, &int_type, &int_ops,
@@ -255,6 +277,12 @@ objc3_async_frame bridge_c_group_join(objc3_task_group_t *group, int value,
   assert(frame->group);
   frame->join_status = OBJC3_SERVICE_UNSUPPORTED_VERSION;
   frame->expected_actor = expected_actor;
+  return result;
+}
+objc3_async_frame bridge_c_group_next(objc3_task_group_t *group,
+                                      uint64_t expected_actor, int *destroyed) {
+  objc3_async_frame result = bridge_c_group_join(group, -1, expected_actor, destroyed);
+  ((struct frame *)result.context)->group_next = 1;
   return result;
 }
 int bridge_c_copy_count(void) {

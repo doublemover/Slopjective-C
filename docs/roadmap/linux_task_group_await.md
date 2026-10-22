@@ -112,3 +112,15 @@ and dispatch pressure. The installed coroutine qualifier includes this witness i
 its C++20/23 and Objective-C++ ARC/MRC matrix. Its source-free provider also
 contains a group-awaiting coroutine, and the sanitizer qualifier instruments
 the dedicated witness with the runtime services.
+
+The shared-frame fixture also implements both operations in C17 resume
+callbacks. Its result adapter retains the selected task in a separate frame
+slot, copies successful typed values, forwards owned error/cancellation
+completions and releases the selected task during frame cleanup. The mixed
+C/Objective-C provider and C++/Objective-C++ consumer matrix covers result
+ordering, type rejection without consumption, queued drain, cancellation on
+both sides of reservation, abandoned frames and actor-inherited private
+children. Object and Block task handles remain usable after the producing
+groups and original handles are released, including present nil results.
+These witnesses reuse the source-free async C ABI and instrumented runtime
+qualification paths; their changed inputs still require fresh validation.
