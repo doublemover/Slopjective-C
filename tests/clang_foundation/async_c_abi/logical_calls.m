@@ -61,7 +61,7 @@ static objc3_task_t *start(objc3_async_frame *frame, objc3_executor_t *executor,
   // counters or allowing those counters to leave scope.
   objc3_task_group_t *cleanup = 0;
   assert(objc3_task_group_create(0, &cleanup) == OBJC3_SERVICE_OK);
-  assert(objc3_task_group_add_task(cleanup, task) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(cleanup, task) == OBJC3_SERVICE_OK);
   assert(objc3_task_group_close(cleanup) == OBJC3_SERVICE_OK);
   assert(objc3_task_group_join(cleanup) == OBJC3_SERVICE_OK);
   objc3_task_group_release(cleanup);
