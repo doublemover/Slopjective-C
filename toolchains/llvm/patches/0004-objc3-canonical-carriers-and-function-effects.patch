@@ -3087,7 +3087,7 @@ index e0b62591a..dbc2e0aa2 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..1768b7af5 100644
+index 4be3e977b..aba51c758 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -22,6 +22,8 @@
@@ -3264,7 +3264,21 @@ index 4be3e977b..1768b7af5 100644
  void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
    Out << *D << ":";
  }
-@@ -1485,6 +1597,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1302,7 +1414,12 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+ 
+   // Never print "instantiations" for deduction guides (they don't really
+   // have them).
+-  if (PrintInstantiation &&
++  // A deduced-return instantiation cannot be reintroduced as template<> with
++  // its concrete return type. ObjC3 source printing keeps the primary template;
++  // its written calls instantiate the same operations when reparsed.
++  bool DeducedObjC3Return = Context.getLangOpts().ObjC3 &&
++      D->getTemplatedDecl()->getReturnType()->getContainedAutoType();
++  if (PrintInstantiation && !DeducedObjC3Return &&
+       !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
+     FunctionDecl *PrevDecl = D->getTemplatedDecl();
+     const FunctionDecl *Def;
+@@ -1485,6 +1602,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -3285,7 +3299,7 @@ index 4be3e977b..1768b7af5 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1512,8 +1638,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1643,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -3296,7 +3310,7 @@ index 4be3e977b..1768b7af5 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1568,9 +1694,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1699,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -3308,7 +3322,7 @@ index 4be3e977b..1768b7af5 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1712,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1717,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -3317,7 +3331,7 @@ index 4be3e977b..1768b7af5 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1619,6 +1746,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1751,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -3326,7 +3340,7 @@ index 4be3e977b..1768b7af5 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1760,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1765,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -3340,7 +3354,7 @@ index 4be3e977b..1768b7af5 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1762,6 +1892,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1762,6 +1897,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
    if (!StringRef(TypeStr).ends_with("*"))
      Out << ' ';
    Out << *PDecl;
@@ -6325,7 +6339,7 @@ index 6a25a799a..9dc97127b 100644
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..701d7c171 100644
+index b0669c602..cd70910cf 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -13,6 +13,7 @@
@@ -6475,7 +6489,25 @@ index b0669c602..701d7c171 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10765,6 +10845,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10426,6 +10506,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+       return false;
+     }
+ 
++    if (isNativeCppCarrierType(FieldType) &&
++        (CSM != CXXSpecialMemberKind::Destructor ||
++         hasObjC3CarrierCppDestructor(FieldType))) {
++      if (Diagnose)
++        S.Diag(FI->getLocation(), S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Note,
++            "native C++ carrier field %0 requires selected payload lifetime operations"))
++            << FI;
++      return false;
++    }
++
+     bool ConstRHS = ConstArg && !FI->isMutable();
+     if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
+                                    CSM, TSK_Field, TAH, Diagnose))
+@@ -10765,6 +10856,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -6496,7 +6528,7 @@ index b0669c602..701d7c171 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11266,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11277,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -6510,7 +6542,7 @@ index b0669c602..701d7c171 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11472,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11483,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -6524,7 +6556,7 @@ index b0669c602..701d7c171 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14257,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14268,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -6553,7 +6585,7 @@ index b0669c602..701d7c171 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14348,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14359,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -6565,7 +6597,7 @@ index b0669c602..701d7c171 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -18882,6 +19017,22 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -18882,6 +19028,22 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -6588,7 +6620,7 @@ index b0669c602..701d7c171 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19152,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19163,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
@@ -7864,7 +7896,7 @@ index 000000000..80bc420b7
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..e95c9d8a6
+index 000000000..44bdf271e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
 @@ -0,0 +1,200 @@
@@ -7977,7 +8009,7 @@ index 000000000..e95c9d8a6
 +    S.Diag(Function->getLocation(), diag::err_objc3_async_c_frame_ownership);
 +    return true;
 +  }
-+  if (Type->getExtInfo().getNoReturn()) {
++  if (Function->isNoReturn()) {
 +    S.Diag(Function->getLocation(), diag::err_objc3_async_c_frame_noreturn);
 +    return true;
 +  }
@@ -8126,10 +8158,10 @@ index 000000000..c0f59a7b6
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Match.cpp b/clang/lib/Sema/SemaObjC3Match.cpp
 new file mode 100644
-index 000000000..81def4229
+index 000000000..cb0daa45e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Match.cpp
-@@ -0,0 +1,338 @@
+@@ -0,0 +1,342 @@
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclCXX.h"
@@ -8419,6 +8451,10 @@ index 000000000..81def4229
 +    diagnoseCoverageIssue(*this, Coverage, Arms, /*ExpressionForm=*/false,
 +                          RBraceLoc);
 +  ExprResult Snapshot = PrepareObjC3Snapshot(Scrutinee);
++  if (Snapshot.isInvalid())
++    return StmtError();
++  Snapshot = ActOnFinishFullExpr(Snapshot.get(), Scrutinee->getExprLoc(),
++                                  /*DiscardedValue=*/false);
 +  if (Snapshot.isInvalid())
 +    return StmtError();
 +  return ObjC3MatchStmt::Create(Context, Snapshot.get(), Arms, KeywordLoc,
@@ -11436,7 +11472,7 @@ index 000000000..2b047d942
 +
 diff --git a/clang/test/ObjC3/Sema/carrier-local-destructors.mm b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
 new file mode 100644
-index 000000000..45866412c
+index 000000000..91aaeb34e
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
 @@ -0,0 +1,23 @@
@@ -11460,7 +11496,7 @@ index 000000000..45866412c
 +};
 +void check_jump_over_carrier_init() {
 +  goto target; // expected-error {{cannot jump from this goto statement to its label}}
-+  __objc3_optional(Ordinary) value = __objc3_none(Ordinary); // expected-note {{jump bypasses variable initialization}}
++  __objc3_optional(Ordinary) value = __objc3_none(Ordinary); // expected-note {{jump bypasses initialization of variable of non-trivial C struct type}}
 +target:;
 +}
 diff --git a/clang/test/ObjC3/Sema/carrier-standard-expressions.c b/clang/test/ObjC3/Sema/carrier-standard-expressions.c
@@ -18904,7 +18940,7 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..ab5f4db8b
+index 000000000..239a6ece0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
 @@ -0,0 +1,874 @@
@@ -19344,9 +19380,10 @@ index 000000000..ab5f4db8b
 +        if (const auto *Variable = dyn_cast<VarDecl>(D)) {
 +          registerVariable(Variable);
 +          if (Variable->getType()->isReferenceType()) {
-+            escape(Variable->getInit());
 +            if (const VarDecl *Source = variable(Variable->getInit()))
 +              Aliases.try_emplace(Variable, Source);
++            else
++              escape(Variable->getInit());
 +          }
 +          collect(Variable->getInit());
 +        }
@@ -19583,15 +19620,14 @@ index 000000000..ab5f4db8b
 +            if (Receivers.count(Expression))
 +              Emitted.insert(Expression);
 +    unsigned NumFacts = Variables.size();
-+    for (auto I = Receivers.begin(); I != Receivers.end();) {
-+      if (!Emitted.contains(I->first)) {
-+        auto Removed = I++;
-+        Receivers.erase(Removed);
-+        continue;
-+      }
-+      I->second = NumFacts++;
-+      ++I;
-+    }
++    SmallVector<const Expr *, 8> Unemitted;
++    for (const auto &Entry : Receivers)
++      if (!Emitted.contains(Entry.first))
++        Unemitted.push_back(Entry.first);
++    for (const Expr *Expression : Unemitted)
++      Receivers.erase(Expression);
++    for (auto &Entry : Receivers)
++      Entry.second = NumFacts++;
 +
 +    struct State {
 +      llvm::BitVector Facts;
@@ -20662,10 +20698,10 @@ index 000000000..88b9b8ca8
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
-index 000000000..b9ffeb885
+index 000000000..aa3e1ec8b
 --- /dev/null
 +++ b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,81 @@
 +// Native condition reconstruction must rerun use-site initialization. Include
 +// after TreeTransform declarations and before explicit instantiation sites.
 +template <typename Derived>
@@ -20674,17 +20710,31 @@ index 000000000..b9ffeb885
 +  // Rebuild the full expression only after constructing the new snapshot.
 +  // Nesting an already completed source expression would end its temporaries
 +  // before successful binding initialization.
++  VarDecl *Variable = Old->getBindingDecl();
++  auto RegisterInvalidBinding = [&] {
++    auto *Invalid = VarDecl::Create(
++        SemaRef.Context, SemaRef.CurContext, Variable->getBeginLoc(),
++        Variable->getLocation(), Variable->getIdentifier(),
++        SemaRef.Context.IntTy, nullptr, SC_None);
++    Invalid->setInvalidDecl();
++    getDerived().transformedLocalDecl(Variable, {Invalid});
++  };
 +  Expr *Initializer = Old->getSource();
 +  while (auto *Cleanups = dyn_cast<ExprWithCleanups>(Initializer))
 +    Initializer = Cleanups->getSubExpr();
 +  ExprResult Source = getDerived().TransformExpr(Initializer);
-+  if (Source.isInvalid()) return StmtError();
-+  VarDecl *Variable = Old->getBindingDecl();
++  if (Source.isInvalid()) {
++    RegisterInvalidBinding();
++    return StmtError();
++  }
 +  StmtResult Result = SemaRef.ActOnObjC3BindingCondition(
 +      nullptr, Variable->getIdentifier(), Variable->getLocation(),
 +      Old->isMutableBinding(), Old->getKeywordLoc(), Old->getEqualLoc(),
 +      Source.get());
-+  if (Result.isInvalid()) return StmtError();
++  if (Result.isInvalid()) {
++    RegisterInvalidBinding();
++    return StmtError();
++  }
 +  auto *New = cast<ObjC3BindingCondition>(Result.get());
 +  getDerived().transformedLocalDecl(Old->getSnapshotDecl(), {New->getSnapshotDecl()});
 +  getDerived().transformedLocalDecl(Variable, {New->getBindingDecl()});
@@ -20735,7 +20785,7 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..91d0ba96a
+index 000000000..c2082baa5
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 @@ -0,0 +1,1684 @@
@@ -21876,84 +21926,84 @@ index 000000000..91d0ba96a
 +    int acquire();
 +    void work();
 +    void ordinary_resource() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +    }
 +    void invalid_resource() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = -1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = -1;
 +    }
 +    void interleaved_resource() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      defer { last(); }
 +    }
 +    void take_resource() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      (void)__builtin_objc3_resource_take(r);
 +    }
 +    void discard_resource() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      __builtin_objc3_resource_discard(r);
 +    }
 +    void reset_resource() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      __builtin_objc3_resource_reset(r, 2);
 +    }
 +    void reset_invalid() {
-+      int r __attribute__((objc_resource(closeResource, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      __builtin_objc3_resource_reset(r, -1);
 +    }
 +    void implicit_close_throws() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeThrow, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeThrow, invalid=-1))) = 1;
 +    }
 +    void immediate_close_throws() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeThrow, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeThrow, invalid=-1))) = 1;
 +      try { __builtin_objc3_resource_discard(r); }
 +      catch (...) { caught(); }
 +    }
 +    void reset_close_or_replacement_throws() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeThrow, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeThrow, invalid=-1))) = 1;
 +      __builtin_objc3_resource_reset(r, replacement());
 +    }
 +    void failed_initialization() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeResource, -1))) = acquire();
++      int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = acquire();
 +    }
 +    void close_during_unwind() {
 +      defer { first(); }
-+      int r __attribute__((objc_resource(closeThrow, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeThrow, invalid=-1))) = 1;
 +      work();
 +    }
 +    void by_address() {
-+      int r __attribute__((objc_resource(closeAddress, -1))) = 1;
++      int r __attribute__((objc_resource(close=closeAddress, invalid=-1))) = 1;
 +      __builtin_objc3_resource_discard(r);
 +    }
 +    void goto_cleanup() {
 +      {
-+        int r __attribute__((objc_resource(closeResource, -1))) = 1;
++        int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +        goto out;
 +      }
 +    out: after();
 +    }
 +    void break_cleanup() {
 +      for (;;) {
-+        int r __attribute__((objc_resource(closeResource, -1))) = 1;
++        int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +        break;
 +      }
 +      after();
 +    }
 +    void continue_cleanup() {
 +      do {
-+        int r __attribute__((objc_resource(closeResource, -1))) = 1;
++        int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +        continue;
 +      } while (false);
 +      after();
 +    }
 +    void independent_callable() {
 +      auto operation = [] {
-+        int r __attribute__((objc_resource(closeResource, -1))) = 1;
++        int r __attribute__((objc_resource(close=closeResource, invalid=-1))) = 1;
 +      };
 +    }
 +  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
@@ -22661,7 +22711,7 @@ index 000000000..53c21685a
 +#endif
 diff --git a/clang/lib/Parse/ParseObjC3Conditions.cpp b/clang/lib/Parse/ParseObjC3Conditions.cpp
 new file mode 100644
-index 000000000..585bffffe
+index 000000000..f82d72d23
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3Conditions.cpp
 @@ -0,0 +1,288 @@
@@ -22844,7 +22894,7 @@ index 000000000..585bffffe
 +          }
 +        }
 +      }
-+    } else if (GuardMode) {
++    } else if (GuardMode || SeenBindingHead) {
 +      InBindingList = false;
 +      ExprResult Value = ParseAssignmentExpression();
 +      if (Value.isInvalid()) {
@@ -23039,7 +23089,7 @@ index 000000000..ab4d2dba4
 +}
 diff --git a/clang/test/ObjC3/Parser/guard-conditions.mm b/clang/test/ObjC3/Parser/guard-conditions.mm
 new file mode 100644
-index 000000000..66f1ffae0
+index 000000000..8bbe5bc89
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/guard-conditions.mm
 @@ -0,0 +1,57 @@
@@ -23067,7 +23117,7 @@ index 000000000..66f1ffae0
 +void assignment_after_boolean(Maybe source, bool flag) {
 +  // A Boolean ends binding continuation. Assigning to the ordinary bool flag
 +  // is a Boolean condition, rather than an attempt to bind a bool payload.
-+  guard let value = source, check(value), flag = check(value) else { return; }
++  guard let value = source, check(value), (flag = check(value)) else { return; }
 +  use(value);
 +}
 +
@@ -23177,11 +23227,10 @@ index 000000000..cfbce1951
 +// CHECK: ObjC3IfBindingStmt
 diff --git a/clang/test/ObjC3/Parser/guard-disabled.mm b/clang/test/ObjC3/Parser/guard-disabled.mm
 new file mode 100644
-index 000000000..b942442b2
+index 000000000..126a5bea5
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/guard-disabled.mm
-@@ -0,0 +1,18 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=2 -fsyntax-only -verify %s
+@@ -0,0 +1,17 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fsyntax-only -verify %s
 +// expected-no-diagnostics
 +
@@ -24552,15 +24601,15 @@ index 000000000..accfd73e4
 +template int dependent_boolean<int>(int); // expected-note {{in instantiation of function template specialization}}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-flow.m b/clang/test/ObjC3/Sema/guard-nullable-flow.m
 new file mode 100644
-index 000000000..eb458267e
+index 000000000..cbb1e8be8
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-nullable-flow.m
 @@ -0,0 +1,206 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-concurrency -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -Wno-nullability-completeness -fsyntax-only -verify=strict %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Wno-nullability-completeness -fsyntax-only -verify=compat %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc3-profile=strict-concurrency -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify=strict %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fobjc-exceptions -Wno-nullability-completeness -fsyntax-only -verify=compat %s
 +
 +#ifdef __cplusplus
 +typedef bool Bool;
@@ -24658,7 +24707,7 @@ index 000000000..eb458267e
 +}
 +
 +void stores_invalidate_exposed_storage(Nullable value) {
-+  Nullable *alias = &value;
++  Nullable __strong *alias = &value;
 +  guard value != (id)0 else { return; }
 +  *alias = (id)0;
 +  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}} compat-warning {{ordinary message send on a nullable receiver}}
@@ -25936,10 +25985,10 @@ index 1b272b541..3f02ebd75 100644
      break;
 diff --git a/clang/lib/Sema/SemaObjC3OptionalOperators.cpp b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
 new file mode 100644
-index 000000000..ae9e9a4ab
+index 000000000..23de4acc1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalOperators.cpp
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,172 @@
 +//===--- SemaObjC3OptionalOperators.cpp - Optional operator semantics ----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26083,7 +26132,14 @@ index 000000000..ae9e9a4ab
 +          << RHS->getType() << LHS->getType() << RHS->getSourceRange();
 +      return ExprError();
 +    }
-+    Semantic = ActOnConditionalOp(OperatorLoc, OperatorLoc, LHS,
++    // The successful presence test refines the selected pointer. Do not let
++    // the conditional operator diagnose a conversion from its written nullable
++    // source to a nonnull fallback before this operator computes its own join.
++    QualType LoadedType = LHS->getType();
++    (void)AttributedType::stripOuterNullability(LoadedType);
++    Expr *Loaded = ImpCastExprToType(LHS, LoadedType, CK_NoOp,
++                                     LHS->getValueKind()).get();
++    Semantic = ActOnConditionalOp(OperatorLoc, OperatorLoc, Loaded,
 +                                   /*Middle=*/nullptr, RHS);
 +    if (!Semantic.isInvalid()) {
 +      NullabilityKind Nullability = NullabilityKind::Nullable;
@@ -26107,10 +26163,10 @@ index 000000000..ae9e9a4ab
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..e923166d4
+index 000000000..846cf037c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,219 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership ---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
@@ -26295,6 +26351,8 @@ index 000000000..e923166d4
 +  }
 +  Variable->addAttr(ObjCResourceAttr::Create(
 +      S.Context, Close, Converted.get(), ByAddress, Call.get(), Attribute));
++  // The implicit scope-exit action reads this local even without a source use.
++  Variable->markUsed(S.Context);
 +}
 +
 +bool clang::checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body) {
@@ -26425,11 +26483,11 @@ index 000000000..e85c435fb
 +#endif
 diff --git a/clang/test/ObjC3/Parser/optional-coalescing-lex.m b/clang/test/ObjC3/Parser/optional-coalescing-lex.m
 new file mode 100644
-index 000000000..feaf3a3df
+index 000000000..51ce64cc5
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/optional-coalescing-lex.m
 @@ -0,0 +1,17 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -trigraphs -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -ftrigraphs -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c23 -fobjc-version=3 -fsyntax-only -verify %s
 +// expected-no-diagnostics
 +
@@ -26469,7 +26527,7 @@ index 000000000..a742d3b6a
 +// IR: phi i32
 diff --git a/clang/test/ObjC3/Parser/optional-coalescing.mm b/clang/test/ObjC3/Parser/optional-coalescing.mm
 new file mode 100644
-index 000000000..8af0fc265
+index 000000000..cf950053a
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/optional-coalescing.mm
 @@ -0,0 +1,41 @@
@@ -26488,7 +26546,7 @@ index 000000000..8af0fc265
 +}
 +
 +int precedence(Maybe source) {
-+  return source ?? 1 || 1 ? 3 : 4;
++  return source ?? fallback() || fallback() ? 3 : 4;
 +}
 +
 +#define OTHERWISE ??
@@ -26508,7 +26566,7 @@ index 000000000..8af0fc265
 +static_assert(__is_same(decltype(None(Maybe) ?? Some(int, 2)), Maybe));
 +
 +// PRINT: return (source ?? (other ?? fallback()));
-+// PRINT: return (source ?? 1 || 1) ? 3 : 4;
++// PRINT: return (source ?? fallback() || fallback()) ? 3 : 4;
 +// PRINT: return (source ?? fallback());
 +// JSON: "kind": "ObjC3CoalesceExpr"
 +// JSON: "operation": "nilCoalescing"
@@ -26622,7 +26680,7 @@ index 000000000..fa58f2c59
 +}
 diff --git a/clang/test/ObjC3/Sema/optional-coalescing.m b/clang/test/ObjC3/Sema/optional-coalescing.m
 new file mode 100644
-index 000000000..cbf58da1e
+index 000000000..c8761fb65
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/optional-coalescing.m
 @@ -0,0 +1,40 @@
@@ -26637,7 +26695,7 @@ index 000000000..cbf58da1e
 +}
 +
 +void rejects_unrelated_fallback(Maybe source, struct Record record) {
-+  (void)(source ?? record); // expected-error {{fallback type .* is not compatible with unwrapped type 'int'}}
++  (void)(source ?? record); // expected-error {{is not compatible with unwrapped type 'int'}}
 +  (void)(source ?? None(long)); // expected-error {{fallback type}}
 +  (void)(None(void) ?? 1); // expected-error {{a void payload cannot be unwrapped by coalescing operator}}
 +}
@@ -26668,7 +26726,7 @@ index 000000000..cbf58da1e
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-ownership.m b/clang/test/ObjC3/Sema/resource-ownership.m
 new file mode 100644
-index 000000000..16884e785
+index 000000000..afd780ae7
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-ownership.m
 @@ -0,0 +1,65 @@
@@ -26705,7 +26763,7 @@ index 000000000..16884e785
 +void retainable_family_is_not_a_scalar_resource(void) {
 +  RetainableHandle value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}}
 +#if __has_feature(objc_arc)
-+  __weak RetainableHandle weak_value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}}
++  __weak RetainableHandle weak_value __attribute__((objc_resource(close=close_retainable, invalid=0))) = 0; // expected-error {{requires a mutable nondependent integer, enum, or ordinary pointer handle}} expected-warning {{'__weak' only applies to Objective-C object or block pointer types}}
 +#endif
 +}
 +void incompatible_close(void) {
@@ -27132,10 +27190,10 @@ index d596ba77e..bfa65d4f3 100644
    ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 new file mode 100644
-index 000000000..f71621a5e
+index 000000000..9cfbb6c29
 --- /dev/null
 +++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,248 @@
 +//===--- ObjC3SourceToolsTests.cpp - Native Objective-C editor contracts ----===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -27341,8 +27399,9 @@ index 000000000..f71621a5e
 +        std::pair("attr", HighlightingKind::Modifier),
 +        std::pair("operation", HighlightingKind::Operator),
 +        std::pair("coalesce", HighlightingKind::Operator)}) {
++    const auto ExpectedRange = A.range(Name);
 +    auto Found = llvm::find_if(Tokens, [&](const HighlightingToken &Token) {
-+      return Token.R == A.range(Name);
++      return Token.R == ExpectedRange;
 +    });
 +    ASSERT_NE(Found, Tokens.end()) << Name;
 +    EXPECT_EQ(Found->Kind, Kind) << Name;
@@ -27636,10 +27695,10 @@ index 000000000..2e7f9ebae
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3OptionalAccess.cpp b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
 new file mode 100644
-index 000000000..dcbf35eda
+index 000000000..713e8ee53
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalAccess.cpp
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,141 @@
 +//===--- SemaObjC3OptionalAccess.cpp - Reference-only optional access -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27724,6 +27783,10 @@ index 000000000..dcbf35eda
 +  if (ResultType->isVoidType())
 +    Absent = ImplicitCastExpr::Create(Context, Context.VoidTy, CK_ToVoid, Zero,
 +        nullptr, VK_PRValue, FPOptionsOverride());
++  if (ResultType->isObjCRetainableType())
++    Absent = ImplicitCastExpr::Create(
++        Context, nullableType(Context, ResultType, /*Nonnull=*/false),
++        CK_NullToPointer, Zero, nullptr, VK_PRValue, FPOptionsOverride());
 +  ExprResult Joined = ActOnConditionalOp(OperatorLoc, OperatorLoc, Receiver,
 +                                          Access, Absent);
 +  if (Joined.isInvalid())
@@ -28756,7 +28819,7 @@ index 000000000..eb6065df6
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-operations.m b/clang/test/ObjC3/Sema/resource-operations.m
 new file mode 100644
-index 000000000..358143eee
+index 000000000..160b280c9
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-operations.m
 @@ -0,0 +1,54 @@
@@ -28799,7 +28862,7 @@ index 000000000..358143eee
 +}
 +void lost_take(void) {
 +  int value RESOURCE = 3;
-+  __builtin_objc3_resource_take(value); // strict-error {{discards its ownership result}}
++  __builtin_objc3_resource_take(value); // strict-error {{discards its ownership result}} compat-warning {{expression result unused}} strict-warning {{expression result unused}}
 +}
 +void escaped_storage(void) {
 +  int value RESOURCE = 3;

@@ -20,7 +20,7 @@ import time
 
 from scripts.objc3c_toolchain.build import foundation_lock
 from scripts.objc3c_toolchain.core import verify_development
-from scripts.objc3c_native_validation import defer_source, guard_source, optional_access_source
+from scripts.objc3c_native_validation import defer_source, guard_source, optional_access_source, coalescing_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -92,7 +92,7 @@ def cases() -> dict[str, dict]:
 
 
 def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: bool = False,
-            public_optional_access: bool = False) -> dict:
+            public_optional_access: bool = False, public_coalescing: bool = False) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / "runtime.json"
     report = {
@@ -101,7 +101,8 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
         "source_syntax_admitted": False, "installed_compiler_qualified": False,
         "requested_source_matrices": ["defer",
             *(["guard"] if public_guard else []),
-            *(["optional-access"] if public_optional_access else [])],
+            *(["optional-access"] if public_optional_access else []),
+            *(["coalescing"] if public_coalescing else [])],
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "commands": [], "configurations": [],
     }
@@ -168,7 +169,8 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
                       (foundation, compiler, tests, runtime, sdk / "objc3-sdk.json",
                        Path(__file__).resolve(), *defer_source.INPUTS,
                        *(guard_source.INPUTS if public_guard else ()),
-                       *(optional_access_source.INPUTS if public_optional_access else ()))}
+                       *(optional_access_source.INPUTS if public_optional_access else ()),
+                       *(coalescing_source.INPUTS if public_coalescing else ()))}
             report.update(
                 source_build_id=source["build_id"],
                 source_tree_sha256=source["tree_sha256"],
@@ -228,6 +230,12 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path, *, public_guard: b
                         for path in optional_access_source.INPUTS
                     }
                     optional_access_source.qualify(run, directory, compiler, sdk, report)
+                if public_coalescing:
+                    report["coalescing_source_inputs_sha256"] = {
+                        str(path.relative_to(repo)): inputs[str(path)]
+                        for path in coalescing_source.INPUTS
+                    }
+                    coalescing_source.qualify(run, directory, compiler, sdk, report)
                 if any(digest(path) != report["verified_modules"][name]
                        for name, path in modules.items()):
                     raise RuntimeError("a verified module changed during execution")
@@ -256,6 +264,8 @@ def main() -> None:
                         help="also execute the public guard source/PCH implementation matrix")
     parser.add_argument("--public-optional-access", action="store_true",
                         help="also execute reference optional member/send source/PCH matrices")
+    parser.add_argument("--public-coalescing", action="store_true",
+                        help="execute scalar and C++ coalescing against the real GNUstep runtime")
     options = parser.parse_args()
     repo = options.repo.resolve()
     result = qualify(
@@ -263,9 +273,10 @@ def main() -> None:
         (options.sdk or repo / "out/toolchains/linux-sdk/current").resolve(),
         (options.output or repo / "out/native-validation/guard-bindings-ast").resolve(),
         public_guard=options.public_guard, public_optional_access=options.public_optional_access,
+        public_coalescing=options.public_coalescing,
     )
     print(f"{result['status']}: {len(result['configurations'])} native AST configurations, "
-          f"{sum(len(result.get(key, {}).get('configurations', [])) for key in ('defer_source', 'guard_source', 'optional_access_source'))} source/PCH configurations, "
+          f"{sum(len(result.get(key, {}).get('configurations', [])) for key in ('defer_source', 'guard_source', 'optional_access_source', 'coalescing_source'))} source/PCH configurations, "
           f"{len(result['commands'])} commands")
 
 
