@@ -125,13 +125,38 @@ static void guard_managed(void) {
   GUARD_CHECK(bound(4) == 7);
 }
 #endif
+static void guard_coalescing(void) {
+  int fallback_calls = 0;
+  guard_calls = 0;
+  int present = guard_next(7, true) ?? (++fallback_calls, 99);
+  GUARD_CHECK(present == 7 && guard_calls == 1 && fallback_calls == 0);
+  int absent = guard_next(7, false) ?? (++fallback_calls, 42);
+  GUARD_CHECK(absent == 42 && guard_calls == 2 && fallback_calls == 1);
+  int associated = None(int) ?? None(int) ?? 42;
+  GUARD_CHECK(associated == 42);
+  Optional(int) flattened = Some(int, 0) ?? Some(int, 99);
+  guard let value = flattened else { ++guard_failures; return; }
+  GUARD_CHECK(value == 0);
+  Optional(int) fallback = None(int) ?? Some(int, 8);
+  if let value = fallback { GUARD_CHECK(value == 8); }
+  else { ++guard_failures; }
+#if __has_feature(objc_arc)
+  id _Nullable empty = (id)0;
+  int object_fallbacks = 0;
+  Optional(id _Nullable) tagged_nil = Some(id _Nullable, (id)0);
+  id selected = tagged_nil ?? (++object_fallbacks, [GuardObject make:1]);
+  GUARD_CHECK(selected == (id)0 && object_fallbacks == 0);
+  GuardObject *object = empty ?? (++object_fallbacks, [GuardObject make:42]);
+  GUARD_CHECK(object != (id)0 && object->number == 42 && object_fallbacks == 1);
+#endif
+}
 static void guard_plain_suite(void) {
   guard_calls = 0; GUARD_CHECK(guard_ordered(false, true, true) == -1);
   guard_calls = 0; GUARD_CHECK(guard_ordered(true, false, true) == -2);
   guard_calls = 0; GUARD_CHECK(guard_ordered(true, true, false) == -2);
   guard_calls = 0; GUARD_CHECK(guard_ordered(true, true, true) == 22);
   GUARD_CHECK(guard_snapshot() == 7);
-  guard_if_list(false); guard_if_list(true); guard_loop(); guard_nested();
+  guard_if_list(false); guard_if_list(true); guard_loop(); guard_nested(); guard_coalescing();
   guard_events = 0; GUARD_CHECK(guard_deferred(false) == -1); GUARD_CHECK(guard_events == 1);
   guard_events = 0; GUARD_CHECK(guard_deferred(true) == 4); GUARD_CHECK(guard_events == 41);
   GUARD_CHECK(guard_statement_expression(false) == -1);
