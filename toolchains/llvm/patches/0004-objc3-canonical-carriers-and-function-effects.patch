@@ -22948,3 +22948,574 @@ index 000000000..719fa93ff
 +  TemplateInitializer(T source) : value(source ? [source number] : 0) {}
 +};
 +template struct TemplateInitializer<Nullable>;
+diff --git a/clang-tools-extra/test/clang-query/objc3-conditions.mm b/clang-tools-extra/test/clang-query/objc3-conditions.mm
+new file mode 100644
+index 000000000..9f9f1ee5e
+--- /dev/null
++++ b/clang-tools-extra/test/clang-query/objc3-conditions.mm
+@@ -0,0 +1,20 @@
++// RUN: clang-query -c 'set bind-root false' \
++// RUN:   -c 'match objc3GuardStmt(objc3ConditionCountIs(2), hasObjC3Condition(0, objc3BindingCondition(hasObjC3Binding(varDecl(hasName("first")))))).bind("guard")' \
++// RUN:   -c 'match objc3IfBindingStmt(hasObjC3Condition(0, objc3BindingCondition(isObjC3MutableBinding())), hasThen(compoundStmt())).bind("branch")' \
++// RUN:   -c 'set traversal IgnoreUnlessSpelledInSource' \
++// RUN:   -c 'match declRefExpr(to(parmVarDecl(hasName("source"))), hasParent(objc3BindingCondition())).bind("source")' \
++// RUN:   %s -- -x objective-c++ -std=c++20 -fobjc-version=3 | FileCheck %s
++
++int query_conditions(Optional(int) source, bool enabled) {
++  guard let first = source, enabled else { return -1; }
++  if var second = source { return first + second; }
++  return first;
++}
++
++// CHECK: note: "guard" binds here
++// CHECK: 1 match.
++// CHECK: note: "branch" binds here
++// CHECK: 1 match.
++// CHECK: note: "source" binds here
++// CHECK: note: "source" binds here
++// CHECK: 2 matches.
+diff --git a/clang/include/clang/ASTMatchers/ASTMatchers.h b/clang/include/clang/ASTMatchers/ASTMatchers.h
+index 8108ee559..bec5247ed 100644
+--- a/clang/include/clang/ASTMatchers/ASTMatchers.h
++++ b/clang/include/clang/ASTMatchers/ASTMatchers.h
+@@ -2229,6 +2229,104 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
+ /// \endcode
+ extern const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
+ 
++/// Matches a native ObjC3 guard and its ordered conditions and failure body.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3GuardStmt>
++    objc3GuardStmt;
++
++/// Matches a native ObjC3 if-let or if-var statement.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
++    objc3IfBindingStmt;
++
++/// Matches one optional binding in an ObjC3 condition list.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3BindingCondition>
++    objc3BindingCondition;
++
++/// Matches native ObjC3 Optional construction and presence queries.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalExpr>
++    objc3OptionalExpr;
++
++/// Matches native ObjC3 Result construction and arm queries.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ResultExpr>
++    objc3ResultExpr;
++
++/// Matches explicit native ObjC3 carrier copy or move construction.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CarrierTransferExpr>
++    objc3CarrierTransferExpr;
++
++/// Matches native ObjC3 checked propagation, optionalization or forcing.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3TryExpr>
++    objc3TryExpr;
++
++/// Matches native ObjC3 typed error transfer.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ThrowStmt>
++    objc3ThrowStmt;
++
++/// Matches an individual native ObjC3 catch clause.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CatchStmt>
++    objc3CatchStmt;
++
++/// Matches native ObjC3 do/catch statements.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3DoCatchStmt>
++    objc3DoCatchStmt;
++
++/// Matches an ordered arm of either native ObjC3 match form.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchArm>
++    objc3MatchArm;
++
++/// Matches native ObjC3 statement-form matches.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchStmt>
++    objc3MatchStmt;
++
++/// Matches native ObjC3 expression-form matches.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchExpr>
++    objc3MatchExpr;
++
++/// Matches the number of ordered conditions, including both bindings and Bool
++/// expressions, in an ObjC3 guard or if binding.
++AST_POLYMORPHIC_MATCHER_P(
++    objc3ConditionCountIs,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3GuardStmt, ObjC3IfBindingStmt),
++    unsigned, Count) {
++  return Node.getNumConditions() == Count;
++}
++
++/// Matches a condition at its zero-based source position. An index outside the
++/// list fails to match. Binding conditions remain distinct from Bool Exprs.
++AST_POLYMORPHIC_MATCHER_P2(
++    hasObjC3Condition,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3GuardStmt, ObjC3IfBindingStmt),
++    unsigned, Index, internal::Matcher<Stmt>, InnerMatcher) {
++  return Index < Node.getNumConditions() &&
++         InnerMatcher.matches(*Node.getCondition(Index), Finder, Builder);
++}
++
++/// Matches the source-facing declaration introduced by a condition or match
++/// arm. Compiler-owned snapshot declarations are not candidates.
++AST_POLYMORPHIC_MATCHER_P(
++    hasObjC3Binding,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition, ObjC3MatchArm),
++    internal::Matcher<VarDecl>, InnerMatcher) {
++  const VarDecl *Binding = Node.getBindingDecl();
++  return Binding && InnerMatcher.matches(*Binding, Finder, Builder);
++}
++
++/// Matches `var` bindings in native ObjC3 conditions or match arms.
++AST_POLYMORPHIC_MATCHER(
++    isObjC3MutableBinding,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition, ObjC3MatchArm)) {
++  return Node.isMutableBinding();
++}
++
++/// Matches the evaluated source of an optional binding or carrier transfer.
++AST_POLYMORPHIC_MATCHER_P(
++    hasObjC3Source,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(ObjC3BindingCondition,
++                                  ObjC3CarrierTransferExpr),
++    internal::Matcher<Expr>, InnerMatcher) {
++  const Expr *Source = Node.getSource();
++  return Source && InnerMatcher.matches(*Source, Finder, Builder);
++}
++
+ /// Matches for statements.
+ ///
+ /// Example matches 'for (;;) {}'
+@@ -5729,26 +5827,33 @@ AST_POLYMORPHIC_MATCHER_P(
+           InnerMatcher.matches(*Condition, Finder, Builder));
+ }
+ 
+-/// Matches the then-statement of an if statement.
++/// Matches the then-statement of an if statement, including a native ObjC3
++/// if-let or if-var statement.
+ ///
+ /// Examples matches the if statement
+ ///   (matcher = ifStmt(hasThen(cxxBoolLiteral(equals(true)))))
+ /// \code
+ ///   if (false) true; else false;
+ /// \endcode
+-AST_MATCHER_P(IfStmt, hasThen, internal::Matcher<Stmt>, InnerMatcher) {
++AST_POLYMORPHIC_MATCHER_P(
++    hasThen, AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ObjC3IfBindingStmt),
++    internal::Matcher<Stmt>, InnerMatcher) {
+   const Stmt *const Then = Node.getThen();
+   return (Then != nullptr && InnerMatcher.matches(*Then, Finder, Builder));
+ }
+ 
+-/// Matches the else-statement of an if statement.
++/// Matches the else-statement of an if statement or the mandatory failure body
++/// of a native ObjC3 guard.
+ ///
+ /// Examples matches the if statement
+ ///   (matcher = ifStmt(hasElse(cxxBoolLiteral(equals(true)))))
+ /// \code
+ ///   if (false) false; else true;
+ /// \endcode
+-AST_MATCHER_P(IfStmt, hasElse, internal::Matcher<Stmt>, InnerMatcher) {
++AST_POLYMORPHIC_MATCHER_P(
++    hasElse,
++    AST_POLYMORPHIC_SUPPORTED_TYPES(IfStmt, ObjC3GuardStmt, ObjC3IfBindingStmt),
++    internal::Matcher<Stmt>, InnerMatcher) {
+   const Stmt *const Else = Node.getElse();
+   return (Else != nullptr && InnerMatcher.matches(*Else, Finder, Builder));
+ }
+diff --git a/clang/lib/AST/ParentMapContext.cpp b/clang/lib/AST/ParentMapContext.cpp
+index 7138dffb4..92084afcd 100644
+--- a/clang/lib/AST/ParentMapContext.cpp
++++ b/clang/lib/AST/ParentMapContext.cpp
+@@ -154,7 +154,16 @@ public:
+ 
+         const auto *ParentExpr = ParentList[0].get<Expr>();
+         if (ParentExpr && ChildExpr)
+-          return AscendIgnoreUnlessSpelledInSource(ParentExpr, ChildExpr);
++          return skipObjC3BindingSnapshot(
++              AscendIgnoreUnlessSpelledInSource(ParentExpr, ChildExpr),
++              ChildExpr);
++
++        if (ChildExpr) {
++          auto SourceParents = skipObjC3BindingSnapshot(ParentList, ChildExpr);
++          if (SourceParents.size() == 1 &&
++              SourceParents[0].get<ObjC3BindingCondition>())
++            return SourceParents;
++        }
+ 
+         {
+           auto AncestorNodes =
+@@ -194,6 +203,24 @@ public:
+     return getDynNodeFromMap(Node, OtherParents);
+   }
+ 
++  DynTypedNodeList skipObjC3BindingSnapshot(DynTypedNodeList ParentList,
++                                           const Expr *Child) {
++    if (ParentList.size() != 1)
++      return ParentList;
++    auto Ancestors = matchParents<VarDecl, DeclStmt, ObjC3BindingCondition>(
++        ParentList, this);
++    if (!std::get<bool>(Ancestors))
++      return ParentList;
++    const auto *Binding = std::get<const ObjC3BindingCondition *>(Ancestors);
++    if (Binding->getSnapshotDecl() != std::get<const VarDecl *>(Ancestors) ||
++        Binding->getSnapshotStatement() != std::get<const DeclStmt *>(Ancestors) ||
++        Binding->getSource()->IgnoreUnlessSpelledInSource() != Child)
++      return ParentList;
++    // The user writes the initializer as a direct child of the condition.
++    // Snapshot storage and its declaration statement only exist in TK_AsIs.
++    return std::get<DynTypedNodeList>(Ancestors);
++  }
++
+   DynTypedNodeList AscendIgnoreUnlessSpelledInSource(const Expr *E,
+                                                      const Expr *Child) {
+ 
+diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+index 004a02c27..24eb7d55e 100644
+--- a/clang/lib/ASTMatchers/ASTMatchFinder.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+@@ -510,7 +510,24 @@ public:
+   bool TraverseAttr(Attr *AttrNode);
+ 
+   bool dataTraverseNode(Stmt *S, DataRecursionQueue *Queue) {
+-    if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
++    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(S)) {
++      {
++        // The source expression is written by the user, although its owning
++        // snapshot declaration is implicit. Source-oriented matchers must see
++        // it without inheriting the snapshot's implicit traversal scope.
++        ASTNodeNotAsIsSourceScope RAII(this, true);
++        if (!TraverseStmt(Binding->getSource()))
++          return false;
++      }
++      {
++        // Preserve the complete semantic ownership tree for TK_AsIs, and keep
++        // source-oriented matching from reporting the initializer twice.
++        ASTNodeNotSpelledInSourceScope RAII(this, true);
++        if (!TraverseStmt(Binding->getSnapshotStatement()))
++          return false;
++      }
++      return TraverseStmt(Binding->getBindingStatement());
++    } else if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
+       {
+         ASTNodeNotAsIsSourceScope RAII(this, true);
+         TraverseStmt(RF->getInit());
+diff --git a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
+index 5cbf13462..61434ecb9 100644
+--- a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
+@@ -941,6 +941,24 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, DependentScopeDeclRefExpr>
+ const internal::VariadicDynCastAllOfMatcher<Stmt, ObjCIvarRefExpr> objcIvarRefExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3GuardStmt> objc3GuardStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
++    objc3IfBindingStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3BindingCondition>
++    objc3BindingCondition;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3OptionalExpr>
++    objc3OptionalExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ResultExpr> objc3ResultExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CarrierTransferExpr>
++    objc3CarrierTransferExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3TryExpr> objc3TryExpr;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3ThrowStmt> objc3ThrowStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3CatchStmt> objc3CatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3DoCatchStmt>
++    objc3DoCatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchArm> objc3MatchArm;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchStmt> objc3MatchStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3MatchExpr> objc3MatchExpr;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, ForStmt> forStmt;
+ const internal::VariadicDynCastAllOfMatcher<Stmt, CXXForRangeStmt>
+     cxxForRangeStmt;
+diff --git a/clang/lib/ASTMatchers/Dynamic/Registry.cpp b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
+index a04070971..29d303b64 100644
+--- a/clang/lib/ASTMatchers/Dynamic/Registry.cpp
++++ b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
+@@ -386,6 +386,24 @@ RegistryMaps::RegistryMaps() {
+   REGISTER_MATCHER(hasUnqualifiedLoc);
+   REGISTER_MATCHER(hasValueType);
+   REGISTER_MATCHER(ifStmt);
++  REGISTER_MATCHER(objc3GuardStmt);
++  REGISTER_MATCHER(objc3IfBindingStmt);
++  REGISTER_MATCHER(objc3BindingCondition);
++  REGISTER_MATCHER(objc3OptionalExpr);
++  REGISTER_MATCHER(objc3ResultExpr);
++  REGISTER_MATCHER(objc3CarrierTransferExpr);
++  REGISTER_MATCHER(objc3TryExpr);
++  REGISTER_MATCHER(objc3ThrowStmt);
++  REGISTER_MATCHER(objc3CatchStmt);
++  REGISTER_MATCHER(objc3DoCatchStmt);
++  REGISTER_MATCHER(objc3MatchArm);
++  REGISTER_MATCHER(objc3MatchStmt);
++  REGISTER_MATCHER(objc3MatchExpr);
++  REGISTER_MATCHER(objc3ConditionCountIs);
++  REGISTER_MATCHER(hasObjC3Condition);
++  REGISTER_MATCHER(hasObjC3Binding);
++  REGISTER_MATCHER(isObjC3MutableBinding);
++  REGISTER_MATCHER(hasObjC3Source);
+   REGISTER_MATCHER(ignoringElidableConstructorCall);
+   REGISTER_MATCHER(ignoringImpCasts);
+   REGISTER_MATCHER(ignoringImplicit);
+diff --git a/clang/unittests/ASTMatchers/CMakeLists.txt b/clang/unittests/ASTMatchers/CMakeLists.txt
+index 955566cf6..2ff1bd9ac 100644
+--- a/clang/unittests/ASTMatchers/CMakeLists.txt
++++ b/clang/unittests/ASTMatchers/CMakeLists.txt
+@@ -3,6 +3,7 @@ add_clang_unittest(ASTMatchersTests
+   ASTMatchersNodeTest.cpp
+   ASTMatchersNarrowingTest.cpp
+   ASTMatchersTraversalTest.cpp
++  ObjC3MatchersTest.cpp
+   CLANG_LIBS
+   clangAST
+   clangASTMatchers
+diff --git a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp b/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
+index 013bb912d..f9d8cd8a8 100644
+--- a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
++++ b/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
+@@ -155,6 +155,55 @@ TEST_F(RegistryTest, ConstructWithSimpleArgs) {
+   EXPECT_FALSE(matches("void foo(int);", Value));
+ }
+ 
++TEST_F(RegistryTest, ObjC3NativeNodeMatchersAreRegistered) {
++  for (StringRef Name : {"objc3GuardStmt", "objc3IfBindingStmt",
++                        "objc3BindingCondition", "objc3OptionalExpr",
++                        "objc3ResultExpr", "objc3CarrierTransferExpr",
++                        "objc3TryExpr", "objc3ThrowStmt", "objc3CatchStmt",
++                        "objc3DoCatchStmt", "objc3MatchArm", "objc3MatchStmt",
++                        "objc3MatchExpr"}) {
++    SCOPED_TRACE(Name);
++    EXPECT_TRUE(lookupMatcherCtor(Name));
++    EXPECT_TRUE(constructMatcher(Name).hasTypedMatcher<Stmt>());
++  }
++}
++
++TEST_F(RegistryTest, ObjC3OrderedConditionPredicatesComposeDynamically) {
++  auto AST = buildASTFromCodeWithArgs(R"(
++    int inspect(Optional(int) source, bool enabled) {
++      guard let first = source, enabled else { return -1; }
++      if var second = source { return first + second; }
++      return first;
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-dynamic-matchers.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  Matcher<Stmt> Guard =
++      constructMatcher("objc3GuardStmt",
++                       constructMatcher("objc3ConditionCountIs", 2))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(Guard, AST->getASTContext()).size());
++  Matcher<Stmt> MutableIf =
++      constructMatcher(
++          "objc3IfBindingStmt",
++          constructMatcher(
++              "hasObjC3Condition", 0,
++              constructMatcher("objc3BindingCondition",
++                               constructMatcher("isObjC3MutableBinding"))))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(MutableIf, AST->getASTContext()).size());
++  Matcher<Stmt> Binding =
++      constructMatcher(
++          "objc3BindingCondition",
++          constructMatcher("hasObjC3Binding",
++                           constructMatcher("varDecl",
++                                            constructMatcher("hasName",
++                                                             StringRef("first")))))
++          .getTypedMatcher<Stmt>();
++  EXPECT_EQ(1u, match(Binding, AST->getASTContext()).size());
++}
++
+ TEST_F(RegistryTest, ConstructWithMatcherArgs) {
+   Matcher<Decl> HasInitializerSimple = constructMatcher(
+       "varDecl", constructMatcher("hasInitializer", constructMatcher("stmt")))
+diff --git a/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
+new file mode 100644
+index 000000000..2e455d274
+--- /dev/null
++++ b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
+@@ -0,0 +1,185 @@
++//===--- ObjC3MatchersTest.cpp - Native ObjC3 matcher consumers -----------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/ASTMatchers/ASTMatchFinder.h"
++#include "clang/ASTMatchers/ASTMatchers.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++using namespace clang::ast_matchers;
++
++namespace {
++
++std::unique_ptr<ASTUnit> buildObjC3AST(StringRef Code) {
++  return tooling::buildASTFromCodeWithArgs(
++      Code, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-matchers.mm");
++}
++
++constexpr llvm::StringLiteral Conditions = R"(
++  using Maybe = Optional(int);
++  int conditions(Maybe source, bool enabled) {
++    guard let first = source, enabled else { return -1; }
++    if var second = source, second > first {
++      second += first;
++      return second;
++    } else {
++      return first;
++    }
++  }
++)";
++
++} // namespace
++
++TEST(ObjC3Matchers, PreservesOrderedConditionsAndUserBindingIdentity) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto Enabled = ignoringParenImpCasts(
++      declRefExpr(to(parmVarDecl(hasName("enabled")))));
++  auto Results = match(
++      objc3GuardStmt(
++          objc3ConditionCountIs(2),
++          hasObjC3Condition(
++              0, objc3BindingCondition(
++                     unless(isObjC3MutableBinding()),
++                     hasObjC3Binding(varDecl(hasName("first")).bind("binding")))
++                     .bind("condition")),
++          hasObjC3Condition(1, Enabled))
++          .bind("guard"),
++      AST->getASTContext());
++  ASSERT_EQ(1u, Results.size());
++  const auto *Condition =
++      Results.front().getNodeAs<ObjC3BindingCondition>("condition");
++  ASSERT_TRUE(Condition);
++  EXPECT_EQ(Condition->getBindingDecl(),
++            Results.front().getNodeAs<VarDecl>("binding"));
++  EXPECT_EQ(Condition,
++            Results.front().getNodeAs<ObjC3GuardStmt>("guard")->getCondition(0));
++  EXPECT_TRUE(match(objc3GuardStmt(hasObjC3Condition(2, stmt())),
++                    AST->getASTContext()).empty());
++  EXPECT_TRUE(match(objc3GuardStmt(objc3ConditionCountIs(1)),
++                    AST->getASTContext()).empty());
++  auto MutableSecond = objc3BindingCondition(
++      isObjC3MutableBinding(), hasObjC3Binding(varDecl(hasName("second"))));
++  EXPECT_EQ(1u, match(objc3IfBindingStmt(hasObjC3Condition(0, MutableSecond)),
++                      AST->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, BranchMatchersApplyToNativeConditionStatements) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  EXPECT_EQ(1u,
++            match(objc3GuardStmt(hasElse(compoundStmt(has(returnStmt())))),
++                  AST->getASTContext()).size());
++  EXPECT_EQ(1u,
++            match(objc3IfBindingStmt(
++                      hasThen(compoundStmt(hasDescendant(
++                          binaryOperator(hasOperatorName("+="))))),
++                      hasElse(compoundStmt(has(returnStmt())))),
++                  AST->getASTContext()).size());
++  auto WithoutElse = buildObjC3AST(R"(
++    void use(Optional(int) source) { if let value = source { (void)value; } }
++  )");
++  ASSERT_TRUE(WithoutElse);
++  ASSERT_FALSE(WithoutElse->getDiagnostics().hasErrorOccurred());
++  EXPECT_TRUE(match(objc3IfBindingStmt(hasElse(stmt())),
++                    WithoutElse->getASTContext()).empty());
++  // Existing IfStmt consumers retain the same matcher syntax.
++  auto Ordinary = tooling::buildASTFromCode("void f() { if (true) {} else {} }");
++  ASSERT_TRUE(Ordinary);
++  EXPECT_EQ(1u, match(ifStmt(hasThen(compoundStmt()), hasElse(compoundStmt())),
++                      Ordinary->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, SourceMatcherFindsWrittenSourceWithoutSnapshotNames) {
++  auto AST = buildObjC3AST(Conditions);
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto SourceParameter = declRefExpr(to(parmVarDecl(hasName("source"))));
++  auto SourceExpression = expr(anyOf(SourceParameter,
++                                     hasDescendant(SourceParameter)));
++  EXPECT_EQ(2u, match(objc3BindingCondition(hasObjC3Source(SourceExpression)),
++                      AST->getASTContext()).size());
++  EXPECT_TRUE(match(objc3BindingCondition(hasObjC3Binding(varDecl(isImplicit()))),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(2u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))))),
++                  AST->getASTContext()).size());
++  EXPECT_EQ(2u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))),
++                                       hasParent(objc3BindingCondition()))),
++                  AST->getASTContext()).size());
++  EXPECT_TRUE(match(declRefExpr(to(parmVarDecl(hasName("source"))),
++                                hasParent(objc3BindingCondition())),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(2u,
++            match(declRefExpr(to(parmVarDecl(hasName("source"))),
++                              hasAncestor(varDecl(isImplicit()))),
++                  AST->getASTContext()).size());
++  EXPECT_TRUE(match(traverse(TK_IgnoreUnlessSpelledInSource,
++                             declRefExpr(to(parmVarDecl(hasName("source"))),
++                                         hasAncestor(varDecl(isImplicit())))),
++                    AST->getASTContext()).empty());
++  EXPECT_EQ(1u,
++            match(traverse(TK_IgnoreUnlessSpelledInSource,
++                           declRefExpr(to(parmVarDecl(hasName("source"))),
++                                       hasAncestor(objc3GuardStmt()))),
++                  AST->getASTContext()).size());
++}
++
++TEST(ObjC3Matchers, NativeExpressionErrorAndMatchKindsRemainQueryable) {
++  auto AST = buildObjC3AST(R"(
++    struct Error {};
++    using Maybe = Optional(int);
++    int typed() throws(Error);
++    void expressions(Maybe source) {
++      Maybe present = Some(int, 1);
++      Result(int, long) result = Ok(int, long, 4);
++      Maybe copied = copyValue(source);
++      handle { (void)tryValue(typed()); }
++      catch(Error error) { (void)error; }
++      catch { }
++    }
++    int raise() throws(Error) { throwError(Error{}); }
++    void statement_match(Maybe source) {
++      match(source) {
++        case .Some(var payload): { ++payload; }
++        case .None: { }
++      }
++    }
++    int expression_match(Maybe source) {
++      return match(source) {
++        case .Some(let payload) => payload;
++        case .None => 0;
++      };
++    }
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &C = AST->getASTContext();
++  EXPECT_FALSE(match(objc3OptionalExpr(), C).empty());
++  EXPECT_FALSE(match(objc3ResultExpr(), C).empty());
++  EXPECT_EQ(1u, match(objc3CarrierTransferExpr(), C).size());
++  EXPECT_EQ(1u, match(objc3TryExpr(), C).size());
++  EXPECT_EQ(1u, match(objc3ThrowStmt(), C).size());
++  EXPECT_EQ(2u, match(objc3CatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3DoCatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3MatchStmt(), C).size());
++  EXPECT_EQ(1u, match(objc3MatchExpr(), C).size());
++  EXPECT_EQ(4u, match(objc3MatchArm(), C).size());
++  EXPECT_EQ(1u,
++            match(objc3MatchArm(isObjC3MutableBinding(),
++                                hasObjC3Binding(varDecl(hasName("payload")))), C)
++                .size());
++  EXPECT_EQ(2u,
++            match(objc3MatchArm(hasObjC3Binding(varDecl(hasName("payload")))), C)
++                .size());
++}
