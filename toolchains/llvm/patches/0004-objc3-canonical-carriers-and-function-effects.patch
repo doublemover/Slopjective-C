@@ -23517,17 +23517,32 @@ index a04070971..29d303b64 100644
    REGISTER_MATCHER(ignoringImpCasts);
    REGISTER_MATCHER(ignoringImplicit);
 diff --git a/clang/unittests/ASTMatchers/CMakeLists.txt b/clang/unittests/ASTMatchers/CMakeLists.txt
-index 955566cf6..2ff1bd9ac 100644
+index 955566cf6..17e9220a7 100644
 --- a/clang/unittests/ASTMatchers/CMakeLists.txt
 +++ b/clang/unittests/ASTMatchers/CMakeLists.txt
-@@ -3,6 +3,7 @@ add_clang_unittest(ASTMatchersTests
-   ASTMatchersNodeTest.cpp
-   ASTMatchersNarrowingTest.cpp
-   ASTMatchersTraversalTest.cpp
+@@ -20,3 +20,22 @@ add_clang_unittest(ASTMatchersTests
+   )
+ 
+ add_subdirectory(Dynamic)
++
++# Keep Objective-C 3 source traversal qualification independently buildable.
++add_clang_unittest(ObjC3MatchersTests
 +  ObjC3MatchersTest.cpp
-   CLANG_LIBS
-   clangAST
-   clangASTMatchers
++  CLANG_LIBS
++  clangAST
++  clangASTMatchers
++  clangBasic
++  clangFrontend
++  clangSerialization
++  clangTooling
++  LINK_LIBS
++  clangTesting
++  LLVMTestingSupport
++  LLVM_COMPONENTS
++  FrontendOpenMP
++  Support
++  TargetParser
++  )
 diff --git a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp b/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp
 index 013bb912d..f9d8cd8a8 100644
 --- a/clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp

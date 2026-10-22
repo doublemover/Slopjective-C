@@ -23,7 +23,7 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "305498c2bfdd187e664c5f052686db529e5426ecaf292b656630a2cd014c6124"
+      "sha256": "8565b53e2c4ea2f5e0f6661a03119372bfa238b0e63587b24b401633f1df071d"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
@@ -78,8 +78,12 @@
       "clangFrontend",
       "clangDriver",
       "ObjC3TypeContractsTests",
+      "ObjC3MatchersTests",
+      "DynamicASTMatchersTests",
       "clangd",
       "clang-format",
+      "clang-query",
+      "c-index-test",
       "lldb",
       "lldb-server",
       "llvm-dwarfdump"
@@ -116,14 +120,18 @@
       {
         "name": "native_type_contract_tests",
         "targets": [
-          "ObjC3TypeContractsTests"
+          "ObjC3TypeContractsTests",
+          "ObjC3MatchersTests",
+          "DynamicASTMatchersTests"
         ]
       },
       {
         "name": "native_editor_tools",
         "targets": [
           "clangd",
-          "clang-format"
+          "clang-format",
+          "clang-query",
+          "c-index-test"
         ]
       },
       {
@@ -256,9 +264,16 @@
     "compile_jobs": 4,
     "link_jobs": 1,
     "test_binaries": [
-      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe",
+      "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
+      "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
     ],
-    "clangd_tidy_checks": false
+    "clangd_tidy_checks": false,
+    "additional_test_suites": [
+      "clang/test/Index/objc3-condition-cursors.mm",
+      "clang/test/Index/objc3-native-expression-cursors.mm",
+      "clang-tools-extra/test/clang-query/objc3-conditions.mm"
+    ]
   },
   "host_tools": {
     "python": "3.15.0",
