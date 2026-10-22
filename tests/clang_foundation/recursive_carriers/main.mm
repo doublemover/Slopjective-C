@@ -204,6 +204,17 @@ static int recursive_native_unwind() {
   return 0;
 }
 
+static int plain_dynamic_storage() {
+  using Plain = Optional(int);
+  Plain *value = new Plain(Some(int, 9));
+  if (!hasValue(*value)) return 21;
+  delete value;
+  Plain *empty = new Plain[3]{};
+  if (hasValue(empty[0]) || hasValue(empty[1]) || hasValue(empty[2])) return 22;
+  delete[] empty;
+  return 0;
+}
+
 int main() {
   if (int code = empty_and_inactive()) return code;
   if (int code = recursive_copy_and_move()) return code;
@@ -211,5 +222,6 @@ int main() {
   if (int code = recursive_failed_transfer()) return code;
   if (int code = nested_initialization_rollback()) return code;
   if (int code = recursive_native_unwind()) return code;
+  if (int code = plain_dynamic_storage()) return code;
   return 0;
 }

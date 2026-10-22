@@ -203,7 +203,7 @@ index 15d0e6435..ff84dd3d9 100644
  DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
      : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..0be7cc17a 100644
+index 9a97d52fd..80474696b 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -524,7 +524,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -215,7 +215,7 @@ index 9a97d52fd..0be7cc17a 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1939,6 +1939,195 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1939,203 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -246,6 +246,14 @@ index 9a97d52fd..0be7cc17a 100644
 +    if (Node->getKind() == ObjC3OptionalExpr::Kind::Some) OS << ", ";
 +  }
 +  if (Node->getPayload()) PrintExpr(Node->getPayload());
++  OS << ")";
++}
++
++void StmtPrinter::VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *Node) {
++  OS << "(";
++  PrintExpr(Node->getLHS());
++  OS << " ?? ";
++  PrintExpr(Node->getRHS());
 +  OS << ")";
 +}
 +
@@ -860,7 +868,7 @@ index 44b51a985..250b678c3 100644
  
    ExprResult R;
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
-index 87cec16a7..b6473abc5 100644
+index 87cec16a7..e45277e76 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp
 +++ b/clang/lib/Serialization/ASTReaderStmt.cpp
 @@ -342,9 +342,111 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
@@ -975,7 +983,7 @@ index 87cec16a7..b6473abc5 100644
  void ASTStmtReader::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1414,6 +1516,58 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
+@@ -1414,6 +1516,66 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
    E->StmtExprBits.TemplateDepth = Record.readInt();
  }
  
@@ -1003,6 +1011,14 @@ index 87cec16a7..b6473abc5 100644
 +  E->setLParenLoc(readSourceLocation());
 +  E->setCommaLoc(readSourceLocation());
 +  E->setRParenLoc(readSourceLocation());
++}
++
++void ASTStmtReader::VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++  VisitExpr(E);
++  E->Written[0] = Record.readSubExpr();
++  E->Written[1] = Record.readSubExpr();
++  E->Semantic = Record.readSubExpr();
++  E->OperatorLoc = readSourceLocation();
 +}
 +
 +void ASTStmtReader::VisitObjC3TryExpr(ObjC3TryExpr *E) {
@@ -1034,7 +1050,7 @@ index 87cec16a7..b6473abc5 100644
  void ASTStmtReader::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    E->setCond(Record.readSubExpr());
-@@ -3234,6 +3388,43 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3234,6 +3396,43 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = DeferStmt::CreateEmpty(Context, Empty);
        break;
  
@@ -1078,7 +1094,7 @@ index 87cec16a7..b6473abc5 100644
      case STMT_RETURN:
        S = ReturnStmt::CreateEmpty(
            Context, /* HasNRVOCandidate=*/Record[ASTStmtReader::NumStmtFields]);
-@@ -3505,6 +3696,22 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3505,6 +3704,25 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = new (Context) StmtExpr(Empty);
        break;
  
@@ -1093,6 +1109,9 @@ index 87cec16a7..b6473abc5 100644
 +    case EXPR_OBJC3_OPTIONAL:
 +      S = new (Context) ObjC3OptionalExpr(Empty);
 +      break;
++    case EXPR_OBJC3_COALESCE:
++      S = new (Context) ObjC3CoalesceExpr(Empty);
++      break;
 +
 +    case EXPR_OBJC3_TRY:
 +      S = new (Context) ObjC3TryExpr(Empty);
@@ -1102,7 +1121,7 @@ index 87cec16a7..b6473abc5 100644
        S = new (Context) ChooseExpr(Empty);
        break;
 diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
-index 70477f4cf..8a37d9b9f 100644
+index 70477f4cf..d1725b3a1 100644
 --- a/clang/lib/Serialization/ASTWriterStmt.cpp
 +++ b/clang/lib/Serialization/ASTWriterStmt.cpp
 @@ -334,10 +334,112 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
@@ -1218,7 +1237,7 @@ index 70477f4cf..8a37d9b9f 100644
  void ASTStmtWriter::VisitReturnStmt(ReturnStmt *S) {
    VisitStmt(S);
  
-@@ -1363,6 +1465,62 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
+@@ -1363,6 +1465,71 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
    Code = serialization::EXPR_STMT;
  }
  
@@ -1248,6 +1267,15 @@ index 70477f4cf..8a37d9b9f 100644
 +  Record.AddSourceLocation(E->getCommaLoc());
 +  Record.AddSourceLocation(E->getRParenLoc());
 +  Code = serialization::EXPR_OBJC3_OPTIONAL;
++}
++
++void ASTStmtWriter::VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++  VisitExpr(E);
++  Record.AddStmt(E->getLHS());
++  Record.AddStmt(E->getRHS());
++  Record.AddStmt(E->getSemanticExpr());
++  Record.AddSourceLocation(E->getOperatorLoc());
++  Code = serialization::EXPR_OBJC3_COALESCE;
 +}
 +
 +void ASTStmtWriter::VisitObjC3TryExpr(ObjC3TryExpr *E) {

@@ -8,6 +8,8 @@ extern "C" {
 id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
 id object_dispose(__unsafe_unretained id);
 void objc_release(__unsafe_unretained id);
+void *_Block_copy(const void *);
+void _Block_release(const void *);
 #ifdef __cplusplus
 }
 #endif
@@ -103,6 +105,147 @@ static void cpp_double_exception(void) {
   catch(int value) { bad=9; }
 }
 #endif
+
+// Scalar resource ownership uses the same registered action ordering under
+// ARC and MRC. Close callbacks exercise both value and address signatures.
+static void close_resource(int value) { record(value); }
+static int close_resource_status(int value) { record(value); return -1; }
+static void close_resource_address(int *value) { record(*value); *value=9; }
+static void close_resource_pointer(void *value) { record(*(int *)value); }
+static void close_resource_pointer_address(void **value) {
+  record(*(int *)*value); *value=(void *)0;
+}
+static int *resource_observed;
+static void resource_normal(void) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  int newer __attribute__((objc_resource(close=close_resource_status, invalid=-1))) = 2;
+}
+static void resource_invalid(void) {
+  int absent __attribute__((objc_resource(close=close_resource, invalid=-1))) = -1;
+  void *nothing __attribute__((objc_resource(close=close_resource_pointer, invalid=0))) = (void *)0;
+}
+static void resource_final_value(void) {
+  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  value=3;
+}
+static void resource_defer_actions(void) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  defer { second(); }
+  int newer __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+}
+static void resource_invalidated(void) {
+  defer { if(*resource_observed != -1)bad=50; second(); }
+  int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
+  resource_observed=&value;
+}
+static void resource_pointer(void) {
+  int digit=3;
+  void *value __attribute__((objc_resource(close=close_resource_pointer_address, invalid=0))) = &digit;
+}
+static void resource_storage(int count) {
+  int *value __attribute__((objc_resource(close=close_resource_pointer, invalid=0))) = (int *)0;
+  int digits[count]; digits[0]=3;
+  value=digits;
+}
+static void resource_backward(void) {
+  int count=0;
+again:;
+  int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+  if(count++ == 0)goto again;
+  second();
+}
+static void resource_forward(void) {
+  {
+    int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+    goto after;
+  }
+after: second();
+}
+static void resource_loop(void) {
+  for(int index=0; index!=2; ++index) {
+    int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+    if(index == 0)continue;
+    break;
+  }
+}
+static int resource_acquire(bool fail) {
+  second();
+  if(fail)@throw token;
+  return 3;
+}
+static void resource_initialization(bool fail) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  int newer __attribute__((objc_resource(close=close_resource, invalid=0))) = resource_acquire(fail);
+}
+static void resource_checked(void) {
+  handle {
+    int value __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+    throwError(token);
+  } catch(id<Error> error) { if(error != token)bad=51; second(); }
+}
+static void close_resource_throwing(int value) { record(value); @throw token; }
+static void resource_throwing_close(void) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  int newer __attribute__((objc_resource(close=close_resource_throwing, invalid=0))) = 3;
+}
+static int (^resource_block)(void);
+static void resource_byref(bool keep) {
+  __block int value __attribute__((objc_resource(close=close_resource_address, invalid=-1))) = 3;
+#if __has_feature(objc_arc)
+  resource_block=^{ return value; };
+#else
+  resource_block=(__typeof__(resource_block))_Block_copy((const void *)^{ return value; });
+#endif
+  value=4;
+  if(!keep) {
+#if !__has_feature(objc_arc)
+    _Block_release((const void *)resource_block);
+#endif
+    resource_block=(id)0;
+  }
+}
+#ifdef __cplusplus
+struct ResourceAction { ~ResourceAction() { second(); } };
+static void resource_cpp_actions(bool fail) {
+  int older __attribute__((objc_resource(close=close_resource, invalid=0))) = 1;
+  ResourceAction action;
+  int newer __attribute__((objc_resource(close=close_resource, invalid=0))) = 3;
+  if(fail)throw 42;
+}
+#endif
+static void resource_ordering(void) {
+  resource_normal(); expect(21);
+  resource_invalid(); expect(0);
+  resource_final_value(); expect(3);
+  resource_defer_actions(); expect(321);
+  resource_invalidated(); expect(32);
+  resource_pointer(); expect(3);
+  resource_storage(7); expect(3);
+  resource_backward(); expect(323);
+  resource_forward(); expect(32);
+  resource_loop(); expect(33);
+  resource_initialization(0); expect(231);
+  @try { resource_initialization(1); }
+  @catch(id error) { if(error != token)bad=52; record(4); }
+  expect(214);
+  resource_checked(); expect(12);
+  @try { resource_throwing_close(); }
+  @catch(id error) { if(error != token)bad=53; second(); }
+  expect(312);
+  resource_byref(0); expect(4);
+  resource_byref(1); expect(4);
+  if(resource_block() != -1)bad=54;
+#if !__has_feature(objc_arc)
+  _Block_release((const void *)resource_block);
+#endif
+  resource_block=(id)0;
+#ifdef __cplusplus
+  resource_cpp_actions(0); expect(321);
+  try { resource_cpp_actions(1); }
+  catch(int value) { if(value != 42)bad=55; record(4); }
+  expect(3214);
+#endif
+}
 
 #if __has_feature(objc_arc)
 __attribute__((objc_root_class))
@@ -307,6 +450,15 @@ static void arc_cleanup_attribute(void) {
   defer { assert_alive(); }
   int marker __attribute__((cleanup(release_marker))) = 2;
   DeferredProbe *value = [DeferredProbe newWithDigit:3]; observe(value);
+}
+static void close_resource_observed(int value) {
+  if(!observed)bad=56;
+  record(value);
+}
+static void arc_resource_only(bool fail) {
+  int resource __attribute__((objc_resource(close=close_resource_observed, invalid=0))) = 1;
+  DeferredProbe *value=[DeferredProbe newWithDigit:3]; observe(value);
+  if(fail)@throw token;
 }
 // Cleanup attributes register source actions in their own right. None of
 // these scopes contains a defer to supply an incidental release-queue owner.
@@ -620,6 +772,10 @@ static void arc_ordering(void) {
   @try { arc_carrier_array(1); } @catch(id error) { if(error != token)bad=33; second(); }
   expect(132);
   arc_cleanup_attribute(); expect(213);
+  arc_resource_only(0); expect(13);
+  @try { arc_resource_only(1); }
+  @catch(id error) { if(error != token)bad=57; second(); }
+  expect(132);
   arc_cleanup_only(0); expect(13);
   @try { arc_cleanup_only(1); } @catch(id error) { if(error != token)bad=39; second(); }
   expect(132);

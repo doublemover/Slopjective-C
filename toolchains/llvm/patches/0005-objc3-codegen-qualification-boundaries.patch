@@ -2975,10 +2975,10 @@ index 7421733ef..f382865e8 100644
    } else if (isa<VarDecl>(D) &&
               GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..1ff306a14 100644
+index e84e05e8e..442f86923 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
-@@ -11,12 +11,17 @@
+@@ -11,12 +11,19 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGBlocks.h"
@@ -2986,6 +2986,8 @@ index e84e05e8e..1ff306a14 100644
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Defer.h"
++#include "CGObjC3Resources.h"
++#include "CGObjC3MixedCarriers.h"
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
@@ -2996,7 +2998,7 @@ index e84e05e8e..1ff306a14 100644
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "ConstantEmitter.h"
-@@ -30,6 +35,7 @@
+@@ -30,6 +37,7 @@
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DeclOpenACC.h"
  #include "clang/AST/DeclOpenMP.h"
@@ -3004,10 +3006,27 @@ index e84e05e8e..1ff306a14 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +498,84 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +500,101 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
++  struct DestroyObjC3MixedCarrierLocal final : EHScopeStack::Cleanup {
++    Address Storage, Selection;
++    QualType Type;
++    bool Precise, DestroyCXX, DestroyStrong, DestroyWeak;
++    DestroyObjC3MixedCarrierLocal(Address Storage, Address Selection,
++                                  QualType Type, bool Precise, bool DestroyCXX,
++                                  bool DestroyStrong, bool DestroyWeak)
++        : Storage(Storage), Selection(Selection), Type(Type), Precise(Precise),
++          DestroyCXX(DestroyCXX), DestroyStrong(DestroyStrong),
++          DestroyWeak(DestroyWeak) {}
++    void Emit(CodeGenFunction &CGF, Flags) override {
++      emitObjC3MixedCarrierDestroyPayload(CGF, Type, Storage, Precise,
++                                          DestroyCXX, DestroyStrong,
++                                          DestroyWeak, Selection);
++    }
++  };
++
 +  struct DestroyObjC3CarrierLocal final : EHScopeStack::Cleanup {
 +    Address Storage;
 +    QualType CarrierType;
@@ -3089,7 +3108,7 @@ index e84e05e8e..1ff306a14 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -527,19 +611,30 @@ namespace {
+@@ -527,19 +630,30 @@ namespace {
        bool NRVO = flags.isForNormalCleanup() && NRVOFlag;
  
        llvm::BasicBlock *SkipDtorBB = nullptr;
@@ -3123,7 +3142,7 @@ index e84e05e8e..1ff306a14 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -1354,9 +1449,93 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1468,99 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -3168,7 +3187,13 @@ index e84e05e8e..1ff306a14 100644
 +      IsCarrier && !IsPlainCarrier && !IsDirectCppLocal &&
 +      CodeGen::isObjC3CarrierARCLocalInitializer(CGM, D) &&
 +      CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical);
-+  if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal && !IsDirectARCLocal) {
++  const bool IsDirectMixedLocal =
++      IsCarrier && !IsPlainCarrier && !IsDirectCppLocal && !IsDirectARCLocal &&
++      !D.getType().isVolatileQualified() &&
++      isDirectObjC3CarrierConstruction(D, Canonical) &&
++      supportsObjC3MixedCarrierLocalLifetime(CGM, Canonical);
++  if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal && !IsDirectARCLocal &&
++      !IsDirectMixedLocal) {
 +    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
 +        CGM, D.getLocation(), Canonical, "local lifetime");
 +    // Keep LocalDeclMap valid for recovery, without evaluating an initializer
@@ -3191,7 +3216,7 @@ index e84e05e8e..1ff306a14 100644
 +      ObjC3ManagedStorageInitRoot = emission.getObjectAddress(*this);
 +      EmitAutoVarInit(emission, InitializerOverride);
 +      ObjC3ManagedStorageInitRoot = Saved;
-+    } else if (IsDirectCppLocal || IsDirectARCLocal ||
++    } else if (IsDirectCppLocal || IsDirectARCLocal || IsDirectMixedLocal ||
 +               (IsPlainCarrier &&
 +                isDirectObjC3CarrierConstruction(D, Canonical))) {
 +      QualType InitCarrierType = Canonical;
@@ -3204,7 +3229,7 @@ index e84e05e8e..1ff306a14 100644
 +              dyn_cast_or_null<ObjC3CarrierTransferExpr>(Init))
 +        InitCarrierType = Transfer->getCarrierType();
 +      Address Initialized = Address::invalid();
-+      if (IsDirectARCLocal || IsDirectCppLocal)
++      if (IsDirectARCLocal || IsDirectCppLocal || IsDirectMixedLocal)
 +        Initialized = beginObjC3CarrierInitGuard(
 +            *this, InitCarrierType.getUnqualifiedType(),
 +            emission.getObjectAddress(*this), IsDirectARCLocal);
@@ -3220,7 +3245,7 @@ index e84e05e8e..1ff306a14 100644
  }
  
  /// Emit a lifetime.begin marker if some criteria are satisfied.
-@@ -1487,7 +1666,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
+@@ -1487,7 +1691,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
  /// EmitAutoVarAlloca - Emit the alloca and debug information for a
  /// local variable.  Does not emit initialization or destruction.
  CodeGenFunction::AutoVarEmission
@@ -3230,7 +3255,7 @@ index e84e05e8e..1ff306a14 100644
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1505,7 +1685,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1710,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      EmitVariablyModifiedType(Ty);
  
    auto *DI = getDebugInfo();
@@ -3240,7 +3265,7 @@ index e84e05e8e..1ff306a14 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1532,7 +1713,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1532,7 +1738,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -3250,7 +3275,7 @@ index e84e05e8e..1ff306a14 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1727,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1752,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -3260,7 +3285,7 @@ index e84e05e8e..1ff306a14 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1704,7 +1887,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1704,7 +1912,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -3278,7 +3303,7 @@ index e84e05e8e..1ff306a14 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +1935,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +1960,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -3314,7 +3339,7 @@ index e84e05e8e..1ff306a14 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +1969,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +1994,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -3340,7 +3365,7 @@ index e84e05e8e..1ff306a14 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2172,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2197,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -3350,7 +3375,7 @@ index e84e05e8e..1ff306a14 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2185,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2210,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -3368,7 +3393,7 @@ index e84e05e8e..1ff306a14 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2199,6 +2432,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2457,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -3376,7 +3401,7 @@ index e84e05e8e..1ff306a14 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2452,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2477,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -3401,7 +3426,7 @@ index e84e05e8e..1ff306a14 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2482,70 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2507,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -3427,6 +3452,42 @@ index e84e05e8e..1ff306a14 100644
 +    else
 +      pushDestroy(NormalAndEHCleanup, emission.getObjectAddress(*this), Canonical,
 +                    destroyObjC3ManagedStorage, false);
++  } else if (IsCarrier && isDirectObjC3CarrierConstruction(D, Canonical) &&
++             supportsObjC3MixedCarrierLocalLifetime(CGM, Canonical)) {
++    Address Storage = emission.getObjectAddress(*this);
++    Address Selection =
++        snapshotObjC3MixedCarrierCleanupSelection(*this, Canonical, Storage);
++    bool Ordered = hasObjC3DeferredSourceOwner(&D);
++    bool Precise = Ordered || D.hasAttr<ObjCPreciseLifetimeAttr>();
++    // A direct carrier selects one ultimate payload. Its native C++ action
++    // and implicit ARC releases have separate source ordering, but all of
++    // them use the same selection frozen before any cleanup can mutate tags.
++    EHStack.pushCleanup<DestroyObjC3MixedCarrierLocal>(
++        NormalAndEHCleanup, Storage, Selection, Canonical, Precise,
++        /*DestroyCXX=*/true, /*DestroyStrong=*/false, /*DestroyWeak=*/false);
++    auto RegisterManaged = [&](CleanupKind Kind, bool Strong) {
++      if (Ordered)
++        EHStack.pushCleanup<EmitObjC3OrderedRelease>(
++            Kind, registerObjC3SourceRelease(
++                &D, Storage, bool(Kind & EHCleanup),
++                [Canonical, Selection, Precise, Strong](
++                    CodeGenFunction &CGF, Address ManagedStorage,
++                    EHScopeStack::Cleanup::Flags) {
++                  emitObjC3MixedCarrierDestroyPayload(
++                      CGF, Canonical, ManagedStorage, Precise,
++                      /*DestroyCXX=*/false,
++                      /*DestroyStrong=*/Strong, /*DestroyWeak=*/!Strong,
++                      Selection);
++                }));
++      else
++        EHStack.pushCleanup<DestroyObjC3MixedCarrierLocal>(
++            Kind, Storage, Selection, Canonical, Precise, /*DestroyCXX=*/false,
++            /*DestroyStrong=*/Strong, /*DestroyWeak=*/!Strong);
++    };
++    if (hasObjC3CarrierStrongPayload(CGM, Canonical))
++      RegisterManaged(getARCCleanupKind(), /*Strong=*/true);
++    if (hasObjC3CarrierWeakPayload(CGM, Canonical))
++      RegisterManaged(NormalAndEHCleanup, /*Strong=*/false);
 +  } else if (IsCarrier && CodeGen::isObjC3CarrierARCLocalInitializer(CGM, D) &&
 +      CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical)) {
 +    bool Ordered = hasObjC3DeferredSourceOwner(&D);
@@ -3474,16 +3535,23 @@ index e84e05e8e..1ff306a14 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2271,7 +2581,7 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2642,14 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
 -                      cxxDestructorCanThrow(emission.Variable->getType()));
 +                      cxxDestructorCanThrow(emission.Variable->getType()), &D);
    }
++
++  // Resource actions are registered only after the initializer has completed.
++  // Register after the implicit byref disposal so a forwarded handle remains
++  // addressable until close and invalidation finish in every ownership mode.
++  if (D.hasAttr<ObjCResourceAttr>())
++    pushObjC3ResourceCleanup(*this, D);
  }
  
-@@ -2285,6 +2595,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+ CodeGenFunction::Destroyer *
+@@ -2285,6 +2662,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -3492,7 +3560,7 @@ index e84e05e8e..1ff306a14 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3008,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3075,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -3629,10 +3697,10 @@ index 6a0d127fb..d49202d41 100644
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
-index bc35ffdaa..e93deff85 100644
+index bc35ffdaa..60fb7a007 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
 +++ b/clang/lib/CodeGen/CGExprAgg.cpp
-@@ -13,6 +13,13 @@
+@@ -13,6 +13,14 @@
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
@@ -3642,11 +3710,12 @@ index bc35ffdaa..e93deff85 100644
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Match.h"
 +#include "CGObjC3ResultExpr.h"
++#include "CGObjC3OptionalOperators.h"
 +#include "CGObjC3TypedErrors.h"
  #include "CGObjCRuntime.h"
  #include "CGRecordLayout.h"
  #include "CodeGenFunction.h"
-@@ -24,7 +31,9 @@
+@@ -24,7 +32,9 @@
  #include "clang/AST/Attr.h"
  #include "clang/AST/DeclCXX.h"
  #include "clang/AST/DeclTemplate.h"
@@ -3656,7 +3725,7 @@ index bc35ffdaa..e93deff85 100644
  #include "llvm/IR/Constants.h"
  #include "llvm/IR/Function.h"
  #include "llvm/IR/GlobalVariable.h"
-@@ -110,6 +119,15 @@ public:
+@@ -110,6 +120,15 @@ public:
    void Visit(Expr *E) {
      ApplyDebugLocation DL(CGF, E);
      StmtVisitor<AggExprEmitter>::Visit(E);
@@ -3672,7 +3741,7 @@ index bc35ffdaa..e93deff85 100644
    }
  
    void VisitStmt(Stmt *S) { CGF.ErrorUnsupported(S, "aggregate expression"); }
-@@ -208,6 +226,16 @@ public:
+@@ -208,6 +227,16 @@ public:
      }
  
      AggValueSlot Slot = EnsureSlot(E->getType());
@@ -3689,7 +3758,7 @@ index bc35ffdaa..e93deff85 100644
      bool NeedsDestruction =
          !Slot.isExternallyDestructed() &&
          E->getType().isDestructedType() == QualType::DK_nontrivial_c_struct;
-@@ -227,6 +255,69 @@ public:
+@@ -227,6 +256,73 @@ public:
    void EmitInitializationToLValue(Expr *E, LValue Address);
    void EmitNullInitializationToLValue(LValue Address);
    //  case Expr::ChooseExprClass:
@@ -3747,6 +3816,10 @@ index bc35ffdaa..e93deff85 100644
 +    emitObjC3TryAggregateExpr(CGF, *E, Dest);
 +  }
 +
++  void VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++    emitObjC3CoalesceAggregateExpr(CGF, E, Dest);
++  }
++
 +  void VisitObjC3CarrierTransferExpr(ObjC3CarrierTransferExpr *E) {
 +    bool IsLocalCarrierInitialization = CGF.isObjC3CarrierLocalInitialization(
 +        Dest.getAddress(), E->getCarrierType());
@@ -3759,7 +3832,7 @@ index bc35ffdaa..e93deff85 100644
    void VisitCXXThrowExpr(const CXXThrowExpr *E) { CGF.EmitCXXThrowExpr(E); }
    void VisitAtomicExpr(AtomicExpr *E) {
      RValue Res = CGF.EmitAtomicExpr(E);
-@@ -258,7 +349,9 @@ void AggExprEmitter::EmitAggLoadOfLValue(const Expr *E) {
+@@ -258,7 +354,9 @@ void AggExprEmitter::EmitAggLoadOfLValue(const Expr *E) {
      if (CGF.CGM.getHLSLRuntime().emitBufferCopy(CGF, E, LV, Dest))
        return;
  
@@ -3770,7 +3843,7 @@ index bc35ffdaa..e93deff85 100644
  }
  
  /// True if the given aggregate type requires special GC API calls.
-@@ -281,6 +374,24 @@ bool AggExprEmitter::TypeRequiresGCollection(QualType T) {
+@@ -281,6 +379,24 @@ bool AggExprEmitter::TypeRequiresGCollection(QualType T) {
  void AggExprEmitter::withReturnValueSlot(
      const Expr *E, llvm::function_ref<RValue(ReturnValueSlot)> EmitCall) {
    QualType RetTy = E->getType();
@@ -3795,7 +3868,7 @@ index bc35ffdaa..e93deff85 100644
    bool RequiresDestruction =
        !Dest.isExternallyDestructed() &&
        RetTy.isDestructedType() == QualType::DK_nontrivial_c_struct;
-@@ -378,6 +489,50 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -378,6 +494,50 @@ void AggExprEmitter::EmitFinalDestCopy(
    if (Dest.isIgnored())
      return;
  
@@ -3846,7 +3919,7 @@ index bc35ffdaa..e93deff85 100644
    // Copy non-trivial C structs here.
    LValue DstLV = CGF.MakeAddrLValue(
        Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
-@@ -412,6 +567,10 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -412,6 +572,10 @@ void AggExprEmitter::EmitFinalDestCopy(
  ///   ignored
  void AggExprEmitter::EmitCopy(QualType type, const AggValueSlot &dest,
                                const AggValueSlot &src) {
@@ -3857,7 +3930,7 @@ index bc35ffdaa..e93deff85 100644
    if (dest.requiresGCollection()) {
      CharUnits sz = dest.getPreferredSize(CGF.getContext(), type);
      llvm::Value *size = llvm::ConstantInt::get(CGF.SizeTy, sz.getQuantity());
-@@ -594,10 +753,22 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
+@@ -594,10 +758,22 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
        DestPtr.getAlignment().alignmentOfArrayElement(elementSize);
    llvm::Type *llvmElementType = CGF.ConvertTypeForMem(elementType);
  
@@ -3881,7 +3954,7 @@ index bc35ffdaa..e93deff85 100644
        elementType.isTriviallyCopyableType(CGF.getContext())) {
      CodeGen::CodeGenModule &CGM = CGF.CGM;
      ConstantEmitter Emitter(CGF);
-@@ -630,7 +801,7 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
+@@ -630,7 +806,7 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
    CodeGenFunction::CleanupDeactivationScope deactivation(CGF);
  
    llvm::Value *begin = DestPtr.emitRawPointer(CGF);
@@ -3890,7 +3963,7 @@ index bc35ffdaa..e93deff85 100644
      CodeGenFunction::AllocaTrackerRAII allocaTracker(CGF);
      // In principle we could tell the cleanup where we are more
      // directly, but the control flow can get so varied here that it
-@@ -643,7 +814,8 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
+@@ -643,7 +819,8 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
      Builder.CreateStore(begin, endOfInit);
      CGF.pushIrregularPartialArrayCleanup(begin, endOfInit, elementType,
                                           elementAlign,
@@ -3900,7 +3973,7 @@ index bc35ffdaa..e93deff85 100644
      cast<EHCleanupScope>(*CGF.EHStack.find(CGF.EHStack.stable_begin()))
          .AddAuxAllocas(allocaTracker.Take());
  
-@@ -675,7 +847,13 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
+@@ -675,7 +852,13 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
  
      LValue elementLV = CGF.MakeAddrLValue(
          Address(element, llvmElementType, elementAlign), elementType);
@@ -3915,7 +3988,7 @@ index bc35ffdaa..e93deff85 100644
      return true;
    };
  
-@@ -743,7 +921,10 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
+@@ -743,7 +926,10 @@ void AggExprEmitter::EmitArrayInit(Address DestPtr, llvm::ArrayType *AType,
        CodeGenFunction::RunCleanupsScope CleanupsScope(CGF);
        LValue elementLV = CGF.MakeAddrLValue(
            Address(currentElement, llvmElementType, elementAlign), elementType);
@@ -3927,7 +4000,7 @@ index bc35ffdaa..e93deff85 100644
          EmitInitializationToLValue(ArrayFiller, elementLV);
        else
          EmitNullInitializationToLValue(elementLV);
-@@ -826,6 +1007,12 @@ static Expr *findPeephole(Expr *op, CastKind kind, const ASTContext &ctx) {
+@@ -826,6 +1012,12 @@ static Expr *findPeephole(Expr *op, CastKind kind, const ASTContext &ctx) {
  }
  
  void AggExprEmitter::VisitCastExpr(CastExpr *E) {
@@ -3940,7 +4013,7 @@ index bc35ffdaa..e93deff85 100644
    if (const auto *ECE = dyn_cast<ExplicitCastExpr>(E))
      CGF.CGM.EmitExplicitCastExprType(ECE, &CGF);
    switch (E->getCastKind()) {
-@@ -862,6 +1049,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
+@@ -862,6 +1054,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -3955,7 +4028,7 @@ index bc35ffdaa..e93deff85 100644
      if (Dest.isIgnored()) {
        CGF.EmitAnyExpr(E->getSubExpr(), AggValueSlot::ignored(),
                        /*ignoreResult=*/true);
-@@ -1370,6 +1565,45 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
+@@ -1370,6 +1570,45 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
                                                   E->getRHS()->getType()) &&
           "Invalid assignment");
  
@@ -4001,7 +4074,7 @@ index bc35ffdaa..e93deff85 100644
    // If the LHS might be a __block variable, and the RHS can
    // potentially cause a block copy, we need to evaluate the RHS first
    // so that the assignment goes the right place.
-@@ -1709,6 +1943,15 @@ static bool isSimpleZero(const Expr *E, CodeGenFunction &CGF) {
+@@ -1709,6 +1948,15 @@ static bool isSimpleZero(const Expr *E, CodeGenFunction &CGF) {
  
  void AggExprEmitter::EmitInitializationToLValue(Expr *E, LValue LV) {
    QualType type = LV.getType();
@@ -4017,7 +4090,7 @@ index bc35ffdaa..e93deff85 100644
    // FIXME: Ignore result?
    // FIXME: Are initializers affected by volatile?
    if (Dest.isZeroed() && isSimpleZero(E, CGF)) {
-@@ -2246,6 +2489,11 @@ LValue CodeGenFunction::EmitAggExprToLValue(const Expr *E) {
+@@ -2246,6 +2494,11 @@ LValue CodeGenFunction::EmitAggExprToLValue(const Expr *E) {
    assert(hasAggregateEvaluationKind(E->getType()) && "Invalid argument!");
    Address Temp = CreateMemTempWithoutCast(E->getType());
    LValue LV = MakeAddrLValue(Temp, E->getType());
@@ -4029,7 +4102,7 @@ index bc35ffdaa..e93deff85 100644
    EmitAggExpr(E, AggValueSlot::forLValue(LV, AggValueSlot::IsNotDestructed,
                                           AggValueSlot::DoesNotNeedGCBarriers,
                                           AggValueSlot::IsNotAliased,
-@@ -2312,7 +2560,42 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+@@ -2312,7 +2565,42 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
                                          AggValueSlot::Overlap_t MayOverlap,
                                          bool isVolatile) {
    assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
@@ -4074,15 +4147,16 @@ index bc35ffdaa..e93deff85 100644
    Address SrcPtr = Src.getAddress();
  
 diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
-index 4d98ee995..1aae6d8b6 100644
+index 4d98ee995..16b4d1868 100644
 --- a/clang/lib/CodeGen/CGExprComplex.cpp
 +++ b/clang/lib/CodeGen/CGExprComplex.cpp
-@@ -10,9 +10,12 @@
+@@ -10,9 +10,13 @@
  //
  //===----------------------------------------------------------------------===//
  
 +#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3Match.h"
++#include "CGObjC3OptionalOperators.h"
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
@@ -4090,7 +4164,7 @@ index 4d98ee995..1aae6d8b6 100644
  #include "CodeGenModule.h"
  #include "ConstantEmitter.h"
  #include "clang/AST/StmtVisitor.h"
-@@ -102,6 +105,14 @@ public:
+@@ -102,6 +106,18 @@ public:
      llvm_unreachable("Stmt can't have complex result type!");
    }
    ComplexPairTy VisitExpr(Expr *S);
@@ -4102,10 +4176,14 @@ index 4d98ee995..1aae6d8b6 100644
 +    return emitObjC3TryScalarExpr(CGF, *E).getComplexVal();
 +  }
 +
++  ComplexPairTy VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++    return emitObjC3CoalesceComplexExpr(CGF, E).getComplexVal();
++  }
++
    ComplexPairTy VisitConstantExpr(ConstantExpr *E) {
      if (llvm::Constant *Result = ConstantEmitter(CGF).tryEmitConstantExpr(E))
        return ComplexPairTy(Result->getAggregateElement(0U),
-@@ -559,6 +570,15 @@ ComplexPairTy ComplexExprEmitter::EmitCast(CastKind CK, Expr *Op,
+@@ -559,6 +575,15 @@ ComplexPairTy ComplexExprEmitter::EmitCast(CastKind CK, Expr *Op,
    }
  
    case CK_LValueToRValueBitCast: {
@@ -4122,10 +4200,10 @@ index 4d98ee995..1aae6d8b6 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGExprScalar.cpp b/clang/lib/CodeGen/CGExprScalar.cpp
-index 6f7b7e7d6..98213d9b0 100644
+index 6f7b7e7d6..a1a225966 100644
 --- a/clang/lib/CodeGen/CGExprScalar.cpp
 +++ b/clang/lib/CodeGen/CGExprScalar.cpp
-@@ -15,9 +15,14 @@
+@@ -15,9 +15,15 @@
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
@@ -4133,6 +4211,7 @@ index 6f7b7e7d6..98213d9b0 100644
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ResultExpr.h"
++#include "CGObjC3OptionalOperators.h"
  #include "CGOpenMPRuntime.h"
  #include "CGRecordLayout.h"
  #include "CodeGenFunction.h"
@@ -4140,7 +4219,7 @@ index 6f7b7e7d6..98213d9b0 100644
  #include "CodeGenModule.h"
  #include "ConstantEmitter.h"
  #include "TargetInfo.h"
-@@ -502,6 +507,36 @@ public:
+@@ -502,6 +508,39 @@ public:
    }
    Value *VisitExpr(Expr *S);
  
@@ -4168,6 +4247,9 @@ index 6f7b7e7d6..98213d9b0 100644
 +    return CodeGen::emitObjC3ResultIsOkExpr(CGF, *E);
 +  }
 +  Value *VisitObjC3MatchExpr(ObjC3MatchExpr *E) { return CGF.EmitObjC3MatchExpr(E); }
++  Value *VisitObjC3CoalesceExpr(ObjC3CoalesceExpr *E) {
++    return emitObjC3CoalesceScalarExpr(CGF, E);
++  }
 +
 +  Value *VisitObjC3TryExpr(ObjC3TryExpr *E) {
 +    auto Value = emitObjC3TryScalarExpr(CGF, *E);
@@ -4177,7 +4259,7 @@ index 6f7b7e7d6..98213d9b0 100644
    Value *VisitConstantExpr(ConstantExpr *E) {
      // A constant expression of type 'void' generates no code and produces no
      // value.
-@@ -2645,6 +2680,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
+@@ -2645,6 +2684,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -4670,15 +4752,16 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..8469fd5ff
+index 000000000..1e5c81ba1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,802 @@
+@@ -0,0 +1,834 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CGCleanup.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -4914,6 +4997,8 @@ index 000000000..8469fd5ff
 +           Result->getKind() == ObjC3ResultExpr::Kind::Err;
 +  if (isa<ObjC3TryExpr>(E))
 +    return true;
++  if (const auto *Coalesce = dyn_cast<ObjC3CoalesceExpr>(E))
++    return isARCInitializer(Coalesce->getSemanticExpr());
 +  if (const auto *Match = dyn_cast<ObjC3MatchExpr>(E)) {
 +    for (unsigned I = 0; I != Match->getNumArms(); ++I)
 +      if (!isARCInitializer(dyn_cast<Expr>(Match->getArm(I)->getBody())))
@@ -4957,7 +5042,10 @@ index 000000000..8469fd5ff
 +                             Done);
 +    CGF.EmitBlock(Destroy);
 +    CGF.Builder.CreateStore(CGF.Builder.getFalse(), Initialized);
-+    if (IsARC) {
++    if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type)) {
++      emitObjC3MixedCarrierDestroyPayload(CGF, Type, Storage, true,
++                                         true, true, true);
++    } else if (IsARC) {
 +      CGF.emitDestroy(Storage, Type, destroyObjC3ManagedStorage, false);
 +    } else {
 +      bool Emitted =
@@ -5076,10 +5164,19 @@ index 000000000..8469fd5ff
 +
 +void CodeGen::emitObjC3CarrierARCValueInit(CodeGenFunction &CGF, const Expr *E,
 +                                           Address Destination) {
-+  CodeGenFunction::CleanupDeactivationScope Deactivation(CGF);
-+  auto Saved = CGF.getObjC3CarrierLocalInitState();
 +  QualType Type =
 +      CGF.getContext().getCanonicalType(E->getType()).getUnqualifiedType();
++  // The generic ARC field/array/capture adapter does not establish the mixed
++  // tree's native C++ action and source-release partitions. Only its dedicated
++  // direct-local and nested-carrier initializer may grant that permission.
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E->getExprLoc(), Type,
++        "mixed ARC/C++ carrier enclosing storage");
++    return;
++  }
++  CodeGenFunction::CleanupDeactivationScope Deactivation(CGF);
++  auto Saved = CGF.getObjC3CarrierLocalInitState();
 +  Address Initialized = Address::invalid();
 +  if (supportsObjC3CarrierARCLocalLifetime(CGF.CGM, Type) ||
 +      supportsObjC3CarrierARCLocalArray(CGF.CGM, Type) ||
@@ -5280,7 +5377,8 @@ index 000000000..8469fd5ff
 +
 +bool CodeGen::hasObjC3CarrierStrongPayload(CodeGenModule &CGM,
 +                                           QualType CarrierType) {
-+  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType))
++  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType) &&
++      !supportsObjC3MixedCarrierLocalLifetime(CGM, CarrierType))
 +    return false;
 +  auto Info = CGM.getContext().getObjC3CarrierRepresentationType(CarrierType);
 +  return hasLifetime(Info.ValueField ? Info.ValueField->getType() : QualType(),
@@ -5294,7 +5392,8 @@ index 000000000..8469fd5ff
 +
 +bool CodeGen::hasObjC3CarrierWeakPayload(CodeGenModule &CGM,
 +                                          QualType CarrierType) {
-+  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType))
++  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType) &&
++      !supportsObjC3MixedCarrierLocalLifetime(CGM, CarrierType))
 +    return false;
 +  auto Info = CGM.getContext().getObjC3CarrierRepresentationType(CarrierType);
 +  return hasLifetime(Info.ValueField ? Info.ValueField->getType() : QualType(),
@@ -5310,6 +5409,10 @@ index 000000000..8469fd5ff
 +    CodeGenFunction &CGF, const ObjC3OptionalExpr &E, Address Destination,
 +    bool IsLocalInitialization, bool DestinationIsIgnored,
 +    bool DestinationIsVolatile) {
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, E.getCarrierType()))
++    return emitObjC3OptionalMixedLocalExpr(
++        CGF, E, Destination, IsLocalInitialization, DestinationIsIgnored,
++        DestinationIsVolatile);
 +  const bool IsNone = E.getKind() == ObjC3OptionalExpr::Kind::None;
 +  return emitARCLocalExpr(
 +      CGF, E.getCarrierType(), Destination, IsLocalInitialization,
@@ -5321,6 +5424,10 @@ index 000000000..8469fd5ff
 +    CodeGenFunction &CGF, const ObjC3ResultExpr &E, Address Destination,
 +    bool IsLocalInitialization, bool DestinationIsIgnored,
 +    bool DestinationIsVolatile) {
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, E.getCarrierType()))
++    return emitObjC3ResultMixedLocalExpr(
++        CGF, E, Destination, IsLocalInitialization, DestinationIsIgnored,
++        DestinationIsVolatile);
 +  const bool IsErr = E.getKind() == ObjC3ResultExpr::Kind::Err;
 +  const ObjC3CarrierPayloadArm Arm = IsErr ? ObjC3CarrierPayloadArm::Error
 +                                           : ObjC3CarrierPayloadArm::Success;
@@ -5333,6 +5440,8 @@ index 000000000..8469fd5ff
 +llvm::Value *CodeGen::emitObjC3CarrierARCTagQuery(
 +    CodeGenFunction &CGF, QualType CarrierType, Expr *Operand, bool IsResult,
 +    SourceLocation Loc) {
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, CarrierType))
++    return emitObjC3MixedCarrierTagQuery(CGF, CarrierType, Operand, IsResult, Loc);
 +  auto Fail = [&]() -> llvm::Value * {
 +    diagnoseUnsupportedObjC3CarrierOperation(
 +        CGF.CGM, Loc, CarrierType, IsResult ? "isOk query" : "hasValue query");
@@ -5383,8 +5492,13 @@ index 000000000..8469fd5ff
 +  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
 +  const bool IsOptional = isa<ObjC3OptionalType>(Canonical);
 +  const bool IsResult = isa<ObjC3ResultType>(Canonical);
-+  assert((IsOptional || IsResult) &&
-+         supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType));
++  if ((!IsOptional && !IsResult) ||
++      !supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, SourceLocation(), CarrierType,
++        "ARC carrier enclosing storage destruction");
++    return;
++  }
 +
 +  llvm::Value *Tag = emitObjC3CarrierLoadTag(
 +      CGF, Storage, CarrierType, SourceLocation(), /*IsVolatile=*/false);
@@ -5575,16 +5689,17 @@ index 000000000..fdf223326
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..88a5c80f1
+index 000000000..58c1bdcdc
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1360 @@
+@@ -0,0 +1,1370 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
 +
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3ResultExpr.h"
 +#include "CGRecordLayout.h"
@@ -6423,6 +6538,12 @@ index 000000000..88a5c80f1
 +  return hasCarrierCppDestructor(Ctx, CarrierType);
 +}
 +
++bool CodeGen::supportsObjC3CarrierCppPayloadLifetime(CodeGenModule &CGM,
++                                                    QualType PayloadType) {
++  unsigned Budget = 256;
++  return isEligibleCarrierCppLocalArm(CGM.getContext(), PayloadType, Budget);
++}
++
 +void CodeGen::emitObjC3CarrierCppValueInit(CodeGenFunction &CGF,
 +                                         const Expr *E,
 +                                         Address Destination) {
@@ -6790,7 +6911,8 @@ index 000000000..88a5c80f1
 +      DestinationIsVolatile || !IsLocalCarrierInitialization ||
 +      !E.getSource() || E.getSource()->getType().isVolatileQualified() ||
 +      (!supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType) &&
-+       !supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType)))
++       !supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType) &&
++       !supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, CarrierType)))
 +    return Fail();
 +
 +  ObjC3CarrierStorageLayout Layout;
@@ -6883,7 +7005,9 @@ index 000000000..88a5c80f1
 +    QualType PayloadType = Plan.Field->getType();
 +    if (isa<ObjC3OptionalType, ObjC3ResultType>(
 +            PayloadType.getCanonicalType().getTypePtr())) {
-+      if (supportsObjC3CarrierARCLocalLifetime(CGF.CGM, PayloadType))
++      if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, PayloadType))
++        emitObjC3MixedCarrierValueInit(CGF, Plan.Initializer, Dst);
++      else if (supportsObjC3CarrierARCLocalLifetime(CGF.CGM, PayloadType))
 +        emitObjC3CarrierARCValueInit(CGF, Plan.Initializer, Dst);
 +      else
 +        emitObjC3CarrierCppValueInit(CGF, Plan.Initializer, Dst);
@@ -6941,10 +7065,10 @@ index 000000000..88a5c80f1
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.h b/clang/lib/CodeGen/CGObjC3Carriers.h
 new file mode 100644
-index 000000000..e74df6b26
+index 000000000..c21374754
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.h
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,211 @@
 +//===--- CGObjC3Carriers.h - ObjC3 carrier CodeGen adapter ------*- C++ -*-===//
 +//
 +// Staged adapter for canonical ObjC3 Optional/Result storage.  This header is
@@ -7119,6 +7243,10 @@ index 000000000..e74df6b26
 +/// remain rejected.
 +bool supportsObjC3CarrierCppLocalLifetime(CodeGenModule &CGM,
 +                                           QualType CarrierType);
++/// Qualify one ordinary C++/plain payload leaf using the same native lifetime
++/// rules as a direct C++ carrier. Managed subobjects remain excluded.
++bool supportsObjC3CarrierCppPayloadLifetime(CodeGenModule &CGM,
++                                           QualType PayloadType);
 +bool hasObjC3CarrierCppLocalDestructor(CodeGenModule &CGM,
 +                                        QualType CarrierType);
 +/// Initialize a fresh nested C++ carrier subobject after its enclosing owner
@@ -9455,7 +9583,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..02e46e746 100644
+index 27e74d966..e943ab3b0 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,11 @@
@@ -9715,7 +9843,7 @@ index 27e74d966..02e46e746 100644
 +}
 +
 +ObjC3DeferState *CodeGenFunction::getObjC3DeferState() {
-+  if (!getLangOpts().ObjC3 || !getLangOpts().ObjCAutoRefCount)
++  if (!getLangOpts().ObjC3)
 +    return nullptr;
 +  if (!ObjC3Defers)
 +    ObjC3Defers = std::make_unique<ObjC3DeferState>(
@@ -9990,10 +10118,10 @@ index 9e4218646..fb44979a0 100644
    if (!ResultType->isVoidType() &&
        (CurFnInfo->getReturnInfo().getKind() == ABIArgInfo::Indirect ||
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
-index 853f038c4..124a2dbb6 100644
+index 853f038c4..bf213b6e7 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
 +++ b/clang/lib/CodeGen/CMakeLists.txt
-@@ -88,6 +88,15 @@ add_clang_library(clangCodeGen
+@@ -88,6 +88,18 @@ add_clang_library(clangCodeGen
    CGLoopInfo.cpp
    CGNonTrivialStruct.cpp
    CGObjC.cpp
@@ -10001,8 +10129,11 @@ index 853f038c4..124a2dbb6 100644
 +  CGObjC3TypedErrors.cpp
 +  CGObjC3ErrorHandlers.cpp
 +  CGObjC3Match.cpp
++  CGObjC3OptionalOperators.cpp
 +  CGObjC3Conditions.cpp
++  CGObjC3Resources.cpp
 +  CGObjC3ArcCarriers.cpp
++  CGObjC3MixedCarriers.cpp
 +  CGObjC3ManagedStorage.cpp
 +  CGObjC3ResultExpr.cpp
 +  CGObjC3ABIBoundaries.cpp
@@ -20566,7 +20697,7 @@ index 000000000..7ba1edbf5
 +// CHECK: call void @consume
 +// CHECK: call void @consume
 diff --git a/clang/lib/CodeGen/CGCleanup.cpp b/clang/lib/CodeGen/CGCleanup.cpp
-index 977f81a64..0ce2baecd 100644
+index 977f81a64..0b4525e9e 100644
 --- a/clang/lib/CodeGen/CGCleanup.cpp
 +++ b/clang/lib/CodeGen/CGCleanup.cpp
 @@ -358,7 +358,8 @@ static void ResolveAllBranchFixups(CodeGenFunction &CGF,
@@ -20637,7 +20768,7 @@ index 977f81a64..0ce2baecd 100644
 +      // discarded its destination slot. Local jumps inside a cleanup body must
 +      // not drain releases pending for the enclosing transfer.
 +      llvm::Value *ReleaseDestination = nullptr;
-+      if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount)
++      if (getLangOpts().ObjC3)
 +        ReleaseDestination =
 +            !Scope.hasBranchThroughs() && !HasFixups && !HasFallthrough &&
 +                    !currentFunctionUsesSEHTry() && Scope.getNumBranchAfters() == 1
@@ -21095,3 +21226,1040 @@ index 000000000..93991e73f
 +// CHECK: load i8
 +// CHECK-NOT: load i8
 +// CHECK: ret i1
+diff --git a/clang/lib/CodeGen/CGExprCXX.cpp b/clang/lib/CodeGen/CGExprCXX.cpp
+index 1769ab00e..0835565f0 100644
+--- a/clang/lib/CodeGen/CGExprCXX.cpp
++++ b/clang/lib/CodeGen/CGExprCXX.cpp
+@@ -13,18 +13,68 @@
+ #include "CGCUDARuntime.h"
+ #include "CGCXXABI.h"
+ #include "CGDebugInfo.h"
++#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3Carriers.h"
+ #include "CGObjCRuntime.h"
+ #include "CodeGenFunction.h"
+ #include "ConstantEmitter.h"
+ #include "TargetInfo.h"
+ #include "clang/Basic/CodeGenOptions.h"
+ #include "clang/CodeGen/CGFunctionInfo.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/IR/Intrinsics.h"
+ 
+ using namespace clang;
+ using namespace CodeGen;
+ 
+ namespace {
++QualType findUnqualifiedCarrierDynamicStorage(
++    CodeGenModule &CGM, QualType Type, bool IsDirect,
++    llvm::SmallPtrSetImpl<const clang::Type *> &Seen) {
++  Type = CGM.getContext().getCanonicalType(Type);
++  if (!Seen.insert(Type.getTypePtr()).second)
++    return {};
++  if (isa<ObjC3OptionalType, ObjC3ResultType>(Type.getTypePtr())) {
++    // Source C++ records already have native ARC field special members.
++    // Direct carrier allocations and nontrivial C++ carrier fields need a
++    // separate allocation/placement lifetime adapter before they can use new.
++    if (!supportsPlainObjC3CarrierStorageLifetime(CGM, Type) &&
++        (IsDirect || !supportsObjC3CarrierARCLocalLifetime(CGM, Type)))
++      return Type;
++    return {};
++  }
++  if (const auto *Array = CGM.getContext().getAsArrayType(Type))
++    return findUnqualifiedCarrierDynamicStorage(
++        CGM, Array->getElementType(), IsDirect, Seen);
++  if (const auto *Record = Type->getAs<RecordType>()) {
++    const RecordDecl *RD = Record->getDecl()->getDefinition();
++    if (!RD)
++      return {};
++    if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++      for (const CXXBaseSpecifier &Base : CXX->bases())
++        if (QualType Found = findUnqualifiedCarrierDynamicStorage(
++                CGM, Base.getType(), false, Seen); !Found.isNull())
++          return Found;
++    for (const FieldDecl *Field : RD->fields())
++      if (QualType Found = findUnqualifiedCarrierDynamicStorage(
++              CGM, Field->getType(), false, Seen); !Found.isNull())
++        return Found;
++  }
++  return {};
++}
++
++bool diagnoseUnqualifiedCarrierDynamicStorage(CodeGenModule &CGM, QualType Type,
++                                               SourceLocation Loc,
++                                               const char *Operation) {
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  QualType Carrier =
++      findUnqualifiedCarrierDynamicStorage(CGM, Type, true, Seen);
++  if (Carrier.isNull())
++    return false;
++  diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Carrier, Operation);
++  return true;
++}
++
+ struct MemberCallInfo {
+   RequiredArgs ReqArgs;
+   // Number of prefix arguments for the call. Ignores the `this` pointer.
+@@ -1569,6 +1619,13 @@ static void EnterNewDeleteCleanup(CodeGenFunction &CGF, const CXXNewExpr *E,
+ llvm::Value *CodeGenFunction::EmitCXXNewExpr(const CXXNewExpr *E) {
+   // The element type being allocated.
+   QualType allocType = getContext().getBaseElementType(E->getAllocatedType());
++  // Reject before evaluating allocation, placement arguments or initializer.
++  // In particular, value/default initialization must not overwrite a live
++  // nontrivial carrier through the generic zero-initialization fast path.
++  if (diagnoseUnqualifiedCarrierDynamicStorage(
++          CGM, allocType, E->getExprLoc(),
++          "nontrivial carrier allocation or storage reuse"))
++    return llvm::PoisonValue::get(ConvertType(E->getType()));
+ 
+   // 1. Build a call to the allocation function.
+   FunctionDecl *allocator = E->getOperatorNew();
+@@ -2092,6 +2149,10 @@ static void EmitArrayDelete(CodeGenFunction &CGF, const CXXDeleteExpr *E,
+ }
+ 
+ void CodeGenFunction::EmitCXXDeleteExpr(const CXXDeleteExpr *E) {
++  if (diagnoseUnqualifiedCarrierDynamicStorage(
++          CGM, E->getDestroyedType(), E->getExprLoc(),
++          "nontrivial carrier dynamic destruction"))
++    return;
+   const Expr *Arg = E->getArgument();
+   Address Ptr = EmitPointerWithAlignment(Arg);
+ 
+diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
+new file mode 100644
+index 000000000..b64f7d116
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.cpp
+@@ -0,0 +1,291 @@
++//===--- CGObjC3MixedCarriers.cpp - Mixed ARC/C++ carrier locals -----------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "CGObjC3MixedCarriers.h"
++#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3Carriers.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/Expr.h"
++#include "llvm/IR/Constants.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++
++bool isCarrier(QualType T) {
++  return !T.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
++                            T.getCanonicalType().getTypePtr());
++}
++
++bool isARCPointer(QualType T) {
++  return T->isObjCObjectPointerType() || T->isBlockPointerType();
++}
++
++bool classifyTree(CodeGenModule &CGM, QualType T, bool &HasARC,
++                   bool &HasCXX, unsigned &Budget, unsigned Depth = 0) {
++  if (T.isNull() || T->isDependentType() || T.isVolatileQualified() ||
++      Depth > 64 || Budget == 0)
++    return false;
++  --Budget;
++  if (isCarrier(T)) {
++    auto Info = CGM.getContext().getObjC3CarrierRepresentationType(T);
++    if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++      return false;
++    for (FieldDecl *Field : {Info.ValueField, Info.SuccessField, Info.ErrorField})
++      if (Field && !classifyTree(CGM, Field->getType(), HasARC, HasCXX,
++                                 Budget, Depth + 1))
++        return false;
++    return true;
++  }
++  if (isARCPointer(T)) {
++    HasARC = true;
++    auto Lifetime = T.getObjCLifetime();
++    return Lifetime == Qualifiers::OCL_Strong ||
++           Lifetime == Qualifiers::OCL_Weak ||
++           Lifetime == Qualifiers::OCL_ExplicitNone;
++  }
++  if (!supportsObjC3CarrierCppPayloadLifetime(CGM, T))
++    return false;
++  HasCXX |= T->getAsCXXRecordDecl() != nullptr;
++  return true;
++}
++
++bool emitMixedConstructor(CodeGenFunction &CGF, QualType Type,
++                           Address Destination, Expr *Payload,
++                           ObjC3CarrierPayloadArm Arm, bool IsNone,
++                           bool IsLocalInitialization, bool IsIgnored,
++                           bool IsVolatile, SourceLocation Loc) {
++  auto Fail = [&]() {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, Type, "mixed ARC/C++ carrier local initialization");
++    return true;
++  };
++  ObjC3CarrierStorageLayout Layout;
++  if (!supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type) ||
++      !IsLocalInitialization || IsIgnored || IsVolatile ||
++      !Destination.isValid() || Destination.isSigned() ||
++      !getObjC3CarrierStorageLayout(CGF.CGM, Type, Layout) ||
++      Destination.getElementType() != Layout.StorageType ||
++      !CGF.isObjC3CarrierLocalInitialization(Destination, Type))
++    return Fail();
++
++  if (!IsNone) {
++    if (!Payload)
++      return Fail();
++    auto Info = CGF.getContext().getObjC3CarrierRepresentationType(Type);
++    FieldDecl *Field = Arm == ObjC3CarrierPayloadArm::Value ? Info.ValueField
++                       : Arm == ObjC3CarrierPayloadArm::Success
++                           ? Info.SuccessField : Info.ErrorField;
++    if (!Field) {
++      if (!Payload->getType()->isVoidType())
++        return Fail();
++      (void)CGF.EmitAnyExpr(Payload, AggValueSlot::ignored(), true);
++    } else {
++      QualType PayloadType = Field->getType();
++      Address Storage =
++          getObjC3CarrierPayloadAddress(CGF, Destination, Type, Arm);
++      if (!Storage.isValid())
++        return Fail();
++      if (isCarrier(PayloadType)) {
++        if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, PayloadType))
++          emitObjC3MixedCarrierValueInit(CGF, Payload, Storage);
++        else if (supportsObjC3CarrierARCLocalLifetime(CGF.CGM, PayloadType))
++          emitObjC3CarrierARCValueInit(CGF, Payload, Storage);
++        else
++          emitObjC3CarrierCppValueInit(CGF, Payload, Storage);
++      } else if (isARCPointer(PayloadType)) {
++        CGF.EmitScalarInit(Payload, nullptr,
++                           CGF.MakeAddrLValue(Storage, PayloadType), false);
++      } else {
++        CGF.EmitAnyExprToMem(Payload, Storage, PayloadType.getQualifiers(),
++                             /*IsInit=*/true);
++      }
++    }
++  }
++  return emitObjC3CarrierStoreTag(
++             CGF, Destination, Type,
++             CGF.Builder.getInt1(!IsNone && Arm != ObjC3CarrierPayloadArm::Error),
++             /*IsInitialization=*/true, /*IsVolatile=*/false)
++             ? true : Fail();
++}
++
++/// Each materialized non-carrier leaf receives one ordinal in source arm
++/// order. Absent Optionals and void arms use zero, which never owns a payload.
++llvm::Value *emitSelection(CodeGenFunction &CGF, QualType Type, Address Storage,
++                            unsigned &Ordinal) {
++  if (!isCarrier(Type))
++    return CGF.Builder.getInt32(++Ordinal);
++  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(Type);
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(
++      CGF, Storage, Type, SourceLocation(), false);
++  assert(Tag && "qualified mixed carrier tag");
++  auto *Active = CGF.createBasicBlock("objc3.mixed.select.active");
++  auto *Inactive = CGF.createBasicBlock("objc3.mixed.select.inactive");
++  auto *Done = CGF.createBasicBlock("objc3.mixed.select.done");
++  CGF.Builder.CreateCondBr(Tag, Active, Inactive);
++  auto SelectArm = [&](FieldDecl *Field, ObjC3CarrierPayloadArm Arm) {
++    if (!Field)
++      return static_cast<llvm::Value *>(CGF.Builder.getInt32(0));
++    Address Payload =
++        getObjC3CarrierPayloadAddress(CGF, Storage, Type, Arm);
++    assert(Payload.isValid() && "qualified mixed carrier payload");
++    return emitSelection(CGF, Field->getType(), Payload, Ordinal);
++  };
++  const bool IsOptional = Type->getAs<ObjC3OptionalType>();
++  CGF.EmitBlock(Active);
++  llvm::Value *TrueValue = SelectArm(
++      IsOptional ? Info.ValueField : Info.SuccessField,
++      IsOptional ? ObjC3CarrierPayloadArm::Value : ObjC3CarrierPayloadArm::Success);
++  auto *TrueEnd = CGF.Builder.GetInsertBlock();
++  CGF.Builder.CreateBr(Done);
++  CGF.EmitBlock(Inactive);
++  llvm::Value *FalseValue =
++      SelectArm(Info.ErrorField, ObjC3CarrierPayloadArm::Error);
++  auto *FalseEnd = CGF.Builder.GetInsertBlock();
++  CGF.Builder.CreateBr(Done);
++  CGF.EmitBlock(Done);
++  auto *Value = CGF.Builder.CreatePHI(CGF.Int32Ty, 2, "objc3.mixed.selected");
++  Value->addIncoming(TrueValue, TrueEnd);
++  Value->addIncoming(FalseValue, FalseEnd);
++  return Value;
++}
++
++struct Leaf {
++  QualType Type;
++  Address Storage;
++  unsigned Ordinal;
++};
++
++void collectLeaves(CodeGenFunction &CGF, QualType Type, Address Storage,
++                    SmallVectorImpl<Leaf> &Leaves, unsigned &Ordinal) {
++  if (!isCarrier(Type)) {
++    Leaves.push_back({Type, Storage, ++Ordinal});
++    return;
++  }
++  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(Type);
++  auto Collect = [&](FieldDecl *Field, ObjC3CarrierPayloadArm Arm) {
++    if (!Field)
++      return;
++    Address Payload = getObjC3CarrierPayloadAddress(CGF, Storage, Type, Arm);
++    assert(Payload.isValid() && "qualified mixed carrier payload");
++    collectLeaves(CGF, Field->getType(), Payload, Leaves, Ordinal);
++  };
++  Collect(Info.ValueField, ObjC3CarrierPayloadArm::Value);
++  Collect(Info.SuccessField, ObjC3CarrierPayloadArm::Success);
++  Collect(Info.ErrorField, ObjC3CarrierPayloadArm::Error);
++}
++
++} // namespace
++
++bool CodeGen::supportsObjC3MixedCarrierLocalLifetime(CodeGenModule &CGM,
++                                                     QualType Type) {
++  if (!CGM.getLangOpts().ObjCAutoRefCount || !CGM.getLangOpts().CPlusPlus ||
++      !isCarrier(Type))
++    return false;
++  bool HasARC = false, HasCXX = false;
++  unsigned Budget = 256;
++  return classifyTree(CGM, Type, HasARC, HasCXX, Budget) && HasARC && HasCXX;
++}
++
++void CodeGen::emitObjC3MixedCarrierValueInit(CodeGenFunction &CGF,
++                                            const Expr *E, Address Destination) {
++  QualType Type = E->getType().getCanonicalType().getUnqualifiedType();
++  assert(supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type));
++  CodeGenFunction::CleanupDeactivationScope Deactivation(CGF);
++  auto Saved = CGF.getObjC3CarrierLocalInitState();
++  Address Initialized = beginObjC3CarrierInitGuard(
++      CGF, Type, Destination, /*IsARC=*/false);
++  CGF.setObjC3CarrierLocalInitState({Destination, Type, Initialized});
++  CGF.EmitAnyExprToMem(E, Destination, Qualifiers(), true);
++  CGF.setObjC3CarrierLocalInitState(Saved);
++}
++
++bool CodeGen::emitObjC3OptionalMixedLocalExpr(
++    CodeGenFunction &CGF, const ObjC3OptionalExpr &E, Address Destination,
++    bool IsLocalInitialization, bool DestinationIsIgnored,
++    bool DestinationIsVolatile) {
++  return emitMixedConstructor(
++      CGF, E.getCarrierType(), Destination, E.getPayload(),
++      ObjC3CarrierPayloadArm::Value,
++      E.getKind() == ObjC3OptionalExpr::Kind::None, IsLocalInitialization,
++      DestinationIsIgnored, DestinationIsVolatile, E.getKeywordLoc());
++}
++
++bool CodeGen::emitObjC3ResultMixedLocalExpr(
++    CodeGenFunction &CGF, const ObjC3ResultExpr &E, Address Destination,
++    bool IsLocalInitialization, bool DestinationIsIgnored,
++    bool DestinationIsVolatile) {
++  return emitMixedConstructor(
++      CGF, E.getCarrierType(), Destination, E.getPayload(),
++      E.getKind() == ObjC3ResultExpr::Kind::Err ? ObjC3CarrierPayloadArm::Error
++                                               : ObjC3CarrierPayloadArm::Success,
++      false, IsLocalInitialization, DestinationIsIgnored,
++      DestinationIsVolatile, E.getKeywordLoc());
++}
++
++llvm::Value *CodeGen::emitObjC3MixedCarrierTagQuery(
++    CodeGenFunction &CGF, QualType Type, Expr *Operand, bool IsResult,
++    SourceLocation Loc) {
++  if (!supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type) || !Operand ||
++      !Operand->isGLValue() || Operand->getType().isVolatileQualified() ||
++      IsResult != (Type->getAs<ObjC3ResultType>() != nullptr)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, Type, "mixed ARC/C++ carrier tag query");
++    return llvm::PoisonValue::get(CGF.ConvertType(CGF.getContext().BoolTy));
++  }
++  Address Storage = CGF.EmitLValue(Operand).getAddress();
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(CGF, Storage, Type, Loc, false);
++  assert(Tag && "qualified mixed carrier tag");
++  return Tag;
++}
++
++Address CodeGen::snapshotObjC3MixedCarrierCleanupSelection(
++    CodeGenFunction &CGF, QualType Type, Address Storage) {
++  assert(supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type));
++  unsigned Ordinal = 0;
++  llvm::Value *Selected = emitSelection(CGF, Type, Storage, Ordinal);
++  Address Selection = CGF.CreateTempAlloca(
++      CGF.Int32Ty, CGF.getContext().getTypeAlignInChars(CGF.getContext().IntTy),
++      "objc3.mixed.cleanup.selection");
++  CGF.Builder.CreateStore(Selected, Selection);
++  return Selection;
++}
++
++void CodeGen::emitObjC3MixedCarrierDestroyPayload(
++    CodeGenFunction &CGF, QualType Type, Address Storage, bool PreciseLifetime,
++    bool DestroyCXX, bool DestroyStrong, bool DestroyWeak, Address Selection) {
++  assert(supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type));
++  if (!Selection.isValid())
++    Selection = snapshotObjC3MixedCarrierCleanupSelection(CGF, Type, Storage);
++  SmallVector<Leaf, 8> Leaves;
++  unsigned Ordinal = 0;
++  collectLeaves(CGF, Type, Storage, Leaves, Ordinal);
++  auto *Done = CGF.createBasicBlock("objc3.mixed.destroy.done");
++  auto *Dispatch = CGF.Builder.CreateSwitch(CGF.Builder.CreateLoad(Selection),
++                                           Done, Leaves.size());
++  for (const Leaf &L : Leaves) {
++    auto Lifetime = L.Type.getObjCLifetime();
++    bool IsCXX = L.Type.isDestructedType() == QualType::DK_cxx_destructor;
++    if (!(IsCXX && DestroyCXX) &&
++        !(isARCPointer(L.Type) &&
++          ((DestroyStrong && Lifetime == Qualifiers::OCL_Strong) ||
++           (DestroyWeak && Lifetime == Qualifiers::OCL_Weak))))
++      continue;
++    auto *Destroy = CGF.createBasicBlock("objc3.mixed.destroy.leaf");
++    Dispatch->addCase(CGF.Builder.getInt32(L.Ordinal), Destroy);
++    CGF.EmitBlock(Destroy);
++    if (IsCXX)
++      CGF.emitDestroy(L.Storage, L.Type,
++                      CGF.getDestroyer(QualType::DK_cxx_destructor), false);
++    else if (Lifetime == Qualifiers::OCL_Strong)
++      CGF.EmitARCDestroyStrong(
++          L.Storage, PreciseLifetime ? ARCPreciseLifetime : ARCImpreciseLifetime);
++    else
++      CGF.EmitARCDestroyWeak(L.Storage);
++    CGF.Builder.CreateBr(Done);
++  }
++  CGF.EmitBlock(Done);
++}
+diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.h b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
+new file mode 100644
+index 000000000..14975550b
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
+@@ -0,0 +1,53 @@
++//===--- CGObjC3MixedCarriers.h - Mixed ARC/C++ carrier locals -*- C++ -*-===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3MIXEDCARRIERS_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3MIXEDCARRIERS_H
++
++#include "Address.h"
++#include "clang/AST/Type.h"
++
++namespace llvm { class Value; }
++namespace clang {
++class Expr;
++class ObjC3OptionalExpr;
++class ObjC3ResultExpr;
++namespace CodeGen {
++class CodeGenFunction;
++class CodeGenModule;
++
++/// Automatic direct carrier trees with native ARC pointer leaves and ordinary
++/// C++ object leaves. This does not admit assignment, capture, enclosing record
++/// storage, or the by-value call ABI of a nontrivial C++ payload.
++bool supportsObjC3MixedCarrierLocalLifetime(CodeGenModule &, QualType);
++
++void emitObjC3MixedCarrierValueInit(CodeGenFunction &, const Expr *, Address);
++bool emitObjC3OptionalMixedLocalExpr(CodeGenFunction &,
++                                    const ObjC3OptionalExpr &, Address,
++                                    bool IsLocalInitialization,
++                                    bool DestinationIsIgnored,
++                                    bool DestinationIsVolatile);
++bool emitObjC3ResultMixedLocalExpr(CodeGenFunction &, const ObjC3ResultExpr &,
++                                  Address, bool IsLocalInitialization,
++                                  bool DestinationIsIgnored,
++                                  bool DestinationIsVolatile);
++llvm::Value *emitObjC3MixedCarrierTagQuery(CodeGenFunction &, QualType, Expr *,
++                                         bool IsResult, SourceLocation);
++
++/// Freeze the active leaf identity before source cleanup actions execute.
++/// Only discriminants on the active path are read; no inactive payload is
++/// evaluated. Each destruction partition captures the same stable selection.
++Address snapshotObjC3MixedCarrierCleanupSelection(CodeGenFunction &, QualType,
++                                                  Address Storage);
++
++/// Native C++ destructor actions and managed releases have distinct source
++/// ordering. Dispatch the selected original leaf using the captured selection,
++/// without re-reading tags after an intervening cleanup action. An omitted
++/// selection snapshots at cleanup entry, for completed-initializer rollback.
++void emitObjC3MixedCarrierDestroyPayload(
++    CodeGenFunction &, QualType, Address Storage, bool PreciseLifetime,
++    bool DestroyCXX, bool DestroyStrong, bool DestroyWeak,
++    Address Selection = Address::invalid());
++
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/lib/CodeGen/CGObjC3OptionalOperators.cpp b/clang/lib/CodeGen/CGObjC3OptionalOperators.cpp
+new file mode 100644
+index 000000000..93c5aed75
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3OptionalOperators.cpp
+@@ -0,0 +1,34 @@
++//===--- CGObjC3OptionalOperators.cpp - Native optional operator lowering -===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "CGObjC3OptionalOperators.h"
++#include "CodeGenFunction.h"
++#include "clang/AST/Expr.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++// Sema's recipe is a native match or binary conditional. Delegate the entire
++// recipe, including destination ownership, to its ordinary emitter. Emitting
++// the written operands here would evaluate the source twice or destroy a
++// selected payload before it has reached the caller's result storage.
++llvm::Value *CodeGen::emitObjC3CoalesceScalarExpr(
++    CodeGenFunction &CGF, const ObjC3CoalesceExpr *E) {
++  assert(E->getSemanticExpr() && "dependent coalescing reached CodeGen");
++  return CGF.EmitScalarExpr(E->getSemanticExpr());
++}
++
++RValue CodeGen::emitObjC3CoalesceComplexExpr(CodeGenFunction &CGF,
++                                            const ObjC3CoalesceExpr *E) {
++  assert(E->getSemanticExpr() && "dependent coalescing reached CodeGen");
++  auto Value = CGF.EmitComplexExpr(E->getSemanticExpr());
++  return RValue::getComplex(Value.first, Value.second);
++}
++
++void CodeGen::emitObjC3CoalesceAggregateExpr(CodeGenFunction &CGF,
++                                            const ObjC3CoalesceExpr *E,
++                                            AggValueSlot Destination) {
++  assert(E->getSemanticExpr() && "dependent coalescing reached CodeGen");
++  CGF.EmitAggExpr(E->getSemanticExpr(), Destination);
++}
+diff --git a/clang/lib/CodeGen/CGObjC3OptionalOperators.h b/clang/lib/CodeGen/CGObjC3OptionalOperators.h
+new file mode 100644
+index 000000000..3bfd0078e
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3OptionalOperators.h
+@@ -0,0 +1,21 @@
++//===--- CGObjC3OptionalOperators.h - Optional operator lowering -*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3OPTIONALOPERATORS_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3OPTIONALOPERATORS_H
++
++#include "CGValue.h"
++
++namespace clang {
++class ObjC3CoalesceExpr;
++namespace CodeGen {
++class CodeGenFunction;
++llvm::Value *emitObjC3CoalesceScalarExpr(CodeGenFunction &,
++                                         const ObjC3CoalesceExpr *);
++RValue emitObjC3CoalesceComplexExpr(CodeGenFunction &,
++                                    const ObjC3CoalesceExpr *);
++void emitObjC3CoalesceAggregateExpr(CodeGenFunction &,
++                                    const ObjC3CoalesceExpr *, AggValueSlot);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/lib/CodeGen/CGObjC3Resources.cpp b/clang/lib/CodeGen/CGObjC3Resources.cpp
+new file mode 100644
+index 000000000..2bd2adfdd
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3Resources.cpp
+@@ -0,0 +1,63 @@
++//===--- CGObjC3Resources.cpp - Native scalar resource cleanup -------------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "CGObjC3Resources.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Expr.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++struct CallResourceCleanup final : EHScopeStack::Cleanup {
++  const VarDecl *Variable;
++  explicit CallResourceCleanup(const VarDecl *Variable) : Variable(Variable) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    emitObjC3ResourceCleanup(CGF, *Variable);
++  }
++};
++} // namespace
++
++void clang::CodeGen::pushObjC3ResourceCleanup(CodeGenFunction &CGF,
++                                              const VarDecl &Variable) {
++  CGF.EHStack.pushCleanup<CallResourceCleanup>(NormalAndEHCleanup, &Variable);
++}
++
++void clang::CodeGen::emitObjC3ResourceCleanup(CodeGenFunction &CGF,
++                                              const VarDecl &Variable) {
++  const auto *Resource = Variable.getAttr<ObjCResourceAttr>();
++  assert(Resource && "resource cleanup requires its validated attribute");
++  QualType HandleType = Variable.getType();
++  DeclRefExpr ValueReference(CGF.getContext(),
++                              const_cast<VarDecl *>(&Variable), false,
++                              HandleType, VK_LValue, Variable.getLocation());
++  LValue Handle = CGF.EmitLValue(&ValueReference);
++  llvm::Value *Current =
++      CGF.EmitLoadOfLValue(Handle, Variable.getLocation()).getScalarVal();
++  llvm::Value *Invalid = CGF.EmitScalarExpr(Resource->getInvalid());
++
++  auto *CloseBlock = CGF.createBasicBlock("resource.close");
++  auto *DoneBlock = CGF.createBasicBlock("resource.done");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateICmpNE(Current, Invalid),
++                           CloseBlock, DoneBlock);
++  CGF.EmitBlock(CloseBlock);
++  llvm::Value *Argument = Resource->getByAddress()
++                              ? Handle.getAddress().emitRawPointer(CGF)
++                              : Current;
++  const auto *Call = cast<CallExpr>(Resource->getCall());
++  const auto *Operand =
++      cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());
++  CodeGenFunction::OpaqueValueMapping Binding(CGF, Operand,
++                                               RValue::get(Argument));
++  CGF.EmitIgnoredExpr(Call);
++  // The cleanup has been removed from the EH stack before it runs. If close
++  // throws, native unwinding cannot register or execute the same action twice.
++  // A close callback may copy a block and move a __block handle into a new
++  // forwarding cell. Invalidate the variable's current storage afterward.
++  CGF.EmitStoreThroughLValue(RValue::get(Invalid),
++                              CGF.EmitLValue(&ValueReference));
++  CGF.EmitBranch(DoneBlock);
++  CGF.EmitBlock(DoneBlock);
++}
+diff --git a/clang/lib/CodeGen/CGObjC3Resources.h b/clang/lib/CodeGen/CGObjC3Resources.h
+new file mode 100644
+index 000000000..92deeb63e
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3Resources.h
+@@ -0,0 +1,13 @@
++//===--- CGObjC3Resources.h - Native scalar resource cleanup -------*- C++ -*-===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3RESOURCES_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3RESOURCES_H
++namespace clang {
++class VarDecl;
++namespace CodeGen {
++class CodeGenFunction;
++void emitObjC3ResourceCleanup(CodeGenFunction &CGF, const VarDecl &Variable);
++void pushObjC3ResourceCleanup(CodeGenFunction &CGF, const VarDecl &Variable);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
+new file mode 100644
+index 000000000..b5d8dadd3
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_NEW -emit-llvm -o %t.new.ll -verify %s
++// RUN: test ! -e %t.new.ll
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_PLACEMENT -emit-llvm -o %t.placement.ll -verify %s
++// RUN: test ! -e %t.placement.ll
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_DELETE -emit-llvm -o %t.delete.ll -verify %s
++// RUN: test ! -e %t.delete.ll
++
++struct Item { ~Item(); };
++using Inner = __objc3_optional(Item);
++using Managed = __objc3_optional(id);
++using Mixed = __objc3_result(Managed, Inner);
++struct Wrapper { Inner hidden; };
++void *operator new(__SIZE_TYPE__, void *) noexcept;
++
++#if defined(TEST_NEW)
++Mixed *allocate() {
++  return new Mixed{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
++}
++Wrapper *allocate_wrapper() {
++  return new Wrapper{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
++}
++#elif defined(TEST_PLACEMENT)
++void replace(Mixed &value) {
++  new (&value) Mixed{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
++}
++#else
++void destroy(Mixed *value) {
++  delete value; // expected-error {{nontrivial carrier dynamic destruction}}
++}
++void destroy_array(Mixed *value) {
++  delete[] value; // expected-error {{nontrivial carrier dynamic destruction}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-mixed-cxx-arc.mm b/clang/test/ObjC3/CodeGen/carrier-mixed-cxx-arc.mm
+new file mode 100644
+index 000000000..114971848
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-mixed-cxx-arc.mm
+@@ -0,0 +1,69 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++
++struct Item {
++  explicit Item(int);
++  Item(const Item &);
++  Item(Item &&);
++  ~Item();
++};
++using Managed = __objc3_optional(id);
++using Native = __objc3_optional(Item);
++using Mixed = __objc3_result(Managed, Native);
++using Outer = __objc3_optional(Mixed);
++
++extern "C" void construct_native_alternative() {
++  Mixed value = __objc3_err(Managed, Native, __objc3_some(Item, Item(1)));
++}
++// CHECK-LABEL: define{{.*}} void @construct_native_alternative()
++// CHECK: invoke void @_ZN4ItemC1Ei
++// CHECK: store i8 1
++// CHECK: store i8 0
++// CHECK: objc3.mixed.select.active:
++// CHECK: objc3.mixed.select.inactive:
++// CHECK: store i32 {{.*}}, ptr %objc3.mixed.cleanup.selection
++// CHECK-DAG: switch i32
++// CHECK-DAG: call void @_ZN4ItemD1Ev
++// CHECK-DAG: llvm.objc.storeStrong
++
++extern "C" void construct_managed_alternative(id object) {
++  Mixed value = __objc3_ok(Managed, Native, __objc3_some(id, object));
++}
++// CHECK-LABEL: define{{.*}} void @construct_managed_alternative(
++// CHECK: llvm.objc.retain
++// CHECK: store i8 1
++// CHECK: store i8 1
++// CHECK: store i32 {{.*}}, ptr %objc3.mixed.cleanup.selection
++// CHECK: switch i32
++// CHECK: llvm.objc.storeStrong
++
++extern "C" void recursive_transfer(Mixed &source) {
++  Mixed copy = __objc3_copy(source);
++  Mixed moved = __objc3_move(source);
++}
++// CHECK-LABEL: define{{.*}} void @recursive_transfer(
++// CHECK: llvm.objc.retain
++// CHECK: invoke void @_ZN4ItemC1ERKS_
++// CHECK: invoke void @_ZN4ItemC1EOS_
++// CHECK: switch i32
++
++extern "C" void optional_mixed_nesting() {
++  Outer absent = __objc3_none(Mixed);
++  Outer present = __objc3_some(
++      Mixed, __objc3_err(Managed, Native, __objc3_none(Item)));
++}
++// CHECK-LABEL: define{{.*}} void @optional_mixed_nesting()
++// CHECK: store i8 0
++// CHECK: store i8 0
++// CHECK: store i8 0
++// CHECK: store i8 1
++// CHECK: objc3.mixed.cleanup.selection
++// CHECK: switch i32
++
++extern "C" bool borrowed_mixed_tag(const Mixed &source) {
++  return __objc3_is_ok(source);
++}
++// CHECK-LABEL: define{{.*}} i1 @borrowed_mixed_tag(
++// CHECK-NOT: llvm.objc.retain
++// CHECK-NOT: @_ZN4Item
++// CHECK: load i8
++// CHECK: ret i1
+diff --git a/clang/test/ObjC3/CodeGen/optional-coalescing-arc.m b/clang/test/ObjC3/CodeGen/optional-coalescing-arc.m
+new file mode 100644
+index 000000000..54dbb7b85
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-coalescing-arc.m
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++
++id fallback(void);
++void consume(id);
++void tagged_result(Optional(id) *source) {
++  id result = *source ?? fallback();
++  consume(result);
++}
++// CHECK-LABEL: define{{.*}} @tagged_result(
++// CHECK: llvm.objc.retain
++// CHECK: br i1
++// CHECK: {{call|invoke}} ptr @fallback
++// CHECK: phi ptr
++// CHECK: llvm.objc.release
++
++void weak_reference_result(id __weak *source, id fallback) {
++  id result = *source ?? fallback;
++  consume(result);
++}
++// CHECK-LABEL: define{{.*}} @weak_reference_result(
++// CHECK-COUNT-1: llvm.objc.loadWeakRetained
++// CHECK: br i1
++// CHECK: phi ptr
++
++void block_result(void (^ _Nullable source)(void),
++                  void (^ _Nonnull fallback)(void)) {
++  void (^result)(void) = source ?? fallback;
++  result();
++}
++// CHECK-LABEL: define{{.*}} @block_result(
++// CHECK: br i1
++// CHECK: phi ptr
++// CHECK: llvm.objc.retainBlock
+diff --git a/clang/test/ObjC3/CodeGen/optional-coalescing-cxx-runtime.mm b/clang/test/ObjC3/CodeGen/optional-coalescing-cxx-runtime.mm
+new file mode 100644
+index 000000000..9868c76d6
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-coalescing-cxx-runtime.mm
+@@ -0,0 +1,44 @@
++// REQUIRES: system-linux, x86-registered-target
++// RUN: %clang -x objective-c++ -std=c++20 -fno-exceptions -fno-objc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 %s -o %t
++// RUN: %t
++// RUN: %clang -x objective-c++ -std=c++23 -O2 -fno-exceptions -fno-objc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 %s -o %t.opt
++// RUN: %t.opt
++
++static int live, constructed, destroyed, fallback_calls;
++struct Value {
++  int number;
++  explicit Value(int number) noexcept : number(number) {
++    ++live;
++    ++constructed;
++  }
++  Value(const Value &other) noexcept : number(other.number) {
++    ++live;
++    ++constructed;
++  }
++  ~Value() noexcept { --live; ++destroyed; }
++};
++static Value fallback() noexcept {
++  ++fallback_calls;
++  return Value(9);
++}
++template <class T> static auto generic(T source) { return source ?? 42; }
++
++int main() {
++  {
++    Optional(Value) present = Some(Value, Value(7));
++    Value selected = present ?? fallback();
++    if (selected.number != 7 || fallback_calls != 0 || live != 2)
++      return 1;
++    Optional(Value) absent = None(Value);
++    Value selected_fallback = absent ?? fallback();
++    if (selected_fallback.number != 9 || fallback_calls != 1 || live != 3)
++      return 2;
++  }
++  if (live != 0 || constructed != destroyed)
++    return 3;
++  if (generic(Some(int, 7)) != 7 || generic(None(int)) != 42)
++    return 4;
++  Optional(Optional(int)) nested = Some(Optional(int), Some(int, 8));
++  Optional(int) flattened = nested ?? None(int);
++  return (flattened ?? 0) == 8 ? 0 : 5;
++}
+diff --git a/clang/test/ObjC3/CodeGen/optional-coalescing-cxx.mm b/clang/test/ObjC3/CodeGen/optional-coalescing-cxx.mm
+new file mode 100644
+index 000000000..c731baff1
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-coalescing-cxx.mm
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fcxx-exceptions -fexceptions -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++
++extern "C" void event(int);
++struct Value {
++  int number;
++  Value(int number) : number(number) { event(100 + number); }
++  Value(const Value &other) : number(other.number) { event(200 + number); }
++  ~Value() { event(300 + number); }
++};
++Value fallback();
++
++Value class_result(Optional(Value) &source) { return source ?? fallback(); }
++// CHECK-LABEL: define{{.*}} @_Z12class_result
++// CHECK: invoke void @_ZN5ValueC1ERKS_
++// CHECK: br i1
++// CHECK: invoke void @_ZN5ValueC1ERKS_
++// CHECK: invoke void @_Z8fallbackv
++// CHECK: call void @_ZN5ValueD1Ev
++
++template <class T> auto templated_result(T source) { return source ?? 42; }
++int use_templated(Optional(int) source) { return templated_result(source); }
++// CHECK-LABEL: define{{.*}} @_Z16templated_result
++// CHECK: phi i32
++
++static_assert(!noexcept(class_result(*static_cast<Optional(Value) *>(nullptr))));
++static_assert(!noexcept(None(int) ?? (throw 1, 2)));
+diff --git a/clang/test/ObjC3/CodeGen/optional-coalescing-runtime.m b/clang/test/ObjC3/CodeGen/optional-coalescing-runtime.m
+new file mode 100644
+index 000000000..bf0472125
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-coalescing-runtime.m
+@@ -0,0 +1,63 @@
++// REQUIRES: system-linux, x86-registered-target
++// RUN: %clang -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 %s -o %t
++// RUN: %t
++// RUN: %clang -x objective-c -std=c23 -O2 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 %s -o %t.opt
++// RUN: %t.opt
++
++typedef Optional(int) Maybe;
++static int source_calls, fallback_calls, order;
++static Maybe source(int value, int present) {
++  ++source_calls;
++  order = order * 10 + value;
++  return present ? Some(int, value) : None(int);
++}
++static int fallback(void) {
++  ++fallback_calls;
++  order = order * 10 + 9;
++  return 9;
++}
++static int same(id left, id right) { return left == right; }
++
++int main(void) {
++  if ((source(1, 1) ?? fallback()) != 1 || source_calls != 1 || fallback_calls)
++    return 1;
++  if ((source(2, 0) ?? fallback()) != 9 || source_calls != 2 || fallback_calls != 1)
++    return 2;
++  order = 0;
++  if ((source(1, 0) ?? source(2, 1) ?? fallback()) != 2 || order != 12)
++    return 3;
++  order = 0;
++  if ((source(1, 0) ?? source(2, 0) ?? fallback()) != 9 || order != 129)
++    return 4;
++  order = 0;
++  if ((source(1, 1) ?? source(2, 1) ?? fallback()) != 1 || order != 1)
++    return 5;
++  if ((Some(int, 0) ?? 1 || 1) != 0)
++    return 6;
++  if ((Some(int, 2) ?? 0 ? 3 : 4) != 3)
++    return 7;
++
++  Maybe carrier = None(int) ?? Some(int, 41);
++  if (!hasValue(carrier) || (carrier ?? 0) != 41)
++    return 8;
++  Optional(Maybe) nested = Some(Maybe, None(int));
++  carrier = nested ?? Some(int, 42);
++  if (hasValue(carrier))
++    return 9;
++  nested = None(Maybe);
++  carrier = nested ?? Some(int, 43);
++  if ((carrier ?? 0) != 43)
++    return 10;
++  Optional(void) unit = None(void) ?? Some(void, (void)0);
++  if (!hasValue(unit))
++    return 11;
++
++  // A tagged nil payload is present and must not select its nonnil fallback.
++  id marker = (id)(__UINTPTR_TYPE__)1;
++  Optional(id) present_nil = Some(id, (id)0);
++  if (!same(present_nil ?? marker, (id)0))
++    return 12;
++  if (!same((id)0 ?? marker, marker) || !same(marker ?? (id)0, marker))
++    return 13;
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/optional-coalescing.m b/clang/test/ObjC3/CodeGen/optional-coalescing.m
+new file mode 100644
+index 000000000..0ce7a5add
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-coalescing.m
+@@ -0,0 +1,52 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int fallback_scalar(void);
++id fallback_object(void);
++typedef Optional(int) Maybe;
++
++int scalar_result(Maybe source) { return source ?? fallback_scalar(); }
++// CHECK-LABEL: define{{.*}} @scalar_result(
++// CHECK: load i8
++// CHECK: br i1 {{.*}}, label %[[PRESENT:[^ ,]+]], label %[[ABSENT:[^ ,]+]]
++// CHECK: [[PRESENT]]:
++// CHECK-NOT: @fallback_scalar
++// CHECK: load i32
++// CHECK: [[ABSENT]]:
++// CHECK: call i32 @fallback_scalar
++// CHECK: phi i32
++
++id reference_result(id source) { return source ?? fallback_object(); }
++// CHECK-LABEL: define{{.*}} @reference_result(
++// CHECK: icmp ne ptr
++// CHECK: br i1 {{.*}}, label %[[OBJECT:[^ ,]+]], label %[[FALLBACK:[^ ,]+]]
++// CHECK: [[OBJECT]]:
++// CHECK-NOT: @fallback_object
++// CHECK: [[FALLBACK]]:
++// CHECK: call ptr @fallback_object
++// CHECK: phi ptr
++
++_Complex double complex_result(Optional(_Complex double) source,
++                               _Complex double fallback) {
++  return source ?? fallback;
++}
++// CHECK-LABEL: define{{.*}} @complex_result(
++// CHECK: phi double
++// CHECK: phi double
++
++struct Pair { int first, second; };
++struct Pair record_result(Optional(struct Pair) source, struct Pair fallback) {
++  return source ?? fallback;
++}
++// CHECK-LABEL: define{{.*}} @record_result(
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: llvm.memcpy
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/resource-ownership.m b/clang/test/ObjC3/CodeGen/resource-ownership.m
+new file mode 100644
+index 000000000..99777b530
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/resource-ownership.m
+@@ -0,0 +1,58 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -O2 -emit-obj -o %t.o %s
++// REQUIRES: x86-registered-target
++#ifdef __cplusplus
++extern "C" {
++#endif
++int acquire(void);
++void may_throw(void);
++void close_handle(int) __attribute__((nothrow));
++void close_address(int *) __attribute__((nothrow));
++void close_pointer_address(void **) __attribute__((nothrow));
++void close_volatile(int) __attribute__((nothrow));
++void resource_value(void) {
++  int value __attribute__((objc_resource(close=close_handle, invalid=-1))) = acquire();
++  may_throw();
++}
++// CHECK-LABEL: define{{.*}} void @resource_value(
++// CHECK: invoke i32 @acquire(
++// CHECK: invoke void @may_throw(
++// CHECK: icmp ne i32 {{.*}}, -1
++// CHECK: resource.close:
++// CHECK: call void @close_handle(i32
++// CHECK: store i32 -1
++// CHECK: call void @close_handle(i32
++// CHECK: store i32 -1
++
++void resource_address(void) {
++  int value __attribute__((objc_resource(close=close_address, invalid=0))) = 7;
++}
++// CHECK-LABEL: define{{.*}} void @resource_address(
++// CHECK: icmp ne i32
++// CHECK: call void @close_address(ptr
++// CHECK: store i32 0
++// CHECK: ret void
++
++void resource_pointer_address(void *input) {
++  void *value __attribute__((objc_resource(close=close_pointer_address, invalid=0))) = input;
++}
++// CHECK-LABEL: define{{.*}} void @resource_pointer_address(
++// CHECK: icmp ne ptr
++// CHECK: call void @close_pointer_address(ptr
++// CHECK: store ptr null
++// CHECK: ret void
++
++void resource_volatile(void) {
++  volatile int value __attribute__((objc_resource(close=close_volatile, invalid=0))) = 7;
++}
++// CHECK-LABEL: define{{.*}} void @resource_volatile(
++// CHECK: load volatile i32
++// CHECK: icmp ne i32
++// CHECK-NOT: load volatile i32
++// CHECK: call void @close_volatile(i32
++// CHECK: store volatile i32 0
++// CHECK: ret void
++#ifdef __cplusplus
++}
++#endif

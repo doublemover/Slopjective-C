@@ -34,7 +34,10 @@ def qualify(sdk: Path, output: Path) -> dict:
                         'recursive selected-arm copy/move and const move',
                         'failed construction and full-expression rollback',
                         'native exception unwind and single source evaluation',
-                        'separately compiled reference boundaries and PCH replay']}
+                        'separately compiled reference boundaries and PCH replay',
+                        'mixed ARC/C++ selected-leaf lifetime partitions',
+                        'strong, weak, unsafe and Block ownership with C++ alternatives',
+                        'native destructor actions and deferred managed releases']}
 
     def persist():
         receipt.write_text(json.dumps(report, indent=2) + '\n')
@@ -47,7 +50,9 @@ def qualify(sdk: Path, output: Path) -> dict:
               (sdk / 'lib/libobjc.so').resolve(), sdk / 'objc3-sdk.json',
               sdk / 'share/objc3c/verify-sdk.py', Path(__file__).resolve()]
     for name in ('main.mm', 'boundary.h', 'provider.mm', 'consumer.mm',
-                 'pch.h', 'pch.mm', 'rejections.mm'):
+                 'pch.h', 'pch.mm', 'rejections.mm', 'mixed-boundary.h',
+                 'mixed-provider.mm', 'mixed-main.mm', 'mixed-consumer.mm',
+                 'mixed-pch.h', 'mixed-pch.mm'):
         inputs.append(fixtures / name)
 
     def run(name, command, *, cwd=None, expected_exit_code=0):
@@ -102,7 +107,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                     flags = ['-std=' + standard, '-fobjc-version=3',
                              '-fobjc-runtime=gnustep-2.2', '-fexceptions',
                              '-fcxx-exceptions', '-fobjc-exceptions',
-                             '-fobjc-arc-exceptions', '-fno-crash-diagnostics', '-g',
+                             '-fobjc-arc-exceptions', '-fblocks', '-fno-crash-diagnostics', '-g',
                              '-fobjc-arc' if arc else '-fno-objc-arc']
                     common = [compiler, '--driver-mode=g++', '--no-default-config', *flags]
                     for optimization in ('O0', 'O2'):
@@ -130,6 +135,29 @@ def qualify(sdk: Path, output: Path) -> dict:
                         execute(name + '-pch-execute', executable, client)
                         report['configurations'].append({'standard': standard, 'ownership': ownership,
                                                           'optimization': optimization})
+                        if arc:
+                            mixed_provider = client / (name + '-mixed-provider.o')
+                            run(name + '-mixed-provider', [*compile_flags, '-x', 'objective-c++', '-c',
+                                source / 'mixed-provider.mm', '-o', mixed_provider], cwd=client)
+                            for fixture in ('main', 'consumer'):
+                                mixed_object = client / (name + '-mixed-' + fixture + '.o')
+                                run(name + '-mixed-' + fixture + '-compile', [
+                                    *compile_flags, '-x', 'objective-c++', '-c',
+                                    source / ('mixed-' + fixture + '.mm'), '-o', mixed_object], cwd=client)
+                                executable = client / (name + '-mixed-' + fixture)
+                                run(name + '-mixed-' + fixture + '-link', [
+                                    *common, mixed_provider, mixed_object, *link, '-o', executable], cwd=client)
+                                execute(name + '-mixed-' + fixture + '-execute', executable, client)
+                            mixed_pch = client / (name + '-mixed.pch')
+                            run(name + '-mixed-pch-header', [*compile_flags, '-x', 'objective-c++-header',
+                                source / 'mixed-pch.h', '-o', mixed_pch], cwd=client)
+                            mixed_object = client / (name + '-mixed-pch.o')
+                            run(name + '-mixed-pch-consumer', [*compile_flags, '-x', 'objective-c++', '-c',
+                                '-include-pch', mixed_pch, source / 'mixed-pch.mm', '-o', mixed_object], cwd=client)
+                            executable = client / (name + '-mixed-pch')
+                            run(name + '-mixed-pch-link', [*common, mixed_provider, mixed_object,
+                                *link, '-o', executable], cwd=client)
+                            execute(name + '-mixed-pch-execute', executable, client)
                     name = f'{standard}-{ownership}'
                     executable = client / (name + '-driver')
                     run(name + '-driver-compile', [frontend, *flags, '-O2',
@@ -140,9 +168,33 @@ def qualify(sdk: Path, output: Path) -> dict:
                         'DELETED_COPY': 'deleted constructor',
                         'CALL_ABI': 'by-value call ABI',
                         'VOLATILE': 'volatile carrier copy and move construction is not supported',
+                        'CXX_NEW': 'nontrivial carrier allocation or storage reuse',
+                        'CXX_PLACEMENT': 'nontrivial carrier allocation or storage reuse',
+                        'CXX_DELETE': 'nontrivial carrier dynamic destruction',
                     }
                     if arc:
                         rejections['ARC_RECORD'] = 'not supported in an Objective-C 3 value carrier'
+                        rejections.update({
+                            'MIXED_ASSIGNMENT': 'ARC carrier assignment',
+                            'MIXED_CALL_ABI': 'by-value call ABI',
+                            'MIXED_ARRAY': 'ARC array local initialization',
+                            'MIXED_VOLATILE': 'volatile carrier copy and move construction is not supported',
+                            'MIXED_CAPTURE': 'by-value call ABI',
+                            'MIXED_RECORD': 'mixed ARC/C++ carrier enclosing storage',
+                            'MIXED_LAMBDA': 'mixed ARC/C++ carrier enclosing storage',
+                            'MIXED_NEW': 'nontrivial carrier allocation or storage reuse',
+                            'MIXED_NEW_VALUE': 'nontrivial carrier allocation or storage reuse',
+                            'MIXED_NEW_ARRAY': 'nontrivial carrier allocation or storage reuse',
+                            'MIXED_PLACEMENT': 'nontrivial carrier allocation or storage reuse',
+                            'MIXED_DELETE': 'nontrivial carrier dynamic destruction',
+                        })
+                        executable = client / (name + '-mixed-driver')
+                        run(name + '-mixed-driver-compile', [frontend, *flags, '-O2',
+                            source / 'mixed-provider.mm', source / 'mixed-main.mm',
+                            '-o', executable], cwd=client)
+                        execute(name + '-mixed-driver-execute', executable, client)
+                    else:
+                        rejections['MIXED_MRC'] = 'not supported in an Objective-C 3 value carrier'
                     for macro, diagnostic in rejections.items():
                         rejected = client / (name + '-' + macro + '.o')
                         log = run(name + '-reject-' + macro, [*common, '-x', 'objective-c++',
@@ -154,7 +206,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         if hashes != {str(path): packages.digest(path) for path in inputs}:
             raise ValueError('installed recursive carrier inputs changed during execution')
         if (len(report['configurations']), report['executions'], report['rejections'],
-                len(report['commands'])) != (8, 28, 18, 107):
+                len(report['commands'])) != (8, 42, 56, 193):
             raise ValueError('installed recursive carrier execution matrix is incomplete')
         report.update(status='PASS', temporary_artifacts_reclaimed=True,
                       commands_passed=len(report['commands']))
