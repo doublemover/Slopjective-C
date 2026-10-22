@@ -17747,10 +17747,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..fc39c48c5
+index 000000000..2a387f2aa
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,789 @@
+@@ -0,0 +1,867 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18036,18 +18036,62 @@ index 000000000..fc39c48c5
 +                           *Nullability == NullabilityKind::NullableResult);
 +  }
 +
++  static bool preservesNullness(const CastExpr *Cast) {
++    switch (Cast->getCastKind()) {
++    case CK_NoOp:
++    case CK_LValueToRValue:
++    case CK_BitCast:
++    case CK_CPointerToObjCPointerCast:
++    case CK_BlockPointerToObjCPointerCast:
++    case CK_AnyPointerToBlockPointerCast:
++    case CK_ObjCObjectLValueCast:
++    case CK_BaseToDerived:
++    case CK_DerivedToBase:
++    case CK_UncheckedDerivedToBase:
++      return true;
++    default:
++      return false;
++    }
++  }
++
++  bool nullValue(const Expr *Value) const {
++    if (!Value || Value->isValueDependent())
++      return false;
++    Value = Value->IgnoreParens();
++    if (const auto *Cast = dyn_cast<CastExpr>(Value)) {
++      // Objective-C nil is commonly spelled '(id)0'. The result is a null
++      // pointer value, but is not a C/C++ null pointer *constant* expression.
++      if (Cast->getCastKind() == CK_NullToPointer)
++        return true;
++      if (preservesNullness(Cast))
++        return nullValue(Cast->getSubExpr());
++    }
++    return Value->isNullPointerConstant(Context,
++                                        Expr::NPC_ValueDependentIsNotNull);
++  }
++
 +  const VarDecl *variable(const Expr *Value) const {
 +    if (!Value)
 +      return nullptr;
-+    Value = Value->IgnoreParenImpCasts();
++    Value = Value->IgnoreParenCasts();
++    if (const auto *Full = dyn_cast<ExprWithCleanups>(Value))
++      return variable(Full->getSubExpr());
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value))
++      return variable(Opaque->getSourceExpr());
 +    if (const auto *Reference = dyn_cast<DeclRefExpr>(Value)) {
 +      const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl());
 +      auto Alias = Aliases.find(Variable);
 +      return Alias == Aliases.end() ? Variable : Alias->second;
 +    }
-+    if (const auto *Operation = dyn_cast<BinaryOperator>(Value))
++    if (const auto *Operation = dyn_cast<BinaryOperator>(Value)) {
 +      if (Operation->getOpcode() == BO_Assign)
 +        return variable(Operation->getLHS());
++      if (Operation->getOpcode() == BO_Comma)
++        return variable(Operation->getRHS());
++    }
++    if (const auto *Compound = dyn_cast<StmtExpr>(Value))
++      if (!Compound->getSubStmt()->body_empty())
++        return variable(dyn_cast<Expr>(Compound->getSubStmt()->body_back()));
 +    return nullptr;
 +  }
 +
@@ -18071,6 +18115,33 @@ index 000000000..fc39c48c5
 +    if (const VarDecl *Variable = variable(Value)) {
 +      registerVariable(Variable);
 +      Escaped.insert(Variable);
++      return;
++    }
++    if (!Value)
++      return;
++    Value = Value->IgnoreParenCasts();
++    if (const auto *Full = dyn_cast<ExprWithCleanups>(Value)) {
++      escape(Full->getSubExpr());
++      return;
++    }
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value)) {
++      escape(Opaque->getSourceExpr());
++      return;
++    }
++    // A glvalue conditional can alias either slot. Keep both possible owners
++    // exposed even though the reference itself has only one runtime address.
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Value)) {
++      escape(Conditional->getTrueExpr());
++      escape(Conditional->getFalseExpr());
++    } else if (const auto *Selection = dyn_cast<GenericSelectionExpr>(Value)) {
++      if (!Selection->isResultDependent())
++        escape(Selection->getResultExpr());
++    } else if (const auto *Choice = dyn_cast<ChooseExpr>(Value)) {
++      if (!Choice->isConditionDependent())
++        escape(Choice->getChosenSubExpr());
++    } else if (const auto *Compound = dyn_cast<StmtExpr>(Value)) {
++      if (!Compound->getSubStmt()->body_empty())
++        escape(dyn_cast<Expr>(Compound->getSubStmt()->body_back()));
 +    }
 +  }
 +
@@ -18086,12 +18157,16 @@ index 000000000..fc39c48c5
 +      return;
 +    }
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
-+      for (const LambdaCapture &Capture : Lambda->captures())
++      auto Initializer = Lambda->capture_init_begin();
++      for (const LambdaCapture &Capture : Lambda->captures()) {
++        const Expr *Source = *Initializer++;
 +        if (Capture.capturesVariable() &&
-+            Capture.getCaptureKind() == LCK_ByRef)
++            Capture.getCaptureKind() == LCK_ByRef) {
 +          Escaped.insert(Capture.getCapturedVar());
-+      for (const Expr *Capture : Lambda->capture_inits())
-+        collect(Capture);
++          escape(Source);
++        }
++        collect(Source);
++      }
 +      return;
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(Statement)) {
@@ -18147,11 +18222,11 @@ index 000000000..fc39c48c5
 +      return false;
 +    if (Value->getType()->getNullability() == NullabilityKind::NonNull)
 +      return true;
++    Value = Value->IgnoreParens();
 +    if (const auto *Full = dyn_cast<ExprWithCleanups>(Value))
 +      return nonnull(Full->getSubExpr(), Facts);
-+    Value = Value->IgnoreParenCasts();
-+    if (Value->getType()->getNullability() == NullabilityKind::NonNull)
-+      return true;
++    if (const auto *Cast = dyn_cast<CastExpr>(Value))
++      return preservesNullness(Cast) && nonnull(Cast->getSubExpr(), Facts);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Value))
 +      return nonnull(Conditional->getTrueExpr(), Facts) &&
 +             nonnull(Conditional->getFalseExpr(), Facts);
@@ -18159,12 +18234,15 @@ index 000000000..fc39c48c5
 +      if (Operation->getOpcode() == BO_Assign ||
 +          Operation->getOpcode() == BO_Comma)
 +        return nonnull(Operation->getRHS(), Facts);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value))
++      return nonnull(Opaque->getSourceExpr(), Facts);
++    if (const auto *Compound = dyn_cast<StmtExpr>(Value))
++      if (!Compound->getSubStmt()->body_empty())
++        return nonnull(dyn_cast<Expr>(Compound->getSubStmt()->body_back()), Facts);
 +    if (const VarDecl *Variable = variable(Value)) {
 +      auto Found = Variables.find(Variable);
 +      return Found != Variables.end() && Facts.test(Found->second);
 +    }
-+    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Value))
-+      return nonnull(Opaque->getSourceExpr(), Facts);
 +    return false;
 +  }
 +
@@ -18217,11 +18295,9 @@ index 000000000..fc39c48c5
 +      }
 +      if (Operation->isEqualityOp()) {
 +        const Expr *Value = nullptr;
-+        if (Operation->getRHS()->isNullPointerConstant(
-+                Context, Expr::NPC_ValueDependentIsNotNull))
++        if (nullValue(Operation->getRHS()))
 +          Value = Operation->getLHS();
-+        else if (Operation->getLHS()->isNullPointerConstant(
-+                     Context, Expr::NPC_ValueDependentIsNotNull))
++        else if (nullValue(Operation->getLHS()))
 +          Value = Operation->getRHS();
 +        if (Value) {
 +          assign(variable(Value), Truth == (Operation->getOpcode() == BO_NE),
@@ -18292,9 +18368,11 @@ index 000000000..fc39c48c5
 +            assign(Variable, nonnull(Variable->getInit(), Facts), Facts);
 +      if (const auto *Operation = dyn_cast<BinaryOperator>(Node))
 +        if (Operation->isAssignmentOp()) {
-+          if (!Variables.count(variable(Operation->getLHS())))
++          const VarDecl *Target = variable(Operation->getLHS());
++          if (!Variables.count(Target) ||
++              (Target && Target->getType()->isReferenceType()))
 +            invalidateEscaped(Facts);
-+          assign(variable(Operation->getLHS()),
++          assign(Target,
 +                 Operation->getOpcode() == BO_Assign &&
 +                     nonnull(Operation->getRHS(), Facts), Facts);
 +        }
@@ -23518,4 +23596,98 @@ index 000000000..2e455d274
 +  EXPECT_EQ(2u,
 +            match(objc3MatchArm(hasObjC3Binding(varDecl(hasName("payload")))), C)
 +                .size());
++}
+diff --git a/clang/test/ObjC3/Sema/guard-nullable-aliases.mm b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
+new file mode 100644
+index 000000000..f81d8808e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
+@@ -0,0 +1,88 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -Wno-nullability-completeness -Wno-arc-bridge-casts-disallowed-in-nonarc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc3-profile=strict -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-nullability-completeness -Wno-arc-bridge-casts-disallowed-in-nonarc -fsyntax-only -verify %s
++
++@interface AliasReceiver
++- (void)ping;
++@end
++typedef AliasReceiver * _Nullable Nullable;
++
++void mutate_reference(Nullable &);
++
++void conditional_reference_store(Nullable first, Nullable second, bool choose) {
++  Nullable &alias = choose ? first : second;
++  guard first != (id)0, second != (id)0 else { return; }
++  alias = (id)0;
++  [first ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++  [second ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void conditional_reference_argument(Nullable first, Nullable second, bool choose) {
++  guard first != (id)0, second != (id)0 else { return; }
++  mutate_reference(choose ? first : second);
++  [first ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++  [second ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void comma_reference_alias(Nullable value) {
++  Nullable &alias = ((void)0, value);
++  guard value != (id)0 else { return; }
++  alias = (id)0;
++  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void statement_expression_reference_alias(Nullable value) {
++  Nullable &alias = *({ &value; });
++  guard value != (id)0 else { return; }
++  alias = (id)0;
++  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void explicit_reference_cast_alias(Nullable value) {
++  Nullable &alias = static_cast<Nullable &>(value);
++  guard value != (id)0 else { return; }
++  alias = (id)0;
++  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void conditional_reference_init_capture(Nullable first, Nullable second,
++                                       bool choose) {
++  auto reset = [&slot = (choose ? first : second)] { slot = (id)0; };
++  guard first != (id)0, second != (id)0 else { return; }
++  reset();
++  [first ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++  [second ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void direct_alias_preserves_exact_source_identity(Nullable value) {
++  Nullable &alias = value;
++  guard alias != (id)0 else { return; }
++  [value ping];
++  [alias ping];
++}
++
++void a_materialized_copy_has_independent_storage(Nullable value) {
++  Nullable &&copy = Nullable(value);
++  value = (id)0;
++  guard copy != (id)0 else { return; }
++  [copy ping];
++  [value ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void all_native_null_spellings_refine(Nullable first, Nullable second,
++                                     Nullable third) {
++  guard first != 0, second != nullptr, third != (id)0 else { return; }
++  [first ping];
++  [second ping];
++  [third ping];
++}
++
++struct PolymorphicBase { virtual ~PolymorphicBase(); };
++struct PolymorphicDerived : PolymorphicBase {};
++
++void a_failing_dynamic_cast_can_be_nil(PolymorphicBase * _Nonnull source) {
++  [(__bridge Nullable)dynamic_cast<PolymorphicDerived *>(source) ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
++}
++
++void a_static_upcast_preserves_nonnull(PolymorphicDerived * _Nonnull source) {
++  [(__bridge Nullable)static_cast<PolymorphicBase *>(source) ping];
 +}
