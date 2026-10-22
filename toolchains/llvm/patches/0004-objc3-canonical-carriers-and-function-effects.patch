@@ -18904,10 +18904,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..4949ea829
+index 000000000..ab5f4db8b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,870 @@
+@@ -0,0 +1,874 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19320,7 +19320,11 @@ index 000000000..4949ea829
 +        const Expr *Source = *Initializer++;
 +        if (Capture.capturesVariable() &&
 +            Capture.getCaptureKind() == LCK_ByRef) {
-+          Escaped.insert(Capture.getCapturedVar());
++          if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
++            Escaped.insert(Variable);
++          else if (const auto *Binding =
++                       dyn_cast<BindingDecl>(Capture.getCapturedVar()))
++            escape(Binding->getBinding());
 +          escape(Source);
 +        }
 +        collect(Source);
@@ -27773,10 +27777,10 @@ index 000000000..dcbf35eda
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..2cc9d7822
+index 000000000..3b80caff0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
-@@ -0,0 +1,478 @@
+@@ -0,0 +1,481 @@
 +//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
@@ -27907,12 +27911,15 @@ index 000000000..2cc9d7822
 +                       "use resource operations on its declaring variable");
 +        }
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
-+      for (const LambdaCapture &Capture : Lambda->captures())
-+        if (Capture.capturesVariable() &&
-+            Variables.count(Capture.getCapturedVar()))
-+          diagnose(Node, Capture.getCapturedVar(),
++      for (const LambdaCapture &Capture : Lambda->captures()) {
++        const auto *Variable = Capture.capturesVariable()
++                                   ? dyn_cast<VarDecl>(Capture.getCapturedVar())
++                                   : nullptr;
++        if (Variable && Variables.count(Variable))
++          diagnose(Node, Variable,
 +                   "strict-system resource '%0' requires ownership-aware "
 +                   "capture support; keep it in its declaring callable");
++      }
 +      for (const Expr *Initializer : Lambda->capture_inits())
 +        collect(Initializer);
 +      return;
@@ -28747,10 +28754,10 @@ index 000000000..eb6065df6
 +}
 diff --git a/clang/test/ObjC3/Sema/resource-operations.m b/clang/test/ObjC3/Sema/resource-operations.m
 new file mode 100644
-index 000000000..d2a21e948
+index 000000000..358143eee
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-operations.m
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,54 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
@@ -28797,3 +28804,11 @@ index 000000000..d2a21e948
 +  int *escaped = &value; // strict-error {{cannot track escaped storage}}
 +  (void)escaped;
 +}
++
++#ifdef __cplusplus
++void captured_owner(void) {
++  int value RESOURCE = 3;
++  auto closure = [value] { return value; }; // strict-error {{requires ownership-aware capture support}}
++  (void)closure;
++}
++#endif
