@@ -21,6 +21,8 @@ objc3_async_frame bridge_c_wide(int *destroyed);
 objc3_async_frame bridge_c_complex(bridge_complex, int *destroyed);
 objc3_async_frame bridge_c_void(int *destroyed);
 objc3_async_frame bridge_c_chain(objc3_async_frame *child, int *destroyed);
+objc3_async_frame bridge_c_group_join(objc3_task_group_t *group, int value,
+                                      uint64_t expected_actor, int *destroyed);
 int bridge_c_copy_count(void);
 int bridge_c_consume_cpp(objc3_executor_t *executor);
 objc3_async_frame bridge_cpp_int(int value);
