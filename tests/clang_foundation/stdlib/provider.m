@@ -7,6 +7,9 @@ Result(int, int) stdlib_optional(Optional(int) value, int (^factory)(void)) {
 Result(int, int) stdlib_status(int status, int value, int (^factory)(int)) {
   return resultFromStatus(status, value, factory);
 }
+Result(int, int) stdlib_error_out(int success, int raw_error, int (^factory)(int)) {
+  return resultFromErrorOut(success, 42, raw_error, factory);
+}
 void stdlib_status_throwing(int status, id<Error> (^factory)(int)) throws(id<Error>) {
   tryValue(statusOrThrow(status, factory));
 }

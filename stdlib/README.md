@@ -46,8 +46,11 @@ The development headers also provide `resultFromStatus(status, successValue,
 makeError)` for zero-success status APIs. The status runs once; the success
 expression runs only for zero, and the error factory is constructed/called only
 for nonzero with the original status. `statusOrThrow(status, makeError)` bridges
-void-success operations to checked `id<Error>` propagation. Domain-specific
-factories retain the API's error meaning. These additions require the next SDK
+void-success operations to checked `id<Error>` propagation. `resultFromErrorOut(success, successValue, errorValue, makeError)` bridges
+BOOL/error-out APIs: it runs the operation before capturing outputs, ignores
+error storage on success, and lets the domain factory normalize even a missing
+error on failure. It accepts NSError-style object slots without requiring a
+Foundation dependency in the library. Domain-specific factories retain the API's error meaning. These additions require the next SDK
 build and installed validation; the current released archive predates them.
 
 The concurrency module exposes the shared task/frame, group, cancellation,

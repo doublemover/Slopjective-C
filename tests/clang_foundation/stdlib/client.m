@@ -28,6 +28,10 @@ static Optional(int) input(int *calls, int present) {
 
 static int status_output(int *output, int value) { *output = value; return 0; }
 
+static int error_out_api(int *value, int *error, int success) {
+  *value = success ? 42 : -1; *error = success ? 0 : 17; return success;
+}
+
 int main(void) {
   assert(OBJC3_LANGUAGE_REVISION >= 202610);
   assert(OBJC3_STDLIB_VERSION_MAJOR == 2);
@@ -80,6 +84,25 @@ int main(void) {
   }
   assert(isOk(stdlib_status(0, 42, status_error)));
   assert(!isOk(stdlib_status(9, 0, status_error)) && error_calls == 2);
+
+  int raw_error = 0, raw_value = 0;
+  int before_error_calls = error_calls;
+  Result(int, int) out_good = resultFromErrorOut(
+      error_out_api(&raw_value, &raw_error, 1), raw_value, raw_error, status_error);
+  match(out_good) {
+    case .Ok(let value): { assert(value == 42 && error_calls == before_error_calls); }
+    case .Err(let error): { (void)error; assert(0); }
+  }
+  Result(int, int) out_bad = resultFromErrorOut(
+      error_out_api(&raw_value, &raw_error, 0), raw_value, raw_error, status_error);
+  match(out_bad) {
+    case .Ok(let value): { (void)value; assert(0); }
+    case .Err(let error): { assert(error == 117 && error_calls == before_error_calls + 1); }
+  }
+  assert(isOk(stdlib_error_out(1, 17, status_error)));
+  assert(!isOk(stdlib_error_out(0, 17, status_error)));
+  // Failure with a missing error still invokes the explicit domain adapter.
+  assert(!isOk(resultFromErrorOut(0, 42, 0, status_error)));
 
   __block int factory_constructions = 0;
   Result(int, int) lazy = okOr(Some(int, 1), (++factory_constructions, factory));

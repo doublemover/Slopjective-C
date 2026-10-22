@@ -40,10 +40,10 @@
         "lazy generic okOr",
         "checked generic orThrow",
         "typed runtime error boxes",
-        "lazy zero-success status Result and checked throws adapters"
+        "lazy zero-success status Result and checked throws adapters",
+        "NSError-style success/error-out Result adapter with explicit domain factory"
       ],
       "remaining": [
-        "NSError-style object/error-out adapters",
         "Error-constrained generic factory validation for Core/Strict"
       ]
     },

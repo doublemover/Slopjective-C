@@ -58,6 +58,20 @@
                (makeError)(__objc3_stdlib_status)); \
   })(__objc3_stdlib_saved_status); })
 
+/* NSError-style BOOL/error-out bridge. Run the API before capturing its
+ * outputs. A domain adapter maps the raw error (including a missing error on
+ * failure) into the caller's Error representation; success ignores it. */
+#define resultFromErrorOut(success, successValue, errorValue, makeError) \
+  ({ __typeof__(success) __objc3_stdlib_succeeded = (success); \
+  (^Result(__typeof__(successValue), __typeof__((makeError)(errorValue))) \
+      (__typeof__(success) __objc3_stdlib_success) { \
+    if (__objc3_stdlib_success) \
+      return Ok(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
+                (successValue)); \
+    return Err(__typeof__(successValue), __typeof__((makeError)(errorValue)), \
+               (makeError)(errorValue)); \
+  })(__objc3_stdlib_succeeded); })
+
 #ifdef __OBJC__
 /* Checked-error counterpart for status APIs whose successful result is void. */
 #define statusOrThrow(status, makeError) \
