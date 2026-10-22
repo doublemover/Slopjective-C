@@ -17815,10 +17815,10 @@ index 000000000..54e1c4ac2
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..8d6754277
+index 000000000..73072bad0
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,427 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17866,14 +17866,16 @@ index 000000000..8d6754277
 +  }
 +};
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
-+                   llvm::StringRef Standard, bool ARC, bool IfBinding) {
++                   llvm::StringRef Standard, bool ARC, bool IfBinding, bool Ordered = false) {
 +  std::vector<std::string> Args = {
 +      "-x", Standard == "c17" ? "objective-c" : "objective-c++",
 +      ("-std=" + Standard).str(), "-fobjc-version=3",
 +      "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fobjc-exceptions",
 +      "-fobjc-arc-exceptions", "-fblocks"};
 +  Args.push_back(ARC ? "-fobjc-arc" : "-fno-objc-arc");
-+  auto AST = tooling::buildASTFromCodeWithArgs(Code, Args, "condition-codegen.m");
++  std::string Input = Ordered && IfBinding
++      ? "#define ORDERED_IF_BINDING 1\n" + Code.str() : Code.str();
++  auto AST = tooling::buildASTFromCodeWithArgs(Input, Args, "condition-codegen.m");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  ExerciseFunction Finder;
@@ -17896,10 +17898,34 @@ index 000000000..8d6754277
 +        Loc, Source->getInit());
 +    ASSERT_FALSE(Result.isInvalid());
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
-+    SmallVector<Stmt *, 8> Tail(Body->body_begin() + 3, Body->body_end());
-+    for (Stmt *Statement : Tail)
++    SmallVector<Stmt *, 4> Conditions{Binding};
++    VarDecl *SecondUser = nullptr;
++    ObjC3BindingCondition *SecondBinding = nullptr;
++    if (Ordered) {
++      ASSERT_GE(Body->size(), 7u);
++      auto *SecondSource = cast<VarDecl>(
++          cast<DeclStmt>(*(Body->body_begin() + 3))->getSingleDecl());
++      SecondUser = cast<VarDecl>(
++          cast<DeclStmt>(*(Body->body_begin() + 4))->getSingleDecl());
++      auto *Boolean = cast<CStyleCastExpr>(*(Body->body_begin() + 5))->getSubExpr();
++      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Boolean));
++      ExprResult Checked = S.ActOnObjC3BooleanCondition(nullptr, Boolean, Boolean->getExprLoc());
++      ASSERT_FALSE(Checked.isInvalid());
++      if (!IfBinding) Conditions.push_back(Checked.get());
++      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(SecondSource->getInit()));
++      StmtResult Next = S.ActOnObjC3BindingCondition(
++          nullptr, SecondUser->getIdentifier(), SecondUser->getLocation(), true,
++          Loc, Loc, SecondSource->getInit());
++      ASSERT_FALSE(Next.isInvalid());
++      SecondBinding = cast<ObjC3BindingCondition>(Next.get());
++      Conditions.push_back(SecondBinding);
++    }
++    SmallVector<Stmt *, 8> Tail(Body->body_begin() + (Ordered ? 6 : 3), Body->body_end());
++    for (Stmt *Statement : Tail) {
 +      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Statement));
-+    Stmt *Conditions[] = {Binding};
++      if (SecondUser)
++        ASSERT_TRUE(Rebind(S, SecondUser, SecondBinding->getBindingDecl()).TraverseStmt(Statement));
++    }
 +    Stmt *Statement;
 +    if (IfBinding) {
 +      auto *Then = CompoundStmt::Create(C, Tail, FPOptionsOverride(),
@@ -18020,6 +18046,167 @@ index 000000000..8d6754277
 +    return 0;
 +  }
 +)";
++const char OrderedPlain[] = R"(
++
++#ifdef ORDERED_IF_BINDING
++#define EXPECTED_FILTERS 0
++#define ZERO_RESULT 3
++#define ZERO_SECOND 1
++#else
++#define EXPECTED_FILTERS 1
++#define ZERO_RESULT -1
++#define ZERO_SECOND 0
++#endif
++  typedef __objc3_optional(int) Maybe;
++  int firstCalls, secondCalls, filters, badOrder, expectedFirst;
++  Maybe *observed;
++  Maybe *counted(Maybe *value) { ++firstCalls; observed = value; return value; }
++  Maybe *countedSecond(Maybe *value, int first) {
++    ++secondCalls;
++    if (first != expectedFirst) ++badOrder;
++    return value;
++  }
++#ifdef __cplusplus
++  bool accept(int value)
++#else
++  _Bool accept(int value)
++#endif
++  {
++    ++filters;
++    *observed = __objc3_none(int);
++    return value > 0;
++  }
++  int exercise(Maybe *input, Maybe *other) {
++    Maybe source = *counted(input);
++    if (1) {} else { return -1; }
++    int value = 0;
++    Maybe secondSource = *countedSecond(other, value);
++    int second = 0;
++    (void)accept(value);
++    return value * 10 + second;
++  }
++  void reset(void) { firstCalls = secondCalls = filters = badOrder = 0; expectedFirst = 2; }
++  int main(void) {
++    Maybe some = __objc3_some(int, 2);
++    Maybe another = __objc3_some(int, 3);
++    Maybe zero = __objc3_some(int, 0);
++    Maybe none = __objc3_none(int);
++    reset();
++    if (exercise(&none, &another) != -1 || firstCalls != 1 ||
++        secondCalls || filters || badOrder) return 1;
++    reset();
++    expectedFirst = 0;
++    if (exercise(&zero, &another) != ZERO_RESULT || firstCalls != 1 ||
++        secondCalls != ZERO_SECOND || filters != EXPECTED_FILTERS || badOrder) return 2;
++    reset();
++    if (exercise(&some, &none) != -1 || firstCalls != 1 ||
++        secondCalls != 1 || filters != EXPECTED_FILTERS || badOrder) return 3;
++    some = __objc3_some(int, 2);
++    reset();
++    if (exercise(&some, &another) != 23 || firstCalls != 1 ||
++        secondCalls != 1 || filters != EXPECTED_FILTERS || badOrder) return 4;
++    return 0;
++  }
++)";
++const char OrderedCpp[] = R"(
++
++#ifdef ORDERED_IF_BINDING
++#define EXPECTED_FILTERS 0
++#define ZERO_RESULT 3
++#define ZERO_SECOND 1
++#else
++#define EXPECTED_FILTERS 1
++#define ZERO_RESULT -1
++#define ZERO_SECOND 0
++#endif
++  int copies, live, tempDestructions, throwTemp, throwCopy, firstCalls,
++      secondCalls, filters, badOrder, expectedLive, phase, cleanupOrder, expectedFirst;
++  bool checking;
++  struct Temporary {
++    ~Temporary() noexcept(false) { if (++tempDestructions == throwTemp) throw 41; }
++  };
++  struct Payload {
++    int number;
++    Payload(int value) : number(value) { ++live; }
++    Payload(const Payload &other, Temporary = Temporary()) : number(other.number) {
++      ++copies;
++      // The source initializer's temporary and snapshot must still be alive
++      // while the user binding's copy constructor runs.
++      if (checking && copies % 2 == 0 &&
++          (tempDestructions != copies - 2 || live != expectedLive + copies / 2))
++        throw 91;
++      if (copies == throwCopy) throw 42;
++      ++live;
++    }
++    ~Payload() {
++      if (phase == 2) cleanupOrder = cleanupOrder * 10 + number;
++      --live;
++    }
++  };
++  typedef __objc3_optional(Payload) Maybe;
++  Maybe *counted(Maybe *value) { ++firstCalls; return value; }
++  Maybe *countedSecond(Maybe *value, int first) {
++    ++secondCalls;
++    if (first != expectedFirst || tempDestructions != 2 || live != expectedLive + 1) ++badOrder;
++    return value;
++  }
++  bool accept(int value) {
++    ++filters;
++    if (tempDestructions != 2 || live != expectedLive + 1) ++badOrder;
++    return value > 0;
++  }
++  int exercise(Maybe *input, Maybe *other) {
++    Maybe &source = *counted(input);
++    if (true) {} else { if (live != expectedLive) return -100; return -1; }
++    Payload value(0);
++    Maybe &secondSource = *countedSecond(other, value.number);
++    Payload second(0);
++    (void)accept(value.number);
++    phase = 2;
++    return value.number * 10 + second.number;
++  }
++  void reset() {
++    copies = tempDestructions = firstCalls = secondCalls = filters = badOrder = 0;
++    throwTemp = throwCopy = phase = cleanupOrder = 0;
++    expectedLive = live;
++    expectedFirst = 2;
++    checking = true;
++  }
++  int main() {
++    Maybe some = __objc3_some(Payload, Payload(2));
++    Maybe another = __objc3_some(Payload, Payload(3));
++    Maybe zero = __objc3_some(Payload, Payload(0));
++    Maybe none = __objc3_none(Payload);
++    if (live != 3) return 1;
++    reset();
++    if (exercise(&none, &another) != -1 || firstCalls != 1 ||
++        secondCalls || filters || badOrder || live != expectedLive) return 2;
++    reset();
++    expectedFirst = 0;
++    if (exercise(&zero, &another) != ZERO_RESULT || firstCalls != 1 ||
++        secondCalls != ZERO_SECOND || filters != EXPECTED_FILTERS || badOrder || live != expectedLive) return 3;
++    reset();
++    if (exercise(&some, &none) != -1 || firstCalls != 1 ||
++        secondCalls != 1 || filters != EXPECTED_FILTERS || badOrder || live != expectedLive) return 4;
++    reset();
++    if (exercise(&some, &another) != 23 || firstCalls != 1 ||
++        secondCalls != 1 || filters != EXPECTED_FILTERS || badOrder || live != expectedLive ||
++        cleanupOrder != 32) return 5;
++    for (int failure = 0; failure != 4; ++failure) {
++      reset();
++      throwCopy = failure < 2 ? 3 + failure : 0;
++      throwTemp = failure >= 2 ? 1 + failure : 0;
++      bool caught = false;
++      try { (void)exercise(&some, &another); }
++      catch (int error) { caught = error != 91; }
++      if (!caught || live != expectedLive || firstCalls != 1 ||
++          secondCalls != 1 || filters != EXPECTED_FILTERS || badOrder) return 6 + failure;
++    }
++    checking = false;
++    throwTemp = throwCopy = phase = 0;
++    return 0;
++  }
++)";
 +} // namespace
 +TEST(ObjC3ConditionCodeGen, NativePlainGuardAndIfBinding) {
 +  for (const char *Standard : {"c17", "c++20", "c++23"})
@@ -18037,5 +18224,25 @@ index 000000000..8d6754277
 +      std::string Name = std::string(Standard) + (If ? "-cpp-if" : "-cpp-guard");
 +      SCOPED_TRACE(Name);
 +      checkLowering(Cpp, Name, Standard, false, If);
++    }
++}
++
++TEST(ObjC3ConditionCodeGen, OrderedBindingsShortCircuitAndKeepIndependentValues) {
++  for (const char *Standard : {"c17", "c++20", "c++23"})
++    for (bool ARC : {false, true})
++      for (bool If : {false, true}) {
++        std::string Name = std::string(Standard) + (ARC ? "-arc" : "-mrc") +
++                            (If ? "-ordered-if" : "-ordered-guard");
++        SCOPED_TRACE(Name);
++        checkLowering(OrderedPlain, Name, Standard, ARC, If, true);
++      }
++}
++TEST(ObjC3ConditionCodeGen, OrderedCppBindingsUnwindPrefixesAndDestroyInReverse) {
++  for (const char *Standard : {"c++20", "c++23"})
++    for (bool If : {false, true}) {
++      std::string Name = std::string(Standard) +
++                            (If ? "-cpp-ordered-if" : "-cpp-ordered-guard");
++      SCOPED_TRACE(Name);
++      checkLowering(OrderedCpp, Name, Standard, false, If, true);
 +    }
 +}

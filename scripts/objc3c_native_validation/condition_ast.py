@@ -45,6 +45,13 @@ def cases() -> dict[str, dict]:
                 "standard": standard, "ownership": "mrc", "kind": kind,
                 "payload": "cpp", "expected_exception_scenarios": 5,
             }
+    for name, facts in list(result.items()):
+        ordered = name.rsplit("-", 1)
+        result[ordered[0] + "-ordered-" + ordered[1]] = {
+            **facts, "ordered_bindings": 2,
+            "mixed_boolean_condition": facts["kind"] == "guard",
+            **({"expected_exception_scenarios": 4} if facts["payload"] == "cpp" else {}),
+        }
     return result
 
 
