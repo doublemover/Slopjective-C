@@ -69,7 +69,16 @@ Private AST lowering now emits ordered tests, snapshots, guard continuations
 and if-binding branches. Its new CodeGen gate verifies native modules and can
 export those exact modules for execution across optimization levels. C++ cases
 include failed snapshot/binding construction and throwing temporary/snapshot
-destructors. This gate is under validation; source syntax is still disabled.
+destructors. Run the maintained runtime gate after a passing admitted build:
+
+```sh
+python -B -m scripts.objc3c_native_validation.condition_ast
+```
+
+It compiles the 16 exported modules at O0/O2, binds exact compiler/test/runtime
+hashes, replaces stale receipts before checking admission and reclaims temporary
+IR/executables. The gate uses the existing foundation lock and checks inputs
+again after execution. Source syntax is still disabled.
 
 ## Implementation still to complete
 
