@@ -159,6 +159,10 @@ def qualify(repo: Path, build: Path, sdk: Path, output: Path) -> dict:
                 foundation_report_sha256=inputs[str(foundation)],
                 runtime_library_sha256=inputs[str(runtime)], runtime_sdk_seal=sdk.name,
                 qualification_script_sha256=inputs[str(Path(__file__).resolve())],
+                defer_source_inputs_sha256={
+                    str(path.relative_to(repo)) if path.is_relative_to(repo) else str(path): inputs[str(path)]
+                    for path in defer_source.INPUTS
+                },
                 executable_model="non-PIE private native AST modules",
             )
             with tempfile.TemporaryDirectory(prefix="objc3-condition-ast-") as temporary:
