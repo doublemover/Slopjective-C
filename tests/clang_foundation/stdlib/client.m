@@ -21,6 +21,32 @@ __attribute__((objc_root_class))
 }
 @end
 
+static int objc_error_out(id<Error> __autoreleasing *error, int success) {
+  if (success) return 1;
+#if __has_feature(objc_arc)
+  *error = [TestError new];
+#else
+  *error = objc_autorelease([TestError new]);
+#endif
+  @autoreleasepool {
+    id<Error> __autoreleasing raw_error_object = (id)0;
+    id<Error> (^normalize_error)(id<Error>) = ^id<Error>(id<Error> raw) { return raw; };
+    Result(int, id<Error>) object_good = resultFromErrorOut(
+        objc_error_out(&raw_error_object, 1), 42, raw_error_object, normalize_error);
+    assert(isOk(object_good) && raw_error_object == (id)0);
+    Result(int, id<Error>) object_bad = resultFromErrorOut(
+        objc_error_out(&raw_error_object, 0), 42, raw_error_object, normalize_error);
+    match(object_bad) {
+      case .Ok(let value): { (void)value; assert(0); }
+      case .Err(let error): { assert(error == raw_error_object && error != (id)0); }
+    }
+  }
+#if __has_feature(objc_arc)
+  assert(errors_created == errors_destroyed);
+#endif
+  return 0;
+}
+
 static Optional(int) input(int *calls, int present) {
   ++*calls;
   return present ? Some(int, 42) : None(int);
@@ -194,6 +220,22 @@ int main(void) {
       caught_status = 1;
     }
     assert(caught_status);
+  }
+#if __has_feature(objc_arc)
+  assert(errors_created == errors_destroyed);
+#endif
+  @autoreleasepool {
+    id<Error> __autoreleasing raw_error_object = (id)0;
+    id<Error> (^normalize_error)(id<Error>) = ^id<Error>(id<Error> raw) { return raw; };
+    Result(int, id<Error>) object_good = resultFromErrorOut(
+        objc_error_out(&raw_error_object, 1), 42, raw_error_object, normalize_error);
+    assert(isOk(object_good) && raw_error_object == (id)0);
+    Result(int, id<Error>) object_bad = resultFromErrorOut(
+        objc_error_out(&raw_error_object, 0), 42, raw_error_object, normalize_error);
+    match(object_bad) {
+      case .Ok(let value): { (void)value; assert(0); }
+      case .Err(let error): { assert(error == raw_error_object && error != (id)0); }
+    }
   }
 #if __has_feature(objc_arc)
   assert(errors_created == errors_destroyed);
