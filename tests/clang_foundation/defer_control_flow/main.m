@@ -11,6 +11,9 @@ int main(int argc, char **argv) {
 #ifdef __cplusplus
     if(mode == 2) { cpp_double_exception(); return 82; }
 #endif
+#if __has_feature(objc_arc)
+    arc_ordering();
+#endif
     if(normal_return() != 7)bad=10;
     expect(21);
     objc_unwind(); expect(312);

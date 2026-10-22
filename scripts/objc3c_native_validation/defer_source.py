@@ -28,7 +28,7 @@ def qualify(run, directory: Path, compiler: Path, sdk: Path, report: dict) -> No
                 common = [
                     compiler, "--driver-mode=g++", "--no-default-config",
                     "-std=" + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
-                    "-fexceptions", "-fobjc-exceptions", "-fobjc-arc-exceptions",
+                    "-fexceptions", "-fobjc-exceptions", "-fobjc-arc-exceptions", "-fblocks",
                     "-fobjc-arc" if arc else "-fno-objc-arc", "-" + optimization,
                     "-g", "-Wno-vla-cxx-extension", "-fno-crash-diagnostics",
                 ]

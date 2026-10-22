@@ -17497,15 +17497,16 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..a4e1a3308
+index 000000000..21e7735e8
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,360 @@
+@@ -0,0 +1,370 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
++#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprCXX.h"
@@ -17843,6 +17844,15 @@ index 000000000..a4e1a3308
 +    if (auto *Context = dyn_cast<DeclContext>(Callable))
 +      if (Context->isDependentContext())
 +        return false;
++  if (getLangOpts().ObjCAutoRefCount) {
++    ObjC3SourceScopes Sources(Body);
++    for (auto [Variable, Owner] : Sources.Variables)
++      if (Sources.DeferredScopes.contains(Owner) &&
++          Variable->getType().getObjCLifetime() == Qualifiers::OCL_Strong &&
++          !Variable->hasAttr<ObjCPreciseLifetimeAttr>())
++        const_cast<VarDecl *>(Variable)->addAttr(
++            ObjCPreciseLifetimeAttr::CreateImplicit(Context));
++  }
 +  SmallVector<GuardSourceScope, 8> Guards;
 +  collectGuards(Body, Body, Guards);
 +  bool Invalid = checkDeferredLabelAddresses(*this, Body);
@@ -17863,10 +17873,10 @@ index 000000000..a4e1a3308
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..885e514fb
+index 000000000..f804c8c23
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,771 @@
+@@ -0,0 +1,846 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17930,7 +17940,8 @@ index 000000000..885e514fb
 +void checkLowering(llvm::StringRef Code, llvm::StringRef Name,
 +                   llvm::StringRef Standard, bool ARC, bool IfBinding,
 +                   bool Ordered = false, bool StatementExpression = false,
-+                   bool TemplateReplay = false, bool Mutable = true) {
++                   bool TemplateReplay = false, bool Mutable = true,
++                   bool PrefixDefer = false) {
 +  std::vector<std::string> Args = {"-x",
 +                                   Standard == "c17" ? "objective-c"
 +                                                     : "objective-c++",
@@ -18060,7 +18071,14 @@ index 000000000..885e514fb
 +      Statement = ObjC3GuardStmt::Create(C, Conditions, If->getElse(), Loc,
 +                                         If->getElseLoc());
 +    }
-+    SmallVector<Stmt *, 8> Statements{Statement};
++    SmallVector<Stmt *, 8> Statements;
++    if (PrefixDefer) {
++      ASSERT_FALSE(IfBinding);
++      ASSERT_TRUE(isa<DeferStmt>(Tail.front()));
++      Statements.push_back(Tail.front());
++      Tail.erase(Tail.begin());
++    }
++    Statements.push_back(Statement);
 +    if (!IfBinding)
 +      Statements.append(Tail);
 +    auto *Rebuilt =
@@ -18071,6 +18089,7 @@ index 000000000..885e514fb
 +    else
 +      Function->setBody(Rebuilt);
 +  }
++  ASSERT_FALSE(AST->getSema().CheckObjC3Guards(Function, Function->getBody()));
 +  FunctionDecl *Concrete = nullptr;
 +  if (Template) {
 +    ASSERT_EQ(1u, std::distance(Template->spec_begin(), Template->spec_end()));
@@ -18637,6 +18656,72 @@ index 000000000..885e514fb
 +              checkLowering(Code, Name, Standard, true, If, false, false, false,
 +                            Mutable);
 +            }
++}
++
++namespace {
++const char ManagedPrefixDefer[] = R"(
++#ifndef __cplusplus
++#define bool _Bool
++#endif
++#ifdef __cplusplus
++extern "C" {
++#endif
++id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
++id object_dispose(__unsafe_unretained id);
++#ifdef __cplusplus
++}
++#endif
++static int events;
++static void record(int digit) __attribute__((nothrow));
++static void record(int digit) { events = events * 10 + digit; }
++__attribute__((objc_root_class))
++@interface PrefixProbe { Class isa; int key; }
+++ (id)newWithKey:(int)value;
++@end
++@implementation PrefixProbe
+++ (id)newWithKey:(int)value {
++  PrefixProbe *object = class_createInstance(self, 0);
++  object->key = value;
++  return object;
++}
++- (void)dealloc { if(key == 42)record(3); object_dispose(self); }
++@end
++typedef __objc3_optional(PrefixProbe *) Source;
++int exercise(int mode, id token) {
++  Source source = __objc3_some(PrefixProbe *, [PrefixProbe newWithKey:42]);
++  if(1) {} else { record(4); return -1; }
++  PrefixProbe *value = (id)0;
++  Source second_source = mode == 1 ? __objc3_none(PrefixProbe *)
++                                  : __objc3_some(PrefixProbe *, value);
++  PrefixProbe *second_value = (id)0;
++  (void)(bool)1;
++  defer { record(1); }
++  if(mode == 2)@throw token;
++  if(!value || second_value != value)return 9;
++  return 0;
++}
++int main(void) {
++  @autoreleasepool {
++    if(exercise(0, (id)0) || events != 13)return 1;
++    events = 0;
++    if(exercise(1, (id)0) != -1 || events != 341)return 2;
++    events = 0;
++    id token = [PrefixProbe newWithKey:7];
++    @try { exercise(2, token); return 3; }
++    @catch(id error) { if(error != token)return 4; record(2); }
++    if(events != 132)return 5;
++  }
++  return 0;
++}
++)";
++}
++TEST(ObjC3ConditionCodeGen, DeferredActionsDistinguishManagedPrefixFailure) {
++  for (const char *Standard : {"c17", "c++20", "c++23"}) {
++    SCOPED_TRACE(Standard);
++    checkLowering(ManagedPrefixDefer,
++                  std::string(Standard) + "-arc-prefix-defer", Standard,
++                  true, false, true, false, false, true, true);
++  }
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
@@ -19498,3 +19583,126 @@ index 000000000..772213cf8
 +label:
 +  (void)target;
 +}
+diff --git a/clang/include/clang/AST/ObjC3SourceScopes.h b/clang/include/clang/AST/ObjC3SourceScopes.h
+new file mode 100644
+index 000000000..9aa10817c
+--- /dev/null
++++ b/clang/include/clang/AST/ObjC3SourceScopes.h
+@@ -0,0 +1,117 @@
++//===--- ObjC3SourceScopes.h - Scope owners for source actions -----*- C++ -*-===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_AST_OBJC3SOURCESCOPES_H
++#define LLVM_CLANG_AST_OBJC3SOURCESCOPES_H
++#include "clang/AST/Decl.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
++#include "clang/AST/StmtCXX.h"
++#include "clang/AST/StmtObjC.h"
++#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/SmallPtrSet.h"
++
++namespace clang {
++/// Source owners are independent of incidental CodeGen cleanup scopes. In
++/// particular, a guard prefix is not a new source region and its snapshot is
++/// not a committed user local. Nested callable bodies have their own owners.
++struct ObjC3SourceScopes {
++  llvm::DenseMap<const VarDecl *, const Stmt *> Variables;
++  llvm::DenseMap<const DeferStmt *, const Stmt *> Defers;
++  llvm::SmallPtrSet<const Stmt *, 8> DeferredScopes;
++
++  explicit ObjC3SourceScopes(const Stmt *Body) { collect(Body, Body); }
++
++private:
++  void collectCondition(const Stmt *Condition, const Stmt *Owner,
++                        const Stmt *BindingOwner) {
++    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Condition)) {
++      Variables[Binding->getBindingDecl()] = BindingOwner;
++      collect(Binding->getSnapshotDecl()->getInit(), Owner);
++      collect(Binding->getBindingDecl()->getInit(), Owner);
++    } else {
++      collect(Condition, Owner);
++    }
++  }
++  void collect(const Stmt *S, const Stmt *Owner) {
++    if (!S) return;
++    if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(S)) {
++      collect(Argument->getExpr(), Owner);
++      return;
++    }
++    if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(S)) {
++      collect(Initializer->getExpr(), Owner);
++      return;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(S)) {
++      for (const Expr *Capture : Lambda->capture_inits()) collect(Capture, Owner);
++      return;
++    }
++    if (isa<BlockExpr>(S)) return;
++    if (isa<CompoundStmt>(S)) Owner = S;
++    if (const auto *Defer = dyn_cast<DeferStmt>(S)) {
++      Defers[Defer] = Owner;
++      DeferredScopes.insert(Owner);
++      collect(Defer->getBody(), Defer->getBody());
++      return;
++    }
++    if (const auto *Declaration = dyn_cast<DeclStmt>(S))
++      for (const Decl *D : Declaration->decls())
++        if (const auto *Variable = dyn_cast<VarDecl>(D))
++          if (Variable->hasLocalStorage() && !Variable->isImplicit())
++            Variables[Variable] = Owner;
++    if (const auto *Catch = dyn_cast<ObjC3CatchStmt>(S)) {
++      collect(Catch->getBindingDeclStmt(), Catch->getHandlerBody());
++      collect(Catch->getHandlerBody(), Catch->getHandlerBody());
++      return;
++    }
++    if (const auto *Catch = dyn_cast<CXXCatchStmt>(S)) {
++      if (const auto *Variable = Catch->getExceptionDecl())
++        Variables[Variable] = Catch->getHandlerBlock();
++      collect(Catch->getHandlerBlock(), Catch->getHandlerBlock());
++      return;
++    }
++    if (const auto *Catch = dyn_cast<ObjCAtCatchStmt>(S)) {
++      if (const auto *Variable = Catch->getCatchParamDecl())
++        Variables[Variable] = Catch->getCatchBody();
++      collect(Catch->getCatchBody(), Catch->getCatchBody());
++      return;
++    }
++    if (const auto *Arm = dyn_cast<ObjC3MatchArm>(S)) {
++      collect(Arm->getPatternValue(), Owner);
++      collect(Arm->getBindingStatement(), Arm->getBody());
++      collect(Arm->getGuard(), Arm->getBody());
++      collect(Arm->getBody(), Arm->getBody());
++      return;
++    }
++    if (const auto *Guard = dyn_cast<ObjC3GuardStmt>(S)) {
++      for (const Stmt *Condition : Guard->getConditions())
++        collectCondition(Condition, Owner, Owner);
++      collect(Guard->getElse(), Guard->getElse());
++      return;
++    }
++    if (const auto *If = dyn_cast<ObjC3IfBindingStmt>(S)) {
++      for (const Stmt *Condition : If->getConditions())
++        collectCondition(Condition, Owner, If->getThen());
++      collect(If->getThen(), If->getThen());
++      collect(If->getElse(), If->getElse());
++      return;
++    }
++    if (const auto *If = dyn_cast<IfStmt>(S)) {
++      for (const Stmt *Child : If->children())
++        collect(Child, Child == If->getThen() || Child == If->getElse()
++                           ? Child : If);
++      return;
++    }
++    const Stmt *Body = nullptr;
++    if (const auto *Loop = dyn_cast<ForStmt>(S)) Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<WhileStmt>(S)) Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<DoStmt>(S)) Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<CXXForRangeStmt>(S)) Body = Loop->getBody();
++    else if (const auto *Loop = dyn_cast<ObjCForCollectionStmt>(S)) Body = Loop->getBody();
++    else if (const auto *Switch = dyn_cast<SwitchStmt>(S)) Body = Switch->getBody();
++    for (const Stmt *Child : S->children())
++      collect(Child, Body ? (Child == Body ? Body : S) : Owner);
++  }
++};
++} // namespace clang
++#endif
