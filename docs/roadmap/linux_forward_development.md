@@ -46,18 +46,33 @@ layout at the C frame boundary.
 
 ## Implementation in progress
 
-Development is advancing in the shared native source tree across guard parsing
-and flow, C++/ARC cleanup, recursive carriers, resource annotations, lazy
-coalescing, task-group suspension/result iteration and debugger tooling. Completed
-spans are exported into the canonical patch stack, committed and pushed; each
-span keeps its implementation separate from the delivered SDK evidence above.
+The shared native source tree now implements ordered public guard and optional
+bindings, lazy coalescing, reference optional access, scalar resource cleanup
+and explicit transfer operations, mixed C++/ARC carrier locals, source C++
+records with carrier fields, and selected-payload LLDB inspection. Native CFG
+work includes selected match/coalescing branches and resource stages. Native-C
+logical async declarations and calls bridge to the C frame ABI; definitions
+still require the separately specified state-machine lowering.
 
-The current wave deliberately precedes validation. Public guard source/PCH,
-recursive carrier and installed SDK suites are enrolled for the next checkpoint;
-passing receipts are not updated from unexecuted fixtures. The runtime now has
-nonblocking group completion and typed result reservation, with C17 frame and
-source-free provider integration. Native Objective-C async lowering, public
-spawn/isolation/Sendable and complete strict profiles remain outstanding.
+Task-group work includes nonblocking completion, typed result reservation and
+iteration, cancellation-safe output slots and retained C17 frame results. Library
+adapters preserve domain errors and lazily construct selected Result arms;
+strict Error-factory checks are native Sema operations. Source traversal,
+libclang indexing, AST matchers, clang-query and focused clangd consumers have
+regressions enrolled in the foundation build. Raw PCH/PCM identity now rejects
+incompatible Objective-C 3 artifacts even when ordinary validation is disabled.
+
+Solo integration is now building these implementations and their enrolled gates.
+The compiler and facade libraries have linked; Clang 23 API and independent-test
+target integration fixes are committed. Eighteen focused tooling/qualification
+harness tests pass. Full foundation, source/PCH runtime and installed SDK
+qualification remain required before new passing release receipts or capability
+claims. The active SDK above still predates this wave.
+
+Native Objective-C async definitions, public spawn/isolation/Sendable, complete
+strict profiles and native AArch64 qualification remain outstanding. Reference
+optional access and resource builtins are bounded implementation slices, not
+complete optional chaining or the full public ownership surface.
 
 ## Active completion sequence
 
