@@ -1514,7 +1514,7 @@ index 000000000..718ff5d6c
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3OptionalExprTest.cpp b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
 new file mode 100644
-index 000000000..f3085d69a
+index 000000000..35c7a5c52
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
 @@ -0,0 +1,252 @@
@@ -1679,7 +1679,7 @@ index 000000000..f3085d69a
 +  OptionalExprCollector Collector;
 +  Collector.TraverseDecl(Context.getTranslationUnitDecl());
 +  auto HasCarrier = [&Context](const ObjC3OptionalExpr *E, bool IsDependent) {
-+    QualType Carrier = E->getCarrierType();
++    QualType Carrier = E->getCarrierType().getCanonicalType();
 +    if (Carrier->isDependentType() != IsDependent)
 +      return false;
 +    if (E->getKind() == ObjC3OptionalExpr::Kind::HasValue)
@@ -1772,7 +1772,7 @@ index 000000000..f3085d69a
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3ResultExprTest.cpp b/clang/unittests/AST/ObjC3ResultExprTest.cpp
 new file mode 100644
-index 000000000..f6ec1a941
+index 000000000..ae8ac6429
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ResultExprTest.cpp
 @@ -0,0 +1,258 @@
@@ -1952,7 +1952,7 @@ index 000000000..f6ec1a941
 +  ResultExprCollector Collector;
 +  Collector.TraverseDecl(Context.getTranslationUnitDecl());
 +  auto IsCarrier = [&Context](const ObjC3ResultExpr *E, bool IsDependent) {
-+    QualType Carrier = E->getCarrierType();
++    QualType Carrier = E->getCarrierType().getCanonicalType();
 +    if (Carrier->isDependentType() != IsDependent)
 +      return false;
 +    const auto *Result = Carrier->getAs<ObjC3ResultType>();

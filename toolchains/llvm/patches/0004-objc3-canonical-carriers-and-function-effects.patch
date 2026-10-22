@@ -12823,10 +12823,10 @@ index 000000000..87b89d30f
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3CarrierTypeTest.cpp b/clang/unittests/AST/ObjC3CarrierTypeTest.cpp
 new file mode 100644
-index 000000000..6e9e29b26
+index 000000000..0d9f1e758
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3CarrierTypeTest.cpp
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,289 @@
 +//===--- ObjC3CarrierTypeTest.cpp - Canonical carrier AST tests
 +//------------===//
 +//
@@ -13031,7 +13031,8 @@ index 000000000..6e9e29b26
 +  EXPECT_EQ(TL.getElementLoc(), Child);
 +  EXPECT_EQ(TL.getLocalSourceRange().getBegin(), TL.getKeywordLoc());
 +  EXPECT_EQ(TL.getLocalSourceRange().getEnd(), TL.getRParenLoc());
-+  EXPECT_EQ(Optional.getAsString(), "Optional(int)");
++  EXPECT_EQ(Optional.getAsString(), "Optional(IntAlias)");
++  EXPECT_EQ(Optional.getCanonicalType().getAsString(), "Optional(int)");
 +
 +  QualType Result = Ctx.getObjC3ResultType(Ctx.IntTy, Ctx.CharTy);
 +  TypeSourceInfo *ResultRoot = Ctx.getTrivialTypeSourceInfo(Result);
@@ -17814,10 +17815,10 @@ index 000000000..54e1c4ac2
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
-index 000000000..131b548e7
+index 000000000..8d6754277
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,220 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +// Exercise the native AST lowering without admitting unqualified source syntax.
 +#include "clang/AST/ASTContext.h"
@@ -17850,13 +17851,16 @@ index 000000000..131b548e7
 +  }
 +};
 +class Rebind : public RecursiveASTVisitor<Rebind> {
++  Sema &Actions;
 +  VarDecl *Old, *New;
 +public:
-+  Rebind(VarDecl *Old, VarDecl *New) : Old(Old), New(New) {}
++  Rebind(Sema &Actions, VarDecl *Old, VarDecl *New)
++      : Actions(Actions), Old(Old), New(New) {}
 +  bool VisitDeclRefExpr(DeclRefExpr *E) {
 +    if (E->getDecl() == Old) {
 +      E->setDecl(New);
 +      E->setType(New->getType().getNonReferenceType());
++      Actions.MarkDeclRefReferenced(E);
 +    }
 +    return true;
 +  }
@@ -17894,7 +17898,7 @@ index 000000000..131b548e7
 +    auto *Binding = cast<ObjC3BindingCondition>(Result.get());
 +    SmallVector<Stmt *, 8> Tail(Body->body_begin() + 3, Body->body_end());
 +    for (Stmt *Statement : Tail)
-+      ASSERT_TRUE(Rebind(User, Binding->getBindingDecl()).TraverseStmt(Statement));
++      ASSERT_TRUE(Rebind(S, User, Binding->getBindingDecl()).TraverseStmt(Statement));
 +    Stmt *Conditions[] = {Binding};
 +    Stmt *Statement;
 +    if (IfBinding) {
@@ -17924,6 +17928,13 @@ index 000000000..131b548e7
 +  Generator->Initialize(C);
 +  for (Decl *D : C.getTranslationUnitDecl()->decls())
 +    ASSERT_TRUE(Generator->HandleTopLevelDecl(DeclGroupRef(D)));
++  // A parsed C AST still needs the normal end-of-translation-unit callback
++  // when replayed into a new CodeGenerator (for globals such as `int calls;`).
++  if (!C.getLangOpts().CPlusPlus)
++    for (Decl *D : C.getTranslationUnitDecl()->decls())
++      if (auto *Variable = dyn_cast<VarDecl>(D))
++        if (Variable->getActingDefinition() == Variable)
++          Generator->CompleteTentativeDefinition(Variable);
 +  Generator->HandleTranslationUnit(C);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  ASSERT_TRUE(Generator->GetModule());
