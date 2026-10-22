@@ -22637,16 +22637,18 @@ index 000000000..9c2d08d67
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
 new file mode 100644
-index 000000000..5e4c0de73
+index 000000000..a7578b19a
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-dynamic-storage-boundaries.mm
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,36 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_NEW -emit-llvm -o %t.new.ll -verify %s
 +// RUN: test ! -e %t.new.ll
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_PLACEMENT -emit-llvm -o %t.placement.ll -verify %s
 +// RUN: test ! -e %t.placement.ll
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_DELETE -emit-llvm -o %t.delete.ll -verify %s
 +// RUN: test ! -e %t.delete.ll
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_DELETE_ARRAY -emit-llvm -o %t.delete-array.ll -verify %s
++// RUN: test ! -e %t.delete-array.ll
 +
 +struct Item { ~Item(); };
 +using Inner = __objc3_optional(Item);
@@ -22666,10 +22668,11 @@ index 000000000..5e4c0de73
 +void replace(Mixed &value) {
 +  new (&value) Mixed{}; // expected-error {{nontrivial carrier allocation or storage reuse}}
 +}
-+#else
++#elif defined(TEST_DELETE)
 +void destroy(Mixed *value) {
 +  delete value; // expected-error {{nontrivial carrier dynamic destruction}}
 +}
++#else
 +void destroy_array(Mixed *value) {
 +  delete[] value; // expected-error {{nontrivial carrier dynamic destruction}}
 +}

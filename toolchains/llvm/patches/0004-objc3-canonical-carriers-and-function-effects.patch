@@ -28800,12 +28800,12 @@ index 000000000..10dcc953c
 +#endif
 diff --git a/clang/test/ObjC3/Sema/optional-access.m b/clang/test/ObjC3/Sema/optional-access.m
 new file mode 100644
-index 000000000..5f532bc86
+index 000000000..c12549591
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/optional-access.m
 @@ -0,0 +1,43 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -Wnullable-to-nonnull-conversion -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -Wnullable-to-nonnull-conversion -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -Wnullable-to-nonnull-conversion -fsyntax-only -verify=expected,cxx %s
 +
 +struct Record { int member; };
 +@interface Receiver
@@ -28821,7 +28821,7 @@ index 000000000..5f532bc86
 +void nonnull(id _Nonnull);
 +
 +void result_types(Receiver * _Nullable receiver, Receiver * _Nonnull fallback) {
-+  nonnull(receiver?.next); // expected-warning 2 {{implicit conversion from nullable pointer}}
++  nonnull(receiver?.next); // expected-warning {{implicit conversion from nullable pointer}} cxx-warning {{implicit conversion from nullable pointer}}
 +  nonnull(receiver?.next ?? fallback);
 +  (void)receiver?.number; // expected-error {{optional member access cannot return 'int'}}
 +  (void)receiver?.record; // expected-error {{optional member access cannot return}}
