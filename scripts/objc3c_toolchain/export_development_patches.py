@@ -251,6 +251,7 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/test/ObjC3/Analysis/defer-match-coalesce.mm",
         "clang/lib/CodeGen/CGObjC3Resources.h",
         "clang/lib/CodeGen/CGObjC3Resources.cpp",
         "clang/lib/CodeGen/CGObjC3OptionalOperators.h",
@@ -333,6 +334,12 @@ PACKETS = {
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
     ],
     "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "lldb/test/Shell/Expr/objc3-carrier-summaries.mm",
+        "lldb/source/DataFormatters/FormatManager.cpp",
+        "lldb/source/Plugins/Language/ObjC/CMakeLists.txt",
+        "lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp",
+        "lldb/source/Plugins/Language/ObjC/ObjC3Carriers.cpp",
+        "lldb/source/Plugins/Language/ObjC/ObjC3Carriers.h",
         "lldb/test/Shell/Expr/objc3-condition-locals.mm",
         "lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h",
         "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",

@@ -19821,10 +19821,10 @@ index 000000000..b9ffeb885
 +}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..6974376a6
+index 000000000..2efe9078e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,1143 @@
+@@ -0,0 +1,1485 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -20769,6 +20769,10 @@ index 000000000..6974376a6
 +    void unordered_operands() {
 +      defer { first(); } (void)(number(Lifetime()) + number(Lifetime()));
 +    }
++    void lambda_capture_temporary() {
++      defer { first(); }
++      auto operation = [value = number(Lifetime())] { return value; };
++    }
 +    void array_prefix() { defer { first(); } Lifetime values[2]; }
 +    void failed_initializer() { defer { first(); } (void)new Lifetime; }
 +    void allocated_array() { defer { first(); } (void)new int[2]; }
@@ -20799,7 +20803,7 @@ index 000000000..6974376a6
 +                              &AST->getASTContext(), Options));
 +    ++Cases;
 +  }
-+  EXPECT_EQ(10u, Cases);
++  EXPECT_EQ(11u, Cases);
 +}
 +
 +TEST(ObjC3ConditionCFG, DeferredConsumedTemporariesUnwindCompletedPrefix) {
@@ -20811,6 +20815,8 @@ index 000000000..6974376a6
 +    struct Second { Second(); ~Second() noexcept(false); };
 +    struct Local { Local(const Second &); ~Local() noexcept; };
 +    struct Element { Element() noexcept; ~Element() noexcept; };
++    typedef Optional(int) Maybe;
++    Maybe makeOptional(const Second &) noexcept;
 +    void useFirst(const First &);
 +    void useSecond(const Second &);
 +    void single_consumed() {
@@ -20840,6 +20846,14 @@ index 000000000..6974376a6
 +    void singleton_array() {
 +      try { defer { first(); } Second elements[1]; }
 +      catch (...) { caught(); }
++    }
++    void binding_source_cleanup() {
++      try {
++        defer { first(); }
++        if let value = ((void)First(), makeOptional(Second())) {
++          work();
++        }
++      } catch (...) { caught(); }
 +    }
 +  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
 +         "-fexceptions", "-fcxx-exceptions"});
@@ -20872,7 +20886,13 @@ index 000000000..6974376a6
 +        "+Element,work,-Element,first,caught,"}},
 +      {"singleton_array",
 +       {"+Second,first,caught,", "+Second,-Second,first,",
-+        "+Second,-Second,first,caught,"}}};
++        "+Second,-Second,first,caught,"}},
++      {"binding_source_cleanup",
++       {"+First,+Second,-First,first,caught,",
++        "+First,+Second,makeOptional,-Second,-First,first,",
++        "+First,+Second,makeOptional,-Second,-First,first,caught,",
++        "+First,+Second,makeOptional,-Second,-First,work,first,",
++        "+First,+Second,makeOptional,-Second,-First,work,first,caught,"}}};
 +  unsigned Cases = 0;
 +  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
 +    auto *Function = dyn_cast<FunctionDecl>(D);
@@ -20963,6 +20983,328 @@ index 000000000..6974376a6
 +      auto Graph = CFG::buildCFG(Function, Function->getBody(),
 +                                 &AST->getASTContext(), Options);
 +      EXPECT_EQ(Function->getName() == "independent_callable", bool(Graph));
++    }
++    ++Cases;
++  }
++  EXPECT_EQ(3u, Cases);
++}
++
++TEST(ObjC3ConditionCFG, MatchAndCoalesceSelectArmsBeforeCleanup) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    typedef Optional(int) Maybe;
++    void first() noexcept;
++    void armCleanup() noexcept;
++    int one() noexcept;
++    int two() noexcept;
++    int none() noexcept;
++    bool predicate(int) noexcept;
++    Maybe *source() noexcept;
++    int fallback() noexcept;
++    Maybe fallbackCarrier() noexcept;
++    id fallbackReference() noexcept;
++    void work();
++    struct Local { Local() noexcept; ~Local() noexcept; };
++    struct Temporary { Temporary() noexcept; ~Temporary() noexcept; };
++    int number(const Temporary &);
++    bool predicateTemporary(const Temporary &);
++    void boolean_expression(bool value) {
++      defer { first(); }
++      (void)__objc3_match(value) {
++        case true => one();
++        case false => two();
++      };
++    }
++    void optional_expression() {
++      defer { first(); }
++      (void)__objc3_match(*source()) {
++        case .Some(let payload) => one();
++        case .None => none();
++      };
++    }
++    void guarded_optional() {
++      defer { first(); }
++      __objc3_match_stmt(*source()) {
++        case .Some(let payload) where predicate(payload): {
++          defer { armCleanup(); }
++          one();
++        }
++        case .Some(var payload): { two(); }
++        case .None: { none(); }
++      }
++    }
++    void selected_local_cleanup(bool value) {
++      defer { first(); }
++      __objc3_match_stmt(value) {
++        case true: {
++          defer { armCleanup(); }
++          Local local;
++          one();
++        }
++        case false: { two(); }
++      }
++    }
++    void throwing_selected_arm(bool value) {
++      try {
++        defer { first(); }
++        __objc3_match_stmt(value) {
++          case true: { Local local; work(); }
++          case false: { two(); }
++        }
++      } catch (...) { none(); }
++    }
++    void arm_temporary(bool value) {
++      try {
++        defer { first(); }
++        (void)__objc3_match(value) {
++          case true => number(Temporary());
++          case false => two();
++        };
++      } catch (...) { none(); }
++    }
++    void guard_temporary() {
++      try {
++        defer { first(); }
++        __objc3_match_stmt(*source()) {
++          case .Some(_) where predicateTemporary(Temporary()): { one(); }
++          case .Some(_): { two(); }
++          case .None: { none(); }
++        }
++      } catch (...) { armCleanup(); }
++    }
++    void scalar_coalesce() {
++      defer { first(); }
++      (void)(*source() ?? fallback());
++    }
++    void carrier_coalesce() {
++      defer { first(); }
++      Maybe value = *source() ?? fallbackCarrier();
++    }
++    void reference_coalesce(id value) {
++      defer { first(); }
++      (void)(value ?? fallbackReference());
++    }
++    template<class T> int template_coalesce(Optional(T) *value) {
++      defer { first(); }
++      return *value ?? fallback();
++    }
++    template int template_coalesce<int>(Optional(int) *);
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  const std::map<std::string, std::set<std::string>> Expected = {
++      {"boolean_expression", {"one,first,", "two,first,"}},
++      {"optional_expression", {"source,one,first,", "source,none,first,"}},
++      {"guarded_optional",
++       {"source,predicate,one,armCleanup,first,",
++        "source,predicate,two,first,", "source,none,first,"}},
++      {"selected_local_cleanup",
++       {"+Local,one,-Local,armCleanup,first,", "two,first,"}},
++      {"throwing_selected_arm",
++       {"+Local,work,-Local,first,", "+Local,work,-Local,first,none,",
++        "two,first,"}},
++      {"arm_temporary",
++       {"+Temporary,number,-Temporary,first,",
++        "+Temporary,number,-Temporary,first,none,", "two,first,"}},
++      {"guard_temporary",
++       {"source,+Temporary,predicateTemporary,-Temporary,one,first,",
++        "source,+Temporary,predicateTemporary,-Temporary,two,first,",
++        "source,+Temporary,predicateTemporary,-Temporary,first,armCleanup,",
++        "source,none,first,"}},
++      {"scalar_coalesce", {"source,first,", "source,fallback,first,"}},
++      {"carrier_coalesce", {"source,first,", "source,fallbackCarrier,first,"}},
++      {"reference_coalesce", {"first,", "fallbackReference,first,"}},
++      {"template_coalesce", {"first,", "fallback,first,"}}};
++  std::set<const FunctionDecl *> Functions;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    if (auto *Function = dyn_cast<FunctionDecl>(D)) {
++      if (Function->hasBody())
++        Functions.insert(Function);
++    } else if (auto *Template = dyn_cast<FunctionTemplateDecl>(D)) {
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = Options.AddImplicitDtors =
++          Options.AddTemporaryDtors = true;
++      EXPECT_FALSE(CFG::buildCFG(Template->getTemplatedDecl(),
++                                Template->getTemplatedDecl()->getBody(),
++                                &AST->getASTContext(), Options));
++      for (FunctionDecl *Specialization : Template->specializations())
++        Functions.insert(Specialization);
++    }
++  }
++  for (const FunctionDecl *Function : Functions) {
++    SCOPED_TRACE(Function->getNameAsString());
++    for (bool Markers : {false, true}) {
++      SCOPED_TRACE(Markers);
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = Options.AddImplicitDtors =
++          Options.AddTemporaryDtors = true;
++      Options.AddRichCXXConstructors = Options.AddLifetime = Options.AddScopes =
++          Markers;
++      Options.setAllAlwaysAdd();
++      auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                                 &AST->getASTContext(), Options);
++      ASSERT_TRUE(Graph);
++      std::set<std::string> Paths;
++      std::function<void(const CFGBlock *, std::string, unsigned)> Visit =
++          [&](const CFGBlock *Block, std::string Events, unsigned Depth) {
++            ASSERT_LT(Depth, 160u);
++            for (const auto &Element : *Block) {
++              if (auto Destructor = Element.getAs<CFGImplicitDtor>()) {
++                const auto *Function =
++                    Destructor->getDestructorDecl(AST->getASTContext());
++                ASSERT_TRUE(Function);
++                Events += "-" + Function->getParent()->getNameAsString() + ",";
++              } else if (auto Statement = Element.getAs<CFGStmt>()) {
++                if (const auto *Constructor =
++                        dyn_cast<CXXConstructExpr>(Statement->getStmt()))
++                  Events += "+" + Constructor->getConstructor()
++                                      ->getParent()->getNameAsString() + ",";
++                else if (const auto *Call =
++                             dyn_cast<CallExpr>(Statement->getStmt()))
++                  if (const auto *Callee = Call->getDirectCallee())
++                    Events += Callee->getNameAsString() + ",";
++              }
++            }
++            if (Block->isNativeExceptionExit())
++              Events += "unwind,";
++            if (Block->hasNoReturnElement())
++              Events += "terminate,";
++            if (Block == &Graph->getExit())
++              Paths.insert(Events);
++            else
++              for (const auto &Edge : Block->succs())
++                if (const auto *Next = Edge.getReachableBlock())
++                  Visit(Next, Events, Depth + 1);
++          };
++      Visit(&Graph->getEntry(), "", 0);
++      EXPECT_EQ(Expected.at(Function->getNameAsString()), Paths);
++    }
++  }
++  EXPECT_EQ(Expected.size(), Functions.size());
++}
++
++TEST(ObjC3ConditionCFG, MatchAndCoalesceParticipateInMandatoryExitProof) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    typedef Optional(int) Maybe;
++    void first() noexcept;
++    bool predicate(int) noexcept;
++    Maybe *source() noexcept;
++    int raising();
++    void work();
++    void pass_exhaustive_match(bool accept, bool value) {
++      if (accept) {} else {
++        defer { first(); }
++        __objc3_match_stmt(value) {
++          case true: { return; }
++          case false: { return; }
++        }
++      }
++    }
++    void fail_arm_falls_through(bool accept, bool value) {
++      if (accept) {} else {
++        defer { first(); }
++        __objc3_match_stmt(value) {
++          case true: { return; }
++          case false: { }
++        }
++      }
++    }
++    void pass_guarded_fallback(bool accept) {
++      if (accept) {} else {
++        defer { first(); }
++        __objc3_match_stmt(*source()) {
++          case .Some(let payload) where predicate(payload): { return; }
++          case .Some(_): { return; }
++          case .None: { return; }
++        }
++      }
++    }
++    void fail_caught_selected_arm(bool accept, bool value) {
++      if (accept) {} else {
++        try {
++          defer { first(); }
++          __objc3_match_stmt(value) {
++            case true: { work(); return; }
++            case false: { return; }
++          }
++        } catch (...) {}
++      }
++    }
++    void fail_caught_coalesce(bool accept) {
++      if (accept) {} else {
++        try { defer { first(); } (void)(*source() ?? raising()); return; }
++        catch (...) {}
++      }
++    }
++    void pass_coalesce_outward(bool accept) {
++      if (accept) {} else {
++        defer { first(); } (void)(*source() ?? raising()); return;
++      }
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fobjc-runtime=gnustep-2.2", "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Messages = new Diagnostics;
++  AST->getDiagnostics().setClient(Messages, true);
++  unsigned Cases = 0, Invalid = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    ASSERT_TRUE(replacePlaceholder(AST->getASTContext(), Function));
++    Sema::SynthesizedFunctionScope Scope(AST->getSema(), Function);
++    bool Bad = AST->getSema().CheckObjC3Guards(Function, Function->getBody());
++    EXPECT_EQ(Function->getName().starts_with("fail_"), Bad);
++    Invalid += Bad;
++    ++Cases;
++  }
++  EXPECT_EQ(6u, Cases);
++  EXPECT_EQ(3u, Invalid);
++  EXPECT_EQ(Invalid, Messages->Errors);
++}
++
++TEST(ObjC3ConditionCFG, MatchRefusesHiddenSnapshotAndResultDestruction) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    struct Value { Value(); ~Value() noexcept(false); };
++    typedef Optional(Value) Owned;
++    typedef Optional(int) Plain;
++    Plain fromTemporary(const Value &) noexcept;
++    void owned_snapshot(Owned *value) {
++      __objc3_match_stmt(*value) {
++        case .Some(_): {}
++        case .None: {}
++      }
++    }
++    void source_temporary() {
++      __objc3_match_stmt(fromTemporary(Value())) {
++        case .Some(_): {}
++        case .None: {}
++      }
++    }
++    void completed_result(bool condition) {
++      (void)__objc3_match(condition) {
++        case true => Value();
++        case false => Value();
++      };
++    }
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++         "-fexceptions", "-fcxx-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  unsigned Cases = 0;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls()) {
++    auto *Function = dyn_cast<FunctionDecl>(D);
++    if (!Function || !Function->hasBody())
++      continue;
++    SCOPED_TRACE(Function->getNameAsString());
++    for (bool EH : {false, true}) {
++      CFG::BuildOptions Options;
++      Options.AddEHEdges = EH;
++      Options.AddImplicitDtors = Options.AddTemporaryDtors = true;
++      EXPECT_FALSE(CFG::buildCFG(Function, Function->getBody(),
++                                &AST->getASTContext(), Options));
 +    }
 +    ++Cases;
 +  }
