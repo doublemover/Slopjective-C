@@ -5319,10 +5319,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..ab80a1ff1
+index 000000000..ba82a3135
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,842 @@
+@@ -0,0 +1,851 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -5566,6 +5566,15 @@ index 000000000..ab80a1ff1
 +    return true;
 +  if (const auto *Coalesce = dyn_cast<ObjC3CoalesceExpr>(E))
 +    return isARCInitializer(Coalesce->getSemanticExpr());
++  if (const auto *Statement = dyn_cast<StmtExpr>(E)) {
++    const CompoundStmt *Body = Statement->getSubStmt();
++    // Aggregate statement expressions emit their final value directly into
++    // the destination before destroying locals in the statement scope.
++    // Admit only a final expression with a qualified selected-payload path.
++    return !Body->body_empty() &&
++           isARCInitializer(dyn_cast<Expr>(
++               Body->body_back()->stripLabelLikeStatements()));
++  }
 +  if (const auto *Match = dyn_cast<ObjC3MatchExpr>(E)) {
 +    for (unsigned I = 0; I != Match->getNumArms(); ++I)
 +      if (!isARCInitializer(dyn_cast<Expr>(Match->getArm(I)->getBody())))
@@ -18827,10 +18836,10 @@ index 000000000..1d8544e7a
 +// CHECK: objc3.try.failure
 diff --git a/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
 new file mode 100644
-index 000000000..ffd53f461
+index 000000000..88421fc82
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,52 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
 +
@@ -18853,6 +18862,18 @@ index 000000000..ffd53f461
 +// CHECK-LABEL: define{{.*}}destroy_nested
 +// CHECK: br i1
 +// CHECK: br i1
++// CHECK: call void @llvm.objc.storeStrong
++
++int statement_result(int status, id object) {
++  __objc3_result(int, id) result = ({
++    int saved = status;
++    saved == 0 ? __objc3_ok(int, id, 42) : __objc3_err(int, id, object);
++  });
++  return __objc3_is_ok(result);
++}
++// CHECK-LABEL: define{{.*}}statement_result
++// CHECK: br i1
++// CHECK: call ptr @llvm.objc.retain
 +// CHECK: call void @llvm.objc.storeStrong
 +// CHECK: call void @llvm.objc.destroyWeak
 +

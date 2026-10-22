@@ -241,7 +241,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                         'OMITTED': 'native C++ carrier',
                         'EMPTY': 'native C++ carrier',
                         'PACKED': 'native C++ carrier record field initialization',
-                        'VOLATILE': 'native C++ carrier record field initialization',
+                        'VOLATILE': 'volatile storage of native C++ carrier field',
                         'UNION': 'native C++ carrier record field initialization',
                         'ARRAY': 'deleted',
                         'BLOCK_ABI': 'runtime callable type encoding',

@@ -28,22 +28,6 @@ static int objc_error_out(id<Error> __autoreleasing *error, int success) {
 #else
   *error = objc_autorelease([TestError new]);
 #endif
-  @autoreleasepool {
-    id<Error> __autoreleasing raw_error_object = (id)0;
-    id<Error> (^normalize_error)(id<Error>) = ^id<Error>(id<Error> raw) { return raw; };
-    Result(int, id<Error>) object_good = resultFromErrorOut(
-        objc_error_out(&raw_error_object, 1), 42, raw_error_object, normalize_error);
-    assert(isOk(object_good) && raw_error_object == (id)0);
-    Result(int, id<Error>) object_bad = resultFromErrorOut(
-        objc_error_out(&raw_error_object, 0), 42, raw_error_object, normalize_error);
-    match(object_bad) {
-      case .Ok(let value): { (void)value; assert(0); }
-      case .Err(let error): { assert(error == raw_error_object && error != (id)0); }
-    }
-  }
-#if __has_feature(objc_arc)
-  assert(errors_created == errors_destroyed);
-#endif
   return 0;
 }
 
@@ -236,6 +220,26 @@ int main(void) {
   assert(errors_created == errors_destroyed);
 #endif
   @autoreleasepool {
+    __block int object_status_calls = 0, object_factory_calls = 0;
+    id<Error> (^status_object_error)(int) = ^id<Error>(int code) {
+      assert(code == -17);
+      ++object_factory_calls;
+#if __has_feature(objc_arc)
+      return [TestError new];
+#else
+      return objc_autorelease([TestError new]);
+#endif
+    };
+    Result(int, id<Error>) status_good_object = resultFromStatus(
+        (++object_status_calls, 0), 42, status_object_error);
+    assert(isOk(status_good_object) && object_status_calls == 1 && object_factory_calls == 0);
+    Result(int, id<Error>) status_bad_object = resultFromStatus(
+        (++object_status_calls, -17), 42, status_object_error);
+    assert(!isOk(status_bad_object) && object_status_calls == 2 && object_factory_calls == 1);
+    match(status_bad_object) {
+      case .Ok(let value): { (void)value; assert(0); }
+      case .Err(let error): { assert(error != (id)0); }
+    }
     id<Error> __autoreleasing raw_error_object = (id)0;
     id<Error> (^normalize_error)(id<Error>) = ^id<Error>(id<Error> raw) { return raw; };
     Result(int, id<Error>) object_good = resultFromErrorOut(

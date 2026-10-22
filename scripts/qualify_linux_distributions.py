@@ -134,7 +134,7 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                 persist()
             print(distribution + ': PASS', flush=True)
 
-        selected = list(distributions or IMAGES)
+        selected = list(dict.fromkeys(distributions or IMAGES))
         failures = []
         with ThreadPoolExecutor(max_workers=min(2, len(selected))) as executor:
             futures = [executor.submit(one_distribution, name) for name in selected]
