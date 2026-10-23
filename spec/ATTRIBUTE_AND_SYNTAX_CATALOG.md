@@ -608,6 +608,21 @@ __attribute__((NSObject))
 - `cf_returns_retained` / `cf_returns_not_retained` / `cf_consumed`
 - `ns_returns_retained` / `ns_returns_not_retained` / `ns_consumed`
 
+### B.8.7 Scalar resource typedef contracts (canonical) {#b-8-7}
+
+```c
+__attribute__((objc_requires_cleanup(CleanupFn)))
+__attribute__((objc_resource_family(FamilyName)))
+__attribute__((objc_invalid(InvalidExpr)))
+```
+
+These attributes apply to typedef declarations and C++ type aliases. They are
+header spellings for the type-directed contracts in [Part 8](#part-8)
+[§8.3.5](#part-8-3-5). The corresponding prefix spellings are
+`@requires_cleanup(CleanupFn)`, `@resource_family(FamilyName)` and
+`@invalid(InvalidExpr)`. Aliases preserve their inherited cleanup, family and
+sentinel; these attributes do not change the scalar ABI.
+
 ## B.9 Reserved tokens {#b-9}
 
 Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:

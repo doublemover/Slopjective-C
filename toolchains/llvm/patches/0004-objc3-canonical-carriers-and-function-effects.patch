@@ -1363,7 +1363,7 @@ index a9965a4a8..4ec0b3a0c 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..ff8a359a4 100644
+index 892715a6d..2d6a20a64 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1415,7 +1415,7 @@ index 892715a6d..ff8a359a4 100644
  
    /// True if we are within an Objective-C container while parsing C-like decls.
    ///
-@@ -7614,6 +7635,32 @@ public:
+@@ -7614,6 +7635,33 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
@@ -1430,6 +1430,7 @@ index 892715a6d..ff8a359a4 100644
 +  StmtResult ParseObjC3DoCatchStatement();
 +  ExprResult ParseObjC3CarrierTransferExpression();
 +  ExprResult ParseObjC3ResourceExpression();
++  bool isObjC3ResourceAttributeAhead();
 +  bool ParseObjC3ScopeCleanupPrefix(ParsedAttributes &Attrs);
 +
 +  bool isObjC3GuardStatementAhead();
@@ -2348,18 +2349,19 @@ index 222881154..906723abd 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..d63a0d60e 100644
+index d743717ad..8ca241c0c 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,8 @@
  
  #include "clang/AST/ASTImporter.h"
  #include "clang/AST/ASTContext.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -592,6 +593,13 @@ namespace clang {
+@@ -592,6 +594,13 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -2373,7 +2375,7 @@ index d743717ad..d63a0d60e 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -627,6 +635,18 @@ namespace clang {
+@@ -627,6 +636,18 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -2392,7 +2394,7 @@ index d743717ad..d63a0d60e 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -1426,6 +1446,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1447,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2420,7 +2422,7 @@ index d743717ad..d63a0d60e 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1667,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1668,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2457,7 +2459,7 @@ index d743717ad..d63a0d60e 100644
    if (Err)
      return std::move(Err);
  
-@@ -2559,6 +2630,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2631,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2484,7 +2486,23 @@ index d743717ad..d63a0d60e 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -4120,6 +4211,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -3085,7 +3177,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+ 
+         QualType FromUT = D->getUnderlyingType();
+         QualType FoundUT = FoundTypedef->getUnderlyingType();
+-        if (Importer.IsStructurallyEquivalent(FromUT, FoundUT)) {
++        auto FromContract = getObjC3ResourceTypeContract(Importer.getFromContext(),
++            Importer.getFromContext().getTypedefType(ElaboratedTypeKeyword::None, {}, D));
++        auto ToContract = getObjC3ResourceTypeContract(Importer.getToContext(),
++            Importer.getToContext().getTypedefType(ElaboratedTypeKeyword::None, {}, FoundTypedef));
++        bool HasContract = FromContract.Cleanup || FromContract.Family || FromContract.Invalid ||
++                           ToContract.Cleanup || ToContract.Family || ToContract.Invalid;
++        if (Importer.IsStructurallyEquivalent(FromUT, FoundUT) &&
++            (!HasContract || IsStructuralMatch(D, FoundTypedef, false))) {
+           // If the underlying declarations are unnamed records these can be
+           // imported as different types. We should create a distinct typedef
+           // node in this case.
+@@ -4120,6 +4219,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2492,7 +2510,7 @@ index d743717ad..d63a0d60e 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4267,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4275,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2539,7 +2557,7 @@ index d743717ad..d63a0d60e 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5194,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5202,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2554,7 +2572,7 @@ index d743717ad..d63a0d60e 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5264,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5272,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2562,7 +2580,7 @@ index d743717ad..d63a0d60e 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5279,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5287,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2571,7 +2589,7 @@ index d743717ad..d63a0d60e 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7471,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7479,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2669,7 +2687,7 @@ index d743717ad..d63a0d60e 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8009,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8017,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2848,7 +2866,7 @@ index d743717ad..d63a0d60e 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10121,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10129,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2948,10 +2966,18 @@ index d743717ad..d63a0d60e 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..955f7efee 100644
+index e0b62591a..24d2b2818 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -207,6 +207,117 @@ class StmtComparer {
+@@ -60,6 +60,7 @@
+ 
+ #include "clang/AST/ASTStructuralEquivalence.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
+ #include "clang/AST/ASTDiagnostic.h"
+ #include "clang/AST/Attr.h"
+ #include "clang/AST/Decl.h"
+@@ -207,6 +208,117 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -3069,7 +3095,7 @@ index e0b62591a..955f7efee 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -963,6 +1074,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1075,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -3093,7 +3119,7 @@ index e0b62591a..955f7efee 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1274,17 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,6 +1275,17 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -3111,6 +3137,27 @@ index e0b62591a..955f7efee 100644
      if (Proto1->getNumParams() != Proto2->getNumParams())
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
+@@ -2446,6 +2586,20 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+   if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
+     return false;
+ 
++  auto A = getObjC3ResourceTypeContract(Context.FromCtx,
++      Context.FromCtx.getTypedefType(ElaboratedTypeKeyword::None, {}, D1));
++  auto B = getObjC3ResourceTypeContract(Context.ToCtx,
++      Context.ToCtx.getTypedefType(ElaboratedTypeKeyword::None, {}, D2));
++  if (bool(A.Cleanup) != bool(B.Cleanup) || bool(A.Family) != bool(B.Family) ||
++      bool(A.Invalid) != bool(B.Invalid))
++    return false;
++  if (A.Cleanup && !IsStructurallyEquivalent(Context, const_cast<FunctionDecl *>(A.getCleanupFunction()), const_cast<FunctionDecl *>(B.getCleanupFunction())))
++    return false;
++  if (A.Family && !IsStructurallyEquivalent(A.Family->getFamily(), B.Family->getFamily()))
++    return false;
++  if (A.Invalid && !sameObjC3ResourceConstant(Context.FromCtx, A.Invalid->getInvalid(),
++                                            Context.ToCtx, B.Invalid->getInvalid()))
++    return false;
+   return IsStructurallyEquivalent(Context, D1->getUnderlyingType(),
+                                   D2->getUnderlyingType());
+ }
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 index 4be3e977b..f1f3c62f2 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
@@ -5309,7 +5356,7 @@ index 000000000..05f2cfb69
 +      SecondType.get(), Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
-index eb50b0e85..f7374088d 100644
+index eb50b0e85..fc9895df0 100644
 --- a/clang/lib/Parse/ParseObjc.cpp
 +++ b/clang/lib/Parse/ParseObjc.cpp
 @@ -25,6 +25,7 @@
@@ -5320,14 +5367,11 @@ index eb50b0e85..f7374088d 100644
  
  using namespace clang;
  
-@@ -45,6 +46,17 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -45,6 +46,14 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
                                ParsedAttributes &DeclSpecAttrs) {
    DeclAttrs.takeAllPrependingFrom(DeclSpecAttrs);
  
-+  if (getLangOpts().ObjC3 && NextToken().is(tok::identifier) &&
-+      (NextToken().getIdentifierInfo()->isStr("resource") ||
-+       NextToken().getIdentifierInfo()->isStr("cleanup")) &&
-+      GetLookAheadToken(2).is(tok::l_paren)) {
++  if (isObjC3ResourceAttributeAhead()) {
 +    if (ParseObjC3ScopeCleanupPrefix(DeclAttrs))
 +      return nullptr;
 +    SourceLocation DeclEnd;
@@ -5338,7 +5382,7 @@ index eb50b0e85..f7374088d 100644
    SourceLocation AtLoc = ConsumeToken(); // the "@"
  
    if (Tok.is(tok::code_completion)) {
-@@ -88,7 +100,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
+@@ -88,7 +97,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
      SingleDecl = ParseObjCPropertyDynamic(AtLoc);
      break;
    case tok::objc_import:
@@ -5348,7 +5392,7 @@ index eb50b0e85..f7374088d 100644
        Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
        SingleDecl = ParseModuleImport(AtLoc, IS);
        break;
-@@ -1206,8 +1219,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1206,8 +1216,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      return nullptr;
    }
  
@@ -5372,7 +5416,7 @@ index eb50b0e85..f7374088d 100644
      // If attributes exist after the method, parse them.
      MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
                           methodAttrs);
-@@ -1216,7 +1244,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1216,7 +1241,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
          getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
          selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
@@ -5381,7 +5425,7 @@ index eb50b0e85..f7374088d 100644
      PD.complete(Result);
      return Result;
    }
-@@ -1280,6 +1308,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1280,6 +1305,15 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
        return nullptr;
      }
  
@@ -5397,7 +5441,7 @@ index eb50b0e85..f7374088d 100644
      // Check for another keyword selector.
      SelIdent = ParseObjCSelectorPiece(selLoc);
      if (!SelIdent && Tok.isNot(tok::colon))
-@@ -1335,6 +1372,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1335,6 +1369,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
      ObjCParamInfo.push_back(Param);
    }
  
@@ -5406,7 +5450,7 @@ index eb50b0e85..f7374088d 100644
    // FIXME: Add support for optional parameter list...
    // If attributes exist after the method, parse them.
    MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
-@@ -1348,7 +1387,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+@@ -1348,7 +1384,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
    Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
        getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
        Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
@@ -5415,7 +5459,7 @@ index eb50b0e85..f7374088d 100644
  
    PD.complete(Result);
    return Result;
-@@ -2515,6 +2554,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
+@@ -2515,6 +2551,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -5424,7 +5468,7 @@ index eb50b0e85..f7374088d 100644
    switch (Tok.getKind()) {
    case tok::code_completion:
      cutOffParsing();
-@@ -2732,6 +2773,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
+@@ -2732,6 +2770,13 @@ ExprResult Parser::ParseObjCMessageExpression() {
    }
  
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5438,7 +5482,7 @@ index eb50b0e85..f7374088d 100644
  
    if (getLangOpts().CPlusPlus) {
      // We completely separate the C and C++ cases because C++ requires
-@@ -2822,6 +2870,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2822,6 +2867,16 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
                                         ParsedType ReceiverType,
                                         Expr *ReceiverExpr) {
    InMessageExpressionRAIIObject InMessage(*this, true);
@@ -5455,7 +5499,7 @@ index eb50b0e85..f7374088d 100644
  
    if (Tok.is(tok::code_completion)) {
      cutOffParsing();
-@@ -2978,10 +3036,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
+@@ -2978,10 +3033,74 @@ Parser::ParseObjCMessageExpressionBody(SourceLocation LBracLoc,
      return Actions.ObjC().ActOnClassMessage(getCurScope(), ReceiverType, Sel,
                                              LBracLoc, KeyLocs, RBracLoc,
                                              KeyExprs);
@@ -24267,18 +24311,20 @@ index fb0b3c150..0ff03bcf5 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..272a4328b
+index 000000000..aa5bae9ea
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,452 @@
+@@ -0,0 +1,559 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/JSONNodeDumper.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Frontend/CompilerInstance.h"
@@ -24387,7 +24433,8 @@ index 000000000..272a4328b
 +  std::string Buffer;
 +  llvm::raw_string_ostream OS(Buffer);
 +  ASTContext &C = FD->getASTContext();
-+  JSONDumper Dumper(OS, C.getSourceManager(), C, C.getPrintingPolicy(), nullptr);
++  JSONDumper Dumper(OS, C.getSourceManager(), C, C.getPrintingPolicy(),
++                    nullptr);
 +  Dumper.SetTraversalKind(Kind);
 +  Dumper.Visit(FD->getBody());
 +  return Buffer;
@@ -24420,7 +24467,7 @@ index 000000000..272a4328b
 +
 +TEST(ObjC3ConditionTooling, TraversesWrittenInitializersInBothOrders) {
 +  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
-+                                              "condition-tooling.mm");
++                                               "condition-tooling.mm");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  auto *FD = findExercise(*AST);
@@ -24437,10 +24484,10 @@ index 000000000..272a4328b
 +      EXPECT_EQ(2u, Visitor.SourceReferences);
 +      EXPECT_EQ(Implicit ? 4u : 2u, Visitor.DeclStatements);
 +      EXPECT_EQ(Implicit ? 2u : 0u, Visitor.Snapshots);
-+      auto FirstSource = std::find(Visitor.Events.begin(), Visitor.Events.end(),
-+                                   "source");
-+      auto FirstDecl = std::find(Visitor.Events.begin(), Visitor.Events.end(),
-+                                 "decl:first");
++      auto FirstSource =
++          std::find(Visitor.Events.begin(), Visitor.Events.end(), "source");
++      auto FirstDecl =
++          std::find(Visitor.Events.begin(), Visitor.Events.end(), "decl:first");
 +      EXPECT_LT(FirstSource, FirstDecl);
 +      auto Binding = std::find(Visitor.Events.begin(), Visitor.Events.end(),
 +                               "binding:first");
@@ -24462,7 +24509,7 @@ index 000000000..272a4328b
 +
 +TEST(ObjC3ConditionTooling, JSONPreservesScopeMetadataAndSourceReferences) {
 +  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
-+                                              "condition-json.mm");
++                                               "condition-json.mm");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  auto *FD = findExercise(*AST);
@@ -24502,7 +24549,8 @@ index 000000000..272a4328b
 +  }
 +}
 +
-+TEST(ObjC3ConditionTooling, ImportKeepsConditionAndContinuationBindingIdentity) {
++TEST(ObjC3ConditionTooling,
++     ImportKeepsConditionAndContinuationBindingIdentity) {
 +  auto From = tooling::buildASTFromCodeWithArgs(
 +      ConditionSource, conditionArgs(), "condition-import.mm");
 +  auto To = tooling::buildASTFromCodeWithArgs(
@@ -24542,7 +24590,7 @@ index 000000000..272a4328b
 +  Options.IndexFunctionLocals = true;
 +  const Decl *ImportedDecls[] = {ImportedFunction};
 +  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(),
-+                           ImportedDecls, Index, Options);
++                            ImportedDecls, Index, Options);
 +  EXPECT_EQ(3u, Index.count("first", index::SymbolRole::Reference));
 +  EXPECT_EQ(3u, Index.count("second", index::SymbolRole::Reference));
 +  for (const auto &Item : Index.Items) {
@@ -24560,7 +24608,7 @@ index 000000000..272a4328b
 +
 +TEST(ObjC3ConditionTooling, IndexesSourcesAndUserBindingsExactlyOnce) {
 +  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
-+                                              "condition-index.mm");
++                                               "condition-index.mm");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  Occurrences Index;
@@ -24577,15 +24625,16 @@ index 000000000..272a4328b
 +    EXPECT_FALSE(Item.Declaration->isImplicit());
 +}
 +
-+TEST(ObjC3ConditionTooling, PersistedASTKeepsNativeBindingsAndSourceOccurrences) {
++TEST(ObjC3ConditionTooling,
++     PersistedASTKeepsNativeBindingsAndSourceOccurrences) {
 +  auto AST = tooling::buildASTFromCodeWithArgs(ConditionSource, conditionArgs(),
-+                                              "condition-persistence.mm");
++                                               "condition-persistence.mm");
 +  ASSERT_TRUE(AST);
 +  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
 +  llvm::SmallString<256> Path;
 +  int Descriptor;
-+  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile(
-+      "objc3-condition-tooling", "ast", Descriptor, Path));
++  ASSERT_FALSE(llvm::sys::fs::createTemporaryFile("objc3-condition-tooling",
++                                                  "ast", Descriptor, Path));
 +  llvm::ToolOutputFile File(Path, Descriptor);
 +  ASSERT_FALSE(AST->Save(Path));
 +  auto VFS = AST->getFileManager().getVirtualFileSystemPtr();
@@ -24634,7 +24683,7 @@ index 000000000..272a4328b
 +    }
 +  )";
 +  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
-+                                               "resource-import.mm");
++                                                "resource-import.mm");
 +  auto To = tooling::buildASTFromCodeWithArgs(
 +      "", conditionArgs(), "resource-target.mm", "clang-tool",
 +      std::make_shared<PCHContainerOperations>(),
@@ -24672,7 +24721,7 @@ index 000000000..272a4328b
 +  Options.IndexFunctionLocals = true;
 +  const Decl *Declarations[] = {Function};
 +  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(),
-+                           Declarations, Index, Options);
++                            Declarations, Index, Options);
 +  EXPECT_EQ(4u, Index.count("slot", index::SymbolRole::Reference));
 +  std::string Printed;
 +  llvm::raw_string_ostream OS(Printed);
@@ -24689,7 +24738,7 @@ index 000000000..272a4328b
 +    void exercise() { @cleanup(close_value) int value = 0; value = 3; }
 +  )";
 +  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
-+                                               "cleanup-import.mm");
++                                                "cleanup-import.mm");
 +  auto To = tooling::buildASTFromCodeWithArgs(
 +      "", conditionArgs(), "cleanup-target.mm", "clang-tool",
 +      std::make_shared<PCHContainerOperations>(),
@@ -24714,14 +24763,116 @@ index 000000000..272a4328b
 +  const auto *Call = cast<CallExpr>(Cleanup->getCall());
 +  ASSERT_TRUE(Call->getDirectCallee());
 +  EXPECT_EQ(&To->getASTContext(), &Call->getDirectCallee()->getASTContext());
-+  const auto *Operand = cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());
++  const auto *Operand =
++      cast<OpaqueValueExpr>(Call->getArg(0)->IgnoreParenImpCasts());
 +  EXPECT_TRUE(Operand->isLValue());
 +  std::string Printed;
 +  llvm::raw_string_ostream OS(Printed);
 +  Function->getBody()->printPretty(OS, nullptr,
 +                                   To->getASTContext().getPrintingPolicy());
-+  EXPECT_NE(std::string::npos, Printed.find("__attribute__((cleanup(close_value)))"));
++  EXPECT_NE(std::string::npos,
++            Printed.find("__attribute__((cleanup(close_value)))"));
 +  EXPECT_EQ(std::string::npos, Printed.find("objc_cleanup"));
++}
++
++TEST(ObjC3ResourceTooling,
++     ImportsTypedefContractsAndReverseCleanupAssociations) {
++  constexpr llvm::StringLiteral Source = R"(
++    void close_handle(int) __attribute__((nothrow));
++    @requires_cleanup(close_handle) @resource_family(Handles) @invalid(-1)
++    typedef int Handle;
++    typedef Handle Alias;
++    int exercise() { @resource(close_handle, invalid: -1) Alias value = 3; return 0; }
++  )";
++  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                                "type-contract-import.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", conditionArgs(), "type-contract-target.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"type-contract-import.mm", Source.str()}});
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *FD = findExercise(*From);
++  ASSERT_TRUE(FD);
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(FD);
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  const auto *Body = cast<CompoundStmt>(Function->getBody());
++  const auto *Declaration = cast<DeclStmt>(*Body->body_begin());
++  const auto *Variable = cast<VarDecl>(Declaration->getSingleDecl());
++  auto Contract =
++      getObjC3ResourceTypeContract(To->getASTContext(), Variable->getType());
++  ASSERT_TRUE(Contract.Cleanup && Contract.Family && Contract.Invalid);
++  ASSERT_TRUE(Contract.getCleanupFunction());
++  EXPECT_EQ("Handles", Contract.Family->getFamily()->getName());
++  EXPECT_EQ(&To->getASTContext(),
++            &Contract.getCleanupFunction()->getASTContext());
++  EXPECT_TRUE(isObjC3ResourceCleanupFunction(Contract.getCleanupFunction()));
++  EXPECT_TRUE(acceptsObjC3ResourceCleanup(To->getASTContext(), Contract,
++                                          Contract.getCleanupFunction()));
++  Expr::EvalResult Sentinel;
++  ASSERT_TRUE(Contract.Invalid->getInvalid()->EvaluateAsRValue(
++      Sentinel, To->getASTContext()));
++  ASSERT_TRUE(Sentinel.Val.isInt());
++  EXPECT_EQ(-1, Sentinel.Val.getInt().getSExtValue());
++}
++
++TEST(ObjC3ResourceTooling,
++     DistinguishesContractsDuringStructuralMatchingAndImport) {
++  const std::string Prefix =
++      "void close_handle(int) __attribute__((nothrow));\n";
++  const std::string Source =
++      Prefix + "@requires_cleanup(close_handle) @resource_family(Handles) "
++               "@invalid(-1) typedef int Handle;";
++  const std::string Equivalent =
++      Prefix + "@requires_cleanup(close_handle) @resource_family(Handles) "
++               "@invalid(~0) typedef int Handle;";
++  const std::string Different =
++      Prefix + "@requires_cleanup(close_handle) @resource_family(OtherHandles) "
++               "@invalid(-1) typedef int Handle;";
++  auto From = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                                "contract-source.mm");
++  auto Same = tooling::buildASTFromCodeWithArgs(Equivalent, conditionArgs(),
++                                                "contract-same.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      Different, conditionArgs(), "contract-different.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"contract-source.mm", Source}});
++  ASSERT_TRUE(From && Same && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  ASSERT_FALSE(Same->getDiagnostics().hasErrorOccurred());
++  ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++  auto Find = [](ASTUnit &AST) -> TypedefNameDecl * {
++    for (Decl *D : AST.getASTContext().getTranslationUnitDecl()->decls())
++      if (auto *Alias = dyn_cast<TypedefNameDecl>(D))
++        if (Alias->getName() == "Handle")
++          return Alias;
++    return nullptr;
++  };
++  ASSERT_TRUE(Find(*From) && Find(*Same) && Find(*To));
++  StructuralEquivalenceContext::NonEquivalentDeclSet SameSet, DifferentSet;
++  StructuralEquivalenceContext SameContext(
++      From->getASTContext().getLangOpts(), From->getASTContext(),
++      Same->getASTContext(), SameSet, StructuralEquivalenceKind::Default, false,
++      false);
++  EXPECT_TRUE(SameContext.IsEquivalent(Find(*From), Find(*Same)));
++  StructuralEquivalenceContext DifferentContext(
++      From->getASTContext().getLangOpts(), From->getASTContext(),
++      To->getASTContext(), DifferentSet, StructuralEquivalenceKind::Default,
++      false, false);
++  EXPECT_FALSE(DifferentContext.IsEquivalent(Find(*From), Find(*To)));
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  Importer.setODRHandling(ASTImporter::ODRHandlingType::Conservative);
++  auto Imported = Importer.Import(Find(*From));
++  EXPECT_FALSE(static_cast<bool>(Imported));
++  if (!Imported)
++    llvm::consumeError(Imported.takeError());
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
 new file mode 100644
@@ -26016,7 +26167,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..14a0e70a6 100644
+index 2c62f46d4..1dd4e79c9 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -26029,10 +26180,41 @@ index 2c62f46d4..14a0e70a6 100644
  class DeclArgument<DeclNode kind, string name, bit opt = 0, bit fake = 0>
      : Argument<name, opt, fake> {
    DeclNode Kind = kind;
-@@ -1450,6 +1453,25 @@ def OSConsumesThis : InheritableAttr {
+@@ -1450,6 +1453,56 @@ def OSConsumesThis : InheritableAttr {
    let SimpleHandler = 1;
  }
  
++def ObjCRequiresCleanup : InheritableAttr {
++  let Spellings = [GNU<"objc_requires_cleanup">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [ExprArgument<"Close">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++def ObjCResourceFamily : InheritableAttr {
++  let Spellings = [GNU<"objc_resource_family">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++def ObjCInvalid : InheritableAttr {
++  let Spellings = [GNU<"objc_invalid">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [ExprArgument<"Invalid">];
++  let Documentation = [ObjCResourceTypeDocs];
++}
++
++// Reverse ownership association survives redeclarations, PCH and AST import.
++// There is no ABI change or public function attribute spelling.
++def ObjCResourceCloseFor : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[Function]>;
++  let Args = [DeclArgument<TypedefName, "ResourceTypedef">];
++  let Documentation = [InternalOnly];
++}
++
 +def ObjCCleanup : InheritableAttr {
 +  let Spellings = [GNU<"objc_cleanup">];
 +  let Subjects = SubjectList<[LocalVar], ErrorDiag>;
@@ -26055,7 +26237,7 @@ index 2c62f46d4..14a0e70a6 100644
  def Cleanup : InheritableAttr {
    let Spellings = [GCC<"cleanup">];
    let Args = [DeclArgument<Function, "FunctionDecl">];
-@@ -1469,6 +1491,8 @@ public:
+@@ -1469,6 +1522,8 @@ public:
    }];
  }
  
@@ -26065,13 +26247,32 @@ index 2c62f46d4..14a0e70a6 100644
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
 diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
-index 0fe41671c..99a0f43b2 100644
+index 0fe41671c..796b2ff2d 100644
 --- a/clang/include/clang/Basic/AttrDocs.td
 +++ b/clang/include/clang/Basic/AttrDocs.td
-@@ -9502,6 +9502,53 @@ this usage is debugger-dependent.
+@@ -9502,6 +9502,72 @@ this usage is debugger-dependent.
    }];
  }
  
++def ObjCResourceTypeDocs : Documentation {
++  let Category = DocCatType;
++  let Content = [{
++Objective-C 3.0 typedefs may declare ``objc_requires_cleanup(F)``,
++``objc_resource_family(Name)`` and ``objc_invalid(X)``. The corresponding prefix
++spellings are ``@requires_cleanup(F)``, ``@resource_family(Name)`` and
++``@invalid(X)``. Contracts follow typedef/using alias sugar; they do not change
++the scalar ABI or create distinct nominal C types.
++
++The cleanup must be a synchronous, nondependent, named single-parameter function
++applicable to the scalar handle or its address. Sentinels are converted to the
++handle type and must be constant. Contradictory alias annotations are rejected.
++In strict-system mode, automatic handle values must be closed, transferred by a
++compatible typed return, or protected by resource/cleanup/defer actions on every
++exit. Family associations reject wrong cleanup functions, repeated cleanup and
++unproven reuse after consumption. Resource field annotations remain outside v1.
++  }];
++}
++
 +def ObjCCleanupDocs : Documentation {
 +  let Category = DocCatVariable;
 +  let Content = [{
@@ -26241,7 +26442,7 @@ index d5085ca6d..d76f1ee46 100644
    case '[':
      Kind = tok::l_square;
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index 1b272b541..a8ae24eca 100644
+index 1b272b541..16bb26c72 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
 @@ -43,6 +43,7 @@
@@ -26263,10 +26464,15 @@ index 1b272b541..a8ae24eca 100644
    Expr *E = AL.getArgAsExpr(0);
    SourceLocation Loc = E->getExprLoc();
    FunctionDecl *FD = nullptr;
-@@ -8114,6 +8119,12 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
+@@ -8114,6 +8119,17 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
    case ParsedAttr::AT_Sentinel:
      handleSentinelAttr(S, D, AL);
      break;
++  case ParsedAttr::AT_ObjCRequiresCleanup:
++  case ParsedAttr::AT_ObjCResourceFamily:
++  case ParsedAttr::AT_ObjCInvalid:
++    handleObjC3ResourceTypeAttr(S, D, AL);
++    break;
 +  case ParsedAttr::AT_ObjCCleanup:
 +    handleObjC3CleanupAttr(S, D, AL);
 +    break;
@@ -26457,17 +26663,19 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..6837c5b65
+index 000000000..a7b1316a3
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,343 @@
-+//===--- SemaObjC3Resources.cpp - Native scalar resource ownership ---------===//
+@@ -0,0 +1,546 @@
++//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
++//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/ParsedAttr.h"
@@ -26483,10 +26691,169 @@ index 000000000..6837c5b65
 +         !Type->isObjCRetainableType() && !Type.isConstQualified() &&
 +         (Type.getObjCLifetime() == Qualifiers::OCL_None ||
 +          Type.getObjCLifetime() == Qualifiers::OCL_ExplicitNone) &&
-+         !Type->isAtomicType() &&
-+         Type.getAddressSpace() == LangAS::Default;
++         !Type->isAtomicType() && Type.getAddressSpace() == LangAS::Default;
 +}
 +} // namespace
++
++void clang::handleObjC3ResourceTypeAttr(Sema &S, Decl *D,
++                                        const ParsedAttr &Attribute) {
++  auto Reject = [&](SourceLocation Location, StringRef Message) {
++    S.Diag(Location, S.getDiagnostics().getCustomDiagID(
++                         DiagnosticsEngine::Error, Message));
++    D->setInvalidDecl();
++  };
++  auto *Alias = dyn_cast<TypedefNameDecl>(D);
++  if (!S.getLangOpts().ObjC3 || !Alias) {
++    Reject(Attribute.getLoc(), "resource type contracts require an Objective-C "
++                               "3.0 typedef or using alias");
++    return;
++  }
++  QualType Type = Alias->getUnderlyingType();
++  if (Type->isDependentType() || Type->isAtomicType() ||
++      !(Type->isIntegerType() || Type->isEnumeralType() ||
++        Type->isPointerType()) ||
++      Type->isObjCRetainableType() ||
++      Type.getAddressSpace() != LangAS::Default) {
++    Reject(Attribute.getLoc(), "resource type contracts require a nondependent "
++                               "ordinary integer, enum, or pointer handle");
++    return;
++  }
++  auto Contract = getObjC3ResourceTypeContract(
++      S.Context,
++      S.Context.getTypedefType(ElaboratedTypeKeyword::None, {}, Alias));
++  if (Attribute.getKind() == ParsedAttr::AT_ObjCResourceFamily) {
++    IdentifierInfo *Family = Attribute.getArgAsIdent(0)->getIdentifierInfo();
++    if (Contract.Family && Contract.Family->getFamily() != Family) {
++      Reject(Attribute.getLoc(),
++             "resource alias cannot change its inherited resource family");
++      return;
++    }
++    if (!Alias->hasAttr<ObjCResourceFamilyAttr>())
++      Alias->addAttr(
++          ObjCResourceFamilyAttr::Create(S.Context, Family, Attribute));
++    return;
++  }
++  Expr *Value = Attribute.getArgAsExpr(0);
++  if (Attribute.getKind() == ParsedAttr::AT_ObjCInvalid) {
++    if (Value->isTypeDependent() || Value->isValueDependent()) {
++      Reject(Value->getExprLoc(),
++             "resource type invalid sentinel must be a nondependent constant");
++      return;
++    }
++    if (!S.getLangOpts().CPlusPlus) {
++      ExprResult Checked = Value;
++      if (S.CheckSingleAssignmentConstraints(Type.getUnqualifiedType(), Checked,
++                                             false, false, false) !=
++          AssignConvertType::Compatible) {
++        Reject(Value->getExprLoc(), "resource type invalid sentinel is "
++                                    "incompatible with the handle type");
++        return;
++      }
++    }
++    ExprResult Converted = S.PerformCopyInitialization(
++        InitializedEntity::InitializeTemporary(Type.getUnqualifiedType()),
++        Value->getExprLoc(), Value);
++    if (Converted.isInvalid()) {
++      D->setInvalidDecl();
++      return;
++    }
++    if (!Converted.get()->isConstantInitializer(S.Context)) {
++      Reject(Value->getExprLoc(),
++             "resource type invalid sentinel must be constant");
++      return;
++    }
++    if (Contract.Invalid &&
++        !sameObjC3ResourceConstant(S.Context, Contract.Invalid->getInvalid(),
++                                   Converted.get())) {
++      Reject(Attribute.getLoc(),
++             "resource alias cannot change its inherited invalid sentinel");
++      return;
++    }
++    if (!Alias->hasAttr<ObjCInvalidAttr>())
++      Alias->addAttr(
++          ObjCInvalidAttr::Create(S.Context, Converted.get(), Attribute));
++    return;
++  }
++  auto *Reference = dyn_cast<DeclRefExpr>(Value->IgnoreParenImpCasts());
++  auto *Function =
++      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
++  const auto *Prototype =
++      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  if (!Function || !Prototype || Function->isDependentContext() ||
++      Function->getNumParams() != 1 || Prototype->isVariadic() ||
++      (isa<CXXMethodDecl>(Function) &&
++       !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      (!Prototype->getReturnType()->isVoidType() &&
++       !Prototype->getReturnType()->isScalarType()) ||
++      Prototype->getReturnType()->isObjCRetainableType()) {
++    Reject(Value->getExprLoc(),
++           "requires_cleanup must name a nondependent single-parameter "
++           "function with an ordinary scalar or void result");
++    return;
++  }
++  const auto &Effects = Prototype->getObjC3FunctionEffects();
++  if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++    Reject(Value->getExprLoc(),
++           "requires_cleanup callback cannot be async or use checked throws");
++    return;
++  }
++  auto Parameter = InitializedEntity::InitializeParameter(
++      S.Context, Function->getParamDecl(0));
++  auto *Handle =
++      new (S.Context) OpaqueValueExpr(Attribute.getLoc(), Type, VK_LValue);
++  auto *Address = new (S.Context) OpaqueValueExpr(
++      Attribute.getLoc(), S.Context.getPointerType(Type), VK_PRValue);
++  auto CanPass = [&](Expr *Argument) {
++    if (!S.CanPerformCopyInitialization(Parameter, Argument))
++      return false;
++    if (S.getLangOpts().CPlusPlus)
++      return true;
++    ExprResult Converted = Argument;
++    return S.CheckSingleAssignmentConstraints(
++               Function->getParamDecl(0)->getType(), Converted, false, false,
++               false) == AssignConvertType::Compatible;
++  };
++  QualType ParameterType = Function->getParamDecl(0)->getType();
++  bool ByAddress =
++      S.Context.hasSameUnqualifiedType(ParameterType, Address->getType()) &&
++      !S.Context.hasSameUnqualifiedType(ParameterType, Type);
++  Expr *Operand = ByAddress ? Address : Handle;
++  if (!CanPass(Operand)) {
++    if (ByAddress || !CanPass(Address)) {
++      Reject(
++          Value->getExprLoc(),
++          "requires_cleanup callback cannot accept the handle or its address");
++      return;
++    }
++    Operand = Address;
++  }
++  Expr *Arguments[] = {Operand};
++  ExprResult CheckedCall = S.BuildCallExpr(nullptr, Value, Value->getExprLoc(),
++                                           Arguments, Value->getEndLoc());
++  if (CheckedCall.isInvalid()) {
++    D->setInvalidDecl();
++    return;
++  }
++  const auto *Call = dyn_cast<CallExpr>(CheckedCall.get());
++  if (!Call || Call->getArg(0)->IgnoreParenImpCasts() != Operand) {
++    Reject(Value->getExprLoc(), "requires_cleanup callback requires an "
++                                "unsupported temporary or ARC writeback");
++    return;
++  }
++  if (Contract.Cleanup &&
++      Contract.getCleanupFunction() != Function->getCanonicalDecl()) {
++    Reject(Attribute.getLoc(),
++           "resource alias cannot change its inherited cleanup function");
++    return;
++  }
++  if (!Alias->hasAttr<ObjCRequiresCleanupAttr>()) {
++    Alias->addAttr(
++        ObjCRequiresCleanupAttr::Create(S.Context, Value, Attribute));
++    Function->getCanonicalDecl()->addAttr(
++        ObjCResourceCloseForAttr::CreateImplicit(S.Context, Alias,
++                                                 Attribute.getRange()));
++  }
++}
 +
 +void clang::handleObjC3CleanupAttr(Sema &S, Decl *D,
 +                                   const ParsedAttr &Attribute) {
@@ -26502,7 +26869,8 @@ index 000000000..6837c5b65
 +           "objc_cleanup requires an automatic local in Objective-C 3.0");
 +    return;
 +  }
-+  if (Variable->hasAttr<ObjCCleanupAttr>() || Variable->hasAttr<CleanupAttr>() ||
++  if (Variable->hasAttr<ObjCCleanupAttr>() ||
++      Variable->hasAttr<CleanupAttr>() ||
 +      Variable->hasAttr<ObjCResourceAttr>()) {
 +    Reject(Attribute.getLoc(), "a variable may have only one cleanup owner");
 +    return;
@@ -26526,12 +26894,14 @@ index 000000000..6837c5b65
 +  }
 +  Expr *Close = Attribute.getArgAsExpr(0);
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
-+  auto *Function = Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
-+  const auto *Prototype = Function
-+      ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
++  auto *Function =
++      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
++  const auto *Prototype =
++      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
 +  if (!Function || !Prototype || Function->getNumParams() != 1 ||
 +      Prototype->isVariadic() || Function->isDependentContext() ||
-+      (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      (isa<CXXMethodDecl>(Function) &&
++       !cast<CXXMethodDecl>(Function)->isStatic()) ||
 +      (!Prototype->getReturnType()->isVoidType() &&
 +       !Prototype->getReturnType()->isScalarType()) ||
 +      Prototype->getReturnType()->isObjCRetainableType()) {
@@ -26559,20 +26929,22 @@ index 000000000..6837c5b65
 +  auto CanPass = [&](Expr *Argument) {
 +    if (Argument == Value && !Type->isScalarType() &&
 +        !(ParameterType->isReferenceType() &&
-+          S.Context.hasSameUnqualifiedType(
-+              ParameterType.getNonReferenceType(), Type)))
-+      return false; // Do not synthesize record copies or converting temporaries.
++          S.Context.hasSameUnqualifiedType(ParameterType.getNonReferenceType(),
++                                           Type)))
++      return false; // Do not synthesize record copies or converting
++                    // temporaries.
 +    if (!S.CanPerformCopyInitialization(Parameter, Argument))
 +      return false;
 +    if (S.getLangOpts().CPlusPlus)
 +      return true;
 +    ExprResult Converted = Argument;
-+    return S.CheckSingleAssignmentConstraints(
-+        ParameterType, Converted, false, false, false) ==
-+        AssignConvertType::Compatible;
++    return S.CheckSingleAssignmentConstraints(ParameterType, Converted, false,
++                                              false, false) ==
++           AssignConvertType::Compatible;
 +  };
-+  bool ByAddress = S.Context.hasSameUnqualifiedType(ParameterType, Address->getType()) &&
-+                   !S.Context.hasSameUnqualifiedType(ParameterType, Type);
++  bool ByAddress =
++      S.Context.hasSameUnqualifiedType(ParameterType, Address->getType()) &&
++      !S.Context.hasSameUnqualifiedType(ParameterType, Type);
 +  if (ByAddress ? !CanPass(Address) : !CanPass(Value)) {
 +    if (ByAddress || !CanPass(Address)) {
 +      Reject(Close->getExprLoc(),
@@ -26582,26 +26954,26 @@ index 000000000..6837c5b65
 +    }
 +    ByAddress = true;
 +  }
-+  auto *Operand = new (S.Context) OpaqueValueExpr(
-+      Attribute.getLoc(), ByAddress ? Address->getType() : Type,
-+      ByAddress ? VK_PRValue : VK_LValue);
++  auto *Operand = new (S.Context)
++      OpaqueValueExpr(Attribute.getLoc(), ByAddress ? Address->getType() : Type,
++                      ByAddress ? VK_PRValue : VK_LValue);
 +  Expr *Arguments[] = {Operand};
 +  ExprResult Call = S.BuildCallExpr(nullptr, Close, Close->getExprLoc(),
-+                                   Arguments, Close->getEndLoc());
++                                    Arguments, Close->getEndLoc());
 +  if (Call.isInvalid()) {
 +    D->setInvalidDecl();
 +    return;
 +  }
 +  const auto *NativeCall = dyn_cast<CallExpr>(Call.get());
-+  if (!NativeCall || !isa<OpaqueValueExpr>(
-+                         NativeCall->getArg(0)->IgnoreParenImpCasts())) {
++  if (!NativeCall ||
++      !isa<OpaqueValueExpr>(NativeCall->getArg(0)->IgnoreParenImpCasts())) {
 +    Reject(Close->getExprLoc(),
 +           "objc_cleanup callback argument requires an unsupported temporary "
 +           "or ARC writeback; use a direct value, reference, or address");
 +    return;
 +  }
-+  Variable->addAttr(ObjCCleanupAttr::Create(
-+      S.Context, Close, ByAddress, Call.get(), Attribute.getRange()));
++  Variable->addAttr(ObjCCleanupAttr::Create(S.Context, Close, ByAddress,
++                                            Call.get(), Attribute.getRange()));
 +  Variable->markUsed(S.Context);
 +}
 +
@@ -26609,7 +26981,7 @@ index 000000000..6837c5b65
 +                                    const ParsedAttr &Attribute) {
 +  auto Reject = [&](SourceLocation Loc, StringRef Message) {
 +    S.Diag(Loc, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
-+        DiagnosticIDs::Error, Message));
++                    DiagnosticIDs::Error, Message));
 +    D->setInvalidDecl();
 +  };
 +  if (!S.getLangOpts().ObjC3) {
@@ -26629,7 +27001,8 @@ index 000000000..6837c5b65
 +           "a resource variable may have only one objc_resource attribute");
 +    return;
 +  }
-+  if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>()) {
++  if (Variable->hasAttr<CleanupAttr>() ||
++      Variable->hasAttr<ObjCCleanupAttr>()) {
 +    Reject(Attribute.getLoc(),
 +           "objc_resource and cleanup cannot own the same variable");
 +    return;
@@ -26650,8 +27023,8 @@ index 000000000..6837c5b65
 +  Expr *Close = Attribute.getArgAsExpr(0);
 +  Expr *Invalid = Attribute.getArgAsExpr(1);
 +  auto *Reference = dyn_cast<DeclRefExpr>(Close->IgnoreParenImpCasts());
-+  auto *Function = Reference ? dyn_cast<FunctionDecl>(Reference->getDecl())
-+                             : nullptr;
++  auto *Function =
++      Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
 +  const auto *Prototype =
 +      Function ? Function->getType()->getAs<FunctionProtoType>() : nullptr;
 +  if (!Function || !Prototype || Function->getNumParams() != 1 ||
@@ -26701,7 +27074,7 @@ index 000000000..6837c5b65
 +  };
 +  bool ByAddress =
 +      S.Context.hasSameUnqualifiedType(Function->getParamDecl(0)->getType(),
-+                                        Address->getType()) &&
++                                       Address->getType()) &&
 +      !S.Context.hasSameUnqualifiedType(Function->getParamDecl(0)->getType(),
 +                                        HandleType);
 +  if (ByAddress ? !CanPass(Address) : !CanPass(Value)) {
@@ -26717,10 +27090,10 @@ index 000000000..6837c5b65
 +  // calling convention, parameter conversions and declaration-use diagnostics.
 +  // At cleanup time CodeGen binds its opaque operand to the current handle
 +  // snapshot (or address), rather than reading a volatile handle twice.
-+  QualType OperandType = ByAddress ? Address->getType()
-+                                    : HandleType.getUnqualifiedType();
-+  auto *Operand = new (S.Context) OpaqueValueExpr(
-+      Attribute.getLoc(), OperandType, VK_PRValue);
++  QualType OperandType =
++      ByAddress ? Address->getType() : HandleType.getUnqualifiedType();
++  auto *Operand = new (S.Context)
++      OpaqueValueExpr(Attribute.getLoc(), OperandType, VK_PRValue);
 +  Expr *Arguments[] = {Operand};
 +  ExprResult Call = S.BuildCallExpr(nullptr, Close, Close->getExprLoc(),
 +                                    Arguments, Close->getEndLoc());
@@ -26739,8 +27112,8 @@ index 000000000..6837c5b65
 +    ExprResult Checked = Invalid;
 +    if (S.CheckSingleAssignmentConstraints(
 +            HandleType.getUnqualifiedType(), Checked, /*Diagnose=*/false,
-+            /*DiagnoseCFAudited=*/false, /*ConvertRHS=*/false) !=
-+        AssignConvertType::Compatible) {
++            /*DiagnoseCFAudited=*/false,
++            /*ConvertRHS=*/false) != AssignConvertType::Compatible) {
 +      Reject(Invalid->getExprLoc(),
 +             "objc_resource invalid sentinel is not compatible with the "
 +             "handle type; cast the constant explicitly");
@@ -26760,8 +27133,8 @@ index 000000000..6837c5b65
 +           "work into the resource initializer");
 +    return;
 +  }
-+  Variable->addAttr(ObjCResourceAttr::Create(
-+      S.Context, Close, Converted.get(), ByAddress, Call.get(), Attribute));
++  Variable->addAttr(ObjCResourceAttr::Create(S.Context, Close, Converted.get(),
++                                             ByAddress, Call.get(), Attribute));
 +  // The implicit scope-exit action reads this local even without a source use.
 +  Variable->markUsed(S.Context);
 +}
@@ -26774,13 +27147,48 @@ index 000000000..6837c5b65
 +  for (auto [Variable, Owner] : Scopes.Variables) {
 +    (void)Owner;
 +    if (const auto *Cleanup = Variable->getAttr<ObjCCleanupAttr>())
-+      if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCResourceAttr>()) {
-+        S.Diag(Cleanup->getLocation(), S.getDiagnostics().getCustomDiagID(
-+            DiagnosticsEngine::Error, "a variable may have only one cleanup owner"));
++      if (Variable->hasAttr<CleanupAttr>() ||
++          Variable->hasAttr<ObjCResourceAttr>()) {
++        S.Diag(Cleanup->getLocation(),
++               S.getDiagnostics().getCustomDiagID(
++                   DiagnosticsEngine::Error,
++                   "a variable may have only one cleanup owner"));
 +        const_cast<VarDecl *>(Variable)->setInvalidDecl();
 +        Invalid = true;
 +      }
 +    const auto *Resource = Variable->getAttr<ObjCResourceAttr>();
++    if (S.getLangOpts().ObjC3Profile == 3 && !Variable->isInvalidDecl()) {
++      auto Contract =
++          getObjC3ResourceTypeContract(S.Context, Variable->getType());
++      const auto *Cleanup = Variable->getAttr<ObjCCleanupAttr>();
++      const auto *Call = Resource  ? cast<CallExpr>(Resource->getCall())
++                         : Cleanup ? cast<CallExpr>(Cleanup->getCall())
++                                   : nullptr;
++      if (Contract.Cleanup && Call &&
++          !acceptsObjC3ResourceCleanup(S.Context, Contract,
++                                       Call->getDirectCallee())) {
++        S.Diag(Variable->getLocation(),
++               S.getDiagnostics().getCustomDiagID(
++                   DiagnosticsEngine::Error,
++                   "cleanup function for resource '%0' is not associated with "
++                   "its type contract or family; use its declared cleanup"))
++            << Variable;
++        const_cast<VarDecl *>(Variable)->setInvalidDecl();
++        Invalid = true;
++      }
++      if (Resource && Contract.Invalid &&
++          !sameObjC3ResourceConstant(S.Context, Resource->getInvalid(),
++                                     Contract.Invalid->getInvalid())) {
++        S.Diag(Variable->getLocation(),
++               S.getDiagnostics().getCustomDiagID(
++                   DiagnosticsEngine::Error,
++                   "resource '%0' uses an invalid sentinel different from its "
++                   "typedef contract"))
++            << Variable;
++        const_cast<VarDecl *>(Variable)->setInvalidDecl();
++        Invalid = true;
++      }
++    }
 +    if (!Resource || Variable->isInvalidDecl())
 +      continue;
 +    if (!Variable->hasInit()) {
@@ -26793,7 +27201,8 @@ index 000000000..6837c5b65
 +      const_cast<VarDecl *>(Variable)->setInvalidDecl();
 +      Invalid = true;
 +    }
-+    if (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>()) {
++    if (Variable->hasAttr<CleanupAttr>() ||
++        Variable->hasAttr<ObjCCleanupAttr>()) {
 +      S.Diag(Resource->getLocation(),
 +             S.getDiagnostics().getCustomDiagID(
 +                 DiagnosticsEngine::Error,
@@ -26806,10 +27215,10 @@ index 000000000..6837c5b65
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resources.h
 new file mode 100644
-index 000000000..57950511a
+index 000000000..35c7f1e4b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -26819,6 +27228,7 @@ index 000000000..57950511a
 +class ParsedAttr;
 +class Sema;
 +class Stmt;
++void handleObjC3ResourceTypeAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +bool checkObjC3ResourceDeclarations(Sema &S, const Stmt *Body);
@@ -28319,21 +28729,28 @@ index 000000000..ef0b1bc0a
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..749587f0b
+index 000000000..88b7aa16f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
-@@ -0,0 +1,481 @@
-+//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow --------===//
+@@ -0,0 +1,896 @@
++//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow
++//--------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
++#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Analysis/CFG.h"
++#include "clang/Basic/ExceptionSpecificationType.h"
++#include "clang/Basic/SourceManager.h"
 +#include "clang/Sema/Sema.h"
 +#include "llvm/ADT/DenseMap.h"
 +#include "llvm/ADT/SmallPtrSet.h"
++#include <memory>
 +#include <vector>
 +
 +using namespace clang;
@@ -28344,7 +28761,11 @@ index 000000000..749587f0b
 +/// sentinel at runtime, but retaining their provenance explains unsafe uses.
 +class ResourceFlow {
 +  enum : unsigned char {
-+    Live = 1, Empty = 2, Moved = 4, Discarded = 8,
++    Live = 1,
++    Empty = 2,
++    Moved = 4,
++    Discarded = 8,
++    Closed = 16,
 +    Sentinel = Empty | Moved | Discarded,
 +    Fresh = Live | Empty
 +  };
@@ -28352,6 +28773,11 @@ index 000000000..749587f0b
 +  Sema &Actions;
 +  ASTContext &Context;
 +  llvm::DenseMap<const VarDecl *, unsigned> Variables;
++  llvm::DenseMap<const VarDecl *, ObjC3ResourceTypeContract> Contracts;
++  llvm::SmallPtrSet<const VarDecl *, 16> OwnershipDiagnosed, LeakDiagnosed;
++  llvm::SmallPtrSet<const Expr *, 16> CloseAddresses;
++  QualType ReturnType;
++  std::unique_ptr<ObjC3SourceScopes> ReturnScopes;
 +  llvm::DenseMap<const ObjC3ResourceExpr *, unsigned> TakenValues;
 +  llvm::SmallPtrSet<const DeclRefExpr *, 32> Observations;
 +  llvm::SmallPtrSet<const ObjC3ResourceExpr *, 16> DroppedTakes;
@@ -28361,20 +28787,163 @@ index 000000000..749587f0b
 +  const VarDecl *variable(const Expr *Value) const {
 +    if (!Value)
 +      return nullptr;
-+    Value = Value->IgnoreParenImpCasts();
++    Value = Value->IgnoreParenCasts();
 +    const auto *Reference = dyn_cast<DeclRefExpr>(Value);
-+    const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl())
-+                                    : nullptr;
++    const auto *Variable =
++        Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
 +    return Variables.count(Variable) ? Variable : nullptr;
 +  }
 +
 +  void diagnose(const Stmt *Node, const VarDecl *Variable, StringRef Message) {
 +    if (!Diagnosed.insert(Node).second)
 +      return;
-+    Actions.Diag(Node->getBeginLoc(), Actions.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
-+                                         DiagnosticIDs::Error, Message))
++    Actions.Diag(Node->getBeginLoc(),
++                 Actions.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                     DiagnosticIDs::Error, Message))
++        << Variable;
++    OwnershipDiagnosed.insert(Variable);
++    Invalid = true;
++  }
++
++  const FunctionDecl *registeredCleanup(const VarDecl *Variable) const {
++    if (const auto *Resource = Variable->getAttr<ObjCResourceAttr>())
++      return cast<CallExpr>(Resource->getCall())->getDirectCallee();
++    if (const auto *Cleanup = Variable->getAttr<ObjCCleanupAttr>())
++      return cast<CallExpr>(Cleanup->getCall())->getDirectCallee();
++    return nullptr;
++  }
++  const Expr *invalidSentinel(const VarDecl *Variable) const {
++    if (const auto *Resource = Variable->getAttr<ObjCResourceAttr>())
++      return Resource->getInvalid();
++    auto Contract = Contracts.lookup(Variable);
++    return Contract.Invalid ? Contract.Invalid->getInvalid() : nullptr;
++  }
++  const VarDecl *argumentVariable(const Expr *Argument) const {
++    Argument = Argument->IgnoreParenImpCasts();
++    if (const auto *Address = dyn_cast<UnaryOperator>(Argument))
++      if (Address->getOpcode() == UO_AddrOf)
++        Argument = Address->getSubExpr();
++    return variable(Argument);
++  }
++  bool acceptsCleanup(const VarDecl *Variable,
++                      const FunctionDecl *Function) const {
++    if (!Function)
++      return false;
++    auto Contract = Contracts.lookup(Variable);
++    if (Contract.Cleanup)
++      return acceptsObjC3ResourceCleanup(Context, Contract, Function);
++    const FunctionDecl *Registered = registeredCleanup(Variable);
++    return Registered &&
++           Registered->getCanonicalDecl() == Function->getCanonicalDecl();
++  }
++  bool compatibleTypes(const ObjC3ResourceTypeContract &A,
++                       const ObjC3ResourceTypeContract &B) const {
++    if (!A.Cleanup || !B.Cleanup)
++      return false;
++    if (A.Family || B.Family)
++      return A.Family && B.Family &&
++             A.Family->getFamily() == B.Family->getFamily();
++    return A.getCleanupFunction() == B.getCleanupFunction();
++  }
++  void checkLeak(const VarDecl *Variable, const Facts &Values) {
++    if (!(state(Variable, Values) & Live) ||
++        !Contracts.lookup(Variable).Cleanup ||
++        OwnershipDiagnosed.contains(Variable) ||
++        !LeakDiagnosed.insert(Variable).second)
++      return;
++    Actions.Diag(Variable->getLocation(),
++                 Actions.getDiagnostics().getCustomDiagID(
++                     DiagnosticsEngine::Error,
++                     "resource '%0' may leave its scope without cleanup; close "
++                     "it on every path, return its owned type, or register "
++                     "@resource/@cleanup"))
 +        << Variable;
 +    Invalid = true;
++  }
++
++  bool noThrow(const FunctionDecl *Function) const {
++    if (!Function)
++      return false;
++    if (Function->hasAttr<NoThrowAttr>())
++      return true;
++    const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
++    return Prototype &&
++           !isUnresolvedExceptionSpec(Prototype->getExceptionSpecType()) &&
++           Prototype->isNothrow();
++  }
++  bool contains(const Stmt *Owner, const Stmt *Node) const {
++    if (!Owner)
++      return false;
++    if (Owner == Node)
++      return true;
++    if (isa<BlockExpr, LambdaExpr>(Owner))
++      return false;
++    for (const Stmt *Child : Owner->children())
++      if (contains(Child, Node))
++        return true;
++    return false;
++  }
++  bool throwingDestructor(QualType Type) const {
++    Type = Context.getBaseElementType(Type);
++    if (const auto *Record = Type->getAsCXXRecordDecl())
++      if (Record->hasDefinition() && !Record->hasTrivialDestructor())
++        return !noThrow(Record->getDestructor());
++    return false;
++  }
++  bool throwingBody(const Stmt *Node) const {
++    if (!Node)
++      return false;
++    if (isa<CXXThrowExpr, ObjCAtThrowStmt, ObjCMessageExpr, ObjC3ThrowStmt,
++            ObjC3TryExpr>(Node))
++      return true;
++    if (const auto *Call = dyn_cast<CallExpr>(Node))
++      if (!noThrow(Call->getDirectCallee()))
++        return true;
++    if (const auto *Construct = dyn_cast<CXXConstructExpr>(Node))
++      if (!noThrow(Construct->getConstructor()))
++        return true;
++    if (const auto *Declarations = dyn_cast<DeclStmt>(Node))
++      for (const Decl *D : Declarations->decls())
++        if (const auto *Variable = dyn_cast<VarDecl>(D))
++          if (throwingDestructor(Variable->getType()))
++            return true;
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      for (const Expr *Initializer : Lambda->capture_inits())
++        if (throwingBody(Initializer))
++          return true;
++      return false;
++    }
++    if (isa<BlockExpr>(Node))
++      return false;
++    for (const Stmt *Child : Node->children())
++      if (throwingBody(Child))
++        return true;
++    return false;
++  }
++  bool hasThrowingReturnCleanup(const ReturnStmt *Return) const {
++    if (!ReturnScopes)
++      return false;
++    auto Precedes = [&](SourceLocation Registration) {
++      return Actions.getSourceManager().isBeforeInTranslationUnit(
++          Registration, Return->getReturnLoc());
++    };
++    for (auto [Deferred, Owner] : ReturnScopes->Defers)
++      if (contains(Owner, Return) && Precedes(Deferred->getBeginLoc()) &&
++          throwingBody(Deferred->getBody()))
++        return true;
++    for (auto [Variable, Owner] : ReturnScopes->Variables)
++      if (contains(Owner, Return) && Precedes(Variable->getLocation())) {
++        const FunctionDecl *Cleanup = registeredCleanup(Variable);
++        if ((Cleanup && !noThrow(Cleanup)) ||
++            throwingDestructor(Variable->getType()))
++          return true;
++        if (Actions.getLangOpts().ObjCAutoRefCount &&
++            Variable->getType().isDestructedType() != QualType::DK_none &&
++            !Cleanup)
++          return true; // Managed release queues have no owned-return EH model
++                       // yet.
++      }
++    return false;
 +  }
 +
 +  void observe(const Expr *Value) {
@@ -28393,13 +28962,16 @@ index 000000000..749587f0b
 +        !Context.hasSameUnqualifiedType(Value->getType(), Variable->getType()))
 +      return std::nullopt;
 +    Expr::EvalResult Candidate, Invalid;
-+    const Expr *Sentinel = Variable->getAttr<ObjCResourceAttr>()->getInvalid();
-+    if (!Value->EvaluateAsRValue(Candidate, Context) || Candidate.HasSideEffects ||
++    const Expr *Sentinel = invalidSentinel(Variable);
++    if (!Sentinel)
++      return std::nullopt;
++    if (!Value->EvaluateAsRValue(Candidate, Context) ||
++        Candidate.HasSideEffects ||
 +        !Sentinel->EvaluateAsRValue(Invalid, Context))
 +      return std::nullopt;
 +    if (Candidate.Val.isInt() && Invalid.Val.isInt())
 +      return llvm::APSInt::isSameValue(Candidate.Val.getInt(),
-+                                      Invalid.Val.getInt());
++                                       Invalid.Val.getInt());
 +    if (Candidate.Val.isLValue() && Invalid.Val.isLValue())
 +      return Candidate.Val.getLValueBase() == Invalid.Val.getLValueBase() &&
 +             Candidate.Val.getLValueOffset() == Invalid.Val.getLValueOffset() &&
@@ -28410,8 +28982,8 @@ index 000000000..749587f0b
 +
 +  bool zeroSentinel(const VarDecl *Variable) const {
 +    Expr::EvalResult Result;
-+    if (!Variable->getAttr<ObjCResourceAttr>()->getInvalid()->EvaluateAsRValue(
-+            Result, Context))
++    const Expr *Sentinel = invalidSentinel(Variable);
++    if (!Sentinel || !Sentinel->EvaluateAsRValue(Result, Context))
 +      return false;
 +    return (Result.Val.isInt() && Result.Val.getInt().isZero()) ||
 +           (Result.Val.isLValue() && Result.Val.isNullPointer());
@@ -28443,8 +29015,28 @@ index 000000000..749587f0b
 +    if (const auto *Declaration = dyn_cast<DeclStmt>(Node))
 +      for (const Decl *D : Declaration->decls())
 +        if (const auto *Variable = dyn_cast<VarDecl>(D)) {
-+          if (Variable->hasAttr<ObjCResourceAttr>() && !Variable->isInvalidDecl())
++          auto Contract =
++              getObjC3ResourceTypeContract(Context, Variable->getType());
++          if (!Contract.Cleanup && Variable->getInit()) {
++            auto Source = getObjC3ResourceTypeContract(
++                Context, Variable->getInit()->IgnoreParenCasts()->getType());
++            if (Source.Cleanup) {
++              if (Variable->hasAttr<ObjCResourceAttr>() ||
++                  Variable->hasAttr<ObjCCleanupAttr>())
++                Contract = Source;
++              else
++                diagnose(Node, Variable,
++                         "initializing untracked resource '%0' erases its "
++                         "cleanup contract; use the acquired value's typedef "
++                         "or register explicit cleanup");
++            }
++          }
++          if (!Variable->isInvalidDecl() && Variable->hasLocalStorage() &&
++              !Variable->getType()->isReferenceType() &&
++              (Variable->hasAttr<ObjCResourceAttr>() || Contract.Cleanup)) {
 +            Variables.try_emplace(Variable, Variables.size());
++            Contracts[Variable] = Contract;
++          }
 +          collect(Variable->getInit());
 +          if (Variable->getType()->isReferenceType())
 +            if (const VarDecl *Source = variable(Variable->getInit()))
@@ -28467,7 +29059,8 @@ index 000000000..749587f0b
 +      return;
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
-+      for (const BlockDecl::Capture &Capture : Block->getBlockDecl()->captures())
++      for (const BlockDecl::Capture &Capture :
++           Block->getBlockDecl()->captures())
 +        if (Variables.count(Capture.getVariable()))
 +          diagnose(Node, Capture.getVariable(),
 +                   "strict-system resource '%0' requires ownership-aware "
@@ -28482,8 +29075,89 @@ index 000000000..749587f0b
 +          DroppedTakes.insert(Operation);
 +      }
 +    }
++    if (const auto *Return = dyn_cast<ReturnStmt>(Node))
++      if (const Expr *Result = Return->getRetValue()) {
++        const VarDecl *SourceVariable = variable(Result);
++        auto Source = SourceVariable
++                          ? Contracts.lookup(SourceVariable)
++                          : getObjC3ResourceTypeContract(
++                                Context, Result->IgnoreParenCasts()->getType());
++        auto Destination = getObjC3ResourceTypeContract(Context, ReturnType);
++        if (Source.Cleanup && !compatibleTypes(Source, Destination)) {
++          if (SourceVariable)
++            diagnose(Return, SourceVariable,
++                     "returning resource '%0' erases or changes its cleanup "
++                     "family; return the compatible owned typedef");
++          else if (Diagnosed.insert(Return).second) {
++            Actions.Diag(Return->getReturnLoc(),
++                         Actions.getDiagnostics().getCustomDiagID(
++                             DiagnosticsEngine::Error,
++                             "returning an acquired resource erases or changes "
++                             "its cleanup family; return its owned typedef"));
++            Invalid = true;
++          }
++        }
++        if (Destination.Cleanup && hasThrowingReturnCleanup(Return) &&
++            !(Destination.Invalid &&
++              sameObjC3ResourceConstant(Context, Result,
++                                        Destination.Invalid->getInvalid())) &&
++            Diagnosed.insert(Return).second) {
++          Actions.Diag(Return->getReturnLoc(),
++                       Actions.getDiagnostics().getCustomDiagID(
++                           DiagnosticsEngine::Error,
++                           "owned resource return has no rollback model for "
++                           "throwing scope cleanup; finish throwing actions "
++                           "before transfer or use nonthrowing cleanup"));
++          if (SourceVariable)
++            OwnershipDiagnosed.insert(SourceVariable);
++          Invalid = true;
++        }
++      }
++    if (const auto *Call = dyn_cast<CallExpr>(Node)) {
++      const FunctionDecl *Function = Call->getDirectCallee();
++      if (Unused &&
++          getObjC3ResourceTypeContract(Context, Call->getType()).Cleanup) {
++        Actions.Diag(
++            Call->getExprLoc(),
++            Actions.getDiagnostics().getCustomDiagID(
++                DiagnosticsEngine::Error,
++                "discarding a value with requires_cleanup loses ownership; "
++                "bind it to a resource or call its cleanup"));
++        Invalid = true;
++      }
++      if (isObjC3ResourceCleanupFunction(Function))
++        for (const Expr *Argument : Call->arguments())
++          if (!argumentVariable(Argument)) {
++            auto Contract = getObjC3ResourceTypeContract(
++                Context, Argument->IgnoreParenCasts()->getType());
++            if (Contract.Cleanup &&
++                !acceptsObjC3ResourceCleanup(Context, Contract, Function) &&
++                Diagnosed.insert(Call).second) {
++              Actions.Diag(
++                  Call->getExprLoc(),
++                  Actions.getDiagnostics().getCustomDiagID(
++                      DiagnosticsEngine::Error,
++                      "cleanup function is not associated with the acquired "
++                      "resource's family; use its declared cleanup"));
++              Invalid = true;
++            }
++          }
++      for (const Expr *Argument : Call->arguments())
++        if (const VarDecl *Variable = argumentVariable(Argument))
++          if (acceptsCleanup(Variable, Function) ||
++              isObjC3ResourceCleanupFunction(Function)) {
++            const Expr *Operand = Argument->IgnoreParenImpCasts();
++            if (const auto *Address = dyn_cast<UnaryOperator>(Operand)) {
++              if (Address->getOpcode() == UO_AddrOf) {
++                CloseAddresses.insert(Address);
++                Operand = Address->getSubExpr();
++              }
++            }
++            observe(Operand);
++          }
++    }
 +    if (const auto *Unary = dyn_cast<UnaryOperator>(Node))
-+      if (Unary->getOpcode() == UO_AddrOf)
++      if (Unary->getOpcode() == UO_AddrOf && !CloseAddresses.contains(Unary))
 +        if (const VarDecl *Variable = variable(Unary->getSubExpr()))
 +          diagnose(Node, Variable,
 +                   "strict-system cannot track escaped storage of resource "
@@ -28506,7 +29180,8 @@ index 000000000..749587f0b
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Node))
 +      observeCondition(Conditional->getCond());
 +    for (const Stmt *Child : Node->children()) {
-+      bool ChildUnused = isa<CompoundStmt>(Node) && isa_and_nonnull<Expr>(Child);
++      bool ChildUnused =
++          isa<CompoundStmt>(Node) && isa_and_nonnull<Expr>(Child);
 +      if (isa<ParenExpr, ExprWithCleanups>(Node))
 +        ChildUnused = Unused;
 +      if (const auto *Cast = dyn_cast<ExplicitCastExpr>(Node))
@@ -28524,7 +29199,8 @@ index 000000000..749587f0b
 +    auto Found = Variables.find(Variable);
 +    return Found == Variables.end() ? Fresh : Values[Found->second];
 +  }
-+  void assign(const VarDecl *Variable, unsigned char Value, Facts &Values) const {
++  void assign(const VarDecl *Variable, unsigned char Value,
++              Facts &Values) const {
 +    auto Found = Variables.find(Variable);
 +    if (Found != Variables.end())
 +      Values[Found->second] = Value;
@@ -28532,7 +29208,7 @@ index 000000000..749587f0b
 +  unsigned char value(const Expr *Expression, const VarDecl *Target,
 +                      const Facts &Values) const {
 +    if (!Expression)
-+      return Fresh;
++      return Empty;
 +    if (auto Match = isSentinel(Expression, Target))
 +      return *Match ? Empty : Live;
 +    Expression = Expression->IgnoreParenImpCasts();
@@ -28560,7 +29236,7 @@ index 000000000..749587f0b
 +
 +  void checkRead(const Stmt *Node, const VarDecl *Variable, const Facts &Values,
 +                 bool Diagnose) {
-+    if (Diagnose && (state(Variable, Values) & (Moved | Discarded)))
++    if (Diagnose && (state(Variable, Values) & (Moved | Discarded | Closed)))
 +      diagnose(Node, Variable,
 +               "resource '%0' may have been moved or discarded; test its "
 +               "invalid sentinel or reinitialize it before using it as valid");
@@ -28568,13 +29244,29 @@ index 000000000..749587f0b
 +
 +  void transfer(const CFGBlock &Block, Facts &Values, bool Diagnose) {
 +    for (const CFGElement &Element : Block) {
++      if (auto End = Element.getAs<CFGLifetimeEnds>()) {
++        const VarDecl *Variable = End->getVarDecl();
++        if (Variables.count(Variable)) {
++          if (Diagnose)
++            checkLeak(Variable, Values);
++          assign(Variable, Empty, Values);
++        }
++        continue;
++      }
++      if (auto Cleanup = Element.getAs<CFGCleanupFunction>()) {
++        if (Variables.count(Cleanup->getVarDecl()))
++          assign(Cleanup->getVarDecl(), Closed, Values);
++        continue;
++      }
 +      if (auto Resource = Element.getAs<CFGObjC3ResourceAction>()) {
 +        if (Element.getKind() == CFGElement::ObjC3ResourceInvalidate) {
 +          const auto *Operation =
 +              dyn_cast<ObjC3ResourceExpr>(Resource->getTriggerStmt());
 +          assign(Resource->getVarDecl(),
-+                 Operation && Operation->getKind() == ObjC3ResourceExpr::Kind::Take
-+                     ? Moved : Discarded,
++                 Operation &&
++                         Operation->getKind() == ObjC3ResourceExpr::Kind::Take
++                     ? Moved
++                     : Discarded,
 +                 Values);
 +        }
 +        continue;
@@ -28612,16 +29304,41 @@ index 000000000..749587f0b
 +      }
 +      auto Initialize = [&](const VarDecl *Target, const Expr *Source,
 +                            bool Assignment) {
-+        if (!Variables.count(Target))
++        const VarDecl *Origin = variable(Source);
++        if (!Variables.count(Target)) {
++          if (Origin && Contracts.lookup(Origin).Cleanup && Diagnose)
++            diagnose(Node, Origin,
++                     "copying resource '%0' into untracked storage erases its "
++                     "cleanup contract; preserve typed ownership or borrow it "
++                     "through a call");
 +          return;
-+        if (Diagnose && Assignment && (state(Target, Values) & Live))
++        }
++        if (Diagnose && (Assignment || Source) &&
++            (state(Target, Values) & Live))
 +          diagnose(Node, Target,
-+                   "assignment may overwrite live resource '%0'; use reset "
-+                   "to close the current value first");
-+        if (Diagnose && variable(Source))
++                   "assignment may overwrite live resource '%0'; use reset to "
++                   "close the current value first");
++        if (Diagnose && Origin)
 +          diagnose(Node, Target,
 +                   "initializing resource '%0' from another resource copies "
 +                   "ownership; use take to transfer it");
++        if (Source && Diagnose) {
++          auto SourceContract = getObjC3ResourceTypeContract(
++              Context, Source->IgnoreParenCasts()->getType());
++          auto TargetContract = Contracts.lookup(Target);
++          if (SourceContract.Cleanup && TargetContract.Cleanup &&
++              !compatibleTypes(SourceContract, TargetContract))
++            diagnose(Node, Target,
++                     "initializing resource '%0' mixes distinct cleanup "
++                     "families; preserve the source resource type");
++          if (SourceContract.Cleanup)
++            if (const FunctionDecl *Cleanup = registeredCleanup(Target))
++              if (!acceptsObjC3ResourceCleanup(Context, SourceContract,
++                                               Cleanup))
++                diagnose(Node, Target,
++                         "cleanup for resource '%0' does not match the "
++                         "acquired value's family; use its declared cleanup");
++        }
 +        assign(Target, value(Source, Target, Values), Values);
 +      };
 +      if (const auto *Declaration = dyn_cast<DeclStmt>(Node))
@@ -28630,7 +29347,10 @@ index 000000000..749587f0b
 +            Initialize(Variable, Variable->getInit(), false);
 +      if (const auto *Binary = dyn_cast<BinaryOperator>(Node))
 +        if (Binary->isAssignmentOp())
-+          Initialize(variable(Binary->getLHS()), Binary->getRHS(), true);
++          if (const auto *Reference = dyn_cast<DeclRefExpr>(
++                  Binary->getLHS()->IgnoreParenImpCasts()))
++            Initialize(dyn_cast<VarDecl>(Reference->getDecl()),
++                       Binary->getRHS(), true);
 +      if (const auto *Unary = dyn_cast<UnaryOperator>(Node))
 +        if (Unary->isIncrementDecrementOp())
 +          if (const VarDecl *Variable = variable(Unary->getSubExpr())) {
@@ -28641,31 +29361,117 @@ index 000000000..749587f0b
 +                       "reset operation");
 +            assign(Variable, Fresh, Values);
 +          }
++      if (const auto *Return = dyn_cast<ReturnStmt>(Node)) {
++        const Expr *Result = Return->getRetValue();
++        if (Result) {
++          const VarDecl *Source = variable(Result);
++          auto SourceContract =
++              Source ? Contracts.lookup(Source)
++                     : getObjC3ResourceTypeContract(
++                           Context, Result->IgnoreParenCasts()->getType());
++          if (SourceContract.Cleanup) {
++            auto Destination =
++                getObjC3ResourceTypeContract(Context, ReturnType);
++            if (!compatibleTypes(SourceContract, Destination)) {
++              if (Diagnose) {
++                if (Source)
++                  diagnose(
++                      Node, Source,
++                      "returning resource '%0' erases or changes its cleanup "
++                      "family; return the compatible owned typedef");
++                else if (Diagnosed.insert(Return).second) {
++                  Actions.Diag(
++                      Return->getReturnLoc(),
++                      Actions.getDiagnostics().getCustomDiagID(
++                          DiagnosticsEngine::Error,
++                          "returning an acquired resource erases or changes "
++                          "its cleanup family; return its owned typedef"));
++                  Invalid = true;
++                }
++              }
++            } else if (Source) {
++              if (registeredCleanup(Source)) {
++                if (Diagnose)
++                  diagnose(
++                      Node, Source,
++                      "returning registered resource '%0' copies ownership; "
++                      "use take from a resource with an invalid sentinel");
++              } else {
++                checkRead(Node, Source, Values, Diagnose);
++                assign(Source, Moved, Values);
++              }
++            }
++          }
++        }
++      }
 +      if (const auto *Call = dyn_cast<CallExpr>(Node)) {
 +        const FunctionDecl *Function = Call->getDirectCallee();
 +        for (const Expr *Argument : Call->arguments()) {
-+          const VarDecl *Variable = variable(Argument);
-+          if (!Variable)
++          const VarDecl *Variable = argumentVariable(Argument);
++          auto Contract =
++              Variable ? Contracts.lookup(Variable)
++                       : getObjC3ResourceTypeContract(
++                             Context, Argument->IgnoreParenCasts()->getType());
++          bool Closing =
++              Variable
++                  ? acceptsCleanup(Variable, Function)
++                  : acceptsObjC3ResourceCleanup(Context, Contract, Function);
++          bool KnownCleanup = isObjC3ResourceCleanupFunction(Function);
++          if (!Variable) {
++            if (Diagnose && Contract.Cleanup && KnownCleanup && !Closing &&
++                Diagnosed.insert(Call).second) {
++              Actions.Diag(
++                  Call->getExprLoc(),
++                  Actions.getDiagnostics().getCustomDiagID(
++                      DiagnosticsEngine::Error,
++                      "cleanup function is not associated with the acquired "
++                      "resource's family; use its declared cleanup"));
++              Invalid = true;
++            }
 +            continue;
-+          if (Argument->isGLValue() && Diagnose)
++          }
++          if (KnownCleanup && !Closing && Diagnose)
++            diagnose(
++                Node, Variable,
++                "cleanup function for resource '%0' is not associated with its "
++                "type contract or family; use its declared cleanup");
++          if (Closing) {
++            if (registeredCleanup(Variable)) {
++              if (Diagnose)
++                diagnose(Node, Variable,
++                         "manual close of registered resource '%0' can close "
++                         "it twice; use discard or close the result of take");
++            } else {
++              if (Diagnose &&
++                  (state(Variable, Values) & (Moved | Discarded | Closed)))
++                diagnose(
++                    Node, Variable,
++                    "resource '%0' may already be closed, moved, or invalid; "
++                    "test its sentinel or reinitialize it before cleanup");
++              unsigned char Previous = state(Variable, Values);
++              assign(Variable,
++                     (Previous & Live ? Closed : 0) |
++                         (Previous & (Empty | Moved | Discarded | Closed)),
++                     Values);
++            }
++          } else if (Argument->isGLValue() && Diagnose)
 +            diagnose(Node, Variable,
 +                     "strict-system cannot expose resource '%0' through a "
 +                     "reference argument; use resource operations directly");
-+          const auto *Close = cast<CallExpr>(
-+              Variable->getAttr<ObjCResourceAttr>()->getCall());
-+          if (Function && Close->getDirectCallee() == Function && Diagnose)
-+            diagnose(Node, Variable,
-+                     "manual close of registered resource '%0' can close it "
-+                     "twice; use discard or close the result of take");
 +        }
 +      }
 +    }
 +  }
 +
-+  bool refineVariable(const VarDecl *Variable, bool Valid, Facts &Values) const {
++  bool refineVariable(const VarDecl *Variable, bool Valid,
++                      Facts &Values) const {
 +    if (!Variable || Variable->getType().isVolatileQualified())
 +      return true;
-+    unsigned char Remaining = state(Variable, Values) & (Valid ? Live : Sentinel);
++    // A manual close consumes ownership without promising sentinel stores.
++    // Comparing the unchanged scalar must never resurrect a closed handle.
++    unsigned char Remaining =
++        (state(Variable, Values) & (Valid ? Live : Sentinel)) |
++        (state(Variable, Values) & Closed);
 +    assign(Variable, Remaining, Values);
 +    return Remaining != 0;
 +  }
@@ -28692,8 +29498,8 @@ index 000000000..749587f0b
 +          Constant = Binary->getLHS();
 +        }
 +        if (Variable && isSentinel(Constant, Variable) == true)
-+          return refineVariable(Variable, Truth == (Binary->getOpcode() == BO_NE),
-+                                Values);
++          return refineVariable(
++              Variable, Truth == (Binary->getOpcode() == BO_NE), Values);
 +      }
 +      // Individual short-circuit CFG branches retain the earlier operand's
 +      // facts. Replaying a compound test can resurrect a value already moved
@@ -28714,16 +29520,29 @@ index 000000000..749587f0b
 +      : Actions(Actions), Context(Actions.Context) {}
 +
 +  bool check(Decl *Callable, Stmt *Body) {
++    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(Callable))
++      ReturnType = Function->getReturnType();
++    else if (const auto *Method = dyn_cast_or_null<ObjCMethodDecl>(Callable))
++      ReturnType = Method->getReturnType();
++    else if (const auto *Block = dyn_cast_or_null<BlockDecl>(Callable))
++      if (const TypeSourceInfo *Signature = Block->getSignatureAsWritten())
++        if (const auto *Prototype =
++                Signature->getType()->getAs<FunctionProtoType>())
++          ReturnType = Prototype->getReturnType();
++    if (getObjC3ResourceTypeContract(Context, ReturnType).Cleanup)
++      ReturnScopes = std::make_unique<ObjC3SourceScopes>(Body);
 +    collect(Body);
 +    if (Variables.empty())
 +      return Invalid;
 +    CFG::BuildOptions Options;
 +    Options.setAllAlwaysAdd();
 +    Options.AddEHEdges = true;
++    Options.AddLifetime = true;
 +    Options.AddInitializers = true;
 +    Options.AddImplicitDtors = true;
 +    Options.AddTemporaryDtors = true;
-+    std::unique_ptr<CFG> Graph = CFG::buildCFG(Callable, Body, &Context, Options);
++    std::unique_ptr<CFG> Graph =
++        CFG::buildCFG(Callable, Body, &Context, Options);
 +    if (!Graph) {
 +      diagnose(Body, Variables.begin()->first,
 +               "strict-system cannot prove ownership of resource '%0' across "
@@ -28793,6 +29612,12 @@ index 000000000..749587f0b
 +        Facts Values = Inputs[Block->getBlockID()].Values;
 +        transfer(*Block, Values, true);
 +      }
++    // General native EH paths can leave trivial locals without lifetime
++    // elements. Their live facts still reach the function exit.
++    const State &Exit = Inputs[Graph->getExit().getBlockID()];
++    if (Exit.Reachable)
++      for (auto [Variable, Index] : Variables)
++        checkLeak(Variable, Exit.Values);
 +    return Invalid;
 +  }
 +};
@@ -29845,4 +30670,309 @@ index 000000000..4870a5922
 +  longjmp(target, 1);
 +}
 +}
++#endif
+diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
+new file mode 100644
+index 000000000..47e198904
+--- /dev/null
++++ b/clang/include/clang/AST/ObjC3ResourceTypes.h
+@@ -0,0 +1,107 @@
++//===--- ObjC3ResourceTypes.h - Scalar resource typedef contracts -*- C++
++//-*-===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_AST_OBJC3RESOURCETYPES_H
++#define LLVM_CLANG_AST_OBJC3RESOURCETYPES_H
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Expr.h"
++
++namespace clang {
++struct ObjC3ResourceTypeContract {
++  const ObjCRequiresCleanupAttr *Cleanup = nullptr;
++  const ObjCResourceFamilyAttr *Family = nullptr;
++  const ObjCInvalidAttr *Invalid = nullptr;
++  const FunctionDecl *getCleanupFunction() const {
++    const auto *Reference =
++        Cleanup
++            ? dyn_cast<DeclRefExpr>(Cleanup->getClose()->IgnoreParenImpCasts())
++            : nullptr;
++    const auto *Function =
++        Reference ? dyn_cast<FunctionDecl>(Reference->getDecl()) : nullptr;
++    return Function ? Function->getCanonicalDecl() : nullptr;
++  }
++};
++
++inline ObjC3ResourceTypeContract
++getObjC3ResourceTypeContract(const ASTContext &Context, QualType Type) {
++  ObjC3ResourceTypeContract Result;
++  while (!Type.isNull()) {
++    if (const auto *Alias = dyn_cast<TypedefType>(Type.getTypePtr())) {
++      const TypedefNameDecl *Declaration = Alias->getDecl();
++      if (!Result.Cleanup)
++        Result.Cleanup = Declaration->getAttr<ObjCRequiresCleanupAttr>();
++      if (!Result.Family)
++        Result.Family = Declaration->getAttr<ObjCResourceFamilyAttr>();
++      if (!Result.Invalid)
++        Result.Invalid = Declaration->getAttr<ObjCInvalidAttr>();
++    }
++    QualType Next = Type.getSingleStepDesugaredType(Context);
++    if (Next == Type)
++      break;
++    Type = Next;
++  }
++  return Result;
++}
++
++inline bool isObjC3ResourceCleanupFunction(const FunctionDecl *Function) {
++  if (!Function)
++    return false;
++  for (const FunctionDecl *Redeclaration : Function->redecls())
++    for (const auto *Association :
++         Redeclaration->specific_attrs<ObjCResourceCloseForAttr>())
++      if (!Association->getResourceTypedef()->isInvalidDecl())
++        return true;
++  return false;
++}
++
++inline bool
++acceptsObjC3ResourceCleanup(const ASTContext &Context,
++                            const ObjC3ResourceTypeContract &Contract,
++                            const FunctionDecl *Function) {
++  if (!Function || !Contract.Cleanup)
++    return false;
++  if (Function->getCanonicalDecl() == Contract.getCleanupFunction())
++    return true;
++  if (!Contract.Family)
++    return false;
++  for (const FunctionDecl *Redeclaration : Function->redecls())
++    for (const auto *Association :
++         Redeclaration->specific_attrs<ObjCResourceCloseForAttr>()) {
++      const TypedefNameDecl *Alias = Association->getResourceTypedef();
++      if (Alias->isInvalidDecl())
++        continue;
++      auto Other = getObjC3ResourceTypeContract(
++          Context,
++          Context.getTypedefType(ElaboratedTypeKeyword::None, {}, Alias));
++      if (Other.Family &&
++          Other.Family->getFamily() == Contract.Family->getFamily())
++        return true;
++    }
++  return false;
++}
++
++inline bool sameObjC3ResourceConstant(const ASTContext &Context,
++                                      const Expr *Left,
++                                      const ASTContext &RightContext,
++                                      const Expr *Right) {
++  Expr::EvalResult A, B;
++  if (!Left || !Right || !Left->EvaluateAsRValue(A, Context) ||
++      !Right->EvaluateAsRValue(B, RightContext) || A.HasSideEffects ||
++      B.HasSideEffects)
++    return false;
++  if (A.Val.isInt() && B.Val.isInt())
++    return llvm::APSInt::isSameValue(A.Val.getInt(), B.Val.getInt());
++  if (A.Val.isLValue() && B.Val.isLValue())
++    return A.Val.getLValueBase() == B.Val.getLValueBase() &&
++           A.Val.getLValueOffset() == B.Val.getLValueOffset() &&
++           A.Val.isLValueOnePastTheEnd() == B.Val.isLValueOnePastTheEnd();
++  return false;
++}
++inline bool sameObjC3ResourceConstant(const ASTContext &Context,
++                                      const Expr *Left, const Expr *Right) {
++  return sameObjC3ResourceConstant(Context, Left, Context, Right);
++}
++} // namespace clang
++#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h b/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h
+new file mode 100644
+index 000000000..fd21712a9
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/resource-type-contracts.h
+@@ -0,0 +1,19 @@
++#ifndef OBJC3_RESOURCE_TYPES_PCH_H
++#define OBJC3_RESOURCE_TYPES_PCH_H
++#ifdef __cplusplus
++extern "C" {
++#endif
++void close_type_handle(int) __attribute__((nothrow));
++void wrong_type_close(int) __attribute__((nothrow));
++#ifdef __cplusplus
++}
++#endif
++@requires_cleanup(close_type_handle) @resource_family(PCHHandles) @invalid(-1)
++typedef int PCHHandle;
++@requires_cleanup(wrong_type_close) @resource_family(PCHOther) @invalid(-1)
++typedef int OtherPCHHandle;
++typedef PCHHandle PCHAlias;
++static inline void pch_resource_owner(int input) {
++  @resource(close_type_handle, invalid: -1) PCHAlias value = input;
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m b/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m
+new file mode 100644
+index 000000000..8c1cb8553
+--- /dev/null
++++ b/clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -fsyntax-only -verify %s
++void imported_family(void) {
++  PCHAlias value = 3;
++  wrong_type_close(value); // expected-error {{not associated with its type contract or family}}
++}
++void imported_requirement(void) {
++  PCHAlias value = 3; // expected-error {{may leave its scope without cleanup}}
++}
+diff --git a/clang/test/ObjC3/AST/resource-type-contracts-pch.m b/clang/test/ObjC3/AST/resource-type-contracts-pch.m
+new file mode 100644
+index 000000000..f4092791a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/resource-type-contracts-pch.m
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o - -verify %s | FileCheck %s --check-prefix=IR
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.cxx.pch %S/Inputs/resource-type-contracts.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc3-profile=strict-system -fobjc-runtime=gnustep-2.2 -include-pch %t.cxx.pch -fsyntax-only -verify %s
++// expected-no-diagnostics
++void pch_contract_consumer(void) {
++  pch_resource_owner(3);
++  PCHAlias value = 4;
++  close_type_handle(value);
++}
++// IR: call void @close_type_handle(i32
+diff --git a/clang/test/ObjC3/Sema/resource-type-contracts.m b/clang/test/ObjC3/Sema/resource-type-contracts.m
+new file mode 100644
+index 000000000..2f9016b12
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/resource-type-contracts.m
+@@ -0,0 +1,129 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -fsyntax-only -verify=common %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=common,strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=common,strict %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -fsyntax-only -verify=common,strict %s
++void close_fd(int) __attribute__((nothrow));
++void close_stream(int) __attribute__((nothrow));
++void close_address(int *) __attribute__((nothrow));
++void close_alternate(int) __attribute__((nothrow));
++void observe_handle(int) __attribute__((nothrow));
++void possibly_throw(void);
++@requires_cleanup(close_fd) @resource_family(Descriptors) @invalid(-1) typedef int FD;
++typedef int Stream __attribute__((objc_requires_cleanup(close_stream), objc_resource_family(Streams), objc_invalid(0)));
++@requires_cleanup(close_alternate) @resource_family(Descriptors) @invalid(-1) typedef int AlternateFD;
++@requires_cleanup(close_address) @invalid(0) typedef int AddressHandle;
++typedef FD FDAlias;
++FD open_fd(void) __attribute__((nothrow));
++AddressHandle open_address(void) __attribute__((nothrow));
++void manual_cleanup(void) {
++  FDAlias value = open_fd();
++  close_fd(value);
++}
++void guarded_cleanup(void) {
++  FD value = open_fd();
++  if(value != -1)close_fd(value);
++}
++void address_cleanup(void) {
++  AddressHandle value = open_address();
++  close_address(&value);
++}
++void automatic_cleanup(void) {
++  @resource(close_fd, invalid: -1) FD value = open_fd();
++}
++void deferred_cleanup(void) {
++  FD value = open_fd();
++  defer { close_fd(value); }
++}
++void same_family_cleanup(void) {
++  FD value = open_fd();
++  close_alternate(value);
++}
++FD transfer_return(void) {
++  FD value = open_fd();
++  return value;
++}
++FD registered_transfer(void) {
++  @resource(close_fd, invalid: -1) FD value = open_fd();
++  return take(value);
++}
++FD direct_transfer(void) { return open_fd(); }
++void forgotten(void) {
++  FD value = open_fd(); // strict-error {{may leave its scope without cleanup}}
++}
++void conditional_leak(int condition) {
++  FD value = open_fd(); // strict-error {{may leave its scope without cleanup}}
++  if(condition)close_fd(value);
++}
++void native_exception_leak(void) {
++  FD value = open_fd(); // strict-error {{may leave its scope without cleanup}}
++  possibly_throw();
++  close_fd(value);
++}
++void repeated_cleanup(void) {
++  FD value = open_fd();
++  close_fd(value);
++  close_fd(value); // strict-error {{may already be closed, moved, or invalid}}
++}
++void manual_close_does_not_invalidate(void) {
++  FD value = open_fd();
++  close_fd(value);
++  if(value != -1)observe_handle(value); // strict-error {{may have been moved or discarded}}
++}
++void wrong_family(void) {
++  FD value = open_fd();
++  close_stream(value); // strict-error {{not associated with its type contract or family}}
++}
++void wrong_family_temporary(void) {
++  close_stream(open_fd()); // strict-error {{not associated with the acquired resource's family}}
++}
++void wrong_automatic_cleanup(void) {
++  @resource(close_stream, invalid: -1) FD value = open_fd(); // strict-error {{not associated with its type contract or family}}
++}
++void wrong_sentinel(void) {
++  @resource(close_fd, invalid: 0) FD value = open_fd(); // strict-error {{sentinel different from its typedef contract}}
++}
++void dropped_acquisition(void) {
++  open_fd(); // strict-error {{discarding a value with requires_cleanup loses ownership}}
++}
++void erased_local(void) {
++  int value = open_fd(); // strict-error {{erases its cleanup contract}}
++  observe_handle(value);
++}
++int erased_return(void) { return open_fd(); } // strict-error {{returning an acquired resource erases or changes its cleanup family}}
++FD unsafe_registered_return(void) {
++  @resource(close_fd, invalid: -1) FD value = open_fd();
++  return value; // strict-error {{returning registered resource}}
++}
++FD throwing_return_cleanup(void) {
++  FD value = open_fd();
++  defer { possibly_throw(); }
++  return value; // strict-error {{owned resource return has no rollback model}}
++}
++FD empty_throwing_return_cleanup(void) {
++  defer { possibly_throw(); }
++  return -1;
++}
++void loop_leak(int skip) {
++  for(int index = 0; index != 2; ++index) {
++    FD value = open_fd(); // strict-error {{may leave its scope without cleanup}}
++    if(skip)continue;
++    close_fd(value);
++  }
++}
++void loop_cleanup(void) {
++  for(int index = 0; index != 2; ++index) {
++    FD value = open_fd();
++    close_fd(value);
++  }
++}
++// Contradictory contracts are ill-formed in every profile.
++@invalid(0) typedef FD BadSentinel; // common-error {{cannot change its inherited invalid sentinel}}
++@resource_family(Streams) typedef FD BadFamily; // common-error {{cannot change its inherited resource family}}
++@requires_cleanup(close_stream) typedef FD BadCleanup; // common-error {{cannot change its inherited cleanup function}}
++@requires_cleanup(close_fd) typedef float BadStorage; // common-error {{require a nondependent ordinary integer, enum, or pointer handle}}
++int runtime_sentinel(void);
++@invalid(runtime_sentinel()) typedef int NonConstant; // common-error {{invalid sentinel must be constant}}
++#ifdef __cplusplus
++using UsingFD = FD;
++UsingFD alias_return(void) { UsingFD value = open_fd(); return value; }
 +#endif

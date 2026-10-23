@@ -82,8 +82,9 @@ remain independent.
 Native Objective-C async definitions, public spawn/isolation/Sendable, complete
 strict profiles and native AArch64 qualification remain outstanding. Reference
 optional access follows Part 3 v1, which deliberately excludes scalar/struct
-optional chaining. Resource cleanup still lacks the complete type-directed and
-borrow/lifetime surface from Part 8.
+optional chaining. Borrow/lifetime and explicit capture rules from Part 8 remain
+outstanding. Resource field annotations are deliberately rejected in v1 under
+Part 8 §8.3.6; aggregate-resource lowering is a separate v2 capability.
 
 The unvalidated implementation batch adds contextual public `take`, `reset`
 and `discard`, prefix `@resource(F, invalid: X)` declarations, resource AST import
@@ -107,7 +108,25 @@ actions registered afterward remain diagnosed. Initializer calls, completed
 inner scopes, control-statement scopes and nested callable ownership retain
 separate registration boundaries. This is a local direct-call analysis; it does
 not claim interprocedural wrapper or arbitrary jump-buffer alias analysis.
-Combined validation is deferred until a larger batch is ready.
+The next authored slice adds typedef/using resource contracts: public
+`@requires_cleanup`, `@resource_family` and `@invalid`, with canonical GNU header
+forms recorded in B.8.7. Cleanup associations survive redeclarations, PCH and AST
+import. Structural matching and importer merge checks distinguish resource
+families, callbacks and converted sentinel values while retaining the scalar
+ABI. Alias redefinitions cannot silently change an inherited contract.
+
+Strict-system flow now tracks automatic typed handles with manual, deferred or
+automatic cleanup, typed ownership returns, selected branches, loops and native
+exception exits. It diagnoses missing cleanup, repeated/wrong-family closes,
+untracked storage, dropped acquisitions and incompatible ownership returns.
+Manual close has a separate consumed state: comparing an unchanged handle to
+its sentinel cannot resurrect ownership. Typed owned returns across potentially
+throwing scope cleanup are explicitly rejected until their rollback is modeled;
+nonthrowing actions and known-invalid returns remain admitted. This slice does
+not claim global/heap ownership, borrowed escapes, explicit capture transfer or
+complete strict-system conformance. Parser/Sema, source/PCH, import/identity and
+runtime fixtures accompany the implementation; no new execution result is
+claimed. Combined validation is deferred until a larger batch is ready.
 
 ## Active completion sequence
 

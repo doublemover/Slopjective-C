@@ -355,7 +355,27 @@ static void cleanup_ordering(void) {
   expect(3214);
 #endif
 }
+@requires_cleanup(close_resource) @resource_family(RuntimeHandles) @invalid(0)
+typedef int RuntimeHandle;
+static RuntimeHandle acquire_typed_handle(void) __attribute__((nothrow));
+static RuntimeHandle acquire_typed_handle(void) { return 3; }
+static RuntimeHandle transfer_typed_handle(void) {
+  RuntimeHandle value = acquire_typed_handle();
+  return value;
+}
+static void typed_resource_actions(void) {
+  @resource(close_resource, invalid: 0) RuntimeHandle value = acquire_typed_handle();
+  defer { second(); }
+  reset(value, 1);
+}
+static void typed_resource_ordering(void) {
+  RuntimeHandle value = transfer_typed_handle();
+  close_resource(value);
+  expect(3);
+  typed_resource_actions(); expect(321);
+}
 static void resource_ordering(void) {
+  typed_resource_ordering();
   cleanup_ordering();
   resource_take_operation(); expect(23);
   resource_discard_operation(); expect(32);
