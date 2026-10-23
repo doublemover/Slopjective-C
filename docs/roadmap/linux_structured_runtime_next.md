@@ -58,9 +58,12 @@ Part 7 §7.4.2 now has concrete C runtime destinations:
 repeated access preserves the same logical executor identity. A process-lifetime
 runtime lease prevents the last client release from closing shared scheduling.
 Initialization errors are reported through the ordinary service status and may
-be retried. The global executor uses the existing bounded serial worker profile.
-Its single reserved worker does not consume any of the eight caller-created
-worker slots.
+be retried. The global executor has a bounded pool of four workers, allowing
+independent callbacks to run concurrently. Its reserved workers do not consume
+any of the eight caller-created serial worker slots. Actor mailbox jobs and
+native task resumes retain their own exclusion rules. Partial pool creation
+failure stops and joins already-created workers before returning the error;
+no partially initialized destination is published.
 
 The main executor is manual. Linux process main-thread identity, rather than
 the thread that first asks for the handle, governs pumping. A non-main thread
@@ -71,8 +74,8 @@ layout or service ABI version changes accompany the additive accessors.
 
 Authored C and C++ witnesses cover stable destinations, initialization from a
 worker, rejection of pumping on another thread, current logical identities,
-global worker execution, and releasing all client handles while shared work is
-pending. Compiler attributes and imported isolation metadata can now identify
+four simultaneously active global callbacks, and releasing all client handles
+while shared work is pending. Compiler attributes and imported isolation metadata can now identify
 these real destinations, but implicit cross-executor call lowering remains a
 compiler responsibility. Validation is deferred.
 
@@ -93,3 +96,8 @@ executor. Such callbacks may be needed to unblock the target's future work.
 Completed observations remain immediately available. Authored witnesses cover
 reentrant last-owner release during terminal registration, manual-task waits,
 and a pending cross-executor actor join. Execution remains deferred.
+
+The canonical-global fixture also authors two simultaneously active actor
+mailboxes, repeated mailbox cleanup, and a task that repeatedly yields on the
+four-worker pool. These distinguish allowed concurrency between independent
+actors from required exclusion within each actor and each native task frame.

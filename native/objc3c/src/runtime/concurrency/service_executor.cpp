@@ -10,6 +10,7 @@
 namespace {
 
 constexpr uint32_t kMaximumWorkerExecutors = 8;
+constexpr uint32_t kGlobalExecutorWorkers = 4;
 constexpr size_t kMaximumQueuedCallbacks = 1024;
 std::atomic<uint32_t> live_worker_executors{0};
 std::atomic<uint64_t> next_executor_identity{1};
@@ -134,7 +135,8 @@ void objc3_executor_internal_release(objc3_executor_t *executor) {
 namespace {
 objc3_service_status create_executor(uint32_t manual,
                                       objc3_executor_t **out_executor,
-                                      bool reserve_public_worker = true) {
+                                      bool reserve_public_worker = true,
+                                      uint32_t worker_count = 1) {
   if (!out_executor || manual > 1) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_executor = nullptr;
   uint64_t identity = 0;
@@ -147,23 +149,37 @@ objc3_service_status create_executor(uint32_t manual,
       return OBJC3_SERVICE_NOT_READY;
     }
     executor->worker_slot = reserve_public_worker;
-    // The worker owns a lifetime reference, independent of public handles.
-    if (!objc3_executor_internal_retain(executor)) {
-      if (executor->worker_slot)
-        live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
-      executor->worker_slot = false;
-      delete executor;
-      return OBJC3_SERVICE_NOT_READY;
-    }
+    objc3_service_status started = OBJC3_SERVICE_OK;
     try {
-      executor->worker = std::thread(worker_main, executor);
+      executor->workers.reserve(worker_count);
+      for (uint32_t index = 0; index != worker_count; ++index) {
+        // Each worker owns a lifetime reference independent of public handles.
+        if (!objc3_executor_internal_retain(executor)) {
+          started = OBJC3_SERVICE_NOT_READY;
+          break;
+        }
+        try {
+          executor->workers.emplace_back(worker_main, executor);
+        } catch (...) {
+          objc3_executor_internal_release(executor);
+          started = OBJC3_SERVICE_OUT_OF_MEMORY;
+          break;
+        }
+      }
     } catch (...) {
-      executor->references.fetch_sub(1, std::memory_order_relaxed);
-      if (executor->worker_slot)
-        live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
-      executor->worker_slot = false;
-      delete executor;
-      return OBJC3_SERVICE_OUT_OF_MEMORY;
+      started = OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+    if (started != OBJC3_SERVICE_OK) {
+      // A partially initialized shared pool is never published. Stop and join
+      // its successfully created workers before dropping the initial owner.
+      {
+        std::lock_guard<std::mutex> lock(executor->mutex);
+        executor->stopping = true;
+      }
+      executor->ready.notify_all();
+      for (auto &worker : executor->workers) worker.join();
+      objc3_executor_internal_release(executor);
+      return started;
     }
   }
   *out_executor = executor;
@@ -185,9 +201,10 @@ objc3_service_status default_executor(bool main,
   auto *&shared = main ? main_executor : global_executor;
   if (!shared) {
     objc3_executor_t *created = nullptr;
-    // The one canonical worker has a reserved budget; initializing the
-    // language default does not consume a caller-created worker slot.
-    const auto status = create_executor(main ? 1u : 0u, &created, false);
+    // The canonical pool has a reserved budget; initializing the language
+    // default does not consume a caller-created serial worker slot.
+    const auto status = create_executor(main ? 1u : 0u, &created, false,
+                                        main ? 1u : kGlobalExecutorWorkers);
     if (status != OBJC3_SERVICE_OK) return status;
     created->main_thread_only = main;
     shared = created;
@@ -225,11 +242,12 @@ extern "C" void objc3_executor_release(objc3_executor_t *executor) {
       executor->stopping = true;
     }
     executor->ready.notify_all();
-    if (executor->worker.joinable()) {
-      if (executor->worker.get_id() == std::this_thread::get_id())
-        executor->worker.detach();
+    for (auto &worker : executor->workers) {
+      if (!worker.joinable()) continue;
+      if (worker.get_id() == std::this_thread::get_id())
+        worker.detach();
       else
-        executor->worker.join();
+        worker.join();
     }
   }
   objc3_executor_internal_release(executor);

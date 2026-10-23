@@ -253,7 +253,9 @@ objc3_service_status objc3_executor_create(uint32_t manual,
 /* Canonical process-wide destinations. Each successful call returns a retained
  * handle with a stable logical identity. Main is manual and may be pumped only
  * by the process main thread; a pump from another thread returns NOT_READY and
- * executes nothing. Global runs on a shared bounded worker executor. Releasing
+ * executes nothing. Global runs on a shared pool of four workers; independent
+ * callbacks can run concurrently, while actor jobs and each task's native
+ * resumes remain serialized. Releasing
  * client handles does not close either destination. Initialization failure may
  * be retried. Ordinary explicitly created manual executors remain pumpable by
  * any one owner at a time. */

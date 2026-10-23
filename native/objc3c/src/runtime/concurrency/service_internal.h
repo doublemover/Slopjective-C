@@ -46,7 +46,7 @@ struct objc3_executor final {
   std::condition_variable ready;
   std::list<WorkItem> queue;
   bool stopping{false};
-  std::thread worker;
+  std::vector<std::thread> workers;
 
   explicit objc3_executor(bool is_manual, uint64_t logical_identity)
       : identity(logical_identity), manual(is_manual) {}

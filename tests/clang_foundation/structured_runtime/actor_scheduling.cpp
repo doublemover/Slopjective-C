@@ -82,11 +82,13 @@ struct Gate {
   std::mutex mutex;
   std::condition_variable changed;
   bool entered = false, open = false;
+  unsigned entrants = 0;
 };
 void gate_callback(void *opaque) {
   auto &gate = *static_cast<Gate *>(opaque);
   std::unique_lock lock(gate.mutex);
   gate.entered = true;
+  ++gate.entrants;
   gate.changed.notify_all();
   assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
                                [&] { return gate.open; }));
@@ -394,11 +396,14 @@ void canonical_executor_defaults() {
   assert(objc3_executor_get_global(&again) == OBJC3_SERVICE_OK && again == global);
   assert(global->identity != main_identity);
   Gate gate;
-  assert(objc3_executor_enqueue(global, gate_callback, &gate) == OBJC3_SERVICE_OK);
+  // All four workers can enter independent callbacks concurrently. Keep all
+  // of them occupied while the queued ownership witness releases its clients.
+  for (unsigned index = 0; index != 4; ++index)
+    assert(objc3_executor_enqueue(global, gate_callback, &gate) == OBJC3_SERVICE_OK);
   {
     std::unique_lock lock(gate.mutex);
     assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
-                                 [&] { return gate.entered; }));
+                                 [&] { return gate.entrants == 4; }));
   }
   DefaultExecutorProbe global_probe;
   global_probe.main_thread = std::this_thread::get_id();
@@ -466,6 +471,103 @@ void actor_join_does_not_block_another_executor() {
   objc3_executor_release(manual);
   objc3_executor_release(worker);
 }
+
+struct GlobalActorBarrier {
+  std::mutex mutex;
+  std::condition_variable changed;
+  unsigned entered{0};
+};
+struct GlobalActorProbe {
+  GlobalActorBarrier *barrier{};
+  objc3_actor_t *actor{};
+  std::atomic<unsigned> active{0}, ran{0}, cleaned{0};
+};
+void global_actor_job(void *opaque) {
+  auto &probe = *static_cast<GlobalActorProbe *>(opaque);
+  assert(probe.active.fetch_add(1) == 0);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == objc3_actor_identity(probe.actor));
+  if (probe.ran++ == 0) {
+    std::unique_lock lock(probe.barrier->mutex);
+    ++probe.barrier->entered;
+    probe.barrier->changed.notify_all();
+    // Two distinct actors can make progress simultaneously on global, while
+    // repeated jobs belonging to either actor must still exclude each other.
+    assert(probe.barrier->changed.wait_for(lock, std::chrono::seconds(5), [&] {
+      return probe.barrier->entered == 2;
+    }));
+  }
+  std::this_thread::yield();
+  assert(probe.active.fetch_sub(1) == 1);
+}
+void global_actor_cleanup(void *opaque) {
+  auto &probe = *static_cast<GlobalActorProbe *>(opaque);
+  assert(probe.active == 0);
+  ++probe.cleaned;
+}
+struct GlobalTaskProbe {
+  std::atomic<unsigned> active{0}, resumes{0}, destroyed{0};
+};
+void global_task_resume(objc3_task_t *task, void *opaque) {
+  auto &probe = *static_cast<GlobalTaskProbe *>(opaque);
+  assert(probe.active.fetch_add(1) == 0);
+  if (++probe.resumes != 64) {
+    assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_OK);
+    for (unsigned index = 0; index != 32; ++index) std::this_thread::yield();
+  } else {
+    objc3_completion completion{};
+    completion.struct_size = sizeof(completion);
+    completion.version = OBJC3_SERVICE_ABI_VERSION;
+    completion.kind = OBJC3_COMPLETION_SUCCESS;
+    assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+    assert(probe.destroyed == 0);
+  }
+  assert(probe.active.fetch_sub(1) == 1);
+}
+void global_task_destroy(void *opaque) {
+  auto &probe = *static_cast<GlobalTaskProbe *>(opaque);
+  assert(probe.active == 0);
+  ++probe.destroyed;
+}
+void global_pool_preserves_actor_and_task_exclusion() {
+  objc3_executor_t *global = nullptr;
+  assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  GlobalActorBarrier barrier;
+  GlobalActorProbe actors[2];
+  for (auto &probe : actors) {
+    probe.barrier = &barrier;
+    assert(objc3_actor_create(global, &probe.actor) == OBJC3_SERVICE_OK);
+    objc3_actor_hop_facts facts{};
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    for (unsigned index = 0; index != 64; ++index)
+      assert(objc3_actor_enqueue(probe.actor, global_actor_job, &probe,
+                                  global_actor_cleanup, &facts) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_close(probe.actor) == OBJC3_SERVICE_OK);
+  }
+  GlobalTaskProbe task_probe;
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = global;
+  options.frame = &task_probe;
+  options.resume = global_task_resume;
+  options.destroy = global_task_destroy;
+  objc3_task_t *task = nullptr;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  assert(objc3_task_wait_quiescent(task) == OBJC3_SERVICE_OK);
+  assert(task_probe.resumes == 64 && task_probe.destroyed == 1);
+  for (auto &probe : actors) {
+    assert(objc3_actor_join(probe.actor) == OBJC3_SERVICE_OK);
+    assert(probe.ran == 64 && probe.cleaned == 64 && probe.active == 0);
+    objc3_actor_release(probe.actor);
+  }
+  objc3_task_release(task);
+  objc3_executor_release(global);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -481,5 +583,6 @@ void test_actor_scheduling() {
     lost_continuation_cancels_descendants(loss);
   canonical_executor_defaults();
   actor_join_does_not_block_another_executor();
+  global_pool_preserves_actor_and_task_exclusion();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }
