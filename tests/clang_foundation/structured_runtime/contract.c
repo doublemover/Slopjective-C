@@ -325,7 +325,8 @@ static void hop_resume(objc3_task_t *task, void *opaque) {
     assert(objc3_task_start_child(task, &options, &frame->child) ==
            OBJC3_SERVICE_INVALID_ARGUMENT);
     options.executor = NULL;
-    assert(objc3_task_start_child(task, &options, &frame->child) ==
+    options.actor = frame->second;
+    assert(objc3_task_start_child_on(task, &options, &frame->child) ==
            OBJC3_SERVICE_OK);
     assert(objc3_task_await(task, frame->child) == OBJC3_SERVICE_OK);
     assert(objc3_task_hop(task, frame->other, NULL) ==

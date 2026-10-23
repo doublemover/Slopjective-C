@@ -1001,6 +1001,98 @@ void cpp_cleanup_request_preserves_owner_cancellation() {
   objc3_task_release(child);
   objc3_executor_release(destination);
 }
+
+struct ExplicitChildEntry {
+  objc3_executor_t *child_executor{};
+  objc3_actor_t *parent_actor{}, *child_actor{};
+  objc3_task_t *child{};
+  unsigned parent_resumes{0}, child_resumes{0}, parent_destroyed{0}, child_destroyed{0};
+  bool cancelled{false};
+};
+void explicit_child_resume(objc3_task_t *task, void *opaque) {
+  auto &state = *static_cast<ExplicitChildEntry *>(opaque);
+  ++state.child_resumes;
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == objc3_actor_identity(state.child_actor));
+  assert(facts.executor_identity == objc3_executor_identity(state.child_executor));
+  assert(bool(objc3_task_is_cancel_requested(task)) == state.cancelled);
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = state.cancelled ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS;
+  if (!state.cancelled) completion.result_type = objc3::task_detail::result_type<void>();
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+}
+void explicit_child_destroy(void *opaque) {
+  ++static_cast<ExplicitChildEntry *>(opaque)->child_destroyed;
+}
+void explicit_parent_destroy(void *opaque) {
+  ++static_cast<ExplicitChildEntry *>(opaque)->parent_destroyed;
+}
+void explicit_parent_resume(objc3_task_t *task, void *opaque) {
+  auto &state = *static_cast<ExplicitChildEntry *>(opaque);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == objc3_actor_identity(state.parent_actor));
+  if (++state.parent_resumes == 1) {
+    objc3_async_frame frame{sizeof(objc3_async_frame), OBJC3_ASYNC_ABI_VERSION,
+                             &state, explicit_child_resume, explicit_child_destroy,
+                             objc3::task_detail::result_type<void>()};
+    assert(objc3_async_frame_start_child_on(&frame, task, nullptr, nullptr,
+                                            &state.child) == OBJC3_SERVICE_INVALID_ARGUMENT);
+    assert(frame.context == &state && state.child_destroyed == 0 && !state.child);
+    assert(objc3_async_frame_start_child_on(
+               &frame, task, state.child_actor ? nullptr : state.child_executor,
+               state.child_actor, &state.child) == OBJC3_SERVICE_OK);
+    assert(!frame.context);
+    assert(objc3_task_await(task, state.child) == OBJC3_SERVICE_OK);
+    return;
+  }
+  complete(task, state.cancelled ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS);
+}
+void explicit_structured_child_destination_preserves_parent() {
+  for (bool cancelled : {false, true}) for (bool actor_entry : {false, true}) {
+    auto *source = executor();
+    ExplicitChildEntry state;
+    state.cancelled = cancelled;
+    state.child_executor = executor();
+    assert(objc3_actor_create(source, &state.parent_actor) == OBJC3_SERVICE_OK);
+    if (actor_entry)
+      assert(objc3_actor_create(state.child_executor, &state.child_actor) == OBJC3_SERVICE_OK);
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.actor = state.parent_actor;
+    options.frame = &state;
+    options.resume = explicit_parent_resume;
+    options.destroy = explicit_parent_destroy;
+    objc3_task_t *parent = nullptr;
+    assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+    if (cancelled) objc3_task_request_cancel(parent);
+    pump(source);
+    pump(state.child_executor);
+    pump(source);
+    assert(state.parent_resumes == 2 && state.child_resumes == 1);
+    assert(state.parent_destroyed == 1 && state.child_destroyed == 1);
+    objc3_task_release(state.child);
+    objc3_task_release(parent);
+    assert(objc3_actor_close(state.parent_actor) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(state.parent_actor) == OBJC3_SERVICE_OK);
+    objc3_actor_release(state.parent_actor);
+    if (state.child_actor) {
+      assert(objc3_actor_close(state.child_actor) == OBJC3_SERVICE_OK);
+      assert(objc3_actor_join(state.child_actor) == OBJC3_SERVICE_OK);
+      objc3_actor_release(state.child_actor);
+    }
+    objc3_executor_release(state.child_executor);
+    objc3_executor_release(source);
+  }
+}
 } // namespace
 
 int main() {
@@ -1024,4 +1116,5 @@ int main() {
   cleanup_join_shields_cancellation_and_owns_abandoned_scope();
   cleanup_join_empty_deferred_dispatch_and_actor_discard();
   cpp_cleanup_request_preserves_owner_cancellation();
+  explicit_structured_child_destination_preserves_parent();
 }

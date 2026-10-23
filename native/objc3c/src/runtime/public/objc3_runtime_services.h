@@ -171,6 +171,13 @@ objc3_service_status objc3_task_start(const objc3_task_start_options *options,
 objc3_service_status objc3_task_start_child(
     objc3_task_t *parent, const objc3_task_start_options *options,
     objc3_task_t **out_task);
+/* The active parent's structured child on an explicit destination. Select
+ * exactly one executor/actor in options. Cancellation ancestry is inherited
+ * before queue publication; the parent's destination is unchanged. Start and
+ * frame-transfer failure rules match start_child. */
+objc3_service_status objc3_task_start_child_on(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task);
 objc3_task_t *objc3_task_retain(objc3_task_t *task);
 void objc3_task_release(objc3_task_t *task);
 /* Monotonic, cooperative cancellation of this task and structured descendants.
@@ -252,6 +259,10 @@ objc3_service_status objc3_async_frame_start(objc3_async_frame *frame,
 objc3_service_status objc3_async_frame_start_child(objc3_async_frame *frame,
                                                    objc3_task_t *parent,
                                                    objc3_task_t **out_task);
+/* Explicit-destination structured entry for an owned lazy C frame. */
+objc3_service_status objc3_async_frame_start_child_on(
+    objc3_async_frame *frame, objc3_task_t *parent, objc3_executor_t *executor,
+    objc3_actor_t *actor, objc3_task_t **out_task);
 
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own

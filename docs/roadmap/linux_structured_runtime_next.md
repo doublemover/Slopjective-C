@@ -194,3 +194,19 @@ foreign callback/destructor gates, empty deferred publication, and the C++
 cleanup request followed by a normal cancellation checkpoint. These backing
 hooks do not claim compiler automatic structured-scope finalization. Validation
 remains deferred.
+
+## Explicit structured child entry destinations
+
+`objc3_task_start_child_on` and `objc3_async_frame_start_child_on` start an active
+parent's structured child on an explicitly retained executor or actor. They
+inherit cancellation ancestry before the child's first queue publication and
+preserve the parent's own destination. The inherited-destination child APIs
+retain their existing contract. These hooks support awaited entries annotated
+with main/global/named affinity without temporarily changing the caller's
+continuation destination. Frame ownership transfers only on successful start.
+
+Authored C and shared-frame C++ witnesses cover explicit actor/executor entry,
+cross-executor parent resumption, cancellation before child creation, initial
+child cancellation observation, invalid-destination ownership preservation, and
+exactly-once frame cleanup. Compiler attribute lowering remains its separate
+implementation milestone; validation is deferred.

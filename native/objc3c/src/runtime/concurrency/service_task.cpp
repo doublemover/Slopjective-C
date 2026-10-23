@@ -551,9 +551,10 @@ extern "C" objc3_service_status objc3_task_start(
   return start_task(options, out_task);
 }
 
-extern "C" objc3_service_status objc3_task_start_child(
+namespace {
+objc3_service_status start_child(
     objc3_task_t *parent, const objc3_task_start_options *options,
-    objc3_task_t **out_task) {
+    objc3_task_t **out_task, bool explicit_destination) {
   if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
   if (!parent || current_service_task != parent || !options ||
@@ -561,7 +562,9 @@ extern "C" objc3_service_status objc3_task_start_child(
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   if (options->version != OBJC3_SERVICE_ABI_VERSION)
     return OBJC3_SERVICE_UNSUPPORTED_VERSION;
-  if (options->executor || options->actor)
+  if (explicit_destination
+          ? bool(options->executor) == bool(options->actor)
+          : options->executor || options->actor)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   auto inherited = *options;
   {
@@ -570,10 +573,25 @@ extern "C" objc3_service_status objc3_task_start_child(
       return OBJC3_SERVICE_ALREADY_COMPLETED;
     if (!parent->resume_active || parent->awaiting || parent->resume_requested)
       return OBJC3_SERVICE_INVALID_ARGUMENT;
-    if (parent->actor) inherited.actor = parent->actor;
-    else inherited.executor = parent->executor;
+    if (!explicit_destination) {
+      if (parent->actor) inherited.actor = parent->actor;
+      else inherited.executor = parent->executor;
+    }
   }
   return start_task(&inherited, out_task, parent);
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_task_start_child(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task) {
+  return start_child(parent, options, out_task, false);
+}
+
+extern "C" objc3_service_status objc3_task_start_child_on(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task) {
+  return start_child(parent, options, out_task, true);
 }
 
 extern "C" objc3_task_t *objc3_task_retain(objc3_task_t *task) {
@@ -1173,8 +1191,9 @@ objc3_service_status start_async_frame(objc3_async_frame *frame,
   options.destroy = frame->destroy;
   options.result_type = frame->result_type;
   const auto started = parent
-                           ? objc3_task_start_child(parent, &options, out_task)
-                           : objc3_task_start(&options, out_task);
+      ? (executor || actor ? objc3_task_start_child_on(parent, &options, out_task)
+                           : objc3_task_start_child(parent, &options, out_task))
+      : objc3_task_start(&options, out_task);
   if (started == OBJC3_SERVICE_OK)
     *frame = {};
   return started;
@@ -1196,6 +1215,16 @@ objc3_async_frame_start_child(objc3_async_frame *frame, objc3_task_t *parent,
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   }
   return start_async_frame(frame, nullptr, nullptr, parent, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_start_child_on(
+    objc3_async_frame *frame, objc3_task_t *parent, objc3_executor_t *executor,
+    objc3_actor_t *actor, objc3_task_t **out_task) {
+  if (!parent || bool(executor) == bool(actor)) {
+    if (out_task) *out_task = nullptr;
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  return start_async_frame(frame, executor, actor, parent, out_task);
 }
 
 void objc3_service_run_task_resume(void *context) {
