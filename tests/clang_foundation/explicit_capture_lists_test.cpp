@@ -29,6 +29,9 @@ void launch(void (^work)(void));
 void close_handle(int) __attribute__((nothrow));
 void close_throwing(int);
 void close_arbitrary(int *);
+borrowed const char *capture_bytes(id owner)
+  __attribute__((objc_returns_borrowed(owner_index=0)));
+void capture_use_bytes(borrowed const char *);
 )objc";
 CompileRequest request(const fs::path &Root, const std::string &Source,
                        BaseLanguage Language, const char *Standard, bool ARC) {
@@ -69,6 +72,9 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       "int f(void) { int x=42; int (^b)(void)=^[move x]{return x;}; return b()+x; }",
       "int f(void) { __block int x=42; int (^b)(void)=^[x]{return x;}; x=9; return b(); }",
       "void f(void) { int strong=1,weak=2,unowned=3,move=4; invoke(^[strong,weak,unowned,move]{}); }",
+      "void f(id o) { const char *p=capture_bytes(o); invoke(^[p]{capture_use_bytes(p);}); }",
+      "void f(id o) { const char *p=capture_bytes(o); invoke(^[move p]{capture_use_bytes(p);}); }",
+      "void f(id o) { const char *p=capture_bytes(o); invoke(^[move p]{capture_use_bytes(p);}); launch(^{capture_use_bytes(p);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);}); if(h!=-1)__builtin_trap(); reset(h,4); invoke(^[move h]{use(h);}); }",
   };
@@ -94,6 +100,9 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       {"void f(id x){invoke(^[x,strong x]{});}", "appear only once"},
       {"void f(void){invoke(^[missing]{});}", "must name a local variable"},
       {"void f(void){const int x=3;invoke(^[move x]{});}", "requires a mutable"},
+      {"void f(void){__block int x=3;invoke(^[x]{invoke(^[move x]{});});}", "immutable enclosing capture"},
+      {"void f(id o){const char *p=capture_bytes(o);launch(^[p]{capture_use_bytes(p);});}", "borrowed pointer escapes"},
+      {"void f(id o){const char *p=capture_bytes(o);launch(^[move p]{capture_use_bytes(p);});}", "borrowed pointer escapes"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[h]{});}", "must use the move modifier"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^{use(h);});}", "requires an explicit move"},
       {"void f(void){int h __attribute__((objc_resource(close=close_throwing,invalid=-1)))=3; invoke(^[move h]{});}", "statically nonthrowing cleanup"},

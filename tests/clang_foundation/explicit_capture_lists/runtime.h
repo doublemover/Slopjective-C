@@ -67,6 +67,10 @@ static void capture_scalar_suite(void) {
   int source = 42;
   CaptureIntBlock moved = ^[move source] { return source; };
   CAPTURE_CHECK(source == 0 && moved() == 42 && moved() == 42);
+  int unused_source = 13;
+  void (^unused)(void) = ^[move unused_source] {};
+  CAPTURE_CHECK(unused_source == 0);
+  (void)unused;
   int snapshot = 9;
   CaptureIntBlock copied = ^[snapshot] { return snapshot; };
   snapshot = 100;
@@ -131,10 +135,16 @@ static void capture_object_suite(void) {
     int (^promoted)(void) = [^[strong weak_source] {
       return weak_source ? weak_source->value : -1;
     } copy];
+    int (^nested)(void) = [^[weak source] {
+      CaptureIntBlock inner = ^[strong source] {
+        return source ? source->value : -1;
+      };
+      return inner();
+    } copy];
     source = (id)0;
-    CAPTURE_CHECK(weak_block() == 34 && promoted() == 34);
+    CAPTURE_CHECK(weak_block() == 34 && promoted() == 34 && nested() == 34);
     promoted = (id)0;
-    CAPTURE_CHECK(weak_block() == -1 && weak_source == (id)0);
+    CAPTURE_CHECK(weak_block() == -1 && nested() == -1 && weak_source == (id)0);
   }
   CAPTURE_CHECK(capture_destroyed == destroyed_before + 4);
 #endif
@@ -147,7 +157,7 @@ static void capture_carrier_move_suite(void) {
     CaptureObject *owner = [CaptureObject make:74];
     Optional(id) source = Some(id, owner);
     owner = (id)0;
-    CaptureIntBlock stack = ^[move source] {
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
       guard let object = source else { return -1; }
       return object ? ((CaptureObject *)object)->value : -2;
     };
@@ -176,7 +186,7 @@ static void capture_carrier_move_suite(void) {
 
 static CaptureIntBlock capture_make_resource(void) {
   int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 7;
-  CaptureIntBlock stack = ^[move handle] { return handle; };
+  CaptureIntBlock __unsafe_unretained stack = ^[move handle] { return handle; };
   CAPTURE_CHECK(handle == -1 && capture_closed == 0);
   return [stack copy];
 }
@@ -210,6 +220,28 @@ static void capture_resource_suite(void) {
     CAPTURE_CHECK(empty() == -1);
   }
   CAPTURE_CHECK(capture_closed == 2);
+  CaptureIntBlock left = (id)0, right = (id)0;
+  {
+    int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 11;
+    // Keep the original literal on the stack even under ARC so these calls
+    // create distinct heap Blocks which independently reference one owner.
+    CaptureIntBlock __unsafe_unretained stack = ^[move handle] { return handle; };
+    left = [stack copy];
+    right = [stack copy];
+    CAPTURE_CHECK(left != right && left() == 11 && right() == 11);
+  }
+#if __has_feature(objc_arc)
+  left = (id)0;
+#else
+  _Block_release(left);
+#endif
+  CAPTURE_CHECK(right() == 11 && capture_closed == 2);
+#if __has_feature(objc_arc)
+  right = (id)0;
+#else
+  _Block_release(right);
+#endif
+  CAPTURE_CHECK(capture_closed == 3 && capture_close_sum == 27);
 }
 
 #ifdef __cplusplus
@@ -230,7 +262,7 @@ static void capture_record_move_suite(void) {
   CaptureMoveRecord::moves = CaptureMoveRecord::copies = 0;
   {
     CaptureMoveRecord source(71);
-    CaptureIntBlock stack = ^[move source] { return source.value; };
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] { return source.value; };
     CAPTURE_CHECK(source.value == -1 && stack() == 71);
     CAPTURE_CHECK(CaptureMoveRecord::moves == 1 && CaptureMoveRecord::copies == 0);
     CaptureIntBlock heap = [stack copy];

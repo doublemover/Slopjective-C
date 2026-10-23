@@ -4,8 +4,10 @@ These fixtures are authored and intentionally unexecuted during the development
 span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
 
 - `runtime.h` / `main.m`: creation snapshots, unused/contextual captures,
-  explicit `__block` snapshots, ARC/MRC ownership, weak zeroing, resource heap
-  copies, address cleanup, sentinels, templates, C++ object move/copy separation
+  explicit `__block` snapshots, ARC/MRC ownership, weak zeroing and nested
+  weak-to-strong promotion, resource heap
+  copies (including distinct heap Blocks copied from one stack literal), address
+  cleanup, sentinels, templates, C++ object move/copy separation
   and capture evaluation order. ARC cases also move strong/weak Optional payloads
   and verify their source fields and weak registrations remain safe.
 - `exceptions.mm`: a later C++ constructor fails during literal construction or
