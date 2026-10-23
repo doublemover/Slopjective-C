@@ -44,6 +44,58 @@ void TestOrdinaryCDeclarationsRoundTrip() {
          ComputeInterfaceSourceSha256(emitted.source_bytes));
 }
 
+void TestNativeOwnershipContractsRoundTrip() {
+  for (const char *language : {"objective-c", "objective-c++"}) {
+    std::vector<std::string> args = {"-x", language,
+        std::string(language) == "objective-c" ? "-std=c17" : "-std=c++20",
+        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+        "--target=x86_64-unknown-linux-gnu"};
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(R"(
+      extern char invalid_storage;
+      void close_fd(int) __attribute__((nothrow));
+      void close_pointer(char *) __attribute__((nothrow));
+      typedef int FD __attribute__((objc_requires_cleanup(close_fd),
+          objc_resource_family(Descriptors), objc_invalid(-1)));
+      typedef FD Alias;
+      typedef char *PointerOwner __attribute__((objc_requires_cleanup(close_pointer),
+          objc_resource_family(Pointers), objc_invalid(&invalid_storage)));
+      FD open_fd(void);
+      void observe_fd(FD);
+      Alias transfer_fd(Alias);
+      PointerOwner open_pointer(void);
+    )", args, "ownership-interface.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.owners", "test");
+    assert(emitted.success && emitted.diagnostics.empty());
+    const std::vector<llvm::StringRef> semantics = {
+        "objc3.canonical-function-effects.v1", "objc3.native-ownership-contracts.v1",
+        "objc3.cxx-data-interfaces.v1"};
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                                  emitted.source_bytes, semantics);
+    assert(static_cast<bool>(decoded));
+    const InterfaceDeclarationIdentity *fd = nullptr, *alias = nullptr, *factory = nullptr;
+    for (const auto &declaration : decoded->declarations) {
+      if (declaration.qualified_name == "FD") fd = &declaration;
+      if (declaration.qualified_name == "Alias") alias = &declaration;
+      if (declaration.qualified_name == "open_fd") factory = &declaration;
+    }
+    assert(fd && alias && factory);
+    assert(fd->effects.ownership_identity == alias->effects.ownership_identity);
+    assert(factory->effects.ownership_identity.find(".return:resource") != std::string::npos);
+    assert(emitted.source_bytes.find("objc_requires_cleanup") != std::string::npos);
+    auto reparsed = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes,
+                                                            args, "ownership-import.m");
+    assert(reparsed && !reparsed->getDiagnostics().hasErrorOccurred());
+    auto repeated = EmitSemanticInterface(reparsed->getASTContext(), "fixture.owners", "test");
+    assert(repeated.success);
+    assert(repeated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto unsupported = DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                                       emitted.source_bytes, {});
+    assert(!unsupported);
+    llvm::consumeError(unsupported.takeError());
+  }
+}
+
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       "__attribute__((noinline)) int old_api(void);\n",
@@ -517,6 +569,7 @@ void TestBoundedCxxSemanticInterfaces() {
 
 int main() {
   TestOrdinaryCDeclarationsRoundTrip();
+  TestNativeOwnershipContractsRoundTrip();
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIExportFailsClosed();
   TestCAsyncPhysicalABIImportBoundaries();

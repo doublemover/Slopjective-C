@@ -25,10 +25,13 @@ namespace objc3::clang_foundation {
 namespace {
 
 namespace fs = std::filesystem;
-const std::array<llvm::StringRef, 11> kSupportedSemantics = {
+const std::array<llvm::StringRef, 14> kSupportedSemantics = {
     "objc3.canonical-function-effects.v1",
     "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

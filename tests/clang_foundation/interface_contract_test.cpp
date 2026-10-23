@@ -13,7 +13,50 @@ static InterfaceModuleIdentity Id(std::string name, std::string fp) {
           "canonical-c18", "pkg-main"};
 }
 
+static void TestNativeContractCapabilities() {
+  auto module = Id("contracts", "sha256:contracts");
+  InterfaceDeclarationIdentity declaration{"c:@F@borrow", "function", "borrow",
+      "char *(int)", {}};
+  declaration.effects.ownership_identity = "native-contracts:v1:returns-borrowed:0";
+  SemanticInterfaceSidecar sidecar;
+  sidecar.module = module;
+  sidecar.canonical_source_sha256 = std::string(64, 'a');
+  sidecar.declarations = {declaration};
+  sidecar.required_semantics = {"objc3.canonical-function-effects.v1"};
+  const std::vector<std::string> supported = {"objc3.canonical-function-effects.v1",
+      "objc3.native-ownership-contracts.v1", "objc3.isolation-contracts.v1",
+      "objc3.typed-keypaths.v1"};
+  assert(!ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                    {declaration}, supported).ok());
+  sidecar.required_semantics.push_back("objc3.native-ownership-contracts.v1");
+  assert(ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                   {declaration}, supported).ok());
+  const auto fingerprint = BuildSemanticFingerprintInput(sidecar);
+  auto changed = declaration;
+  changed.effects.ownership_identity += ";different-owner";
+  assert(!SameInterfaceDeclarationIdentity(declaration, changed));
+  auto different = sidecar;
+  different.declarations = {changed};
+  assert(fingerprint != BuildSemanticFingerprintInput(different));
+  declaration.effects.actor_isolation_identity = "actor-isolated";
+  declaration.effects.executor_affinity_identity = "named:ui";
+  sidecar.declarations = {declaration};
+  assert(!ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                    {declaration}, supported).ok());
+  sidecar.required_semantics.push_back("objc3.isolation-contracts.v1");
+  assert(ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                   {declaration}, supported).ok());
+  declaration.canonical_type_identity = "KeyPath<Root *, int>";
+  sidecar.declarations = {declaration};
+  assert(!ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                    {declaration}, supported).ok());
+  sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
+  assert(ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
+                                   {declaration}, supported).ok());
+}
+
 int main() {
+  TestNativeContractCapabilities();
   auto module = Id("A", "sha256:aaa");
   InterfaceDeclarationIdentity decl{"c:@F@answer", "function", "A::answer",
                                     "int ()", {}};

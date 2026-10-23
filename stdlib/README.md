@@ -103,3 +103,12 @@ python3 -B SDK/share/objc3c/source-build/qualify_stdlib.py \
 
 Builds and tests use disposable directories under `TMPDIR`; receipts and logs
 remain in the requested output directory.
+
+The development `objc3.keypath` module now exposes native typed property literals,
+get/set applications, readonly conversion and immutable metadata. Its compiler
+and runtime slices are authored; remaining traversal/value boundaries are
+recorded in the inventory. Structured runtime development now includes parent
+cancellation propagation, canonical main/global destinations and retained named
+executor lookup. The global destination has four workers; ordinary explicitly
+created executors keep their serial contract. These new slices await the
+coordinated validation batch.

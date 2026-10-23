@@ -380,6 +380,19 @@ llvm::Error ValidateForEncoding(
     if (!supported.count(semantic))
       return Invalid(llvm::formatv("unknown required semantic '{0}'", semantic).str());
   }
+  for (const auto &declaration : sidecar.declarations) {
+    const auto &effects = declaration.effects;
+    if (effects.ownership_identity.find("native-contracts:v1:") != std::string::npos &&
+        !required.count("objc3.native-ownership-contracts.v1"))
+      return Invalid("native ownership contract is missing its semantic capability");
+    if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos &&
+        !required.count("objc3.typed-keypaths.v1"))
+      return Invalid("typed key path is missing its semantic capability");
+    if ((!effects.actor_isolation_identity.empty() ||
+         !effects.executor_affinity_identity.empty()) &&
+        !required.count("objc3.isolation-contracts.v1"))
+      return Invalid("native isolation contract is missing its semantic capability");
+  }
   std::set<std::pair<std::string, std::string>> dependency_ids;
   for (const auto &dependency : sidecar.dependencies) {
     const auto &id = dependency.module;

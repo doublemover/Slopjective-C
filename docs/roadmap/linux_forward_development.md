@@ -261,3 +261,33 @@ witnesses cover these semantics. Focused source compilation also repaired two
 resource-prefix parser API mismatches and one resource diagnostic helper from
 the preceding implementation batch. Compiler relinking and execution of the
 new native fixtures remain pending; SDK/archive qualification remains paused.
+
+## Parallel implementation batch
+
+Six extended development spans now implement borrowed-pointer contracts and
+mandatory escape flow, explicit Block capture lists and unique resource capture
+owners, native C async definitions, actor/executor/Sendable semantics, typed key
+paths and structured runtime lifetime/cancellation. Their maintained fixtures and
+status documents are committed as each span completes a coherent piece. Shared
+compiler packets and module integration are checkpointed centrally in the same
+source tree; no isolated feature worktrees or ignored implementations are used.
+
+The runtime has gained descendant cancellation, failure propagation, reentrant
+operation lifetimes, canonical main/global executors and retained named executor
+registration. The global executor uses four concurrent workers; created executors
+remain serial. Native C free-function definitions now have authored frame/resume/
+destroy/result lowering; method and Block integration is advancing separately.
+Key paths now have typed property literals/application, immutable metadata and
+native identity, with the inventory recording the remaining traversal cases.
+
+[Module contract integration](linux_native_interface_contracts.md) preserves the
+new ownership/isolation metadata and typed key-path identities across emitted
+source, sidecars, imports and immutable packages. Resource-capture flow now uses
+creation-time CFG transfer stages, including left-to-right source invalidation
+and independent captured-owner facts inside Block bodies. Simple explicit
+scalar/object/resource capture lists enter the native EH graph; general C++
+capture and implicit Block-copy EH ownership remain explicit boundaries.
+
+Development is frontloaded. Native compiler/facade relinking, execution of the
+new witnesses and SDK/archive qualification remain deferred. Earlier validation
+receipts do not establish results for this implementation batch.

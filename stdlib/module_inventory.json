@@ -103,13 +103,17 @@
         "task groups",
         "cancellation",
         "executor/actor destinations and hops",
-        "C++ coroutine adapter"
+        "C++ coroutine adapter",
+        "structured descendant cancellation and failure propagation",
+        "canonical main and bounded concurrent global executors",
+        "named executor registration, retained lookup and affinity queries",
+        "native C free-function frame lowering (authored)"
       ],
       "remaining": [
-        "native Objective-C async lowering",
-        "public spawn recognition",
-        "await-required crossings",
-        "compiler isolation and Sendable"
+        "native Objective-C method/Block async integration",
+        "public spawn lowering and structured scope finalization",
+        "awaited isolation and executor crossing lowering",
+        "complete strict concurrency and Sendable enforcement"
       ]
     },
     {
@@ -121,10 +125,21 @@
         "minor": 0,
         "patch": 0
       },
-      "header": null,
-      "status": "unimplemented",
-      "implemented": [],
-      "remaining": ["typed literals", "typed application", "component metadata"]
+      "header": "include/objc3/keypath.h",
+      "status": "partial",
+      "implemented": [
+        "native typed property key-path literals",
+        "typed read/write and readonly conversion",
+        "immutable component metadata and native accessor dispatch",
+        "cross-translation-unit type and descriptor identity"
+      ],
+      "remaining": [
+        "nullable-intermediate and record-field traversal",
+        "dependent, effectful and isolated paths",
+        "borrowed and owned-resource value semantics",
+        "optional KVC conversion and root indexing",
+        "complete installed contract validation"
+      ]
     },
     {
       "module": "objc3.system",

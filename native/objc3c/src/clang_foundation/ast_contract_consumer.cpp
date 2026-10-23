@@ -1,3 +1,4 @@
+#include "clang_foundation/native_contract_identity.h"
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_emitter.h"
@@ -97,6 +98,7 @@ class ContractConsumer final : public clang::ASTConsumer,
     }
     const auto ownership = ReadNativeReturnOwnership(decl);
     if (!ownership.empty()) identity.effects.ownership_identity = ownership;
+    ReadNativeDeclarationContracts(decl, *context_, identity.effects);
     identity.native_symbol_name = ReadNativeSymbolName(decl);
     identity.spi_group = ReadInterfaceSPIGroup(decl);
     result_.declarations.push_back(std::move(identity));

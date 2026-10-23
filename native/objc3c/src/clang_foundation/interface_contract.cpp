@@ -263,6 +263,24 @@ InterfaceContractValidation ValidateSemanticInterface(
         !return_ownership_semantic)
       Add(result, "O3IFC014", "managed return ownership is missing its semantic capability",
           declaration.stable_id);
+  for (const auto &declaration : sidecar.declarations) {
+    const auto &effects = declaration.effects;
+    if (effects.ownership_identity.find("native-contracts:v1:") != std::string::npos &&
+        !std::binary_search(required.begin(), required.end(),
+                            "objc3.native-ownership-contracts.v1"))
+      Add(result, "O3IFC022", "native ownership contract is missing its semantic capability",
+          declaration.stable_id);
+    if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos &&
+        !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v1"))
+      Add(result, "O3IFC024", "typed key path is missing its semantic capability",
+          declaration.stable_id);
+    if ((!effects.actor_isolation_identity.empty() ||
+         !effects.executor_affinity_identity.empty()) &&
+        !std::binary_search(required.begin(), required.end(),
+                            "objc3.isolation-contracts.v1"))
+      Add(result, "O3IFC023", "native isolation contract is missing its semantic capability",
+          declaration.stable_id);
+  }
   const bool carrier_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.native-carrier-types.v1");
   for (const auto &declaration : sidecar.declarations)

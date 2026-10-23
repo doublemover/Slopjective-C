@@ -82,6 +82,7 @@ add_library(objc3_runtime_services STATIC
   ../runtime/concurrency/service_actor.cpp
   ../runtime/concurrency/service_public.cpp
   ../runtime/stdlib/text_service.cpp
+  ../runtime/stdlib/keypath_service.cpp
   ../runtime/stdlib/collections_service.cpp
   ../runtime/stdlib/generic_collection_service.cpp
   ../runtime/stdlib/generic_associative_service.cpp)
@@ -123,6 +124,18 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cCon
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
+  add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
+  target_link_libraries(objc3_keypath_service_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)
+  add_executable(objc3_keypath_native_ast_test
+    ../../../../tests/clang_foundation/keypath_native_ast_test.cpp)
+  target_compile_definitions(objc3_keypath_native_ast_test PRIVATE
+    OBJC3_KEYPATH_TEST_REPO_ROOT="${_objc3_repo}")
+  target_include_directories(objc3_keypath_native_ast_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_keypath_native_ast_test PRIVATE
+    clangAST clangBasic clangFrontend clangSerialization clangTooling)
+  add_test(NAME objc3_keypath_native_ast COMMAND objc3_keypath_native_ast_test)
   add_executable(objc3_stdlib_map_count_test ../../tests/stdlib_map_count_test.cpp)
   target_link_libraries(objc3_stdlib_map_count_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
@@ -192,6 +205,12 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_module_names_test PRIVATE objc3c_frontend_v2)
   add_test(NAME objc3_interface_module_names COMMAND objc3_interface_module_names_test)
+  add_executable(objc3_borrowed_pointers_test
+    ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)
+  target_include_directories(objc3_borrowed_pointers_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_borrowed_pointers_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_borrowed_pointers COMMAND objc3_borrowed_pointers_test)
   add_executable(objc3_interface_spi_test
     ../../../../tests/clang_foundation/interface_spi_test.cpp)
   target_include_directories(objc3_interface_spi_test SYSTEM PRIVATE
@@ -216,6 +235,21 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation clangTooling)
   add_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
+  add_executable(objc3_isolation_contracts_test
+    ../../../../tests/clang_foundation/isolation_contracts_test.cpp)
+  target_include_directories(objc3_isolation_contracts_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_compile_definitions(objc3_isolation_contracts_test PRIVATE
+    OBJC3_ISOLATION_RUNTIME_HEADERS="${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
+  target_link_libraries(objc3_isolation_contracts_test PRIVATE
+    objc3c_clang_foundation clangTooling)
+  add_test(NAME objc3_isolation_contracts COMMAND objc3_isolation_contracts_test)
+  add_executable(objc3_explicit_capture_lists_test
+    ../../../../tests/clang_foundation/explicit_capture_lists_test.cpp)
+  target_include_directories(objc3_explicit_capture_lists_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_explicit_capture_lists_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_explicit_capture_lists COMMAND objc3_explicit_capture_lists_test)
   add_executable(objc3_interface_artifact_io_test
     ../../../../tests/clang_foundation/interface_artifact_io_test.cpp)
   target_include_directories(objc3_interface_artifact_io_test SYSTEM PRIVATE
@@ -304,7 +338,9 @@ if (BUILD_TESTING)
   set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
   foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
       objc3_ownership_projection_test objc3_module_method_names_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
-      objc3_interface_import_api_test
+      objc3_interface_import_api_test objc3_isolation_contracts_test
+      objc3_explicit_capture_lists_test objc3_borrowed_pointers_test
+      objc3_keypath_service_test objc3_keypath_native_ast_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
       objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test objc3_task_group_await_test
       objc3_generic_collection_service_test objc3_generic_associative_service_test
