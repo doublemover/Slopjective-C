@@ -33,7 +33,7 @@ __attribute__((objc_root_class)) @interface Root @end
 actor class Counter : Root { @public int storage; }
 @property(nonatomic) int value;
 @property(nonatomic, readonly) int token __attribute__((objc_nonisolated));
-- (int)read;
+- (int)read __attribute__((nothrow));
 - (int)stable __attribute__((objc_nonisolated));
 @end
 )";
@@ -131,7 +131,7 @@ __attribute__((objc_executor(named("store.serial")))) int same_named(void) { ret
          "cross-actor entry requires an explicit await");
   Reject(Make(Root.str() + R"(
 @interface MutableMessage (Ambiguous)
-- (int)read;
+- (int)read __attribute__((nothrow));
 @end
 int ambiguous(id value) { return [value read]; }
 )"),
@@ -364,10 +364,9 @@ int unnecessary(void) __objc3_async { return __objc3_await synchronous(); }
 )"));
   Success(Plain);
   assert(Has(Plain, "native await operand does not suspend"));
-  Reject(Make(R"(
+  Success(Compile(Make(R"(
 int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
-)"),
-         "actor crossing requires executor-hop lowering");
+)")));
   const std::string NoThrow = Cxx ? " noexcept" : "";
   for (const std::string Executor :
        {"main", "global", "named(\"db.serial\")"}) {
@@ -383,7 +382,7 @@ int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
               NoThrow +
               ";\nid bounded(void) __objc3_async { return "
               "__objc3_await owned_result(); }"),
-         "awaited executor entry requires");
+         "awaited isolated entry requires");
   Reject(Make("__attribute__((objc_executor(main))) int nested(void)" +
               NoThrow +
               ";\n__attribute__((objc_executor(global))) int outer(int)" +
@@ -402,7 +401,7 @@ int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
 __attribute__((objc_executor(main))) int native_cpp_throw(void);
 int bounded_cpp(void) __objc3_async { return __objc3_await native_cpp_throw(); }
 )"),
-           "awaited executor entry requires");
+           "awaited isolated entry requires");
   if (Cxx)
     Reject(Make(R"(
 int throwing_sync(void) throws(int);
@@ -430,10 +429,15 @@ void CheckExecutorEntryIR(bool Cxx, bool Arc, const std::string &Standard) {
           "int consume_global(int)" + NoThrow +
           " __attribute__((objc_executor(global)));\n" + CLinkage +
           "int consume_named(int)" + NoThrow +
-          " __attribute__((objc_executor(named(\"ir.destination\"))));\n" + R"(
+          " __attribute__((objc_executor(named(\"ir.destination\"))));\n" +
+          CLinkage + "Counter *actor_source(void)" + NoThrow + ";\n" + R"(
+@interface Counter (AffineEntry)
+- (int)affinityRead __attribute__((objc_executor(named("ir.destination")), nothrow));
+@end
 int executor_ir(SafeMessage *message) __objc3_async {
   int value = __objc3_await consume_main(next_value(), message);
   value = __objc3_await consume_global(value);
+  value += __objc3_await [actor_source() affinityRead];
   return __objc3_await consume_named(value);
 }
 )",
@@ -444,10 +448,13 @@ int executor_ir(SafeMessage *message) __objc3_async {
   Success(Compile(R));
   std::ifstream Stream(R.output_path);
   std::string IR{std::istreambuf_iterator<char>(Stream), {}};
-  for (auto Symbol : {"@objc3_executor_get_main", "@objc3_executor_get_global",
-                      "@objc3_executor_get_named", "@objc3_executor_is_current",
-                      "@objc3_executor_release", "@objc3_task_hop",
-                      "@objc3_task_await", "@llvm.coro.suspend"})
+  for (auto Symbol :
+       {"@objc3_executor_get_main", "@objc3_executor_get_global",
+        "@objc3_executor_get_named", "@objc3_executor_is_current",
+        "@objc3_executor_release", "@objc3_task_hop",
+        "@objc3_actor_get_for_object", "@objc3_actor_release",
+        "@objc3_actor_executor_identity", "@objc3_executor_identity",
+        "@objc3_task_await", "@llvm.coro.suspend"})
     assert(IR.find(Symbol) != std::string::npos);
   assert(IR.find("ir.destination") != std::string::npos);
   assert(IR.find("named:ir.destination") == std::string::npos);
@@ -456,6 +463,12 @@ int executor_ir(SafeMessage *message) __objc3_async {
   unsigned Occurrences = 0;
   for (size_t Position = 0;
        (Position = IR.find("@next_value(", Position)) != std::string::npos;
+       ++Position)
+    ++Occurrences;
+  assert(Occurrences == 2);
+  Occurrences = 0;
+  for (size_t Position = 0;
+       (Position = IR.find("@actor_source(", Position)) != std::string::npos;
        ++Position)
     ++Occurrences;
   assert(Occurrences == 2);

@@ -79,14 +79,25 @@ continuation destination while awaiting the child. Cancellation uses the native
 frame cancellation channel, and lookup/hop failures use native service errors.
 Checked throws are preserved and explicitly propagated inside the thunk.
 
+Synchronous typed instance messages use the same private native frame, with
+semantic bindings that evaluate the original receiver and arguments once before
+frame creation. Actor entry obtains a retained mailbox from the runtime's
+explicit object association and hops to that mailbox. A declared executor is
+checked against the retained mailbox's exact backing executor identity before
+the hop. Nil receivers keep ordinary nil-message behavior without requiring an
+association. Missing/retired associations and conflicting executor bindings
+produce native service failures. The actor lookup lease is balanced after the
+runtime has retained the destination, while the frame owns its receiver.
+
 The initial thunk result boundary excludes owned object/block results and C++
-nontrivial values. C++ target functions must have a nonthrowing native exception
-contract; arbitrary C++ exception transport is not silently synthesized. Nested
-isolated argument expressions require their own await. Actor-instance entry and
-unsupported callable shapes still receive targeted diagnostics. The compiler
-does not automatically associate object allocation with actor mailboxes. These
-remaining obligations and deferred execution validation prevent a full actor
-conformance claim.
+nontrivial values. Consuming parameters/receivers remain rejected until their
+cancellation-time adoption is implemented. C++ targets must have a nonthrowing
+native exception contract; arbitrary C++ exception transport is not silently
+synthesized. Nested isolated argument expressions require their own await.
+Async isolated target entries, class/super messages, and unsupported callable
+shapes still receive targeted diagnostics. The compiler does not automatically
+associate object allocation with actor mailboxes. These remaining obligations
+and deferred execution validation prevent a full actor conformance claim.
 
 A provably non-suspending native await evaluates its original operand and warns
 in strict concurrency checking. The proof visits evaluated subexpressions,
@@ -126,16 +137,16 @@ unsafe-unretained capture requires explicit unsafe admission. Shared `__block`
 state and cleanup-managed captures do not gain safety from a scalar or hidden
 physical field representation. Proven immutable local block literals are
 checked recursively; unknown block values need an explicit unchecked wrapper or
-are rejected in strict concurrency mode. Async work-item parameters and non-void task-handle results are
-validated on spawn/detached declarations. Discarded child handles in expression
+are rejected in strict concurrency mode. Async work-item parameters and non-void
+task-handle results are validated on spawn/detached declarations. Discarded child handles in expression
 statements receive the Part 7 unused-handle warning; explicit void discard and
 detached APIs express intentional discard. Additional synchronous block arguments
 are checked for their captures without being mislabeled as async work items.
 
 Group scope classification is persistent metadata and can coexist with a child
 or detached API classification; child and detached classifications conflict.
-This slice does not infer a
-group-add transfer contract from an arbitrary function name, implement task
+This slice does not infer a group-add transfer contract from an arbitrary
+function name, implement task
 creation from attributes, or relax the independent borrowed/resource flow rules.
 Dynamic invocation with incompatible known method isolation metadata is rejected
 instead of selecting an arbitrary global method-pool candidate.
@@ -149,6 +160,10 @@ borrowed/resource aggregates, direct and macro spawn captures, metadata-erasing
 pointers, source-free interface reconstruction, PCH serialization, native AST
 import conflicts, and ODR hash identity. The native C async diagnostics fixture
 also covers buried async operands and a non-suspending await inside defer.
+Deferred IR fixtures cover main/global/named executor entry, independent object
+argument ownership, one evaluation of source arguments, and preservation of
+executor-entry thunks through PCH. C++ exception-boundary and unsupported result
+shapes retain targeted failure fixtures.
 
 The regression sources are not execution evidence. Public actor/strict
 concurrency feature predicates remain subject to the repository capability
