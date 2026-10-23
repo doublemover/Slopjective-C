@@ -70,8 +70,11 @@ struct objc3_task final {
     // ancestors keep only weak descendant tokens.
     bool cancel_requested{false};
     std::shared_ptr<AwaitTarget> structured_parent;
+    // Protected by structured_parent's mutex; stable after parent cancellation.
+    size_t structured_index{0};
     std::vector<std::weak_ptr<AwaitTarget>> structured_children;
     explicit AwaitTarget(objc3_task_t *value) : task(value) {}
+    ~AwaitTarget();
   };
   struct Waiter {
     objc3_completion_callback callback;

@@ -35,6 +35,14 @@ Cancellation ancestry is a cancellation relationship. The shared task API still
 requires callers to join owned work explicitly; it does not introduce automatic
 structured scope finalization or compiler actor isolation.
 
+Cancellation marking, wake traversal, and final ancestry-token reclamation use
+allocation-free iterative walks. A deep structured tree no longer adds one
+native call frame per child while requesting cancellation or releasing its last
+descendant. Registration prunes expired links before cancellation and freezes
+existing child positions afterward. An authored 1,536-frame native C chain
+crosses executor queue admission, checks every cancellation/cleanup, then drops
+late dependency notifications and the completed ancestry chain.
+
 ## Lost continuations and frame cleanup
 
 Actor-discarded resumes, deferred dispatch failures, and last-owner abandonment

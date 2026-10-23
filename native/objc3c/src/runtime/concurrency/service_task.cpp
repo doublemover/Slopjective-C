@@ -2,7 +2,6 @@
 #include "service_autorelease_pool.h"
 #include "service_actor.h"
 
-#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <new>
@@ -333,6 +332,26 @@ void release_payload(objc3_task_t *task) noexcept {
 
 } // namespace
 
+objc3_task::AwaitTarget::~AwaitTarget() {
+  // Releasing the last descendant can reclaim an arbitrarily deep chain of
+  // completed ancestor tokens. A nested destructor hands its one strong parent
+  // to the outer loop rather than recursively dropping another shared_ptr.
+  // The TLS pointer is trivial and owns no state at thread teardown.
+  static thread_local std::shared_ptr<AwaitTarget> *deferred_parent = nullptr;
+  if (deferred_parent) {
+    *deferred_parent = std::move(structured_parent);
+    return;
+  }
+  auto next = std::move(structured_parent);
+  std::shared_ptr<AwaitTarget> pending;
+  deferred_parent = &pending;
+  while (next) {
+    next.reset();
+    next = std::move(pending);
+  }
+  deferred_parent = nullptr;
+}
+
 objc3_task_t::~objc3_task() {
   if (await_target) {
     std::lock_guard<std::mutex> lock(await_target->mutex);
@@ -481,11 +500,16 @@ objc3_service_status start_task(
       auto &children = parent->await_target->structured_children;
       // After cancellation, wake traversal uses stable vector positions while
       // temporarily dropping the token lock around callback-capable dispatch.
-      if (!parent->await_target->cancel_requested)
-        children.erase(std::remove_if(children.begin(), children.end(),
-                                      [](const auto &child) {
-                                        return child.expired();
-                                      }), children.end());
+      if (!parent->await_target->cancel_requested) {
+        size_t kept = 0;
+        for (const auto &weak_child : children)
+          if (auto child = weak_child.lock()) {
+            child->structured_index = kept;
+            children[kept++] = child;
+          }
+        children.resize(kept);
+      }
+      task->await_target->structured_index = children.size();
       children.push_back(task->await_target);
       task->await_target->structured_parent = parent->await_target;
       task->await_target->cancel_requested =
@@ -558,60 +582,73 @@ extern "C" void objc3_task_request_cancel(objc3_task_t *task) {
 }
 
 namespace {
-bool mark_cancel_tree(const std::shared_ptr<objc3_task::AwaitTarget> &target) {
-  std::lock_guard<std::mutex> lifetime(target->mutex);
-  target->cancel_requested = true;
+using CancellationTarget = std::shared_ptr<objc3_task::AwaitTarget>;
+
+CancellationTarget next_cancellation_target(CancellationTarget current,
+                                            const CancellationTarget &root) {
+  {
+    std::lock_guard<std::mutex> lock(current->mutex);
+    for (const auto &weak_child : current->structured_children)
+      if (auto child = weak_child.lock()) return child;
+  }
+  while (current != root) {
+    auto parent = current->structured_parent;
+    {
+      std::lock_guard<std::mutex> lock(parent->mutex);
+      // Cancellation freezes existing child positions. New registrations append
+      // and inherit cancellation before their first queue publication.
+      for (size_t index = current->structured_index + 1;
+           index < parent->structured_children.size(); ++index)
+        if (auto sibling = parent->structured_children[index].lock())
+          return sibling;
+    }
+    current = std::move(parent);
+  }
+  return {};
+}
+
+bool mark_cancel_tree(const CancellationTarget &root) {
   bool wake = false;
-  if (auto *task = target->task) {
-    // The token protects the raw record through its destruction boundary.
-    // No retained task is released under a group/publication lock, so marking
-    // cannot invoke completion observers or native frame cleanup.
-    task->cancel_requested.store(true, std::memory_order_release);
-    std::lock_guard<std::mutex> lock(task->mutex);
-    if (!task->terminal && task->awaiting) {
-      if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
-      task->await_status = nullptr;
-      task->await_result_task = nullptr;
-      task->awaiting = false;
-      task->cancel_wake_pending = true;
-      wake = true;
+  for (auto target = root; target; target = next_cancellation_target(target, root)) {
+    std::lock_guard<std::mutex> lifetime(target->mutex);
+    target->cancel_requested = true;
+    if (auto *task = target->task) {
+      // The token protects the raw record through its destruction boundary.
+      // No retained task is released under a group/publication lock, so marking
+      // cannot invoke completion observers or native frame cleanup.
+      task->cancel_requested.store(true, std::memory_order_release);
+      std::lock_guard<std::mutex> lock(task->mutex);
+      if (!task->terminal && task->awaiting) {
+        if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
+        task->await_status = nullptr;
+        task->await_result_task = nullptr;
+        task->awaiting = false;
+        task->cancel_wake_pending = true;
+        wake = true;
+      }
     }
   }
-  for (const auto &weak_child : target->structured_children)
-    if (auto child = weak_child.lock())
-      wake = mark_cancel_tree(child) || wake;
   return wake;
 }
 
-void wake_cancelled_tree(
-    const std::shared_ptr<objc3_task::AwaitTarget> &target) {
-  objc3_task_t *task = nullptr;
-  {
-    std::lock_guard<std::mutex> lifetime(target->mutex);
-    if (objc3_task_internal_retain(target->task)) task = target->task;
-  }
-  if (task) {
-    TaskReleaseGuard guard{task};
-    bool wake;
-    {
-      std::lock_guard<std::mutex> lock(task->mutex);
-      wake = std::exchange(task->cancel_wake_pending, false) && !task->terminal;
-    }
-    if (wake) wake_awaiting_task(task);
-  }
-  // Snapshot one child at a time, then drop the token lock before dispatch.
-  // Dispatch failure can synchronously complete a child and reenter arbitrary
-  // task/group APIs. Registration preserves indices after cancellation and
-  // only appends, so each snapshot remains valid across that reentry.
-  size_t index = 0;
-  for (;;) {
-    std::shared_ptr<objc3_task::AwaitTarget> child;
+void wake_cancelled_tree(const CancellationTarget &root) {
+  for (auto target = root; target; target = next_cancellation_target(target, root)) {
+    objc3_task_t *task = nullptr;
     {
       std::lock_guard<std::mutex> lifetime(target->mutex);
-      if (index == target->structured_children.size()) break;
-      child = target->structured_children[index++].lock();
+      if (objc3_task_internal_retain(target->task)) task = target->task;
     }
-    if (child) wake_cancelled_tree(child);
+    if (task) {
+      TaskReleaseGuard guard{task};
+      bool wake;
+      {
+        std::lock_guard<std::mutex> lock(task->mutex);
+        wake = std::exchange(task->cancel_wake_pending, false) && !task->terminal;
+      }
+      // No token or group lock spans dispatch, which may synchronously invoke
+      // completion or frame cleanup if admission fails.
+      if (wake) wake_awaiting_task(task);
+    }
   }
 }
 } // namespace

@@ -547,6 +547,85 @@ static void child_cancellation(int cancel_before_spawn, int cancel_child_only,
   objc3_task_release(tree.dependency);
   objc3_executor_release(tree.executor);
 }
+
+typedef struct DeepCancellation {
+  objc3_executor_t *executor;
+  objc3_task_t *dependency;
+  objc3_task_t **tasks;
+  unsigned count;
+  unsigned destroyed;
+} DeepCancellation;
+typedef struct DeepCancellationFrame {
+  DeepCancellation *state;
+  unsigned index;
+  unsigned step;
+} DeepCancellationFrame;
+static void deep_cancellation_resume(objc3_task_t *task, void *opaque);
+static void deep_cancellation_destroy(void *opaque) {
+  DeepCancellationFrame *frame = (DeepCancellationFrame *)opaque;
+  ++frame->state->destroyed;
+  free(frame);
+}
+static void deep_cancellation_start(DeepCancellation *state, unsigned index,
+                                     objc3_task_t *parent) {
+  DeepCancellationFrame *frame =
+      (DeepCancellationFrame *)calloc(1, sizeof(*frame));
+  assert(frame);
+  frame->state = state;
+  frame->index = index;
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = parent ? NULL : state->executor;
+  options.frame = frame;
+  options.resume = deep_cancellation_resume;
+  options.destroy = deep_cancellation_destroy;
+  assert((parent ? objc3_task_start_child(parent, &options, &state->tasks[index])
+                 : objc3_task_start(&options, &state->tasks[index])) == OBJC3_SERVICE_OK);
+}
+static void deep_cancellation_resume(objc3_task_t *task, void *opaque) {
+  DeepCancellationFrame *frame = (DeepCancellationFrame *)opaque;
+  if (frame->step++ == 0) {
+    if (frame->index + 1 != frame->state->count)
+      deep_cancellation_start(frame->state, frame->index + 1, task);
+    assert(objc3_task_await(task, frame->state->dependency) == OBJC3_SERVICE_OK);
+  } else {
+    assert(objc3_task_is_cancel_requested(task));
+    tree_complete(task, OBJC3_COMPLETION_CANCELLED);
+  }
+}
+static void deep_child_cancellation_and_ancestry_cleanup(void) {
+  DeepCancellation state = ZERO_INIT;
+  state.count = 1536; /* Deliberately exceeds executor continuation admission. */
+  state.tasks = (objc3_task_t **)calloc(state.count, sizeof(*state.tasks));
+  assert(state.tasks);
+  assert(objc3_executor_create(1, &state.executor) == OBJC3_SERVICE_OK);
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = state.executor;
+  options.resume = remain_suspended;
+  assert(objc3_task_start(&options, &state.dependency) == OBJC3_SERVICE_OK);
+  deep_cancellation_start(&state, 0, NULL);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(state.executor, state.count * 2, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == state.count + 1 && state.destroyed == 0);
+  objc3_task_request_cancel(state.tasks[0]);
+  for (unsigned index = 0; index != state.count; ++index)
+    assert(objc3_task_is_cancel_requested(state.tasks[index]));
+  assert(objc3_executor_pump(state.executor, state.count * 2, &executed) == OBJC3_SERVICE_OK);
+  assert(state.destroyed == state.count);
+  for (unsigned index = 0; index != state.count; ++index) {
+    tree_assert_kind(state.tasks[index], OBJC3_COMPLETION_CANCELLED);
+    objc3_task_release(state.tasks[index]);
+  }
+  /* Late dependency notifications own only ancestry tokens. Their final
+   * release reclaims the deep chain without recursing through native frames. */
+  tree_complete(state.dependency, OBJC3_COMPLETION_SUCCESS);
+  objc3_task_release(state.dependency);
+  objc3_executor_release(state.executor);
+  free(state.tasks);
+}
 int main(void) {
   groups();
   actors();
@@ -556,6 +635,7 @@ int main(void) {
   child_cancellation(0, 1, 0, 0);
   child_cancellation(0, 0, 1, 0);
   child_cancellation(0, 0, 0, 1);
+  deep_child_cancellation_and_ancestry_cleanup();
   objc3_executor_t *main_executor = NULL, *global_executor = NULL;
   objc3_error_t *service_error = NULL;
   objc3_service_status service_status = OBJC3_SERVICE_OK;
