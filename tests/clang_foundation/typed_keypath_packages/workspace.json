@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-workspace.v4",
+  "packages": ["provider/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.m",
+    "language": "objective-c",
+    "standard": "c17",
+    "ownership": "arc",
+    "dependencies": [
+      {"name": "fixture.TypedKeyPaths", "package": "typed-keypaths-v1", "visibility": "private"}
+    ]
+  }
+}
