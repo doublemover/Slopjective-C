@@ -1247,6 +1247,31 @@ extern "C" objc3_service_status objc3_async_frame_start_child_on(
   return start_async_frame(frame, executor, actor, parent, out_task);
 }
 
+extern "C" objc3_service_status objc3_async_frame_spawn(
+    objc3_async_frame *frame, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  auto *parent = objc3_task_current_callback();
+  if (!parent) return OBJC3_SERVICE_NOT_READY;
+  return objc3_async_frame_start_child(frame, parent, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_detach(
+    objc3_async_frame *frame, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  objc3_executor_t *global = nullptr;
+  const auto destination = objc3_executor_get_global(&global);
+  if (destination != OBJC3_SERVICE_OK) return destination;
+  const auto started = objc3_async_frame_start(frame, global, nullptr, out_task);
+  objc3_executor_release(global);
+  return started;
+}
+
 void objc3_service_run_task_resume(void *context) {
   auto *task = static_cast<objc3_task_t *>(context);
   void *frame = nullptr;

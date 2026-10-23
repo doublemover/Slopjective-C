@@ -263,6 +263,17 @@ objc3_service_status objc3_async_frame_start_child(objc3_async_frame *frame,
 objc3_service_status objc3_async_frame_start_child_on(
     objc3_async_frame *frame, objc3_task_t *parent, objc3_executor_t *executor,
     objc3_actor_t *actor, objc3_task_t **out_task);
+/* Library spawn backing operations. spawn requires the current active task
+ * resume and inherits its dynamic actor/executor and cancellation ancestry.
+ * Outside task execution it returns NOT_READY. detach selects the canonical
+ * global executor and establishes no inherited cancellation relationship.
+ * Both clear out_task on failure and preserve the owned frame unless started.
+ * These carrier helpers do not replace compiler-recognized Block-taking APIs:
+ * the standard header performs capture checking at that source boundary. */
+objc3_service_status objc3_async_frame_spawn(objc3_async_frame *frame,
+                                             objc3_task_t **out_task);
+objc3_service_status objc3_async_frame_detach(objc3_async_frame *frame,
+                                              objc3_task_t **out_task);
 
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own

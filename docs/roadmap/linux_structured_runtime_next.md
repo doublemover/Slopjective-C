@@ -256,3 +256,21 @@ Compiler entry lowering can compare this destination against canonical
 main/global/named affinity before entering an explicitly bound actor. Authored
 witnesses cover concurrent queries, distinct actors on one destination, and
 using the retained executor after all actor/caller executor handles are gone.
+
+## Ambient child and detached frame starts
+
+`objc3_async_frame_spawn` starts a child of the active runtime task, inheriting
+its current actor/executor and cancellation ancestry before first publication.
+An invocation outside task execution reports `NOT_READY`. The operation does
+not derive a parent from physical thread or destination identity.
+`objc3_async_frame_detach` starts independently on the canonical global pool;
+neither initial nor later parent cancellation becomes its cancellation source.
+Both operations preserve the owned frame on startup failure and clear it only
+on successful ownership transfer. The C++ lazy task adapter exposes matching
+`start_child()` and `detach()` operations.
+
+These carrier operations back the standard header's Block-taking APIs; only
+that recognized source boundary applies capture diagnostics. A C17 witness
+authors active actor inheritance, cancellation set before spawn, global detached
+independence, explicit group quiescence, and failure-side carrier cleanup.
+Validation remains deferred.

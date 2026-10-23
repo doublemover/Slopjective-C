@@ -803,6 +803,18 @@ public:
   task_handle<T> start_on(objc3_actor_t *actor) && {
     return start_impl(nullptr, actor);
   }
+  // Library entrypoints use the active runtime owner rather than guessing a
+  // parent from a destination or physical thread. Failure keeps frame_ owned.
+  task_handle<T> start_child() && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_spawn(&frame_, &started));
+    return task_handle<T>(started);
+  }
+  task_handle<T> detach() && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_detach(&frame_, &started));
+    return task_handle<T>(started);
+  }
 };
 
 } // namespace objc3
