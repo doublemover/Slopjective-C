@@ -127,6 +127,14 @@ No existing SDK receipt establishes acceptance of this new source.
 
 ## Remaining definition work
 
+Potentially suspending awaits while holding an `@synchronized` monitor are
+diagnosed, with a note at monitor acquisition. Monitor ownership must remain on
+the acquiring thread; releasing/reacquiring around suspension would change the
+critical section. Proven non-suspending identity awaits are accepted. A lock
+expression may suspend before acquisition, and nested async Block definitions
+check only their own monitor scopes. Source and PCH witnesses cover these
+boundaries in C17 and Objective-C++.
+
 Variable-length automatic storage and dynamic
 `alloca` are diagnosed because their storage is not represented by this
 fixed-layout frame implementation. Awaitable runtime handles, explicit yield
