@@ -77,6 +77,9 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { const char *p=capture_bytes(o); invoke(^[move p]{capture_use_bytes(p);}); launch(^{capture_use_bytes(p);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);}); if(h!=-1)__builtin_trap(); reset(h,4); invoke(^[move h]{use(h);}); }",
+      "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{reset(h,4);discard(h);}); }",
+      "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{int v=take(h);close_handle(v);}); }",
+      "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{defer {discard(h);} use(h);}); }",
   };
   for (const auto &Source : Accepted)
     expect(request(Root, Source, Language, Standard, ARC), true);
@@ -110,6 +113,8 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);});use(h);}", "may have been moved"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);});close_handle(h);}", "already"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{close_handle(h);});}", "cleanup"},
+      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{discard(h);use(h);});}", "may have been moved"},
+      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{int a=take(h);close_handle(a);int b=take(h);close_handle(b);});}", "may have been moved"},
   };
   for (const auto &[Source, Message] : Rejected)
     expect(request(Root, Source, Language, Standard, ARC), false, Message);

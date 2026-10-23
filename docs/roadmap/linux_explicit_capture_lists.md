@@ -30,6 +30,16 @@ captures. Completed fields have native exception cleanup when a later capture
 constructor or Block heap copy fails. Retain-cycle checking recognizes explicit
 weak/unowned captures and unused strong captures of the receiving object.
 
+Completed explicit fields have one shared live flag across construction
+rollback, temporary-failure rollback and committed lexical disposal. A guard
+below the full-expression temporary stack retains the rollback obligation until
+temporary destruction finishes and permanent cleanups are installed. This also
+covers ARC scalar initialization, ordinary return-expression field cleanup and
+precise `keepAlive`/`withLifetime` receiver evaluation. Source-scope queues delay
+committed implicit managed field releases until after that creation scope's
+defers; the source variable's declaration scope does not determine the field's
+owner. Resources and user C++ destructors retain their source-action LIFO order.
+
 Moving an ARC strong object slot transfers its existing owned reference and
 writes nil to the source. Moving a weak source acquires a strong snapshot and
 clears its weak slot. Other scalar moves write the previous value into the
@@ -62,6 +72,12 @@ therefore preserves one cleanup obligation rather than duplicating a handle.
 Address-based cleanup callbacks receive the acquired handle through a typed
 snapshot. Their validated argument conversions and calling convention remain
 native. The final allocation has cleanup on native exception edges too.
+
+`take`, `reset` and `discard` in the Block body resolve the original captured
+operand through that owner payload. Independent copies therefore observe the
+same sentinel changes. Reset/discard cleanup and exceptional invalidation use
+this storage rather than synthesizing a reference to the enclosing source
+local. A failed reset replacement leaves the captured owner invalid.
 
 Admission currently requires a statically nonthrowing callback (`nothrow` or
 `noexcept`). This avoids unwinding through ARC's nonthrowing release intrinsic.
@@ -105,9 +121,15 @@ callbacks, sentinels, left-to-right C++ capture effects, construction failure,
 heap-copy rollback and IR ownership operations. They are authored evidence,
 not passing results.
 
+Further fixtures cover captured resource operations, transferred owners,
+deferred discard during unwind, ordinary/return/goto exits, nested creation
+scopes, precise Block lifetime receivers and throwing full-expression
+temporaries after object/resource/C++ moves. These remain unexecuted.
+
 Remaining boundaries include unqualified/mixed/C++ carrier move captures,
 potentially
-throwing resource final disposal, broad exceptional CFG capture admission and
+throwing resource final disposal, rollback of an already-owned ARC Block return
+result when later return cleanup fails, broad exceptional CFG capture admission and
 end-to-end validation of the combined native compiler packets. Borrowed escape
 and concurrent-transfer admission are implemented by their owning slices and
 must be verified with these capture paths. Native source is exported and sealed

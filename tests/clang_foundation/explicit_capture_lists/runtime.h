@@ -150,6 +150,87 @@ static void capture_object_suite(void) {
 #endif
 }
 
+static int capture_defer_field_scope(int exit_kind) {
+  int before = capture_destroyed;
+  {
+    // Registration before the literal makes an ordinary LIFO field release
+    // run too early. A committed implicit release must follow this action.
+    defer { CAPTURE_CHECK(capture_destroyed == before); }
+    CaptureObject *source = [CaptureObject make:91];
+#if !__has_feature(objc_arc)
+    CaptureObject *manual_owner = source;
+#endif
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      return source->value;
+    };
+#if !__has_feature(objc_arc)
+    [manual_owner release];
+#endif
+    CAPTURE_CHECK(source == (id)0 && stack() == 91);
+    if (exit_kind == 1) return stack();
+    if (exit_kind == 2) goto finished;
+  }
+finished:
+  CAPTURE_CHECK(capture_destroyed == before + 1);
+  return 91;
+}
+static void capture_defer_suite(void) {
+  for (int exit_kind = 0; exit_kind != 3; ++exit_kind) {
+    int before = capture_destroyed;
+    CAPTURE_CHECK(capture_defer_field_scope(exit_kind) == 91);
+    CAPTURE_CHECK(capture_destroyed == before + 1);
+  }
+  int before = capture_destroyed;
+  CaptureObject *source = [CaptureObject make:92];
+  {
+    // The original declaration is in the outer scope; the literal fields
+    // belong to this inner source scope and its release queue.
+    defer { CAPTURE_CHECK(capture_destroyed == before); }
+    CaptureIntBlock __unsafe_unretained stack = ^[strong source] {
+      return source->value;
+    };
+#if !__has_feature(objc_arc)
+    [source release];
+#endif
+    source = (id)0;
+    CAPTURE_CHECK(stack() == 92);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 1);
+  {
+    defer { CAPTURE_CHECK(capture_destroyed == before + 2); }
+    CaptureObject *outer = [CaptureObject make:93];
+#if !__has_feature(objc_arc)
+    CaptureObject *outer_owner = outer;
+#endif
+    CaptureIntBlock __unsafe_unretained outer_block = ^[move outer] {
+      return outer->value;
+    };
+#if !__has_feature(objc_arc)
+    [outer_owner release];
+#endif
+    {
+      defer { CAPTURE_CHECK(capture_destroyed == before + 1); }
+      CaptureObject *inner = [CaptureObject make:94];
+#if !__has_feature(objc_arc)
+      CaptureObject *inner_owner = inner;
+#endif
+      CaptureIntBlock __unsafe_unretained inner_block = ^[move inner] {
+        return inner->value;
+      };
+#if !__has_feature(objc_arc)
+      [inner_owner release];
+#endif
+      withLifetime(inner_block) {
+        defer { CAPTURE_CHECK(inner_block() == 94 && outer_block() == 93); }
+        CAPTURE_CHECK(inner_block() == 94);
+      }
+    }
+    CAPTURE_CHECK(capture_destroyed == before + 2 && outer_block() == 93);
+    keepAlive(outer_block);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 3);
+}
+
 #if __has_feature(objc_arc)
 static void capture_carrier_move_suite(void) {
   int before = capture_destroyed;
@@ -244,6 +325,46 @@ static void capture_resource_suite(void) {
   CAPTURE_CHECK(capture_closed == 3 && capture_close_sum == 27);
 }
 
+static void capture_resource_operations_suite(void) {
+  int before = capture_closed, sum = capture_close_sum;
+  {
+    int handle __attribute__((objc_resource(close=capture_close_address,
+                                             invalid=-1))) = 81;
+    void (^operate)(void) = ^[move handle] {
+      reset(handle, 82);
+      discard(handle);
+    };
+    CAPTURE_CHECK(handle == -1);
+    operate();
+    CAPTURE_CHECK(capture_closed == before + 2 &&
+                  capture_close_sum == sum + 163);
+  }
+  CAPTURE_CHECK(capture_closed == before + 2);
+  CaptureIntBlock left = (id)0, right = (id)0;
+  {
+    int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 83;
+    CaptureIntBlock __unsafe_unretained stack = ^[move handle] {
+      return take(handle);
+    };
+    left = [stack copy];
+    right = [stack copy];
+    CAPTURE_CHECK(left != right && handle == -1);
+  }
+  // The operations address the one shared owner payload, not the original
+  // source local or a private copy of the handle in each heap Block.
+  int acquired = left();
+  CAPTURE_CHECK(acquired == 83 && right() == -1);
+  capture_close(acquired);
+#if __has_feature(objc_arc)
+  left = right = (id)0;
+#else
+  _Block_release(left);
+  _Block_release(right);
+#endif
+  CAPTURE_CHECK(capture_closed == before + 3 &&
+                capture_close_sum == sum + 246);
+}
+
 #ifdef __cplusplus
 struct CaptureMoveRecord {
   inline static int moves = 0, copies = 0, live = 0;
@@ -302,10 +423,12 @@ static void capture_cpp_suite(void) {
 static void capture_suite(void) {
   capture_scalar_suite();
   capture_object_suite();
+  capture_defer_suite();
 #if __has_feature(objc_arc)
   capture_carrier_move_suite();
 #endif
   capture_resource_suite();
+  capture_resource_operations_suite();
 #ifdef __cplusplus
   capture_cpp_suite();
 #endif

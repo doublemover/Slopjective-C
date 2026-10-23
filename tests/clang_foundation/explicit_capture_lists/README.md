@@ -9,10 +9,16 @@ span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
   copies (including distinct heap Blocks copied from one stack literal), address
   cleanup, sentinels, templates, C++ object move/copy separation
   and capture evaluation order. ARC cases also move strong/weak Optional payloads
-  and verify their source fields and weak registrations remain safe.
+  and verify their source fields and weak registrations remain safe. Resource
+  take/reset/discard operates through shared copied owners. Deferred actions
+  observe committed fields before implicit release across nested scopes,
+  return/goto exits and precise Block lifetime receiver regions.
 - `exceptions.mm`: a later C++ constructor fails during literal construction or
   heap copying, including a throwing move constructor; completed object/resource
-  captures clean up exactly once.
+  captures clean up exactly once. It also covers throwing reset replacements,
+  deferred resource discard, transferred handles, committed field unwind and
+  temporary-destructor failure between field construction and lifetime commit,
+  including `keepAlive`/`withLifetime` Block receivers.
 - `sema.m`: parser and ownership diagnostics plus weak-self guard syntax and
   retain-cycle diagnostics. Its RUN line uses Clang's verify mechanism.
 - `strict_resource.m`: strict-system consumed-state, reset, sentinel observation
