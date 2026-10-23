@@ -548,12 +548,9 @@ class TypeDependencyVisitor final
 
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
     const auto effects = type->getObjC3FunctionEffects();
-    // A C async declaration names a frame-returning entry point. Reprinting
-    // its logical return type as Objective-C++ would instead select task<T>.
-    // The interface schema must model that physical ABI before exporting it.
-    if (effects.Async && !context_.getLangOpts().CPlusPlus)
-      AddDiagnostic(result_, "O3IFC161",
-                    "Objective-C async frame entry ABI is not yet modeled in semantic interfaces");
+    // The canonical function type explicitly selects its physical ABI. Never
+    // infer the return carrier from the importing translation unit's language.
+    UsesRuntimeFrame |= effects.Async && effects.AsyncFrame;
     UsesCanonicalFunctionEffects |=
         effects.Async || effects.Throws != clang::ObjC3ThrowsKind::None;
     if (!effects.ErrorType.isNull()) TraverseType(effects.ErrorType);
@@ -598,6 +595,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+    check(property->getType());
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
     check(method->getObjC3FunctionType());
     check(method->getReturnType());
@@ -897,6 +896,11 @@ class InterfaceCollector final
                     identity.stable_id);
       return true;
     }
+    if (!IsValidAsyncABIIdentity(identity.effects)) {
+      AddDiagnostic(result_, "O3IFC025", "public async type has no complete physical ABI identity",
+                    identity.stable_id);
+      return true;
+    }
     auto *representative = Representative(declaration);
     const std::string stable_id = identity.stable_id;
     uses_function_effects_ |=
@@ -1054,14 +1058,16 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                   a.effects.throws_kind, a.effects.error_type_identity,
                   a.effects.actor_isolation_identity,
                   a.effects.executor_affinity_identity,
-                  a.effects.ownership_identity) ==
+                  a.effects.ownership_identity,
+                  a.effects.async_abi_identity) ==
          std::tie(b.stable_id, b.kind, b.qualified_name, b.spi_group,
                   b.native_symbol_name, b.canonical_type_identity,
                   b.effects.is_async, b.effects.is_throwing,
                   b.effects.throws_kind, b.effects.error_type_identity,
                   b.effects.actor_isolation_identity,
                   b.effects.executor_affinity_identity,
-                  b.effects.ownership_identity);
+                  b.effects.ownership_identity,
+                  b.effects.async_abi_identity);
 }
 
 }  // namespace
@@ -1147,6 +1153,8 @@ bool ReadInterfaceDeclarationIdentity(
   if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(representative))
     identity.effects = ReadCanonicalFunctionEffects(
         method->getObjC3FunctionType(), context);
+  if (auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(representative))
+    identity.effects = ReadCanonicalFunctionEffects(property->getType(), context);
   const auto return_ownership = ReadNativeReturnOwnership(representative);
   if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
   ReadNativeDeclarationContracts(representative, context, identity.effects);
@@ -1299,8 +1307,11 @@ InterfaceEmissionArtifact EmitSemanticInterface(
         declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
       sidecar.required_semantics.push_back("objc3.direct-dispatch.v1");
     const auto &effects = declaration.effects;
-    if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty())
+    if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty() ||
+        !effects.async_abi_identity.empty())
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
+    if (!effects.async_abi_identity.empty())
+      sidecar.required_semantics.push_back(kAsyncEntryABISemantic);
     if (effects.ownership_identity.starts_with("native-return:"))
       sidecar.required_semantics.push_back("objc3.native-return-ownership.v1");
     if (HasNativeOwnershipContracts(effects))
@@ -1331,6 +1342,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     "objc3.native-ownership-contracts.v1",
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
+    "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
@@ -1421,6 +1433,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.native-ownership-contracts.v1",
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
+    "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

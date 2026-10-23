@@ -303,6 +303,8 @@ PACKETS = {
     "0005-objc3-codegen-qualification-boundaries.patch": [
         "clang/lib/CodeGen/CGObjC3Async.cpp",
         "clang/lib/CodeGen/CGObjC3Async.h",
+        "clang/lib/CodeGen/CGObjC3Isolation.cpp",
+        "clang/lib/CodeGen/CGObjC3Isolation.h",
         "clang/lib/CodeGen/CGObjC3BlockCaptures.cpp",
         "clang/lib/CodeGen/CGObjC3BlockCaptures.h",
         "clang/lib/CodeGen/CodeGenModule.h",

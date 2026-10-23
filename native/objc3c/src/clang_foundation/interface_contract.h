@@ -6,7 +6,7 @@
 namespace objc3::clang_foundation {
 
 inline constexpr unsigned kInterfaceSchemaMajor = 2;
-inline constexpr unsigned kInterfaceSchemaMinor = 0;
+inline constexpr unsigned kInterfaceSchemaMinor = 1;
 inline constexpr const char *kInterfaceSchemaId =
     "objc3c.semantic-interface.v2";
 
@@ -31,10 +31,19 @@ struct InterfaceEffectIdentity {
   std::string actor_isolation_identity;
   std::string executor_affinity_identity;
   std::string ownership_identity;
+  // Position-tagged physical entry ABI, including nested callable types.
+  // Logical async effects alone cannot distinguish a C frame from task<T>.
+  std::string async_abi_identity;
 };
 
+inline constexpr const char *kAsyncEntryABISemantic =
+    "objc3.async-entry-abi.v1";
+
+[[nodiscard]] bool
+IsValidAsyncABIIdentity(const InterfaceEffectIdentity &effects);
+
 struct InterfaceDeclarationIdentity {
-  std::string stable_id;       // Clang USR, normalized for file-scope C typedefs.
+  std::string stable_id; // Clang USR, normalized for file-scope C typedefs.
   std::string kind;
   std::string qualified_name;
   std::string canonical_type_identity;
@@ -45,9 +54,9 @@ struct InterfaceDeclarationIdentity {
 };
 
 // Compare the complete declaration contract, including every modeled effect.
-[[nodiscard]] bool SameInterfaceDeclarationIdentity(
-    const InterfaceDeclarationIdentity &left,
-    const InterfaceDeclarationIdentity &right);
+[[nodiscard]] bool
+SameInterfaceDeclarationIdentity(const InterfaceDeclarationIdentity &left,
+                                 const InterfaceDeclarationIdentity &right);
 
 struct InterfaceDependency {
   InterfaceModuleIdentity module;
@@ -65,7 +74,6 @@ struct InterfaceSourceArtifact {
   std::vector<InterfaceDeclarationIdentity> declarations;
   std::vector<InterfaceDependency> dependencies;
 };
-
 
 // `required_semantics` names versioned semantics whose absence changes meaning.
 // Optional producer hints belong elsewhere and are ignored by importers.
@@ -107,8 +115,8 @@ struct InterfaceContractValidation {
 
 // Stable fingerprint input sorts semantically unordered collections and omits
 // source formatting and its own fingerprint. The sidecar codec owns JSON.
-[[nodiscard]] std::string BuildSemanticFingerprintInput(
-    const SemanticInterfaceSidecar &sidecar);
+[[nodiscard]] std::string
+BuildSemanticFingerprintInput(const SemanticInterfaceSidecar &sidecar);
 
 [[nodiscard]] InterfaceContractValidation ValidateSemanticInterface(
     const SemanticInterfaceSidecar &sidecar,
@@ -117,4 +125,4 @@ struct InterfaceContractValidation {
     const std::vector<InterfaceDeclarationIdentity> &parsed_clang_declarations,
     const std::vector<std::string> &supported_required_semantics);
 
-}  // namespace objc3::clang_foundation
+} // namespace objc3::clang_foundation

@@ -549,6 +549,7 @@ void BuildDependencyRecord(const CompileRequest &request,
             ",\"native_symbol_name\":" + JsonQuote(decl.native_symbol_name) +
             ",\"type\":" + JsonQuote(decl.canonical_type_identity) +
             ",\"async\":" + (decl.effects.is_async ? "true" : "false") +
+            ",\"async_abi_identity\":" + JsonQuote(decl.effects.async_abi_identity) +
             ",\"throws_kind\":" + JsonQuote(decl.effects.throws_kind) +
             ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) +
             '}';

@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "clang_foundation/module_names.h"
 
 #include <algorithm>
@@ -147,6 +148,7 @@ llvm::Expected<InterfaceModuleIdentity> DecodeModule(const Object &object,
 
 Object EncodeEffects(const InterfaceEffectIdentity &effects) {
   return Object{{"async", effects.is_async},
+                {"async_abi_identity", effects.async_abi_identity},
                 {"throws", effects.is_throwing},
                 {"throws_kind", effects.throws_kind},
                 {"error_type_identity", effects.error_type_identity},
@@ -158,7 +160,7 @@ Object EncodeEffects(const InterfaceEffectIdentity &effects) {
 llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
                                                        llvm::StringRef path) {
   if (auto error = CheckKeys(object,
-      {"async", "throws", "throws_kind", "error_type_identity",
+      {"async", "async_abi_identity", "throws", "throws_kind", "error_type_identity",
        "actor_isolation_identity", "executor_affinity_identity", "ownership_identity"}, path))
     return std::move(error);
   InterfaceEffectIdentity result;
@@ -179,6 +181,7 @@ llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
   READ_EFFECT_FIELD(actor_isolation_identity, "actor_isolation_identity");
   READ_EFFECT_FIELD(executor_affinity_identity, "executor_affinity_identity");
   READ_EFFECT_FIELD(ownership_identity, "ownership_identity");
+  READ_EFFECT_FIELD(async_abi_identity, "async_abi_identity");
 #undef READ_EFFECT_FIELD
   return result;
 }
@@ -279,7 +282,7 @@ llvm::Error ValidateForEncoding(
     return value.size() <= kMaxStringBytes && llvm::json::isUTF8(value);
   };
   if (sidecar.schema_major != kInterfaceSchemaMajor ||
-      sidecar.schema_minor > kInterfaceSchemaMinor)
+      sidecar.schema_minor != kInterfaceSchemaMinor)
     return Invalid("unsupported semantic interface schema version");
   if (!IsSha256(sidecar.canonical_source_sha256))
     return Invalid("source binding must be a lowercase SHA256 digest");
@@ -367,7 +370,8 @@ llvm::Error ValidateForEncoding(
                               &declaration.effects.error_type_identity,
                               &declaration.effects.actor_isolation_identity,
                               &declaration.effects.executor_affinity_identity,
-                              &declaration.effects.ownership_identity})
+                              &declaration.effects.ownership_identity,
+                              &declaration.effects.async_abi_identity})
       if (!valid_text(*value))
         return Invalid("declaration field is invalid UTF-8 or exceeds string limit");
   }
@@ -382,6 +386,13 @@ llvm::Error ValidateForEncoding(
   }
   for (const auto &declaration : sidecar.declarations) {
     const auto &effects = declaration.effects;
+    if (!IsValidAsyncABIIdentity(effects))
+      return Invalid("invalid or missing physical async entry ABI identity");
+    if (!effects.async_abi_identity.empty() && !required.count(kAsyncEntryABISemantic))
+      return Invalid("async entry ABI is missing its semantic capability");
+    if (effects.async_abi_identity.find("10:c-frame-v1") != std::string::npos &&
+        !required.count(RuntimeInterfaceSemantic().str()))
+      return Invalid("C frame entry ABI is missing its SDK header contract");
     if (effects.ownership_identity.find("native-contracts:v1:") != std::string::npos &&
         !required.count("objc3.native-ownership-contracts.v1"))
       return Invalid("native ownership contract is missing its semantic capability");
@@ -497,7 +508,7 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
   if (!major) return major.takeError();
   auto minor = RequiredUnsigned(*root, "schema_minor", "/");
   if (!minor) return minor.takeError();
-  if (*major != kInterfaceSchemaMajor || *minor > kInterfaceSchemaMinor)
+  if (*major != kInterfaceSchemaMajor || *minor != kInterfaceSchemaMinor)
     return Invalid("unsupported semantic interface schema version");
 
   SemanticInterfaceSidecar result;

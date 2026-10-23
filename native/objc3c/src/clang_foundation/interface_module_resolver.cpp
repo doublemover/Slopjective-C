@@ -30,6 +30,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.native-ownership-contracts.v1",
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
+    "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",

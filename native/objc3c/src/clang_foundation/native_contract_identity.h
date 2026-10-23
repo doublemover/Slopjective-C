@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 
+#include "clang_foundation/async_abi_identity.h"
 #include "clang_foundation/interface_contract.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang/AST/ASTContext.h"
@@ -126,6 +127,17 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
                                            const clang::ASTContext &context,
                                            InterfaceEffectIdentity &effects) {
   std::string ownership;
+  clang::QualType declaration_type;
+  if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))
+    declaration_type = value->getType();
+  if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
+    declaration_type = context.getTypeDeclType(type);
+  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+    declaration_type = method->getObjC3FunctionType();
+  if (const auto *property =
+          llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+    declaration_type = property->getType();
+  effects.async_abi_identity = ReadAsyncABIIdentity(declaration_type, context);
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))
     AppendNativeTypeContracts(ownership, value->getType(), context, "type");
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
@@ -134,6 +146,9 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     AppendNativeTypeContracts(ownership, method->getObjC3FunctionType(),
                               context, "type");
+  if (const auto *property =
+          llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+    AppendNativeTypeContracts(ownership, property->getType(), context, "type");
   if (const auto *borrow = clang::getObjC3BorrowedReturnContract(declaration)) {
     AppendNativeContractField(ownership, "returns-borrowed");
     AppendNativeContractField(ownership,

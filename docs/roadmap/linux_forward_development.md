@@ -1,293 +1,122 @@
 # Objective-C 3.0 on Linux
 
-The target is Objective-C 3.0 as defined by `spec/`, implemented by the patched
-Clang toolchain. C17 and C++20/23 name the underlying Clang source modes; they
-are not separate Objective-C product versions. Linux x86-64 with GNUstep 2.2 is
-the currently qualified runtime target. Windows and compatibility with retired
-frontends are outside the active development plan.
+The target is Objective-C **3.0 as defined by `spec/`**, implemented in the pinned
+native Clang toolchain and GNUstep 2.2 runtime. C17 and C++20/23 are underlying
+source modes. Linux x86-64 is the active implementation target. Windows,
+compatibility with retired frontends and rollback variants are outside this plan.
 
-The [language capability authority](../../schemas/objc3-language-capabilities.json)
-records public compiler claims. The [library inventory](../../stdlib/module_inventory.json)
-records native library coverage against the
-[standard-library contract](../../spec/STANDARD_LIBRARY_CONTRACT.md). Existing
-historical milestone checklists do not establish current Clang conformance.
+The [capability authority](../../schemas/objc3-language-capabilities.json) owns
+public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
+records implemented and remaining module contracts. Source implementation,
+validated compiler behavior and installed SDK delivery are separate checkpoints.
+The current large implementation batch is **authored, not built or executed**.
+Public async/actor predicates and full Core/Strict conformance remain reserved.
 
-## Delivered foundations
+## Current implementation spans
 
-The [current SDK receipt](../support/linux_defer_scope_release_acceptance.json) identifies
-the activated archive, its 26 installed suites and fresh Debian 13 / Ubuntu 26.04 checks. That release includes
-extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract, native standard-library modules,
-per-callback and per-resume autorelease pools, fair actor scheduling and the
-current SDK-independent package install command. Deferred cleanup now preserves
-managed source-scope releases and native action order, copied bodies and original
-exception state; checked-handler initialization and unwind diagnostics also
-pass the coroutine gate. New development must produce a
-new archive and receipt before it is described as delivered in that SDK.
+Six compiler/runtime spans and central integration work in the same canonical
+source tree. Maintained code and fixtures are committed as coherent pieces
+complete. Compiler changes are exported into the tracked LLVM patch stack in
+coordinated source checkpoints. There are no feature worktrees or ignored draft
+implementations. The canonical LLVM authoring tree remains under the existing
+ignored build root; exported patches are its version-controlled source inputs.
 
-The public synchronous compiler supports native `defer`, `Optional`, `Result`
-and checked `throws` in the bounded compatibility profile. Native `match` now
-constructs aggregate, reference, complex/vector and C++ member-pointer results;
-its bindings use stable snapshots and independent mutable case storage, with
-native weak loads and C++ copy/exception rules. Its ownership and
-ABI tests cover strong/weak/unsafe objects, Blocks, nested carriers, arrays,
-records, heap storage, direct dispatch, typed errors and native unwinding.
+| Span | Authored implementation | Continued implementation |
+| --- | --- | --- |
+| Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, mutable aliases, lifetime snapshots, capture provenance and native identity | Dynamic global initialization, carrier payload/alias precision, noescape definition proofs, temporary-owner materialization and remaining diagnostic boundaries |
+| Explicit captures | Strong/weak/unowned/move lists, independent object and resource owners, C++ creation move vs heap copy, qualified ARC carrier moves, captured take/reset/discard | Source-defer ordering for managed fields, full-expression temporary failure handoff, remaining native-EH CFG and destruction boundaries |
+| Async frames | Native C functions, methods and Blocks; lazy frame state machines; live storage, owned results/errors and child awaits; canonical frame-vs-task type identity and C++ frame bridge | Isolation entry integration, complete definition/storage boundary coverage and structured scope lowering |
+| Isolation/Sendable | Actor/executor/nonisolated/task metadata, state/call/transfer checks, transitive Sendable proof, exact identities and non-suspending await checks | Actual awaited main/global/named entry, retained actor-instance association, public spawn and complete Strict Concurrency behavior |
+| Typed key paths | Native property and record-field paths, exact-once access/writeback, immutable metadata, Root/Value identity, readonly narrowing and signature-only types | Public operation source representation/tooling, nullable intermediate traversal, dependent/effectful/isolated and ownership-bearing value boundaries |
+| Structured runtime | Descendant cancellation, iterative deep-tree reclamation, terminal failure cleanup, canonical/named executors, concurrent global pool, service errors, shielded cleanup joins and explicit-destination children | Actor-object association, compiler-owned structured scope finalization and remaining reentrant/abandonment edges |
+| Central integration | Resource capture CFG stages, precise lifetime owners, semantic ownership/isolation/key-path contracts, schema 2.1 physical async ABI identities and clangd source relationships | Package/profile projections, source-free transport, editor operations and combined feature integration |
 
-Native semantic interfaces preserve callable effects, ownership, availability,
-module-owned names, explicit exports and SPI. Source graphs and immutable binary
-packages support separately compiled and source-free providers. Installed editor
-and LLDB tests exercise the same canonical identities.
+Per-feature detail and authored witnesses:
 
-The structured runtime supplies groups, cancellation, task outcomes, serial
-actors, executor destinations and suspended dependency/hop scheduling. The
-Objective-C++ coroutine compiler supports async functions, methods and Blocks
-through reserved spellings. Public async/await and actors remain reserved.
-The [shared ABI contract](linux_async_c_abi.md) no longer exposes C++ promise
-layout at the C frame boundary.
+- [Borrowed pointers](linux_borrowed_pointers.md) and [explicit captures](linux_explicit_capture_lists.md).
+- [Native C definitions](linux_native_c_definitions.md), [shared async ABI](linux_async_c_abi.md) and [structured runtime](linux_structured_runtime_next.md).
+- [Isolation and Sendable](linux_native_isolation_sendable.md).
+- [Typed key paths](linux_typed_keypaths.md).
+- [Native module contracts](linux_native_interface_contracts.md).
 
-## Implementation in progress
+## Foundations already implemented
 
-The shared native source tree now implements ordered public guard and optional
-bindings, lazy coalescing, reference optional access, scalar resource cleanup
-and explicit transfer operations, mixed C++/ARC carrier locals, source C++
-records with carrier fields, and selected-payload LLDB inspection. Native CFG
-work includes selected match/coalescing branches and resource stages. Native-C
-logical async declarations and calls bridge to the C frame ABI; definitions
-still require the separately specified state-machine lowering.
+The earlier compiler foundation includes native defer and cleanup; ordered guard
+and optional bindings; lazy coalescing and reference optional access; exhaustive
+match results; recursive Optional/Result ownership; C++/ARC records, arrays and
+heap storage; native checked errors and lazy factories; scalar resources and
+strict moved/consumed flow. Part 3 v1 deliberately limits optional access to
+reference results and void sends. Resource aggregate fields are a separate v2
+capability under Part 8 §8.3.6.
 
-Task-group work includes nonblocking completion, typed result reservation and
-iteration, cancellation-safe output slots and retained C17 frame results. Library
-adapters preserve domain errors and lazily construct selected Result arms;
-strict Error-factory checks are native Sema operations. Source traversal,
-libclang indexing, AST matchers, clang-query and focused clangd consumers have
-regressions enrolled in the foundation build. Raw PCH/PCM identity now rejects
-incompatible Objective-C 3 artifacts even when ordinary validation is disabled.
+Module-owned names, explicit exports/SPI, source dependency graphs, immutable
+packages and bounded ownership projections retain native declaration identity.
+PCH/PCM replay checks the Objective-C 3 build identity. Native source traversal,
+libclang, matchers, clang-query, clangd and LLDB cover the earlier admitted
+surfaces. New feature-specific consumers are being extended with each source
+milestone; earlier tooling coverage does not establish new feature coverage.
 
-The consolidated development foundation now passes: compiler, facade libraries,
-editor tools and LLDB build successfully; 293 Clang regressions pass with three
-unsupported, alongside 148 native AST/CFG/CodeGen, matcher and clangd contract
-tests. Eighteen focused tooling tests and eight coroutine harness tests pass.
-The admitted execution matrix also passes 1,045 commands: 404 native AST
-configurations, 24 defer, 24 guard, 24 optional-access and eight coalescing
-source/PCH configurations. SDK/archive qualification is stopped while the next implementation batch is developed.
-The repaired standard-library overlay passes 40 executions / 198 commands, and
-the async C ABI MRC lifetime witness passes 100 repeated executions. Strict
-factory contracts check all three profiles: ARC additionally compiles the
-managed carrier ABI; MRC checks Sema without admitting unsupported managed
-carrier code generation. Installed SDK qualification remains required before
-new release receipts or capability claims. The active
-SDK above still predates this wave. Managed release queues retain an explicit
-native-EH CFG ownership boundary while normal CFG and native execution checks
-remain independent.
+## Completion sequence
 
-Native Objective-C async definitions, public spawn/isolation/Sendable, complete
-strict profiles and native AArch64 qualification remain outstanding. Reference
-optional access follows Part 3 v1, which deliberately excludes scalar/struct
-optional chaining. Borrowed-pointer provenance, escape checking and explicit capture rules from
-Part 8 remain outstanding. Resource field annotations are deliberately rejected in v1 under
-Part 8 §8.3.6; aggregate-resource lowering is a separate v2 capability.
+1. Finish the current ownership, async, isolation, key-path and structured runtime
+   slices together. Preserve live owners through suspension and exceptions;
+   retain complete callable identity across source, PCH, import and packages.
+2. Complete library-recognized structured/detached spawn and the standardized
+   macro surface, with scope quiescence and Sendable diagnostics. Bind actor
+   instances and executor entry to actual retained runtime destinations.
+3. Reconcile every remaining Part 3/5 type/control-flow requirement, generic
+   constraint, property/reflection/metaprogramming and specified foreign/Swift
+   interop surface with real implementation. Keep optional feature-set limits
+   explicit; no placeholder module counts as completion.
+4. Close unsupported native-EH CFG ownership and profile diagnostics, including
+   required fix-its, before promoting Core, Strict, Strict Concurrency or Strict
+   System capabilities.
+5. Run a combined compiler/facade/tooling/runtime validation batch after the
+   implementation checkpoint is coherent. Then perform one coordinated SDK
+   cutover and installed-consumer run for the release. Do not rebuild or qualify
+   SDK archives repeatedly during frontloaded source development.
+6. Complete native Linux AArch64 implementation and qualification on a native
+   host. Cross-compilation/emulation can find defects but do not establish native
+   support. Qualify supported fresh Linux distributions against the final SDK.
 
-The unvalidated implementation batch adds contextual public `take`, `reset`
-and `discard`, prefix `@resource(F, invalid: X)` declarations, resource AST import
-and structural identity, strict proofs for unspecified receivers, and C++ error
-factory thunks that avoid eager copies and construct factories only on failure.
-New parser, PCH, strict-flow, import/index and execution fixtures accompany the
-implementation. A further chunk implements prefix `@cleanup(F)` and canonical
-`cleanup(F)` headers with checked native value, direct reference and address
-calls. Cleanup is unconditional, reads the final value, preserves callback
-mutations, and shares registration order with defer and resources. Native unwinding, CFG
-cleanup elements, protected jumps, AST import, PCH and deferred ARC source
-release scopes are integrated. Forwarded block storage remains alive until the
-callback returns. Path-sensitive analysis remains explicitly unsupported for
-these native cleanup nodes. New semantic, IR, CFG, import/PCH and runtime
-fixtures are authored; no post-batch compiler build or execution is claimed.
-Strict profiles also diagnose direct non-local transfers that may bypass a
-registered defer, cleanup or resource action, including signal jumps and
-`-fno-builtin` C library declarations. A unique automatic jump buffer used only
-by jump primitives can preserve existing registrations at its local save point;
-actions registered afterward remain diagnosed. Initializer calls, completed
-inner scopes, control-statement scopes and nested callable ownership retain
-separate registration boundaries. This is a local direct-call analysis; it does
-not claim interprocedural wrapper or arbitrary jump-buffer alias analysis.
-The next authored slice adds typedef/using resource contracts: public
-`@requires_cleanup`, `@resource_family` and `@invalid`, with canonical GNU header
-forms recorded in B.8.7. Cleanup associations survive redeclarations, PCH and AST
-import. Structural matching and importer merge checks distinguish resource
-families, callbacks and converted sentinel values while retaining the scalar
-ABI. Alias redefinitions cannot silently change an inherited contract.
+This is a hard cutover project. Semantic interface schema 2.1 requires explicit
+physical async ABI identity; old interfaces/packages must be rebuilt. Source,
+headers, objects, PCH, interfaces, packages and SDK artifacts must agree when a
+contract changes. Broad source-language/ownership projections remain gated until
+they preserve the complete declaration and physical ABI contract.
 
-Strict-system flow now tracks automatic typed handles with manual, deferred or
-automatic cleanup, typed ownership returns, selected branches, loops and native
-exception exits. It diagnoses missing cleanup, repeated/wrong-family closes,
-untracked storage, dropped acquisitions and incompatible ownership returns.
-Manual close has a separate consumed state: comparing an unchanged handle to
-its sentinel cannot resurrect ownership. Typed owned returns across potentially
-throwing scope cleanup are explicitly rejected until their rollback is modeled;
-nonthrowing actions and known-invalid returns remain admitted. This slice does
-not claim global/heap ownership, borrowed escapes, explicit capture transfer or
-complete strict-system conformance. Parser/Sema, source/PCH, import/identity and
-runtime fixtures accompany the implementation; no new execution result is
-claimed. Combined validation is deferred until a larger batch is ready.
+## Existing evidence
 
-## Active completion sequence
+The last fully validated compiler checkpoint is
+`0ddde9661a53f6464d9eb7225e80eedf5fce8ae3`, native source identity
+`llvmorg-23.1.3-0d261d1ca552-0a3a6c1d8422-00b75dc3`. Its compiler/facade/editor/
+debugger build passed, with 293 Clang regressions (three unsupported), 148 native
+contract tests and 1,045 integration commands. Separate receipts identify earlier
+stdlib, carrier, async and sanitizer runs. Later focused source compilation
+covered 31 C++ translation units; it did not execute the new language fixtures.
+**None of those results validates the current parallel implementation batch.**
 
-Each milestone includes implementation, diagnostics, imports, ownership,
-execution and installed-archive tests before its capability is promoted.
+The active older SDK is identified by
+[defer delivery evidence](../support/linux_defer_scope_release_acceptance.json)
+and [guard AST evidence](../support/linux_guard_ast_acceptance.json). No new SDK
+archive, installed-feature PASS or complete profile claim is implied by new
+source commits. Validation is deliberately deferred while implementation advances.
 
-1. **Native standard library.** Replace the retired `module`/`fn` sources and
-   synthetic integer helpers with canonical Clang modules backed by the real
-   runtime. Ship core discovery/versioning, lazy nil-to-error helpers, validated
-   UTF-8, concrete/generic collections and structured runtime declarations.
-   Exercise mixed Objective-C/Objective-C++ providers, ARC/MRC consumers, O0/O2,
-   cached imports and expected failures. Implement typed key paths and strict
-   system helpers as their compiler semantics become available.
-2. **Core type and control-flow completion.** Reconcile every Part 3 and Part 5
-   requirement with the current AST and diagnostics: generic constraints,
-   optional binding/chaining, `guard`, exhaustive matching, typed key paths and
-   flow-sensitive refinements. Carry these through PCH and semantic interfaces.
-3. **Native Objective-C async.** Lower functions, methods and Blocks to the
-   existing C frame ABI without requiring C++ source. Preserve live locals,
-   cleanup, owned results/errors, native exceptions and cancellation across
-   suspension. Recognize structured versus detached spawn and enforce awaited
-   effectful calls before promoting public syntax.
-4. **Isolation and concurrency safety.** Implement actor/global-actor callable
-   metadata, awaited executor crossings, isolated state access and Sendable
-   transfer checks. Preserve logical identity and mailbox fairness through
-   nested calls, imports and source-free packages.
-5. **Ownership and strict profiles.** Complete resource, borrowed/lifetime,
-   capture and escape rules from Part 8. Enable Core, Strict, Strict Concurrency
-   and Strict System only when the full relevant checklist and required library
-   modules pass, including required diagnostics and fix-its.
-6. **Remaining specified feature sets.** Complete the specified reflection,
-   metaprogramming/property behavior, foreign/Swift interop and tooling surfaces.
-   Optional feature-set status must remain explicit until its entire contract
-   is implemented and tested.
-7. **Release and architecture coverage.** Run the actual new archive on fresh
-   supported Linux distributions, publish its exact content identity and
-   installation evidence, then qualify AArch64 on a native host. Emulation and
-   cross-compilation can find bugs but do not establish native support.
+## Development operation
 
-The standard-library cutover is version 2. Its inventory distinguishes completed
-module contracts from partial and unimplemented modules. Importing a module
-alone does not establish profile conformance. No placeholder key-path or system
-module may turn a missing implementation into apparent coverage.
+Keep maintained implementation under `native/`, `stdlib/`, `scripts/`, `tests/`
+and the tracked compiler patches. `out/toolchains/` contains the active native
+source/build and SDK installation; `out/native-validation/` contains generated
+execution evidence; `out/session/` contains disposable local handoff records.
+These output roots are gitignored. Retain unique authored source through Git and
+pinned patch inputs; remove superseded generated artifacts rather than retaining
+rollback archives or duplicate source/build trees.
 
-## Development and release operation
-
-Use one hard cutover for source, objects, interfaces, packages and installed SDK
-artifacts when an ABI changes. Retain the current archive/installation and active
-compiler source/build tree. Remove superseded generated artifacts once a new
-release is verified; Git and pinned source/patch inputs preserve history.
-Preserve unique authored work before removing a worktree.
-
-| Location                 | Purpose                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| `out/toolchains/`        | Active compiler/build and current SDK archive/installation |
-| `out/native-validation/` | Current native execution receipts and diagnostics          |
-| `out/session/`           | Local handoff records and PR drafts                        |
-| `scratch/`               | Disposable experiments and temporary review worktrees      |
-
-These output roots are gitignored. Maintained code belongs under `scripts/`,
-`native/`, `stdlib/` or `tests/`; outputs do not belong beside source files.
-
-This instance has a four-CPU quota and 16 GiB of RAM. Use four compile jobs and
-one link job, a bounded 1 GB ccache with content-based compiler checks, and the
-private mode-0700 `/tmp/objc3c-1000` directory exported as `TMPDIR` by managed
-activation. `/tmp` already uses RAM; no extra ramdisk reservation is needed.
-Keep persistent compiler objects, SDKs and ccache on disk. Disposable integration
-executables and service archives use case-scoped temporary directories and are
-reclaimed on success or failure; logs and receipts remain on disk.
-
-Installed SDK consumers run with bounded concurrency and stop scheduling later
-suites after a failure. The maintained fresh-distribution runner binds the exact
-archive digest and qualifies Debian 13 and Ubuntu 26.04 concurrently with two
-CPUs per container, executable tmpfs and guaranteed container cleanup. Its
-`native-features` scope includes guard, optional access, recursive carrier and
-LLDB witnesses alongside defer, standard-library and async/task consumers.
-
-The ignored local `linux-dev` CMake preset targets the current frontend build.
-The SDK pipeline enables all required qualification independently. Frontend
-CTest executables are built and executed serially, then passed binaries are
-reclaimed to stay within the disk budget. Source, configuration and actual
-foundation contents determine reuse; deleting a duplicate stage does not
-invalidate an unchanged foundation.
-
-`out/bin/clangd` uses the current patched SDK, two workers and in-memory
-preambles. The ignored `.clangd` and root compilation database select current
-build paths. After an SDK cutover, reconfigure the frontend against
-`out/toolchains/linux-sdk/current` so no deleted candidate path remains in the
-compilation database.
-
-## Development system module
-
-The next implementation chunk adds the partial `objc3.system` native module,
-with an explicit Strict System import gate. Linux file descriptors and libc heap
-buffers carry cleanup/family/sentinel typedef contracts. Helpers provide explicit
-unsafe adoption, descriptor duplication, exact-once POSIX close and ordinary
-allocation/free. No new runtime ABI is introduced. Close preserves status/errno,
-is not retried after EINTR, and retains its cancellation/exception behavior.
-
-The maintained stdlib gate now includes twelve system execution configurations,
-three ownership rejections per language/ownership pair, and rejection of imports
-outside Strict System. These are authored checks awaiting combined validation;
-no new PASS, SDK or profile claim is recorded. Borrowed-pointer contracts,
-escape checking and complete diagnostics remain in the inventory's remaining
-list.
-
-## Development explicit lifetime control
-
-The next source milestone implements Part 8.6 `withLifetime(expr) stmt` and
-`keepAlive(expr);` as native statement nodes. Each operand is evaluated once
-and initialized into an implicit precise owner. Bounded owners end after the
-statement; kept owners end with the current lexical scope. Object and Block
-operands are supported. MRC acquires an independent reference even for an
-already owned operand; ARC uses a precise strong binding. Explicit bindings
-register cleanup on exceptional exits as well as normal returns and jumps.
-Source release queues keep these owners alive until explicit scope actions
-finish, including defers registered before `keepAlive`.
-
-The node, implicit declaration and source operand survive templates, PCH and
-AST import. Source traversal, indexing, printing, native/dynamic matchers and
-source-parent lookup expose the written operand once. CFGs have an explicit
-precise-owner release element even without optional destructor/lifetime flags.
-Protected jumps and strict non-local jump diagnostics include these owners.
-Path-sensitive symbolic analysis still reports an explicit unsupported boundary;
-block-copy, throwing initializer temporary and general managed EH CFG
-restrictions are not claimed resolved. An initialization guard releases a
-completed owner if destruction of a full-expression temporary throws before the
-permanent lexical cleanup can be registered.
-
-New semantic, IR, source/PCH, import/index, matcher, CFG-ordering and runtime
-witnesses cover these semantics. Focused source compilation also repaired two
-resource-prefix parser API mismatches and one resource diagnostic helper from
-the preceding implementation batch. Compiler relinking and execution of the
-new native fixtures remain pending; SDK/archive qualification remains paused.
-
-## Parallel implementation batch
-
-Six extended development spans now implement borrowed-pointer contracts and
-mandatory escape flow, explicit Block capture lists and unique resource capture
-owners, native C async definitions, actor/executor/Sendable semantics, typed key
-paths and structured runtime lifetime/cancellation. Their maintained fixtures and
-status documents are committed as each span completes a coherent piece. Shared
-compiler packets and module integration are checkpointed centrally in the same
-source tree; no isolated feature worktrees or ignored implementations are used.
-
-The runtime has gained descendant cancellation, failure propagation, reentrant
-operation lifetimes, canonical main/global executors and retained named executor
-registration. The global executor uses four concurrent workers; created executors
-remain serial. Native C free-function definitions now have authored frame/resume/
-destroy/result lowering; method and Block integration is advancing separately.
-Key paths now have typed property literals/application, immutable metadata and
-native identity, with the inventory recording the remaining traversal cases.
-
-[Module contract integration](linux_native_interface_contracts.md) preserves the
-new ownership/isolation metadata and typed key-path identities across emitted
-source, sidecars, imports and immutable packages. Resource-capture flow now uses
-creation-time CFG transfer stages, including left-to-right source invalidation
-and independent captured-owner facts inside Block bodies. Simple explicit
-scalar/object/resource capture lists enter the native EH graph; general C++
-capture and implicit Block-copy EH ownership remain explicit boundaries.
-
-Development is frontloaded. Native compiler/facade relinking, execution of the
-new witnesses and SDK/archive qualification remain deferred. Earlier validation
-receipts do not establish results for this implementation batch.
+The instance has four CPU quota cores and 16 GiB RAM. Use four compile jobs, one
+link job and a bounded 1 GiB content-keyed ccache. Managed activation sets the
+private executable tmpfs directory `/tmp/objc3c-1000` as `TMPDIR`; no extra RAM disk
+is needed. Keep persistent objects/SDK/cache on disk and disposable executables
+in automatically reclaimed case directories. During this development phase,
+build/test/qualification execution remains postponed. Once validation resumes,
+run necessary checks for the combined change and broaden only to resolve new
+failures or unresolved concerns.

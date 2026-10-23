@@ -1284,10 +1284,10 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..bc62e13e0
+index 000000000..1a7ba0b96
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,86 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1295,6 +1295,7 @@ index 000000000..bc62e13e0
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/StmtCXX.h"
 +namespace clang {
 +/// Canonical logical signature shared by functions, methods, and Blocks.
@@ -1335,12 +1336,41 @@ index 000000000..bc62e13e0
 +  const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit());
 +  return Await ? getObjC3CheckedAsyncAdapterCall(Await->getOperand()) : nullptr;
 +}
++/// The explicit C-frame entry adapter owns the carrier until task adoption.
++/// Unwrap it for logical effect checking without changing its evaluated type.
++inline const Expr *getObjC3FrameAdapterSource(const Expr *E) {
++  E = E->IgnoreImplicit();
++  const auto *Call = dyn_cast<CallExpr>(E);
++  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
++  if (FD && FD->getIdentifier() &&
++      FD->getIdentifier()->isStr("__objc3_async_from_frame") &&
++      Call->getNumArgs() == 1)
++    return Call->getArg(0)->IgnoreParenImpCasts();
++  return E;
++}
 +inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
 +  if (const auto *Adapter = getObjC3CheckedAsyncAdapter(E))
-+    return Adapter->getArg(0)->IgnoreImplicit();
++    return getObjC3FrameAdapterSource(Adapter->getArg(0));
 +  if (const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit()))
-+    return Await->getOperand()->IgnoreImplicit();
-+  return E->IgnoreParenImpCasts();
++    return getObjC3FrameAdapterSource(Await->getOperand());
++  return getObjC3FrameAdapterSource(E->IgnoreParenImpCasts());
++}
++
++inline const FunctionProtoType *getObjC3AsyncCalleeFunctionType(const Expr *E) {
++  E = getObjC3AsyncSourceCall(E);
++  if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
++    return getObjC3CallableFunctionType(Message->getMethodDecl());
++  const auto *Call = dyn_cast<CallExpr>(E);
++  if (!Call) return nullptr;
++  QualType Type = Call->getCallee()->getType();
++  if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++    Type = Expr::findBoundMemberType(Call->getCallee());
++  if (Type.isNull()) return nullptr;
++  if (const auto *Pointer = Type->getAs<PointerType>())
++    Type = Pointer->getPointeeType();
++  else if (const auto *Block = Type->getAs<BlockPointerType>())
++    Type = Block->getPointeeType();
++  return Type->getAs<FunctionProtoType>();
 +}
 +} // namespace clang
 +#endif

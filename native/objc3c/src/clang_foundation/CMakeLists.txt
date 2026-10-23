@@ -80,6 +80,7 @@ add_library(objc3_runtime_services STATIC
   ../runtime/concurrency/service_task.cpp
   ../runtime/concurrency/service_group.cpp
   ../runtime/concurrency/service_actor.cpp
+  ../runtime/concurrency/service_actor_object.cpp
   ../runtime/concurrency/service_public.cpp
   ../runtime/stdlib/text_service.cpp
   ../runtime/stdlib/keypath_service.cpp

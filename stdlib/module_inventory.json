@@ -43,7 +43,9 @@
         "lazy zero-success status Result and checked throws adapters",
         "NSError-style success/error-out Result adapter with explicit domain factory"
       ],
-      "remaining": ["Error-constrained generic factory validation for Core/Strict"]
+      "remaining": [
+        "Error-constrained generic factory validation for Core/Strict"
+      ]
     },
     {
       "module": "objc3.text",
@@ -107,10 +109,11 @@
         "structured descendant cancellation and failure propagation",
         "canonical main and bounded concurrent global executors",
         "named executor registration, retained lookup and affinity queries",
-        "native C free-function frame lowering (authored)"
+        "native C function, method and Block frame lowering (authored)",
+        "canonical frame-versus-task callable ABI and C++ frame bridge (authored)",
+        "cancellation-shielded cleanup joins and explicit-destination children (authored)"
       ],
       "remaining": [
-        "native Objective-C method/Block async integration",
         "public spawn lowering and structured scope finalization",
         "awaited isolation and executor crossing lowering",
         "complete strict concurrency and Sendable enforcement"
@@ -131,10 +134,12 @@
         "native typed property key-path literals",
         "typed read/write and readonly conversion",
         "immutable component metadata and native accessor dispatch",
-        "cross-translation-unit type and descriptor identity"
+        "cross-translation-unit type and descriptor identity",
+        "record-field traversal and exact-once property writeback (authored)",
+        "exact writable-to-readonly narrowing and source-only type signatures (authored)"
       ],
       "remaining": [
-        "nullable-intermediate and record-field traversal",
+        "nullable-intermediate traversal",
         "dependent, effectful and isolated paths",
         "borrowed and owned-resource value semantics",
         "optional KVC conversion and root indexing",
@@ -157,10 +162,11 @@
         "heap-buffer allocation, adoption and free",
         "native typedef cleanup/family/sentinel contracts",
         "explicit Strict System import gate",
-        "native withLifetime/keepAlive precise owner bindings"
+        "native withLifetime/keepAlive precise owner bindings",
+        "borrowed-pointer contracts, owner provenance and escape checking (authored)"
       ],
       "remaining": [
-        "borrowed-pointer contracts, owner provenance and escape checking",
+        "temporary-owner materialization and remaining borrowed alias/escape boundaries",
         "complete strict-system diagnostics and ownership boundaries"
       ]
     }

@@ -328,7 +328,7 @@ index 95cfd19c0..804b26750 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index 0bb9c6aa0..c826c7a18 100644
+index 0bb9c6aa0..f8cf2a16c 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
 @@ -42,6 +42,123 @@
@@ -455,20 +455,19 @@ index 0bb9c6aa0..c826c7a18 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -1633,6 +1750,12 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
+@@ -1633,6 +1750,11 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
    }
  
    const FunctionType *FnType = CalleeType->castAs<FunctionType>();
-+  const bool NativeCall = !getCallee()->getType()->isBlockPointerType();
 +  if (const auto *Proto = dyn_cast<FunctionProtoType>(FnType))
-+    if (NativeCall && Proto->getObjC3FunctionEffects().Async)
-+      if (QualType Task = Ctx.getObjC3AsyncTaskType(Proto->getReturnType());
++    if (Proto->getObjC3FunctionEffects().Async)
++      if (QualType Task = Ctx.getObjC3AsyncReturnType(Proto);
 +          !Task.isNull())
 +        return Task;
    return FnType->getReturnType();
  }
  
-@@ -2653,6 +2776,15 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -2653,6 +2775,15 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
@@ -484,7 +483,7 @@ index 0bb9c6aa0..c826c7a18 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3691,6 +3823,13 @@ namespace {
+@@ -3691,6 +3822,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -498,7 +497,7 @@ index 0bb9c6aa0..c826c7a18 100644
    };
  }
  
-@@ -3870,6 +4009,65 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4008,65 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -830,7 +829,7 @@ index fdefb6d6b..e32759c03 100644
 +  VisitStmt(S->getStorage());
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..ef5c46ae7 100644
+index 74209f579..4fd76bb51 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -878,7 +877,7 @@ index 74209f579..ef5c46ae7 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,89 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,91 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -904,11 +903,13 @@ index 74209f579..ef5c46ae7 100644
 +      if (NotPrimaryExpression)
 +        *NotPrimaryExpression = true;
 +      Res = ParseCastExpression(CastParseKind::AnyCastExpr);
-+      if (!Res.isInvalid() && Actions.DiagnoseObjC3AwaitIsolation(Res.get()))
-+        return ExprError();
++      if (!Res.isInvalid())
++        Res = Actions.BuildObjC3IsolationAwaitOperand(AwaitLoc, Res.get());
 +      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
 +          Actions.isObjC3NonSuspendingAwait(Res.get()))
 +        return Actions.ActOnObjC3NonSuspendingAwait(AwaitLoc, Res.get());
++      if (!Res.isInvalid() && getLangOpts().CPlusPlus)
++        Res = Actions.BuildObjC3CxxFrameAwaitOperand(AwaitLoc, Res.get());
 +      if (!Res.isInvalid())
 +        Res = getLangOpts().CPlusPlus
 +                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get())
@@ -968,7 +969,7 @@ index 74209f579..ef5c46ae7 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1725,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1727,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -976,7 +977,7 @@ index 74209f579..ef5c46ae7 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2028,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2030,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }
@@ -998,7 +999,7 @@ index 74209f579..ef5c46ae7 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3439,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+@@ -3330,6 +3441,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  
@@ -2328,7 +2329,7 @@ index 000000000..ae8ac6429
 +
 +} // namespace
 diff --git a/clang/lib/AST/ExprObjC.cpp b/clang/lib/AST/ExprObjC.cpp
-index 502c374f4..e9eb6cb0d 100644
+index 502c374f4..ee2671f16 100644
 --- a/clang/lib/AST/ExprObjC.cpp
 +++ b/clang/lib/AST/ExprObjC.cpp
 @@ -273,6 +273,9 @@ void ObjCMessageExpr::getSelectorLocs(
@@ -2336,7 +2337,7 @@ index 502c374f4..e9eb6cb0d 100644
    if (const ObjCMethodDecl *MD = getMethodDecl()) {
      QualType QT = MD->getReturnType();
 +    if (MD->getObjC3FunctionEffects().Async)
-+      if (QualType Task = Ctx.getObjC3AsyncTaskType(QT); !Task.isNull())
++      if (QualType Task = Ctx.getObjC3AsyncReturnType(MD->getObjC3FunctionType()->castAs<FunctionProtoType>()); !Task.isNull())
 +        return Task;
      if (QT == Ctx.getObjCInstanceType()) {
        // instancetype corresponds to expression types.

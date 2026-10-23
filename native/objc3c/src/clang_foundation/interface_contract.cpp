@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <set>
 #include <sstream>
 #include <tuple>
 
@@ -30,13 +31,18 @@ void ModuleFields(std::ostringstream &out, const std::string &prefix,
 }
 std::string DeclarationKey(const InterfaceDeclarationIdentity &d) {
   std::ostringstream out;
-  out << d.stable_id << '\n' << d.kind << '\n' << d.qualified_name << '\n'
-      << d.canonical_type_identity << '\n' << d.effects.is_async << '\n'
-      << d.effects.is_throwing << '\n' << d.effects.throws_kind << '\n'
+  out << d.stable_id << '\n'
+      << d.kind << '\n'
+      << d.qualified_name << '\n'
+      << d.canonical_type_identity << '\n'
+      << d.effects.is_async << '\n'
+      << d.effects.is_throwing << '\n'
+      << d.effects.throws_kind << '\n'
       << d.effects.error_type_identity << '\n'
       << d.effects.actor_isolation_identity << '\n'
       << d.effects.executor_affinity_identity << '\n'
       << d.effects.ownership_identity;
+  Field(out, "async-entry-abi", d.effects.async_abi_identity);
   if (!d.spi_group.empty())
     Field(out, "spi-group", d.spi_group);
   if (!d.native_symbol_name.empty())
@@ -45,8 +51,10 @@ std::string DeclarationKey(const InterfaceDeclarationIdentity &d) {
 }
 bool HasEffects(const InterfaceEffectIdentity &e) {
   return e.is_async || e.is_throwing || !e.throws_kind.empty() ||
-         !e.error_type_identity.empty() || !e.actor_isolation_identity.empty() ||
-         !e.executor_affinity_identity.empty() || !e.ownership_identity.empty();
+         !e.error_type_identity.empty() ||
+         !e.actor_isolation_identity.empty() ||
+         !e.executor_affinity_identity.empty() ||
+         !e.ownership_identity.empty() || !e.async_abi_identity.empty();
 }
 bool IsSha256(const std::string &digest) {
   return digest.size() == 64 &&
@@ -60,11 +68,49 @@ bool Empty(const InterfaceModuleIdentity &m) {
          m.extension_abi.empty() || m.language_revision.empty() ||
          m.language_profile.empty() || m.package_identity.empty();
 }
-void Add(InterfaceContractValidation &r, std::string code,
-         std::string message, std::string subject = {}) {
-  r.diagnostics.push_back({std::move(code), std::move(message), std::move(subject)});
+void Add(InterfaceContractValidation &r, std::string code, std::string message,
+         std::string subject = {}) {
+  r.diagnostics.push_back(
+      {std::move(code), std::move(message), std::move(subject)});
 }
-}  // namespace
+} // namespace
+
+bool IsValidAsyncABIIdentity(const InterfaceEffectIdentity &effects) {
+  const auto &text = effects.async_abi_identity;
+  if (text.empty())
+    return !effects.is_async;
+  if (!text.starts_with("v1:"))
+    return false;
+  std::size_t cursor = 3;
+  auto field = [&](std::string &value) {
+    const auto start = cursor;
+    std::size_t size = 0;
+    while (cursor < text.size() && text[cursor] >= '0' && text[cursor] <= '9') {
+      const auto digit = static_cast<std::size_t>(text[cursor++] - '0');
+      // Bound arithmetic by the whole input before multiplying.
+      if (size > text.size() / 10 || size * 10 + digit > text.size())
+        return false;
+      size = size * 10 + digit;
+    }
+    if (cursor == start || cursor == text.size() || text[cursor++] != ':' ||
+        (cursor - start > 2 && text[start] == '0') ||
+        size > text.size() - cursor)
+      return false;
+    value = text.substr(cursor, size);
+    cursor += size;
+    return true;
+  };
+  std::set<std::string> positions;
+  while (cursor < text.size()) {
+    std::string position, abi;
+    if (!field(position) || !field(abi) ||
+        !(position == "type" || position.starts_with("type.")) ||
+        !positions.insert(position).second ||
+        (abi != "c-frame-v1" && abi != "cxx-task-v1"))
+      return false;
+  }
+  return !positions.empty();
+}
 
 bool IsValidSPIGroup(const std::string &group) {
   auto letter = [](unsigned char c) {
@@ -92,7 +138,8 @@ bool SameInterfaceDeclarationIdentity(
                   left.effects.error_type_identity,
                   left.effects.actor_isolation_identity,
                   left.effects.executor_affinity_identity,
-                  left.effects.ownership_identity) ==
+                  left.effects.ownership_identity,
+                  left.effects.async_abi_identity) ==
          std::tie(right.stable_id, right.kind, right.qualified_name,
                   right.canonical_type_identity, right.spi_group,
                   right.native_symbol_name, right.effects.is_async,
@@ -100,29 +147,37 @@ bool SameInterfaceDeclarationIdentity(
                   right.effects.error_type_identity,
                   right.effects.actor_isolation_identity,
                   right.effects.executor_affinity_identity,
-                  right.effects.ownership_identity);
+                  right.effects.ownership_identity,
+                  right.effects.async_abi_identity);
 }
 
-std::string BuildSemanticFingerprintInput(const SemanticInterfaceSidecar &sidecar) {
+std::string
+BuildSemanticFingerprintInput(const SemanticInterfaceSidecar &sidecar) {
   std::ostringstream out;
-  out << kInterfaceSchemaId << '\n' << sidecar.schema_major << '.'
-      << sidecar.schema_minor << '\n';
+  out << kInterfaceSchemaId << '\n'
+      << sidecar.schema_major << '.' << sidecar.schema_minor << '\n';
   // Exclude the fingerprint itself and source bytes to avoid self-reference
   // and rebuild invalidation for comments/formatting in the generated source.
   ModuleFields(out, "module", sidecar.module, false);
   Field(out, "ownership-projection", sidecar.ownership_projection);
   auto semantics = sidecar.required_semantics;
   std::sort(semantics.begin(), semantics.end());
-  for (const auto &s : semantics) Field(out, "required", s);
+  for (const auto &s : semantics)
+    Field(out, "required", s);
   auto declarations = sidecar.declarations;
-  std::sort(declarations.begin(), declarations.end(),
-            [](const auto &a, const auto &b) { return a.stable_id < b.stable_id; });
-  for (const auto &d : declarations) Field(out, "declaration", DeclarationKey(d));
+  std::sort(
+      declarations.begin(), declarations.end(),
+      [](const auto &a, const auto &b) { return a.stable_id < b.stable_id; });
+  for (const auto &d : declarations)
+    Field(out, "declaration", DeclarationKey(d));
   auto dependencies = sidecar.dependencies;
-  std::sort(dependencies.begin(), dependencies.end(), [](const auto &a, const auto &b) {
-    return std::tie(a.module.canonical_name, a.module.semantic_fingerprint) <
-           std::tie(b.module.canonical_name, b.module.semantic_fingerprint);
-  });
+  std::sort(dependencies.begin(), dependencies.end(),
+            [](const auto &a, const auto &b) {
+              return std::tie(a.module.canonical_name,
+                              a.module.semantic_fingerprint) <
+                     std::tie(b.module.canonical_name,
+                              b.module.semantic_fingerprint);
+            });
   for (std::size_t i = 0; i < dependencies.size(); ++i) {
     const auto prefix = "dependency." + std::to_string(i);
     ModuleFields(out, prefix, dependencies[i].module);
@@ -140,24 +195,29 @@ InterfaceContractValidation ValidateSemanticInterface(
     const std::vector<std::string> &supported_required_semantics) {
   InterfaceContractValidation result;
   if (sidecar.schema_major != kInterfaceSchemaMajor ||
-      sidecar.schema_minor > kInterfaceSchemaMinor)
+      sidecar.schema_minor != kInterfaceSchemaMinor)
     Add(result, "O3IFC001", "unsupported semantic interface schema version");
   if (Empty(sidecar.module) || Empty(expected))
     Add(result, "O3IFC002", "module identity is incomplete");
   if (sidecar.module.canonical_name != expected.canonical_name ||
       sidecar.module.semantic_fingerprint != expected.semantic_fingerprint ||
       sidecar.module.package_identity != expected.package_identity)
-    Add(result, "O3IFC003", "module or package identity mismatch", expected.canonical_name);
+    Add(result, "O3IFC003", "module or package identity mismatch",
+        expected.canonical_name);
   if (sidecar.module.target_triple != expected.target_triple ||
       sidecar.module.runtime_abi != expected.runtime_abi ||
       sidecar.module.extension_abi != expected.extension_abi ||
       sidecar.module.language_revision != expected.language_revision ||
       sidecar.module.language_profile != expected.language_profile)
-    Add(result, "O3IFC004", "target, runtime ABI, extension ABI, language revision, or profile mismatch", expected.canonical_name);
+    Add(result, "O3IFC004",
+        "target, runtime ABI, extension ABI, language revision, or profile "
+        "mismatch",
+        expected.canonical_name);
   if (!IsSha256(sidecar.canonical_source_sha256) ||
       !IsSha256(canonical_source_sha256) ||
       sidecar.canonical_source_sha256 != canonical_source_sha256)
-    Add(result, "O3IFC005", "generated canonical source digest mismatch", expected.canonical_name);
+    Add(result, "O3IFC005", "generated canonical source digest mismatch",
+        expected.canonical_name);
   const bool projection_semantic = std::find(sidecar.required_semantics.begin(),
                                              sidecar.required_semantics.end(),
                                              "objc3.ownership-projection.v1") !=
@@ -183,24 +243,32 @@ InterfaceContractValidation ValidateSemanticInterface(
   auto required = sidecar.required_semantics;
   std::sort(required.begin(), required.end());
   if (std::adjacent_find(required.begin(), required.end()) != required.end())
-    Add(result, "O3IFC006", "duplicate required semantic capability", expected.canonical_name);
+    Add(result, "O3IFC006", "duplicate required semantic capability",
+        expected.canonical_name);
   for (const auto &semantic : required)
     if (!std::binary_search(supported.begin(), supported.end(), semantic))
-      Add(result, "O3IFC007", "unknown required semantic: " + semantic, expected.canonical_name);
+      Add(result, "O3IFC007", "unknown required semantic: " + semantic,
+          expected.canonical_name);
   auto expected_decls = sidecar.declarations;
   auto actual_decls = parsed_clang_declarations;
-  auto by_id = [](const auto &a, const auto &b) { return a.stable_id < b.stable_id; };
+  auto by_id = [](const auto &a, const auto &b) {
+    return a.stable_id < b.stable_id;
+  };
   std::sort(expected_decls.begin(), expected_decls.end(), by_id);
   std::sort(actual_decls.begin(), actual_decls.end(), by_id);
   for (std::size_t i = 1; i < expected_decls.size(); ++i)
     if (expected_decls[i - 1].stable_id == expected_decls[i].stable_id)
-      Add(result, "O3IFC008", "duplicate sidecar declaration identity", expected_decls[i].stable_id);
+      Add(result, "O3IFC008", "duplicate sidecar declaration identity",
+          expected_decls[i].stable_id);
   if (expected_decls.size() != actual_decls.size())
-    Add(result, "O3IFC009", "Clang declaration set does not match sidecar identities", expected.canonical_name);
+    Add(result, "O3IFC009",
+        "Clang declaration set does not match sidecar identities",
+        expected.canonical_name);
   const auto count = std::min(expected_decls.size(), actual_decls.size());
   for (std::size_t i = 0; i < count; ++i)
     if (DeclarationKey(expected_decls[i]) != DeclarationKey(actual_decls[i]))
-      Add(result, "O3IFC010", "declaration type or effect identity mismatch", expected_decls[i].stable_id);
+      Add(result, "O3IFC010", "declaration type or effect identity mismatch",
+          expected_decls[i].stable_id);
   if ((sidecar.module.language_profile.find(";language=c++;") !=
            std::string::npos ||
        sidecar.module.language_profile.find(";language=objective-c++;") !=
@@ -210,11 +278,11 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result, "O3IFC016",
         "C++ declarations are missing their semantic interface capability",
         expected.canonical_name);
-  const bool has_cxx_members = std::any_of(
-      sidecar.declarations.begin(), sidecar.declarations.end(),
-      [](const auto &d) { return d.kind == "CXXMethod"; });
-  if (has_cxx_members != std::binary_search(
-          required.begin(), required.end(), "objc3.cxx-member-interfaces.v1"))
+  const bool has_cxx_members =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &d) { return d.kind == "CXXMethod"; });
+  if (has_cxx_members != std::binary_search(required.begin(), required.end(),
+                                            "objc3.cxx-member-interfaces.v1"))
     Add(result, "O3IFC021",
         "C++ member declarations and required capability must agree",
         expected.canonical_name);
@@ -246,7 +314,8 @@ InterfaceContractValidation ValidateSemanticInterface(
   for (const auto &declaration : sidecar.declarations)
     if (HasEffects(declaration.effects) && !effect_semantic)
       Add(result, "O3IFC012",
-          "effect-bearing declaration is missing the canonical function-effects semantic capability",
+          "effect-bearing declaration is missing the canonical "
+          "function-effects semantic capability",
           declaration.stable_id);
   const bool return_ownership_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.native-return-ownership.v1");
@@ -254,31 +323,58 @@ InterfaceContractValidation ValidateSemanticInterface(
       required.begin(), required.end(), "objc3.direct-dispatch.v1");
   for (const auto &declaration : sidecar.declarations)
     if (declaration.kind == "ObjCMethod" &&
-        declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos &&
+        declaration.canonical_type_identity.find(";dispatch=direct") !=
+            std::string::npos &&
         !direct_semantic)
-      Add(result, "O3IFC015", "direct method is missing its semantic capability",
+      Add(result, "O3IFC015",
+          "direct method is missing its semantic capability",
           declaration.stable_id);
   for (const auto &declaration : sidecar.declarations)
     if (declaration.effects.ownership_identity.starts_with("native-return:") &&
         !return_ownership_semantic)
-      Add(result, "O3IFC014", "managed return ownership is missing its semantic capability",
+      Add(result, "O3IFC014",
+          "managed return ownership is missing its semantic capability",
           declaration.stable_id);
   for (const auto &declaration : sidecar.declarations) {
     const auto &effects = declaration.effects;
-    if (effects.ownership_identity.find("native-contracts:v1:") != std::string::npos &&
+    if (!IsValidAsyncABIIdentity(effects))
+      Add(result, "O3IFC025",
+          "invalid or missing physical async entry ABI identity",
+          declaration.stable_id);
+    if (!effects.async_abi_identity.empty() &&
+        !std::binary_search(required.begin(), required.end(),
+                            kAsyncEntryABISemantic))
+      Add(result, "O3IFC025",
+          "async entry ABI is missing its semantic capability",
+          declaration.stable_id);
+    if (effects.async_abi_identity.find("10:c-frame-v1") != std::string::npos &&
+        std::none_of(
+            required.begin(), required.end(), [](const auto &semantic) {
+              return semantic.starts_with("objc3.sdk-runtime-frames.v4.");
+            }))
+      Add(result, "O3IFC025",
+          "C frame entry ABI is missing its SDK header contract",
+          declaration.stable_id);
+    if (effects.ownership_identity.find("native-contracts:v1:") !=
+            std::string::npos &&
         !std::binary_search(required.begin(), required.end(),
                             "objc3.native-ownership-contracts.v1"))
-      Add(result, "O3IFC022", "native ownership contract is missing its semantic capability",
+      Add(result, "O3IFC022",
+          "native ownership contract is missing its semantic capability",
           declaration.stable_id);
-    if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos &&
-        !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v1"))
-      Add(result, "O3IFC024", "typed key path is missing its semantic capability",
+    if (declaration.canonical_type_identity.find("KeyPath<") !=
+            std::string::npos &&
+        !std::binary_search(required.begin(), required.end(),
+                            "objc3.typed-keypaths.v1"))
+      Add(result, "O3IFC024",
+          "typed key path is missing its semantic capability",
           declaration.stable_id);
     if ((!effects.actor_isolation_identity.empty() ||
          !effects.executor_affinity_identity.empty()) &&
         !std::binary_search(required.begin(), required.end(),
                             "objc3.isolation-contracts.v1"))
-      Add(result, "O3IFC023", "native isolation contract is missing its semantic capability",
+      Add(result, "O3IFC023",
+          "native isolation contract is missing its semantic capability",
           declaration.stable_id);
   }
   const bool carrier_semantic = std::binary_search(
@@ -290,16 +386,20 @@ InterfaceContractValidation ValidateSemanticInterface(
              std::string::npos) &&
         !carrier_semantic)
       Add(result, "O3IFC013",
-          "carrier declaration is missing the native carrier type semantic capability",
+          "carrier declaration is missing the native carrier type semantic "
+          "capability",
           declaration.stable_id);
   for (const auto &dep : sidecar.dependencies)
-    if (dep.module.canonical_name.empty() || dep.module.semantic_fingerprint.empty() ||
+    if (dep.module.canonical_name.empty() ||
+        dep.module.semantic_fingerprint.empty() ||
         dep.module.target_triple != sidecar.module.target_triple ||
         dep.module.runtime_abi != sidecar.module.runtime_abi ||
         dep.module.extension_abi != sidecar.module.extension_abi ||
         dep.module.language_revision != sidecar.module.language_revision)
-      Add(result, "O3IFC011", "dependency identity is incomplete or ABI-incompatible", dep.module.canonical_name);
+      Add(result, "O3IFC011",
+          "dependency identity is incomplete or ABI-incompatible",
+          dep.module.canonical_name);
   return result;
 }
 
-}  // namespace objc3::clang_foundation
+} // namespace objc3::clang_foundation

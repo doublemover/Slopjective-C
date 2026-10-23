@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..b12de7414 100644
+index 9a97d52fd..7b762fe9a 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -238,7 +238,45 @@ index 9a97d52fd..b12de7414 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1889,6 +1890,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
+@@ -1819,6 +1820,20 @@ void StmtPrinter::PrintCallArgs(CallExpr *Call) {
+ }
+ 
+ void StmtPrinter::VisitCallExpr(CallExpr *Call) {
++  if (const auto *Member =
++          dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts())) {
++    const Expr *Path = nullptr;
++    auto Kind = getObjC3KeyPathMember(Member, Path);
++    if ((Kind == ObjC3KeyPathMemberKind::Get && Call->getNumArgs() == 1) ||
++        (Kind == ObjC3KeyPathMemberKind::Set && Call->getNumArgs() == 2)) {
++      OS << (Kind == ObjC3KeyPathMemberKind::Get ? "KeyPathGet(" : "KeyPathSet(");
++      PrintExpr(const_cast<Expr *>(Path));
++      OS << ", ";
++      PrintCallArgs(Call);
++      OS << ')';
++      return;
++    }
++  }
+   PrintExpr(Call->getCallee());
+   OS << "(";
+   PrintCallArgs(Call);
+@@ -1832,6 +1847,16 @@ static bool isImplicitThis(const Expr *E) {
+ }
+ 
+ void StmtPrinter::VisitMemberExpr(MemberExpr *Node) {
++  const Expr *Path = nullptr;
++  auto Kind = getObjC3KeyPathMember(Node, Path);
++  if (Kind == ObjC3KeyPathMemberKind::ReadOnly ||
++      Kind == ObjC3KeyPathMemberKind::Metadata) {
++    OS << (Kind == ObjC3KeyPathMemberKind::ReadOnly ? "KeyPathAsReadOnly("
++                                                : "KeyPathMetadata(");
++    PrintExpr(const_cast<Expr *>(Path));
++    OS << ')';
++    return;
++  }
+   if (!Policy.SuppressImplicitBase || !isImplicitThis(Node->getBase())) {
+     PrintExpr(Node->getBase());
+ 
+@@ -1889,6 +1914,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
  }
  
  void StmtPrinter::VisitCompoundLiteralExpr(CompoundLiteralExpr *Node) {
@@ -253,7 +291,7 @@ index 9a97d52fd..b12de7414 100644
    OS << '(';
    Node->getType().print(OS, Policy);
    OS << ')';
-@@ -1939,6 +1948,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1972,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -507,7 +545,7 @@ index 9a97d52fd..b12de7414 100644
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
-@@ -2955,6 +3211,20 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,6 +3235,20 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -528,7 +566,7 @@ index 9a97d52fd..b12de7414 100644
  
    const FunctionType *AFT = Node->getFunctionType();
  
-@@ -3045,3 +3315,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3339,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;
@@ -1022,7 +1060,7 @@ index 000000000..20b83e18c
 +                                        Parens.getCloseLocation(), Semi);
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..0f6728ee3 100644
+index 44b51a985..0be5a6d31 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,8 +11,10 @@
@@ -1149,7 +1187,7 @@ index 44b51a985..0f6728ee3 100644
      return ParseIfStatement(TrailingElseLoc);
    case tok::kw_switch:              // C99 6.8.4.2: switch-statement
      return ParseSwitchStatement(TrailingElseLoc, PrecedingLabel);
-@@ -2464,6 +2523,15 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -2464,6 +2523,16 @@ StmtResult Parser::ParseReturnStatement() {
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);
@@ -1158,6 +1196,7 @@ index 44b51a985..0f6728ee3 100644
 +            Decl::castFromDeclContext(Actions.CurContext)))
 +      IsCoreturn |=
 +          FT->getObjC3FunctionEffects().Async &&
++          !FT->getObjC3FunctionEffects().AsyncFrame &&
 +          !Actions.Context.getTranslationUnitDecl()
 +               ->lookup(&Actions.Context.Idents.get("__objc3_async_task"))
 +               .empty();

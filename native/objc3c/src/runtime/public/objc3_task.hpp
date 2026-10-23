@@ -2,9 +2,9 @@
 #define OBJC3_TASK_HPP
 
 #if defined(__OBJC3_EXTENSION_ABI_REVISION__) &&                               \
-    __OBJC3_EXTENSION_ABI_REVISION__ != 20
+    __OBJC3_EXTENSION_ABI_REVISION__ != 21
 #error                                                                         \
-    "The task bridge requires Objective-C 3 extension ABI 20; rebuild the compiler and all providers."
+    "The task bridge requires Objective-C 3 extension ABI 21; rebuild the compiler and all providers."
 #endif
 
 #include "objc3_runtime_services.h"

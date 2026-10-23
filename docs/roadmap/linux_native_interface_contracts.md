@@ -22,8 +22,32 @@ while retaining its contract is rejected. Resource cleanup functions must be
 externally visible and available through the export/dependency graph; private
 storage sentinels and unrepresentable constants are rejected explicitly.
 
+Async signatures now carry a separate position-tagged physical entry identity:
+`c-frame-v1` or `cxx-task-v1`. The canonical native function type retains an
+`AsyncFrame` discriminator and prints frame declarations with the persistent
+`__objc3_async_frame` spelling, including indirect callbacks, Blocks and methods.
+Interface collection recursively records nested callable positions in arrays,
+records, native carriers and key paths. Logical async effects alone never select
+the importing source language's physical return carrier. The required semantic
+`objc3.async-entry-abi.v1` protects this distinction in fingerprints, source
+reparse, AST import, dependency records and immutable packages.
+
+Semantic interface schema **2.1** is a hard cutover: the ABI identity field is
+required, and schema 2.0 artifacts must be rebuilt. Missing, malformed, unknown
+or duplicate-position identities and stripped required semantics are rejected.
+Canonical frame declarations include the trusted SDK runtime header and bind
+its exact header semantic. This does not relax the module resolver's existing
+source-language/ownership profile compatibility rules; mixed native AST import
+and C++ frame-await bridges are developed separately from profile projections.
+
 Authored witnesses cover source round trips, sentinel/alias identity, semantic
-fingerprints and stripped-capability rejection. This implementation batch has
-not been built or executed. C async frame interfaces across C/C++ physical ABI
-views remain explicitly rejected pending their separate declaration contract.
+fingerprints, ABI tampering, recursive callback contracts, mixed-language AST
+type import and stripped-capability rejection. This implementation batch has
+not been built or executed.
 Opposite-ownership projections retain their existing bounded C API rules.
+
+Native extension ABI **21** accompanies the new serialized function effects,
+capture fields and attributes. Older ABI 20 PCH/PCM inputs are rejected before
+record decoding, independently of ordinary PCH validation switches. Runtime
+frame/task-service record versions remain unchanged; all compiler/header/object/
+interface/package inputs must be rebuilt together.
