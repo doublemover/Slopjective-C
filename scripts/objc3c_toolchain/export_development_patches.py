@@ -63,6 +63,7 @@ PACKETS = {
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
         "clang/include/clang/AST/Decl.h",
+        "clang/include/clang/AST/EvaluatedExprVisitor.h",
         "clang/include/clang/AST/ObjC3Borrowed.h",
         "clang/include/clang/AST/ObjC3Isolation.h",
         "clang/include/clang/AST/ObjC3KeyPath.h",
@@ -301,10 +302,13 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/lib/CodeGen/CGException.cpp",
         "clang/lib/CodeGen/CGObjC3Async.cpp",
         "clang/lib/CodeGen/CGObjC3Async.h",
         "clang/lib/CodeGen/CGObjC3Isolation.cpp",
         "clang/lib/CodeGen/CGObjC3Isolation.h",
+        "clang/lib/CodeGen/CGObjC3KeyPath.cpp",
+        "clang/lib/CodeGen/CGObjC3KeyPath.h",
         "clang/lib/CodeGen/CGObjC3BlockCaptures.cpp",
         "clang/lib/CodeGen/CGObjC3BlockCaptures.h",
         "clang/lib/CodeGen/CodeGenModule.h",

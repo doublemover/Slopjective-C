@@ -1234,10 +1234,10 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..d129fafbf 100644
+index 2cb79b6ba..f71bfb5d2 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,118 @@
+@@ -11,7 +11,123 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
@@ -1264,7 +1264,7 @@ index 2cb79b6ba..d129fafbf 100644
 +def err_objc3_isolation_hop_unavailable : Error<
 +  "native %select{actor|executor}0 crossing requires executor-hop lowering">;
 +def err_objc3_isolation_hop_shape : Error<
-+  "awaited executor entry requires a direct, non-variadic synchronous call with scalar or void result, scalar arguments, and a nonthrowing C++ exception specification">;
++  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with scalar or void result, non-consuming scalar arguments, and a nonthrowing C++ exception specification">;
 +def err_objc3_isolated_state : Error<
 +  "actor-isolated state %0 is accessible only on the same actor; use an awaited actor member">;
 +def err_objc3_sendable_transfer : Error<
@@ -1295,6 +1295,11 @@ index 2cb79b6ba..d129fafbf 100644
 +def err_objc3_async_covariant_return : Error<
 +  "native async overrides require identical logical result types">;
 +def err_objc3_async_defer_suspend : Error<"cannot suspend from a defer statement">;
++def err_objc3_async_synchronized_suspend : Error<
++  "cannot suspend while holding an @synchronized monitor">;
++def note_objc3_async_synchronized_scope : Note<
++  "monitor is acquired here and must be released on the same thread">;
++
 +def err_objc3_async_task_header : Error<
 +  "native async task lowering requires the installed <objc3_task.hpp> header">;
 +def err_objc3_async_task_abi_context : Error<
@@ -1356,7 +1361,7 @@ index 2cb79b6ba..d129fafbf 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -6986,6 +7097,8 @@ def note_protected_by_variable_non_pod : Note<
+@@ -6986,6 +7102,8 @@ def note_protected_by_variable_non_pod : Note<
    "jump bypasses initialization of non-POD variable">;
  def note_protected_by_cleanup : Note<
    "jump bypasses initialization of variable with __attribute__((cleanup))">;
@@ -1365,7 +1370,7 @@ index 2cb79b6ba..d129fafbf 100644
  def note_protected_by_vla_typedef : Note<
    "jump bypasses initialization of VLA typedef">;
  def note_protected_by_vla_type_alias : Note<
-@@ -7010,6 +7123,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7128,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1379,7 +1384,7 @@ index 2cb79b6ba..d129fafbf 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7146,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7151,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1390,7 +1395,7 @@ index 2cb79b6ba..d129fafbf 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -7046,6 +7170,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
+@@ -7046,6 +7175,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
  
  def note_exits_cleanup : Note<
    "jump exits scope of variable with __attribute__((cleanup))">;
@@ -1399,7 +1404,7 @@ index 2cb79b6ba..d129fafbf 100644
  def note_exits_dtor : Note<
    "jump exits scope of variable with non-trivial destructor">;
  def note_exits_temporary_dtor : Note<
-@@ -8001,6 +8127,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8132,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1425,7 +1430,7 @@ index 2cb79b6ba..d129fafbf 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14512,48 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14517,48 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -3660,14 +3665,15 @@ index e0b62591a..626fb9369 100644
    D2 = D2->getCanonicalDecl();
  
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..8932b2aff 100644
+index 4be3e977b..11bfb66e1 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
-@@ -20,8 +20,11 @@
+@@ -19,133 +19,137 @@
+ #include "clang/AST/DeclVisitor.h"
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
- #include "clang/AST/PrettyPrinter.h"
 +#include "clang/AST/ObjC3Isolation.h"
+ #include "clang/AST/PrettyPrinter.h"
  #include "clang/Basic/Module.h"
  #include "clang/Basic/SourceManager.h"
 +#include "llvm/ADT/STLExtras.h"
@@ -3675,15 +3681,289 @@ index 4be3e977b..8932b2aff 100644
  #include "llvm/ADT/StringExtras.h"
  #include "llvm/Support/raw_ostream.h"
  using namespace clang;
-@@ -71,6 +74,7 @@ namespace {
-     void VisitFunctionDecl(FunctionDecl *D);
-     void VisitFriendDecl(FriendDecl *D);
-     void VisitFieldDecl(FieldDecl *D);
-+    void VisitObjCIvarDecl(ObjCIvarDecl *D);
-     void VisitVarDecl(VarDecl *D);
-     void VisitLabelDecl(LabelDecl *D);
-     void VisitParmVarDecl(ParmVarDecl *D);
-@@ -265,11 +269,28 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+ 
+ namespace {
+-  class DeclPrinter : public DeclVisitor<DeclPrinter> {
+-    raw_ostream &Out;
+-    PrintingPolicy Policy;
+-    const ASTContext &Context;
+-    unsigned Indentation;
+-    bool PrintInstantiation;
+-
+-    raw_ostream& Indent() { return Indent(Indentation); }
+-    raw_ostream& Indent(unsigned Indentation);
+-    void ProcessDeclGroup(SmallVectorImpl<Decl*>& Decls);
+-
+-    void Print(AccessSpecifier AS);
+-    void PrintConstructorInitializers(CXXConstructorDecl *CDecl,
+-                                      std::string &Proto);
+-
+-    /// Print an Objective-C method type in parentheses.
+-    ///
+-    /// \param Quals The Objective-C declaration qualifiers.
+-    /// \param T The type to print.
+-    void PrintObjCMethodType(ASTContext &Ctx, Decl::ObjCDeclQualifier Quals,
+-                             QualType T);
+-
+-    void PrintObjCTypeParams(ObjCTypeParamList *Params);
+-    void PrintOpenACCRoutineOnLambda(Decl *D);
+-
+-  public:
+-    DeclPrinter(raw_ostream &Out, const PrintingPolicy &Policy,
+-                const ASTContext &Context, unsigned Indentation = 0,
+-                bool PrintInstantiation = false)
+-        : Out(Out), Policy(Policy), Context(Context), Indentation(Indentation),
+-          PrintInstantiation(PrintInstantiation) {}
+-
+-    void VisitDeclContext(DeclContext *DC, bool Indent = true);
+-
+-    void VisitTranslationUnitDecl(TranslationUnitDecl *D);
+-    void VisitTypedefDecl(TypedefDecl *D);
+-    void VisitTypeAliasDecl(TypeAliasDecl *D);
+-    void VisitEnumDecl(EnumDecl *D);
+-    void VisitRecordDecl(RecordDecl *D);
+-    void VisitEnumConstantDecl(EnumConstantDecl *D);
+-    void VisitEmptyDecl(EmptyDecl *D);
+-    void VisitFunctionDecl(FunctionDecl *D);
+-    void VisitFriendDecl(FriendDecl *D);
+-    void VisitFieldDecl(FieldDecl *D);
+-    void VisitVarDecl(VarDecl *D);
+-    void VisitLabelDecl(LabelDecl *D);
+-    void VisitParmVarDecl(ParmVarDecl *D);
+-    void VisitFileScopeAsmDecl(FileScopeAsmDecl *D);
+-    void VisitTopLevelStmtDecl(TopLevelStmtDecl *D);
+-    void VisitImportDecl(ImportDecl *D);
+-    void VisitStaticAssertDecl(StaticAssertDecl *D);
+-    void VisitNamespaceDecl(NamespaceDecl *D);
+-    void VisitUsingDirectiveDecl(UsingDirectiveDecl *D);
+-    void VisitNamespaceAliasDecl(NamespaceAliasDecl *D);
+-    void VisitCXXRecordDecl(CXXRecordDecl *D);
+-    void VisitLinkageSpecDecl(LinkageSpecDecl *D);
+-    void VisitTemplateDecl(const TemplateDecl *D);
+-    void VisitFunctionTemplateDecl(FunctionTemplateDecl *D);
+-    void VisitClassTemplateDecl(ClassTemplateDecl *D);
+-    void VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D);
+-    void VisitClassTemplateSpecializationDecl(
+-                                            ClassTemplateSpecializationDecl *D);
+-    void VisitClassTemplatePartialSpecializationDecl(
+-                                     ClassTemplatePartialSpecializationDecl *D);
+-    void VisitObjCMethodDecl(ObjCMethodDecl *D);
+-    void VisitObjCImplementationDecl(ObjCImplementationDecl *D);
+-    void VisitObjCInterfaceDecl(ObjCInterfaceDecl *D);
+-    void VisitObjCProtocolDecl(ObjCProtocolDecl *D);
+-    void VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *D);
+-    void VisitObjCCategoryDecl(ObjCCategoryDecl *D);
+-    void VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *D);
+-    void VisitObjCPropertyDecl(ObjCPropertyDecl *D);
+-    void VisitObjCPropertyImplDecl(ObjCPropertyImplDecl *D);
+-    void VisitUnresolvedUsingTypenameDecl(UnresolvedUsingTypenameDecl *D);
+-    void VisitUnresolvedUsingValueDecl(UnresolvedUsingValueDecl *D);
+-    void VisitUsingDecl(UsingDecl *D);
+-    void VisitUsingEnumDecl(UsingEnumDecl *D);
+-    void VisitUsingShadowDecl(UsingShadowDecl *D);
+-    void VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D);
+-    void VisitOMPAllocateDecl(OMPAllocateDecl *D);
+-    void VisitOMPRequiresDecl(OMPRequiresDecl *D);
+-    void VisitOMPDeclareReductionDecl(OMPDeclareReductionDecl *D);
+-    void VisitOMPDeclareMapperDecl(OMPDeclareMapperDecl *D);
+-    void VisitOMPCapturedExprDecl(OMPCapturedExprDecl *D);
+-    void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *TTP);
+-    void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *NTTP);
+-    void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *);
+-    void VisitHLSLBufferDecl(HLSLBufferDecl *D);
+-    void VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D);
+-
+-    void VisitOpenACCDeclareDecl(OpenACCDeclareDecl *D);
+-    void VisitOpenACCRoutineDecl(OpenACCRoutineDecl *D);
+-
+-    void printTemplateParameters(const TemplateParameterList *Params,
+-                                 bool OmitTemplateKW = false);
+-    void printTemplateArguments(ArrayRef<TemplateArgument> Args,
+-                                const TemplateParameterList *Params);
+-    void printTemplateArguments(ArrayRef<TemplateArgumentLoc> Args,
+-                                const TemplateParameterList *Params);
+-    enum class AttrPosAsWritten { Default = 0, Left, Right };
+-    std::optional<std::string>
+-    prettyPrintAttributes(const Decl *D,
+-                          AttrPosAsWritten Pos = AttrPosAsWritten::Default);
+-
+-    void prettyPrintPragmas(Decl *D);
+-    void printDeclType(QualType T, StringRef DeclName, bool Pack = false);
+-  };
+-}
++class DeclPrinter : public DeclVisitor<DeclPrinter> {
++  raw_ostream &Out;
++  PrintingPolicy Policy;
++  const ASTContext &Context;
++  unsigned Indentation;
++  bool PrintInstantiation;
++
++  raw_ostream &Indent() { return Indent(Indentation); }
++  raw_ostream &Indent(unsigned Indentation);
++  void ProcessDeclGroup(SmallVectorImpl<Decl *> &Decls);
++
++  void Print(AccessSpecifier AS);
++  void PrintConstructorInitializers(CXXConstructorDecl *CDecl,
++                                    std::string &Proto);
++
++  /// Print an Objective-C method type in parentheses.
++  ///
++  /// \param Quals The Objective-C declaration qualifiers.
++  /// \param T The type to print.
++  void PrintObjCMethodType(ASTContext &Ctx, Decl::ObjCDeclQualifier Quals,
++                           QualType T, const ParmVarDecl *Parameter = nullptr);
++
++  void PrintObjCTypeParams(ObjCTypeParamList *Params);
++  void PrintOpenACCRoutineOnLambda(Decl *D);
++
++public:
++  DeclPrinter(raw_ostream &Out, const PrintingPolicy &Policy,
++              const ASTContext &Context, unsigned Indentation = 0,
++              bool PrintInstantiation = false)
++      : Out(Out), Policy(Policy), Context(Context), Indentation(Indentation),
++        PrintInstantiation(PrintInstantiation) {}
++
++  void VisitDeclContext(DeclContext *DC, bool Indent = true);
++
++  void VisitTranslationUnitDecl(TranslationUnitDecl *D);
++  void VisitTypedefDecl(TypedefDecl *D);
++  void VisitTypeAliasDecl(TypeAliasDecl *D);
++  void VisitEnumDecl(EnumDecl *D);
++  void VisitRecordDecl(RecordDecl *D);
++  void VisitEnumConstantDecl(EnumConstantDecl *D);
++  void VisitEmptyDecl(EmptyDecl *D);
++  void VisitFunctionDecl(FunctionDecl *D);
++  void VisitFriendDecl(FriendDecl *D);
++  void VisitFieldDecl(FieldDecl *D);
++  void VisitObjCIvarDecl(ObjCIvarDecl *D);
++  void VisitVarDecl(VarDecl *D);
++  void VisitLabelDecl(LabelDecl *D);
++  void VisitParmVarDecl(ParmVarDecl *D);
++  void VisitFileScopeAsmDecl(FileScopeAsmDecl *D);
++  void VisitTopLevelStmtDecl(TopLevelStmtDecl *D);
++  void VisitImportDecl(ImportDecl *D);
++  void VisitStaticAssertDecl(StaticAssertDecl *D);
++  void VisitNamespaceDecl(NamespaceDecl *D);
++  void VisitUsingDirectiveDecl(UsingDirectiveDecl *D);
++  void VisitNamespaceAliasDecl(NamespaceAliasDecl *D);
++  void VisitCXXRecordDecl(CXXRecordDecl *D);
++  void VisitLinkageSpecDecl(LinkageSpecDecl *D);
++  void VisitTemplateDecl(const TemplateDecl *D);
++  void VisitFunctionTemplateDecl(FunctionTemplateDecl *D);
++  void VisitClassTemplateDecl(ClassTemplateDecl *D);
++  void VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D);
++  void VisitClassTemplateSpecializationDecl(ClassTemplateSpecializationDecl *D);
++  void VisitClassTemplatePartialSpecializationDecl(
++      ClassTemplatePartialSpecializationDecl *D);
++  void VisitObjCMethodDecl(ObjCMethodDecl *D);
++  void VisitObjCImplementationDecl(ObjCImplementationDecl *D);
++  void VisitObjCInterfaceDecl(ObjCInterfaceDecl *D);
++  void VisitObjCProtocolDecl(ObjCProtocolDecl *D);
++  void VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *D);
++  void VisitObjCCategoryDecl(ObjCCategoryDecl *D);
++  void VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *D);
++  void VisitObjCPropertyDecl(ObjCPropertyDecl *D);
++  void VisitObjCPropertyImplDecl(ObjCPropertyImplDecl *D);
++  void VisitUnresolvedUsingTypenameDecl(UnresolvedUsingTypenameDecl *D);
++  void VisitUnresolvedUsingValueDecl(UnresolvedUsingValueDecl *D);
++  void VisitUsingDecl(UsingDecl *D);
++  void VisitUsingEnumDecl(UsingEnumDecl *D);
++  void VisitUsingShadowDecl(UsingShadowDecl *D);
++  void VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D);
++  void VisitOMPAllocateDecl(OMPAllocateDecl *D);
++  void VisitOMPRequiresDecl(OMPRequiresDecl *D);
++  void VisitOMPDeclareReductionDecl(OMPDeclareReductionDecl *D);
++  void VisitOMPDeclareMapperDecl(OMPDeclareMapperDecl *D);
++  void VisitOMPCapturedExprDecl(OMPCapturedExprDecl *D);
++  void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *TTP);
++  void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *NTTP);
++  void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *);
++  void VisitHLSLBufferDecl(HLSLBufferDecl *D);
++  void VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D);
++
++  void VisitOpenACCDeclareDecl(OpenACCDeclareDecl *D);
++  void VisitOpenACCRoutineDecl(OpenACCRoutineDecl *D);
++
++  void printTemplateParameters(const TemplateParameterList *Params,
++                               bool OmitTemplateKW = false);
++  void printTemplateArguments(ArrayRef<TemplateArgument> Args,
++                              const TemplateParameterList *Params);
++  void printTemplateArguments(ArrayRef<TemplateArgumentLoc> Args,
++                              const TemplateParameterList *Params);
++  enum class AttrPosAsWritten { Default = 0, Left, Right };
++  std::optional<std::string>
++  prettyPrintAttributes(const Decl *D,
++                        AttrPosAsWritten Pos = AttrPosAsWritten::Default);
++
++  void prettyPrintPragmas(Decl *D);
++  void printDeclType(QualType T, StringRef DeclName, bool Pack = false);
++};
++} // namespace
+ 
+ void Decl::print(raw_ostream &Out, unsigned Indentation,
+                  bool PrintInstantiation) const {
+-  print(Out, getASTContext().getPrintingPolicy(), Indentation, PrintInstantiation);
++  print(Out, getASTContext().getPrintingPolicy(), Indentation,
++        PrintInstantiation);
+ }
+ 
+ void Decl::print(raw_ostream &Out, const PrintingPolicy &Policy,
+                  unsigned Indentation, bool PrintInstantiation) const {
+   DeclPrinter Printer(Out, Policy, getASTContext(), Indentation,
+                       PrintInstantiation);
+-  Printer.Visit(const_cast<Decl*>(this));
++  Printer.Visit(const_cast<Decl *>(this));
+ }
+ 
+ void TemplateParameterList::print(raw_ostream &Out, const ASTContext &Context,
+@@ -190,30 +194,29 @@ static QualType GetBaseType(QualType T) {
+   return BaseType;
+ }
+ 
+-static QualType getDeclType(Decl* D) {
+-  if (TypedefNameDecl* TDD = dyn_cast<TypedefNameDecl>(D))
++static QualType getDeclType(Decl *D) {
++  if (TypedefNameDecl *TDD = dyn_cast<TypedefNameDecl>(D))
+     return TDD->getUnderlyingType();
+-  if (ValueDecl* VD = dyn_cast<ValueDecl>(D))
++  if (ValueDecl *VD = dyn_cast<ValueDecl>(D))
+     return VD->getType();
+   return QualType();
+ }
+ 
+-void Decl::printGroup(Decl** Begin, unsigned NumDecls,
+-                      raw_ostream &Out, const PrintingPolicy &Policy,
+-                      unsigned Indentation) {
++void Decl::printGroup(Decl **Begin, unsigned NumDecls, raw_ostream &Out,
++                      const PrintingPolicy &Policy, unsigned Indentation) {
+   if (NumDecls == 1) {
+     (*Begin)->print(Out, Policy, Indentation);
+     return;
+   }
+ 
+-  Decl** End = Begin + NumDecls;
++  Decl **End = Begin + NumDecls;
+   if (isa<TagDecl>(*Begin))
+     ++Begin;
+ 
+   PrintingPolicy SubPolicy(Policy);
+ 
+   bool isFirst = true;
+-  for ( ; Begin != End; ++Begin) {
++  for (; Begin != End; ++Begin) {
+     if (isFirst) {
+       isFirst = false;
+     } else {
+@@ -236,7 +239,7 @@ LLVM_DUMP_METHOD void DeclContext::dumpDeclContext() const {
+   Printer.VisitDeclContext(const_cast<DeclContext *>(this), /*Indent=*/false);
+ }
+ 
+-raw_ostream& DeclPrinter::Indent(unsigned Indentation) {
++raw_ostream &DeclPrinter::Indent(unsigned Indentation) {
+   for (unsigned i = 0; i != Indentation; ++i)
+     Out << "  ";
+   return Out;
+@@ -265,11 +268,32 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -3706,7 +3986,11 @@ index 4be3e977b..8932b2aff 100644
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
 +             ObjCRequiresCleanupAttr, ObjCResourceFamilyAttr, ObjCInvalidAttr,
-+             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr>(A) &&
++             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr,
++             NSConsumesSelfAttr>(A) &&
++        !(isa<ObjCMethodDecl>(D) &&
++          isa<NSReturnsRetainedAttr, NSReturnsNotRetainedAttr,
++              NSReturnsAutoreleasedAttr>(A)) &&
 +        !(SPI &&
 +          (SPI->getAnnotation().starts_with("objc3.spi:") ||
 +           SPI->getAnnotation().starts_with("objc3.module-name:")) &&
@@ -3714,7 +3998,7 @@ index 4be3e977b..8932b2aff 100644
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -282,7 +303,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -282,7 +306,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
               "Default not a valid for an attribute location");
        if (Pos == AttrPosAsWritten::Default || Pos == APos) {
          AOut << LS;
@@ -3787,7 +4071,100 @@ index 4be3e977b..8932b2aff 100644
        }
        break;
      }
-@@ -818,6 +903,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -348,12 +436,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+   T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
+ }
+ 
+-void DeclPrinter::ProcessDeclGroup(SmallVectorImpl<Decl*>& Decls) {
++void DeclPrinter::ProcessDeclGroup(SmallVectorImpl<Decl *> &Decls) {
+   this->Indent();
+   Decl::printGroup(Decls.data(), Decls.size(), Out, Policy, Indentation);
+   Out << ";\n";
+   Decls.clear();
+-
+ }
+ 
+ void DeclPrinter::Print(AccessSpecifier AS) {
+@@ -451,7 +538,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+   if (Indent)
+     Indentation += Policy.Indentation;
+ 
+-  SmallVector<Decl*, 2> Decls;
++  SmallVector<Decl *, 2> Decls;
+   for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
+        D != DEnd; ++D) {
+ 
+@@ -556,7 +643,9 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+         ((isa<FunctionDecl>(*D) &&
+           cast<FunctionDecl>(*D)->doesThisDeclarationHaveABody()) ||
+          (isa<FunctionTemplateDecl>(*D) &&
+-          cast<FunctionTemplateDecl>(*D)->getTemplatedDecl()->doesThisDeclarationHaveABody())))
++          cast<FunctionTemplateDecl>(*D)
++              ->getTemplatedDecl()
++              ->doesThisDeclarationHaveABody())))
+       ; // StmtPrinter already added '\n' after CompoundStmt.
+     else
+       Out << "\n";
+@@ -690,20 +779,32 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+   CXXDeductionGuideDecl *GuideDecl = dyn_cast<CXXDeductionGuideDecl>(D);
+   if (!Policy.SuppressSpecifiers) {
+     switch (D->getStorageClass()) {
+-    case SC_None: break;
+-    case SC_Extern: Out << "extern "; break;
+-    case SC_Static: Out << "static "; break;
+-    case SC_PrivateExtern: Out << "__private_extern__ "; break;
+-    case SC_Auto: case SC_Register:
++    case SC_None:
++      break;
++    case SC_Extern:
++      Out << "extern ";
++      break;
++    case SC_Static:
++      Out << "static ";
++      break;
++    case SC_PrivateExtern:
++      Out << "__private_extern__ ";
++      break;
++    case SC_Auto:
++    case SC_Register:
+       llvm_unreachable("invalid for functions");
+     }
+ 
+-    if (D->isInlineSpecified())  Out << "inline ";
+-    if (D->isVirtualAsWritten()) Out << "virtual ";
+-    if (D->isModulePrivate())    Out << "__module_private__ ";
++    if (D->isInlineSpecified())
++      Out << "inline ";
++    if (D->isVirtualAsWritten())
++      Out << "virtual ";
++    if (D->isModulePrivate())
++      Out << "__module_private__ ";
+     if (D->isConstexprSpecified() && !D->isExplicitlyDefaulted())
+       Out << "constexpr ";
+-    if (D->isConsteval())        Out << "consteval ";
++    if (D->isConsteval())
++      Out << "consteval ";
+     else if (D->isImmediateFunction())
+       Out << "immediate ";
+     ExplicitSpecifier ExplicitSpec = ExplicitSpecifier::getFromDecl(D);
+@@ -753,12 +854,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+       llvm::raw_string_ostream POut(Proto);
+       DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
+       for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
+-        if (i) POut << ", ";
++        if (i)
++          POut << ", ";
+         ParamPrinter.VisitParmVarDecl(D->getParamDecl(i));
+       }
+ 
+       if (FT->isVariadic()) {
+-        if (D->getNumParams()) POut << ", ";
++        if (D->getNumParams())
++          POut << ", ";
+         POut << "...";
+       } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
+         // The function has a prototype, so it needs to retain the prototype
+@@ -818,6 +921,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -3812,7 +4189,43 @@ index 4be3e977b..8932b2aff 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -923,8 +1026,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -878,8 +999,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+       }
+ 
+       if (D->getBody())
+-        D->getBody()->printPrettyControlled(Out, nullptr, SubPolicy, Indentation, "\n",
+-                                  &Context);
++        D->getBody()->printPrettyControlled(Out, nullptr, SubPolicy,
++                                            Indentation, "\n", &Context);
+     } else {
+       if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
+         Out << " {}";
+@@ -894,19 +1015,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+       printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
+     Out << "friend ";
+     Out << TSI->getType().getAsString(Policy);
+-  }
+-  else if (FunctionDecl *FD =
+-      dyn_cast<FunctionDecl>(D->getFriendDecl())) {
++  } else if (FunctionDecl *FD = dyn_cast<FunctionDecl>(D->getFriendDecl())) {
+     Out << "friend ";
+     VisitFunctionDecl(FD);
+-  }
+-  else if (FunctionTemplateDecl *FTD =
+-           dyn_cast<FunctionTemplateDecl>(D->getFriendDecl())) {
++  } else if (FunctionTemplateDecl *FTD =
++                 dyn_cast<FunctionTemplateDecl>(D->getFriendDecl())) {
+     Out << "friend ";
+     VisitFunctionTemplateDecl(FTD);
+-  }
+-  else if (ClassTemplateDecl *CTD =
+-           dyn_cast<ClassTemplateDecl>(D->getFriendDecl())) {
++  } else if (ClassTemplateDecl *CTD =
++                 dyn_cast<ClassTemplateDecl>(D->getFriendDecl())) {
+     Out << "friend ";
+     VisitRedeclarableTemplateDecl(CTD);
+   }
+@@ -923,8 +1040,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -3825,26 +4238,102 @@ index 4be3e977b..8932b2aff 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,6 +1049,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,10 +1063,29 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
+-void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
+-  Out << *D << ":";
 +void DeclPrinter::VisitObjCIvarDecl(ObjCIvarDecl *D) {
 +  switch (D->getAccessControl()) {
-+  case ObjCIvarDecl::Private: Indent() << "@private\n"; break;
-+  case ObjCIvarDecl::Protected: Indent() << "@protected\n"; break;
-+  case ObjCIvarDecl::Public: Indent() << "@public\n"; break;
-+  case ObjCIvarDecl::Package: Indent() << "@package\n"; break;
-+  case ObjCIvarDecl::None: break;
++  case ObjCIvarDecl::Private:
++    Indent() << "@private\n";
++    break;
++  case ObjCIvarDecl::Protected:
++    Indent() << "@protected\n";
++    break;
++  case ObjCIvarDecl::Public:
++    Indent() << "@public\n";
++    break;
++  case ObjCIvarDecl::Package:
++    Indent() << "@package\n";
++    break;
++  case ObjCIvarDecl::None:
++    break;
 +  }
 +  Indent();
 +  VisitFieldDecl(D);
-+}
-+
- void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
-   Out << *D << ":";
  }
-@@ -1302,7 +1419,12 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+ 
++void DeclPrinter::VisitLabelDecl(LabelDecl *D) { Out << *D << ":"; }
++
+ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+   prettyPrintPragmas(D);
+ 
+@@ -959,9 +1097,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+       Param && Param->isExplicitObjectParameter())
+     Out << "this ";
+ 
+-  QualType T = D->getTypeSourceInfo()
+-    ? D->getTypeSourceInfo()->getType()
+-    : D->getASTContext().getUnqualifiedObjCPointerType(D->getType());
++  QualType T =
++      D->getTypeSourceInfo()
++          ? D->getTypeSourceInfo()->getType()
++          : D->getASTContext().getUnqualifiedObjCPointerType(D->getType());
+ 
+   if (!Policy.SuppressSpecifiers) {
+     StorageClass SC = D->getStorageClass();
+@@ -1029,9 +1168,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+   }
+ }
+ 
+-void DeclPrinter::VisitParmVarDecl(ParmVarDecl *D) {
+-  VisitVarDecl(D);
+-}
++void DeclPrinter::VisitParmVarDecl(ParmVarDecl *D) { VisitVarDecl(D); }
+ 
+ void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
+   Out << "__asm (";
+@@ -1046,8 +1183,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+ }
+ 
+ void DeclPrinter::VisitImportDecl(ImportDecl *D) {
+-  Out << "@import " << D->getImportedModule()->getFullModuleName()
+-      << ";\n";
++  Out << "@import " << D->getImportedModule()->getFullModuleName() << ";\n";
+ }
+ 
+ void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
+@@ -1131,7 +1267,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+     if (D->getNumBases()) {
+       Out << ": ";
+       for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
+-             BaseEnd = D->bases_end(); Base != BaseEnd; ++Base) {
++                                              BaseEnd = D->bases_end();
++           Base != BaseEnd; ++Base) {
+         if (Base != D->bases_begin())
+           Out << ", ";
+ 
+@@ -1262,7 +1399,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+   printTemplateParameters(D->getTemplateParameters());
+ 
+   if (const TemplateTemplateParmDecl *TTP =
+-        dyn_cast<TemplateTemplateParmDecl>(D)) {
++          dyn_cast<TemplateTemplateParmDecl>(D)) {
+     if (TTP->wasDeclaredWithTypename())
+       Out << "typename";
+     else
+@@ -1282,7 +1419,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+   } else if (auto *TD = D->getTemplatedDecl())
+     Visit(TD);
+   else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
+-    Out << "concept " << Concept->getName() << " = " ;
++    Out << "concept " << Concept->getName() << " = ";
+     Concept->getConstraintExpr()->printPretty(Out, nullptr, Policy, Indentation,
+                                               "\n", &Context);
+   }
+@@ -1302,7 +1439,13 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -3852,16 +4341,70 @@ index 4be3e977b..8932b2aff 100644
 +  // A deduced-return instantiation cannot be reintroduced as template<> with
 +  // its concrete return type. ObjC3 source printing keeps the primary template;
 +  // its written calls instantiate the same operations when reparsed.
-+  bool DeducedObjC3Return = Context.getLangOpts().ObjC3 &&
++  bool DeducedObjC3Return =
++      Context.getLangOpts().ObjC3 &&
 +      D->getTemplatedDecl()->getReturnType()->getContainedAutoType();
 +  if (PrintInstantiation && !DeducedObjC3Return &&
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1485,6 +1607,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
-   if (OMD->isVariadic())
-       Out << ", ...";
+@@ -1377,13 +1520,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+ }
  
+ void DeclPrinter::VisitClassTemplateSpecializationDecl(
+-                                           ClassTemplateSpecializationDecl *D) {
++    ClassTemplateSpecializationDecl *D) {
+   Out << "template<> ";
+   VisitCXXRecordDecl(D);
+ }
+ 
+ void DeclPrinter::VisitClassTemplatePartialSpecializationDecl(
+-                                    ClassTemplatePartialSpecializationDecl *D) {
++    ClassTemplatePartialSpecializationDecl *D) {
+   printTemplateParameters(D->getTemplateParameters());
+   VisitCXXRecordDecl(D);
+ }
+@@ -1398,9 +1541,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+ //----------------------------------------------------------------------------
+ 
+ void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
+-                                      Decl::ObjCDeclQualifier Quals,
+-                                      QualType T) {
++                                      Decl::ObjCDeclQualifier Quals, QualType T,
++                                      const ParmVarDecl *Parameter) {
+   Out << '(';
++  if (Parameter && !Policy.SuppressDeclAttributes) {
++    // These are parameter contracts, not attributes on the method result.
++    // Keep them inside the written method parameter's type parentheses.
++    for (const Attr *Attribute : Parameter->attrs())
++      if (isa<NoEscapeAttr, NSConsumedAttr>(Attribute)) {
++        Attribute->printPretty(Out, Policy);
++        Out << ' ';
++      }
++  }
+   if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
+     Out << "in ";
+   if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
+@@ -1472,9 +1624,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+     if (lastPos != 0)
+       Out << " ";
+     Out << name.substr(lastPos, pos - lastPos) << ':';
+-    PrintObjCMethodType(OMD->getASTContext(),
+-                        PI->getObjCDeclQualifier(),
+-                        PI->getType());
++    PrintObjCMethodType(OMD->getASTContext(), PI->getObjCDeclQualifier(),
++                        PI->getType(), PI);
+     Out << *PI;
+     lastPos = pos + 1;
+   }
+@@ -1483,8 +1634,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+     Out << name;
+ 
+   if (OMD->isVariadic())
+-      Out << ", ...";
+-
++    Out << ", ...";
++
 +  const auto Effects = OMD->getObjC3FunctionEffects();
 +  if (Effects.Async)
 +    Out << (Effects.AsyncFrame ? " __objc3_async_frame" : " __objc3_async");
@@ -3879,7 +4422,17 @@ index 4be3e977b..8932b2aff 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1512,8 +1648,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1492,8 +1657,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+     Out << ' ';
+     OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
+                                 &Context);
+-  }
+-  else if (Policy.PolishForDeclaration)
++  } else if (Policy.PolishForDeclaration)
+     Out << ';';
+ }
+ 
+@@ -1512,8 +1676,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -3890,7 +4443,7 @@ index 4be3e977b..8932b2aff 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1681,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1709,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -3899,7 +4452,17 @@ index 4be3e977b..8932b2aff 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1568,9 +1704,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1722,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+   const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
+   if (!Protocols.empty()) {
+     for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
+-         E = Protocols.end(); I != E; ++I)
++                                              E = Protocols.end();
++         I != E; ++I)
+       Out << (I == Protocols.begin() ? '<' : ',') << **I;
+     Out << "> ";
+   }
+@@ -1568,9 +1733,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -3911,7 +4474,7 @@ index 4be3e977b..8932b2aff 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1722,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1751,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -3920,7 +4483,17 @@ index 4be3e977b..8932b2aff 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1619,6 +1756,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1596,7 +1762,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+   if (!Protocols.empty()) {
+     Out << "@protocol " << *PID;
+     for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
+-         E = Protocols.end(); I != E; ++I)
++                                              E = Protocols.end();
++         I != E; ++I)
+       Out << (I == Protocols.begin() ? '<' : ',') << **I;
+     Out << ">\n";
+   } else
+@@ -1619,6 +1786,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -3929,7 +4502,7 @@ index 4be3e977b..8932b2aff 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1770,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1800,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -3943,8 +4516,23 @@ index 4be3e977b..8932b2aff 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1756,12 +1896,11 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
-     (void) first; // Silence dead store warning due to idiomatic code.
+@@ -1645,8 +1815,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+ }
+ 
+ void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
+-  Out << "@compatibility_alias " << *AID
+-      << ' ' << *AID->getClassInterface() << ";\n";
++  Out << "@compatibility_alias " << *AID << ' ' << *AID->getClassInterface()
++      << ";\n";
+ }
+ 
+ /// PrintObjCPropertyDecl - print a property declaration.
+@@ -1753,15 +1923,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+       }
+     }
+ 
+-    (void) first; // Silence dead store warning due to idiomatic code.
++    (void)first; // Silence dead store warning due to idiomatic code.
      Out << ")";
    }
 -  std::string TypeStr = PDecl->getASTContext().getUnqualifiedObjCPointerType(T).
@@ -3961,6 +4549,26 @@ index 4be3e977b..8932b2aff 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
+@@ -1800,8 +1969,8 @@ void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+   Out << "using enum " << D->getEnumDecl();
+ }
+ 
+-void
+-DeclPrinter::VisitUnresolvedUsingTypenameDecl(UnresolvedUsingTypenameDecl *D) {
++void DeclPrinter::VisitUnresolvedUsingTypenameDecl(
++    UnresolvedUsingTypenameDecl *D) {
+   Out << "using typename ";
+   D->getQualifier().print(Out, Policy);
+   Out << D->getDeclName();
+@@ -1823,7 +1992,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+   if (!D->varlist_empty()) {
+     for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
+                                                 E = D->varlist_end();
+-                                                I != E; ++I) {
++         I != E; ++I) {
+       Out << (I == D->varlist_begin() ? '(' : ',');
+       NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
+       ND->printQualifiedName(Out);
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..e794d1d0a 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -8021,7 +8629,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..d00fef7f3 100644
+index 5d4c5ff7d..98e7d4a02 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -8346,7 +8954,7 @@ index 5d4c5ff7d..d00fef7f3 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -16922,6 +17132,196 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -16922,6 +17132,208 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -8500,12 +9108,24 @@ index 5d4c5ff7d..d00fef7f3 100644
 +      if (!Outer || !Outer->isCaptured(Resolved))
 +        continue;
 +      const auto &OuterCapture = Outer->getCapture(Resolved);
++      bool MutableResourceOwner = false;
++      if (ResourceCapture)
++        if (const auto *OuterBlock = dyn_cast<BlockScopeInfo>(Outer))
++          for (const auto &Item : OuterBlock->ObjC3ExplicitCaptures)
++            if (Item.getVariable() == Resolved) {
++              MutableResourceOwner = Item.isObjC3ResourceCapture();
++              break;
++            }
 +      bool Immutable = OuterCapture.getCaptureType()
 +                           .getNonReferenceType().isConstQualified();
 +      if (const auto *Lambda = dyn_cast<LambdaScopeInfo>(Outer))
 +        Immutable |= OuterCapture.isCopyCapture() &&
 +                     Lambda->lambdaCaptureShouldBeConst();
-+      if (Immutable) {
++      // The resource field points to a private mutable owner payload. Moving
++      // that payload is an ownership operation, like take/reset/discard, and
++      // does not assign the enclosing Block's const pointer field. Ordinary
++      // const captures and C++ lambda storage remain immutable.
++      if (Immutable && !MutableResourceOwner) {
 +        Reject("move Block capture cannot consume an immutable enclosing capture");
 +        return;
 +      }
@@ -8543,7 +9163,7 @@ index 5d4c5ff7d..d00fef7f3 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17447,45 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17459,45 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -8589,7 +9209,7 @@ index 5d4c5ff7d..d00fef7f3 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17493,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17505,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -8599,7 +9219,7 @@ index 5d4c5ff7d..d00fef7f3 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,6 +17576,11 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,6 +17588,11 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -8611,7 +9231,7 @@ index 5d4c5ff7d..d00fef7f3 100644
      Expr *CopyExpr = nullptr;
      if (getLangOpts().CPlusPlus && Cap.isCopyCapture()) {
        if (auto *Record = Cap.getCaptureType()->getAsCXXRecordDecl()) {
-@@ -17161,6 +17602,25 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17614,25 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -8637,7 +9257,7 @@ index 5d4c5ff7d..d00fef7f3 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17653,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17665,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -8663,7 +9283,7 @@ index 5d4c5ff7d..d00fef7f3 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17688,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17700,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -8674,7 +9294,7 @@ index 5d4c5ff7d..d00fef7f3 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +19964,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +19976,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -8695,7 +9315,7 @@ index 5d4c5ff7d..d00fef7f3 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +19992,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20004,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -10288,10 +10908,10 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..b8802b2d6
+index 000000000..cbe13164e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,252 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -10459,6 +11079,7 @@ index 000000000..b8802b2d6
 +  }
 +
 +  if (CheckedAsync && getLangOpts().CPlusPlus &&
++      !Decl::castFromDeclContext(CurContext)->hasAttr<ObjC3IsolationThunkAttr>() &&
 +      !getObjC3CheckedAsyncAdapter(Operand)) {
 +    auto *Await = cast<CoawaitExpr>(Operand->IgnoreImplicit());
 +    LookupResult Hook(*this, &Context.Idents.get("__objc3_async_checked"),
@@ -10907,7 +11528,7 @@ index 7286a0c2f..cb50e6ea8 100644
      const ArrayParameterType *T) {
    return VisitConstantArrayType(T);
 diff --git a/clang/lib/Sema/SemaTemplateDeduction.cpp b/clang/lib/Sema/SemaTemplateDeduction.cpp
-index 3c45806c4..967bb047b 100644
+index 3c45806c4..b15ae4888 100644
 --- a/clang/lib/Sema/SemaTemplateDeduction.cpp
 +++ b/clang/lib/Sema/SemaTemplateDeduction.cpp
 @@ -1888,6 +1888,40 @@ static TemplateDeductionResult DeduceTemplateArgumentsByTypeMatch(
@@ -10951,7 +11572,54 @@ index 3c45806c4..967bb047b 100644
      //     _Complex T   [placeholder extension]
      case Type::Complex: {
        const auto *CP = P->castAs<ComplexType>(), *CA = A->getAs<ComplexType>();
-@@ -7014,6 +7048,20 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+@@ -2043,6 +2077,36 @@ static TemplateDeductionResult DeduceTemplateArgumentsByTypeMatch(
+           FPP->isVariadic() != FPA->isVariadic())
+         return TemplateDeductionResult::NonDeducedMismatch;
+ 
++      // ObjC3 effects participate in callable deduction independently of C++
++      // noexcept. In particular, neither logical async nor its physical frame
++      // representation may disappear through a dependent callback signature.
++      const auto ParamEffects = FPP->getObjC3FunctionEffects();
++      const auto ArgEffects = FPA->getObjC3FunctionEffects();
++      if (ParamEffects.Async != ArgEffects.Async ||
++          ParamEffects.AsyncFrame != ArgEffects.AsyncFrame)
++        return TemplateDeductionResult::NonDeducedMismatch;
++      if (ParamEffects.Throws != ArgEffects.Throws) {
++        // Call deduction can widen the argument's nonthrowing type to the
++        // parameter. Function-address/specialization deduction instead asks
++        // whether the pattern can convert to the supplied function type.
++        // Partial ordering must retain exact domains in either direction.
++        const bool Widen = POK == PartialOrderingKind::None &&
++            ((TDF & TDF_AllowCompatibleFunctionType)
++                 ? ParamEffects.Throws == ObjC3ThrowsKind::None
++                 : ArgEffects.Throws == ObjC3ThrowsKind::None);
++        if (!Widen)
++          return TemplateDeductionResult::NonDeducedMismatch;
++      }
++      if (ParamEffects.Throws == ObjC3ThrowsKind::Typed &&
++          ArgEffects.Throws == ObjC3ThrowsKind::Typed) {
++        if (auto Result = DeduceTemplateArgumentsByTypeMatch(
++                S, TemplateParams, ParamEffects.ErrorType, ArgEffects.ErrorType,
++                Info, Deduced, 0, degradeCallPartialOrderingKind(POK),
++                /*DeducedFromArrayBound=*/false, HasDeducedAnyParam);
++            Result != TemplateDeductionResult::Success)
++          return Result;
++      }
++
+       // Check return types.
+       if (auto Result = DeduceTemplateArgumentsByTypeMatch(
+               S, TemplateParams, FPP->getReturnType(), FPA->getReturnType(),
+@@ -6940,6 +7004,9 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+     const FunctionProtoType *Proto = cast<FunctionProtoType>(T);
+     MarkUsedTemplateParameters(Ctx, Proto->getReturnType(), OnlyDeduced, Depth,
+                                Used);
++    if (Proto->getObjC3ThrowsKind() == ObjC3ThrowsKind::Typed)
++      MarkUsedTemplateParameters(Ctx, Proto->getObjC3ErrorType(), OnlyDeduced,
++                                 Depth, Used);
+     for (unsigned I = 0, N = Proto->getNumParams(); I != N; ++I) {
+       // C++17 [temp.deduct.type]p5:
+       //   The non-deduced contexts are: [...]
+@@ -7014,6 +7081,20 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
      break;
    }
  
@@ -28250,7 +28918,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..ffeabab36 100644
+index 2c62f46d4..7c733342e 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -28360,7 +29028,7 @@ index 2c62f46d4..ffeabab36 100644
  def ObjCPreciseLifetime : InheritableAttr {
    let Spellings = [Clang<"objc_precise_lifetime">];
    let Subjects = SubjectList<[Var], ErrorDiag>;
-@@ -5503,3 +5582,57 @@ def Personality : InheritableAttr {
+@@ -5503,3 +5582,58 @@ def Personality : InheritableAttr {
    let Subjects = SubjectList<[Function]>;
    let Documentation = [PersonalityDocs];
  }
@@ -28379,6 +29047,7 @@ index 2c62f46d4..ffeabab36 100644
 +  let Spellings = [];
 +  let SemaHandler = 0;
 +  let Subjects = SubjectList<[Function]>;
++  let Args = [BoolArgument<"ActorEntry">, BoolArgument<"OwnedResult">];
 +  let Documentation = [InternalOnly];
 +}
 +def ObjCExecutor : InheritableAttr {
@@ -34387,10 +35056,10 @@ index 000000000..1e0226ed1
 +#endif
 diff --git a/clang/include/clang/AST/ObjC3KeyPath.h b/clang/include/clang/AST/ObjC3KeyPath.h
 new file mode 100644
-index 000000000..37822fc0b
+index 000000000..9d51bf5c8
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3KeyPath.h
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,200 @@
 +//===--- ObjC3KeyPath.h - Native key-path record identity ---------*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -34399,6 +35068,7 @@ index 000000000..37822fc0b
 +
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Expr.h"
 +#include <iterator>
 +
@@ -34454,6 +35124,28 @@ index 000000000..37822fc0b
 +    Info.Value = Function->getReturnType();
 +  }
 +  return true;
++}
++
++/// Effective native ownership includes method families under MRC, where ARC
++/// has not synthesized a returns-retained attribute. Explicit ownership wins.
++inline bool doesObjC3KeyPathGetterReturnRetained(const ObjCMethodDecl *Method) {
++  if (!Method)
++    return false;
++  if (Method->hasAttr<NSReturnsRetainedAttr>())
++    return true;
++  if (Method->hasAttr<NSReturnsNotRetainedAttr>() ||
++      Method->hasAttr<NSReturnsAutoreleasedAttr>())
++    return false;
++  switch (Method->getMethodFamily()) {
++  case OMF_alloc:
++  case OMF_copy:
++  case OMF_mutableCopy:
++  case OMF_new:
++  case OMF_init:
++    return true;
++  default:
++    return false;
++  }
 +}
 +
 +enum class ObjC3KeyPathMemberKind { None, ReadOnly, Metadata, Get, Set };
@@ -34762,10 +35454,10 @@ index 9adba1943..cdb3575cc 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..41732669a
+index 000000000..31f009263
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,182 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -34776,6 +35468,8 @@ index 000000000..41732669a
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/Sema/Lookup.h"
 +#include "clang/AST/ExprObjC.h"
++#include "clang/AST/StmtObjC.h"
++#include "llvm/ADT/SmallPtrSet.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Basic/Builtins.h"
@@ -34816,17 +35510,18 @@ index 000000000..41732669a
 +}
 +
 +ExprResult Sema::ActOnObjC3CAwaitExpr(SourceLocation Loc, Expr *Operand) {
-+  const auto *Enclosing = getObjC3CallableFunctionType(
-+      Decl::castFromDeclContext(CurContext));
-+  if (getLangOpts().CPlusPlus || !Enclosing ||
-+      !Enclosing->getObjC3FunctionEffects().Async) {
++  const Decl *Callable = Decl::castFromDeclContext(CurContext);
++  const auto *Enclosing = getObjC3CallableFunctionType(Callable);
++  if ((getLangOpts().CPlusPlus &&
++       !Callable->hasAttr<ObjC3IsolationThunkAttr>()) || !Enclosing ||
++      !Enclosing->getObjC3FunctionEffects().AsyncFrame) {
 +    Diag(Loc, diag::err_objc3_await_context);
 +    return ExprError();
 +  }
 +  // Keep the source call and its logical function type. The call expression's
 +  // evaluated result is the common ABI carrier, not the logical await result.
 +  const auto *Function = getObjC3AsyncCalleeFunctionType(Operand);
-+  if (!Function || !Function->getObjC3FunctionEffects().Async) {
++  if (!Function || !Function->getObjC3FunctionEffects().AsyncFrame) {
 +    // Isolation checking runs at the parser's shared await entry before this
 +    // identity path. A synchronous expression needs no frame continuation.
 +    if (isObjC3NonSuspendingAwait(Operand))
@@ -34855,6 +35550,45 @@ index 000000000..41732669a
 +}
 +
 +namespace {
++class AsyncMonitorVisitor : public RecursiveASTVisitor<AsyncMonitorVisitor> {
++  Sema &S;
++  SmallVector<SourceLocation, 4> Monitors;
++  llvm::SmallPtrSet<const Expr *, 8> Diagnosed;
++  void check(Expr *E, SourceLocation Loc) {
++    if (Monitors.empty() || !Diagnosed.insert(E).second) return;
++    S.Diag(Loc, diag::err_objc3_async_synchronized_suspend);
++    S.Diag(Monitors.back(), diag::note_objc3_async_synchronized_scope);
++    Failed = true;
++  }
++public:
++  bool Failed = false;
++  explicit AsyncMonitorVisitor(Sema &S) : S(S) {}
++  // Closure creation does not execute its body. A nested async callable checks
++  // only its own monitor scopes when its definition is completed.
++  bool TraverseBlockExpr(BlockExpr *) { return true; }
++  bool TraverseLambdaExpr(LambdaExpr *) { return true; }
++  bool TraverseObjCAtSynchronizedStmt(ObjCAtSynchronizedStmt *Statement) {
++    // The lock expression runs before monitor acquisition and may suspend.
++    if (!TraverseStmt(Statement->getSynchExpr())) return false;
++    Monitors.push_back(Statement->getAtSynchronizedLoc());
++    bool Result = TraverseStmt(Statement->getSynchBody());
++    Monitors.pop_back();
++    return Result;
++  }
++  bool VisitCoawaitExpr(CoawaitExpr *E) {
++    check(E, E->getKeywordLoc());
++    return true;
++  }
++  bool VisitDependentCoawaitExpr(DependentCoawaitExpr *E) {
++    check(E, E->getKeywordLoc());
++    return true;
++  }
++  bool VisitCoyieldExpr(CoyieldExpr *E) {
++    check(E, E->getKeywordLoc());
++    return true;
++  }
++};
++
 +class CAsyncStorageVisitor : public RecursiveASTVisitor<CAsyncStorageVisitor> {
 +  Sema &S;
 +public:
@@ -34892,9 +35626,11 @@ index 000000000..41732669a
 +  const auto *Type = getObjC3CallableFunctionType(Callable);
 +  if (!Type || !Type->getObjC3FunctionEffects().Async)
 +    return false;
++  AsyncMonitorVisitor Monitors(S);
++  Monitors.TraverseStmt(Body);
 +  if (S.getLangOpts().CPlusPlus) {
-+    if (!Type->getObjC3FunctionEffects().AsyncFrame) return false;
-+    if (Callable->hasAttr<ObjC3IsolationThunkAttr>()) return false;
++    if (!Type->getObjC3FunctionEffects().AsyncFrame) return Monitors.Failed;
++    if (Callable->hasAttr<ObjC3IsolationThunkAttr>()) return Monitors.Failed;
 +    S.Diag(Callable->getLocation(), diag::err_objc3_async_frame_cpp_definition);
 +    return true;
 +  }
@@ -34902,14 +35638,14 @@ index 000000000..41732669a
 +    return true;
 +  CAsyncStorageVisitor Visitor(S);
 +  Visitor.TraverseStmt(Body);
-+  return Visitor.Failed;
++  return Visitor.Failed || Monitors.Failed;
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..4b671880a
+index 000000000..ca7d17c53
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,1522 @@
+@@ -0,0 +1,1985 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -34918,6 +35654,7 @@ index 000000000..4b671880a
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Isolation.h"
++#include "clang/AST/ObjC3KeyPath.h"
 +#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Analysis/CFG.h"
 +#include "clang/Sema/ParsedAttr.h"
@@ -35094,8 +35831,10 @@ index 000000000..4b671880a
 +    const ValueDecl *second = nullptr;
 +    // -1 is the variable/field itself; -2 is an unknown array index.
 +    int64_t Index = -1;
++    unsigned Parent = 0;
 +    bool operator==(const Storage &Other) const {
-+      return first == Other.first && second == Other.second && Index == Other.Index;
++      return first == Other.first && second == Other.second &&
++             Index == Other.Index && Parent == Other.Parent;
 +    }
 +  };
 +  struct StorageInfo {
@@ -35106,7 +35845,7 @@ index 000000000..4b671880a
 +      return {llvm::DenseMapInfo<const VarDecl *>::getTombstoneKey(), nullptr};
 +    }
 +    static unsigned getHashValue(const Storage &S) {
-+      return llvm::hash_combine(S.first, S.second, S.Index);
++      return llvm::hash_combine(S.first, S.second, S.Index, S.Parent);
 +    }
 +    static bool isEqual(const Storage &A, const Storage &B) { return A == B; }
 +  };
@@ -35114,10 +35853,12 @@ index 000000000..4b671880a
 +    SmallVector<Value, 16> Values;
 +    SmallVector<Value, 16> OwnerIdentities;
 +    SmallVector<Storage, 16> LocalTargets;
++    SmallVector<Value, 16> MayTargets;
 +    SmallVector<Value, 4> CapturedValues;
 +    Value CaptureReady;
 +    SmallVector<Value, 16> EvaluatedValues;
 +    SmallVector<Storage, 16> EvaluatedTargets;
++    SmallVector<Value, 16> EvaluatedMayTargets;
 +    Value EvaluatedReady;
 +    // An active pin is an owning snapshot. Same additionally proves that the
 +    // source variable has not been reassigned since that snapshot was taken.
@@ -35129,6 +35870,10 @@ index 000000000..4b671880a
 +  Decl *Callable;
 +  Stmt *Body;
 +  llvm::DenseMap<Storage, unsigned, StorageInfo> Slots;
++  struct PathNode { unsigned Parent = 0; const ValueDecl *Field = nullptr; int64_t Index = -1; };
++  mutable std::vector<PathNode> Paths{{}};
++  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
++  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
 +  llvm::DenseMap<const BlockExpr *, unsigned> BlockSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::DenseMap<std::pair<const BlockExpr *, unsigned>, unsigned> BlockLoans;
@@ -35136,10 +35881,15 @@ index 000000000..4b671880a
 +  llvm::DenseMap<Storage, Value, StorageInfo> InheritedValues;
 +  llvm::DenseMap<const VarDecl *, Value> InheritedOwners;
 +  llvm::DenseMap<Storage, Storage, StorageInfo> InheritedTargets;
++  llvm::DenseMap<Storage, SmallVector<Storage, 2>, StorageInfo> InheritedMayTargets;
 +  SmallVector<Origin, 16> Origins;
 +  llvm::DenseMap<const Stmt *, SmallVector<unsigned, 2>> Acquisitions;
 +  llvm::DenseMap<const VarDecl *, unsigned> Pins;
 +  llvm::DenseMap<const VarDecl *, const VarDecl *> PinSources;
++  // Opaque runtime payload initializers deliberately have no SourceExpr.
++  // Their native condition/match owners retain the snapshot association.
++  llvm::DenseMap<const VarDecl *, const VarDecl *> BindingSnapshots;
++  llvm::DenseMap<const VarDecl *, const Expr *> MatchSources;
 +  llvm::SmallPtrSet<const Stmt *, 32> Diagnosed;
 +  llvm::SmallPtrSet<const Stmt *, 16> UnstableDiagnosed;
 +  SmallVector<ParmVarDecl *, 8> Parameters;
@@ -35148,6 +35898,42 @@ index 000000000..4b671880a
 +  bool Invalid = false;
 +  bool MightBorrow = false;
 +
++  bool carriesBorrowedValueImpl(QualType Type,
++      llvm::SmallPtrSetImpl<const clang::Type *> &Seen) const {
++    if (Type.isNull())
++      return false;
++    if (isObjC3BorrowedType(Context, Type))
++      return true;
++    while (true) {
++      QualType Next = Type.getSingleStepDesugaredType(Context);
++      if (Next == Type)
++        break;
++      Type = Next;
++    }
++    if (!Seen.insert(Type.getTypePtr()).second || Type->isFunctionType() ||
++        Type->isBlockPointerType())
++      return false; // Callable signature contracts are metadata, not loans.
++    auto Carries = [&](QualType Payload) {
++      return carriesBorrowedValueImpl(Payload, Seen);
++    };
++    if (Type->isPointerType() || Type->isReferenceType())
++      return Carries(Type->getPointeeType());
++    if (const auto *Array = Context.getAsArrayType(Type))
++      return Carries(Array->getElementType());
++    if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
++      return Carries(Optional->getElementType());
++    if (const auto *Result = Type->getAs<ObjC3ResultType>())
++      return Carries(Result->getSuccessType()) || Carries(Result->getErrorType());
++    if (const auto *Record = Type->getAs<RecordType>())
++      for (const FieldDecl *Field : Record->getDecl()->fields())
++        if (Carries(Field->getType()))
++          return true;
++    return false;
++  }
++  bool carriesBorrowedValue(QualType Type) const {
++    llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++    return carriesBorrowedValueImpl(Type, Seen);
++  }
 +  const VarDecl *variable(const Expr *E) const {
 +    if (!E)
 +      return nullptr;
@@ -35183,6 +35969,76 @@ index 000000000..4b671880a
 +    }
 +    return Variable;
 +  }
++  unsigned path(Storage Location) const {
++    unsigned Parent = Location.Parent;
++    if (Location.second) {
++      auto Key = std::make_pair(Parent, Location.second);
++      auto [It, Inserted] = FieldPaths.try_emplace(Key, Paths.size());
++      if (Inserted)
++        Paths.push_back({Parent, Location.second, -1});
++      Parent = It->second;
++    }
++    if (Location.Index != -1) {
++      auto Key = std::make_pair(Parent, Location.Index);
++      auto [It, Inserted] = ArrayPaths.try_emplace(Key, Paths.size());
++      if (Inserted)
++        Paths.push_back({Parent, nullptr, Location.Index});
++      Parent = It->second;
++    }
++    return Parent;
++  }
++  Storage fieldStorage(Storage Base, const ValueDecl *Field) const {
++    return {Base.first, Base.first ? Field : nullptr, -1, path(Base)};
++  }
++  Storage indexedStorage(Storage Base, int64_t Index) const {
++    return {Base.first, nullptr, Index, path(Base)};
++  }
++  Storage parentStorage(Storage Location) const {
++    if (!Location.Parent)
++      return {Location.first, nullptr};
++    const PathNode &Node = Paths[Location.Parent];
++    return {Location.first, Node.Field, Node.Index, Node.Parent};
++  }
++  bool pathsMayAlias(unsigned A, unsigned B) const {
++    if (!A || !B)
++      return A == B;
++    const PathNode &L = Paths[A], &R = Paths[B];
++    if (L.Field != R.Field ||
++        (L.Index != R.Index && L.Index != -2 && R.Index != -2))
++      return false;
++    return pathsMayAlias(L.Parent, R.Parent);
++  }
++  bool within(Storage Location, Storage Container) const {
++    if (Location.first != Container.first)
++      return false;
++    unsigned Prefix = path(Container), Current = path(Location);
++    while (Current && !pathsMayAlias(Current, Prefix))
++      Current = Paths[Current].Parent;
++    return pathsMayAlias(Current, Prefix);
++  }
++  QualType pathType(const VarDecl *Root, unsigned Path) const {
++    if (!Root)
++      return {};
++    if (!Path)
++      return Root->getType();
++    const PathNode &Node = Paths[Path];
++    if (Node.Field)
++      return Node.Field->getType();
++    QualType Parent = pathType(Root, Node.Parent);
++    if (const auto *Array = Context.getAsArrayType(Parent))
++      return Array->getElementType();
++    return {};
++  }
++  QualType storageType(Storage Location) const {
++    if (!Location.first)
++      return {};
++    QualType Type = Location.second ? Location.second->getType()
++                                    : pathType(Location.first, Location.Parent);
++    if (Location.Index != -1)
++      if (const auto *Array = Context.getAsArrayType(Type))
++        return Array->getElementType();
++    return Type;
++  }
 +  Storage storage(const Expr *E, const Facts *State = nullptr) const {
 +    if (!E)
 +      return {};
@@ -35190,10 +36046,10 @@ index 000000000..4b671880a
 +    if (const VarDecl *Variable = variable(E))
 +      return {Variable, nullptr};
 +    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
-+      const VarDecl *Base = Member->isArrow()
-+                                ? referent(Member->getBase(), State).first
-+                                : storage(Member->getBase(), State).first;
-+      return {Base, Base ? Member->getMemberDecl() : nullptr};
++      Storage Base = Member->isArrow()
++                         ? referent(Member->getBase(), State)
++                         : storage(Member->getBase(), State);
++      return fieldStorage(Base, Member->getMemberDecl());
 +    }
 +    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(E)) {
 +      Storage Base = referent(Subscript->getBase(), State);
@@ -35207,7 +36063,7 @@ index 000000000..4b671880a
 +        else
 +          Index = -2;
 +      }
-+      return {Base.first, Base.second, Index};
++      return {Base.first, Base.second, Index, Base.Parent};
 +    }
 +    if (const auto *Dereference = dyn_cast<UnaryOperator>(E))
 +      if (Dereference->getOpcode() == UO_Deref)
@@ -35241,27 +36097,47 @@ index 000000000..4b671880a
 +      if (Offset->getOpcode() == BO_Comma || Offset->isAssignmentOp())
 +        return referent(Offset->getRHS(), State, Depth + 1);
 +    }
-+    Storage Source = storage(E, nullptr);
++    Storage Source = storage(E, State);
 +    if (E->getType()->isArrayType() && Source.first)
-+      return {Source.first, Source.second, 0};
++      return indexedStorage(Source, 0);
 +    if (Source.first && State) {
 +      auto Found = Slots.find(Source);
-+      if (Found != Slots.end())
-+        return State->LocalTargets[Found->second];
++      if (Found != Slots.end()) {
++        Storage Target = State->LocalTargets[Found->second];
++        if (!Target.first && State->MayTargets[Found->second].count() == 1)
++          Target = location(State->MayTargets[Found->second].find_first());
++        return Target;
++      }
 +    }
 +    if (const VarDecl *V = variable(E))
 +      if (V->getType().isConstQualified() && V->hasInit())
 +        return referent(V->getInit(), State, Depth + 1);
 +    return {};
 +  }
-+  void addStorage(Storage S) {
-+    if (S.first && !Slots.count(S))
-+      Slots[S] = Slots.size();
++  void addStorage(Storage Location, QualType Type = {}, unsigned Depth = 0) {
++    if (!Location.first || Slots.count(Location))
++      return;
++    Slots[Location] = Slots.size();
++    if (Type.isNull())
++      Type = storageType(Location);
++    if (Type.isNull() || Depth > 32)
++      return;
++    if (const auto *Record = Type->getAs<RecordType>())
++      for (const FieldDecl *Field : Record->getDecl()->fields())
++        addStorage(fieldStorage(Location, Field), Field->getType(), Depth + 1);
++    if (const auto *Array = Context.getAsArrayType(Type)) {
++      addStorage(indexedStorage(Location, -2), Array->getElementType(), Depth + 1);
++      addStorage(indexedStorage(Location, 0), Array->getElementType(), Depth + 1);
++      if (const auto *Constant = dyn_cast<ConstantArrayType>(Array))
++        if (Constant->getSize().getActiveBits() <= 6)
++          for (uint64_t I = 1; I < Constant->getSize().getZExtValue(); ++I)
++            addStorage(indexedStorage(Location, I), Array->getElementType(), Depth + 1);
++    }
 +  }
 +  void addVariable(const VarDecl *Variable) {
 +    addStorage({Variable, nullptr});
 +    QualType Type = Variable->getType();
-+    MightBorrow |= containsObjC3BorrowedType(Context, Type) ||
++    MightBorrow |= carriesBorrowedValue(Type) ||
 +                   Variable->hasAttr<NoEscapeAttr>();
 +    if ((Type->isPointerType() || Type->isObjCObjectPointerType() ||
 +         Type->isReferenceType() || Type->isArrayType()) && !isObjC3BorrowedType(Context, Type) &&
@@ -35292,6 +36168,8 @@ index 000000000..4b671880a
 +      return Call->getDirectCallee();
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
 +      return Message->getMethodDecl();
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
++      return Construction->getConstructor();
 +    return nullptr;
 +  }
 +  const Expr *argument(const Expr *E, unsigned Index) const {
@@ -35299,6 +36177,8 @@ index 000000000..4b671880a
 +      return Index < Call->getNumArgs() ? Call->getArg(Index) : nullptr;
 +    if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
 +      return Index < Message->getNumArgs() ? Message->getArg(Index) : nullptr;
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
++      return Index < Construction->getNumArgs() ? Construction->getArg(Index) : nullptr;
 +    return nullptr;
 +  }
 +  const Expr *ownerArgument(const Expr *E, unsigned Index) const {
@@ -35312,6 +36192,10 @@ index 000000000..4b671880a
 +    if (!E)
 +      return;
 +    E = E->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
++      return ownerVariables(Cleanups->getSubExpr(), Owners);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
++      return ownerVariables(Opaque->getSourceExpr(), Owners);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
 +      bool Truth;
 +      if (!Conditional->getCond()->HasSideEffects(Context) &&
@@ -35331,6 +36215,16 @@ index 000000000..4b671880a
 +  void collectBindings(const Stmt *Node) {
 +    if (!Node || isa<BlockExpr, LambdaExpr>(Node))
 +      return;
++    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Node))
++      BindingSnapshots[Binding->getBindingDecl()] = Binding->getSnapshotDecl();
++    if (const auto *Match = dyn_cast<ObjC3MatchStmt>(Node))
++      for (unsigned I = 0; I != Match->getNumArms(); ++I)
++        if (const VarDecl *Binding = Match->getArm(I)->getBindingDecl())
++          MatchSources[Binding] = Match->getScrutinee();
++    if (const auto *Match = dyn_cast<ObjC3MatchExpr>(Node))
++      for (unsigned I = 0; I != Match->getNumArms(); ++I)
++        if (const VarDecl *Binding = Match->getArm(I)->getBindingDecl())
++          MatchSources[Binding] = Match->getScrutinee();
 +    if (const auto *Reference = dyn_cast<DeclRefExpr>(Node))
 +      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl()))
 +        addVariable(Variable);
@@ -35361,11 +36255,11 @@ index 000000000..4b671880a
 +        if (const auto *V = dyn_cast<VarDecl>(D))
 +          addVariable(V);
 +    if (const auto *E = dyn_cast<Expr>(Node)) {
-+      MightBorrow |= containsObjC3BorrowedType(Context, E->getType());
++      MightBorrow |= carriesBorrowedValue(E->getType());
 +      if (!isa<BlockExpr>(E) && !ExpressionSlots.count(E))
 +        ExpressionSlots[E] = ExpressionSlots.size();
 +      if (isa<MemberExpr, ArraySubscriptExpr>(E))
-+        addStorage(storage(E));
++        addStorage(storage(E), E->getType());
 +      if (const auto *Contract = getObjC3BorrowedReturnContract(callee(E))) {
 +        const Expr *OwnerExpr = ownerArgument(E, Contract->getOwnerIndex());
 +        SmallVector<const VarDecl *, 2> Owners;
@@ -35475,6 +36369,10 @@ index 000000000..4b671880a
 +    if (!E)
 +      return Result;
 +    E = E->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
++      return ownerIdentity(Cleanups->getSubExpr(), State);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
++      return ownerIdentity(Opaque->getSourceExpr(), State);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
 +      Result = ownerIdentity(Conditional->getTrueExpr(), State);
 +      Result |= ownerIdentity(Conditional->getFalseExpr(), State);
@@ -35536,60 +36434,117 @@ index 000000000..4b671880a
 +    }
 +    return Result;
 +  }
-+  Value storedValue(Storage Resolved, QualType Type, const Facts &State) const {
-+    auto Found = Slots.find(Resolved);
-+    if (Found == Slots.end() && Resolved.first && Resolved.Index >= 0)
-+      Found = Slots.find({Resolved.first, Resolved.second, -2});
-+    if (Found != Slots.end()) {
-+      Value Result = State.Values[Found->second];
-+      Storage Location = Resolved;
-+      if (Type->isRecordType() || Type->isArrayType() ||
-+          Location.Index == -2) {
-+        for (auto [Other, Index] : Slots)
-+          if (Other.first == Location.first &&
-+              (Other.second || Other.Index != -1))
-+            Result |= State.Values[Index];
-+      } else if (Location.Index >= 0) {
-+        auto Unknown = Slots.find({Location.first, Location.second, -2});
-+        if (Unknown != Slots.end())
-+          Result |= State.Values[Unknown->second];
-+      }
-+      // A pointer to local storage exposes its borrowed contents as well.
-+      // Follow a finite chain of address aliases; cycles do not create facts.
-+      Storage Target = State.LocalTargets[Found->second];
-+      for (unsigned Depth = 0; Target.first && Depth != 32; ++Depth) {
-+        auto Pointee = Slots.find(Target);
-+        if (Pointee == Slots.end())
-+          break;
-+        Result |= State.Values[Pointee->second];
-+        if (Target.first->getType()->isRecordType() ||
-+            Target.first->getType()->isArrayType())
-+          for (auto [Other, Index] : Slots)
-+            if (Other.first == Target.first)
-+              Result |= State.Values[Index];
-+        Target = State.LocalTargets[Pointee->second];
-+      }
-+      return Result;
++  bool overlapsUnion(Storage Location, Storage Other) const {
++    if (Location.first != Other.first)
++      return false;
++    for (unsigned Depth = 0; Depth != 32 && path(Location); ++Depth) {
++      Location = parentStorage(Location);
++      QualType Type = storageType(Location);
++      if (!Type.isNull())
++        if (const auto *Record = Type->getAs<RecordType>())
++          if (Record->getDecl()->isUnion() && within(Other, Location))
++            return true;
 +    }
-+    return empty();
++    return false;
 +  }
-+  Value exposedValue(Storage Target, const Facts &State) const {
++  Value contents(Storage Location, QualType Type, const Facts &State) const {
 +    Value Result = empty();
-+    for (unsigned Depth = 0; Target.first && Depth != 32; ++Depth) {
-+      auto Found = Slots.find(Target);
-+      if (Found == Slots.end() && Target.Index >= 0)
-+        Found = Slots.find({Target.first, Target.second, -2});
-+      if (Found == Slots.end())
-+        break;
-+      Result |= State.Values[Found->second];
-+      if (Target.first->getType()->isRecordType() ||
-+          Target.first->getType()->isArrayType())
-+        for (auto [Other, Index] : Slots)
-+          if (Other.first == Target.first)
-+            Result |= State.Values[Index];
-+      Target = State.LocalTargets[Found->second];
++    if (!Location.first)
++      return Result;
++    bool Aggregate = !Type.isNull() && (Type->isRecordType() || Type->isArrayType());
++    bool CopiedScalar = !Type.isNull() &&
++                        (Type->isArithmeticType() || Type->isEnumeralType());
++    unsigned Query = path(Location);
++    for (auto [Other, Index] : Slots) {
++      if (Other.first != Location.first)
++        continue;
++      if (pathsMayAlias(path(Other), Query) ||
++          (!CopiedScalar && within(Location, Other)) ||
++          overlapsUnion(Location, Other) || (Aggregate && within(Other, Location)))
++        Result |= State.Values[Index];
 +    }
 +    return Result;
++  }
++  Value storageTargets(Storage Location, QualType Type, const Facts &State) const {
++    Value Result(Slots.size());
++    if (!Location.first)
++      return Result;
++    bool Aggregate = !Type.isNull() && (Type->isRecordType() || Type->isArrayType());
++    unsigned Query = path(Location);
++    for (auto [Other, Index] : Slots)
++      if (Other.first == Location.first &&
++          (pathsMayAlias(path(Other), Query) || within(Location, Other) ||
++           overlapsUnion(Location, Other) || (Aggregate && within(Other, Location))))
++        Result |= State.MayTargets[Index];
++    return Result;
++  }
++  Storage location(unsigned Index) const {
++    for (auto [Location, Slot] : Slots)
++      if (Slot == Index)
++        return Location;
++    return {};
++  }
++  Value exposedTargets(const Value &Targets, const Facts &State) const {
++    Value Result = empty(), Pending = Targets;
++    Value Seen(Slots.size());
++    while (true) {
++      Pending.reset(Seen);
++      int Index = Pending.find_first();
++      if (Index < 0)
++        break;
++      Seen.set(Index);
++      Storage Location = location(Index);
++      Result |= contents(Location, storageType(Location), State);
++      Pending |= storageTargets(Location, storageType(Location), State);
++    }
++    return Result;
++  }
++  Value possibleTargets(const Expr *E, const Facts &State) const {
++    Value Targets(Slots.size());
++    if (!E)
++      return Targets;
++    E = E->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
++      return possibleTargets(Cleanups->getSubExpr(), State);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
++      return possibleTargets(Opaque->getSourceExpr(), State);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++      Targets = possibleTargets(Conditional->getTrueExpr(), State);
++      Targets |= possibleTargets(Conditional->getFalseExpr(), State);
++      return Targets;
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E))
++      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp())
++        return possibleTargets(Binary->getRHS(), State);
++    Storage Target = referent(E, &State);
++    if (auto Found = Slots.find(Target); Found != Slots.end()) {
++      Targets.set(Found->second);
++      return Targets;
++    }
++    if (auto Found = Slots.find(storage(E, &State)); Found != Slots.end())
++      return State.MayTargets[Found->second];
++    return Targets;
++  }
++  bool hasUnknownIndex(Storage Location) const {
++    unsigned Current = path(Location);
++    while (Current) {
++      if (Paths[Current].Index == -2)
++        return true;
++      Current = Paths[Current].Parent;
++    }
++    return false;
++  }
++  Value storedValue(Storage Resolved, QualType Type, const Facts &State) const {
++    Value Result = contents(Resolved, Type, State);
++    auto Found = Slots.find(Resolved);
++    if (Found == Slots.end() && Resolved.first && Resolved.Index >= 0)
++      Found = Slots.find({Resolved.first, Resolved.second, -2, Resolved.Parent});
++    if (Found != Slots.end())
++      Result |= exposedTargets(storageTargets(Resolved, Type, State), State);
++    return Result;
++  }
++  Value exposedValue(Storage Target, const Facts &State) const {
++    return storedValue(Target, storageType(Target), State);
 +  }
 +  Value value(const Expr *E, const Facts &State) const {
 +    if (!E)
@@ -35598,7 +36553,7 @@ index 000000000..4b671880a
 +    if (Evaluated != ExpressionSlots.end() &&
 +        State.EvaluatedReady.test(Evaluated->second)) {
 +      Value Result = State.EvaluatedValues[Evaluated->second];
-+      Result |= exposedValue(State.EvaluatedTargets[Evaluated->second], State);
++      Result |= exposedTargets(State.EvaluatedMayTargets[Evaluated->second], State);
 +      return Result;
 +    }
 +    // Casts, including void* and uintptr_t, carry the facts until the result's
@@ -35611,8 +36566,14 @@ index 000000000..4b671880a
 +    }
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return value(Cleanups->getSubExpr(), State);
-+    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
-+      return value(Opaque->getSourceExpr(), State);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E)) {
++      if (Opaque->getSourceExpr())
++        return value(Opaque->getSourceExpr(), State);
++      Value Result = empty();
++      if (carriesBorrowedValue(Opaque->getType()))
++        Result.set(0);
++      return Result;
++    }
 +    if (const auto *Temporary = dyn_cast<MaterializeTemporaryExpr>(E))
 +      return value(Temporary->getSubExpr(), State);
 +    if (const auto *Binding = dyn_cast<CXXBindTemporaryExpr>(E))
@@ -35681,6 +36642,21 @@ index 000000000..4b671880a
 +      return value(Access->getSemanticExpr(), State);
 +    if (const auto *Coalesce = dyn_cast<ObjC3CoalesceExpr>(E))
 +      return value(Coalesce->getSemanticExpr(), State);
++    if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(E)) {
++      ObjC3KeyPathApplicationInfo Application;
++      if (getObjC3KeyPathApplication(Pseudo, Application)) {
++        // Get copies the selected data. Set and narrowing have no loan result;
++        // their source operands are checked separately at application time.
++        if (Application.Operation != 0)
++          return empty();
++        Value Result = empty();
++        if (carriesBorrowedValue(E->getType()))
++          Result.set(0);
++        return Result;
++      }
++      if (const Expr *Result = Pseudo->getResultExpr())
++        return value(Result, State);
++    }
 +    if (const auto *Match = dyn_cast<ObjC3MatchExpr>(E)) {
 +      Value Result = empty();
 +      for (unsigned I = 0; I != Match->getNumArms(); ++I)
@@ -35704,6 +36680,13 @@ index 000000000..4b671880a
 +      }
 +      return Result;
 +    }
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
++      if (trivialRecordCopy(Construction->getConstructor()) &&
++          Construction->getNumArgs() == 1)
++        return value(Construction->getArg(0), State);
++    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(E))
++      if (trivialRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
++        return value(Operator->getArg(1), State);
 +    if (const auto *Initializer = dyn_cast<InitListExpr>(E)) {
 +      Value Result = empty();
 +      for (const Expr *Element : Initializer->inits())
@@ -35722,12 +36705,12 @@ index 000000000..4b671880a
 +    Storage Resolved = storage(E, &State);
 +    if (Slots.count(Resolved) ||
 +        (Resolved.first && Resolved.Index >= 0 &&
-+         Slots.count({Resolved.first, Resolved.second, -2})))
++         Slots.count({Resolved.first, Resolved.second, -2, Resolved.Parent})))
 +      return storedValue(Resolved, E->getType(), State);
 +    // A declaration-provided borrowed type with no tracked local definition
 +    // (e.g. a field, foreign function pointer, or imported declaration) cannot
 +    // silently become unborrowed merely because its acquisition is opaque.
-+    if (containsObjC3BorrowedType(Context, E->getType())) {
++    if (carriesBorrowedValue(E->getType())) {
 +      Value Result = empty();
 +      Result.set(0);
 +      return Result;
@@ -35803,7 +36786,7 @@ index 000000000..4b671880a
 +    }
 +  }
 +  void store(const Stmt *Operation, Storage Destination, const Value &V,
-+             Facts &State, bool Emit) {
++             Facts &State, bool Emit, bool Replace = false) {
 +    if (V.any() && Emit) {
 +      if (!Destination.first || !Destination.first->hasLocalStorage())
 +        diagnose(Operation, Destination.first ? "global/static/thread-local storage"
@@ -35817,53 +36800,187 @@ index 000000000..4b671880a
 +      Found = Slots.find(Destination);
 +    }
 +    if (Found != Slots.end()) {
-+      if (Destination.Index == -2)
++      if (!Replace && hasUnknownIndex(Destination))
 +        State.Values[Found->second] |= V;
 +      else
 +        State.Values[Found->second] = V;
 +    }
 +  }
-+  void initializeRecord(const Stmt *Operation, const VarDecl *Destination,
-+                        const Expr *Initializer, Facts &State, bool Emit) {
-+    const auto *Record = Destination->getType()->getAs<RecordType>();
-+    if (!Record || !Initializer)
++  Storage rebase(Storage Location, Storage From, Storage To) const {
++    if (Location.first != From.first)
++      return {};
++    unsigned Prefix = path(From), Current = path(Location);
++    SmallVector<unsigned, 8> Suffix;
++    while (Current && Current != Prefix) {
++      Suffix.push_back(Current);
++      Current = Paths[Current].Parent;
++    }
++    if (Current != Prefix)
++      return {};
++    for (unsigned I : llvm::reverse(Suffix)) {
++      // Interner insertion can reallocate Paths, so copy the selector first.
++      PathNode Node = Paths[I];
++      To = Node.Field ? fieldStorage(To, Node.Field)
++                      : indexedStorage(To, Node.Index);
++    }
++    return To;
++  }
++  void copyStorageShape(const Stmt *Operation, Storage Destination,
++                         Storage Source, Facts &State, bool Emit) {
++    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; };
++    SmallVector<Copy, 16> Copies;
++    for (auto [Location, Index] : Slots) {
++      Storage Target = rebase(Location, Source, Destination);
++      if (Target.first && Slots.count(Target))
++        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index]});
++    }
++    for (Copy &Entry : Copies) {
++      store(Operation, Entry.Destination, Entry.Contents, State, Emit,
++            !hasUnknownIndex(Destination));
++      State.LocalTargets[Slots.lookup(Entry.Destination)] = Entry.Target;
++      State.MayTargets[Slots.lookup(Entry.Destination)] = std::move(Entry.Targets);
++    }
++  }
++  void initializeAggregate(const Stmt *Operation, Storage Destination,
++                            QualType Type, const Expr *Initializer,
++                            Facts &State, bool Emit, unsigned Depth = 0) {
++    if (Depth > 32 || !Destination.first)
 +      return;
-+    Initializer = Initializer->IgnoreParenCasts();
-+    const auto *List = dyn_cast<InitListExpr>(Initializer);
++    if (!Type->isRecordType() && !Type->isArrayType()) {
++      Value V = value(Initializer, State);
++      Storage Target = referent(Initializer, &State);
++      Value Targets = possibleTargets(Initializer, State);
++      if (Targets.any() && !hasUnknownIndex(Destination) &&
++          !isObjC3BorrowedType(Context, Type))
++        V = empty();
++      store(Operation, Destination, V, State, Emit);
++      if (auto Found = Slots.find(Destination); Found != Slots.end()) {
++        State.LocalTargets[Found->second] = Target;
++        if (hasUnknownIndex(Destination))
++          State.MayTargets[Found->second] |= Targets;
++        else
++          State.MayTargets[Found->second] = std::move(Targets);
++      }
++      return;
++    }
++    const Expr *Written = Initializer ? Initializer->IgnoreParenCasts() : nullptr;
++    if (const auto *Construction = dyn_cast_or_null<CXXConstructExpr>(Written))
++      if (Construction->getConstructor()->isTrivial() &&
++          Construction->getConstructor()->isCopyOrMoveConstructor() &&
++          Construction->getNumArgs() == 1) {
++        initializeAggregate(Operation, Destination, Type, Construction->getArg(0),
++                            State, Emit, Depth + 1);
++        return;
++      }
++    if (const auto *Cleanups = dyn_cast_or_null<ExprWithCleanups>(Written))
++      Written = Cleanups->getSubExpr()->IgnoreParenCasts();
++    const auto *List = dyn_cast_or_null<InitListExpr>(Written);
 +    if (List && List->getSemanticForm())
 +      List = List->getSemanticForm();
-+    Storage Source = storage(Initializer, &State);
-+    unsigned Index = 0;
-+    for (const FieldDecl *Field : Record->getDecl()->fields()) {
-+      Value V = empty();
-+      if (List && Index < List->getNumInits()) {
-+        V = value(List->getInit(Index), State);
-+      } else if (Source.first) {
-+        auto Found = Slots.find({Source.first, Field});
-+        if (Found != Slots.end())
-+          V = State.Values[Found->second];
-+      }
-+      store(Operation, {Destination, Field}, V, State, Emit);
-+      ++Index;
++    Storage Source = storage(Written, &State);
++    if (!List && Source.first) {
++      copyStorageShape(Operation, Destination, Source, State, Emit);
++      return;
 +    }
-+    // Aggregate contents are derived from their individual fields. Clearing
-+    // the summary permits overwriting a borrowed field with an owned value.
-+    State.Values[Slots.lookup({Destination, nullptr})] = empty();
++    if (const auto *Record = Type->getAs<RecordType>()) {
++      unsigned I = 0;
++      for (const FieldDecl *Field : Record->getDecl()->fields()) {
++        const Expr *FieldInit = List && I < List->getNumInits()
++                                    ? List->getInit(I) : nullptr;
++        initializeAggregate(Operation, fieldStorage(Destination, Field),
++                            Field->getType(), FieldInit, State, Emit, Depth + 1);
++        ++I;
++      }
++    } else if (const auto *Array = Context.getAsArrayType(Type)) {
++      unsigned Prefix = path(Destination);
++      SmallVector<Storage, 16> Elements;
++      for (auto [Location, Index] : Slots) {
++        (void)Index;
++        if (Location.first == Destination.first && Location.Parent == Prefix &&
++            !Location.second && Location.Index != -1)
++          Elements.push_back(Location);
++      }
++      for (Storage Element : Elements) {
++        const Expr *ElementInit = List && Element.Index >= 0 &&
++                                         static_cast<uint64_t>(Element.Index) < List->getNumInits()
++                                      ? List->getInit(Element.Index) : nullptr;
++        initializeAggregate(Operation, Element, Array->getElementType(),
++                            ElementInit, State, Emit, Depth + 1);
++      }
++    }
++    // Exact aggregate initialization derives contents from individual paths.
++    // Opaque payload copies retain a conservative aggregate summary instead.
++    Value Summary = !List && Written ? value(Written, State) : empty();
++    if (const auto *Record = Type->getAs<RecordType>())
++      if (Record->getDecl()->isUnion())
++        Summary |= contents(Destination, Type, State);
++    store(Operation, Destination, Summary, State, Emit);
++  }
++  void initializeRecord(const Stmt *Operation, const VarDecl *Destination,
++                        const Expr *Initializer, Facts &State, bool Emit) {
++    if (Destination->getType()->isRecordType() && Initializer)
++      initializeAggregate(Operation, {Destination, nullptr}, Destination->getType(),
++                          Initializer, State, Emit);
 +  }
 +  void initializeArray(const Stmt *Operation, const VarDecl *Destination,
 +                       const Expr *Initializer, Facts &State, bool Emit) {
-+    if (!Destination->getType()->isArrayType() || !Initializer)
-+      return;
-+    const auto *List = dyn_cast<InitListExpr>(Initializer->IgnoreParenCasts());
-+    if (!List)
-+      return;
-+    for (unsigned I = 0; I != List->getNumInits(); ++I)
-+      store(Operation, {Destination, nullptr, I}, value(List->getInit(I), State),
-+            State, Emit);
-+    State.Values[Slots.lookup({Destination, nullptr})] = empty();
++    if (Destination->getType()->isArrayType() && Initializer)
++      initializeAggregate(Operation, {Destination, nullptr}, Destination->getType(),
++                          Initializer, State, Emit);
 +  }
 +  Storage pointedStorage(const Expr *Pointer, const Facts &State) const {
 +    return referent(Pointer, &State);
++  }
++  void copyRepresentation(const CallExpr *Call, Facts &State, bool Emit) {
++    Storage Source = pointedStorage(Call->getArg(1), State);
++    Storage Destination = pointedStorage(Call->getArg(0), State);
++    auto Amount = Call->getArg(2)->getIntegerConstantExpr(Context);
++    if (Amount && Amount->isZero())
++      return; // No pointer representation is exposed by a zero-byte copy.
++    Value Payload = exposedValue(Source, State);
++    if (!Source.first) {
++      // Copying characters from the borrowed region is owned data. The
++      // pointer itself is checked independently as an ordinary noescape arg.
++      return;
++    }
++    bool Whole = Destination.first && !Source.second && !Destination.second &&
++                 !Source.Parent && !Destination.Parent &&
++                 (Source.Index == -1 || Source.Index == 0) &&
++                 (Destination.Index == -1 || Destination.Index == 0) &&
++                 Context.hasSameType(Source.first->getType(),
++                                     Destination.first->getType()) &&
++                 Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64 &&
++                 !Source.first->getType()->isIncompleteType() &&
++                 !Source.first->getType()->isVariableArrayType() &&
++                 Amount->getZExtValue() == static_cast<uint64_t>(
++                     Context.getTypeSizeInChars(Source.first->getType()).getQuantity());
++    if (Whole) {
++      // Diagnose exposed address payloads even if their direct slot is empty.
++      if (Emit && Payload.any() && !Destination.first->hasLocalStorage())
++        diagnose(Call, "global/static/thread-local storage through a representation copy");
++      copyStorageShape(Call, {Destination.first, nullptr}, {Source.first, nullptr},
++                       State, Emit);
++      return;
++    }
++    // Unknown/partial copies weakly update local contents. Retaining previous
++    // facts avoids claiming that untouched pointer fields were overwritten.
++    if (auto Existing = Slots.find(Destination); Existing != Slots.end())
++      Payload |= State.Values[Existing->second];
++    if (Payload.any()) {
++      store(Call, Destination, Payload, State, Emit);
++      QualType DestinationType = storageType(Destination);
++      if (!DestinationType.isNull() &&
++          (DestinationType->isRecordType() || DestinationType->isArrayType()))
++        for (auto [Location, Index] : Slots)
++          if (within(Location, Destination)) {
++            QualType Leaf = storageType(Location);
++            if (!Leaf.isNull() && !Leaf->isRecordType() && !Leaf->isArrayType()) {
++              Value Contents = State.Values[Index];
++              Contents |= Payload;
++              store(Call, Location, Contents, State, Emit);
++            }
++          }
++    }
 +  }
 +  bool copyingBuiltin(const FunctionDecl *Function) const {
 +    if (!Function || !Function->getBuiltinID())
@@ -35901,11 +37018,18 @@ index 000000000..4b671880a
 +                               : addressValue(Member->getBase(), State);
 +    return value(E, State);
 +  }
++  bool trivialRecordCopy(const Decl *Declaration) const {
++    const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Declaration);
++    return Method && Method->isTrivial() &&
++           Method->isCopyOrMoveConstructorOrAssignment();
++  }
 +  bool safeParameter(const Expr *Call, unsigned Index) const {
 +    const Decl *Callee = callee(Call);
 +    if ((getObjC3TaskBoundaryKind(Callee) & 3) ||
 +        isObjC3ActorIsolated(Callee) || getObjC3Executor(Callee))
 +      return false;
++    if (trivialRecordCopy(Callee))
++      return true;
 +    Index = formalIndex(Call, Index);
 +    auto Formals = formalParameters(Callee);
 +    if (Index < Formals.size()) {
@@ -35945,20 +37069,15 @@ index 000000000..4b671880a
 +      Count = Call->getNumArgs();
 +    else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation))
 +      Count = Message->getNumArgs();
++    else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Invocation))
++      Count = Construction->getNumArgs();
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) {
 +      const FunctionDecl *Function = Call->getDirectCallee();
 +      if (copyingBuiltin(Function) && Count >= 3) {
 +        StringRef Name = Function->getName();
 +        Name.consume_front("__builtin_");
 +        if (Name == "memcpy" || Name == "memmove") {
-+          Storage Source = pointedStorage(Call->getArg(1), State);
-+          auto Found = Slots.find(Source);
-+          if (Found != Slots.end()) {
-+            Value Payload = State.Values[Found->second];
-+            if (Payload.any())
-+              store(Invocation, pointedStorage(Call->getArg(0), State), Payload,
-+                    State, Emit);
-+          }
++          copyRepresentation(Call, State, Emit);
 +        }
 +      }
 +    }
@@ -35968,7 +37087,8 @@ index 000000000..4b671880a
 +        Receiver = Message->getInstanceReceiver();
 +      if (const auto *MemberCall = dyn_cast<CXXMemberCallExpr>(Invocation))
 +        Receiver = MemberCall->getImplicitObjectArgument();
-+      if (Receiver && addressValue(Receiver, State).any())
++      if (Receiver && !trivialRecordCopy(callee(Invocation)) &&
++          addressValue(Receiver, State).any())
 +        diagnose(Receiver, "a receiver without a non-escaping lifetime contract");
 +    }
 +    if (Emit)
@@ -36025,6 +37145,12 @@ index 000000000..4b671880a
 +        expire(Release->getVarDecl(), State);
 +        continue;
 +      }
++      if (auto Initializer = Element.getAs<CFGInitializer>()) {
++        const Expr *Value = Initializer->getInitializer()->getInit();
++        if (Emit && value(Value, State).any())
++          diagnose(Value, "a constructor member/base initializer without a borrowed lifetime contract");
++        continue;
++      }
 +      auto Statement = Element.getAs<CFGStmt>();
 +      if (!Statement)
 +        continue;
@@ -36035,16 +37161,22 @@ index 000000000..4b671880a
 +          State.EvaluatedReady.reset(Slot);
 +          Value V = value(Expression, State);
 +          Storage Target = referent(Expression, &State);
-+          if (Target.first && !isObjC3BorrowedType(Context, Expression->getType()))
++          Value Targets = possibleTargets(Expression, State);
++          if (Targets.any() && !isObjC3BorrowedType(Context, Expression->getType()))
 +            V = empty();
 +          State.EvaluatedValues[Slot] = std::move(V);
 +          State.EvaluatedTargets[Slot] = Target;
++          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
 +        }
 +      if (const auto *Declaration = dyn_cast<DeclStmt>(Node)) {
 +        for (const Decl *D : Declaration->decls())
 +          if (const auto *Variable = dyn_cast<VarDecl>(D)) {
 +            Value V = value(Variable->getInit(), State);
++            if (const VarDecl *Snapshot = BindingSnapshots.lookup(Variable))
++              V = storedValue({Snapshot, nullptr}, Snapshot->getType(), State);
++            else if (const Expr *Scrutinee = MatchSources.lookup(Variable))
++              V = value(Scrutinee, State);
 +            if (isObjC3BorrowedType(Context, Variable->getType()) &&
 +                Variable->hasInit() && V.none() &&
 +                !Variable->getInit()->isNullPointerConstant(
@@ -36054,11 +37186,13 @@ index 000000000..4b671880a
 +            if (OwnerRoots.count(Variable) && Owner.none())
 +              Owner.set(OwnerRoots.lookup(Variable));
 +            Storage Target = referent(Variable->getInit(), &State);
-+            if (Target.first && Variable->hasLocalStorage() &&
++            Value Targets = possibleTargets(Variable->getInit(), State);
++            if (Targets.any() && Variable->hasLocalStorage() &&
 +                !isObjC3BorrowedType(Context, Variable->getType()))
 +              V = empty(); // Its address exposes the pointee's current facts.
 +            store(Node, {Variable, nullptr}, V, State, Emit);
 +            State.LocalTargets[Slots.lookup({Variable, nullptr})] = Target;
++            State.MayTargets[Slots.lookup({Variable, nullptr})] = std::move(Targets);
 +            State.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Owner);
 +            initializeRecord(Node, Variable, Variable->getInit(), State, Emit);
 +            initializeArray(Node, Variable, Variable->getInit(), State, Emit);
@@ -36079,7 +37213,9 @@ index 000000000..4b671880a
 +            V |= value(Assignment->getLHS(), State);
 +          Value Owner = ownerIdentity(Assignment->getRHS(), State);
 +          Storage Address = referent(Assignment->getRHS(), &State);
-+          if (Address.first && Target.first && Target.first->hasLocalStorage() &&
++          Value Targets = possibleTargets(Assignment->getRHS(), State);
++          if (Targets.any() && Target.first && Target.first->hasLocalStorage() &&
++              !hasUnknownIndex(Target) &&
 +              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
 +            V = empty();
 +          if (auto Found = Slots.find(Target);
@@ -36091,12 +37227,20 @@ index 000000000..4b671880a
 +            if (Owner.none() && OwnerRoots.count(Target.first))
 +              Owner.set(OwnerRoots.lookup(nullptr));
 +            State.OwnerIdentities[Slot] = Owner;
-+            State.LocalTargets[Slot] = Address;
++          }
++          if (auto Found = Slots.find(Target); Found != Slots.end()) {
++            State.LocalTargets[Found->second] = Address;
++            if (hasUnknownIndex(Target))
++              State.MayTargets[Found->second] |= Targets;
++            else
++              State.MayTargets[Found->second] = std::move(Targets);
 +          }
 +          store(Node, Target, V, State, Emit);
-+          if (Target.first && !Target.second && Target.Index == -1 &&
-+              Slots.count(Target))
-+            initializeRecord(Node, Target.first, Assignment->getRHS(), State, Emit);
++          if (Target.first && Slots.count(Target) &&
++              (Assignment->getLHS()->getType()->isRecordType() ||
++               Assignment->getLHS()->getType()->isArrayType()))
++            initializeAggregate(Node, Target, Assignment->getLHS()->getType(),
++                                Assignment->getRHS(), State, Emit);
 +        }
 +      } else if (const auto *Return = dyn_cast<ReturnStmt>(Node)) {
 +        Value V = value(Return->getRetValue(), State);
@@ -36135,11 +37279,17 @@ index 000000000..4b671880a
 +                                   BlockDeclaration->getBody());
 +              Nested.Origins = Origins;
 +              Nested.OwnerRoots = OwnerRoots;
++              Nested.Paths = Paths;
++              Nested.FieldPaths = FieldPaths;
++              Nested.ArrayPaths = ArrayPaths;
 +              // Address captures can reach another automatic variable which
 +              // is not itself a Blocks capture. Seed the enclosing storage
 +              // graph so the nested CFG can follow that transitive payload.
 +              for (auto [Location, Index] : Slots) {
 +                Nested.InheritedValues[Location] = State.Values[Index];
++                for (int Target = State.MayTargets[Index].find_first(); Target >= 0;
++                     Target = State.MayTargets[Index].find_next(Target))
++                  Nested.InheritedMayTargets[Location].push_back(location(Target));
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
 +                if (!Location.second && Location.Index == -1)
 +                  Nested.InheritedOwners[Location.first] =
@@ -36157,10 +37307,30 @@ index 000000000..4b671880a
 +                if (Location.first == Source) {
 +                  State.Values[Index] = empty();
 +                  State.LocalTargets[Index] = {};
++                  State.MayTargets[Index].reset();
 +                }
 +            }
-+        if (isa<CallExpr, ObjCMessageExpr>(Invocation))
++        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation))
++          if (trivialRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
++            initializeAggregate(Invocation, storage(Operator->getArg(0), &State),
++                                Operator->getArg(0)->getType(), Operator->getArg(1),
++                                State, Emit);
++        if (Emit)
++          if (const auto *Allocation = dyn_cast<CXXNewExpr>(Invocation))
++            if (value(Allocation->getInitializer(), State).any())
++              diagnose(Invocation, "dynamically allocated aggregate storage");
++        if (isa<CallExpr, ObjCMessageExpr, CXXConstructExpr>(Invocation))
 +          checkCall(Invocation, State, Emit);
++        if (Emit)
++          if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Invocation)) {
++            ObjC3KeyPathApplicationInfo Application;
++            if (getObjC3KeyPathApplication(Pseudo, Application))
++              for (unsigned I = 1; I != Application.Syntax->getNumArgs(); ++I)
++                if (value(Application.Syntax->getArg(I), State).any())
++                  diagnose(Application.Syntax->getArg(I),
++                           I == 2 ? "key-path value storage without a borrowed lifetime contract"
++                                  : "a retained key-path root without a borrowed lifetime contract");
++          }
 +        // Dereferencing reads data without making that data borrowed. Its
 +        // pointer operand must nevertheless still have a live owner.
 +        if (Emit) {
@@ -36210,6 +37380,7 @@ index 000000000..4b671880a
 +    if (Found != Slots.end()) {
 +      State.Values[Found->second] = empty();
 +      State.LocalTargets[Found->second] = {};
++      State.MayTargets[Found->second].reset();
 +    }
 +  }
 +  bool join(Facts &Destination, const Facts &Source) const {
@@ -36227,6 +37398,10 @@ index 000000000..4b671880a
 +      Owners |= Source.OwnerIdentities[I];
 +      Changed |= Owners != Destination.OwnerIdentities[I];
 +      Destination.OwnerIdentities[I] = std::move(Owners);
++      Value Targets = Destination.MayTargets[I];
++      Targets |= Source.MayTargets[I];
++      Changed |= Targets != Destination.MayTargets[I];
++      Destination.MayTargets[I] = std::move(Targets);
 +      if (!(Destination.LocalTargets[I] == Source.LocalTargets[I]) &&
 +          Destination.LocalTargets[I].first) {
 +        Destination.LocalTargets[I] = {};
@@ -36244,6 +37419,10 @@ index 000000000..4b671880a
 +      Evaluated |= Source.EvaluatedValues[I];
 +      Changed |= Evaluated != Destination.EvaluatedValues[I];
 +      Destination.EvaluatedValues[I] = std::move(Evaluated);
++      Value Targets = Destination.EvaluatedMayTargets[I];
++      Targets |= Source.EvaluatedMayTargets[I];
++      Changed |= Targets != Destination.EvaluatedMayTargets[I];
++      Destination.EvaluatedMayTargets[I] = std::move(Targets);
 +      if (!(Destination.EvaluatedTargets[I] == Source.EvaluatedTargets[I]) &&
 +          Destination.EvaluatedTargets[I].first) {
 +        Destination.EvaluatedTargets[I] = {};
@@ -36302,7 +37481,13 @@ index 000000000..4b671880a
 +      addVariable(Parameter);
 +    }
 +    collectBindings(Body);
++    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
++      for (const CXXCtorInitializer *Initializer : Constructor->inits())
++        collectBindings(Initializer->getInit());
 +    collect(Body, Body);
++    if (const auto *Constructor = dyn_cast_or_null<CXXConstructorDecl>(Callable))
++      for (const CXXCtorInitializer *Initializer : Constructor->inits())
++        collect(Initializer->getInit(), Body);
 +    for (const auto &[Location, V] : InheritedValues) {
 +      (void)Location;
 +      MightBorrow |= V.any();
@@ -36319,7 +37504,12 @@ index 000000000..4b671880a
 +    std::unique_ptr<CFG> Graph = CFG::buildCFG(Callable, Body, &Context, Options);
 +    if (!Graph) {
 +      // A translation unit without borrowing does not need a borrowed CFG.
-+      if (Origins.size() > 1)
++      bool PromisedParameter = llvm::any_of(Parameters, [&](const ParmVarDecl *P) {
++        return P->hasAttr<NoEscapeAttr>() ||
++               carriesBorrowedValue(P->getType());
++      });
++      if (Origins.size() > 1 || PromisedParameter ||
++          llvm::any_of(InheritedValues, [](const auto &Entry) { return Entry.second.any(); }))
 +        diagnose(Body, "control flow whose borrowed owner lifetime cannot be proved");
 +      return Invalid;
 +    }
@@ -36328,10 +37518,12 @@ index 000000000..4b671880a
 +    Initial.Values.assign(Slots.size(), empty());
 +    Initial.OwnerIdentities.assign(Slots.size(), Value(OwnerRoots.size()));
 +    Initial.LocalTargets.resize(Slots.size());
++    Initial.MayTargets.assign(Slots.size(), Value(Slots.size()));
 +    Initial.CapturedValues.assign(BlockSlots.size(), empty());
 +    Initial.CaptureReady.resize(BlockSlots.size());
 +    Initial.EvaluatedValues.assign(ExpressionSlots.size(), empty());
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
++    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
 +    for (auto [Owner, Index] : OwnerRoots)
 +      if (auto Found = Slots.find({Owner, nullptr});
@@ -36343,8 +37535,15 @@ index 000000000..4b671880a
 +      Capture.resize(Origins.size() * 2);
 +      Initial.Values[Slots.lookup(Location)] = std::move(Capture);
 +    }
-+    for (const auto &[Location, Target] : InheritedTargets)
++    for (const auto &[Location, Target] : InheritedTargets) {
 +      Initial.LocalTargets[Slots.lookup(Location)] = Target;
++      if (auto Found = Slots.find(Target); Found != Slots.end())
++        Initial.MayTargets[Slots.lookup(Location)].set(Found->second);
++    }
++    for (const auto &[Location, Targets] : InheritedMayTargets)
++      for (Storage Target : Targets)
++        if (auto Found = Slots.find(Target); Found != Slots.end())
++          Initial.MayTargets[Slots.lookup(Location)].set(Found->second);
 +    for (const auto &[Variable, V] : InheritedOwners) {
 +      Value Identity = V;
 +      Identity.resize(OwnerRoots.size());
@@ -36357,14 +37556,14 @@ index 000000000..4b671880a
 +        continue;
 +      if (!Location.first->hasLocalStorage() && !Location.second &&
 +          Location.Index == -1 &&
-+          containsObjC3BorrowedType(Context, Location.first->getType()))
++          carriesBorrowedValue(Location.first->getType()))
 +        Initial.Values[Index].set(0);
 +      if (isa<ParmVarDecl>(Location.first) && Location.second &&
-+          containsObjC3BorrowedType(Context, Location.second->getType()))
++          carriesBorrowedValue(Location.second->getType()))
 +        Initial.Values[Index].set(0);
 +    }
 +    for (ParmVarDecl *Parameter : Parameters)
-+      if ((containsObjC3BorrowedType(Context, Parameter->getType()) &&
++      if ((carriesBorrowedValue(Parameter->getType()) &&
 +           !Parameter->getType()->isRecordType()) ||
 +          Parameter->hasAttr<NoEscapeAttr>()) {
 +        Value V = empty();
@@ -36459,10 +37658,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..d1eb686cc
+index 000000000..e0680cb68
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,837 @@
+@@ -0,0 +1,972 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -36480,6 +37679,8 @@ index 000000000..d1eb686cc
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/ParsedAttr.h"
 +#include "clang/Sema/Sema.h"
++#include "clang/Sema/SemaObjC.h"
++#include "llvm/ADT/STLExtras.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/Support/SaveAndRestore.h"
 +
@@ -36997,10 +38198,8 @@ index 000000000..d1eb686cc
 +        dyn_cast<StringLiteral>(AL.getArgAsExpr(0)->IgnoreParenImpCasts());
 +    if (!Literal)
 +      return;
-+    if (D->hasAttr<ObjCNonisolatedAttr>() ||
-+        (D->hasAttr<ObjCExecutorAttr>() &&
-+         D->getAttr<ObjCExecutorAttr>()->getExecutor() !=
-+             Literal->getString())) {
++    if (D->hasAttr<ObjCExecutorAttr>() &&
++        D->getAttr<ObjCExecutorAttr>()->getExecutor() != Literal->getString()) {
 +      S.Diag(AL.getLoc(), diag::err_objc3_isolation_conflict)
 +          << cast<NamedDecl>(D);
 +      D->setInvalidDecl();
@@ -37143,19 +38342,35 @@ index 000000000..d1eb686cc
 +bool isolationFrameScalar(QualType T, bool Result) {
 +  if (Result && T->isVoidType())
 +    return true;
-+  // Object/block parameters get independent frame leases. Owned object return
-+  // conventions need a separate adoption path before they can be admitted.
-+  if (Result && T->isObjCRetainableType())
-+    return false;
 +  return T->isArithmeticType() || T->isEnumeralType() || T->isPointerType() ||
-+         T->isNullPtrType() || (!Result && T->isObjCRetainableType());
++         T->isNullPtrType() || T->isObjCRetainableType();
 +}
 +
-+FunctionDecl *buildIsolationThunk(Sema &S, CallExpr *Source,
++bool isolationResultIsOwned(const Decl *Target) {
++  if (Target->hasAttr<NSReturnsRetainedAttr>())
++    return true;
++  if (Target->hasAttr<NSReturnsNotRetainedAttr>() ||
++      Target->hasAttr<NSReturnsAutoreleasedAttr>())
++    return false;
++  if (const auto *Method = dyn_cast<ObjCMethodDecl>(Target))
++    switch (Method->getMethodFamily()) {
++    case OMF_alloc:
++    case OMF_new:
++    case OMF_copy:
++    case OMF_mutableCopy:
++    case OMF_init:
++      return true;
++    default:
++      break;
++    }
++  return false;
++}
++
++FunctionDecl *buildIsolationThunk(Sema &S, Expr *Source, const Decl *Target,
++                                  const FunctionProtoType *Original,
 +                                  const ObjCExecutorAttr *Executor,
-+                                  SourceLocation Loc) {
-+  auto *Target = Source->getDirectCallee();
-+  const auto *Original = Target->getType()->getAs<FunctionProtoType>();
++                                  bool ActorEntry, SourceLocation Loc) {
++  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
 +  auto *TU = S.Context.getTranslationUnitDecl();
 +  std::string Prefix =
 +      "__objc3_isolation_entry_" + std::to_string(Loc.getRawEncoding());
@@ -37167,15 +38382,22 @@ index 000000000..d1eb686cc
 +  Info.ObjC3Effects = Original->getObjC3FunctionEffects();
 +  Info.ObjC3Effects.Async = true;
 +  Info.ObjC3Effects.AsyncFrame = true;
-+  SmallVector<QualType, 4> Types(Original->param_types());
++  SmallVector<QualType, 4> Types;
++  if (Message)
++    Types.push_back(Message->getInstanceReceiver()->getType());
++  llvm::append_range(Types, Original->param_types());
 +  QualType Type =
 +      S.Context.getFunctionType(Original->getReturnType(), Types, Info);
 +  auto *Thunk = FunctionDecl::Create(
 +      S.Context, TU, Loc, Loc, &S.Context.Idents.get(Name), Type,
 +      S.Context.getTrivialTypeSourceInfo(Type, Loc), SC_Static);
 +  Thunk->setImplicit();
-+  Thunk->addAttr(ObjC3IsolationThunkAttr::CreateImplicit(S.Context));
-+  Thunk->addAttr(Executor->clone(S.Context));
++  Thunk->addAttr(ObjC3IsolationThunkAttr::CreateImplicit(
++      S.Context, ActorEntry,
++      !Original->getObjC3FunctionEffects().Async &&
++          isolationResultIsOwned(Target)));
++  if (Executor)
++    Thunk->addAttr(Executor->clone(S.Context));
 +  SmallVector<ParmVarDecl *, 4> Params;
 +  for (unsigned I = 0; I != Types.size(); ++I) {
 +    auto *Param = ParmVarDecl::Create(
@@ -37190,16 +38412,33 @@ index 000000000..d1eb686cc
 +  TU->addDecl(Thunk);
 +  {
 +    Sema::SynthesizedFunctionScope Scope(S, Thunk);
-+    ExprResult Callee = S.BuildDeclRefExpr(Target, Target->getType(), VK_LValue,
-+                                           Source->getExprLoc());
 +    SmallVector<Expr *, 4> Arguments;
 +    for (auto *Param : Params)
 +      Arguments.push_back(
 +          S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc));
-+    ExprResult Value =
-+        S.BuildCallExpr(nullptr, Callee.get(), Loc, Arguments, Loc);
++    ExprResult Value;
++    if (Message) {
++      ExprResult Receiver = S.DefaultLvalueConversion(Arguments.front());
++      if (Receiver.isInvalid())
++        return nullptr;
++      Value = S.ObjC().BuildInstanceMessageImplicit(
++          Receiver.get(), Receiver.get()->getType(), Loc,
++          Message->getSelector(),
++          const_cast<ObjCMethodDecl *>(cast<ObjCMethodDecl>(Target)),
++          MutableArrayRef<Expr *>(Arguments).drop_front());
++    } else {
++      auto *Function = const_cast<FunctionDecl *>(cast<FunctionDecl>(Target));
++      ExprResult Callee = S.BuildDeclRefExpr(Function, Function->getType(),
++                                             VK_LValue, Source->getExprLoc());
++      Value = S.BuildCallExpr(nullptr, Callee.get(), Loc, Arguments, Loc);
++    }
 +    if (Value.isInvalid())
 +      return nullptr;
++    if (Original->getObjC3FunctionEffects().Async) {
++      Value = S.ActOnObjC3CAwaitExpr(Loc, Value.get());
++      if (Value.isInvalid())
++        return nullptr;
++    }
 +    if (Info.ObjC3Effects.Throws != ObjC3ThrowsKind::None) {
 +      Value = S.ActOnObjC3TryExpr(
 +          static_cast<unsigned>(ObjC3TryExpr::Kind::Propagate), Loc, Loc,
@@ -37219,46 +38458,118 @@ index 000000000..d1eb686cc
 +  S.Consumer.HandleTopLevelDecl(DeclGroupRef(Thunk));
 +  return Thunk;
 +}
++
++bool sameCurrentActor(const Decl *Callable, const ObjCMessageExpr *Message) {
++  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
++  if (!Method || !isObjC3ActorIsolated(Method))
++    return false;
++  if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance)
++    return true;
++  const auto *Receiver = Message->getInstanceReceiver();
++  if (!Receiver)
++    return false;
++  const auto *Reference =
++      dyn_cast<DeclRefExpr>(Receiver->IgnoreParenImpCasts());
++  return Reference && Reference->getDecl() == Method->getSelfDecl();
++}
++
++bool consumesIsolatedParameter(const ParmVarDecl *Parameter) {
++  return Parameter->hasAttr<NSConsumedAttr>() ||
++         Parameter->hasAttr<CFConsumedAttr>() ||
++         Parameter->hasAttr<ObjCResourceAttr>() ||
++         Parameter->getType()->isReferenceType();
++}
++
++const FunctionProtoType *isolationCalleeFunctionType(Sema &S,
++                                                     const Decl *Target) {
++  if (const auto *Type = getObjC3CallableFunctionType(Target))
++    return Type;
++  // Ordinary synchronous methods intentionally need no stored effect type.
++  // Form their logical signature without mutating declaration identity.
++  if (const auto *Method = dyn_cast_or_null<ObjCMethodDecl>(Target)) {
++    SmallVector<QualType, 4> Types;
++    for (const auto *Parameter : Method->parameters())
++      Types.push_back(Parameter->getType());
++    FunctionProtoType::ExtProtoInfo Info;
++    Info.Variadic = Method->isVariadic();
++    Info.ObjC3Effects = Method->getObjC3FunctionEffects();
++    return S.Context.getFunctionType(Method->getReturnType(), Types, Info)
++        ->castAs<FunctionProtoType>();
++  }
++  return nullptr;
++}
 +} // namespace
 +
 +ExprResult Sema::BuildObjC3IsolationAwaitOperand(SourceLocation Loc,
 +                                                 Expr *Operand) {
-+  auto *Call = dyn_cast<CallExpr>(Operand->IgnoreParens());
-+  auto *Target = Call ? Call->getDirectCallee() : nullptr;
++  auto *Source = Operand->IgnoreParens();
++  auto *Call = dyn_cast<CallExpr>(Source);
++  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
++  const Decl *Target = Call      ? Call->getDirectCallee()
++                       : Message ? Message->getMethodDecl()
++                                 : nullptr;
++  auto *Callable = Decl::castFromDeclContext(CurContext);
 +  const auto *Executor = getObjC3Executor(Target);
-+  const auto *Current = getObjC3Executor(Decl::castFromDeclContext(CurContext));
-+  bool Crossing = Executor && (!Current || Current->getExecutor() !=
-+                                               Executor->getExecutor());
-+  const auto *FT =
-+      Target ? Target->getType()->getAs<FunctionProtoType>() : nullptr;
-+  if (!Crossing || !FT || FT->getObjC3FunctionEffects().Async) {
++  const auto *Current = getObjC3Executor(Callable);
++  bool ActorEntry = Message && isObjC3ActorIsolated(Target);
++  bool Crossing = (ActorEntry && !sameCurrentActor(Callable, Message)) ||
++                  (Executor && (!Current || Current->getExecutor() !=
++                                                Executor->getExecutor()));
++  const auto *FT = isolationCalleeFunctionType(*this, Target);
++  if (!Crossing || !FT ||
++      (FT->getObjC3FunctionEffects().Async &&
++       !FT->getObjC3FunctionEffects().AsyncFrame)) {
 +    if (DiagnoseObjC3AwaitIsolation(Operand))
 +      return ExprError();
 +    return Operand;
 +  }
++  SmallVector<Expr *, 4> SourceArguments;
++  if (Call)
++    llvm::append_range(SourceArguments, Call->arguments());
++  else
++    llvm::append_range(SourceArguments, Message->arguments());
 +  // Preserve pre-call argument evaluation on the caller. A nested crossing is
 +  // never authorized merely because the outer call has an explicit await.
-+  IsolationBodyChecker Arguments(*this, Decl::castFromDeclContext(CurContext),
-+                                 true);
-+  for (auto *Argument : Call->arguments())
++  IsolationBodyChecker Arguments(*this, Callable, true);
++  if (Message && Message->getInstanceReceiver())
++    Arguments.Visit(Message->getInstanceReceiver());
++  for (auto *Argument : SourceArguments)
 +    Arguments.Visit(Argument);
 +  if (Arguments.failed())
 +    return ExprError();
-+  bool Shape = !isa<CXXMethodDecl>(Target) && !FT->isVariadic() &&
-+               isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts()) &&
-+               FT->getNumParams() == Call->getNumArgs() &&
++  bool Shape = !FT->isVariadic() &&
++               FT->getNumParams() == SourceArguments.size() &&
 +               isolationFrameScalar(FT->getReturnType(), true) &&
 +               (!getLangOpts().CPlusPlus || FT->isNothrow() ||
 +                Target->hasAttr<NoThrowAttr>());
 +  for (QualType T : FT->param_types())
 +    Shape &= isolationFrameScalar(T, false);
++  if (Call) {
++    Shape &= !isa<CXXMethodDecl>(Target) &&
++             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
++    for (const auto *Parameter : cast<FunctionDecl>(Target)->parameters())
++      Shape &= !consumesIsolatedParameter(Parameter);
++  } else {
++    Shape &=
++        Message->getReceiverKind() == ObjCMessageExpr::Instance &&
++        Message->getInstanceReceiver()->getType()->isObjCObjectPointerType() &&
++        !Target->hasAttr<NSConsumesSelfAttr>() &&
++        cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init;
++    for (const auto *Parameter : cast<ObjCMethodDecl>(Target)->parameters())
++      Shape &= !consumesIsolatedParameter(Parameter);
++  }
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);
 +    Diag(Target->getLocation(), diag::note_objc3_sendable_boundary);
 +    return ExprError();
 +  }
 +  bool Failed = false;
-+  for (const Expr *Argument : Call->arguments())
++  if (Message)
++    Failed |= checkTransfer(
++        *this, transferSource(Message->getInstanceReceiver())->getType(),
++        Message->getInstanceReceiver()->getExprLoc(), "isolated receiver",
++        Target);
++  for (const Expr *Argument : SourceArguments)
 +    Failed |=
 +        checkTransfer(*this, transferSource(Argument)->getType(),
 +                      Argument->getExprLoc(), "isolated argument", Target);
@@ -37269,12 +38580,35 @@ index 000000000..d1eb686cc
 +                            "isolated checked error", Target);
 +  if (Failed)
 +    return ExprError();
-+  auto *Thunk = buildIsolationThunk(*this, Call, Executor, Loc);
++  auto *Thunk =
++      buildIsolationThunk(*this, Source, Target, FT, Executor, ActorEntry, Loc);
 +  if (!Thunk)
 +    return ExprError();
 +  ExprResult Callee = BuildDeclRefExpr(Thunk, Thunk->getType(), VK_LValue, Loc);
-+  return BuildCallExpr(nullptr, Callee.get(), Loc,
-+                       {Call->getArgs(), Call->getNumArgs()}, Loc);
++  if (!Message)
++    return BuildCallExpr(nullptr, Callee.get(), Loc, SourceArguments, Loc);
++
++  // Semantic bindings guarantee receiver-first, exactly-once evaluation before
++  // lazy frame creation. The original message is diagnostic/printing syntax;
++  // it is never executed on the caller's executor.
++  SmallVector<Expr *, 4> Semantics;
++  SmallVector<Expr *, 4> Captures;
++  auto Capture = [&](Expr *Value) {
++    auto *Opaque = new (Context)
++        OpaqueValueExpr(Value->getExprLoc(), Value->getType(),
++                        Value->getValueKind(), Value->getObjectKind(), Value);
++    Semantics.push_back(Opaque);
++    Captures.push_back(Opaque);
++  };
++  Capture(Message->getInstanceReceiver());
++  for (auto *Argument : SourceArguments)
++    Capture(Argument);
++  ExprResult Frame = BuildCallExpr(nullptr, Callee.get(), Loc, Captures, Loc);
++  if (Frame.isInvalid())
++    return ExprError();
++  unsigned ResultIndex = Semantics.size();
++  Semantics.push_back(Frame.get());
++  return PseudoObjectExpr::Create(Context, Message, Semantics, ResultIndex);
 +}
 +
 +bool Sema::isObjC3NonSuspendingAwait(Expr *Operand) {
@@ -37330,10 +38664,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..dc77fc8e8
+index 000000000..ce5be61c0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1078 @@
+@@ -0,0 +1,1264 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37486,6 +38820,54 @@ index 000000000..dc77fc8e8
 +  return {};
 +}
 +
++bool stableIdentity(Sema &S, QualType Type, SourceLocation Loc) {
++  for (QualType Written = Type;;) {
++    if (isa<ObjCTypeParamType>(Written)) {
++      reject(S, Loc, "key-path identity requires concrete Objective-C "
++                     "generic arguments");
++      return false;
++    }
++    QualType Next = Written.getSingleStepDesugaredType(S.Context);
++    if (Next == Written)
++      break;
++    Written = Next;
++  }
++  if (const auto *Object = Type->getAs<ObjCObjectPointerType>()) {
++    if (const auto *Interface = Object->getInterfaceDecl())
++      if (!Interface->hasDefinition()) {
++        reject(S, Loc, "key-path class identity requires a complete "
++                       "Objective-C interface");
++        return false;
++      }
++    for (const auto *Protocol : Object->quals())
++      if (!Protocol->hasDefinition()) {
++        reject(S, Loc, "key-path protocol identity requires a complete "
++                       "Objective-C protocol");
++        return false;
++      }
++    for (QualType Argument : Object->getTypeArgs())
++      if (!stableIdentity(S, Argument, Loc))
++        return false;
++  } else if (Type->isPointerType() || Type->isReferenceType() ||
++             Type->isBlockPointerType()) {
++    return stableIdentity(S, Type->getPointeeType(), Loc);
++  } else if (const auto *Member = Type->getAs<MemberPointerType>()) {
++    return stableIdentity(S, Member->getPointeeType(), Loc);
++  } else if (const auto *Function = Type->getAs<FunctionType>()) {
++    if (!stableIdentity(S, Function->getReturnType(), Loc))
++      return false;
++    if (const auto *Proto = dyn_cast<FunctionProtoType>(Function))
++      for (QualType Parameter : Proto->param_types())
++        if (!stableIdentity(S, Parameter, Loc))
++          return false;
++  } else if (const auto *Array = S.Context.getAsArrayType(Type)) {
++    return stableIdentity(S, Array->getElementType(), Loc);
++  } else if (const auto *Atomic = Type->getAs<AtomicType>()) {
++    return stableIdentity(S, Atomic->getValueType(), Loc);
++  }
++  return true;
++}
++
 +QualType normalizeRoot(Sema &S, QualType Root, SourceLocation Loc) {
 +  if (!Root.isNull() && Root->isObjCObjectType())
 +    Root = S.Context.getObjCObjectPointerType(Root);
@@ -37493,6 +38875,12 @@ index 000000000..dc77fc8e8
 +      !Root->isObjCObjectPointerType() ||
 +      !Root->castAs<ObjCObjectPointerType>()->getInterfaceDecl()) {
 +    reject(S, Loc, "key-path root must name a concrete Objective-C class");
++    return {};
++  }
++  if (!stableIdentity(S, Root, Loc))
++    return {};
++  if (containsObjC3BorrowedType(S.Context, Root)) {
++    reject(S, Loc, "key-path root cannot erase borrowed provenance");
 +    return {};
 +  }
 +  if (Root->getNullability() == NullabilityKind::Nullable ||
@@ -37535,12 +38923,15 @@ index 000000000..dc77fc8e8
 +    if (Type->isPointerType() || Type->isReferenceType() ||
 +        Type->isBlockPointerType())
 +      return Self(Self, Type->getPointeeType());
-+    if (const auto *Function = Type->getAs<FunctionProtoType>()) {
++    if (const auto *Member = Type->getAs<MemberPointerType>())
++      return Self(Self, Member->getPointeeType());
++    if (const auto *Function = Type->getAs<FunctionType>()) {
 +      if (Self(Self, Function->getReturnType()))
 +        return true;
-+      for (QualType Parameter : Function->param_types())
-+        if (Self(Self, Parameter))
-+          return true;
++      if (const auto *Proto = dyn_cast<FunctionProtoType>(Function))
++        for (QualType Parameter : Proto->param_types())
++          if (Self(Self, Parameter))
++            return true;
 +    }
 +    if (const auto *Array = S.Context.getAsArrayType(Type))
 +      return Self(Self, Array->getElementType());
@@ -37574,11 +38965,15 @@ index 000000000..dc77fc8e8
 +             Type->isBlockPointerType()) {
 +    Identity += ";pointee={" +
 +                typeIdentity(Context, Type->getPointeeType()) + "}";
-+  } else if (const auto *Function = Type->getAs<FunctionProtoType>()) {
++  } else if (const auto *Member = Type->getAs<MemberPointerType>()) {
++    Identity += ";member-pointee={" +
++                typeIdentity(Context, Member->getPointeeType()) + "}";
++  } else if (const auto *Function = Type->getAs<FunctionType>()) {
 +    Identity += ";result={" +
 +                typeIdentity(Context, Function->getReturnType()) + "}";
-+    for (QualType Parameter : Function->param_types())
-+      Identity += ";parameter={" + typeIdentity(Context, Parameter) + "}";
++    if (const auto *Proto = dyn_cast<FunctionProtoType>(Function))
++      for (QualType Parameter : Proto->param_types())
++        Identity += ";parameter={" + typeIdentity(Context, Parameter) + "}";
 +  } else if (const auto *Array = Context.getAsArrayType(Type)) {
 +    Identity += ";element={" +
 +                typeIdentity(Context, Array->getElementType()) + "}";
@@ -37678,14 +39073,30 @@ index 000000000..dc77fc8e8
 +      return {};
 +    }
 +  }
++  if (!stableIdentity(S, Value, Loc))
++    return {};
 +  Value = normalizeValue(S, Value);
 +  std::string Name = recordName(S, Root, Value, Writable);
 +  auto *TU = S.Context.getTranslationUnitDecl();
 +  LookupResult Lookup(S, &S.Context.Idents.get(Name), Loc, Sema::LookupTagName);
 +  S.LookupQualifiedName(Lookup, TU);
-+  if (Lookup.isSingleResult())
-+    if (auto *Record = dyn_cast<RecordDecl>(Lookup.getFoundDecl()))
-+      return S.Context.getRecordType(Record);
++  if (!Lookup.empty()) {
++    ObjC3KeyPathInfo Existing;
++    if (Lookup.isSingleResult())
++      if (auto *Record = dyn_cast<RecordDecl>(Lookup.getFoundDecl())) {
++        QualType ExistingType = S.Context.getRecordType(Record);
++        if (getObjC3KeyPathInfo(ExistingType, Existing) &&
++            bool(Existing.Read) == Writable &&
++            typeIdentity(S.Context, Existing.Root) ==
++                typeIdentity(S.Context, Root) &&
++            typeIdentity(S.Context, Existing.Value) ==
++                typeIdentity(S.Context, Value))
++          return ExistingType;
++      }
++    reject(S, Loc, "key-path type conflicts with an incompatible native "
++                   "record identity");
++    return {};
++  }
 +
 +  RecordDecl *Record = S.Context.buildImplicitRecord(Name);
 +  TU->addDecl(Record);
@@ -37902,6 +39313,71 @@ index 000000000..dc77fc8e8
 +  return S.BuildObjC3LifetimeStmt(OwnerBinding, Compound, Loc, Loc, Loc, Loc);
 +}
 +
++bool nullable(QualType Type) {
++  return Type->getNullability() == NullabilityKind::Nullable ||
++         Type->getNullability() == NullabilityKind::NullableResult;
++}
++
++StmtResult nullableGetter(Sema &S, Expr *Receiver,
++                           ArrayRef<Component> Components,
++                           unsigned Index, SourceLocation Loc) {
++  const Component &Part = Components[Index];
++  ExprResult Read = readComponent(S, Receiver, Part);
++  if (Read.isInvalid())
++    return StmtError();
++  if (Index + 1 == Components.size())
++    return S.BuildReturnStmt(Loc, Read.get());
++
++  if (Read.get()->getType()->isObjCRetainableType()) {
++    // Keep the actual getter result, including a weak load or copied Block,
++    // alive across the complete remaining chain in both ARC and MRC.
++    DeclStmt *Binding = S.BuildObjC3LifetimeBinding(Read.get(), Part.Loc);
++    if (!Binding)
++      return StmtError();
++    auto *Owner = cast<VarDecl>(Binding->getSingleDecl());
++    ExprResult Snapshot =
++        S.DefaultLvalueConversion(reference(S, Owner, Part.Loc));
++    if (Snapshot.isInvalid())
++      return StmtError();
++    SmallVector<Stmt *, 2> Body;
++    if (nullable(Part.Value)) {
++      ExprResult Missing = S.BuildUnaryOp(nullptr, Part.Loc, UO_LNot,
++                                           Snapshot.get());
++      ExprResult Nil = S.ActOnIntegerConstant(Part.Loc, 0);
++      if (Missing.isInvalid() || Nil.isInvalid())
++        return StmtError();
++      StmtResult ReturnNil = S.BuildReturnStmt(Part.Loc, Nil.get());
++      if (ReturnNil.isInvalid())
++        return StmtError();
++      Body.push_back(IfStmt::Create(S.Context, Part.Loc,
++          IfStatementKind::Ordinary, nullptr, nullptr, Missing.get(),
++          Part.Loc, Part.Loc, ReturnNil.get()));
++    }
++    StmtResult Tail = nullableGetter(S, Snapshot.get(), Components,
++                                     Index + 1, Loc);
++    if (Tail.isInvalid())
++      return StmtError();
++    Body.push_back(Tail.get());
++    auto *Compound = CompoundStmt::Create(
++        S.Context, Body, FPOptionsOverride(), Part.Loc, Loc);
++    return S.BuildObjC3LifetimeStmt(Binding, Compound, Part.Loc,
++                                     Part.Loc, Part.Loc, Loc);
++  }
++
++  // A native record between object components is copied exactly once. This
++  // also preserves native ARC aggregate copy/disposal for managed fields.
++  auto [Snapshot, Declaration] = recordSnapshot(S, Read.get(), Part.Loc);
++  if (!Snapshot)
++    return StmtError();
++  StmtResult Tail = nullableGetter(S, reference(S, Snapshot, Part.Loc),
++                                   Components, Index + 1, Loc);
++  if (Tail.isInvalid())
++    return StmtError();
++  Stmt *Body[] = {Declaration, Tail.get()};
++  return CompoundStmt::Create(S.Context, Body, FPOptionsOverride(),
++                               Part.Loc, Loc);
++}
++
 +std::string declarationOwner(const ObjCPropertyDecl *Property) {
 +  const DeclContext *Owner = Property->getDeclContext();
 +  if (const auto *Category = dyn_cast<ObjCCategoryDecl>(Owner)) {
@@ -37928,7 +39404,7 @@ index 000000000..dc77fc8e8
 +
 +FunctionDecl *accessor(Sema &S, QualType Root, QualType Value,
 +                        ArrayRef<Component> Components, bool Setter,
-+                        SourceLocation Loc) {
++                        SourceLocation Loc, bool NullableTraversal = false) {
 +  auto *TU = S.Context.getTranslationUnitDecl();
 +  SmallVector<QualType, 2> ParamTypes{Root};
 +  if (Setter)
@@ -37942,6 +39418,9 @@ index 000000000..dc77fc8e8
 +      FunctionType, S.Context.getTrivialTypeSourceInfo(FunctionType, Loc),
 +      SC_Static);
 +  Function->setImplicit();
++  if (!Setter)
++    Function->addAttr(AnnotateAttr::CreateImplicit(
++        S.Context, "objc3.keypath.getter.v2", nullptr, 0));
 +  SmallVector<ParmVarDecl *, 2> Params;
 +  for (unsigned I = 0; I != ParamTypes.size(); ++I) {
 +    auto *Param = ParmVarDecl::Create(
@@ -37960,7 +39439,13 @@ index 000000000..dc77fc8e8
 +    if (Receiver.isInvalid())
 +      return nullptr;
 +    SmallVector<Stmt *, 1> Body;
-+    if (Setter && Components.back().Field) {
++    if (NullableTraversal) {
++      assert(!Setter && nullable(Value) && Value->isObjCRetainableType());
++      StmtResult Get = nullableGetter(S, Receiver.get(), Components, 0, Loc);
++      if (Get.isInvalid())
++        return nullptr;
++      Body.push_back(Get.get());
++    } else if (Setter && Components.back().Field) {
 +      StmtResult Set = recordFieldSetter(S, Receiver.get(),
 +          reference(S, Params[1], Loc), Components, Loc);
 +      if (Set.isInvalid())
@@ -38026,6 +39511,11 @@ index 000000000..dc77fc8e8
 +      Source->getExprLoc(), Value.get()->getType(), Value.get()->getValueKind(),
 +      Value.get()->getObjectKind(), Value.get());
 +  Semantics.push_back(Capture);
++  // Native CodeGen gives retainable operands an independent precise snapshot
++  // before later operands execute. Establish the enclosing full-expression
++  // cleanup boundary in C/MRC as well as ARC/C++.
++  if (Capture->getType()->isObjCRetainableType())
++    S.Cleanup.setExprNeedsCleanups(true);
 +  return Capture;
 +}
 +
@@ -38115,6 +39605,15 @@ index 000000000..dc77fc8e8
 +  QualType Current = Root;
 +  bool Writable = true;
 +  bool HasFields = false;
++  bool NullableTraversal = false;
++  SourceLocation FirstNullableLoc;
++  auto NoteNullable = [&](QualType Value, unsigned Index) {
++    if (Index + 1 < Members.size() && nullable(Value)) {
++      NullableTraversal = true;
++      if (FirstNullableLoc.isInvalid())
++        FirstNullableLoc = MemberLocs[Index];
++    }
++  };
 +  std::string Path;
 +  for (unsigned I = 0; I != Members.size(); ++I) {
 +    if (const auto *RecordType = Current->getAs<clang::RecordType>()) {
@@ -38156,14 +39655,7 @@ index 000000000..dc77fc8e8
 +      Writable &= !readonly(Part);
 +      HasFields = true;
 +      Path += "." + Members[I]->getName().str();
-+      if (I + 1 < Members.size() &&
-+          (Value->getNullability() == NullabilityKind::Nullable ||
-+         Value->getNullability() == NullabilityKind::NullableResult)) {
-+        reject(*this, MemberLocs[I],
-+               "nullable intermediate key-path component requires explicit "
-+               "optional handling");
-+        return ExprError();
-+      }
++      NoteNullable(Value, I);
 +      Current = Value;
 +      continue;
 +    }
@@ -38203,6 +39695,23 @@ index 000000000..dc77fc8e8
 +             "executor-affine properties");
 +      return ExprError();
 +    }
++    auto ConsumesCaller = [](ObjCMethodDecl *Accessor) {
++      if (!Accessor)
++        return false;
++      if (Accessor->hasAttr<NSConsumesSelfAttr>() ||
++          Accessor->getMethodFamily() == OMF_init)
++        return true;
++      for (const ParmVarDecl *Parameter : Accessor->parameters())
++        if (Parameter->hasAttr<NSConsumedAttr>())
++          return true;
++      return false;
++    };
++    if (ConsumesCaller(Property->getGetterMethodDecl()) ||
++        ConsumesCaller(Property->getSetterMethodDecl())) {
++      reject(*this, MemberLocs[I],
++             "key paths cannot erase consuming accessor ownership");
++      return ExprError();
++    }
 +    auto UnsupportedEffect = [](ObjCMethodDecl *Accessor) {
 +      if (!Accessor)
 +        return false;
@@ -38218,7 +39727,8 @@ index 000000000..dc77fc8e8
 +    QualType Value = Property->getType().substObjCMemberType(
 +        Current, Property->getDeclContext(), ObjCSubstitutionContext::Property);
 +    if (erasesOwnership(*this, Value) ||
-+        getObjC3BorrowedReturnContract(Property->getGetterMethodDecl())) {
++        getObjC3BorrowedReturnContract(Property->getGetterMethodDecl()) ||
++        Property->getGetterMethodDecl()->hasAttr<ObjCReturnsInnerPointerAttr>()) {
 +      reject(*this, MemberLocs[I],
 +             "key paths cannot erase borrowed provenance or scalar "
 +             "resource ownership");
@@ -38230,20 +39740,26 @@ index 000000000..dc77fc8e8
 +    if (!Path.empty())
 +      Path += ".";
 +    Path += Members[I]->getName().str();
-+    if (I + 1 < Members.size() &&
-+        (Value->getNullability() == NullabilityKind::Nullable ||
-+         Value->getNullability() == NullabilityKind::NullableResult)) {
-+      reject(*this, MemberLocs[I],
-+             "nullable intermediate key-path component requires explicit "
-+             "optional handling");
++    NoteNullable(Value, I);
++    Current = Value;
++  }
++  if (NullableTraversal) {
++    if (!nullable(Current) || !Current->isObjCRetainableType()) {
++      reject(*this, FirstNullableLoc,
++             "nullable intermediate key-path traversal requires a final "
++             "nullable Objective-C object or Block value");
 +      return ExprError();
 +    }
-+    Current = Value;
++    // There is no specified successful write to a missing intermediate. Keep
++    // the entire chain readonly even if each property independently has a
++    // setter, rather than silently dropping an update.
++    Writable = false;
 +  }
 +  QualType Type = keyPathType(*this, Root, Current, Writable, Descriptor, Loc);
 +  if (Type.isNull())
 +    return ExprError();
-+  FunctionDecl *Get = accessor(*this, Root, Current, Components, false, Loc);
++  FunctionDecl *Get = accessor(*this, Root, Current, Components, false, Loc,
++                               NullableTraversal);
 +  FunctionDecl *Set = Writable
 +      ? accessor(*this, Root, Current, Components, true, Loc) : nullptr;
 +  if (!Get || (Writable && !Set))
@@ -38257,6 +39773,7 @@ index 000000000..dc77fc8e8
 +              Part.Value->getNullability() == NullabilityKind::NullableResult)
 +                 ? 2u : 0u;
 +    Flags |= Part.Value->getNullability() == NullabilityKind::NonNull ? 64u : 0u;
++    Flags |= Part.Value->isObjCRetainableType() ? 256u : 0u;
 +    if (Part.Property) {
 +      auto Attributes = Part.Property->getPropertyAttributes();
 +      Flags |= Attributes & ObjCPropertyAttribute::kind_weak ? 4u : 0u;
@@ -38264,6 +39781,8 @@ index 000000000..dc77fc8e8
 +      Flags |= Attributes & (ObjCPropertyAttribute::kind_strong |
 +                            ObjCPropertyAttribute::kind_retain) ? 16u : 0u;
 +      Flags |= Part.Property->isAtomic() ? 32u : 0u;
++      Flags |= doesObjC3KeyPathGetterReturnRetained(
++                   Part.Property->getGetterMethodDecl()) ? 512u : 0u;
 +    } else {
 +      Flags |= 128u;
 +      auto Lifetime = Part.Field->getType().getObjCLifetime();
@@ -38296,7 +39815,8 @@ index 000000000..dc77fc8e8
 +      aggregate(*this, Array, ComponentValues, Loc), Loc);
 +  Expr *DescriptorFields[] = {
 +      integer(*this, 32, 2, Loc),
-+      integer(*this, 32, (Writable ? 1u : 0u) | (HasFields ? 0u : 2u), Loc),
++      integer(*this, 32, (Writable ? 1u : 0u) | (HasFields ? 0u : 2u) |
++                            (NullableTraversal ? 4u : 0u), Loc),
 +      integer(*this, 64, Components.size(), Loc),
 +      text(*this, typeIdentity(Context, Root), Loc),
 +      text(*this, typeIdentity(Context, Current), Loc), text(*this, Path, Loc),
@@ -38700,7 +40220,7 @@ index 000000000..f25f8c852
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypaths.m b/clang/test/ObjC3/Sema/typed-keypaths.m
 new file mode 100644
-index 000000000..af73c649d
+index 000000000..2ab3c034f
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypaths.m
 @@ -0,0 +1,53 @@
@@ -38744,7 +40264,7 @@ index 000000000..af73c649d
 +  KeyPathSet(@keypath(PathNode, child), root, maybe); // expected-error {{key-path setter requires a nonnull property value}}
 +  (void)@keypath(PathNode, absent); // expected-error {{key-path component must name a visible declared instance property}}
 +  (void)@keypath(PathNode, count.child); // expected-error {{key-path intermediate component must have a concrete object or supported record type}}
-+  (void)@keypath(PathNode, optionalChild.count); // expected-error {{nullable intermediate key-path component requires explicit optional handling}}
++  (void)@keypath(PathNode, optionalChild.count); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
 +  (void)@keypath(int, count); // expected-error {{key-path root must name a concrete Objective-C class}}
 +  (void)@keypath(self, count); // expected-error {{@keypath(self, ...) requires an instance method}}
 +}
@@ -38820,23 +40340,27 @@ index 000000000..053e26d3c
 +}
 diff --git a/clang/test/ObjC3/Sema/native-c-async-entry-identity.mm b/clang/test/ObjC3/Sema/native-c-async-entry-identity.mm
 new file mode 100644
-index 000000000..5214fc878
+index 000000000..94ee5b5f9
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-c-async-entry-identity.mm
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,22 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
 +#include "../CodeGen/Inputs/native-c-async-entry-abi.h"
 +int redeclared(int) __objc3_async_frame; // expected-note {{previous declaration}}
 +int redeclared(int) __objc3_async; // expected-error {{conflicting types}}
-+FrameCallback frame_pointer = task_leaf; // expected-error {{incompatible}}
-+TaskCallback task_pointer = frame_leaf; // expected-error {{incompatible}}
++FrameCallback frame_pointer = task_leaf; // expected-error {{cannot initialize}}
++TaskCallback task_pointer = frame_leaf; // expected-error {{cannot initialize}}
 +void assignments(FrameBlock frame, TaskBlock task) {
 +  frame = task; // expected-error {{incompatible}}
 +  task = frame; // expected-error {{incompatible}}
 +}
 +int unsupported_definition(int n) __objc3_async_frame { return n; } // expected-error {{definitions with C frame async entry ABI require Objective-C C17 mode}}
 +FrameBlock unsupported_block = ^int(int n) __objc3_async_frame { return n; }; // expected-error {{definitions with C frame async entry ABI require Objective-C C17 mode}}
-+@interface WrongOverride : FrameWorker
++__attribute__((objc_root_class))
++@interface IdentityBase
++- (int)value:(int)value __objc3_async_frame; // expected-note {{previous declaration}}
++@end
++@interface WrongOverride : IdentityBase
 +- (int)value:(int)value __objc3_async; // expected-error {{async/throws effects of method}}
 +@end
 +int missing_check(id<FrameError> error) __objc3_async {
@@ -38913,10 +40437,10 @@ index 000000000..5b58c0b8a
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm b/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm
 new file mode 100644
-index 000000000..40d0f2040
+index 000000000..482e7aa5a
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,41 @@
 +// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +// expected-no-diagnostics
@@ -38952,6 +40476,12 @@ index 000000000..40d0f2040
 +                       WritableKeyPath<NullPathRoot *, NullableElements>));
 +static_assert(__is_same(decltype(@keypath(NullPathRoot, callback)),
 +                       WritableKeyPath<NullPathRoot *, NullableCallback>));
++
++struct NativeMemberPathOwner {};
++using NullableMember = int (NativeMemberPathOwner::*)(NullPathElement * _Nullable);
++using NonnullMember = int (NativeMemberPathOwner::*)(NullPathElement * _Nonnull);
++static_assert(!__is_same(KeyPath<NullPathRoot *, NullableMember>,
++                        KeyPath<NullPathRoot *, NonnullMember>));
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-opaque-tag-conflict.m b/clang/test/ObjC3/Sema/typed-keypath-opaque-tag-conflict.m
 new file mode 100644
 index 000000000..a193e49f7
@@ -38964,3 +40494,322 @@ index 000000000..a193e49f7
 +@interface OpaqueTagRoot
 +@end
 +KeyPath<OpaqueTagRoot *, int> bad; // expected-error {{objc3.keypath metadata declaration has an incompatible native ABI shape}}
+diff --git a/clang/include/clang/AST/EvaluatedExprVisitor.h b/clang/include/clang/AST/EvaluatedExprVisitor.h
+index 2991f2859..037124a15 100644
+--- a/clang/include/clang/AST/EvaluatedExprVisitor.h
++++ b/clang/include/clang/AST/EvaluatedExprVisitor.h
+@@ -98,6 +98,19 @@ public:
+         this->Visit(*I);
+   }
+ 
++  void VisitPseudoObjectExpr(PTR(PseudoObjectExpr) E) {
++    // The syntactic form is retained for printing and diagnostics. Only the
++    // semantic expressions execute, and an opaque binding evaluates its source
++    // here rather than at each later use of the captured value.
++    for (auto *Semantic : E->semantics())
++      if (auto *Opaque = dyn_cast<OpaqueValueExpr>(Semantic)) {
++        if (auto *Source = Opaque->getSourceExpr())
++          this->Visit(Source);
++      } else {
++        this->Visit(Semantic);
++      }
++  }
++
+   /// The basis case walks all of the children of the statement or
+   /// expression, assuming they are all potentially evaluated.
+   void VisitStmt(PTR(Stmt) S) {
+diff --git a/clang/test/ObjC3/Sema/Inputs/async-effect-deduction.h b/clang/test/ObjC3/Sema/Inputs/async-effect-deduction.h
+new file mode 100644
+index 000000000..28e5fd26a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/async-effect-deduction.h
+@@ -0,0 +1,49 @@
++#pragma once
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Error @end
++@protocol DeductionFirst <Error> @end
++@protocol DeductionSecond <Error> @end
++
++template <class T> struct DeductionTaskRepresentation { void *context; };
++template <class T> using __objc3_async_task = DeductionTaskRepresentation<T>;
++
++using TaskFirst = int (^)(void) __objc3_async __objc3_throws(id<DeductionFirst>);
++using TaskSecond = int (^)(void) __objc3_async __objc3_throws(id<DeductionSecond>);
++using FrameFirst = int (^)(void) __objc3_async_frame __objc3_throws(id<DeductionFirst>);
++using PlainTask = int (^)(void) __objc3_async;
++using BareTask = int (^)(void) __objc3_async __objc3_throws;
++using FrameFunction = int (*)(void) __objc3_async_frame __objc3_throws(id<DeductionFirst>);
++
++template <class R, class E>
++E deduceTaskError(R (^)(void) __objc3_async __objc3_throws(E));
++template <class R, class E>
++E deduceFrameError(R (^)(void) __objc3_async_frame __objc3_throws(E));
++template <class R, class E>
++E deduceFunctionError(R (*)(void) __objc3_async_frame __objc3_throws(E));
++
++// The only use of E is in the checked effect. It is a deduced parameter.
++template <class T> struct DeducedEffects { static constexpr bool match = false; };
++template <class R, class E>
++struct DeducedEffects<R (^)(void) __objc3_async __objc3_throws(E)> {
++  static constexpr bool match = true;
++  using result = R;
++  using error = E;
++};
++
++template <class R> char deduceKind(R (^)(void) __objc3_async);
++template <class R> short deduceKind(R (^)(void) __objc3_async __objc3_throws);
++template <class R, class E>
++long deduceKind(R (^)(void) __objc3_async __objc3_throws(E));
++
++template <class R, class E>
++char deduceRepresentation(R (^)(void) __objc3_async __objc3_throws(E));
++template <class R, class E>
++long deduceRepresentation(R (^)(void) __objc3_async_frame __objc3_throws(E));
++
++template <class R, class E>
++void deduceSpecialization(R (*)(void) __objc3_async_frame __objc3_throws(E));
++template <> void deduceSpecialization(FrameFunction);
++
++template <class R> R deduceFrameAddress(R) __objc3_async_frame;
++using FrameAddress = int (*)(int) __objc3_async_frame;
++inline FrameAddress address = deduceFrameAddress;
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-async-synchronized.h b/clang/test/ObjC3/Sema/Inputs/native-async-synchronized.h
+new file mode 100644
+index 000000000..d0f884db4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-async-synchronized.h
+@@ -0,0 +1,9 @@
++#ifndef NATIVE_ASYNC_SYNCHRONIZED_H
++#define NATIVE_ASYNC_SYNCHRONIZED_H
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++int pch_monitor_leaf(void) __objc3_async_frame;
++int pch_monitor_sync(void);
++static int pch_safe_monitor(id lock) __objc3_async_frame {
++  @synchronized(lock) { return __objc3_await pch_monitor_sync(); }
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/async-effect-deduction-pch.mm b/clang/test/ObjC3/Sema/async-effect-deduction-pch.mm
+new file mode 100644
+index 000000000..8158a6153
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/async-effect-deduction-pch.mm
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %S/Inputs/async-effect-deduction.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-pch -o %t.arc %S/Inputs/async-effect-deduction.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -include-pch %t.arc -fsyntax-only -verify %s
++// expected-no-diagnostics
++static_assert(__is_same(decltype(deduceTaskError((TaskFirst)0)), id<DeductionFirst>));
++static_assert(__is_same(decltype(deduceFrameError((FrameFirst)0)), id<DeductionFirst>));
++static_assert(__is_same(decltype(deduceFunctionError((FrameFunction)0)), id<DeductionFirst>));
++static_assert(DeducedEffects<TaskFirst>::match && !DeducedEffects<FrameFirst>::match);
++static_assert(sizeof(deduceRepresentation((TaskFirst)0)) == sizeof(char));
++static_assert(sizeof(deduceRepresentation((FrameFirst)0)) == sizeof(long));
+diff --git a/clang/test/ObjC3/Sema/async-effect-deduction.mm b/clang/test/ObjC3/Sema/async-effect-deduction.mm
+new file mode 100644
+index 000000000..e54ad5faf
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/async-effect-deduction.mm
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++#include "Inputs/async-effect-deduction.h"
++
++static_assert(__is_same(decltype(deduceTaskError((TaskFirst)0)), id<DeductionFirst>));
++static_assert(__is_same(decltype(deduceFrameError((FrameFirst)0)), id<DeductionFirst>));
++static_assert(__is_same(decltype(deduceFunctionError((FrameFunction)0)), id<DeductionFirst>));
++static_assert(DeducedEffects<TaskFirst>::match);
++static_assert(__is_same(DeducedEffects<TaskFirst>::result, int));
++static_assert(__is_same(DeducedEffects<TaskFirst>::error, id<DeductionFirst>));
++static_assert(!DeducedEffects<PlainTask>::match);
++static_assert(!DeducedEffects<BareTask>::match);
++static_assert(!DeducedEffects<FrameFirst>::match);
++static_assert(sizeof(deduceKind((PlainTask)0)) == sizeof(char));
++static_assert(sizeof(deduceKind((BareTask)0)) == sizeof(short));
++static_assert(sizeof(deduceKind((TaskFirst)0)) == sizeof(long));
++static_assert(sizeof(deduceRepresentation((TaskFirst)0)) == sizeof(char));
++static_assert(sizeof(deduceRepresentation((FrameFirst)0)) == sizeof(long));
++
++template <class E>
++void sameError(int (^)(void) __objc3_async __objc3_throws(E), // expected-note {{candidate template ignored: deduced conflicting types}}
++               int (^)(void) __objc3_async __objc3_throws(E));
++template <class R, class E>
++void frameOnly(R (^)(void) __objc3_async_frame __objc3_throws(E)); // expected-note {{candidate template ignored}}
++template <class R>
++void nonthrowingOnly(R (^)(void) __objc3_async); // expected-note {{candidate template ignored}}
++void mismatches(TaskFirst first, TaskSecond second) {
++  sameError(first, second); // expected-error {{no matching function for call to 'sameError'}}
++  frameOnly(first); // expected-error {{no matching function for call to 'frameOnly'}}
++  nonthrowingOnly(first); // expected-error {{no matching function for call to 'nonthrowingOnly'}}
++}
+diff --git a/clang/test/ObjC3/Sema/native-async-synchronized-pch.m b/clang/test/ObjC3/Sema/native-async-synchronized-pch.m
+new file mode 100644
+index 000000000..ae026d68a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-synchronized-pch.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -x objective-c-header -emit-pch -o %t %S/Inputs/native-async-synchronized.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -fsyntax-only -verify %s
++#include "Inputs/native-async-synchronized.h"
++int pch_invalid_monitor(id lock) __objc3_async_frame {
++  @synchronized(lock) { // expected-note {{monitor is acquired here and must be released on the same thread}}
++    return __objc3_await pch_monitor_leaf(); // expected-error {{cannot suspend while holding an @synchronized monitor}}
++  }
++}
++int pch_safe_await(id lock) __objc3_async_frame { return __objc3_await pch_safe_monitor(lock); }
+diff --git a/clang/test/ObjC3/Sema/native-async-synchronized.m b/clang/test/ObjC3/Sema/native-async-synchronized.m
+new file mode 100644
+index 000000000..7ba64b5be
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-synchronized.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++int monitor_leaf(void) __objc3_async;
++id monitor_object(void) __objc3_async;
++int monitor_sync(void);
++typedef int (^MonitorWork)(void) __objc3_async;
++int invalid_monitor(id lock) __objc3_async {
++  @synchronized(lock) { // expected-note {{monitor is acquired here and must be released on the same thread}}
++    return __objc3_await monitor_leaf(); // expected-error {{cannot suspend while holding an @synchronized monitor}}
++  }
++}
++int identity_monitor(id lock) __objc3_async {
++  @synchronized(lock) { return __objc3_await monitor_sync(); }
++}
++int receiver_before_acquisition(void) __objc3_async {
++  @synchronized(__objc3_await monitor_object()) { return 42; }
++}
++int nested_block_boundary(id lock) __objc3_async {
++  MonitorWork work;
++  @synchronized(lock) {
++    work = ^int(void) __objc3_async { return __objc3_await monitor_leaf(); };
++  }
++  return __objc3_await work();
++}
++void nested_own_monitor(id lock) {
++  MonitorWork work = ^int(void) __objc3_async {
++    @synchronized(lock) { // expected-note {{monitor is acquired here and must be released on the same thread}}
++      return __objc3_await monitor_leaf(); // expected-error {{cannot suspend while holding an @synchronized monitor}}
++    }
++  };
++  (void)work;
++}
+diff --git a/clang/test/ObjC3/Sema/native-async-synchronized.mm b/clang/test/ObjC3/Sema/native-async-synchronized.mm
+new file mode 100644
+index 000000000..613f0e1ae
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-synchronized.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
++int monitor_leaf(void) __objc3_async;
++int monitor_sync(void);
++int invalid_monitor(id lock) __objc3_async {
++  @synchronized(lock) { // expected-note {{monitor is acquired here and must be released on the same thread}}
++    return __objc3_await monitor_leaf(); // expected-error {{cannot suspend while holding an @synchronized monitor}}
++  }
++}
++int identity_monitor(id lock) __objc3_async {
++  @synchronized(lock) { return __objc3_await monitor_sync(); }
++}
++int block_boundary(id lock) __objc3_async {
++  @synchronized(lock) {
++    auto work = ^int(void) __objc3_async { return __objc3_await monitor_leaf(); };
++    (void)work;
++  }
++  return 42;
++}
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m b/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m
+new file mode 100644
+index 000000000..2dbb8c9fd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++@class ForwardPathClass;
++@protocol ForwardPathProtocol;
++typedef KeyPath<ForwardPathClass *, int> IncompleteRoot; // expected-error {{key-path class identity requires a complete Objective-C interface}}
++__attribute__((objc_root_class))
++@interface CompletePathClass
++@end
++typedef KeyPath<CompletePathClass *, ForwardPathClass *> IncompleteValue; // expected-error {{key-path class identity requires a complete Objective-C interface}}
++typedef KeyPath<CompletePathClass *, id<ForwardPathProtocol>> IncompleteProtocol; // expected-error {{key-path protocol identity requires a complete Objective-C protocol}}
++// Native runtime identity is fixed before a keypath record name is formed.
++__attribute__((objc_root_class, objc_runtime_name("NativePathClass")))
++@interface ForwardPathClass
++@end
++__attribute__((objc_runtime_name("NativePathProtocol")))
++@protocol ForwardPathProtocol
++@end
++typedef KeyPath<ForwardPathClass *, id<ForwardPathProtocol>> CompleteIdentity;
++CompleteIdentity use_complete(CompleteIdentity path) { return path; }
++
++__attribute__((objc_root_class))
++@interface OpenPathGeneric<T>
++- (KeyPath<CompletePathClass *, T>)unsubstituted; // expected-error {{key-path identity requires concrete Objective-C generic arguments}}
++@end
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m b/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m
+new file mode 100644
+index 000000000..0bba2f948
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++#include "../Inputs/keypath-abi.h"
++__attribute__((objc_root_class))
++@interface NativeOwnershipPathRoot
++@property(nonatomic, readonly, getter=ownedValue) NativeOwnershipPathRoot * _Nullable produced;
++- (NativeOwnershipPathRoot * _Nullable)ownedValue __attribute__((ns_returns_retained));
++@property(nonatomic, readonly) const char *bytes;
++- (const char *)bytes __attribute__((objc_returns_inner_pointer));
++@property(nonatomic, strong) NativeOwnershipPathRoot * _Nullable consuming;
++- (void)setConsuming:(NativeOwnershipPathRoot * _Nullable __attribute__((ns_consumed)))value;
++@end
++KeyPath<NativeOwnershipPathRoot *, NativeOwnershipPathRoot * _Nullable> native_owned_path(void) {
++  return @keypath(NativeOwnershipPathRoot, produced);
++}
++void invalid_native_ownership(void) {
++  (void)@keypath(NativeOwnershipPathRoot, bytes); // expected-error {{key paths cannot erase borrowed provenance or scalar resource ownership}}
++  (void)@keypath(NativeOwnershipPathRoot, consuming); // expected-error {{key paths cannot erase consuming accessor ownership}}
++}
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
+new file mode 100644
+index 000000000..1a2cb18d6
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++#include "../Inputs/keypath-abi.h"
++typedef int (^ _Nullable NullablePathBlock)(void);
++typedef struct NullablePathPair { long first, second; } NullablePathPair;
++__attribute__((objc_root_class))
++@interface NullablePathNode
++@property(nonatomic, strong) NullablePathNode * _Nullable next;
++@property(nonatomic, strong) NullablePathNode * _Nullable value;
++@property(nonatomic, strong) NullablePathNode * _Nonnull required;
++@property(nonatomic, copy) NullablePathBlock callback;
++@property(nonatomic) long count;
++@property(nonatomic) NullablePathPair pair;
++@end
++KeyPath<NullablePathNode *, NullablePathNode * _Nullable> nullable_path(void) {
++  return @keypath(NullablePathNode, next.next.value);
++}
++KeyPath<NullablePathNode *, NullablePathBlock> nullable_block_path(void) {
++  return @keypath(NullablePathNode, next.callback);
++}
++NullablePathNode * _Nullable apply(NullablePathNode * _Nonnull root) {
++  return KeyPathGet(nullable_path(), root);
++}
++void invalid_nullable_paths(NullablePathNode * _Nonnull root) {
++  KeyPathSet(@keypath(NullablePathNode, next.value), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  (void)@keypath(NullablePathNode, next.required); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++  (void)@keypath(NullablePathNode, next.count); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++  (void)@keypath(NullablePathNode, next.pair); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++  (void)@keypath(NullablePathNode, next.pair.first); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
++}

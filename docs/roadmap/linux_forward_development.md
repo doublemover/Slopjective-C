@@ -12,24 +12,25 @@ validated compiler behavior and installed SDK delivery are separate checkpoints.
 The current large implementation batch is **authored, not built or executed**.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
-## Current implementation spans
+## Paused implementation checkpoint
 
-Six compiler/runtime spans and central integration work in the same canonical
-source tree. Maintained code and fixtures are committed as coherent pieces
-complete. Compiler changes are exported into the tracked LLVM patch stack in
-coordinated source checkpoints. There are no feature worktrees or ignored draft
+Development is paused at the user's request. All six compiler/runtime agents
+have finished their current spans and are parked. Completed maintained code and
+fixtures are committed, and canonical compiler changes are exported into the
+tracked LLVM patch stack. No new implementation or validation is scheduled.
+There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
 
 | Span | Authored implementation | Continued implementation |
 | --- | --- | --- |
-| Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, mutable aliases, lifetime snapshots, capture provenance and native identity | Dynamic global initialization, carrier payload/alias precision, noescape definition proofs and remaining diagnostic boundaries |
-| Explicit captures | Strong/weak/unowned/move lists, independent object and resource owners, C++ creation move vs heap copy, qualified ARC carrier moves, captured take/reset/discard | Source-defer ordering for managed fields, full-expression temporary failure handoff, remaining native-EH CFG and destruction boundaries |
-| Async frames | Native C functions, methods and Blocks; lazy frame state machines; live storage, owned results/errors and child awaits; canonical frame-vs-task type identity and C++ frame bridge | Isolation entry integration, complete definition/storage boundary coverage and structured scope lowering |
-| Isolation/Sendable | Actor/executor/nonisolated/task metadata, state/call/transfer checks, transitive Sendable proof, exact identities and non-suspending await checks | Actual awaited main/global/named entry, retained actor-instance association, public spawn and complete Strict Concurrency behavior |
-| Typed key paths | Native property and record-field paths, exact-once access/writeback, immutable metadata, Root/Value identity, readonly narrowing and signature-only types | Public operation source representation/tooling, nullable intermediate traversal, dependent/effectful/isolated and ownership-bearing value boundaries |
-| Structured runtime | Descendant cancellation, iterative deep-tree reclamation, terminal failure cleanup, canonical/named executors, concurrent global pool, service errors, shielded cleanup joins and explicit-destination children | Actor-object association, compiler-owned structured scope finalization and remaining reentrant/abandonment edges |
-| Central integration | Resource capture CFG stages, precise lifetime owners, semantic ownership/isolation/key-path contracts, schema 2.1 physical async ABI identities and clangd source relationships | Package/profile projections, source-free transport, editor operations and combined feature integration |
+| Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap |
+| Explicit captures | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership |
+| Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Ordinary C++ frame definitions, dynamic stack storage, C++ task pool handling, handle-await protocols and structured scope lowering |
+| Isolation/Sendable | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
+| Typed key paths | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values |
+| Structured runtime | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library and remaining combined integration |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and deferred feature-batch driver | Remaining package/profile projections, driver enrollment and combined validation of authored fixtures |
 
 Per-feature detail and authored witnesses:
 
@@ -58,12 +59,12 @@ milestone; earlier tooling coverage does not establish new feature coverage.
 
 ## Completion sequence
 
-1. Finish the current ownership, async, isolation, key-path and structured runtime
+1. On resumption, finish the remaining ownership, async, isolation, key-path and structured runtime
    slices together. Preserve live owners through suspension and exceptions;
    retain complete callable identity across source, PCH, import and packages.
-2. Complete library-recognized structured/detached spawn and the standardized
-   macro surface, with scope quiescence and Sendable diagnostics. Bind actor
-   instances and executor entry to actual retained runtime destinations.
+2. Integrate the authored recognized spawn APIs/macros, retained actor bindings
+   and awaited entries with the remaining C++ frame-definition and automatic
+   structured-scope finalization work.
 3. Reconcile every remaining Part 3/5 type/control-flow requirement, generic
    constraint, property/reflection/metaprogramming and specified foreign/Swift
    interop surface with real implementation. Keep optional feature-set limits
@@ -111,7 +112,7 @@ The active older SDK is identified by
 [defer delivery evidence](../support/linux_defer_scope_release_acceptance.json)
 and [guard AST evidence](../support/linux_guard_ast_acceptance.json). No new SDK
 archive, installed-feature PASS or complete profile claim is implied by new
-source commits. Validation is deliberately deferred while implementation advances.
+source commits. Validation remains deferred at this paused source checkpoint.
 
 ## Development operation
 
@@ -128,6 +129,7 @@ link job and a bounded 1 GiB content-keyed ccache. Managed activation sets the
 private executable tmpfs directory `/tmp/objc3c-1000` as `TMPDIR`; no extra RAM disk
 is needed. Keep persistent objects/SDK/cache on disk and disposable executables
 in automatically reclaimed case directories. During this development phase,
-build/test/qualification execution remains postponed. Once validation resumes,
+build/test/qualification execution remains postponed and development is paused.
+Once validation resumes,
 run necessary checks for the combined change and broaden only to resolve new
 failures or unresolved concerns.

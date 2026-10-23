@@ -29,10 +29,9 @@ error object after join, then check its deallocation. The C convenience surface
 has a distinct bare-throws void Block overload; typed C error effects remain on
 the lower-level frame API boundary.
 
-The C++ typed-E overloads and witnesses depend on the pending native compiler
-deduction hook for ObjC3 function effect ErrorType, plus async/frame effect
-identity matching and used-template-parameter tracking. Root owns completing
-that canonical compiler span after this authored library handoff. Until then
-they are maintained implementation inputs, not a claim that typed-E overload
-resolution builds. Neither implicit effect erasure nor compiler automatic
-group-scope finalization is claimed here.
+The native compiler now has authored deduction of ObjC3 checked ErrorType,
+exact async/frame matching and used-template-parameter tracking, including
+specialization and PCH witnesses. This closes the typed-E header dependency in
+source; it has not been built or executed. The C++ raw-frame definition cases
+also require the next bounded explicit C++ frame-body admission. Neither effect
+erasure nor automatic group-scope finalization is claimed here.

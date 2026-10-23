@@ -2550,7 +2550,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..1bdba4a5f 100644
+index 0683a4937..df57ea675 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -1,3 +1,4 @@
@@ -2670,20 +2670,25 @@ index 0683a4937..1bdba4a5f 100644
    // If the block has no captures, we won't have a pre-computed
    // layout for it.
    if (!blockExpr->getBlockDecl()->hasCaptures())
-@@ -930,6 +997,12 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -930,6 +997,17 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      if (capture.isConstant()) continue;
  
      QualType type = capture.fieldType();
 +    QualType sourceType = variable->getType();
-+    if (CI.isNested() && BlockInfo)
-+      sourceType = BlockInfo->getCapture(variable).fieldType();
-+    else if (auto *Field = LambdaCaptureFields.lookup(variable))
++    if (CI.isNested() && BlockInfo) {
++      const auto &OuterCapture = BlockInfo->getCapture(variable);
++      // A resource field physically stores its owner pointer, while its
++      // source lvalue refers to the typed mutable handle inside that owner.
++      sourceType = OuterCapture.Cap->isObjC3ResourceCapture()
++                       ? OuterCapture.Cap->getCaptureType()
++                       : OuterCapture.fieldType();
++    } else if (auto *Field = LambdaCaptureFields.lookup(variable))
 +      sourceType = Field->getType();
 +    sourceType = sourceType.getNonReferenceType();
  
      // This will be a [[type]]*, except that a byref entry will just be
      // an i8**.
-@@ -961,8 +1034,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -961,8 +1039,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      } else {
        DeclRefExpr declRef(getContext(), const_cast<VarDecl *>(variable),
                            /*RefersToEnclosingVariableOrCapture*/ CI.isNested(),
@@ -2693,7 +2698,7 @@ index 0683a4937..1bdba4a5f 100644
        src = EmitDeclRefLValue(&declRef).getAddress();
      };
  
-@@ -981,6 +1053,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -981,6 +1058,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
        // Write that void* into the capture field.
        Builder.CreateStore(byrefPointer, blockField);
  
@@ -2704,7 +2709,7 @@ index 0683a4937..1bdba4a5f 100644
      // If we have a copy constructor, evaluate that into the block field.
      } else if (const Expr *copyExpr = CI.getCopyExpr()) {
        if (blockDecl->isConversionFromLambda()) {
-@@ -997,6 +1073,49 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -997,6 +1078,49 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
          EmitSynthesizedCXXCopyCtor(blockField, src, copyExpr);
        }
  
@@ -2754,7 +2759,7 @@ index 0683a4937..1bdba4a5f 100644
      // If it's a reference variable, copy the reference into the block field.
      } else if (type->getAs<ReferenceType>()) {
        Builder.CreateStore(src.emitRawPointer(*this), blockField);
-@@ -1047,6 +1166,13 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1047,6 +1171,13 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
                       /*captured by init*/ false);
      }
  
@@ -2768,7 +2773,7 @@ index 0683a4937..1bdba4a5f 100644
      // Push a cleanup for the capture if necessary.
      if (!blockInfo.NoEscape && !blockInfo.NeedsCopyDispose)
        continue;
-@@ -1056,9 +1182,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1056,9 +1187,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      if (CI.isByRef())
        continue;
  
@@ -2781,7 +2786,7 @@ index 0683a4937..1bdba4a5f 100644
        continue;
  
      CodeGenFunction::Destroyer *destroyer;
-@@ -1069,7 +1197,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1069,7 +1202,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      // For const-qualified captures, emit clang.arc.use to ensure the captured
      // object doesn't get released while we are still depending on its validity
      // within the block.
@@ -2794,7 +2799,7 @@ index 0683a4937..1bdba4a5f 100644
          type.getObjCLifetime() == Qualifiers::OCL_Strong &&
          CGM.getCodeGenOpts().OptimizationLevel != 0) {
        assert(CGM.getLangOpts().ObjCAutoRefCount &&
-@@ -1082,7 +1214,8 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1082,7 +1219,8 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      }
  
      CleanupKind cleanupKind = NormalCleanup;
@@ -2804,7 +2809,7 @@ index 0683a4937..1bdba4a5f 100644
      if (useArrayEHCleanup)
        cleanupKind = NormalAndEHCleanup;
  
-@@ -1100,7 +1233,36 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1100,7 +1238,36 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
        return false;
      };
  
@@ -2842,7 +2847,7 @@ index 0683a4937..1bdba4a5f 100644
        pushDestroy(cleanupKind, blockField, type, destroyer, useArrayEHCleanup);
      else
        pushLifetimeExtendedDestroy(cleanupKind, blockField, type, destroyer,
-@@ -1250,7 +1412,10 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
+@@ -1250,7 +1417,10 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
    Address addr = Builder.CreateStructGEP(LoadBlockStruct(), capture.getIndex(),
                                           "block.capture.addr");
  
@@ -2854,7 +2859,7 @@ index 0683a4937..1bdba4a5f 100644
      // addr should be a void** right now.  Load, then cast the result
      // to byref*.
  
-@@ -1262,7 +1427,7 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
+@@ -1262,7 +1432,7 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
                                   variable->getName());
    }
  
@@ -2863,7 +2868,7 @@ index 0683a4937..1bdba4a5f 100644
            capture.fieldType()->isReferenceType()) &&
           "the capture field of a non-escaping variable should have a "
           "reference type");
-@@ -1282,6 +1447,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+@@ -1282,6 +1452,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
  llvm::Constant *
  CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
                                      StringRef Name) {
@@ -2874,7 +2879,7 @@ index 0683a4937..1bdba4a5f 100644
    if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
      return Block;
  
-@@ -1449,7 +1618,12 @@ void CodeGenFunction::setBlockContextParameter(const ImplicitParamDecl *D,
+@@ -1449,7 +1623,12 @@ void CodeGenFunction::setBlockContextParameter(const ImplicitParamDecl *D,
  Address CodeGenFunction::LoadBlockStruct() {
    assert(BlockInfo && "not in a block invocation function!");
    assert(BlockPointer && "no block pointer set!");
@@ -2888,7 +2893,7 @@ index 0683a4937..1bdba4a5f 100644
  }
  
  llvm::Function *CodeGenFunction::GenerateBlockFunction(
-@@ -1501,6 +1675,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1501,6 +1680,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  
    // Create the function declaration.
    const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
@@ -2904,7 +2909,7 @@ index 0683a4937..1bdba4a5f 100644
    const CGFunctionInfo &fnInfo =
      CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
    if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
-@@ -1521,8 +1704,17 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1521,8 +1709,17 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
                       llvm::ConstantExpr::getPointerCast(fn, GenVoidPtrTy));
    }
  
@@ -2923,7 +2928,7 @@ index 0683a4937..1bdba4a5f 100644
                  blockDecl->getLocation(),
                  blockInfo.getBlockExpr()->getBody()->getBeginLoc());
  
-@@ -1541,6 +1733,8 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1541,6 +1738,8 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
      auto NL = ApplyDebugLocation::CreateEmpty(*this);
      Builder.CreateStore(BlockPointer, Alloca);
      BlockPointerDbgLoc = Alloca.emitRawPointer(*this);
@@ -2932,7 +2937,7 @@ index 0683a4937..1bdba4a5f 100644
    }
  
    // If we have a C++ 'this' reference, go ahead and force it into
-@@ -1569,22 +1763,36 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1569,22 +1768,36 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    // Save a spot to insert the debug information for all the DeclRefExprs.
    llvm::BasicBlock *entry = Builder.GetInsertBlock();
    llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
@@ -2973,7 +2978,7 @@ index 0683a4937..1bdba4a5f 100644
    else
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
-@@ -1629,6 +1837,9 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1629,6 +1842,9 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  static std::pair<BlockCaptureEntityKind, BlockFieldFlags>
  computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
                                 const LangOptions &LangOpts) {
@@ -2983,7 +2988,7 @@ index 0683a4937..1bdba4a5f 100644
    if (CI.getCopyExpr()) {
      assert(!CI.isByRef());
      // don't bother computing flags
-@@ -1642,6 +1853,10 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1642,6 +1858,10 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -2994,7 +2999,7 @@ index 0683a4937..1bdba4a5f 100644
    if (T.hasAddressDiscriminatedPointerAuth())
      return std::make_pair(
          BlockCaptureEntityKind::AddressDiscriminatedPointerAuth, Flags);
-@@ -1652,6 +1867,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1652,6 +1872,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      Flags = BLOCK_FIELD_IS_BLOCK;
  
    switch (T.isNonTrivialToPrimitiveCopy()) {
@@ -3002,7 +3007,7 @@ index 0683a4937..1bdba4a5f 100644
    case QualType::PCK_Struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -1737,7 +1953,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1737,7 +1958,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
    std::string Str;
    ASTContext &Ctx = CGM.getContext();
    const BlockDecl::Capture &CI = *Cap.Cap;
@@ -3015,7 +3020,7 @@ index 0683a4937..1bdba4a5f 100644
  
    BlockCaptureEntityKind Kind;
    BlockFieldFlags Flags;
-@@ -1766,6 +1986,19 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1766,6 +1991,19 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      Str += llvm::to_string(TyStr.size()) + TyStr.c_str();
      break;
    }
@@ -3035,7 +3040,7 @@ index 0683a4937..1bdba4a5f 100644
    case BlockCaptureEntityKind::ARCWeak:
      Str += "w";
      break;
-@@ -1808,6 +2041,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1808,6 +2046,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      break;
    }
    case BlockCaptureEntityKind::NonTrivialCStruct: {
@@ -3051,7 +3056,7 @@ index 0683a4937..1bdba4a5f 100644
      bool IsVolatile = CaptureTy.isVolatileQualified();
      CharUnits Alignment = BlockAlignment.alignmentAtOffset(Cap.getOffset());
  
-@@ -1861,23 +2103,35 @@ static std::string getCopyDestroyHelperFuncName(
+@@ -1861,23 +2108,35 @@ static std::string getCopyDestroyHelperFuncName(
  static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
                                 Address Field, QualType CaptureType,
                                 BlockFieldFlags Flags, bool ForCopyHelper,
@@ -3090,7 +3095,7 @@ index 0683a4937..1bdba4a5f 100644
        CGF.pushDestroy(Kind, Field, CaptureType, Destroyer, Kind & EHCleanup);
      }
      break;
-@@ -1972,7 +2226,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1972,7 +2231,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        continue;
  
      const BlockDecl::Capture &CI = *capture.Cap;
@@ -3099,7 +3104,7 @@ index 0683a4937..1bdba4a5f 100644
      BlockFieldFlags flags = capture.CopyFlags;
  
      unsigned index = capture.getIndex();
-@@ -1980,6 +2234,13 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1980,6 +2239,13 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      Address dstField = Builder.CreateStructGEP(dst, index);
  
      switch (capture.CopyKind) {
@@ -3113,7 +3118,7 @@ index 0683a4937..1bdba4a5f 100644
      case BlockCaptureEntityKind::CXXRecord:
        // If there's an explicit copy expression, we do that.
        assert(CI.getCopyExpr() && "copy expression for variable is missing");
-@@ -1989,7 +2250,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1989,7 +2255,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        EmitARCCopyWeak(dstField, srcField);
        break;
      case BlockCaptureEntityKind::AddressDiscriminatedPointerAuth: {
@@ -3122,7 +3127,7 @@ index 0683a4937..1bdba4a5f 100644
        PointerAuthQualifier PointerAuth = Type.getPointerAuth();
        assert(PointerAuth && PointerAuth.isAddressDiscriminated());
        EmitPointerAuthCopy(PointerAuth, Type, dstField, srcField);
-@@ -1999,7 +2260,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1999,7 +2265,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      case BlockCaptureEntityKind::NonTrivialCStruct: {
        // If this is a C struct that requires non-trivial copy construction,
        // emit a call to its copy constructor.
@@ -3131,7 +3136,7 @@ index 0683a4937..1bdba4a5f 100644
        callCStructCopyConstructor(MakeAddrLValue(dstField, varType),
                                   MakeAddrLValue(srcField, varType));
        break;
-@@ -2024,7 +2285,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2024,7 +2290,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
          // Unless EH cleanup is required, we don't need this anymore, so kill
          // it. It's not quite worth the annoyance to avoid creating it in the
          // first place.
@@ -3141,7 +3146,7 @@ index 0683a4937..1bdba4a5f 100644
            if (auto *I = cast_or_null<llvm::Instruction>(
                    dstField.getPointerIfNotSigned()))
              I->eraseFromParent();
-@@ -2051,7 +2313,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2051,7 +2318,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      // Ensure that we destroy the copied object if an exception is thrown later
      // in the helper function.
      pushCaptureCleanup(capture.CopyKind, dstField, captureType, flags,
@@ -3151,7 +3156,7 @@ index 0683a4937..1bdba4a5f 100644
    }
  
    FinishFunction();
-@@ -2071,6 +2334,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
+@@ -2071,6 +2339,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
  static std::pair<BlockCaptureEntityKind, BlockFieldFlags>
  computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
                                    const LangOptions &LangOpts) {
@@ -3161,7 +3166,7 @@ index 0683a4937..1bdba4a5f 100644
    if (CI.isEscapingByref()) {
      BlockFieldFlags Flags = BLOCK_FIELD_IS_BYREF;
      if (T.isObjCGCWeak())
-@@ -2078,6 +2344,10 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2078,6 +2349,10 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -3172,7 +3177,7 @@ index 0683a4937..1bdba4a5f 100644
    switch (T.isDestructedType()) {
    case QualType::DK_cxx_destructor:
      return std::make_pair(BlockCaptureEntityKind::CXXRecord, BlockFieldFlags());
-@@ -2090,6 +2360,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2090,6 +2365,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      // Support __weak direct captures.
      return std::make_pair(BlockCaptureEntityKind::ARCWeak,
                            getBlockFieldFlagsForObjCObjectPointer(CI, T));
@@ -3180,7 +3185,7 @@ index 0683a4937..1bdba4a5f 100644
    case QualType::DK_nontrivial_c_struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -2168,8 +2439,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2168,8 +2444,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
      Address srcField = Builder.CreateStructGEP(src, capture.getIndex());
  
      pushCaptureCleanup(capture.DisposeKind, srcField,
@@ -3192,7 +3197,7 @@ index 0683a4937..1bdba4a5f 100644
    }
  
    cleanups.ForceCleanup();
-@@ -2555,7 +2827,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
+@@ -2555,7 +2832,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
    // If type is a non-trivial C struct type that is non-trivial to
    // destructly move or destroy, build the copy and dispose helpers.
    if (type.isNonTrivialToPrimitiveDestructiveMove() == QualType::PCK_Struct ||
@@ -3202,7 +3207,7 @@ index 0683a4937..1bdba4a5f 100644
      return ::buildByrefHelpers(
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
-@@ -2866,9 +3139,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
+@@ -2866,9 +3144,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
  
  void CodeGenFunction::enterByrefCleanup(CleanupKind Kind, Address Addr,
                                          BlockFieldFlags Flags,
@@ -4646,14 +4651,15 @@ index e84e05e8e..a022353dc 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..2034f6d70 100644
+index 6a0d127fb..ca517e830 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
-@@ -14,6 +14,12 @@
+@@ -14,6 +14,13 @@
  #include "CGCUDARuntime.h"
  #include "CGCXXABI.h"
  #include "CGCall.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3KeyPath.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3ArcCarriers.h"
@@ -4662,7 +4668,15 @@ index 6a0d127fb..2034f6d70 100644
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
-@@ -1749,6 +1755,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
+@@ -32,6 +39,7 @@
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/InferAlloc.h"
+ #include "clang/AST/MatrixUtils.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/NSAPI.h"
+ #include "clang/AST/ParentMapContext.h"
+ #include "clang/AST/StmtVisitor.h"
+@@ -1749,6 +1757,8 @@ LValue CodeGenFunction::EmitLValue(const Expr *E,
  
  LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
                                           KnownNonNull_t IsKnownNonNull) {
@@ -4671,7 +4685,7 @@ index 6a0d127fb..2034f6d70 100644
    ApplyDebugLocation DL(*this, E);
    switch (E->getStmtClass()) {
    default: return EmitUnsupportedLValue(E, "l-value expression");
-@@ -1815,6 +1823,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
+@@ -1815,6 +1825,7 @@ LValue CodeGenFunction::EmitLValueHelper(const Expr *E,
  
    case Expr::ExprWithCleanupsClass: {
      const auto *cleanups = cast<ExprWithCleanups>(E);
@@ -4679,7 +4693,7 @@ index 6a0d127fb..2034f6d70 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -6475,6 +6484,87 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6475,6 +6486,87 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -4767,7 +4781,7 @@ index 6a0d127fb..2034f6d70 100644
    llvm::CallBase *CallOrInvokeStorage;
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
-@@ -6702,6 +6792,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+@@ -6702,6 +6794,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -4776,6 +4790,28 @@ index 6a0d127fb..2034f6d70 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
+@@ -7314,6 +7408,8 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+                                            bool forLValue,
+                                            AggValueSlot slot) {
+   SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
++  ObjC3KeyPathApplicationInfo KeyPath;
++  const bool IsKeyPath = getObjC3KeyPathApplication(E, KeyPath);
+ 
+   // Find the result expression, if any.
+   const Expr *resultExpr = E->getResultExpr();
+@@ -7347,7 +7443,11 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+ 
+       // Otherwise, emit as normal.
+       } else {
+-        opaqueData = OVMA::bind(CGF, ov, ov->getSourceExpr());
++        if (IsKeyPath && ov->getType()->isObjCRetainableType())
++          opaqueData = OVMA::bind(CGF, ov, RValue::get(
++              emitObjC3KeyPathOperandSnapshot(CGF, ov->getSourceExpr())));
++        else
++          opaqueData = OVMA::bind(CGF, ov, ov->getSourceExpr());
+ 
+         // If this is the result, also evaluate the result now.
+         if (ov == resultExpr) {
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
 index bc35ffdaa..7452bf430 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
@@ -5429,7 +5465,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..aadea4918 100644
+index c724a063b..2f0a1a2d9 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,12 @@
@@ -5663,6 +5699,17 @@ index c724a063b..aadea4918 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
+@@ -3719,6 +3817,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+ 
+ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
+                                           const ObjCAutoreleasePoolStmt &ARPS) {
++  if (ObjC3CAsync.Data) {
++    EmitObjC3CAsyncAutoreleasePoolStmt(ARPS);
++    return;
++  }
+   const Stmt *subStmt = ARPS.getSubStmt();
+   const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
+ 
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
 index 000000000..0031ffd4e
@@ -8552,10 +8599,10 @@ index 000000000..0ecf0b983
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
 new file mode 100644
-index 000000000..e97620d7a
+index 000000000..b65c35e4b
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,227 @@
 +//===--- CGObjC3ErrorHandlers.cpp - ObjC3 error handlers
 +//--------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -8563,6 +8610,7 @@ index 000000000..e97620d7a
 +#include "CGObjC3ErrorHandlers.h"
 +#include "CGObjC3TypedErrors.h"
 +#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3BlockCaptures.h"
 +#include "CGObjCRuntime.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -8611,6 +8659,7 @@ index 000000000..e97620d7a
 +        CGF, CGF.ObjC3PendingErrorStorage, ErrorType));
 +    return;
 +  }
++  abandonObjC3ARCReturn(CGF);
 +  if (!CGF.FnRetTy->isVoidType() && !emitObjC3CarrierARCErrorReturn(CGF))
 +    CGF.Builder.CreateStore(
 +        llvm::Constant::getNullValue(CGF.ConvertType(CGF.FnRetTy)),
@@ -8756,6 +8805,7 @@ index 000000000..e97620d7a
 +  }
 +  CGF.EmitBranch(Done);
 +  CGF.EmitBlock(Handler.Dispatch.getBlock());
++  abandonObjC3ARCReturnForCatch(CGF, S.getBody());
 +  llvm::Value *Error = CGF.EmitLoadOfScalar(
 +      CGF.MakeAddrLValue(Storage, OwnedType), S.getDoLoc());
 +  for (unsigned I = 0; I != S.getNumCatchClauses(); ++I) {
@@ -9700,7 +9750,7 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..1a2746326
+index 000000000..4886ad215
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 @@ -0,0 +1,762 @@
@@ -9814,7 +9864,7 @@ index 000000000..1a2746326
 +}
 +
 +bool isNativeCAwait(CodeGenFunction &CGF, const Expr *E) {
-+  return !CGF.getLangOpts().CPlusPlus &&
++  return CGF.ObjC3CAsync.Data &&
 +         isa<CoawaitExpr>(E->IgnoreParenImpCasts());
 +}
 +
@@ -10896,14 +10946,15 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..d861da449 100644
+index 27e74d966..18b33bda2 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
-@@ -13,6 +13,12 @@
+@@ -13,6 +13,13 @@
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
 +#include "CGObjC3BlockCaptures.h"
++#include "CGObjC3KeyPath.h"
 +#include "CGObjC3Defer.h"
 +#include "CGObjC3TypedErrors.h"
 +#include "CGObjC3ArcCarriers.h"
@@ -10912,7 +10963,7 @@ index 27e74d966..d861da449 100644
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
-@@ -159,6 +165,39 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
+@@ -159,6 +166,39 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
    case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
    case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
  
@@ -10952,7 +11003,7 @@ index 27e74d966..d861da449 100644
    case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
-@@ -576,12 +615,30 @@ Address CodeGenFunction::EmitCompoundStmt(const CompoundStmt &S, bool GetLast,
+@@ -576,12 +616,30 @@ Address CodeGenFunction::EmitCompoundStmt(const CompoundStmt &S, bool GetLast,
  Address
  CodeGenFunction::EmitCompoundStmtWithoutScope(const CompoundStmt &S,
                                                bool GetLast,
@@ -10986,7 +11037,7 @@ index 27e74d966..d861da449 100644
  
    Address RetAlloca = Address::invalid();
    if (GetLast) {
-@@ -888,6 +945,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+@@ -888,6 +946,7 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
    // C99 6.8.4.1: The first substatement is executed if the expression compares
    // unequal to 0.  The condition must be a scalar type.
    LexicalScope ConditionScope(*this, S.getCond()->getSourceRange());
@@ -10994,7 +11045,7 @@ index 27e74d966..d861da449 100644
    ApplyDebugLocation DL(*this, S.getCond());
  
    if (S.getInit()) {
-@@ -920,6 +978,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+@@ -920,6 +979,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
        if (Executed) {
          MaybeEmitDeferredVarDeclInit(S.getConditionVariable());
          RunCleanupsScope ExecutedScope(*this);
@@ -11003,7 +11054,7 @@ index 27e74d966..d861da449 100644
          EmitStmt(Executed);
        }
        PGO->markStmtMaybeUsed(Skipped);
-@@ -973,6 +1033,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+@@ -973,6 +1034,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
    incrementProfileCounter(UseExecPath, &S);
    {
      RunCleanupsScope ThenScope(*this);
@@ -11012,7 +11063,7 @@ index 27e74d966..d861da449 100644
      EmitStmt(S.getThen());
    }
    EmitBranch(ContBlock);
-@@ -989,6 +1051,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
+@@ -989,6 +1052,8 @@ void CodeGenFunction::EmitIfStmt(const IfStmt &S) {
        incrementProfileCounter(UseSkipPath, &S);
      {
        RunCleanupsScope ElseScope(*this);
@@ -11021,7 +11072,7 @@ index 27e74d966..d861da449 100644
        EmitStmt(Else);
      }
      {
-@@ -1096,6 +1160,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
+@@ -1096,6 +1161,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
    //   with each iteration of the loop.
    RunCleanupsScope ConditionScope(*this);
  
@@ -11030,7 +11081,7 @@ index 27e74d966..d861da449 100644
    if (S.getConditionVariable())
      EmitDecl(*S.getConditionVariable());
  
-@@ -1158,6 +1224,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
+@@ -1158,6 +1225,8 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
      RunCleanupsScope BodyScope(*this);
      EmitBlock(LoopBody);
      incrementProfileCounter(UseExecPath, &S);
@@ -11039,7 +11090,7 @@ index 27e74d966..d861da449 100644
      EmitStmt(S.getBody());
    }
  
-@@ -1206,6 +1274,8 @@ void CodeGenFunction::EmitDoStmt(const DoStmt &S,
+@@ -1206,6 +1275,8 @@ void CodeGenFunction::EmitDoStmt(const DoStmt &S,
  
    {
      RunCleanupsScope BodyScope(*this);
@@ -11048,7 +11099,7 @@ index 27e74d966..d861da449 100644
      EmitStmt(S.getBody());
    }
  
-@@ -1279,6 +1349,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+@@ -1279,6 +1350,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
    if (getLangOpts().C99 || getLangOpts().CPlusPlus)
      ForScope.emplace(*this, S.getSourceRange());
  
@@ -11057,7 +11108,7 @@ index 27e74d966..d861da449 100644
    // Evaluate the first part before the loop.
    if (S.getInit())
      EmitStmt(S.getInit());
-@@ -1301,6 +1373,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+@@ -1301,6 +1374,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
  
    // Create a cleanup scope for the condition variable cleanups.
    LexicalScope ConditionScope(*this, S.getSourceRange());
@@ -11066,7 +11117,7 @@ index 27e74d966..d861da449 100644
  
    // If the for loop doesn't have an increment we can just use the condition as
    // the continue block. Otherwise, if there is no condition variable, we can
-@@ -1377,6 +1451,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
+@@ -1377,6 +1452,8 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
      // Create a separate cleanup scope for the body, in case it is not
      // a compound statement.
      RunCleanupsScope BodyScope(*this);
@@ -11075,7 +11126,7 @@ index 27e74d966..d861da449 100644
      EmitStmt(S.getBody());
    }
  
-@@ -1421,6 +1497,7 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
+@@ -1421,6 +1498,7 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
    JumpDest LoopExit = getJumpDestInCurrentScope("for.end");
  
    LexicalScope ForScope(*this, S.getSourceRange());
@@ -11083,7 +11134,7 @@ index 27e74d966..d861da449 100644
  
    // Evaluate the first pieces before the loop.
    if (S.getInit())
-@@ -1487,7 +1564,10 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
+@@ -1487,7 +1565,10 @@ CodeGenFunction::EmitCXXForRangeStmt(const CXXForRangeStmt &S,
    {
      // Create a separate cleanup scope for the loop variable and body.
      LexicalScope BodyScope(*this, S.getSourceRange());
@@ -11094,7 +11145,7 @@ index 27e74d966..d861da449 100644
      EmitStmt(S.getBody());
    }
    // The last block in the loop's body (which unconditionally branches to the
-@@ -1601,6 +1681,10 @@ static bool isSwiftAsyncCallee(const CallExpr *CE) {
+@@ -1601,6 +1682,10 @@ static bool isSwiftAsyncCallee(const CallExpr *CE) {
  /// if the function returns void, or may be missing one if the function returns
  /// non-void.  Fun stuff :).
  void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
@@ -11105,7 +11156,7 @@ index 27e74d966..d861da449 100644
    ApplyAtomGroup Grp(getDebugInfo());
    if (requiresReturnValueCheck()) {
      llvm::Constant *SLoc = EmitCheckSourceLocation(S.getBeginLoc());
-@@ -1632,6 +1716,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -1632,6 +1717,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
    // non-trivial cleanups.
    SaveRetExprRAII SaveRetExpr(RV, *this);
  
@@ -11113,7 +11164,26 @@ index 27e74d966..d861da449 100644
    RunCleanupsScope cleanupScope(*this);
    if (const auto *EWC = dyn_cast_or_null<ExprWithCleanups>(RV))
      RV = EWC->getSubExpr();
-@@ -1697,6 +1782,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -1682,7 +1768,9 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+   } else {
+     switch (getEvaluationKind(RV->getType())) {
+     case TEK_Scalar: {
+-      llvm::Value *Ret = EmitScalarExpr(RV);
++      llvm::Value *Ret = tryEmitObjC3KeyPathGetterReturn(*this, RV);
++      if (!Ret)
++        Ret = EmitScalarExpr(RV);
+       if (CurFnInfo->getReturnInfo().getKind() == ABIArgInfo::Indirect) {
+         EmitStoreOfScalar(Ret, MakeAddrLValue(ReturnValue, RV->getType()),
+                           /*isInit*/ true);
+@@ -1690,6 +1778,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+         auto *I = Builder.CreateStore(Ret, ReturnValue);
+         addInstToCurrentSourceAtom(I, I->getValueOperand());
+       }
++      commitObjC3ARCReturn(*this, S);
+       break;
+     }
+     case TEK_Complex:
+@@ -1697,6 +1786,13 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
@@ -11127,7 +11197,7 @@ index 27e74d966..d861da449 100644
        EmitAggExpr(RV, AggValueSlot::forAddr(
                            ReturnValue, Qualifiers(),
                            AggValueSlot::IsDestructed,
-@@ -1712,6 +1804,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -1712,6 +1808,7 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
      ++NumSimpleReturnExprs;
  
    cleanupScope.ForceCleanup();
@@ -11135,7 +11205,7 @@ index 27e74d966..d861da449 100644
    EmitBranchThroughCleanup(ReturnBlock);
  }
  
-@@ -1995,7 +2088,7 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -1995,7 +2092,7 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
    const DeferStmt &Stmt;
    EmitDeferredStatement(const DeferStmt *Stmt) : Stmt(*Stmt) {}
  
@@ -11144,7 +11214,7 @@ index 27e74d966..d861da449 100644
      // Take care that any cleanups pushed by the body of a '_Defer' statement
      // don't clobber the current cleanup slot value.
      //
-@@ -2056,10 +2149,23 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -2056,10 +2153,23 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
        SavedCleanupDest =
            CGF.Builder.CreateLoad(CGF.NormalCleanupDest, "cleanup.dest.saved");
  
@@ -11172,7 +11242,7 @@ index 27e74d966..d861da449 100644
  
      // Cleanups must end with an insert point.
      CGF.EnsureInsertPoint();
-@@ -2067,10 +2173,224 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -2067,10 +2177,224 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
  };
  } // namespace
  
@@ -11397,7 +11467,7 @@ index 27e74d966..d861da449 100644
  /// CollectStatementsForCase - Given the body of a 'switch' statement and a
  /// constant value that is being switched on, see if we can dead code eliminate
  /// the body of the switch to a simple series of statements to emit.  Basically,
-@@ -2378,6 +2698,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2378,6 +2702,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
          incrementProfileCounter(Case);
        RunCleanupsScope ExecutedScope(*this);
  
@@ -11406,7 +11476,7 @@ index 27e74d966..d861da449 100644
        if (S.getInit())
          EmitStmt(S.getInit());
  
-@@ -2386,6 +2708,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2386,6 +2712,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
        if (S.getConditionVariable())
          EmitDecl(*S.getConditionVariable(), /*EvaluateConditionDecl=*/true);
  
@@ -11417,7 +11487,7 @@ index 27e74d966..d861da449 100644
        // At this point, we are no longer "within" a switch instance, so
        // we can temporarily enforce this to ensure that any embedded case
        // statements are not emitted.
-@@ -2410,6 +2736,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2410,6 +2740,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
  
    RunCleanupsScope ConditionScope(*this);
  
@@ -11478,19 +11548,20 @@ index 9e4218646..0add7cb51 100644
    if (!ResultType->isVoidType() &&
        (CurFnInfo->getReturnInfo().getKind() == ABIArgInfo::Indirect ||
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
-index 853f038c4..fc925abed 100644
+index 853f038c4..5c2a965fe 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
 +++ b/clang/lib/CodeGen/CMakeLists.txt
-@@ -72,6 +72,8 @@ add_clang_library(clangCodeGen
+@@ -72,6 +72,9 @@ add_clang_library(clangCodeGen
    CGClass.cpp
    CGCleanup.cpp
    CGCoroutine.cpp
 +  CGObjC3Async.cpp
 +  CGObjC3Isolation.cpp
++  CGObjC3KeyPath.cpp
    CGDebugInfo.cpp
    CGDecl.cpp
    CGDeclCXX.cpp
-@@ -88,6 +90,21 @@ add_clang_library(clangCodeGen
+@@ -88,6 +91,21 @@ add_clang_library(clangCodeGen
    CGLoopInfo.cpp
    CGNonTrivialStruct.cpp
    CGObjC.cpp
@@ -11513,7 +11584,7 @@ index 853f038c4..fc925abed 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..0b76245bd 100644
+index 7629b42dd..2339560e8 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -1,3 +1,4 @@
@@ -11521,18 +11592,19 @@ index 7629b42dd..0b76245bd 100644
  //===--- CodeGenFunction.cpp - Emit LLVM Code from ASTs for a Function ----===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -19,6 +20,10 @@
+@@ -19,6 +20,11 @@
  #include "CGHLSLRuntime.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenModule.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3Defer.h"
 +#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3BlockCaptures.h"
 +#include "CGObjC3TypedErrors.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
  #include "clang/AST/ASTContext.h"
-@@ -289,6 +294,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
+@@ -289,6 +295,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
      case Type::IncompleteArray:
      case Type::VariableArray:
      case Type::Record:
@@ -11541,7 +11613,7 @@ index 7629b42dd..0b76245bd 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -418,8 +425,15 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -418,8 +426,15 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
      PopCleanupBlocks(PrologueCleanupDepth);
    }
  
@@ -11557,7 +11629,15 @@ index 7629b42dd..0b76245bd 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -884,8 +898,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -437,6 +452,7 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+   // rather than that of the end of the function's scope '}'.
+   uint64_t RetKeyInstructionsAtomGroup = Loc ? Loc->getAtomGroup() : 0;
+   ApplyDebugLocation AL(*this, Loc);
++  disarmObjC3ARCReturn(*this);
+   EmitFunctionEpilog(*CurFnInfo, EmitRetDbgLoc, EndLoc,
+                      RetKeyInstructionsAtomGroup);
+   EmitEndEHSpec(CurCodeDecl);
+@@ -884,8 +900,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
    // are not aware of how to move the extra UBSan instructions across the split
    // coroutine boundaries.
    if (D && SanOpts.has(SanitizerKind::Null))
@@ -11567,11 +11647,12 @@ index 7629b42dd..0b76245bd 100644
        SanOpts.Mask &= ~SanitizerKind::Null;
  
    // Apply xray attributes to the function (as a string, for now)
-@@ -1274,7 +1287,16 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1289,17 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
 +  emitObjC3CarrierARCReturnProlog(*this);
++  emitObjC3ARCReturnProlog(*this);
 +  // Native adjustment thunks forward the caller's physical error output.
 +  // They do not initialize it or acquire another pending-error reference.
 +  if ((ObjC3FunctionErrorOutDecl ||
@@ -11584,7 +11665,7 @@ index 7629b42dd..0b76245bd 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1477,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1480,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -11600,7 +11681,7 @@ index 7629b42dd..0b76245bd 100644
  
    return ResTy;
  }
-@@ -1463,10 +1494,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,10 +1497,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -11619,7 +11700,7 @@ index 7629b42dd..0b76245bd 100644
  
    CGM.getTargetCodeGenInfo().checkFunctionABI(CGM, FD);
  
-@@ -1545,7 +1584,9 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1545,7 +1587,9 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
  
    if (Body) {
      // Coroutines always emit lifetime markers.
@@ -11630,7 +11711,7 @@ index 7629b42dd..0b76245bd 100644
        ShouldEmitLifetimeMarkers = true;
  
      // Initialize helper which will detect jumps which can cause invalid
-@@ -1622,7 +1663,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1622,7 +1666,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
      EmitCall(FnInfo, GDStubCallee, ReturnValueSlot(), CallArgs, nullptr, false,
               Loc);
    } else if (Body) {
@@ -11643,7 +11724,7 @@ index 7629b42dd..0b76245bd 100644
    } else
      llvm_unreachable("no definition for emitted function");
  
-@@ -2556,6 +2601,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2604,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -11653,7 +11734,7 @@ index 7629b42dd..0b76245bd 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..f3bb9f945 100644
+index e7c24f1f3..78b411bc1 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -44,6 +44,7 @@
@@ -11784,17 +11865,22 @@ index e7c24f1f3..f3bb9f945 100644
  
    bool inSuspendBlock() const {
      return isCoroutine() && CurCoro.InSuspendBlock;
-@@ -656,7 +731,9 @@ public:
+@@ -656,7 +731,14 @@ public:
    bool checkIfLoopMustProgress(const Expr *, bool HasEmptyBody);
  
    const CodeGen::CGBlockInfo *BlockInfo = nullptr;
 +  ObjC3BlockCaptureFullExprScope *ObjC3BlockCaptureFullExpr = nullptr;
++  /// Ordinary ARC result storage owns a +1 until the physical epilogue. The
++  /// site identity distinguishes abandoned returns from exceptions caught
++  /// locally by a deferred action which subsequently completes the return.
++  Address ObjC3ARCReturnPending = Address::invalid();
++  llvm::DenseMap<const ReturnStmt *, unsigned> ObjC3ARCReturnSites;
    llvm::Value *BlockPointer = nullptr;
 +  Address ObjC3AsyncBlockDebugAddress = Address::invalid();
  
    llvm::DenseMap<const ValueDecl *, FieldDecl *> LambdaCaptureFields;
    FieldDecl *LambdaThisCaptureField = nullptr;
-@@ -2297,6 +2374,7 @@ public:
+@@ -2297,6 +2379,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -11802,7 +11888,7 @@ index e7c24f1f3..f3bb9f945 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -2387,7 +2465,8 @@ public:
+@@ -2387,7 +2470,8 @@ public:
    /// \param LoadBlockVarAddr Indicates whether we need to emit a load from
    /// \p Addr to get the address of the __block structure.
    void enterByrefCleanup(CleanupKind Kind, Address Addr, BlockFieldFlags Flags,
@@ -11812,7 +11898,7 @@ index e7c24f1f3..f3bb9f945 100644
  
    void setBlockContextParameter(const ImplicitParamDecl *D, unsigned argNum,
                                  llvm::Value *ptr);
-@@ -3537,8 +3616,18 @@ public:
+@@ -3537,8 +3621,18 @@ public:
        return CGF.emitBlockByrefAddress(Addr, Variable, /*forward*/ false);
      }
    };
@@ -11833,7 +11919,7 @@ index e7c24f1f3..f3bb9f945 100644
    void EmitAutoVarCleanups(const AutoVarEmission &emission);
    void emitAutoVarTypeCleanup(const AutoVarEmission &emission,
                                QualType::DestructionKind dtorKind);
-@@ -3641,6 +3730,11 @@ public:
+@@ -3641,6 +3735,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -11845,7 +11931,7 @@ index e7c24f1f3..f3bb9f945 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3655,7 +3749,15 @@ public:
+@@ -3655,7 +3754,15 @@ public:
                             AggValueSlot AVS = AggValueSlot::ignored());
    Address
    EmitCompoundStmtWithoutScope(const CompoundStmt &S, bool GetLast = false,
@@ -11862,7 +11948,7 @@ index e7c24f1f3..f3bb9f945 100644
  
    /// EmitLabel - Emit the block for the given label. It is legal to call this
    /// function even if there is no current insertion point.
-@@ -3665,6 +3767,8 @@ public:
+@@ -3665,6 +3772,8 @@ public:
    void EmitAttributedStmt(const AttributedStmt &S);
    void EmitGotoStmt(const GotoStmt &S);
    void EmitIndirectGotoStmt(const IndirectGotoStmt &S);
@@ -11871,7 +11957,7 @@ index e7c24f1f3..f3bb9f945 100644
    void EmitIfStmt(const IfStmt &S);
  
    void EmitWhileStmt(const WhileStmt &S, ArrayRef<const Attr *> Attrs = {});
-@@ -3679,6 +3783,28 @@ public:
+@@ -3679,6 +3788,28 @@ public:
    void EmitCaseStmt(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
    void EmitCaseStmtRange(const CaseStmt &S, ArrayRef<const Attr *> Attrs);
    void EmitDeferStmt(const DeferStmt &S);
@@ -11900,12 +11986,13 @@ index e7c24f1f3..f3bb9f945 100644
    void EmitAsmStmt(const AsmStmt &S);
  
    const BreakContinue *GetDestForLoopControlStmt(const LoopControlStmt &S);
-@@ -3689,8 +3815,14 @@ public:
+@@ -3689,8 +3820,15 @@ public:
    void EmitObjCAtSynchronizedStmt(const ObjCAtSynchronizedStmt &S);
    void EmitObjCAutoreleasePoolStmt(const ObjCAutoreleasePoolStmt &S);
  
 +  void EmitObjC3CAsyncBody(const Decl &Callable, const Stmt &Body);
 +  void EmitObjC3CAsyncReturn(const ReturnStmt &S);
++  void EmitObjC3CAsyncAutoreleasePoolStmt(const ObjCAutoreleasePoolStmt &S);
 +  bool EmitObjC3CAsyncErrorReturn(llvm::Value *OwnedError);
 +  RValue EmitObjC3CAwaitExpr(const CoawaitExpr &E, AggValueSlot Slot,
 +                            bool IgnoreResult);
@@ -11915,7 +12002,7 @@ index e7c24f1f3..f3bb9f945 100644
    RValue EmitCoawaitExpr(const CoawaitExpr &E,
                           AggValueSlot aggSlot = AggValueSlot::ignored(),
                           bool ignoreResult = false);
-@@ -5007,7 +5139,8 @@ public:
+@@ -5007,7 +5145,8 @@ public:
    /// Retrieves the default cleanup kind for an ARC cleanup.
    /// Except under -fobjc-arc-eh, ARC cleanups are normal-only.
    CleanupKind getARCCleanupKind() {
@@ -20517,10 +20604,10 @@ index 000000000..8f64042cf
 +} // namespace clang::CodeGen
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCRuntime.cpp b/clang/lib/CodeGen/CGObjCRuntime.cpp
-index 2b8bd170b..a4a36d8a0 100644
+index 2b8bd170b..0df3194d5 100644
 --- a/clang/lib/CodeGen/CGObjCRuntime.cpp
 +++ b/clang/lib/CodeGen/CGObjCRuntime.cpp
-@@ -13,6 +13,7 @@
+@@ -13,10 +13,12 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGObjCRuntime.h"
@@ -20528,7 +20615,20 @@ index 2b8bd170b..a4a36d8a0 100644
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
  #include "CGRecordLayout.h"
-@@ -451,6 +452,9 @@ void CGObjCRuntime::destroyCalleeDestroyedArguments(CodeGenFunction &CGF,
+ #include "CodeGenFunction.h"
++#include "CGObjC3BlockCaptures.h"
+ #include "CodeGenModule.h"
+ #include "clang/AST/RecordLayout.h"
+ #include "clang/AST/StmtObjC.h"
+@@ -262,6 +264,7 @@ void CGObjCRuntime::EmitTryCatchStmt(CodeGenFunction &CGF,
+       EmitInitOfCatchParam(CGF, CastExn, CatchParam);
+     }
+ 
++    abandonObjC3ARCReturnForCatch(CGF, S.getTryBody());
+     CGF.ObjCEHValueStack.push_back(Exn);
+     CGF.EmitStmt(Handler.Body);
+     CGF.ObjCEHValueStack.pop_back();
+@@ -451,6 +454,9 @@ void CGObjCRuntime::destroyCalleeDestroyedArguments(CodeGenFunction &CGF,
          case QualType::DK_cxx_destructor:
            CGF.destroyCXXObject(CGF, RV.getAggregateAddress(), QT);
            break;
@@ -24665,10 +24765,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..2cab1ad33
+index 000000000..03fc449ba
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,798 @@
+@@ -0,0 +1,928 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24678,6 +24778,7 @@ index 000000000..2cab1ad33
 +// return, suspension destruction, checked failure and cancellation alike.
 +//===----------------------------------------------------------------------===//
 +#include "CGCleanup.h"
++#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ManagedStorage.h"
@@ -24712,6 +24813,7 @@ index 000000000..2cab1ad33
 +  CodeGenFunction::JumpDest Final;
 +  llvm::BasicBlock *Suspend = nullptr;
 +  const ReturnStmt *ExceptionReturn = nullptr;
++  SmallVector<Address, 4> AutoreleasePools;
 +};
 +CodeGenFunction::CGObjC3CAsyncInfo::CGObjC3CAsyncInfo() = default;
 +CodeGenFunction::CGObjC3CAsyncInfo::~CGObjC3CAsyncInfo() = default;
@@ -24961,7 +25063,32 @@ index 000000000..2cab1ad33
 +    CGF.Builder.CreateStore(nullPtr(CGF), Child);
 +  }
 +};
++void closeAutoreleasePool(CodeGenFunction &CGF, Address Slot) {
++  llvm::Value *Token = CGF.Builder.CreateLoad(Slot);
++  auto *Active = CGF.createBasicBlock("objc3.pool.active");
++  auto *Done = CGF.createBasicBlock("objc3.pool.closed");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Token), Active, Done);
++  CGF.EmitBlock(Active);
++  // Clear before invoking arbitrary object destruction. An exception or
++  // reentrant cleanup must never pop the same thread-local pool twice.
++  CGF.Builder.CreateStore(nullPtr(CGF), Slot);
++  CGF.EmitObjCAutoreleasePoolPop(Token);
++  CGF.EmitBranch(Done);
++  CGF.EmitBlock(Done);
++}
++struct CloseAutoreleasePool final : EHScopeStack::Cleanup {
++  Address Slot;
++  explicit CloseAutoreleasePool(Address Slot) : Slot(Slot) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    closeAutoreleasePool(CGF, Slot);
++  }
++};
 +void suspend(CodeGenFunction &CGF, CGObjC3CAsyncData &Data, bool Final) {
++  // Explicit lexical pools nest inside the scheduler's implicit slice pool.
++  // Drain them before that outer pool, and carry no thread-local token across
++  // suspension. Their storage remains live for cancellation/destruction paths.
++  for (Address Slot : llvm::reverse(Data.AutoreleasePools))
++    closeAutoreleasePool(CGF, Slot);
 +  auto *Ready = CGF.createBasicBlock(Final ? "objc3.final.ready" : "objc3.await.ready");
 +  auto *Destroy = CGF.createBasicBlock("objc3.suspend.destroy");
 +  auto *Token = llvm::ConstantTokenNone::get(CGF.getLLVMContext());
@@ -24974,6 +25101,9 @@ index 000000000..2cab1ad33
 +  CGF.EmitBlock(Destroy);
 +  CGF.EmitBranchThroughCleanup(Data.Destroy);
 +  CGF.EmitBlock(Ready);
++  if (!Final)
++    for (Address Slot : Data.AutoreleasePools)
++      CGF.Builder.CreateStore(CGF.EmitObjCAutoreleasePoolPush(), Slot);
 +  if (Final) {
 +    CGF.Builder.CreateUnreachable();
 +    CGF.Builder.ClearInsertionPoint();
@@ -25035,6 +25165,59 @@ index 000000000..2cab1ad33
 +  CGF.Builder.CreateStore(CGF.Builder.getInt32(1), Data.Kind);
 +  CGF.EmitBranchThroughCleanup(Data.Final);
 +  CGF.EmitBlock(Continue);
++}
++
++// An allocation failure is still a typed lazy task, with process-lifetime
++// context and callbacks. Starting or awaiting it reports the original service
++// status; abandoning it needs neither an allocation nor a source-body cleanup.
++llvm::Function *allocationFailureCallback(CodeGenFunction &Parent, bool Destroy) {
++  auto &CGM = Parent.CGM;
++  auto &Ctx = CGM.getContext();
++  FunctionArgList Args;
++  for (unsigned I = 0; I != (Destroy ? 1u : 2u); ++I)
++    Args.push_back(ImplicitParamDecl::Create(
++        Ctx, Ctx.VoidPtrTy, ImplicitParamKind::Other));
++  const auto &FI = CGM.getTypes().arrangeBuiltinFunctionDeclaration(Ctx.VoidTy, Args);
++  auto *F = llvm::Function::Create(CGM.getTypes().GetFunctionType(FI),
++      llvm::GlobalValue::InternalLinkage,
++      Destroy ? "__objc3_c_async_allocation_failed_destroy"
++              : "__objc3_c_async_allocation_failed_resume", &CGM.getModule());
++  CGM.SetInternalFunctionAttributes(GlobalDecl(), F, FI);
++  CodeGenFunction CGF(CGM);
++  CGF.StartFunction(GlobalDecl(), Ctx.VoidTy, F, FI, Args);
++  if (!Destroy) {
++    llvm::Value *Owner = CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(Args[0]));
++    llvm::Value *Requested = call(CGF, "objc3_task_is_cancel_requested",
++                                  CGF.Int32Ty, {Owner});
++    llvm::Value *Cancelled = CGF.Builder.CreateIsNotNull(Requested);
++    llvm::Value *Error = serviceError(CGF, CGF.Builder.getInt32(3));
++    Address Completion = CGF.CreateTempAlloca(completionType(CGM),
++        CharUnits::fromQuantity(8), "objc3.allocation.failure");
++    CGF.Builder.CreateMemSet(Completion, CGF.Builder.getInt8(0),
++                             CGF.Builder.getInt64(48));
++    storeField(CGF, Completion, 0, CGF.Builder.getInt32(48));
++    storeField(CGF, Completion, 1, CGF.Builder.getInt32(ServiceABI));
++    storeField(CGF, Completion, 2, CGF.Builder.CreateSelect(
++        Cancelled, CGF.Builder.getInt32(2), CGF.Builder.getInt32(1)));
++    storeField(CGF, Completion, 6,
++               CGF.Builder.CreateSelect(Cancelled, nullPtr(CGF), Error));
++    llvm::Value *Status = call(CGF, "objc3_task_complete", CGF.Int32Ty,
++                                {Owner, Completion.emitRawPointer(CGF)});
++    call(CGF, "objc3_error_release", CGF.VoidTy, {Error});
++    llvm::Value *Accepted = CGF.Builder.CreateOr(CGF.Builder.CreateIsNull(Status),
++        CGF.Builder.CreateICmpEQ(Status, CGF.Builder.getInt32(4)));
++    auto *Done = CGF.createBasicBlock("objc3.allocation.failure.completed");
++    auto *Invalid = CGF.createBasicBlock("objc3.allocation.failure.invalid");
++    CGF.Builder.CreateCondBr(Accepted, Done, Invalid);
++    CGF.EmitBlock(Invalid);
++    CGF.EmitTrapCall(llvm::Intrinsic::trap);
++    CGF.Builder.CreateUnreachable();
++    CGF.Builder.ClearInsertionPoint();
++    CGF.EmitBlock(Done);
++  }
++  CGF.FinishFunction();
++  F->setDoesNotThrow();
++  return F;
 +}
 +
 +// Runtime callback owns no task reference. The scheduler serializes callbacks
@@ -25132,8 +25315,14 @@ index 000000000..2cab1ad33
 +  auto *Allocated = Builder.GetInsertBlock();
 +  Builder.CreateCondBr(Builder.CreateIsNotNull(Memory), Initialize, Failure);
 +  EmitBlock(Failure);
-+  Builder.CreateMemSet(ReturnValue, Builder.getInt8(0),
-+                       llvm::ConstantInt::get(SizeTy, getContext().getTypeSizeInChars(FnRetTy).getQuantity()));
++  storeField(*this, ReturnValue, 0, Builder.getInt32(40));
++  storeField(*this, ReturnValue, 1, Builder.getInt32(AsyncABI));
++  // A descriptor is static, nonnull and shared safely by these immutable
++  // failure frames. No callback mutates or releases this context.
++  storeField(*this, ReturnValue, 2, Data.ResultType);
++  storeField(*this, ReturnValue, 3, allocationFailureCallback(*this, false));
++  storeField(*this, ReturnValue, 4, allocationFailureCallback(*this, true));
++  storeField(*this, ReturnValue, 5, Data.ResultType);
 +  EmitBranchThroughCleanup(ReturnBlock);
 +  EmitBlock(Initialize);
 +  auto *Storage = Builder.CreatePHI(Int8PtrTy, 2);
@@ -25344,6 +25533,26 @@ index 000000000..2cab1ad33
 +  CurFn->setPresplitCoroutine();
 +}
 +
++void CodeGenFunction::EmitObjC3CAsyncAutoreleasePoolStmt(
++    const ObjCAutoreleasePoolStmt &Statement) {
++  auto &Data = *ObjC3CAsync.Data;
++  const auto &Body = cast<CompoundStmt>(*Statement.getSubStmt());
++  if (auto *DI = getDebugInfo())
++    DI->EmitLexicalBlockStart(Builder, Body.getLBracLoc());
++  RunCleanupsScope Scope(*this);
++  Address Token = CreateTempAlloca(Int8PtrTy, getPointerAlign(),
++                                    "objc3.pool.token");
++  Builder.CreateStore(EmitObjCAutoreleasePoolPush(), Token);
++  Data.AutoreleasePools.push_back(Token);
++  EHStack.pushCleanup<CloseAutoreleasePool>(NormalAndEHCleanup, Token);
++  for (const Stmt *Child : Body.body())
++    EmitStmt(Child);
++  Scope.ForceCleanup();
++  Data.AutoreleasePools.pop_back();
++  if (auto *DI = getDebugInfo())
++    DI->EmitLexicalBlockEnd(Builder, Body.getRBracLoc());
++}
++
 +void CodeGenFunction::EmitObjC3CAsyncReturn(const ReturnStmt &S) {
 +  auto &Data = *ObjC3CAsync.Data;
 +  if (&S == Data.ExceptionReturn) {
@@ -25356,11 +25565,25 @@ index 000000000..2cab1ad33
 +    if (E) EmitIgnoredExpr(E);
 +  } else if (E) {
 +    Address Source = CreateMemTemp(Data.LogicalResult, "objc3.return.source");
-+    if (getEvaluationKind(Data.LogicalResult) == TEK_Scalar)
++    const auto *Thunk = CurCodeDecl->getAttr<ObjC3IsolationThunkAttr>();
++    bool OwnedReference = Data.LogicalResult->isObjCRetainableType() &&
++        (getLangOpts().ObjCAutoRefCount || (Thunk && Thunk->getOwnedResult()));
++    if (OwnedReference) {
++      // ARC claims a natural +1 or retains/copies a +0 expression independently
++      // of lexical/full-expression owners. An MRC isolation thunk instead
++      // adopts exactly the original synchronous declaration's +1 result.
++      // Unsafe source storage has this explicit owner until resultOps copies;
++      // success, service failure and native exception edges all balance it.
++      llvm::Value *Owned = getLangOpts().ObjCAutoRefCount
++                               ? EmitARCRetainScalarExpr(E) : EmitScalarExpr(E);
++      EHStack.pushCleanup<ReleaseCapture>(NormalAndEHCleanup, Owned);
++      EmitStoreOfScalar(Owned, MakeAddrLValue(Source, Data.LogicalResult), true);
++    } else if (getEvaluationKind(Data.LogicalResult) == TEK_Scalar) {
 +      EmitStoreOfScalar(EmitScalarExpr(E),
 +          MakeAddrLValue(Source, Data.LogicalResult), true);
-+    else
++    } else {
 +      EmitAnyExprToMem(E, Source, Qualifiers(), true);
++    }
 +    if (containsObjC3CarrierManagedStorage(Data.LogicalResult))
 +      pushDestroy(NormalAndEHCleanup, Source, Data.LogicalResult,
 +                   destroyObjC3ManagedStorage, false);
@@ -25390,11 +25613,18 @@ index 000000000..2cab1ad33
 +bool CodeGenFunction::EmitObjC3CAsyncErrorReturn(llvm::Value *OwnedError) {
 +  auto &Data = *ObjC3CAsync.Data;
 +  auto *Error = call(*this, "__objc3_task_error_create", Int8PtrTy, {OwnedError});
-+  auto *Previous = Builder.CreateLoad(Data.Error);
-+  Builder.CreateStore(Error, Data.Error);
-+  call(*this, "objc3_error_release", VoidTy, {Previous});
-+  Builder.CreateStore(Builder.CreateSelect(Builder.CreateIsNotNull(Error),
-+      Builder.getInt32(1), Builder.getInt32(2)), Data.Kind);
++  auto *Ready = createBasicBlock("objc3.error.materialized");
++  auto *Invalid = createBasicBlock("objc3.error.materialization.invalid");
++  Builder.CreateCondBr(Builder.CreateIsNotNull(Error), Ready, Invalid);
++  EmitBlock(Invalid);
++  // The runtime consumes the source +1 and supplies an allocation-independent
++  // service error if typed-error allocation fails. Null violates that contract.
++  EmitTrapCall(llvm::Intrinsic::trap);
++  Builder.CreateUnreachable();
++  Builder.ClearInsertionPoint();
++  EmitBlock(Ready);
++  replaceError(*this, Data, Error);
++  Builder.CreateStore(Builder.getInt32(1), Data.Kind);
 +  EmitBranchThroughCleanup(Data.Final);
 +  return true;
 +}
@@ -25491,10 +25721,10 @@ index 000000000..8c1c22e40
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
 new file mode 100644
-index 000000000..036726406
+index 000000000..4a3d5d8ad
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
-@@ -0,0 +1,364 @@
+@@ -0,0 +1,472 @@
 +//===--- CGObjC3BlockCaptures.cpp - Explicit Block capture owners -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3BlockCaptures.h"
@@ -25506,6 +25736,8 @@ index 000000000..036726406
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/Stmt.h"
 +#include "llvm/IR/DataLayout.h"
 +#include "llvm/IR/DerivedTypes.h"
 +
@@ -25556,6 +25788,49 @@ index 000000000..036726406
 +      emitObjC3BlockCaptureCleanup(CGF, Capture, true);
 +  }
 +};
++void releasePendingARCReturn(CodeGenFunction &CGF, llvm::Value *ShouldRelease) {
++  auto *Release = CGF.createBasicBlock("objc3.arc.return.abandon");
++  auto *Done = CGF.createBasicBlock("objc3.arc.return.continue");
++  CGF.Builder.CreateCondBr(ShouldRelease, Release, Done);
++  CGF.EmitBlock(Release);
++  // Disarm before releasing, including a Block whose dispose helper owns
++  // resource owners. A later exception path must not release the slot twice.
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(0), CGF.ObjC3ARCReturnPending);
++  CGF.EmitARCDestroyStrong(CGF.ReturnValue, ARCPreciseLifetime);
++  CGF.EmitBranch(Done);
++  CGF.EmitBlock(Done);
++}
++struct DestroyPendingARCReturn final : EHScopeStack::Cleanup {
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    llvm::Value *Site = CGF.Builder.CreateLoad(CGF.ObjC3ARCReturnPending);
++    releasePendingARCReturn(
++        CGF, CGF.Builder.CreateICmpNE(Site, CGF.Builder.getInt32(0)));
++  }
++};
++void collectARCReturnSites(const Stmt *Statement, CodeGenFunction &CGF,
++                          SmallVectorImpl<unsigned> &Sites) {
++  if (!Statement || isa<BlockExpr>(Statement)) return;
++  if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
++    for (const Expr *Initializer : Lambda->capture_inits())
++      collectARCReturnSites(Initializer, CGF, Sites);
++    return;
++  }
++  if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement)) {
++    collectARCReturnSites(Argument->getExpr(), CGF, Sites);
++    return;
++  }
++  if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement)) {
++    collectARCReturnSites(Initializer->getExpr(), CGF, Sites);
++    return;
++  }
++  if (const auto *Return = dyn_cast<ReturnStmt>(Statement)) {
++    if (unsigned Site = CGF.ObjC3ARCReturnSites.lookup(Return))
++      Sites.push_back(Site);
++    return;
++  }
++  for (const Stmt *Child : Statement->children())
++    collectARCReturnSites(Child, CGF, Sites);
++}
 +// This prefix is compiler-private. Copy/dispose helpers depend only on this
 +// versioned prefix, and can safely share helpers across different handle types,
 +// cleanup functions and sentinels. Each owner carries its exact native callback.
@@ -25734,6 +26009,69 @@ index 000000000..036726406
 +  CGF.EmitBlock(Done);
 +}
 +
++void clang::CodeGen::emitObjC3ARCReturnProlog(CodeGenFunction &CGF) {
++  // Native ARC result initialization produces +1 for both retained-result and
++  // autoreleased-result functions. Autorelease occurs only in the epilogue.
++  // Async/coroutine logical ObjC results use different physical staging slots.
++  const auto *Callable = getObjC3CallableFunctionType(CGF.CurCodeDecl);
++  if (!CGF.getLangOpts().ObjC3 || !CGF.getLangOpts().ObjCAutoRefCount ||
++      CGF.CurFuncIsThunk || CGF.FnRetTy.isNull() ||
++      !CGF.FnRetTy->isObjCRetainableType() || !CGF.ReturnValue.isValid() ||
++      (Callable && (Callable->isObjC3Async() ||
++                    Callable->isObjC3AsyncFrame())) || CGF.isCoroutine() ||
++      getObjC3CoroutineBody(CGF.CurCodeDecl) ||
++      !CGF.ReturnValue.getElementType()->isPointerTy())
++    return;
++  CGF.ObjC3ARCReturnPending = CGF.CreateTempAlloca(
++      CGF.Builder.getInt32Ty(), CharUnits::fromQuantity(4),
++      "objc3.arc.return.pending");
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(0), CGF.ObjC3ARCReturnPending);
++  if (CGF.getLangOpts().Exceptions || CGF.getLangOpts().ObjCExceptions)
++    CGF.EHStack.pushCleanup<DestroyPendingARCReturn>(EHCleanup);
++}
++
++void clang::CodeGen::commitObjC3ARCReturn(CodeGenFunction &CGF,
++                                        const ReturnStmt &Return) {
++  if (!CGF.ObjC3ARCReturnPending.isValid()) return;
++  const Expr *Value = Return.getRetValue();
++  while (const auto *Full = dyn_cast_or_null<ExprWithCleanups>(Value))
++    Value = Full->getSubExpr();
++  const auto *Produced = dyn_cast_or_null<ImplicitCastExpr>(Value);
++  if (!Produced || Produced->getCastKind() != CK_ARCProduceObject)
++    return; // Synthetic +0 returns have no proved owned result to release.
++  auto [Position, Inserted] = CGF.ObjC3ARCReturnSites.try_emplace(
++      &Return, CGF.ObjC3ARCReturnSites.size() + 1);
++  (void)Inserted;
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(Position->second),
++                          CGF.ObjC3ARCReturnPending);
++}
++
++void clang::CodeGen::abandonObjC3ARCReturnForCatch(CodeGenFunction &CGF,
++                                                const Stmt *TryBody) {
++  if (!CGF.ObjC3ARCReturnPending.isValid()) return;
++  SmallVector<unsigned, 8> Sites;
++  collectARCReturnSites(TryBody, CGF, Sites);
++  if (Sites.empty()) return;
++  llvm::Value *Pending = CGF.Builder.CreateLoad(CGF.ObjC3ARCReturnPending);
++  llvm::Value *Abandoned = CGF.Builder.getFalse();
++  for (unsigned Site : Sites)
++    Abandoned = CGF.Builder.CreateOr(
++        Abandoned, CGF.Builder.CreateICmpEQ(Pending, CGF.Builder.getInt32(Site)));
++  releasePendingARCReturn(CGF, Abandoned);
++}
++
++void clang::CodeGen::disarmObjC3ARCReturn(CodeGenFunction &CGF) {
++  if (CGF.ObjC3ARCReturnPending.isValid())
++    CGF.Builder.CreateStore(CGF.Builder.getInt32(0), CGF.ObjC3ARCReturnPending);
++}
++
++void clang::CodeGen::abandonObjC3ARCReturn(CodeGenFunction &CGF) {
++  if (!CGF.ObjC3ARCReturnPending.isValid()) return;
++  llvm::Value *Site = CGF.Builder.CreateLoad(CGF.ObjC3ARCReturnPending);
++  releasePendingARCReturn(
++      CGF, CGF.Builder.CreateICmpNE(Site, CGF.Builder.getInt32(0)));
++}
++
 +uint64_t clang::CodeGen::getObjC3BlockResourcePayloadOffset(
 +    CodeGenModule &CGM, const VarDecl &Variable) {
 +  return CGM.getDataLayout().getStructLayout(ownerType(CGM, Variable))
@@ -25861,10 +26199,10 @@ index 000000000..036726406
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.h b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
 new file mode 100644
-index 000000000..d91d00b59
+index 000000000..ffc859cc4
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,73 @@
 +//===--- CGObjC3BlockCaptures.h - Explicit Block capture owners -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3BLOCKCAPTURES_H
@@ -25876,6 +26214,8 @@ index 000000000..d91d00b59
 +namespace clang {
 +class VarDecl;
 +class Expr;
++class Stmt;
++class ReturnStmt;
 +namespace CodeGen {
 +class CodeGenFunction;
 +class CodeGenModule;
@@ -25907,6 +26247,13 @@ index 000000000..d91d00b59
 +void emitObjC3BlockCaptureCleanup(CodeGenFunction &CGF,
 +                                ObjC3BlockCaptureCleanup *Capture,
 +                                bool ForEHCleanup);
++void emitObjC3ARCReturnProlog(CodeGenFunction &CGF);
++/// Commit only a native ARC-produced +1 result in ordinary scalar storage.
++void commitObjC3ARCReturn(CodeGenFunction &CGF, const ReturnStmt &Return);
++/// A catch abandons only returns originating in its protected source body.
++void abandonObjC3ARCReturnForCatch(CodeGenFunction &CGF, const Stmt *TryBody);
++void abandonObjC3ARCReturn(CodeGenFunction &CGF);
++void disarmObjC3ARCReturn(CodeGenFunction &CGF);
 +uint64_t getObjC3BlockResourcePayloadOffset(CodeGenModule &CGM,
 +                                            const VarDecl &Variable);
 +/// The closure field contains an owner pointer. Its payload has the original
@@ -26076,12 +26423,12 @@ index 000000000..b26225326
 +}
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-definitions.m b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
 new file mode 100644
-index 000000000..21d86bb67
+index 000000000..bd7648b90
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,96 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
 +#include "Inputs/native-c-async-frame.h"
 +@protocol Error @end
 +@protocol NativeError <Error> @end
@@ -26168,6 +26515,14 @@ index 000000000..21d86bb67
 +_Static_assert(sizeof(leaf(1)) == sizeof(objc3_async_frame), "physical frame call");
 +typedef int (*AsyncInt)(int) __objc3_async;
 +_Static_assert(__builtin_types_compatible_p(__typeof__(&leaf), AsyncInt), "logical effect type");
++
++extern id retained_result(void) __attribute__((ns_returns_retained));
++// A naturally +1 source result is claimed, copied to the owned completion and
++// released once on the frame return edge, rather than leaking an ARC +1.
++// ARC-LABEL: define{{.*}} void @new_object_result(
++// ARC: {{call|invoke}} ptr @retained_result
++// ARC: {{objc_release|llvm.objc.release}}
++id new_object_result(void) __objc3_async { return retained_result(); }
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-pch.m b/clang/test/ObjC3/CodeGen/native-c-async-pch.m
 new file mode 100644
 index 000000000..3ea5d6666
@@ -26249,10 +26604,10 @@ index 000000000..330f3d009
 +// CHECK: call void @objc_msgSend
 diff --git a/clang/lib/CodeGen/CGObjC3Isolation.cpp b/clang/lib/CodeGen/CGObjC3Isolation.cpp
 new file mode 100644
-index 000000000..cd6302d0c
+index 000000000..9da1140e2
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Isolation.cpp
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,162 @@
 +//===--- CGObjC3Isolation.cpp - Executor entry for private frames
 +//-----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26275,31 +26630,108 @@ index 000000000..cd6302d0c
 +      llvm::FunctionType::get(Result, Types, false), Name);
 +  return CGF.EmitNounwindRuntimeCall(Callee, Arguments);
 +}
++
++llvm::Value *lookupExecutor(CodeGenFunction &CGF,
++                            const ObjCExecutorAttr &Executor,
++                            Address Destination) {
++  StringRef Identity = Executor.getExecutor();
++  if (Identity == "main" || Identity == "global")
++    return runtimeCall(CGF,
++                       Identity == "main" ? "objc3_executor_get_main"
++                                          : "objc3_executor_get_global",
++                       CGF.Int32Ty, {Destination.emitRawPointer(CGF)});
++  assert(Identity.starts_with("named:") && "unknown executor identity");
++  Identity = Identity.drop_front(6);
++  llvm::Value *Name = CGF.CGM.GetAddrOfConstantCString(Identity).getPointer();
++  return runtimeCall(CGF, "objc3_executor_get_named", CGF.Int32Ty,
++                     {Name, Destination.emitRawPointer(CGF)});
++}
++
++ObjC3IsolationEntry emitActorEntry(CodeGenFunction &CGF,
++                                   const FunctionDecl &Callable,
++                                   const ObjCExecutorAttr *Executor,
++                                   llvm::Value *Owner) {
++  auto *Null = llvm::ConstantPointerNull::get(CGF.Int8PtrTy);
++  Address Actor = CGF.CreateTempAlloca(CGF.Int8PtrTy, CGF.getPointerAlign(),
++                                       "objc3.isolation.actor");
++  Address Status = CGF.CreateTempAlloca(CGF.Int32Ty, CharUnits::fromQuantity(4),
++                                        "objc3.actor.entry.status");
++  Address Suspend = CGF.CreateTempAlloca(
++      CGF.Builder.getInt1Ty(), CharUnits::One(), "objc3.actor.entry.suspend");
++  CGF.Builder.CreateStore(Null, Actor);
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(0), Status);
++  CGF.Builder.CreateStore(CGF.Builder.getFalse(), Suspend);
++  llvm::Value *Receiver =
++      CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(Callable.getParamDecl(0)));
++  auto *Lookup = CGF.createBasicBlock("objc3.actor.lookup");
++  auto *Ready = CGF.createBasicBlock("objc3.actor.ready");
++  auto *Done = CGF.createBasicBlock("objc3.actor.entry");
++  // Sending a message to nil still evaluates its source arguments, but needs
++  // no mailbox association. The original nil message supplies its zero result.
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Receiver), Done, Lookup);
++  CGF.EmitBlock(Lookup);
++  llvm::Value *Found =
++      runtimeCall(CGF, "objc3_actor_get_for_object", CGF.Int32Ty,
++                  {Receiver, Actor.emitRawPointer(CGF)});
++  CGF.Builder.CreateStore(Found, Status);
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Found), Ready, Done);
++  CGF.EmitBlock(Ready);
++  llvm::Value *Target = CGF.Builder.CreateLoad(Actor);
++  if (Executor) {
++    Address Required = CGF.CreateTempAlloca(
++        CGF.Int8PtrTy, CGF.getPointerAlign(), "objc3.actor.required.executor");
++    CGF.Builder.CreateStore(Null, Required);
++    llvm::Value *Resolved = lookupExecutor(CGF, *Executor, Required);
++    CGF.Builder.CreateStore(Resolved, Status);
++    auto *Check = CGF.createBasicBlock("objc3.actor.check.executor");
++    auto *Failed = CGF.createBasicBlock("objc3.actor.lookup.failed");
++    auto *Match = CGF.createBasicBlock("objc3.actor.executor.matched");
++    auto *Mismatch = CGF.createBasicBlock("objc3.actor.executor.mismatch");
++    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Resolved), Check, Failed);
++    CGF.EmitBlock(Failed);
++    runtimeCall(CGF, "objc3_actor_release", CGF.VoidTy, {Target});
++    CGF.Builder.CreateBr(Done);
++    CGF.EmitBlock(Check);
++    llvm::Value *RequiredExecutor = CGF.Builder.CreateLoad(Required);
++    llvm::Value *RequiredIdentity = runtimeCall(
++        CGF, "objc3_executor_identity", CGF.Int64Ty, {RequiredExecutor});
++    llvm::Value *ActorIdentity = runtimeCall(
++        CGF, "objc3_actor_executor_identity", CGF.Int64Ty, {Target});
++    runtimeCall(CGF, "objc3_executor_release", CGF.VoidTy, {RequiredExecutor});
++    CGF.Builder.CreateCondBr(
++        CGF.Builder.CreateICmpEQ(RequiredIdentity, ActorIdentity), Match,
++        Mismatch);
++    CGF.EmitBlock(Mismatch);
++    // The explicit association disagrees with the declaration's executor.
++    CGF.Builder.CreateStore(CGF.Builder.getInt32(1), Status);
++    runtimeCall(CGF, "objc3_actor_release", CGF.VoidTy, {Target});
++    CGF.Builder.CreateBr(Done);
++    CGF.EmitBlock(Match);
++  }
++  llvm::Value *Hopped =
++      runtimeCall(CGF, "objc3_task_hop", CGF.Int32Ty, {Owner, Null, Target});
++  CGF.Builder.CreateStore(Hopped, Status);
++  CGF.Builder.CreateStore(CGF.Builder.CreateIsNull(Hopped), Suspend);
++  runtimeCall(CGF, "objc3_actor_release", CGF.VoidTy, {Target});
++  CGF.Builder.CreateBr(Done);
++  CGF.EmitBlock(Done);
++  return {CGF.Builder.CreateLoad(Status), CGF.Builder.CreateLoad(Suspend)};
++}
 +} // namespace
 +
 +ObjC3IsolationEntry clang::CodeGen::emitObjC3IsolationEntry(
 +    CodeGenFunction &CGF, const Decl &Callable, llvm::Value *Owner) {
 +  const auto *Executor = getObjC3Executor(&Callable);
-+  assert(Callable.hasAttr<ObjC3IsolationThunkAttr>() && Executor &&
++  const auto *Marker = Callable.getAttr<ObjC3IsolationThunkAttr>();
++  assert(Marker && (Executor || Marker->getActorEntry()) &&
 +         "isolation entry requires a synthesized executor frame");
-+  StringRef Identity = Executor->getExecutor();
++  if (Marker->getActorEntry())
++    return emitActorEntry(CGF, cast<FunctionDecl>(Callable), Executor, Owner);
 +  Address Destination = CGF.CreateTempAlloca(
 +      CGF.Int8PtrTy, CGF.getPointerAlign(), "objc3.isolation.destination");
 +  auto *Null = llvm::ConstantPointerNull::get(CGF.Int8PtrTy);
 +  CGF.Builder.CreateStore(Null, Destination);
-+  llvm::Value *Lookup;
-+  if (Identity == "main" || Identity == "global") {
-+    Lookup = runtimeCall(CGF,
-+                         Identity == "main" ? "objc3_executor_get_main"
-+                                            : "objc3_executor_get_global",
-+                         CGF.Int32Ty, {Destination.emitRawPointer(CGF)});
-+  } else {
-+    assert(Identity.starts_with("named:") && "unknown executor identity");
-+    Identity = Identity.drop_front(6);
-+    llvm::Value *Name = CGF.CGM.GetAddrOfConstantCString(Identity).getPointer();
-+    Lookup = runtimeCall(CGF, "objc3_executor_get_named", CGF.Int32Ty,
-+                         {Name, Destination.emitRawPointer(CGF)});
-+  }
++  llvm::Value *Lookup = lookupExecutor(CGF, *Executor, Destination);
 +  auto *LookupEnd = CGF.Builder.GetInsertBlock();
 +  auto *Ready = CGF.createBasicBlock("objc3.isolation.ready");
 +  auto *Hop = CGF.createBasicBlock("objc3.isolation.hop");
@@ -26402,10 +26834,10 @@ index 000000000..627a1dc0b
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h
 new file mode 100644
-index 000000000..15aa242f4
+index 000000000..ace2b7131
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,16 @@
 +#ifndef NATIVE_ISOLATION_ENTRY_H
 +#define NATIVE_ISOLATION_ENTRY_H
 +#include "native-c-async-frame.h"
@@ -26413,6 +26845,13 @@ index 000000000..15aa242f4
 +    __attribute__((objc_executor(named("persistent.executor"))));
 +static inline int pch_isolation_parent(int value) __objc3_async {
 +  return __objc3_await isolated_pch_entry(value);
++}
++__attribute__((objc_root_class)) @interface PCHRoot @end
++actor class PCHActor : PCHRoot
++- (int)read __attribute__((nothrow));
++@end
++static inline int pch_actor_parent(PCHActor *actor) __objc3_async {
++  return __objc3_await [actor read];
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-entry-abi-pch.mm b/clang/test/ObjC3/CodeGen/native-c-async-entry-abi-pch.mm
@@ -26509,10 +26948,10 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..41d35470f
+index 000000000..b635b44d9
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,63 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#include "Inputs/native-c-async-frame.h"
@@ -26544,20 +26983,312 @@ index 000000000..41d35470f
 +// CHECK-DAG: call i32 @main_entry
 +// CHECK-DAG: call i32 @global_entry
 +// CHECK-DAG: call i32 @named_entry
++
++actor class Counter : Message
++- (int)read __attribute__((nothrow));
++- (int)affineRead __attribute__((nothrow, objc_executor(named("database.serial"))));
++@end
++extern Counter *source_receiver(void);
++int actor_parent(void) __objc3_async {
++  int first = __objc3_await [source_receiver() read];
++  return first + __objc3_await [source_receiver() affineRead];
++}
++// CHECK-DAG: call i32 @objc3_actor_get_for_object
++// CHECK-DAG: call i64 @objc3_actor_executor_identity
++// CHECK-DAG: call i64 @objc3_executor_identity
++// CHECK-DAG: call void @objc3_actor_release
++
++extern Message *owned_entry(void)
++    __attribute__((objc_executor(global), ns_returns_retained));
++Message *owned_parent(void) __objc3_async {
++  return __objc3_await owned_entry();
++}
++// CHECK-DAG: call ptr @owned_entry
++// CHECK-DAG: call void @objc_release
++
++@protocol Error @end
++@protocol HopError <Error, Sendable> @end
++extern int checked_frame(id<HopError>) __objc3_async_frame
++    __objc3_throws(id<HopError>) __attribute__((objc_executor(main)));
++int checked_parent(id<HopError> error) __objc3_async __objc3_throws(id<HopError>) {
++  return __objc3_try(__objc3_await checked_frame(error));
++}
++// CHECK-DAG: call void @checked_frame
++// CHECK-DAG: call ptr @__objc3_task_error_object
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 new file mode 100644
-index 000000000..750ab634b
+index 000000000..8f99e9078
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,16 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c-header -emit-pch -o %t %S/Inputs/native-isolation-entry.h
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#include "Inputs/native-isolation-entry.h"
 +objc3_async_frame use_pch_isolation(int value) {
 +  return pch_isolation_parent(value);
 +}
++objc3_async_frame use_pch_actor(PCHActor *actor) {
++  return pch_actor_parent(actor);
++}
 +// CHECK-DAG: define internal void @pch_isolation_parent
 +// CHECK-DAG: call i32 @objc3_executor_get_named
 +// CHECK-DAG: call i32 @objc3_task_hop
 +// CHECK-DAG: call i32 @isolated_pch_entry
 +// CHECK-DAG: call i32 @objc3_async_frame_start_child
++// CHECK-DAG: call i32 @objc3_actor_get_for_object
++// CHECK-DAG: call void @objc3_actor_release
+diff --git a/clang/lib/CodeGen/CGException.cpp b/clang/lib/CodeGen/CGException.cpp
+index 99dfaa80b..6d07d652a 100644
+--- a/clang/lib/CodeGen/CGException.cpp
++++ b/clang/lib/CodeGen/CGException.cpp
+@@ -15,6 +15,7 @@
+ #include "CGDebugInfo.h"
+ #include "CGObjCRuntime.h"
+ #include "CodeGenFunction.h"
++#include "CGObjC3BlockCaptures.h"
+ #include "ConstantEmitter.h"
+ #include "TargetInfo.h"
+ #include "clang/AST/Mangle.h"
+@@ -1284,6 +1285,7 @@ void CodeGenFunction::ExitCXXTryStmt(const CXXTryStmt &S, bool IsFnTryBlock) {
+     // Initialize the catch variable and set up the cleanups.
+     SaveAndRestore RestoreCurrentFuncletPad(CurrentFuncletPad);
+     CGM.getCXXABI().emitBeginCatch(*this, C);
++    abandonObjC3ARCReturnForCatch(*this, S.getTryBlock());
+ 
+     // Emit the PGO counter increment.
+     incrementProfileCounter(C);
+diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.cpp b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
+new file mode 100644
+index 000000000..aedd5dbde
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
+@@ -0,0 +1,100 @@
++//===--- CGObjC3KeyPath.cpp - Native key-path operand ownership ------------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "CGObjC3KeyPath.h"
++#include "CGObjC3BlockCaptures.h"
++#include "CodeGenFunction.h"
++#include "clang/AST/Attr.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ExprObjC.h"
++#include "clang/AST/ObjC3KeyPath.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++struct ReleaseKeyPathOperand final : EHScopeStack::Cleanup {
++  llvm::Value *Owner;
++  explicit ReleaseKeyPathOperand(llvm::Value *Owner) : Owner(Owner) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
++  }
++};
++
++struct ReleasePendingKeyPathOperand final : EHScopeStack::Cleanup {
++  Address Storage;
++  explicit ReleasePendingKeyPathOperand(Address Storage) : Storage(Storage) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    CGF.EmitARCRelease(CGF.Builder.CreateLoad(Storage), ARCPreciseLifetime);
++  }
++};
++
++llvm::Value *acquireOperand(CodeGenFunction &CGF, const Expr *Source) {
++  if (const auto *Parens = dyn_cast<ParenExpr>(Source))
++    return acquireOperand(CGF, Parens->getSubExpr());
++  if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Source)) {
++    // Acquire the snapshot before the operand's own temporary destruction.
++    // Keep a rollback slot below that temporary stack so a throwing C++
++    // destructor also releases a completed object/Block snapshot. The source
++    // capture guard remains responsible for its own partial field rollback.
++    Address Pending = CGF.CreateMemTemp(Source->getType(),
++                                         "objc3.keypath.pending");
++    auto *Start = CGF.Builder.CreateStore(llvm::Constant::getNullValue(
++        CGF.ConvertType(Source->getType())), Pending);
++    CGF.EHStack.pushCleanup<ReleasePendingKeyPathOperand>(EHCleanup, Pending);
++    auto Rollback = CGF.EHStack.stable_begin();
++    llvm::Value *Owner;
++    {
++      ObjC3BlockCaptureFullExprScope Captures(CGF, Cleanups);
++      CodeGenFunction::RunCleanupsScope Temporaries(CGF);
++      Owner = acquireOperand(CGF, Cleanups->getSubExpr());
++      CGF.Builder.CreateStore(Owner, Pending);
++    }
++    CGF.DeactivateCleanupBlock(Rollback, Start);
++    return Owner;
++  }
++  // ARC performs owned weak loads and consumes an already-owned production.
++  // MRC acquires an independent retain even for a conventional +1 operand;
++  // this snapshot must not consume the caller's original ownership claim.
++  // Block retention invokes the actual potentially throwing native copy.
++  return CGF.getLangOpts().ObjCAutoRefCount
++      ? CGF.EmitARCRetainScalarExpr(Source)
++      : CGF.EmitARCRetain(Source->getType(), CGF.EmitScalarExpr(Source));
++}
++} // namespace
++
++llvm::Value *clang::CodeGen::emitObjC3KeyPathOperandSnapshot(
++    CodeGenFunction &CGF, const Expr *Source) {
++  assert(Source->getType()->isObjCRetainableType());
++  llvm::Value *Owner = acquireOperand(CGF, Source);
++  CGF.pushFullExprCleanup<ReleaseKeyPathOperand>(NormalAndEHCleanup, Owner);
++  return Owner;
++}
++
++llvm::Value *clang::CodeGen::tryEmitObjC3KeyPathGetterReturn(
++    CodeGenFunction &CGF, const Expr *Source) {
++  if (CGF.getLangOpts().ObjCAutoRefCount ||
++      !Source->getType()->isObjCRetainableType())
++    return nullptr;
++  const auto *Function = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
++  if (!Function || !Function->isImplicit())
++    return nullptr;
++  bool Getter = false;
++  for (const auto *Attribute : Function->specific_attrs<AnnotateAttr>())
++    Getter |= Attribute->getAnnotation() == "objc3.keypath.getter.v2";
++  if (!Getter)
++    return nullptr;
++
++  llvm::Value *Value = CGF.EmitScalarExpr(Source);
++  const auto *Message =
++      dyn_cast<ObjCMessageExpr>(Source->IgnoreParenImpCasts());
++  const ObjCMethodDecl *Method = Message ? Message->getMethodDecl() : nullptr;
++  // The synthesized function has the ordinary +0 return convention even when
++  // its selected native getter produces a +1 value. Balance that ownership
++  // before receiver cleanup; otherwise acquire an independent autoreleased
++  // owner so a precise intermediate release cannot invalidate the result.
++  if (doesObjC3KeyPathGetterReturnRetained(Method))
++    return CGF.EmitARCAutorelease(Value);
++  return CGF.EmitARCRetainAutorelease(Source->getType(), Value);
++}
+diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.h b/clang/lib/CodeGen/CGObjC3KeyPath.h
+new file mode 100644
+index 000000000..59e202bdd
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3KeyPath.h
+@@ -0,0 +1,20 @@
++//===--- CGObjC3KeyPath.h - Native key-path operand ownership ----*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3KEYPATH_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3KEYPATH_H
++namespace llvm { class Value; }
++namespace clang {
++class Expr;
++namespace CodeGen {
++class CodeGenFunction;
++/// Create a +1 snapshot before evaluating the next written operand. The
++/// snapshot survives result construction and has precise normal/EH cleanup at
++/// the enclosing full-expression, under both ARC and manual reference counting.
++llvm::Value *emitObjC3KeyPathOperandSnapshot(CodeGenFunction &, const Expr *);
++/// Return a normalized +0 MRC getter result before precise receiver cleanup.
++/// Null means the current return is outside a compiler-owned keypath getter.
++llvm::Value *tryEmitObjC3KeyPathGetterReturn(CodeGenFunction &, const Expr *);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-c-async-allocation-failure.m b/clang/test/ObjC3/CodeGen/native-c-async-allocation-failure.m
+new file mode 100644
+index 000000000..b7c277bdc
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-async-allocation-failure.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++// CHECK-LABEL: define{{.*}} void @allocation_failure(
++// CHECK: objc3.coro.allocation.failed:
++// CHECK: store ptr @__objc3_c_async_allocation_failed_resume
++// CHECK: store ptr @__objc3_c_async_allocation_failed_destroy
++// CHECK: objc3.coro.initialize:
++int allocation_failure(int value) __objc3_async { return value; }
++// CHECK-LABEL: define internal void @__objc3_c_async_allocation_failed_resume(
++// CHECK: call i32 @objc3_task_is_cancel_requested
++// CHECK: call i32 @objc3_async_error_create_service(i32 3,
++// CHECK: call i32 @objc3_task_complete
++// CHECK: call void @objc3_error_release
++// CHECK-NOT: llvm.coro.resume
++// CHECK-LABEL: define internal void @__objc3_c_async_allocation_failed_destroy(
++// CHECK-NOT: free
++// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/native-c-async-pools.m b/clang/test/ObjC3/CodeGen/native-c-async-pools.m
+new file mode 100644
+index 000000000..5bcab04fe
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-async-pools.m
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++int leaf(void) __objc3_async;
++// CHECK-LABEL: define{{.*}} void @pool_parent(
++// CHECK: llvm.objc.autoreleasePoolPush
++// CHECK: llvm.objc.autoreleasePoolPush
++// CHECK: objc3.pool.active:
++// CHECK: store ptr null
++// CHECK: {{objc_autoreleasePoolPop|llvm.objc.autoreleasePoolPop}}
++// CHECK: objc3.pool.active{{.*}}:
++// CHECK: {{objc_autoreleasePoolPop|llvm.objc.autoreleasePoolPop}}
++// CHECK: llvm.coro.suspend
++// CHECK: llvm.objc.autoreleasePoolPush
++// CHECK: llvm.objc.autoreleasePoolPush
++int pool_parent(void) __objc3_async {
++  @autoreleasepool {
++    @autoreleasepool {
++      int n = __objc3_await leaf();
++      return n + __objc3_await leaf();
++    }
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
+new file mode 100644
+index 000000000..22972f916
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++#include "../Inputs/keypath-abi.h"
++__attribute__((objc_root_class))
++@interface NullableCGPathRoot
++@property(nonatomic, strong) NullableCGPathRoot * _Nullable next;
++@property(nonatomic, strong) NullableCGPathRoot * _Nullable value;
++@end
++KeyPath<NullableCGPathRoot *, NullableCGPathRoot * _Nullable> nullable_cg(void) {
++  return @keypath(NullableCGPathRoot, next.value);
++}
++// A missing snapshot branches around the final property dispatch. The precise
++// receiver ownership release also participates in native exceptional cleanup.
++// CHECK: define internal {{.*}}@__objc3_keypath_get_
++// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
++// CHECK: {{call|invoke}} {{.*}}@{{llvm.objc.retain|objc_retain}}
++// CHECK: icmp eq ptr {{.*}}, null
++// CHECK: br i1
++// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
+diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-operand-snapshots.m b/clang/test/ObjC3/CodeGen/typed-keypath-operand-snapshots.m
+new file mode 100644
+index 000000000..f2c2cf767
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-keypath-operand-snapshots.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++#include "../Inputs/keypath-abi.h"
++__attribute__((objc_root_class))
++@interface SnapshotPathRoot
++@property(nonatomic) int count;
++@end
++int later_operand(void);
++void snapshot_before_later_operand(SnapshotPathRoot * _Nonnull root) {
++  KeyPathSet(@keypath(SnapshotPathRoot, count), root, later_operand());
++}
++// A successful root retain is installed before evaluating a potentially
++// throwing later operand; normal and exceptional exits both release it.
++// CHECK-LABEL: define {{.*}}@snapshot_before_later_operand
++// CHECK: {{call|invoke}} {{.*}}@{{llvm.objc.retain|objc_retain}}
++// CHECK: invoke i32 @later_operand
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
++// CHECK: landingpad
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}

@@ -92,8 +92,9 @@ The installed gate is wired for C17/C++20/C++23, ARC/MRC, O0/O2, profile rejecti
 and ownership diagnostics. The compiler source now also implements native
 `withLifetime(owner) { ... }` and `keepAlive(owner);` with strong precise owners
 under ARC and MRC. These statements need no library import; `objc3.system`
-imports retain their Strict System gate. Borrowed-pointer contracts, escape
-checking and complete Strict System conformance remain outstanding. The active SDK predates this implementation.
+imports retain their Strict System gate. Borrowed-pointer contracts and escape
+checking are authored in the native compiler; remaining alias/diagnostic boundaries
+and complete Strict System conformance remain outstanding. The active SDK predates this implementation.
 
 Run the installed integration gate with:
 

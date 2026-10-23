@@ -766,6 +766,19 @@ class InterfaceCollector final
       }
     }
     if (!IsIdentityCandidate(declaration, context_, source_root_)) {
+      if (const auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(declaration)) {
+        const auto *owner = llvm::dyn_cast<clang::NamedDecl>(
+            clang::Decl::castFromDeclContext(parameter->getDeclContext()));
+        if (owner && IsIdentityCandidate(owner, context_, source_root_))
+          for (const auto *attribute : parameter->attrs()) {
+            if (attribute->isImplicit() ||
+                llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute))
+              continue;
+            AddDiagnostic(result_, "O3IFC116",
+                (llvm::Twine("public parameter has an attribute not modeled in the interface: ") +
+                 attribute->getSpelling()).str(), owner->getQualifiedNameAsString());
+          }
+      }
       // Native C typedefs can have no linkage while naming a callable contract.
       // Validate their type even when the current public identity model does
       // not export them, rather than silently accepting unqualified effects.
@@ -845,8 +858,11 @@ class InterfaceCollector final
       if (llvm::isa<clang::ObjCReturnsBorrowedAttr, clang::NoThrowAttr>(attribute) &&
           llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration))
         continue;
-      if (llvm::isa<clang::NoEscapeAttr>(attribute) &&
+      if (llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute) &&
           llvm::isa<clang::ParmVarDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::NSConsumesSelfAttr>(attribute) &&
+          llvm::isa<clang::ObjCMethodDecl>(declaration))
         continue;
       if (llvm::isa<clang::ObjCExecutorAttr, clang::ObjCNonisolatedAttr,
                     clang::ObjCUnsafeSendableAttr, clang::ObjCTaskSpawnAttr,
@@ -858,7 +874,7 @@ class InterfaceCollector final
       if (llvm::isa<clang::ObjCMethodDecl>(declaration) &&
           llvm::isa<clang::ObjCDirectAttr>(attribute))
         continue;
-      if (llvm::isa<clang::FunctionDecl>(declaration) &&
+      if (llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration) &&
           llvm::isa<clang::NSReturnsRetainedAttr, clang::NSReturnsNotRetainedAttr,
                     clang::NSReturnsAutoreleasedAttr>(attribute))
         continue;

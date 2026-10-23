@@ -295,12 +295,11 @@ Separate bare and typed-E checked-effect overloads retain the Block effect and
 transport its owned error in the resulting task; they never convert checked
 failure to cancellation or erase it into a nonthrowing Block type.
 
-**Pending compiler dependency:** the C++ typed-E overloads require native
-template deduction of ObjC3 function-effect `ErrorType`, matching of async/frame
-effect identity, and used-template-parameter tracking. That canonical compiler
-span is handed to root; this header and its witnesses are maintained authored
-inputs, not evidence that typed-E overload resolution currently builds. The
-compiler packet/export and SDK rebuild remain separate root-owned work.
+The canonical compiler source now authors the C++ typed-E overload dependency:
+deduction of ObjC3 function-effect `ErrorType`, exact async/frame effect matching,
+and used-template-parameter tracking. This header and its witnesses remain
+authored inputs; overload resolution has not been built or executed. Ordinary
+C++ raw-frame definitions remain a separate compiler admission boundary.
 
 `tests/clang_foundation/task_spawning` authors C17 and C++20/23 direct/macro
 equivalence, cancellation before spawn, preserved actor affinity through
@@ -310,3 +309,15 @@ and strict diagnostic parity. The source batch should cover ARC/MRC, O0/O2,
 and source/PCH/module imports. No compilation or execution was performed.
 These APIs retain explicit task/group joining; compiler automatic group-scope
 finalization and the complete abstract structured-group library remain open.
+
+Root solo follow-up now authors typed async callback deduction: ErrorType is a
+deducible type position, async/frame representations match exactly, and throwing
+domains cannot be erased. Function-address matching uses its established reverse
+conversion direction. Native source/specialization/PCH fixtures are authored;
+execution remains deferred. Explicit C++ raw-frame definition cases remain the
+next compiler admission boundary for the spawn witness.
+
+Development is paused at the user's request. All six parallel spans are parked;
+completed maintained changes and the final canonical compiler source are
+preserved in commits and tracked patch inputs. No new implementation or
+validation is scheduled until work resumes.

@@ -6,7 +6,13 @@ function, family and converted sentinel; integer expressions normalize by value,
 and external address sentinels use declaration identity plus offset/one-past
 state. Nested function, pointer and array positions retain resource and borrowed
 markers. Borrowed returns retain the owner parameter index, and noescape/nothrow
-facts remain part of the declaration identity.
+facts remain part of the declaration identity. Consumed parameters retain their
+native ownership contract in both type positions and declarations, including MRC
+source attributes; consuming method receivers and explicit method return ownership
+are modeled too. Polished Objective-C method source retains parameter noescape
+and consumption attributes inside their type parentheses. Unmodeled public
+parameter attributes are rejected instead of being silently removed, including
+attributes that introduce hidden ABI arguments.
 
 Actor, effective nonisolated accessor, executor, unchecked Sendable and structured
 task-boundary metadata populate the existing isolation identity fields. Typed key

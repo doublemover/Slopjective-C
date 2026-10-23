@@ -119,6 +119,8 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                                   parameter, depth + 1);
         if (prototype->getExtParameterInfo(index).isNoEscape())
           AppendNativeContractField(out, parameter + ":noescape");
+        if (prototype->isParamConsumed(index))
+          AppendNativeContractField(out, parameter + ":ns-consumed");
       }
   }
 }
@@ -156,10 +158,15 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   }
   if (declaration->hasAttr<clang::NoThrowAttr>())
     AppendNativeContractField(ownership, "nothrow");
+  if (declaration->hasAttr<clang::NSConsumesSelfAttr>())
+    AppendNativeContractField(ownership, "ns-consumes-self");
   auto parameter = [&](const clang::ParmVarDecl *value, unsigned index) {
     if (value->hasAttr<clang::NoEscapeAttr>())
       AppendNativeContractField(
           ownership, "parameter[" + std::to_string(index) + "]:noescape");
+    if (value->hasAttr<clang::NSConsumedAttr>())
+      AppendNativeContractField(
+          ownership, "parameter[" + std::to_string(index) + "]:ns-consumed");
   };
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     for (unsigned i = 0; i < function->getNumParams(); ++i)

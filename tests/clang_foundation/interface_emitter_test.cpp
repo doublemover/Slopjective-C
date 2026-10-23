@@ -153,6 +153,83 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestConsumedAndMethodOwnershipRoundTrips() {
+  for (const char *language : {"objective-c", "objective-c++"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args = {
+          "-x",
+          language,
+          std::string(language) == "objective-c" ? "-std=c17" : "-std=c++20",
+          "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2",
+          "-fblocks",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc)
+        args.push_back("-fobjc-arc");
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(
+          R"(
+        void consume(__attribute__((ns_consumed)) id value);
+        void observe(__attribute__((noescape)) void (^body)(void));
+        __attribute__((objc_root_class)) @interface OwnershipRoot
+        - (void)consume:(__attribute__((ns_consumed)) id)value;
+        - (void)observe:(__attribute__((noescape)) void (^)(void))body;
+        - (id)retainedValue __attribute__((ns_returns_retained));
+        - (id)borrowedValue __attribute__((ns_returns_not_retained));
+        - (void)consumeSelf __attribute__((ns_consumes_self));
+        @end
+      )",
+          args, "ownership-contracts.m");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                           "fixture.consume", "test");
+      assert(emitted.success);
+      for (const char *attribute :
+           {"ns_consumed", "noescape", "ns_consumes_self",
+            "ns_returns_retained", "ns_returns_not_retained"})
+        assert(emitted.source_bytes.find(attribute) != std::string::npos);
+      const std::vector<llvm::StringRef> supported = {
+          "objc3.canonical-function-effects.v1",
+          "objc3.native-return-ownership.v1",
+          "objc3.native-ownership-contracts.v1",
+          "objc3.cxx-data-interfaces.v1"};
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes, supported);
+      assert(decoded);
+      bool parameter = false, receiver = false, method_return = false;
+      for (const auto &declaration : decoded->declarations) {
+        parameter |= declaration.effects.ownership_identity.find(
+                         "ns-consumed") != std::string::npos;
+        receiver |= declaration.effects.ownership_identity.find(
+                        "ns-consumes-self") != std::string::npos;
+        method_return |= declaration.kind == "ObjCMethod" &&
+                         declaration.effects.ownership_identity.starts_with(
+                             "native-return:retained");
+      }
+      assert(parameter && receiver && method_return);
+      auto reparsed = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes, args, "ownership-import.m");
+      assert(reparsed && !reparsed->getDiagnostics().hasErrorOccurred());
+      auto repeated = EmitSemanticInterface(reparsed->getASTContext(),
+                                            "fixture.consume", "test");
+      assert(repeated.success && repeated.identity.semantic_fingerprint ==
+                                     emitted.identity.semantic_fingerprint);
+    }
+  }
+  // A dropped parameter attribute can change hidden arguments even when the
+  // ordinary function pointer ABI appears to have the same source type.
+  auto unmodeled = clang::tooling::buildASTFromCodeWithArgs(
+      "int size(const char *const p __attribute__((pass_object_size(0))));",
+      {"-x", "c", "-std=c17"}, "unmodeled-param.c");
+  assert(unmodeled && !unmodeled->getDiagnostics().hasErrorOccurred());
+  auto rejected =
+      EmitSemanticInterface(unmodeled->getASTContext(), "fixture.size", "test");
+  assert(!rejected.success);
+  bool diagnosed = false;
+  for (const auto &diagnostic : rejected.diagnostics)
+    diagnosed |= diagnostic.code == "O3IFC116";
+  assert(diagnosed);
+}
+
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       "__attribute__((noinline)) int old_api(void);\n",
@@ -562,7 +639,7 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1"};
     std::string previous;
     for (const char *signature :
          {"int get() const __objc3_async __objc3_throws(id<First>);",
@@ -728,6 +805,7 @@ int main() {
   TestOrdinaryCDeclarationsRoundTrip();
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
+  TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIRoundTrips();
   TestCAsyncPhysicalABIImportBoundaries();

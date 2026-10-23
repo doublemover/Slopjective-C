@@ -117,7 +117,7 @@ install(DIRECTORY "${_objc3_repo}/stdlib/include/objc3"
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES "${_objc3_repo}/stdlib/module_inventory.json"
   DESTINATION share/objc3c/stdlib)
-foreach(_feature_fixture explicit_capture_lists typed_keypaths native_c_async)
+foreach(_feature_fixture explicit_capture_lists typed_keypaths native_c_async native_isolation)
   install(DIRECTORY "${_objc3_repo}/tests/clang_foundation/${_feature_fixture}"
     DESTINATION share/objc3c/examples/linux-features
     FILES_MATCHING PATTERN "*.h" PATTERN "*.m" PATTERN "*.mm"
@@ -131,6 +131,10 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cCon
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
+  add_executable(objc3_async_error_bridge_test
+    ../../../../tests/clang_foundation/structured_runtime/error_bridge.cpp)
+  target_link_libraries(objc3_async_error_bridge_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_async_error_bridge COMMAND objc3_async_error_bridge_test)
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
   target_link_libraries(objc3_keypath_service_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_keypath_service COMMAND objc3_keypath_service_test)
@@ -348,6 +352,7 @@ if (BUILD_TESTING)
       objc3_interface_import_api_test objc3_isolation_contracts_test
       objc3_explicit_capture_lists_test objc3_borrowed_pointers_test
       objc3_keypath_service_test objc3_keypath_native_ast_test
+      objc3_async_error_bridge_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
       objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test objc3_task_group_await_test
       objc3_generic_collection_service_test objc3_generic_associative_service_test

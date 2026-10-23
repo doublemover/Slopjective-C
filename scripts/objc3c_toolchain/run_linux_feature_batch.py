@@ -159,13 +159,21 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         output_name="provider.o")
                     foreign = compile_source(case, work / "foreign.cpp", work,
                         language="c++", standard="c++20", output_name="foreign.o")
+                    allocation = compile_source(case, work / "allocation_failure.m", work,
+                        language="objective-c", standard="c17", ownership=case.provider_ownership,
+                        output_name="allocation.o")
                     # The implementation source is absent during consumer/PCH compilation.
                     (work / "provider.m").unlink()
                     extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
                     client = work / ("client.m" if case.language == "objective-c" else "client.mm")
                     consumer = compile_source(case, client, work, extra=extra,
                                               output_name="consumer.o")
-                    execute(case, [provider, foreign, consumer], work)
+                    execute(case, [provider, foreign, allocation, consumer], work)
+                    if (case.language == "objective-c++" and case.transport == "source" and
+                            case.ownership == case.provider_ownership):
+                        raw = compile_source(case, work / "client.cpp", work,
+                            language="c++", standard=case.standard, output_name="raw.o")
+                        execute(case, [provider, foreign, allocation, raw], work, "-raw-cxx")
                 else:
                     extra = []
                     if case.transport == "pch":
@@ -181,6 +189,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     if case.feature == "captures" and "++" in case.language and case.transport == "source":
                         exception = compile_source(case, work / "exceptions.mm", work)
                         execute(case, [exception], work, "-exceptions")
+                    if case.feature == "captures" and case.ownership == "arc" and case.transport == "source":
+                        returns = compile_source(case, work / "return_failures.m", work)
+                        execute(case, [returns], work, "-return-cleanup")
                 report["cases"].append({"name": case.name, "status": "pass"})
             write_json(report_path, report)
         report["status"] = "pass"
