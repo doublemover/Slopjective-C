@@ -125,7 +125,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 0,
+        "minor": 1,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -136,10 +136,11 @@
         "immutable component metadata and native accessor dispatch",
         "cross-translation-unit type and descriptor identity",
         "record-field traversal and exact-once property writeback (authored)",
-        "exact writable-to-readonly narrowing and source-only type signatures (authored)"
+        "exact writable-to-readonly narrowing and source-only type signatures (authored)",
+        "bounded readonly nullable traversal and retained application operand snapshots (authored)"
       ],
       "remaining": [
-        "nullable-intermediate traversal",
+        "nullable chains with nonnull/scalar/aggregate results and writable traversal",
         "dependent, effectful and isolated paths",
         "borrowed and owned-resource value semantics",
         "optional KVC conversion and root indexing",
@@ -166,7 +167,7 @@
         "borrowed-pointer contracts, owner provenance and escape checking (authored)"
       ],
       "remaining": [
-        "temporary-owner materialization and remaining borrowed alias/escape boundaries",
+        "remaining borrowed alias/escape and required diagnostic boundaries",
         "complete strict-system diagnostics and ownership boundaries"
       ]
     }

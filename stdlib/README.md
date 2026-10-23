@@ -27,7 +27,8 @@ fake integer helpers and package metadata are no longer library inputs.
 `objc3.core`, `objc3.errors`, `objc3.text`, `objc3.collections` and
 `objc3.concurrency` are native imports. The development `objc3.system` module is
 available under `-fobjc3-profile=strict-system` and supplies Linux resource
-helpers. `objc3.keypath` remains unimplemented. Module presence does not claim a
+helpers. The partial native `objc3.keypath` module supplies typed paths and
+immutable metadata; its development version is 2.1.0. Module presence does not claim a
 complete Core or Strict profile.
 
 Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.
@@ -112,3 +113,11 @@ cancellation propagation, canonical main/global destinations and retained named
 executor lookup. The global destination has four workers; ordinary explicitly
 created executors keep their serial contract. These new slices await the
 coordinated validation batch.
+
+The authored key-path 2.1 source adds record-field writeback, exact readonly
+narrowing, opaque descriptor signatures, nested nullability identity and bounded
+readonly traversal through nullable receivers when the final value is a nullable
+object or Block. Native application snapshots keep owned pointer operands alive
+through later operand evaluation and unwind. Scalar/aggregate or nonnull results
+through nullable intermediates and writable nullable chains remain diagnosed.
+The current installed SDK does not establish validation of these additions.

@@ -23,7 +23,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 
 | Span | Authored implementation | Continued implementation |
 | --- | --- | --- |
-| Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, mutable aliases, lifetime snapshots, capture provenance and native identity | Dynamic global initialization, carrier payload/alias precision, noescape definition proofs, temporary-owner materialization and remaining diagnostic boundaries |
+| Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, mutable aliases, lifetime snapshots, capture provenance and native identity | Dynamic global initialization, carrier payload/alias precision, noescape definition proofs and remaining diagnostic boundaries |
 | Explicit captures | Strong/weak/unowned/move lists, independent object and resource owners, C++ creation move vs heap copy, qualified ARC carrier moves, captured take/reset/discard | Source-defer ordering for managed fields, full-expression temporary failure handoff, remaining native-EH CFG and destruction boundaries |
 | Async frames | Native C functions, methods and Blocks; lazy frame state machines; live storage, owned results/errors and child awaits; canonical frame-vs-task type identity and C++ frame bridge | Isolation entry integration, complete definition/storage boundary coverage and structured scope lowering |
 | Isolation/Sendable | Actor/executor/nonisolated/task metadata, state/call/transfer checks, transitive Sendable proof, exact identities and non-suspending await checks | Actual awaited main/global/named entry, retained actor-instance association, public spawn and complete Strict Concurrency behavior |
@@ -84,6 +84,17 @@ physical async ABI identity; old interfaces/packages must be rebuilt. Source,
 headers, objects, PCH, interfaces, packages and SDK artifacts must agree when a
 contract changes. Broad source-language/ownership projections remain gated until
 they preserve the complete declaration and physical ABI contract.
+
+Part 8.7.1 permits requiring explicit lifetime control for a nonstable borrowed
+owner. The implementation chooses that specified policy; automatic temporary
+owner materialization is an optional alternative, not a mandatory missing feature.
+
+The authored `scripts.objc3c_toolchain.run_linux_feature_batch` driver runs capture,
+key-path and native C async witnesses against an already-built compiler/runtime.
+It covers source/PCH, C17/C++20/C++23, ARC/MRC, O0/O2 and mixed async provider
+ownership in private temporary directories, retaining only logs and a batch
+report. Explicit compiler/header/library overrides support development testing
+without an SDK archive rebuild. The driver has not been executed in this phase.
 
 ## Existing evidence
 
