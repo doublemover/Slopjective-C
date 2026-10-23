@@ -90,6 +90,11 @@ int main() {
     }
     assert(failed);
   }
+  int pool_destructions = 0;
+  auto pools_frame = native_c_pools(&pool_destructions);
+  auto pools = objc3::task<int>::from_native(&pools_frame).start(executor);
+  pools.wait();
+  assert(pools.result() == 42 && pool_destructions == 4);
   for (int nested = 0; nested != 2; ++nested) {
     auto failed_frame = nested ? native_c_oom_parent() : native_c_force_oom();
     auto failed = objc3::task<int>::from_native(&failed_frame).start(executor);

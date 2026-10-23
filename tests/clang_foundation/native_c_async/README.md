@@ -8,7 +8,10 @@ The allocation interposer rejects one native factory allocation per thread and
 checks typed lazy OOM carriers, abandonment, cancellation before first resume,
 and OOM identity through C and C++ parents. Exercise ARC and MRC
 provider/consumer pairs, O0/O2, source
-inclusion and a PCH of `provider.h`.
+inclusion and a PCH of `provider.h`. Nested explicit pools check draining before
+each suspension, reconstruction on resume, lexical exit, and destruction after
+cancellation while tokens are inactive. Newly created object results check that
+source temporary owners are balanced after independent result publication.
 
 `client.m` consumes logical async declarations and the C runtime API. It checks
 lazy abandonment, failed starts preserving their owner, parent cancellation

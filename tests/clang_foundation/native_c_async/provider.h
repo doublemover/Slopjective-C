@@ -17,6 +17,7 @@ objc3_async_frame native_c_empty(int *cleanups);
 objc3_async_frame native_c_external_leaf(int value);
 objc3_async_frame native_c_roundtrip(int value);
 objc3_async_frame native_c_oom_parent(void);
+objc3_async_frame native_c_pools(int *destroyed);
 #else
 int native_c_leaf(int value, int *cleanups) __objc3_async_frame;
 int native_c_chain(int count, int *cleanups) __objc3_async_frame;
@@ -27,6 +28,7 @@ void native_c_empty(int *cleanups) __objc3_async_frame;
 int native_c_external_leaf(int value) __objc3_async_frame;
 int native_c_roundtrip(int value) __objc3_async_frame;
 int native_c_oom_parent(void) __objc3_async_frame;
+int native_c_pools(int *destroyed) __objc3_async_frame;
 #endif
 objc3_async_frame native_c_force_oom(void);
 objc3_async_frame native_c_make_method_frame(int mode, int *destroyed);
@@ -38,6 +40,7 @@ objc3_async_frame native_c_make_nil_await_frame(void);
 @protocol NativeCError <Error> @end
 typedef int (^native_c_block)(int);
 id native_c_object(id object, int *cleanups) __objc3_async_frame;
+id native_c_new_object(int *destroyed) __objc3_async_frame;
 native_c_block native_c_block_value(int value, int *cleanups) __objc3_async_frame;
 int native_c_throw(id<NativeCError> error) __objc3_async_frame __objc3_throws(id<NativeCError>);
 int native_c_propagate(id<NativeCError> error) __objc3_async_frame __objc3_throws(id<NativeCError>);

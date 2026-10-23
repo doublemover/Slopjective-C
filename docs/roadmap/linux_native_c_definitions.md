@@ -51,8 +51,12 @@ Block invocation owns a heap copy before suspension, preserving captures and
 superclass and direct messages use the physical frame result; nil messages return
 an empty carrier. Method and Block encodings describe that carrier.
 
-Returns first acquire independent result storage. Objects are retained and
-Blocks are copied while their lexical storage is live. A result is published
+Returns first acquire independent result storage. ARC source values acquire a
+temporary +1 that claims naturally retained results or retains/copies borrowed
+objects and Blocks, then releases it after the independent result copy. MRC
+isolation thunks adopt and balance the original synchronous target's declared
++1 result; ordinary MRC definitions keep their source ownership obligations.
+Objects are retained and Blocks are copied while lexical storage is live. A result is published
 only after lexical return cleanup, before final suspension. Failed result copies
 terminalize through an owned service-error completion without reporting an
 uninitialized success. A genuine cancelled status retains its cancellation
@@ -72,6 +76,15 @@ await scope exits. Child result extraction uses typed C copy-out; owned object
 and Block results become source-level +0 values through autorelease, so ARC
 locals can retain them across later execution slices. The runtime supplies the
 execution-slice autorelease pool and destination preservation.
+
+Explicit source `@autoreleasepool` scopes use frame-resident token slots. Native
+suspension drains active pools from inner to outer and stores null in every
+slot. Resume recreates them from outer to inner on the continuation's actual
+thread. Lexical exit pops only a currently live token; suspended-frame destruction
+cannot pop a token created on another execution slice or thread. This preserves
+bounded autorelease lifetime and permits the additional safe drain points in
+Part 7 §7.9.4. ARC owners survive those boundaries; MRC values crossing a drain
+still require explicit source ownership.
 
 Checked child errors enter the existing `try`, optionalization and typed-handler
 machinery. Error objects acquire an independent owner before the private child

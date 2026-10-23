@@ -148,3 +148,41 @@ static int native_c_nil_await(void) __objc3_async {
   return __objc3_await [worker value:42];
 }
 objc3_async_frame native_c_make_nil_await_frame(void) { return native_c_nil_await(); }
+
+extern void *source_autorelease(void *) __asm__("objc_autorelease");
+static void autoreleased_worker(int *destroyed) {
+  NativeCAsyncWorker *worker = [NativeCAsyncWorker new];
+  worker->destroyed = destroyed;
+#if __has_feature(objc_arc)
+  void *pending = (__bridge_retained void *)worker;
+#else
+  void *pending = (__bridge void *)worker;
+#endif
+  source_autorelease(pending);
+}
+int native_c_pools(int *destroyed) __objc3_async {
+  int before = __atomic_load_n(destroyed, __ATOMIC_ACQUIRE);
+  @autoreleasepool {
+    autoreleased_worker(destroyed);
+    @autoreleasepool {
+      autoreleased_worker(destroyed);
+      __objc3_await native_c_leaf(0, 0);
+      if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 2) return -1;
+      autoreleased_worker(destroyed);
+      __objc3_await native_c_leaf(0, 0);
+      if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 3) return -2;
+    }
+    autoreleased_worker(destroyed);
+  }
+  return __atomic_load_n(destroyed, __ATOMIC_ACQUIRE) == before + 4 ? 42 : -3;
+}
+
+id native_c_new_object(int *destroyed) __objc3_async {
+  NativeCAsyncWorker *worker = [NativeCAsyncWorker new];
+  worker->destroyed = destroyed;
+#if __has_feature(objc_arc)
+  return worker;
+#else
+  return (__bridge id)source_autorelease((__bridge void *)worker);
+#endif
+}
