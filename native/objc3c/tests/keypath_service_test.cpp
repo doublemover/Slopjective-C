@@ -51,4 +51,15 @@ int main() {
   assert(objc3_keypath_equal_v2(&descriptor, &other, &equal) ==
          OBJC3_KEYPATH_INCOMPATIBLE_ABI && equal == 0);
   assert(objc3_keypath_validate_v2(nullptr) == OBJC3_KEYPATH_INVALID_ARGUMENT);
+
+  const objc3_keypath_component_v2 fields[] = {
+      {"Root *", "Root", "pair", "struct Pair", "pair", "setPair:", 0, 0},
+      {"struct Pair", "struct Pair", "first", "long", "", "",
+       OBJC3_KEYPATH_COMPONENT_RECORD_FIELD, 0}};
+  objc3_keypath_descriptor_v2 field_path{
+      OBJC3_KEYPATH_ABI_VERSION, OBJC3_KEYPATH_WRITABLE, 2,
+      "Root *", "long", "pair.first", fields};
+  assert(objc3_keypath_validate_v2(&field_path) == OBJC3_KEYPATH_OK);
+  field_path.flags |= OBJC3_KEYPATH_KVC_COMPATIBLE;
+  assert(objc3_keypath_validate_v2(&field_path) == OBJC3_KEYPATH_INVALID_METADATA);
 }

@@ -25,15 +25,22 @@ extern "C" int objc3_keypath_validate_v2(
     const auto &component = descriptor->components[i];
     if (!present(component.owner_type) || !present(component.declaration_owner) ||
         !present(component.member) ||
-        !present(component.value_type) || !present(component.getter_selector) ||
+        !present(component.value_type) || !component.getter_selector ||
         !component.setter_selector || component.reserved ||
-        (component.flags & ~((1u << 7) - 1)) ||
+        (component.flags & ~((1u << 8) - 1)) ||
         ((component.flags & OBJC3_KEYPATH_COMPONENT_NULLABLE) &&
          (component.flags & OBJC3_KEYPATH_COMPONENT_NONNULL)))
       return OBJC3_KEYPATH_INVALID_METADATA;
     const bool readonly = component.flags & OBJC3_KEYPATH_COMPONENT_READONLY;
-    if (readonly != !*component.setter_selector)
+    const bool field = component.flags & OBJC3_KEYPATH_COMPONENT_RECORD_FIELD;
+    if (field) {
+      if (*component.getter_selector || *component.setter_selector ||
+          (descriptor->flags & OBJC3_KEYPATH_KVC_COMPATIBLE))
+        return OBJC3_KEYPATH_INVALID_METADATA;
+    } else if (!*component.getter_selector ||
+               readonly != !*component.setter_selector) {
       return OBJC3_KEYPATH_INVALID_METADATA;
+    }
     writable &= !readonly;
     if (i && !same(descriptor->components[i - 1].value_type,
                     component.owner_type))

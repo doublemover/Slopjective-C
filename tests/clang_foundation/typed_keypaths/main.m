@@ -58,6 +58,39 @@ int main(void) {
     KeyPathSet(runtime_pair_path(), root, pair);
     PathPair actual = KeyPathGet(runtime_pair_path(), root);
     assert(actual.first == 21 && actual.second == 22);
+    path_pair_reads = path_pair_sets = 0;
+    WritableKeyPath<RuntimePathNode *, long> first =
+        @keypath(RuntimePathNode, pair.first);
+    KeyPathSet(first, root, 41L);
+    assert(path_pair_reads == 1 && path_pair_sets == 1);
+    actual = KeyPathGet(runtime_pair_path(), root);
+    assert(actual.first == 41 && actual.second == 22);
+    assert(KeyPathGet(first, root) == 41);
+    const objc3_keypath_descriptor_v2 *field_metadata = KeyPathMetadata(first);
+    assert(!(field_metadata->flags & OBJC3_KEYPATH_KVC_COMPATIBLE));
+    assert(objc3_keypath_component_v2_at(field_metadata, 1, &part) == 0);
+    assert(part->flags & OBJC3_KEYPATH_COMPONENT_RECORD_FIELD);
+    assert(!*part->getter_selector && !*part->setter_selector);
+    path_throw_pair_getter = 1;
+    int sets_before_failure = path_pair_sets;
+    @try {
+      KeyPathSet(first, root, 99L);
+      assert(0);
+    } @catch (RuntimePathNode *failure) {
+      assert(failure == root);
+    }
+    path_throw_pair_getter = 0;
+    assert(path_pair_sets == sets_before_failure);
+    path_throw_pair_setter = 1;
+    @try {
+      KeyPathSet(first, root, 99L);
+      assert(0);
+    } @catch (RuntimePathNode *failure) {
+      assert(failure == root);
+    }
+    path_throw_pair_setter = 0;
+    actual = root.pair;
+    assert(actual.first == 41L && actual.second == 22L);
 
     // Property copying remains the native setter's job. The key-path record
     // stores no captured object and does not bypass copy/strong semantics.

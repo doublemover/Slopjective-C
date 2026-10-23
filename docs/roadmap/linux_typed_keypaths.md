@@ -48,6 +48,16 @@ unwinding use the existing compiler/runtime behavior. Application rejects an
 incompatible concrete root or nullable root. Setting a nonnull pointer property
 rejects a nullable or nil value. Readonly values cannot call `KeyPathSet`.
 
+Named, trivially copyable native records may be traversed through their direct
+accessible fields, including nested record fields. For a terminal record field,
+setting retains the exact property receiver through the operation, snapshots
+the record once, updates the selected field, and sends the original property's
+setter once. Sibling values survive the writeback. Precise lifetime bindings
+use the same ARC/MRC retain/release and unwind path as `withLifetime`; a native
+exception from the getter or setter releases the retained receiver. Atomic
+property accessors keep their individual native semantics; the complete
+read/modify/write sequence is not a new atomic transaction.
+
 The record contains typed getter/setter function pointers and an immutable
 descriptor pointer. It contains no root object, registry index, synthetic
 integer handle, or reset-generation state. Readonly and writable records carry
@@ -66,9 +76,13 @@ flags. Metadata storage has native-image lifetime. The runtime validates its
 ABI/shape, performs checked component lookup, and compares full structural
 identity across separately emitted descriptors. A readonly view retains the
 underlying chain descriptor; its static type still prevents setting.
+Native record fields carry a component-kind flag, empty selector strings, and
+their declaring record identity. Paths containing native fields clear the KVC
+compatibility bit.
 
-Current fail-closed boundaries are nullable intermediate traversal, record-field
-traversal, dependent types, nontrivial value payloads, async/throwing accessors,
+Current fail-closed boundaries are nullable intermediate traversal, dependent
+types, nontrivial/anonymous/union record traversal, inherited fields, bit-fields,
+reference fields, nontrivial value payloads, async/throwing accessors,
 actor-isolated/executor-affine properties, and borrowed or scalar resource
 ownership that would lose provenance through a value getter. Nullable final
 properties are supported. Optional `root[path]` sugar and explicit NSString KVC

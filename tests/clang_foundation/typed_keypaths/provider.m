@@ -4,9 +4,11 @@
 
 int path_child_reads, path_count_reads, path_count_sets;
 int path_copies, path_destroyed;
+int path_pair_reads, path_pair_sets;
+int path_throw_pair_getter, path_throw_pair_setter;
 
 @implementation RuntimePathNode
-@synthesize copied = _copied, pair = _pair;
+@synthesize copied = _copied;
 #if __has_feature(objc_arc)
 @synthesize observer = _observer;
 #endif
@@ -17,6 +19,16 @@ int path_copies, path_destroyed;
 }
 - (int)readCount { ++path_count_reads; return _count; }
 - (void)writeCount:(int)value { ++path_count_sets; _count = value; }
+- (PathPair)pair {
+  ++path_pair_reads;
+  if (path_throw_pair_getter) @throw self;
+  return _pair;
+}
+- (void)setPair:(PathPair)value {
+  ++path_pair_sets;
+  if (path_throw_pair_setter) @throw self;
+  _pair = value;
+}
 - (int)identity { return _count + 100; }
 - (RuntimePathNode *)readChild { ++path_child_reads; return _child; }
 - (void)writeChild:(RuntimePathNode *)child {

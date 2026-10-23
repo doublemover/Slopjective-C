@@ -33,16 +33,21 @@ clang::FunctionDecl *function(clang::ASTUnit &unit, llvm::StringRef name) {
 int main() {
   const char *source = R"objc(
 #include "runtime/public/objc3_keypath.h"
+typedef struct ASTPathPair { long first, second; } ASTPathPair;
 __attribute__((objc_root_class))
 @interface ASTPathRoot
 @property(nonatomic) int count;
 @property(nonatomic, readonly) int identity;
+@property(nonatomic) ASTPathPair pair;
 @end
 WritableKeyPath<ASTPathRoot *, int> writable_path(void) {
   return @keypath(ASTPathRoot, count);
 }
 KeyPath<ASTPathRoot *, int> readonly_path(void) {
   return @keypath(ASTPathRoot, identity);
+}
+WritableKeyPath<ASTPathRoot *, long> field_path(void) {
+  return @keypath(ASTPathRoot, pair.first);
 }
 )objc";
   auto provider = parse(source, "keypath-provider.mm");
@@ -79,4 +84,16 @@ KeyPath<ASTPathRoot *, int> readonly_path(void) {
   assert(printed.find("@keypath(ASTPathRoot * _Nonnull, count)") !=
          std::string::npos);
   assert(printed.find("__objc3_keypath_get_") == std::string::npos);
+  auto imported_field = importer.Import(function(*provider, "field_path"));
+  assert(imported_field);
+  auto *field_target = llvm::cast<clang::FunctionDecl>(*imported_field);
+  clang::ObjC3KeyPathInfo field_info;
+  assert(clang::getObjC3KeyPathInfo(field_target->getReturnType(), field_info));
+  assert(field_info.Set && field_info.Value->isIntegerType());
+  std::string field_printed;
+  llvm::raw_string_ostream field_out(field_printed);
+  field_target->print(field_out, policy);
+  field_out.flush();
+  assert(field_printed.find("@keypath(ASTPathRoot * _Nonnull, pair.first)") !=
+         std::string::npos);
 }

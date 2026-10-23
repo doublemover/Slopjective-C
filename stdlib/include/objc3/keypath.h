@@ -16,6 +16,9 @@
  * KeyPathAsReadOnly(kp) are compiler-owned applications. Each written operand
  * is evaluated once. Accessors use ordinary Objective-C dispatch, ownership,
  * and declared nullability. KeyPathSet requires a WritableKeyPath value.
+ * A native record-field set reads one property snapshot, updates the field,
+ * and writes that snapshot through the original setter exactly once. The
+ * receiver remains alive through that complete read/modify/write operation.
  *
  * Metadata is immutable and valid for the lifetime of its native image. No
  * registry, reset generation, integer handle, or root retain is involved.

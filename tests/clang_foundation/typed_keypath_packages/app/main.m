@@ -13,5 +13,10 @@ int main(void) {
     assert(objc3_keypath_validate_v2(metadata) == 0);
     assert(strstr(metadata->root_type, "objc-runtime=") != 0);
     assert(!strcmp(metadata->path, "count"));
+    PackagePathPair pair = {1L, 17L};
+    root.pair = pair;
+    KeyPathSet(package_field_path(), root, 42L);
+    pair = root.pair;
+    assert(pair.first == 42L && pair.second == 17L);
   }
 }

@@ -23,7 +23,8 @@ enum objc3_keypath_component_flags_v2 {
   OBJC3_KEYPATH_COMPONENT_COPY = 1u << 3,
   OBJC3_KEYPATH_COMPONENT_STRONG = 1u << 4,
   OBJC3_KEYPATH_COMPONENT_ATOMIC = 1u << 5,
-  OBJC3_KEYPATH_COMPONENT_NONNULL = 1u << 6
+  OBJC3_KEYPATH_COMPONENT_NONNULL = 1u << 6,
+  OBJC3_KEYPATH_COMPONENT_RECORD_FIELD = 1u << 7
 };
 
 typedef struct objc3_keypath_component_v2 {
@@ -31,8 +32,8 @@ typedef struct objc3_keypath_component_v2 {
   const char *declaration_owner;
   const char *member;
   const char *value_type;
-  const char *getter_selector;
-  const char *setter_selector; /* Empty for a readonly property. */
+  const char *getter_selector; /* Empty for a native record field. */
+  const char *setter_selector; /* Empty for readonly properties/record fields. */
   uint32_t flags;
   uint32_t reserved;
 } objc3_keypath_component_v2;

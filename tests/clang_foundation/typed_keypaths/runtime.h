@@ -7,6 +7,8 @@
 typedef struct PathPair { long first, second; } PathPair;
 extern int path_child_reads, path_count_reads, path_count_sets;
 extern int path_copies, path_destroyed;
+extern int path_pair_reads, path_pair_sets;
+extern int path_throw_pair_getter, path_throw_pair_setter;
 
 __attribute__((objc_root_class))
 @interface RuntimePathNode {
