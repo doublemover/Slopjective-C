@@ -676,7 +676,7 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..28f1f26a4 100644
+index fdefb6d6b..e32759c03 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
 @@ -1653,6 +1653,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
@@ -788,7 +788,38 @@ index fdefb6d6b..28f1f26a4 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
-@@ -3013,3 +3115,9 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+@@ -1730,7 +1832,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
+ 
+ void StmtProfiler::VisitBlockExpr(const BlockExpr *S) {
+   VisitExpr(S);
+-  VisitDecl(S->getBlockDecl());
++  const BlockDecl *Block = S->getBlockDecl();
++  VisitDecl(Block);
++  ID.AddBoolean(Block->hasObjC3CaptureList());
++  ID.AddBoolean(Block->capturesCXXThis());
++  ID.AddInteger(Block->getNumCaptures());
++  for (const auto &Capture : Block->captures()) {
++    VisitDecl(Capture.getVariable());
++    VisitType(Capture.getCaptureType());
++    ID.AddInteger(static_cast<unsigned>(Capture.getObjC3CaptureKind()));
++    ID.AddBoolean(Capture.isObjC3ResourceCapture());
++    ID.AddBoolean(Capture.isByRef());
++    ID.AddBoolean(Capture.isNested());
++    ID.AddBoolean(Capture.getObjC3InitExpr());
++    if (Capture.getObjC3InitExpr())
++      Visit(Capture.getObjC3InitExpr());
++    ID.AddBoolean(Capture.hasCopyExpr());
++    if (Capture.hasCopyExpr())
++      Visit(Capture.getCopyExpr());
++  }
++  // BlockExpr deliberately has no children: capture/body identity must be
++  // profiled explicitly or a different capture order/ownership can hash equal.
++  if (Block->getBody())
++    Visit(Block->getBody());
+ }
+ 
+ void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
+@@ -3013,3 +3137,9 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
    StmtProfilerWithoutPointers Profiler(ID, Hash);
    Profiler.Visit(this);
  }
@@ -799,7 +830,7 @@ index fdefb6d6b..28f1f26a4 100644
 +  VisitStmt(S->getStorage());
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..189a4fa3b 100644
+index 74209f579..ef5c46ae7 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -847,16 +878,25 @@ index 74209f579..189a4fa3b 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,73 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,89 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        NextToken().is(tok::l_paren) &&
++        (Tok.getIdentifierInfo()->isStr("KeyPathGet") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathSet") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathMetadata") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathAsReadOnly"))) {
++      Res = ParseObjC3KeyPathApplication();
++      break;
++    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
 +        Tok.getIdentifierInfo()->isStr("__objc3_await")) {
 +      SourceLocation AwaitLoc = ConsumeToken();
 +      const auto *FT = getObjC3CallableFunctionType(
 +          Decl::castFromDeclContext(Actions.CurContext));
-+      if (!getLangOpts().CPlusPlus20 || !FT ||
++      if ((getLangOpts().CPlusPlus && !getLangOpts().CPlusPlus20) || !FT ||
 +          !FT->getObjC3FunctionEffects().Async) {
 +        Diag(AwaitLoc, diag::err_objc3_await_context);
 +        return ExprError();
@@ -864,8 +904,15 @@ index 74209f579..189a4fa3b 100644
 +      if (NotPrimaryExpression)
 +        *NotPrimaryExpression = true;
 +      Res = ParseCastExpression(CastParseKind::AnyCastExpr);
++      if (!Res.isInvalid() && Actions.DiagnoseObjC3AwaitIsolation(Res.get()))
++        return ExprError();
++      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
++          Actions.isObjC3NonSuspendingAwait(Res.get()))
++        return Actions.ActOnObjC3NonSuspendingAwait(AwaitLoc, Res.get());
 +      if (!Res.isInvalid())
-+        Res = Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get());
++        Res = getLangOpts().CPlusPlus
++                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get())
++                  : Actions.ActOnObjC3CAwaitExpr(AwaitLoc, Res.get());
 +      return Res;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
@@ -921,7 +968,7 @@ index 74209f579..189a4fa3b 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1709,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1725,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -929,7 +976,7 @@ index 74209f579..189a4fa3b 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2012,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2028,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }
@@ -951,6 +998,73 @@ index 74209f579..189a4fa3b 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
+@@ -3330,6 +3439,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+   // Inform sema that we are starting a block.
+   Actions.ActOnBlockStart(CaretLoc, getCurScope());
+ 
++  // Ownership is contextual here: weak/strong/unowned/move remain ordinary
++  // identifiers everywhere outside the modifier position of a capture item.
++  if (Tok.is(tok::l_square)) {
++    BalancedDelimiterTracker Captures(*this, tok::l_square);
++    Captures.consumeOpen();
++    auto CaptureError = [&](SourceLocation Loc, StringRef Message) {
++      Diag(Loc, PP.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                    DiagnosticIDs::Error, Message));
++    };
++    if (Tok.is(tok::r_square))
++      CaptureError(Tok.getLocation(),
++                   "an explicit Block capture list requires a capture item");
++    while (Tok.isNot(tok::r_square) && Tok.isNot(tok::eof)) {
++      SourceLocation Begin = Tok.getLocation();
++      unsigned Kind = static_cast<unsigned>(BlockDecl::ObjC3CaptureKind::Strong);
++      if (Tok.is(tok::code_completion)) {
++        Actions.CodeCompletion().CodeCompleteOrdinaryName(
++            getCurScope(), SemaCodeCompletion::PCC_Expression);
++        cutOffParsing();
++        break;
++      }
++      IdentifierInfo *Name = Tok.is(tok::identifier) ? Tok.getIdentifierInfo()
++                                                    : nullptr;
++      if (!Name) {
++        CaptureError(Begin, "expected an identifier in Block capture list");
++        SkipUntil(tok::comma, tok::r_square, StopBeforeMatch);
++      } else {
++        StringRef Spelling = Name->getName();
++        if ((Spelling == "strong" || Spelling == "weak" ||
++             Spelling == "unowned" || Spelling == "move") &&
++            NextToken().is(tok::identifier)) {
++          Kind = static_cast<unsigned>(
++              Spelling == "weak" ? BlockDecl::ObjC3CaptureKind::Weak :
++              Spelling == "unowned" ? BlockDecl::ObjC3CaptureKind::Unowned :
++              Spelling == "move" ? BlockDecl::ObjC3CaptureKind::Move :
++                                    BlockDecl::ObjC3CaptureKind::Strong);
++          ConsumeToken();
++          Name = Tok.getIdentifierInfo();
++        }
++        SourceLocation NameLoc = ConsumeToken();
++        Actions.ActOnObjC3BlockCapture(Name, Kind, SourceRange(Begin, NameLoc),
++                                       getCurScope());
++        if (Tok.isNot(tok::comma) && Tok.isNot(tok::r_square)) {
++          CaptureError(Tok.getLocation(),
++                       "expected ',' or ']' after Block capture item");
++          SkipUntil(tok::comma, tok::r_square, StopBeforeMatch);
++        }
++      }
++      if (Tok.isNot(tok::comma))
++        break;
++      ConsumeToken();
++      if (Tok.is(tok::r_square))
++        CaptureError(Tok.getLocation(),
++                     "expected a Block capture item after ','");
++    }
++    Captures.consumeClose();
++    Actions.ActOnObjC3BlockCaptureList(
++        SourceRange(Captures.getOpenLocation(), Captures.getCloseLocation()));
++  }
++
+   // Parse the return type if present.
+   DeclSpec DS(AttrFactory);
+   Declarator ParamInfo(DS, ParsedAttributesView::none(),
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
 index 0ed5c35c4..f917f804b 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
