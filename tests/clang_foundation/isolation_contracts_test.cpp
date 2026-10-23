@@ -411,6 +411,57 @@ int unchecked_sync(void) __objc3_async { return __objc3_await throwing_sync(); }
            "throwing call requires an explicit");
 }
 
+void CheckExecutorEntryIR(bool Cxx, bool Arc, const std::string &Standard) {
+  namespace fs = std::filesystem;
+  auto Directory =
+      fs::temp_directory_path() /
+      ("objc3-isolation-ir-" +
+       std::to_string(
+           std::chrono::steady_clock::now().time_since_epoch().count()));
+  fs::create_directory(Directory);
+  const std::string Header = Cxx ? "#include \"objc3_task.hpp\"\n"
+                                 : "#include \"objc3_runtime_services.h\"\n";
+  const std::string NoThrow = Cxx ? " noexcept" : "";
+  const std::string CLinkage = Cxx ? "extern \"C\" " : "";
+  auto R = Request(
+      Header + Root.str() + CLinkage + "int next_value(void)" + NoThrow +
+          ";\n" + CLinkage + "int consume_main(int, SafeMessage *)" + NoThrow +
+          " __attribute__((objc_executor(main)));\n" + CLinkage +
+          "int consume_global(int)" + NoThrow +
+          " __attribute__((objc_executor(global)));\n" + CLinkage +
+          "int consume_named(int)" + NoThrow +
+          " __attribute__((objc_executor(named(\"ir.destination\"))));\n" + R"(
+int executor_ir(SafeMessage *message) __objc3_async {
+  int value = __objc3_await consume_main(next_value(), message);
+  value = __objc3_await consume_global(value);
+  return __objc3_await consume_named(value);
+}
+)",
+      Cxx, Arc, Standard);
+  R.emit = EmitKind::LLVM;
+  R.arguments.insert(R.arguments.end(), {"-Xclang", "-disable-llvm-passes"});
+  R.output_path = (Directory / "entry.ll").string();
+  Success(Compile(R));
+  std::ifstream Stream(R.output_path);
+  std::string IR{std::istreambuf_iterator<char>(Stream), {}};
+  for (auto Symbol : {"@objc3_executor_get_main", "@objc3_executor_get_global",
+                      "@objc3_executor_get_named", "@objc3_executor_is_current",
+                      "@objc3_executor_release", "@objc3_task_hop",
+                      "@objc3_task_await", "@llvm.coro.suspend"})
+    assert(IR.find(Symbol) != std::string::npos);
+  assert(IR.find("ir.destination") != std::string::npos);
+  assert(IR.find("named:ir.destination") == std::string::npos);
+  // One original source argument call plus its external declaration. Frame
+  // construction and resumption must not re-evaluate the source expression.
+  unsigned Occurrences = 0;
+  for (size_t Position = 0;
+       (Position = IR.find("@next_value(", Position)) != std::string::npos;
+       ++Position)
+    ++Occurrences;
+  assert(Occurrences == 2);
+  fs::remove_all(Directory);
+}
+
 void CheckPrintAndPersistence(bool Cxx, bool Arc) {
   const std::string Source = Root.str() + R"(
 __attribute__((objc_executor(named("db.\"quoted\"")))) int named_entry(void);
@@ -585,10 +636,12 @@ int main() {
     CheckSource(false, Arc, "c17");
     CheckPrintAndPersistence(false, Arc);
     CheckAwaitBoundaries(false, Arc, "c17");
+    CheckExecutorEntryIR(false, Arc, "c17");
     for (const std::string Standard : {"c++20", "c++23"}) {
       CheckSource(true, Arc, Standard);
       CheckConcurrentCaptures(Arc, Standard);
       CheckAwaitBoundaries(true, Arc, Standard);
+      CheckExecutorEntryIR(true, Arc, Standard);
     }
     CheckPrintAndPersistence(true, Arc);
   }
