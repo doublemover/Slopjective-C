@@ -128,3 +128,29 @@ not prove same actor instance isolation. C and C++ fixtures author owned-name,
 case-sensitive identity, idempotence/conflict, registration-race, retained-client
 retirement, and reentrant registry access during last-worker shutdown witnesses.
 No execution or installed export qualification is claimed yet.
+
+## Allocation-independent async service failures
+
+Native C frame service failures use
+`objc3_async_error_create_service(status, &error)` and
+`objc3_async_error_get_service(error, &status)`. Each bounded nonzero service
+failure has an immutable process-owned error in static placement storage.
+Materializing or retaining it allocates nothing and cannot saturate a reference
+count, including while reporting `OUT_OF_MEMORY`. Ordinary owned-error
+retain/release usage remains valid. `OK`, `CANCELLED`, and unknown statuses are
+rejected, preserving genuine cancellation as its distinct completion kind.
+
+C++ task results and awaits recognize this transport and throw
+`service_failure(status)` before considering native exception or generic task
+error payloads. Native empty-child/invalid-await failures can therefore retain
+their original status through independent C frames and C++ consumers. Authored
+witnesses cover all service statuses, independent shared error owners, ordinary
+error mismatch, and C-frame publication observed by both C++ result access and
+suspended awaiters. Validation is deferred.
+
+C++ promise publication uses the same transport when result copying or native
+exception-error allocation fails. Missing foreign exception carriers and failed
+owned-error retention also remain explicit service failures. Only an actual
+cancellation representation produces a cancelled completion. An authored
+throwing-copy witness checks that `OUT_OF_MEMORY` survives result publication
+and native frame cleanup rather than becoming cancellation.

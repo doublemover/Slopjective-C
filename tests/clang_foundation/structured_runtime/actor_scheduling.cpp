@@ -237,7 +237,7 @@ enum class ContinuationLoss { ActorDiscard, ClosedHop, ThrowingResume };
 struct LostContinuation {
   objc3_executor_t *other{};
   objc3_actor_t *closed_destination{};
-  objc3_task_t *dependency{}, *child{};
+  objc3_task_t *dependency{}, *parent_dependency{}, *child{};
   unsigned parent_resumes{0}, child_resumes{0};
   unsigned parent_destroyed{0}, child_destroyed{0};
   ContinuationLoss loss{};
@@ -269,7 +269,7 @@ void lost_parent_resume(objc3_task_t *task, void *opaque) {
     options.resume = lost_child_resume;
     options.destroy = lost_child_destroy;
     assert(objc3_task_start_child(task, &options, &state.child) == OBJC3_SERVICE_OK);
-    assert(objc3_task_await(task, state.dependency) == OBJC3_SERVICE_OK);
+    assert(objc3_task_await(task, state.parent_dependency) == OBJC3_SERVICE_OK);
     return;
   }
   if (state.loss == ContinuationLoss::ThrowingResume) throw 17;
@@ -294,6 +294,7 @@ void lost_continuation_cancels_descendants(ContinuationLoss loss) {
   options.executor = executor;
   options.resume = lost_dependency_resume;
   assert(objc3_task_start(&options, &state.dependency) == OBJC3_SERVICE_OK);
+  assert(objc3_task_start(&options, &state.parent_dependency) == OBJC3_SERVICE_OK);
   options.executor = nullptr;
   options.actor = actor;
   options.frame = &state;
@@ -305,11 +306,14 @@ void lost_continuation_cancels_descendants(ContinuationLoss loss) {
   assert(objc3_executor_pump(executor, 16, &executed) == OBJC3_SERVICE_OK);
   assert(objc3_executor_pump(state.other, 16, &executed) == OBJC3_SERVICE_OK);
   assert(state.parent_resumes == 1 && state.child_resumes == 2);
-  assert(objc3_task_schedule_resume(parent) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_SUCCESS;
+  assert(objc3_task_complete(state.parent_dependency, &completion) == OBJC3_SERVICE_OK);
   if (loss == ContinuationLoss::ActorDiscard)
     assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_pump(executor, 16, &executed) == OBJC3_SERVICE_OK);
-  objc3_completion completion{};
   assert(objc3_task_get_completion(parent, &completion) == OBJC3_SERVICE_OK);
   assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
   assert(objc3_task_is_cancel_requested(parent));
@@ -329,6 +333,7 @@ void lost_continuation_cancels_descendants(ContinuationLoss loss) {
   objc3_task_release(parent);
   objc3_task_release(state.child);
   objc3_task_release(state.dependency);
+  objc3_task_release(state.parent_dependency);
   assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
   assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
   assert(objc3_actor_join(state.closed_destination) == OBJC3_SERVICE_OK);

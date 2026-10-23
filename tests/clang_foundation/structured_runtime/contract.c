@@ -557,6 +557,13 @@ int main(void) {
   child_cancellation(0, 0, 1, 0);
   child_cancellation(0, 0, 0, 1);
   objc3_executor_t *main_executor = NULL, *global_executor = NULL;
+  objc3_error_t *service_error = NULL;
+  objc3_service_status service_status = OBJC3_SERVICE_OK;
+  assert(objc3_async_error_create_service(OBJC3_SERVICE_OUT_OF_MEMORY,
+                                          &service_error) == OBJC3_SERVICE_OK);
+  assert(objc3_async_error_get_service(service_error, &service_status) ==
+         OBJC3_SERVICE_OK && service_status == OBJC3_SERVICE_OUT_OF_MEMORY);
+  objc3_error_release(service_error);
   objc3_executor_t *main_again = NULL, *global_again = NULL;
   assert(objc3_executor_get_main(&main_executor) == OBJC3_SERVICE_OK);
   assert(objc3_executor_get_global(&global_executor) == OBJC3_SERVICE_OK);

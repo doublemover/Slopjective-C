@@ -96,6 +96,16 @@ objc3_error_t *objc3_error_retain(objc3_error_t *error);
 void objc3_error_release(objc3_error_t *error);
 const void *objc3_error_payload(const objc3_error_t *error);
 const objc3_value_ops *objc3_error_payload_ops(const objc3_error_t *error);
+/* Async service-failure transport, distinct from cancellation and checked
+ * language errors. Creation returns an owned immutable shared error without
+ * allocating, including OUT_OF_MEMORY. Retain/release obey ordinary owned-error
+ * usage; the process retains the backing error. OK, CANCELLED, and unknown
+ * statuses are INVALID_ARGUMENT and clear out_error. get_service returns
+ * TYPE_MISMATCH for other errors without modifying out_status. */
+objc3_service_status objc3_async_error_create_service(
+    objc3_service_status status, objc3_error_t **out_error);
+objc3_service_status objc3_async_error_get_service(
+    const objc3_error_t *error, objc3_service_status *out_status);
 
 typedef enum objc3_completion_kind {
   OBJC3_COMPLETION_SUCCESS = 0,

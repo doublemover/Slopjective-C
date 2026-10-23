@@ -762,6 +762,81 @@ void worker_registration_races() {
   objc3_executor_release(producer);
   objc3_executor_release(consumer);
 }
+
+objc3::task<int> catch_service_status(objc3::task_handle<int> dependency,
+                                     objc3_service_status expected) {
+  try {
+    (void)co_await dependency;
+  } catch (const objc3::service_failure &failure) {
+    assert(failure.status() == expected);
+    co_return 73;
+  }
+  assert(false);
+  co_return 0;
+}
+void service_status_error_crosses_c_frame_and_cpp_await() {
+  auto *destination = executor();
+  for (const auto status : {OBJC3_SERVICE_INVALID_ARGUMENT,
+                            OBJC3_SERVICE_OUT_OF_MEMORY,
+                            OBJC3_SERVICE_TYPE_MISMATCH}) {
+    HeldFrame frame;
+    auto *raw = start_held(destination, frame, objc3::task_detail::result_type<int>());
+    auto handle = objc3::task_handle<int>::adopt_native(&raw);
+    auto waiting = catch_service_status(handle, status).start(destination);
+    pump(destination);
+    objc3_error_t *error = nullptr;
+    assert(objc3_async_error_create_service(status, &error) == OBJC3_SERVICE_OK);
+    objc3_completion completion{};
+    completion.struct_size = sizeof(completion);
+    completion.version = OBJC3_SERVICE_ABI_VERSION;
+    completion.kind = OBJC3_COMPLETION_ERROR;
+    completion.error = error;
+    assert(objc3_task_complete(handle.native_handle(), &completion) == OBJC3_SERVICE_OK);
+    objc3_error_release(error);
+    pump(destination);
+    assert(waiting.result() == 73 && frame.destroyed == 1);
+    bool caught = false;
+    try { (void)handle.result(); }
+    catch (const objc3::service_failure &failure) {
+      caught = failure.status() == status;
+    }
+    assert(caught);
+  }
+  objc3_executor_release(destination);
+}
+
+struct CopyAllocationFailure {
+  std::shared_ptr<std::atomic<unsigned>> live;
+  explicit CopyAllocationFailure(std::shared_ptr<std::atomic<unsigned>> count)
+      : live(std::move(count)) { ++*live; }
+  CopyAllocationFailure(CopyAllocationFailure &&other) noexcept
+      : live(std::move(other.live)) {}
+  CopyAllocationFailure(const CopyAllocationFailure &) { throw std::bad_alloc(); }
+  ~CopyAllocationFailure() { if (live) --*live; }
+};
+objc3::task<CopyAllocationFailure> fail_result_copy(
+    std::shared_ptr<std::atomic<unsigned>> live) {
+  co_return CopyAllocationFailure(std::move(live));
+}
+void cpp_result_copy_failure_preserves_oom() {
+  auto *destination = executor();
+  auto live = std::make_shared<std::atomic<unsigned>>(0);
+  auto failed = fail_result_copy(live).start(destination);
+  pump(destination);
+  objc3_completion completion{};
+  assert(objc3_task_get_completion(failed.native_handle(), &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == OBJC3_COMPLETION_ERROR && completion.error);
+  objc3_service_status status = OBJC3_SERVICE_OK;
+  assert(objc3_async_error_get_service(completion.error, &status) == OBJC3_SERVICE_OK);
+  assert(status == OBJC3_SERVICE_OUT_OF_MEMORY && *live == 0);
+  bool caught = false;
+  try { (void)failed.result(); }
+  catch (const objc3::service_failure &failure) {
+    caught = failure.status() == OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  assert(caught);
+  objc3_executor_release(destination);
+}
 } // namespace
 
 int main() {
@@ -780,4 +855,6 @@ int main() {
   next_worker_registration_races();
   next_failed_and_cancelled_results();
   many_group_observation_lifetimes();
+  service_status_error_crosses_c_frame_and_cpp_await();
+  cpp_result_copy_failure_preserves_oom();
 }

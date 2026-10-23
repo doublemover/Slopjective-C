@@ -1078,6 +1078,40 @@ void test_completed_group_registration_survives_reentrant_last_owner_release() {
   objc3_executor_release(executor);
 }
 
+void test_service_status_errors_are_owned_and_distinct_from_cancellation() {
+  for (int value = OBJC3_SERVICE_INVALID_ARGUMENT;
+       value <= OBJC3_SERVICE_TYPE_MISMATCH; ++value) {
+    const auto status = static_cast<objc3_service_status>(value);
+    if (status == OBJC3_SERVICE_CANCELLED) continue;
+    objc3_error_t *error = nullptr, *same = nullptr;
+    assert(objc3_async_error_create_service(status, &error) == OBJC3_SERVICE_OK);
+    assert(objc3_async_error_create_service(status, &same) == OBJC3_SERVICE_OK);
+    assert(error && same == error);
+    const auto *ops = objc3_error_payload_ops(error);
+    assert(ops && objc3_value_ops_validate(ops) == OBJC3_SERVICE_OK);
+    assert(*static_cast<const objc3_service_status *>(objc3_error_payload(error)) == status);
+    auto *retained = objc3_error_retain(error);
+    objc3_error_release(error);
+    objc3_error_release(same);
+    objc3_service_status recovered = OBJC3_SERVICE_OK;
+    assert(objc3_async_error_get_service(retained, &recovered) == OBJC3_SERVICE_OK);
+    assert(recovered == status);
+    objc3_error_release(retained);
+  }
+  objc3_error_t *invalid = reinterpret_cast<objc3_error_t *>(1);
+  assert(objc3_async_error_create_service(OBJC3_SERVICE_OK, &invalid) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT && !invalid);
+  assert(objc3_async_error_create_service(OBJC3_SERVICE_CANCELLED, &invalid) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT && !invalid);
+  int ordinary_payload = 91;
+  objc3_error_t *ordinary = nullptr;
+  assert(objc3_error_create(&ordinary_payload, &int_ops, &ordinary) == OBJC3_SERVICE_OK);
+  objc3_service_status unchanged = OBJC3_SERVICE_CLOSED;
+  assert(objc3_async_error_get_service(ordinary, &unchanged) ==
+         OBJC3_SERVICE_TYPE_MISMATCH && unchanged == OBJC3_SERVICE_CLOSED);
+  objc3_error_release(ordinary);
+}
+
 void test_group_failure_release_defers_reentrant_destruction_until_unlocked() {
   using namespace objc3::services;
   auto *executor = manual_executor();
@@ -1689,6 +1723,7 @@ void test_actor_scheduling();
 int main() {
   test_actor_scheduling();
   test_completed_group_registration_survives_reentrant_last_owner_release();
+  test_service_status_errors_are_owned_and_distinct_from_cancellation();
   test_same_executor_pending_wait_returns_not_ready();
   test_task_pending_self_wait_returns_not_ready();
   test_zero_payload_and_reentry();

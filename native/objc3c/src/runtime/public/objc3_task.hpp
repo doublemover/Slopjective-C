@@ -66,6 +66,13 @@ inline void check(objc3_service_status status) {
     throw service_failure(status);
 }
 
+inline objc3_error_t *service_error(objc3_service_status status) noexcept {
+  objc3_error_t *error = nullptr;
+  if (objc3_async_error_create_service(status, &error) != OBJC3_SERVICE_OK || !error)
+    std::terminate();
+  return error;
+}
+
 template <class T> struct value_ops;
 
 template <class T, class = void> struct result_traits {
@@ -233,6 +240,10 @@ inline void rethrow_completion(const objc3_completion &completion) {
     throw task_cancelled();
   if (completion.kind != OBJC3_COMPLETION_ERROR)
     return;
+  objc3_service_status service_status;
+  if (objc3_async_error_get_service(completion.error, &service_status) ==
+      OBJC3_SERVICE_OK)
+    throw service_failure(service_status);
   const auto *ops = objc3_error_payload_ops(completion.error);
   if (ops && ops->copy_init == value_ops<std::exception_ptr>::copy)
     std::rethrow_exception(*static_cast<const std::exception_ptr *>(
@@ -642,13 +653,18 @@ public:
       objc3_error_t *error = nullptr;
       if (__objc3_error_raised && !failed) {
         error = objc3_error_retain(__objc3_error);
-        completion.kind = error ? OBJC3_COMPLETION_ERROR
-                                : OBJC3_COMPLETION_CANCELLED;
+        if (!error)
+          error = task_detail::service_error(__objc3_error
+                      ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
+        completion.kind = OBJC3_COMPLETION_ERROR;
         completion.error = error;
       } else if (failed && !failure) {
         // A foreign exception may have no C++ exception_ptr representation.
-        // It must never publish an uninitialized successful result.
-        completion.kind = OBJC3_COMPLETION_CANCELLED;
+        // Preserve failure when no native exception carrier is available;
+        // this is neither a successful result nor a cancellation request.
+        error = task_detail::service_error(OBJC3_SERVICE_INVALID_ARGUMENT);
+        completion.kind = OBJC3_COMPLETION_ERROR;
+        completion.error = error;
       } else if (failed) {
         try {
           std::rethrow_exception(failure);
@@ -656,14 +672,18 @@ public:
           completion.kind = OBJC3_COMPLETION_CANCELLED;
         } catch (const task_error &foreign) {
           error = objc3_error_retain(foreign.native_handle());
+          if (!error)
+            error = task_detail::service_error(foreign.native_handle()
+                        ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
           completion.kind = OBJC3_COMPLETION_ERROR;
         } catch (...) {
           completion.kind = OBJC3_COMPLETION_ERROR;
-          if (objc3_error_create(
+          const auto status = objc3_error_create(
                   &failure,
                   &task_detail::value_ops<std::exception_ptr>::descriptor,
-                  &error) != OBJC3_SERVICE_OK)
-            completion.kind = OBJC3_COMPLETION_CANCELLED;
+                  &error);
+          if (status != OBJC3_SERVICE_OK)
+            error = task_detail::service_error(status);
         }
         completion.error = error;
       } else {
@@ -673,12 +693,23 @@ public:
       objc3_error_release(error);
       if (status != OBJC3_SERVICE_OK &&
           status != OBJC3_SERVICE_ALREADY_COMPLETED) {
-        // A failed result copy must still terminalize and reclaim the frame.
+        // A failed result copy is a service failure, including OOM. Preserve
+        // its status instead of making it indistinguishable from cancellation.
         completion = {};
         completion.struct_size = sizeof(completion);
         completion.version = OBJC3_SERVICE_ABI_VERSION;
-        completion.kind = OBJC3_COMPLETION_CANCELLED;
-        (void)objc3_task_complete(owner, &completion);
+        if (status == OBJC3_SERVICE_CANCELLED) {
+          completion.kind = OBJC3_COMPLETION_CANCELLED;
+        } else {
+          completion.kind = OBJC3_COMPLETION_ERROR;
+          error = task_detail::service_error(status);
+          completion.error = error;
+        }
+        const auto published = objc3_task_complete(owner, &completion);
+        if (completion.error) objc3_error_release(completion.error);
+        if (published != OBJC3_SERVICE_OK &&
+            published != OBJC3_SERVICE_ALREADY_COMPLETED)
+          std::terminate();
       }
     }
     static void resume(objc3_task_t *owner, void *frame) noexcept {
