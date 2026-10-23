@@ -5,15 +5,29 @@
 #include <string.h>
 
 static int path_evaluations, root_evaluations, value_evaluations;
+static int operand_sequence;
 static WritableKeyPath<RuntimePathNode *, int> once_path(void) {
   ++path_evaluations;
+  operand_sequence = operand_sequence * 10 + 1;
   return runtime_nested_path();
 }
 static RuntimePathNode *once_root(RuntimePathNode *root) {
   ++root_evaluations;
+  operand_sequence = operand_sequence * 10 + 2;
   return root;
 }
-static int once_value(void) { ++value_evaluations; return 42; }
+static int once_value(void) {
+  ++value_evaluations;
+  operand_sequence = operand_sequence * 10 + 3;
+  return 42;
+}
+static KeyPath<RuntimePathNode *, int> once_readonly_return(void) {
+  return once_path();
+}
+static int consume_readonly(KeyPath<RuntimePathNode *, int> path,
+                            RuntimePathNode * _Nonnull root) {
+  return KeyPathGet(path, root);
+}
 
 int main(void) {
   @autoreleasepool {
@@ -36,10 +50,13 @@ int main(void) {
 
     assert(KeyPathGet(once_path(), once_root(root)) == 17);
     assert(path_evaluations == 1 && root_evaluations == 1);
+    assert(operand_sequence == 12);
+    operand_sequence = 0;
     assert(path_child_reads == 1 && path_count_reads == 1);
     KeyPathSet(once_path(), once_root(root), once_value());
     assert(path_evaluations == 2 && root_evaluations == 2 &&
            value_evaluations == 1);
+    assert(operand_sequence == 123);
     assert(path_child_reads == 2 && path_count_sets == 1);
     assert(KeyPathGet(path, root) == 42);
     assert(KeyPathGet(runtime_identity_path(), child) == 142);
@@ -53,6 +70,23 @@ int main(void) {
     KeyPath<RuntimePathNode *, int> read = KeyPathAsReadOnly(path);
     assert(KeyPathGet(read, root) == 42);
     assert(KeyPathMetadata(read) == metadata);
+    int evaluations_before_narrowing = path_evaluations;
+    read = once_path();
+    assert(path_evaluations == evaluations_before_narrowing + 1);
+    assert(KeyPathGet(once_readonly_return(), root) == 42);
+    assert(path_evaluations == evaluations_before_narrowing + 2);
+    assert(consume_readonly(once_path(), root) == 42);
+    assert(path_evaluations == evaluations_before_narrowing + 3);
+
+    // The selected path is a value snapshot before later operands execute.
+    // Changing the source record while evaluating the root cannot redirect it.
+    WritableKeyPath<RuntimePathNode *, int> selected = runtime_nested_path();
+    assert(KeyPathGet(selected,
+        (selected = @keypath(RuntimePathNode, count), root)) == 42);
+    selected = runtime_nested_path();
+    KeyPathSet(selected, (selected = @keypath(RuntimePathNode, count), root), 43);
+    assert(root.count == 1 && child.count == 43);
+    KeyPathSet(runtime_nested_path(), root, 42);
 
     PathPair pair = {21, 22};
     KeyPathSet(runtime_pair_path(), root, pair);

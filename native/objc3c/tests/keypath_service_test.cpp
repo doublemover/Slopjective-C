@@ -60,6 +60,13 @@ int main() {
       OBJC3_KEYPATH_ABI_VERSION, OBJC3_KEYPATH_WRITABLE, 2,
       "Root *", "long", "pair.first", fields};
   assert(objc3_keypath_validate_v2(&field_path) == OBJC3_KEYPATH_OK);
+  auto impossible_root_field = field_path;
+  impossible_root_field.component_count = 1;
+  impossible_root_field.components = fields + 1;
+  impossible_root_field.root_type = "struct Pair";
+  impossible_root_field.path = "first";
+  assert(objc3_keypath_validate_v2(&impossible_root_field) ==
+         OBJC3_KEYPATH_INVALID_METADATA);
   field_path.flags |= OBJC3_KEYPATH_KVC_COMPATIBLE;
   assert(objc3_keypath_validate_v2(&field_path) == OBJC3_KEYPATH_INVALID_METADATA);
 }

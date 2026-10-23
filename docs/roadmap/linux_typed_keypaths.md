@@ -28,8 +28,11 @@ immutable metadata ABI. `KeyPath<Root, Value>` and
 constructors. Root class names and class pointer types normalize to a nonnull
 class pointer. A literal with an entirely settable property chain has writable
 type; a readonly chain has readonly type. `KeyPathAsReadOnly` explicitly narrows
-a writable value without reevaluating it. An implicit writable-to-readonly
-conversion is not currently provided.
+a writable value without reevaluating it. Native C assignment, argument, and
+return conversion also narrow writable paths to the exact readonly Root/Value
+type. C++ uses an implicit const conversion member, including native overload
+resolution. Root and Value variance and readonly-to-writable conversions are
+not admitted.
 
 The parser owns `@keypath(RootType, property.chain)` and
 `@keypath(self, property.chain)`. `self` requires an instance method and is a type
@@ -40,7 +43,8 @@ object intermediate types, and retains the final property's nullability.
 Missing, inaccessible, or incompatible components fail before lowering.
 
 `KeyPathGet`, `KeyPathSet`, and `KeyPathMetadata` are compiler-owned applications.
-Each written operand is evaluated once. A generated typed function performs
+Each written operand is evaluated once, in source order, and the selected
+keypath record is copied before later operands can mutate its source. A generated typed function performs
 each selected getter once, and a setter dispatches through the declared final
 setter. These are ordinary Objective-C message expressions with the declared
 selectors; strong, copy, weak, atomic, native result ownership, dispatch, and
@@ -62,12 +66,26 @@ The record contains typed getter/setter function pointers and an immutable
 descriptor pointer. It contains no root object, registry index, synthetic
 integer handle, or reset-generation state. Readonly and writable records carry
 distinct native type identities. Names derive from canonical source types,
-value nullability, concrete runtime class names, and generic arguments, rather
+recursive value nullability, concrete runtime class/protocol names, and generic
+arguments, rather
 than source offsets or Sema addresses. The ordinary records, functions,
 constants, and attributes use native AST/PCH serialization and AST import.
 `clang/AST/ObjC3KeyPath.h` exposes their recognized Root/Value/writability to
 native interface consumers. Type printing preserves `KeyPath<...>` spelling;
 literal printing reconstructs `@keypath(...)` without private helper names.
+Applications retain a public syntactic call in a native `PseudoObjectExpr`,
+separate from their semantic operand snapshots and typed calls. The public AST
+helper exposes the operator token, complete invocation range, and source-order
+arguments for native editor tooling and AST import. Native tree transforms
+reconstruct applications from those public operands.
+
+Type signatures and typed get/set/read-only operations need only the public
+opaque descriptor tag. The compiler reuses an existing compatible forward
+or definition, rejects conflicting declarations, or registers a compatible
+public forward that a later module header definition completes. Literal
+construction and reflection still require the complete validated module ABI.
+This permits native source interfaces to carry keypath signatures without
+serializing producer-local literal helper bodies.
 
 ABI-v2 descriptors retain source/native root and value identity, the dotted
 path, component receiver/value types, declaration owner identity, actual getter
@@ -93,7 +111,10 @@ Pending fixtures cover parser/sema diagnostics, C17 and C++20/23 PCH import,
 native AST import, source printing/reparse, concrete generic roots, incompatible
 library metadata, native metadata-service failures/equality, and separate native
 translation units exercising exact-once evaluation, aggregates, custom selectors,
-readonly conversion, copy/strong/weak property behavior, and self without a
-capture. `tests/clang_foundation/typed_keypath_packages` supplies native
+implicit readonly conversion, mutation during later operands, copy/strong/weak
+property behavior, and self without a capture. Additional AST fixtures check
+complete source ranges and public operation spelling across native import;
+PCH fixtures cover signatures preceding the metadata header and nested generic,
+callback, and pointer nullability identity. `tests/clang_foundation/typed_keypath_packages` supplies native
 source-package/import fixtures. None has been executed in this development
 phase.

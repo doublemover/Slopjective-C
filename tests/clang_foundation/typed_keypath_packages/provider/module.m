@@ -24,3 +24,7 @@ KeyPath<PackagePathRoot *, int> package_identity_path(void) {
 WritableKeyPath<PackagePathRoot *, long> package_field_path(void) {
   return @keypath(PackagePathRoot, pair.first);
 }
+
+KeyPath<PackagePathRoot *, int> package_narrowed_path(void) {
+  return package_count_path();
+}

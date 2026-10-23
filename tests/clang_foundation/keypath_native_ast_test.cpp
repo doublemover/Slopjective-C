@@ -3,6 +3,8 @@
 #include "clang/AST/Decl.h"
 #include "clang/AST/ObjC3KeyPath.h"
 #include "clang/AST/PrettyPrinter.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Lex/Lexer.h"
 #include "clang/Frontend/ASTUnit.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/raw_ostream.h"
@@ -28,6 +30,56 @@ clang::FunctionDecl *function(clang::ASTUnit &unit, llvm::StringRef name) {
   assert(false && "fixture function not found");
   return nullptr;
 }
+
+struct ApplicationRanges
+    : clang::RecursiveASTVisitor<ApplicationRanges> {
+  clang::ASTContext &context;
+  unsigned seen[4] = {};
+  explicit ApplicationRanges(clang::ASTContext &context) : context(context) {}
+
+  bool VisitPseudoObjectExpr(clang::PseudoObjectExpr *expression) {
+    clang::ObjC3KeyPathApplicationInfo info;
+    if (!clang::getObjC3KeyPathApplication(expression, info)) return true;
+    ++seen[info.Operation];
+    const auto &source = context.getSourceManager();
+    const auto range = info.Syntax->getSourceRange();
+    assert(range.getBegin() == expression->getBeginLoc());
+    assert(range.getEnd() == expression->getEndLoc());
+    const auto text = clang::Lexer::getSourceText(
+        clang::CharSourceRange::getTokenRange(range), source,
+        context.getLangOpts());
+    assert(text.starts_with(clang::getObjC3KeyPathOperationName(info.Operation)));
+    assert(text.ends_with(")"));
+    unsigned previous = source.getFileOffset(range.getBegin());
+    for (const clang::Expr *operand : info.Syntax->arguments()) {
+      const auto begin = source.getFileOffset(operand->getBeginLoc());
+      const auto end = source.getFileOffset(operand->getEndLoc());
+      assert(previous <= begin && begin <= end);
+      assert(end <= source.getFileOffset(range.getEnd()));
+      previous = end;
+    }
+    // Separate native captures own the semantic evaluation. Each operand has
+    // exactly one binding, in the same order as the public syntactic call.
+    assert(expression->getNumSemanticExprs() >= info.Syntax->getNumArgs());
+    for (unsigned i = 0; i < info.Syntax->getNumArgs(); ++i) {
+      auto *capture = llvm::dyn_cast<clang::OpaqueValueExpr>(
+          expression->getSemanticExpr(i));
+      assert(capture && capture->getSourceExpr());
+    }
+    return true;
+  }
+
+  bool VisitMemberExpr(clang::MemberExpr *member) {
+    const clang::Expr *path = nullptr;
+    if (clang::getObjC3KeyPathMember(member, path) ==
+        clang::ObjC3KeyPathMemberKind::None) return true;
+    assert(path);
+    const auto &source = context.getSourceManager();
+    assert(!source.isBeforeInTranslationUnit(member->getEndLoc(),
+                                             member->getBeginLoc()));
+    return true;
+  }
+};
 }
 
 int main() {
@@ -49,11 +101,25 @@ KeyPath<ASTPathRoot *, int> readonly_path(void) {
 WritableKeyPath<ASTPathRoot *, long> field_path(void) {
   return @keypath(ASTPathRoot, pair.first);
 }
+int apply_path(ASTPathRoot * _Nonnull root) {
+  auto path = writable_path();
+  KeyPathSet(path, root, 9);
+  auto read = KeyPathAsReadOnly(path);
+  (void)KeyPathMetadata(read);
+  return KeyPathGet(read, root);
+}
+template<int Unused> int template_application(ASTPathRoot * _Nonnull root) {
+  return KeyPathGet(writable_path(), root);
+}
+template int template_application<1>(ASTPathRoot * _Nonnull);
 )objc";
   auto provider = parse(source, "keypath-provider.mm");
   auto consumer = parse("", "keypath-consumer.mm");
   assert(provider && consumer);
   assert(!provider->getDiagnostics().hasErrorOccurred());
+  ApplicationRanges provider_ranges(provider->getASTContext());
+  provider_ranges.TraverseDecl(function(*provider, "apply_path"));
+  for (unsigned count : provider_ranges.seen) assert(count == 1);
   auto *writable = function(*provider, "writable_path");
   auto *readonly = function(*provider, "readonly_path");
   clang::ObjC3KeyPathInfo before, read;
@@ -96,4 +162,20 @@ WritableKeyPath<ASTPathRoot *, long> field_path(void) {
   field_out.flush();
   assert(field_printed.find("@keypath(ASTPathRoot * _Nonnull, pair.first)") !=
          std::string::npos);
+
+  auto imported_application = importer.Import(function(*provider, "apply_path"));
+  assert(imported_application);
+  auto *application = llvm::cast<clang::FunctionDecl>(*imported_application);
+  ApplicationRanges imported_ranges(consumer->getASTContext());
+  imported_ranges.TraverseDecl(application);
+  for (unsigned count : imported_ranges.seen) assert(count == 1);
+  std::string application_printed;
+  llvm::raw_string_ostream application_out(application_printed);
+  application->print(application_out, policy);
+  application_out.flush();
+  assert(application_printed.find("KeyPathSet(path, root, 9)") !=
+         std::string::npos);
+  assert(application_printed.find("KeyPathGet(read, root)") !=
+         std::string::npos);
+  assert(application_printed.find("__objc3_") == std::string::npos);
 }

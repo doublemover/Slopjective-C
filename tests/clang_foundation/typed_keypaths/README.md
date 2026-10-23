@@ -7,8 +7,10 @@ Enable native exceptions with `-fexceptions -fobjc-exceptions
 -fobjc-arc-exceptions` for the getter/setter unwind witnesses.
 
 The checks cover typed record ABI across translation units, nested getter and
-setter dispatch, custom selectors, exact-once operand/component evaluation,
-metadata and declaration identity, readonly conversion, aggregate payloads,
+setter dispatch, custom selectors, exact-once source-order operand/component
+evaluation, selected-path snapshots under mutation of later operands,
+metadata and declaration identity, implicit readonly argument/return/assignment
+conversion, aggregate payloads,
 record-field snapshot/writeback, sibling preservation and native unwinding,
 copy/strong/weak property semantics, and the absence of a captured self owner.
 No execution or qualification result is claimed by these authored fixtures.

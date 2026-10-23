@@ -34,7 +34,7 @@ extern "C" int objc3_keypath_validate_v2(
     const bool readonly = component.flags & OBJC3_KEYPATH_COMPONENT_READONLY;
     const bool field = component.flags & OBJC3_KEYPATH_COMPONENT_RECORD_FIELD;
     if (field) {
-      if (*component.getter_selector || *component.setter_selector ||
+      if (!i || *component.getter_selector || *component.setter_selector ||
           (descriptor->flags & OBJC3_KEYPATH_KVC_COMPATIBLE))
         return OBJC3_KEYPATH_INVALID_METADATA;
     } else if (!*component.getter_selector ||
