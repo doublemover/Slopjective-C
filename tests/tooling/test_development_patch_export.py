@@ -66,3 +66,17 @@ def test_export_identity_survives_intent_to_add_and_new_files(tmp_path):
         without_index = packet.read_bytes()
         exporter.export()
         assert packet.read_bytes() == without_index
+        (source / 'tracked').write_text('completed change\n')
+        (source / 'new/a').write_text('unfinished work\n')
+        (source / 'not-yet-owned').write_text('in progress\n')
+        exporter.export(['tracked'])
+        selective = packet.read_bytes()
+        assert b'+completed change\n' in selective
+        assert b'+unfinished work' not in selective
+        assert b'+first\n' in selective
+        assert b'not-yet-owned' not in selective
+        (source / 'tracked').write_text('upstream\n')
+        exporter.export(['tracked'])
+        assert b'diff --git a/tracked b/tracked' not in packet.read_bytes()
+        assert b'+first\n' in packet.read_bytes()
+

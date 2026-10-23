@@ -76,6 +76,11 @@ cancellation without suspension; `task_yield` queues a new resume and observes
 cancellation when execution continues. Code without an await, checkpoint or
 yield remains responsible for its own cancellation checks.
 
+The development runtime also adds [nonblocking closed-group joins](linux_task_group_await.md)
+through `objc3_task_group_await` and `objc3::task_group_handle`. This addition has
+focused regression and installed qualification wiring; execution and SDK
+acceptance for the changed inputs remain pending.
+
 Releasing the last suspended parent handle terminalizes its task and destroys
 its frame. Child callbacks carry a separate lifetime token and generation, not a
 pointer into the frame or a retaining parent cycle. Late callbacks cannot revive

@@ -37,6 +37,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
         'services/carrier_service.cpp',
         'concurrency/service_executor.cpp', 'concurrency/service_task.cpp',
         'concurrency/service_group.cpp', 'concurrency/service_actor.cpp',
+        'concurrency/service_actor_object.cpp',
         'concurrency/service_public.cpp')]
     fixture = repo / 'tests/clang_foundation/native_async'
     inputs = sources + sorted(fixture.glob('*'))

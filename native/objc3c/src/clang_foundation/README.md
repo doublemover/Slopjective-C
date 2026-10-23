@@ -11,7 +11,7 @@ The [root README](../../../../README.md) describes public commands and support.
 For focused frontend development against an existing qualified SDK:
 
 ```sh
-sdk="$PWD/out/toolchains/objc3-development/stage-linux-x86_64"
+sdk="$PWD/out/toolchains/linux-sdk/current"
 cmake -S native/objc3c -B out/toolchains/objc3-facade/build-linux-x86_64 -G Ninja \
   -DOBJC3C_CLANG_FOUNDATION_ROOT="$sdk" \
   -DCMAKE_CXX_COMPILER="$OBJC3C_BOOTSTRAP_LLVM_ROOT/bin/clang++"

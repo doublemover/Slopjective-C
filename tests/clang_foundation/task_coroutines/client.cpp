@@ -788,6 +788,49 @@ void hop_publication_contract() {
   objc3_task_release(task);
   objc3_executor_release(target);
 }
+void source_free_group_await_contract() {
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  auto group = objc3::task_group_handle::create();
+  auto nested = group.child();
+  auto child_state = std::make_shared<coroutine_state>();
+  auto parent_state = std::make_shared<coroutine_state>();
+  auto child = start_leaf(executor, child_state);
+  nested.add(child);
+  group.close();
+  auto joined = start_group_join(executor, group, parent_state);
+  pump(executor, 2);
+  assert(child_state->entered == 1 && parent_state->entered == 1);
+  pending(joined);
+  assert(parent_state->continued == 0);
+  child_state->ready = true;
+  pump(executor, 100);
+  assert(joined.result() == 42 && parent_state->continued == 1);
+  assert(child_state->destroyed == 1 && parent_state->destroyed == 1);
+  group.wait();
+  auto results = objc3::task_group_handle::create();
+  child_state = std::make_shared<coroutine_state>();
+  parent_state = std::make_shared<coroutine_state>();
+  auto next_child = start_leaf(executor, child_state);
+  results.add(next_child);
+  results.close();
+  auto next = start_group_next(executor, results, parent_state);
+  pump(executor, 2);
+  pending(next);
+  assert(child_state->entered == 1 && parent_state->entered == 1);
+  child_state->ready = true;
+  pump(executor, 100);
+  assert(next.result() == 42 && parent_state->continued == 1);
+  assert(child_state->destroyed == 1 && parent_state->destroyed == 1);
+  auto drained_state = std::make_shared<coroutine_state>();
+  auto drained = start_group_next(executor, results, drained_state);
+  pump(executor, 1);
+  pending(drained);
+  pump(executor, 100);
+  assert(drained.result() == -1 && drained_state->destroyed == 1);
+  results.wait();
+  objc3_executor_release(executor);
+}
 } // namespace
 int main() {
   manual_contract();
@@ -798,4 +841,5 @@ int main() {
   failed_actor_dispatch_contract();
   group_cancel_dispatch_failure_contract();
   hop_publication_contract();
+  source_free_group_await_contract();
 }

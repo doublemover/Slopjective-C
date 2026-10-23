@@ -34,14 +34,14 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
     compiler = compiler or sdk / 'bin/clang'
     runtime_library = runtime_library or sdk / 'lib/libobjc3_runtime_services.a'
     env = environment(sdk)
-    cases, commands = [], []
+    cases, system_cases, commands = [], [], []
 
     def inputs():
         return {
             'compiler_sha256': packages.digest(compiler.resolve()),
             'runtime_library_sha256': packages.digest(runtime_library),
             'source_hashes': {name: packages.digest(fixture / name)
-                              for name in ('provider.h', 'provider.m', 'client.m')},
+                              for name in ('provider.h', 'provider.m', 'client.m', 'factory-contract.m', 'system-contract.m')},
             'include_hashes': {path.relative_to(include_root).as_posix(): packages.digest(path)
                               for directory in ('objc3', 'objc3c/runtime')
                               for path in sorted((include_root / directory).rglob('*'))
@@ -116,7 +116,64 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
                     '-std=c17', '-O2', root / 'provider.o', runtime_library,
                     '-lstdc++', '-pthread', '-o', root / 'launcher-client'], root)
                 run('launcher-execute', [root / 'launcher-client'], root)
+            # Check Error-constrained factories in every strict profile without
+            # inferring whole-profile conformance from these focused contracts.
+            shutil.copyfile(fixture / 'factory-contract.m', root / 'factory-contract.m')
+            for (language, standard), ownership, profile in itertools.product(
+                    modes, ('arc', 'mrc'), ('strict', 'strict-concurrency', 'strict-system')):
+                label = '-'.join(('factory', standard, ownership, profile))
+                object_file = root / 'factory-contract.o'
+                arguments = [compiler, *common, '-x', language, '-std=' + standard,
+                             '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc',
+                             '-fobjc3-profile=' + profile,
+                             '-c' if ownership == 'arc' else '-fsyntax-only',
+                             root / 'factory-contract.m', '-o', object_file]
+                # MRC managed carrier code generation is deliberately gated.
+                # Its factory constraints remain independently checkable in
+                # Sema; ARC additionally exercises the qualified object ABI.
+                run(label + '-accepted', arguments, root)
+                object_file.unlink(missing_ok=True)
+                run(label + '-rejected', [*arguments, '-DINVALID_ERROR_FACTORY=1'], root,
+                    failure="must conform to Objective-C protocol 'Error'")
+                if object_file.exists():
+                    raise ValueError('invalid Error factory emitted an object: ' + label)
+            # This module is only imported under Strict System. Its resource
+            # primitives need no new runtime ABI, and ARC/MRC must both work.
+            shutil.copyfile(fixture / 'system-contract.m', root / 'system-contract.m')
+            for (language, standard), ownership, opt in itertools.product(
+                    modes, ('arc', 'mrc'), ('O0', 'O2')):
+                label = '-'.join(('system', standard, ownership, opt))
+                arguments = [compiler, *common, '-x', language, '-std=' + standard,
+                             '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc',
+                             '-fobjc3-profile=strict-system', '-fexceptions',
+                             '-fobjc-exceptions', '-' + opt]
+                obj, executable = root / 'system.o', root / 'system'
+                run(label + '-compile', [*arguments, '-c', root / 'system-contract.m',
+                                         '-o', obj], root)
+                run(label + '-link', [sdk / 'bin/clang++', '--no-default-config',
+                    '-fuse-ld=lld', obj, '-L' + str(sdk / 'lib'), '-lobjc',
+                    '-Wl,-rpath,' + str(sdk / 'lib'), '-o', executable], root)
+                run(label + '-execute', [executable], root)
+                system_cases.append({'standard': standard, 'ownership': ownership,
+                    'optimization': opt, 'executable_sha256': packages.digest(executable)})
+                if opt == 'O2':
+                    for macro, message in (
+                            ('INVALID_SYSTEM_LEAK', 'may leave its scope without cleanup'),
+                            ('INVALID_SYSTEM_MOVE', 'may have been moved or discarded'),
+                            ('INVALID_SYSTEM_FAMILY', 'not associated with its type contract or family')):
+                        rejected = root / 'system-rejected.o'
+                        run(label + '-' + macro.lower(), [*arguments, '-D' + macro + '=1',
+                            '-c', root / 'system-contract.m', '-o', rejected], root,
+                            failure=message)
+                        if rejected.exists():
+                            raise ValueError('invalid system contract emitted an object: ' + label)
             invalid = root / 'invalid.m'
+            invalid.write_text('@import objc3.system;\n')
+            for profile in ('compatibility', 'strict', 'strict-concurrency'):
+                run('system-profile-' + profile, [compiler, *common,
+                    '-x', 'objective-c', '-std=c17', '-fobjc3-profile=' + profile,
+                    '-fsyntax-only', invalid], root,
+                    failure='objc3.system requires the strict-system profile')
             invalid.write_text('@import objc3.core;\n')
             run('major-version-mismatch', [compiler, *common, '-x', 'objective-c',
                 '-std=c17', '-DOBJC3_STDLIB_REQUIRED_MAJOR=99', '-fsyntax-only', invalid],
@@ -133,10 +190,15 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
             'sdk_seal': manifest['seal_sha256'],
             'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
             **initial_inputs,
-            'executions': len(cases), 'cases': cases, 'commands': commands}
+            'executions': len(cases), 'strict_factory_configurations': 18,
+            'strict_factory_codegen_configurations': 9,
+            'strict_factory_sema_configurations': 9,
+            'strict_factory_rejections': 18, 'profile_conformance_claimed': False,
+            'cases': cases, 'system_executions': len(system_cases),
+            'system_cases': system_cases, 'commands': commands}
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.stdlib-qualification.v1', 'status': 'FAIL',
-            'sdk_seal': manifest['seal_sha256'], 'cases': cases,
+            'sdk_seal': manifest['seal_sha256'], 'cases': cases, 'system_cases': system_cases,
             'commands': commands, 'error': str(error)})
         raise
     packages.write_json(receipt, report)
@@ -150,6 +212,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     report = qualify(args.sdk_root or Path(__file__).resolve().parents[3], args.output_dir)
     print(json.dumps({'status': report['status'], 'executions': report['executions'],
+                      'system_executions': report['system_executions'],
                       'commands': len(report['commands'])}))
     return 0
 

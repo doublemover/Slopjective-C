@@ -2,9 +2,9 @@
 #define OBJC3_TASK_HPP
 
 #if defined(__OBJC3_EXTENSION_ABI_REVISION__) &&                               \
-    __OBJC3_EXTENSION_ABI_REVISION__ != 20
+    __OBJC3_EXTENSION_ABI_REVISION__ != 21
 #error                                                                         \
-    "The task bridge requires Objective-C 3 extension ABI 20; rebuild the compiler and all providers."
+    "The task bridge requires Objective-C 3 extension ABI 21; rebuild the compiler and all providers."
 #endif
 
 #include "objc3_runtime_services.h"
@@ -64,6 +64,13 @@ namespace task_detail {
 inline void check(objc3_service_status status) {
   if (status != OBJC3_SERVICE_OK)
     throw service_failure(status);
+}
+
+inline objc3_error_t *service_error(objc3_service_status status) noexcept {
+  objc3_error_t *error = nullptr;
+  if (objc3_async_error_create_service(status, &error) != OBJC3_SERVICE_OK || !error)
+    std::terminate();
+  return error;
 }
 
 template <class T> struct value_ops;
@@ -233,6 +240,10 @@ inline void rethrow_completion(const objc3_completion &completion) {
     throw task_cancelled();
   if (completion.kind != OBJC3_COMPLETION_ERROR)
     return;
+  objc3_service_status service_status;
+  if (objc3_async_error_get_service(completion.error, &service_status) ==
+      OBJC3_SERVICE_OK)
+    throw service_failure(service_status);
   const auto *ops = objc3_error_payload_ops(completion.error);
   if (ops && ops->copy_init == value_ops<std::exception_ptr>::copy)
     std::rethrow_exception(*static_cast<const std::exception_ptr *>(
@@ -336,6 +347,71 @@ public:
     }
   }
 };
+
+template <class T> struct task_group_next_request;
+struct task_group_cleanup_request;
+
+/* A retained shared group, with explicit close and cancellation. Awaiting a
+ * closed handle joins its complete task tree without blocking a worker. This
+ * is a library handle, not a compiler-recognized structured task-group scope:
+ * destruction releases ownership, and abandoning one await does not cancel
+ * the shared tasks. Close and join before releasing the last caller owner. */
+class [[nodiscard]] task_group_handle {
+  objc3_task_group_t *group_ = nullptr;
+  explicit task_group_handle(objc3_task_group_t *owned) noexcept
+      : group_(owned) {}
+
+public:
+  task_group_handle() noexcept = default;
+  static task_group_handle create() {
+    objc3_task_group_t *group = nullptr;
+    task_detail::check(objc3_task_group_create(nullptr, &group));
+    return task_group_handle(group);
+  }
+  task_group_handle child() const {
+    if (!group_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    objc3_task_group_t *group = nullptr;
+    task_detail::check(objc3_task_group_create(group_, &group));
+    return task_group_handle(group);
+  }
+  task_group_handle(const task_group_handle &other) noexcept
+      : group_(objc3_task_group_retain(other.group_)) {}
+  task_group_handle(task_group_handle &&other) noexcept
+      : group_(std::exchange(other.group_, nullptr)) {}
+  task_group_handle &operator=(task_group_handle other) noexcept {
+    std::swap(group_, other.group_);
+    return *this;
+  }
+  ~task_group_handle() { objc3_task_group_release(group_); }
+  objc3_task_group_t *native_handle() const noexcept { return group_; }
+  explicit operator bool() const noexcept { return group_ != nullptr; }
+  template <class U> void add(const basic_task_handle<U> &task) const {
+    task_detail::check(objc3_task_group_add(group_, task.native_handle()));
+  }
+  void close() const { task_detail::check(objc3_task_group_close(group_)); }
+  void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
+  void wait() const { task_detail::check(objc3_task_group_join(group_)); }
+  task_group_cleanup_request cancel_and_join() const;
+  template <class U = void>
+  task_group_next_request<typename task_detail::result_traits<U>::abi_type>
+  next() const;
+};
+
+template <class T> struct task_group_next_request {
+  task_group_handle group;
+};
+
+struct task_group_cleanup_request {
+  task_group_handle group;
+};
+inline task_group_cleanup_request task_group_handle::cancel_and_join() const {
+  return {*this};
+}
+template <class U>
+task_group_next_request<typename task_detail::result_traits<U>::abi_type>
+task_group_handle::next() const {
+  return {*this};
+}
 
 struct task_checkpoint_t {};
 struct task_yield_t {};
@@ -459,6 +535,74 @@ public:
           true};
     }
 
+    struct group_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        task_detail::check(objc3_task_group_await(group.native_handle(), parent,
+                                                  &status));
+      }
+      void await_resume() {
+        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        task_detail::check(status);
+      }
+    };
+    auto await_transform(task_group_handle group) {
+      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      return group_awaiter{owner, std::move(group)};
+    }
+
+    struct cleanup_group_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        group.close();
+        group.cancel();
+        task_detail::check(objc3_task_group_await_cleanup(
+            group.native_handle(), parent, &status));
+      }
+      void await_resume() { task_detail::check(status); }
+    };
+    auto await_transform(task_group_cleanup_request request) {
+      // Scope unwind must finish even when owner cancellation already holds.
+      // It remains observable by the next ordinary cancellation checkpoint.
+      return cleanup_group_awaiter{owner, std::move(request.group)};
+    }
+
+    template <class U> struct group_next_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      objc3_task_t *result = nullptr;
+      group_next_awaiter(objc3_task_t *parent, task_group_handle group)
+          : parent(parent), group(std::move(group)) {}
+      group_next_awaiter(const group_next_awaiter &) = delete;
+      group_next_awaiter(group_next_awaiter &&other) noexcept
+          : parent(other.parent), group(std::move(other.group)),
+            status(other.status), result(std::exchange(other.result, nullptr)) {}
+      ~group_next_awaiter() { objc3_task_release(result); }
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        task_detail::check(objc3_task_group_await_next(
+            group.native_handle(), parent, task_detail::result_type<U>(),
+            &status, &result));
+      }
+      task_handle<U> await_resume() {
+        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        if (status == OBJC3_SERVICE_CLOSED) return {};
+        task_detail::check(status);
+        return task_handle<U>::adopt_native(&result);
+      }
+    };
+    template <class U> auto await_transform(task_group_next_request<U> request) {
+      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      return group_next_awaiter<U>{owner, std::move(request.group)};
+    }
+
 #ifdef __OBJC__
     template <class U>
     struct checked_dependency_awaiter : dependency_awaiter<U> {
@@ -537,13 +681,18 @@ public:
       objc3_error_t *error = nullptr;
       if (__objc3_error_raised && !failed) {
         error = objc3_error_retain(__objc3_error);
-        completion.kind = error ? OBJC3_COMPLETION_ERROR
-                                : OBJC3_COMPLETION_CANCELLED;
+        if (!error)
+          error = task_detail::service_error(__objc3_error
+                      ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
+        completion.kind = OBJC3_COMPLETION_ERROR;
         completion.error = error;
       } else if (failed && !failure) {
         // A foreign exception may have no C++ exception_ptr representation.
-        // It must never publish an uninitialized successful result.
-        completion.kind = OBJC3_COMPLETION_CANCELLED;
+        // Preserve failure when no native exception carrier is available;
+        // this is neither a successful result nor a cancellation request.
+        error = task_detail::service_error(OBJC3_SERVICE_INVALID_ARGUMENT);
+        completion.kind = OBJC3_COMPLETION_ERROR;
+        completion.error = error;
       } else if (failed) {
         try {
           std::rethrow_exception(failure);
@@ -551,14 +700,18 @@ public:
           completion.kind = OBJC3_COMPLETION_CANCELLED;
         } catch (const task_error &foreign) {
           error = objc3_error_retain(foreign.native_handle());
+          if (!error)
+            error = task_detail::service_error(foreign.native_handle()
+                        ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
           completion.kind = OBJC3_COMPLETION_ERROR;
         } catch (...) {
           completion.kind = OBJC3_COMPLETION_ERROR;
-          if (objc3_error_create(
+          const auto status = objc3_error_create(
                   &failure,
                   &task_detail::value_ops<std::exception_ptr>::descriptor,
-                  &error) != OBJC3_SERVICE_OK)
-            completion.kind = OBJC3_COMPLETION_CANCELLED;
+                  &error);
+          if (status != OBJC3_SERVICE_OK)
+            error = task_detail::service_error(status);
         }
         completion.error = error;
       } else {
@@ -568,12 +721,23 @@ public:
       objc3_error_release(error);
       if (status != OBJC3_SERVICE_OK &&
           status != OBJC3_SERVICE_ALREADY_COMPLETED) {
-        // A failed result copy must still terminalize and reclaim the frame.
+        // A failed result copy is a service failure, including OOM. Preserve
+        // its status instead of making it indistinguishable from cancellation.
         completion = {};
         completion.struct_size = sizeof(completion);
         completion.version = OBJC3_SERVICE_ABI_VERSION;
-        completion.kind = OBJC3_COMPLETION_CANCELLED;
-        (void)objc3_task_complete(owner, &completion);
+        if (status == OBJC3_SERVICE_CANCELLED) {
+          completion.kind = OBJC3_COMPLETION_CANCELLED;
+        } else {
+          completion.kind = OBJC3_COMPLETION_ERROR;
+          error = task_detail::service_error(status);
+          completion.error = error;
+        }
+        const auto published = objc3_task_complete(owner, &completion);
+        if (completion.error) objc3_error_release(completion.error);
+        if (published != OBJC3_SERVICE_OK &&
+            published != OBJC3_SERVICE_ALREADY_COMPLETED)
+          std::terminate();
       }
     }
     static void resume(objc3_task_t *owner, void *frame) noexcept {
@@ -639,6 +803,18 @@ public:
   task_handle<T> start_on(objc3_actor_t *actor) && {
     return start_impl(nullptr, actor);
   }
+  // Library entrypoints use the active runtime owner rather than guessing a
+  // parent from a destination or physical thread. Failure keeps frame_ owned.
+  task_handle<T> start_child() && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_spawn(&frame_, &started));
+    return task_handle<T>(started);
+  }
+  task_handle<T> detach() && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_detach(&frame_, &started));
+    return task_handle<T>(started);
+  }
 };
 
 } // namespace objc3
@@ -646,6 +822,21 @@ public:
 // Reserved compiler hook. The canonical source function retains its logical
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
+
+// Reserved explicit C-frame entry bridge. The by-value argument owns the lazy
+// frame immediately, including when descriptor validation rejects adoption.
+// Successful from_native consumes it; every failed adoption disposes it before
+// the original service/native exception continues through the C++ coroutine.
+template <class T>
+__objc3_async_task<T> __objc3_async_from_frame(objc3_async_frame frame) {
+  try {
+    return __objc3_async_task<T>::from_native(&frame);
+  } catch (...) {
+    (void)objc3_async_frame_dispose(&frame);
+    throw;
+  }
+}
+
 
 #ifdef __OBJC__
 template <class T>

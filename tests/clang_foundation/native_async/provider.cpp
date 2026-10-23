@@ -893,3 +893,155 @@ objc3::task<int> native_block_noescape(std::shared_ptr<async_state> state, bool 
   });
 }
 #endif
+
+#ifdef __OBJC__
+// Real object/actor lifetime witnesses run in every native ARC/MRC provider.
+#include <cassert>
+#include <thread>
+
+static std::atomic<unsigned> actor_association_destructions{0};
+__attribute__((objc_root_class))
+@interface RuntimeActorAssociationValue {
+  Class isa;
+@public
+  int number;
+  bool expectRetired;
+}
++ (id)new;
+@end
+@implementation RuntimeActorAssociationValue
++ (id)new { return class_createInstance(self, 0); }
+- (void)dealloc {
+  if (expectRetired) {
+    objc3_actor_t *found = nullptr;
+    assert(objc3_actor_get_for_object((__bridge const void *)self, &found) ==
+           OBJC3_SERVICE_CLOSED && !found);
+  }
+  ++actor_association_destructions;
+  object_dispose(self);
+}
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+
+struct ActorObjectJob {
+  void *object;
+  objc3_actor_t *actor;
+  unsigned ran{0}, cleaned{0};
+};
+static void actor_object_job(void *opaque) {
+  auto &job = *static_cast<ActorObjectJob *>(opaque);
+  objc3_actor_t *found = nullptr;
+  assert(objc3_actor_get_for_object(job.object, &found) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_identity(found) == objc3_actor_identity(job.actor));
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == objc3_actor_identity(found));
+  auto *value = (__bridge RuntimeActorAssociationValue *)job.object;
+  value->number = 42;
+  ++job.ran;
+  objc3_actor_release(found);
+}
+static void actor_object_cleanup(void *opaque) {
+  ++static_cast<ActorObjectJob *>(opaque)->cleaned;
+}
+
+bool native_actor_object_association() {
+  const auto before = actor_association_destructions.load();
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  objc3_actor_t *first = nullptr, *second = nullptr;
+  assert(objc3_actor_create(executor, &first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &second) == OBJC3_SERVICE_OK);
+  RuntimeActorAssociationValue *owner = [RuntimeActorAssociationValue new];
+  void *raw = (__bridge void *)owner;
+  objc3_actor_t *found = nullptr;
+  assert(objc3_actor_get_for_object(raw, &found) == OBJC3_SERVICE_NOT_READY && !found);
+  assert(objc3_actor_bind_object(raw, first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_bind_object(raw, first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_bind_object(raw, second) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  owner->expectRetired = true;
+#if !__has_feature(objc_arc)
+  objc_release(owner);
+#endif
+  owner = (RuntimeActorAssociationValue *)0;
+  assert(actor_association_destructions == before); // Only binding pins object.
+  assert(objc3_actor_get_for_object(raw, &found) == OBJC3_SERVICE_OK && found == first);
+  objc3_actor_release(first); // Binding/lookup independently retain the actor.
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_NOT_READY);
+  ActorObjectJob job{raw, found};
+  objc3_actor_hop_facts hop{};
+  hop.struct_size = sizeof(hop);
+  hop.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_enqueue(found, actor_object_job, &job, actor_object_cleanup,
+                              &hop) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(found) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_NOT_READY);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(job.ran == 1 && job.cleaned == 1);
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
+  assert(actor_association_destructions == before + 1); // Dealloc reenters lookup.
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_CLOSED);
+  objc3_actor_release(found);
+  assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(second) == OBJC3_SERVICE_OK);
+  objc3_actor_release(second);
+
+  RuntimeActorAssociationValue *raced = [RuntimeActorAssociationValue new];
+  raw = (__bridge void *)raced;
+  objc3_actor_t *candidates[8]{};
+  objc3_service_status outcomes[8]{};
+  std::thread registrations[8];
+  for (unsigned index = 0; index != 8; ++index) {
+    assert(objc3_actor_create(executor, &candidates[index]) == OBJC3_SERVICE_OK);
+    registrations[index] = std::thread([&, index] {
+      outcomes[index] = objc3_actor_bind_object(raw, candidates[index]);
+    });
+  }
+  unsigned winners = 0;
+  objc3_actor_t *winner = nullptr, *replacement = nullptr;
+  for (unsigned index = 0; index != 8; ++index) {
+    registrations[index].join();
+    if (outcomes[index] == OBJC3_SERVICE_OK) {
+      ++winners;
+      winner = candidates[index];
+    } else {
+      assert(outcomes[index] == OBJC3_SERVICE_INVALID_ARGUMENT);
+      replacement = candidates[index];
+    }
+  }
+  assert(winners == 1 && replacement);
+  assert(objc3_actor_get_for_object(raw, &found) == OBJC3_SERVICE_OK && found == winner);
+  assert(objc3_actor_close(winner) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(winner) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_bind_object(raw, winner) == OBJC3_SERVICE_CLOSED);
+  assert(objc3_actor_bind_object(raw, replacement) == OBJC3_SERVICE_OK);
+  // The retained old lookup cannot admit work after rebinding the live object.
+  assert(objc3_actor_enqueue(found, actor_object_job, &job, actor_object_cleanup,
+                              &hop) == OBJC3_SERVICE_CLOSED);
+  objc3_actor_release(found);
+  assert(objc3_actor_get_for_object(raw, &found) == OBJC3_SERVICE_OK && found == replacement);
+  objc3_actor_release(found);
+  assert(objc3_actor_close(replacement) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(replacement) == OBJC3_SERVICE_OK);
+  raced->expectRetired = true;
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
+#if !__has_feature(objc_arc)
+  objc_release(raced);
+#endif
+  raced = (RuntimeActorAssociationValue *)0;
+  assert(actor_association_destructions == before + 2);
+  for (auto *candidate : candidates) {
+    assert(objc3_actor_close(candidate) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(candidate) == OBJC3_SERVICE_OK);
+    objc3_actor_release(candidate);
+  }
+  objc3_executor_release(executor);
+  return true;
+}
+#endif

@@ -1,14 +1,17 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTImporter.h"
 #include "clang/Tooling/Tooling.h"
 
 using namespace objc3::clang_foundation;
@@ -34,13 +37,197 @@ void TestOrdinaryCDeclarationsRoundTrip() {
   assert(emitted.sidecar_json.find("fixture.points") != std::string::npos);
   assert(emitted.source_bytes.find("struct Point") != std::string::npos);
 
-  auto decoded = DecodeSemanticInterfaceSidecar(
-      emitted.sidecar_json, emitted.source_bytes, {});
+  auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                                emitted.source_bytes, {});
   assert(static_cast<bool>(decoded));
   assert(decoded->module.canonical_name == "fixture.points");
   assert(decoded->declarations.size() >= 4);
   assert(decoded->canonical_source_sha256 ==
          ComputeInterfaceSourceSha256(emitted.source_bytes));
+}
+
+void TestNativeOwnershipContractsRoundTrip() {
+  for (const char *language : {"objective-c", "objective-c++"}) {
+    std::vector<std::string> args = {
+        "-x",
+        language,
+        std::string(language) == "objective-c" ? "-std=c17" : "-std=c++20",
+        "-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2",
+        "--target=x86_64-unknown-linux-gnu"};
+    auto ast =
+        clang::tooling::buildASTFromCodeWithArgs(R"(
+      extern char invalid_storage;
+      void close_fd(int) __attribute__((nothrow));
+      void close_pointer(char *) __attribute__((nothrow));
+      typedef int FD __attribute__((objc_requires_cleanup(close_fd),
+          objc_resource_family(Descriptors), objc_invalid(-1)));
+      typedef FD Alias;
+      typedef char *PointerOwner __attribute__((objc_requires_cleanup(close_pointer),
+          objc_resource_family(Pointers), objc_invalid(&invalid_storage)));
+      FD open_fd(void);
+      void observe_fd(FD);
+      Alias transfer_fd(Alias);
+      PointerOwner open_pointer(void);
+    )",
+                                                 args, "ownership-interface.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted =
+        EmitSemanticInterface(ast->getASTContext(), "fixture.owners", "test");
+    assert(emitted.success && emitted.diagnostics.empty());
+    const std::vector<llvm::StringRef> semantics = {
+        "objc3.canonical-function-effects.v1",
+        "objc3.native-ownership-contracts.v1", "objc3.cxx-data-interfaces.v1"};
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(static_cast<bool>(decoded));
+    const InterfaceDeclarationIdentity *fd = nullptr, *alias = nullptr,
+                                       *factory = nullptr;
+    for (const auto &declaration : decoded->declarations) {
+      if (declaration.qualified_name == "FD")
+        fd = &declaration;
+      if (declaration.qualified_name == "Alias")
+        alias = &declaration;
+      if (declaration.qualified_name == "open_fd")
+        factory = &declaration;
+    }
+    assert(fd && alias && factory);
+    assert(fd->effects.ownership_identity == alias->effects.ownership_identity);
+    assert(factory->effects.ownership_identity.find(".return:resource") !=
+           std::string::npos);
+    assert(emitted.source_bytes.find("objc_requires_cleanup") !=
+           std::string::npos);
+    auto reparsed = clang::tooling::buildASTFromCodeWithArgs(
+        emitted.source_bytes, args, "ownership-import.m");
+    assert(reparsed && !reparsed->getDiagnostics().hasErrorOccurred());
+    auto repeated = EmitSemanticInterface(reparsed->getASTContext(),
+                                          "fixture.owners", "test");
+    assert(repeated.success);
+    assert(repeated.identity.semantic_fingerprint ==
+           emitted.identity.semantic_fingerprint);
+    auto unsupported = DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                                      emitted.source_bytes, {});
+    assert(!unsupported);
+    llvm::consumeError(unsupported.takeError());
+  }
+}
+
+void TestOpaqueKeyPathSignatureRoundTrips() {
+  for (const char *language : {"objective-c", "objective-c++"}) {
+    std::vector<std::string> args = {
+        "-x",
+        language,
+        std::string(language) == "objective-c" ? "-std=c17" : "-std=c++23",
+        "-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2",
+        "--target=x86_64-unknown-linux-gnu"};
+    auto ast =
+        clang::tooling::buildASTFromCodeWithArgs(R"(
+      __attribute__((objc_root_class)) @interface PathRoot @end
+      typedef KeyPath<PathRoot *, int> ReadPath;
+      typedef WritableKeyPath<PathRoot *, int> WritePath;
+      ReadPath read_path(void);
+      WritePath write_path(void);
+      void receive_path(ReadPath);
+    )",
+                                                 args, "keypath-signatures.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted =
+        EmitSemanticInterface(ast->getASTContext(), "fixture.paths", "test");
+    assert(emitted.success);
+    assert(emitted.source_bytes.find("__objc3_keypath_") == std::string::npos);
+    const std::vector<llvm::StringRef> supported = {
+        "objc3.typed-keypaths.v1", "objc3.canonical-function-effects.v1",
+        "objc3.native-ownership-contracts.v1", "objc3.cxx-data-interfaces.v1"};
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, supported);
+    assert(decoded);
+    auto imported = clang::tooling::buildASTFromCodeWithArgs(
+        emitted.source_bytes, args, "relocated.m");
+    assert(imported && !imported->getDiagnostics().hasErrorOccurred());
+    auto repeated = EmitSemanticInterface(imported->getASTContext(),
+                                          "fixture.paths", "test");
+    assert(repeated.success);
+    assert(repeated.identity.semantic_fingerprint ==
+           emitted.identity.semantic_fingerprint);
+  }
+}
+
+void TestConsumedAndMethodOwnershipRoundTrips() {
+  for (const char *language : {"objective-c", "objective-c++"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args = {
+          "-x",
+          language,
+          std::string(language) == "objective-c" ? "-std=c17" : "-std=c++20",
+          "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2",
+          "-fblocks",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc)
+        args.push_back("-fobjc-arc");
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(
+          R"(
+        void consume(__attribute__((ns_consumed)) id value);
+        void observe(__attribute__((noescape)) void (^body)(void));
+        __attribute__((objc_root_class)) @interface OwnershipRoot
+        - (void)consume:(__attribute__((ns_consumed)) id)value;
+        - (void)observe:(__attribute__((noescape)) void (^)(void))body;
+        - (id)retainedValue __attribute__((ns_returns_retained));
+        - (id)borrowedValue __attribute__((ns_returns_not_retained));
+        - (void)consumeSelf __attribute__((ns_consumes_self));
+        @end
+      )",
+          args, "ownership-contracts.m");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                           "fixture.consume", "test");
+      assert(emitted.success);
+      for (const char *attribute :
+           {"ns_consumed", "noescape", "ns_consumes_self",
+            "ns_returns_retained", "ns_returns_not_retained"})
+        assert(emitted.source_bytes.find(attribute) != std::string::npos);
+      const std::vector<llvm::StringRef> supported = {
+          "objc3.canonical-function-effects.v1",
+          "objc3.native-return-ownership.v1",
+          "objc3.native-ownership-contracts.v1",
+          "objc3.cxx-data-interfaces.v1"};
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes, supported);
+      assert(decoded);
+      bool parameter = false, receiver = false, method_return = false;
+      for (const auto &declaration : decoded->declarations) {
+        parameter |= declaration.effects.ownership_identity.find(
+                         "ns-consumed") != std::string::npos;
+        receiver |= declaration.effects.ownership_identity.find(
+                        "ns-consumes-self") != std::string::npos;
+        method_return |= declaration.kind == "ObjCMethod" &&
+                         declaration.effects.ownership_identity.starts_with(
+                             "native-return:retained");
+      }
+      assert(parameter && receiver && method_return);
+      auto reparsed = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes, args, "ownership-import.m");
+      assert(reparsed && !reparsed->getDiagnostics().hasErrorOccurred());
+      auto repeated = EmitSemanticInterface(reparsed->getASTContext(),
+                                            "fixture.consume", "test");
+      assert(repeated.success && repeated.identity.semantic_fingerprint ==
+                                     emitted.identity.semantic_fingerprint);
+    }
+  }
+  // A dropped parameter attribute can change hidden arguments even when the
+  // ordinary function pointer ABI appears to have the same source type.
+  auto unmodeled = clang::tooling::buildASTFromCodeWithArgs(
+      "int size(const char *const p __attribute__((pass_object_size(0))));",
+      {"-x", "c", "-std=c17"}, "unmodeled-param.c");
+  assert(unmodeled && !unmodeled->getDiagnostics().hasErrorOccurred());
+  auto rejected =
+      EmitSemanticInterface(unmodeled->getASTContext(), "fixture.size", "test");
+  assert(!rejected.success);
+  bool diagnosed = false;
+  for (const auto &diagnostic : rejected.diagnostics)
+    diagnosed |= diagnostic.code == "O3IFC116";
+  assert(diagnosed);
 }
 
 void TestUnmodeledAttributesFailClosed() {
@@ -61,11 +248,123 @@ void TestUnmodeledAttributesFailClosed() {
   assert(found_attribute_diagnostic);
 }
 
+void TestCAsyncPhysicalABIRoundTrips() {
+  for (const char *source :
+       {"int fetch(int) __objc3_async;",
+        "typedef int (*AsyncCallback)(int) __objc3_async;",
+        "struct Callbacks { int (*fetch)(int) __objc3_async; };",
+        "void accepts(int (*callback)(int) __objc3_async);",
+        "@interface Worker - (int)fetch:(int)n __objc3_async; @end",
+        "typedef int (^AsyncBlock)(int) __objc3_async;",
+        "typedef int (^AsyncBlock)(int) __objc3_async; "
+        "@interface Worker @property(copy) AsyncBlock callback; @end"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        source,
+        {"-x", "objective-c", "-std=c17", "-fobjc-version=3", "-fblocks",
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+        "async_frame_interface.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                         "fixture.async_frame", "test-package");
+    assert(emitted.success && !emitted.source_bytes.empty());
+    assert(emitted.source_bytes.find("__objc3_async_frame") !=
+           std::string::npos);
+    const std::vector<llvm::StringRef> supported = {
+        "objc3.canonical-function-effects.v1", kAsyncEntryABISemantic,
+        RuntimeInterfaceSemantic()};
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, supported);
+    assert(decoded);
+    bool found = false;
+    for (const auto &declaration : decoded->declarations)
+      if (!declaration.effects.async_abi_identity.empty()) {
+        assert(IsValidAsyncABIIdentity(declaration.effects));
+        assert(declaration.effects.async_abi_identity.find("c-frame-v1") !=
+               std::string::npos);
+        found = true;
+      }
+    assert(found);
+    auto stripped = *decoded;
+    std::erase(stripped.required_semantics,
+               std::string(kAsyncEntryABISemantic));
+    auto invalid = EncodeSemanticInterfaceSidecar(stripped, supported);
+    assert(!invalid);
+    llvm::consumeError(invalid.takeError());
+  }
+}
+
+void TestCAsyncPhysicalABIImportBoundaries() {
+  // Frame ABI is a property of the callable type, not of the destination AST.
+  // A C++ consumer simultaneously owns task-returning and frame-returning
+  // signatures with the same logical result type.
+  auto build = [](bool cpp) {
+    std::vector<std::string> args = {"-x",
+                                     cpp ? "objective-c++" : "objective-c",
+                                     cpp ? "-std=c++20" : "-std=c17",
+                                     "-fobjc-version=3",
+                                     "-fobjc-runtime=gnustep-2.2",
+                                     "--target=x86_64-unknown-linux-gnu"};
+    clang::tooling::FileContentMappings files;
+    AddRuntimeInterfaceFiles(files, args);
+    const std::string source =
+        std::string("#include <objc3c/runtime/objc3_runtime_services.h>\n") +
+        (cpp ? "template<class T> struct TaskCarrier { void *context; }; "
+               "template<class T> using __objc3_async_task = TaskCarrier<T>; "
+               "int task_fetch(int) __objc3_async; "
+               "int fetch(int) __objc3_async_frame; "
+               "void inspect(void) { (void)task_fetch(1); (void)fetch(2); }"
+             : "int fetch(int) __objc3_async; "
+               "void inspect(void) { (void)fetch(1); }");
+    return clang::tooling::buildASTFromCodeWithArgs(
+        source, args, cpp ? "async_import.mm" : "async_import.m", "clang-tool",
+        std::make_shared<clang::PCHContainerOperations>(),
+        clang::tooling::getClangStripDependencyFileAdjuster(), files);
+  };
+  auto function = [](clang::ASTContext &context, llvm::StringRef name) {
+    for (auto *decl : context.getTranslationUnitDecl()->decls())
+      if (auto *fd = llvm::dyn_cast<clang::FunctionDecl>(decl))
+        if (fd->getName() == name)
+          return fd;
+    return static_cast<clang::FunctionDecl *>(nullptr);
+  };
+  for (bool source_cpp : {false, true}) {
+    for (bool target_cpp : {false, true}) {
+      auto from = build(source_cpp), to = build(target_cpp);
+      assert(from && to && !from->getDiagnostics().hasErrorOccurred() &&
+             !to->getDiagnostics().hasErrorOccurred());
+      auto *from_function = function(from->getASTContext(), "fetch");
+      auto *to_function = function(to->getASTContext(), "fetch");
+      assert(from_function && to_function);
+      auto &context = to->getASTContext();
+      clang::ASTImporter importer(context, to->getFileManager(),
+                                  from->getASTContext(), from->getFileManager(),
+                                  false);
+      auto imported = importer.Import(from_function->getType());
+      assert(imported &&
+             context.hasSameType(*imported, to_function->getType()));
+      const auto *prototype = (*imported)->castAs<clang::FunctionProtoType>();
+      assert(prototype->getObjC3FunctionEffects().AsyncFrame);
+      if (target_cpp) {
+        auto *task = function(context, "task_fetch");
+        assert(task && !context.hasSameType(task->getType(), *imported));
+        assert(!task->getType()
+                    ->castAs<clang::FunctionProtoType>()
+                    ->getObjC3FunctionEffects()
+                    .AsyncFrame);
+      }
+      InterfaceDeclarationIdentity identity;
+      assert(ReadInterfaceDeclarationIdentity(to_function, context, identity));
+      assert(identity.effects.async_abi_identity == "v1:4:type10:c-frame-v1");
+    }
+  }
+}
+
 void TestObjectiveCContainerRoundTrips() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((objc_root_class)) @interface Widget\n- (int)value;\n@end\n",
-      {"-x", "objective-c", "-std=gnu11",
-       "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+      "__attribute__((objc_root_class)) @interface Widget\n- "
+      "(int)value;\n@end\n",
+      {"-x", "objective-c", "-std=gnu11", "-fobjc-runtime=gnustep-2.2",
+       "--target=x86_64-unknown-linux-gnu"},
       "objc_fixture.m");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
 
@@ -112,34 +411,37 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
         emitted.sidecar_json, emitted.source_bytes, semantics);
     assert(decoded);
     assert(decoded->required_semantics ==
-        std::vector<std::string>{"objc3.canonical-function-effects.v1"});
+           std::vector<std::string>{"objc3.canonical-function-effects.v1"});
     bool found_typed_effect = false;
     bool found_canonical_effect = false;
     for (const auto &identity : decoded->declarations) {
-      found_canonical_effect |= identity.canonical_type_identity.find("throws(int)") !=
-          std::string::npos;
+      found_canonical_effect |= identity.canonical_type_identity.find(
+                                    "throws(int)") != std::string::npos;
       if (identity.effects.is_throwing) {
         assert(identity.effects.throws_kind == "typed");
         assert(identity.effects.error_type_identity == "int");
         assert(identity.canonical_type_identity.find("throws(int)") !=
-            std::string::npos);
+               std::string::npos);
         found_typed_effect = true;
       }
     }
     assert(found_canonical_effect);
-    if (std::string(source).find("accepts_inline_callback") == std::string::npos)
+    if (std::string(source).find("accepts_inline_callback") ==
+        std::string::npos)
       assert(found_typed_effect);
     auto regenerated_ast = clang::tooling::buildASTFromCodeWithArgs(
         emitted.source_bytes,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
          "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
         "relocated-effect-interface.m");
-    assert(regenerated_ast && !regenerated_ast->getDiagnostics().hasErrorOccurred());
+    assert(regenerated_ast &&
+           !regenerated_ast->getDiagnostics().hasErrorOccurred());
     auto regenerated = EmitSemanticInterface(regenerated_ast->getASTContext(),
-        "fixture.effect", "test-package");
+                                             "fixture.effect", "test-package");
     assert(regenerated.success);
     assert(regenerated.source_bytes == emitted.source_bytes);
-    assert(regenerated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    assert(regenerated.identity.semantic_fingerprint ==
+           emitted.identity.semantic_fingerprint);
   }
 }
 
@@ -147,95 +449,139 @@ void TestManagedReturnOwnershipRoundTrips() {
   std::string previous_fingerprint;
   std::map<std::string, SemanticInterfaceSidecar> mrc_views;
   for (bool arc : {false, true})
-  for (const char *attribute : {"ns_returns_retained", "ns_returns_not_retained", "ns_returns_autoreleased"}) {
-    const std::string source = "@protocol Error @end\nid managed(void) "
-                               "throws(id<Error>) __attribute__((" +
-                               std::string(attribute) + "));\n";
-    std::vector<std::string> arguments = {"-x", "objective-c", "-std=c17",
-        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
-    if (arc) arguments.push_back("-fobjc-arc");
-    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, arguments, "managed-return.m");
-    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
-    auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.managed", "test-package");
-    for (const auto &diagnostic : emitted.diagnostics)
-      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
-    assert(emitted.success && emitted.source_bytes.find(attribute) != std::string::npos);
-    assert(previous_fingerprint != emitted.identity.semantic_fingerprint);
-    previous_fingerprint = emitted.identity.semantic_fingerprint;
-    auto round_trip = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes, arguments, "relocated.m");
-    assert(round_trip && !round_trip->getDiagnostics().hasErrorOccurred());
-    auto regenerated = EmitSemanticInterface(round_trip->getASTContext(), "fixture.managed", "test-package");
-    if (!regenerated.success || regenerated.source_bytes != emitted.source_bytes)
-      std::fprintf(stderr, "original:\n%s\nregenerated:\n%s\n", emitted.source_bytes.c_str(), regenerated.source_bytes.c_str());
-    assert(regenerated.success && regenerated.source_bytes == emitted.source_bytes);
-    assert(regenerated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
-    const std::vector<llvm::StringRef> supported = {"objc3.canonical-function-effects.v1", "objc3.native-return-ownership.v1"};
-    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, supported);
-    assert(decoded);
-    if (!arc) mrc_views[attribute] = *decoded;
-    else {
-      const auto &mrc = mrc_views.at(attribute);
-      // Ownership modes remain distinct module identities. The declaration
-      // contract must agree for this explicitly modeled managed-return API.
-      assert(mrc.module.runtime_abi != decoded->module.runtime_abi);
-      assert(mrc.module.semantic_fingerprint != decoded->module.semantic_fingerprint);
-      assert(mrc.declarations.size() == decoded->declarations.size());
-      for (std::size_t i = 0; i != mrc.declarations.size(); ++i)
-        assert(SameInterfaceDeclarationIdentity(mrc.declarations[i], decoded->declarations[i]));
-    }
-    bool found = false;
-    for (const auto &declaration : decoded->declarations)
-      if (declaration.qualified_name == "managed") {
-        assert(declaration.effects.ownership_identity.starts_with("native-return:"));
-        found = true;
+    for (const char *attribute :
+         {"ns_returns_retained", "ns_returns_not_retained",
+          "ns_returns_autoreleased"}) {
+      const std::string source = "@protocol Error @end\nid managed(void) "
+                                 "throws(id<Error>) __attribute__((" +
+                                 std::string(attribute) + "));\n";
+      std::vector<std::string> arguments = {
+          "-x",
+          "objective-c",
+          "-std=c17",
+          "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc)
+        arguments.push_back("-fobjc-arc");
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, arguments,
+                                                          "managed-return.m");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                           "fixture.managed", "test-package");
+      for (const auto &diagnostic : emitted.diagnostics)
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str());
+      assert(emitted.success &&
+             emitted.source_bytes.find(attribute) != std::string::npos);
+      assert(previous_fingerprint != emitted.identity.semantic_fingerprint);
+      previous_fingerprint = emitted.identity.semantic_fingerprint;
+      auto round_trip = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes, arguments, "relocated.m");
+      assert(round_trip && !round_trip->getDiagnostics().hasErrorOccurred());
+      auto regenerated = EmitSemanticInterface(
+          round_trip->getASTContext(), "fixture.managed", "test-package");
+      if (!regenerated.success ||
+          regenerated.source_bytes != emitted.source_bytes)
+        std::fprintf(stderr, "original:\n%s\nregenerated:\n%s\n",
+                     emitted.source_bytes.c_str(),
+                     regenerated.source_bytes.c_str());
+      assert(regenerated.success &&
+             regenerated.source_bytes == emitted.source_bytes);
+      assert(regenerated.identity.semantic_fingerprint ==
+             emitted.identity.semantic_fingerprint);
+      const std::vector<llvm::StringRef> supported = {
+          "objc3.canonical-function-effects.v1",
+          "objc3.native-return-ownership.v1"};
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes, supported);
+      assert(decoded);
+      if (!arc)
+        mrc_views[attribute] = *decoded;
+      else {
+        const auto &mrc = mrc_views.at(attribute);
+        // Ownership modes remain distinct module identities. The declaration
+        // contract must agree for this explicitly modeled managed-return API.
+        assert(mrc.module.runtime_abi != decoded->module.runtime_abi);
+        assert(mrc.module.semantic_fingerprint !=
+               decoded->module.semantic_fingerprint);
+        assert(mrc.declarations.size() == decoded->declarations.size());
+        for (std::size_t i = 0; i != mrc.declarations.size(); ++i)
+          assert(SameInterfaceDeclarationIdentity(mrc.declarations[i],
+                                                  decoded->declarations[i]));
       }
-    assert(found);
-    auto stripped = *decoded;
-    std::erase(stripped.required_semantics, "objc3.native-return-ownership.v1");
-    auto checked = ValidateSemanticInterface(stripped, decoded->module,
-        decoded->canonical_source_sha256, decoded->declarations,
-        {"objc3.canonical-function-effects.v1", "objc3.native-return-ownership.v1"});
-    bool rejected_erasure = false;
-    for (const auto &diagnostic : checked.diagnostics)
-      rejected_erasure |= diagnostic.code == "O3IFC014";
-    assert(rejected_erasure);
-    auto old_consumer = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes,
-        {"objc3.canonical-function-effects.v1"});
-    assert(!old_consumer);
-    llvm::consumeError(old_consumer.takeError());
-  }
+      bool found = false;
+      for (const auto &declaration : decoded->declarations)
+        if (declaration.qualified_name == "managed") {
+          assert(declaration.effects.ownership_identity.starts_with(
+              "native-return:"));
+          found = true;
+        }
+      assert(found);
+      auto stripped = *decoded;
+      std::erase(stripped.required_semantics,
+                 "objc3.native-return-ownership.v1");
+      auto checked = ValidateSemanticInterface(
+          stripped, decoded->module, decoded->canonical_source_sha256,
+          decoded->declarations,
+          {"objc3.canonical-function-effects.v1",
+           "objc3.native-return-ownership.v1"});
+      bool rejected_erasure = false;
+      for (const auto &diagnostic : checked.diagnostics)
+        rejected_erasure |= diagnostic.code == "O3IFC014";
+      assert(rejected_erasure);
+      auto old_consumer = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes,
+          {"objc3.canonical-function-effects.v1"});
+      assert(!old_consumer);
+      llvm::consumeError(old_consumer.takeError());
+    }
 }
 
 void TestDirectMethodIdentityRoundTrip() {
   std::string previous;
   for (bool direct : {false, true}) {
-    const std::string source = "__attribute__((objc_root_class)) @interface Direct "
-        "- (int)value" + std::string(direct ? " __attribute__((objc_direct))" : "") + "; @end";
-    const std::vector<std::string> args = {"-x", "objective-c", "-fobjc-version=3",
-        "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
-    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "direct.m");
+    const std::string source =
+        "__attribute__((objc_root_class)) @interface Direct "
+        "- (int)value" +
+        std::string(direct ? " __attribute__((objc_direct))" : "") + "; @end";
+    const std::vector<std::string> args = {
+        "-x", "objective-c", "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+        "--target=x86_64-unknown-linux-gnu"};
+    auto ast =
+        clang::tooling::buildASTFromCodeWithArgs(source, args, "direct.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
-    auto emitted = EmitSemanticInterface(ast->getASTContext(), "direct.methods", "test");
-    assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+    auto emitted =
+        EmitSemanticInterface(ast->getASTContext(), "direct.methods", "test");
+    assert(emitted.success &&
+           emitted.identity.semantic_fingerprint != previous);
     previous = emitted.identity.semantic_fingerprint;
-    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes, args, "round.m");
+    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes,
+                                                          args, "round.m");
     assert(round && !round->getDiagnostics().hasErrorOccurred());
-    auto regenerated = EmitSemanticInterface(round->getASTContext(), "direct.methods", "test");
-    assert(regenerated.success && regenerated.identity.semantic_fingerprint == previous);
+    auto regenerated =
+        EmitSemanticInterface(round->getASTContext(), "direct.methods", "test");
+    assert(regenerated.success &&
+           regenerated.identity.semantic_fingerprint == previous);
     const std::vector<llvm::StringRef> supported = {"objc3.direct-dispatch.v1"};
-    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, supported);
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, supported);
     assert(decoded);
     if (direct) {
       assert(emitted.source_bytes.find("objc_direct") != std::string::npos);
-      assert(decoded->required_semantics == std::vector<std::string>{"objc3.direct-dispatch.v1"});
+      assert(decoded->required_semantics ==
+             std::vector<std::string>{"objc3.direct-dispatch.v1"});
       auto erased = *decoded;
       erased.required_semantics.clear();
-      auto checked = ValidateSemanticInterface(erased, decoded->module,
-          decoded->canonical_source_sha256, decoded->declarations, {"objc3.direct-dispatch.v1"});
+      auto checked = ValidateSemanticInterface(
+          erased, decoded->module, decoded->canonical_source_sha256,
+          decoded->declarations, {"objc3.direct-dispatch.v1"});
       bool rejected = false;
-      for (const auto &diagnostic : checked.diagnostics) rejected |= diagnostic.code == "O3IFC015";
+      for (const auto &diagnostic : checked.diagnostics)
+        rejected |= diagnostic.code == "O3IFC015";
       assert(rejected);
-      auto unaware = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, {});
+      auto unaware = DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                                    emitted.source_bytes, {});
       assert(!unaware);
       llvm::consumeError(unaware.takeError());
     }
@@ -243,9 +589,13 @@ void TestDirectMethodIdentityRoundTrip() {
 }
 
 void TestManagedIvarAndPropertyRoundTrip() {
-  const std::vector<std::string> args = {
-      "-x", "objective-c", "-std=c17", "-fobjc-version=3", "-fobjc-arc",
-      "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
+  const std::vector<std::string> args = {"-x",
+                                         "objective-c",
+                                         "-std=c17",
+                                         "-fobjc-version=3",
+                                         "-fobjc-arc",
+                                         "-fobjc-runtime=gnustep-2.2",
+                                         "--target=x86_64-unknown-linux-gnu"};
   std::string previous;
   for (const char *access : {"@public", "@protected", "@private", "@package"}) {
     const std::string source =
@@ -260,19 +610,27 @@ void TestManagedIvarAndPropertyRoundTrip() {
         "@property(nonatomic) struct Record record; @end";
     auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "heap.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
-    auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.heap", "test");
+    auto emitted =
+        EmitSemanticInterface(ast->getASTContext(), "fixture.heap", "test");
     for (const auto &diagnostic : emitted.diagnostics)
-      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
-    assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                   diagnostic.message.c_str());
+    assert(emitted.success &&
+           emitted.identity.semantic_fingerprint != previous);
     assert(emitted.source_bytes.find(access) != std::string::npos);
     assert(emitted.source_bytes.find("values[2]") != std::string::npos);
-    assert(emitted.source_bytes.find("__weak id nativeWeak") != std::string::npos);
-    assert(emitted.source_bytes.find("__strong id nativeStrong") != std::string::npos);
+    assert(emitted.source_bytes.find("__weak id nativeWeak") !=
+           std::string::npos);
+    assert(emitted.source_bytes.find("__strong id nativeStrong") !=
+           std::string::npos);
     previous = emitted.identity.semantic_fingerprint;
-    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes, args, "round.m");
+    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes,
+                                                          args, "round.m");
     assert(round && !round->getDiagnostics().hasErrorOccurred());
-    auto regenerated = EmitSemanticInterface(round->getASTContext(), "fixture.heap", "test");
-    assert(regenerated.success && regenerated.source_bytes == emitted.source_bytes);
+    auto regenerated =
+        EmitSemanticInterface(round->getASTContext(), "fixture.heap", "test");
+    assert(regenerated.success &&
+           regenerated.source_bytes == emitted.source_bytes);
     assert(regenerated.identity.semantic_fingerprint == previous);
   }
 }
@@ -281,25 +639,34 @@ void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
         "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-        "objc3.canonical-function-effects.v1"};
+        "objc3.canonical-function-effects.v1", "objc3.async-entry-abi.v1"};
     std::string previous;
-    for (const char *signature : {
-             "int get() const __objc3_async __objc3_throws(id<First>);",
-             "int get() const __objc3_async __objc3_throws(id<Second>);",
-             "static int get() __objc3_async __objc3_throws(id<Second>);"}) {
+    for (const char *signature :
+         {"int get() const __objc3_async __objc3_throws(id<First>);",
+          "int get() const __objc3_async __objc3_throws(id<Second>);",
+          "static int get() __objc3_async __objc3_throws(id<Second>);"}) {
       const std::string source =
-          std::string("@protocol Error @end @protocol First<Error> @end "
-                      "@protocol Second<Error> @end struct Worker { int value; ") +
+          std::string(
+              "@protocol Error @end @protocol First<Error> @end "
+              "@protocol Second<Error> @end struct Worker { int value; ") +
           signature + " };";
       const std::vector<std::string> args = {
-          "-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
-          "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
-      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "members.mm");
+          "-x",
+          "objective-c++",
+          "-std=c++20",
+          "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2",
+          "--target=x86_64-unknown-linux-gnu"};
+      auto ast =
+          clang::tooling::buildASTFromCodeWithArgs(source, args, "members.mm");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
-      auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.members", "test");
+      auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                           "fixture.members", "test");
       for (const auto &diagnostic : emitted.diagnostics)
-        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
-      assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str());
+      assert(emitted.success &&
+             emitted.identity.semantic_fingerprint != previous);
       auto decoded = DecodeSemanticInterfaceSidecar(
           emitted.sidecar_json, emitted.source_bytes, semantics);
       assert(decoded);
@@ -307,23 +674,28 @@ void TestBoundedCxxSemanticInterfaces() {
       for (const auto &declaration : decoded->declarations)
         if (declaration.kind == "CXXMethod") {
           found = true;
-          assert(declaration.effects.is_async && declaration.effects.is_throwing);
-          assert(declaration.canonical_type_identity.find(";cxx-method=") != std::string::npos);
+          assert(declaration.effects.is_async &&
+                 declaration.effects.is_throwing);
+          assert(declaration.canonical_type_identity.find(";cxx-method=") !=
+                 std::string::npos);
         }
       assert(found);
       previous = emitted.identity.semantic_fingerprint;
       auto round = clang::tooling::buildASTFromCodeWithArgs(
           emitted.source_bytes, args, "round-members.mm");
       assert(round && !round->getDiagnostics().hasErrorOccurred());
-      auto regenerated = EmitSemanticInterface(round->getASTContext(), "fixture.members", "test");
-      assert(regenerated.success && regenerated.identity.semantic_fingerprint == previous);
+      auto regenerated = EmitSemanticInterface(round->getASTContext(),
+                                               "fixture.members", "test");
+      assert(regenerated.success &&
+             regenerated.identity.semantic_fingerprint == previous);
       std::erase(decoded->required_semantics, "objc3.cxx-member-interfaces.v1");
-      decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(
-          BuildSemanticFingerprintInput(*decoded));
+      decoded->module.semantic_fingerprint =
+          ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
       auto invalid = EncodeSemanticInterfaceSidecar(*decoded, semantics);
       assert(!invalid);
-      assert(llvm::toString(invalid.takeError()).find(
-                 "C++ member declarations and required capability") != std::string::npos);
+      assert(llvm::toString(invalid.takeError())
+                 .find("C++ member declarations and required capability") !=
+             std::string::npos);
     }
   }
   std::string prior;
@@ -407,7 +779,8 @@ void TestBoundedCxxSemanticInterfaces() {
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : Base { int second; };",
         "struct Special { Special(); int value; };",
-        "struct Method { int value; inline int get() const { return value; } };",
+        "struct Method { int value; inline int get() const { return value; } "
+        "};",
         "class Hidden { int value; };", "struct Default { int value=42; };",
         "struct Nested { struct Inner { int value; }; Inner child; };",
         "int api(int argument=42);", "inline int api() { return 42; }",
@@ -426,11 +799,16 @@ void TestBoundedCxxSemanticInterfaces() {
   }
 }
 
-}  // namespace
+} // namespace
 
 int main() {
   TestOrdinaryCDeclarationsRoundTrip();
+  TestNativeOwnershipContractsRoundTrip();
+  TestOpaqueKeyPathSignatureRoundTrips();
+  TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();
+  TestCAsyncPhysicalABIRoundTrips();
+  TestCAsyncPhysicalABIImportBoundaries();
   TestObjectiveCContainerRoundTrips();
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();

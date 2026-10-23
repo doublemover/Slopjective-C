@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..c0a4d44d6
+index 000000000..3f918093c
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,157 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -34,6 +34,16 @@ index 000000000..c0a4d44d6
 +/// subobjects. Pointers and references are views, never owned subobjects.
 +bool containsObjC3CarrierManagedStorage(QualType Type);
 +bool containsObjC3CarrierThrowingCopy(QualType Type);
++
++/// Actual C++ object payloads of a direct Optional/Result tree. Carrier-level
++/// const/volatile qualifiers are preserved on each selected source leaf.
++void collectObjC3CarrierCppPayloadTypes(
++    QualType Type, llvm::SmallVectorImpl<QualType> &Payloads);
++bool hasObjC3CarrierCppPayload(QualType Type);
++bool hasObjC3CarrierCppDestructor(QualType Type);
++/// Pure C++ carrier subobjects owned by an ordinary source record or array.
++/// This is a presence query, not an operation or call-ABI qualification.
++bool containsObjC3CarrierCppStorage(QualType Type);
 +
 +
 +/// Versioned storage/ownership encoding for the qualified Linux ARC callable
@@ -152,31 +162,35 @@ index 000000000..c0a4d44d6
 +
 +
 diff --git a/clang/lib/AST/CMakeLists.txt b/clang/lib/AST/CMakeLists.txt
-index e3f74d73f..15bac0545 100644
+index e3f74d73f..3609394b1 100644
 --- a/clang/lib/AST/CMakeLists.txt
 +++ b/clang/lib/AST/CMakeLists.txt
-@@ -58,6 +58,7 @@ add_clang_library(clangAST
+@@ -58,6 +58,10 @@ add_clang_library(clangAST
    DynamicRecursiveASTVisitor.cpp
    ParentMapContext.cpp
    Expr.cpp
 +  ObjC3MatchNodes.cpp
++  ObjC3OptionalOperators.cpp
++  ObjC3OptionalAccess.cpp
++  ObjC3Resources.cpp
    ExprClassification.cpp
    ExprConcepts.cpp
    ExprConstant.cpp
-@@ -131,6 +132,7 @@ add_clang_library(clangAST
+@@ -131,6 +135,8 @@ add_clang_library(clangAST
    TemplateName.cpp
    TextNodeDumper.cpp
    Type.cpp
 +  ObjC3TypeContracts.cpp
++  ObjC3ConditionNodes.cpp
    TypeLoc.cpp
    TypePrinter.cpp
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..9e3216ec1
+index 000000000..33ae24aee
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,528 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -193,6 +207,7 @@ index 000000000..9e3216ec1
 +#include "clang/Basic/LangOptions.h"
 +#include "clang/Basic/TargetInfo.h"
 +#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/DenseSet.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/ADT/StringExtras.h"
 +#include "llvm/Support/SHA256.h"
@@ -317,6 +332,78 @@ index 000000000..9e3216ec1
 +  };
 +  return !Type.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
 +      Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
++}
++
++void clang::collectObjC3CarrierCppPayloadTypes(
++    QualType Type, llvm::SmallVectorImpl<QualType> &Payloads) {
++  if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
++                           Type.getCanonicalType().getTypePtr()))
++    return;
++  SmallVector<QualType, 8> Pending{Type};
++  llvm::DenseSet<QualType> Seen;
++  while (!Pending.empty()) {
++    QualType Current = Pending.pop_back_val().getCanonicalType();
++    if (!Seen.insert(Current).second)
++      continue;
++    auto Add = [&](QualType Child) {
++      if (Current.isConstQualified())
++        Child = Child.withConst();
++      if (Current.isVolatileQualified())
++        Child = Child.withVolatile();
++      Pending.push_back(Child);
++    };
++    if (const auto *Optional = Current->getAs<ObjC3OptionalType>()) {
++      Add(Optional->getElementType());
++    } else if (const auto *Result = Current->getAs<ObjC3ResultType>()) {
++      Add(Result->getSuccessType());
++      Add(Result->getErrorType());
++    } else if (Current->getAsCXXRecordDecl()) {
++      Payloads.push_back(Current);
++    }
++  }
++}
++
++bool clang::hasObjC3CarrierCppPayload(QualType Type) {
++  SmallVector<QualType, 4> Payloads;
++  collectObjC3CarrierCppPayloadTypes(Type, Payloads);
++  return !Payloads.empty();
++}
++
++bool clang::hasObjC3CarrierCppDestructor(QualType Type) {
++  SmallVector<QualType, 4> Payloads;
++  collectObjC3CarrierCppPayloadTypes(Type, Payloads);
++  for (QualType Payload : Payloads) {
++    const CXXRecordDecl *RD = Payload->getAsCXXRecordDecl();
++    if (!RD->hasDefinition() || !RD->hasTrivialDestructor())
++      return true;
++  }
++  return false;
++}
++
++bool clang::containsObjC3CarrierCppStorage(QualType Type) {
++  SmallVector<QualType, 8> Pending{Type};
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  while (!Pending.empty()) {
++    QualType Current = Pending.pop_back_val();
++    if (Current.isNull() ||
++        !Seen.insert(Current.getCanonicalType().getTypePtr()).second)
++      continue;
++    if (hasObjC3CarrierCppPayload(Current))
++      return true;
++    if (const auto *Array = Current->getAsArrayTypeUnsafe()) {
++      Pending.push_back(Array->getElementType());
++    } else if (const auto *Record = Current->getAs<RecordType>()) {
++      const RecordDecl *RD = Record->getDecl()->getDefinition();
++      if (!RD)
++        continue;
++      if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++        for (const auto &Base : CXX->bases())
++          Pending.push_back(Base.getType());
++      for (const auto *Field : RD->fields())
++        Pending.push_back(Field->getType());
++    }
++  }
++  return false;
 +}
 +
 +namespace {
@@ -1197,10 +1284,10 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..bc62e13e0
+index 000000000..31069bc83
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,94 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1208,6 +1295,7 @@ index 000000000..bc62e13e0
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/StmtCXX.h"
 +namespace clang {
 +/// Canonical logical signature shared by functions, methods, and Blocks.
@@ -1248,12 +1336,49 @@ index 000000000..bc62e13e0
 +  const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit());
 +  return Await ? getObjC3CheckedAsyncAdapterCall(Await->getOperand()) : nullptr;
 +}
++/// The explicit C-frame entry adapter owns the carrier until task adoption.
++/// Unwrap it for logical effect checking without changing its evaluated type.
++inline const Expr *getObjC3FrameAdapterSource(const Expr *E) {
++  E = E->IgnoreImplicit();
++  const auto *Call = dyn_cast<CallExpr>(E);
++  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
++  if (FD && FD->getIdentifier() &&
++      FD->getIdentifier()->isStr("__objc3_async_from_frame") &&
++      Call->getNumArgs() == 1)
++    return Call->getArg(0)->IgnoreParenImpCasts();
++  return E;
++}
 +inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
++  const Expr *Source;
 +  if (const auto *Adapter = getObjC3CheckedAsyncAdapter(E))
-+    return Adapter->getArg(0)->IgnoreImplicit();
-+  if (const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit()))
-+    return Await->getOperand()->IgnoreImplicit();
-+  return E->IgnoreParenImpCasts();
++    Source = getObjC3FrameAdapterSource(Adapter->getArg(0));
++  else if (const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit()))
++    Source = getObjC3FrameAdapterSource(Await->getOperand());
++  else
++    Source = getObjC3FrameAdapterSource(E->IgnoreParenImpCasts());
++  while (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Source->IgnoreImplicit())) {
++    if (!Pseudo->getResultExpr())
++      break;
++    Source = Pseudo->getResultExpr();
++  }
++  return Source->IgnoreParenImpCasts();
++}
++
++inline const FunctionProtoType *getObjC3AsyncCalleeFunctionType(const Expr *E) {
++  E = getObjC3AsyncSourceCall(E);
++  if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
++    return getObjC3CallableFunctionType(Message->getMethodDecl());
++  const auto *Call = dyn_cast<CallExpr>(E);
++  if (!Call) return nullptr;
++  QualType Type = Call->getCallee()->getType();
++  if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++    Type = Expr::findBoundMemberType(Call->getCallee());
++  if (Type.isNull()) return nullptr;
++  if (const auto *Pointer = Type->getAs<PointerType>())
++    Type = Pointer->getPointeeType();
++  else if (const auto *Block = Type->getAs<BlockPointerType>())
++    Type = Block->getPointeeType();
++  return Type->getAs<FunctionProtoType>();
 +}
 +} // namespace clang
 +#endif

@@ -385,6 +385,16 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     test_path = (source / build["test_suite"]).as_posix()
     test_cmd = [environment["python_executable"], "-B", test_runner, "-sv", "--show-unsupported", "-j",
                 str(min(jobs["compile_jobs"], 4)), test_path]
+    additional_suites = build.get("additional_test_suites", [])
+    if not isinstance(additional_suites, list):
+        raise ToolchainError("additional_test_suites must be a list of relative paths")
+    for relative in additional_suites:
+        if not isinstance(relative, str) or not relative:
+            raise ToolchainError("additional test suite paths must be nonempty strings")
+        suite = (source / relative).resolve()
+        if not suite.is_relative_to(source.resolve()):
+            raise ToolchainError("additional test suite paths must remain within the source")
+        test_cmd.append(suite.as_posix())
     test_follow_ups = []
     test_binaries = build.get("test_binaries", [])
     if not isinstance(test_binaries, list):

@@ -141,6 +141,11 @@ Objective‑C 3.0 introduces type annotations usable on typedefs:
 - `@resource_family(Name)`
 - `@invalid(X)`
 
+The canonical header forms are `objc_requires_cleanup(F)`,
+`objc_resource_family(Name)` and `objc_invalid(X)`, each enclosed in
+`__attribute__((...))`; see [B.8.7](#b-8-7). Contracts survive typedef/using
+aliases and interface serialization without changing the underlying scalar ABI.
+
 In strict-system mode, the compiler shall diagnose:
 
 - forgetting to cleanup values of types with `@requires_cleanup`,

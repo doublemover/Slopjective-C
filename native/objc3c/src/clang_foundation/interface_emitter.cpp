@@ -1,5 +1,6 @@
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
+#include "clang_foundation/native_contract_identity.h"
 #include "clang_foundation/interface_module_resolver.h"
 #include "clang_foundation/module_names.h"
 #include "clang_foundation/runtime_interface_types.h"
@@ -455,6 +456,13 @@ class TypeDependencyVisitor final
      return !stable_id.empty() && resolved_ids_.count(stable_id);
    }
 
+  bool TraverseRecordType(clang::RecordType *type) {
+    clang::ObjC3KeyPathInfo keypath;
+    if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath))
+      return TraverseType(keypath.Root) && TraverseType(keypath.Value);
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type);
+  }
+
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
     CheckVisibility(declaration);
@@ -481,6 +489,31 @@ class TypeDependencyVisitor final
                                   builtin->getUnderlyingType())))
           return true;
       }
+    }
+    const auto contract = clang::getObjC3ResourceTypeContract(
+        context_, clang::QualType(type, 0));
+    if (const auto *cleanup = contract.getCleanupFunction()) {
+      CheckVisibility(cleanup);
+      if (!cleanup->isExternallyVisible() ||
+          (!IsInMainFile(context_, cleanup->getLocation()) && !IsResolved(cleanup)))
+        AddDiagnostic(result_, "O3IFC170",
+                      "exported resource cleanup needs an externally visible, resolved function",
+                      cleanup->getQualifiedNameAsString());
+    }
+    if (contract.Invalid) {
+      const auto *invalid = contract.Invalid->getInvalid();
+      if (NativeResourceSentinelIdentity(invalid, context_) == "!unmodeled")
+        AddDiagnostic(result_, "O3IFC170",
+                      "resource sentinel has no stable exported constant identity",
+                      declaration->getQualifiedNameAsString());
+      clang::Expr::EvalResult value;
+      if (invalid->EvaluateAsRValue(value, context_) && value.Val.isLValue())
+        if (const auto *base = value.Val.getLValueBase().dyn_cast<const clang::ValueDecl *>()) {
+          CheckVisibility(base);
+          if (!IsInMainFile(context_, base->getLocation()) && !IsResolved(base))
+            AddDiagnostic(result_, "O3IFC170", "resource sentinel dependency is unresolved",
+                          base->getQualifiedNameAsString());
+        }
     }
     CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
@@ -515,6 +548,9 @@ class TypeDependencyVisitor final
 
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
     const auto effects = type->getObjC3FunctionEffects();
+    // The canonical function type explicitly selects its physical ABI. Never
+    // infer the return carrier from the importing translation unit's language.
+    UsesRuntimeFrame |= effects.Async && effects.AsyncFrame;
     UsesCanonicalFunctionEffects |=
         effects.Async || effects.Throws != clang::ObjC3ThrowsKind::None;
     if (!effects.ErrorType.isNull()) TraverseType(effects.ErrorType);
@@ -559,6 +595,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+    check(property->getType());
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
     check(method->getObjC3FunctionType());
     check(method->getReturnType());
@@ -728,6 +766,19 @@ class InterfaceCollector final
       }
     }
     if (!IsIdentityCandidate(declaration, context_, source_root_)) {
+      if (const auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(declaration)) {
+        const auto *owner = llvm::dyn_cast<clang::NamedDecl>(
+            clang::Decl::castFromDeclContext(parameter->getDeclContext()));
+        if (owner && IsIdentityCandidate(owner, context_, source_root_))
+          for (const auto *attribute : parameter->attrs()) {
+            if (attribute->isImplicit() ||
+                llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute))
+              continue;
+            AddDiagnostic(result_, "O3IFC116",
+                (llvm::Twine("public parameter has an attribute not modeled in the interface: ") +
+                 attribute->getSpelling()).str(), owner->getQualifiedNameAsString());
+          }
+      }
       // Native C typedefs can have no linkage while naming a callable contract.
       // Validate their type even when the current public identity model does
       // not export them, rather than silently accepting unqualified effects.
@@ -800,13 +851,30 @@ class InterfaceCollector final
                declaration) &&
            llvm::isa<clang::ObjCRuntimeNameAttr>(attribute)))
         continue;
+      if (llvm::isa<clang::ObjCRequiresCleanupAttr, clang::ObjCResourceFamilyAttr,
+                    clang::ObjCInvalidAttr>(attribute) &&
+          llvm::isa<clang::TypedefNameDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::ObjCReturnsBorrowedAttr, clang::NoThrowAttr>(attribute) &&
+          llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute) &&
+          llvm::isa<clang::ParmVarDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::NSConsumesSelfAttr>(attribute) &&
+          llvm::isa<clang::ObjCMethodDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::ObjCExecutorAttr, clang::ObjCNonisolatedAttr,
+                    clang::ObjCUnsafeSendableAttr, clang::ObjCTaskSpawnAttr,
+                    clang::ObjCTaskDetachedAttr, clang::ObjCTaskGroupAttr>(attribute))
+        continue;
       if (llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,
                     clang::AvailabilityAttr>(attribute))
         continue;
       if (llvm::isa<clang::ObjCMethodDecl>(declaration) &&
           llvm::isa<clang::ObjCDirectAttr>(attribute))
         continue;
-      if (llvm::isa<clang::FunctionDecl>(declaration) &&
+      if (llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration) &&
           llvm::isa<clang::NSReturnsRetainedAttr, clang::NSReturnsNotRetainedAttr,
                     clang::NSReturnsAutoreleasedAttr>(attribute))
         continue;
@@ -837,6 +905,16 @@ class InterfaceCollector final
                         : "declaration has no canonical type identity supported by the interface contract",
                     identity.stable_id.empty()
                         ? declaration->getQualifiedNameAsString() : identity.stable_id);
+      return true;
+    }
+    if (identity.effects.ownership_identity.find("!unmodeled") != std::string::npos) {
+      AddDiagnostic(result_, "O3IFC170", "public ownership contract has no stable interface representation",
+                    identity.stable_id);
+      return true;
+    }
+    if (!IsValidAsyncABIIdentity(identity.effects)) {
+      AddDiagnostic(result_, "O3IFC025", "public async type has no complete physical ABI identity",
+                    identity.stable_id);
       return true;
     }
     auto *representative = Representative(declaration);
@@ -903,7 +981,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   if (c_linkage)
     out << "extern \"C\" {\n";
   clang::PrintingPolicy policy(context.getLangOpts());
-  policy.PrintAsCanonical = true;
+  policy.PrintAsCanonical = false;
   policy.FullyQualifiedName = true;
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
@@ -996,14 +1074,16 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                   a.effects.throws_kind, a.effects.error_type_identity,
                   a.effects.actor_isolation_identity,
                   a.effects.executor_affinity_identity,
-                  a.effects.ownership_identity) ==
+                  a.effects.ownership_identity,
+                  a.effects.async_abi_identity) ==
          std::tie(b.stable_id, b.kind, b.qualified_name, b.spi_group,
                   b.native_symbol_name, b.canonical_type_identity,
                   b.effects.is_async, b.effects.is_throwing,
                   b.effects.throws_kind, b.effects.error_type_identity,
                   b.effects.actor_isolation_identity,
                   b.effects.executor_affinity_identity,
-                  b.effects.ownership_identity);
+                  b.effects.ownership_identity,
+                  b.effects.async_abi_identity);
 }
 
 }  // namespace
@@ -1089,8 +1169,11 @@ bool ReadInterfaceDeclarationIdentity(
   if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(representative))
     identity.effects = ReadCanonicalFunctionEffects(
         method->getObjC3FunctionType(), context);
+  if (auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(representative))
+    identity.effects = ReadCanonicalFunctionEffects(property->getType(), context);
   const auto return_ownership = ReadNativeReturnOwnership(representative);
   if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
+  ReadNativeDeclarationContracts(representative, context, identity.effects);
   return true;
 }
 
@@ -1240,10 +1323,19 @@ InterfaceEmissionArtifact EmitSemanticInterface(
         declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
       sidecar.required_semantics.push_back("objc3.direct-dispatch.v1");
     const auto &effects = declaration.effects;
-    if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty())
+    if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty() ||
+        !effects.async_abi_identity.empty())
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
+    if (!effects.async_abi_identity.empty())
+      sidecar.required_semantics.push_back(kAsyncEntryABISemantic);
     if (effects.ownership_identity.starts_with("native-return:"))
       sidecar.required_semantics.push_back("objc3.native-return-ownership.v1");
+    if (HasNativeOwnershipContracts(effects))
+      sidecar.required_semantics.push_back(kNativeOwnershipContractSemantic);
+    if (HasNativeIsolationContracts(effects))
+      sidecar.required_semantics.push_back(kNativeIsolationContractSemantic);
+    if (declaration.canonical_type_identity.find("KeyPath<") != std::string::npos)
+      sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
     if (declaration.canonical_type_identity.find("Optional(") !=
             std::string::npos ||
         declaration.canonical_type_identity.find("Result(") !=
@@ -1263,6 +1355,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.canonical-function-effects.v1",
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v1",
+    "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
@@ -1350,6 +1446,10 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.canonical-function-effects.v1",
     "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v1",
+    "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
