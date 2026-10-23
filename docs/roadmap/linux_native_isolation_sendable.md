@@ -58,7 +58,9 @@ Native completed-callable checking covers Objective-C/C++ functions, methods,
 and Blocks. It distinguishes the same `self`/`super` actor from another receiver,
 compares lexical executor identities, and checks evaluated calls from C++ default
 arguments and member initializers. A property accessor observes the property's
-nonisolated modifier. Nested callable bodies are checked in their own context.
+nonisolated modifier. An explicit member executor remains an independent entry
+requirement on a nonisolated method; only the type's default affinity is removed.
+Nested callable bodies are checked in their own context.
 
 Cross-actor and cross-executor calls without `await` are diagnosed. Direct actor
 ivar access requires the same isolated actor context; adding `await` to a raw
@@ -103,16 +105,23 @@ implicit conversion, so conversion to `id` does not erase a borrowed contract or
 a known concrete type's Sendable conformance.
 
 Concurrent capture checking uses the original captured declaration and explicit
-capture mode. Weak capture still requires a Sendable referenced type. Unowned or
+capture mode and actual logical capture storage. An explicit strong snapshot
+can establish owned capture storage from an unsafe source, while the original
+declaration still supplies borrowed/resource provenance. Weak capture still
+requires a Sendable referenced type. Unowned or
 unsafe-unretained capture requires explicit unsafe admission. Shared `__block`
 state and cleanup-managed captures do not gain safety from a scalar or hidden
 physical field representation. Proven immutable local block literals are
 checked recursively; unknown block values need an explicit unchecked wrapper or
-are rejected in strict concurrency mode. Async work-item parameters are
-validated on spawn/detached declarations; additional synchronous block arguments
+are rejected in strict concurrency mode. Async work-item parameters and non-void task-handle results are
+validated on spawn/detached declarations. Discarded child handles in expression
+statements receive the Part 7 unused-handle warning; explicit void discard and
+detached APIs express intentional discard. Additional synchronous block arguments
 are checked for their captures without being mislabeled as async work items.
 
-Group scope classification is persistent metadata. This slice does not infer a
+Group scope classification is persistent metadata and can coexist with a child
+or detached API classification; child and detached classifications conflict.
+This slice does not infer a
 group-add transfer contract from an arbitrary function name, implement task
 creation from attributes, or relax the independent borrowed/resource flow rules.
 Dynamic invocation with incompatible known method isolation metadata is rejected

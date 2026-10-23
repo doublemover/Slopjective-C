@@ -155,6 +155,24 @@ int ambiguous(id value) { return [value read]; }
 @end
 )"),
          "cross-actor entry requires an explicit await");
+  Success(Compile(Make(Root.str() + R"(
+@interface Counter (IndependentAffinity)
+- (int)mainToken __attribute__((objc_nonisolated, objc_executor(main)));
+@end
+@implementation Counter (IndependentAffinity)
+- (int)mainToken { return 1; }
+@end
+__attribute__((objc_executor(main))) int affine_nonisolated(Counter *c) {
+  return [c mainToken];
+}
+)")));
+  Reject(Make(Root.str() + R"(
+@interface Counter (IndependentAffinity)
+- (int)mainToken __attribute__((objc_nonisolated, objc_executor(main)));
+@end
+int nonaffine_nonisolated(Counter *c) { return [c mainToken]; }
+)"),
+         "cross-executor entry requires an explicit await");
   Reject(Make(Root.str() + R"(
 __attribute__((objc_executor(main))) int main_only(void);
 __attribute__((objc_executor(global))) int wrong_executor(void) { return main_only(); }
@@ -190,6 +208,11 @@ __attribute__((objc_executor(named("two")))) int wrong_named(void) { return name
          "explicit actor nonreentrancy is deferred in v1");
   Success(Compile(
       Make("int nonreentrant(int nonreentrant) { return nonreentrant; }")));
+  Success(Compile(Make(Root.str() + R"(
+@interface Counter ()
+@property(nonatomic, readwrite) int token;
+@end
+)")));
   Reject(Make(Root.str() + R"(
 @interface MutableMessage (Wrong)
 - (int)wrong __attribute__((objc_nonisolated));
@@ -247,6 +270,8 @@ void CheckConcurrentCaptures(bool Arc, const std::string &Standard) {
 typedef void (^Work)(void) __objc3_async;
 void *spawn(Work) __attribute__((objc_task_spawn));
 void *detach(Work) __attribute__((objc_task_detached));
+void *group_spawn(Work) __attribute__((objc_task_group, objc_task_spawn));
+void *group_spawn(Work) __attribute__((objc_task_group));
 #define SPAWN(e) spawn(e)
 struct Packet { int value; Counter *actor; };
 )";
@@ -260,6 +285,14 @@ void valid(struct Packet packet, SafeMessage *message) {
 void nested_immutable(int value) {
   void (^const helper)(void) = ^{ (void)value; };
   spawn(^void() __objc3_async { helper(); });
+}
+void strong_snapshot(Counter *source) {
+  __unsafe_unretained Counter *actor = source;
+  spawn(^[actor] void() __objc3_async { (void)actor; });
+}
+void shared_source_snapshot(void) {
+  __block int value = 1;
+  spawn(^[value] void() __objc3_async { (void)value; });
 }
 void additional_sync_block(int value) {
   extern void *with_callback(Work, void (^)(void)) __attribute__((objc_task_spawn));
@@ -297,9 +330,26 @@ void unknown(Work block) { spawn(block); }
 )"),
          "cannot prove Sendable captures");
   Reject(Make(R"(
-void bad_api(int) __attribute__((objc_task_spawn));
+void *bad_api(int) __attribute__((objc_task_spawn));
 )"),
          "requires an async block work-item parameter");
+  Reject(Make(R"(
+void bad_result(Work) __attribute__((objc_task_spawn));
+)"),
+         "must return a task handle");
+  auto Unused = Compile(Make(R"(
+void unused_child(void) { spawn(^void() __objc3_async {}); }
+)"));
+  Success(Unused);
+  assert(Has(Unused, "child task handle is unused"));
+  auto Acknowledged = Compile(Make(R"(
+void intentional_discard(void) {
+  (void)spawn(^void() __objc3_async {});
+  detach(^void() __objc3_async {});
+}
+)"));
+  Success(Acknowledged);
+  assert(!Has(Acknowledged, "child task handle is unused"));
 }
 
 void CheckAwaitBoundaries(bool Cxx, bool Arc, const std::string &Standard) {
@@ -398,6 +448,15 @@ void *spawn(Work) __attribute__((objc_task_spawn));
   assert(ActorSpelling != std::string::npos);
   StrippedSource.replace(ActorSpelling, std::string("actor class").size(),
                          "@interface");
+  const std::string Nonisolated = "__attribute__((objc_nonisolated))";
+  for (auto Position = StrippedSource.find(Nonisolated);
+       Position != std::string::npos;
+       Position = StrippedSource.find(Nonisolated))
+    StrippedSource.erase(Position, Nonisolated.size());
+  // The metadata-loss fixture stays valid ordinary Objective-C; rejection
+  // must come from the reconstructed interface contract.
+  auto StrippedAST = Parse(StrippedSource, Cxx, Arc);
+
   Decoded->canonical_source_sha256 =
       ComputeInterfaceSourceSha256(StrippedSource);
   auto StrippedSidecar = EncodeSemanticInterfaceSidecar(*Decoded, Semantics);
