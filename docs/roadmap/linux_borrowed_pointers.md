@@ -29,8 +29,12 @@ Implemented in source:
   expired acquisitions, applies assignment kills, joins reachable alternatives,
   and retains provenance across ordinary pointer aliases, casts to `void *` or
   integers, pointer arithmetic, local records, constant array elements, and
-  mutable pointers to proven local storage. Native Optional/Result constructors,
-  transfers and expression payloads carry the same obligation.
+  mutable pointers to proven local storage. Interned field/array paths keep
+  repeated nested fields distinct. Finite possible-target sets retain local
+  address provenance across branch joins and later writes to the pointee.
+  Native Optional/Result constructors, transfers and expression payloads carry
+  the same obligation. Guard/if-let snapshots and match bindings preserve
+  concrete owner identity through their opaque runtime initializers.
   Converged facts drive diagnostics, including loop backedges and EH edges.
 - Owner identity flows through mutable local object/pointer aliases so a
   forwarded borrowed return can prove its designated owner parameter. Owner
@@ -48,7 +52,10 @@ Implemented in source:
   superficially nonescaping formal parameter. Objective-C++ dynamic namespace
   and static-member initializers use the same mandatory check. Noescape
   parameters seed loans in definitions so implementations cannot silently
-  violate their declared contract.
+  violate their declared contract. C++ constructor arguments and member/base
+  initializers receive the same checks, and borrowed dynamic aggregate
+  allocation fails closed. Unavailable CFGs cannot bypass noescape parameter
+  obligations. Key-path applications retain erased root/value obligations.
 - Automatic locals, proven noescape/borrowed formals, synchronous block calls,
   noescape block arguments, scalar data copied from the borrowed region, and
   compiler-known data-copy builtins are accepted. Pointer representations copied
@@ -57,7 +64,12 @@ Implemented in source:
   later leak in the body. Capture snapshots precede explicit move source
   niling, and owning captures pin the corresponding owner inside the closure.
   Expression snapshots preserve values already evaluated before later operand
-  assignments. Null branch refinement accepts proven null uses.
+  assignments. Null branch refinement accepts proven null uses. Native
+  aggregate initialization/assignment, trivial C++ copies, and exact-size
+  `memcpy`/`memmove` preserve field/array payload paths. Partial representation
+  copies weakly update possible destinations; zero-byte copies do not escape
+  a pointer representation. Callable signatures containing borrowed results
+  remain metadata and do not make the callable address a borrowed value.
 
 Maintained evidence authored for the later coordinated batch:
 
@@ -68,8 +80,10 @@ Maintained evidence authored for the later coordinated batch:
   pointer erasure, data copying, contract validation, compatibility profile,
   late pins, mutable local address aliases, null refinements, moved/owning block
   captures, nested payloads, noescape definition proofs, dynamic globals, typedef
-  and variable identity, native PCH, AST import identity, ODR identity, and
-  source-free interfaces.
+  and variable identity, nested sibling fields and arrays, future loans through
+  joined address aliases, representation copies, union overlap, guard/match
+  owner forwarding, trivial C++ copies, noescape constructors, native PCH, AST
+  import identity, ODR identity, and source-free interfaces.
 - `tests/clang_foundation/borrowed_pointers/`: separate canonical header,
   accepted source, independently selected escape cases, PCH consumer, and
   source-free import provider/consumer fixtures.
@@ -80,17 +94,26 @@ Remaining boundaries to keep explicit while development continues:
   compatibility and runtime lifetime behavior await the coordinated batch.
 - Part 8.7 mentions an explicit unsafe escape marker but the catalog/formal
   grammar supplies no spelling. This implementation introduces no speculative
-  unsafe syntax. Non-stable owners require explicit lifetime control; automatic
-  temporary-owner materialization with a warning is not implemented.
-- Arbitrary multi-target pointer aliases, nested aggregate field paths, union
-  active-member identity, unknown array indices, bulk aggregate copies,
-  and interprocedural owner effects require further precision. Unknown indirect
-  stores fail closed; unknown array writes preserve may-alias facts.
+  unsafe syntax. Non-stable owners require explicit lifetime control, one of
+  the alternatives expressly allowed by 8.7.1; automatic temporary-owner
+  materialization with a warning is not implemented.
+- Multi-target indirect writes, unknown pointer offsets, exact union active
+  member changes, partial-copy byte offsets, and interprocedural owner effects
+  require further precision. Reads retain finite possible local targets;
+  unknown indirect stores fail closed. Unknown array writes preserve may-alias
+  facts, and union field reads conservatively preserve overlapping loans.
 - Owner-alias replacement can conservatively expire a loan even if another
   independent strong alias keeps the same object alive. General MRC release
   effects, C++ lambdas, arbitrary constructor/operator effects, dynamic
-  allocation provenance, opaque guard/match binding provenance, and callback
-  invocation effects need more work.
+  allocation provenance, and callback invocation effects need more work.
 - Indirect borrowed-result calls preserve their type obligation but cannot
   reconstruct a declaration-only owner-index relationship. No whole-program
   analyzer is required or substituted for the mandatory frontend pass.
+
+Handoff: source development is parked after the coordinated third compiler
+checkpoint request. Only `clang/lib/Sema/SemaObjC3Borrowed.cpp` changed in this
+last span; the public borrowed header and both Sema files remain the three new
+native LLVM paths reported to the root exporter. No builds, tests, native SDK
+operations, exporter/seal operations, or qualification runs were performed by
+this agent. The maintained fixtures are authored evidence for the root's later
+coordinated execution, and the source changes remain subject to that execution.

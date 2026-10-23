@@ -31,6 +31,8 @@ id make_owner(void);
 const char *global_pointer;
 void (^global_block)(void);
 struct Holder { const char *pointer; };
+struct Pair { struct Holder left, right; };
+struct AddressHolder { const char **pointer; };
 )";
 CompileRequest Request(const fs::path &Root, const std::string &Source,
                        BaseLanguage Language, const std::string &Standard,
@@ -91,6 +93,19 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { const char *p=bytes(o); invoke(^[move o,p]{(void)o;use(p);}); }",
       "void f(id o) { Optional(BorrowedBytes) p=Some(BorrowedBytes,bytes(o)); invoke(^{(void)p;}); }",
       "void f(const char *p __attribute__((noescape))) { use_noescape(p); }",
+      "char f(const char *p __attribute__((noescape))) { return p[0]; }",
+      "void f(id o,int choose) { const char *p=bytes(o),*q=0; const char **a; if(choose)a=&p;else a=&q; p=0;escape_address(a); }",
+      "void f(id o) { const char *p=bytes(o); struct AddressHolder h={&p}; p=0;escape_address(h.pointer); }",
+      "void f(id o) { struct Pair h={{bytes(o)},{0}}; escape(h.right.pointer);h.left.pointer=0;escape(h.left.pointer); }",
+      "void f(id o) { struct Pair source={{bytes(o)},{0}}; struct Pair copy=source;use(copy.left.pointer);escape(copy.right.pointer);copy.left.pointer=0;escape(copy.left.pointer); }",
+      "void f(id o) { struct Holder h[2]={{bytes(o)},{0}};escape(h[1].pointer);h[0].pointer=0;escape(h[0].pointer); }",
+      "void f(id o) { struct Holder h[2][2]={{{bytes(o)},{0}},{{0},{0}}};escape(h[0][1].pointer);h[0][0].pointer=0;escape(h[0][0].pointer); }",
+      "void f(id o) { struct Holder source={bytes(o)},copy={0};__builtin_memcpy(&copy,&source,sizeof copy);use(copy.pointer);copy.pointer=0;escape(copy.pointer); }",
+      "void f(id o,void *heap) { const char *p=bytes(o);__builtin_memcpy(heap,&p,0); }",
+      "typedef BorrowedBytes (*Provider)(id); Provider provider=bytes; void f(id o) {use(provider(o));}",
+      "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));guard let p=s else{return 0;}return p; }",
+      "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));if let p=s {return p;}return 0; }",
+      "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));return match(s){case __objc3_case_some(let p)=>p;case __objc3_case_none=>(BorrowedBytes)0;}; }",
       "void f(id o, id replacement) { const char *p=bytes(o); o=replacement; p=bytes(o); use(p); }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { return bytes(o); }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { id alias=o; return bytes(alias); }",
@@ -120,6 +135,16 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { Optional(BorrowedBytes) p=Some(BorrowedBytes,bytes(o)); launch(^{(void)p;}); }",
       "void f(const char *p __attribute__((noescape))) { global_pointer=p; }",
       "const char *f(const char *p __attribute__((noescape))) { return p; }",
+      "void f(id o,int choose) { const char *p=0,*q=0;const char **a;if(choose)a=&p;else a=&q;p=bytes(o);escape_address(a); }",
+      "void f(id o) { const char *p=0;struct AddressHolder h={&p};p=bytes(o);escape_address(h.pointer); }",
+      "void f(id o) { struct Pair h={{bytes(o)},{0}};h.right.pointer=0;escape(h.left.pointer); }",
+      "void f(id o) { struct Holder h[2]={{0},{0}};h[0].pointer=bytes(o);h[1].pointer=0;escape(h[0].pointer); }",
+      "void f(id o,int index) { struct Holder h[2]={{0},{0}};h[index].pointer=bytes(o);h[index].pointer=0;escape(h[0].pointer); }",
+      "void f(id o) { struct Pair source={{bytes(o)},{0}},copy=source;escape(copy.left.pointer); }",
+      "void f(id o,void *heap) { struct Pair h={{bytes(o)},{0}};__builtin_memcpy(heap,&h,sizeof h); }",
+      "void f(id o) { struct Holder source={bytes(o)},copy={0};__builtin_memmove(&copy,&source,sizeof copy);escape(copy.pointer); }",
+      "void f(id o) { union Overlap{const char *a;const char *b;};union Overlap u={0};u.a=bytes(o);escape(u.b); }",
+      "void f(id o) { Optional(BorrowedBytes) s=Some(BorrowedBytes,bytes(o));guard let p=s else{return;}escape(p); }",
       "void f(id o) { const char *p=bytes(o); launch(^{ use(p); }); }",
       "void f(id o) { const char *p=bytes(o); invoke(^{ escape(p); }); }",
       "void f(id o) { const char *p[2]={bytes(o),0}; escape(p[0]); }",
@@ -159,6 +184,18 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
     Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
            "borrowed pointer declaration contract");
   if (Language == BaseLanguage::ObjectiveCxx) {
+    for (const auto &Code : std::vector<std::string>{
+             "void f(id o) { Holder a={bytes(o)},b={0};b=a;use(b.pointer);b.pointer=0;escape(b.pointer); }",
+             "struct Scalar{int number;const char *pointer;};int f(const Scalar& s __attribute__((noescape))){return s.number;}",
+             "struct Copied{char value;Copied(const char *p __attribute__((noescape))):value(p[0]){}};void f(id o){Copied value(bytes(o));}"})
+      Expect(Request(Root, Header + Code, Language, Standard, ARC), true);
+    for (const auto &Code : std::vector<std::string>{
+             "void f(id o) { Holder a={bytes(o)},b={0};b=a;escape(b.pointer); }",
+             "struct Saved{const char *pointer;Saved(const char *p):pointer(p){}};void f(id o){Saved value(bytes(o));}",
+             "struct Saved{const char *pointer;Saved(const char *p __attribute__((noescape))):pointer(p){}};",
+             "void f(id o){(void)new Holder{bytes(o)};}"})
+      Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
+             "borrowed pointer escapes");
     // Objective-C++ dynamic initialization must receive the mandatory check,
     // including aggregate initialization and out-of-line static members.
     for (const auto &Code : std::vector<std::string>{
@@ -167,7 +204,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
              "extern id owner; struct Static { static const char *pointer; }; const char *Static::pointer=bytes(owner);",
              // Argument values are captured when evaluated. Clearing a later
              // argument cannot erase an earlier argument's obligation.
-             "void f(id o) { const char *p=bytes(o); pair_escape(p,p=0); }"})
+             "void f(id o) { const char *p=0; pair_escape((p=bytes(o),p),p=0); }"})
       Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
              "borrowed pointer escapes");
   }

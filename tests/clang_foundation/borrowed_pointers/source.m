@@ -80,3 +80,44 @@ void nested_payload(id owner) {
   Optional(BorrowedBytes) payload = Some(BorrowedBytes, borrowed_bytes(owner));
   invoke_noescape(^{ (void)payload; });
 }
+
+BorrowedBytes guard_payload_forward(id owner)
+    __attribute__((objc_returns_borrowed(owner_index=0))) {
+  Optional(BorrowedBytes) source = Some(BorrowedBytes, borrowed_bytes(owner));
+  guard let pointer = source else { return 0; }
+  return pointer;
+}
+
+BorrowedBytes match_payload_forward(id owner)
+    __attribute__((objc_returns_borrowed(owner_index=0))) {
+  Optional(BorrowedBytes) source = Some(BorrowedBytes, borrowed_bytes(owner));
+  return match (source) {
+    case __objc3_case_some(let pointer) => pointer;
+    case __objc3_case_none => (BorrowedBytes)0;
+  };
+}
+
+void nested_field_paths(id owner) {
+  struct Item { const char *pointer; };
+  struct Pair { struct Item first, second; };
+  struct Pair original = {{borrowed_bytes(owner)}, {0}};
+  struct Pair copy = original;
+  consume_untracked(copy.second.pointer);
+  copy.first.pointer = 0;
+  consume_untracked(copy.first.pointer);
+}
+
+void copy_pointer_representation(id owner) {
+  struct Item { const char *pointer; };
+  struct Item original = {borrowed_bytes(owner)}, copy = {0};
+  __builtin_memmove(&copy, &original, sizeof copy);
+  consume_borrowed(copy.pointer);
+  copy.pointer = 0;
+  consume_untracked(copy.pointer);
+}
+
+// A callable's borrowed result is a signature contract, not a loan of the
+// callback address. The result of invoking it still has a nonescape obligation.
+typedef BorrowedBytes (*BorrowedProvider)(id);
+BorrowedProvider provider = borrowed_bytes;
+void indirect_borrowed_result(id owner) { consume_borrowed(provider(owner)); }
