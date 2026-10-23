@@ -224,6 +224,75 @@ static void capture_committed_field_unwind(void) {
     CAPTURE_CHECK(capture_destroyed == before + 1);
   }
 }
+#if __has_feature(objc_arc)
+static CaptureIntBlock capture_return_failed_temporary(void)
+    __attribute__((ns_returns_retained));
+static CaptureIntBlock capture_return_failed_temporary(void) {
+  int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 119;
+  CaptureMoveRecord record(120);
+  return (CaptureThrowingTemporary{}, ^[move handle, move record] {
+    return handle + record.value;
+  });
+}
+static id capture_return_caught_temporary(void)
+    __attribute__((ns_returns_retained));
+static id capture_return_caught_temporary(void) {
+  int before = capture_closed;
+  try {
+    int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 121;
+    return (CaptureThrowingTemporary{}, ^[move handle] { return handle; });
+  } catch (const CaptureFailure &) {
+    CAPTURE_CHECK(capture_closed == before + 1);
+    return (id)0;
+  }
+}
+static CaptureIntBlock capture_return_cpp_local_catch(void)
+    __attribute__((ns_returns_retained));
+static CaptureIntBlock capture_return_cpp_local_catch(void) {
+  int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 122;
+  defer {
+    try { throw CaptureFailure{}; }
+    catch (const CaptureFailure &) { CAPTURE_CHECK(1); }
+  }
+  return ^[move handle] { return handle; };
+}
+static CaptureIntBlock capture_return_cpp_outer_catch(void)
+    __attribute__((ns_returns_retained));
+static CaptureIntBlock capture_return_cpp_outer_catch(void) {
+  int before = capture_closed;
+  try {
+    try {
+      int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 123;
+      defer { throw CaptureFailure{}; }
+      return ^[move handle] { return handle; };
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(capture_closed == before + 1);
+      throw;
+    }
+  } catch (const CaptureFailure &) {
+    CAPTURE_CHECK(capture_closed == before + 1);
+    return (id)0;
+  }
+}
+static void capture_owned_return_unwind(void) {
+  int before = capture_closed, live_before = CaptureMoveRecord::live;
+  try {
+    (void)capture_return_failed_temporary();
+    CAPTURE_CHECK(0);
+  } catch (const CaptureFailure &) {
+    CAPTURE_CHECK(capture_closed == before + 1 &&
+                  CaptureMoveRecord::live == live_before);
+  }
+  CAPTURE_CHECK(capture_return_caught_temporary() == (id)0 &&
+                capture_closed == before + 2);
+  CaptureIntBlock result = capture_return_cpp_local_catch();
+  CAPTURE_CHECK(result() == 122 && capture_closed == before + 2);
+  result = (id)0;
+  CAPTURE_CHECK(capture_closed == before + 3);
+  CAPTURE_CHECK(capture_return_cpp_outer_catch() == (id)0 &&
+                capture_closed == before + 4);
+}
+#endif
 int main(void) {
   capture_failed_creation();
   capture_failed_heap_copy();
@@ -234,5 +303,8 @@ int main(void) {
   capture_failed_lifetime_receiver(false);
   capture_failed_lifetime_receiver(true);
   capture_committed_field_unwind();
+#if __has_feature(objc_arc)
+  capture_owned_return_unwind();
+#endif
   return capture_failures != 0;
 }

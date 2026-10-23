@@ -40,6 +40,17 @@ committed implicit managed field releases until after that creation scope's
 defers; the source variable's declaration scope does not determine the field's
 owner. Resources and user C++ destructors retain their source-action LIFO order.
 
+Ordinary Objective-C3 ARC physical retainable return slots now record the
+originating return only after native `CK_ARCProduceObject` initialization proves
+their +1 ownership. Native unwind and escaping checked errors release an
+abandoned result. C++/Objective-C catches and checked handlers release it only
+when their protected source body contains that return, so a handler inside a
+defer can catch its own error and still finish the original return. The pending
+site is cleared before release and before successful physical transfer or
+epilogue autorelease. Retained-result annotations and `id`-erased Blocks follow
+the same rule. Native async frames and task/coroutine logical results retain
+their separate staging ownership and are excluded explicitly.
+
 Moving an ARC strong object slot transfers its existing owned reference and
 writes nil to the source. Moving a weak source acquires a strong snapshot and
 clears its weak slot. Other scalar moves write the previous value into the
@@ -125,11 +136,14 @@ Further fixtures cover captured resource operations, transferred owners,
 deferred discard during unwind, ordinary/return/goto exits, nested creation
 scopes, precise Block lifetime receivers and throwing full-expression
 temporaries after object/resource/C++ moves. These remain unexecuted.
+`return_failures.h`/`.m` and the C++ exception fixture additionally cover prepared
+retained/autoreleased and `id`-erased Block results, failed return temporaries,
+nested catches, and both escaping and locally handled deferred checked errors.
 
 Remaining boundaries include unqualified/mixed/C++ carrier move captures,
 potentially
-throwing resource final disposal, rollback of an already-owned ARC Block return
-result when later return cleanup fails, broad exceptional CFG capture admission and
+throwing resource final disposal, unqualified foreign/raw return staging,
+broad exceptional CFG capture admission and
 end-to-end validation of the combined native compiler packets. Borrowed escape
 and concurrent-transfer admission are implemented by their owning slices and
 must be verified with these capture paths. Native source is exported and sealed

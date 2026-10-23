@@ -25,6 +25,11 @@ span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
   and selected negative cases (`CAPTURE_USE_AFTER_MOVE`,
   `CAPTURE_DOUBLE_CLEANUP`, `CAPTURE_SECOND_MOVE`, `CAPTURE_BODY_CLOSE`).
 - `lowering.m`: emitted ownership operations and refcounted resource owners.
+- `return_failures.h` / `return_failures.m`: ARC-only physical result ownership
+  through throwing defers, native nested catches, checked errors and successful
+  cleanup-local handlers. Retained/autoreleased and `id`-erased Block results
+  are covered; compile as C17 or C++20/C++23. `exceptions.mm` also covers returned
+  literals whose full-expression temporary destructor throws.
 - `persistence.h` / `persistence.m`: source/PCH clients; define
   `CAPTURE_PERSISTENCE_PCH` when the header is supplied through `-include-pch`.
 
