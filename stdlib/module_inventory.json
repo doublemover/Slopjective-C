@@ -135,10 +135,18 @@
         "minor": 0,
         "patch": 0
       },
-      "header": null,
-      "status": "unimplemented",
-      "implemented": [],
-      "remaining": ["resource cleanup", "borrow/lifetime intrinsics", "strict-system diagnostics"]
+      "header": "include/objc3/system.h",
+      "status": "partial",
+      "implemented": [
+        "Linux file-descriptor adoption, duplication and exact-once close",
+        "heap-buffer allocation, adoption and free",
+        "native typedef cleanup/family/sentinel contracts",
+        "explicit Strict System import gate"
+      ],
+      "remaining": [
+        "borrow/lifetime intrinsics",
+        "complete strict-system diagnostics and ownership boundaries"
+      ]
     }
   ]
 }

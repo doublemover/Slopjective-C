@@ -471,10 +471,10 @@ index 9a97d52fd..dfe345f2f 100644
    PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
-index 000000000..6d121c5b5
+index 000000000..93add170b
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,414 @@
+@@ -0,0 +1,415 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -797,7 +797,8 @@ index 000000000..6d121c5b5
 +      Arguments.push_back(Invalid.get());
 +    }
 +    if (Parens.consumeClose()) return true;
-+    std::string AttributeName = ("objc_" + Name).str();
++    std::string AttributeName = "objc_";
++    AttributeName += Name;
 +    Attrs.addNew(&PP.getIdentifierTable().get(AttributeName),
 +                 SourceRange(AtLoc, Parens.getCloseLocation()),
 +                 AttributeScopeInfo(nullptr, SourceLocation()), Arguments.data(),

@@ -25,9 +25,10 @@ version, implemented surface and remaining obligations against the
 fake integer helpers and package metadata are no longer library inputs.
 
 `objc3.core`, `objc3.errors`, `objc3.text`, `objc3.collections` and
-`objc3.concurrency` are native imports. `objc3.keypath` and `objc3.system` remain
-unimplemented and their imports fail. Module presence does not claim a complete
-Core or Strict profile.
+`objc3.concurrency` are native imports. The development `objc3.system` module is
+available under `-fobjc3-profile=strict-system` and supplies Linux resource
+helpers. `objc3.keypath` remains unimplemented. Module presence does not claim a
+complete Core or Strict profile.
 
 Text uses validated UTF-8 and explicit byte/scalar lengths; embedded NUL is data.
 Prefixes count Unicode scalars. Concrete and generic collections use opaque
@@ -65,6 +66,30 @@ The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly
 for the C++ coroutine adapter. Public async/await and actor language capabilities
 remain reserved until compiler lowering and isolation are complete.
+
+The development `objc3.system` header exposes `objc3_file_descriptor` and
+`objc3_heap_buffer` with native cleanup, family and sentinel contracts. Descriptor
+helpers adopt raw ownership explicitly, duplicate a borrowed descriptor into a
+new owner, and close once with POSIX status/errno behavior. Close is not retried
+after EINTR and is not declared nonthrowing because it is a cancellation point.
+Heap-buffer helpers allocate, adopt and free ordinary libc storage. Adoption is
+explicitly unsafe: the caller promises ownership and the correct deallocator.
+
+```objective-c
+@import objc3.system;
+
+void allocate(void) {
+  @resource(objc3_heap_buffer_free, invalid: (void *)0)
+  objc3_heap_buffer buffer = objc3_heap_buffer_allocate(64);
+  if (buffer == (void *)0) return;
+  /* Use buffer. Scope exit frees it. */
+}
+```
+
+These headers and their source/PCH/runtime fixtures are authored but unvalidated.
+The installed gate is wired for C17/C++20/C++23, ARC/MRC, O0/O2, profile rejection
+and ownership diagnostics. Borrow/lifetime helpers and complete Strict System
+conformance remain outstanding. The active SDK predates this implementation.
 
 Run the installed integration gate with:
 

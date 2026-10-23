@@ -216,3 +216,18 @@ preambles. The ignored `.clangd` and root compilation database select current
 build paths. After an SDK cutover, reconfigure the frontend against
 `out/toolchains/linux-sdk/current` so no deleted candidate path remains in the
 compilation database.
+
+## Development system module
+
+The next implementation chunk adds the partial `objc3.system` native module,
+with an explicit Strict System import gate. Linux file descriptors and libc heap
+buffers carry cleanup/family/sentinel typedef contracts. Helpers provide explicit
+unsafe adoption, descriptor duplication, exact-once POSIX close and ordinary
+allocation/free. No new runtime ABI is introduced. Close preserves status/errno,
+is not retried after EINTR, and retains its cancellation/exception behavior.
+
+The maintained stdlib gate now includes twelve system execution configurations,
+three ownership rejections per language/ownership pair, and rejection of imports
+outside Strict System. These are authored checks awaiting combined validation;
+no new PASS, SDK or profile claim is recorded. Borrow/lifetime intrinsics and
+complete diagnostics remain in the inventory's remaining list.

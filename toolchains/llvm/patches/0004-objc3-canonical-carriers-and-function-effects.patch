@@ -2966,7 +2966,7 @@ index d743717ad..8ca241c0c 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..24d2b2818 100644
+index e0b62591a..08caf143a 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,7 @@
@@ -3137,7 +3137,7 @@ index e0b62591a..24d2b2818 100644
      if (Proto1->getNumParams() != Proto2->getNumParams())
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
-@@ -2446,6 +2586,20 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2446,6 +2586,34 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
@@ -3153,8 +3153,22 @@ index e0b62591a..24d2b2818 100644
 +  if (A.Family && !IsStructurallyEquivalent(A.Family->getFamily(), B.Family->getFamily()))
 +    return false;
 +  if (A.Invalid && !sameObjC3ResourceConstant(Context.FromCtx, A.Invalid->getInvalid(),
-+                                            Context.ToCtx, B.Invalid->getInvalid()))
-+    return false;
++                                            Context.ToCtx, B.Invalid->getInvalid())) {
++    // Cross-context external address sentinels name the same linked object,
++    // even though their APValue declaration pointers differ. Internal objects
++    // retain distinct identity. Offsets and one-past state must still match.
++    Expr::EvalResult Left, Right;
++    if (!A.Invalid->getInvalid()->EvaluateAsRValue(Left, Context.FromCtx) ||
++        !B.Invalid->getInvalid()->EvaluateAsRValue(Right, Context.ToCtx) ||
++        !Left.Val.isLValue() || !Right.Val.isLValue()) return false;
++    const auto *L = Left.Val.getLValueBase().dyn_cast<const ValueDecl *>();
++    const auto *R = Right.Val.getLValueBase().dyn_cast<const ValueDecl *>();
++    if (!L || !R || !L->hasExternalFormalLinkage() || !R->hasExternalFormalLinkage() ||
++        Left.Val.getLValueOffset() != Right.Val.getLValueOffset() ||
++        Left.Val.isLValueOnePastTheEnd() != Right.Val.isLValueOnePastTheEnd() ||
++        !IsStructurallyEquivalent(Context, const_cast<ValueDecl *>(L), const_cast<ValueDecl *>(R)))
++      return false;
++  }
    return IsStructurallyEquivalent(Context, D1->getUnderlyingType(),
                                    D2->getUnderlyingType());
  }
@@ -24311,10 +24325,10 @@ index fb0b3c150..0ff03bcf5 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..aa5bae9ea
+index 000000000..6eae7a97b
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,559 @@
+@@ -0,0 +1,589 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -24873,6 +24887,36 @@ index 000000000..aa5bae9ea
 +  EXPECT_FALSE(static_cast<bool>(Imported));
 +  if (!Imported)
 +    llvm::consumeError(Imported.takeError());
++}
++
++TEST(ObjC3ResourceTooling, MatchesExternalAddressSentinelsAcrossContexts) {
++  constexpr llvm::StringLiteral Source = R"(
++    extern char invalid_token;
++    void close_pointer(void *) __attribute__((nothrow));
++    @requires_cleanup(close_pointer) @resource_family(Pointers) @invalid(&invalid_token)
++    typedef void *Handle;
++  )";
++  auto Left = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                                "pointer-left.mm");
++  auto Right = tooling::buildASTFromCodeWithArgs(Source, conditionArgs(),
++                                                 "pointer-right.mm");
++  ASSERT_TRUE(Left && Right);
++  ASSERT_FALSE(Left->getDiagnostics().hasErrorOccurred());
++  ASSERT_FALSE(Right->getDiagnostics().hasErrorOccurred());
++  auto Find = [](ASTUnit &AST) -> TypedefNameDecl * {
++    for (Decl *D : AST.getASTContext().getTranslationUnitDecl()->decls())
++      if (auto *Alias = dyn_cast<TypedefNameDecl>(D))
++        if (Alias->getName() == "Handle")
++          return Alias;
++    return nullptr;
++  };
++  ASSERT_TRUE(Find(*Left) && Find(*Right));
++  StructuralEquivalenceContext::NonEquivalentDeclSet Different;
++  StructuralEquivalenceContext Context(
++      Left->getASTContext().getLangOpts(), Left->getASTContext(),
++      Right->getASTContext(), Different, StructuralEquivalenceKind::Default,
++      false, false);
++  EXPECT_TRUE(Context.IsEquivalent(Find(*Left), Find(*Right)));
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
 new file mode 100644
@@ -28729,10 +28773,10 @@ index 000000000..ef0b1bc0a
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..88b7aa16f
+index 000000000..73fcb0595
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
-@@ -0,0 +1,896 @@
+@@ -0,0 +1,940 @@
 +//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow
 +//--------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28883,6 +28927,17 @@ index 000000000..88b7aa16f
 +        return true;
 +    return false;
 +  }
++  bool refersTo(const Stmt *Node, const VarDecl *Variable) const {
++    if (!Node || !Variable)
++      return false;
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(Node))
++      if (Reference->getDecl() == Variable)
++        return true;
++    for (const Stmt *Child : Node->children())
++      if (refersTo(Child, Variable))
++        return true;
++    return false;
++  }
 +  bool throwingDestructor(QualType Type) const {
 +    Type = Context.getBaseElementType(Type);
 +    if (const auto *Record = Type->getAsCXXRecordDecl())
@@ -28896,6 +28951,10 @@ index 000000000..88b7aa16f
 +    if (isa<CXXThrowExpr, ObjCAtThrowStmt, ObjCMessageExpr, ObjC3ThrowStmt,
 +            ObjC3TryExpr>(Node))
 +      return true;
++    if (const auto *Operation = dyn_cast<ObjC3ResourceExpr>(Node))
++      if (Operation->getKind() != ObjC3ResourceExpr::Kind::Take &&
++          !noThrow(registeredCleanup(Operation->getResourceVariable())))
++        return true;
 +    if (const auto *Call = dyn_cast<CallExpr>(Node))
 +      if (!noThrow(Call->getDirectCallee()))
 +        return true;
@@ -28927,13 +28986,27 @@ index 000000000..88b7aa16f
 +      return Actions.getSourceManager().isBeforeInTranslationUnit(
 +          Registration, Return->getReturnLoc());
 +    };
++    const auto *Transfer = dyn_cast_or_null<ObjC3ResourceExpr>(
++        Return->getRetValue() ? Return->getRetValue()->IgnoreParenCasts()
++                              : nullptr);
++    const VarDecl *Disarmed =
++        Transfer && Transfer->getKind() == ObjC3ResourceExpr::Kind::Take
++            ? Transfer->getResourceVariable()
++            : nullptr;
++    // A direct take invalidates the source before return cleanup. Keep the
++    // conservative boundary when a later registered body can rearm that slot.
++    for (auto [Deferred, Owner] : ReturnScopes->Defers)
++      if (contains(Owner, Return) && Precedes(Deferred->getBeginLoc()) &&
++          refersTo(Deferred->getBody(), Disarmed))
++        Disarmed = nullptr;
 +    for (auto [Deferred, Owner] : ReturnScopes->Defers)
 +      if (contains(Owner, Return) && Precedes(Deferred->getBeginLoc()) &&
 +          throwingBody(Deferred->getBody()))
 +        return true;
 +    for (auto [Variable, Owner] : ReturnScopes->Variables)
 +      if (contains(Owner, Return) && Precedes(Variable->getLocation())) {
-+        const FunctionDecl *Cleanup = registeredCleanup(Variable);
++        const FunctionDecl *Cleanup =
++            Variable == Disarmed ? nullptr : registeredCleanup(Variable);
 +        if ((Cleanup && !noThrow(Cleanup)) ||
 +            throwingDestructor(Variable->getType()))
 +          return true;
@@ -29259,6 +29332,8 @@ index 000000000..88b7aa16f
 +        continue;
 +      }
 +      if (auto Resource = Element.getAs<CFGObjC3ResourceAction>()) {
++        if (Element.getKind() == CFGElement::ObjC3ResourceClose)
++          assign(Resource->getVarDecl(), Closed, Values);
 +        if (Element.getKind() == CFGElement::ObjC3ResourceInvalidate) {
 +          const auto *Operation =
 +              dyn_cast<ObjC3ResourceExpr>(Resource->getTriggerStmt());
@@ -29294,6 +29369,19 @@ index 000000000..88b7aa16f
 +                     "use discard to close it immediately");
 +          break;
 +        case ObjC3ResourceExpr::Kind::Reset:
++          if (Diagnose) {
++            auto Replacement = getObjC3ResourceTypeContract(
++                Context,
++                Operation->getReplacement()->IgnoreParenCasts()->getType());
++            auto Target = Contracts.lookup(Variable);
++            if (Replacement.Cleanup &&
++                ((Target.Cleanup && !compatibleTypes(Replacement, Target)) ||
++                 !acceptsObjC3ResourceCleanup(Context, Replacement,
++                                              registeredCleanup(Variable))))
++              diagnose(Node, Variable,
++                       "reset of resource '%0' mixes incompatible cleanup "
++                       "families; preserve the replacement's resource type");
++          }
 +          assign(Variable, value(Operation->getReplacement(), Variable, Values),
 +                 Values);
 +          break;
@@ -30843,10 +30931,10 @@ index 000000000..f4092791a
 +// IR: call void @close_type_handle(i32
 diff --git a/clang/test/ObjC3/Sema/resource-type-contracts.m b/clang/test/ObjC3/Sema/resource-type-contracts.m
 new file mode 100644
-index 000000000..2f9016b12
+index 000000000..79ab42fb6
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/resource-type-contracts.m
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,140 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=compatibility -fsyntax-only -verify=common %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=common,strict %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=common,strict %s
@@ -30863,6 +30951,7 @@ index 000000000..2f9016b12
 +@requires_cleanup(close_address) @invalid(0) typedef int AddressHandle;
 +typedef FD FDAlias;
 +FD open_fd(void) __attribute__((nothrow));
++Stream open_stream(void) __attribute__((nothrow));
 +AddressHandle open_address(void) __attribute__((nothrow));
 +void manual_cleanup(void) {
 +  FDAlias value = open_fd();
@@ -30927,6 +31016,16 @@ index 000000000..2f9016b12
 +}
 +void wrong_automatic_cleanup(void) {
 +  @resource(close_stream, invalid: -1) FD value = open_fd(); // strict-error {{not associated with its type contract or family}}
++}
++void wrong_reset_family(void) {
++  @resource(close_fd, invalid: -1) FD value = open_fd();
++  reset(value, open_stream()); // strict-error {{reset of resource 'value' mixes incompatible cleanup families}}
++}
++void throwing_close(int);
++@requires_cleanup(throwing_close) @invalid(-1) typedef int ThrowingHandle;
++ThrowingHandle direct_disarmed_transfer(void) {
++  @resource(throwing_close, invalid: -1) ThrowingHandle value = 3;
++  return take(value);
 +}
 +void wrong_sentinel(void) {
 +  @resource(close_fd, invalid: 0) FD value = open_fd(); // strict-error {{sentinel different from its typedef contract}}
