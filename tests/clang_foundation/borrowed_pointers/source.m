@@ -37,3 +37,46 @@ int copying_data(id owner) {
   __builtin_memcpy(output, pointer, sizeof output);
   return output[0] + pointer[0]; // The copied scalar data is owned.
 }
+
+// Mutable local address aliases expose current pointee facts, including kills.
+void local_address_alias(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  const char **alias;
+  alias = &pointer;
+  consume_borrowed(*alias);
+  *alias = 0;
+  consume_untracked(pointer);
+}
+
+// A pin created after acquisition extends that same owner's existing loans.
+void late_lifetime_pin(id owner, id replacement) {
+  const char *pointer = borrowed_bytes(owner);
+  keepAlive(owner);
+  owner = replacement;
+  consume_borrowed(pointer);
+}
+
+void ended_pin_unchanged_owner(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  withLifetime(owner) { consume_borrowed(pointer); }
+  consume_borrowed(pointer);
+}
+
+void nullable_branch(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  if (!pointer)
+    consume_untracked(pointer);
+  else
+    consume_borrowed(pointer);
+}
+
+void moved_capture(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  invoke_noescape(^[move pointer] { consume_borrowed(pointer); });
+  consume_untracked(pointer); // move initialized the source pointer to null.
+}
+
+void nested_payload(id owner) {
+  Optional(BorrowedBytes) payload = Some(BorrowedBytes, borrowed_bytes(owner));
+  invoke_noescape(^{ (void)payload; });
+}

@@ -47,4 +47,27 @@ void rejected(void) {
   { id owner = make_owner(); pointer = borrowed_bytes(owner); }
   consume_borrowed(pointer);
 }
+#elif defined(CASE_ADDRESS_ALIAS)
+void rejected(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  const char **alias = &pointer;
+  invoke_noescape(^{ consume_untracked(*alias); });
+}
+#elif defined(CASE_NOESCAPE_DEFINITION)
+void rejected(const char *pointer __attribute__((noescape))) {
+  global_pointer = pointer;
+}
+#elif defined(CASE_CARRIER_CAPTURE)
+void rejected(id owner) {
+  Optional(BorrowedBytes) payload = Some(BorrowedBytes, borrowed_bytes(owner));
+  invoke_escaping(^{ (void)payload; });
+}
+#elif defined(CASE_MOVED_CAPTURE)
+void rejected(id owner) {
+  const char *pointer = borrowed_bytes(owner);
+  invoke_escaping(^[move pointer] { consume_borrowed(pointer); });
+}
+#elif defined(CASE_DYNAMIC_GLOBAL) && defined(__cplusplus)
+extern id owner;
+const char *rejected = borrowed_bytes(owner);
 #endif

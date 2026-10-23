@@ -23,6 +23,8 @@ BorrowedBytes bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0
 void use(borrowed const char *pointer);
 void use_noescape(const char *pointer __attribute__((noescape)));
 void escape(const char *pointer);
+void escape_address(const char **pointer);
+void pair_escape(const char *first, const char *second);
 void invoke(void (^work)(void) __attribute__((noescape)));
 void launch(void (^work)(void));
 id make_owner(void);
@@ -75,6 +77,20 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "int f(id o) { const char *p=bytes(o); char out[4]; __builtin_memcpy(out,p,4); return out[0]+p[0]; }",
       "void f(id o) { withLifetime(o) { const char *p=bytes(o); use(p); } }",
       "void f(id o, id replacement) { keepAlive(o); const char *p=bytes(o); o=replacement; use(p); }",
+      "void f(id o, id replacement) { const char *p=bytes(o); keepAlive(o); o=replacement; use(p); }",
+      "void f(id o) { const char *p=bytes(o); withLifetime(o) { use(p); } use(p); }",
+      "void f(id o, id replacement) { id alias=o; const char *p=bytes(o); keepAlive(alias); o=replacement; use(p); }",
+      "void f(id a,id b,int choose) { use(bytes(choose?a:b)); }",
+      "void f(id o) { const char *p=bytes(o); if(!p) escape(p); else use(p); }",
+      "void f(id o) { const char *p=bytes(o); if(p==0) global_pointer=p; }",
+      "void f(id o) { const char *p=bytes(o); const char **alias=&p; *alias=0; escape(p); }",
+      "void f(id o) { const char *p=bytes(o); const char **alias; alias=&p; use(*alias); }",
+      "void f(id o) { struct Holder h={bytes(o)}; struct Holder *alias=&h; alias->pointer=0; escape(h.pointer); }",
+      "void f(id o) { const char *p[2]={bytes(o),0}; const char **alias=p; *alias=0; escape(p[0]); }",
+      "void f(id o) { const char *p=bytes(o); invoke(^[move p]{use(p);}); escape(p); }",
+      "void f(id o) { const char *p=bytes(o); invoke(^[move o,p]{(void)o;use(p);}); }",
+      "void f(id o) { Optional(BorrowedBytes) p=Some(BorrowedBytes,bytes(o)); invoke(^{(void)p;}); }",
+      "void f(const char *p __attribute__((noescape))) { use_noescape(p); }",
       "void f(id o, id replacement) { const char *p=bytes(o); o=replacement; p=bytes(o); use(p); }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { return bytes(o); }",
       "BorrowedBytes f(id o) __attribute__((objc_returns_borrowed(owner_index=0))) { id alias=o; return bytes(alias); }",
@@ -95,6 +111,15 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { static __thread const char *p; p=bytes(o); }",
       "void f(id o, struct Holder *h) { h->pointer=bytes(o); }",
       "void f(id o) { escape(bytes(o)); }",
+      "void f(id o) { const char *p=bytes(o); const char **alias=&p; escape_address(alias); }",
+      "void f(id o) { const char *p=bytes(o); const char **alias=&p; invoke(^{escape(*alias);}); }",
+      "void f(id o) { struct Holder h={bytes(o)}; struct Holder *alias=&h; escape(alias->pointer); }",
+      "void f(id o) { const char *p[2]={bytes(o),0}; const char **alias=p; escape(*alias); }",
+      "void f(id o) { const char *p=bytes(o); launch(^[move p]{use(p);}); }",
+      "void f(id o) { const char *p=bytes(o); invoke(^[move o,p]{(void)o;use(p);}); use(p); }",
+      "void f(id o) { Optional(BorrowedBytes) p=Some(BorrowedBytes,bytes(o)); launch(^{(void)p;}); }",
+      "void f(const char *p __attribute__((noescape))) { global_pointer=p; }",
+      "const char *f(const char *p __attribute__((noescape))) { return p; }",
       "void f(id o) { const char *p=bytes(o); launch(^{ use(p); }); }",
       "void f(id o) { const char *p=bytes(o); invoke(^{ escape(p); }); }",
       "void f(id o) { const char *p[2]={bytes(o),0}; escape(p[0]); }",
@@ -127,9 +152,25 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   for (const auto &Code : std::vector<std::string>{
            "void f(borrowed const char*); void f(const char*);",
            "BorrowedBytes f(id); const char *f(id);",
+           "typedef BorrowedBytes Local; typedef const char *Local;",
+           "extern BorrowedBytes slot; extern const char *slot;",
+           "void f(Optional(BorrowedBytes)); void f(Optional(const char *));",
            "BorrowedBytes f(id a,id b) __attribute__((objc_returns_borrowed(owner_index=0))); BorrowedBytes f(id a,id b) __attribute__((objc_returns_borrowed(owner_index=1)));"})
     Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
            "borrowed pointer declaration contract");
+  if (Language == BaseLanguage::ObjectiveCxx) {
+    // Objective-C++ dynamic initialization must receive the mandatory check,
+    // including aggregate initialization and out-of-line static members.
+    for (const auto &Code : std::vector<std::string>{
+             "extern id owner; const char *leak=bytes(owner);",
+             "extern id owner; Holder leak={bytes(owner)};",
+             "extern id owner; struct Static { static const char *pointer; }; const char *Static::pointer=bytes(owner);",
+             // Argument values are captured when evaluated. Clearing a later
+             // argument cannot erase an earlier argument's obligation.
+             "void f(id o) { const char *p=bytes(o); pair_escape(p,p=0); }"})
+      Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
+             "borrowed pointer escapes");
+  }
   auto Compatibility = Request(Root, Header + "void f(id o) { global_pointer=bytes(o); }",
                                 Language, Standard, ARC);
   Compatibility.profile = SemanticProfile::Compatibility;
