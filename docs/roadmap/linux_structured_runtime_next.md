@@ -49,3 +49,29 @@ Maintained fixtures author abandoned-parent, cancelled-actor, closed-hop, and
 throwing-resume witnesses. They check descendant wakes on another executor,
 exactly-once frame cleanup, and harmless late dependency notifications. These
 paths remain subject to the deferred validation phase.
+
+## Canonical main and global executors
+
+Part 7 §7.4.2 now has concrete C runtime destinations:
+`objc3_executor_get_main(&executor)` and
+`objc3_executor_get_global(&executor)`. Each accessor returns a retained handle;
+repeated access preserves the same logical executor identity. A process-lifetime
+runtime lease prevents the last client release from closing shared scheduling.
+Initialization errors are reported through the ordinary service status and may
+be retried. The global executor uses the existing bounded serial worker profile.
+Its single reserved worker does not consume any of the eight caller-created
+worker slots.
+
+The main executor is manual. Linux process main-thread identity, rather than
+the thread that first asks for the handle, governs pumping. A non-main thread
+receives `NOT_READY` with zero executed callbacks; it cannot execute main-affine
+work. Hosts pump main work through the existing executor API. Explicitly created
+manual executors retain their existing serialized pumping rules. No struct
+layout or service ABI version changes accompany the additive accessors.
+
+Authored C and C++ witnesses cover stable destinations, initialization from a
+worker, rejection of pumping on another thread, current logical identities,
+global worker execution, and releasing all client handles while shared work is
+pending. Compiler attributes and imported isolation metadata can now identify
+these real destinations, but implicit cross-executor call lowering remains a
+compiler responsibility. Validation is deferred.

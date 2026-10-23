@@ -3,6 +3,8 @@
 
 #include <cassert>
 #include <new>
+#include <sys/syscall.h>
+#include <unistd.h>
 #include <utility>
 
 namespace {
@@ -13,6 +15,12 @@ std::atomic<uint32_t> live_worker_executors{0};
 std::atomic<uint64_t> next_executor_identity{1};
 thread_local uint64_t current_executor_logical_identity = 0;
 thread_local bool *current_callback_reschedule = nullptr;
+
+// A default executor owns one process-lifetime public lease. Releasing the
+// last client must not close the language's shared scheduling destination.
+std::mutex default_executor_mutex;
+objc3_executor_t *main_executor = nullptr;
+objc3_executor_t *global_executor = nullptr;
 
 struct ExecutorIdentityScope {
   uint64_t previous;
@@ -50,6 +58,10 @@ bool reserve_worker_slot() noexcept {
       return true;
   }
   return false;
+}
+
+bool is_process_main_thread() noexcept {
+  return ::syscall(SYS_gettid) == ::getpid();
 }
 
 void run_callback(objc3_executor_t *executor,
@@ -119,8 +131,10 @@ void objc3_executor_internal_release(objc3_executor_t *executor) {
   }
 }
 
-extern "C" objc3_service_status objc3_executor_create(
-    uint32_t manual, objc3_executor_t **out_executor) {
+namespace {
+objc3_service_status create_executor(uint32_t manual,
+                                      objc3_executor_t **out_executor,
+                                      bool reserve_public_worker = true) {
   if (!out_executor || manual > 1) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_executor = nullptr;
   uint64_t identity = 0;
@@ -128,15 +142,16 @@ extern "C" objc3_service_status objc3_executor_create(
   auto *executor = new (std::nothrow) objc3_executor(manual != 0, identity);
   if (!executor) return OBJC3_SERVICE_OUT_OF_MEMORY;
   if (!executor->manual) {
-    if (!reserve_worker_slot()) {
+    if (reserve_public_worker && !reserve_worker_slot()) {
       delete executor;
       return OBJC3_SERVICE_NOT_READY;
     }
-    executor->worker_slot = true;
+    executor->worker_slot = reserve_public_worker;
     // The worker owns a lifetime reference, independent of public handles.
     if (!objc3_executor_internal_retain(executor)) {
+      if (executor->worker_slot)
+        live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
       executor->worker_slot = false;
-      live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
       delete executor;
       return OBJC3_SERVICE_NOT_READY;
     }
@@ -144,14 +159,52 @@ extern "C" objc3_service_status objc3_executor_create(
       executor->worker = std::thread(worker_main, executor);
     } catch (...) {
       executor->references.fetch_sub(1, std::memory_order_relaxed);
+      if (executor->worker_slot)
+        live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
       executor->worker_slot = false;
-      live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
       delete executor;
       return OBJC3_SERVICE_OUT_OF_MEMORY;
     }
   }
   *out_executor = executor;
   return OBJC3_SERVICE_OK;
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_executor_create(
+    uint32_t manual, objc3_executor_t **out_executor) {
+  return create_executor(manual, out_executor);
+}
+
+namespace {
+objc3_service_status default_executor(bool main,
+                                      objc3_executor_t **out_executor) {
+  if (!out_executor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_executor = nullptr;
+  std::lock_guard<std::mutex> lock(default_executor_mutex);
+  auto *&shared = main ? main_executor : global_executor;
+  if (!shared) {
+    objc3_executor_t *created = nullptr;
+    // The one canonical worker has a reserved budget; initializing the
+    // language default does not consume a caller-created worker slot.
+    const auto status = create_executor(main ? 1u : 0u, &created, false);
+    if (status != OBJC3_SERVICE_OK) return status;
+    created->main_thread_only = main;
+    shared = created;
+  }
+  *out_executor = objc3_executor_retain(shared);
+  return *out_executor ? OBJC3_SERVICE_OK : OBJC3_SERVICE_NOT_READY;
+}
+} // namespace
+
+extern "C" objc3_service_status
+objc3_executor_get_main(objc3_executor_t **out_executor) {
+  return default_executor(true, out_executor);
+}
+
+extern "C" objc3_service_status
+objc3_executor_get_global(objc3_executor_t **out_executor) {
+  return default_executor(false, out_executor);
 }
 
 extern "C" objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor) {
@@ -206,6 +259,8 @@ extern "C" objc3_service_status objc3_executor_pump(
   if (!executor || !executor->manual || !out_executed)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_executed = 0;
+  if (executor->main_thread_only && !is_process_main_thread())
+    return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> serial(executor->pump_mutex, std::try_to_lock);
   if (!serial.owns_lock()) return OBJC3_SERVICE_NOT_READY;
   if (!objc3_executor_internal_retain(executor))

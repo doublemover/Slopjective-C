@@ -556,5 +556,17 @@ int main(void) {
   child_cancellation(0, 1, 0, 0);
   child_cancellation(0, 0, 1, 0);
   child_cancellation(0, 0, 0, 1);
+  objc3_executor_t *main_executor = NULL, *global_executor = NULL;
+  objc3_executor_t *main_again = NULL, *global_again = NULL;
+  assert(objc3_executor_get_main(&main_executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_get_global(&global_executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_get_main(&main_again) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_get_global(&global_again) == OBJC3_SERVICE_OK);
+  assert(main_executor == main_again && global_executor == global_again);
+  assert(main_executor != global_executor);
+  objc3_executor_release(main_again);
+  objc3_executor_release(global_again);
+  objc3_executor_release(main_executor);
+  objc3_executor_release(global_executor);
   return 0;
 }

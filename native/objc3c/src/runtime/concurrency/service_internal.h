@@ -37,6 +37,7 @@ struct objc3_executor final {
   std::atomic<uint32_t> public_references{1};
   const uint64_t identity;
   const bool manual;
+  bool main_thread_only{false};
   bool worker_slot{false};
   std::mutex mutex;
   // Separate from the queue lock so callbacks remain reentrant-safe. A pump

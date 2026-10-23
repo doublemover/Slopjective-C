@@ -249,6 +249,15 @@ objc3_service_status objc3_async_frame_start_child(objc3_async_frame *frame,
  * that drains after they return. Retain values needed after callback scope. */
 objc3_service_status objc3_executor_create(uint32_t manual,
                                          objc3_executor_t **out_executor);
+/* Canonical process-wide destinations. Each successful call returns a retained
+ * handle with a stable logical identity. Main is manual and may be pumped only
+ * by the process main thread; a pump from another thread returns NOT_READY and
+ * executes nothing. Global runs on a shared bounded worker executor. Releasing
+ * client handles does not close either destination. Initialization failure may
+ * be retried. Ordinary explicitly created manual executors remain pumpable by
+ * any one owner at a time. */
+objc3_service_status objc3_executor_get_main(objc3_executor_t **out_executor);
+objc3_service_status objc3_executor_get_global(objc3_executor_t **out_executor);
 objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor);
 void objc3_executor_release(objc3_executor_t *executor);
 objc3_service_status objc3_executor_enqueue(objc3_executor_t *executor,

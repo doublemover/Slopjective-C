@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
+#include <thread>
 
 // Counter-only hooks keep this executable independent of libobjc. The installed
 // native-async fixture separately checks real GNUstep object deallocation.
@@ -334,6 +335,93 @@ void lost_continuation_cancels_descendants(ContinuationLoss loss) {
   objc3_executor_release(state.other);
   objc3_executor_release(executor);
 }
+
+struct DefaultExecutorProbe {
+  std::mutex mutex;
+  std::condition_variable changed;
+  std::thread::id main_thread;
+  uint64_t expected_identity{};
+  bool expect_main{false}, ran{false};
+};
+void default_executor_callback(void *opaque) {
+  auto &probe = *static_cast<DefaultExecutorProbe *>(opaque);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == 0 && facts.executor_identity == probe.expected_identity);
+  assert((std::this_thread::get_id() == probe.main_thread) == probe.expect_main);
+  std::lock_guard lock(probe.mutex);
+  probe.ran = true;
+  probe.changed.notify_all();
+}
+void canonical_executor_defaults() {
+  assert(objc3_executor_get_main(nullptr) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_executor_get_global(nullptr) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  objc3_executor_t *main = nullptr;
+  // First access may occur on a worker, but that cannot redefine main affinity.
+  std::thread initialize([&] {
+    assert(objc3_executor_get_main(&main) == OBJC3_SERVICE_OK);
+  });
+  initialize.join();
+  objc3_executor_t *again = nullptr;
+  assert(objc3_executor_get_main(&again) == OBJC3_SERVICE_OK && again == main);
+  DefaultExecutorProbe main_probe;
+  main_probe.main_thread = std::this_thread::get_id();
+  main_probe.expected_identity = main->identity;
+  main_probe.expect_main = true;
+  assert(objc3_executor_enqueue(main, default_executor_callback, &main_probe) ==
+         OBJC3_SERVICE_OK);
+  std::thread wrong_thread([&] {
+    uint32_t executed = 19;
+    assert(objc3_executor_pump(main, 1, &executed) == OBJC3_SERVICE_NOT_READY);
+    assert(executed == 0);
+  });
+  wrong_thread.join();
+  assert(!main_probe.ran);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(main, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && main_probe.ran);
+  const auto main_identity = main->identity;
+  objc3_executor_release(main);
+  objc3_executor_release(again);
+  assert(objc3_executor_get_main(&main) == OBJC3_SERVICE_OK);
+  assert(main->identity == main_identity);
+  objc3_executor_release(main);
+
+  objc3_executor_t *global = nullptr;
+  assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_get_global(&again) == OBJC3_SERVICE_OK && again == global);
+  assert(global->identity != main_identity);
+  Gate gate;
+  assert(objc3_executor_enqueue(global, gate_callback, &gate) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock lock(gate.mutex);
+    assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
+                                 [&] { return gate.entered; }));
+  }
+  DefaultExecutorProbe global_probe;
+  global_probe.main_thread = std::this_thread::get_id();
+  global_probe.expected_identity = global->identity;
+  assert(objc3_executor_enqueue(global, default_executor_callback, &global_probe) ==
+         OBJC3_SERVICE_OK);
+  objc3_executor_release(global);
+  objc3_executor_release(again);
+  // The canonical owner keeps pending work alive when all clients release.
+  assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  assert(global->identity == global_probe.expected_identity);
+  {
+    std::lock_guard lock(gate.mutex);
+    gate.open = true;
+    gate.changed.notify_all();
+  }
+  {
+    std::unique_lock lock(global_probe.mutex);
+    assert(global_probe.changed.wait_for(lock, std::chrono::seconds(5),
+                                         [&] { return global_probe.ran; }));
+  }
+  objc3_executor_release(global);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -347,5 +435,6 @@ void test_actor_scheduling() {
   for (auto loss : {ContinuationLoss::ActorDiscard, ContinuationLoss::ClosedHop,
                     ContinuationLoss::ThrowingResume})
     lost_continuation_cancels_descendants(loss);
+  canonical_executor_defaults();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }
