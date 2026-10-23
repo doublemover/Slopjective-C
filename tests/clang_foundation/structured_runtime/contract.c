@@ -564,6 +564,23 @@ int main(void) {
   assert(objc3_executor_get_global(&global_again) == OBJC3_SERVICE_OK);
   assert(main_executor == main_again && global_executor == global_again);
   assert(main_executor != global_executor);
+  assert(objc3_executor_identity(main_executor) != 0);
+  assert(objc3_executor_identity(global_executor) !=
+         objc3_executor_identity(main_executor));
+  assert(objc3_executor_identity(NULL) == 0 && !objc3_executor_is_current(NULL));
+  assert(!objc3_executor_is_current(main_executor));
+  assert(objc3_executor_register_named("fixture.c.owner", main_executor) ==
+         OBJC3_SERVICE_OK);
+  objc3_executor_t *named = NULL;
+  assert(objc3_executor_get_named("fixture.c.owner", &named) == OBJC3_SERVICE_OK);
+  assert(named == main_executor);
+  assert(objc3_executor_unregister_named("fixture.c.owner") == OBJC3_SERVICE_OK);
+  objc3_executor_t *retired = named;
+  assert(objc3_executor_get_named("fixture.c.owner", &retired) ==
+         OBJC3_SERVICE_CLOSED && !retired);
+  assert(objc3_executor_register_named("fixture.c.owner", main_executor) ==
+         OBJC3_SERVICE_CLOSED);
+  objc3_executor_release(named);
   objc3_executor_release(main_again);
   objc3_executor_release(global_again);
   objc3_executor_release(main_executor);

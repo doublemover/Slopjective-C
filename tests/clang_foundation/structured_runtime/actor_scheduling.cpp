@@ -343,6 +343,7 @@ struct DefaultExecutorProbe {
   std::condition_variable changed;
   std::thread::id main_thread;
   uint64_t expected_identity{};
+  objc3_executor_t *executor{};
   bool expect_main{false}, ran{false};
 };
 void default_executor_callback(void *opaque) {
@@ -352,6 +353,8 @@ void default_executor_callback(void *opaque) {
   facts.version = OBJC3_ACTOR_SERVICE_VERSION;
   assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
   assert(facts.actor_identity == 0 && facts.executor_identity == probe.expected_identity);
+  assert(objc3_executor_identity(probe.executor) == probe.expected_identity);
+  assert(objc3_executor_is_current(probe.executor));
   assert((std::this_thread::get_id() == probe.main_thread) == probe.expect_main);
   std::lock_guard lock(probe.mutex);
   probe.ran = true;
@@ -371,6 +374,7 @@ void canonical_executor_defaults() {
   DefaultExecutorProbe main_probe;
   main_probe.main_thread = std::this_thread::get_id();
   main_probe.expected_identity = main->identity;
+  main_probe.executor = main;
   main_probe.expect_main = true;
   assert(objc3_executor_enqueue(main, default_executor_callback, &main_probe) ==
          OBJC3_SERVICE_OK);
@@ -408,6 +412,7 @@ void canonical_executor_defaults() {
   DefaultExecutorProbe global_probe;
   global_probe.main_thread = std::this_thread::get_id();
   global_probe.expected_identity = global->identity;
+  global_probe.executor = global;
   assert(objc3_executor_enqueue(global, default_executor_callback, &global_probe) ==
          OBJC3_SERVICE_OK);
   objc3_executor_release(global);
@@ -568,6 +573,115 @@ void global_pool_preserves_actor_and_task_exclusion() {
   objc3_task_release(task);
   objc3_executor_release(global);
 }
+
+void named_executor_identity_and_registration_races() {
+  objc3_executor_t *first = nullptr, *second = nullptr, *found = nullptr;
+  assert(objc3_executor_create(1, &first) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &second) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_register_named(nullptr, first) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_executor_register_named("", first) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_executor_get_named("fixture.not.registered", &found) ==
+         OBJC3_SERVICE_NOT_READY && !found);
+  char name[] = "fixture.named.copy";
+  assert(objc3_executor_register_named(name, first) == OBJC3_SERVICE_OK);
+  name[0] = 'X';
+  assert(objc3_executor_get_named("fixture.named.copy", &found) == OBJC3_SERVICE_OK);
+  assert(found == first);
+  objc3_executor_release(found);
+  assert(objc3_executor_get_named(name, &found) == OBJC3_SERVICE_NOT_READY && !found);
+  assert(objc3_executor_register_named("fixture.named.copy", first) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_register_named("fixture.named.copy", second) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_executor_get_named("Fixture.named.copy", &found) ==
+         OBJC3_SERVICE_NOT_READY && !found);
+  const auto identity = objc3_executor_identity(first);
+  objc3_executor_release(first); // Registry alone now owns this destination.
+  assert(objc3_executor_get_named("fixture.named.copy", &found) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_identity(found) == identity);
+  assert(objc3_executor_unregister_named("fixture.named.copy") == OBJC3_SERVICE_OK);
+  assert(objc3_executor_unregister_named("fixture.named.copy") == OBJC3_SERVICE_OK);
+  assert(objc3_executor_register_named("fixture.named.copy", second) == OBJC3_SERVICE_CLOSED);
+  assert(objc3_executor_identity(found) == identity); // Existing client survives.
+  objc3_executor_release(found);
+
+  objc3_executor_t *candidates[8]{};
+  objc3_service_status status[8]{};
+  std::thread registrations[8];
+  for (unsigned index = 0; index != 8; ++index) {
+    assert(objc3_executor_create(1, &candidates[index]) == OBJC3_SERVICE_OK);
+    registrations[index] = std::thread([&, index] {
+      status[index] = objc3_executor_register_named("fixture.named.race", candidates[index]);
+    });
+  }
+  unsigned winners = 0;
+  objc3_executor_t *winner = nullptr;
+  for (unsigned index = 0; index != 8; ++index) {
+    registrations[index].join();
+    if (status[index] == OBJC3_SERVICE_OK) {
+      ++winners;
+      winner = candidates[index];
+    } else {
+      assert(status[index] == OBJC3_SERVICE_INVALID_ARGUMENT);
+    }
+  }
+  assert(winners == 1);
+  assert(objc3_executor_get_named("fixture.named.race", &found) == OBJC3_SERVICE_OK);
+  assert(found == winner);
+  assert(objc3_executor_unregister_named("fixture.named.race") == OBJC3_SERVICE_OK);
+  objc3_executor_release(found);
+  for (auto *candidate : candidates) objc3_executor_release(candidate);
+  objc3_executor_release(second);
+}
+struct NamedRetirementProbe {
+  std::atomic<bool> queried{false};
+};
+void query_retired_executor(void *opaque) {
+  auto &probe = *static_cast<NamedRetirementProbe *>(opaque);
+  objc3_executor_t *found = nullptr;
+  assert(objc3_executor_get_named("fixture.named.retirement", &found) ==
+         OBJC3_SERVICE_CLOSED && !found);
+  probe.queried = true;
+}
+void named_retirement_releases_executor_outside_registry_lock() {
+  objc3_executor_t *worker = nullptr;
+  assert(objc3_executor_create(0, &worker) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_register_named("fixture.named.retirement", worker) == OBJC3_SERVICE_OK);
+  Gate gate;
+  assert(objc3_executor_enqueue(worker, gate_callback, &gate) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock lock(gate.mutex);
+    assert(gate.changed.wait_for(lock, std::chrono::seconds(5), [&] { return gate.entered; }));
+  }
+  NamedRetirementProbe probe;
+  assert(objc3_executor_enqueue(worker, query_retired_executor, &probe) == OBJC3_SERVICE_OK);
+  objc3_executor_release(worker); // The registry holds the last public lease.
+  objc3_service_status retired = OBJC3_SERVICE_NOT_READY;
+  std::thread retire([&] {
+    retired = objc3_executor_unregister_named("fixture.named.retirement");
+  });
+  // The blocked worker itself keeps this internal record alive. Observe stop
+  // publication without retaining a public handle which would alter shutdown.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  for (;;) {
+    bool stopping;
+    {
+      std::lock_guard lock(worker->mutex);
+      stopping = worker->stopping;
+    }
+    if (stopping) break;
+    assert(std::chrono::steady_clock::now() < deadline);
+    std::this_thread::yield();
+  }
+  {
+    std::lock_guard lock(gate.mutex);
+    gate.open = true;
+    gate.changed.notify_all();
+  }
+  // Retirement joins the draining worker. Its pending callback must be able to
+  // reacquire the registry lock before that join can return.
+  retire.join();
+  assert(retired == OBJC3_SERVICE_OK && probe.queried);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -584,5 +698,7 @@ void test_actor_scheduling() {
   canonical_executor_defaults();
   actor_join_does_not_block_another_executor();
   global_pool_preserves_actor_and_task_exclusion();
+  named_executor_identity_and_registration_races();
+  named_retirement_releases_executor_outside_registry_lock();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }

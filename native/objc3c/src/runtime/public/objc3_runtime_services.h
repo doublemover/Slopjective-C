@@ -261,6 +261,26 @@ objc3_service_status objc3_executor_create(uint32_t manual,
  * any one owner at a time. */
 objc3_service_status objc3_executor_get_main(objc3_executor_t **out_executor);
 objc3_service_status objc3_executor_get_global(objc3_executor_t **out_executor);
+/* Logical executor affinity only; actor isolation additionally needs matching
+ * actor instance identity. Null has identity zero and is never current. */
+uint64_t objc3_executor_identity(const objc3_executor_t *executor);
+int objc3_executor_is_current(const objc3_executor_t *executor);
+/* Bind a nonempty NUL-terminated byte name, copied by the runtime. Names match
+ * the exact ordinary-string bytes of objc_executor(named("...")); no case or
+ * Unicode normalization occurs. The named namespace is separate from canonical
+ * main/global. Registration retains executor; same active binding is idempotent
+ * OK, a conflicting binding is INVALID_ARGUMENT. Lookup returns one retained
+ * handle, NOT_READY if unregistered, or CLOSED after retirement. Output is null
+ * on failure. Retiring an active name drops registry ownership after unlocking,
+ * preserves existing clients/tasks, and is idempotent. A retired name cannot be
+ * registered again, preserving executor-equivalence proofs for old continuations.
+ * Hosts retire bindings explicitly; registry names/tombstones have process
+ * lifetime. Pending workers finish under their ordinary handle ownership rules. */
+objc3_service_status objc3_executor_register_named(const char *name,
+                                                   objc3_executor_t *executor);
+objc3_service_status objc3_executor_get_named(const char *name,
+                                              objc3_executor_t **out_executor);
+objc3_service_status objc3_executor_unregister_named(const char *name);
 objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor);
 void objc3_executor_release(objc3_executor_t *executor);
 objc3_service_status objc3_executor_enqueue(objc3_executor_t *executor,

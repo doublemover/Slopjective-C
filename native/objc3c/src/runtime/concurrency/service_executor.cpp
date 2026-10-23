@@ -2,7 +2,9 @@
 #include "service_autorelease_pool.h"
 
 #include <cassert>
+#include <map>
 #include <new>
+#include <string>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <utility>
@@ -22,6 +24,30 @@ thread_local bool *current_callback_reschedule = nullptr;
 std::mutex default_executor_mutex;
 objc3_executor_t *main_executor = nullptr;
 objc3_executor_t *global_executor = nullptr;
+
+struct NamedExecutorBinding {
+  objc3_executor_t *executor{};
+  bool retired{false};
+};
+struct NamedExecutorRegistry {
+  std::mutex mutex;
+  std::map<std::string, NamedExecutorBinding, std::less<>> bindings;
+};
+
+NamedExecutorRegistry &named_registry() {
+  // Explicit retirement drops scheduling ownership. Keep registry storage and
+  // retired identities for process lifetime: automatic atexit destruction
+  // could race still-running callbacks, or permit an old affinity name to be
+  // rebound while an existing continuation owns the original destination.
+  // A throwing first allocation leaves static initialization retryable.
+  static auto *registry = new NamedExecutorRegistry;
+  return *registry;
+}
+
+struct ExecutorLease {
+  objc3_executor_t *executor;
+  ~ExecutorLease() { objc3_executor_release(executor); }
+};
 
 struct ExecutorIdentityScope {
   uint64_t previous;
@@ -222,6 +248,83 @@ objc3_executor_get_main(objc3_executor_t **out_executor) {
 extern "C" objc3_service_status
 objc3_executor_get_global(objc3_executor_t **out_executor) {
   return default_executor(false, out_executor);
+}
+
+extern "C" uint64_t objc3_executor_identity(const objc3_executor_t *executor) {
+  return executor ? executor->identity : 0;
+}
+
+extern "C" int objc3_executor_is_current(const objc3_executor_t *executor) {
+  return executor &&
+                 objc3::services::executor_is_current_identity(executor->identity)
+             ? 1 : 0;
+}
+
+extern "C" objc3_service_status
+objc3_executor_register_named(const char *name, objc3_executor_t *executor) {
+  if (!name || !*name || !executor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  ExecutorLease owner{objc3_executor_retain(executor)};
+  if (!owner.executor) return OBJC3_SERVICE_NOT_READY;
+  try {
+    auto &registry = named_registry();
+    std::lock_guard<std::mutex> lock(registry.mutex);
+    const auto found = registry.bindings.find(name);
+    if (found != registry.bindings.end()) {
+      if (found->second.retired) return OBJC3_SERVICE_CLOSED;
+      return found->second.executor == executor ? OBJC3_SERVICE_OK
+                                                : OBJC3_SERVICE_INVALID_ARGUMENT;
+    }
+    registry.bindings.emplace(name, NamedExecutorBinding{owner.executor, false});
+    owner.executor = nullptr;
+    return OBJC3_SERVICE_OK;
+  } catch (const std::bad_alloc &) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  } catch (...) {
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+}
+
+extern "C" objc3_service_status
+objc3_executor_get_named(const char *name, objc3_executor_t **out_executor) {
+  if (!out_executor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_executor = nullptr;
+  if (!name || !*name) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  try {
+    auto &registry = named_registry();
+    std::lock_guard<std::mutex> lock(registry.mutex);
+    const auto found = registry.bindings.find(name);
+    if (found == registry.bindings.end()) return OBJC3_SERVICE_NOT_READY;
+    if (found->second.retired) return OBJC3_SERVICE_CLOSED;
+    *out_executor = objc3_executor_retain(found->second.executor);
+    return *out_executor ? OBJC3_SERVICE_OK : OBJC3_SERVICE_NOT_READY;
+  } catch (const std::bad_alloc &) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  } catch (...) {
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+}
+
+extern "C" objc3_service_status
+objc3_executor_unregister_named(const char *name) {
+  if (!name || !*name) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  // Release after the registry lock. Last-release worker shutdown may execute
+  // callbacks which themselves query or retire named destinations.
+  ExecutorLease owner{nullptr};
+  try {
+    auto &registry = named_registry();
+    std::lock_guard<std::mutex> lock(registry.mutex);
+    const auto found = registry.bindings.find(name);
+    if (found == registry.bindings.end()) return OBJC3_SERVICE_NOT_READY;
+    // Retirement is monotonic and idempotent. Existing client/task handles
+    // remain valid, but this language-visible name can never change identity.
+    found->second.retired = true;
+    owner.executor = std::exchange(found->second.executor, nullptr);
+    return OBJC3_SERVICE_OK;
+  } catch (const std::bad_alloc &) {
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  } catch (...) {
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
 }
 
 extern "C" objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor) {

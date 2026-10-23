@@ -101,3 +101,30 @@ The canonical-global fixture also authors two simultaneously active actor
 mailboxes, repeated mailbox cleanup, and a task that repeatedly yields on the
 four-worker pool. These distinguish allowed concurrency between independent
 actors from required exclusion within each actor and each native task frame.
+
+## Named executor identity and lifetime
+
+`objc3_executor_register_named(name, executor)` retains an executor under an
+owned exact-byte name. Names use the ordinary string bytes accepted by
+`objc_executor(named("..."))`, without Unicode normalization or case folding.
+An active duplicate naming the same executor returns `OK`; a conflicting
+destination returns `INVALID_ARGUMENT`. Concurrent registrations publish one
+binding. The named namespace is independent of canonical main/global.
+
+`objc3_executor_get_named(name, &executor)` returns a retained destination,
+`NOT_READY` for an unregistered name, or `CLOSED` for a retired name.
+`objc3_executor_unregister_named(name)` permanently retires a binding and drops
+its registry owner after releasing the registry lock. Repeat retirement is
+idempotent. Retained task/client destinations remain valid and finish under
+ordinary executor ownership rules. A retired name cannot be rebound: lexical
+same-name executor proofs must not silently identify old and new destinations.
+Hosts retire names explicitly. Names and retirement tombstones have process
+lifetime, avoiding automatic shutdown races with executing callbacks.
+
+`objc3_executor_identity` and `objc3_executor_is_current` expose the logical
+executor identity and current execution affinity for retained destinations.
+They are independent of physical worker identity. Same executor affinity does
+not prove same actor instance isolation. C and C++ fixtures author owned-name,
+case-sensitive identity, idempotence/conflict, registration-race, retained-client
+retirement, and reentrant registry access during last-worker shutdown witnesses.
+No execution or installed export qualification is claimed yet.
