@@ -406,9 +406,148 @@ static void task_hops(void) {
   objc3_executor_release(frame.other);
   objc3_executor_release(executor);
 }
+
+/* Native C frames exercise the same child entry used by compiler-generated
+ * async frames. The independent dependency keeps each live task suspended, so
+ * cancellation must publish a wake rather than merely set a query bit. */
+typedef struct CancellationTree CancellationTree;
+typedef struct CancellationFrame {
+  CancellationTree *tree;
+  unsigned index;
+  unsigned step;
+} CancellationFrame;
+struct CancellationTree {
+  objc3_executor_t *executor;
+  objc3_task_t *dependency;
+  objc3_task_t *tasks[5];
+  unsigned destroyed[5];
+  unsigned resumes[5];
+  int complete_middle;
+};
+static void tree_resume(objc3_task_t *task, void *opaque);
+static void tree_destroy(void *opaque) {
+  CancellationFrame *frame = (CancellationFrame *)opaque;
+  ++frame->tree->destroyed[frame->index];
+  free(frame);
+}
+static objc3_task_t *tree_start(CancellationTree *tree, unsigned index,
+                                objc3_task_t *parent) {
+  CancellationFrame *frame = (CancellationFrame *)calloc(1, sizeof(*frame));
+  assert(frame);
+  frame->tree = tree;
+  frame->index = index;
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = parent ? NULL : tree->executor;
+  options.resume = tree_resume;
+  options.destroy = tree_destroy;
+  options.frame = frame;
+  objc3_task_t *task = NULL;
+  assert((parent ? objc3_task_start_child(parent, &options, &task)
+                 : objc3_task_start(&options, &task)) == OBJC3_SERVICE_OK);
+  tree->tasks[index] = task;
+  return task;
+}
+static void tree_complete(objc3_task_t *task, objc3_completion_kind kind) {
+  objc3_completion completion = ZERO_INIT;
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = kind;
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+}
+static void tree_resume(objc3_task_t *task, void *opaque) {
+  CancellationFrame *frame = (CancellationFrame *)opaque;
+  CancellationTree *tree = frame->tree;
+  ++tree->resumes[frame->index];
+  if (frame->step++ == 0) {
+    if (frame->index == 0) {
+      tree_start(tree, 1, task);
+      tree_start(tree, 2, task);
+      tree_start(tree, 4, NULL); /* detached from the active parent */
+    } else if (frame->index == 1) {
+      tree_start(tree, 3, task);
+      if (tree->complete_middle) {
+        tree_complete(task, OBJC3_COMPLETION_SUCCESS);
+        return;
+      }
+    }
+    if (!objc3_task_is_cancel_requested(task)) {
+      assert(objc3_task_await(task, tree->dependency) == OBJC3_SERVICE_OK);
+      return;
+    }
+  }
+  tree_complete(task, objc3_task_is_cancel_requested(task)
+                          ? OBJC3_COMPLETION_CANCELLED
+                          : OBJC3_COMPLETION_SUCCESS);
+}
+static void remain_suspended(objc3_task_t *task, void *frame) {
+  (void)task;
+  (void)frame;
+}
+static void tree_pump(CancellationTree *tree) {
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(tree->executor, 64, &executed) == OBJC3_SERVICE_OK);
+  assert(executed < 64);
+}
+static void tree_assert_kind(objc3_task_t *task, objc3_completion_kind kind) {
+  objc3_completion completion = ZERO_INIT;
+  assert(objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == kind);
+}
+static void child_cancellation(int cancel_before_spawn, int cancel_child_only,
+                                int release_completed_middle) {
+  CancellationTree tree = ZERO_INIT;
+  tree.complete_middle = release_completed_middle;
+  assert(objc3_executor_create(1, &tree.executor) == OBJC3_SERVICE_OK);
+  objc3_task_start_options dependency_options = ZERO_INIT;
+  dependency_options.struct_size = sizeof(dependency_options);
+  dependency_options.version = OBJC3_SERVICE_ABI_VERSION;
+  dependency_options.executor = tree.executor;
+  dependency_options.resume = remain_suspended;
+  assert(objc3_task_start(&dependency_options, &tree.dependency) ==
+         OBJC3_SERVICE_OK);
+  tree_start(&tree, 0, NULL);
+  if (cancel_before_spawn) objc3_task_request_cancel(tree.tasks[0]);
+  tree_pump(&tree);
+  if (release_completed_middle) {
+    tree_assert_kind(tree.tasks[1], OBJC3_COMPLETION_SUCCESS);
+    assert(tree.destroyed[1] == 1);
+    objc3_task_release(tree.tasks[1]);
+    tree.tasks[1] = NULL;
+  }
+  if (!cancel_before_spawn)
+    objc3_task_request_cancel(tree.tasks[cancel_child_only ? 1 : 0]);
+  /* Cancellation is visible throughout the tree before any queued continuation
+   * runs. Child cancellation never travels upward or sideways. */
+  assert(objc3_task_is_cancel_requested(tree.tasks[0]) == !cancel_child_only);
+  assert(objc3_task_is_cancel_requested(tree.tasks[2]) == !cancel_child_only);
+  assert(objc3_task_is_cancel_requested(tree.tasks[3]));
+  assert(!objc3_task_is_cancel_requested(tree.tasks[4]));
+  assert(!objc3_task_is_cancel_requested(tree.dependency));
+  tree_pump(&tree);
+  tree_assert_kind(tree.tasks[3], OBJC3_COMPLETION_CANCELLED);
+  if (!cancel_child_only)
+    tree_assert_kind(tree.tasks[0], OBJC3_COMPLETION_CANCELLED);
+  objc3_task_request_cancel(tree.tasks[0]); /* idempotent and cancels siblings */
+  tree_pump(&tree);
+  tree_complete(tree.dependency, OBJC3_COMPLETION_SUCCESS);
+  tree_pump(&tree);
+  tree_assert_kind(tree.tasks[4], OBJC3_COMPLETION_SUCCESS);
+  for (unsigned index = 0; index != 5; ++index) {
+    assert(tree.destroyed[index] == 1);
+    if (tree.tasks[index]) objc3_task_release(tree.tasks[index]);
+  }
+  objc3_task_release(tree.dependency);
+  objc3_executor_release(tree.executor);
+}
 int main(void) {
   groups();
   actors();
   task_hops();
+  child_cancellation(1, 0, 0);
+  child_cancellation(0, 0, 0);
+  child_cancellation(0, 1, 0);
+  child_cancellation(0, 0, 1);
   return 0;
 }

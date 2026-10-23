@@ -152,13 +152,19 @@ typedef struct objc3_task_start_options {
 objc3_service_status objc3_task_start(const objc3_task_start_options *options,
                                      objc3_task_t **out_task);
 /* Start a private child from the parent's active resume, inheriting its current
- * destination. Both destination fields in options must be null. Ownership
- * transfers only on success, as for start. No parent-child ownership is implied. */
+ * destination and cancellation state before its first resume. Later parent
+ * cancellation reaches all live structured descendants, including through a
+ * completed/released intermediate child. Cancelling a child does not cancel
+ * its ancestors or siblings. Both destination fields in options must be null.
+ * Ownership transfers only on success, as for start. Cancellation ancestry
+ * does not retain task handles/frames or imply an automatic scope-exit join. */
 objc3_service_status objc3_task_start_child(
     objc3_task_t *parent, const objc3_task_start_options *options,
     objc3_task_t **out_task);
 objc3_task_t *objc3_task_retain(objc3_task_t *task);
 void objc3_task_release(objc3_task_t *task);
+/* Monotonic, cooperative cancellation of this task and structured descendants.
+ * Independently started tasks have no inherited cancellation relationship. */
 void objc3_task_request_cancel(objc3_task_t *task);
 int objc3_task_is_cancel_requested(const objc3_task_t *task);
 /* Coalesce outstanding wake requests. A wake during an active resume queues

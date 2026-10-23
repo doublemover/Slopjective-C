@@ -156,6 +156,79 @@ void exercise(bool manual, bool actor, bool fairness, bool actor_witness,
   objc3_task_release(task);
   objc3_executor_release(probe.executor);
 }
+
+struct CancellationRace {
+  Gate registration;
+  objc3_task_t *child{};
+  std::atomic<unsigned> child_resumes{0}, child_destroyed{0};
+  std::atomic<unsigned> parent_destroyed{0};
+  std::atomic<bool> inherited{false};
+};
+void complete_cancelled(objc3_task_t *task) {
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_CANCELLED;
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+}
+void race_child_resume(objc3_task_t *task, void *opaque) {
+  auto &race = *static_cast<CancellationRace *>(opaque);
+  ++race.child_resumes;
+  // This check runs on the worker, immediately at the child's first entry.
+  race.inherited = objc3_task_is_cancel_requested(task);
+  assert(race.inherited);
+  complete_cancelled(task);
+}
+void race_child_destroy(void *opaque) {
+  ++static_cast<CancellationRace *>(opaque)->child_destroyed;
+}
+void race_parent_destroy(void *opaque) {
+  ++static_cast<CancellationRace *>(opaque)->parent_destroyed;
+}
+void race_parent_resume(objc3_task_t *task, void *opaque) {
+  auto &race = *static_cast<CancellationRace *>(opaque);
+  gate_callback(&race.registration);
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.frame = &race;
+  options.resume = race_child_resume;
+  options.destroy = race_child_destroy;
+  assert(objc3_task_start_child(task, &options, &race.child) == OBJC3_SERVICE_OK);
+  complete_cancelled(task);
+}
+void child_registration_after_worker_cancellation() {
+  CancellationRace race;
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(0, &executor) == OBJC3_SERVICE_OK);
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = &race;
+  options.resume = race_parent_resume;
+  options.destroy = race_parent_destroy;
+  objc3_task_t *parent = nullptr;
+  assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock lock(race.registration.mutex);
+    assert(race.registration.changed.wait_for(lock, std::chrono::seconds(5),
+                                               [&] {
+      return race.registration.entered;
+    }));
+    objc3_task_request_cancel(parent);
+    race.registration.open = true;
+    race.registration.changed.notify_all();
+  }
+  assert(objc3_task_wait_quiescent(parent) == OBJC3_SERVICE_OK);
+  assert(race.child);
+  assert(objc3_task_wait_quiescent(race.child) == OBJC3_SERVICE_OK);
+  assert(race.inherited && race.child_resumes == 1);
+  assert(race.child_destroyed == 1 && race.parent_destroyed == 1);
+  objc3_task_release(race.child);
+  objc3_task_release(parent);
+  objc3_executor_release(executor);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -165,5 +238,6 @@ void test_actor_scheduling() {
       exercise(manual, true, true, actor_witness);
   }
   exercise(true, true, false, false, true);
+  child_registration_after_worker_cancellation();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }

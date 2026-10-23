@@ -2,6 +2,7 @@
 #include "service_autorelease_pool.h"
 #include "service_actor.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <new>
@@ -412,8 +413,10 @@ void objc3_task_internal_release(objc3_task_t *task) {
   }
 }
 
-extern "C" objc3_service_status objc3_task_start(
-    const objc3_task_start_options *options, objc3_task_t **out_task) {
+namespace {
+objc3_service_status start_task(
+    const objc3_task_start_options *options, objc3_task_t **out_task,
+    objc3_task_t *parent = nullptr) {
   if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
   if (!options || options->struct_size < sizeof(objc3_task_start_options) ||
@@ -425,6 +428,12 @@ extern "C" objc3_service_status objc3_task_start(
                : OBJC3_SERVICE_INVALID_ARGUMENT;
   auto *task = new (std::nothrow) objc3_task;
   if (!task) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  try {
+    task->await_target = std::make_shared<objc3_task::AwaitTarget>(task);
+  } catch (...) {
+    delete task;
+    return OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
   if (options->result_type) {
     const auto status = objc3_async_result_type_validate(options->result_type);
     if (status != OBJC3_SERVICE_OK) {
@@ -468,6 +477,32 @@ extern "C" objc3_service_status objc3_task_start(
       return OBJC3_SERVICE_OUT_OF_MEMORY;
     }
   }
+  if (parent) {
+    try {
+      // Register before the first resume can be published. Cancellation and
+      // registration use the same token lock: the child is either traversed
+      // by an ongoing request or inherits the already-published request.
+      std::lock_guard<std::mutex> lock(parent->await_target->mutex);
+      auto &children = parent->await_target->structured_children;
+      // After cancellation, wake traversal uses stable vector positions while
+      // temporarily dropping the token lock around callback-capable dispatch.
+      if (!parent->await_target->cancel_requested)
+        children.erase(std::remove_if(children.begin(), children.end(),
+                                      [](const auto &child) {
+                                        return child.expired();
+                                      }), children.end());
+      children.push_back(task->await_target);
+      task->await_target->structured_parent = parent->await_target;
+      task->await_target->cancel_requested =
+          parent->await_target->cancel_requested;
+      task->cancel_requested.store(task->await_target->cancel_requested,
+                                    std::memory_order_release);
+    } catch (...) {
+      task->frame = nullptr;
+      delete task;
+      return OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+  }
   const objc3_service_status queued = objc3_task_schedule_resume(task);
   if (queued != OBJC3_SERVICE_OK) {
     task->frame = nullptr;
@@ -480,6 +515,12 @@ extern "C" objc3_service_status objc3_task_start(
   }
   *out_task = task;
   return OBJC3_SERVICE_OK;
+}
+} // namespace
+
+extern "C" objc3_service_status objc3_task_start(
+    const objc3_task_start_options *options, objc3_task_t **out_task) {
+  return start_task(options, out_task);
 }
 
 extern "C" objc3_service_status objc3_task_start_child(
@@ -504,7 +545,7 @@ extern "C" objc3_service_status objc3_task_start_child(
     if (parent->actor) inherited.actor = parent->actor;
     else inherited.executor = parent->executor;
   }
-  return objc3_task_start(&inherited, out_task);
+  return start_task(&inherited, out_task, parent);
 }
 
 extern "C" objc3_task_t *objc3_task_retain(objc3_task_t *task) {
@@ -521,21 +562,71 @@ extern "C" void objc3_task_request_cancel(objc3_task_t *task) {
   if (objc3_task_mark_cancel(task)) objc3_task_wake_cancelled(task);
 }
 
-bool objc3_task_mark_cancel(objc3_task_t *task) {
-  task->cancel_requested.store(true, std::memory_order_release);
-  std::lock_guard<std::mutex> lock(task->mutex);
-  if (!task->terminal && task->awaiting) {
-    if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
-    task->await_status = nullptr;
-    task->await_result_task = nullptr;
-    task->awaiting = false;
-    return true;
+namespace {
+bool mark_cancel_tree(const std::shared_ptr<objc3_task::AwaitTarget> &target) {
+  std::lock_guard<std::mutex> lifetime(target->mutex);
+  target->cancel_requested = true;
+  bool wake = false;
+  if (auto *task = target->task) {
+    // The token protects the raw record through its destruction boundary.
+    // No retained task is released under a group/publication lock, so marking
+    // cannot invoke completion observers or native frame cleanup.
+    task->cancel_requested.store(true, std::memory_order_release);
+    std::lock_guard<std::mutex> lock(task->mutex);
+    if (!task->terminal && task->awaiting) {
+      if (task->await_status) *task->await_status = OBJC3_SERVICE_CANCELLED;
+      task->await_status = nullptr;
+      task->await_result_task = nullptr;
+      task->awaiting = false;
+      task->cancel_wake_pending = true;
+      wake = true;
+    }
   }
-  return false;
+  for (const auto &weak_child : target->structured_children)
+    if (auto child = weak_child.lock())
+      wake = mark_cancel_tree(child) || wake;
+  return wake;
+}
+
+void wake_cancelled_tree(
+    const std::shared_ptr<objc3_task::AwaitTarget> &target) {
+  objc3_task_t *task = nullptr;
+  {
+    std::lock_guard<std::mutex> lifetime(target->mutex);
+    if (objc3_task_internal_retain(target->task)) task = target->task;
+  }
+  if (task) {
+    TaskReleaseGuard guard{task};
+    bool wake;
+    {
+      std::lock_guard<std::mutex> lock(task->mutex);
+      wake = std::exchange(task->cancel_wake_pending, false) && !task->terminal;
+    }
+    if (wake) wake_awaiting_task(task);
+  }
+  // Snapshot one child at a time, then drop the token lock before dispatch.
+  // Dispatch failure can synchronously complete a child and reenter arbitrary
+  // task/group APIs. Registration preserves indices after cancellation and
+  // only appends, so each snapshot remains valid across that reentry.
+  size_t index = 0;
+  for (;;) {
+    std::shared_ptr<objc3_task::AwaitTarget> child;
+    {
+      std::lock_guard<std::mutex> lifetime(target->mutex);
+      if (index == target->structured_children.size()) break;
+      child = target->structured_children[index++].lock();
+    }
+    if (child) wake_cancelled_tree(child);
+  }
+}
+} // namespace
+
+bool objc3_task_mark_cancel(objc3_task_t *task) {
+  return mark_cancel_tree(task->await_target);
 }
 
 void objc3_task_wake_cancelled(objc3_task_t *task) {
-  wake_awaiting_task(task);
+  wake_cancelled_tree(task->await_target);
 }
 
 extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {

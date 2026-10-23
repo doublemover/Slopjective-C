@@ -64,6 +64,12 @@ struct objc3_task final {
   struct AwaitTarget {
     std::mutex mutex;
     objc3_task_t *task;
+    // Cancellation ancestry outlives intermediate task records, without
+    // owning a task or native frame. Descendants retain their ancestor token;
+    // ancestors keep only weak descendant tokens.
+    bool cancel_requested{false};
+    std::shared_ptr<AwaitTarget> structured_parent;
+    std::vector<std::weak_ptr<AwaitTarget>> structured_children;
     explicit AwaitTarget(objc3_task_t *value) : task(value) {}
   };
   struct Waiter {
@@ -87,6 +93,7 @@ struct objc3_task final {
   bool resume_active{false};
   bool resume_requested{false};
   bool awaiting{false};
+  bool cancel_wake_pending{false};
   uint64_t await_generation{0};
   objc3_service_status *await_status{nullptr};
   objc3_task_t **await_result_task{nullptr};
