@@ -1,7 +1,7 @@
 # Linux native Objective-C C17 async definitions
 
 This development slice lowers reserved `__objc3_async` free-function definitions
-and `__objc3_await` in Objective-C 3 C17 mode to the existing shared C frame ABI.
+Objective-C method and Block definitions, and `__objc3_await` in Objective-C 3 C17 mode to the existing shared C frame ABI.
 The canonical logical function result and effects remain unchanged. The native C
 symbol physically returns `objc3_async_frame`; explicit asm bindings remain
 available for foreign frame factories. This introduces no runtime record-layout
@@ -40,10 +40,21 @@ ramp parameter copy and cleanup preserve the caller ABI. ARC local releases,
 source defers, native C record destruction and managed carrier cleanup use the
 ordinary lexical cleanup stack on continuation and destruction edges.
 
+Method frames independently retain their receivers in ARC and MRC before initial
+suspension, and preserve `self`, `_cmd` and explicit argument storage. Each async
+Block invocation owns a heap copy before suspension, preserving captures and
+`__block` forwarding after the source Block leaves scope. Dynamic, protocol,
+superclass and direct messages use the physical frame result; nil messages return
+an empty carrier. Method and Block encodings describe that carrier.
+
 Returns first acquire independent result storage. Objects are retained and
 Blocks are copied while their lexical storage is live. A result is published
 only after lexical return cleanup, before final suspension. Failed result copies
-terminalize through cancellation without reporting an uninitialized success.
+terminalize through an owned service-error completion without reporting an
+uninitialized success. A genuine cancelled status retains its cancellation
+completion. Bounded service failures use allocation-independent immutable runtime
+error owners; an impossible materialization failure crosses a fatal contract
+boundary rather than being mislabeled cancellation.
 Void, zero, false and nil retain the shared ABI's distinct completion semantics.
 The native return initializer omits the ordinary Objective-C physical-return
 retain/autorelease transfer. Per-type descriptor caches retain the canonical
@@ -60,8 +71,11 @@ execution-slice autorelease pool and destination preservation.
 
 Checked child errors enter the existing `try`, optionalization and typed-handler
 machinery. Error objects acquire an independent owner before the private child
-handle leaves scope. Cancellation and foreign completions bypass checked
-handlers. A native Objective-C exception can enter an ordinary source `@catch`;
+handle leaves scope. Cancellation, service failures and foreign completions bypass checked
+handlers. An invalid or empty awaited child preserves
+`OBJC3_SERVICE_INVALID_ARGUMENT`; the C++ bridge rethrows its original
+`objc3::service_failure` status. Existing C++ exception payloads retain their owned
+transport through a native C parent without interpreting C++ exception storage. A native Objective-C exception can enter an ordinary source `@catch`;
 an exception escaping the async body uses the existing foreign-exception
 cancellation channel. Generated value and frame callbacks contain native
 exception boundaries rather than unwinding across the C callback ABI.
@@ -84,7 +98,10 @@ ARC/MRC owned results, aligned records, complex values and PCH-defined async
 functions. The maintained `tests/clang_foundation/native_c_async` witnesses cover
 lazy disposal, preserved failed starts, actor destinations, cancellation while a
 parent awaits its child, independent object/Block copy-out ownership, checked
-error propagation/recovery and a separately compiled C++ carrier consumer.
+error propagation/recovery, dynamic/protocol/direct/super/class methods, lazy
+receiver ownership, copied Block captures, nil sends, and a separately compiled
+C++ carrier consumer. A C++ frame factory also exercises C++ → C → C++ value
+and exception transport.
 
 Qualification must later build the compiler and run those fixtures in C17
 ARC/MRC provider/consumer pairs and C++20/23 consumers, then exercise resumed
@@ -93,14 +110,18 @@ No existing SDK receipt establishes acceptance of this new source.
 
 ## Remaining definition work
 
-Native Objective-C method and async Block definitions still need their own
-entry/capture integration. Variable-length automatic storage and dynamic
+Variable-length automatic storage and dynamic
 `alloca` are diagnosed because their storage is not represented by this
 fixed-layout frame implementation. Awaitable runtime handles, explicit yield
 and hop syntax require further source-level protocols; this slice accepts
 logical async calls through the shared frame boundary. Executor/isolation
 metadata checks are developed separately and must precede any synchronous
 await identity path.
+
+Source-free logical C-frame declarations are still explicitly gated in the
+module facade. A persistent, type-carried physical ABI identity is the next
+implementation span; C++ task and C frame entries must remain distinguishable
+for direct and indirect calls in a single translation unit.
 
 Public async/await and actor capability predicates remain reserved. The existing
 SDK/archive documentation continues to describe its previously built sources.

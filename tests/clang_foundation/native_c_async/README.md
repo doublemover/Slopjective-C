@@ -2,14 +2,17 @@
 
 These files are authored development fixtures; execution is intentionally delayed.
 Compile `provider.m` as Objective-C 3 C17 with blocks and native Objective-C
-exceptions enabled. Exercise ARC and MRC provider/consumer pairs, O0/O2, source
+exceptions enabled. Link `foreign.cpp` into each client; it exports a C frame
+from a C++ coroutine for cross-language await/error transport. Exercise ARC and MRC provider/consumer pairs, O0/O2, source
 inclusion and a PCH of `provider.h`.
 
 `client.m` consumes logical async declarations and the C runtime API. It checks
 lazy abandonment, failed starts preserving their owner, parent cancellation
 while a private child is queued, actor destinations, loop-local continuation
 state, exactly-once lexical cleanup, retained object and copied Block results,
-checked propagation and suspending typed recovery. Native Objective-C exceptions
+checked propagation and suspending typed recovery. It also checks copied async
+Block captures and dynamic/protocol/direct/super/class method frames through the
+C++ client, including receiver lifetime and nil-message failures. Native Objective-C exceptions
 must produce cancellation and bypass checked errors.
 
 `client.cpp` independently consumes physical frame declarations with the public
