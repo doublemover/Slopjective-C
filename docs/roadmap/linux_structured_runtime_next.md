@@ -148,6 +148,12 @@ count, including while reporting `OUT_OF_MEMORY`. Ordinary owned-error
 retain/release usage remains valid. `OK`, `CANCELLED`, and unknown statuses are
 rejected, preserving genuine cancellation as its distinct completion kind.
 
+The private Objective-C checked-error bridge also materializes this service
+transport when either native error-record or payload allocation fails. It still
+consumes the supplied native +1 exactly once; null input reports
+`INVALID_ARGUMENT`. A standalone authored ownership witness injects both
+allocation failures and checks that neither becomes a null cancellation carrier.
+
 C++ task results and awaits recognize this transport and throw
 `service_failure(status)` before considering native exception or generic task
 error payloads. Native empty-child/invalid-await failures can therefore retain
