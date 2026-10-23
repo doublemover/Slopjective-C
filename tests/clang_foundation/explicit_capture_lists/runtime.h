@@ -179,6 +179,37 @@ static void capture_resource_suite(void) {
 }
 
 #ifdef __cplusplus
+struct CaptureMoveRecord {
+  inline static int moves = 0, copies = 0, live = 0;
+  int value;
+  explicit CaptureMoveRecord(int value) : value(value) { ++live; }
+  CaptureMoveRecord(const CaptureMoveRecord &other) : value(other.value) {
+    ++copies; ++live;
+  }
+  CaptureMoveRecord(CaptureMoveRecord &&other) noexcept : value(other.value) {
+    other.value = -1;
+    ++moves; ++live;
+  }
+  ~CaptureMoveRecord() { --live; }
+};
+static void capture_record_move_suite(void) {
+  CaptureMoveRecord::moves = CaptureMoveRecord::copies = 0;
+  {
+    CaptureMoveRecord source(71);
+    CaptureIntBlock stack = ^[move source] { return source.value; };
+    CAPTURE_CHECK(source.value == -1 && stack() == 71);
+    CAPTURE_CHECK(CaptureMoveRecord::moves == 1 && CaptureMoveRecord::copies == 0);
+    CaptureIntBlock heap = [stack copy];
+    CAPTURE_CHECK(heap() == 71 && CaptureMoveRecord::moves == 1 &&
+                  CaptureMoveRecord::copies == 1);
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+}
 struct CaptureOrder {
   int *source;
   int observed;
@@ -192,6 +223,7 @@ template<class T> static int capture_template(T value) {
   return closure();
 }
 static void capture_cpp_suite(void) {
+  capture_record_move_suite();
   int source = 23;
   CaptureOrder later(&source);
   auto ordered = ^[move source, later] {

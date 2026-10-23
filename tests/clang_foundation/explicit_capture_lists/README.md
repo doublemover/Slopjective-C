@@ -5,9 +5,11 @@ span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
 
 - `runtime.h` / `main.m`: creation snapshots, unused/contextual captures,
   explicit `__block` snapshots, ARC/MRC ownership, weak zeroing, resource heap
-  copies, address cleanup, sentinels, templates and capture evaluation order.
+  copies, address cleanup, sentinels, templates, C++ object move/copy separation
+  and capture evaluation order.
 - `exceptions.mm`: a later C++ constructor fails during literal construction or
-  heap copying; completed object/resource captures clean up exactly once.
+  heap copying, including a throwing move constructor; completed object/resource
+  captures clean up exactly once.
 - `sema.m`: parser and ownership diagnostics plus weak-self guard syntax and
   retain-cycle diagnostics. Its RUN line uses Clang's verify mechanism.
 - `strict_resource.m`: strict-system consumed-state, reset, sentinel observation

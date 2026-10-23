@@ -33,7 +33,10 @@ weak/unowned captures and unused strong captures of the receiving object.
 Moving an ARC strong object slot transfers its existing owned reference and
 writes nil to the source. Moving a weak source acquires a strong snapshot and
 clears its weak slot. Other scalar moves write the previous value into the
-capture and leave a zero/null source. A const, volatile, atomic or immutable
+capture and leave a zero/null source. C++ object moves use a separately stored
+creation-time move-constructor recipe; later heap copies use the ordinary const
+copy constructor. This preserves the C++ type's own moved-from state. Move-only
+C++ objects are rejected because an ordinary Block must remain copyable. A const, volatile, atomic or immutable
 enclosing capture cannot be consumed. MRC raw pointer slots do not prove a
 separately owned +1: their destination acquires a reference before source
 nil-ing, and any independently held manual ownership remains the caller's
@@ -95,7 +98,7 @@ callbacks, sentinels, left-to-right C++ capture effects, construction failure,
 heap-copy rollback and IR ownership operations. They are authored evidence,
 not passing results.
 
-Remaining boundaries include C++ record/carrier move captures, potentially
+Remaining boundaries include carrier move captures, potentially
 throwing resource final disposal, broad exceptional CFG capture admission and
 end-to-end validation of the combined native compiler packets. Borrowed escape
 and concurrent-transfer admission are implemented by their owning slices and

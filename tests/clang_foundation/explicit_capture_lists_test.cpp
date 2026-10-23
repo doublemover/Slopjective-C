@@ -95,8 +95,11 @@ void semantics(const fs::path &Root, BaseLanguage Language,
     expect(request(Root, Source, Language, Standard, ARC), false, Message);
   if (Language == BaseLanguage::ObjectiveCxx) {
     expect(request(Root,
-        "struct R { int x; }; void f(void){R x{};invoke(^[move x]{});}",
-        Language, Standard, ARC), false, "currently requires a scalar");
+        "struct R { int x; R()=default; R(const R&)=default; R(R&&v) noexcept:x(v.x){v.x=-1;} }; void f(void){R x{};invoke(^[move x]{});}",
+        Language, Standard, ARC), true);
+    expect(request(Root,
+        "struct R { R()=default; R(const R&)=delete; R(R&&) noexcept{} }; void f(void){R x{};invoke(^[move x]{});}",
+        Language, Standard, ARC), false, "deleted");
     expect(request(Root,
         "template<class T> int f(T x){auto b=^[move x]{return x;};return b()+x;} int g(){return f(42);}",
         Language, Standard, ARC), true);
@@ -152,6 +155,15 @@ void check_body(clang::FunctionDecl *Function) {
   Stream.flush();
   assert(Printed.find("^[weak object, move number]") != std::string::npos);
 }
+void check_record_body(clang::FunctionDecl *Function) {
+  Blocks Visitor;
+  Visitor.TraverseStmt(Function->getBody());
+  assert(Visitor.Values.size() == 1);
+  const auto &Capture = Visitor.Values[0]->getBlockDecl()->captures()[0];
+  assert(Capture.getObjC3CaptureKind() == clang::BlockDecl::ObjC3CaptureKind::Move);
+  assert(Capture.getObjC3InitExpr() && Capture.getCopyExpr());
+  assert(Capture.getObjC3InitExpr() != Capture.getCopyExpr());
+}
 void persistence(const fs::path &Root) {
   const std::string Source = std::string(Declarations) + R"objc(
 int capture_provider(id object) {
@@ -161,6 +173,19 @@ int capture_provider(id object) {
   int (^second)(void)=^[move handle]{return handle;};
   return first()+second()+number;
 }
+struct CaptureRecord {
+  int value;
+  explicit CaptureRecord(int value): value(value) {}
+  CaptureRecord(const CaptureRecord &other): value(other.value) {}
+  CaptureRecord(CaptureRecord &&other) noexcept: value(other.value) {
+    other.value=-1;
+  }
+};
+int capture_record_provider(void) {
+  CaptureRecord source(3);
+  auto block=^[move source]{return source.value;};
+  return block()+source.value;
+}
 )objc";
   const auto Header = Root / "capture-provider.h";
   { std::ofstream File(Header); File << Source; }
@@ -168,12 +193,16 @@ int capture_provider(id object) {
   auto To = parse("", Root / "capture-consumer.mm");
   auto *Provider = function(*From, "capture_provider");
   check_body(Provider);
+  check_record_body(function(*From, "capture_record_provider"));
   clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
       From->getASTContext(), From->getFileManager(), false);
   auto Imported = Importer.Import(Provider);
   if (!Imported) llvm::logAllUnhandledErrors(Imported.takeError(), llvm::errs());
   assert(Imported);
   check_body(llvm::cast<clang::FunctionDecl>(*Imported));
+  auto ImportedRecord = Importer.Import(function(*From, "capture_record_provider"));
+  assert(ImportedRecord);
+  check_record_body(llvm::cast<clang::FunctionDecl>(*ImportedRecord));
   auto ChangedSource = Source;
   const auto Position = ChangedSource.find("^[weak object, move number]");
   assert(Position != std::string::npos);
@@ -188,6 +217,7 @@ int capture_provider(id object) {
   auto Reloaded = parse("int capture_client(id x){return capture_provider(x);}",
       Root / "capture-pch-client.mm", {"-include-pch", PCH.string()});
   check_body(function(*Reloaded, "capture_provider"));
+  check_record_body(function(*Reloaded, "capture_record_provider"));
 }
 } // namespace
 int main() {

@@ -70,9 +70,27 @@ static void capture_failed_resource_creation(void) {
     CAPTURE_CHECK(handle == -1 && capture_closed == before + 1);
   }
 }
+struct CaptureThrowingMove {
+  CaptureThrowingMove() = default;
+  CaptureThrowingMove(const CaptureThrowingMove &) = default;
+  CaptureThrowingMove(CaptureThrowingMove &&) { throw CaptureFailure{}; }
+};
+static void capture_failed_move_constructor(void) {
+  int before = capture_closed;
+  int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 63;
+  CaptureThrowingMove later;
+  try {
+    auto failed = ^[move handle, move later] {};
+    (void)failed;
+    CAPTURE_CHECK(0);
+  } catch (const CaptureFailure &) {
+    CAPTURE_CHECK(handle == -1 && capture_closed == before + 1);
+  }
+}
 int main(void) {
   capture_failed_creation();
   capture_failed_heap_copy();
   capture_failed_resource_creation();
+  capture_failed_move_constructor();
   return capture_failures != 0;
 }
