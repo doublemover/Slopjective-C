@@ -210,3 +210,27 @@ cross-executor parent resumption, cancellation before child creation, initial
 child cancellation observation, invalid-destination ownership preservation, and
 exactly-once frame cleanup. Compiler attribute lowering remains its separate
 implementation milestone; validation is deferred.
+
+## Explicit Objective-C object actor associations
+
+`objc3_actor_bind_object(object, actor)` pins a live Objective-C object and its
+mailbox. Duplicate binding to the same actor is idempotent; a conflicting active
+actor is rejected. `objc3_actor_get_for_object` returns a retained actor,
+`NOT_READY` for an absent association, or `CLOSED` for a retired association.
+There is no pointer-address guess or automatically inferred actor instance.
+
+`objc3_actor_unbind_object` requires the old actor already closed and quiescent.
+Its check never pumps or blocks. Successful retirement drops object and actor
+owners outside every runtime mutex. The old actor cannot accept further jobs,
+so a still-live object may subsequently be bound to another mailbox without
+overlapping old isolated segments. Repeated unbind reports `CLOSED`. Hosts pair
+every successful binding with explicit unbind; compiler setup/teardown must own
+that pairing before automatic actor lifetime can be claimed.
+
+Object pins reside in their own runtime archive member. Pure value task/actor
+clients retain their libobjc-free link. The maintained native async ARC/MRC
+provider authors real object deallocation, reentrant lookup during deallocation,
+pending mailbox cleanup, independent retained lookups, conflicting concurrent
+registration, and closed-old-mailbox rebinding witnesses. Its existing
+instrumented native-runtime source list includes the new member. Validation
+and installed symbol/package qualification remain deferred.

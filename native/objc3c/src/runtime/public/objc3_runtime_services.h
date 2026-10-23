@@ -415,6 +415,21 @@ objc3_actor_t *objc3_actor_retain(objc3_actor_t *actor);
 void objc3_actor_release(objc3_actor_t *actor);
 uint64_t objc3_actor_identity(const objc3_actor_t *actor);
 uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor);
+/* Explicit Objective-C object association. Binding retains both the live object
+ * and actor; same active binding is idempotent, a conflicting actor is
+ * INVALID_ARGUMENT, and a closed new destination is CLOSED. Lookup returns one
+ * retained actor, NOT_READY if absent, CLOSED if retired, and null on failure.
+ * Unbind requires the old actor already closed and quiescent; otherwise it
+ * returns NOT_READY without changing the binding. Retirement drops both pins
+ * outside runtime locks and returns CLOSED on repeat. Rebinding after retirement
+ * is safe because the old actor cannot accept further isolated work. Pair every
+ * successful binding with explicit unbind; allocation/deallocation does not
+ * automatically establish or retire actor identity. These entrypoints require
+ * libobjc; ordinary value-only actor/task entrypoints do not. */
+objc3_service_status objc3_actor_bind_object(void *object, objc3_actor_t *actor);
+objc3_service_status objc3_actor_get_for_object(const void *object,
+                                                objc3_actor_t **out_actor);
+objc3_service_status objc3_actor_unbind_object(void *object);
 /* On success ownership of context transfers to the actor. destroy runs once
  * after job returns, or after cancellation discards the queued job. On failure
  * the caller keeps ownership and out_facts is unchanged. Jobs are serialized;

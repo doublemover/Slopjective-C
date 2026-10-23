@@ -200,6 +200,17 @@ objc3_executor_t *actor_executor(Actor *actor) noexcept {
   return actor ? actor->executor : nullptr;
 }
 
+bool actor_is_closed(Actor *actor) noexcept {
+  std::lock_guard<std::mutex> lock(actor->mutex);
+  return actor->closed;
+}
+
+bool actor_is_closed_and_quiescent(Actor *actor) noexcept {
+  std::lock_guard<std::mutex> lock(actor->mutex);
+  return actor->closed && actor->mailbox.empty() && !actor->active &&
+         !actor->drain_scheduled;
+}
+
 objc3_service_status actor_enqueue(Actor *actor, ActorJob job, void *context,
                                   ActorContextDestroy destroy,
                                   ActorHopFacts *out_facts) {
