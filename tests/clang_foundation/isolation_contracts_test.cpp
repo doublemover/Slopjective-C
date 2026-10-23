@@ -1,0 +1,507 @@
+#include "clang_foundation/compile_session.h"
+#include "clang_foundation/interface_codec.h"
+#include "clang_foundation/interface_emitter.h"
+#include "clang/AST/ASTImporter.h"
+#include "clang/AST/DeclObjC.h"
+#include "clang/AST/ODRHash.h"
+#include "clang/AST/ObjC3Isolation.h"
+#include "clang/AST/PrettyPrinter.h"
+#include "clang/Frontend/ASTUnit.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Serialization/PCHContainerOperations.h"
+#include "clang/Tooling/Tooling.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
+#include <cassert>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+using namespace objc3::clang_foundation;
+namespace {
+constexpr llvm::StringLiteral Root = R"(
+__attribute__((objc_root_class)) @interface Root @end
+@protocol Sendable @end
+@interface SafeMessage : Root <Sendable> @end
+@interface MutableMessage : Root @end
+actor class Counter : Root { @public int storage; }
+@property(nonatomic) int value;
+@property(nonatomic, readonly) int token __attribute__((objc_nonisolated));
+- (int)read;
+- (int)stable __attribute__((objc_nonisolated));
+@end
+)";
+
+CompileRequest Request(std::string Source, bool Cxx = false, bool Arc = true,
+                       const std::string &Standard = "") {
+  CompileRequest R;
+  R.input_path = Cxx ? "isolation.mm" : "isolation.m";
+  R.source_text = std::move(Source);
+  R.language = Cxx ? BaseLanguage::ObjectiveCxx : BaseLanguage::ObjectiveC;
+  R.objc3 = true;
+  R.arc = Arc;
+  R.strict_concurrency = true;
+  R.target_triple = "x86_64-unknown-linux-gnu";
+  R.objc_runtime = "gnustep-2.2";
+  R.arguments = {"-std=" +
+                     (Standard.empty() ? (Cxx ? "c++20" : "c17") : Standard),
+                 "-fblocks", "-fobjc-weak", "-Wno-objc-property-implementation",
+                 std::string("-I") + OBJC3_ISOLATION_RUNTIME_HEADERS};
+  return R;
+}
+bool Has(const CompileResult &R, llvm::StringRef Message) {
+  for (const auto &D : R.diagnostics)
+    if (llvm::StringRef(D.message).contains(Message))
+      return true;
+  return false;
+}
+void Success(const CompileResult &R) {
+  if (!R.success) {
+    std::cerr << R.failure << '\n';
+    for (const auto &D : R.diagnostics)
+      std::cerr << D.message << '\n';
+  }
+  assert(R.success);
+}
+void Reject(CompileRequest R, llvm::StringRef Message) {
+  auto Result = Compile(R);
+  assert(!Result.success);
+  if (!Has(Result, Message)) {
+    std::cerr << "Missing expected diagnostic: " << Message.str() << '\n';
+    for (const auto &D : Result.diagnostics)
+      std::cerr << D.message << '\n';
+  }
+  assert(Has(Result, Message));
+}
+std::vector<std::string> ASTArgs(bool Cxx, bool Arc) {
+  return {"-x",
+          Cxx ? "objective-c++" : "objective-c",
+          Cxx ? "-std=c++20" : "-std=c17",
+          "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2",
+          "-fblocks",
+          "-fobjc3-strict-concurrency",
+          Arc ? "-fobjc-arc" : "-fno-objc-arc",
+          "--target=x86_64-unknown-linux-gnu"};
+}
+std::unique_ptr<clang::ASTUnit> Parse(llvm::StringRef Source, bool Cxx = false,
+                                      bool Arc = true) {
+  auto Unit = clang::tooling::buildASTFromCodeWithArgs(
+      Source, ASTArgs(Cxx, Arc), Cxx ? "isolation.mm" : "isolation.m");
+  assert(Unit && !Unit->getDiagnostics().hasErrorOccurred());
+  return Unit;
+}
+template <class T> T *Named(clang::ASTUnit &Unit, llvm::StringRef Name) {
+  for (auto *D : Unit.getASTContext().getTranslationUnitDecl()->decls())
+    if (auto *N = llvm::dyn_cast<T>(D))
+      if (N->getName() == Name)
+        return N;
+  assert(false && "required test declaration missing");
+  return nullptr;
+}
+
+void CheckSource(bool Cxx, bool Arc, const std::string &Standard) {
+  auto Make = [&](std::string S) {
+    return Request(std::move(S), Cxx, Arc, Standard);
+  };
+  Success(Compile(Make(Root.str() + R"(
+@implementation Counter
+- (int)read { return storage + self.value + [self stable]; }
+- (int)stable { return 7; }
+- (int)token { return 9; }
+@end
+int nonisolated_read(Counter *value) { return [value stable] + value.token; }
+__attribute__((objc_executor(main))) int main_value(void) { return 1; }
+__attribute__((objc_executor(main))) int same_executor(void) { return main_value(); }
+__attribute__((objc_executor(named("store.serial")))) int named_value(void) { return 2; }
+__attribute__((objc_executor(named("store.serial")))) int same_named(void) { return named_value(); }
+)")));
+  Reject(Make(Root.str() + "int cross(Counter *c) { return [c read]; }"),
+         "cross-actor entry requires an explicit await");
+  Reject(Make("@class Counter;\n" + Root.str() +
+              "int forward_actor(Counter *c) { return [c read]; }"),
+         "cross-actor entry requires an explicit await");
+  Reject(Make(Root.str() + "int cross(Counter *c) { return c.value; }"),
+         "cross-actor entry requires an explicit await");
+  Reject(Make(Root.str() + R"(
+@interface MutableMessage (Ambiguous)
+- (int)read;
+@end
+int ambiguous(id value) { return [value read]; }
+)"),
+         "ambiguous Objective-C 3 isolation or task-boundary metadata");
+  Reject(Make(Root.str() + "int cross(Counter *c) { return c->storage; }"),
+         "actor-isolated state");
+  Reject(Make(Root.str() + R"(
+@implementation Counter
+- (int)read { return storage; }
+- (int)stable { return storage; }
+- (int)token { return 0; }
+@end
+)"),
+         "actor-isolated state");
+  Reject(Make(Root.str() + R"(
+@interface Counter (Other)
+- (int)other:(Counter *)other;
+@end
+@implementation Counter (Other)
+- (int)other:(Counter *)other { return [other read]; }
+@end
+)"),
+         "cross-actor entry requires an explicit await");
+  Reject(Make(Root.str() + R"(
+__attribute__((objc_executor(main))) int main_only(void);
+__attribute__((objc_executor(global))) int wrong_executor(void) { return main_only(); }
+)"),
+         "cross-executor entry requires an explicit await");
+  Reject(Make(Root.str() + R"(
+__attribute__((objc_executor(named("one")))) int named_only(void);
+__attribute__((objc_executor(named("two")))) int wrong_named(void) { return named_only(); }
+)"),
+         "cross-executor entry requires an explicit await");
+  Reject(Make(Root.str() + R"(
+@interface Counter (Signatures)
+- (MutableMessage *)bad:(MutableMessage *)value __attribute__((objc_nonisolated));
+@end
+)"),
+         "non-Sendable type");
+  Success(Compile(Make(Root.str() + R"(
+@interface Counter (Signatures)
+- (SafeMessage *)safe:(Counter *)value __attribute__((objc_nonisolated));
+@end
+)")));
+  Reject(Make(Root.str() + R"(
+@interface Counter (Future)
+- (void)future __attribute__((objc_actor_nonreentrant));
+@end
+)"),
+         "explicit actor nonreentrancy is deferred in v1");
+  Reject(Make(Root.str() + R"(
+@interface Counter (Future)
+- (void)future nonreentrant;
+@end
+)"),
+         "explicit actor nonreentrancy is deferred in v1");
+  Success(Compile(
+      Make("int nonreentrant(int nonreentrant) { return nonreentrant; }")));
+  Reject(Make(Root.str() + R"(
+@interface MutableMessage (Wrong)
+- (int)wrong __attribute__((objc_nonisolated));
+@end
+)"),
+         "requires an actor instance method or property");
+  Reject(Make(R"(
+__attribute__((objc_executor(main))) int redeclared(void);
+__attribute__((objc_executor(global))) int redeclared(void);
+)"),
+         "does not match the previous declaration");
+  Reject(Make(R"(
+__attribute__((objc_executor(named("")))) int empty_identity(void);
+)"),
+         "nonempty ordinary string");
+  Reject(Make(R"(
+__attribute__((objc_executor(main))) int main_entry(void);
+int (*erased)(void) = main_entry;
+)"),
+         "erases isolation or task-boundary metadata");
+  Success(Compile(Make(R"(
+__attribute__((objc_executor(main))) int inherited(void);
+int inherited(void) { return 1; }
+)")));
+  auto Unsafe = Compile(Make(Root.str() + R"(
+__attribute__((objc_unsafe_sendable)) @interface UnsafeMessage : Root @end
+@interface Counter (Unchecked)
+- (UnsafeMessage *)unchecked __attribute__((objc_nonisolated));
+@end
+)"));
+  Success(Unsafe);
+  assert(Has(Unsafe, "relies on objc_unsafe_sendable"));
+  Reject(Make(Root.str() + R"(
+void close_handle(int);
+typedef int Handle __attribute__((objc_requires_cleanup(close_handle)));
+typedef struct ResourcePacket { Handle handle; } ResourcePacket;
+@interface Counter (Resources)
+- (ResourcePacket)resource __attribute__((objc_nonisolated));
+@end
+)"),
+         "non-Sendable type");
+  Reject(Make(Root.str() + R"(
+typedef struct BorrowPacket { borrowed int *pointer; } BorrowPacket;
+typedef struct __attribute__((objc_unsafe_sendable)) OuterPacket { BorrowPacket inner; } OuterPacket;
+@interface Counter (Borrowed)
+- (OuterPacket)borrowedPacket __attribute__((objc_nonisolated));
+@end
+)"),
+         "non-Sendable type");
+}
+
+void CheckConcurrentCaptures(bool Arc, const std::string &Standard) {
+  const std::string Preamble = Root.str() + R"(
+#include "objc3_task.hpp"
+typedef void (^Work)(void) __objc3_async;
+void *spawn(Work) __attribute__((objc_task_spawn));
+void *detach(Work) __attribute__((objc_task_detached));
+#define SPAWN(e) spawn(e)
+struct Packet { int value; Counter *actor; };
+)";
+  auto Make = [&](std::string S) {
+    return Request(Preamble + S, true, Arc, Standard);
+  };
+  Success(Compile(Make(R"(
+void valid(struct Packet packet, SafeMessage *message) {
+  SPAWN(^void() __objc3_async { (void)packet.value; (void)message; });
+}
+void nested_immutable(int value) {
+  void (^const helper)(void) = ^{ (void)value; };
+  spawn(^void() __objc3_async { helper(); });
+}
+void additional_sync_block(int value) {
+  extern void *with_callback(Work, void (^)(void)) __attribute__((objc_task_spawn));
+  with_callback(^void() __objc3_async {}, ^{ (void)value; });
+}
+)")));
+  Reject(Make(R"(
+void unsafe(MutableMessage *object) {
+  SPAWN(^void() __objc3_async { (void)object; });
+}
+)"),
+         "concurrent capture");
+  Reject(Make(R"(
+void shared(void) {
+  __block int state = 0;
+  detach(^void() __objc3_async { state++; });
+}
+)"),
+         "shared __block capture");
+  Reject(Make(R"(
+void weak(MutableMessage *object) {
+  __weak MutableMessage *weakObject = object;
+  spawn(^void() __objc3_async { (void)weakObject; });
+}
+)"),
+         "concurrent capture");
+  Reject(Make(R"(
+void unowned(Counter *actor) {
+  spawn(^[unowned actor] void() __objc3_async { (void)actor; });
+}
+)"),
+         "concurrent capture");
+  Reject(Make(R"(
+void unknown(Work block) { spawn(block); }
+)"),
+         "cannot prove Sendable captures");
+  Reject(Make(R"(
+void bad_api(int) __attribute__((objc_task_spawn));
+)"),
+         "requires an async block work-item parameter");
+}
+
+void CheckAwaitBoundaries(bool Cxx, bool Arc, const std::string &Standard) {
+  const std::string Header = Cxx ? "#include \"objc3_task.hpp\"\n"
+                                 : "#include \"objc3_runtime_services.h\"\n";
+  auto Make = [&](std::string S) {
+    return Request(Header + Root.str() + S, Cxx, Arc, Standard);
+  };
+  auto Plain = Compile(Make(R"(
+int synchronous(void) { return 7; }
+int unnecessary(void) __objc3_async { return __objc3_await synchronous(); }
+)"));
+  Success(Plain);
+  assert(Has(Plain, "native await operand does not suspend"));
+  Reject(Make(R"(
+int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
+)"),
+         "actor crossing requires executor-hop lowering");
+  Reject(Make(R"(
+__attribute__((objc_executor(main))) int main_only(void);
+int executor_cross(void) __objc3_async { return __objc3_await main_only(); }
+)"),
+         "executor crossing requires executor-hop lowering");
+  if (Cxx)
+    Reject(Make(R"(
+int throwing_sync(void) throws(int);
+int unchecked_sync(void) __objc3_async { return __objc3_await throwing_sync(); }
+)"),
+           "throwing call requires an explicit");
+}
+
+void CheckPrintAndPersistence(bool Cxx, bool Arc) {
+  const std::string Source = Root.str() + R"(
+__attribute__((objc_executor(named("db.\"quoted\"")))) int named_entry(void);
+typedef void (^Work)(void) __objc3_async;
+void *spawn(Work) __attribute__((objc_task_spawn));
+)";
+  auto From = Parse(Source, Cxx, Arc);
+  auto *Counter = Named<clang::ObjCInterfaceDecl>(*From, "Counter");
+  assert(clang::isObjC3Actor(Counter));
+  auto *NamedEntry = Named<clang::FunctionDecl>(*From, "named_entry");
+  auto Emitted = EmitSemanticInterface(From->getASTContext(),
+                                       "Isolation.Contracts", "isolation-v1");
+  assert(Emitted.success);
+  const std::vector<llvm::StringRef> Semantics = {
+      "objc3.canonical-function-effects.v1",
+      "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1",
+      "objc3.native-ownership-contracts.v1",
+      "objc3.isolation-contracts.v1",
+      "objc3.typed-keypaths.v1",
+      "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1",
+      "objc3.cxx-member-interfaces.v1",
+      "objc3.ownership-projection.v1",
+      "objc3.api-availability.v1",
+      "objc3.api-partitions.v1",
+      "objc3.module-owned-names.v1"};
+  auto Decoded = DecodeSemanticInterfaceSidecar(
+      Emitted.sidecar_json, Emitted.source_bytes, Semantics);
+  assert(Decoded);
+  bool ActorIdentity = false, ExecutorIdentity = false;
+  for (const auto &Declaration : Decoded->declarations) {
+    ActorIdentity |= Declaration.qualified_name == "Counter" &&
+                     !Declaration.effects.actor_isolation_identity.empty();
+    ExecutorIdentity |=
+        Declaration.qualified_name == "named_entry" &&
+        Declaration.effects.executor_affinity_identity == "named:db.\"quoted\"";
+  }
+  assert(ActorIdentity && ExecutorIdentity);
+  // Exercise the real source-free import pipeline, including an otherwise
+  // digest-consistent source whose actor metadata has been removed.
+  namespace fs = std::filesystem;
+  auto Directory =
+      fs::temp_directory_path() /
+      ("objc3-isolation-import-" +
+       std::to_string(
+           std::chrono::steady_clock::now().time_since_epoch().count()));
+  fs::create_directories(Directory);
+  auto InterfacePath = Directory / "Isolation.objc3i";
+  std::ofstream(InterfacePath) << Emitted.source_bytes;
+  std::ofstream(InterfacePath.string() + ".json") << Emitted.sidecar_json;
+  InterfaceImportInput Input;
+  Input.source_path = InterfacePath.string();
+  Input.locked_identity = Emitted.identity;
+  auto Consumer =
+      Request("int client(Counter *c) { return [c stable]; }", Cxx, Arc);
+  Consumer.imported_interfaces = {Input};
+  Success(Compile(Consumer));
+  Consumer.source_text = "int client(Counter *c) { return [c read]; }";
+  auto CrossModule = Compile(Consumer);
+  assert(!CrossModule.success &&
+         Has(CrossModule, "cross-actor entry requires an explicit await"));
+  std::string StrippedSource = Emitted.source_bytes;
+  auto ActorSpelling = StrippedSource.find("actor class Counter");
+  assert(ActorSpelling != std::string::npos);
+  StrippedSource.replace(ActorSpelling, std::string("actor class").size(),
+                         "@interface");
+  Decoded->canonical_source_sha256 =
+      ComputeInterfaceSourceSha256(StrippedSource);
+  auto StrippedSidecar = EncodeSemanticInterfaceSidecar(*Decoded, Semantics);
+  assert(StrippedSidecar);
+  std::ofstream(InterfacePath) << StrippedSource;
+  std::ofstream(InterfacePath.string() + ".json") << *StrippedSidecar;
+  Consumer.source_text = "int baseline(void) { return 1; }";
+  auto MissingMetadata = Compile(Consumer);
+  assert(!MissingMetadata.success &&
+         !MissingMetadata.interface_import_diagnostics.empty());
+  fs::remove_all(Directory);
+
+  auto EmittedAST = Parse(Emitted.source_bytes, Cxx, Arc);
+  assert(clang::isObjC3Actor(
+      Named<clang::ObjCInterfaceDecl>(*EmittedAST, "Counter")));
+  assert(clang::getObjC3Executor(NamedEntry)->getExecutor() ==
+         "named:db.\"quoted\"");
+  clang::PrintingPolicy Policy(From->getLangOpts());
+  Policy.PolishForDeclaration = true;
+  std::string Printed;
+  llvm::raw_string_ostream Out(Printed);
+  for (const auto *D :
+       From->getASTContext().getTranslationUnitDecl()->decls()) {
+    if (D->isImplicit())
+      continue;
+    D->print(Out, Policy);
+    Out << ";\n";
+  }
+  assert(Printed.find("actor class Counter") != std::string::npos);
+  assert(Printed.find("objc_executor(named(") != std::string::npos);
+  assert(Printed.find("objc_task_spawn") != std::string::npos);
+  auto Regenerated = Parse(Printed, Cxx, Arc);
+  assert(clang::isObjC3Actor(
+      Named<clang::ObjCInterfaceDecl>(*Regenerated, "Counter")));
+  assert(clang::haveSameObjC3Isolation(
+      NamedEntry, Named<clang::FunctionDecl>(*Regenerated, "named_entry")));
+
+  llvm::SmallString<256> Path;
+  int FD;
+  assert(
+      !llvm::sys::fs::createTemporaryFile("objc3-isolation", "ast", FD, Path));
+  llvm::ToolOutputFile File(Path, FD);
+  assert(!From->Save(Path));
+  auto VFS = From->getFileManager().getVirtualFileSystemPtr();
+  auto Options = std::make_shared<clang::DiagnosticOptions>();
+  auto Diagnostics = clang::CompilerInstance::createDiagnostics(*VFS, *Options);
+  auto Containers = std::make_shared<clang::PCHContainerOperations>();
+  clang::HeaderSearchOptions HeaderOptions;
+  auto Reloaded = clang::ASTUnit::LoadFromASTFile(
+      Path, Containers->getRawReader(), clang::ASTUnit::LoadEverything, VFS,
+      Options, Diagnostics, From->getFileSystemOpts(), HeaderOptions);
+  assert(Reloaded);
+  assert(clang::isObjC3Actor(
+      Named<clang::ObjCInterfaceDecl>(*Reloaded, "Counter")));
+  assert(clang::haveSameObjC3Isolation(
+      NamedEntry, Named<clang::FunctionDecl>(*Reloaded, "named_entry")));
+  assert(clang::getObjC3TaskBoundaryKind(
+             Named<clang::FunctionDecl>(*Reloaded, "spawn")) == 1);
+}
+
+void CheckImportConflicts() {
+  for (auto Other : {"global", "named(\"background\")"}) {
+    auto From = Parse("__attribute__((objc_executor(main))) int entry(void);");
+    auto To = Parse(std::string("__attribute__((objc_executor(") + Other +
+                    "))) int entry(void);");
+    clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
+                                From->getASTContext(), From->getFileManager(),
+                                false);
+    auto Imported = Importer.Import(Named<clang::FunctionDecl>(*From, "entry"));
+    assert(!Imported);
+    llvm::consumeError(Imported.takeError());
+  }
+  auto From = Parse(Root);
+  auto To = Parse("__attribute__((objc_root_class)) @interface Root @end\n"
+                  "@interface Counter : Root @end");
+  clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
+                              From->getASTContext(), From->getFileManager(),
+                              false);
+  auto Imported =
+      Importer.Import(Named<clang::ObjCInterfaceDecl>(*From, "Counter"));
+  assert(!Imported);
+  llvm::consumeError(Imported.takeError());
+  auto A = Parse(
+      "__attribute__((objc_executor(main))) int hashed(void) { return 1; }");
+  auto B = Parse(
+      "__attribute__((objc_executor(global))) int hashed(void) { return 1; }");
+  clang::ODRHash AH, BH;
+  AH.AddFunctionDecl(Named<clang::FunctionDecl>(*A, "hashed"));
+  BH.AddFunctionDecl(Named<clang::FunctionDecl>(*B, "hashed"));
+  assert(AH.CalculateHash() != BH.CalculateHash());
+}
+} // namespace
+
+int main() {
+  for (bool Arc : {false, true}) {
+    CheckSource(false, Arc, "c17");
+    CheckPrintAndPersistence(false, Arc);
+    CheckAwaitBoundaries(false, Arc, "c17");
+    for (const std::string Standard : {"c++20", "c++23"}) {
+      CheckSource(true, Arc, Standard);
+      CheckConcurrentCaptures(Arc, Standard);
+      CheckAwaitBoundaries(true, Arc, Standard);
+    }
+    CheckPrintAndPersistence(true, Arc);
+  }
+  CheckImportConflicts();
+}
