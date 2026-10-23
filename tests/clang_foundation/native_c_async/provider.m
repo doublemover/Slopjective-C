@@ -73,21 +73,6 @@ extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_r
 extern id object_dispose(__unsafe_unretained id);
 extern void release_source(void *) __asm__("objc_release");
 extern const char *sel_getName(SEL);
-@protocol NativeCAsyncMethods
-- (int)value:(int)delta __objc3_async;
-@end
-__attribute__((objc_root_class))
-@interface NativeCAsyncWorker <NativeCAsyncMethods> {
-  Class isa;
-@public
-  int number;
-  int *destroyed;
-}
-+ (id)new;
-+ (int)classValue __objc3_async;
-- (int)value:(int)delta __objc3_async;
-- (int)directValue:(int)delta __objc3_async __attribute__((objc_direct));
-@end
 @implementation NativeCAsyncWorker
 + (id)new { return class_createInstance(self, 0); }
 + (int)classValue __objc3_async { return __objc3_await native_c_leaf(42, 0); }
@@ -133,7 +118,6 @@ objc3_async_frame native_c_make_method_frame(int mode, int *destroyed) {
 #endif
   return frame;
 }
-typedef int (^NativeCAsyncBlock)(int) __objc3_async;
 objc3_async_frame native_c_make_block_frame(int value, int *destroyed) {
   NativeCAsyncWorker *worker = [NativeCAsyncWorker new];
   worker->number = value;

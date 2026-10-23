@@ -19,5 +19,12 @@ must produce cancellation and bypass checked errors.
 C++ task bridge. Build it in C++20 and C++23. The provider's private frame layout
 and C++ promise representation must remain absent from the consumer interface.
 
+`client.mm` consumes the persistent logical `__objc3_async_frame` declarations
+in Objective-C++20/23. Its own async functions use the separate C++ task ABI and
+await native functions, function pointers, methods, Blocks, object/record/void
+results, checked errors, nil frames and foreign C++ errors through the explicit
+frame adapter. A rejected type adoption must dispose a lazy method frame and
+release its receiver exactly once. The shared header also supports PCH inclusion.
+
 Use the installed runtime/header owner when later constructing commands. These
 fixtures add no qualification receipt or SDK acceptance claim.

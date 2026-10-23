@@ -1,7 +1,8 @@
 # Linux native Objective-C C17 async definitions
 
-This development slice lowers reserved `__objc3_async` free-function definitions
-Objective-C method and Block definitions, and `__objc3_await` in Objective-C 3 C17 mode to the existing shared C frame ABI.
+This development slice lowers reserved `__objc3_async` free-function,
+Objective-C method and Block definitions, and `__objc3_await` in Objective-C 3 C17
+mode to the existing shared C frame ABI.
 The canonical logical function result and effects remain unchanged. The native C
 symbol physically returns `objc3_async_frame`; explicit asm bindings remain
 available for foreign frame factories. This introduces no runtime record-layout
@@ -118,10 +119,37 @@ logical async calls through the shared frame boundary. Executor/isolation
 metadata checks are developed separately and must precede any synchronous
 await identity path.
 
-Source-free logical C-frame declarations are still explicitly gated in the
-module facade. A persistent, type-carried physical ABI identity is the next
-implementation span; C++ task and C frame entries must remain distinguishable
-for direct and indirect calls in a single translation unit.
+## Persistent entry ABI identity
+
+`__objc3_async_frame` is the canonical persistent spelling for a logical async
+callable whose physical entry returns `objc3_async_frame`. Native C17
+`__objc3_async` defaults to this identity; Objective-C++ `__objc3_async` keeps the
+C++ task identity. The `AsyncFrame` effect bit is part of canonical function type
+identity, folding profiles, redeclaration and override checks, overload
+conversions, callback mangling, structural equivalence, ODR hashing, printing,
+PCH and AST import. Frame and task physical-result caches are independent even
+when both use the same logical result in one translation unit. Direct,
+function-pointer, Block and method calls select their declared ABI.
+
+An Objective-C++ `__objc3_await` of a declared frame call adapts through
+`__objc3_async_from_frame<R>`. This helper adopts the owned lazy carrier and
+disposes it before rethrowing if descriptor validation or adoption fails. The
+compiler retains the original logical source call for checked-error analysis.
+Frame-only calls need the C runtime header; adapted awaits also need
+`objc3_task.hpp`. Ordinary C++ frame-ABI definitions are diagnosed before promise
+lowering. Compiler-created isolated synchronous entry thunks use the native
+frame generator and its cancellation/cleanup machinery; their retainable
+arguments have independent frame owners under ARC and MRC before any hop.
+
+The module facade now carries the recursive `c-frame-v1`/`cxx-task-v1` contract
+under required semantic `objc3.async-entry-abi.v1` and schema 2.1. That separate
+facade span owns export/import codec and package-profile bounds. This source
+implementation does not qualify arbitrary cross-profile package projection.
+
+Authored additional witnesses cover mixed direct/indirect/Block/method calls,
+C++ checked frame awaits, PCH persistence, callback mangling, cache separation,
+frame-only C++ calls without the task header, incompatible ABI redeclarations and
+assignments, and adoption-failure ownership. These remain unbuilt and unrun.
 
 Public async/await and actor capability predicates remain reserved. The existing
 SDK/archive documentation continues to describe its previously built sources.
