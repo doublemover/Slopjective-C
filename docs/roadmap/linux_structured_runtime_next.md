@@ -187,6 +187,13 @@ cleanup is pending; forced runtime cancellation waits until quiescence before
 reclaiming the parent. Dispatch and all retained-owner release happen outside
 task/group/link locks. Empty groups also suspend and queue.
 
+Releasing the transferred scope lease remains active task work after native
+frame destruction. This includes group-owned child error and value payload
+destructors. Outer joins observe quiescence only after that release finishes;
+reentrant cleanup keeps the parent callback identity and cannot wait on itself.
+An authored nested-scope witness blocks an inner error destructor after parent
+completion and verifies that its outer join still cannot resume.
+
 Authored C17 and C++ witnesses cover cancellation already set on entry, repeated
 cancellation, rejected overlapping suspension and premature wake/completion,
 abandoned parent/group owners, nested groups, actor resumption and discard,

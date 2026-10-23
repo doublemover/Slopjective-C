@@ -279,7 +279,8 @@ objc3_completion task_view(const objc3_task_t *task) noexcept {
 
 bool task_quiescent_locked(const objc3_task_t *task) noexcept {
   return task->terminal && task->frame_destroyed && !task->frame_destroying &&
-         !task->resume_active && task->callbacks_active == 0;
+         !task->resume_active && task->callbacks_active == 0 &&
+         task->continuation_owners_active == 0;
 }
 
 void notify_quiescence(objc3_task_t *task) noexcept {
@@ -325,6 +326,23 @@ void finish_frame_destruction(objc3_task_t *task, void *frame,
     std::lock_guard<std::mutex> lock(task->mutex);
     task->frame_destroying = false;
     task->frame_destroyed = true;
+  }
+  task->completed.notify_all();
+  notify_quiescence(task);
+}
+
+void finish_continuation_owner(objc3_task_t *task,
+                               std::shared_ptr<void> &owner) noexcept {
+  if (!owner) return;
+  {
+    // A payload destructor may reenter a blocking wait on this very task.
+    // Preserve callback identity until all retained cleanup resources are gone.
+    CurrentTaskScope current(task);
+    owner.reset();
+  }
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    --task->continuation_owners_active;
   }
   task->completed.notify_all();
   notify_quiescence(task);
@@ -846,6 +864,7 @@ extern "C" objc3_service_status objc3_task_complete(
     task->resume_after_completion_claim = false;
     task->resume_requested = false;
     continuation_owner = std::move(task->continuation_owner);
+    if (continuation_owner) ++task->continuation_owners_active;
     waiters.swap(task->waiters);
     task->callbacks_active += static_cast<uint32_t>(waiters.size());
     if (!task->resume_active && task->frame) {
@@ -861,6 +880,7 @@ extern "C" objc3_service_status objc3_task_complete(
     finish_frame_destruction(task, frame_to_destroy, frame_destructor);
   else
     task->completed.notify_all();
+  finish_continuation_owner(task, continuation_owner);
   return OBJC3_SERVICE_OK;
 }
 
@@ -1239,6 +1259,7 @@ void objc3_service_run_task_resume(void *context) {
     if (!task->terminal && !task->resume_active) {
       task->resume_active = true;
       continuation_owner = std::move(task->continuation_owner);
+      if (continuation_owner) ++task->continuation_owners_active;
       frame = task->frame;
       resume = task->resume;
     }
@@ -1279,4 +1300,5 @@ void objc3_service_run_task_resume(void *context) {
   notify_quiescence(task);
   release_rejected_dispatch(rejected);
   if (dispatch_status != OBJC3_SERVICE_OK) cancel_task(task);
+  finish_continuation_owner(task, continuation_owner);
 }

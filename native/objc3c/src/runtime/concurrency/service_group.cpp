@@ -236,7 +236,8 @@ JoinState join_state_locked(const TaskGroup *group) {
     std::lock_guard<std::mutex> lock(entry.task->mutex);
     if (!entry.completed || !entry.task->terminal ||
         !entry.task->frame_destroyed || entry.task->frame_destroying ||
-        entry.task->resume_active || entry.task->callbacks_active)
+        entry.task->resume_active || entry.task->callbacks_active ||
+        entry.task->continuation_owners_active)
       pending = true;
   }
   for (auto *child : group->children) {
@@ -261,7 +262,7 @@ JoinState cleanup_join_state_locked(const TaskGroup *group) {
     std::lock_guard<std::mutex> lock(entry.task->mutex);
     if (!entry.task->terminal || !entry.task->frame_destroyed ||
         entry.task->frame_destroying || entry.task->resume_active ||
-        entry.task->callbacks_active)
+        entry.task->callbacks_active || entry.task->continuation_owners_active)
       pending = true;
   }
   for (auto *child : group->children) {

@@ -845,6 +845,7 @@ struct CleanupJoinFrame {
   unsigned resumes{0}, destroyed{0};
   objc3_service_status status{OBJC3_SERVICE_UNSUPPORTED_VERSION};
   bool release_group_inside_resume{false};
+  Gate *registration_gate{nullptr};
 };
 void cleanup_join_resume(objc3_task_t *task, void *opaque) {
   auto &frame = *static_cast<CleanupJoinFrame *>(opaque);
@@ -863,6 +864,7 @@ void cleanup_join_resume(objc3_task_t *task, void *opaque) {
     premature.kind = OBJC3_COMPLETION_CANCELLED;
     assert(objc3_task_complete(task, &premature) == OBJC3_SERVICE_NOT_READY);
     if (frame.release_group_inside_resume) objc3_task_group_release(frame.group);
+    if (frame.registration_gate) frame.registration_gate->arrive();
     return;
   }
   assert(frame.status == OBJC3_SERVICE_OK && objc3_task_is_cancel_requested(task));
@@ -969,6 +971,94 @@ void cleanup_join_empty_deferred_dispatch_and_actor_discard() {
     objc3_actor_release(actor);
     objc3_executor_release(destination);
   }
+}
+
+struct CleanupPayload {
+  Gate *gate;
+  objc3_task_group_t *outer;
+};
+objc3_service_status copy_cleanup_payload(void *destination, const void *source) {
+  new (destination) CleanupPayload(*static_cast<const CleanupPayload *>(source));
+  return OBJC3_SERVICE_OK;
+}
+objc3_service_status move_cleanup_payload(void *destination, void *source) {
+  return copy_cleanup_payload(destination, source);
+}
+void destroy_cleanup_payload(void *opaque) {
+  auto &payload = *static_cast<CleanupPayload *>(opaque);
+  // Reentrant scope waits cannot observe the parent as quiescent while its
+  // retained inner scope is still executing payload destruction.
+  assert(objc3_task_group_join(payload.outer) == OBJC3_SERVICE_NOT_READY);
+  payload.gate->arrive();
+  payload.~CleanupPayload();
+}
+const objc3_value_ops cleanup_payload_ops{
+    sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION,
+    sizeof(CleanupPayload), alignof(CleanupPayload),
+    copy_cleanup_payload, move_cleanup_payload, destroy_cleanup_payload};
+
+void cleanup_owner_destruction_is_outer_scope_work() {
+  auto *producer = executor();
+  auto *consumer = executor(false);
+  auto *observer = executor();
+  auto inner = objc3::task_group_handle::create();
+  auto outer = objc3::task_group_handle::create();
+  HeldFrame child_frame;
+  auto *child = start_held(producer, child_frame);
+  assert(objc3_task_group_add(inner.native_handle(), child) == OBJC3_SERVICE_OK);
+  pump(producer);
+  inner.close();
+  inner.cancel();
+
+  Gate registration_gate, destruction_gate;
+  CleanupJoinFrame parent_frame;
+  parent_frame.group = inner.native_handle();
+  parent_frame.child = &child_frame;
+  parent_frame.registration_gate = &registration_gate;
+  auto *parent = start_cleanup_join(consumer, nullptr, parent_frame);
+  registration_gate.wait();
+  assert(objc3_task_group_add(outer.native_handle(), parent) == OBJC3_SERVICE_OK);
+  outer.close();
+  JoinFrame observed{outer.native_handle()};
+  auto *joiner = start_join(observer, observed);
+  pump(observer);
+  assert(observed.resumes == 1);
+
+  CleanupPayload payload{&destruction_gate, outer.native_handle()};
+  objc3_error_t *error = nullptr;
+  assert(objc3_error_create(&payload, &cleanup_payload_ops, &error) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_ERROR;
+  completion.error = error;
+  assert(objc3_task_complete(child, &completion) == OBJC3_SERVICE_OK);
+  objc3_error_release(error);
+  objc3_task_release(child);
+  inner = {};
+  registration_gate.release();
+
+  destruction_gate.wait();
+  assert(parent_frame.resumes == 2 && parent_frame.destroyed == 1);
+  pump(observer);
+  assert(observed.resumes == 1 && observed.destroyed == 0);
+  destruction_gate.release();
+  // A later callback on the serial destination establishes that retained
+  // cleanup and its readiness notification both finished, without polling.
+  Gate fence;
+  assert(objc3_executor_enqueue(consumer, [](void *opaque) {
+    static_cast<Gate *>(opaque)->arrive();
+  }, &fence) == OBJC3_SERVICE_OK);
+  fence.wait();
+  pump(observer);
+  assert(observed.resumes == 2 && observed.destroyed == 1);
+  fence.release();
+  outer.wait();
+  objc3_task_release(joiner);
+  objc3_task_release(parent);
+  objc3_executor_release(observer);
+  objc3_executor_release(consumer);
+  objc3_executor_release(producer);
 }
 objc3::task<int> cpp_cancelled_scope_cleanup(objc3::task_group_handle group,
                                            std::atomic<unsigned> &turns) {
@@ -1115,6 +1205,7 @@ int main() {
   cpp_result_copy_failure_preserves_oom();
   cleanup_join_shields_cancellation_and_owns_abandoned_scope();
   cleanup_join_empty_deferred_dispatch_and_actor_discard();
+  cleanup_owner_destruction_is_outer_scope_work();
   cpp_cleanup_request_preserves_owner_cancellation();
   explicit_structured_child_destination_preserves_parent();
 }

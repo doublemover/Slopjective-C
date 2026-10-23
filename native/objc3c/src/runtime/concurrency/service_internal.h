@@ -105,6 +105,9 @@ struct objc3_task final {
   objc3_task_t **await_result_task{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
   std::shared_ptr<void> continuation_owner;
+  // Releasing a cleanup-join lease can destroy group-owned task/error payloads.
+  // That work remains part of this task's quiescence after its frame is gone.
+  uint32_t continuation_owners_active{0};
   uint32_t callbacks_active{0};
   bool frame_destroying{false};
   bool frame_destroyed{true};
