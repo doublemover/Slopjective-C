@@ -365,6 +365,47 @@ static void capture_resource_operations_suite(void) {
                 capture_close_sum == sum + 246);
 }
 
+static void capture_nested_resource_suite(void) {
+  int before = capture_closed;
+  __block CaptureIntBlock inner = (id)0;
+  __block int transfers = 0;
+  void (^left)(void) = (id)0, (^right)(void) = (id)0;
+  {
+    int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 128;
+    void (^__unsafe_unretained stack)(void) = ^[move handle] {
+      if (handle != -1) {
+        CaptureIntBlock __unsafe_unretained next = ^[move handle] {
+          return handle;
+        };
+        inner = [next copy];
+        ++transfers;
+      }
+    };
+    left = [stack copy];
+    right = [stack copy];
+    CAPTURE_CHECK(handle == -1 && left != right);
+  }
+  left();
+  right();
+  CAPTURE_CHECK(transfers == 1 && inner() == 128 && capture_closed == before);
+#if __has_feature(objc_arc)
+  left = right = (id)0;
+#else
+  _Block_release(left);
+  _Block_release(right);
+#endif
+  // Both old copies now own an empty payload; the nested closure has the one
+  // live cleanup obligation in its new owner, independent of their lifetime.
+  CAPTURE_CHECK(inner() == 128 && capture_closed == before);
+#if __has_feature(objc_arc)
+  inner = (id)0;
+#else
+  _Block_release(inner);
+  inner = (id)0;
+#endif
+  CAPTURE_CHECK(capture_closed == before + 1);
+}
+
 #ifdef __cplusplus
 struct CaptureMoveRecord {
   inline static int moves = 0, copies = 0, live = 0;
@@ -429,6 +470,7 @@ static void capture_suite(void) {
 #endif
   capture_resource_suite();
   capture_resource_operations_suite();
+  capture_nested_resource_suite();
 #ifdef __cplusplus
   capture_cpp_suite();
 #endif

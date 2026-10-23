@@ -13,6 +13,9 @@ span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
   take/reset/discard operates through shared copied owners. Deferred actions
   observe committed fields before implicit release across nested scopes,
   return/goto exits and precise Block lifetime receiver regions.
+  Nested resource moves hand off the shared outer payload to an independent
+  owner and leave all old copies invalid; the exception fixture covers failed
+  nested creation after that handoff.
 - `exceptions.mm`: a later C++ constructor fails during literal construction or
   heap copying, including a throwing move constructor; completed object/resource
   captures clean up exactly once. It also covers throwing reset replacements,

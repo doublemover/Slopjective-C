@@ -224,6 +224,29 @@ static void capture_committed_field_unwind(void) {
     CAPTURE_CHECK(capture_destroyed == before + 1);
   }
 }
+static void capture_nested_resource_failure(void) {
+  int before = capture_closed;
+  {
+    int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 129;
+    void (^operate)(void) = ^[move handle] {
+      if (handle == -1) return;
+      CaptureThrowLater later;
+      auto failed = ^[move handle, later] { (void)later; };
+      (void)failed;
+      CAPTURE_CHECK(0);
+    };
+    CaptureThrowLater::copies = 0;
+    CaptureThrowLater::fail_on = 1;
+    try {
+      operate();
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(handle == -1 && capture_closed == before + 1);
+    }
+    operate(); // The original captured owner remains safely invalid.
+  }
+  CAPTURE_CHECK(capture_closed == before + 1);
+}
 #if __has_feature(objc_arc)
 static CaptureIntBlock capture_return_failed_temporary(void)
     __attribute__((ns_returns_retained));
@@ -303,6 +326,7 @@ int main(void) {
   capture_failed_lifetime_receiver(false);
   capture_failed_lifetime_receiver(true);
   capture_committed_field_unwind();
+  capture_nested_resource_failure();
 #if __has_feature(objc_arc)
   capture_owned_return_unwind();
 #endif

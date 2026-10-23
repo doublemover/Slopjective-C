@@ -80,6 +80,7 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{reset(h,4);discard(h);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{int v=take(h);close_handle(v);}); }",
       "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{defer {discard(h);} use(h);}); }",
+      "void f(void) { int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{invoke(^[move h]{use(h);});if(h!=-1)__builtin_trap();reset(h,4);discard(h);}); }",
   };
   for (const auto &Source : Accepted)
     expect(request(Root, Source, Language, Standard, ARC), true);
@@ -115,6 +116,7 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{close_handle(h);});}", "cleanup"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{discard(h);use(h);});}", "may have been moved"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{int a=take(h);close_handle(a);int b=take(h);close_handle(b);});}", "may have been moved"},
+      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{invoke(^[move h]{use(h);});use(h);});}", "may have been moved"},
   };
   for (const auto &[Source, Message] : Rejected)
     expect(request(Root, Source, Language, Standard, ARC), false, Message);
@@ -189,6 +191,18 @@ void check_record_body(clang::FunctionDecl *Function) {
   assert(Capture.getObjC3InitExpr() && Capture.getCopyExpr());
   assert(Capture.getObjC3InitExpr() != Capture.getCopyExpr());
 }
+void check_nested_resource_body(clang::FunctionDecl *Function) {
+  Blocks Visitor;
+  Visitor.TraverseStmt(Function->getBody());
+  assert(Visitor.Values.size() == 2);
+  const auto &Outer = Visitor.Values[0]->getBlockDecl()->captures()[0];
+  const auto &Inner = Visitor.Values[1]->getBlockDecl()->captures()[0];
+  assert(Outer.isObjC3ResourceCapture() && Inner.isObjC3ResourceCapture());
+  assert(Outer.getVariable() == Inner.getVariable());
+  assert(!Outer.isNested() && Inner.isNested());
+  assert(Inner.getObjC3CaptureKind() == clang::BlockDecl::ObjC3CaptureKind::Move);
+  assert(Inner.getCaptureType()->isIntegerType());
+}
 void persistence(const fs::path &Root) {
   const std::string Source = std::string(Declarations) + R"objc(
 int capture_provider(id object) {
@@ -211,6 +225,15 @@ int capture_record_provider(void) {
   auto block=^[move source]{return source.value;};
   return block()+source.value;
 }
+void capture_nested_resource_provider(void) {
+  int handle __attribute__((objc_resource(close=close_handle,invalid=-1)))=31;
+  void (^outer)(void)=^[move handle]{
+    void (^inner)(void)=^[move handle]{use(handle);};
+    inner();
+    if(handle!=-1)__builtin_trap();
+  };
+  outer();
+}
 )objc";
   const auto Header = Root / "capture-provider.h";
   { std::ofstream File(Header); File << Source; }
@@ -219,6 +242,7 @@ int capture_record_provider(void) {
   auto *Provider = function(*From, "capture_provider");
   check_body(Provider);
   check_record_body(function(*From, "capture_record_provider"));
+  check_nested_resource_body(function(*From, "capture_nested_resource_provider"));
   clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
       From->getASTContext(), From->getFileManager(), false);
   auto Imported = Importer.Import(Provider);
@@ -228,6 +252,9 @@ int capture_record_provider(void) {
   auto ImportedRecord = Importer.Import(function(*From, "capture_record_provider"));
   assert(ImportedRecord);
   check_record_body(llvm::cast<clang::FunctionDecl>(*ImportedRecord));
+  auto ImportedNested = Importer.Import(function(*From, "capture_nested_resource_provider"));
+  assert(ImportedNested);
+  check_nested_resource_body(llvm::cast<clang::FunctionDecl>(*ImportedNested));
   auto ChangedSource = Source;
   const auto Position = ChangedSource.find("^[weak object, move number]");
   assert(Position != std::string::npos);
@@ -243,6 +270,7 @@ int capture_record_provider(void) {
       Root / "capture-pch-client.mm", {"-include-pch", PCH.string()});
   check_body(function(*Reloaded, "capture_provider"));
   check_record_body(function(*Reloaded, "capture_record_provider"));
+  check_nested_resource_body(function(*Reloaded, "capture_nested_resource_provider"));
 }
 } // namespace
 int main() {

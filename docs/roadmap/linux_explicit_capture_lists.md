@@ -90,6 +90,15 @@ same sentinel changes. Reset/discard cleanup and exceptional invalidation use
 this storage rather than synthesizing a reference to the enclosing source
 local. A failed reset replacement leaves the captured owner invalid.
 
+A nested explicit resource move transfers the current shared payload into a
+new owner and invalidates the original owner. Copies of the outer Block all
+observe that sentinel, while the nested Block owns the surviving cleanup
+obligation independently of their lifetime. This mutation applies to the
+resource owner's payload; ordinary const capture fields remain immutable.
+Nested construction failure destroys the new completed owner once and leaves
+the outer owner invalid. Import/PCH witnesses preserve the common original
+declaration and both resource capture flags.
+
 Admission currently requires a statically nonthrowing callback (`nothrow` or
 `noexcept`). This avoids unwinding through ARC's nonthrowing release intrinsic.
 Potentially throwing final-disposal callbacks, arbitrary `objc_cleanup`/GNU
