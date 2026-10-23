@@ -274,3 +274,39 @@ that recognized source boundary applies capture diagnostics. A C17 witness
 authors active actor inheritance, cancellation set before spawn, global detached
 independence, explicit group quiescence, and failure-side carrier cleanup.
 Validation remains deferred.
+
+## Recognized standard spawn APIs and macros
+
+`objc3.concurrency` now declares Block-taking `objc3_task_spawn` and
+`objc3_task_detached` functions carrying the canonical compiler attributes.
+`OBJC_TASK_SPAWN(e)` and `OBJC_TASK_DETACHED(e)` expand directly to those calls,
+evaluating the argument once and preserving its original capture provenance for
+Sendable checks and unused-child diagnostics. Lazy native Block factories own
+their captures in both ARC and MRC before the source expression can expire.
+
+The C convenience overloads accept void async-frame Blocks, with distinct
+nonthrowing and bare checked-throws callable types. They return one owned task
+or null on invalid input/start failure and dispose a failed-start frame. C
+nonvoid and typed checked-error effects remain available through the lower-level
+owned frame API. C++ overloads preserve generic logical results and distinguish
+ordinary C++ async-task from explicit C-frame callable types. Startup failures
+throw `service_failure`, with native frames reclaimed by their lazy owner.
+Separate bare and typed-E checked-effect overloads retain the Block effect and
+transport its owned error in the resulting task; they never convert checked
+failure to cancellation or erase it into a nonthrowing Block type.
+
+**Pending compiler dependency:** the C++ typed-E overloads require native
+template deduction of ObjC3 function-effect `ErrorType`, matching of async/frame
+effect identity, and used-template-parameter tracking. That canonical compiler
+span is handed to root; this header and its witnesses are maintained authored
+inputs, not evidence that typed-E overload resolution currently builds. The
+compiler packet/export and SDK rebuild remain separate root-owned work.
+
+`tests/clang_foundation/task_spawning` authors C17 and C++20/23 direct/macro
+equivalence, cancellation before spawn, preserved actor affinity through
+suspension, global detached independence, typed result joins, raw-frame joins,
+checked error identity, capture deallocation, failed-start ownership cleanup,
+and strict diagnostic parity. The source batch should cover ARC/MRC, O0/O2,
+and source/PCH/module imports. No compilation or execution was performed.
+These APIs retain explicit task/group joining; compiler automatic group-scope
+finalization and the complete abstract structured-group library remain open.
