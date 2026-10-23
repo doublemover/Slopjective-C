@@ -67,13 +67,26 @@ ivar access requires the same isolated actor context; adding `await` to a raw
 ivar expression does not create an actor entry. Nonisolated methods cannot read
 or write actor storage through an implicit `self` proof.
 
-Await operands are checked before native frame or C++ awaitable conversion, so
-a synchronous actor/executor call receives a targeted isolation diagnostic.
-Actual actor/executor crossings remain rejected with an executor-hop-lowering
-error. The runtime's main/global/named executor APIs do not by themselves insert
-compiler hops or associate Objective-C object allocation with actor mailboxes.
-These remaining lowering obligations are required before execution can establish
-the full actor contract.
+Await operands are checked before native frame or C++ awaitable conversion.
+Direct synchronous executor calls with scalar arguments and scalar/void results
+now form a private native async-frame thunk. Its source arguments evaluate once
+on the caller, and object/block arguments receive independent frame leases under
+ARC and MRC. The child frame resolves the exact main/global/named executor,
+checks dynamic current affinity, and hops and suspends before invoking the
+original declaration when required. Destination lookup ownership is balanced
+after the runtime has retained the hop destination. The parent retains its own
+continuation destination while awaiting the child. Cancellation uses the native
+frame cancellation channel, and lookup/hop failures use native service errors.
+Checked throws are preserved and explicitly propagated inside the thunk.
+
+The initial thunk result boundary excludes owned object/block results and C++
+nontrivial values. C++ target functions must have a nonthrowing native exception
+contract; arbitrary C++ exception transport is not silently synthesized. Nested
+isolated argument expressions require their own await. Actor-instance entry and
+unsupported callable shapes still receive targeted diagnostics. The compiler
+does not automatically associate object allocation with actor mailboxes. These
+remaining obligations and deferred execution validation prevent a full actor
+conformance claim.
 
 A provably non-suspending native await evaluates its original operand and warns
 in strict concurrency checking. The proof visits evaluated subexpressions,

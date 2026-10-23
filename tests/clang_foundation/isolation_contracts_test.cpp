@@ -368,11 +368,41 @@ int unnecessary(void) __objc3_async { return __objc3_await synchronous(); }
 int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
 )"),
          "actor crossing requires executor-hop lowering");
-  Reject(Make(R"(
-__attribute__((objc_executor(main))) int main_only(void);
-int executor_cross(void) __objc3_async { return __objc3_await main_only(); }
-)"),
+  const std::string NoThrow = Cxx ? " noexcept" : "";
+  for (const std::string Executor :
+       {"main", "global", "named(\"db.serial\")"}) {
+    auto Cross =
+        Compile(Make("__attribute__((objc_executor(" + Executor +
+                     "))) int entry(int)" + NoThrow +
+                     ";\nint executor_cross(int value) __objc3_async { return "
+                     "__objc3_await entry(value); }"));
+    Success(Cross);
+    assert(!Has(Cross, "native await operand does not suspend"));
+  }
+  Reject(Make("__attribute__((objc_executor(main))) id owned_result(void)" +
+              NoThrow +
+              ";\nid bounded(void) __objc3_async { return "
+              "__objc3_await owned_result(); }"),
+         "awaited executor entry requires");
+  Reject(Make("__attribute__((objc_executor(main))) int nested(void)" +
+              NoThrow +
+              ";\n__attribute__((objc_executor(global))) int outer(int)" +
+              NoThrow +
+              ";\nint bad_nested(void) __objc3_async { return "
+              "__objc3_await outer(nested()); }"),
          "executor crossing requires executor-hop lowering");
+  Reject(
+      Make("__attribute__((objc_executor(main))) int unsafe(MutableMessage *)" +
+           NoThrow +
+           ";\nint bad_transfer(MutableMessage *value) __objc3_async "
+           "{ return __objc3_await unsafe(value); }"),
+      "isolated argument");
+  if (Cxx)
+    Reject(Make(R"(
+__attribute__((objc_executor(main))) int native_cpp_throw(void);
+int bounded_cpp(void) __objc3_async { return __objc3_await native_cpp_throw(); }
+)"),
+           "awaited executor entry requires");
   if (Cxx)
     Reject(Make(R"(
 int throwing_sync(void) throws(int);
