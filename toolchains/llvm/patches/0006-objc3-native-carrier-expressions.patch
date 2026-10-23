@@ -262,10 +262,10 @@ index 53107e279..d8e4cdb96 100644
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
-index f5fa397c9..5ffde11c0 100644
+index f5fa397c9..88fdb0a46 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
 +++ b/clang/include/clang/Basic/StmtNodes.td
-@@ -18,6 +18,12 @@ def GotoStmt : StmtNode<Stmt>;
+@@ -18,6 +18,13 @@ def GotoStmt : StmtNode<Stmt>;
  def IndirectGotoStmt : StmtNode<Stmt>;
  def ReturnStmt : StmtNode<Stmt>;
  def DeferStmt : StmtNode<Stmt>;
@@ -273,12 +273,13 @@ index f5fa397c9..5ffde11c0 100644
 +def ObjC3CatchStmt : StmtNode<Stmt>;
 +def ObjC3DoCatchStmt : StmtNode<Stmt>;
 +def ObjC3BindingCondition : StmtNode<Stmt>;
++def ObjC3LifetimeStmt : StmtNode<Stmt>;
 +def ObjC3GuardStmt : StmtNode<Stmt>;
 +def ObjC3IfBindingStmt : StmtNode<Stmt>;
  def DeclStmt  : StmtNode<Stmt>;
  def SwitchCase : StmtNode<Stmt, 1>;
  def CaseStmt : StmtNode<SwitchCase>;
-@@ -124,6 +130,18 @@ def AtomicExpr : StmtNode<Expr>;
+@@ -124,6 +131,18 @@ def AtomicExpr : StmtNode<Expr>;
  def AddrLabelExpr : StmtNode<Expr>;
  def StmtExpr : StmtNode<Expr>;
  def ChooseExpr : StmtNode<Expr>;
@@ -675,7 +676,7 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..982f53a36 100644
+index fdefb6d6b..28f1f26a4 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
 @@ -1653,6 +1653,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
@@ -787,6 +788,16 @@ index fdefb6d6b..982f53a36 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
+@@ -3013,3 +3115,9 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+   StmtProfilerWithoutPointers Profiler(ID, Hash);
+   Profiler.Visit(this);
+ }
++
++void StmtProfiler::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddBoolean(S->isKeepAlive());
++  VisitStmt(S->getStorage());
++}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
 index 74209f579..189a4fa3b 100644
 --- a/clang/lib/Parse/ParseExpr.cpp

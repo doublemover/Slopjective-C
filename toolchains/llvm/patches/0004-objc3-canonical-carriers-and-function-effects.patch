@@ -87,14 +87,14 @@ index 7ed6509c3..69a765fda 100644
    /// the specified type.
    QualType getPointerType(QualType T) const;
 diff --git a/clang/include/clang/AST/ASTNodeTraverser.h b/clang/include/clang/AST/ASTNodeTraverser.h
-index a8a73c5b7..1c6cc9c0f 100644
+index a8a73c5b7..dba7119d3 100644
 --- a/clang/include/clang/AST/ASTNodeTraverser.h
 +++ b/clang/include/clang/AST/ASTNodeTraverser.h
 @@ -159,6 +159,7 @@ public:
  
        // Some statements have custom mechanisms for dumping their children.
        if (isa<DeclStmt, GenericSelectionExpr, RequiresExpr,
-+              ObjC3BindingCondition, ObjC3CoalesceExpr, ObjC3OptionalAccessExpr,
++              ObjC3LifetimeStmt, ObjC3BindingCondition, ObjC3CoalesceExpr, ObjC3OptionalAccessExpr,
                OpenACCWaitConstruct, SYCLKernelCallStmt,
                UnresolvedSYCLKernelCallStmt>(S))
          return;
@@ -112,7 +112,7 @@ index a8a73c5b7..1c6cc9c0f 100644
    void VisitLocInfoType(const LocInfoType *T) {
      Visit(T->getTypeSourceInfo()->getTypeLoc());
    }
-@@ -896,6 +904,56 @@ public:
+@@ -896,6 +904,63 @@ public:
      }
    }
  
@@ -152,6 +152,13 @@ index a8a73c5b7..1c6cc9c0f 100644
 +      Visit(Node->getAccess(), "access");
 +    else
 +      Visit(Node->getSemanticExpr(), "semantic");
++  }
++
++  void VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *Node) {
++    if (Traversal == TK_IgnoreUnlessSpelledInSource) {
++      Visit(Node->getOperand());
++      Visit(Node->getBody());
++    } else Visit(Node->getStorage());
 +  }
 +
 +  void VisitObjC3BindingCondition(const ObjC3BindingCondition *Node) {
@@ -511,7 +518,7 @@ index fd3cce10b..e2a8d508a 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index 165c6324c..9e2f3d882 100644
+index 165c6324c..4fb18e249 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -1008,6 +1008,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -578,7 +585,7 @@ index 165c6324c..9e2f3d882 100644
    if (D->getReturnTypeSourceInfo()) {
      TRY_TO(TraverseTypeLoc(D->getReturnTypeSourceInfo()->getTypeLoc()));
    }
-@@ -2946,6 +2975,60 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -2946,6 +2975,67 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -633,6 +640,13 @@ index 165c6324c..9e2f3d882 100644
 +    ShouldVisitChildren = false;
 +  }
 +})
++DEF_TRAVERSE_STMT(ObjC3LifetimeStmt, {
++  if (!getDerived().shouldVisitImplicitCode()) {
++    TRY_TO_TRAVERSE_OR_ENQUEUE_STMT(S->getOperand());
++    if (S->getBody()) TRY_TO_TRAVERSE_OR_ENQUEUE_STMT(S->getBody());
++    ShouldVisitChildren = false;
++  }
++})
 +DEF_TRAVERSE_STMT(ObjC3GuardStmt, {})
 +DEF_TRAVERSE_STMT(ObjC3IfBindingStmt, {})
 +DEF_TRAVERSE_STMT(ObjC3DoCatchStmt, {})
@@ -640,10 +654,10 @@ index 165c6324c..9e2f3d882 100644
  DEF_TRAVERSE_STMT(CompoundLiteralExpr, {
    TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
 diff --git a/clang/include/clang/AST/TextNodeDumper.h b/clang/include/clang/AST/TextNodeDumper.h
-index 41ddd88a8..cae302445 100644
+index 41ddd88a8..775aaabda 100644
 --- a/clang/include/clang/AST/TextNodeDumper.h
 +++ b/clang/include/clang/AST/TextNodeDumper.h
-@@ -265,6 +265,13 @@ public:
+@@ -265,6 +265,14 @@ public:
    void VisitCaseStmt(const CaseStmt *Node);
    void VisitReturnStmt(const ReturnStmt *Node);
    void VisitCoawaitExpr(const CoawaitExpr *Node);
@@ -651,6 +665,7 @@ index 41ddd88a8..cae302445 100644
 +  void VisitObjC3ThrowStmt(const ObjC3ThrowStmt *Node);
 +  void VisitObjC3CatchStmt(const ObjC3CatchStmt *Node);
 +  void VisitObjC3BindingCondition(const ObjC3BindingCondition *Node);
++  void VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S);
 +  void VisitObjC3GuardStmt(const ObjC3GuardStmt *Node);
 +  void VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *Node);
 +  void VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *Node);
@@ -1164,7 +1179,7 @@ index 7671f003c..16e56e1ce 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..144b1f9e9 100644
+index 2cb79b6ba..22c11a520 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,63 @@
@@ -1300,12 +1315,14 @@ index 2cb79b6ba..144b1f9e9 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14457,46 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14457,48 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
 +def err_objc3_guard_must_exit : Error<"guard else body must exit the current scope on every reachable path">;
 +def err_objc3_guard_exit_unsupported : Error<"cannot prove guard scope exit for this cleanup or control-flow construct">;
++def note_protected_by_objc3_lifetime : Note<"jump bypasses initialization of a precise lifetime binding">;
++def note_exits_objc3_lifetime : Note<"jump exits a precise lifetime binding">;
 +def note_protected_by_objc3_binding : Note<"jump bypasses initialization of an optional binding">;
 +def note_exits_objc3_binding : Note<"jump exits an initialized optional binding">;
 +def err_objc3_condition_type : Error<"condition must have Bool type, not %0">;
@@ -1363,7 +1380,7 @@ index a9965a4a8..4ec0b3a0c 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index 892715a6d..2d6a20a64 100644
+index 892715a6d..f9c91fffb 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -29,6 +29,8 @@
@@ -1415,7 +1432,7 @@ index 892715a6d..2d6a20a64 100644
  
    /// True if we are within an Objective-C container while parsing C-like decls.
    ///
-@@ -7614,6 +7635,33 @@ public:
+@@ -7614,6 +7635,34 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
@@ -1445,6 +1462,7 @@ index 892715a6d..2d6a20a64 100644
 +  TypeResult ParseObjC3QualifiedTypeName(SourceLocation &EndLoc);
 +  bool isObjC3QualifiedTypeNameAhead();
 +  StmtResult ParseObjC3DeferStatement();
++  StmtResult ParseObjC3LifetimeStatement();
 +  TypeResult ParseObjC3TypeConstructor(SourceLocation &EndLoc);
  
    /// ParseExpansionStatement - Parse a C++26 expansion
@@ -1565,7 +1583,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..bef9dc50f 100644
+index 11550340a..b6f54cdeb 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1629,7 +1647,7 @@ index 11550340a..bef9dc50f 100644
    DeclResult ActOnModuleImport(SourceLocation StartLoc,
                                 SourceLocation ExportLoc,
                                 SourceLocation ImportLoc, Module *M,
-@@ -11247,6 +11262,115 @@ public:
+@@ -11247,6 +11262,119 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -1685,6 +1703,10 @@ index 11550340a..bef9dc50f 100644
 +      Scope *BindingScope, IdentifierInfo *Name, SourceLocation NameLoc,
 +      bool Mutable, SourceLocation KeywordLoc, SourceLocation EqualLoc,
 +      Expr *Source);
++  DeclStmt *BuildObjC3LifetimeBinding(Expr *, SourceLocation);
++  StmtResult BuildObjC3LifetimeStmt(DeclStmt *, Stmt *, SourceLocation,
++                                    SourceLocation, SourceLocation,
++                                    SourceLocation);
 +  StmtResult ActOnObjC3GuardStmt(
 +      Scope *ParentScope, ArrayRef<Stmt *> Conditions, Stmt *ElseBody,
 +      SourceLocation KeywordLoc, SourceLocation ElseLoc);
@@ -1745,7 +1767,7 @@ index 11550340a..bef9dc50f 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15481,13 @@ public:
+@@ -15357,6 +15485,13 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -1774,7 +1796,7 @@ index f5cb8ea4b..0e30ab06b 100644
    bool CheckARCMethodDecl(ObjCMethodDecl *method);
  
 diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
-index 671341488..3552d05f6 100644
+index 671341488..d5784a526 100644
 --- a/clang/include/clang/Serialization/ASTBitCodes.h
 +++ b/clang/include/clang/Serialization/ASTBitCodes.h
 @@ -56,6 +56,10 @@ const unsigned VERSION_MAJOR = 39;
@@ -1800,7 +1822,7 @@ index 671341488..3552d05f6 100644
  };
  
  /// Record types that occur within the options block inside
-@@ -2091,6 +2100,22 @@ enum StmtCode {
+@@ -2091,6 +2100,23 @@ enum StmtCode {
    EXPR_HLSL_OUT_ARG,
  
    STMT_DEFER,
@@ -1820,6 +1842,7 @@ index 671341488..3552d05f6 100644
 +  EXPR_OBJC3_COALESCE,
 +  EXPR_OBJC3_OPTIONAL_ACCESS,
 +  EXPR_OBJC3_RESOURCE,
++  STMT_OBJC3_LIFETIME,
  };
  
  /// The kinds of designators that can occur in a
@@ -2349,7 +2372,7 @@ index 222881154..906723abd 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..8ca241c0c 100644
+index d743717ad..4f7101001 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,8 @@
@@ -2361,7 +2384,7 @@ index d743717ad..8ca241c0c 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -592,6 +594,13 @@ namespace clang {
+@@ -592,6 +594,14 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -2369,13 +2392,14 @@ index d743717ad..8ca241c0c 100644
 +    ExpectedStmt VisitObjC3ThrowStmt(ObjC3ThrowStmt *S);
 +    ExpectedStmt VisitObjC3CatchStmt(ObjC3CatchStmt *S);
 +    ExpectedStmt VisitObjC3BindingCondition(ObjC3BindingCondition *S);
++    ExpectedStmt VisitObjC3LifetimeStmt(ObjC3LifetimeStmt *S);
 +    ExpectedStmt VisitObjC3GuardStmt(ObjC3GuardStmt *S);
 +    ExpectedStmt VisitObjC3IfBindingStmt(ObjC3IfBindingStmt *S);
 +    ExpectedStmt VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S);
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -627,6 +636,18 @@ namespace clang {
+@@ -627,6 +637,18 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -2394,7 +2418,7 @@ index d743717ad..8ca241c0c 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -1426,6 +1447,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1448,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2422,7 +2446,7 @@ index d743717ad..8ca241c0c 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1668,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1669,36 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2459,7 +2483,7 @@ index d743717ad..8ca241c0c 100644
    if (Err)
      return std::move(Err);
  
-@@ -2559,6 +2631,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2632,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2486,7 +2510,7 @@ index d743717ad..8ca241c0c 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -3085,7 +3177,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3178,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -2502,7 +2526,7 @@ index d743717ad..8ca241c0c 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -4120,6 +4219,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4220,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2510,7 +2534,7 @@ index d743717ad..8ca241c0c 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4275,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4276,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2557,7 +2581,7 @@ index d743717ad..8ca241c0c 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5202,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5203,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2572,7 +2596,7 @@ index d743717ad..8ca241c0c 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5272,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5273,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2580,7 +2604,7 @@ index d743717ad..8ca241c0c 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5287,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5288,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2589,7 +2613,7 @@ index d743717ad..8ca241c0c 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7479,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7480,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2687,7 +2711,7 @@ index d743717ad..8ca241c0c 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8017,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8018,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2866,7 +2890,7 @@ index d743717ad..8ca241c0c 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10129,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10130,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2965,8 +2989,25 @@ index d743717ad..8ca241c0c 100644
  }
  
  namespace {
+@@ -11049,3 +11554,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+       getStructuralEquivalenceKind(*this), false, Complain);
+   return Ctx.IsEquivalent(From, To);
+ }
++
++ExpectedStmt ASTNodeImporter::VisitObjC3LifetimeStmt(ObjC3LifetimeStmt *S) {
++  Error Err = Error::success();
++  auto *Storage = importChecked(Err, S->getStorage());
++  auto Keyword = importChecked(Err, S->getKeywordLoc());
++  auto LParen = importChecked(Err, S->getLParenLoc());
++  auto RParen = importChecked(Err, S->getRParenLoc());
++  auto Semi = importChecked(Err, S->getSemiLoc());
++  if (Err)
++    return std::move(Err);
++  return new (Importer.getToContext())
++      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
++}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..08caf143a 100644
+index e0b62591a..e23a3f971 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,7 @@
@@ -2977,7 +3018,7 @@ index e0b62591a..08caf143a 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/Attr.h"
  #include "clang/AST/Decl.h"
-@@ -207,6 +208,117 @@ class StmtComparer {
+@@ -207,6 +208,121 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -3078,6 +3119,10 @@ index e0b62591a..08caf143a 100644
 +    return A->isMutableBinding() == B->isMutableBinding();
 +  }
 +
++  bool IsStmtEquivalent(const ObjC3LifetimeStmt *A, const ObjC3LifetimeStmt *B) {
++    return A->isKeepAlive() == B->isKeepAlive();
++  }
++
 +  bool IsStmtEquivalent(const ObjC3GuardStmt *A, const ObjC3GuardStmt *B) {
 +    return A->getNumConditions() == B->getNumConditions();
 +  }
@@ -3095,7 +3140,7 @@ index e0b62591a..08caf143a 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -963,6 +1075,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1079,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -3119,7 +3164,7 @@ index e0b62591a..08caf143a 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1275,17 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,6 +1279,17 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -3137,7 +3182,7 @@ index e0b62591a..08caf143a 100644
      if (Proto1->getNumParams() != Proto2->getNumParams())
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
-@@ -2446,6 +2586,34 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2446,6 +2590,34 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
@@ -3637,7 +3682,7 @@ index 172a19f8f..cee3576c9 100644
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
 diff --git a/clang/lib/AST/JSONNodeDumper.cpp b/clang/lib/AST/JSONNodeDumper.cpp
-index 8373dd8e3..a122db478 100644
+index 8373dd8e3..d27d9543b 100644
 --- a/clang/lib/AST/JSONNodeDumper.cpp
 +++ b/clang/lib/AST/JSONNodeDumper.cpp
 @@ -639,6 +639,7 @@ void JSONNodeDumper::VisitFunctionType(const FunctionType *T) {
@@ -3860,6 +3905,17 @@ index 8373dd8e3..a122db478 100644
  void JSONNodeDumper::VisitSwitchStmt(const SwitchStmt *SS) {
    attributeOnlyIfTrue("hasInit", SS->hasInitStorage());
    attributeOnlyIfTrue("hasVar", SS->hasVarStorage());
+@@ -1940,3 +2125,10 @@ void JSONNodeDumper::VisitCompoundStmt(const CompoundStmt *S) {
+   if (S->hasStoredFPFeatures())
+     JOS.attribute("fpoptions", createFPOptions(S->getStoredFPFeatures()));
+ }
++
++void JSONNodeDumper::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  JOS.attribute("isKeepAlive", S->isKeepAlive());
++  JOS.attribute("bindingScope", S->isKeepAlive() ? "lexical" : "body");
++  JOS.attributeObject("keywordLoc",
++                      [=, this] { writeSourceLocation(S->getKeywordLoc()); });
++}
 diff --git a/clang/lib/AST/MicrosoftMangle.cpp b/clang/lib/AST/MicrosoftMangle.cpp
 index 59732ff0f..0d5627100 100644
 --- a/clang/lib/AST/MicrosoftMangle.cpp
@@ -4043,7 +4099,7 @@ index 000000000..ee728c92d
 +  return Node;
 +}
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 9799c8651..de64057ef 100644
+index 9799c8651..a0bb9c97e 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
 @@ -1532,6 +1532,49 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
@@ -4130,6 +4186,15 @@ index 9799c8651..de64057ef 100644
  
    if (D->isVariadic())
      OS << " variadic";
+@@ -3356,3 +3419,8 @@ void TextNodeDumper::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+   if (S->hasStoredFPFeatures())
+     printFPOptions(S->getStoredFPFeatures());
+ }
++
++void TextNodeDumper::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  OS << (S->isKeepAlive() ? " keepAlive scope=lexical"
++                          : " withLifetime scope=body");
++}
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
 index 42d148715..c1d50b358 100644
 --- a/clang/lib/AST/Type.cpp
@@ -5778,7 +5843,7 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..922e21a77 100644
+index b4a9cc120..61d42b85e 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
 @@ -14,6 +14,7 @@
@@ -5831,7 +5896,7 @@ index b4a9cc120..922e21a77 100644
          Diags = ScopePair(diag::note_enters_block_captures_non_trivial_c_struct,
                            diag::note_exits_block_captures_non_trivial_c_struct);
          break;
-@@ -406,6 +418,62 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -406,6 +418,73 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
      return;
    }
  
@@ -5847,6 +5912,17 @@ index b4a9cc120..922e21a77 100644
 +    origParentScope = Scopes.size() - 1;
 +    unsigned InitScope = origParentScope;
 +    BuildScopeInformation(Variable->getInit(), InitScope);
++    return;
++  }
++  case Stmt::ObjC3LifetimeStmtClass: {
++    auto *Lifetime = cast<ObjC3LifetimeStmt>(S);
++    unsigned LocalScope = origParentScope;
++    unsigned &Owner = Lifetime->isKeepAlive() ? origParentScope : LocalScope;
++    BuildScopeInformation(Lifetime->getOperand(), Owner);
++    Scopes.emplace_back(Owner, diag::note_protected_by_objc3_lifetime,
++                         diag::note_exits_objc3_lifetime, Lifetime->getKeywordLoc());
++    Owner = Scopes.size() - 1;
++    if (Lifetime->getBody()) BuildScopeInformation(Lifetime->getBody(), Owner);
 +    return;
 +  }
 +  case Stmt::ObjC3GuardStmtClass: {
@@ -5894,7 +5970,7 @@ index b4a9cc120..922e21a77 100644
    case Stmt::CXXTryStmtClass: {
      CXXTryStmt *TS = cast<CXXTryStmt>(S);
      {
-@@ -695,8 +763,14 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -695,8 +774,14 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
        SubStmt = Next;
      }
  
@@ -5902,7 +5978,7 @@ index b4a9cc120..922e21a77 100644
 -    BuildScopeInformation(SubStmt, ParentScope);
 +    // A single unbraced guard body has its own implicit source scope. Its
 +    // successful declarations cannot protect a sibling control-flow arm.
-+    if (isa<ObjC3GuardStmt>(SubStmt) && !isa<CompoundStmt>(S)) {
++    if (isa<ObjC3GuardStmt, ObjC3LifetimeStmt>(SubStmt) && !isa<CompoundStmt>(S)) {
 +      unsigned BodyScope = ParentScope;
 +      BuildScopeInformation(SubStmt, BodyScope);
 +    } else {
@@ -18529,10 +18605,10 @@ index 000000000..dadeb6606
 +}
 diff --git a/clang/include/clang/AST/ObjC3ConditionNodes.inc b/clang/include/clang/AST/ObjC3ConditionNodes.inc
 new file mode 100644
-index 000000000..516e9f809
+index 000000000..2dd5403d5
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ConditionNodes.inc
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,172 @@
 +//===--- ObjC3ConditionNodes - Native condition AST ---------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18578,8 +18654,8 @@ index 000000000..516e9f809
 +  unsigned NumConditions;
 +  SourceLocation KeywordLoc, ElseLoc;
 +  ObjC3GuardStmt(unsigned N, SourceLocation Keyword, SourceLocation Else)
-+      : Stmt(ObjC3GuardStmtClass), NumConditions(N),
-+        KeywordLoc(Keyword), ElseLoc(Else) {}
++      : Stmt(ObjC3GuardStmtClass), NumConditions(N), KeywordLoc(Keyword),
++        ElseLoc(Else) {}
 +
 +public:
 +  friend class ASTStmtReader;
@@ -18608,8 +18684,7 @@ index 000000000..516e9f809
 +  }
 +  const_child_range children() const {
 +    Stmt *const *Begin = getTrailingObjects();
-+    return const_child_range(Begin,
-+                             Begin + NumConditions + 1);
++    return const_child_range(Begin, Begin + NumConditions + 1);
 +  }
 +  static bool classof(const Stmt *S) {
 +    return S->getStmtClass() == ObjC3GuardStmtClass;
@@ -18660,6 +18735,50 @@ index 000000000..516e9f809
 +  }
 +  static bool classof(const Stmt *S) {
 +    return S->getStmtClass() == ObjC3IfBindingStmtClass;
++  }
++};
++
++/// Precise owner binding. A bounded statement owns an ordinary compound with
++/// the implicit declaration first and its source body second. A keepAlive owns
++/// only the declaration; its cleanup belongs to the enclosing lexical scope.
++class ObjC3LifetimeStmt final : public Stmt {
++  Stmt *Storage = nullptr;
++  SourceLocation KeywordLoc, LParenLoc, RParenLoc, SemiLoc;
++
++public:
++  friend class ASTStmtReader;
++  explicit ObjC3LifetimeStmt(EmptyShell E) : Stmt(ObjC3LifetimeStmtClass, E) {}
++  ObjC3LifetimeStmt(Stmt *Storage, SourceLocation Keyword,
++                    SourceLocation LParen, SourceLocation RParen,
++                    SourceLocation Semi)
++      : Stmt(ObjC3LifetimeStmtClass), Storage(Storage), KeywordLoc(Keyword),
++        LParenLoc(LParen), RParenLoc(RParen), SemiLoc(Semi) {}
++  bool isKeepAlive() const { return isa<DeclStmt>(Storage); }
++  Stmt *getStorage() const { return Storage; }
++  DeclStmt *getBindingStatement() const {
++    return cast<DeclStmt>(
++        isKeepAlive() ? Storage : *cast<CompoundStmt>(Storage)->body_begin());
++  }
++  VarDecl *getBindingDecl() const;
++  Expr *getOperand() const;
++  Stmt *getBody() const {
++    return isKeepAlive() ? nullptr
++                         : *(cast<CompoundStmt>(Storage)->body_begin() + 1);
++  }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  SourceLocation getSemiLoc() const { return SemiLoc; }
++  SourceLocation getBeginLoc() const { return KeywordLoc; }
++  SourceLocation getEndLoc() const {
++    return isKeepAlive() ? SemiLoc : getBody()->getEndLoc();
++  }
++  child_range children() { return child_range(&Storage, &Storage + 1); }
++  const_child_range children() const {
++    return const_child_range(&Storage, &Storage + 1);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3LifetimeStmtClass;
 +  }
 +};
 diff --git a/clang/lib/AST/ObjC3ConditionNodes.cpp b/clang/lib/AST/ObjC3ConditionNodes.cpp
@@ -19115,10 +19234,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..1bd78ba63
+index 000000000..2c3a2b4ff
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,892 @@
+@@ -0,0 +1,947 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20011,6 +20130,61 @@ index 000000000..1bd78ba63
 +  }
 +  return Invalid;
 +}
++
++DeclStmt *Sema::BuildObjC3LifetimeBinding(Expr *Value, SourceLocation Keyword) {
++  ExprResult Checked = CheckPlaceholderExpr(Value);
++  if (Checked.isInvalid())
++    return nullptr;
++  Value = Checked.get();
++  QualType Type = Value->getType().getNonReferenceType().getUnqualifiedType();
++  if (!Value->isTypeDependent() && !Type->isObjCRetainableType()) {
++    Diag(Value->getExprLoc(),
++         getDiagnostics().getCustomDiagID(
++             DiagnosticsEngine::Error, "explicit lifetime control requires an "
++                                       "Objective-C object or block; got %0"))
++        << Value->getType();
++    return nullptr;
++  }
++  if (getLangOpts().ObjCAutoRefCount && !Value->isTypeDependent())
++    Type = Context.getLifetimeQualifiedType(Type, Qualifiers::OCL_Strong);
++  Type = Context.getConstType(Type);
++  auto *Binding =
++      VarDecl::Create(Context, CurContext, Keyword, Keyword, nullptr, Type,
++                      Context.getTrivialTypeSourceInfo(Type, Keyword), SC_None);
++  Binding->setImplicit();
++  Binding->addAttr(ObjCPreciseLifetimeAttr::CreateImplicit(Context));
++  Binding->addAttr(ObjC3LifetimeBindingAttr::CreateImplicit(Context));
++  ExprResult Init = PerformCopyInitialization(
++      InitializedEntity::InitializeVariable(Binding), Keyword, Value);
++  if (Init.isInvalid())
++    return nullptr;
++  Init = ActOnFinishFullExpr(Init.get(), Keyword, false);
++  if (Init.isInvalid())
++    return nullptr;
++  Binding->setInit(Init.get());
++  CheckCompleteVariableDeclaration(Binding);
++  if (Binding->isInvalidDecl())
++    return nullptr;
++  CurContext->addDecl(Binding);
++  setFunctionHasBranchProtectedScope();
++  return new (Context)
++      DeclStmt(DeclGroupRef(Binding), Keyword, Value->getEndLoc());
++}
++
++StmtResult Sema::BuildObjC3LifetimeStmt(DeclStmt *Binding, Stmt *Body,
++                                        SourceLocation Keyword,
++                                        SourceLocation LParen,
++                                        SourceLocation RParen,
++                                        SourceLocation Semi) {
++  Stmt *Storage = Binding;
++  if (Body) {
++    Stmt *Children[] = {Binding, Body};
++    Storage = CompoundStmt::Create(Context, Children, FPOptionsOverride(),
++                                   Keyword, Body->getEndLoc());
++  }
++  return new (Context)
++      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
++}
 diff --git a/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp b/clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp
 new file mode 100644
 index 000000000..d6c2d433f
@@ -20897,10 +21071,10 @@ index 000000000..d6c2d433f
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
-index 000000000..aa3e1ec8b
+index 000000000..c78ec0ab0
 --- /dev/null
 +++ b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,101 @@
 +// Native condition reconstruction must rerun use-site initialization. Include
 +// after TreeTransform declarations and before explicit instantiation sites.
 +template <typename Derived>
@@ -20982,12 +21156,32 @@ index 000000000..aa3e1ec8b
 +  return SemaRef.ActOnObjC3IfBindingStmt(Conditions, Then.get(), Else.get(),
 +                                       Old->getIfLoc(), Old->getElseLoc());
 +}
++
++template <typename Derived>
++StmtResult
++TreeTransform<Derived>::TransformObjC3LifetimeStmt(ObjC3LifetimeStmt *Old) {
++  ExprResult Value = getDerived().TransformExpr(Old->getOperand());
++  if (Value.isInvalid())
++    return StmtError();
++  DeclStmt *Binding =
++      SemaRef.BuildObjC3LifetimeBinding(Value.get(), Old->getKeywordLoc());
++  if (!Binding)
++    return StmtError();
++  getDerived().transformedLocalDecl(Old->getBindingDecl(),
++                                    {cast<VarDecl>(Binding->getSingleDecl())});
++  StmtResult Body = getDerived().TransformStmt(Old->getBody());
++  if (Body.isInvalid())
++    return StmtError();
++  return SemaRef.BuildObjC3LifetimeStmt(
++      Binding, Body.get(), Old->getKeywordLoc(), Old->getLParenLoc(),
++      Old->getRParenLoc(), Old->getSemiLoc());
++}
 diff --git a/clang/unittests/AST/ObjC3ConditionScopeTest.cpp b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
 new file mode 100644
-index 000000000..c2082baa5
+index 000000000..5f34b66dd
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionScopeTest.cpp
-@@ -0,0 +1,1684 @@
+@@ -0,0 +1,1753 @@
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -22672,6 +22866,75 @@ index 000000000..c2082baa5
 +  }
 +  EXPECT_EQ(3u, Cases);
 +}
++
++TEST(ObjC3LifetimeScopes,
++     ReleasesOwnersAfterSourceActionsWithoutOptionalFlags) {
++  for (bool ARC : {false, true}) {
++    std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
++                                     "-fobjc-version=3",
++                                     "-fobjc-runtime=gnustep-2.2"};
++    if (ARC)
++      Args.push_back("-fobjc-arc");
++    auto AST = tooling::buildASTFromCodeWithArgs(R"(
++      void action(void) __attribute__((nothrow));
++      void body(void) __attribute__((nothrow));
++      void after(void) __attribute__((nothrow));
++      void exercise(id source) {
++        defer { action(); }
++        keepAlive(source);
++        withLifetime(source) { body(); }
++        after();
++      }
++    )",
++                                                 Args, "lifetime-scopes.mm");
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    FunctionDecl *Function = nullptr;
++    for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++      if (auto *F = dyn_cast<FunctionDecl>(D))
++        if (F->getName() == "exercise")
++          Function = F;
++    ASSERT_TRUE(Function);
++    CFG::BuildOptions Options;
++    Options.AddImplicitDtors = Options.AddLifetime = Options.AddScopes = false;
++    Options.setAllAlwaysAdd();
++    auto Graph = CFG::buildCFG(Function, Function->getBody(),
++                               &AST->getASTContext(), Options);
++    ASSERT_TRUE(Graph);
++    std::string Events;
++    const CFGBlock *Block = &Graph->getEntry();
++    unsigned Steps = 0;
++    std::set<const VarDecl *> Owners;
++    while (Block) {
++      ASSERT_LT(++Steps, 40u);
++      for (auto Element : *Block) {
++        if (auto Release = Element.getAs<CFGObjC3LifetimeRelease>()) {
++          Events += "L";
++          Owners.insert(Release->getVarDecl());
++        } else if (auto Statement = Element.getAs<CFGStmt>()) {
++          if (auto *Call = dyn_cast<CallExpr>(Statement->getStmt()))
++            if (auto *F = Call->getDirectCallee()) {
++              if (F->getName() == "body")
++                Events += "B";
++              if (F->getName() == "after")
++                Events += "Z";
++              if (F->getName() == "action")
++                Events += "A";
++            }
++        }
++      }
++      const CFGBlock *Next = nullptr;
++      for (auto Successor : Block->succs())
++        if (const CFGBlock *Reachable = Successor.getReachableBlock()) {
++          ASSERT_FALSE(Next);
++          Next = Reachable;
++        }
++      Block = Next;
++    }
++    EXPECT_EQ("BLZAL", Events);
++    EXPECT_EQ(2u, Owners.size());
++  }
++}
 diff --git a/clang/test/ObjC3/Sema/defer-address-taken.m b/clang/test/ObjC3/Sema/defer-address-taken.m
 new file mode 100644
 index 000000000..772213cf8
@@ -22700,10 +22963,10 @@ index 000000000..772213cf8
 +}
 diff --git a/clang/include/clang/AST/ObjC3SourceScopes.h b/clang/include/clang/AST/ObjC3SourceScopes.h
 new file mode 100644
-index 000000000..6b7c89104
+index 000000000..b722dd7b5
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3SourceScopes.h
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,170 @@
 +//===--- ObjC3SourceScopes.h - Scope owners for source actions -----*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -22771,14 +23034,26 @@ index 000000000..6b7c89104
 +      collect(Defer->getBody(), Defer->getBody());
 +      return;
 +    }
++    if (const auto *Lifetime = dyn_cast<ObjC3LifetimeStmt>(S)) {
++      if (!Lifetime->isKeepAlive()) {
++        collect(Lifetime->getStorage(), Lifetime->getStorage());
++      } else {
++        Variables[Lifetime->getBindingDecl()] = Owner;
++        CleanupScopes.insert(Owner);
++        collect(Lifetime->getOperand(), Owner);
++      }
++      return;
++    }
 +    if (const auto *Declaration = dyn_cast<DeclStmt>(S))
 +      for (const Decl *D : Declaration->decls())
 +        if (const auto *Variable = dyn_cast<VarDecl>(D))
-+          if (Variable->hasLocalStorage() && !Variable->isImplicit()) {
++          if (Variable->hasLocalStorage() &&
++              (!Variable->isImplicit() || Variable->hasAttr<ObjC3LifetimeBindingAttr>())) {
 +            Variables[Variable] = Owner;
 +            if (Variable->hasAttr<CleanupAttr>() ||
 +                Variable->hasAttr<ObjCCleanupAttr>() ||
-+                Variable->hasAttr<ObjCResourceAttr>())
++                Variable->hasAttr<ObjCResourceAttr>() ||
++                Variable->hasAttr<ObjC3LifetimeBindingAttr>())
 +              CleanupScopes.insert(Owner);
 +          }
 +    if (const auto *Catch = dyn_cast<ObjC3CatchStmt>(S)) {
@@ -23765,7 +24040,7 @@ index 000000000..34da6ee82
 +// CHECK: FunctionDecl {{.*}} binding_used_in_later_lambda
 +// CHECK: ObjC3GuardStmt {{.*}} conditions=2
 diff --git a/clang/include/clang/AST/JSONNodeDumper.h b/clang/include/clang/AST/JSONNodeDumper.h
-index 4e8d1649b..5028c85a7 100644
+index 4e8d1649b..3181ecbb5 100644
 --- a/clang/include/clang/AST/JSONNodeDumper.h
 +++ b/clang/include/clang/AST/JSONNodeDumper.h
 @@ -161,6 +161,7 @@ class JSONNodeDumper
@@ -23796,11 +24071,12 @@ index 4e8d1649b..5028c85a7 100644
  
    void VisitIntegerLiteral(const IntegerLiteral *IL);
    void VisitCharacterLiteral(const CharacterLiteral *CL);
-@@ -339,6 +353,9 @@ public:
+@@ -339,6 +353,10 @@ public:
  
    void VisitLoopControlStmt(const LoopControlStmt *LS);
    void VisitIfStmt(const IfStmt *IS);
 +  void VisitObjC3BindingCondition(const ObjC3BindingCondition *S);
++  void VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S);
 +  void VisitObjC3GuardStmt(const ObjC3GuardStmt *S);
 +  void VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *S);
    void VisitSwitchStmt(const SwitchStmt *SS);
@@ -24166,7 +24442,7 @@ index 000000000..eafa8e821
 +// CHECK: "patternKind": "none"
 +
 diff --git a/clang/tools/libclang/CIndex.cpp b/clang/tools/libclang/CIndex.cpp
-index 6e30ffd6b..b7ad8c8d8 100644
+index 6e30ffd6b..b4b5f552b 100644
 --- a/clang/tools/libclang/CIndex.cpp
 +++ b/clang/tools/libclang/CIndex.cpp
 @@ -1766,6 +1766,26 @@ bool CursorVisitor::VisitFunctionTypeLoc(FunctionTypeLoc TL,
@@ -24196,10 +24472,11 @@ index 6e30ffd6b..b7ad8c8d8 100644
    return false;
  }
  
-@@ -2112,6 +2132,13 @@ public:
+@@ -2112,6 +2132,14 @@ public:
    void VisitForStmt(const ForStmt *FS);
    void VisitGotoStmt(const GotoStmt *GS);
    void VisitIfStmt(const IfStmt *If);
++  void VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S);
 +  void VisitObjC3BindingCondition(const ObjC3BindingCondition *S);
 +  void VisitObjC3CoalesceExpr(const ObjC3CoalesceExpr *E);
 +  void VisitObjC3OptionalAccessExpr(const ObjC3OptionalAccessExpr *E);
@@ -24210,7 +24487,7 @@ index 6e30ffd6b..b7ad8c8d8 100644
    void VisitInitListExpr(const InitListExpr *IE);
    void VisitMemberExpr(const MemberExpr *M);
    void VisitOffsetOfExpr(const OffsetOfExpr *E);
-@@ -2242,6 +2269,7 @@ public:
+@@ -2242,6 +2270,7 @@ public:
  
    // Attributes
    void VisitAnnotateAttr(const AnnotateAttr *A);
@@ -24218,10 +24495,15 @@ index 6e30ffd6b..b7ad8c8d8 100644
  
  private:
    void AddDeclarationNameInfo(const Stmt *S);
-@@ -3172,6 +3200,53 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
+@@ -3172,6 +3201,58 @@ void EnqueueVisitor::VisitIfStmt(const IfStmt *If) {
    AddStmt(If->getInit());
    AddDecl(If->getConditionVariable());
  }
++
++void EnqueueVisitor::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  AddStmt(S->getBody());
++  AddStmt(S->getOperand());
++}
 +
 +void EnqueueVisitor::VisitObjC3BindingCondition(
 +    const ObjC3BindingCondition *S) {
@@ -24272,7 +24554,7 @@ index 6e30ffd6b..b7ad8c8d8 100644
  void EnqueueVisitor::VisitInitListExpr(const InitListExpr *IE) {
    // We care about the syntactic form of the initializer list, only.
    if (InitListExpr *Syntactic = IE->getSyntacticForm())
-@@ -3728,6 +3803,13 @@ void EnqueueVisitor::VisitAnnotateAttr(const AnnotateAttr *A) {
+@@ -3728,6 +3809,13 @@ void EnqueueVisitor::VisitAnnotateAttr(const AnnotateAttr *A) {
    EnqueueChildren(A);
  }
  
@@ -24287,10 +24569,10 @@ index 6e30ffd6b..b7ad8c8d8 100644
    EnqueueVisitor(WL, MakeCXCursor(S, StmtParent, TU, RegionOfInterest))
        .ConstStmtVisitor::Visit(S);
 diff --git a/clang/tools/libclang/CXCursor.cpp b/clang/tools/libclang/CXCursor.cpp
-index fb0b3c150..0ff03bcf5 100644
+index fb0b3c150..e48e62946 100644
 --- a/clang/tools/libclang/CXCursor.cpp
 +++ b/clang/tools/libclang/CXCursor.cpp
-@@ -185,9 +185,32 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
+@@ -185,9 +185,33 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
      break;
  
    case Stmt::IfStmtClass:
@@ -24299,6 +24581,7 @@ index fb0b3c150..0ff03bcf5 100644
      break;
  
 +  case Stmt::ObjC3BindingConditionClass:
++  case Stmt::ObjC3LifetimeStmtClass:
 +  case Stmt::ObjC3GuardStmtClass:
 +  case Stmt::ObjC3MatchArmClass:
 +  case Stmt::ObjC3MatchStmtClass:
@@ -24325,10 +24608,10 @@ index fb0b3c150..0ff03bcf5 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..6eae7a97b
+index 000000000..c39d815b6
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,589 @@
+@@ -0,0 +1,655 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -24918,6 +25201,72 @@ index 000000000..6eae7a97b
 +      false, false);
 +  EXPECT_TRUE(Context.IsEquivalent(Find(*Left), Find(*Right)));
 +}
++
++TEST(ObjC3LifetimeTooling, ImportsOwnersAndTraversesWrittenOperandOnce) {
++  constexpr llvm::StringLiteral Source = R"(
++    void observe(id);
++    void exercise(id source) {
++      keepAlive(source);
++      withLifetime(source) { observe(source); }
++    }
++  )";
++  auto From =
++      tooling::buildASTFromCodeWithArgs(Source, conditionArgs(), "life.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", conditionArgs(), "life-to.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(),
++      {{"life.mm", Source.str()}});
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(findExercise(*From));
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  class Visitor : public RecursiveASTVisitor<Visitor> {
++  public:
++    SmallVector<ObjC3LifetimeStmt *, 4> Lifetimes;
++    unsigned References = 0, Hidden = 0;
++    bool VisitObjC3LifetimeStmt(ObjC3LifetimeStmt *S) {
++      Lifetimes.push_back(S);
++      return true;
++    }
++    bool VisitVarDecl(VarDecl *V) {
++      Hidden += V->isImplicit();
++      return true;
++    }
++    bool VisitDeclRefExpr(DeclRefExpr *E) {
++      References += E->getDecl()->getName() == "source";
++      return true;
++    }
++  } V;
++  ASSERT_TRUE(V.TraverseStmt(Function->getBody()));
++  ASSERT_EQ(2u, V.Lifetimes.size());
++  EXPECT_EQ(3u, V.References);
++  EXPECT_EQ(0u, V.Hidden);
++  EXPECT_TRUE(V.Lifetimes[0]->isKeepAlive());
++  EXPECT_FALSE(V.Lifetimes[1]->isKeepAlive());
++  for (auto *S : V.Lifetimes) {
++    EXPECT_TRUE(S->getBindingDecl()->hasAttr<ObjCPreciseLifetimeAttr>());
++    EXPECT_TRUE(S->getBindingDecl()->hasAttr<ObjC3LifetimeBindingAttr>());
++    EXPECT_EQ(&To->getASTContext(), &S->getBindingDecl()->getASTContext());
++  }
++  Occurrences Index;
++  index::IndexingOptions Options;
++  Options.IndexFunctionLocals = true;
++  const Decl *Decls[] = {Function};
++  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(), Decls,
++                            Index, Options);
++  EXPECT_EQ(3u, Index.count("source", index::SymbolRole::Reference));
++  std::string Printed;
++  llvm::raw_string_ostream OS(Printed);
++  Function->getBody()->printPretty(OS, nullptr,
++                                   To->getASTContext().getPrintingPolicy());
++  EXPECT_NE(std::string::npos, Printed.find("keepAlive(source)"));
++  EXPECT_NE(std::string::npos, Printed.find("withLifetime(source)"));
++}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m
 new file mode 100644
 index 000000000..9f55af3f8
@@ -25474,10 +25823,10 @@ index 000000000..9f9f1ee5e
 +// CHECK: note: "source" binds here
 +// CHECK: 2 matches.
 diff --git a/clang/include/clang/ASTMatchers/ASTMatchers.h b/clang/include/clang/ASTMatchers/ASTMatchers.h
-index 8108ee559..c13441b09 100644
+index 8108ee559..9e48fd1e9 100644
 --- a/clang/include/clang/ASTMatchers/ASTMatchers.h
 +++ b/clang/include/clang/ASTMatchers/ASTMatchers.h
-@@ -2229,6 +2229,130 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
+@@ -2229,6 +2229,139 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
  /// \endcode
  extern const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
  
@@ -25488,6 +25837,15 @@ index 8108ee559..c13441b09 100644
 +/// Matches a native ObjC3 if-let or if-var statement.
 +extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
 +    objc3IfBindingStmt;
++
++/// Matches precise native lifetime control, preserving the written operand.
++extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3LifetimeStmt>
++    objc3LifetimeStmt;
++AST_MATCHER(ObjC3LifetimeStmt, isObjC3KeepAlive) { return Node.isKeepAlive(); }
++AST_MATCHER_P(ObjC3LifetimeStmt, hasObjC3LifetimeOperand,
++              internal::Matcher<Expr>, InnerMatcher) {
++  return InnerMatcher.matches(*Node.getOperand(), Finder, Builder);
++}
 +
 +/// Matches one optional binding in an ObjC3 condition list.
 +extern const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3BindingCondition>
@@ -25608,7 +25966,7 @@ index 8108ee559..c13441b09 100644
  /// Matches for statements.
  ///
  /// Example matches 'for (;;) {}'
-@@ -5729,26 +5853,33 @@ AST_POLYMORPHIC_MATCHER_P(
+@@ -5729,26 +5862,33 @@ AST_POLYMORPHIC_MATCHER_P(
            InnerMatcher.matches(*Condition, Finder, Builder));
  }
  
@@ -25647,10 +26005,10 @@ index 8108ee559..c13441b09 100644
    return (Else != nullptr && InnerMatcher.matches(*Else, Finder, Builder));
  }
 diff --git a/clang/lib/AST/ParentMapContext.cpp b/clang/lib/AST/ParentMapContext.cpp
-index 7138dffb4..92084afcd 100644
+index 7138dffb4..331dc54d4 100644
 --- a/clang/lib/AST/ParentMapContext.cpp
 +++ b/clang/lib/AST/ParentMapContext.cpp
-@@ -154,7 +154,16 @@ public:
+@@ -154,7 +154,17 @@ public:
  
          const auto *ParentExpr = ParentList[0].get<Expr>();
          if (ParentExpr && ChildExpr)
@@ -25662,13 +26020,14 @@ index 7138dffb4..92084afcd 100644
 +        if (ChildExpr) {
 +          auto SourceParents = skipObjC3BindingSnapshot(ParentList, ChildExpr);
 +          if (SourceParents.size() == 1 &&
-+              SourceParents[0].get<ObjC3BindingCondition>())
++              (SourceParents[0].get<ObjC3BindingCondition>() ||
++               SourceParents[0].get<ObjC3LifetimeStmt>()))
 +            return SourceParents;
 +        }
  
          {
            auto AncestorNodes =
-@@ -194,6 +203,24 @@ public:
+@@ -194,6 +204,40 @@ public:
      return getDynNodeFromMap(Node, OtherParents);
    }
  
@@ -25676,6 +26035,22 @@ index 7138dffb4..92084afcd 100644
 +                                           const Expr *Child) {
 +    if (ParentList.size() != 1)
 +      return ParentList;
++    auto Keep = matchParents<VarDecl, DeclStmt, ObjC3LifetimeStmt>(ParentList, this);
++    if (std::get<bool>(Keep)) {
++      const auto *Lifetime = std::get<const ObjC3LifetimeStmt *>(Keep);
++      if (Lifetime->getBindingDecl() == std::get<const VarDecl *>(Keep) &&
++          Lifetime->getOperand()->IgnoreUnlessSpelledInSource() == Child)
++        return std::get<DynTypedNodeList>(Keep);
++    }
++    auto Bounded = matchParents<VarDecl, DeclStmt, CompoundStmt,
++                                ObjC3LifetimeStmt>(ParentList, this);
++    if (std::get<bool>(Bounded)) {
++      const auto *Lifetime = std::get<const ObjC3LifetimeStmt *>(Bounded);
++      if (Lifetime->getStorage() == std::get<const CompoundStmt *>(Bounded) &&
++          Lifetime->getBindingDecl() == std::get<const VarDecl *>(Bounded) &&
++          Lifetime->getOperand()->IgnoreUnlessSpelledInSource() == Child)
++        return std::get<DynTypedNodeList>(Bounded);
++    }
 +    auto Ancestors = matchParents<VarDecl, DeclStmt, ObjC3BindingCondition>(
 +        ParentList, this);
 +    if (!std::get<bool>(Ancestors))
@@ -25694,14 +26069,25 @@ index 7138dffb4..92084afcd 100644
                                                       const Expr *Child) {
  
 diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
-index 004a02c27..24eb7d55e 100644
+index 004a02c27..0dd11d636 100644
 --- a/clang/lib/ASTMatchers/ASTMatchFinder.cpp
 +++ b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
-@@ -510,7 +510,24 @@ public:
+@@ -510,7 +510,35 @@ public:
    bool TraverseAttr(Attr *AttrNode);
  
    bool dataTraverseNode(Stmt *S, DataRecursionQueue *Queue) {
 -    if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
++    if (auto *Lifetime = dyn_cast<ObjC3LifetimeStmt>(S)) {
++      {
++        ASTNodeNotAsIsSourceScope RAII(this, true);
++        if (!TraverseStmt(Lifetime->getOperand())) return false;
++      }
++      {
++        ASTNodeNotSpelledInSourceScope RAII(this, true);
++        if (!TraverseStmt(Lifetime->getBindingStatement())) return false;
++      }
++      return TraverseStmt(Lifetime->getBody());
++    }
 +    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(S)) {
 +      {
 +        // The source expression is written by the user, although its owning
@@ -25724,13 +26110,14 @@ index 004a02c27..24eb7d55e 100644
          ASTNodeNotAsIsSourceScope RAII(this, true);
          TraverseStmt(RF->getInit());
 diff --git a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
-index 5cbf13462..8f96f9d7f 100644
+index 5cbf13462..e1d4885b6 100644
 --- a/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
 +++ b/clang/lib/ASTMatchers/ASTMatchersInternal.cpp
-@@ -941,6 +941,28 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, DependentScopeDeclRefExpr>
+@@ -941,6 +941,29 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, DependentScopeDeclRefExpr>
  const internal::VariadicDynCastAllOfMatcher<Stmt, ObjCIvarRefExpr> objcIvarRefExpr;
  const internal::VariadicDynCastAllOfMatcher<Stmt, BlockExpr> blockExpr;
  const internal::VariadicDynCastAllOfMatcher<Stmt, IfStmt> ifStmt;
++const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3LifetimeStmt> objc3LifetimeStmt;
 +const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3GuardStmt> objc3GuardStmt;
 +const internal::VariadicDynCastAllOfMatcher<Stmt, ObjC3IfBindingStmt>
 +    objc3IfBindingStmt;
@@ -25757,13 +26144,16 @@ index 5cbf13462..8f96f9d7f 100644
  const internal::VariadicDynCastAllOfMatcher<Stmt, CXXForRangeStmt>
      cxxForRangeStmt;
 diff --git a/clang/lib/ASTMatchers/Dynamic/Registry.cpp b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
-index a04070971..29d303b64 100644
+index a04070971..7cc86e8a6 100644
 --- a/clang/lib/ASTMatchers/Dynamic/Registry.cpp
 +++ b/clang/lib/ASTMatchers/Dynamic/Registry.cpp
-@@ -386,6 +386,24 @@ RegistryMaps::RegistryMaps() {
+@@ -386,6 +386,27 @@ RegistryMaps::RegistryMaps() {
    REGISTER_MATCHER(hasUnqualifiedLoc);
    REGISTER_MATCHER(hasValueType);
    REGISTER_MATCHER(ifStmt);
++  REGISTER_MATCHER(objc3LifetimeStmt);
++  REGISTER_MATCHER(isObjC3KeepAlive);
++  REGISTER_MATCHER(hasObjC3LifetimeOperand);
 +  REGISTER_MATCHER(objc3GuardStmt);
 +  REGISTER_MATCHER(objc3IfBindingStmt);
 +  REGISTER_MATCHER(objc3BindingCondition);
@@ -25875,10 +26265,10 @@ index 013bb912d..f9d8cd8a8 100644
        "varDecl", constructMatcher("hasInitializer", constructMatcher("stmt")))
 diff --git a/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
 new file mode 100644
-index 000000000..c3195afc0
+index 000000000..6dcb1f806
 --- /dev/null
 +++ b/clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,206 @@
 +//===--- ObjC3MatchersTest.cpp - Native ObjC3 matcher consumers -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -26064,6 +26454,27 @@ index 000000000..c3195afc0
 +            match(objc3MatchArm(hasObjC3Binding(varDecl(hasName("payload")))), C)
 +                .size());
 +}
++
++TEST(ObjC3Matchers, LifetimeOwnersExposeWrittenReferencesAndParents) {
++  auto AST = buildObjC3AST(R"(
++    void example(id source) { keepAlive(source); withLifetime(source) {} }
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto &Ctx = AST->getASTContext();
++  EXPECT_EQ(1u, match(objc3LifetimeStmt(isObjC3KeepAlive()), Ctx).size());
++  EXPECT_EQ(1u,
++            match(objc3LifetimeStmt(unless(isObjC3KeepAlive())), Ctx).size());
++  EXPECT_EQ(2u, match(objc3LifetimeStmt(hasObjC3LifetimeOperand(
++                          declRefExpr(to(parmVarDecl(hasName("source")))))),
++                      Ctx)
++                    .size());
++  auto Written = match(traverse(TK_IgnoreUnlessSpelledInSource,
++                                declRefExpr(to(parmVarDecl(hasName("source"))),
++                                            hasParent(objc3LifetimeStmt()))),
++                       Ctx);
++  EXPECT_EQ(2u, Written.size());
++}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-aliases.mm b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
 new file mode 100644
 index 000000000..9e52a88b8
@@ -26211,7 +26622,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..1dd4e79c9 100644
+index 2c62f46d4..dedfdcb72 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -26290,6 +26701,21 @@ index 2c62f46d4..1dd4e79c9 100644
  def CmseNSEntry : InheritableAttr, TargetSpecificAttr<TargetARM> {
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
+@@ -2922,6 +2977,14 @@ def ObjCIndependentClass : InheritableAttr {
+   let Documentation = [Undocumented];
+ }
+ 
++// Semantic binding owned by withLifetime/keepAlive, including MRC retention.
++def ObjC3LifetimeBinding : InheritableAttr {
++  let Spellings = [];
++  let SemaHandler = 0;
++  let Subjects = SubjectList<[LocalVar]>;
++  let Documentation = [InternalOnly];
++}
++
+ def ObjCPreciseLifetime : InheritableAttr {
+   let Spellings = [Clang<"objc_precise_lifetime">];
+   let Subjects = SubjectList<[Var], ErrorDiag>;
 diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
 index 0fe41671c..796b2ff2d 100644
 --- a/clang/include/clang/Basic/AttrDocs.td
@@ -26707,7 +27133,7 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..a7b1316a3
+index 000000000..b6d37fb1b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
 @@ -0,0 +1,546 @@
@@ -26742,8 +27168,8 @@ index 000000000..a7b1316a3
 +void clang::handleObjC3ResourceTypeAttr(Sema &S, Decl *D,
 +                                        const ParsedAttr &Attribute) {
 +  auto Reject = [&](SourceLocation Location, StringRef Message) {
-+    S.Diag(Location, S.getDiagnostics().getCustomDiagID(
-+                         DiagnosticsEngine::Error, Message));
++    S.Diag(Location, S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                         DiagnosticIDs::Error, Message));
 +    D->setInvalidDecl();
 +  };
 +  auto *Alias = dyn_cast<TypedefNameDecl>(D);
@@ -30469,10 +30895,10 @@ index 000000000..b994669e2
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp b/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp
 new file mode 100644
-index 000000000..06fe27dec
+index 000000000..4c5f0dba4
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3NonlocalJumps.cpp
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,195 @@
 +//===--- SemaObjC3NonlocalJumps.cpp - Scope-exit nonlocal transfers --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Resources.h"
@@ -30628,7 +31054,8 @@ index 000000000..06fe27dec
 +    for (auto [Variable, Owner] : Scopes.Variables)
 +      if (!Variable->isInvalidDecl() &&
 +          (Variable->hasAttr<CleanupAttr>() || Variable->hasAttr<ObjCCleanupAttr>() ||
-+           Variable->hasAttr<ObjCResourceAttr>()))
++           Variable->hasAttr<ObjCResourceAttr>() ||
++           Variable->hasAttr<ObjC3LifetimeBindingAttr>()))
 +        Registrations.push_back({owner(Owner), Variable->getInit(),
 +                                 Variable->getLocation()});
 +    llvm::stable_sort(Registrations, [&](const Action &Left, const Action &Right) {
@@ -30669,10 +31096,10 @@ index 000000000..06fe27dec
 +}
 diff --git a/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
 new file mode 100644
-index 000000000..4870a5922
+index 000000000..654755f39
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,106 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=compatibility -fsyntax-only -verify=compat %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict -fsyntax-only -verify=strict %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc3-profile=strict-system -fsyntax-only -verify=strict %s
@@ -30759,6 +31186,26 @@ index 000000000..4870a5922
 +}
 +}
 +#endif
++
++void skips_precise_owner(id owner, void **target) {
++  keepAlive(owner); // strict-note {{scope-exit action registered here}}
++  __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++}
++void skips_bounded_owner(id owner, void **target) {
++  withLifetime(owner) { // strict-note {{scope-exit action registered here}}
++    __builtin_longjmp(target, 1); // strict-error {{non-local jump may bypass a registered cleanup action}}
++  }
++}
++void completed_precise_owner(id owner, void **target) {
++  { keepAlive(owner); }
++  withLifetime(owner) {}
++  __builtin_longjmp(target, 1);
++}
++void local_preserves_precise_owner(id owner) {
++  void *target[5];
++  keepAlive(owner);
++  if (__builtin_setjmp(target) == 0) __builtin_longjmp(target, 1);
++}
 diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
 new file mode 100644
 index 000000000..47e198904
@@ -31074,4 +31521,84 @@ index 000000000..79ab42fb6
 +#ifdef __cplusplus
 +using UsingFD = FD;
 +UsingFD alias_return(void) { UsingFD value = open_fd(); return value; }
++#endif
+diff --git a/clang/test/ObjC3/AST/Inputs/lifetime-control.h b/clang/test/ObjC3/AST/Inputs/lifetime-control.h
+new file mode 100644
+index 000000000..271a2919a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/lifetime-control.h
+@@ -0,0 +1,9 @@
++static inline void pch_lifetime(id owner) {
++  keepAlive(owner);
++  withLifetime(owner) { keepAlive(owner); }
++}
++#ifdef __cplusplus
++template<class T> void pch_lifetime_template(T value) {
++  withLifetime(value) { keepAlive(value); }
++}
++#endif
+diff --git a/clang/test/ObjC3/AST/lifetime-control-pch.m b/clang/test/ObjC3/AST/lifetime-control-pch.m
+new file mode 100644
+index 000000000..78b7345e1
+--- /dev/null
++++ b/clang/test/ObjC3/AST/lifetime-control-pch.m
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.c.pch %S/Inputs/lifetime-control.h
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.c.pch -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/lifetime-control.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.cxx.pch -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++void pch_consumer(id owner) {
++  pch_lifetime(owner);
++#ifdef __cplusplus
++  pch_lifetime_template(owner);
++#endif
++}
+diff --git a/clang/test/ObjC3/Sema/lifetime-control.m b/clang/test/ObjC3/Sema/lifetime-control.m
+new file mode 100644
+index 000000000..53d505ba1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/lifetime-control.m
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++id produce(void);
++void use(id);
++void valid(id owner, void (^block)(void), int enabled) {
++  keepAlive(owner);
++  withLifetime(produce()) { use(owner); }
++  withLifetime(block) block();
++  if (enabled) keepAlive(owner); else use(owner);
++  for (int n = 0; n != 2; ++n) withLifetime(produce()) {
++    if (enabled) continue;
++    break;
++  }
++  withLifetime((produce(), owner)) { keepAlive(produce()); }
++}
++void invalid(int number, void *pointer) {
++  keepAlive(number); // expected-error {{explicit lifetime control requires an Objective-C object or block}}
++  withLifetime(pointer) {} // expected-error {{explicit lifetime control requires an Objective-C object or block}}
++  keepAlive(use((id)0)); // expected-error {{explicit lifetime control requires an Objective-C object or block}}
++}
++void bypass(id owner) {
++  goto after; // expected-error {{cannot jump from this goto statement to its label}}
++  keepAlive(owner); // expected-note {{jump bypasses initialization of a precise lifetime binding}}
++ after:;
++}
++void enter_body(id owner) {
++  goto inside; // expected-error {{cannot jump from this goto statement to its label}}
++  withLifetime(owner) { // expected-note {{jump bypasses initialization of a precise lifetime binding}}
++   inside: use(owner);
++  }
++}
++void unbraced_siblings(id owner, int enabled) {
++  if (enabled) keepAlive(owner); else { goto done; done:; }
++}
++#ifdef __cplusplus
++template <class T> void dependent(T value) {
++  withLifetime(value) { keepAlive(value); }
++}
++template void dependent<id>(id);
 +#endif

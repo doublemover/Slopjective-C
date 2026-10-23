@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     if(mode == 2) { cpp_double_exception(); return 82; }
 #endif
     resource_ordering();
+    lifetime_ordering();
 #if __has_feature(objc_arc)
     arc_ordering();
 #endif

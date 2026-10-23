@@ -1046,3 +1046,117 @@ static void arc_ordering(void) {
 #endif
 }
 #endif
+
+// Explicit lifetime owners are strong under ARC and MRC. Releasing the source
+// owner inside the region proves that the hidden binding owns an independent
+// reference, while deallocation events prove its cleanup boundary.
+static int lifetime_alive, lifetime_evaluations;
+__attribute__((objc_root_class))
+@interface LifetimeProbe { Class isa; }
++ (id)new;
+@end
+@implementation LifetimeProbe
++ (id)new { ++lifetime_alive; return class_createInstance(self, 0); }
+- (void)dealloc { --lifetime_alive; record(3); object_dispose(self); }
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+static void lifetime_check(void) {
+  if(lifetime_alive != 1)bad=91;
+}
+static int lifetime_bounded(int exit_kind) {
+  LifetimeProbe *owner = [LifetimeProbe new];
+  withLifetime((++lifetime_evaluations, owner)) {
+    defer { lifetime_check(); record(2); }
+#if !__has_feature(objc_arc)
+    objc_release(owner);
+#endif
+    owner = (LifetimeProbe *)0;
+    lifetime_check(); record(1);
+    if(exit_kind == 1)return 7;
+    if(exit_kind == 2)@throw token;
+    if(exit_kind == 3)goto done;
+#ifdef __cplusplus
+    if(exit_kind == 4)throw 42;
+#endif
+  }
+ done:
+  record(4);
+  if(lifetime_alive)bad=92;
+  return 8;
+}
+static void lifetime_kept(int throw_now) {
+  LifetimeProbe *owner = [LifetimeProbe new];
+  defer { lifetime_check(); record(1); }
+  keepAlive((++lifetime_evaluations, owner));
+#if !__has_feature(objc_arc)
+  objc_release(owner);
+#endif
+  owner = (LifetimeProbe *)0;
+  lifetime_check(); record(2);
+  if(throw_now)@throw token;
+}
+static void lifetime_iterations(void) {
+  for(int n=0;n!=3;++n) {
+    LifetimeProbe *owner = [LifetimeProbe new];
+    withLifetime(owner) {
+#if !__has_feature(objc_arc)
+      objc_release(owner);
+#endif
+      owner = (LifetimeProbe *)0;
+      lifetime_check(); record(1);
+      if(n==0)continue;
+      if(n==1)break;
+    }
+  }
+  if(lifetime_alive)bad=93;
+}
+#ifdef __cplusplus
+struct LifetimeFinish {
+  ~LifetimeFinish() noexcept(false) { record(2); throw 42; }
+};
+static void lifetime_failed_full_expression(int bounded) {
+  LifetimeProbe *owner = [LifetimeProbe new];
+  try {
+    defer { lifetime_check(); record(1); }
+    if(bounded) { withLifetime((LifetimeFinish(), owner)) { bad=101; } }
+    else { keepAlive((LifetimeFinish(), owner)); bad=101; }
+  } catch(int value) { if(value!=42)bad=102; record(4); }
+#if !__has_feature(objc_arc)
+  objc_release(owner);
+#endif
+  owner=(LifetimeProbe *)0;
+  if(lifetime_alive)bad=103;
+}
+#endif
+static void lifetime_ordering(void) {
+  lifetime_evaluations=0;
+  if(lifetime_bounded(0)!=8)bad=94; expect(1234);
+  if(lifetime_bounded(1)!=7)bad=95; expect(123);
+  @try { lifetime_bounded(2); bad=96; }
+  @catch(id error) { if(error!=token)bad=96; record(4); }
+  expect(1234);
+  if(lifetime_bounded(3)!=8)bad=97; expect(1234);
+#ifdef __cplusplus
+  try { lifetime_bounded(4); bad=98; }
+  catch(int value) { if(value!=42)bad=98; record(4); }
+  expect(1234);
+#endif
+  lifetime_kept(0); expect(213);
+  @try { lifetime_kept(1); bad=99; }
+  @catch(id error) { if(error!=token)bad=99; record(4); }
+  expect(2134);
+  lifetime_iterations(); expect(1313);
+#ifdef __cplusplus
+  lifetime_failed_full_expression(0); expect(2143);
+  lifetime_failed_full_expression(1); expect(2143);
+#endif
+  if(lifetime_alive || lifetime_evaluations !=
+#ifdef __cplusplus
+      7
+#else
+      6
+#endif
+      )bad=100;
+}

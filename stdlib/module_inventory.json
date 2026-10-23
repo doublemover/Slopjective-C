@@ -141,10 +141,11 @@
         "Linux file-descriptor adoption, duplication and exact-once close",
         "heap-buffer allocation, adoption and free",
         "native typedef cleanup/family/sentinel contracts",
-        "explicit Strict System import gate"
+        "explicit Strict System import gate",
+        "native withLifetime/keepAlive precise owner bindings"
       ],
       "remaining": [
-        "borrow/lifetime intrinsics",
+        "borrowed-pointer contracts, owner provenance and escape checking",
         "complete strict-system diagnostics and ownership boundaries"
       ]
     }

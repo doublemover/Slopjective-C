@@ -82,8 +82,8 @@ remain independent.
 Native Objective-C async definitions, public spawn/isolation/Sendable, complete
 strict profiles and native AArch64 qualification remain outstanding. Reference
 optional access follows Part 3 v1, which deliberately excludes scalar/struct
-optional chaining. Borrow/lifetime and explicit capture rules from Part 8 remain
-outstanding. Resource field annotations are deliberately rejected in v1 under
+optional chaining. Borrowed-pointer provenance, escape checking and explicit capture rules from
+Part 8 remain outstanding. Resource field annotations are deliberately rejected in v1 under
 Part 8 §8.3.6; aggregate-resource lowering is a separate v2 capability.
 
 The unvalidated implementation batch adds contextual public `take`, `reset`
@@ -229,5 +229,35 @@ is not retried after EINTR, and retains its cancellation/exception behavior.
 The maintained stdlib gate now includes twelve system execution configurations,
 three ownership rejections per language/ownership pair, and rejection of imports
 outside Strict System. These are authored checks awaiting combined validation;
-no new PASS, SDK or profile claim is recorded. Borrow/lifetime intrinsics and
-complete diagnostics remain in the inventory's remaining list.
+no new PASS, SDK or profile claim is recorded. Borrowed-pointer contracts,
+escape checking and complete diagnostics remain in the inventory's remaining
+list.
+
+## Development explicit lifetime control
+
+The next source milestone implements Part 8.6 `withLifetime(expr) stmt` and
+`keepAlive(expr);` as native statement nodes. Each operand is evaluated once
+and initialized into an implicit precise owner. Bounded owners end after the
+statement; kept owners end with the current lexical scope. Object and Block
+operands are supported. MRC acquires an independent reference even for an
+already owned operand; ARC uses a precise strong binding. Explicit bindings
+register cleanup on exceptional exits as well as normal returns and jumps.
+Source release queues keep these owners alive until explicit scope actions
+finish, including defers registered before `keepAlive`.
+
+The node, implicit declaration and source operand survive templates, PCH and
+AST import. Source traversal, indexing, printing, native/dynamic matchers and
+source-parent lookup expose the written operand once. CFGs have an explicit
+precise-owner release element even without optional destructor/lifetime flags.
+Protected jumps and strict non-local jump diagnostics include these owners.
+Path-sensitive symbolic analysis still reports an explicit unsupported boundary;
+block-copy, throwing initializer temporary and general managed EH CFG
+restrictions are not claimed resolved. An initialization guard releases a
+completed owner if destruction of a full-expression temporary throws before the
+permanent lexical cleanup can be registered.
+
+New semantic, IR, source/PCH, import/index, matcher, CFG-ordering and runtime
+witnesses cover these semantics. Focused source compilation also repaired two
+resource-prefix parser API mismatches and one resource diagnostic helper from
+the preceding implementation batch. Compiler relinking and execution of the
+new native fixtures remain pending; SDK/archive qualification remains paused.
