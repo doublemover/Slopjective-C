@@ -422,6 +422,50 @@ void canonical_executor_defaults() {
   }
   objc3_executor_release(global);
 }
+
+struct ActorJoinProbe {
+  objc3_actor_t *actor{};
+  objc3_service_status status{OBJC3_SERVICE_CLOSED};
+};
+void cross_executor_actor_join(void *opaque) {
+  auto &probe = *static_cast<ActorJoinProbe *>(opaque);
+  probe.status = objc3_actor_join(probe.actor);
+}
+void empty_actor_job(void *) {}
+void actor_join_does_not_block_another_executor() {
+  objc3_executor_t *worker = nullptr, *manual = nullptr;
+  assert(objc3_executor_create(0, &worker) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &manual) == OBJC3_SERVICE_OK);
+  Gate gate;
+  assert(objc3_executor_enqueue(worker, gate_callback, &gate) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock lock(gate.mutex);
+    assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
+                                 [&] { return gate.entered; }));
+  }
+  ActorJoinProbe probe;
+  assert(objc3_actor_create(worker, &probe.actor) == OBJC3_SERVICE_OK);
+  objc3_actor_hop_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_enqueue(probe.actor, empty_actor_job, nullptr, nullptr,
+                              &facts) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(probe.actor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_enqueue(manual, cross_executor_actor_join, &probe) ==
+         OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(manual, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && probe.status == OBJC3_SERVICE_NOT_READY);
+  {
+    std::lock_guard lock(gate.mutex);
+    gate.open = true;
+    gate.changed.notify_all();
+  }
+  assert(objc3_actor_join(probe.actor) == OBJC3_SERVICE_OK);
+  objc3_actor_release(probe.actor);
+  objc3_executor_release(manual);
+  objc3_executor_release(worker);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -436,5 +480,6 @@ void test_actor_scheduling() {
                     ContinuationLoss::ThrowingResume})
     lost_continuation_cancels_descendants(loss);
   canonical_executor_defaults();
+  actor_join_does_not_block_another_executor();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }

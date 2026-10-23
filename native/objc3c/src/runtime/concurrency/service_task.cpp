@@ -985,7 +985,8 @@ extern "C" objc3_service_status objc3_task_wait(objc3_task_t *task) {
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   if (!task->terminal && (current_service_task == task ||
-      objc3::services::executor_current_identity() != 0)) {
+      objc3::services::executor_current_identity() != 0 ||
+      (task->executor && task->executor->manual))) {
     lock.unlock();
     objc3_task_internal_release(task);
     return OBJC3_SERVICE_NOT_READY;

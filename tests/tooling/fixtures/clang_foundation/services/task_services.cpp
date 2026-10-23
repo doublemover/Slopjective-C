@@ -284,6 +284,8 @@ void test_task_pending_self_wait_returns_not_ready() {
   options.destroy = destroy_frame;
   objc3_task_t *task = nullptr;
   assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  // The owner of a manual destination must remain able to pump its work.
+  assert(objc3_task_wait(task) == OBJC3_SERVICE_NOT_READY);
   uint32_t executed = 0;
   assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
   assert(executed == 1 && destroyed == 1);
@@ -1053,6 +1055,29 @@ void release_public_group_reference(void *opaque) {
   task_group_release(released);
 }
 
+void test_completed_group_registration_survives_reentrant_last_owner_release() {
+  using namespace objc3::services;
+  auto *executor = manual_executor();
+  std::atomic<int> destroyed{0};
+  auto *task = start_task(executor, new Frame{executor, 0, 0, false, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(complete_with_int_error(task, 321) == OBJC3_SERVICE_OK);
+  assert(destroyed == 1);
+  TaskGroup *group = nullptr;
+  assert(task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  DropGroupReferenceOnce drop{&group};
+  task_group_test_set_failure_propagation_hook(release_public_group_reference,
+                                               &drop);
+  // The terminal observer runs inside add(), drops the last caller owner, and
+  // releases its own association before add() finishes registration cleanup.
+  const auto status = task_group_add_task(group, task);
+  task_group_test_set_failure_propagation_hook(nullptr, nullptr);
+  assert(status == OBJC3_SERVICE_OK && drop.dropped && !group);
+  objc3_task_release(task);
+  objc3_executor_release(executor);
+}
+
 void test_group_failure_release_defers_reentrant_destruction_until_unlocked() {
   using namespace objc3::services;
   auto *executor = manual_executor();
@@ -1663,6 +1688,7 @@ void test_actor_scheduling();
 
 int main() {
   test_actor_scheduling();
+  test_completed_group_registration_survives_reentrant_last_owner_release();
   test_same_executor_pending_wait_returns_not_ready();
   test_task_pending_self_wait_returns_not_ready();
   test_zero_payload_and_reentry();

@@ -214,8 +214,9 @@ objc3_task_copy_result(objc3_task_t *task,
                        const objc3_async_result_type *expected_type,
                        const objc3_value_ops *consumer_ops, void *destination);
 /* wait blocks until terminal completion; it does not pump a manual executor.
- * A pending wait from the task itself or any runtime executor callback returns
- * NOT_READY so queued task work can continue. Completed waits remain valid. */
+ * A pending manual-task wait, or a pending wait from the task itself or any
+ * runtime executor callback, returns NOT_READY so queued task work can continue.
+ * Completed waits remain valid. */
 objc3_service_status objc3_task_wait(objc3_task_t *task);
 
 /* Move-only lazy frame carrier shared by C, Objective-C and C++. The frame
@@ -366,8 +367,9 @@ objc3_service_status objc3_actor_enqueue(objc3_actor_t *actor,
                                         objc3_actor_hop_facts *out_facts);
 objc3_service_status objc3_actor_close(objc3_actor_t *actor);
 objc3_service_status objc3_actor_cancel(objc3_actor_t *actor);
-/* join includes context cleanup. Active jobs finish cooperatively. Manual or
- * current-executor pending waits return NOT_READY; a callback cannot join its
+/* join includes context cleanup. Active jobs finish cooperatively. Pending
+ * manual waits or waits from any runtime executor callback return NOT_READY;
+ * a callback cannot join its
  * own actor. Last caller release cancels unexecuted mailbox jobs. */
 objc3_service_status objc3_actor_join(objc3_actor_t *actor);
 objc3_service_status objc3_actor_current_facts(objc3_current_actor_facts *out_facts);

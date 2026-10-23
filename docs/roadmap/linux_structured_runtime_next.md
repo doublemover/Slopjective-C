@@ -75,3 +75,21 @@ global worker execution, and releasing all client handles while shared work is
 pending. Compiler attributes and imported isolation metadata can now identify
 these real destinations, but implicit cross-executor call lowering remains a
 compiler responsibility. Validation is deferred.
+
+## Operation lifetime and nonblocking runtime waits
+
+Group registration, recursive close, blocking completion iteration, and join
+hold operation leases separately from their task observers. In particular,
+registering an already-terminal task can invoke a synchronous failure observer
+which releases the last caller group reference. Registration bookkeeping still
+owns the group until it finishes. Group join keeps that ownership through native
+frame and callback quiescence after task completion publication. Actor joins
+likewise keep an internal operation lease while context cleanup finishes.
+
+Pending task waits on manual destinations return `NOT_READY`, allowing the owner
+to pump. Pending actor joins and the internal blocking group-next operation also
+return `NOT_READY` from any runtime executor callback, including a different
+executor. Such callbacks may be needed to unblock the target's future work.
+Completed observations remain immediately available. Authored witnesses cover
+reentrant last-owner release during terminal registration, manual-task waits,
+and a pending cross-executor actor join. Execution remains deferred.

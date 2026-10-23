@@ -91,6 +91,12 @@ TaskGroup *retain_if_alive(TaskGroup *group) {
   return group;
 }
 
+struct GroupOperationLease final {
+  TaskGroup *group;
+  explicit GroupOperationLease(TaskGroup *value) : group(retain_if_alive(value)) {}
+  ~GroupOperationLease() { task_group_release(group); }
+};
+
 TaskGroup *retain_parent(TaskGroup *group, bool *retain_failed = nullptr) {
   if (retain_failed) *retain_failed = false;
   if (!group->parent_link) return nullptr;
@@ -524,6 +530,11 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
 
 objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
   if (!group || !task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  // Registering an already-terminal task invokes its observer synchronously.
+  // That observer can dispatch user cleanup which drops the caller's last
+  // group owner before registration bookkeeping below has finished.
+  GroupOperationLease operation(group);
+  if (!operation.group) return OBJC3_SERVICE_NOT_READY;
   auto *observer = new (std::nothrow) ObserverContext{group, task};
   if (!observer) return OBJC3_SERVICE_OUT_OF_MEMORY;
   std::shared_ptr<ObjC3TaskQuiescenceObserver> quiescence;
@@ -610,6 +621,8 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
 
 objc3_service_status task_group_close(TaskGroup *group) {
   if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  GroupOperationLease operation(group);
+  if (!operation.group) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(group->mutex);
   group->closed = true;
   size_t index = 0;
@@ -640,6 +653,8 @@ objc3_service_status task_group_next_completed(TaskGroup *group,
                                                objc3_task_t **out_task) {
   if (!group || !out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
+  GroupOperationLease operation(group);
+  if (!operation.group) return OBJC3_SERVICE_NOT_READY;
   objc3_task_t *current = objc3_task_current_callback();
   if (current && contains_task(group, current)) {
     std::lock_guard<std::mutex> lock(group->mutex);
@@ -655,6 +670,7 @@ objc3_service_status task_group_next_completed(TaskGroup *group,
     const auto result = take_completed_locked(group, out_task, &available);
     if (result != OBJC3_SERVICE_NOT_READY || available || group->failure_propagation_failed)
       return result;
+    if (executor_current_identity() != 0) return OBJC3_SERVICE_NOT_READY;
     group->changed.wait(lock, [group] {
       if (group->failure_propagation_failed) return true;
       if (group->closed && all_tasks_complete_locked(group)) return true;
@@ -677,6 +693,11 @@ objc3_service_status task_group_try_next_completed(TaskGroup *group,
 
 objc3_service_status task_group_join(TaskGroup *group) {
   if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  // Completion observers own their association only through publication,
+  // whereas join also waits for native frame and callback cleanup. Keep the
+  // group record alive throughout that longer quiescence operation.
+  GroupOperationLease operation(group);
+  if (!operation.group) return OBJC3_SERVICE_NOT_READY;
   objc3_task_t *current = objc3_task_current_callback();
   if (current && contains_task(group, current)) return OBJC3_SERVICE_NOT_READY;
 
