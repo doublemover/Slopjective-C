@@ -14,7 +14,9 @@ extern "C" {
 
 enum objc3_keypath_flags_v2 {
   OBJC3_KEYPATH_WRITABLE = 1u << 0,
-  OBJC3_KEYPATH_KVC_COMPATIBLE = 1u << 1
+  OBJC3_KEYPATH_KVC_COMPATIBLE = 1u << 1,
+  /* Readonly chain; a missing intermediate returns a nullable object/Block. */
+  OBJC3_KEYPATH_NULLABLE_TRAVERSAL = 1u << 2
 };
 enum objc3_keypath_component_flags_v2 {
   OBJC3_KEYPATH_COMPONENT_READONLY = 1u << 0,
@@ -24,7 +26,9 @@ enum objc3_keypath_component_flags_v2 {
   OBJC3_KEYPATH_COMPONENT_STRONG = 1u << 4,
   OBJC3_KEYPATH_COMPONENT_ATOMIC = 1u << 5,
   OBJC3_KEYPATH_COMPONENT_NONNULL = 1u << 6,
-  OBJC3_KEYPATH_COMPONENT_RECORD_FIELD = 1u << 7
+  OBJC3_KEYPATH_COMPONENT_RECORD_FIELD = 1u << 7,
+  OBJC3_KEYPATH_COMPONENT_RETAINABLE = 1u << 8,
+  OBJC3_KEYPATH_COMPONENT_GETTER_RETURNS_RETAINED = 1u << 9
 };
 
 typedef struct objc3_keypath_component_v2 {

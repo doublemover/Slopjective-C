@@ -17,17 +17,19 @@ extern "C" int objc3_keypath_validate_v2(
       !present(descriptor->root_type) || !present(descriptor->value_type) ||
       !present(descriptor->path) ||
       (descriptor->flags & ~(OBJC3_KEYPATH_WRITABLE |
-                             OBJC3_KEYPATH_KVC_COMPATIBLE)))
+                             OBJC3_KEYPATH_KVC_COMPATIBLE |
+                             OBJC3_KEYPATH_NULLABLE_TRAVERSAL)))
     return OBJC3_KEYPATH_INVALID_METADATA;
   std::string_view remaining(descriptor->path);
   bool writable = true;
+  bool nullable_traversal = false;
   for (uint64_t i = 0; i < descriptor->component_count; ++i) {
     const auto &component = descriptor->components[i];
     if (!present(component.owner_type) || !present(component.declaration_owner) ||
         !present(component.member) ||
         !present(component.value_type) || !component.getter_selector ||
         !component.setter_selector || component.reserved ||
-        (component.flags & ~((1u << 8) - 1)) ||
+        (component.flags & ~((1u << 10) - 1)) ||
         ((component.flags & OBJC3_KEYPATH_COMPONENT_NULLABLE) &&
          (component.flags & OBJC3_KEYPATH_COMPONENT_NONNULL)))
       return OBJC3_KEYPATH_INVALID_METADATA;
@@ -35,12 +37,16 @@ extern "C" int objc3_keypath_validate_v2(
     const bool field = component.flags & OBJC3_KEYPATH_COMPONENT_RECORD_FIELD;
     if (field) {
       if (!i || *component.getter_selector || *component.setter_selector ||
+          (component.flags & OBJC3_KEYPATH_COMPONENT_GETTER_RETURNS_RETAINED) ||
           (descriptor->flags & OBJC3_KEYPATH_KVC_COMPATIBLE))
         return OBJC3_KEYPATH_INVALID_METADATA;
     } else if (!*component.getter_selector ||
                readonly != !*component.setter_selector) {
       return OBJC3_KEYPATH_INVALID_METADATA;
     }
+    if ((component.flags & OBJC3_KEYPATH_COMPONENT_GETTER_RETURNS_RETAINED) &&
+        !(component.flags & OBJC3_KEYPATH_COMPONENT_RETAINABLE))
+      return OBJC3_KEYPATH_INVALID_METADATA;
     writable &= !readonly;
     if (i && !same(descriptor->components[i - 1].value_type,
                     component.owner_type))
@@ -49,9 +55,9 @@ extern "C" int objc3_keypath_validate_v2(
     if (!remaining.starts_with(member)) return OBJC3_KEYPATH_INVALID_METADATA;
     remaining.remove_prefix(member.size());
     if (i + 1 < descriptor->component_count) {
-      if (remaining.empty() || remaining.front() != '.' ||
-          (component.flags & OBJC3_KEYPATH_COMPONENT_NULLABLE))
+      if (remaining.empty() || remaining.front() != '.')
         return OBJC3_KEYPATH_INVALID_METADATA;
+      nullable_traversal |= component.flags & OBJC3_KEYPATH_COMPONENT_NULLABLE;
       remaining.remove_prefix(1);
     }
   }
@@ -59,8 +65,18 @@ extern "C" int objc3_keypath_validate_v2(
       !same(descriptor->root_type, descriptor->components[0].owner_type) ||
       !same(descriptor->value_type,
             descriptor->components[descriptor->component_count - 1].value_type) ||
-      (!!(descriptor->flags & OBJC3_KEYPATH_WRITABLE) != writable))
+      (!!(descriptor->flags & OBJC3_KEYPATH_NULLABLE_TRAVERSAL) !=
+       nullable_traversal) ||
+      (!!(descriptor->flags & OBJC3_KEYPATH_WRITABLE) !=
+       (writable && !nullable_traversal)))
     return OBJC3_KEYPATH_INVALID_METADATA;
+  if (nullable_traversal) {
+    const auto flags =
+        descriptor->components[descriptor->component_count - 1].flags;
+    if (!(flags & OBJC3_KEYPATH_COMPONENT_NULLABLE) ||
+        !(flags & OBJC3_KEYPATH_COMPONENT_RETAINABLE))
+      return OBJC3_KEYPATH_INVALID_METADATA;
+  }
   return OBJC3_KEYPATH_OK;
 }
 

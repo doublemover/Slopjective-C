@@ -8,6 +8,6 @@
   "ownership": "arc",
   "provider_ownership": "arc",
   "exports": ["PackagePathRoot", "PackagePathPair", "package_count_path",
-              "package_identity_path", "package_field_path"],
+              "package_identity_path", "package_field_path", "package_narrowed_path"],
   "dependencies": []
 }

@@ -88,6 +88,106 @@ int main(void) {
     assert(root.count == 1 && child.count == 43);
     KeyPathSet(runtime_nested_path(), root, 42);
 
+    // A root snapshot remains alive while a later setter operand releases
+    // the source owner, then dies after the enclosing full expression.
+    int destroyed_before_snapshot = path_destroyed;
+    RuntimePathNode *snapshot_owner = [RuntimePathNode newWithCount:5];
+#if __has_feature(objc_arc)
+    __weak RuntimePathNode *snapshot_witness = snapshot_owner;
+    KeyPathSet(@keypath(RuntimePathNode, count), snapshot_owner,
+        (snapshot_owner = nil,
+         assert(snapshot_witness != nil), 6));
+    assert(snapshot_witness == nil);
+#else
+    KeyPathSet(@keypath(RuntimePathNode, count), snapshot_owner,
+        (objc_release(snapshot_owner),
+         assert(path_destroyed == destroyed_before_snapshot), 6));
+#endif
+    assert(path_destroyed == destroyed_before_snapshot + 1);
+    snapshot_owner = [RuntimePathNode newWithCount:7];
+#if __has_feature(objc_arc)
+    snapshot_witness = snapshot_owner;
+#endif
+    destroyed_before_snapshot = path_destroyed;
+    @try {
+      KeyPathSet(@keypath(RuntimePathNode, count), snapshot_owner, ({
+#if __has_feature(objc_arc)
+        snapshot_owner = nil;
+        assert(snapshot_witness != nil);
+#else
+        objc_release(snapshot_owner);
+        assert(path_destroyed == destroyed_before_snapshot);
+#endif
+        @throw root;
+        8;
+      }));
+      assert(0);
+    } @catch (RuntimePathNode *failure) {
+      assert(failure == root);
+    }
+    assert(path_destroyed == destroyed_before_snapshot + 1);
+#if __has_feature(objc_arc)
+    assert(snapshot_witness == nil);
+#endif
+
+    // Nullable chains are readonly and preserve their final nullable type.
+    KeyPath<RuntimePathNode *, RuntimePathNode * _Nullable> optional_path =
+        @keypath(RuntimePathNode, optionalNext.optionalValue);
+    path_optional_reads = path_value_reads = 0;
+    assert(KeyPathGet(optional_path, root) == nil);
+    assert(path_optional_reads == 1 && path_value_reads == 0);
+    root.optionalNext = child;
+    path_optional_reads = path_value_reads = 0;
+    assert(KeyPathGet(@keypath(RuntimePathNode,
+        optionalNext.optionalNext.optionalValue), root) == nil);
+    assert(path_optional_reads == 2 && path_value_reads == 0);
+    RuntimePathNode *leaf = [RuntimePathNode newWithCount:9];
+    child.optionalValue = leaf;
+    path_optional_reads = path_value_reads = 0;
+    assert(KeyPathGet(optional_path, root) == leaf);
+    assert(path_optional_reads == 1 && path_value_reads == 1);
+    const objc3_keypath_descriptor_v2 *optional_metadata =
+        KeyPathMetadata(optional_path);
+    assert(objc3_keypath_validate_v2(optional_metadata) == 0);
+    assert((optional_metadata->flags & OBJC3_KEYPATH_NULLABLE_TRAVERSAL) &&
+           !(optional_metadata->flags & OBJC3_KEYPATH_WRITABLE));
+    path_throw_optional_value = 1;
+    @try {
+      (void)KeyPathGet(optional_path, root);
+      assert(0);
+    } @catch (RuntimePathNode *failure) {
+      assert(failure == child);
+    }
+    path_throw_optional_value = 0;
+    int callback_value = 73;
+    child.callback = ^{ return callback_value; };
+    callback_value = 0;
+    PathCallback callback = KeyPathGet(
+        @keypath(RuntimePathNode, optionalNext.callback), root);
+    assert(callback && callback() == 73);
+    root.optionalNext = nil;
+    path_callback_reads = 0;
+    assert(KeyPathGet(@keypath(RuntimePathNode, optionalNext.callback), root) == nil);
+    assert(path_callback_reads == 0);
+    child.callback = nil;
+    child.optionalValue = nil;
+#if !__has_feature(objc_arc)
+    objc_release(leaf);
+#endif
+
+    // Native +1 getter results normalize to the ordinary +0 KeyPathGet
+    // convention under MRC; the inner pool witnesses the balancing release.
+    int destroyed_before_owned_getter = path_destroyed;
+    @autoreleasepool {
+      RuntimePathNode *produced =
+          KeyPathGet(@keypath(RuntimePathNode, produced), root);
+      assert(produced && produced.count == root.count);
+      assert(objc3_keypath_component_v2_at(
+          KeyPathMetadata(@keypath(RuntimePathNode, produced)), 0, &part) == 0);
+      assert(part->flags & OBJC3_KEYPATH_COMPONENT_GETTER_RETURNS_RETAINED);
+    }
+    assert(path_destroyed == destroyed_before_owned_getter + 1);
+
     PathPair pair = {21, 22};
     KeyPathSet(runtime_pair_path(), root, pair);
     PathPair actual = KeyPathGet(runtime_pair_path(), root);

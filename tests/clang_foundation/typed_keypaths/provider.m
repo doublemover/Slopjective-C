@@ -6,6 +6,8 @@ int path_child_reads, path_count_reads, path_count_sets;
 int path_copies, path_destroyed;
 int path_pair_reads, path_pair_sets;
 int path_throw_pair_getter, path_throw_pair_setter;
+int path_optional_reads, path_value_reads, path_callback_reads;
+int path_throw_optional_value;
 
 @implementation RuntimePathNode
 @synthesize copied = _copied;
@@ -40,6 +42,46 @@ int path_throw_pair_getter, path_throw_pair_setter;
   _child = child;
 #endif
 }
+- (RuntimePathNode *)readOptionalNext {
+  ++path_optional_reads;
+  return _optionalNext;
+}
+- (void)writeOptionalNext:(RuntimePathNode *)value {
+#if __has_feature(objc_arc)
+  _optionalNext = value;
+#else
+  value = objc_retain(value);
+  objc_release(_optionalNext);
+  _optionalNext = value;
+#endif
+}
+- (RuntimePathNode *)readOptionalValue {
+  ++path_value_reads;
+  if (path_throw_optional_value) @throw self;
+  return _optionalValue;
+}
+- (void)writeOptionalValue:(RuntimePathNode *)value {
+#if __has_feature(objc_arc)
+  _optionalValue = value;
+#else
+  value = objc_retain(value);
+  objc_release(_optionalValue);
+  _optionalValue = value;
+#endif
+}
+- (PathCallback)readCallback { ++path_callback_reads; return _callback; }
+- (void)writeCallback:(PathCallback)value {
+#if __has_feature(objc_arc)
+  _callback = value;
+#else
+  PathCallback copy = Block_copy(value);
+  Block_release(_callback);
+  _callback = copy;
+#endif
+}
+- (RuntimePathNode *)ownedValue {
+  return [RuntimePathNode newWithCount:_count];
+}
 - (id)copyWithZone:(void *)zone {
   (void)zone;
   ++path_copies;
@@ -54,6 +96,9 @@ int path_throw_pair_getter, path_throw_pair_setter;
 #if !__has_feature(objc_arc)
   objc_release(_child);
   objc_release(_copied);
+  objc_release(_optionalNext);
+  objc_release(_optionalValue);
+  Block_release(_callback);
 #endif
   object_dispose(self);
 }

@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 0u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 1u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -14,16 +14,22 @@
  *
  * KeyPathGet(kp, root), KeyPathSet(kp, root, value), KeyPathMetadata(kp), and
  * KeyPathAsReadOnly(kp) are compiler-owned applications. Each written operand
- * is evaluated once. Accessors use ordinary Objective-C dispatch, ownership,
- * and declared nullability. KeyPathSet requires a WritableKeyPath value.
+ * is evaluated once in source order. Retainable operands have independent
+ * precise lifetime snapshots through the enclosing full expression, including
+ * native exception unwinding in ARC and MRC. Accessors use ordinary
+ * Objective-C dispatch, ownership, and declared nullability. KeyPathSet requires a WritableKeyPath value.
  * A native record-field set reads one property snapshot, updates the field,
  * and writes that snapshot through the original setter exactly once. The
  * receiver remains alive through that complete read/modify/write operation.
  *
  * Metadata is immutable and valid for the lifetime of its native image. No
- * registry, reset generation, integer handle, or root retain is involved.
- * Nullable intermediate properties require explicit optional handling and
- * are rejected by the current literal grammar. KVC string boxing and the
- * optional root[kp] spelling are outside this module's current surface. */
+ * literal construction uses no registry, reset generation, integer handle,
+ * or captured root owner.
+ * Nullable intermediates are supported only for readonly traversal to a
+ * nullable Objective-C object or Block result. The first missing intermediate
+ * returns nil without evaluating later components. Such paths never permit
+ * KeyPathSet, even when individual component properties have setters.
+ * Nonnull/scalar/aggregate results through nullable intermediates diagnose.
+ * KVC string boxing and optional root[kp] syntax remain outside this surface. */
 
 #endif
