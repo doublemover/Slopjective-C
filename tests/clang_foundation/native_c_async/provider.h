@@ -16,6 +16,7 @@ objc3_async_frame native_c_complex_value(native_c_complex value);
 objc3_async_frame native_c_empty(int *cleanups);
 objc3_async_frame native_c_external_leaf(int value);
 objc3_async_frame native_c_roundtrip(int value);
+objc3_async_frame native_c_oom_parent(void);
 #else
 int native_c_leaf(int value, int *cleanups) __objc3_async_frame;
 int native_c_chain(int count, int *cleanups) __objc3_async_frame;
@@ -25,7 +26,9 @@ native_c_complex native_c_complex_value(native_c_complex value) __objc3_async_fr
 void native_c_empty(int *cleanups) __objc3_async_frame;
 int native_c_external_leaf(int value) __objc3_async_frame;
 int native_c_roundtrip(int value) __objc3_async_frame;
+int native_c_oom_parent(void) __objc3_async_frame;
 #endif
+objc3_async_frame native_c_force_oom(void);
 objc3_async_frame native_c_make_method_frame(int mode, int *destroyed);
 objc3_async_frame native_c_make_block_frame(int value, int *destroyed);
 objc3_async_frame native_c_make_nil_frame(void);

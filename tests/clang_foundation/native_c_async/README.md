@@ -2,8 +2,12 @@
 
 These files are authored development fixtures; execution is intentionally delayed.
 Compile `provider.m` as Objective-C 3 C17 with blocks and native Objective-C
-exceptions enabled. Link `foreign.cpp` into each client; it exports a C frame
-from a C++ coroutine for cross-language await/error transport. Exercise ARC and MRC provider/consumer pairs, O0/O2, source
+exceptions enabled. Link `foreign.cpp` and `allocation_failure.m` into each
+client. The C++ file exports a C frame for cross-language await/error transport.
+The allocation interposer rejects one native factory allocation per thread and
+checks typed lazy OOM carriers, abandonment, cancellation before first resume,
+and OOM identity through C and C++ parents. Exercise ARC and MRC
+provider/consumer pairs, O0/O2, source
 inclusion and a PCH of `provider.h`.
 
 `client.m` consumes logical async declarations and the C runtime API. It checks

@@ -160,6 +160,32 @@ int main(void) {
     objc3_actor_release(actor);
   }
   references(executor);
+  objc3_async_frame abandoned_oom = native_c_force_oom();
+  assert(objc3_async_frame_validate(&abandoned_oom) == OBJC3_SERVICE_OK);
+  assert(objc3_async_frame_dispose(&abandoned_oom) == OBJC3_SERVICE_OK);
+  for (int nested = 0; nested != 2; ++nested) {
+    objc3_async_frame failed = nested ? native_c_oom_parent() : native_c_force_oom();
+    assert(objc3_async_frame_validate(&failed) == OBJC3_SERVICE_OK);
+    objc3_task_t *task = start(&failed, executor, 0);
+    finish(task, executor);
+    objc3_completion completion = {0};
+    assert(objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_OK);
+    assert(completion.kind == OBJC3_COMPLETION_ERROR && completion.error);
+    objc3_service_status original = OBJC3_SERVICE_OK;
+    assert(objc3_async_error_get_service(completion.error, &original) == OBJC3_SERVICE_OK);
+    assert(original == OBJC3_SERVICE_OUT_OF_MEMORY);
+    objc3_task_release(task);
+  }
+  // Cancellation before the first resume remains cancellation, including for
+  // an allocation-failure carrier; the source body must never execute.
+  objc3_async_frame cancelled_oom = native_c_force_oom();
+  objc3_task_t *cancelled = start(&cancelled_oom, executor, 0);
+  objc3_task_request_cancel(cancelled);
+  finish(cancelled, executor);
+  int untouched = 13;
+  assert(objc3_task_copy_result(cancelled, &int_type, &int_ops, &untouched) == OBJC3_SERVICE_CANCELLED);
+  assert(untouched == 13);
+  objc3_task_release(cancelled);
   objc3_executor_release(executor);
   return 0;
 }

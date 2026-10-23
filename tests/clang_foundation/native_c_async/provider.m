@@ -1,6 +1,10 @@
 #ifndef NATIVE_C_ASYNC_PROVIDER_H
 #include "provider.h"
 #endif
+int native_c_oom_source(void) __objc3_async_frame __asm__("native_c_force_oom");
+int native_c_oom_parent(void) __objc3_async {
+  return __objc3_await native_c_oom_source();
+}
 static void cleaned(int *count) {
   if (count) __atomic_fetch_add(count, 1, __ATOMIC_RELEASE);
 }

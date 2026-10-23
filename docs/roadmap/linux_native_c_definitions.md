@@ -30,8 +30,11 @@ objc3_async_frame pending = total(8);
 LLVM coroutine splitting supplies resume and destruction states and promotes
 live automatic storage into the allocated frame. Allocation observes the frame's
 computed alignment, including over-aligned parameter and local storage.
-Allocation failure returns an empty carrier; failed runtime starts preserve a
-successfully constructed carrier's ownership.
+Allocation failure returns a valid typed lazy failure frame backed by static
+context and allocation-independent callbacks. Starting it publishes the original
+`OUT_OF_MEMORY` service error; disposal runs a no-op destructor without touching
+source storage. Genuine cancellation observed before its resume remains a
+cancellation completion. Failed runtime starts preserve the carrier's ownership.
 
 The initial suspension occurs after frame capture initialization and before the
 source body. Value parameters are copied into independent frame storage. ARC

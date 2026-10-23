@@ -90,5 +90,16 @@ int main() {
     }
     assert(failed);
   }
+  for (int nested = 0; nested != 2; ++nested) {
+    auto failed_frame = nested ? native_c_oom_parent() : native_c_force_oom();
+    auto failed = objc3::task<int>::from_native(&failed_frame).start(executor);
+    failed.wait();
+    bool original_oom = false;
+    try { (void)failed.result(); }
+    catch (const objc3::service_failure &error) {
+      original_oom = error.status() == OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+    assert(original_oom);
+  }
   objc3_executor_release(executor);
 }

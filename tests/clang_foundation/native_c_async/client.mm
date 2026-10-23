@@ -32,6 +32,7 @@ int recover_frame(id<NativeCError> error) __objc3_async {
 int nil_frame() __objc3_async {
   return __objc3_await [(NativeCAsyncWorker *)0 value:1];
 }
+int allocation_error() __objc3_async { return __objc3_await native_c_oom_parent(); }
 int foreign_error() __objc3_async { return __objc3_await native_c_roundtrip(-1); }
 struct native_c_pair pair_frame() __objc3_async {
   return __objc3_await native_c_pair_value({40, 2.0});
@@ -84,6 +85,14 @@ int main() {
       service = error.status() == OBJC3_SERVICE_INVALID_ARGUMENT;
     }
     assert(service);
+    auto oom = allocation_error().start(executor);
+    oom.wait();
+    bool allocation_status = false;
+    try { (void)oom.result(); }
+    catch (const objc3::service_failure &error) {
+      allocation_status = error.status() == OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+    assert(allocation_status);
     auto foreign = foreign_error().start(executor);
     foreign.wait();
     bool original = false;
