@@ -140,6 +140,40 @@ static void capture_object_suite(void) {
 #endif
 }
 
+#if __has_feature(objc_arc)
+static void capture_carrier_move_suite(void) {
+  int before = capture_destroyed;
+  {
+    CaptureObject *owner = [CaptureObject make:74];
+    Optional(id) source = Some(id, owner);
+    owner = (id)0;
+    CaptureIntBlock stack = ^[move source] {
+      guard let object = source else { return -1; }
+      return object ? ((CaptureObject *)object)->value : -2;
+    };
+    // Tags remain valid; ownership-bearing source leaves are now nil.
+    guard let moved_from = source else { ++capture_failures; return; }
+    CAPTURE_CHECK(moved_from == (id)0 && stack() == 74);
+    CaptureIntBlock heap = [stack copy];
+    CAPTURE_CHECK(heap() == 74 && capture_destroyed == before);
+    heap = (id)0;
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 1);
+  {
+    CaptureObject *owner = [CaptureObject make:75];
+    Optional(id __weak) source = Some(id __weak, owner);
+    CaptureIntBlock weak = [^[move source] {
+      guard let object = source else { return -1; }
+      return object ? ((CaptureObject *)object)->value : -2;
+    } copy];
+    guard let moved_from = source else { ++capture_failures; return; }
+    CAPTURE_CHECK(moved_from == (id)0 && weak() == 75);
+    owner = (id)0;
+    CAPTURE_CHECK(weak() == -2 && capture_destroyed == before + 2);
+  }
+}
+#endif
+
 static CaptureIntBlock capture_make_resource(void) {
   int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 7;
   CaptureIntBlock stack = ^[move handle] { return handle; };
@@ -236,6 +270,9 @@ static void capture_cpp_suite(void) {
 static void capture_suite(void) {
   capture_scalar_suite();
   capture_object_suite();
+#if __has_feature(objc_arc)
+  capture_carrier_move_suite();
+#endif
   capture_resource_suite();
 #ifdef __cplusplus
   capture_cpp_suite();

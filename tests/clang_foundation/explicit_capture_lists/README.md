@@ -6,7 +6,8 @@ span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
 - `runtime.h` / `main.m`: creation snapshots, unused/contextual captures,
   explicit `__block` snapshots, ARC/MRC ownership, weak zeroing, resource heap
   copies, address cleanup, sentinels, templates, C++ object move/copy separation
-  and capture evaluation order.
+  and capture evaluation order. ARC cases also move strong/weak Optional payloads
+  and verify their source fields and weak registrations remain safe.
 - `exceptions.mm`: a later C++ constructor fails during literal construction or
   heap copying, including a throwing move constructor; completed object/resource
   captures clean up exactly once.

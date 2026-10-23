@@ -74,6 +74,17 @@ void semantics(const fs::path &Root, BaseLanguage Language,
   };
   for (const auto &Source : Accepted)
     expect(request(Root, Source, Language, Standard, ARC), true);
+  if (ARC) {
+    expect(request(Root,
+        "void f(id x){Optional(id) v=Some(id,x);invoke(^[move v]{(void)v;});}",
+        Language, Standard, ARC), true);
+    expect(request(Root,
+        "void f(id x){Optional(id __weak) v=Some(id __weak,x);invoke(^[move v]{(void)v;});}",
+        Language, Standard, ARC), true);
+    expect(request(Root,
+        "void f(id x){Optional(id const) v=Some(id const,x);invoke(^[move v]{});}",
+        Language, Standard, ARC), false, "mutable, nonresource payloads");
+  }
   expect(request(Root,
       "void f(id x){ invoke(^[weak x]{(void)x;}); }", Language, Standard, ARC),
       ARC, ARC ? "" : "requires automatic reference counting");

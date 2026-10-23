@@ -42,6 +42,13 @@ separately owned +1: their destination acquires a reference before source
 nil-ing, and any independently held manual ownership remains the caller's
 responsibility. The runtime witness covers that +0-alias case.
 
+Qualified Linux ARC Optional/Result moves reuse the existing active-arm storage
+operations in C17 and C++20/C++23. They move strong/weak leaves, clear remaining
+selected scalar/unsafe leaves, and retain valid source discriminants. Nested
+const, volatile or resource-contracted payloads and unqualified/mixed carrier
+shapes remain rejected. Later Block copies use the existing owned-carrier copy
+contract.
+
 ## Resource ownership across Block copies
 
 An explicit move from a validated `objc_resource` local creates a private,
@@ -98,7 +105,8 @@ callbacks, sentinels, left-to-right C++ capture effects, construction failure,
 heap-copy rollback and IR ownership operations. They are authored evidence,
 not passing results.
 
-Remaining boundaries include carrier move captures, potentially
+Remaining boundaries include unqualified/mixed/C++ carrier move captures,
+potentially
 throwing resource final disposal, broad exceptional CFG capture admission and
 end-to-end validation of the combined native compiler packets. Borrowed escape
 and concurrent-transfer admission are implemented by their owning slices and
