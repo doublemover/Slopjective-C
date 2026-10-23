@@ -34,3 +34,18 @@ execution is deferred. Public service ABI layouts and versions are unchanged.
 Cancellation ancestry is a cancellation relationship. The shared task API still
 requires callers to join owned work explicitly; it does not introduce automatic
 structured scope finalization or compiler actor isolation.
+
+## Lost continuations and frame cleanup
+
+Actor-discarded resumes, deferred dispatch failures, and last-owner abandonment
+now publish task cancellation and request cancellation of structured descendants
+before terminalizing the unreachable parent. A child that has hopped to a
+different executor is still reached. The active resume flag continues protecting
+native frame access until the originating callback and its autorelease pool have
+finished. An unexpected exception from a resume callback is contained and follows
+the same cancellation cleanup path, rather than stranding the frame silently.
+
+Maintained fixtures author abandoned-parent, cancelled-actor, closed-hop, and
+throwing-resume witnesses. They check descendant wakes on another executor,
+exactly-once frame cleanup, and harmless late dependency notifications. These
+paths remain subject to the deferred validation phase.

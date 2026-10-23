@@ -87,6 +87,9 @@ struct ResumeDispatch {
 };
 
 void cancel_task(objc3_task_t *task) noexcept {
+  // Forced loss of a continuation is cancellation of the task's structured
+  // work too. Publish descendant flags/wakes before reporting this outcome.
+  objc3_task_request_cancel(task);
   objc3_completion cancelled{};
   cancelled.struct_size = sizeof(cancelled);
   cancelled.version = OBJC3_SERVICE_ABI_VERSION;
@@ -167,11 +170,7 @@ void wake_awaiting_task(objc3_task_t *task) noexcept {
   const auto status = objc3_task_schedule_resume(task);
   if (status == OBJC3_SERVICE_OK || status == OBJC3_SERVICE_ALREADY_COMPLETED)
     return;
-  objc3_completion cancelled{};
-  cancelled.struct_size = sizeof(cancelled);
-  cancelled.version = OBJC3_SERVICE_ABI_VERSION;
-  cancelled.kind = OBJC3_COMPLETION_CANCELLED;
-  (void)objc3_task_complete(task, &cancelled);
+  cancel_task(task);
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
@@ -401,11 +400,7 @@ void objc3_task_internal_release(objc3_task_t *task) {
     if (needs_cancel) {
       // Keep the record alive across cancellation callbacks and their reentry.
       task->references.store(1, std::memory_order_release);
-      objc3_completion cancelled{};
-      cancelled.struct_size = sizeof(cancelled);
-      cancelled.version = OBJC3_SERVICE_ABI_VERSION;
-      cancelled.kind = OBJC3_COMPLETION_CANCELLED;
-      (void)objc3_task_complete(task, &cancelled);
+      cancel_task(task);
       objc3_task_internal_release(task);
     } else {
       delete task;
@@ -1139,6 +1134,7 @@ void objc3_service_run_task_resume(void *context) {
   auto *task = static_cast<objc3_task_t *>(context);
   void *frame = nullptr;
   objc3_task_resume resume = nullptr;
+  bool resume_failed = false;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->resume_queued = false;
@@ -1154,8 +1150,13 @@ void objc3_service_run_task_resume(void *context) {
     // another worker that can resume immediately. The destination's outer
     // callback pool alone would drain too late for that handoff.
     objc3::services::CallbackAutoreleasePool pool;
-    try { resume(task, frame); } catch (...) {}
+    try { resume(task, frame); } catch (...) { resume_failed = true; }
   }
+  // A callback violates the C contract if it throws. Contain that failure
+  // without leaving a live frame suspended with no reachable continuation.
+  // Keep resume_active until the common cleanup path, so cancellation
+  // observers cannot destroy the native frame before this slice has ended.
+  if (resume_failed) cancel_task(task);
   void *frame_to_destroy = nullptr;
   objc3_frame_destroy frame_destructor = nullptr;
   ResumeDispatch *rejected = nullptr;

@@ -496,7 +496,8 @@ static void tree_assert_kind(objc3_task_t *task, objc3_completion_kind kind) {
   assert(completion.kind == kind);
 }
 static void child_cancellation(int cancel_before_spawn, int cancel_child_only,
-                                int release_completed_middle) {
+                                int release_completed_middle,
+                                int abandon_parent) {
   CancellationTree tree = ZERO_INIT;
   tree.complete_middle = release_completed_middle;
   assert(objc3_executor_create(1, &tree.executor) == OBJC3_SERVICE_OK);
@@ -516,18 +517,23 @@ static void child_cancellation(int cancel_before_spawn, int cancel_child_only,
     objc3_task_release(tree.tasks[1]);
     tree.tasks[1] = NULL;
   }
-  if (!cancel_before_spawn)
+  if (abandon_parent) {
+    objc3_task_release(tree.tasks[0]);
+    tree.tasks[0] = NULL;
+    assert(tree.destroyed[0] == 1);
+  } else if (!cancel_before_spawn)
     objc3_task_request_cancel(tree.tasks[cancel_child_only ? 1 : 0]);
   /* Cancellation is visible throughout the tree before any queued continuation
    * runs. Child cancellation never travels upward or sideways. */
-  assert(objc3_task_is_cancel_requested(tree.tasks[0]) == !cancel_child_only);
+  if (tree.tasks[0])
+    assert(objc3_task_is_cancel_requested(tree.tasks[0]) == !cancel_child_only);
   assert(objc3_task_is_cancel_requested(tree.tasks[2]) == !cancel_child_only);
   assert(objc3_task_is_cancel_requested(tree.tasks[3]));
   assert(!objc3_task_is_cancel_requested(tree.tasks[4]));
   assert(!objc3_task_is_cancel_requested(tree.dependency));
   tree_pump(&tree);
   tree_assert_kind(tree.tasks[3], OBJC3_COMPLETION_CANCELLED);
-  if (!cancel_child_only)
+  if (!cancel_child_only && tree.tasks[0])
     tree_assert_kind(tree.tasks[0], OBJC3_COMPLETION_CANCELLED);
   objc3_task_request_cancel(tree.tasks[0]); /* idempotent and cancels siblings */
   tree_pump(&tree);
@@ -545,9 +551,10 @@ int main(void) {
   groups();
   actors();
   task_hops();
-  child_cancellation(1, 0, 0);
-  child_cancellation(0, 0, 0);
-  child_cancellation(0, 1, 0);
-  child_cancellation(0, 0, 1);
+  child_cancellation(1, 0, 0, 0);
+  child_cancellation(0, 0, 0, 0);
+  child_cancellation(0, 1, 0, 0);
+  child_cancellation(0, 0, 1, 0);
+  child_cancellation(0, 0, 0, 1);
   return 0;
 }

@@ -229,6 +229,111 @@ void child_registration_after_worker_cancellation() {
   objc3_task_release(parent);
   objc3_executor_release(executor);
 }
+
+enum class ContinuationLoss { ActorDiscard, ClosedHop, ThrowingResume };
+struct LostContinuation {
+  objc3_executor_t *other{};
+  objc3_actor_t *closed_destination{};
+  objc3_task_t *dependency{}, *child{};
+  unsigned parent_resumes{0}, child_resumes{0};
+  unsigned parent_destroyed{0}, child_destroyed{0};
+  ContinuationLoss loss{};
+};
+void lost_dependency_resume(objc3_task_t *, void *) {}
+void lost_child_destroy(void *opaque) {
+  ++static_cast<LostContinuation *>(opaque)->child_destroyed;
+}
+void lost_parent_destroy(void *opaque) {
+  ++static_cast<LostContinuation *>(opaque)->parent_destroyed;
+}
+void lost_child_resume(objc3_task_t *task, void *opaque) {
+  auto &state = *static_cast<LostContinuation *>(opaque);
+  if (state.child_resumes++ == 0) {
+    assert(objc3_task_hop(task, state.other, nullptr) == OBJC3_SERVICE_OK);
+  } else if (!objc3_task_is_cancel_requested(task)) {
+    assert(objc3_task_await(task, state.dependency) == OBJC3_SERVICE_OK);
+  } else {
+    complete_cancelled(task);
+  }
+}
+void lost_parent_resume(objc3_task_t *task, void *opaque) {
+  auto &state = *static_cast<LostContinuation *>(opaque);
+  if (state.parent_resumes++ == 0) {
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.frame = &state;
+    options.resume = lost_child_resume;
+    options.destroy = lost_child_destroy;
+    assert(objc3_task_start_child(task, &options, &state.child) == OBJC3_SERVICE_OK);
+    assert(objc3_task_await(task, state.dependency) == OBJC3_SERVICE_OK);
+    return;
+  }
+  if (state.loss == ContinuationLoss::ThrowingResume) throw 17;
+  assert(state.loss == ContinuationLoss::ClosedHop);
+  assert(objc3_task_hop(task, nullptr, state.closed_destination) ==
+         OBJC3_SERVICE_OK);
+}
+void lost_continuation_cancels_descendants(ContinuationLoss loss) {
+  LostContinuation state;
+  state.loss = loss;
+  objc3_executor_t *executor = nullptr;
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &state.other) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &state.closed_destination) ==
+         OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(state.closed_destination) == OBJC3_SERVICE_OK);
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.resume = lost_dependency_resume;
+  assert(objc3_task_start(&options, &state.dependency) == OBJC3_SERVICE_OK);
+  options.executor = nullptr;
+  options.actor = actor;
+  options.frame = &state;
+  options.resume = lost_parent_resume;
+  options.destroy = lost_parent_destroy;
+  objc3_task_t *parent = nullptr;
+  assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 16, &executed) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(state.other, 16, &executed) == OBJC3_SERVICE_OK);
+  assert(state.parent_resumes == 1 && state.child_resumes == 2);
+  assert(objc3_task_schedule_resume(parent) == OBJC3_SERVICE_OK);
+  if (loss == ContinuationLoss::ActorDiscard)
+    assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 16, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  assert(objc3_task_get_completion(parent, &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+  assert(objc3_task_is_cancel_requested(parent));
+  assert(objc3_task_is_cancel_requested(state.child));
+  assert(state.parent_destroyed == 1);
+  assert(objc3_executor_pump(state.other, 16, &executed) == OBJC3_SERVICE_OK);
+  assert(objc3_task_wait_quiescent(state.child) == OBJC3_SERVICE_OK);
+  assert(state.child_destroyed == 1 && state.child_resumes == 3);
+  completion = {};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_SUCCESS;
+  assert(objc3_task_complete(state.dependency, &completion) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 16, &executed) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(state.other, 16, &executed) == OBJC3_SERVICE_OK);
+  assert(state.parent_destroyed == 1 && state.child_destroyed == 1);
+  objc3_task_release(parent);
+  objc3_task_release(state.child);
+  objc3_task_release(state.dependency);
+  assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(state.closed_destination) == OBJC3_SERVICE_OK);
+  objc3_actor_release(state.closed_destination);
+  objc3_actor_release(actor);
+  objc3_executor_release(state.other);
+  objc3_executor_release(executor);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -239,5 +344,8 @@ void test_actor_scheduling() {
   }
   exercise(true, true, false, false, true);
   child_registration_after_worker_cancellation();
+  for (auto loss : {ContinuationLoss::ActorDiscard, ContinuationLoss::ClosedHop,
+                    ContinuationLoss::ThrowingResume})
+    lost_continuation_cancels_descendants(loss);
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }
