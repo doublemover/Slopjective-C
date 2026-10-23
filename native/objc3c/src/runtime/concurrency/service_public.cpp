@@ -139,6 +139,17 @@ uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor) {
   return services::actor_executor_identity(
       handle<const services::Actor>(actor));
 }
+objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
+                                               objc3_executor_t **out_executor) {
+  if (!out_executor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_executor = nullptr;
+  if (!actor) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  auto *executor = objc3_executor_retain(
+      services::actor_executor(handle<services::Actor>(actor)));
+  if (!executor) return OBJC3_SERVICE_NOT_READY;
+  *out_executor = executor;
+  return OBJC3_SERVICE_OK;
+}
 objc3_service_status objc3_actor_enqueue(objc3_actor_t *actor,
                                          objc3_actor_job job, void *context,
                                          objc3_actor_context_destroy destroy,

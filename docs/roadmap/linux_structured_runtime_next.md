@@ -241,3 +241,12 @@ pending mailbox cleanup, independent retained lookups, conflicting concurrent
 registration, and closed-old-mailbox rebinding witnesses. Its existing
 instrumented native-runtime source list includes the new member. Validation
 and installed symbol/package qualification remain deferred.
+
+`objc3_actor_get_executor(actor, &executor)` returns the actor's exact immutable
+backing destination with an independent retained lease, including after mailbox
+closure. Its identity agrees with `objc3_actor_executor_identity`; sharing a
+backing executor never proves that distinct actor instances share isolation.
+Compiler entry lowering can compare this destination against canonical
+main/global/named affinity before entering an explicitly bound actor. Authored
+witnesses cover concurrent queries, distinct actors on one destination, and
+using the retained executor after all actor/caller executor handles are gone.

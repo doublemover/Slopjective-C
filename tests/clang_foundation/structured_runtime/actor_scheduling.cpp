@@ -687,6 +687,49 @@ void named_retirement_releases_executor_outside_registry_lock() {
   retire.join();
   assert(retired == OBJC3_SERVICE_OK && probe.queried);
 }
+
+void retained_actor_executor_preserves_exact_backing_identity() {
+  objc3_executor_t *backing = nullptr, *found = nullptr;
+  objc3_actor_t *first = nullptr, *second = nullptr;
+  assert(objc3_executor_create(1, &backing) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(backing, &first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(backing, &second) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_get_executor(nullptr, &found) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(!found);
+  assert(objc3_actor_get_executor(first, nullptr) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_actor_identity(first) != objc3_actor_identity(second));
+  const auto identity = objc3_executor_identity(backing);
+  std::thread queries[8];
+  for (unsigned index = 0; index != 8; ++index) {
+    queries[index] = std::thread([&, index] {
+      auto *actor = index % 2 ? first : second;
+      for (unsigned turn = 0; turn != 64; ++turn) {
+        objc3_executor_t *lease = nullptr;
+        assert(objc3_actor_get_executor(actor, &lease) == OBJC3_SERVICE_OK);
+        assert(lease == backing && objc3_executor_identity(lease) == identity);
+        assert(objc3_actor_executor_identity(actor) == identity);
+        objc3_executor_release(lease);
+      }
+    });
+  }
+  for (auto &query : queries) query.join();
+  assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_get_executor(first, &found) == OBJC3_SERVICE_OK);
+  objc3_executor_release(backing);
+  objc3_actor_release(first);
+  objc3_actor_release(second);
+  // The query's independent lease keeps the destination live after both
+  // mailbox lifetimes finish, without merging their distinct actor identities.
+  assert(objc3_executor_identity(found) == identity);
+  std::atomic<unsigned> callbacks{0};
+  assert(objc3_executor_enqueue(found, [](void *opaque) {
+    ++*static_cast<std::atomic<unsigned> *>(opaque);
+  }, &callbacks) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(found, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && callbacks == 1);
+  objc3_executor_release(found);
+}
 } // namespace
 
 void test_actor_scheduling() {
@@ -705,5 +748,6 @@ void test_actor_scheduling() {
   global_pool_preserves_actor_and_task_exclusion();
   named_executor_identity_and_registration_races();
   named_retirement_releases_executor_outside_registry_lock();
+  retained_actor_executor_preserves_exact_backing_identity();
   assert(pool_depth == 0 && pool_pushes == pool_pops);
 }

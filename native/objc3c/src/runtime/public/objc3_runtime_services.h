@@ -415,6 +415,13 @@ objc3_actor_t *objc3_actor_retain(objc3_actor_t *actor);
 void objc3_actor_release(objc3_actor_t *actor);
 uint64_t objc3_actor_identity(const objc3_actor_t *actor);
 uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor);
+/* Return one retained immutable backing destination, including for a closed
+ * actor. Its identity equals actor_executor_identity; this proves executor
+ * affinity only, never equivalence of distinct actor mailboxes. Clears output
+ * on failure. The caller keeps actor alive for this query and releases the
+ * returned executor independently. */
+objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
+                                               objc3_executor_t **out_executor);
 /* Explicit Objective-C object association. Binding retains both the live object
  * and actor; same active binding is idempotent, a conflicting actor is
  * INVALID_ARGUMENT, and a closed new destination is CLOSED. Lookup returns one
