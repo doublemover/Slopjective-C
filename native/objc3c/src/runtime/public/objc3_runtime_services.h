@@ -339,6 +339,21 @@ objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
 objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
                                            objc3_task_t *parent,
                                            objc3_service_status *out_status);
+/* Scope-unwind cleanup join. Requires the same closed-tree/membership rules as
+ * await. The caller cancels unfinished scope work before registering. Only this
+ * dependency is shielded from parent cancellation; the task's monotonic bit is
+ * preserved. The runtime retains parent/group through cleanup dispatch and the
+ * selected continuation, including abandoned caller handles and actor discard.
+ * Manual schedule_resume or complete cannot bypass the pending cleanup join:
+ * both return NOT_READY until this dependency becomes ready. Forced runtime
+ * cancellation is deferred until the cleanup observation, then reclaims once.
+ * Success always queues after actual task/frame/callback quiescence. Failed
+ * completion publication reports NOT_READY only after that quiescence. Output
+ * remains untouched if registration fails. Close/cancel errors must be handled
+ * before using this join; it does not itself establish a structured scope. */
+objc3_service_status objc3_task_group_await_cleanup(
+    objc3_task_group_t *group, objc3_task_t *parent,
+    objc3_service_status *out_status);
 /* Reserve the next direct child task from a closed group tree, from parent's
  * active resume. Parent must not belong to the tree. Output slots must reside
  * in the parent frame until resumption; *out_task must initially be null.

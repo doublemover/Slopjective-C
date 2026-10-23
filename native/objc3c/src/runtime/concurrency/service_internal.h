@@ -97,11 +97,14 @@ struct objc3_task final {
   bool resume_active{false};
   bool resume_requested{false};
   bool awaiting{false};
+  bool await_cancellation_shielded{false};
+  bool cancel_after_cleanup{false};
   bool cancel_wake_pending{false};
   uint64_t await_generation{0};
   objc3_service_status *await_status{nullptr};
   objc3_task_t **await_result_task{nullptr};
   std::shared_ptr<AwaitTarget> await_target;
+  std::shared_ptr<void> continuation_owner;
   uint32_t callbacks_active{0};
   bool frame_destroying{false};
   bool frame_destroyed{true};
@@ -148,21 +151,25 @@ struct ObjC3TaskAwaitContinuation {
 };
 objc3_service_status objc3_task_prepare_await(
     objc3_task_t *parent, ObjC3TaskAwaitContinuation &continuation,
-    objc3_service_status *status = nullptr, objc3_task_t **result_task = nullptr);
+    objc3_service_status *status = nullptr, objc3_task_t **result_task = nullptr,
+    bool cancellation_shielded = false);
 struct ObjC3TaskAwaitClaim {
   objc3_task_t *parent{nullptr};
   bool wake{false};
   bool transferred_result{false};
+  bool cancel_after_cleanup{false};
 };
 // Claiming invokes no callbacks and releases no task references. Dispatch and
 // its retained parent release must happen after all group/publication locks.
 ObjC3TaskAwaitClaim objc3_task_claim_await(
     const ObjC3TaskAwaitContinuation &continuation, objc3_service_status status,
-    objc3_task_t *owned_result = nullptr);
+    objc3_task_t *owned_result = nullptr,
+    std::shared_ptr<void> continuation_owner = {});
 void objc3_task_dispatch_await(ObjC3TaskAwaitClaim claim);
 void objc3_task_finish_await(
     const ObjC3TaskAwaitContinuation &continuation,
-    objc3_service_status status = OBJC3_SERVICE_OK);
+    objc3_service_status status = OBJC3_SERVICE_OK,
+    std::shared_ptr<void> continuation_owner = {});
 void objc3_task_abort_await(objc3_task_t *parent,
                            const ObjC3TaskAwaitContinuation &continuation);
 // Marking cannot invoke callbacks. Wake only after releasing group/publication

@@ -626,6 +626,53 @@ static void deep_child_cancellation_and_ancestry_cleanup(void) {
   objc3_executor_release(state.executor);
   free(state.tasks);
 }
+typedef struct CleanupJoinC {
+  objc3_task_group_t *group;
+  objc3_service_status status;
+  unsigned resumes;
+  unsigned destroyed;
+} CleanupJoinC;
+static void cleanup_join_c_resume(objc3_task_t *task, void *opaque) {
+  CleanupJoinC *frame = (CleanupJoinC *)opaque;
+  if (++frame->resumes == 1) {
+    objc3_task_request_cancel(task);
+    assert(objc3_task_group_await_cleanup(frame->group, task, &frame->status) ==
+           OBJC3_SERVICE_OK);
+    return;
+  }
+  assert(frame->status == OBJC3_SERVICE_OK && objc3_task_is_cancel_requested(task));
+  assert(objc3_task_group_join(frame->group) == OBJC3_SERVICE_OK);
+  tree_complete(task, OBJC3_COMPLETION_CANCELLED);
+}
+static void cleanup_join_c_destroy(void *opaque) {
+  ++((CleanupJoinC *)opaque)->destroyed;
+}
+static void cancelled_cleanup_join_c(void) {
+  CleanupJoinC frame = ZERO_INIT;
+  frame.status = OBJC3_SERVICE_UNSUPPORTED_VERSION;
+  objc3_executor_t *executor = NULL;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_create(NULL, &frame.group) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_close(frame.group) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_cancel(frame.group) == OBJC3_SERVICE_OK);
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = &frame;
+  options.resume = cleanup_join_c_resume;
+  options.destroy = cleanup_join_c_destroy;
+  objc3_task_t *task = NULL;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(frame.resumes == 1 && frame.destroyed == 0);
+  objc3_task_group_release(frame.group);
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(frame.resumes == 2 && frame.destroyed == 1);
+  objc3_task_release(task);
+  objc3_executor_release(executor);
+}
 int main(void) {
   groups();
   actors();
@@ -636,6 +683,7 @@ int main(void) {
   child_cancellation(0, 0, 1, 0);
   child_cancellation(0, 0, 0, 1);
   deep_child_cancellation_and_ancestry_cleanup();
+  cancelled_cleanup_join_c();
   objc3_executor_t *main_executor = NULL, *global_executor = NULL;
   objc3_error_t *service_error = NULL;
   objc3_service_status service_status = OBJC3_SERVICE_OK;

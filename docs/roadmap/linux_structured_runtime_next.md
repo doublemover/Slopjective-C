@@ -162,3 +162,35 @@ owned-error retention also remain explicit service failures. Only an actual
 cancellation representation produces a cancelled completion. An authored
 throwing-copy witness checks that `OUT_OF_MEMORY` survives result publication
 and native frame cleanup rather than becoming cancellation.
+
+## Cancellation-shielded scope cleanup joins
+
+`objc3_task_group_await_cleanup(group, parent, &frame_status)` supplies the
+mandatory quiescence wait needed after a structured scope has requested child
+cancellation. It requires a closed group tree and rejects parent membership
+cycles and overlapping suspensions. Callers first close/cancel their scope and
+handle errors from those operations. Registration failure preserves the status
+slot. The C++ owner-aware request `co_await group.cancel_and_join()` performs
+those operations and registers the cleanup join through its active promise.
+
+Only this wait is shielded. The owner's monotonic cancellation bit remains set,
+and the next ordinary checkpoint still observes cancellation. Cleanup success
+always queues a continuation after nested task completion, foreign completion
+callbacks, and native frame cleanup. A failure-publication error is reported only
+after actual quiescence, even when its completion queue entry was suppressed.
+
+The cleanup waiter retains its parent and group independently of caller handles.
+When ready, the group lease transfers through deferred publication into the
+selected resume slice. Frame cleanup on actor discard or failed dispatch still
+owns that lease. Manual resume/completion requests return `NOT_READY` while
+cleanup is pending; forced runtime cancellation waits until quiescence before
+reclaiming the parent. Dispatch and all retained-owner release happen outside
+task/group/link locks. Empty groups also suspend and queue.
+
+Authored C17 and C++ witnesses cover cancellation already set on entry, repeated
+cancellation, rejected overlapping suspension and premature wake/completion,
+abandoned parent/group owners, nested groups, actor resumption and discard,
+foreign callback/destructor gates, empty deferred publication, and the C++
+cleanup request followed by a normal cancellation checkpoint. These backing
+hooks do not claim compiler automatic structured-scope finalization. Validation
+remains deferred.

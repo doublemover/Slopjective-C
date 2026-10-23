@@ -349,6 +349,7 @@ public:
 };
 
 template <class T> struct task_group_next_request;
+struct task_group_cleanup_request;
 
 /* A retained shared group, with explicit close and cancellation. Awaiting a
  * closed handle joins its complete task tree without blocking a worker. This
@@ -390,6 +391,7 @@ public:
   void close() const { task_detail::check(objc3_task_group_close(group_)); }
   void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
   void wait() const { task_detail::check(objc3_task_group_join(group_)); }
+  task_group_cleanup_request cancel_and_join() const;
   template <class U = void>
   task_group_next_request<typename task_detail::result_traits<U>::abi_type>
   next() const;
@@ -398,6 +400,13 @@ public:
 template <class T> struct task_group_next_request {
   task_group_handle group;
 };
+
+struct task_group_cleanup_request {
+  task_group_handle group;
+};
+inline task_group_cleanup_request task_group_handle::cancel_and_join() const {
+  return {*this};
+}
 template <class U>
 task_group_next_request<typename task_detail::result_traits<U>::abi_type>
 task_group_handle::next() const {
@@ -543,6 +552,25 @@ public:
     auto await_transform(task_group_handle group) {
       if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
       return group_awaiter{owner, std::move(group)};
+    }
+
+    struct cleanup_group_awaiter {
+      objc3_task_t *parent;
+      task_group_handle group;
+      objc3_service_status status = OBJC3_SERVICE_NOT_READY;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        group.close();
+        group.cancel();
+        task_detail::check(objc3_task_group_await_cleanup(
+            group.native_handle(), parent, &status));
+      }
+      void await_resume() { task_detail::check(status); }
+    };
+    auto await_transform(task_group_cleanup_request request) {
+      // Scope unwind must finish even when owner cancellation already holds.
+      // It remains observable by the next ordinary cancellation checkpoint.
+      return cleanup_group_awaiter{owner, std::move(request.group)};
     }
 
     template <class U> struct group_next_awaiter {
@@ -782,6 +810,21 @@ public:
 // Reserved compiler hook. The canonical source function retains its logical
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
+
+// Reserved explicit C-frame entry bridge. The by-value argument owns the lazy
+// frame immediately, including when descriptor validation rejects adoption.
+// Successful from_native consumes it; every failed adoption disposes it before
+// the original service/native exception continues through the C++ coroutine.
+template <class T>
+__objc3_async_task<T> __objc3_async_from_frame(objc3_async_frame frame) {
+  try {
+    return __objc3_async_task<T>::from_native(&frame);
+  } catch (...) {
+    (void)objc3_async_frame_dispose(&frame);
+    throw;
+  }
+}
+
 
 #ifdef __OBJC__
 template <class T>

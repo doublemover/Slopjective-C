@@ -837,6 +837,170 @@ void cpp_result_copy_failure_preserves_oom() {
   assert(caught);
   objc3_executor_release(destination);
 }
+
+struct CleanupJoinFrame {
+  objc3_task_group_t *group{};
+  HeldFrame *child{};
+  uint64_t actor_identity{};
+  unsigned resumes{0}, destroyed{0};
+  objc3_service_status status{OBJC3_SERVICE_UNSUPPORTED_VERSION};
+  bool release_group_inside_resume{false};
+};
+void cleanup_join_resume(objc3_task_t *task, void *opaque) {
+  auto &frame = *static_cast<CleanupJoinFrame *>(opaque);
+  if (++frame.resumes == 1) {
+    objc3_task_request_cancel(task);
+    assert(objc3_task_group_await_cleanup(frame.group, task, &frame.status) ==
+           OBJC3_SERVICE_OK);
+    objc3_service_status untouched = OBJC3_SERVICE_UNSUPPORTED_VERSION;
+    assert(objc3_task_group_await_cleanup(frame.group, task, &untouched) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    assert(untouched == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+    assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_NOT_READY);
+    objc3_completion premature{};
+    premature.struct_size = sizeof(premature);
+    premature.version = OBJC3_SERVICE_ABI_VERSION;
+    premature.kind = OBJC3_COMPLETION_CANCELLED;
+    assert(objc3_task_complete(task, &premature) == OBJC3_SERVICE_NOT_READY);
+    if (frame.release_group_inside_resume) objc3_task_group_release(frame.group);
+    return;
+  }
+  assert(frame.status == OBJC3_SERVICE_OK && objc3_task_is_cancel_requested(task));
+  if (frame.child) assert(frame.child->destroyed == 1);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == frame.actor_identity);
+  assert(objc3_task_group_join(frame.group) == OBJC3_SERVICE_OK);
+  complete(task, OBJC3_COMPLETION_CANCELLED);
+}
+void cleanup_join_destroy(void *opaque) {
+  auto &frame = *static_cast<CleanupJoinFrame *>(opaque);
+  // The continuation lease includes forced frame cleanup if its actor discards
+  // the queued cleanup resume. The borrowed group remains valid in this callback.
+  assert(objc3_task_group_join(frame.group) == OBJC3_SERVICE_OK);
+  ++frame.destroyed;
+}
+objc3_task_t *start_cleanup_join(objc3_executor_t *destination,
+                                objc3_actor_t *actor, CleanupJoinFrame &frame) {
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = actor ? nullptr : destination;
+  options.actor = actor;
+  options.frame = &frame;
+  options.resume = cleanup_join_resume;
+  options.destroy = cleanup_join_destroy;
+  objc3_task_t *parent = nullptr;
+  assert(objc3_task_start(&options, &parent) == OBJC3_SERVICE_OK);
+  return parent;
+}
+void cleanup_join_shields_cancellation_and_owns_abandoned_scope() {
+  auto *producer = executor();
+  auto *destination = executor();
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(destination, &actor) == OBJC3_SERVICE_OK);
+  auto group = objc3::task_group_handle::create();
+  auto nested = group.child();
+  HeldFrame child_frame;
+  auto *child = start_held(producer, child_frame);
+  assert(objc3_task_group_add(nested.native_handle(), child) == OBJC3_SERVICE_OK);
+  pump(producer);
+  Gate callback_gate, destruction_gate;
+  child_frame.destruction_gate = &destruction_gate;
+  assert(objc3_task_add_waiter(child, [](void *opaque, const objc3_completion *) {
+    static_cast<Gate *>(opaque)->arrive();
+  }, &callback_gate) == OBJC3_SERVICE_OK);
+  group.close();
+  group.cancel();
+  assert(objc3_task_is_cancel_requested(child));
+  CleanupJoinFrame frame;
+  frame.group = group.native_handle();
+  frame.child = &child_frame;
+  frame.actor_identity = objc3_actor_identity(actor);
+  auto *parent = start_cleanup_join(destination, actor, frame);
+  pump(destination);
+  assert(frame.resumes == 1 && frame.status == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+  objc3_task_request_cancel(parent);
+  pump(destination);
+  assert(frame.resumes == 1 && frame.destroyed == 0);
+  objc3_task_release(parent); // Cleanup owns its parent independently.
+  group = {};
+  nested = {};
+  std::thread finisher([&] { complete(child, OBJC3_COMPLETION_CANCELLED); });
+  callback_gate.wait();
+  pump(destination);
+  assert(frame.resumes == 1 && frame.destroyed == 0);
+  callback_gate.release();
+  destruction_gate.wait();
+  pump(destination);
+  assert(frame.resumes == 1 && frame.destroyed == 0);
+  destruction_gate.release();
+  finisher.join();
+  pump(destination);
+  assert(frame.resumes == 2 && frame.destroyed == 1 && child_frame.destroyed == 1);
+  assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+  objc3_actor_release(actor);
+  objc3_task_release(child);
+  objc3_executor_release(destination);
+  objc3_executor_release(producer);
+}
+void cleanup_join_empty_deferred_dispatch_and_actor_discard() {
+  for (bool discard : {false, true}) {
+    auto *destination = executor();
+    objc3_actor_t *actor = nullptr;
+    assert(objc3_actor_create(destination, &actor) == OBJC3_SERVICE_OK);
+    CleanupJoinFrame frame;
+    assert(objc3_task_group_create(nullptr, &frame.group) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_close(frame.group) == OBJC3_SERVICE_OK);
+    frame.actor_identity = objc3_actor_identity(actor);
+    frame.release_group_inside_resume = true;
+    auto *parent = start_cleanup_join(destination, actor, frame);
+    pump(destination, 1);
+    assert(frame.resumes == 1 && frame.destroyed == 0);
+    if (discard) assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    pump(destination);
+    assert(frame.resumes == (discard ? 1u : 2u) && frame.destroyed == 1);
+    objc3_task_release(parent);
+    assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+    objc3_actor_release(actor);
+    objc3_executor_release(destination);
+  }
+}
+objc3::task<int> cpp_cancelled_scope_cleanup(objc3::task_group_handle group,
+                                           std::atomic<unsigned> &turns) {
+  ++turns;
+  co_await group.cancel_and_join();
+  ++turns;
+  try { co_await objc3::task_checkpoint; }
+  catch (const objc3::task_cancelled &) {
+    ++turns;
+    co_return 89;
+  }
+  assert(false);
+  co_return 0;
+}
+void cpp_cleanup_request_preserves_owner_cancellation() {
+  auto *destination = executor();
+  auto group = objc3::task_group_handle::create();
+  HeldFrame child_frame;
+  auto *child = start_held(destination, child_frame);
+  assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
+  std::atomic<unsigned> turns{0};
+  auto parent = cpp_cancelled_scope_cleanup(group, turns).start(destination);
+  parent.cancel();
+  pump(destination);
+  assert(turns == 1 && objc3_task_is_cancel_requested(child));
+  complete(child, OBJC3_COMPLETION_CANCELLED);
+  pump(destination);
+  assert(turns == 3 && parent.result() == 89 && child_frame.destroyed == 1);
+  group.wait();
+  objc3_task_release(child);
+  objc3_executor_release(destination);
+}
 } // namespace
 
 int main() {
@@ -857,4 +1021,7 @@ int main() {
   many_group_observation_lifetimes();
   service_status_error_crosses_c_frame_and_cpp_await();
   cpp_result_copy_failure_preserves_oom();
+  cleanup_join_shields_cancellation_and_owns_abandoned_scope();
+  cleanup_join_empty_deferred_dispatch_and_actor_discard();
+  cpp_cleanup_request_preserves_owner_cancellation();
 }
