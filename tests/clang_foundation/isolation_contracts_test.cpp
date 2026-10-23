@@ -378,11 +378,28 @@ int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
     Success(Cross);
     assert(!Has(Cross, "native await operand does not suspend"));
   }
-  Reject(Make("__attribute__((objc_executor(main))) id owned_result(void)" +
+  Reject(Make("struct PairResult { int value; };\n"
+              "__attribute__((objc_executor(main))) struct PairResult "
+              "record_result(void)" +
               NoThrow +
-              ";\nid bounded(void) __objc3_async { return "
-              "__objc3_await owned_result(); }"),
+              ";\nstruct PairResult bounded(void) __objc3_async { return "
+              "__objc3_await record_result(); }"),
          "awaited isolated entry requires");
+  Success(
+      Compile(Make("__attribute__((objc_executor(main), ns_returns_retained)) "
+                   "SafeMessage *owned_result(void)" +
+                   NoThrow + R"(;
+SafeMessage *owned_cross(void) __objc3_async {
+  return __objc3_await owned_result();
+}
+)")));
+  Success(Compile(Make(R"(
+__attribute__((objc_executor(global), nothrow))
+int frame_entry(int value) __objc3_async_frame;
+int frame_cross(int value) __objc3_async {
+  return __objc3_await frame_entry(value);
+}
+)")));
   Reject(Make("__attribute__((objc_executor(main))) int nested(void)" +
               NoThrow +
               ";\n__attribute__((objc_executor(global))) int outer(int)" +

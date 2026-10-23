@@ -89,12 +89,22 @@ association. Missing/retired associations and conflicting executor bindings
 produce native service failures. The actor lookup lease is balanced after the
 runtime has retained the destination, while the frame owns its receiver.
 
-The initial thunk result boundary excludes owned object/block results and C++
-nontrivial values. Consuming parameters/receivers remain rejected until their
+Retainable results use independent native result ownership. ARC claims a +1
+result or retains/copies a +0 result before copying into the task result owner;
+MRC thunks adopt and balance synchronous retained-return conventions, including
+retained method families. Ordinary native await results remain +0 until copied
+into the enclosing result owner. Result Sendable requirements remain enforced.
+An original async native-frame target is awaited inside the private child after
+entry, so its continuation inherits the hopped destination while the original
+caller keeps its own destination. Checked async errors retain the native checked
+transport rather than constructing a C++ promise inside the private frame.
+
+The initial thunk value boundary excludes C++ nontrivial values and aggregate
+results. Consuming parameters/receivers remain rejected until their
 cancellation-time adoption is implemented. C++ targets must have a nonthrowing
 native exception contract; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
-Async isolated target entries, class/super messages, and unsupported callable
+Ordinary C++ task-ABI isolated target entries, class/super messages, and unsupported callable
 shapes still receive targeted diagnostics. The compiler does not automatically
 associate object allocation with actor mailboxes. These remaining obligations
 and deferred execution validation prevent a full actor conformance claim.
@@ -146,8 +156,8 @@ are checked for their captures without being mislabeled as async work items.
 Group scope classification is persistent metadata and can coexist with a child
 or detached API classification; child and detached classifications conflict.
 This slice does not infer a group-add transfer contract from an arbitrary
-function name, implement task
-creation from attributes, or relax the independent borrowed/resource flow rules.
+function name, implement task creation from attributes, or relax the independent
+borrowed/resource flow rules.
 Dynamic invocation with incompatible known method isolation metadata is rejected
 instead of selecting an arbitrary global method-pool candidate.
 
@@ -164,6 +174,12 @@ Deferred IR fixtures cover main/global/named executor entry, independent object
 argument ownership, one evaluation of source arguments, and preservation of
 executor-entry thunks through PCH. C++ exception-boundary and unsupported result
 shapes retain targeted failure fixtures.
+
+`tests/clang_foundation/native_isolation/provider.h`, `provider.m`, and `client.m`
+provide an installed executable witness for real executor entry, explicit actor
+association, caller destination restoration, cancellation before target entry,
+nil-message behavior and retained result cleanup. Build modes and deferred
+execution scope are described in the adjacent README.
 
 The regression sources are not execution evidence. Public actor/strict
 concurrency feature predicates remain subject to the repository capability
