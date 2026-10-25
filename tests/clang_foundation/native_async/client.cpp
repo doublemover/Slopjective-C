@@ -846,6 +846,7 @@ int main() {
   objc3_executor_release(other);
   objc3_executor_release(executor);
   pool_slices();
+  assert(native_lexical_pool_witnesses());
   assert(native_actor_object_association());
 #endif
 }

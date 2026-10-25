@@ -172,29 +172,33 @@ __attribute__((objc_root_class))
 int native_pool_slices(std::shared_ptr<std::atomic<unsigned>> destroyed,
                        objc3_actor_t *first, objc3_actor_t *second,
                        objc3::task_handle<int> completed) __objc3_async {
-  NativeAsyncValue *value = [NativeAsyncValue new];
+  @autoreleasepool {
+    @autoreleasepool {
+      NativeAsyncValue *value = [NativeAsyncValue new];
 #if !__has_feature(objc_arc)
-  struct release_owner {
-    NativeAsyncValue *value;
-    ~release_owner() { objc_release(value); }
-  } owner{value};
+      struct release_owner {
+        NativeAsyncValue *value;
+        ~release_owner() { objc_release(value); }
+      } owner{value};
 #endif
-  value->number = 42;
-  [NativeAsyncPoolWitness temporary:destroyed.get()];
-  __objc3_await objc3::task_yield;
-  if (*destroyed != 1 || value->number != 42) __builtin_trap();
-  [NativeAsyncPoolWitness temporary:destroyed.get()];
-  int result = __objc3_await completed;
-  if (*destroyed != 2 || result != 42) __builtin_trap();
-  if (first) {
-    [NativeAsyncPoolWitness temporary:destroyed.get()];
-    __objc3_await objc3::hop_to(second);
-    if (*destroyed != 3 || value->number != 42) __builtin_trap();
-    [NativeAsyncPoolWitness temporary:destroyed.get()];
-    __objc3_await objc3::hop_to(first);
-    if (*destroyed != 4 || value->number != 42) __builtin_trap();
+      value->number = 42;
+      [NativeAsyncPoolWitness temporary:destroyed.get()];
+      __objc3_await objc3::task_yield;
+      if (*destroyed != 1 || value->number != 42) __builtin_trap();
+      [NativeAsyncPoolWitness temporary:destroyed.get()];
+      int result = __objc3_await completed;
+      if (*destroyed != 2 || result != 42) __builtin_trap();
+      if (first) {
+        [NativeAsyncPoolWitness temporary:destroyed.get()];
+        __objc3_await objc3::hop_to(second);
+        if (*destroyed != 3 || value->number != 42) __builtin_trap();
+        [NativeAsyncPoolWitness temporary:destroyed.get()];
+        __objc3_await objc3::hop_to(first);
+        if (*destroyed != 4 || value->number != 42) __builtin_trap();
+      }
+      return value->number;
+    }
   }
-  return value->number;
 }
 
 static std::atomic<unsigned> actor_owned_creations{0};
@@ -901,6 +905,101 @@ objc3::task<int> native_block_noescape(std::shared_ptr<async_state> state, bool 
 // Real object/actor lifetime witnesses run in every native ARC/MRC provider.
 #include <cassert>
 #include <thread>
+
+namespace {
+struct lexical_pool_task {
+  struct promise_type {
+    std::exception_ptr error;
+    lexical_pool_task get_return_object() noexcept {
+      return lexical_pool_task(std::coroutine_handle<promise_type>::from_promise(*this));
+    }
+    std::suspend_always initial_suspend() noexcept { return {}; }
+    std::suspend_always final_suspend() noexcept { return {}; }
+    void return_void() noexcept {}
+    void unhandled_exception() noexcept { error = std::current_exception(); }
+  };
+  std::coroutine_handle<promise_type> handle;
+  explicit lexical_pool_task(std::coroutine_handle<promise_type> handle) : handle(handle) {}
+  lexical_pool_task(const lexical_pool_task &) = delete;
+  lexical_pool_task(lexical_pool_task &&other) noexcept
+      : handle(std::exchange(other.handle, {})) {}
+  ~lexical_pool_task() { if (handle) handle.destroy(); }
+};
+struct pool_veto_suspend {
+  bool await_ready() const noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) const noexcept { return false; }
+  void await_resume() const noexcept {}
+};
+struct pool_throw_suspend {
+  bool await_ready() const noexcept { return false; }
+  void await_suspend(std::coroutine_handle<>) const { throw 73; }
+  void await_resume() const noexcept {}
+};
+lexical_pool_task lexical_pool_flow(std::atomic<unsigned> *destroyed) {
+  @autoreleasepool {
+    [NativeAsyncPoolWitness temporary:destroyed];
+    @autoreleasepool {
+      [NativeAsyncPoolWitness temporary:destroyed];
+      co_await std::suspend_always{};
+      assert(*destroyed == 2);
+      [NativeAsyncPoolWitness temporary:destroyed];
+      co_await std::suspend_never{};
+      assert(*destroyed == 2); // A ready await retains the active lexical pools.
+      co_await pool_veto_suspend{};
+      assert(*destroyed == 3); // An extra drain on a vetoed suspension is safe.
+      [NativeAsyncPoolWitness temporary:destroyed];
+      try { co_await pool_throw_suspend{}; }
+      catch (int error) {
+        assert(error == 73 && *destroyed == 4);
+        [NativeAsyncPoolWitness temporary:destroyed];
+      }
+    }
+    assert(*destroyed == 5); // The catch ran inside a restored inner pool.
+    [NativeAsyncPoolWitness temporary:destroyed];
+  }
+  assert(*destroyed == 6);
+  co_return;
+}
+lexical_pool_task lexical_pool_abandon(std::atomic<unsigned> *destroyed) {
+  @autoreleasepool { @autoreleasepool { @autoreleasepool {
+  @autoreleasepool { @autoreleasepool { @autoreleasepool {
+    [NativeAsyncPoolWitness temporary:destroyed];
+    co_await std::suspend_always{};
+    throw 99;
+  } } } } } }
+  co_return;
+}
+} // namespace
+
+bool native_lexical_pool_witnesses() {
+  std::atomic<unsigned> destroyed{0};
+  {
+    auto task = lexical_pool_flow(&destroyed);
+    task.handle.resume();
+    assert(destroyed == 2 && !task.handle.done());
+    std::thread resume([&] { task.handle.resume(); });
+    resume.join();
+    assert(task.handle.done() && !task.handle.promise().error && destroyed == 6);
+  }
+  for (bool resume : {false, true}) {
+    destroyed = 0;
+    auto task = lexical_pool_abandon(&destroyed);
+    task.handle.resume();
+    assert(destroyed == 1 && !task.handle.done());
+    std::thread finish([&] {
+      if (resume) task.handle.resume();
+      else { task.handle.destroy(); task.handle = {}; }
+    });
+    finish.join();
+    assert(destroyed == 1);
+    if (resume) {
+      assert(task.handle.done() && task.handle.promise().error);
+      try { std::rethrow_exception(task.handle.promise().error); }
+      catch (int error) { assert(error == 99); }
+    }
+  }
+  return true;
+}
 
 static std::atomic<unsigned> actor_association_destructions{0};
 __attribute__((objc_root_class))

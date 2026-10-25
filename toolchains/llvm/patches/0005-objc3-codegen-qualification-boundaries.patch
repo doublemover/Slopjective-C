@@ -5499,10 +5499,10 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..c4b1701d3 100644
+index c724a063b..ffdf6e3be 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
-@@ -12,7 +12,12 @@
+@@ -12,7 +12,13 @@
  
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
@@ -5510,12 +5510,13 @@ index c724a063b..c4b1701d3 100644
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3TypedErrors.h"
++#include "CGObjC3Async.h"
  #include "CodeGenFunction.h"
 +#include "CGObjC3BlockCaptures.h"
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "ConstantEmitter.h"
-@@ -590,6 +595,29 @@ tryEmitSpecializedAllocInit(CodeGenFunction &CGF, const ObjCMessageExpr *OME) {
+@@ -590,6 +596,29 @@ tryEmitSpecializedAllocInit(CodeGenFunction &CGF, const ObjCMessageExpr *OME) {
  
  RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
                                              ReturnValueSlot Return) {
@@ -5545,7 +5546,7 @@ index c724a063b..c4b1701d3 100644
    // Only the lookup mechanism and first two arguments of the method
    // implementation vary between runtimes.  We can get the receiver and
    // arguments in generic code.
-@@ -677,9 +705,17 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+@@ -677,9 +706,17 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
      Receiver = EmitARCRetainAutorelease(ReceiverType, Receiver);
  
    QualType ResultType = method ? method->getReturnType() : E->getType();
@@ -5563,7 +5564,7 @@ index c724a063b..c4b1701d3 100644
  
    // For delegate init calls in ARC, do an unsafe store of null into
    // self.  This represents the call taking direct ownership of that
-@@ -804,12 +840,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
+@@ -804,12 +841,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
      args.push_back(OMD->getCmdDecl());
  
    args.append(OMD->param_begin(), OMD->param_end());
@@ -5589,7 +5590,7 @@ index c724a063b..c4b1701d3 100644
  
    if (OMD->isDirectMethod()) {
      CGM.getObjCRuntime().GenerateDirectMethodPrologue(*this, Fn, OMD, CD);
-@@ -832,11 +879,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -832,11 +880,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  /// Generate an Objective-C method.  An Objective-C method is a C function with
  /// its pointer, name, and types registered in the class structure.
  void CodeGenFunction::GenerateObjCMethod(const ObjCMethodDecl *OMD) {
@@ -5620,7 +5621,7 @@ index c724a063b..c4b1701d3 100644
    FinishFunction(OMD->getBodyRBrace());
  }
  
-@@ -1166,12 +1229,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
+@@ -1166,12 +1230,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
  
    ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
  
@@ -5644,7 +5645,7 @@ index c724a063b..c4b1701d3 100644
      } else {
        ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
        emitCPPObjectAtomicGetterCall(*this, ReturnValue.emitRawPointer(*this),
-@@ -1792,17 +1866,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
+@@ -1792,17 +1867,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
      // Suppress the final autorelease in ARC.
      AutoreleaseResult = false;
  
@@ -5672,7 +5673,7 @@ index c724a063b..c4b1701d3 100644
      // constructor returns 'self'.
      CodeGenTypes &Types = CGM.getTypes();
      QualType IdTy(CGM.getContext().getObjCIdType());
-@@ -1996,6 +2075,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -1996,6 +2076,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
  
    // Initialize the element variable.
    RunCleanupsScope elementVariableScope(*this);
@@ -5680,7 +5681,7 @@ index c724a063b..c4b1701d3 100644
    bool elementIsVariable;
    LValue elementLValue;
    QualType elementType;
-@@ -2091,6 +2171,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -2091,6 +2172,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
    BreakContinueStack.push_back(BreakContinue(S, LoopEnd, AfterBody));
    {
      RunCleanupsScope Scope(*this);
@@ -5689,7 +5690,7 @@ index c724a063b..c4b1701d3 100644
      EmitStmt(S.getBody());
    }
    BreakContinueStack.pop_back();
-@@ -2380,6 +2462,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+@@ -2380,6 +2463,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
  /// if it can prove that the block never escapes except down the stack.
  llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
                                                   bool mandatory) {
@@ -5708,7 +5709,7 @@ index c724a063b..c4b1701d3 100644
    llvm::Value *result
      = emitARCValueOperation(*this, value, nullptr,
                              CGM.getObjCEntrypoints().objc_retainBlock,
-@@ -3525,6 +3619,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -3525,6 +3620,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5716,7 +5717,7 @@ index c724a063b..c4b1701d3 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3635,7 @@ llvm::Value *
+@@ -3540,6 +3636,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5724,7 +5725,7 @@ index c724a063b..c4b1701d3 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3746,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3747,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5732,11 +5733,11 @@ index c724a063b..c4b1701d3 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3719,6 +3816,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3817,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
-+  if (ObjC3CAsync.Data) {
++  if (ObjC3CAsync.Data || getObjC3CxxAutoreleasePools(*this)) {
 +    EmitObjC3CAsyncAutoreleasePoolStmt(ARPS);
 +    return;
 +  }
@@ -21111,7 +21112,7 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..a6f444635 100644
+index bf896f133..d01079434 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
 @@ -1,3 +1,4 @@
@@ -21119,15 +21120,76 @@ index bf896f133..a6f444635 100644
  //===----- CGCoroutine.cpp - Emit LLVM Code for C++ coroutines ------------===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -11,6 +12,7 @@
+@@ -11,6 +12,8 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGCleanup.h"
 +#include "CGObjC3TypedErrors.h"
++#include "CGObjC3Async.h"
  #include "CGDebugInfo.h"
  #include "CodeGenFunction.h"
  #include "clang/AST/StmtCXX.h"
-@@ -366,11 +368,14 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+@@ -30,6 +33,10 @@ static constexpr llvm::StringLiteral AwaitKindStr[] = {"init", "await", "yield",
+ }
+ 
+ struct clang::CodeGen::CGCoroData {
++  // Explicit lexical pools are recreated on the actual continuation thread.
++  // Every slot is null while the coroutine is suspended or being destroyed.
++  SmallVector<Address, 4> ObjC3AutoreleasePools;
++
+   // What is the current await expression kind and how many
+   // await/yield expressions were encountered so far.
+   // These are used to generate pretty labels for await expressions in LLVM IR.
+@@ -85,6 +92,14 @@ struct clang::CodeGen::CGCoroData {
+   CallExpr const *CoroIdExpr = nullptr;
+ };
+ 
++llvm::SmallVectorImpl<Address> *
++clang::CodeGen::getObjC3CxxAutoreleasePools(CodeGenFunction &CGF) {
++  if (!CGF.getLangOpts().ObjC3 || !CGF.CurCoro.Data ||
++      !CGF.getLangOpts().ObjCRuntime.hasNativeARC())
++    return nullptr;
++  return &CGF.CurCoro.Data->ObjC3AutoreleasePools;
++}
++
+ // Defining these here allows to keep CGCoroData private to this file.
+ clang::CodeGen::CodeGenFunction::CGCoroInfo::CGCoroInfo() {}
+ CodeGenFunction::CGCoroInfo::~CGCoroInfo() {}
+@@ -243,6 +258,16 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+   // Otherwise, emit suspend logic.
+   CGF.EmitBlock(SuspendBlock);
+ 
++  // Drain before await_suspend can publish the frame to another thread. If
++  // that call throws into a handler inside the lexical pool, its EH cleanup
++  // restores the pools before the handler starts running. The cleanup owns a
++  // snapshot of the active slots, independent of later code-generation scopes.
++  CodeGenFunction::RunCleanupsScope PoolTransition(CGF);
++  if (auto *Pools = getObjC3CxxAutoreleasePools(CGF); Pools && !Pools->empty()) {
++    pushObjC3AsyncPoolReopenCleanup(CGF, *Pools);
++    drainObjC3AsyncAutoreleasePools(CGF, *Pools);
++  }
++
+   auto &Builder = CGF.Builder;
+   llvm::Function *CoroSave = CGF.CGM.getIntrinsic(llvm::Intrinsic::coro_save);
+   auto *NullPtr = llvm::ConstantPointerNull::get(CGF.CGM.Int8PtrTy);
+@@ -296,6 +321,7 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+                                              SuspendIntrinsicCallArgs);
+ 
+   assert(SuspendRet);
++  PoolTransition.ForceCleanup();
+   CGF.CurCoro.InSuspendBlock = false;
+ 
+   switch (SuspendReturnType) {
+@@ -338,6 +364,8 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+ 
+   // Emit await_resume expression.
+   CGF.EmitBlock(ReadyBlock);
++  if (auto *Pools = getObjC3CxxAutoreleasePools(CGF))
++    reopenObjC3AsyncAutoreleasePools(CGF, *Pools);
+ 
+   // Exception handling requires additional IR. If the 'await_resume' function
+   // is marked as 'noexcept', we avoid generating this additional IR.
+@@ -366,11 +394,14 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
      return Res;
    }
  
@@ -21144,7 +21206,7 @@ index bf896f133..a6f444635 100644
  
    return Res;
  }
-@@ -378,6 +383,8 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+@@ -378,6 +409,8 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
  RValue CodeGenFunction::EmitCoawaitExpr(const CoawaitExpr &E,
                                          AggValueSlot aggSlot,
                                          bool ignoreResult) {
@@ -21153,7 +21215,7 @@ index bf896f133..a6f444635 100644
    return emitSuspendExpression(*this, *CurCoro.Data, E,
                                 CurCoro.Data->CurrentAwaitKind, aggSlot,
                                 ignoreResult, /*forLValue*/false).RV;
-@@ -389,6 +396,41 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
+@@ -389,6 +422,41 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
                                 aggSlot, ignoreResult, /*forLValue*/false).RV;
  }
  
@@ -21195,7 +21257,7 @@ index bf896f133..a6f444635 100644
  void CodeGenFunction::EmitCoreturnStmt(CoreturnStmt const &S) {
    ++CurCoro.Data->CoreturnCount;
    const Expr *RV = S.getOperand();
-@@ -922,6 +964,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -922,6 +990,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        {Builder.getInt32(NewAlign), NullPtr, NullPtr, NullPtr});
    createCoroData(*this, CurCoro, CoroId);
  
@@ -21213,7 +21275,7 @@ index bf896f133..a6f444635 100644
    GetReturnObjectManager GroManager(*this, S);
    CurCoro.Data->SuspendBB =
        GroManager.DirectEmit ? RetBB : createBasicBlock("pre.gvo.conv");
-@@ -1008,6 +1061,40 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1008,6 +1087,40 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        // not needed.
      }
  
@@ -24845,10 +24907,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..a428ef908
+index 000000000..e920324d2
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,938 @@
+@@ -0,0 +1,982 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25360,6 +25422,49 @@ index 000000000..a428ef908
 +}
 +} // namespace
 +
++void clang::CodeGen::drainObjC3AsyncAutoreleasePools(
++    CodeGenFunction &CGF, llvm::ArrayRef<Address> Pools) {
++  for (Address Slot : llvm::reverse(Pools))
++    closeAutoreleasePool(CGF, Slot);
++}
++
++void clang::CodeGen::reopenObjC3AsyncAutoreleasePools(
++    CodeGenFunction &CGF, llvm::ArrayRef<Address> Pools) {
++  for (Address Slot : Pools) {
++    auto *Closed = CGF.createBasicBlock("objc3.pool.reopen");
++    auto *Ready = CGF.createBasicBlock("objc3.pool.ready");
++    CGF.Builder.CreateCondBr(
++        CGF.Builder.CreateIsNull(CGF.Builder.CreateLoad(Slot)), Closed, Ready);
++    CGF.EmitBlock(Closed);
++    CGF.Builder.CreateStore(CGF.EmitObjCAutoreleasePoolPush(), Slot);
++    CGF.EmitBranch(Ready);
++    CGF.EmitBlock(Ready);
++  }
++}
++
++namespace {
++struct ReopenAutoreleasePools final : EHScopeStack::Cleanup {
++  size_t Count;
++  Address *slots() { return reinterpret_cast<Address *>(this + 1); }
++  static size_t getExtraSize(size_t Count) { return Count * sizeof(Address); }
++  ReopenAutoreleasePools(size_t Count, llvm::ArrayRef<Address> Pools)
++      : Count(Count) {
++    assert(Count == Pools.size());
++    for (size_t I = 0; I != Count; ++I)
++      new (slots() + I) Address(Pools[I]);
++  }
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    reopenObjC3AsyncAutoreleasePools(CGF, {slots(), Count});
++  }
++};
++} // namespace
++
++void clang::CodeGen::pushObjC3AsyncPoolReopenCleanup(
++    CodeGenFunction &CGF, llvm::ArrayRef<Address> Pools) {
++  CGF.EHStack.pushCleanupWithExtra<ReopenAutoreleasePools>(EHCleanup,
++                                                        Pools.size(), Pools);
++}
++
 +void CodeGenFunction::EmitObjC3CAsyncBody(const Decl &Callable,
 +                                           const Stmt &Body) {
 +  ObjC3CAsync.Data = std::make_unique<CGObjC3CAsyncData>();
@@ -25618,7 +25723,8 @@ index 000000000..a428ef908
 +
 +void CodeGenFunction::EmitObjC3CAsyncAutoreleasePoolStmt(
 +    const ObjCAutoreleasePoolStmt &Statement) {
-+  auto &Data = *ObjC3CAsync.Data;
++  auto &Pools = ObjC3CAsync.Data ? ObjC3CAsync.Data->AutoreleasePools
++                                 : *getObjC3CxxAutoreleasePools(*this);
 +  const auto &Body = cast<CompoundStmt>(*Statement.getSubStmt());
 +  if (auto *DI = getDebugInfo())
 +    DI->EmitLexicalBlockStart(Builder, Body.getLBracLoc());
@@ -25626,12 +25732,12 @@ index 000000000..a428ef908
 +  Address Token = CreateTempAlloca(Int8PtrTy, getPointerAlign(),
 +                                    "objc3.pool.token");
 +  Builder.CreateStore(EmitObjCAutoreleasePoolPush(), Token);
-+  Data.AutoreleasePools.push_back(Token);
++  Pools.push_back(Token);
 +  EHStack.pushCleanup<CloseAutoreleasePool>(NormalAndEHCleanup, Token);
 +  for (const Stmt *Child : Body.body())
 +    EmitStmt(Child);
 +  Scope.ForceCleanup();
-+  Data.AutoreleasePools.pop_back();
++  Pools.pop_back();
 +  if (auto *DI = getDebugInfo())
 +    DI->EmitLexicalBlockEnd(Builder, Body.getRBracLoc());
 +}
@@ -25789,19 +25895,31 @@ index 000000000..a428ef908
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..8c1c22e40
+index 000000000..437cbe80d
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,28 @@
 +//===--- CGObjC3Async.h - Native C async checked continuation ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
 +#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
-+namespace llvm { class Value; }
++namespace llvm {
++class Value;
++template <class T> class ArrayRef;
++template <class T> class SmallVectorImpl;
++}
 +namespace clang {
 +class CoawaitExpr;
 +namespace CodeGen {
 +class CodeGenFunction;
++class Address;
++// A C++ coroutine owns slots, never live thread-local pool tokens, across a
++// suspension. C frames keep their corresponding private slot vector.
++llvm::SmallVectorImpl<Address> *getObjC3CxxAutoreleasePools(CodeGenFunction &);
++void drainObjC3AsyncAutoreleasePools(CodeGenFunction &, llvm::ArrayRef<Address>);
++void reopenObjC3AsyncAutoreleasePools(CodeGenFunction &, llvm::ArrayRef<Address>);
++void pushObjC3AsyncPoolReopenCleanup(CodeGenFunction &, llvm::ArrayRef<Address>);
++
 +/// On an admitted checked error, transfer to the enclosing try failure edge.
 +/// Cancellation and foreign failures bypass checked handlers.
 +bool emitObjC3CAsyncCheckedFailure(CodeGenFunction &, const CoawaitExpr &,
@@ -27461,3 +27579,46 @@ index 000000000..e27f5d6f9
 +// CHECK-LABEL: define{{.*}} @different
 +// CHECK-SAME: !func_sanitize ![[OTHER:[0-9]+]]
 +objc3_async_frame different(double value) { return (objc3_async_frame){0}; }
+diff --git a/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm b/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm
+new file mode 100644
+index 000000000..fd8cb9ca8
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm
+@@ -0,0 +1,37 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-llvm -disable-llvm-passes -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-llvm -disable-llvm-passes -o /dev/null -verify %s
++// expected-no-diagnostics
++#include "Inputs/native-async-task.h"
++int pool_leaf() __objc3_async { return 42; }
++// CHECK-LABEL: define{{.*}} @_Z11pool_parentv(
++// CHECK: objc3.pool.token
++// CHECK: objc3.pool.token
++// CHECK: store ptr null, ptr %objc3.pool.token
++// CHECK: @llvm.coro.await.suspend
++// CHECK: objc3.pool.reopen
++// CHECK: @llvm.objc.autoreleasePoolPush
++int pool_parent() __objc3_async {
++  @autoreleasepool {
++    @autoreleasepool {
++      return __objc3_await pool_leaf();
++    }
++  }
++}
++
++struct throwing_suspend {
++  bool await_ready() noexcept;
++  void await_suspend(std::coroutine_handle<>);
++  void await_resume() noexcept;
++};
++// Ordinary C++ coroutine syntax receives the same pool protocol in ObjC3 mode.
++// CHECK-LABEL: define{{.*}} @_Z19explicit_pool_throwv(
++// CHECK: objc3.pool.token
++// CHECK: invoke void @llvm.coro.await.suspend
++// CHECK: objc3.pool.reopen
++objc3::task<void> explicit_pool_throw() {
++  @autoreleasepool {
++    try { co_await throwing_suspend{}; }
++    catch (int) {}
++  }
++  co_return;
++}
