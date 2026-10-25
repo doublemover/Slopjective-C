@@ -13,7 +13,10 @@
  * explicitly join owned tasks/groups; these functions do not establish an
  * implicit structured group scope. */
 
-#ifdef __OBJC__
+/* Native async callable lowering is currently admitted in the compatibility
+ * profile. Other profiles can use the shared C service ABI above without
+ * eagerly parsing convenience bodies whose source-call ABI is not admitted. */
+#if defined(__OBJC__) && __OBJC3_PROFILE__ == 0
 #ifdef __cplusplus
 #include <objc3c/runtime/objc3_task.hpp>
 

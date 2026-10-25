@@ -17,8 +17,7 @@ void moved_use(void) {
   (void)dup(value);
 }
 #elif defined(INVALID_SYSTEM_FAMILY)
-static void wrong_close(int value) __attribute__((nothrow));
-static void wrong_close(int value) { (void)value; }
+static __attribute__((nothrow)) void wrong_close(int value) { (void)value; }
 @requires_cleanup(wrong_close) @resource_family(Unrelated) @invalid(-1)
 typedef int WrongHandle;
 void wrong_family(void) {
@@ -26,8 +25,8 @@ void wrong_family(void) {
   wrong_close(value);
 }
 #else
-static void observe_descriptor(int value, int *output) __attribute__((nothrow));
-static void observe_descriptor(int value, int *output) { *output = value; }
+static __attribute__((nothrow)) void
+observe_descriptor(int value, int *output) { *output = value; }
 static objc3_file_descriptor transfer_descriptor(int raw) {
   @resource(objc3_file_descriptor_close, invalid: -1)
   objc3_file_descriptor value = objc3_file_descriptor_unsafe_adopt(raw);

@@ -32510,10 +32510,10 @@ index 000000000..ef0b1bc0a
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..22521fc6f
+index 000000000..e7cbb2abd
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
-@@ -0,0 +1,969 @@
+@@ -0,0 +1,974 @@
 +//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow
 +//--------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -33423,6 +33423,11 @@ index 000000000..22521fc6f
 +        unsigned EdgeIndex = Index++;
 +        const CFGBlock *Next = Successor.getReachableBlock();
 +        if (!Next)
++          continue;
++        // A terminating call (including a second exception during cleanup)
++        // never leaves the scope normally. Preserve its exceptional edges to
++        // handlers, but do not merge its synthetic exit edge into leak facts.
++        if (Block->hasNoReturnElement() && Next == &Graph->getExit())
 +          continue;
 +        Facts Edge = Output;
 +        bool Reachable = true;
@@ -41326,3 +41331,23 @@ index 000000000..4da333b1e
 +actor class Counter : Root
 +- (Message *)message __attribute__((objc_nonisolated)); // expected-note {{unchecked concurrency transfer of 'Message *' relies on objc_unsafe_sendable}}
 +@end
+diff --git a/clang/test/ObjC3/Sema/resource-termination-flow.m b/clang/test/ObjC3/Sema/resource-termination-flow.m
+new file mode 100644
+index 000000000..6e2afb356
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/resource-termination-flow.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify %s
++void close_handle(int);
++typedef int Handle __attribute__((objc_requires_cleanup(close_handle), objc_invalid(-1)));
++void operation(void);
++void accepted(void) {
++  @resource(close_handle, invalid: -1) Handle first = 1;
++  @resource(close_handle, invalid: -1) Handle second = 2;
++  operation();
++}
++void rejected(void) {
++  Handle missing = 3; // expected-error {{may leave its scope without cleanup}}
++  operation();
++}
