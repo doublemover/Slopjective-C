@@ -314,10 +314,9 @@ Root solo follow-up now authors typed async callback deduction: ErrorType is a
 deducible type position, async/frame representations match exactly, and throwing
 domains cannot be erased. Function-address matching uses its established reverse
 conversion direction. Native source/specialization/PCH fixtures are authored;
-execution remains deferred. Explicit C++ raw-frame definition cases remain the
-next compiler admission boundary for the spawn witness.
+execution remains deferred. Explicit C++ raw-frame definitions are now authored for value parameters and
+trivially copyable results/parameters; the spawn witness remains pending validation.
 
-Development is paused at the user's request. All six parallel spans are parked;
-completed maintained changes and the final canonical compiler source are
-preserved in commits and tracked patch inputs. No new implementation or
-validation is scheduled until work resumes.
+Development has resumed with solo compiler and feature-runner integration. All
+six prior parallel spans remain parked; their source is preserved in commits.
+Combined compilation and execution will establish the next evidence checkpoint.

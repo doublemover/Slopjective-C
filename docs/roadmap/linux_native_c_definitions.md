@@ -160,8 +160,13 @@ An Objective-C++ `__objc3_await` of a declared frame call adapts through
 disposes it before rethrowing if descriptor validation or adoption fails. The
 compiler retains the original logical source call for checked-error analysis.
 Frame-only calls need the C runtime header; adapted awaits also need
-`objc3_task.hpp`. Ordinary C++ frame-ABI definitions are diagnosed before promise
-lowering. Compiler-created isolated synchronous entry thunks use the native
+`objc3_task.hpp`. Explicit C++ frame-ABI definitions use the native frame generator rather than
+C++ promise lowering. Free functions, Blocks and Objective-C methods admit
+value parameters and trivially copyable results/parameters; C++ lexical local
+construction/destruction uses the ordinary cleanup stack. Reference and
+nontrivial record parameters/results and implicit C++ member receivers remain
+diagnosed. Native frame bodies use return and __objc3_await; C++ coroutine
+keywords remain rejected. This source extension is pending compilation and execution. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable
 arguments have independent frame owners under ARC and MRC before any hop.
 

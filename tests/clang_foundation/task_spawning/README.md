@@ -32,6 +32,6 @@ the lower-level frame API boundary.
 The native compiler now has authored deduction of ObjC3 checked ErrorType,
 exact async/frame matching and used-template-parameter tracking, including
 specialization and PCH witnesses. This closes the typed-E header dependency in
-source; it has not been built or executed. The C++ raw-frame definition cases
-also require the next bounded explicit C++ frame-body admission. Neither effect
+source; it has not been built or executed. The C++ raw-frame definitions now have bounded native frame-body admission
+for value parameters and trivially copyable parameters/results. Neither effect
 erasure nor automatic group-scope finalization is claimed here.

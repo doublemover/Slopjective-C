@@ -829,7 +829,7 @@ index fdefb6d6b..e32759c03 100644
 +  VisitStmt(S->getStorage());
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..4fd76bb51 100644
+index 74209f579..19a1d4e1d 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -877,7 +877,7 @@ index 74209f579..4fd76bb51 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,91 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,93 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -908,10 +908,12 @@ index 74209f579..4fd76bb51 100644
 +      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
 +          Actions.isObjC3NonSuspendingAwait(Res.get()))
 +        return Actions.ActOnObjC3NonSuspendingAwait(AwaitLoc, Res.get());
-+      if (!Res.isInvalid() && getLangOpts().CPlusPlus)
++      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
++          !FT->getObjC3FunctionEffects().AsyncFrame)
 +        Res = Actions.BuildObjC3CxxFrameAwaitOperand(AwaitLoc, Res.get());
 +      if (!Res.isInvalid())
-+        Res = getLangOpts().CPlusPlus
++        Res = getLangOpts().CPlusPlus &&
++                      !FT->getObjC3FunctionEffects().AsyncFrame
 +                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get())
 +                  : Actions.ActOnObjC3CAwaitExpr(AwaitLoc, Res.get());
 +      return Res;
@@ -969,7 +971,7 @@ index 74209f579..4fd76bb51 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1727,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1729,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -977,7 +979,7 @@ index 74209f579..4fd76bb51 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2030,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2032,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }
@@ -999,7 +1001,7 @@ index 74209f579..4fd76bb51 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3441,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+@@ -3330,6 +3443,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  

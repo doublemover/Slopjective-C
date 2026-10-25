@@ -21,7 +21,7 @@ else:
     from sdk_example import environment, write_json
 
 ROOT = Path(__file__).resolve().parents[2]
-FEATURES = ("captures", "keypaths", "async")
+FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
 MODES = (("objective-c", "c17"), ("objective-c++", "c++20"),
          ("objective-c++", "c++23"))
 
@@ -48,7 +48,7 @@ def configurations(features=FEATURES, transports=("source", "pch")):
             for ownership in ("arc", "mrc"):
                 for optimization in ("O0", "O2"):
                     for transport in transports:
-                        providers = ("arc", "mrc") if feature == "async" else ("",)
+                        providers = ("arc", "mrc") if feature in ("async", "isolation") else ("",)
                         for provider in providers:
                             yield Configuration(feature, language, standard, ownership,
                                                 optimization, transport, provider)
@@ -103,7 +103,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
         if code:
             raise RuntimeError("native feature command failed: " + label)
 
-    def flags(language, standard, ownership, optimization, work):
+    def flags(case, language, standard, ownership, optimization, work):
         result = ["--no-default-config", "-x", language, "-std=" + standard,
             "-" + optimization, "-g", "-UNDEBUG", "-fobjc-version=3",
             "-fobjc-runtime=gnustep-2.2", "-fblocks", "-fexceptions",
@@ -115,12 +115,14 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
             result.append("-fobjc-arc" if ownership == "arc" else "-fno-objc-arc")
         if "++" in language:
             result.append("-fcoro-aligned-allocation")
+        if case.feature in ("isolation", "spawn"):
+            result.append("-fobjc3-strict-concurrency")
         return result
 
     def compile_source(case, source, work, *, language=None, standard=None,
                        ownership=None, extra=(), output_name=None):
         target = work / (output_name or source.stem + ".o")
-        opts = flags(language or case.language, standard or case.standard,
+        opts = flags(case, language or case.language, standard or case.standard,
                      ownership or case.ownership, case.optimization, work)
         invoke(case.name + "-" + target.stem, [compiler, *opts, *extra,
             "-c", source, "-o", target], work)
@@ -128,7 +130,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
 
     def pch(case, header, work):
         target = work / "fixture.pch"
-        opts = flags(case.language + "-header", case.standard, case.ownership,
+        opts = flags(case, case.language + "-header", case.standard, case.ownership,
                      case.optimization, work)
         # Header language spellings preserve Objective-C/Objective-C++ ownership.
         invoke(case.name + "-pch", [compiler, *opts, header, "-o", target], work)
@@ -150,10 +152,28 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                 (work / "include/objc3c").mkdir(parents=True)
                 (work / "include/objc3c/runtime").symlink_to(headers, target_is_directory=True)
                 family = {"captures": "explicit_capture_lists", "keypaths": "typed_keypaths",
-                          "async": "native_c_async"}[case.feature]
+                          "async": "native_c_async", "isolation": "native_isolation",
+                          "spawn": "task_spawning"}[case.feature]
                 source = fixtures / family
                 shutil.copytree(source, work, dirs_exist_ok=True)
-                if case.feature == "async":
+                if case.feature == "isolation":
+                    provider = compile_source(case, work / "provider.m", work,
+                        language="objective-c", standard="c17", ownership=case.provider_ownership,
+                        output_name="provider.o")
+                    (work / "provider.m").unlink()
+                    extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
+                    client = compile_source(case, work / "client.m", work, extra=extra)
+                    execute(case, [provider, client], work)
+                elif case.feature == "spawn":
+                    extra = []
+                    if case.transport == "pch":
+                        header = work / "spawn.h"
+                        header.write_text("#include <objc3/concurrency.h>\n#include <objc3/errors.h>\n",
+                                          encoding="utf-8")
+                        extra = pch(case, header, work)
+                    client = work / ("contract.m" if case.language == "objective-c" else "contract.mm")
+                    execute(case, [compile_source(case, client, work, extra=extra)], work)
+                elif case.feature == "async":
                     provider = compile_source(case, work / "provider.m", work,
                         language="objective-c", standard="c17", ownership=case.provider_ownership,
                         output_name="provider.o")
@@ -186,6 +206,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         (work / "provider.m").unlink()
                     objects.append(compile_source(case, work / "main.m", work, extra=extra))
                     execute(case, objects, work)
+                    if case.feature == "keypaths" and "++" in case.language:
+                        failure = compile_source(case, work / "operand_failures.mm", work, extra=extra)
+                        execute(case, [objects[0], failure], work, "-operand-failures")
                     if case.feature == "captures" and "++" in case.language and case.transport == "source":
                         exception = compile_source(case, work / "exceptions.mm", work)
                         execute(case, [exception], work, "-exceptions")

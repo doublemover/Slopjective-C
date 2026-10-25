@@ -12,12 +12,12 @@ validated compiler behavior and installed SDK delivery are separate checkpoints.
 The current large implementation batch is **authored, not built or executed**.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
-## Paused implementation checkpoint
+## Active implementation checkpoint
 
-Development is paused at the user's request. All six compiler/runtime agents
-have finished their current spans and are parked. Completed maintained code and
-fixtures are committed, and canonical compiler changes are exported into the
-tracked LLVM patch stack. No new implementation or validation is scheduled.
+Development has resumed with a solo integration span. The six prior agents are
+parked. Maintained code and canonical compiler patches preserve their completed
+work; the next batch integrates C++ frame definitions and the deferred feature
+runner before combined validation.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
@@ -26,11 +26,11 @@ ignored build root; exported patches are its version-controlled source inputs.
 | --- | --- | --- |
 | Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap |
 | Explicit captures | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership |
-| Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Ordinary C++ frame definitions, dynamic stack storage, C++ task pool handling, handle-await protocols and structured scope lowering |
+| Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Nontrivial C++ frame parameters/results, dynamic stack storage, C++ task pool handling, handle-await protocols and structured scope lowering |
 | Isolation/Sendable | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values |
 | Structured runtime | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library and remaining combined integration |
-| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and deferred feature-batch driver | Remaining package/profile projections, driver enrollment and combined validation of authored fixtures |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and deferred feature-batch driver | Remaining package/profile projections, combined validation of authored fixtures |
 
 Per-feature detail and authored witnesses:
 
@@ -91,7 +91,7 @@ owner. The implementation chooses that specified policy; automatic temporary
 owner materialization is an optional alternative, not a mandatory missing feature.
 
 The authored `scripts.objc3c_toolchain.run_linux_feature_batch` driver runs capture,
-key-path and native C async witnesses against an already-built compiler/runtime.
+key-path, native C async, isolation and spawn witnesses against an already-built compiler/runtime.
 It covers source/PCH, C17/C++20/C++23, ARC/MRC, O0/O2 and mixed async provider
 ownership in private temporary directories, retaining only logs and a batch
 report. Explicit compiler/header/library overrides support development testing
@@ -112,7 +112,7 @@ The active older SDK is identified by
 [defer delivery evidence](../support/linux_defer_scope_release_acceptance.json)
 and [guard AST evidence](../support/linux_guard_ast_acceptance.json). No new SDK
 archive, installed-feature PASS or complete profile claim is implied by new
-source commits. Validation remains deferred at this paused source checkpoint.
+source commits. Validation remains deferred until the combined implementation checkpoint.
 
 ## Development operation
 
@@ -129,7 +129,7 @@ link job and a bounded 1 GiB content-keyed ccache. Managed activation sets the
 private executable tmpfs directory `/tmp/objc3c-1000` as `TMPDIR`; no extra RAM disk
 is needed. Keep persistent objects/SDK/cache on disk and disposable executables
 in automatically reclaimed case directories. During this development phase,
-build/test/qualification execution remains postponed and development is paused.
+build/test/qualification execution remains postponed while implementation is frontloaded.
 Once validation resumes,
 run necessary checks for the combined change and broaden only to resolve new
 failures or unresolved concerns.
