@@ -101,6 +101,8 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" 
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
 fi
 if [ "$qualification_scope" = full ] || [ "$qualification_scope" = native-features ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_compiler_witnesses.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./compiler-witness-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_typed_keypath_packages.py" \
   --output-dir ./typed-keypath-package-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_feature_batch.py" \

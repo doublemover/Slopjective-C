@@ -208,6 +208,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
                                 ('qualify_stdlib.py', 'qualify_stdlib.py'),
                                 ('run_linux_feature_batch.py', 'run_linux_feature_batch.py'),
+                                ('run_linux_compiler_witnesses.py', 'run_linux_compiler_witnesses.py'),
                                 ('qualify_match_results.py', 'qualify_match_results.py'),
                                 ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
                                 ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),
@@ -276,6 +277,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     license_dir = prefix / 'share/licenses/robin-map'
     license_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(robin_license, license_dir / 'LICENSE')
+    shutil.copy2(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck',
+                 prefix / 'bin/FileCheck')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
@@ -301,6 +304,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_module_names import qualify as qualify_names
     from .qualify_structured_runtime import qualify as qualify_structured
     from .run_linux_feature_batch import run_batch as qualify_native_features
+    from .run_linux_compiler_witnesses import qualify as qualify_compiler_witnesses
     from .qualify_task_coroutines import qualify as qualify_coroutines
     from .qualify_async_c_abi import qualify as qualify_async_c_abi
     from .qualify_stdlib import qualify as qualify_stdlib
@@ -330,6 +334,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_module_spi': partial(qualify_spi, prefix, validation_report.parent / 'installed-module-spi', jobs=1),
         'installed_module_names': partial(qualify_names, prefix, validation_report.parent / 'installed-module-names', jobs=1),
         'installed_structured_runtime': partial(qualify_structured, prefix, validation_report.parent / 'installed-structured-runtime'),
+        'installed_compiler_witnesses': partial(qualify_compiler_witnesses, prefix,
+            validation_report.parent / 'installed-compiler-witnesses'),
         'installed_native_features': partial(qualify_native_features, prefix,
             validation_report.parent / 'installed-native-features',
             fixtures=prefix / 'share/objc3c/examples/linux-features'),
@@ -361,7 +367,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
                              data['seal_sha256'], suite, counts)
-    priority = ('installed_typed_keypath_packages',
+    priority = ('installed_compiler_witnesses', 'installed_typed_keypath_packages',
                 'installed_recursive_carriers', 'installed_async_c_abi',
                 'installed_stdlib', 'installed_match_results',
                 'installed_task_coroutines', 'installed_native_async',

@@ -1,20 +1,30 @@
 #pragma once
-// Emit this header as PCH, then include it in persistence.m. Capture-list source
-// ranges, explicit ownership, unused fields and move kinds must survive reload.
-__attribute__((objc_root_class))
-@interface CapturePersistenceMethods
-- (id)copy;
-@end
+// Compile as a PCH and consume from persistence.m. Ownership and move source
+// locations survive reload, with a real GNUstep Block copy in ARC and MRC.
+#ifdef __cplusplus
+extern "C"
+#endif
+void *_Block_copy(const void *);
 typedef int (^CapturePersistenceBlock)(void);
-static inline CapturePersistenceBlock capture_persist(int *after) {
+static inline CapturePersistenceBlock capture_persist(int *after)
+    __attribute__((ns_returns_retained)) {
   int value = 17;
   CapturePersistenceBlock block = ^[move value] { return value; };
   *after = value;
-  return [block copy];
+#if __has_feature(objc_arc)
+  return (__bridge_transfer CapturePersistenceBlock)
+      _Block_copy((__bridge const void *)block);
+#else
+  return (CapturePersistenceBlock)_Block_copy((const void *)block);
+#endif
 }
 #if __has_feature(objc_arc)
-static inline id (^capture_persist_weak(id input))(void) {
-  return [^[weak input] { return input; } copy];
+typedef id (^CapturePersistenceWeakBlock)(void);
+static inline CapturePersistenceWeakBlock capture_persist_weak(id input)
+    __attribute__((ns_returns_retained)) {
+  CapturePersistenceWeakBlock block = ^[weak input] { return input; };
+  return (__bridge_transfer CapturePersistenceWeakBlock)
+      _Block_copy((__bridge const void *)block);
 }
 #endif
 #ifdef __cplusplus

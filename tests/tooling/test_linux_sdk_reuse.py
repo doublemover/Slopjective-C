@@ -63,7 +63,8 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     repo = tmp_path / 'project'
     fixture = 'tests/tooling/fixtures/objc3_editor/qualification-cases.json'
     for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen', fixture):
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck', fixture):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('initial contents')
@@ -82,7 +83,8 @@ def identity_project(tmp_path, monkeypatch, configure):
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
     for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
-                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'):
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen',
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck'):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('qualified input')
