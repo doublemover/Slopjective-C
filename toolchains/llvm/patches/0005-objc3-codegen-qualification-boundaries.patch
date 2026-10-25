@@ -6024,10 +6024,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..ba82a3135
+index 000000000..f5d12ca74
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,851 @@
+@@ -0,0 +1,857 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -6041,6 +6041,8 @@ index 000000000..ba82a3135
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/Type.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/IR/BasicBlock.h"
@@ -6258,6 +6260,10 @@ index 000000000..ba82a3135
 +  E = E->IgnoreParenImpCasts();
 +  if (E->getType().isVolatileQualified())
 +    return false;
++  if (const auto *Await = dyn_cast<CoawaitExpr>(E)) {
++    const auto *Function = getObjC3AsyncCalleeFunctionType(Await->getCommonExpr());
++    return Function && Function->getObjC3FunctionEffects().AsyncFrame;
++  }
 +  if (E->isGLValue() ||
 +      isa<ObjC3CarrierTransferExpr, CallExpr, ObjCMessageExpr, PseudoObjectExpr>(E))
 +    return true;
@@ -12076,7 +12082,7 @@ index e7c24f1f3..78b411bc1 100644
    }
  
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
-index 313a364e8..07f6c52aa 100644
+index 313a364e8..5bf036388 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
 +++ b/clang/lib/CodeGen/CodeGenModule.cpp
 @@ -11,6 +11,8 @@
@@ -12088,7 +12094,37 @@ index 313a364e8..07f6c52aa 100644
  #include "ABIInfo.h"
  #include "CGBlocks.h"
  #include "CGCUDARuntime.h"
-@@ -1010,6 +1012,8 @@ void CodeGenModule::checkAliases() {
+@@ -919,11 +921,26 @@ void CodeGenModule::checkAliases() {
+           const auto *AliaseeFTy =
+               AliaseeTy.getCanonicalType()->getAs<FunctionType>();
+           assert(AliasFTy && AliaseeFTy);
+-          if (!Context.typesAreCompatible(AliasFTy->getReturnType(),
+-                                          AliaseeFTy->getReturnType()))
+-            return true;
+           const auto *AliasFPTy = dyn_cast<FunctionProtoType>(AliasFTy);
+           const auto *AliaseeFPTy = dyn_cast<FunctionProtoType>(AliaseeFTy);
++          QualType AliasResult = AliasFTy->getReturnType();
++          QualType AliaseeResult = AliaseeFTy->getReturnType();
++          if (!IsIFunc && AliasFPTy && AliaseeFPTy) {
++            const auto A = AliasFPTy->getObjC3FunctionEffects();
++            const auto B = AliaseeFPTy->getObjC3FunctionEffects();
++            // A logical C-frame declaration may deliberately alias a physical
++            // factory. Compare its actual shared-frame return ABI. Two logical
++            // declarations still require their original result types to agree.
++            if (A.AsyncFrame && !B.Async) {
++              QualType Physical = Context.getObjC3AsyncReturnType(AliasFPTy);
++              if (!Physical.isNull()) AliasResult = Physical;
++            } else if (B.AsyncFrame && !A.Async) {
++              QualType Physical = Context.getObjC3AsyncReturnType(AliaseeFPTy);
++              if (!Physical.isNull()) AliaseeResult = Physical;
++            }
++          }
++          if (!Context.typesAreCompatible(AliasResult, AliaseeResult))
++            return true;
+           // Report variadic vs no-prototype.
+           if ((AliasFPTy && AliasFPTy->isVariadic() && !AliaseeFPTy) ||
+               (AliaseeFPTy && AliaseeFPTy->isVariadic() && !AliasFPTy))
+@@ -1010,6 +1027,8 @@ void CodeGenModule::checkAliases() {
  }
  
  void CodeGenModule::clear() {
@@ -12097,7 +12133,7 @@ index 313a364e8..07f6c52aa 100644
    DeferredDeclsToEmit.clear();
    EmittedDeferredDecls.clear();
    DeferredAnnotations.clear();
-@@ -6073,6 +6077,9 @@ llvm::Constant *
+@@ -6073,6 +6092,9 @@ llvm::Constant *
  CodeGenModule::GetAddrOfGlobal(GlobalDecl GD, ForDefinition_t IsForDefinition) {
    const Decl *D = GD.getDecl();
  
@@ -12107,7 +12143,7 @@ index 313a364e8..07f6c52aa 100644
    if (isa<CXXConstructorDecl>(D) || isa<CXXDestructorDecl>(D))
      return getAddrOfCXXStructor(GD, /*FnInfo=*/nullptr, /*FnType=*/nullptr,
                                  /*DontDefer=*/false, IsForDefinition);
-@@ -6976,6 +6983,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
+@@ -6976,6 +6998,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
                                                   llvm::GlobalValue *GV) {
    const auto *D = cast<FunctionDecl>(GD.getDecl());
  
@@ -12123,7 +12159,7 @@ index 313a364e8..07f6c52aa 100644
    // Compute the function info and LLVM type.
    const CGFunctionInfo &FI = getTypes().arrangeGlobalDeclaration(GD);
    llvm::FunctionType *Ty = getTypes().GetFunctionType(FI);
-@@ -7944,10 +7960,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
+@@ -7944,10 +7975,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
    if (D->isTemplated())
      return;
  
@@ -24907,10 +24943,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..e920324d2
+index 000000000..11b95c159
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,982 @@
+@@ -0,0 +1,1017 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24923,6 +24959,7 @@ index 000000000..e920324d2
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Isolation.h"
 +#include "CGObjC3TypedErrors.h"
@@ -25026,6 +25063,7 @@ index 000000000..e920324d2
 +  CGM.SetInternalFunctionAttributes(GlobalDecl(), F, FI);
 +  CodeGenFunction CGF(CGM);
 +  CGF.StartFunction(GlobalDecl(), Ret, F, FI, Args);
++  auto Debug = ApplyDebugLocation::CreateArtificial(CGF);
 +  auto AddressOf = [&](unsigned I) {
 +    return Address(CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(Args[I])),
 +                   CGF.ConvertTypeForMem(T), Ctx.getTypeAlignInChars(T));
@@ -25871,6 +25909,12 @@ index 000000000..e920324d2
 +      {Dependency, Descriptor, Ops,
 +       Result.isValid() ? Result.emitRawPointer(*this) : nullPtr(*this)});
 +  checkStatus(*this, Data, Status);
++  // Copy-out established a complete owned carrier before child cleanup runs.
++  // Its enclosing initialization guard must protect that ownership on unwind.
++  auto Init = getObjC3CarrierLocalInitState();
++  if (Result.isValid() && Init.Initialized.isValid() &&
++      isObjC3CarrierLocalInitialization(Result, T))
++    Builder.CreateStore(Builder.getTrue(), Init.Initialized);
 +  // Cleanup dispatch also serves cancellation/failure exits. Reload copied
 +  // values after its continuation so SSA dominance does not depend on the
 +  // runtime cleanup destination selector. Result ownership outlives the child.
@@ -25886,19 +25930,46 @@ index 000000000..e920324d2
 +      Value = RValue::get(EmitLoadOfScalar(MakeAddrLValue(Result, T), E.getExprLoc()));
 +    else {
 +      Value = RValue::getAggregate(Result);
-+      if (Temporary && T.isDestructedType() != QualType::DK_none)
++      if (Temporary && hasObjC3CarrierManagedPayload(T))
++        pushObjC3CarrierARCTemporaryCleanup(*this, T, Result);
++      else if (Temporary && T.isDestructedType() != QualType::DK_none)
 +        pushDestroy(NormalAndEHCleanup, Result, T, getDestroyer(T.isDestructedType()), false);
 +    }
 +  }
 +  (void)IgnoreResult;
 +  return Value;
 +}
++
++// Metadata comes from the same AST representation and operation emitters as a
++// native async Optional result. The library never guesses carrier field layout.
++llvm::Value *clang::CodeGen::emitObjC3AsyncGroupNextPlan(
++    CodeGenFunction &CGF, const CallExpr &E) {
++  auto &Ctx = CGF.getContext();
++  QualType Result = E.getArg(0)->getType()->getPointeeType().getCanonicalType();
++  QualType Element = cast<ObjC3OptionalType>(Result.getTypePtr())->getElementType();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(Result);
++  auto *Type = llvm::StructType::get(
++      CGF.Int32Ty, CGF.Int32Ty, CGF.Int8PtrTy, CGF.Int8PtrTy, CGF.Int8PtrTy,
++      CGF.Int64Ty, CGF.Int64Ty, CGF.Int32Ty, CGF.Int32Ty);
++  auto *Init = llvm::ConstantStruct::get(
++      Type, {CGF.Builder.getInt32(56), CGF.Builder.getInt32(1),
++             resultDescriptor(CGF, Element), resultDescriptor(CGF, Result),
++             cast<llvm::Constant>(valueOps(CGF, Result)),
++             CGF.Builder.getInt64(Info.ValueOffsetBits / Ctx.getCharWidth()),
++             CGF.Builder.getInt64(Info.TagOffsetBits / Ctx.getCharWidth()),
++             CGF.Builder.getInt32(1), CGF.Builder.getInt32(0)});
++  auto *Plan = new llvm::GlobalVariable(
++      CGF.CGM.getModule(), Type, true, llvm::GlobalValue::PrivateLinkage, Init,
++      "__objc3_async_group_next_plan");
++  Plan->setAlignment(llvm::Align(8));
++  return Plan;
++}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..437cbe80d
+index 000000000..f07bd5c4e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,30 @@
 +//===--- CGObjC3Async.h - Native C async checked continuation ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
@@ -25910,9 +25981,11 @@ index 000000000..437cbe80d
 +}
 +namespace clang {
 +class CoawaitExpr;
++class CallExpr;
 +namespace CodeGen {
 +class CodeGenFunction;
 +class Address;
++llvm::Value *emitObjC3AsyncGroupNextPlan(CodeGenFunction &, const CallExpr &);
 +// A C++ coroutine owns slots, never live thread-local pool tokens, across a
 +// suspension. C frames keep their corresponding private slot vector.
 +llvm::SmallVectorImpl<Address> *getObjC3CxxAutoreleasePools(CodeGenFunction &);
@@ -27622,3 +27695,78 @@ index 000000000..fd8cb9ca8
 +  }
 +  co_return;
 +}
+diff --git a/clang/lib/CodeGen/CGBuiltin.cpp b/clang/lib/CodeGen/CGBuiltin.cpp
+index 37846bbb0..e45130fda 100644
+--- a/clang/lib/CodeGen/CGBuiltin.cpp
++++ b/clang/lib/CodeGen/CGBuiltin.cpp
+@@ -16,6 +16,7 @@
+ #include "CGCXXABI.h"
+ #include "CGDebugInfo.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3Async.h"
+ #include "CGOpenCLRuntime.h"
+ #include "CGRecordLayout.h"
+ #include "CGValue.h"
+@@ -6402,6 +6403,8 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
+   case Builtin::BI__fastfail:
+     return RValue::get(EmitMSVCBuiltinExpr(MSVCIntrin::__fastfail, E));
+ 
++  case Builtin::BI__builtin_objc3_async_group_next_plan:
++    return RValue::get(emitObjC3AsyncGroupNextPlan(*this, *E));
+   case Builtin::BI__builtin_coro_id:
+     return EmitCoroutineIntrinsic(E, Intrinsic::coro_id);
+   case Builtin::BI__builtin_coro_promise:
+diff --git a/clang/test/ObjC3/CodeGen/native-group-next-plan.m b/clang/test/ObjC3/CodeGen/native-group-next-plan.m
+new file mode 100644
+index 000000000..3009cfa9e
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-group-next-plan.m
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// The shared plan is compiler-owned, including canonical descriptors, complete
++// carrier copy/destruction operations and AST field offsets. No operand runs.
++int evaluated;
++const void *integer_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(int) *)++evaluated);
++}
++#if __has_feature(objc_arc)
++const void *object_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(id) *)0);
++}
++typedef int (^Reader)(void);
++const void *block_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(Reader) *)0);
++}
++#endif
++const void *void_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(void) *)0);
++}
++struct __attribute__((aligned(64))) Wide { int value; };
++const void *aligned_plan(void) {
++  return __builtin_objc3_async_group_next_plan((Optional(struct Wide) *)0);
++}
++// CHECK-DAG: @__objc3_async_group_next_plan{{.*}} = private constant {{.*}}i32 56, i32 1
++// CHECK-DAG: @__objc3_c_async_value_ops{{.*}} = private constant
++// CHECK-DAG: c"objc3.async.v1:_ZTSi\00"
++// CHECK-LABEL: define{{.*}} ptr @integer_plan(
++// CHECK-NOT: load i32, ptr @evaluated
++// CHECK-NOT: store i32 {{.*}}@evaluated
++// CHECK: ret ptr @__objc3_async_group_next_plan
++// ARC-LABEL: define{{.*}} ptr @object_plan(
++// ARC: ret ptr @__objc3_async_group_next_plan
+diff --git a/clang/test/ObjC3/CodeGen/native-c-frame-alias.m b/clang/test/ObjC3/CodeGen/native-c-frame-alias.m
+new file mode 100644
+index 000000000..93985346c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-c-frame-alias.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-llvm -o /dev/null -Wattribute-alias -verify %s
++#include "Inputs/native-c-async-frame.h"
++static objc3_async_frame physical(int x) { return (objc3_async_frame){0}; }
++static int logical(int) __objc3_async_frame __attribute__((alias("physical"),unused));
++static int wrong_parameter(double) __objc3_async_frame __attribute__((alias("physical"),unused)); // expected-warning {{alias and aliasee have different types}}
++// expected-note@-3 {{aliasee is declared here}}
++static int native(int value) __objc3_async_frame { return value; }
++static double wrong_logical(int) __objc3_async_frame __attribute__((alias("native"),unused)); // expected-warning {{alias and aliasee have different types}}
++// expected-note@-2 {{aliasee is declared here}}

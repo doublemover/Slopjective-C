@@ -173,6 +173,32 @@ static inline objc3_task_t *objc3_task_detached(objc3_task_throwing_work work)
   extern result_type name(objc3_task_t *) __objc3_async_frame \
       __objc3_throws(error_type) __asm__("__objc3_task_join_frame")
 
+/* Declare completion-order native iteration returning Optional(T). Typedefs
+ * support record, object and Block element types. The compiler supplies exact
+ * Optional layout and ownership operations. Construction retains the group
+ * immediately; first resume closes its tree. A present nil remains Some(nil).
+ * A typed mismatch leaves the selected task available for another consumer.
+ * The physical local shim has the ordinary shared-frame C ABI; callers see
+ * only the logical async declaration, including its checked error domain. */
+extern objc3_async_frame __objc3_task_group_next_frame(
+    objc3_task_group_t *, const objc3_async_group_next_plan *);
+#define __OBJC3_GROUP_NEXT_DECLARE(name, element_type, effects) \
+  static objc3_async_frame name##_objc3_physical(objc3_task_group_t *) \
+      __asm__("__objc3_group_next_" #name); \
+  static Optional(element_type) name(objc3_task_group_t *) \
+      __objc3_async_frame effects \
+      __attribute__((alias("__objc3_group_next_" #name), unused)); \
+  __attribute__((used)) static objc3_async_frame \
+  name##_objc3_physical(objc3_task_group_t *group) { \
+    return __objc3_task_group_next_frame(group, \
+        (const objc3_async_group_next_plan *) \
+        __builtin_objc3_async_group_next_plan((Optional(element_type) *)0)); \
+  }
+#define OBJC_TASK_GROUP_NEXT_DECLARE(name, element_type) \
+  __OBJC3_GROUP_NEXT_DECLARE(name, element_type, )
+#define OBJC_TASK_GROUP_NEXT_DECLARE_THROWING(name, element_type, error_type) \
+  __OBJC3_GROUP_NEXT_DECLARE(name, element_type, __objc3_throws(error_type))
+
 /* Close and nonblockingly join an existing group tree. The group is retained
  * by the lazy frame, independently of the caller's handle. Ordinary caller
  * cancellation remains observable; this is an explicit join, not a scope. */

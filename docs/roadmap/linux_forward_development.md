@@ -34,6 +34,17 @@ package/source-graph/audit batch passed 160 tests. These historical scopes are
 not repeated or summed into the current counts. Public async/actor predicates
 and full Core/Strict/System conformance remain reserved.
 
+## Active native group iteration span
+
+[Native C group-result iteration](linux_native_group_iteration.md) adds typed
+`Optional(T)` results, compiler-owned layout/ownership plans and queued
+completion-order reservation. It preserves present nil values, checked errors,
+type rejection without consumption and cancellation ownership. The source
+concurrency module is 2.2.0. Awaited ARC carriers also gain initialization guards
+and cleanup of discarded owned results. Runtime preflight passes; compiler and
+source/PCH validation follow this coherent span. The accepted SDK above remains
+the prior handle-join delivery until the new source cohort is qualified.
+
 ## Native handle joins and runtime cutover
 
 [Native task/group handle joins](linux_async_handle_joins.md) provide lazy

@@ -22,3 +22,28 @@ void unused_child_handles(void) {
   objc3_task_spawn(^void(void) __objc3_async_frame {}); // expected-warning {{child task handle is unused}}
   OBJC_TASK_SPAWN(^void(void) __objc3_async_frame {}); // expected-warning {{child task handle is unused}}
 }
+
+// A group result is copied into independent Optional storage. Resource aliases
+// and nontrivial enclosing records cannot acquire an implicit duplicate owner.
+#ifndef __cplusplus
+void group_next_close_handle(int);
+typedef int GroupNextOwnedHandle __attribute__((
+    objc_requires_cleanup(group_next_close_handle),
+    objc_resource_family(GroupNextHandles),objc_invalid(-1)));
+void reject_group_next_resource(void) {
+  (void)__builtin_objc3_async_group_next_plan((Optional(GroupNextOwnedHandle) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
+}
+#if __has_feature(objc_arc)
+struct GroupNextOwnedRecord { id value; };
+void reject_group_next_record(void) {
+  (void)__builtin_objc3_async_group_next_plan((Optional(struct GroupNextOwnedRecord) *)0); // expected-error {{not supported in an Objective-C 3 value carrier}}
+}
+void reject_group_next_unowned(void) {
+  (void)__builtin_objc3_async_group_next_plan((Optional(__unsafe_unretained id) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
+}
+#endif
+#else
+void reject_group_next_cpp_plan(void) {
+  (void)__builtin_objc3_async_group_next_plan((Optional(int) *)0); // expected-error {{native group-next plan requires a pointer}}
+}
+#endif

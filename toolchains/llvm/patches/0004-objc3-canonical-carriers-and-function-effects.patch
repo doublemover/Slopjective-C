@@ -1234,10 +1234,10 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..49436b447 100644
+index 2cb79b6ba..e8c025e67 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,125 @@
+@@ -11,7 +11,129 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
@@ -1290,6 +1290,10 @@ index 2cb79b6ba..49436b447 100644
 +
 +def err_objc3_type_identity_pointer : Error<
 +  "Objective-C 3 type identity requires a pointer to the result type">;
++def err_objc3_group_next_plan_payload : Error<
++  "native group-next Optional payload requires supported plain storage or an ARC managed carrier">;
++def err_objc3_group_next_plan_type : Error<
++  "native group-next plan requires a pointer to a complete Optional<T> in Linux x86-64 GNUstep 2.2 Objective-C C compatibility mode">;
 +def err_objc3_async_task_unsupported : Error<
 +  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 callable with a concrete value or void result">;
 +def err_objc3_async_covariant_return : Error<
@@ -1363,7 +1367,7 @@ index 2cb79b6ba..49436b447 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -6986,6 +7104,8 @@ def note_protected_by_variable_non_pod : Note<
+@@ -6986,6 +7108,8 @@ def note_protected_by_variable_non_pod : Note<
    "jump bypasses initialization of non-POD variable">;
  def note_protected_by_cleanup : Note<
    "jump bypasses initialization of variable with __attribute__((cleanup))">;
@@ -1372,7 +1376,7 @@ index 2cb79b6ba..49436b447 100644
  def note_protected_by_vla_typedef : Note<
    "jump bypasses initialization of VLA typedef">;
  def note_protected_by_vla_type_alias : Note<
-@@ -7010,6 +7130,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7134,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1386,7 +1390,7 @@ index 2cb79b6ba..49436b447 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7153,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7157,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1397,7 +1401,7 @@ index 2cb79b6ba..49436b447 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -7046,6 +7177,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
+@@ -7046,6 +7181,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
  
  def note_exits_cleanup : Note<
    "jump exits scope of variable with __attribute__((cleanup))">;
@@ -1406,7 +1410,7 @@ index 2cb79b6ba..49436b447 100644
  def note_exits_dtor : Note<
    "jump exits scope of variable with non-trivial destructor">;
  def note_exits_temporary_dtor : Note<
-@@ -8001,6 +8134,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8138,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1432,7 +1436,7 @@ index 2cb79b6ba..49436b447 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14519,48 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14523,48 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -18426,10 +18430,10 @@ index 0573cdf95..e51931da4 100644
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..07d74b93c 100644
+index 2a8395e26..036d6da08 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
-@@ -29,6 +29,7 @@
+@@ -29,9 +29,12 @@
  #include "clang/AST/ExprObjC.h"
  #include "clang/AST/FormatString.h"
  #include "clang/AST/IgnoreExpr.h"
@@ -18437,7 +18441,12 @@ index 2a8395e26..07d74b93c 100644
  #include "clang/AST/NSAPI.h"
  #include "clang/AST/NonTrivialTypeVisitor.h"
  #include "clang/AST/OperationKinds.h"
-@@ -2991,6 +2992,97 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
++#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
+ #include "clang/AST/RecordLayout.h"
+ #include "clang/AST/Stmt.h"
+ #include "clang/AST/TemplateBase.h"
+@@ -2991,6 +2994,145 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
  
    FPOptions FPO;
    switch (BuiltinID) {
@@ -18501,6 +18510,54 @@ index 2a8395e26..07d74b93c 100644
 +        IsReset ? TheCall->getArg(1) : nullptr, TheCall->getBeginLoc(),
 +        TheCall->getRParenLoc());
 +  }
++  case Builtin::BI__builtin_objc3_async_group_next_plan: {
++    if (checkArgCount(TheCall, 1)) return ExprError();
++    Expr *Argument = TheCall->getArg(0);
++    const auto *Pointer = Argument->getType()->getAs<PointerType>();
++    QualType Type = Pointer ? Pointer->getPointeeType() : QualType();
++    auto Info = !Type.isNull() && Type->getAs<ObjC3OptionalType>()
++                    ? Context.getObjC3CarrierRepresentationType(Type)
++                    : ObjC3CarrierRepresentationInfo();
++    const auto &Triple = Context.getTargetInfo().getTriple();
++    if (!getLangOpts().ObjC3 || !getLangOpts().ObjC ||
++        getLangOpts().CPlusPlus || getLangOpts().ObjC3Profile != 0 ||
++        getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
++        !Triple.isOSLinux() || Triple.getArch() != llvm::Triple::x86_64 ||
++        Type.isNull() || !Type->getAs<ObjC3OptionalType>() ||
++        Type.isConstQualified() || Type.isVolatileQualified() ||
++        Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
++        !Info.TagField || Context.getTypeSizeInChars(Info.TagField->getType()).getQuantity() != 1) {
++      Diag(Argument->getExprLoc(), diag::err_objc3_group_next_plan_type);
++      return ExprError();
++    }
++    auto OwnedLeaves = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
++      auto Resource = getObjC3ResourceTypeContract(Context, T);
++      if (Depth > 64 || T.isVolatileQualified() || Resource.Cleanup || Resource.Family)
++        return false;
++      if (T->isObjCObjectPointerType() || T->isBlockPointerType())
++        return T.getObjCLifetime() == Qualifiers::OCL_Strong;
++      if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++        return Self(Self, Optional->getElementType(), Depth + 1);
++      if (const auto *Result = T->getAs<ObjC3ResultType>())
++        return Self(Self, Result->getSuccessType(), Depth + 1) &&
++               Self(Self, Result->getErrorType(), Depth + 1);
++      auto Leaf = getObjC3ValueTypeFacts(Context, T,
++                                         ObjC3PayloadPosition::OptionalElement);
++      return Leaf.isValid() && !T->isAtomicType() && !T->isArrayType() &&
++             (!Leaf.IsRecord || Leaf.IsTriviallyCopyable);
++    };
++    std::string Encoding;
++    if (!OwnedLeaves(OwnedLeaves, Type, 0) ||
++        (hasObjC3CarrierManagedPayload(Type) &&
++         !getObjC3CarrierRuntimeEncoding(Context, Type, Encoding))) {
++      Diag(Argument->getExprLoc(), diag::err_objc3_group_next_plan_payload);
++      return ExprError();
++    }
++    // The type operand is unevaluated. Drop its value expression before CFG,
++    // ownership analysis and code generation can visit its side effects.
++    TheCall->setArg(0, new (Context) ImplicitValueInitExpr(Argument->getType()));
++    return TheCall;
++  }
 +  case Builtin::BI__builtin_objc3_type_identity: {
 +    if (checkArgCount(TheCall, 1))
 +      return ExprError();
@@ -18535,7 +18592,7 @@ index 2a8395e26..07d74b93c 100644
    case Builtin::BI__builtin___get_unsafe_stack_start:
    case Builtin::BI__builtin___get_unsafe_stack_bottom:
      Diag(TheCall->getBeginLoc(), diag::warn_deprecated_builtin)
-@@ -10821,6 +10913,9 @@ struct SearchNonTrivialToInitializeField
+@@ -10821,6 +10963,9 @@ struct SearchNonTrivialToInitializeField
      Super::visitWithKind(PDIK, FT, SL);
    }
  
@@ -18545,7 +18602,7 @@ index 2a8395e26..07d74b93c 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
    }
-@@ -10863,6 +10958,9 @@ struct SearchNonTrivialToCopyField
+@@ -10863,6 +11008,9 @@ struct SearchNonTrivialToCopyField
      Super::visitWithKind(PCK, FT, SL);
    }
  
@@ -20059,10 +20116,10 @@ index 000000000..2338ccaf7
 +  };
 +}
 diff --git a/clang/include/clang/Basic/Builtins.td b/clang/include/clang/Basic/Builtins.td
-index 344a712dd..a59067cd4 100644
+index 344a712dd..e91f0e6be 100644
 --- a/clang/include/clang/Basic/Builtins.td
 +++ b/clang/include/clang/Basic/Builtins.td
-@@ -550,6 +550,36 @@ def BuiltinSetFltRounds : Builtin {
+@@ -550,6 +550,43 @@ def BuiltinSetFltRounds : Builtin {
  }
  
  // GCC-compatible C99 CMPLX implementation.
@@ -20071,6 +20128,13 @@ index 344a712dd..a59067cd4 100644
 +  let Spellings = ["__builtin_objc3_type_identity"];
 +  let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
 +  let Prototype = "char const*(...)";
++}
++
++// A compiler-owned Optional layout and operation plan for native group awaits.
++def ObjC3AsyncGroupNextPlan : Builtin {
++  let Spellings = ["__builtin_objc3_async_group_next_plan"];
++  let Attributes = [NoThrow, Const, CustomTypeChecking];
++  let Prototype = "void const*(...)";
 +}
 +
 +// Type-check an Error-constrained library factory without changing its value.
@@ -41372,4 +41436,24 @@ index 000000000..99451fd00
 +void owning_copy(void) {
 +  @resource(close_address, invalid: -1) int value = 3;
 +  use_block(^{ return value; }); // expected-error {{a cleanup resource requires an explicit move Block capture}}
++}
+diff --git a/clang/test/ObjC3/Sema/native-group-next-plan.m b/clang/test/ObjC3/Sema/native-group-next-plan.m
+new file mode 100644
+index 000000000..8c2dbfd5b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-group-next-plan.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
++void bad(void) {
++  __builtin_objc3_async_group_next_plan(42); // expected-error {{native group-next plan requires a pointer}}
++  __builtin_objc3_async_group_next_plan((int *)0); // expected-error {{native group-next plan requires a pointer}}
++  __builtin_objc3_async_group_next_plan((const Optional(int) *)0); // expected-error {{native group-next plan requires a pointer}}
++#if __has_feature(objc_arc)
++  __builtin_objc3_async_group_next_plan((Optional(__weak id) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
++#else
++  __builtin_objc3_async_group_next_plan((Optional(id) *)0); // expected-error {{requires supported plain storage or an ARC managed carrier}}
++#endif
++  __builtin_objc3_async_group_next_plan(); // expected-error {{too few arguments}}
++  __builtin_objc3_async_group_next_plan((Optional(int) *)0, 0); // expected-error {{too many arguments}}
 +}

@@ -306,6 +306,7 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/lib/CodeGen/CGBuiltin.cpp",
         "clang/lib/CodeGen/CGException.cpp",
         "clang/lib/CodeGen/CGObjC3Async.cpp",
         "clang/lib/CodeGen/CGObjC3Async.h",
