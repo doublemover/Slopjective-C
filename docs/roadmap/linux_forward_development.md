@@ -9,7 +9,10 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current large implementation batch is **authored, not built or executed**.
+The resumed compiler build and **342 native Clang regressions** pass, with three
+unsupported cases. Four standalone runtime suites and 60 focused tooling tests
+also pass. The broader feature execution matrix and SDK qualification remain in
+progress.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
 ## Active implementation checkpoint
@@ -59,7 +62,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
 
 ## Completion sequence
 
-1. On resumption, finish the remaining ownership, async, isolation, key-path and structured runtime
+1. Finish the remaining ownership, async, isolation, key-path and structured runtime
    slices together. Preserve live owners through suspension and exceptions;
    retain complete callable identity across source, PCH, import and packages.
 2. Integrate the authored recognized spawn APIs/macros, retained actor bindings
@@ -95,7 +98,8 @@ key-path, native C async, isolation and spawn witnesses against an already-built
 It covers source/PCH, C17/C++20/C++23, ARC/MRC, O0/O2 and mixed async provider
 ownership in private temporary directories, retaining only logs and a batch
 report. Explicit compiler/header/library overrides support development testing
-without an SDK archive rebuild. The driver has not been executed in this phase.
+without an SDK archive rebuild. The runner is now being executed against the development compiler/runtime;
+completed C17 capture cases cover source/PCH, ARC/MRC and O0/O2.
 
 ## Existing evidence
 
@@ -129,10 +133,10 @@ link job and a bounded 1 GiB content-keyed ccache. Managed activation sets the
 private executable tmpfs directory `/tmp/objc3c-1000` as `TMPDIR`; no extra RAM disk
 is needed. Keep persistent objects/SDK/cache on disk and disposable executables
 in automatically reclaimed case directories. During this development phase,
-build/test/qualification execution remains postponed while implementation is frontloaded.
-Once validation resumes,
-run necessary checks for the combined change and broaden only to resolve new
-failures or unresolved concerns.
+implementation remains frontloaded. Compiler compilation and focused runtime/
+tooling checks now establish the combined checkpoint; language execution and
+SDK qualification follow once compilation succeeds. Broaden checks only to
+resolve failures or unresolved concerns.
 
 Runtime-only development can configure `native/objc3c/src/runtime` directly:
 

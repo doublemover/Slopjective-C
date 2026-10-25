@@ -328,7 +328,7 @@ index 95cfd19c0..804b26750 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index 0bb9c6aa0..f8cf2a16c 100644
+index 0bb9c6aa0..7267fa5d7 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
 @@ -42,6 +42,123 @@
@@ -483,7 +483,26 @@ index 0bb9c6aa0..f8cf2a16c 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3691,6 +3822,13 @@ namespace {
+@@ -2660,9 +2791,15 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+     return cast<GenericSelectionExpr>(this)->getResultExpr()->
+       isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+   case CoawaitExprClass:
+-  case CoyieldExprClass:
+-    return cast<CoroutineSuspendExpr>(this)->getResumeExpr()->
+-      isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
++  case CoyieldExprClass: {
++    const Expr *Resume = cast<CoroutineSuspendExpr>(this)->getResumeExpr();
++    // Native frame awaits use an opaque protocol operation, without a source
++    // await_resume call. The await itself is an observable suspension.
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Resume))
++      if (!Opaque->getSourceExpr())
++        return false;
++    return Resume->isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
++  }
+   case ChooseExprClass:
+     return cast<ChooseExpr>(this)->getChosenSubExpr()->
+       isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+@@ -3691,6 +3828,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -497,7 +516,7 @@ index 0bb9c6aa0..f8cf2a16c 100644
    };
  }
  
-@@ -3870,6 +4008,65 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4014,65 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  

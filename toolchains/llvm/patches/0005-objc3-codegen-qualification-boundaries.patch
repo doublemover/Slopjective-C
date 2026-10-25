@@ -3238,7 +3238,7 @@ index 0683a4937..603af31da 100644
  
  /// Adjust the declaration of something from the blocks API.
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..5bbc34650 100644
+index 08cb9860f..829194fc2 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -3317,7 +3317,7 @@ index 08cb9860f..5bbc34650 100644
    CanQualType resultType = FTP->getReturnType().getUnqualifiedType();
 +  if (Effects.Async)
 +    resultType = CGT.getContext().getCanonicalType(
-+        CGT.getContext().getObjC3AsyncReturnType(FTP));
++        CGT.getContext().getObjC3AsyncReturnType(FTP.getTypePtr()));
 +  if (!instanceMethod) {
 +    QualType Projected;
 +    if (CodeGen::getObjC3CarrierABIProjectionType(
@@ -11582,7 +11582,7 @@ index 853f038c4..5c2a965fe 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..043496663 100644
+index 7629b42dd..e21b73ef5 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -1,3 +1,4 @@
@@ -11698,29 +11698,34 @@ index 7629b42dd..043496663 100644
  
    CGM.getTargetCodeGenInfo().checkFunctionABI(CGM, FD);
  
-@@ -1545,7 +1587,8 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1542,10 +1584,13 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+       Loc = SpecDecl->getLocation();
+ 
+   Stmt *Body = FD->getBody();
++  const auto *AsyncType = getObjC3CallableFunctionType(FD);
++  const bool NativeFrame = AsyncType && AsyncType->isObjC3AsyncFrame();
  
    if (Body) {
      // Coroutines always emit lifetime markers.
 -    if (isa<CoroutineBodyStmt>(Body))
 +    if (isa<CoroutineBodyStmt>(Body) ||
-+        FD->getType()->castAs<FunctionProtoType>()->isObjC3AsyncFrame())
++        NativeFrame)
        ShouldEmitLifetimeMarkers = true;
  
      // Initialize helper which will detect jumps which can cause invalid
-@@ -1622,7 +1665,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1622,7 +1667,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
      EmitCall(FnInfo, GDStubCallee, ReturnValueSlot(), CallArgs, nullptr, false,
               Loc);
    } else if (Body) {
 -    EmitFunctionBody(Body);
-+    if (FD->getType()->castAs<FunctionProtoType>()->isObjC3AsyncFrame())
++    if (NativeFrame)
 +      EmitObjC3CAsyncBody(*FD, *Body);
 +    else
 +      EmitFunctionBody(Body);
    } else
      llvm_unreachable("no definition for emitted function");
  
-@@ -2556,6 +2602,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2604,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -12096,7 +12101,7 @@ index 313a364e8..07f6c52aa 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 55fe21658..ed06f4ece 100644
+index 55fe21658..bf0cc2a25 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -1,3 +1,4 @@
@@ -12165,14 +12170,14 @@ index 55fe21658..ed06f4ece 100644
 +           isObjC3ErrorObjectType(CGM, Effects.ErrorType));
 +      if (auto *FD = dyn_cast_or_null<FunctionDecl>(D)) {
 +        const FunctionDecl *Definition = nullptr;
-+        if (Context.getLangOpts().CPlusPlus &&
++        if (Context.getLangOpts().CPlusPlus && !Effects.AsyncFrame &&
 +            FPT == FD->getType()->getAs<FunctionProtoType>() &&
 +            FD->hasBody(Definition) &&
 +            !isa<CoroutineBodyStmt>(Definition->getBody()))
 +          SupportedAsync = false;
 +      }
 +      if (const auto *BD = dyn_cast_or_null<BlockDecl>(D))
-+        if (Context.getLangOpts().CPlusPlus &&
++        if (Context.getLangOpts().CPlusPlus && !Effects.AsyncFrame &&
 +            FPT == getObjC3CallableFunctionType(BD) && BD->getBody() &&
 +            !getObjC3CoroutineBody(BD))
 +          SupportedAsync = false;
@@ -18188,7 +18193,7 @@ index 000000000..51dd68396
 +// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 new file mode 100644
-index 000000000..ef728a77d
+index 000000000..7952af7c9
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 @@ -0,0 +1,31 @@
@@ -18218,7 +18223,7 @@ index 000000000..ef728a77d
 +}
 +#elif TEST_KIND == 3
 +int unsupported(Receiver *receiver) {
-+  return __objc3_try_force([receiver value]); // expected-error {{requires a throwing call expression}}
++  return __objc3_try_force([receiver value]); // expected-error {{native Objective-C async frame calls require the installed}}
 +}
 +#else
 +struct Aggregate unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
@@ -24761,10 +24766,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..03fc449ba
+index 000000000..e740804d1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,928 @@
+@@ -0,0 +1,933 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24840,9 +24845,8 @@ index 000000000..03fc449ba
 +                                CGM.Int32Ty, CGM.Int8PtrTy, CGM.Int8PtrTy,
 +                                CGM.Int8PtrTy, CGM.Int8PtrTy);
 +}
-+llvm::Value *field(CodeGenFunction &CGF, Address Record, unsigned Index) {
-+  return CGF.Builder.CreateStructGEP(Record.getElementType(),
-+                                     Record.emitRawPointer(CGF), Index);
++Address field(CodeGenFunction &CGF, Address Record, unsigned Index) {
++  return CGF.Builder.CreateStructGEP(Record, Index);
 +}
 +void storeField(CodeGenFunction &CGF, Address Record, unsigned Index,
 +                 llvm::Value *Value) {
@@ -25002,7 +25006,8 @@ index 000000000..03fc449ba
 +      CGF.Int32Ty, CGF.Int32Ty, CGF.Int64Ty, CGF.Int64Ty, CGF.Int8PtrTy,
 +      CGF.Int8PtrTy, CGF.Int8PtrTy);
 +  auto *Fn = CGF.Builder.CreateLoad(
-+      CGF.Int8PtrTy, CGF.Builder.CreateStructGEP(OpsType, Ops, Index));
++      CGF.Builder.CreateStructGEP(
++          Address(Ops, OpsType, CharUnits::fromQuantity(8)), Index));
 +  SmallVector<llvm::Type *, 2> Types;
 +  for (auto *Arg : Args) Types.push_back(Arg->getType());
 +  return CGF.EmitNounwindRuntimeCall(
@@ -25240,7 +25245,8 @@ index 000000000..03fc449ba
 +    auto *Promise = CGF.Builder.CreateCall(
 +        CGM.getIntrinsic(llvm::Intrinsic::coro_promise),
 +        {Frame, CGF.Builder.getInt32(8), CGF.Builder.getFalse()});
-+    CGF.Builder.CreateStore(Owner, Promise);
++    CGF.Builder.CreateStore(Owner,
++        Address(Promise, CGF.Int8PtrTy, CharUnits::fromQuantity(8)));
 +  }
 +  llvm::BasicBlock *Catch = nullptr;
 +  if (CGF.getLangOpts().ObjCExceptions) {
@@ -25651,12 +25657,12 @@ index 000000000..03fc449ba
 +  Status = call(*this, "objc3_task_get_completion", Int32Ty,
 +      {Dependency, Completion.emitRawPointer(*this)});
 +  checkStatus(*this, Data, Status);
-+  auto *Kind = Builder.CreateLoad(Int32Ty, field(*this, Completion, 2));
++  auto *Kind = Builder.CreateLoad(field(*this, Completion, 2));
 +  auto *Success = createBasicBlock("objc3.await.success");
 +  auto *Failure = createBasicBlock("objc3.await.failure");
 +  Builder.CreateCondBr(Builder.CreateIsNull(Kind), Success, Failure);
 +  EmitBlock(Failure);
-+  auto *Error = Builder.CreateLoad(Int8PtrTy, field(*this, Completion, 6));
++  auto *Error = Builder.CreateLoad(field(*this, Completion, 6));
 +  if (!emitObjC3CAsyncCheckedFailure(*this, E, Kind, Error)) {
 +    auto *Retained = call(*this, "objc3_error_retain", Int8PtrTy, {Error});
 +    replaceError(*this, Data, Retained);
@@ -25669,11 +25675,16 @@ index 000000000..03fc449ba
 +  llvm::Value *Ops = valueOps(*this, T);
 +  bool Temporary = T->isVoidType() || Slot.isIgnored();
 +  Address Result = T->isVoidType() ? Address::invalid()
-+      : Temporary ? CreateMemTemp(T, "objc3.await.result") : Slot.getAddress();
++      : Temporary ? Address(CreateMemTemp(T, "objc3.await.result"))
++                  : Address(Slot.getAddress());
 +  Status = call(*this, "objc3_task_copy_result", Int32Ty,
 +      {Dependency, Descriptor, Ops,
 +       Result.isValid() ? Result.emitRawPointer(*this) : nullPtr(*this)});
 +  checkStatus(*this, Data, Status);
++  // Cleanup dispatch also serves cancellation/failure exits. Reload copied
++  // values after its continuation so SSA dominance does not depend on the
++  // runtime cleanup destination selector. Result ownership outlives the child.
++  AwaitScope.ForceCleanup();
 +  RValue Value = RValue::getIgnored();
 +  if (T->isObjCRetainableType()) {
 +    auto *Pointer = Builder.CreateLoad(Result);
@@ -25689,7 +25700,6 @@ index 000000000..03fc449ba
 +        pushDestroy(NormalAndEHCleanup, Result, T, getDestroyer(T.isDestructedType()), false);
 +    }
 +  }
-+  AwaitScope.ForceCleanup();
 +  (void)IgnoreResult;
 +  return Value;
 +}
@@ -25717,14 +25727,15 @@ index 000000000..8c1c22e40
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
 new file mode 100644
-index 000000000..4a3d5d8ad
+index 000000000..bf8cf4727
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,464 @@
 +//===--- CGObjC3BlockCaptures.cpp - Explicit Block capture owners -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3BlockCaptures.h"
 +#include "CGCall.h"
++#include "CGDebugInfo.h"
 +#include "CGObjC3Carriers.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -25741,15 +25752,6 @@ index 000000000..4a3d5d8ad
 +using namespace clang::CodeGen;
 +
 +namespace clang::CodeGen {
-+struct ObjC3BlockCaptureCleanup {
-+  ObjC3BlockCaptureCleanup *Next = nullptr;
-+  Address StoragePointer, Live;
-+  llvm::Type *ElementType;
-+  CharUnits Alignment;
-+  QualType Type;
-+  CodeGenFunction::Destroyer *Destroyer;
-+  bool UseArrayEHCleanup;
-+};
 +struct ObjC3BlockCaptureFullExprData {
 +  ObjC3BlockCaptureCleanup *Captures = nullptr;
 +};
@@ -26195,10 +26197,10 @@ index 000000000..4a3d5d8ad
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.h b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
 new file mode 100644
-index 000000000..ffc859cc4
+index 000000000..d278042dc
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,81 @@
 +//===--- CGObjC3BlockCaptures.h - Explicit Block capture owners -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3BLOCKCAPTURES_H
@@ -26215,7 +26217,15 @@ index 000000000..ffc859cc4
 +namespace CodeGen {
 +class CodeGenFunction;
 +class CodeGenModule;
-+struct ObjC3BlockCaptureCleanup;
++struct ObjC3BlockCaptureCleanup {
++  ObjC3BlockCaptureCleanup *Next = nullptr;
++  Address StoragePointer, Live;
++  llvm::Type *ElementType;
++  CharUnits Alignment;
++  QualType Type;
++  void (*Destroyer)(CodeGenFunction &, Address, QualType);
++  bool UseArrayEHCleanup;
++};
 +struct ObjC3BlockCaptureFullExprData;
 +/// Keep a rollback owner below the ordinary full-expression temporary stack.
 +/// A throwing temporary destructor can run after the immediate construction
@@ -26419,7 +26429,7 @@ index 000000000..b26225326
 +}
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-definitions.m b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
 new file mode 100644
-index 000000000..bd7648b90
+index 000000000..9cd87216f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-definitions.m
 @@ -0,0 +1,96 @@
@@ -26442,7 +26452,7 @@ index 000000000..bd7648b90
 +int leaf(int value) __objc3_async { return value; }
 +// CHECK-LABEL: define{{.*}} void @chain(
 +// CHECK: llvm.coro.suspend
-+// CHECK: call void @leaf(
++// CHECK: {{call|invoke}} void @leaf(
 +// CHECK: objc3_async_frame_start_child
 +// CHECK: objc3_task_await
 +// CHECK: llvm.coro.suspend
@@ -26539,12 +26549,12 @@ index 000000000..3ea5d6666
 +// CHECK: objc3_task_copy_result
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m b/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m
 new file mode 100644
-index 000000000..1f5ebb9f9
+index 000000000..dd7d33b13
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m
 @@ -0,0 +1,19 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MRC
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MRC
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +#include "../Inputs/keypath-abi.h"
 +typedef struct PathRecord { long first, second; } PathRecord;
 +__attribute__((objc_root_class))
@@ -26556,20 +26566,20 @@ index 000000000..1f5ebb9f9
 +}
 +// CHECK-DAG: c"record.first\00"
 +// CHECK: define internal void @__objc3_keypath_set_
-+// MRC: call ptr @objc_retain
++// MRC: call ptr @{{llvm.objc.retain|objc_retain}}
 +// CHECK: call {{.*}}@objc_msgSend
 +// CHECK: getelementptr inbounds {{.*}}PathRecord
 +// CHECK: store i64
 +// CHECK: call void @objc_msgSend
-+// MRC: call void @objc_release
++// MRC: call void @{{llvm.objc.release|objc_release}}
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypaths.m b/clang/test/ObjC3/CodeGen/typed-keypaths.m
 new file mode 100644
-index 000000000..330f3d009
+index 000000000..ef1aae95f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypaths.m
 @@ -0,0 +1,30 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +#include "../Inputs/keypath-abi.h"
 +__attribute__((objc_root_class))
 +@interface PathRoot
@@ -26600,7 +26610,7 @@ index 000000000..330f3d009
 +// CHECK: call void @objc_msgSend
 diff --git a/clang/lib/CodeGen/CGObjC3Isolation.cpp b/clang/lib/CodeGen/CGObjC3Isolation.cpp
 new file mode 100644
-index 000000000..9da1140e2
+index 000000000..efc74f478
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Isolation.cpp
 @@ -0,0 +1,162 @@
@@ -26638,7 +26648,7 @@ index 000000000..9da1140e2
 +                       CGF.Int32Ty, {Destination.emitRawPointer(CGF)});
 +  assert(Identity.starts_with("named:") && "unknown executor identity");
 +  Identity = Identity.drop_front(6);
-+  llvm::Value *Name = CGF.CGM.GetAddrOfConstantCString(Identity).getPointer();
++  llvm::Value *Name = CGF.CGM.GetAddrOfConstantCString(Identity.str()).getPointer();
 +  return runtimeCall(CGF, "objc3_executor_get_named", CGF.Int32Ty,
 +                     {Name, Destination.emitRawPointer(CGF)});
 +}
@@ -26852,7 +26862,7 @@ index 000000000..ace2b7131
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-entry-abi-pch.mm b/clang/test/ObjC3/CodeGen/native-c-async-entry-abi-pch.mm
 new file mode 100644
-index 000000000..a1379781f
+index 000000000..9e1b6168d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-entry-abi-pch.mm
 @@ -0,0 +1,13 @@
@@ -26863,7 +26873,7 @@ index 000000000..a1379781f
 +static_assert(__is_same(decltype(frame_leaf(1)), objc3_async_frame));
 +static_assert(__is_same(decltype(task_leaf(1)), objc3::task<int>));
 +// CHECK-LABEL: define{{.*}} void @_Z12pch_consumer
-+// CHECK: call void @frame_leaf
++// CHECK: {{call|invoke}} void @frame_leaf
 +// CHECK: __objc3_async_from_frame
 +// CHECK: {{call|invoke}} void @_Z9task_leafi
 +int pch_consumer(int n) __objc3_async {
@@ -26871,7 +26881,7 @@ index 000000000..a1379781f
 +}
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-entry-abi.mm b/clang/test/ObjC3/CodeGen/native-c-async-entry-abi.mm
 new file mode 100644
-index 000000000..dacc50501
+index 000000000..11398c076
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-entry-abi.mm
 @@ -0,0 +1,51 @@
@@ -26889,7 +26899,7 @@ index 000000000..dacc50501
 +
 +// Both caches contain logical int at once; each evaluated ABI remains distinct.
 +// CHECK-LABEL: define{{.*}} void @_Z11mixed_await
-+// CHECK: call void @frame_leaf(ptr {{.*}}sret(%struct.objc3_async_frame)
++// CHECK: {{call|invoke}} void @frame_leaf(ptr {{.*}}sret(%struct.objc3_async_frame)
 +// CHECK: {{call|invoke}} void {{.*}}__objc3_async_from_frame
 +// CHECK: {{call|invoke}} void @_Z9task_leafi
 +int mixed_await(int value, FrameCallback fn, FrameBlock block, FrameWorker *worker)
@@ -26904,7 +26914,7 @@ index 000000000..dacc50501
 +  return a + b + c + d + e + f + g;
 +}
 +// CHECK-LABEL: define{{.*}} void @_Z13checked_await
-+// CHECK: call void @frame_checked
++// CHECK: {{call|invoke}} void @frame_checked
 +// CHECK: __objc3_async_from_frame
 +// CHECK: __objc3_async_checked
 +int checked_await(id<FrameError> error) __objc3_async __objc3_throws(id<FrameError>) {
@@ -26944,7 +26954,7 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..b635b44d9
+index 000000000..c01bde977
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 @@ -0,0 +1,63 @@
@@ -26965,20 +26975,20 @@ index 000000000..b635b44d9
 +// Each private frame owns converted arguments before its initial suspension.
 +// Calls remain in the child frame after the executor-entry suspension; the
 +// parent's dependency resumes through the parent's original destination.
-+// CHECK-DAG: call i32 @objc3_executor_get_main
-+// CHECK-DAG: call i32 @objc3_executor_get_global
-+// CHECK-DAG: call i32 @objc3_executor_get_named
-+// CHECK-DAG: call i32 @objc3_executor_is_current
-+// CHECK-DAG: call i32 @objc3_task_hop
-+// CHECK-DAG: call void @objc3_executor_release
-+// CHECK-DAG: call{{.*}} @objc_retain
-+// CHECK-DAG: call i32 @objc3_async_frame_start_child
-+// CHECK-DAG: call i32 @objc3_task_await
-+// CHECK-DAG: call i32 @objc3_task_copy_result
-+// CHECK-DAG: call i8 @llvm.coro.suspend
-+// CHECK-DAG: call i32 @main_entry
-+// CHECK-DAG: call i32 @global_entry
-+// CHECK-DAG: call i32 @named_entry
++// CHECK-DAG: {{call|invoke}} i32 @objc3_executor_get_main
++// CHECK-DAG: {{call|invoke}} i32 @objc3_executor_get_global
++// CHECK-DAG: {{call|invoke}} i32 @objc3_executor_get_named
++// CHECK-DAG: {{call|invoke}} i32 @objc3_executor_is_current
++// CHECK-DAG: {{call|invoke}} i32 @objc3_task_hop
++// CHECK-DAG: {{call|invoke}} void @objc3_executor_release
++// CHECK-DAG: {{call|invoke}}{{.*}} @{{llvm.objc.retain|objc_retain}}
++// CHECK-DAG: {{call|invoke}} i32 @objc3_async_frame_start_child
++// CHECK-DAG: {{call|invoke}} i32 @objc3_task_await
++// CHECK-DAG: {{call|invoke}} i32 @objc3_task_copy_result
++// CHECK-DAG: {{call|invoke}} i8 @llvm.coro.suspend
++// CHECK-DAG: {{call|invoke}} i32 @main_entry
++// CHECK-DAG: {{call|invoke}} i32 @global_entry
++// CHECK-DAG: {{call|invoke}} i32 @named_entry
 +
 +actor class Counter : Message
 +- (int)read __attribute__((nothrow));
@@ -26989,18 +26999,18 @@ index 000000000..b635b44d9
 +  int first = __objc3_await [source_receiver() read];
 +  return first + __objc3_await [source_receiver() affineRead];
 +}
-+// CHECK-DAG: call i32 @objc3_actor_get_for_object
-+// CHECK-DAG: call i64 @objc3_actor_executor_identity
-+// CHECK-DAG: call i64 @objc3_executor_identity
-+// CHECK-DAG: call void @objc3_actor_release
++// CHECK-DAG: {{call|invoke}} i32 @objc3_actor_get_for_object
++// CHECK-DAG: {{call|invoke}} i64 @objc3_actor_executor_identity
++// CHECK-DAG: {{call|invoke}} i64 @objc3_executor_identity
++// CHECK-DAG: {{call|invoke}} void @objc3_actor_release
 +
 +extern Message *owned_entry(void)
 +    __attribute__((objc_executor(global), ns_returns_retained));
 +Message *owned_parent(void) __objc3_async {
 +  return __objc3_await owned_entry();
 +}
-+// CHECK-DAG: call ptr @owned_entry
-+// CHECK-DAG: call void @objc_release
++// CHECK-DAG: {{call|invoke}} ptr @owned_entry
++// CHECK-DAG: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
 +
 +@protocol Error @end
 +@protocol HopError <Error, Sendable> @end
@@ -27009,8 +27019,8 @@ index 000000000..b635b44d9
 +int checked_parent(id<HopError> error) __objc3_async __objc3_throws(id<HopError>) {
 +  return __objc3_try(__objc3_await checked_frame(error));
 +}
-+// CHECK-DAG: call void @checked_frame
-+// CHECK-DAG: call ptr @__objc3_task_error_object
++// CHECK-DAG: {{call|invoke}} void @checked_frame
++// CHECK-DAG: {{call|invoke}} ptr @__objc3_task_error_object
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 new file mode 100644
 index 000000000..8f99e9078
@@ -27239,12 +27249,12 @@ index 000000000..5bcab04fe
 +}
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
 new file mode 100644
-index 000000000..22972f916
+index 000000000..21fdd1303
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
 @@ -0,0 +1,20 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +#include "../Inputs/keypath-abi.h"
 +__attribute__((objc_root_class))
 +@interface NullableCGPathRoot
@@ -27259,7 +27269,7 @@ index 000000000..22972f916
 +// CHECK: define internal {{.*}}@__objc3_keypath_get_
 +// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
 +// CHECK: {{call|invoke}} {{.*}}@{{llvm.objc.retain|objc_retain}}
-+// CHECK: icmp eq ptr {{.*}}, null
++// CHECK: icmp ne ptr {{.*}}, null
 +// CHECK: br i1
 +// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
@@ -27290,12 +27300,12 @@ index 000000000..f2c2cf767
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
 diff --git a/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm b/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm
 new file mode 100644
-index 000000000..868a28368
+index 000000000..13eabd4b8
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm
 @@ -0,0 +1,33 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#include "Inputs/native-c-async-frame.h"
 +extern void entered(int);
 +extern void destroyed(int);

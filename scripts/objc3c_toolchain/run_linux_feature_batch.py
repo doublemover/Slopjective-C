@@ -110,7 +110,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
             "-fobjc-exceptions", "-fobjc-arc-exceptions",
             "-fmodules", "-fmodules-cache-path=" + str(work / "modules"),
             "-I" + str(work / "include"),
-            "-I" + str(headers), "-I" + str(include_root), "-I" + str(sdk / "include")]
+            "-I" + str(headers)]
         if language != "c++":
             result.append("-fobjc-arc" if ownership == "arc" else "-fno-objc-arc")
         if "++" in language:
@@ -132,7 +132,11 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
         target = work / "fixture.pch"
         opts = flags(case, case.language + "-header", case.standard, case.ownership,
                      case.optimization, work)
-        # Header language spellings preserve Objective-C/Objective-C++ ownership.
+        # Match the consumer's preprocessor configuration, including the
+        # fixture's include-suppression marker, under Clang module validation.
+        if case.feature in ("captures", "keypaths"):
+            opts.append("-D" + ("CAPTURE_RUNTIME_PCH" if case.feature == "captures"
+                                 else "TYPED_KEYPATH_RUNTIME_PCH"))
         invoke(case.name + "-pch", [compiler, *opts, header, "-o", target], work)
         return ["-include-pch", str(target)]
 
@@ -151,6 +155,16 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                 work = Path(temporary)
                 (work / "include/objc3c").mkdir(parents=True)
                 (work / "include/objc3c/runtime").symlink_to(headers, target_is_directory=True)
+                # Present one include tree: duplicate installed/development
+                # objc3 module maps otherwise make PCH consumption ambiguous.
+                for include_tree in (sdk / "include", include_root):
+                    for entry in include_tree.iterdir():
+                        if entry.name == "objc3c":
+                            continue
+                        view = work / "include" / entry.name
+                        if view.is_symlink():
+                            view.unlink()
+                        view.symlink_to(entry, target_is_directory=entry.is_dir())
                 family = {"captures": "explicit_capture_lists", "keypaths": "typed_keypaths",
                           "async": "native_c_async", "isolation": "native_isolation",
                           "spawn": "task_spawning"}[case.feature]
@@ -173,6 +187,12 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         extra = pch(case, header, work)
                     client = work / ("contract.m" if case.language == "objective-c" else "contract.mm")
                     execute(case, [compile_source(case, client, work, extra=extra)], work)
+                    opts = flags(case, case.language, case.standard, case.ownership,
+                                 case.optimization, work)
+                    invoke(case.name + "-diagnostics", [compiler, *opts, *extra,
+                        "-fsyntax-only", "-Xclang", "-verify",
+                        "-Xclang", "-verify-ignore-unexpected=note",
+                        work / "diagnostics.m"], work)
                 elif case.feature == "async":
                     provider = compile_source(case, work / "provider.m", work,
                         language="objective-c", standard="c17", ownership=case.provider_ownership,

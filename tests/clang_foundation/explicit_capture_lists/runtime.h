@@ -2,8 +2,38 @@
 // Public source and PCH witness. Compile main.m as Objective-C C17 or
 // Objective-C++ C++20/C++23, with ARC or MRC, against GNUstep 2.2.
 static int capture_failures, capture_closed, capture_close_sum;
-#define CAPTURE_CHECK(value) do { if (!(value)) ++capture_failures; } while (0)
+#include <stdio.h>
+#define CAPTURE_CHECK(value) do { if (!(value)) { ++capture_failures; fprintf(stderr, "%s:%d: failed: %s\n", __FILE__, __LINE__, #value); } } while (0)
 typedef int (^CaptureIntBlock)(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
+void *_Block_copy(const void *);
+#ifdef __cplusplus
+}
+#endif
+// libobjc supplies the Blocks C ABI without Foundation's -copy methods.
+static CaptureIntBlock capture_heap_copy(CaptureIntBlock value)
+    __attribute__((ns_returns_retained));
+static CaptureIntBlock capture_heap_copy(CaptureIntBlock value) {
+#if __has_feature(objc_arc)
+  return (__bridge_transfer CaptureIntBlock)_Block_copy((__bridge const void *)value);
+#else
+  return (CaptureIntBlock)_Block_copy(value);
+#endif
+}
+
+typedef void (^CaptureVoidBlock)(void);
+static CaptureVoidBlock capture_heap_copy_void(CaptureVoidBlock value)
+    __attribute__((ns_returns_retained));
+static CaptureVoidBlock capture_heap_copy_void(CaptureVoidBlock value) {
+#if __has_feature(objc_arc)
+  return (__bridge_transfer CaptureVoidBlock)_Block_copy((__bridge const void *)value);
+#else
+  return (CaptureVoidBlock)_Block_copy(value);
+#endif
+}
+
 static void capture_close(int value) __attribute__((nothrow));
 static void capture_close(int value) {
   ++capture_closed;
@@ -127,23 +157,29 @@ static void capture_object_suite(void) {
   CAPTURE_CHECK(capture_destroyed == destroyed_before + 3);
 #if __has_feature(objc_arc)
   {
+    CaptureIntBlock weak_block, nested;
+    CaptureObject * __weak weak_source;
+    @autoreleasepool {
     CaptureObject *source = [CaptureObject make:34];
-    CaptureObject * __weak weak_source = source;
-    int (^weak_block)(void) = [^[weak source] {
-      return source ? source->value : -1;
-    } copy];
-    int (^promoted)(void) = [^[strong weak_source] {
+    weak_source = source;
+    weak_block = capture_heap_copy(^[weak source] {
+      CaptureObject *snapshot = source;
+      return snapshot ? snapshot->value : -1;
+    });
+    int (^promoted)(void) = capture_heap_copy(^[strong weak_source] {
       return weak_source ? weak_source->value : -1;
-    } copy];
-    int (^nested)(void) = [^[weak source] {
+    });
+    nested = capture_heap_copy(^[weak source] {
       CaptureIntBlock inner = ^[strong source] {
-        return source ? source->value : -1;
+        CaptureObject *snapshot = source;
+      return snapshot ? snapshot->value : -1;
       };
       return inner();
-    } copy];
+    });
     source = (id)0;
     CAPTURE_CHECK(weak_block() == 34 && promoted() == 34 && nested() == 34);
     promoted = (id)0;
+    } // Destroy lexical capture owners and drain temporary weak loads.
     CAPTURE_CHECK(weak_block() == -1 && nested() == -1 && weak_source == (id)0);
   }
   CAPTURE_CHECK(capture_destroyed == destroyed_before + 4);
@@ -245,7 +281,7 @@ static void capture_carrier_move_suite(void) {
     // Tags remain valid; ownership-bearing source leaves are now nil.
     guard let moved_from = source else { ++capture_failures; return; }
     CAPTURE_CHECK(moved_from == (id)0 && stack() == 74);
-    CaptureIntBlock heap = [stack copy];
+    CaptureIntBlock heap = capture_heap_copy(stack);
     CAPTURE_CHECK(heap() == 74 && capture_destroyed == before);
     heap = (id)0;
   }
@@ -253,10 +289,10 @@ static void capture_carrier_move_suite(void) {
   {
     CaptureObject *owner = [CaptureObject make:75];
     Optional(id __weak) source = Some(id __weak, owner);
-    CaptureIntBlock weak = [^[move source] {
+    CaptureIntBlock weak = capture_heap_copy(^[move source] {
       guard let object = source else { return -1; }
       return object ? ((CaptureObject *)object)->value : -2;
-    } copy];
+    });
     guard let moved_from = source else { ++capture_failures; return; }
     CAPTURE_CHECK(moved_from == (id)0 && weak() == 75);
     owner = (id)0;
@@ -269,12 +305,12 @@ static CaptureIntBlock capture_make_resource(void) {
   int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 7;
   CaptureIntBlock __unsafe_unretained stack = ^[move handle] { return handle; };
   CAPTURE_CHECK(handle == -1 && capture_closed == 0);
-  return [stack copy];
+  return capture_heap_copy(stack);
 }
 static void capture_resource_suite(void) {
   capture_closed = capture_close_sum = 0;
   CaptureIntBlock first = capture_make_resource();
-  CaptureIntBlock second = [first copy];
+  CaptureIntBlock second = capture_heap_copy(first);
   CAPTURE_CHECK(first() == 7 && second() == 7 && capture_closed == 0);
 #if __has_feature(objc_arc)
   first = (id)0;
@@ -307,8 +343,8 @@ static void capture_resource_suite(void) {
     // Keep the original literal on the stack even under ARC so these calls
     // create distinct heap Blocks which independently reference one owner.
     CaptureIntBlock __unsafe_unretained stack = ^[move handle] { return handle; };
-    left = [stack copy];
-    right = [stack copy];
+    left = capture_heap_copy(stack);
+    right = capture_heap_copy(stack);
     CAPTURE_CHECK(left != right && left() == 11 && right() == 11);
   }
 #if __has_feature(objc_arc)
@@ -346,8 +382,8 @@ static void capture_resource_operations_suite(void) {
     CaptureIntBlock __unsafe_unretained stack = ^[move handle] {
       return take(handle);
     };
-    left = [stack copy];
-    right = [stack copy];
+    left = capture_heap_copy(stack);
+    right = capture_heap_copy(stack);
     CAPTURE_CHECK(left != right && handle == -1);
   }
   // The operations address the one shared owner payload, not the original
@@ -377,12 +413,12 @@ static void capture_nested_resource_suite(void) {
         CaptureIntBlock __unsafe_unretained next = ^[move handle] {
           return handle;
         };
-        inner = [next copy];
+        inner = capture_heap_copy(next);
         ++transfers;
       }
     };
-    left = [stack copy];
-    right = [stack copy];
+    left = capture_heap_copy_void(stack);
+    right = capture_heap_copy_void(stack);
     CAPTURE_CHECK(handle == -1 && left != right);
   }
   left();
@@ -427,7 +463,7 @@ static void capture_record_move_suite(void) {
     CaptureIntBlock __unsafe_unretained stack = ^[move source] { return source.value; };
     CAPTURE_CHECK(source.value == -1 && stack() == 71);
     CAPTURE_CHECK(CaptureMoveRecord::moves == 1 && CaptureMoveRecord::copies == 0);
-    CaptureIntBlock heap = [stack copy];
+    CaptureIntBlock heap = capture_heap_copy(stack);
     CAPTURE_CHECK(heap() == 71 && CaptureMoveRecord::moves == 1 &&
                   CaptureMoveRecord::copies == 1);
 #if __has_feature(objc_arc)

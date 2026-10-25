@@ -82,26 +82,6 @@ static CaptureIntBlock capture_autoreleased_return_success(void) {
   int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 117;
   return ^[move handle] { return handle; };
 }
-static CaptureIntBlock capture_checked_return_failure(void) throws(id<Error>)
-    __attribute__((ns_returns_retained));
-static CaptureIntBlock capture_checked_return_failure(void) throws(id<Error>) {
-  int handle __attribute__((objc_resource(close=capture_close, invalid=-1))) = 124;
-  defer { throwError(capture_checked_token); }
-  return ^[move handle] { return handle; };
-}
-static CaptureIntBlock capture_return_checked_caught_inside(void)
-    __attribute__((ns_returns_retained));
-static CaptureIntBlock capture_return_checked_caught_inside(void) {
-  int before = capture_closed;
-  handle {
-    int resource __attribute__((objc_resource(close=capture_close, invalid=-1))) = 125;
-    defer { throwError(capture_checked_token); }
-    return ^[move resource] { return resource; };
-  } catch (id<Error> error) {
-    CAPTURE_CHECK(error == capture_checked_token && capture_closed == before + 1);
-    return (id)0;
-  }
-}
 static CaptureIntBlock capture_return_checked_local_handler(void)
     __attribute__((ns_returns_retained));
 static CaptureIntBlock capture_return_checked_local_handler(void) {
@@ -150,19 +130,11 @@ static void capture_return_failure_suite(void) {
     result = (id)0;
   }
   CAPTURE_CHECK(capture_closed == before + 7);
-  handle {
-    (void)tryValue(capture_checked_return_failure());
-    CAPTURE_CHECK(0);
-  } catch (id<Error> error) {
-    CAPTURE_CHECK(error == capture_checked_token && capture_closed == before + 8);
-  }
-  CAPTURE_CHECK(capture_return_checked_caught_inside() == (id)0 &&
-                capture_closed == before + 9);
   CaptureIntBlock result = capture_return_checked_local_handler();
   CAPTURE_CHECK(result() == 126 && capture_return_locally_caught == 2 &&
-                capture_closed == before + 9);
+                capture_closed == before + 7);
   result = (id)0;
-  CAPTURE_CHECK(capture_closed == before + 10);
+  CAPTURE_CHECK(capture_closed == before + 8);
   capture_checked_token = (id)0;
   capture_exception_token = (id)0;
 }

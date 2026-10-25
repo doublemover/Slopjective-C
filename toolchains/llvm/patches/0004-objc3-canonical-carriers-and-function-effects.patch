@@ -2047,7 +2047,7 @@ index 9f1da65e0..ba3f05189 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index 222881154..dc3608a25 100644
+index 222881154..e8957f112 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -11,6 +11,7 @@
@@ -2353,28 +2353,29 @@ index 222881154..dc3608a25 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -5090,7 +5316,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5090,7 +5316,10 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
 -                     isCanonicalResultType(ResultTy) && !EPI.HasTrailingReturn;
 +                     isCanonicalResultType(ResultTy) && !EPI.HasTrailingReturn &&
 +                     (EPI.ObjC3Effects.Throws != ObjC3ThrowsKind::Typed ||
-+                      EPI.ObjC3Effects.ErrorType.isCanonical());
++                      (EPI.ObjC3Effects.ErrorType.isCanonical() &&
++                       !EPI.ObjC3Effects.ErrorType.hasLocalQualifiers()));
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -5111,6 +5339,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5111,6 +5340,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
 +    if (CanonicalEPI.ObjC3Effects.Throws == ObjC3ThrowsKind::Typed)
 +      CanonicalEPI.ObjC3Effects.ErrorType =
-+          getCanonicalType(CanonicalEPI.ObjC3Effects.ErrorType);
++          getCanonicalType(CanonicalEPI.ObjC3Effects.ErrorType).getUnqualifiedType();
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5176,14 +5407,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5176,14 +5408,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -2392,7 +2393,7 @@ index 222881154..dc3608a25 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -8907,6 +9139,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8907,6 +9140,13 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
    QualType BlockTy =
        Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
    QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
@@ -2406,7 +2407,7 @@ index 222881154..dc3608a25 100644
    // Encode result type.
    if (getLangOpts().EncodeExtendedBlockSig)
      getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
-@@ -8926,6 +9165,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8926,6 +9166,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      assert(sz.isPositive() && "BlockExpr - Incomplete param type");
      ParmOffset += sz;
    }
@@ -2415,7 +2416,7 @@ index 222881154..dc3608a25 100644
    // Size of the argument frame
    S += charUnitsToString(ParmOffset);
    // Block pointer and offset.
-@@ -8952,6 +9193,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8952,6 +9194,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
  
@@ -2426,7 +2427,7 @@ index 222881154..dc3608a25 100644
    return S;
  }
  
-@@ -9019,8 +9264,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9019,8 +9265,15 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
    // FIXME: This is not very efficient.
    // Encode return type.
    std::string S;
@@ -2444,7 +2445,7 @@ index 222881154..dc3608a25 100644
    // Compute size of all parameters.
    // Start with computing size of a pointer in number of bytes.
    // FIXME: There might(should) be a better way of doing this computation!
-@@ -9039,6 +9291,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9039,6 +9292,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
             "getObjCEncodingForMethodDecl - Incomplete param type");
      ParmOffset += sz;
    }
@@ -2453,7 +2454,7 @@ index 222881154..dc3608a25 100644
    S += charUnitsToString(ParmOffset);
    S += "@0:";
    S += charUnitsToString(PtrSize);
-@@ -9062,6 +9316,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9062,6 +9317,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
      S += charUnitsToString(ParmOffset);
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
@@ -2464,7 +2465,7 @@ index 222881154..dc3608a25 100644
  
    return S;
  }
-@@ -9764,6 +10022,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9764,6 +10023,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -2481,7 +2482,7 @@ index 222881154..dc3608a25 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11694,6 +11962,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11694,6 +11963,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -2499,7 +2500,7 @@ index 222881154..dc3608a25 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11772,6 +12051,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11772,6 +12052,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -2511,7 +2512,7 @@ index 222881154..dc3608a25 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -12047,6 +12331,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -12047,6 +12332,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::OverflowBehavior:
      llvm_unreachable("Types are eliminated above");
  
@@ -2525,7 +2526,7 @@ index 222881154..dc3608a25 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14464,6 +14755,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14464,6 +14756,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -2550,7 +2551,7 @@ index 222881154..dc3608a25 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14743,6 +15052,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14743,6 +15053,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -7763,7 +7764,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..6df4a223e 100644
+index 6a25a799a..96bfd8933 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,10 @@
@@ -8079,7 +8080,7 @@ index 6a25a799a..6df4a223e 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16892,38 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16892,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -8113,12 +8114,13 @@ index 6a25a799a..6df4a223e 100644
 +    dcl->setInvalidDecl();
 +  if (dcl && !dcl->isInvalidDecl() && CheckObjC3Guards(dcl, Body))
 +    dcl->setInvalidDecl();
-+  if (dcl && !dcl->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
++  if (dcl && !dcl->isInvalidDecl() && !FSI->hasUnrecoverableErrorOccurred() &&
++      diagnoseObjC3UncheckedCalls(*this, Body))
 +    dcl->setInvalidDecl();
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16938,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16939,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -8133,7 +8135,7 @@ index 6a25a799a..6df4a223e 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20434,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20435,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -8631,7 +8633,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..1a38417a0 100644
+index 5d4c5ff7d..70d196e94 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -9165,7 +9167,7 @@ index 5d4c5ff7d..1a38417a0 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17459,43 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17459,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -9196,7 +9198,8 @@ index 5d4c5ff7d..1a38417a0 100644
 +    BD->setInvalidDecl();
 +  if (!BD->isInvalidDecl() && checkObjC3IsolationBody(*this, BD, Body))
 +    BD->setInvalidDecl();
-+  if (!BD->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
++  if (!BD->isInvalidDecl() && !BSI->hasUnrecoverableErrorOccurred() &&
++      diagnoseObjC3UncheckedCalls(*this, Body))
 +    BD->setInvalidDecl();
 +  if (!BD->isInvalidDecl() && BSI->isCoroutine()) {
 +    SourceLocation Begin = Body->getBeginLoc(), End = Body->getEndLoc();
@@ -9209,7 +9212,7 @@ index 5d4c5ff7d..1a38417a0 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17503,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17504,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -9219,7 +9222,7 @@ index 5d4c5ff7d..1a38417a0 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,6 +17586,11 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,6 +17587,11 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -9231,14 +9234,18 @@ index 5d4c5ff7d..1a38417a0 100644
      Expr *CopyExpr = nullptr;
      if (getLangOpts().CPlusPlus && Cap.isCopyCapture()) {
        if (auto *Record = Cap.getCaptureType()->getAsCXXRecordDecl()) {
-@@ -17161,6 +17612,25 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17613,29 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
 +        if (Explicit != BSI->ObjC3ExplicitCaptures.end() &&
 +            Explicit->getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move) {
-+          ExprResult Initializer = BuildDeclarationNameExpr(
-+              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
++          // Creation reads the source variable, before entering the Block's
++          // const capture environment. The still-active Block scope would
++          // otherwise turn this into const T&& and select the copy constructor.
++          ExprResult Initializer = DeclRefExpr::Create(
++              Context, NestedNameSpecifierLoc(), SourceLocation(), Var, false,
++              Loc, Var->getType().getNonReferenceType(), VK_LValue);
 +          if (!Initializer.isInvalid()) {
 +            Initializer = ImpCastExprToType(
 +                Initializer.get(), Initializer.get()->getType(), CK_NoOp,
@@ -9257,7 +9264,7 @@ index 5d4c5ff7d..1a38417a0 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17663,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17668,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -9283,7 +9290,7 @@ index 5d4c5ff7d..1a38417a0 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17698,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17703,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -9294,7 +9301,7 @@ index 5d4c5ff7d..1a38417a0 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +19974,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +19979,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -9315,7 +9322,7 @@ index 5d4c5ff7d..1a38417a0 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20002,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20007,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -10908,10 +10915,10 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..cbe13164e
+index 000000000..f2634c35a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,256 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -10986,6 +10993,8 @@ index 000000000..cbe13164e
 +        const_cast<Expr *>(getObjC3AsyncSourceCall(E->getOperand())));
 +    Visit(E->getOperand());
 +  }
++  // Recovery children already carry a diagnostic from their full expression.
++  void VisitRecoveryExpr(RecoveryExpr *) {}
 +  void VisitCoawaitExpr(CoawaitExpr *E) {
 +    check(const_cast<Expr *>(getObjC3AsyncSourceCall(E)), true);
 +    Base::VisitStmt(E);
@@ -11079,7 +11088,8 @@ index 000000000..cbe13164e
 +  }
 +
 +  if (CheckedAsync && getLangOpts().CPlusPlus &&
-+      !Decl::castFromDeclContext(CurContext)->hasAttr<ObjC3IsolationThunkAttr>() &&
++      !getObjC3CallableFunctionType(Decl::castFromDeclContext(CurContext))
++           ->getObjC3FunctionEffects().AsyncFrame &&
 +      !getObjC3CheckedAsyncAdapter(Operand)) {
 +    auto *Await = cast<CoawaitExpr>(Operand->IgnoreImplicit());
 +    LookupResult Hook(*this, &Context.Idents.get("__objc3_async_checked"),
@@ -11120,6 +11130,7 @@ index 000000000..cbe13164e
 +    if (const auto *FT =
 +            getObjC3CallableFunctionType(Decl::castFromDeclContext(CurContext)))
 +      if (FT->getObjC3FunctionEffects().Async &&
++          !FT->getObjC3FunctionEffects().AsyncFrame &&
 +          !ActOnCoroutineBodyStart(getCurScope(), KeywordLoc, "co_return"))
 +        return StmtError();
 +  }
@@ -13395,7 +13406,7 @@ index 000000000..dc39ac0e6
 +}
 diff --git a/clang/test/ObjC3/AST/method-effects.m b/clang/test/ObjC3/AST/method-effects.m
 new file mode 100644
-index 000000000..cd90dd949
+index 000000000..042f49f8e
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/method-effects.m
 @@ -0,0 +1,18 @@
@@ -13411,10 +13422,10 @@ index 000000000..cd90dd949
 +- (int)first:(int)value __objc3_throws:(int)other;
 +@end
 +// PRINT: - (int)checked throws(E);
-+// PRINT: + (void)combined:(int)value __objc3_async throws;
++// PRINT: + (void)combined:(int)value __objc3_async_frame throws;
 +// PRINT: - (int)first:(int)value __objc3_throws:(int)other;
 +// DUMP: ObjCMethodDecl{{.*}} checked 'int' 'int (void) throws(E)'
-+// DUMP: ObjCMethodDecl{{.*}} combined: 'void' 'void (int) async throws'
++// DUMP: ObjCMethodDecl{{.*}} combined: 'void' 'void (int) __objc3_async_frame throws'
 +// JSON: "objc3CallableType":
 +// JSON: "qualType": "int (void) throws(E)"
 diff --git a/clang/test/ObjC3/AST/optional-expressions-pch.mm b/clang/test/ObjC3/AST/optional-expressions-pch.mm
@@ -19604,7 +19615,7 @@ index 000000000..9c680a775
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm b/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm
 new file mode 100644
-index 000000000..259f31a97
+index 000000000..692ebedc6
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-async-checked-boundaries.mm
 @@ -0,0 +1,31 @@
@@ -19618,7 +19629,7 @@ index 000000000..259f31a97
 +// explicit task interoperation. Applying checked syntax requires an await.
 +auto lazy() { return checked(); }
 +int unchecked() __objc3_async {
-+  return __objc3_await checked(); // expected-error 2 {{throwing call requires an explicit}}
++  return __objc3_await checked(); // expected-error {{throwing call requires an explicit}}
 +}
 +int mismatch() __objc3_async __objc3_throws(id<Second>) {
 +  return __objc3_try(__objc3_await checked()); // expected-error {{try error type does not match}}
@@ -19669,7 +19680,7 @@ index 000000000..a0729465d
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm b/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm
 new file mode 100644
-index 000000000..d098d378c
+index 000000000..51fdde143
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm
 @@ -0,0 +1,15 @@
@@ -19686,7 +19697,7 @@ index 000000000..d098d378c
 +  int checked() const __objc3_async __objc3_throws(id<Error>);
 +};
 +int unchecked(Worker &w) __objc3_async {
-+  return __objc3_await w.checked(); // expected-error 2 {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
++  return __objc3_await w.checked(); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 diff --git a/clang/test/ObjC3/AST/native-async-value-pch.mm b/clang/test/ObjC3/AST/native-async-value-pch.mm
 new file mode 100644
@@ -21517,10 +21528,10 @@ index 000000000..7b0a0db24
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Conditions.cpp b/clang/lib/Sema/SemaObjC3Conditions.cpp
 new file mode 100644
-index 000000000..f1b2b904c
+index 000000000..7e033a6bf
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Conditions.cpp
-@@ -0,0 +1,949 @@
+@@ -0,0 +1,959 @@
 +//===--- SemaObjC3Conditions.cpp - Native binding semantics
 +//----------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -22253,6 +22264,16 @@ index 000000000..f1b2b904c
 +                            AbstractConditionalOperator, BinaryOperator,
 +                            ChooseExpr>(Terminator);
 +        if (Block->succ_size() == 2 && BooleanBranch) {
++          if (const auto *Binding = dyn_cast_or_null<ObjC3BindingCondition>(Terminator)) {
++            // A stable source slot still contains the tested reference after
++            // its snapshot. Weak/volatile storage is excluded by registration;
++            // aliases that can mutate it cannot acquire this source proof.
++            const Expr *Source = Binding->getSource();
++            if (Source->getType()->isObjCRetainableType())
++              if (const VarDecl *Variable = variable(Source))
++                if (!Escaped.contains(Variable))
++                  assign(Variable, Index == 0, Edge);
++          }
 +          const Expr *Condition = Block->getLastCondition();
 +          if (!Condition)
 +            Condition = dyn_cast_or_null<Expr>(Block->getTerminatorCondition());
@@ -22395,9 +22416,9 @@ index 000000000..f1b2b904c
 +  SmallVector<GuardSourceScope, 8> Guards;
 +  collectGuards(Body, Body, Guards);
 +  bool Invalid = checkObjC3ResourceDeclarations(*this, Body);
-+  Invalid |= checkObjC3ResourceFlow(*this, Callable, Body);
-+  Invalid |= checkObjC3BorrowedFlow(*this, Callable, Body);
 +  Invalid |= checkObjC3NonlocalJumps(*this, Body);
++  if (!Invalid) Invalid |= checkObjC3ResourceFlow(*this, Callable, Body);
++  Invalid |= checkObjC3BorrowedFlow(*this, Callable, Body);
 +  Invalid |= checkDeferredLabelAddresses(*this, Body);
 +  Invalid |= NullableReceiverFlow(*this).check(Callable, Body);
 +  // Nested guards get their own mandatory-exit diagnostic before an outer
@@ -28773,7 +28794,7 @@ index 000000000..6dcb1f806
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-aliases.mm b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
 new file mode 100644
-index 000000000..9e52a88b8
+index 000000000..7d51f2f86
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-nullable-aliases.mm
 @@ -0,0 +1,88 @@
@@ -28825,9 +28846,9 @@ index 000000000..9e52a88b8
 +
 +void conditional_reference_init_capture(Nullable first, Nullable second,
 +                                       bool choose) {
-+  auto reset = [&slot = (choose ? first : second)] { slot = (id)0; };
++  auto invalidate = [&slot = (choose ? first : second)] { slot = (id)0; };
 +  guard first != (id)0, second != (id)0 else { return; }
-+  reset();
++  invalidate();
 +  [first ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
 +  [second ping]; // expected-error {{ordinary message send requires a nonnull receiver}}
 +}
@@ -29587,7 +29608,7 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..b6d37fb1b
+index 000000000..a0baa0ca2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
 @@ -0,0 +1,546 @@
@@ -29644,7 +29665,7 @@ index 000000000..b6d37fb1b
 +  }
 +  auto Contract = getObjC3ResourceTypeContract(
 +      S.Context,
-+      S.Context.getTypedefType(ElaboratedTypeKeyword::None, {}, Alias));
++      S.Context.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, Alias));
 +  if (Attribute.getKind() == ParsedAttr::AT_ObjCResourceFamily) {
 +    IdentifierInfo *Family = Attribute.getArgAsIdent(0)->getIdentifierInfo();
 +    if (Contract.Family && Contract.Family->getFamily() != Family) {
@@ -32244,10 +32265,10 @@ index 000000000..ef0b1bc0a
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResourceFlow.cpp b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
 new file mode 100644
-index 000000000..8c49d6239
+index 000000000..22521fc6f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResourceFlow.cpp
-@@ -0,0 +1,967 @@
+@@ -0,0 +1,969 @@
 +//===--- SemaObjC3ResourceFlow.cpp - Scalar resource ownership flow
 +//--------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -32370,7 +32391,7 @@ index 000000000..8c49d6239
 +    Actions.Diag(Variable->getLocation(),
 +                 Actions.getDiagnostics().getCustomDiagID(
 +                     DiagnosticsEngine::Error,
-+                     "resource '%0' may leave its scope without cleanup; close "
++                     "resource %0 may leave its scope without cleanup; close "
 +                     "it on every path, return its owned type, or register "
 +                     "@resource/@cleanup"))
 +        << Variable;
@@ -32578,7 +32599,7 @@ index 000000000..8c49d6239
 +                Contract = Source;
 +              else
 +                diagnose(Node, Variable,
-+                         "initializing untracked resource '%0' erases its "
++                         "initializing untracked resource %0 erases its "
 +                         "cleanup contract; use the acquired value's typedef "
 +                         "or register explicit cleanup");
 +            }
@@ -32593,7 +32614,7 @@ index 000000000..8c49d6239
 +          if (Variable->getType()->isReferenceType())
 +            if (const VarDecl *Source = variable(Variable->getInit()))
 +              diagnose(Node, Source,
-+                       "strict-system cannot track an alias to resource '%0'; "
++                       "strict-system cannot track an alias to resource %0; "
 +                       "use resource operations on its declaring variable");
 +        }
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
@@ -32603,7 +32624,7 @@ index 000000000..8c49d6239
 +                                   : nullptr;
 +        if (Variable && Variables.count(Variable))
 +          diagnose(Node, Variable,
-+                   "strict-system resource '%0' requires ownership-aware "
++                   "strict-system resource %0 requires ownership-aware "
 +                   "capture support; keep it in its declaring callable");
 +      }
 +      for (const Expr *Initializer : Lambda->capture_inits())
@@ -32611,11 +32632,12 @@ index 000000000..8c49d6239
 +      return;
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
++      if (Block->getBlockDecl()->isInvalidDecl()) { Invalid = true; return; }
 +      for (const BlockDecl::Capture &Capture :
 +           Block->getBlockDecl()->captures())
 +        if (Variables.count(Capture.getVariable()) && !Capture.isObjC3ResourceCapture())
 +          diagnose(Node, Capture.getVariable(),
-+                   "strict-system resource '%0' requires ownership-aware "
++                   "strict-system resource %0 requires ownership-aware "
 +                   "capture support; keep it in its declaring callable");
 +      return;
 +    }
@@ -32638,7 +32660,7 @@ index 000000000..8c49d6239
 +        if (Source.Cleanup && !compatibleTypes(Source, Destination)) {
 +          if (SourceVariable)
 +            diagnose(Return, SourceVariable,
-+                     "returning resource '%0' erases or changes its cleanup "
++                     "returning resource %0 erases or changes its cleanup "
 +                     "family; return the compatible owned typedef");
 +          else if (Diagnosed.insert(Return).second) {
 +            Actions.Diag(Return->getReturnLoc(),
@@ -32713,7 +32735,7 @@ index 000000000..8c49d6239
 +        if (const VarDecl *Variable = variable(Unary->getSubExpr()))
 +          diagnose(Node, Variable,
 +                   "strict-system cannot track escaped storage of resource "
-+                   "'%0'; use resource operations on its declaring variable");
++                   "%0; use resource operations on its declaring variable");
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(Node))
 +      if (Binary->isComparisonOp()) {
 +        // Observing a moved-from sentinel is defined, even when the comparison
@@ -32790,7 +32812,7 @@ index 000000000..8c49d6239
 +                 bool Diagnose) {
 +    if (Diagnose && (state(Variable, Values) & (Moved | Discarded | Closed)))
 +      diagnose(Node, Variable,
-+               "resource '%0' may have been moved or discarded; test its "
++               "resource %0 may have been moved or discarded; test its "
 +               "invalid sentinel or reinitialize it before using it as valid");
 +  }
 +
@@ -32852,7 +32874,7 @@ index 000000000..8c49d6239
 +          Values[TakenValues.lookup(Operation)] = state(Variable, Values);
 +          if (Diagnose && DroppedTakes.contains(Operation))
 +            diagnose(Operation, Variable,
-+                     "taking resource '%0' discards its ownership result; "
++                     "taking resource %0 discards its ownership result; "
 +                     "use discard to close it immediately");
 +          break;
 +        case ObjC3ResourceExpr::Kind::Reset:
@@ -32866,7 +32888,7 @@ index 000000000..8c49d6239
 +                 !acceptsObjC3ResourceCleanup(Context, Replacement,
 +                                              registeredCleanup(Variable))))
 +              diagnose(Node, Variable,
-+                       "reset of resource '%0' mixes incompatible cleanup "
++                       "reset of resource %0 mixes incompatible cleanup "
 +                       "families; preserve the replacement's resource type");
 +          }
 +          assign(Variable, value(Operation->getReplacement(), Variable, Values),
@@ -32883,7 +32905,7 @@ index 000000000..8c49d6239
 +        if (!Variables.count(Target)) {
 +          if (Origin && Contracts.lookup(Origin).Cleanup && Diagnose)
 +            diagnose(Node, Origin,
-+                     "copying resource '%0' into untracked storage erases its "
++                     "copying resource %0 into untracked storage erases its "
 +                     "cleanup contract; preserve typed ownership or borrow it "
 +                     "through a call");
 +          return;
@@ -32891,11 +32913,11 @@ index 000000000..8c49d6239
 +        if (Diagnose && (Assignment || Source) &&
 +            (state(Target, Values) & Live))
 +          diagnose(Node, Target,
-+                   "assignment may overwrite live resource '%0'; use reset to "
++                   "assignment may overwrite live resource %0; use reset to "
 +                   "close the current value first");
 +        if (Diagnose && Origin)
 +          diagnose(Node, Target,
-+                   "initializing resource '%0' from another resource copies "
++                   "initializing resource %0 from another resource copies "
 +                   "ownership; use take to transfer it");
 +        if (Source && Diagnose) {
 +          auto SourceContract = getObjC3ResourceTypeContract(
@@ -32904,14 +32926,14 @@ index 000000000..8c49d6239
 +          if (SourceContract.Cleanup && TargetContract.Cleanup &&
 +              !compatibleTypes(SourceContract, TargetContract))
 +            diagnose(Node, Target,
-+                     "initializing resource '%0' mixes distinct cleanup "
++                     "initializing resource %0 mixes distinct cleanup "
 +                     "families; preserve the source resource type");
 +          if (SourceContract.Cleanup)
 +            if (const FunctionDecl *Cleanup = registeredCleanup(Target))
 +              if (!acceptsObjC3ResourceCleanup(Context, SourceContract,
 +                                               Cleanup))
 +                diagnose(Node, Target,
-+                         "cleanup for resource '%0' does not match the "
++                         "cleanup for resource %0 does not match the "
 +                         "acquired value's family; use its declared cleanup");
 +        }
 +        assign(Target, value(Source, Target, Values), Values);
@@ -32932,7 +32954,7 @@ index 000000000..8c49d6239
 +            checkRead(Node, Variable, Values, Diagnose);
 +            if (Diagnose)
 +              diagnose(Node, Variable,
-+                       "modifying resource '%0' requires an ownership-aware "
++                       "modifying resource %0 requires an ownership-aware "
 +                       "reset operation");
 +            assign(Variable, Fresh, Values);
 +          }
@@ -32952,7 +32974,7 @@ index 000000000..8c49d6239
 +                if (Source)
 +                  diagnose(
 +                      Node, Source,
-+                      "returning resource '%0' erases or changes its cleanup "
++                      "returning resource %0 erases or changes its cleanup "
 +                      "family; return the compatible owned typedef");
 +                else if (Diagnosed.insert(Return).second) {
 +                  Actions.Diag(
@@ -32969,7 +32991,7 @@ index 000000000..8c49d6239
 +                if (Diagnose)
 +                  diagnose(
 +                      Node, Source,
-+                      "returning registered resource '%0' copies ownership; "
++                      "returning registered resource %0 copies ownership; "
 +                      "use take from a resource with an invalid sentinel");
 +              } else {
 +                checkRead(Node, Source, Values, Diagnose);
@@ -33008,20 +33030,20 @@ index 000000000..8c49d6239
 +          if (KnownCleanup && !Closing && Diagnose)
 +            diagnose(
 +                Node, Variable,
-+                "cleanup function for resource '%0' is not associated with its "
++                "cleanup function for resource %0 is not associated with its "
 +                "type contract or family; use its declared cleanup");
 +          if (Closing) {
 +            if (registeredCleanup(Variable)) {
 +              if (Diagnose)
 +                diagnose(Node, Variable,
-+                         "manual close of registered resource '%0' can close "
++                         "manual close of registered resource %0 can close "
 +                         "it twice; use discard or close the result of take");
 +            } else {
 +              if (Diagnose &&
 +                  (state(Variable, Values) & (Moved | Discarded | Closed)))
 +                diagnose(
 +                    Node, Variable,
-+                    "resource '%0' may already be closed, moved, or invalid; "
++                    "resource %0 may already be closed, moved, or invalid; "
 +                    "test its sentinel or reinitialize it before cleanup");
 +              unsigned char Previous = state(Variable, Values);
 +              assign(Variable,
@@ -33031,7 +33053,7 @@ index 000000000..8c49d6239
 +            }
 +          } else if (Argument->isGLValue() && Diagnose)
 +            diagnose(Node, Variable,
-+                     "strict-system cannot expose resource '%0' through a "
++                     "strict-system cannot expose resource %0 through a "
 +                     "reference argument; use resource operations directly");
 +        }
 +      }
@@ -33115,6 +33137,7 @@ index 000000000..8c49d6239
 +    if (getObjC3ResourceTypeContract(Context, ReturnType).Cleanup)
 +      ReturnScopes = std::make_unique<ObjC3SourceScopes>(Body);
 +    collect(Body);
++    if (Invalid) return true;
 +    if (Variables.empty())
 +      return Invalid;
 +    CFG::BuildOptions Options;
@@ -33128,7 +33151,7 @@ index 000000000..8c49d6239
 +        CFG::buildCFG(Callable, Body, &Context, Options);
 +    if (!Graph) {
 +      diagnose(Body, Variables.begin()->first,
-+               "strict-system cannot prove ownership of resource '%0' across "
++               "strict-system cannot prove ownership of resource %0 across "
 +               "this control flow; simplify the callable's cleanup boundary");
 +      return true;
 +    }
@@ -33867,7 +33890,7 @@ index 000000000..ad5d10456
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-unspecified-receivers.m b/clang/test/ObjC3/Sema/guard-unspecified-receivers.m
 new file mode 100644
-index 000000000..6da053850
+index 000000000..bfc19da5e
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-unspecified-receivers.m
 @@ -0,0 +1,36 @@
@@ -33884,7 +33907,7 @@ index 000000000..6da053850
 +}
 +void unspecified_receiver(Receiver * _Null_unspecified value) {
 +  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
-+  guard value else { return; }
++  guard value != (id)0 else { return; }
 +  [value ping];
 +  value = (id)0;
 +  [value ping]; // strict-error {{ordinary message send requires a nonnull receiver}}
@@ -33909,7 +33932,7 @@ index 000000000..6da053850
 +@end
 diff --git a/clang/test/ObjC3/Sema/cleanup-ownership.m b/clang/test/ObjC3/Sema/cleanup-ownership.m
 new file mode 100644
-index 000000000..b994669e2
+index 000000000..ce2514617
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/cleanup-ownership.m
 @@ -0,0 +1,53 @@
@@ -33922,7 +33945,7 @@ index 000000000..b994669e2
 +void no_parameters(void);
 +@protocol Error @end
 +void checked_close(int) throws(id<Error>);
-+void async_close(int) async;
++void async_close(int) __objc3_async;
 +struct Record { int member; };
 +void copy_record(struct Record);
 +void valid(void) {
@@ -33933,7 +33956,7 @@ index 000000000..b994669e2
 +}
 +@cleanup(close_value) int global = 1; // expected-error {{only applies to local variables}}
 +void static_storage(void) {
-+  @cleanup(close_value) static int value = 1; // expected-error {{automatic local}}
++  @cleanup(close_value) static int value = 1; // expected-error {{only applies to local variables}}
 +}
 +void bad_callback(void) {
 +  @cleanup(wrong_address) int wrong = 1; // expected-error {{cannot accept the value}}
@@ -33946,7 +33969,7 @@ index 000000000..b994669e2
 +  @cleanup(close_value) int value __attribute__((cleanup(close_address))) = 1; // expected-error {{may have only one cleanup owner}}
 +}
 +void competing_owner(void) {
-+  @cleanup(close_value) int value __attribute__((objc_resource(close=close_value, invalid=0))) = 1; // expected-error {{cleanup cannot own the same variable|may have only one cleanup owner}}
++  @cleanup(close_value) int value __attribute__((objc_resource(close=close_value, invalid=0))) = 1; // expected-error {{objc_resource and cleanup cannot own the same variable}}
 +}
 +void jump_into_cleanup(void) {
 +  goto after; // expected-error {{cannot jump from this goto statement to its label}}
@@ -33956,7 +33979,7 @@ index 000000000..b994669e2
 +#ifdef __cplusplus
 +void converted_reference(const double &);
 +void temporary_argument(void) {
-+  @cleanup(converted_reference) int value = 1; // expected-error {{requires an unsupported temporary}}
++  @cleanup(converted_reference) int value = 1;
 +}
 +template<class T> void dependent_storage(void) {
 +  @cleanup(close_value) T value = {}; // expected-error {{requires complete nondependent fixed-size storage}}
@@ -34281,7 +34304,7 @@ index 000000000..654755f39
 +}
 diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
 new file mode 100644
-index 000000000..47e198904
+index 000000000..6ed4810f0
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ResourceTypes.h
 @@ -0,0 +1,107 @@
@@ -34361,7 +34384,7 @@ index 000000000..47e198904
 +        continue;
 +      auto Other = getObjC3ResourceTypeContract(
 +          Context,
-+          Context.getTypedefType(ElaboratedTypeKeyword::None, {}, Alias));
++          Context.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, Alias));
 +      if (Other.Family &&
 +          Other.Family->getFamily() == Contract.Family->getFamily())
 +        return true;
@@ -35403,10 +35426,29 @@ index 000000000..173e860ae
 +      Kind, Args, KeywordLoc, Parens.getCloseLocation());
 +}
 diff --git a/clang/lib/Sema/SemaObjC.cpp b/clang/lib/Sema/SemaObjC.cpp
-index 9adba1943..cdb3575cc 100644
+index 9adba1943..a2aefba93 100644
 --- a/clang/lib/Sema/SemaObjC.cpp
 +++ b/clang/lib/Sema/SemaObjC.cpp
-@@ -864,6 +864,19 @@ static bool findRetainCycleOwner(Sema &S, Expr *e, RetainCycleOwner &owner) {
+@@ -556,10 +556,14 @@ static QualType applyObjCTypeArgs(Sema &S, SourceLocation loc, QualType type,
+       if (auto attr = qual.getAs<AttributedTypeLoc>()) {
+         rangeToRemove = attr.getLocalSourceRange();
+         if (attr.getTypePtr()->getImmediateNullability()) {
+-          typeArg = attr.getTypePtr()->getModifiedType();
+-          S.Diag(attr.getBeginLoc(),
+-                 diag::err_objc_type_arg_explicit_nullability)
+-              << typeArg << FixItHint::CreateRemoval(rangeToRemove);
++          // Objective-C 3 retains nested nullability in generic contracts,
++          // including typed key-path Root/Value identity.
++          if (!S.getLangOpts().ObjC3) {
++            typeArg = attr.getTypePtr()->getModifiedType();
++            S.Diag(attr.getBeginLoc(),
++                   diag::err_objc_type_arg_explicit_nullability)
++                << typeArg << FixItHint::CreateRemoval(rangeToRemove);
++          }
+           diagnosed = true;
+         }
+       }
+@@ -864,6 +868,19 @@ static bool findRetainCycleOwner(Sema &S, Expr *e, RetainCycleOwner &owner) {
  
  namespace {
  
@@ -35426,7 +35468,7 @@ index 9adba1943..cdb3575cc 100644
  struct FindCaptureVisitor : EvaluatedExprVisitor<FindCaptureVisitor> {
    VarDecl *Variable;
    Expr *Capturer = nullptr;
-@@ -887,7 +900,7 @@ struct FindCaptureVisitor : EvaluatedExprVisitor<FindCaptureVisitor> {
+@@ -887,7 +904,7 @@ struct FindCaptureVisitor : EvaluatedExprVisitor<FindCaptureVisitor> {
  
    void VisitBlockExpr(BlockExpr *block) {
      // Look inside nested blocks
@@ -35435,7 +35477,7 @@ index 9adba1943..cdb3575cc 100644
        Visit(block->getBlockDecl()->getBody());
    }
  
-@@ -947,9 +960,15 @@ static Expr *findCapturingExpr(Sema &S, Expr *e, RetainCycleOwner &owner) {
+@@ -947,9 +964,15 @@ static Expr *findCapturingExpr(Sema &S, Expr *e, RetainCycleOwner &owner) {
    }
  
    BlockExpr *block = dyn_cast<BlockExpr>(e);
@@ -35454,10 +35496,10 @@ index 9adba1943..cdb3575cc 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..0df1a2148
+index 000000000..7f636b158
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,197 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -35493,7 +35535,9 @@ index 000000000..0df1a2148
 +                    Loc, LookupOrdinaryName);
 +  Hook.suppressDiagnostics();
 +  LookupQualifiedName(Hook, Context.getTranslationUnitDecl());
-+  if (!Hook.getAsSingle<FunctionTemplateDecl>()) {
++  if (Hook.isAmbiguous() || !llvm::any_of(Hook, [](NamedDecl *D) {
++        return isa<FunctionTemplateDecl>(D);
++      })) {
 +    Diag(Loc, diag::err_objc3_async_task_header);
 +    return ExprError();
 +  }
@@ -35655,7 +35699,7 @@ index 000000000..0df1a2148
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..60e8a0b56
+index 000000000..444eecde6
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 @@ -0,0 +1,1980 @@
@@ -35686,7 +35730,7 @@ index 000000000..60e8a0b56
 +                                          const ParsedAttr &Attribute) {
 +  auto Reject = [&](StringRef Message) {
 +    S.Diag(Attribute.getLoc(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
-+                                  DiagnosticsEngine::Error, Message));
++                                  DiagnosticIDs::Level::Error, Message));
 +    D->setInvalidDecl();
 +  };
 +  if (!S.getLangOpts().ObjC3) {
@@ -35738,11 +35782,11 @@ index 000000000..60e8a0b56
 +      sameObjC3BorrowedSignature(S.Context, New, S.Context, Old))
 +    return false;
 +  S.Diag(New->getLocation(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
-+                                DiagnosticsEngine::Error,
++                                DiagnosticIDs::Level::Error,
 +                                "conflicting borrowed pointer declaration contract for '%0'"))
 +      << New;
 +  S.Diag(Old->getLocation(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
-+                                DiagnosticsEngine::Note,
++                                DiagnosticIDs::Level::Note,
 +                                "previous borrowed pointer contract is declared here"));
 +  return true;
 +}
@@ -37666,7 +37710,7 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..8f0803fa2
+index 000000000..fc5cbd751
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
 @@ -0,0 +1,972 @@
@@ -38241,7 +38285,7 @@ index 000000000..8f0803fa2
 +      D->addAttr(ObjCUnsafeSendableAttr::Create(S.Context, AL));
 +    // Interfaces are the exported type contract. Implementation spelling must
 +    // not leave a source-free importer unable to observe the admission.
-+    if (const auto *Implementation = dyn_cast<ObjCImplementationDecl>(D))
++    if (auto *Implementation = dyn_cast<ObjCImplementationDecl>(D))
 +      if (auto *Interface = Implementation->getClassInterface())
 +        if (!Interface->hasAttr<ObjCUnsafeSendableAttr>())
 +          Interface->addAttr(ObjCUnsafeSendableAttr::Create(S.Context, AL));
@@ -38510,7 +38554,7 @@ index 000000000..8f0803fa2
 +
 +ExprResult Sema::BuildObjC3IsolationAwaitOperand(SourceLocation Loc,
 +                                                 Expr *Operand) {
-+  auto *Source = Operand->IgnoreParens();
++  auto *Source = Operand->IgnoreImplicit()->IgnoreParenImpCasts();
 +  auto *Call = dyn_cast<CallExpr>(Source);
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
 +  const Decl *Target = Call      ? static_cast<const Decl *>(Call->getDirectCallee())
@@ -40152,7 +40196,7 @@ index 000000000..4dfe1ef0e
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-generic-root.m b/clang/test/ObjC3/Sema/typed-keypath-generic-root.m
 new file mode 100644
-index 000000000..497e6678e
+index 000000000..d172593fa
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-generic-root.m
 @@ -0,0 +1,27 @@
@@ -40165,7 +40209,7 @@ index 000000000..497e6678e
 +@property(nonatomic) int count;
 +@end
 +__attribute__((objc_root_class))
-+@interface GenericPathBox<T> 
++@interface GenericPathBox<T : id> 
 +@property(nonatomic, strong) T _Nonnull item;
 +@end
 +
@@ -40445,7 +40489,7 @@ index 000000000..5b58c0b8a
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm b/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm
 new file mode 100644
-index 000000000..482e7aa5a
+index 000000000..26801897b
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-nested-nullability.mm
 @@ -0,0 +1,41 @@
@@ -40457,14 +40501,14 @@ index 000000000..482e7aa5a
 +@interface NullPathElement
 +@end
 +__attribute__((objc_root_class))
-+@interface NullPathBox<T>
++@interface NullPathBox<T : id>
 +@end
 +using NullableElements = NullPathBox<NullPathElement * _Nullable> * _Nonnull;
 +using NonnullElements = NullPathBox<NullPathElement * _Nonnull> * _Nonnull;
 +using NullableCallback = NullPathElement * _Nullable (* _Nonnull)(NullPathElement * _Nullable);
 +using NonnullCallback = NullPathElement * _Nonnull (* _Nonnull)(NullPathElement * _Nonnull);
-+using NullablePointee = NullPathElement * _Nullable * _Nonnull;
-+using NonnullPointee = NullPathElement * _Nonnull * _Nonnull;
++using NullablePointee = NullPathElement * __unsafe_unretained _Nullable * _Nonnull;
++using NonnullPointee = NullPathElement * __unsafe_unretained _Nonnull * _Nonnull;
 +__attribute__((objc_root_class))
 +@interface NullPathRoot
 +@property(nonatomic, strong) NullableElements elements;
@@ -40615,7 +40659,7 @@ index 000000000..8158a6153
 +static_assert(sizeof(deduceRepresentation((FrameFirst)0)) == sizeof(long));
 diff --git a/clang/test/ObjC3/Sema/async-effect-deduction.mm b/clang/test/ObjC3/Sema/async-effect-deduction.mm
 new file mode 100644
-index 000000000..e54ad5faf
+index 000000000..72d54d886
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/async-effect-deduction.mm
 @@ -0,0 +1,31 @@
@@ -40628,7 +40672,7 @@ index 000000000..e54ad5faf
 +static_assert(__is_same(decltype(deduceFunctionError((FrameFunction)0)), id<DeductionFirst>));
 +static_assert(DeducedEffects<TaskFirst>::match);
 +static_assert(__is_same(DeducedEffects<TaskFirst>::result, int));
-+static_assert(__is_same(DeducedEffects<TaskFirst>::error, id<DeductionFirst>));
++static_assert(__is_same(DeducedEffects<TaskFirst>::error, __strong id<DeductionFirst>));
 +static_assert(!DeducedEffects<PlainTask>::match);
 +static_assert(!DeducedEffects<BareTask>::match);
 +static_assert(!DeducedEffects<FrameFirst>::match);
@@ -40730,7 +40774,7 @@ index 000000000..613f0e1ae
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m b/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m
 new file mode 100644
-index 000000000..2dbb8c9fd
+index 000000000..61c933281
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-complete-identity.m
 @@ -0,0 +1,24 @@
@@ -40755,7 +40799,7 @@ index 000000000..2dbb8c9fd
 +CompleteIdentity use_complete(CompleteIdentity path) { return path; }
 +
 +__attribute__((objc_root_class))
-+@interface OpenPathGeneric<T>
++@interface OpenPathGeneric<T : id>
 +- (KeyPath<CompletePathClass *, T>)unsubstituted; // expected-error {{key-path identity requires concrete Objective-C generic arguments}}
 +@end
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m b/clang/test/ObjC3/Sema/typed-keypath-native-ownership.m
@@ -40839,4 +40883,17 @@ index 000000000..1328ccfcb
 +int dynamic(int count) __objc3_async_frame {
 +  (void)__builtin_alloca(count); // expected-error {{require fixed-size automatic storage}}
 +  return count;
++}
+diff --git a/clang/test/ObjC3/Sema/defer-checked-return-negative.m b/clang/test/ObjC3/Sema/defer-checked-return-negative.m
+new file mode 100644
+index 000000000..a90418213
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/defer-checked-return-negative.m
+@@ -0,0 +1,7 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++@protocol Error @end
++typedef int (^Result)(void);
++Result fail(id<Error> error) __objc3_throws(id<Error>) {
++  defer { __objc3_throw(error); } // expected-error {{an ObjC3 error may not escape a defer body}}
++  return ^{ return 1; };
 +}

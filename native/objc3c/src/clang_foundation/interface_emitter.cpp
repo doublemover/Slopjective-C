@@ -456,11 +456,11 @@ class TypeDependencyVisitor final
      return !stable_id.empty() && resolved_ids_.count(stable_id);
    }
 
-  bool TraverseRecordType(clang::RecordType *type) {
+  bool TraverseRecordType(clang::RecordType *type, bool traverse_qualifier) {
     clang::ObjC3KeyPathInfo keypath;
     if (clang::getObjC3KeyPathInfo(clang::QualType(type, 0), keypath))
       return TraverseType(keypath.Root) && TraverseType(keypath.Value);
-    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type);
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type, traverse_qualifier);
   }
 
   bool VisitTagType(clang::TagType *type) {
