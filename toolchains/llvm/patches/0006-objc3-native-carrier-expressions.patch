@@ -1069,7 +1069,7 @@ index 74209f579..19a1d4e1d 100644
    DeclSpec DS(AttrFactory);
    Declarator ParamInfo(DS, ParsedAttributesView::none(),
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
-index 0ed5c35c4..f917f804b 100644
+index 0ed5c35c4..3f71c52c7 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
 +++ b/clang/lib/Sema/SemaExceptionSpec.cpp
 @@ -14,6 +14,7 @@
@@ -1166,7 +1166,7 @@ index 0ed5c35c4..f917f804b 100644
    case Expr::CXXDefaultArgExprClass:
      return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
  
-@@ -1617,6 +1697,17 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1617,6 +1697,18 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return canSubStmtsThrow(*this, S);
    }
  
@@ -1179,6 +1179,7 @@ index 0ed5c35c4..f917f804b 100644
 +  case Stmt::ObjC3GuardStmtClass:
 +  case Stmt::ObjC3IfBindingStmtClass:
 +  case Stmt::ObjC3DoCatchStmtClass:
++  case Stmt::ObjC3LifetimeStmtClass:
 +    return canSubStmtsThrow(*this, S);
 +
    case Stmt::ObjCAtThrowStmtClass:

@@ -674,9 +674,11 @@ static void cancelled_cleanup_join_c(void) {
   objc3_task_release(task);
   objc3_executor_release(executor);
 }
+static const char spawn_void_identity[] = "objc3.async.v1:fixture.spawn.void";
 static const objc3_async_result_type spawn_void_type = {
     sizeof(objc3_async_result_type), OBJC3_ASYNC_ABI_VERSION,
-    0, 1, OBJC3_ASYNC_VOID, 0, "fixture.spawn.void", 18, NULL};
+    0, 1, OBJC3_ASYNC_VOID, 0, spawn_void_identity,
+    sizeof(spawn_void_identity) - 1, NULL};
 typedef struct SpawnProbe {
   objc3_actor_t *expected_actor;
   objc3_executor_t *expected_executor;

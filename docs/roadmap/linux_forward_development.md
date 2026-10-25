@@ -133,3 +133,16 @@ build/test/qualification execution remains postponed while implementation is fro
 Once validation resumes,
 run necessary checks for the combined change and broaden only to resolve new
 failures or unresolved concerns.
+
+Runtime-only development can configure `native/objc3c/src/runtime` directly:
+
+```sh
+cmake -S native/objc3c/src/runtime -B out/runtime-development -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build out/runtime-development --parallel 4
+ctest --test-dir out/runtime-development --output-on-failure
+```
+
+This reuses the production service target and does not require a compiler SDK.
+The task-service, structured-runtime, checked-error-bridge and key-path service
+suites pass at this resumed checkpoint. Language fixture execution and SDK
+qualification still depend on completing the compiler build.

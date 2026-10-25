@@ -72,34 +72,8 @@ target_link_libraries(clang-scan-deps PRIVATE clangAST clangBasic clangDependenc
   clangDriver clangFrontend clangLex clangSerialization clangTooling ${_objc3_native_codegen})
 install(TARGETS clang-scan-deps RUNTIME DESTINATION bin)
 
-add_library(objc3_runtime_services STATIC
-  ../runtime/services/error_service.cpp
-  ../runtime/services/objc_task_error.cpp
-  ../runtime/services/carrier_service.cpp
-  ../runtime/concurrency/service_executor.cpp
-  ../runtime/concurrency/service_task.cpp
-  ../runtime/concurrency/service_group.cpp
-  ../runtime/concurrency/service_actor.cpp
-  ../runtime/concurrency/service_actor_object.cpp
-  ../runtime/concurrency/service_public.cpp
-  ../runtime/stdlib/text_service.cpp
-  ../runtime/stdlib/keypath_service.cpp
-  ../runtime/stdlib/collections_service.cpp
-  ../runtime/stdlib/generic_collection_service.cpp
-  ../runtime/stdlib/generic_associative_service.cpp)
-target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
-target_compile_options(objc3_runtime_services INTERFACE
-  "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fcoro-aligned-allocation>"
-  "$<$<COMPILE_LANG_AND_ID:OBJCXX,Clang>:-fcoro-aligned-allocation>")
-target_link_options(objc3_runtime_services INTERFACE
-  "-fuse-ld=lld"
-  "LINKER:-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff"
-  "LINKER:-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff")
-target_include_directories(objc3_runtime_services PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public>"
-  "$<INSTALL_INTERFACE:include>")
-find_package(Threads REQUIRED)
-target_link_libraries(objc3_runtime_services PRIVATE Threads::Threads)
+# The runtime can also be built independently of the compiler SDK.
+add_subdirectory(../runtime "${CMAKE_CURRENT_BINARY_DIR}/runtime")
 
 include(GNUInstallDirs)
 install(TARGETS objc3c objc3c_frontend_v2 objc3c_clang_foundation objc3_runtime_services

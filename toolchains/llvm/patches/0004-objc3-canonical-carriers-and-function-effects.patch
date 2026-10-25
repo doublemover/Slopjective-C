@@ -8631,7 +8631,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..62404fd8e 100644
+index 5d4c5ff7d..1a38417a0 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -9094,7 +9094,7 @@ index 5d4c5ff7d..62404fd8e 100644
 +  QualType CaptureType, DeclRefType;
 +  llvm::SaveAndRestore<bool> ExplicitCapture(BSI->ObjC3CapturingExplicit, true);
 +  if (tryCaptureVariable(Resolved, Range.getEnd(), TryCaptureKind::ExplicitByVal,
-+                         SourceLocation(), true, CaptureType, DeclRefType)) {
++                         SourceLocation(), true, CaptureType, DeclRefType, nullptr)) {
 +    BSI->TheDecl->setInvalidDecl();
 +    return;
 +  }
@@ -35292,7 +35292,7 @@ index 9514dead3..e9fbcba4f 100644
    Scope *TheScope;
 diff --git a/clang/lib/Parse/ParseObjC3KeyPath.cpp b/clang/lib/Parse/ParseObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..061e93fcd
+index 000000000..173e860ae
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3KeyPath.cpp
 @@ -0,0 +1,106 @@
@@ -35381,7 +35381,7 @@ index 000000000..061e93fcd
 +                      : Operation->isStr("KeyPathMetadata") ? 2 : 3;
 +  BalancedDelimiterTracker Parens(*this, tok::l_paren);
 +  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
-+                              Operation->getName()))
++                              Operation->getNameStart()))
 +    return ExprError();
 +  SmallVector<Expr *, 3> Args;
 +  const unsigned Count = Kind == 0 ? 2 : Kind == 1 ? 3 : 1;
@@ -35655,10 +35655,10 @@ index 000000000..0df1a2148
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..ca7d17c53
+index 000000000..60e8a0b56
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,1985 @@
+@@ -0,0 +1,1980 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -35685,7 +35685,7 @@ index 000000000..ca7d17c53
 +void clang::handleObjC3ReturnsBorrowedAttr(Sema &S, Decl *D,
 +                                          const ParsedAttr &Attribute) {
 +  auto Reject = [&](StringRef Message) {
-+    S.Diag(Attribute.getLoc(), S.getDiagnostics().getCustomDiagID(
++    S.Diag(Attribute.getLoc(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
 +                                  DiagnosticsEngine::Error, Message));
 +    D->setInvalidDecl();
 +  };
@@ -35737,11 +35737,11 @@ index 000000000..ca7d17c53
 +  if (!S.getLangOpts().ObjC3 ||
 +      sameObjC3BorrowedSignature(S.Context, New, S.Context, Old))
 +    return false;
-+  S.Diag(New->getLocation(), S.getDiagnostics().getCustomDiagID(
++  S.Diag(New->getLocation(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
 +                                DiagnosticsEngine::Error,
 +                                "conflicting borrowed pointer declaration contract for '%0'"))
 +      << New;
-+  S.Diag(Old->getLocation(), S.getDiagnostics().getCustomDiagID(
++  S.Diag(Old->getLocation(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
 +                                DiagnosticsEngine::Note,
 +                                "previous borrowed pointer contract is declared here"));
 +  return true;
@@ -35851,12 +35851,6 @@ index 000000000..ca7d17c53
 +    }
 +  };
 +  struct StorageInfo {
-+    static Storage getEmptyKey() {
-+      return {llvm::DenseMapInfo<const VarDecl *>::getEmptyKey(), nullptr};
-+    }
-+    static Storage getTombstoneKey() {
-+      return {llvm::DenseMapInfo<const VarDecl *>::getTombstoneKey(), nullptr};
-+    }
 +    static unsigned getHashValue(const Storage &S) {
 +      return llvm::hash_combine(S.first, S.second, S.Index, S.Parent);
 +    }
@@ -37283,7 +37277,8 @@ index 000000000..ca7d17c53
 +        }
 +        if (Emit)
 +          if (const auto *BlockExpression = dyn_cast<BlockExpr>(Invocation)) {
-+            BlockDecl *BlockDeclaration = BlockExpression->getBlockDecl();
++            BlockDecl *BlockDeclaration =
++                const_cast<BlockDecl *>(BlockExpression->getBlockDecl());
 +            if (!BlockDeclaration->isInvalidDecl()) {
 +              // An ordinary pointer alias can capture borrowing even after
 +              // its static type lost the qualifier. Recheck the nested body
@@ -37671,7 +37666,7 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..e0680cb68
+index 000000000..8f0803fa2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
 @@ -0,0 +1,972 @@
@@ -38518,7 +38513,7 @@ index 000000000..e0680cb68
 +  auto *Source = Operand->IgnoreParens();
 +  auto *Call = dyn_cast<CallExpr>(Source);
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
-+  const Decl *Target = Call      ? Call->getDirectCallee()
++  const Decl *Target = Call      ? static_cast<const Decl *>(Call->getDirectCallee())
 +                       : Message ? Message->getMethodDecl()
 +                                 : nullptr;
 +  auto *Callable = Decl::castFromDeclContext(CurContext);
@@ -38677,7 +38672,7 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..ce5be61c0
+index 000000000..d270872d0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 @@ -0,0 +1,1264 @@
@@ -38818,7 +38813,7 @@ index 000000000..ce5be61c0
 +  S.LookupQualifiedName(Tag, TU);
 +  if (Tag.isSingleResult()) {
 +    if (auto *Record = dyn_cast<RecordDecl>(Tag.getFoundDecl()))
-+      return checkMetadataType(S, S.Context.getRecordType(Record), Name, Loc,
++      return checkMetadataType(S, S.Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Record), Name, Loc,
 +                               /*AllowOpaque=*/true);
 +  } else if (Tag.empty()) {
 +    // A signature stores only this pointer. Register its public forward tag in
@@ -38826,7 +38821,7 @@ index 000000000..ce5be61c0
 +    RecordDecl *Record = S.Context.buildImplicitRecord(Name);
 +    TU->addDecl(Record);
 +    S.PushOnScopeChains(Record, S.TUScope, /*AddToContext=*/false);
-+    return S.Context.getRecordType(Record);
++    return S.Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Record);
 +  }
 +  reject(S, Loc, "key-path metadata tag conflicts with an incompatible "
 +                 "native declaration");
@@ -38958,7 +38953,7 @@ index 000000000..ce5be61c0
 +  Policy.SuppressTagKeyword = false;
 +  Policy.Bool = false; // One metadata/record identity across C and C++ spellings.
 +  std::string Identity =
-+      Context.getCanonicalType(Type).getUnqualifiedType().getAsString(Policy);
++      QualType(Context.getCanonicalType(Type)).getUnqualifiedType().getAsString(Policy);
 +  if (Type->canHaveNullability())
 +    Identity += ";nullability=" + std::to_string(static_cast<unsigned>(
 +        Type->getNullability().value_or(NullabilityKind::Unspecified)));
@@ -39049,7 +39044,7 @@ index 000000000..ce5be61c0
 +  {
 +    Sema::SynthesizedFunctionScope FunctionScope(S, Conversion);
 +    QualType ThisType = S.Context.getPointerType(
-+        S.Context.getRecordType(Record).withConst());
++        S.Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Record).withConst());
 +    auto *This = CXXThisExpr::Create(S.Context, Loc, ThisType, true);
 +    Expr *Selected = MemberExpr::CreateImplicit(
 +        S.Context, This, true, Read, Target.withConst(), VK_LValue, OK_Ordinary);
@@ -39097,7 +39092,7 @@ index 000000000..ce5be61c0
 +    ObjC3KeyPathInfo Existing;
 +    if (Lookup.isSingleResult())
 +      if (auto *Record = dyn_cast<RecordDecl>(Lookup.getFoundDecl())) {
-+        QualType ExistingType = S.Context.getRecordType(Record);
++        QualType ExistingType = S.Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Record);
 +        if (getObjC3KeyPathInfo(ExistingType, Existing) &&
 +            bool(Existing.Read) == Writable &&
 +            typeIdentity(S.Context, Existing.Root) ==
@@ -39145,7 +39140,7 @@ index 000000000..ce5be61c0
 +    Record->completeDefinition();
 +  if (Conversion)
 +    S.Consumer.HandleInlineFunctionDefinition(Conversion);
-+  return S.Context.getRecordType(Record);
++  return S.Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Record);
 +}
 +
 +Expr *field(Sema &S, Expr *Base, FieldDecl *Field) {
@@ -39176,7 +39171,7 @@ index 000000000..ce5be61c0
 +
 +InitListExpr *aggregate(Sema &S, QualType Type, ArrayRef<Expr *> Values,
 +                        SourceLocation Loc) {
-+  auto *List = new (S.Context) InitListExpr(S.Context, Loc, Values, Loc);
++  auto *List = new (S.Context) InitListExpr(S.Context, Loc, Values, Loc, /*isExplicit=*/false);
 +  List->setType(Type);
 +  return List;
 +}
@@ -39807,7 +39802,7 @@ index 000000000..ce5be61c0
 +        : static_cast<NamedDecl *>(Part.Field);
 +    std::string DeclaringOwner = Part.Property
 +        ? declarationOwner(Part.Property)
-+        : typeIdentity(Context, Context.getRecordType(Part.Field->getParent()));
++        : typeIdentity(Context, Context.getTypeDeclType(ElaboratedTypeKeyword::None, std::nullopt, Part.Field->getParent()));
 +    std::string Getter = Part.Property
 +        ? Part.Property->getGetterName().getAsString() : "";
 +    std::string Setter = Part.Property && !ReadOnly
