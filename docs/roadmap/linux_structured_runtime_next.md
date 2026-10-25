@@ -1,9 +1,13 @@
 # Linux structured runtime development
 
 This file tracks maintained runtime work following the task-destination and
-nonblocking group-await milestones. Implementation and fixture authoring are
-frontloaded; no build, execution, sanitizer, or installed-SDK qualification is
-claimed for these additions. Existing receipts describe their recorded inputs.
+nonblocking group-await milestones. The coordinated Linux checkpoint passes the
+standalone runtime suites, native feature matrices and installed structured,
+task/group-await, async and spawn consumers. Development instrumentation passes
+ASan/UBSan and TSan for the structured runtime, task/group-await and five-family
+feature matrices. See the [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+for the exact binaries, archive and scope. Compiler automatic structured-scope
+finalization and the complete abstract group library remain open.
 
 ## Structured child cancellation
 
@@ -28,8 +32,8 @@ The installed C frame fixture authors witnesses for cancellation before spawn,
 cancellation of already-suspended descendants, child-only cancellation, detached
 independence, and a released intermediate child. The actor-scheduling fixture
 authors a worker registration race with a cancellation request made during the
-active parent resume. These witnesses use existing maintained suite entrypoints;
-execution is deferred. Public service ABI layouts and versions are unchanged.
+active parent resume. These witnesses use existing maintained suite entrypoints
+and pass in the coordinated batch. Public service ABI layouts and versions are unchanged.
 
 Cancellation ancestry is a cancellation relationship. The shared task API still
 requires callers to join owned work explicitly; it does not introduce automatic
@@ -56,7 +60,7 @@ the same cancellation cleanup path, rather than stranding the frame silently.
 Maintained fixtures author abandoned-parent, cancelled-actor, closed-hop, and
 throwing-resume witnesses. They check descendant wakes on another executor,
 exactly-once frame cleanup, and harmless late dependency notifications. These
-paths remain subject to the deferred validation phase.
+paths pass in the coordinated runtime and installed-consumer batch.
 
 ## Canonical main and global executors
 
@@ -85,7 +89,7 @@ worker, rejection of pumping on another thread, current logical identities,
 four simultaneously active global callbacks, and releasing all client handles
 while shared work is pending. Compiler attributes and imported isolation metadata can now identify
 these real destinations, but implicit cross-executor call lowering remains a
-compiler responsibility. Validation is deferred.
+compiler responsibility. Runtime destination witnesses pass.
 
 ## Operation lifetime and nonblocking runtime waits
 
@@ -103,7 +107,7 @@ return `NOT_READY` from any runtime executor callback, including a different
 executor. Such callbacks may be needed to unblock the target's future work.
 Completed observations remain immediately available. Authored witnesses cover
 reentrant last-owner release during terminal registration, manual-task waits,
-and a pending cross-executor actor join. Execution remains deferred.
+and a pending cross-executor actor join. These runtime witnesses pass.
 
 The canonical-global fixture also authors two simultaneously active actor
 mailboxes, repeated mailbox cleanup, and a task that repeatedly yields on the
@@ -135,7 +139,7 @@ They are independent of physical worker identity. Same executor affinity does
 not prove same actor instance isolation. C and C++ fixtures author owned-name,
 case-sensitive identity, idempotence/conflict, registration-race, retained-client
 retirement, and reentrant registry access during last-worker shutdown witnesses.
-No execution or installed export qualification is claimed yet.
+The runtime and installed structured/task qualification gates pass.
 
 ## Allocation-independent async service failures
 
@@ -160,7 +164,7 @@ error payloads. Native empty-child/invalid-await failures can therefore retain
 their original status through independent C frames and C++ consumers. Authored
 witnesses cover all service statuses, independent shared error owners, ordinary
 error mismatch, and C-frame publication observed by both C++ result access and
-suspended awaiters. Validation is deferred.
+suspended awaiters. These async/runtime witnesses pass.
 
 C++ promise publication uses the same transport when result copying or native
 exception-error allocation fails. Missing foreign exception carriers and failed
@@ -205,8 +209,8 @@ cancellation, rejected overlapping suspension and premature wake/completion,
 abandoned parent/group owners, nested groups, actor resumption and discard,
 foreign callback/destructor gates, empty deferred publication, and the C++
 cleanup request followed by a normal cancellation checkpoint. These backing
-hooks do not claim compiler automatic structured-scope finalization. Validation
-remains deferred.
+hooks do not claim compiler automatic structured-scope finalization. The runtime
+and task/group-await witnesses pass, including the separate sanitizer batch.
 
 ## Explicit structured child entry destinations
 
@@ -221,8 +225,8 @@ continuation destination. Frame ownership transfers only on successful start.
 Authored C and shared-frame C++ witnesses cover explicit actor/executor entry,
 cross-executor parent resumption, cancellation before child creation, initial
 child cancellation observation, invalid-destination ownership preservation, and
-exactly-once frame cleanup. Compiler attribute lowering remains its separate
-implementation milestone; validation is deferred.
+exactly-once frame cleanup. These runtime witnesses pass. Bounded compiler
+attribute lowering and awaited entry are also exercised by the isolation matrix.
 
 ## Explicit Objective-C object actor associations
 
@@ -245,8 +249,8 @@ clients retain their libobjc-free link. The maintained native async ARC/MRC
 provider authors real object deallocation, reentrant lookup during deallocation,
 pending mailbox cleanup, independent retained lookups, conflicting concurrent
 registration, and closed-old-mailbox rebinding witnesses. Its existing
-instrumented native-runtime source list includes the new member. Validation
-and installed symbol/package qualification remain deferred.
+instrumented native-runtime source list includes the new member. Native async
+instrumentation and installed async/structured/package gates pass.
 
 `objc3_actor_get_executor(actor, &executor)` returns the actor's exact immutable
 backing destination with an independent retained lease, including after mailbox
@@ -273,7 +277,7 @@ These carrier operations back the standard header's Block-taking APIs; only
 that recognized source boundary applies capture diagnostics. A C17 witness
 authors active actor inheritance, cancellation set before spawn, global detached
 independence, explicit group quiescence, and failure-side carrier cleanup.
-Validation remains deferred.
+These runtime and spawn witnesses pass.
 
 ## Recognized standard spawn APIs and macros
 
@@ -295,28 +299,26 @@ Separate bare and typed-E checked-effect overloads retain the Block effect and
 transport its owned error in the resulting task; they never convert checked
 failure to cancellation or erase it into a nonthrowing Block type.
 
-The canonical compiler source now authors the C++ typed-E overload dependency:
+The canonical compiler implements the C++ typed-E overload dependency:
 deduction of ObjC3 function-effect `ErrorType`, exact async/frame effect matching,
-and used-template-parameter tracking. This header and its witnesses remain
-authored inputs; overload resolution has not been built or executed. Ordinary
-C++ raw-frame definitions remain a separate compiler admission boundary.
+and used-template-parameter tracking. Header overload resolution and execution
+pass in the spawn matrix. Bounded ordinary C++ raw-frame definitions admit value
+parameters and trivially copyable parameters/results; references, nontrivial
+values and implicit C++ `this` retain targeted diagnostics.
 
 `tests/clang_foundation/task_spawning` authors C17 and C++20/23 direct/macro
 equivalence, cancellation before spawn, preserved actor affinity through
 suspension, global detached independence, typed result joins, raw-frame joins,
 checked error identity, capture deallocation, failed-start ownership cleanup,
-and strict diagnostic parity. The source batch should cover ARC/MRC, O0/O2,
-and source/PCH/module imports. No compilation or execution was performed.
+and strict diagnostic parity. All 24 source/PCH configurations pass across
+ARC/MRC, O0/O2 and C17/C++20/C++23, both normally and under ASan/UBSan and TSan.
+The installed feature gate covers the same matrix.
 These APIs retain explicit task/group joining; compiler automatic group-scope
 finalization and the complete abstract structured-group library remain open.
 
-Root solo follow-up now authors typed async callback deduction: ErrorType is a
-deducible type position, async/frame representations match exactly, and throwing
-domains cannot be erased. Function-address matching uses its established reverse
-conversion direction. Native source/specialization/PCH fixtures are authored;
-execution remains deferred. Explicit C++ raw-frame definitions are now authored for value parameters and
-trivially copyable results/parameters; the spawn witness remains pending validation.
-
-Development has resumed with solo compiler and feature-runner integration. All
-six prior parallel spans remain parked; their source is preserved in commits.
-Combined compilation and execution will establish the next evidence checkpoint.
+Typed async callback deduction treats ErrorType as a deducible type position,
+requires exact async/frame representation, and preserves throwing domains.
+Function-address matching uses its established reverse conversion direction.
+Native source/specialization/PCH fixtures pass alongside the bounded C++ frame
+and spawn runtime matrices. These hooks continue to require explicit task/group
+joining until compiler automatic structured-scope finalization is implemented.

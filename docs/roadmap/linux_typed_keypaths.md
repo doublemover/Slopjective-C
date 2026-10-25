@@ -5,8 +5,10 @@ This development slice implements the language and library boundary in Part 3
 canonical development LLVM sourcetree and the Linux GNUstep 2.2 native runtime.
 Native compiler regressions and all 24 source/PCH runtime configurations pass
 across C17/C++20/C++23, ARC/MRC and O0/O2, including exact-once record snapshots
-and C++ operand failures. Native interface round trips and installed SDK
-qualification remain in progress; full profile conformance remains reserved.
+and C++ operand failures. The same 24 configurations pass under ASan/UBSan and
+TSan. Native interface round trips, the facade suite and installed SDK gate also
+pass; see the [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json).
+Full profile conformance remains reserved.
 
 ```objc
 @import objc3.keypath;

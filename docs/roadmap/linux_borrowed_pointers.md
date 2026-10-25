@@ -1,10 +1,12 @@
 # Linux borrowed-pointer implementation
 
-Part 8.7 source development, 2026-10-23. This work targets the canonical native
-compiler in `out/toolchains/objc3-development/src`. The root agent owns export of
-that source into maintained LLVM patch packets, sealing, and the coordinated
-validation batch. No compiler build or test execution has been performed for
-this checkpoint.
+Part 8.7 is implemented in the canonical native compiler and exported into the
+maintained LLVM patch packets. The coordinated Linux SDK build passes native
+regressions, the borrowed-pointer facade suite, PCH/source-free import contracts
+and the surrounding lifetime/runtime integration. See the
+[integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+for the exact source and SDK identities; these results do not promote full
+Strict System conformance.
 
 Implemented in source:
 
@@ -71,7 +73,7 @@ Implemented in source:
   a pointer representation. Callable signatures containing borrowed results
   remain metadata and do not make the callable address a borrowed value.
 
-Maintained evidence authored for the later coordinated batch:
+Maintained fixtures executed by the coordinated batch:
 
 - `tests/clang_foundation/borrowed_pointers_test.cpp`, target
   `objc3_borrowed_pointers`: C17/C++20/C++23 under ARC and MRC, required escape
@@ -90,8 +92,6 @@ Maintained evidence authored for the later coordinated batch:
 
 Remaining boundaries to keep explicit while development continues:
 
-- This is authored source, not a validated conformance claim. Compiler/API
-  compatibility and runtime lifetime behavior await the coordinated batch.
 - Part 8.7 mentions an explicit unsafe escape marker but the catalog/formal
   grammar supplies no spelling. This implementation introduces no speculative
   unsafe syntax. Non-stable owners require explicit lifetime control, one of
@@ -110,10 +110,8 @@ Remaining boundaries to keep explicit while development continues:
   reconstruct a declaration-only owner-index relationship. No whole-program
   analyzer is required or substituted for the mandatory frontend pass.
 
-Handoff: source development is parked after the coordinated third compiler
-checkpoint request. Only `clang/lib/Sema/SemaObjC3Borrowed.cpp` changed in this
-last span; the public borrowed header and both Sema files remain the three new
-native LLVM paths reported to the root exporter. No builds, tests, native SDK
-operations, exporter/seal operations, or qualification runs were performed by
-this agent. The maintained fixtures are authored evidence for the root's later
-coordinated execution, and the source changes remain subject to that execution.
+AST import preserves the owner/type contracts in the target AST. Native CFG
+lifetime endpoints follow explicit actions and deferred cleanup for ordinary ARC
+strong/weak object slots; nonthrowing release endpoints no longer obscure owner
+expiry. The maintained facade regressions exercise both expired owners and
+independent lifetime pins. The conservative boundaries above remain deliberate.

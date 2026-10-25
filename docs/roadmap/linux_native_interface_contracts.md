@@ -46,10 +46,12 @@ its exact header semantic. This does not relax the module resolver's existing
 source-language/ownership profile compatibility rules; mixed native AST import
 and C++ frame-await bridges are developed separately from profile projections.
 
-Authored witnesses cover source round trips, sentinel/alias identity, semantic
-fingerprints, ABI tampering, recursive callback contracts, mixed-language AST
-type import and stripped-capability rejection. This implementation batch has
-not been built or executed.
+The coordinated facade and installed-package gates pass source round trips,
+sentinel/alias identity, semantic fingerprints, ABI tampering, recursive callback
+contracts, mixed-language AST type import and stripped-capability rejection. See
+the [integration receipt](../support/linux_native_feature_integration_acceptance.json).
+Import retains Objective-C message receiver forms and parameter extension flags;
+compatible plain C/C++ records preserve the consumer's native record kind.
 Opposite-ownership projections retain their existing bounded C API rules.
 
 Native extension ABI **21** accompanies the new serialized function effects,

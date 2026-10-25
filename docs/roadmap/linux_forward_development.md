@@ -9,28 +9,35 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **352 native Clang regressions** pass, with three
-unsupported cases. Four standalone runtime suites and 83 focused tooling tests
-also pass, including ASan/UBSan runs of all four runtime suites. All five feature
-families pass: 168 configurations and 942 commands (captures/keypaths/spawn 24
-each; async/isolation 48 each). All 166 native AST/matcher/source-tooling contract tests pass; compiler, editor
-and debugger targets build. Combined SDK qualification remains in progress.
+The combined delivery checkpoint passes **355 native Clang/index/query regressions**
+(352 in the ObjC3 suite), with three unsupported cases, and all 166 native
+AST/matcher/source-tooling contracts. Compiler, editor and debugger targets build;
+all 32 facade suites, eight GNUstep runtime integration tests, 37 installed
+consumer checks and 13 selected native integration nodes pass. All **31 installed
+SDK qualification gates** pass against the frozen source identity
+`llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3`.
+The exact archive also passes the recorded native-feature scope on pinned
+Debian 13 and Ubuntu 26.04, including ordinary-user consumers.
+
+The five feature families pass 168 configurations / 942 commands against the
+installed SDK. Separate development runs pass the same complete matrix under
+ASan/UBSan and TSan: another 336 configurations / 1,884 commands. Four standalone
+runtime suites pass normally and under ASan/UBSan; the additional structured,
+task/group-await, native C++ async and C-frame ABI sanitizer suites also pass.
+The latest package/source-graph/audit tooling batch passes 153 tests, alongside
+focused installer, runtime, source-seal and distribution-runner checks.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
 ## Active implementation checkpoint
 
-Development has resumed with a solo integration span. The six prior agents are
-parked. Maintained code and canonical compiler patches preserve their completed
-work. C++ frame definitions and the five-family feature runner are integrated;
-compiler/editor/debugger targets and their contract suites pass. Installed SDK
-qualification is the active delivery step. The first combined pass found facade
-integration defects: EOF recovery, cross-language C-frame record matching,
-Objective-C message import in key-path accessors, borrowed `noescape` prototype
-flags and ARC lifetime endpoints around deferred actions. These now have native
-repairs; facade witnesses also reflect cancellation before source-body entry and
-shielded cleanup completion. The failed candidate remains unpublished while the
-corrected source is exported and resealed for the next combined pass. All 32
-facade suites now pass across the collector and focused repair runs. C++ actor
+The completed implementation is exported into maintained compiler patches,
+sealed and delivered as the current Linux SDK. C++ frame definitions and the
+five-family feature runner are integrated with compiler/editor/debugger consumers.
+Combined qualification repaired EOF recovery, cross-language C-frame record
+matching, Objective-C message import in key-path accessors, borrowed `noescape`
+prototype flags and ARC lifetime endpoints around deferred actions. Facade
+witnesses cover cancellation before source-body entry and shielded cleanup
+completion. All 32 facade suites pass together in the final SDK build. C++ actor
 entry additionally preserves method `nothrow`, establishes generated thunk frame
 identity before code generation, and admits implicit ARC cleanup of transitively
 Sendable aggregate fields. Required unchecked-transfer notes no longer depend
@@ -61,8 +68,8 @@ ignored build root; exported patches are its version-controlled source inputs.
 | Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Nontrivial C++ frame parameters/results, dynamic stack storage, C++ task pool handling, handle-await protocols and structured scope lowering |
 | Isolation/Sendable | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values |
-| Structured runtime | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library and remaining combined integration |
-| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and deferred feature-batch driver | Remaining package/profile projections, combined validation of authored fixtures |
+| Structured runtime | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner | Remaining package/profile projections and full profile conformance |
 
 Per-feature detail and authored witnesses:
 
@@ -94,9 +101,9 @@ milestone; earlier tooling coverage does not establish new feature coverage.
 1. Finish the remaining ownership, async, isolation, key-path and structured runtime
    slices together. Preserve live owners through suspension and exceptions;
    retain complete callable identity across source, PCH, import and packages.
-2. Integrate the authored recognized spawn APIs/macros, retained actor bindings
-   and awaited entries with the remaining C++ frame-definition and automatic
-   structured-scope finalization work.
+2. Extend the admitted C++ frame, isolation and spawn surfaces into automatic
+   structured-scope finalization. Preserve cancellation and retained actor/
+   destination ownership through the complete scope-cleanup protocol.
 3. Reconcile every remaining Part 3/5 type/control-flow requirement, generic
    constraint, property/reflection/metaprogramming and specified foreign/Swift
    interop surface with real implementation. Keep optional feature-set limits
@@ -104,17 +111,18 @@ milestone; earlier tooling coverage does not establish new feature coverage.
 4. Close unsupported native-EH CFG ownership and profile diagnostics, including
    required fix-its, before promoting Core, Strict, Strict Concurrency or Strict
    System capabilities.
-5. Run a combined compiler/facade/tooling/runtime validation batch after the
-   implementation checkpoint is coherent. Then perform one coordinated SDK
-   cutover and installed-consumer run for the release. Do not rebuild or qualify
-   SDK archives repeatedly during frontloaded source development.
+5. Repeat the combined compiler/facade/tooling/runtime/sanitizer batch after the
+   next implementation span is coherent, then perform one coordinated SDK
+   cutover. The current checkpoint has completed that sequence; avoid repeated
+   archive rebuilds during frontloaded source development.
 6. Complete native Linux AArch64 implementation and qualification on a native
    host. Cross-compilation/emulation can find defects but do not establish native
-   support. Qualify supported fresh Linux distributions against the final SDK.
+   support. Repeat the fresh-distribution archive checks for each future cutover.
 
-This is a hard cutover project. Semantic interface schema 2.1 requires explicit
-physical async ABI identity; old interfaces/packages must be rebuilt. Source,
-headers, objects, PCH, interfaces, packages and SDK artifacts must agree when a
+This is a hard cutover project. Native extension ABI 21 and semantic interface
+schema 2.1 require explicit physical async ABI identity; old interfaces/packages
+must be rebuilt. Source, headers, objects, PCH, interfaces, packages and SDK
+artifacts must agree when a
 contract changes. Broad source-language/ownership projections remain gated until
 they preserve the complete declaration and physical ABI contract.
 
@@ -140,21 +148,22 @@ clients are instrumented; GNU libobjc is loaded as shipped.
 
 ## Existing evidence
 
-The last fully validated compiler checkpoint is
-`0ddde9661a53f6464d9eb7225e80eedf5fce8ae3`, native source identity
-`llvmorg-23.1.3-0d261d1ca552-0a3a6c1d8422-00b75dc3`. Its compiler/facade/editor/
-debugger build passed, with 293 Clang regressions (three unsupported), 148 native
-contract tests and 1,045 integration commands. Separate receipts identify earlier
-stdlib, carrier, async and sanitizer runs. Later focused source compilation
-covered 31 C++ translation units; it did not execute the new language fixtures.
-**None of those results validates the current parallel implementation batch.**
+The current [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+binds the implementation commit, source/patch identity, SDK release and archive
+hashes to the foundation, installed-consumer, sanitizer and fresh-distribution
+reports. It records the precise scope of each run rather than treating development
+instrumentation as a rebuild of the final archive.
 
-The active older SDK is identified by
-[defer delivery evidence](../support/linux_defer_scope_release_acceptance.json)
-and [guard AST evidence](../support/linux_guard_ast_acceptance.json). No new SDK
-archive, installed-feature PASS or complete profile claim is implied by new
-source commits. Current development results are recorded above; combined
-foundation/facade/installed-consumer validation is underway.
+The accepted SDK seal is
+`26d7e520de88f61d6143ad9e0d7d8ebcd16f4f4a6f573cf652ce4099e15286d4`;
+its 434,700,253-byte archive has SHA-256
+`4a91b2d9b5e0a08eba8d8cd5b1222d107b5c6ee4bb007c36988013000dfa88bd`.
+The fresh-distribution scope installs that exact archive, checks relocation,
+embedding and debugging, then executes the five feature families and selected
+carrier/control-flow consumers as an ordinary user. The host release runs all 31 installed
+gates. Neither scope establishes full Core/Strict/System profiles or native Linux
+AArch64 support. Earlier defer/guard receipts remain historical evidence for
+their recorded inputs, rather than the authority for this SDK.
 
 ## Development operation
 
@@ -170,11 +179,10 @@ The instance has four CPU quota cores and 16 GiB RAM. Use four compile jobs, one
 link job and a bounded 1 GiB content-keyed ccache. Managed activation sets the
 private executable tmpfs directory `/tmp/objc3c-1000` as `TMPDIR`; no extra RAM disk
 is needed. Keep persistent objects/SDK/cache on disk and disposable executables
-in automatically reclaimed case directories. During this development phase,
-implementation remains frontloaded. Compiler compilation and focused runtime/
-tooling checks now establish the combined checkpoint; language execution and
-SDK qualification follow once compilation succeeds. Broaden checks only to
-resolve failures or unresolved concerns.
+in automatically reclaimed case directories. For subsequent implementation spans,
+frontload development and use focused compile checks before the combined
+language/runtime/sanitizer batch. Perform a coordinated SDK cutover after that batch is coherent; broaden checks to resolve
+failures or unresolved concerns.
 
 Installed qualification gates audit the frozen SDK's full contents at entry
 and exit. Nested source/package operations reuse that gate's manifest binding,
@@ -194,4 +202,4 @@ ctest --test-dir out/runtime-development --output-on-failure
 This reuses the production service target and does not require a compiler SDK.
 The task-service, structured-runtime, checked-error-bridge and key-path service
 suites pass normally and under ASan/UBSan. The native compiler and all five feature
-families pass; combined SDK qualification is in progress.
+families pass, and the coordinated SDK qualification passes all installed gates.

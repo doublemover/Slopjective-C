@@ -1,6 +1,9 @@
 # Native executor and actor entry witnesses
 
-These maintained fixtures are authored; execution remains deferred. Compile
+All 48 source/PCH execution configurations pass normally and under ASan/UBSan
+and TSan, including mixed provider/consumer ownership. The installed SDK feature
+gate also passes; see the [integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json).
+Compile
 `provider.m` with Objective-C 3 C17, blocks, native exceptions and strict
 concurrency, then `client.m` with the same settings. Exercise ARC/MRC provider
 and client combinations, O0/O2, source declarations and a PCH of `provider.h`.
@@ -17,5 +20,6 @@ deallocation association is not claimed.
 
 The existing `../isolation_contracts_test.cpp` covers source and IR diagnostics,
 ARC/MRC C17/C++20/23 calls, exact named lookup bytes, PCH/import/ODR metadata and
-source-free contract preservation. These witnesses add no qualification receipt
-or acceptance claim.
+source-free contract preservation. The C++ task caller also enters a C provider's
+actor and checks destination restoration and independent result ownership.
+Public actor/Strict Concurrency conformance remains gated by the capability matrix.

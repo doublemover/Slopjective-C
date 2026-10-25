@@ -3,8 +3,10 @@
 Part 8.8 now has a native implementation in the shared development compiler.
 The native compiler regressions and all 24 runtime configurations pass across
 C17/C++20/C++23, ARC/MRC, O0/O2 and source/PCH transport, including exceptional
-creation and return cleanup. Installed SDK qualification remains in progress;
-these development checks do not establish profile conformance.
+creation and return cleanup. The same 24 configurations also pass under
+ASan/UBSan and TSan, and the installed SDK feature gate passes. The
+[integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+binds these distinct runs; full profile conformance remains reserved.
 
 ## Implemented ownership contract
 

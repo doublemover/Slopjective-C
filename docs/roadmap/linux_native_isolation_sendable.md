@@ -8,8 +8,10 @@ owns the corresponding maintained LLVM patch and manifest.
 
 The native compiler regressions and all 48 isolation execution configurations
 pass across C17/C++20/C++23, ARC/MRC providers and consumers, O0/O2 and source/PCH
-transport. Four runtime suites also pass under ASan/UBSan. Installed SDK
-qualification remains in progress; public actor capability claims remain gated.
+transport. The same 48 configurations pass under ASan/UBSan and TSan, including
+a C++ task caller entering a C provider's actor. The installed SDK gate and native
+facade contracts pass; see the [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json).
+Public actor capability claims remain gated.
 
 ## Declaration identity
 
@@ -106,8 +108,7 @@ native exception contract, including `nothrow` on Objective-C 3.0 methods; arbit
 synthesized. Nested isolated argument expressions require their own await.
 Ordinary C++ task-ABI isolated target entries, class/super messages, and unsupported callable
 shapes still receive targeted diagnostics. The compiler does not automatically
-associate object allocation with actor mailboxes. These remaining obligations
-and deferred execution validation prevent a full actor conformance claim.
+associate object allocation with actor mailboxes. These remaining obligations prevent a full actor conformance claim.
 
 A provably non-suspending native await evaluates its original operand and warns
 in strict concurrency checking. The proof visits evaluated subexpressions,
@@ -181,8 +182,8 @@ shapes retain targeted failure fixtures.
 `tests/clang_foundation/native_isolation/provider.h`, `provider.m`, and `client.m`
 provide an installed executable witness for real executor entry, explicit actor
 association, caller destination restoration, cancellation before target entry,
-nil-message behavior and retained result cleanup. Build modes and deferred
-execution scope are described in the adjacent README.
+nil-message behavior and retained result cleanup. Build modes and executable
+scope are described in the adjacent README.
 
 The regression sources are not execution evidence. Public actor/strict
 concurrency feature predicates remain subject to the repository capability

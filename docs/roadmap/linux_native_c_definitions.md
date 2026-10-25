@@ -105,12 +105,14 @@ statement layout is required.
 
 ## Authored coverage and validation status
 
-The resumed native compiler build and 346 Clang regressions pass. Runtime
-execution exposed and fixed duplicate frame-root cleanup and a deferred release
+The coordinated compiler build passes 355 native Clang/index/query regressions.
+Runtime execution exposed and fixed duplicate frame-root cleanup and a deferred release
 edge whose destination could be deleted during block simplification. Await
 completion outputs now carry the required service header. All 48 async runtime
 configurations pass across ARC/MRC provider/consumer pairs, C17/C++20/C++23,
-O0/O2 and source/PCH transport. Installed SDK qualification remains in progress.
+O0/O2 and source/PCH transport. The same 48 configurations pass under ASan/UBSan
+and TSan. The installed SDK feature gate, native async gate and source-free async
+package gate pass.
 
 New native compiler fixtures cover definition IR, private child awaits, loop
 locals, lexical cleanup, checked recovery that awaits again, native exceptions,
@@ -124,9 +126,10 @@ C++ carrier consumer. A C++ frame factory also exercises C++ → C → C++ value
 and exception transport.
 
 The development runner executes those fixtures against the current compiler.
-Combined qualification must still cover sanitizer instrumentation and source-free
-semantic/package transport against the new installed SDK.
-No existing SDK receipt establishes acceptance of this new source.
+The [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+records these checks against their actual development binaries and the final SDK
+archive, including the separate native C++ async and shared C-frame sanitizer
+suites. Remaining language admission boundaries below are not implied complete.
 
 ## Remaining definition work
 

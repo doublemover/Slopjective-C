@@ -1,7 +1,9 @@
 # Standard spawn source witnesses
 
-These maintained sources are authored inputs for the deferred combined feature
-driver. They have not been built or executed.
+All 24 source/PCH execution configurations pass normally and under ASan/UBSan
+and TSan; the installed SDK feature gate also passes. See the
+[integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json)
+for the exact inputs and scope.
 
 `contract.m` exercises C17 ARC/MRC child and detached direct/macro equivalence,
 active actor inheritance, cancellation set before child creation, global
@@ -16,8 +18,8 @@ owned group before releasing captured state.
 
 `diagnostics.m` is a strict concurrency negative input: direct/macro spawn and
 detached capture errors must point at the source invocation/argument, and both
-ignored child handles must warn. The driver should also compile equivalent
-source and module/PCH imports, with ARC/MRC and O0/O2. Module exports must retain
+ignored child handles must warn. The driver compiles equivalent
+source and PCH imports, with ARC/MRC and O0/O2. Module exports must retain
 the canonical task attributes; macro expansion cannot replace them with an
 unclassified frame helper.
 
@@ -29,9 +31,9 @@ error object after join, then check its deallocation. The C convenience surface
 has a distinct bare-throws void Block overload; typed C error effects remain on
 the lower-level frame API boundary.
 
-The native compiler now has authored deduction of ObjC3 checked ErrorType,
-exact async/frame matching and used-template-parameter tracking, including
-specialization and PCH witnesses. This closes the typed-E header dependency in
-source; it has not been built or executed. The C++ raw-frame definitions now have bounded native frame-body admission
+The native compiler implements deduction of ObjC3 checked ErrorType,
+exact async/frame matching and used-template-parameter tracking, with passing
+specialization and PCH witnesses. This closes the typed-E header dependency.
+The C++ raw-frame definitions have bounded native frame-body admission
 for value parameters and trivially copyable parameters/results. Neither effect
 erasure nor automatic group-scope finalization is claimed here.

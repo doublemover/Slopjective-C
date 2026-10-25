@@ -1,7 +1,9 @@
 # Explicit capture witnesses
 
-These fixtures are authored and intentionally unexecuted during the development
-span. They target the shared native Objective-C 3 compiler and GNUstep 2.2.
+These fixtures target the native Objective-C 3.0 compiler and GNUstep 2.2.
+All 24 source/PCH configurations pass normally and under ASan/UBSan and TSan;
+the installed SDK feature gate also passes. Exact inputs and scope are recorded
+in the [integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json).
 
 - `runtime.h` / `main.m`: creation snapshots, unused/contextual captures,
   explicit `__block` snapshots, ARC/MRC ownership, weak zeroing and nested
