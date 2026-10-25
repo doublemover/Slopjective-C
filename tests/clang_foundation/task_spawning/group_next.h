@@ -50,6 +50,13 @@ static int group_wrong_type(objc3_task_group_t *group) __objc3_async_frame {
   return hasValue(item);
 }
 #if __has_feature(objc_arc)
+typedef struct GroupAwaitBox { Optional(SpawnOwner *) value; } GroupAwaitBox;
+static GroupAwaitBox group_box_source(SpawnOwner *owner) __objc3_async_frame {
+  GroupAwaitBox result={Some(SpawnOwner *,owner)};return result;
+}
+static int group_ignore_box(SpawnOwner *owner) __objc3_async_frame {
+  __objc3_await group_box_source(owner);return 42;
+}
 static JoinReader group_owner_block(SpawnOwner *owner) __objc3_async_frame {
   return ^int { return owner->number; };
 }
@@ -204,6 +211,7 @@ static void group_next_witnesses(objc3_executor_t *executor) {
   unsigned destroyed=0;
   SpawnOwner *owner=[SpawnOwner new];owner->destroyed=&destroyed;owner->number=42;
 #if __has_feature(objc_arc)
+  join_check_value(executor,join_start(executor,group_ignore_box(owner)),42);
   first=join_start(executor,join_object_source(owner));
   second=join_start(executor,join_object_source((SpawnOwner *)0));
   group=group_with(first);assert(objc3_task_group_add(group,second)==OBJC3_SERVICE_OK);

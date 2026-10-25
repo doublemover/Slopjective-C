@@ -6984,10 +6984,10 @@ index 000000000..fdf223326
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..49fd908b3
+index 000000000..64bf07d36
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1427 @@
+@@ -0,0 +1,1432 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -8182,7 +8182,12 @@ index 000000000..49fd908b3
 +    return Diagnose(Found);
 +  };
 +
-+  if (CheckType(FPT->getReturnType()))
++  // The shared frame carries this result in owned private payload storage;
++  // it does not return the enclosing record through the ordinary call ABI.
++  // Parameter admission below still requires its source-to-physical mapping.
++  const bool ManagedFrameResult = FPT->getObjC3FunctionEffects().AsyncFrame &&
++      supportsObjC3ManagedRecordRuntimeABI(CGM, FPT->getReturnType());
++  if (!ManagedFrameResult && CheckType(FPT->getReturnType()))
 +    return true;
 +  for (QualType Param : FPT->param_types())
 +    if (CheckType(Param))
@@ -12082,7 +12087,7 @@ index e7c24f1f3..78b411bc1 100644
    }
  
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
-index 313a364e8..5bf036388 100644
+index 313a364e8..38789c90e 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
 +++ b/clang/lib/CodeGen/CodeGenModule.cpp
 @@ -11,6 +11,8 @@
@@ -12094,7 +12099,7 @@ index 313a364e8..5bf036388 100644
  #include "ABIInfo.h"
  #include "CGBlocks.h"
  #include "CGCUDARuntime.h"
-@@ -919,11 +921,26 @@ void CodeGenModule::checkAliases() {
+@@ -919,11 +921,33 @@ void CodeGenModule::checkAliases() {
            const auto *AliaseeFTy =
                AliaseeTy.getCanonicalType()->getAs<FunctionType>();
            assert(AliasFTy && AliaseeFTy);
@@ -12108,13 +12113,20 @@ index 313a364e8..5bf036388 100644
 +          if (!IsIFunc && AliasFPTy && AliaseeFPTy) {
 +            const auto A = AliasFPTy->getObjC3FunctionEffects();
 +            const auto B = AliaseeFPTy->getObjC3FunctionEffects();
++            const bool AFactory = A.AsyncFrame && !B.Async &&
++                                  B.Throws == ObjC3ThrowsKind::None;
++            const bool BFactory = B.AsyncFrame && !A.Async &&
++                                  A.Throws == ObjC3ThrowsKind::None;
++            // Checked synchronous calls add a hidden error-output parameter;
++            // task-vs-frame entries and logical checked domains also differ.
++            if (A != B && !AFactory && !BFactory) return true;
 +            // A logical C-frame declaration may deliberately alias a physical
 +            // factory. Compare its actual shared-frame return ABI. Two logical
 +            // declarations still require their original result types to agree.
-+            if (A.AsyncFrame && !B.Async) {
++            if (AFactory) {
 +              QualType Physical = Context.getObjC3AsyncReturnType(AliasFPTy);
 +              if (!Physical.isNull()) AliasResult = Physical;
-+            } else if (B.AsyncFrame && !A.Async) {
++            } else if (BFactory) {
 +              QualType Physical = Context.getObjC3AsyncReturnType(AliaseeFPTy);
 +              if (!Physical.isNull()) AliaseeResult = Physical;
 +            }
@@ -12124,7 +12136,7 @@ index 313a364e8..5bf036388 100644
            // Report variadic vs no-prototype.
            if ((AliasFPTy && AliasFPTy->isVariadic() && !AliaseeFPTy) ||
                (AliaseeFPTy && AliaseeFPTy->isVariadic() && !AliasFPTy))
-@@ -1010,6 +1027,8 @@ void CodeGenModule::checkAliases() {
+@@ -1010,6 +1034,8 @@ void CodeGenModule::checkAliases() {
  }
  
  void CodeGenModule::clear() {
@@ -12133,7 +12145,7 @@ index 313a364e8..5bf036388 100644
    DeferredDeclsToEmit.clear();
    EmittedDeferredDecls.clear();
    DeferredAnnotations.clear();
-@@ -6073,6 +6092,9 @@ llvm::Constant *
+@@ -6073,6 +6099,9 @@ llvm::Constant *
  CodeGenModule::GetAddrOfGlobal(GlobalDecl GD, ForDefinition_t IsForDefinition) {
    const Decl *D = GD.getDecl();
  
@@ -12143,7 +12155,7 @@ index 313a364e8..5bf036388 100644
    if (isa<CXXConstructorDecl>(D) || isa<CXXDestructorDecl>(D))
      return getAddrOfCXXStructor(GD, /*FnInfo=*/nullptr, /*FnType=*/nullptr,
                                  /*DontDefer=*/false, IsForDefinition);
-@@ -6976,6 +6998,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
+@@ -6976,6 +7005,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
                                                   llvm::GlobalValue *GV) {
    const auto *D = cast<FunctionDecl>(GD.getDecl());
  
@@ -12159,7 +12171,7 @@ index 313a364e8..5bf036388 100644
    // Compute the function info and LLVM type.
    const CGFunctionInfo &FI = getTypes().arrangeGlobalDeclaration(GD);
    llvm::FunctionType *Ty = getTypes().GetFunctionType(FI);
-@@ -7944,10 +7975,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
+@@ -7944,10 +7982,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
    if (D->isTemplated())
      return;
  
@@ -24943,10 +24955,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..11b95c159
+index 000000000..39d067003
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1017 @@
+@@ -0,0 +1,1016 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24959,7 +24971,6 @@ index 000000000..11b95c159
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
 +#include "CGObjC3Carriers.h"
-+#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Isolation.h"
 +#include "CGObjC3TypedErrors.h"
@@ -25930,8 +25941,8 @@ index 000000000..11b95c159
 +      Value = RValue::get(EmitLoadOfScalar(MakeAddrLValue(Result, T), E.getExprLoc()));
 +    else {
 +      Value = RValue::getAggregate(Result);
-+      if (Temporary && hasObjC3CarrierManagedPayload(T))
-+        pushObjC3CarrierARCTemporaryCleanup(*this, T, Result);
++      if (Temporary && containsObjC3CarrierManagedStorage(T))
++        pushDestroy(NormalAndEHCleanup, Result, T, destroyObjC3ManagedStorage, false);
 +      else if (Temporary && T.isDestructedType() != QualType::DK_none)
 +        pushDestroy(NormalAndEHCleanup, Result, T, getDestroyer(T.isDestructedType()), false);
 +    }
@@ -27757,10 +27768,10 @@ index 000000000..3009cfa9e
 +// ARC: ret ptr @__objc3_async_group_next_plan
 diff --git a/clang/test/ObjC3/CodeGen/native-c-frame-alias.m b/clang/test/ObjC3/CodeGen/native-c-frame-alias.m
 new file mode 100644
-index 000000000..93985346c
+index 000000000..3a212330f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-frame-alias.m
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,16 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-llvm -o /dev/null -Wattribute-alias -verify %s
 +#include "Inputs/native-c-async-frame.h"
 +static objc3_async_frame physical(int x) { return (objc3_async_frame){0}; }
@@ -27770,3 +27781,10 @@ index 000000000..93985346c
 +static int native(int value) __objc3_async_frame { return value; }
 +static double wrong_logical(int) __objc3_async_frame __attribute__((alias("native"),unused)); // expected-warning {{alias and aliasee have different types}}
 +// expected-note@-2 {{aliasee is declared here}}
++
++@protocol Error @end
++@protocol NarrowError <Error> @end
++static int checked(int value) __objc3_throws(id<Error>) { return value; } // expected-note {{aliasee is declared here}}
++static int wrong_hidden_parameter(int) __attribute__((alias("checked"),unused)); // expected-warning {{alias and aliasee have different types}}
++static int future_checked(int value) __objc3_async_frame __objc3_throws(id<Error>) { return value; } // expected-note {{aliasee is declared here}}
++static int wrong_error_domain(int) __objc3_async_frame __objc3_throws(id<NarrowError>) __attribute__((alias("future_checked"),unused)); // expected-warning {{alias and aliasee have different types}}

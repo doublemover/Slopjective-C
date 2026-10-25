@@ -48,7 +48,9 @@ layout. Factory failure leaves output storage unchanged. Static logical aliases
 bind to local physical shims, avoiding an exported reference to an internal
 factory. Alias diagnostics compare the shared physical frame return when one
 side is a logical frame callable; unrelated argument and logical-result
-mismatches remain diagnosed.
+mismatches remain diagnosed. Checked synchronous aliases retain their hidden
+error-output parameter contract; aliases between different logical error
+domains are also diagnosed.
 
 Plain scalar, pointer, void, aligned record and nested plain optional values
 are admitted in C mode. Owned object/Block and nested managed carriers require
@@ -61,7 +63,9 @@ Native frame awaits now participate in ARC carrier initialization guards.
 Copy-out establishes ownership before child cleanup dispatch, and discarded
 managed results receive a full-expression cleanup. This applies the established
 carrier lifetime model to awaited values rather than copying an owning carrier
-as raw bytes.
+as raw bytes. Qualified enclosing managed records use their private frame
+result transport and the same destroy operation for discarded results.
+Their ordinary by-value parameter admission remains separate.
 
 Runtime preflight covers descriptor copying, completion ordering, lazy close,
 type rejection without consumption, cancellation on both sides of reservation,
