@@ -162,3 +162,7 @@ producer and consumer key-path metadata identities. The expanded 32-gate SDK and
 36 executions and 12 readonly rejections. The [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
 records the exact archive and scope. The earlier 24-case runtime matrix did not
 establish this package coverage.
+
+The later 33-gate SDK retains this complete package matrix and passes it on fresh
+Debian and Ubuntu with the newer compiler; see the
+[current acceptance receipt](../support/linux_async_lexical_pool_acceptance.json).

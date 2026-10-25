@@ -1,10 +1,11 @@
 # Linux C++ coroutine lexical autorelease pools
 
-The next compiler span implements suspension-safe `@autoreleasepool` scopes in
-Objective-C 3.0 C++ coroutines, including ordinary C++ coroutine syntax. This is
-source development following the published SDK with source identity
-`llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3`; that archive does not include
-this later compiler change.
+The Linux SDK implements suspension-safe `@autoreleasepool` scopes in
+Objective-C 3.0 C++ coroutines, including ordinary C++ coroutine syntax. Source
+identity is `llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`. The
+[acceptance receipt](../support/linux_async_lexical_pool_acceptance.json) binds
+its exact archive to the compiler, runtime, sanitizer and fresh-distribution
+reports.
 
 Each lexical scope owns a frame-resident pool-token slot. A potentially
 suspending await drains active pools from inner to outer before `await_suspend`
@@ -26,9 +27,10 @@ The runtime witnesses cover nested pools, ready/vetoed/throwing awaits,
 cross-thread resume, suspended destruction on another thread, six nested scopes,
 exceptions and existing manual/worker/actor executor hops. The complete compiler run passes 356 regressions and 166 native contracts;
 all 16 native C++ async sanitizer configurations and all 33 installed SDK gates
-pass. Exact archive qualification on fresh Debian/Ubuntu is running.
+pass. The exact archive also passes fresh Debian/Ubuntu qualification, including
+ordinary-user consumers; owned containers are removed.
 
 This changes code generation without adding an AST statement or runtime record
 layout. Native extension ABI 21 and the existing task/frame service versions
-remain unchanged. Compiler source identity and PCH/PCM build guards still require
-a coordinated rebuild when the source span is delivered.
+remain unchanged. Delivery uses a coordinated compiler/SDK cutover; PCH/PCM build guards require
+matching source identity.

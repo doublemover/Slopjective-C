@@ -162,7 +162,9 @@ strict resource diagnostics and 24 persistence source/PCH variants. It passes
 153 commands and 24 intended rejections against the published compiler with
 repaired source fixtures. The MRC persistence fixture now uses native Block copy
 with an explicit retained result contract. This runner and these fixture repairs
-are enrolled for the next SDK; they are absent from the 32-gate archive.
+pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
+[current receipt](../support/linux_async_lexical_pool_acceptance.json) records
+the scope. They remain absent from the earlier 32-gate archive.
 
 Remaining boundaries include unqualified/mixed/C++ carrier move captures,
 potentially
