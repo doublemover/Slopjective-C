@@ -60,6 +60,12 @@ void expect(const CompileRequest &Request, bool Success,
     bool Found = false;
     for (const auto &D : Result.diagnostics)
       Found |= D.message.find(Message) != std::string::npos;
+    if (!Found) {
+      std::cerr << "expected capture diagnostic containing: " << Message
+                << "\nfor:\n" << *Request.source_text << '\n';
+      for (const auto &D : Result.diagnostics)
+        std::cerr << D.message << '\n';
+    }
     assert(Found && "capture diagnostic must identify the violated obligation");
   }
 }
@@ -112,8 +118,8 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       {"void f(void){int h __attribute__((objc_resource(close=close_throwing,invalid=-1)))=3; invoke(^[move h]{});}", "statically nonthrowing cleanup"},
       {"void f(void){int h __attribute__((cleanup(close_arbitrary)))=3; invoke(^[move h]{});}", "arbitrary cleanup storage"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);});use(h);}", "may have been moved"},
-      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);});close_handle(h);}", "already"},
-      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{close_handle(h);});}", "cleanup"},
+      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{use(h);});close_handle(h);}", "manual close of registered resource"},
+      {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{close_handle(h);});}", "manual close of registered resource"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{discard(h);use(h);});}", "may have been moved"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{int a=take(h);close_handle(a);int b=take(h);close_handle(b);});}", "may have been moved"},
       {"void f(void){int h __attribute__((objc_resource(close=close_handle,invalid=-1)))=3; invoke(^[move h]{invoke(^[move h]{use(h);});use(h);});}", "may have been moved"},

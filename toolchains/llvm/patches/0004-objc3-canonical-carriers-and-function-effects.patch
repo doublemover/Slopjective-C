@@ -2561,7 +2561,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..1e530c2fb 100644
+index d743717ad..66b6ca399 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2625,7 +2625,15 @@ index d743717ad..1e530c2fb 100644
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -1426,6 +1452,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -677,6 +703,7 @@ namespace clang {
+     ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
+     ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
+     ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
++    ExpectedStmt VisitObjCMessageExpr(ObjCMessageExpr *E);
+     ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
+     ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
+     ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
+@@ -1426,6 +1453,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2653,7 +2661,19 @@ index d743717ad..1e530c2fb 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1673,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1613,6 +1661,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+   Error Err = Error::success();
+   FunctionProtoType::ExtProtoInfo ToEPI;
+   ToEPI.ExtInfo = FromEPI.ExtInfo;
++  // getFunctionType copies this array into target-owned prototype storage.
++  // These bits carry noescape, consumed and parameter ABI contracts.
++  ToEPI.ExtParameterInfos = FromEPI.ExtParameterInfos;
++  ToEPI.CFIUncheckedCallee = FromEPI.CFIUncheckedCallee;
++  ToEPI.AArch64SMEAttributes = FromEPI.AArch64SMEAttributes;
+   ToEPI.Variadic = FromEPI.Variadic;
+   ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
+   ToEPI.TypeQuals = FromEPI.TypeQuals;
+@@ -1626,6 +1679,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2696,7 +2716,7 @@ index d743717ad..1e530c2fb 100644
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1904,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
+@@ -1821,6 +1910,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -2710,7 +2730,7 @@ index d743717ad..1e530c2fb 100644
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2559,6 +2649,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2655,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2737,7 +2757,7 @@ index d743717ad..1e530c2fb 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -3085,7 +3195,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3201,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -2753,7 +2773,33 @@ index d743717ad..1e530c2fb 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3996,6 +4113,65 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3456,6 +3579,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+           continue;
+ 
+         if (IsStructuralMatch(D, FoundRecord)) {
++          if (D->getKind() != FoundRecord->getKind()) {
++            // Cross-language plain C records were fully compared. Reuse the
++            // target node instead of casting it to the producer's node class.
++            RecordDecl *Target = FoundRecord->getDefinition();
++            if (!Target) Target = FoundRecord;
++            Importer.MapImported(D, Target);
++            return Target;
++          }
+           RecordDecl *FoundDef = FoundRecord->getDefinition();
+           if (D->isThisDeclarationADefinition() && FoundDef) {
+             // FIXME: Structural equivalence check should check for same
+@@ -3463,9 +3594,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+             Importer.MapImported(D, FoundDef);
+             if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
+               auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
+-              assert(FoundCXX && "Record type mismatch");
+-
+-              if (!Importer.isMinimalImport())
++              if (FoundCXX && !Importer.isMinimalImport())
+                 // FoundDef may not have every implicit method that D has
+                 // because implicit methods are created only if they are used.
+                 if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
+@@ -3996,6 +4125,65 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -2819,7 +2865,7 @@ index d743717ad..1e530c2fb 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4052,6 +4228,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,6 +4240,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
@@ -2832,7 +2878,7 @@ index d743717ad..1e530c2fb 100644
          if (IsStructuralMatch(D, FoundFunction)) {
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
-@@ -4120,6 +4302,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4314,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2840,7 +2886,7 @@ index d743717ad..1e530c2fb 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4358,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4370,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2887,7 +2933,7 @@ index d743717ad..1e530c2fb 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5285,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5297,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2907,7 +2953,7 @@ index d743717ad..1e530c2fb 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5360,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5372,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2915,7 +2961,7 @@ index d743717ad..1e530c2fb 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5375,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5387,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2924,7 +2970,7 @@ index d743717ad..1e530c2fb 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5904,6 +6143,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6155,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -2940,7 +2986,7 @@ index d743717ad..1e530c2fb 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6324,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6336,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -2950,7 +2996,7 @@ index d743717ad..1e530c2fb 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -7328,6 +7579,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7591,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3048,7 +3094,7 @@ index d743717ad..1e530c2fb 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8117,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8129,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3227,7 +3273,7 @@ index d743717ad..1e530c2fb 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8598,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8610,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3244,7 +3290,61 @@ index d743717ad..1e530c2fb 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -9664,8 +10188,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -8835,6 +9371,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+                                    E->getFPFeatures());
+ }
+ 
++ExpectedStmt ASTNodeImporter::VisitObjCMessageExpr(ObjCMessageExpr *E) {
++  Error Err = Error::success();
++  auto Type = importChecked(Err, E->getType());
++  auto Selector = importChecked(Err, E->getSelector());
++  auto *Method = importChecked(Err, E->getMethodDecl());
++  auto Left = importChecked(Err, E->getLeftLoc());
++  auto Right = importChecked(Err, E->getRightLoc());
++  SmallVector<Expr *, 4> Args;
++  SmallVector<SourceLocation, 4> SelectorLocs;
++  for (Expr *Argument : E->arguments())
++    Args.push_back(importChecked(Err, Argument));
++  for (unsigned I = 0; I != E->getNumSelectorLocs(); ++I)
++    SelectorLocs.push_back(importChecked(Err, E->getSelectorLoc(I)));
++  ObjCMessageExpr *Result = nullptr;
++  switch (E->getReceiverKind()) {
++  case ObjCMessageExpr::Instance: {
++    auto *Receiver = importChecked(Err, E->getInstanceReceiver());
++    if (Err) return std::move(Err);
++    Result = ObjCMessageExpr::Create(Importer.getToContext(), Type,
++        E->getValueKind(), Left, Receiver, Selector, SelectorLocs, Method,
++        Args, Right, E->isImplicit());
++    break;
++  }
++  case ObjCMessageExpr::Class: {
++    auto *Receiver = importChecked(Err, E->getClassReceiverTypeInfo());
++    if (Err) return std::move(Err);
++    Result = ObjCMessageExpr::Create(Importer.getToContext(), Type,
++        E->getValueKind(), Left, Receiver, Selector, SelectorLocs, Method,
++        Args, Right, E->isImplicit());
++    break;
++  }
++  case ObjCMessageExpr::SuperInstance:
++  case ObjCMessageExpr::SuperClass: {
++    auto SuperLoc = importChecked(Err, E->getSuperLoc());
++    auto SuperType = importChecked(Err, E->getSuperType());
++    if (Err) return std::move(Err);
++    Result = ObjCMessageExpr::Create(Importer.getToContext(), Type,
++        E->getValueKind(), Left, SuperLoc,
++        E->getReceiverKind() == ObjCMessageExpr::SuperInstance, SuperType,
++        Selector, SelectorLocs, Method, Args, Right, E->isImplicit());
++    break;
++  }
++  }
++  Result->setDelegateInitCall(E->isDelegateInitCall());
++  return Result;
++}
++
+ ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
+   ExpectedType ToTypeOrErr = import(E->getType());
+   if (!ToTypeOrErr)
+@@ -9664,8 +10247,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3259,7 +3359,7 @@ index d743717ad..1e530c2fb 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10243,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10302,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3358,7 +3458,7 @@ index d743717ad..1e530c2fb 100644
  }
  
  namespace {
-@@ -9857,6 +10475,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10534,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -3398,7 +3498,7 @@ index d743717ad..1e530c2fb 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -11049,3 +11700,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +11759,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -3416,7 +3516,7 @@ index d743717ad..1e530c2fb 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..1f294dbb7 100644
+index e0b62591a..97b77c2dd 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -3707,6 +3807,33 @@ index e0b62591a..1f294dbb7 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
+@@ -2784,8 +3003,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+     Decl *D1, Decl *D2) {
+ 
+   // Kind mismatch.
+-  if (D1->getKind() != D2->getKind())
+-    return false;
++  if (D1->getKind() != D2->getKind()) {
++    // Shared C records have CXXRecordDecl nodes in C++ consumers. Their
++    // layout and lifetime must remain plain C; compare every field normally.
++    auto *R1 = dyn_cast<RecordDecl>(D1);
++    auto *R2 = dyn_cast<RecordDecl>(D2);
++    if (!R1 || !R2 ||
++        FromCtx.getLangOpts().CPlusPlus == ToCtx.getLangOpts().CPlusPlus)
++      return false;
++    const auto *CXX = dyn_cast<CXXRecordDecl>(R1);
++    if (!CXX)
++      CXX = dyn_cast<CXXRecordDecl>(R2);
++    if (!CXX || bool(R1->getDefinition()) != bool(R2->getDefinition()) ||
++        CXX->isLambda() || CXX->getDescribedClassTemplate() ||
++        (CXX->hasDefinition() &&
++         (!CXX->isTrivial() || !CXX->isStandardLayout() || CXX->getNumBases())))
++      return false;
++    return ::IsStructurallyEquivalent(*this, R1, R2);
++  }
+ 
+   // Cast the Decls to their actual subclass so that the right overload of
+   // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
 index 4be3e977b..11bfb66e1 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
@@ -5847,7 +5974,7 @@ index 8dd120f52..01c123394 100644
    ParsePragma.cpp
    ParseStmt.cpp
 diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
-index 6262e8b20..bb0df5489 100644
+index 6262e8b20..9c40c0f09 100644
 --- a/clang/lib/Parse/ParseDecl.cpp
 +++ b/clang/lib/Parse/ParseDecl.cpp
 @@ -10,6 +10,7 @@
@@ -5858,11 +5985,15 @@ index 6262e8b20..bb0df5489 100644
  #include "clang/AST/ASTContext.h"
  #include "clang/AST/DeclTemplate.h"
  #include "clang/AST/PrettyDeclStackTrace.h"
-@@ -38,6 +39,32 @@
+@@ -38,6 +39,36 @@
  
  using namespace clang;
  
 +namespace {
++bool isObjC3BorrowedToken(const LangOptions &Lang, const Token &Current) {
++  return Lang.ObjC3 && Current.is(tok::identifier) &&
++         Current.getIdentifierInfo()->isStr("borrowed");
++}
 +bool isObjC3BorrowedQualifier(const LangOptions &Lang, const Token &Current,
 +                              const Token &Next) {
 +  if (!Lang.ObjC3 || Current.isNot(tok::identifier) ||
@@ -5891,7 +6022,7 @@ index 6262e8b20..bb0df5489 100644
  //===----------------------------------------------------------------------===//
  // C99 6.7: Declarations.
  //===----------------------------------------------------------------------===//
-@@ -645,7 +672,87 @@ void Parser::ParseGNUAttributeArgs(
+@@ -645,7 +676,87 @@ void Parser::ParseGNUAttributeArgs(
    ParsedAttr::Kind AttrKind =
        ParsedAttr::getParsedKind(AttrName, ScopeName, Form.getSyntax());
  
@@ -5980,7 +6111,7 @@ index 6262e8b20..bb0df5489 100644
      ParseAvailabilityAttribute(*AttrName, AttrNameLoc, Attrs, EndLoc, ScopeName,
                                 ScopeLoc, Form);
      return;
-@@ -1243,6 +1350,80 @@ VersionTuple Parser::ParseVersionTuple(SourceRange &Range) {
+@@ -1243,6 +1354,80 @@ VersionTuple Parser::ParseVersionTuple(SourceRange &Range) {
    return VersionTuple(Major, Minor, Subminor);
  }
  
@@ -6061,7 +6192,7 @@ index 6262e8b20..bb0df5489 100644
  void Parser::ParseAvailabilityAttribute(
      IdentifierInfo &Availability, SourceLocation AvailabilityLoc,
      ParsedAttributes &attrs, SourceLocation *endLoc, IdentifierInfo *ScopeName,
-@@ -3445,6 +3626,28 @@ void Parser::ParseDeclarationSpecifiers(
+@@ -3445,6 +3630,28 @@ void Parser::ParseDeclarationSpecifiers(
          (TemplateInfo.Kind == ParsedTemplateKind::ExplicitInstantiation ||
           TemplateInfo.Kind == ParsedTemplateKind::ExplicitSpecialization);
  
@@ -6090,11 +6221,12 @@ index 6262e8b20..bb0df5489 100644
      switch (Tok.getKind()) {
      default:
        if (Tok.isRegularKeywordAttribute())
-@@ -3775,12 +3978,39 @@ void Parser::ParseDeclarationSpecifiers(
+@@ -3775,12 +3982,40 @@ void Parser::ParseDeclarationSpecifiers(
      case tok::kw_decltype:
      case tok::identifier:
      ParseIdentifier: {
 +      if (!DS.hasTypeSpecifier() &&
++          isObjC3BorrowedToken(getLangOpts(), Tok) &&
 +          isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken())) {
 +        if (DS.getObjC3BorrowedLoc().isValid())
 +          Diag(Tok, PP.getDiagnostics().getCustomDiagID(
@@ -6130,11 +6262,12 @@ index 6262e8b20..bb0df5489 100644
        // If the token is an identifier named "__declspec" and Microsoft
        // extensions are not enabled, it is likely that there will be cascading
        // parse errors if this really is a __declspec attribute. Attempt to
-@@ -5643,6 +5873,12 @@ bool Parser::isKnownToBeTypeSpecifier(const Token &Tok) const {
+@@ -5643,6 +5878,13 @@ bool Parser::isKnownToBeTypeSpecifier(const Token &Tok) const {
  }
  
  bool Parser::isTypeSpecifierQualifier(const Token &Tok) {
-+  if (isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
++  if (isObjC3BorrowedToken(getLangOpts(), Tok) &&
++      isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
 +    return true;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
@@ -6143,11 +6276,12 @@ index 6262e8b20..bb0df5489 100644
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -5826,6 +6062,15 @@ Parser::DeclGroupPtrTy Parser::ParseTopLevelStmtDecl() {
+@@ -5826,6 +6068,16 @@ Parser::DeclGroupPtrTy Parser::ParseTopLevelStmtDecl() {
  bool Parser::isDeclarationSpecifier(
      ImplicitTypenameContext AllowImplicitTypename,
      bool DisambiguatingWithExpression) {
-+  if (isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
++  if (isObjC3BorrowedToken(getLangOpts(), Tok) &&
++      isObjC3BorrowedQualifier(getLangOpts(), Tok, NextToken()))
 +    return true;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::at) &&
 +      isObjC3QualifiedTypeNameAhead())
@@ -6159,7 +6293,7 @@ index 6262e8b20..bb0df5489 100644
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -7305,6 +7550,15 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7305,6 +7557,15 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
    SmallVector<SourceRange, 2> DynamicExceptionRanges;
    ExprResult NoexceptExpr;
    CachedTokens *ExceptionSpecTokens = nullptr;
@@ -6175,7 +6309,7 @@ index 6262e8b20..bb0df5489 100644
    ParsedAttributes FnAttrs(AttrFactory);
    TypeResult TrailingReturnType;
    SourceLocation TrailingReturnTypeLoc;
-@@ -7431,11 +7685,29 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7431,11 +7692,29 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
          TrailingReturnTypeLoc = Range.getBegin();
          EndLoc = Range.getEnd();
        }
@@ -6205,7 +6339,7 @@ index 6262e8b20..bb0df5489 100644
    // Collect non-parameter declarations from the prototype if this is a function
    // declaration. They will be moved into the scope of the function. Only do
    // this in C and not C++, where the decls will continue to live in the
-@@ -7470,10 +7742,99 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7470,10 +7749,99 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
                      NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                      ExceptionSpecTokens, DeclsInPrototype, StartLoc,
                      LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
@@ -28982,7 +29116,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..7c733342e 100644
+index 2c62f46d4..c683cb66b 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -29077,7 +29211,23 @@ index 2c62f46d4..7c733342e 100644
  def CmseNSEntry : InheritableAttr, TargetSpecificAttr<TargetARM> {
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
-@@ -2922,6 +2993,14 @@ def ObjCIndependentClass : InheritableAttr {
+@@ -2812,9 +2883,14 @@ def StrictGuardStackCheck : InheritableAttr {
+   let SimpleHandler = 1;
+ }
+ 
++// Objective-C 3.0 executor-entry thunks require an explicit native-EH
++// contract for synchronous methods in Objective-C++ as well as functions.
++def ObjC3Method : SubsetSubject<ObjCMethod,
++    [{S->getASTContext().getLangOpts().ObjC3}], "Objective-C 3.0 methods">;
++
+ def NoThrow : InheritableAttr {
+   let Spellings = [GCC<"nothrow">, Declspec<"nothrow">];
+-  let Subjects = SubjectList<[FunctionLike]>;
++  let Subjects = SubjectList<[FunctionLike, ObjC3Method]>;
+   let Documentation = [NoThrowDocs];
+ }
+ 
+@@ -2922,6 +2998,14 @@ def ObjCIndependentClass : InheritableAttr {
    let Documentation = [Undocumented];
  }
  
@@ -29092,7 +29242,7 @@ index 2c62f46d4..7c733342e 100644
  def ObjCPreciseLifetime : InheritableAttr {
    let Spellings = [Clang<"objc_precise_lifetime">];
    let Subjects = SubjectList<[Var], ErrorDiag>;
-@@ -5503,3 +5582,58 @@ def Personality : InheritableAttr {
+@@ -5503,3 +5587,58 @@ def Personality : InheritableAttr {
    let Subjects = SubjectList<[Function]>;
    let Documentation = [PersonalityDocs];
  }
@@ -37805,10 +37955,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..6786e811c
+index 000000000..150d6e3f0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,979 @@
+@@ -0,0 +1,999 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -37938,7 +38088,11 @@ index 000000000..6786e811c
 +        return {};
 +      bool Safe = true, ReliesOnPromise = Resource;
 +      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
-+        Safe = Class->isAggregate() && !Class->hasNonTrivialDestructor();
++        // An implicit ARC destructor only releases the fields checked below.
++        // User-provided destruction still needs explicit unsafe admission.
++        Safe = Class->isAggregate() &&
++               (!Class->hasNonTrivialDestructor() ||
++                !Class->hasUserDeclaredDestructor());
 +      for (const auto *Field : Definition->fields()) {
 +        if (isObjC3BorrowedType(C, Field->getType())) {
 +          Active.erase(Record);
@@ -37985,8 +38139,14 @@ index 000000000..6786e811c
 +      S.Diag(Boundary->getLocation(), diag::note_objc3_sendable_boundary);
 +    return strictConcurrency(S);
 +  }
-+  if (strictConcurrency(S) && (Classification.Unchecked || ForceUnsafe))
-+    S.Diag(Loc, diag::note_objc3_unchecked_sendable) << T;
++  if (strictConcurrency(S) && (Classification.Unchecked || ForceUnsafe) &&
++      !S.getDiagnostics().getSuppressAllDiagnostics() &&
++      !S.getDiagnostics().hasFatalErrorOccurred()) {
++    // This is a required standalone transfer note, not a child of a preceding
++    // warning. Emit it even when the previous diagnostic was suppressed.
++    S.getDiagnostics().Report(Loc, diag::note_objc3_unchecked_sendable)
++        .setForceEmit() << T;
++  }
 +  return false;
 +}
 +
@@ -38452,9 +38612,14 @@ index 000000000..6786e811c
 +  if (!New->hasAttr<ObjCExecutorAttr>())
 +    if (const auto *A = Old->getAttr<ObjCExecutorAttr>())
 +      New->addAttr(A->clone(S.Context));
-+  if (!New->hasAttr<ObjCNonisolatedAttr>())
++  if (!New->hasAttr<ObjCNonisolatedAttr>()) {
 +    if (const auto *A = Old->getAttr<ObjCNonisolatedAttr>())
 +      New->addAttr(A->clone(S.Context));
++    else if (isObjC3Nonisolated(Old))
++      // Property accessors inherit the property's effective contract even
++      // before the new implementation is linked to its property declaration.
++      New->addAttr(ObjCNonisolatedAttr::CreateImplicit(S.Context));
++  }
 +  if (!New->hasAttr<ObjCTaskSpawnAttr>())
 +    if (const auto *A = Old->getAttr<ObjCTaskSpawnAttr>())
 +      New->addAttr(A->clone(S.Context));
@@ -38542,6 +38707,11 @@ index 000000000..6786e811c
 +  llvm::append_range(Types, Original->param_types());
 +  QualType Type =
 +      S.Context.getFunctionType(Original->getReturnType(), Types, Info);
++  // Register the native frame representation before publishing the body to
++  // CodeGen. A C++ task caller may be the first user of this logical result,
++  // so its task representation does not establish the thunk's frame ABI.
++  if (S.BuildObjC3AsyncTaskType(Type->castAs<FunctionProtoType>(), Loc).isNull())
++    return nullptr;
 +  auto *Thunk = FunctionDecl::Create(
 +      S.Context, TU, Loc, Loc, &S.Context.Idents.get(Name), Type,
 +      S.Context.getTrivialTypeSourceInfo(Type, Loc), SC_Static);
@@ -41105,3 +41275,41 @@ index 000000000..4dfa639eb
 +  reset();
 +  discard();
 +}
+diff --git a/clang/test/ObjC3/Parser/borrowed-eof-recovery.c b/clang/test/ObjC3/Parser/borrowed-eof-recovery.c
+new file mode 100644
+index 000000000..d3f640832
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/borrowed-eof-recovery.c
+@@ -0,0 +1,6 @@
++// RUN: not %clang_cc1 -x c -fsyntax-only %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only %s 2>&1 | FileCheck %s
++// CHECK: error:
++
++// Qualifier recognition must not request lookahead after the lexer reaches EOF.
++int broken( {
+diff --git a/clang/test/ObjC3/Sema/method-nothrow.m b/clang/test/ObjC3/Sema/method-nothrow.m
+new file mode 100644
+index 000000000..5fdb746cd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/method-nothrow.m
+@@ -0,0 +1,7 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Werror=ignored-attributes -ast-dump %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Werror=ignored-attributes -ast-dump %s | FileCheck %s
++@interface Worker
++// CHECK: ObjCMethodDecl {{.*}} read 'int'
++// CHECK-NEXT: NoThrowAttr
++- (int)read __attribute__((nothrow));
++@end
+diff --git a/clang/test/ObjC3/Sema/unchecked-sendable-note.m b/clang/test/ObjC3/Sema/unchecked-sendable-note.m
+new file mode 100644
+index 000000000..4da333b1e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/unchecked-sendable-note.m
+@@ -0,0 +1,7 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-strict-concurrency -fsyntax-only -verify %s
++__attribute__((objc_root_class)) @interface Root @end
++__attribute__((objc_unsafe_sendable)) @interface Message : Root @end
++actor class Counter : Root
++- (Message *)message __attribute__((objc_nonisolated)); // expected-note {{unchecked concurrency transfer of 'Message *' relies on objc_unsafe_sendable}}
++@end

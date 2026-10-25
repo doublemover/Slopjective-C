@@ -435,12 +435,14 @@ void worker_contract() {
     assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
     for (unsigned index = 0; index != parents.size(); ++index) {
       // Cancellation races success, and is cooperative. Either outcome must
-      // preserve exactly-once lexical destruction and a valid terminal view.
+      // destroy every entered lexical scope once and preserve a terminal view.
+      // Cancellation before initial resume enters no source scope.
       try {
         assert(parents[index].result() == 42);
       } catch (const objc3::task_cancelled &) {
       }
-      assert(states[index]->destroyed == 1);
+      assert(states[index]->entered <= 1);
+      assert(states[index]->destroyed == states[index]->entered);
       assert(states[index]->continued <= 1);
     }
     child.wait();

@@ -340,6 +340,16 @@ void TestCAsyncPhysicalABIImportBoundaries() {
                                   from->getASTContext(), from->getFileManager(),
                                   false);
       auto imported = importer.Import(from_function->getType());
+      if (!imported) {
+        llvm::errs() << "async import " << source_cpp << " -> " << target_cpp
+                     << ": " << llvm::toString(imported.takeError()) << '\n';
+        assert(false && "async function type import failed");
+      }
+      if (!context.hasSameType(*imported, to_function->getType()))
+        llvm::errs() << "async import " << source_cpp << " -> " << target_cpp
+                     << ": imported " << imported->getAsString()
+                     << ", expected " << to_function->getType().getAsString()
+                     << '\n';
       assert(imported &&
              context.hasSameType(*imported, to_function->getType()));
       const auto *prototype = (*imported)->castAs<clang::FunctionProtoType>();

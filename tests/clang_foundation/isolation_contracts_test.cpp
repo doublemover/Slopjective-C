@@ -1,6 +1,7 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/ODRHash.h"
@@ -53,6 +54,8 @@ CompileRequest Request(std::string Source, bool Cxx = false, bool Arc = true,
                      (Standard.empty() ? (Cxx ? "c++20" : "c17") : Standard),
                  "-fblocks", "-fobjc-weak", "-Wno-objc-property-implementation",
                  std::string("-I") + OBJC3_ISOLATION_RUNTIME_HEADERS};
+  if (Cxx)
+    R.arguments.push_back("-fcoro-aligned-allocation");
   return R;
 }
 bool Has(const CompileResult &R, llvm::StringRef Message) {
@@ -92,8 +95,13 @@ std::vector<std::string> ASTArgs(bool Cxx, bool Arc) {
 }
 std::unique_ptr<clang::ASTUnit> Parse(llvm::StringRef Source, bool Cxx = false,
                                       bool Arc = true) {
+  auto Arguments = ASTArgs(Cxx, Arc);
+  clang::tooling::FileContentMappings Files;
+  AddRuntimeInterfaceFiles(Files, Arguments);
   auto Unit = clang::tooling::buildASTFromCodeWithArgs(
-      Source, ASTArgs(Cxx, Arc), Cxx ? "isolation.mm" : "isolation.m");
+      Source, Arguments, Cxx ? "isolation.mm" : "isolation.m", "clang-tool",
+      std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(), Files);
   assert(Unit && !Unit->getDiagnostics().hasErrorOccurred());
   return Unit;
 }
@@ -326,6 +334,13 @@ void unowned(Counter *actor) {
 )"),
          "concurrent capture");
   Reject(Make(R"(
+struct CustomDestruction { int value; ~CustomDestruction() {} };
+void custom_destructor(CustomDestruction value) {
+  spawn(^void() __objc3_async { (void)value; });
+}
+)"),
+         "concurrent capture");
+  Reject(Make(R"(
 void unknown(Work block) { spawn(block); }
 )"),
          "cannot prove Sendable captures");
@@ -507,6 +522,8 @@ void *spawn(Work) __attribute__((objc_task_spawn));
   assert(Emitted.success);
   const std::vector<llvm::StringRef> Semantics = {
       "objc3.canonical-function-effects.v1",
+      "objc3.async-entry-abi.v1",
+      RuntimeInterfaceSemantic(),
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",
       "objc3.native-ownership-contracts.v1",
@@ -521,6 +538,11 @@ void *spawn(Work) __attribute__((objc_task_spawn));
       "objc3.module-owned-names.v1"};
   auto Decoded = DecodeSemanticInterfaceSidecar(
       Emitted.sidecar_json, Emitted.source_bytes, Semantics);
+  if (!Decoded) {
+    llvm::errs() << "isolation sidecar decode failed: "
+                 << llvm::toString(Decoded.takeError()) << '\n';
+    assert(false && "isolation sidecar decode failed");
+  }
   assert(Decoded);
   bool ActorIdentity = false, ExecutorIdentity = false;
   for (const auto &Declaration : Decoded->declarations) {
@@ -591,7 +613,8 @@ void *spawn(Work) __attribute__((objc_task_spawn));
   llvm::raw_string_ostream Out(Printed);
   for (const auto *D :
        From->getASTContext().getTranslationUnitDecl()->decls()) {
-    if (D->isImplicit())
+    if (D->isImplicit() ||
+        !From->getSourceManager().isWrittenInMainFile(D->getLocation()))
       continue;
     D->print(Out, Policy);
     Out << ";\n";

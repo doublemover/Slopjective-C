@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <sched.h>
 #include <string.h>
+#ifdef __cplusplus
+#include "objc3_task.hpp"
+#endif
 extern void release_object(void *) __asm__("objc_release");
 static objc3_executor_t *caller, *main_destination, *global, *named;
 static objc3_service_status copy_int(void *to, const void *from) {
@@ -39,6 +42,14 @@ static objc3_completion finish(objc3_task_t *task) {
   assert(!"native isolation task did not progress");
   return completion;
 }
+#ifdef __cplusplus
+static int task_actor_entry(HopCounter *counter,
+                            objc3_executor_t *destination) __objc3_async {
+  int value = __objc3_await [counter add:1];
+  assert(objc3_executor_is_current(destination));
+  return value;
+}
+#endif
 int main(void) {
   @autoreleasepool {
     assert(objc3_executor_create(1, &caller) == OBJC3_SERVICE_OK);
@@ -92,6 +103,15 @@ int main(void) {
     assert(hop_arguments() == 1 && hop_entries() == 0 && hop_cleanups() == 1);
     objc3_task_release(task);
 
+#ifdef __cplusplus
+    // Exercise a C++ task caller entering the C provider's actor through a
+    // generated native frame, then returning to the original destination.
+    {
+      auto parent = task_actor_entry(counter, caller).start(caller);
+      assert(finish(parent.native_handle()).kind == OBJC3_COMPLETION_SUCCESS);
+      assert(parent.result() == 43);
+    }
+#endif
     int before = hop_destroyed();
     @autoreleasepool {
       frame = hop_owned_roundtrip();
@@ -107,6 +127,11 @@ int main(void) {
       assert([(__bridge HopObject *)owned number] == 42);
       ops->destroy(&owned);
     }
+    // Completion publication can precede the global worker's frame/pool
+    // cleanup. Observe final result-owner destruction before checking its count.
+    for (unsigned step = 0; step != 1000000 && hop_destroyed() == before;
+         ++step)
+      sched_yield();
     assert(hop_destroyed() == before + 1);
     assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
     assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);

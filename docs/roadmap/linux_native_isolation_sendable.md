@@ -102,7 +102,7 @@ transport rather than constructing a C++ promise inside the private frame.
 The initial thunk value boundary excludes C++ nontrivial values and aggregate
 results. Consuming parameters/receivers remain rejected until their
 cancellation-time adoption is implemented. C++ targets must have a nonthrowing
-native exception contract; arbitrary C++ exception transport is not silently
+native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
 Ordinary C++ task-ABI isolated target entries, class/super messages, and unsupported callable
 shapes still receive targeted diagnostics. The compiler does not automatically
@@ -122,8 +122,11 @@ await in a defer does not manufacture a suspension.
 The structural classifier admits C scalar/enumeration values, actor references,
 `Sendable` protocol conformance (including protocol/class ancestry), arrays,
 Optional/Result payloads, and transitive value aggregates. C++ implicit record
-admission requires aggregate shape and a trivial destructor; fields and bases
-are recursively checked. Ordinary object references and block types do not gain
+admission requires aggregate shape and either a trivial destructor or implicit
+destruction composed entirely of admitted fields and bases. ARC-owned actor and
+Sendable object fields therefore remain value-like; user-provided nontrivial
+destruction requires explicit unsafe admission. Fields and bases are recursively
+checked. Ordinary object references and block types do not gain
 Sendable status from pointer constness.
 
 Borrowed type markers are rejected before unsafe admission. Borrowed fields and

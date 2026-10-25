@@ -62,6 +62,12 @@ void Expect(const CompileRequest &R, bool Success,
     bool Found = false;
     for (const auto &D : Result.diagnostics)
       Found |= D.message.find(Diagnostic) != std::string::npos;
+    if (!Found) {
+      std::cerr << "expected borrowed-pointer diagnostic containing: "
+                << Diagnostic << "\nfor:\n" << *R.source_text << '\n';
+      for (const auto &D : Result.diagnostics)
+        std::cerr << D.message << '\n';
+    }
     assert(Found && "rejection must identify its borrowed operation/contract");
   }
 }
@@ -182,7 +188,9 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
            "void f(Optional(BorrowedBytes)); void f(Optional(const char *));",
            "BorrowedBytes f(id a,id b) __attribute__((objc_returns_borrowed(owner_index=0))); BorrowedBytes f(id a,id b) __attribute__((objc_returns_borrowed(owner_index=1)));"})
     Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
-           "borrowed pointer declaration contract");
+           Code.starts_with("typedef") ? "borrowed pointer typedef contract"
+           : Code.starts_with("extern") ? "borrowed pointer variable contract"
+                                       : "borrowed pointer declaration contract");
   if (Language == BaseLanguage::ObjectiveCxx) {
     for (const auto &Code : std::vector<std::string>{
              "void f(id o) { Holder a={bytes(o)},b={0};b=a;use(b.pointer);b.pointer=0;escape(b.pointer); }",

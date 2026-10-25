@@ -244,6 +244,9 @@ void cancellation_and_abandonment() {
   assert(cancelled.status == OBJC3_SERVICE_CANCELLED);
   objc3_task_release(b);
   assert(abandoned.destroyed == 1);
+  // Abandonment publishes cancellation before destroying the frame. Later
+  // group completion must not write through the removed continuation.
+  assert(abandoned.status == OBJC3_SERVICE_CANCELLED);
   pump(destination);
   assert(cancelled.resumes == 2 && cancelled.destroyed == 1);
   assert(!objc3_task_is_cancel_requested(child));
@@ -251,7 +254,7 @@ void cancellation_and_abandonment() {
   complete(child);
   pump(destination);
   assert(cancelled.resumes == 2 && abandoned.resumes == 1);
-  assert(abandoned.status == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+  assert(abandoned.status == OBJC3_SERVICE_CANCELLED);
   group.wait();
   objc3_task_release(a);
   objc3_task_release(child);
@@ -857,12 +860,19 @@ void cleanup_join_resume(objc3_task_t *task, void *opaque) {
     assert(objc3_task_group_await_cleanup(frame.group, task, &untouched) ==
            OBJC3_SERVICE_INVALID_ARGUMENT);
     assert(untouched == OBJC3_SERVICE_UNSUPPORTED_VERSION);
-    assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_NOT_READY);
-    objc3_completion premature{};
-    premature.struct_size = sizeof(premature);
-    premature.version = OBJC3_SERVICE_ABI_VERSION;
-    premature.kind = OBJC3_COMPLETION_CANCELLED;
-    assert(objc3_task_complete(task, &premature) == OBJC3_SERVICE_NOT_READY);
+    if (frame.status == OBJC3_SERVICE_UNSUPPORTED_VERSION) {
+      assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_NOT_READY);
+      objc3_completion premature{};
+      premature.struct_size = sizeof(premature);
+      premature.version = OBJC3_SERVICE_ABI_VERSION;
+      premature.kind = OBJC3_COMPLETION_CANCELLED;
+      assert(objc3_task_complete(task, &premature) == OBJC3_SERVICE_NOT_READY);
+    } else {
+      // A ready empty group has cleared the pending shield. Its continuation
+      // remains queued and cannot run inside this source slice.
+      assert(frame.status == OBJC3_SERVICE_OK);
+      assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_OK);
+    }
     if (frame.release_group_inside_resume) objc3_task_group_release(frame.group);
     if (frame.registration_gate) frame.registration_gate->arrive();
     return;
@@ -1081,6 +1091,10 @@ void cpp_cleanup_request_preserves_owner_cancellation() {
   assert(objc3_task_group_add(group.native_handle(), child) == OBJC3_SERVICE_OK);
   std::atomic<unsigned> turns{0};
   auto parent = cpp_cancelled_scope_cleanup(group, turns).start(destination);
+  // Enter the cleanup scope before cancelling its owner. Pre-entry
+  // cancellation intentionally executes no source body or cleanup request.
+  pump(destination);
+  assert(turns == 1 && objc3_task_is_cancel_requested(child));
   parent.cancel();
   pump(destination);
   assert(turns == 1 && objc3_task_is_cancel_requested(child));

@@ -9,7 +9,7 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **346 native Clang regressions** pass, with three
+The resumed compiler build and **349 native Clang regressions** pass, with three
 unsupported cases. Four standalone runtime suites and 83 focused tooling tests
 also pass, including ASan/UBSan runs of all four runtime suites. All five feature
 families pass: 168 configurations and 942 commands (captures/keypaths/spawn 24
@@ -23,7 +23,18 @@ Development has resumed with a solo integration span. The six prior agents are
 parked. Maintained code and canonical compiler patches preserve their completed
 work. C++ frame definitions and the five-family feature runner are integrated;
 compiler/editor/debugger targets and their contract suites pass. Installed SDK
-qualification is the active delivery step.
+qualification is the active delivery step. The first combined pass found facade
+integration defects: EOF recovery, cross-language C-frame record matching,
+Objective-C message import in key-path accessors, borrowed `noescape` prototype
+flags and ARC lifetime endpoints around deferred actions. These now have native
+repairs; facade witnesses also reflect cancellation before source-body entry and
+shielded cleanup completion. The failed candidate remains unpublished while the
+corrected source is exported and resealed for the next combined pass. All 32
+facade suites now pass across the collector and focused repair runs. C++ actor
+entry additionally preserves method `nothrow`, establishes generated thunk frame
+identity before code generation, and admits implicit ARC cleanup of transitively
+Sendable aggregate fields. Required unchecked-transfer notes no longer depend
+on a preceding warning.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
