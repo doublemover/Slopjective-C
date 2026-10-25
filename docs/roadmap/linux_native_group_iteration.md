@@ -1,9 +1,10 @@
 # Native C group-result iteration
 
-This source span adds completion-order iteration through the existing shared
-frame ABI. The accepted SDK in the [handle-join receipt](../support/linux_async_handle_join_acceptance.json)
-predates this span. The concurrency module source version is 2.2.0; service ABI 4,
-frame ABI 1, native extension ABI 21 and interface schema 2.1 are unchanged.
+The Linux SDK adds completion-order iteration through the existing shared
+frame ABI. The [acceptance receipt](../support/linux_native_group_iteration_acceptance.json)
+binds its compiler, runtime, installed checks and exact archive. The concurrency
+module version is 2.2.0; service ABI 4, frame ABI 1, native extension ABI 21 and
+interface schema 2.1 are unchanged.
 
 ```objective-c
 #include <objc3/concurrency.h>
@@ -55,8 +56,9 @@ domains are also diagnosed.
 Plain scalar, pointer, void, aligned record and nested plain optional values
 are admitted in C mode. Owned object/Block and nested managed carriers require
 ARC and supported strong storage. Weak/unowned payloads, scalar resources,
-nontrivial enclosing records and other unsupported ownership shapes are rejected
-before metadata emission. C++ retains its existing typed `group.next<T>()` API.
+nontrivial enclosing record payloads and other unsupported ownership shapes are
+rejected before iteration metadata emission. C++ retains its existing typed
+`group.next<T>()` API.
 These bounded helpers do not promote full async/actor/profile predicates.
 
 Native frame awaits now participate in ARC carrier initialization guards.
@@ -67,15 +69,26 @@ as raw bytes. Qualified enclosing managed records use their private frame
 result transport and the same destroy operation for discarded results.
 Their ordinary by-value parameter admission remains separate.
 
-Runtime preflight covers descriptor copying, completion ordering, lazy close,
+Runtime qualification covers descriptor copying, completion ordering, lazy close,
 type rejection without consumption, cancellation on both sides of reservation,
 allocation/copy failures, retained error identity and releasing original group
 owners. The maintained spawn source/PCH fixture adds scalar, aligned record,
 nested optional, void, ARC object/Block nil, discarded owned results, checked
 error and actor-destination witnesses. Compiler regressions cover metadata
 emission, unevaluated operands, unsupported ownership and physical frame aliases.
-The complete validation batch follows the coherent source span; this document
-makes no new SDK acceptance claim until that delivery finishes.
+The frozen source passes all 24 spawn configurations / 108 commands normally,
+under ASan/UBSan and under TSan. The instrumented shared C-frame matrix passes
+40 configurations / 256 commands; coroutine/group and native C++ async matrices
+pass 12 / 48 and 16 / 80 respectively. These sanitizer runs instrument GNU
+libobjc, project services and clients together. All five standalone runtime
+suites pass in all three modes. Three focused compiler regressions pass,
+including ARC debug-info verification and checked alias diagnostics. The
+[acceptance record](../support/linux_native_group_iteration_acceptance.json)
+binds these source checks. The rebuilt compiler passes 359 Clang/index/query
+regressions and 166 native contracts; all 32 facade suites, nine GNUstep clients,
+37 installed consumers, 13 selected integration nodes and all 33 installed SDK
+gates pass. That exact archive also passes fresh Debian 13 and Ubuntu 26.04
+qualification, including ordinary-user consumers and owned-container cleanup.
 
 Automatic structured-scope finalization, cancellation-shielded caller unwind
 and the remaining abstract group-library forms remain separate implementation.

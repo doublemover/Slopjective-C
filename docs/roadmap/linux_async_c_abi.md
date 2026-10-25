@@ -9,10 +9,12 @@ compiler's type-identity builtin.
 Native [C async definitions](linux_native_c_definitions.md) now implement
 functions, methods and Blocks with frame-resident values, owned results/errors,
 cleanup and child awaits. [Task/group handle adapters](linux_async_handle_joins.md)
-bridge existing retained handles into those definitions and C++ lazy tasks. The
+bridge existing retained handles into those definitions and C++ lazy tasks.
+[Native C group iteration](linux_native_group_iteration.md) adds owned optional
+results with compiler-defined layout and copy/destruction operations. The
 current SDK passes all 33 installed gates, including shared-frame source-free
 consumers, native C/C++ execution and debugger checks. The
-[current receipt](../support/linux_async_handle_join_acceptance.json) records
+[current receipt](../support/linux_native_group_iteration_acceptance.json) records
 that delivery and its fresh-distribution status. Public async/actor predicates
 and full profile conformance remain reserved.
 

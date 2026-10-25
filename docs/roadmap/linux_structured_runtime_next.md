@@ -16,7 +16,7 @@ handles into native C async definitions and C++ lazy tasks. They preserve result
 and error identity, retain independent leases, queue nonblocking continuations,
 and reject hidden own/direct-parent dependency cycles. Group construction leaves
 registration open; first resume closes the tree and joins complete quiescence.
-The concurrency module is 2.1.0; service ABI 4 and frame ABI 1 are unchanged.
+The concurrency module is 2.2.0; service ABI 4 and frame ABI 1 are unchanged.
 
 Full GNU runtime instrumentation exposed a lazy global autorelease-mode race.
 The Linux patch now uses native per-thread ARC pools exclusively, with no
@@ -24,9 +24,10 @@ Foundation mode switch or legacy retained-return slot. Native tokens remain
 valid across late `NSAutoreleasePool` class registration. Nil return-value
 claiming preserves an empty pool. All nine GNUstep client tests and five
 standalone service suites pass; the latter also pass under ASan/UBSan and TSan.
-The [current delivery record](../support/linux_async_handle_join_acceptance.json)
+The [current delivery record](../support/linux_native_group_iteration_acceptance.json)
 binds source reports and the coordinated SDK status. Automatic structured-scope
-finalization and native C group-result iteration remain implementation work.
+finalization and cancellation-shielded caller unwind remain implementation work.
+Native C group-result iteration is delivered through the typed helpers linked below.
 
 ## Structured child cancellation
 
@@ -334,6 +335,31 @@ ARC/MRC, O0/O2 and C17/C++20/C++23, both normally and under ASan/UBSan and TSan.
 The installed feature gate covers the same matrix.
 These APIs retain explicit task/group joining; compiler automatic group-scope
 finalization and the complete abstract structured-group library remain open.
+
+## Next compiler milestone: structured group scopes
+
+The [native C result-iteration span](linux_native_group_iteration.md) supplies
+owned `Optional(T)` transport alongside explicit task/group joins. The next
+compiler milestone is the group-scope contract in Part 7 §7.5.2.3: a recognized
+group scope cannot return while its children remain live, and a throwing exit
+must cancel them before unwinding completes. Ordinary adapter awaits do not
+establish this contract.
+
+Implementation must bind the recognized API's actual group owner into the
+native frame, route normal return and exceptional/cancellation exits through
+one finalization state, and use the runtime's cancellation-shielded cleanup
+registration while waiting for complete quiescence. Pending return values,
+owned errors, defers and actor/executor destinations must survive that wait.
+Close, cancel, join and release each need an explicit ownership transition;
+frame abandonment and failed dispatch must reclaim the same state exactly once.
+Nested scopes finalize from the inside out without blocking an executor.
+
+Admission requires source/PCH and source-free callable identity, normal and
+throwing exits, pre-existing and concurrent cancellation, nested child groups,
+actor/manual/worker destinations, failed registration and abandoned frames.
+Debug-info and sanitizer execution belong to that combined implementation span.
+The current explicit APIs remain bounded until these compiler paths exist;
+the public async/actor and full-profile predicates stay reserved.
 
 Typed async callback deduction treats ErrorType as a deducible type position,
 requires exact async/frame representation, and preserves throwing domains.

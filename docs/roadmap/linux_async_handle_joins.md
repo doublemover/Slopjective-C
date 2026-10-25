@@ -5,7 +5,10 @@ ABI. The [acceptance receipt](../support/linux_async_handle_join_acceptance.json
 binds the source checkpoint, native ARC-only runtime policy, new SDK archive
 and exact validation reports. It reuses the unchanged verified LLVM foundation
 from the [lexical pool delivery](../support/linux_async_lexical_pool_acceptance.json).
-The concurrency module's source version is 2.1.0. Runtime service ABI 4, async
+The original handle-join module version was 2.1.0. The current
+[group-iteration delivery](linux_native_group_iteration.md) ships version 2.2.0
+and a rebuilt compiler; its acceptance record covers the expanded checks.
+Runtime service ABI 4, async
 frame ABI 1, native extension ABI 21 and interface schema 2.1 are unchanged.
 
 `objc3_async_frame_from_task` creates a lazy frame with an independent reference
@@ -92,6 +95,7 @@ compiler foundation retains its 356 regression and 166 native-contract passes
 without repeating that compiler build.
 
 These joins supply a prerequisite for structured-scope lowering. Automatic
-scope finalization, shielded caller unwind, native group-result iteration and
-complete profile admission remain open. A normal adapter await cannot substitute
-for the runtime's direct cancellation-shielded cleanup registration.
+scope finalization, shielded caller unwind and complete profile admission remain
+open. Native C group-result iteration is delivered by the linked 2.2.0 helpers.
+A normal adapter await cannot substitute for the runtime's direct
+cancellation-shielded cleanup registration.
