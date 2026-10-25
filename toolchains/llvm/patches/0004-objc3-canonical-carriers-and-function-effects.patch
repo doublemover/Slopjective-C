@@ -1234,10 +1234,10 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..e8c025e67 100644
+index 2cb79b6ba..8673b6ceb 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,129 @@
+@@ -11,7 +11,131 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
@@ -1308,6 +1308,8 @@ index 2cb79b6ba..e8c025e67 100644
 +  "native async task lowering requires the installed <objc3_task.hpp> header">;
 +def err_objc3_async_task_abi_context : Error<
 +  "C++ task async entry ABI cannot be lowered in Objective-C C mode">;
++def err_objc3_group_scope_exceptions : Error<
++  "native structured group scopes require Objective-C exception handling when exceptions are enabled">;
 +def err_objc3_async_frame_cpp_definition : Error<
 +  "C frame async definitions use native return and __objc3_await, not C++ coroutine keywords">;
 +def err_objc3_async_frame_cpp_storage : Error<
@@ -1367,7 +1369,7 @@ index 2cb79b6ba..e8c025e67 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -6986,6 +7108,8 @@ def note_protected_by_variable_non_pod : Note<
+@@ -6986,6 +7110,8 @@ def note_protected_by_variable_non_pod : Note<
    "jump bypasses initialization of non-POD variable">;
  def note_protected_by_cleanup : Note<
    "jump bypasses initialization of variable with __attribute__((cleanup))">;
@@ -1376,7 +1378,7 @@ index 2cb79b6ba..e8c025e67 100644
  def note_protected_by_vla_typedef : Note<
    "jump bypasses initialization of VLA typedef">;
  def note_protected_by_vla_type_alias : Note<
-@@ -7010,6 +7134,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7136,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1390,7 +1392,7 @@ index 2cb79b6ba..e8c025e67 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7157,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7159,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1401,7 +1403,7 @@ index 2cb79b6ba..e8c025e67 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -7046,6 +7181,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
+@@ -7046,6 +7183,8 @@ def note_enters_defer_stmt : Note<"jump enters a defer statement">;
  
  def note_exits_cleanup : Note<
    "jump exits scope of variable with __attribute__((cleanup))">;
@@ -1410,7 +1412,7 @@ index 2cb79b6ba..e8c025e67 100644
  def note_exits_dtor : Note<
    "jump exits scope of variable with non-trivial destructor">;
  def note_exits_temporary_dtor : Note<
-@@ -8001,6 +8138,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8140,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1436,7 +1438,7 @@ index 2cb79b6ba..e8c025e67 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14523,48 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14525,48 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -35814,10 +35816,10 @@ index 9adba1943..a2aefba93 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..7f636b158
+index 000000000..fc8313806
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,202 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -35991,6 +35993,11 @@ index 000000000..7f636b158
 +  AsyncMonitorVisitor Monitors(S);
 +  Monitors.TraverseStmt(Body);
 +  if (!Type->getObjC3FunctionEffects().AsyncFrame) return Monitors.Failed;
++  if (Callable->hasAttr<ObjCTaskGroupAttr>() && S.getLangOpts().Exceptions &&
++      !S.getLangOpts().ObjCExceptions) {
++    S.Diag(Callable->getLocation(), diag::err_objc3_group_scope_exceptions);
++    return true;
++  }
 +  if (S.getLangOpts().CPlusPlus) {
 +    // The ramp copies parameters before the lazy initial suspension. Native
 +    // C++ copy/move construction needs a separate ownership protocol; never
@@ -41456,4 +41463,15 @@ index 000000000..8c2dbfd5b
 +#endif
 +  __builtin_objc3_async_group_next_plan(); // expected-error {{too few arguments}}
 +  __builtin_objc3_async_group_next_plan((Optional(int) *)0, 0); // expected-error {{too many arguments}}
++}
+diff --git a/clang/test/ObjC3/Sema/native-group-scope.m b/clang/test/ObjC3/Sema/native-group-scope.m
+new file mode 100644
+index 000000000..018c7256e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-group-scope.m
+@@ -0,0 +1,5 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -verify %s
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++int scope_requires_eh(void) __objc3_async_frame __attribute__((objc_task_group)) { // expected-error {{native structured group scopes require Objective-C exception handling when exceptions are enabled}}
++  return 42;
 +}

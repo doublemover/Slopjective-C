@@ -422,6 +422,25 @@ objc3_service_status objc3_task_group_await(objc3_task_group_t *group,
 objc3_service_status objc3_task_group_await_cleanup(
     objc3_task_group_t *group, objc3_task_t *parent,
     objc3_service_status *out_status);
+/* Native compiler-owned group scope. Enter creates a fresh open group and
+ * reserves all cleanup waiter storage before the body executes. One scope is
+ * admitted per task; enter/finish require that task's active resume. The current
+ * accessor returns a borrowed group only inside that task's callback. Retain it
+ * explicitly to keep a separate owner. Its tree admits only structured
+ * descendants of the scope task, including through released intermediates;
+ * independent tasks and ancestor cycles are rejected.
+ * Finish closes the tree, optionally cancels it, and always queues a shielded
+ * continuation after task/frame/callback quiescence. out_status remains in the
+ * native frame until resumption. Enter reserves the final waiter; scope close
+ * and cancellation do not allocate snapshots. Scheduling and completion/failure
+ * publication retain their ordinary allocation/error contracts. Completion
+ * cannot bypass a live scope; lost
+ * continuations and last-owner abandonment cancel and join before frame cleanup.
+ * These entrypoints do not turn arbitrary manual tasks into compiler scopes. */
+objc3_service_status objc3_task_group_scope_enter(objc3_task_t *parent);
+objc3_task_group_t *objc3_task_group_scope_current(void);
+objc3_service_status objc3_task_group_scope_finish(
+    objc3_task_t *parent, int cancel, objc3_service_status *out_status);
 /* Reserve the next direct child task from a closed group tree, from parent's
  * active resume. Parent must not belong to the tree. Output slots must reside
  * in the parent frame until resumption; *out_task must initially be null.

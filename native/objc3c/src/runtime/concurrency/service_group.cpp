@@ -30,6 +30,7 @@ struct TaskGroup final {
     bool completed{false};
     bool consumed{false};
     bool failed{false};
+    bool scope_cancel_requested{false};
     uint64_t completion_order{0};
   };
   struct NextWaiter {
@@ -46,6 +47,7 @@ struct TaskGroup final {
     bool cleanup{false};
     objc3_task_t *owned_parent{nullptr};
     std::shared_ptr<void> cleanup_owner;
+    std::shared_ptr<ObjC3TaskGroupScope> scope;
     JoinWaiter() = default;
     JoinWaiter(const JoinWaiter &) = delete;
     ~JoinWaiter() {
@@ -59,6 +61,7 @@ struct TaskGroup final {
   std::shared_ptr<FailurePublicationState> failure_publication;
   std::shared_ptr<GroupParentLink> self_link;
   std::shared_ptr<GroupParentLink> parent_link;
+  std::shared_ptr<objc3_task::AwaitTarget> scope_target;
   std::condition_variable changed;
   std::vector<TaskEntry> tasks;
   std::vector<TaskGroup *> children;
@@ -87,6 +90,17 @@ struct TaskGroup final {
     for (auto *child : children) task_group_release(child);
   }
 };
+
+} // namespace objc3::services
+
+struct ObjC3TaskGroupScope final {
+  objc3::services::TaskGroup *group{};
+  std::list<objc3::services::TaskGroup::JoinWaiter> reservation;
+  ObjC3TaskGroupScope() { reservation.emplace_back(); }
+  ~ObjC3TaskGroupScope() { objc3::services::task_group_release(group); }
+};
+
+namespace objc3::services {
 
 namespace {
 
@@ -325,8 +339,36 @@ void dispatch_next_notifications(std::list<TaskGroup::NextWaiter> &ready) {
 }
 
 void dispatch_join_notifications(std::list<TaskGroup::JoinWaiter> &waiters) {
-  for (const auto &waiter : waiters)
-    objc3_task_finish_await(waiter.continuation, waiter.status, waiter.cleanup_owner);
+  for (const auto &waiter : waiters) {
+    if (!waiter.scope) {
+      objc3_task_finish_await(waiter.continuation, waiter.status, waiter.cleanup_owner);
+      continue;
+    }
+    auto *parent = waiter.owned_parent;
+    bool forced;
+    {
+      std::lock_guard<std::mutex> lock(parent->mutex);
+      forced = parent->group_scope_forced;
+      // The notification owns the scope until after dispatch. Dropping this
+      // association therefore cannot release group/task payloads under lock.
+      parent->group_scope.reset();
+      if (forced) {
+        parent->awaiting = false;
+        parent->await_status = nullptr;
+        parent->await_result_task = nullptr;
+        parent->await_cancellation_shielded = false;
+      }
+    }
+    if (forced) {
+      objc3_completion completion{};
+      completion.struct_size = sizeof(completion);
+      completion.version = OBJC3_SERVICE_ABI_VERSION;
+      completion.kind = OBJC3_COMPLETION_CANCELLED;
+      (void)objc3_task_complete(parent, &completion);
+    } else {
+      objc3_task_finish_await(waiter.continuation, waiter.status, waiter.scope);
+    }
+  }
   // Owned cleanup parent/group leases are released only after dispatch, with
   // every task/group/link/publication lock already dropped.
   waiters.clear();
@@ -578,6 +620,7 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
     }
     group->failure_publication = parent->failure_publication;
     group->parent_link = parent->self_link;
+    group->scope_target = parent->scope_target;
     cancelled = parent->cancelled;
   }
   *out_group = group;
@@ -587,6 +630,16 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
 
 objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
   if (!group || !task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  // A compiler scope admits only its structured descendants. Cancellation
+  // ancestry therefore also proves that adding this task cannot introduce an
+  // ancestor cycle, including through nested groups or released intermediates.
+  if (group->scope_target) {
+    bool child = false;
+    for (auto target = task->await_target->structured_parent; target;
+         target = target->structured_parent)
+      if (target == group->scope_target) { child = true; break; }
+    if (!child) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
   // Registering an already-terminal task invokes its observer synchronously.
   // That observer can dispatch user cleanup which drops the caller's last
   // group owner before registration bookkeeping below has finished.
@@ -914,6 +967,181 @@ objc3_service_status task_group_await_cleanup(TaskGroup *group,
                                               objc3_task_t *parent,
                                               objc3_service_status *out_status) {
   return await_group(group, parent, out_status, true);
+}
+
+namespace {
+// The scope retains the root, which owns every descendant. Once a node is
+// closed its child vector cannot grow, so no auxiliary ownership/snapshot
+// allocation is needed while recursively closing or cancelling the tree.
+void close_scope_tree(TaskGroup *group) {
+  std::unique_lock<std::mutex> lock(group->mutex);
+  group->closed = true;
+  for (size_t index = 0; index != group->children.size(); ++index) {
+    auto *child = group->children[index];
+    ++group->child_closures_inflight;
+    lock.unlock();
+    close_scope_tree(child);
+    lock.lock();
+    --group->child_closures_inflight;
+  }
+  lock.unlock();
+  notify_group_changed(group);
+}
+
+void cancel_scope_tree(TaskGroup *group) {
+  for (;;) {
+    objc3_task_t *task = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(group->mutex);
+      group->cancelled = true;
+      for (auto &entry : group->tasks) {
+        if (entry.completed || entry.scope_cancel_requested) continue;
+        if (!objc3_task_internal_retain(entry.task)) std::terminate();
+        entry.scope_cancel_requested = true;
+        task = entry.task;
+        break;
+      }
+    }
+    if (!task) break;
+    // Cancellation and arbitrary frame destruction run outside group locks.
+    // A failed in-flight registration can erase/reindex entries; the per-entry
+    // mark, rather than a saved vector index, prevents lost cancellation.
+    objc3_task_request_cancel(task);
+    objc3_task_internal_release(task);
+  }
+  size_t index = 0;
+  for (;;) {
+    TaskGroup *child;
+    {
+      std::lock_guard<std::mutex> lock(group->mutex);
+      if (index == group->children.size()) break;
+      child = group->children[index++];
+    }
+    cancel_scope_tree(child);
+  }
+}
+
+void register_scope_join(const std::shared_ptr<ObjC3TaskGroupScope> &scope,
+                         objc3_task_t *parent) {
+  auto &waiter = scope->reservation.front();
+  waiter.cleanup = true;
+  waiter.owned_parent = objc3_task_retain(parent);
+  if (!waiter.owned_parent) std::terminate();
+  waiter.scope = scope;
+  waiter.continuation = {parent->await_target, UINT64_MAX};
+  std::list<TaskGroup::JoinWaiter> ready;
+  {
+    std::lock_guard<std::mutex> lock(scope->group->mutex);
+    const auto state = cleanup_join_state_locked(scope->group);
+    if (state == JoinState::Pending)
+      scope->group->join_waiters.splice(scope->group->join_waiters.end(),
+                                        scope->reservation);
+    else {
+      waiter.status = state == JoinState::Failed ? OBJC3_SERVICE_NOT_READY
+                                                : OBJC3_SERVICE_OK;
+      ready.splice(ready.end(), scope->reservation);
+    }
+  }
+  dispatch_join_notifications(ready);
+}
+
+void prepare_scope_join_locked(objc3_task_t *parent,
+                                objc3_service_status *out_status) {
+  parent->group_scope_joining = true;
+  parent->await_generation = UINT64_MAX;
+  parent->awaiting = true;
+  parent->await_status = out_status;
+  parent->await_result_task = nullptr;
+  parent->await_cancellation_shielded = true;
+  parent->resume_requested = false;
+}
+} // namespace
+
+objc3_service_status task_group_scope_enter(objc3_task_t *parent) {
+  if (!parent || objc3_task_current_callback() != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (parent->terminal || parent->completion_claimed)
+      return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (!parent->resume_active || parent->awaiting || parent->resume_requested ||
+        parent->group_scope_entered || !parent->frame || !parent->destroy ||
+        !parent->await_target || parent->await_generation == UINT64_MAX)
+      return OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  std::shared_ptr<ObjC3TaskGroupScope> scope;
+  try { scope = std::make_shared<ObjC3TaskGroupScope>(); }
+  catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
+  auto status = task_group_create(nullptr, &scope->group);
+  if (status != OBJC3_SERVICE_OK) return status;
+  scope->group->scope_target = parent->await_target;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (parent->terminal || parent->completion_claimed)
+      return OBJC3_SERVICE_ALREADY_COMPLETED;
+    parent->group_scope_entered = true;
+    parent->group_scope_owner = scope;
+    parent->group_scope = std::move(scope);
+  }
+  return OBJC3_SERVICE_OK;
+}
+
+TaskGroup *task_group_scope_current(objc3_task_t *parent) {
+  if (!parent || objc3_task_current_callback() != parent) return nullptr;
+  std::lock_guard<std::mutex> lock(parent->mutex);
+  return parent->group_scope ? parent->group_scope->group : nullptr;
+}
+
+objc3_service_status task_group_scope_finish(objc3_task_t *parent, bool cancel,
+                                             objc3_service_status *out_status) {
+  if (!parent || !out_status || objc3_task_current_callback() != parent)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
+  std::shared_ptr<ObjC3TaskGroupScope> scope;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (parent->terminal || parent->completion_claimed)
+      return OBJC3_SERVICE_ALREADY_COMPLETED;
+    if (!parent->resume_active || parent->awaiting || parent->resume_requested ||
+        !parent->group_scope || parent->group_scope_joining)
+      return OBJC3_SERVICE_INVALID_ARGUMENT;
+    scope = parent->group_scope;
+    prepare_scope_join_locked(parent, out_status);
+  }
+  close_scope_tree(scope->group);
+  if (cancel || objc3_task_is_cancel_requested(parent))
+    cancel_scope_tree(scope->group);
+  register_scope_join(scope, parent);
+  return OBJC3_SERVICE_OK;
+}
+
+bool task_group_scope_abort(objc3_task_t *parent) noexcept {
+  std::shared_ptr<ObjC3TaskGroupScope> scope;
+  bool arm;
+  bool earlier_cleanup = false;
+  {
+    std::lock_guard<std::mutex> lock(parent->mutex);
+    if (!parent->group_scope) return false;
+    if (parent->group_scope_forced) return true;
+    scope = parent->group_scope;
+    earlier_cleanup = parent->awaiting && parent->await_cancellation_shielded &&
+                      !parent->group_scope_joining;
+    if (earlier_cleanup) {
+      // Do not replace a cleanup dependency installed by the body. Its
+      // selected notification retries forced scope finalization afterwards.
+      parent->cancel_after_cleanup = true;
+      arm = false;
+    } else {
+      parent->group_scope_forced = true;
+      arm = !parent->group_scope_joining;
+      if (arm) prepare_scope_join_locked(parent, nullptr);
+    }
+  }
+  objc3_task_request_cancel(parent);
+  if (earlier_cleanup) return true;
+  close_scope_tree(scope->group);
+  cancel_scope_tree(scope->group);
+  if (arm) register_scope_join(scope, parent);
+  return true;
 }
 
 objc3_service_status task_group_await_next(

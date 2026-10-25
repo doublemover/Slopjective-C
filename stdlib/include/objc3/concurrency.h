@@ -13,6 +13,16 @@
  * explicitly join owned tasks/groups; these functions do not establish an
  * implicit structured group scope. */
 
+/* Native C-frame functions/methods marked objc_task_group own a fresh group
+ * from first resume through implicit finalization. Obtain its borrowed handle
+ * with objc3_task_group_scope_current(), and add only structured descendants
+ * created by child spawn/start. Normal exit closes and joins; checked failure,
+ * cancellation and lost continuations also cancel unfinished scope work.
+ * Defers/body locals follow lexical exit; frame captures and staged results/
+ * errors remain owned through the join. Exceptions-enabled definitions require
+ * Objective-C exception handling. Ordinary C++ task coroutines retain explicit
+ * joins until their corresponding scope lowering is implemented. */
+
 /* Native async callable lowering is currently admitted in the compatibility
  * profile. Other profiles can use the shared C service ABI above without
  * eagerly parsing convenience bodies whose source-call ABI is not admitted. */

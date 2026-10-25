@@ -37,6 +37,17 @@ scope. Historical and overlapping batches are not summed into current counts.
 Public async/actor predicates and full Core/Strict/System conformance remain
 reserved.
 
+## Active native group scope span
+
+[Native C-frame group scopes](linux_native_group_scopes.md) add implicit
+finalization for functions and Objective-C methods marked `objc_task_group`.
+The source module is 2.3.0. A fresh scope group admits structured descendants;
+preallocated cleanup guards preserve pending results/errors and protect frames
+through cancellation, abandonment and actor discard. All five standalone
+runtime suites, 24 normal source/PCH spawn configurations and two focused
+compiler regressions pass. Sanitizer and installed delivery checks follow this
+coherent span; the accepted SDK above remains the 2.2.0 iteration delivery.
+
 ## Native C group iteration
 
 [Native C group-result iteration](linux_native_group_iteration.md) supplies typed

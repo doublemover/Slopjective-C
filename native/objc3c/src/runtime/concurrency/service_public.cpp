@@ -65,6 +65,19 @@ objc3_service_status objc3_task_group_cancel(objc3_task_group_t *group) {
     return services::task_group_cancel(handle<services::TaskGroup>(group));
   });
 }
+objc3_service_status objc3_task_group_scope_enter(objc3_task_t *parent) {
+  return status([&] { return services::task_group_scope_enter(parent); });
+}
+objc3_task_group_t *objc3_task_group_scope_current(void) {
+  return handle<objc3_task_group_t>(
+      services::task_group_scope_current(objc3_task_current_callback()));
+}
+objc3_service_status objc3_task_group_scope_finish(
+    objc3_task_t *parent, int cancel, objc3_service_status *out_status) {
+  return status([&] {
+    return services::task_group_scope_finish(parent, cancel != 0, out_status);
+  });
+}
 objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
                                            objc3_task_t **out_task) {
   if (out_task)

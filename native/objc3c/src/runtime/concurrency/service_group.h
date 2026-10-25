@@ -28,6 +28,12 @@ objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
 objc3_service_status task_group_await_cleanup(TaskGroup *group,
                                               objc3_task_t *parent,
                                               objc3_service_status *out_status);
+objc3_service_status task_group_scope_enter(objc3_task_t *parent);
+TaskGroup *task_group_scope_current(objc3_task_t *parent);
+objc3_service_status task_group_scope_finish(objc3_task_t *parent, bool cancel,
+                                             objc3_service_status *out_status);
+// Forced continuation loss must finish scope work before reclaiming the frame.
+bool task_group_scope_abort(objc3_task_t *parent) noexcept;
 objc3_service_status task_group_await_next(
     TaskGroup *group, objc3_task_t *parent,
     const objc3_async_result_type *expected_type,

@@ -1,6 +1,7 @@
 #include "service_internal.h"
 #include "service_autorelease_pool.h"
 #include "service_actor.h"
+#include "service_group.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -86,6 +87,7 @@ struct ResumeDispatch {
 };
 
 void cancel_task(objc3_task_t *task) noexcept {
+  if (objc3::services::task_group_scope_abort(task)) return;
   // Forced loss of a continuation is cancellation of the task's structured
   // work too. Publish descendant flags/wakes before reporting this outcome.
   objc3_task_request_cancel(task);
@@ -321,6 +323,15 @@ void finish_frame_destruction(objc3_task_t *task, void *frame,
   if (frame) {
     CurrentTaskScope current(task);
     objc3_task_destroy_frame(frame, destroy);
+  }
+  std::shared_ptr<void> scope_owner;
+  {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    scope_owner = std::move(task->group_scope_owner);
+  }
+  {
+    CurrentTaskScope current(task);
+    scope_owner.reset();
   }
   {
     std::lock_guard<std::mutex> lock(task->mutex);
@@ -790,7 +801,9 @@ extern "C" objc3_service_status objc3_task_complete(
     std::lock_guard<std::mutex> lock(task->mutex);
     if (task->terminal || task->completion_claimed)
       return OBJC3_SERVICE_ALREADY_COMPLETED;
-    if (task->awaiting && task->await_cancellation_shielded)
+    if (task->group_scope ||
+        (task->group_scope_forced && completion->kind != OBJC3_COMPLETION_CANCELLED) ||
+        (task->awaiting && task->await_cancellation_shielded))
       return OBJC3_SERVICE_NOT_READY;
     task->completion_claimed = true;
   }
@@ -971,7 +984,10 @@ objc3_service_status objc3_task_prepare_await(
       return OBJC3_SERVICE_ALREADY_COMPLETED;
     if (!parent->resume_active || parent->awaiting || parent->resume_requested)
       return OBJC3_SERVICE_INVALID_ARGUMENT;
-    if (parent->await_generation == UINT64_MAX)
+    // Reserve the last generation for a compiler scope's allocation-free
+    // finalizer. Body awaits can never steal or reuse its continuation token.
+    if (parent->await_generation == UINT64_MAX ||
+        (parent->group_scope && parent->await_generation == UINT64_MAX - 1))
       return OBJC3_SERVICE_NOT_READY;
     if (!parent->await_target)
       parent->await_target = std::make_shared<objc3_task::AwaitTarget>(parent);
@@ -1281,7 +1297,8 @@ void objc3_service_run_task_resume(void *context) {
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     task->resume_queued = false;
-    if (!task->terminal && !task->resume_active) {
+    if (!task->terminal && !task->resume_active &&
+        !(task->group_scope && task->group_scope_forced)) {
       task->resume_active = true;
       continuation_owner = std::move(task->continuation_owner);
       if (continuation_owner) ++task->continuation_owners_active;

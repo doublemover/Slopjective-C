@@ -29,6 +29,7 @@ __attribute__((objc_root_class))
 
 #include "handle_joins.h"
 #include "group_next.h"
+#include "group_scope.h"
 
 typedef struct SpawnState {
   objc3_actor_t *actor;
@@ -196,6 +197,7 @@ int main(void) {
   }
   handle_join_witnesses(source);
   group_next_witnesses(source);
+  group_scope_witnesses(source);
   unsigned error_destroyed = 0;
   checked_spawn_error_ownership(&error_destroyed);
   wait_for_destructions(&error_destroyed, 1);

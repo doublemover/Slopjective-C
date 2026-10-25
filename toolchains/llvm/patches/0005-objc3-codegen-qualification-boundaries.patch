@@ -24955,10 +24955,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..39d067003
+index 000000000..446dc9421
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1016 @@
+@@ -0,0 +1,1083 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24970,6 +24970,7 @@ index 000000000..39d067003
 +#include "CGCleanup.h"
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Isolation.h"
@@ -24996,6 +24997,7 @@ index 000000000..39d067003
 +  Address ResultLive = Address::invalid();
 +  Address Error = Address::invalid();
 +  Address Kind = Address::invalid();
++  Address ScopeEntered = Address::invalid();
 +  llvm::Value *ResultOps = nullptr;
 +  llvm::Constant *ResultType = nullptr;
 +  QualType LogicalResult;
@@ -25524,6 +25526,9 @@ index 000000000..39d067003
 +  Data.Owner = CreateTempAlloca(Int8PtrTy, CharUnits::fromQuantity(8), "objc3.task.owner");
 +  Data.Error = CreateTempAlloca(Int8PtrTy, CharUnits::fromQuantity(8), "objc3.task.error");
 +  Data.Kind = CreateTempAlloca(Int32Ty, CharUnits::fromQuantity(4), "objc3.task.kind");
++  if (Callable.hasAttr<ObjCTaskGroupAttr>())
++    Data.ScopeEntered = CreateTempAlloca(Builder.getInt1Ty(), CharUnits::One(),
++                                         "objc3.scope.entered");
 +  Data.ResultLive = CreateTempAlloca(Builder.getInt1Ty(), CharUnits::One(), "objc3.result.live");
 +  if (!Data.LogicalResult->isVoidType())
 +    Data.Result = CreateMemTemp(Data.LogicalResult, "objc3.task.result");
@@ -25572,6 +25577,8 @@ index 000000000..39d067003
 +    Builder.CreateStore(nullPtr(*this), Data.Error);
 +    Builder.CreateStore(Builder.getInt32(0), Data.Kind);
 +    Builder.CreateStore(Builder.getFalse(), Data.ResultLive);
++    if (Data.ScopeEntered.isValid())
++      Builder.CreateStore(Builder.getFalse(), Data.ScopeEntered);
 +    Data.ResultOps = valueOps(*this, Data.LogicalResult);
 +    EHStack.pushCleanup<DestroyResult>(NormalAndEHCleanup, Data.Result,
 +        Data.ResultLive, Data.Error, Data.ResultOps);
@@ -25653,6 +25660,12 @@ index 000000000..39d067003
 +    storeField(*this, ReturnValue, 4, frameCallback(*this, true));
 +    storeField(*this, ReturnValue, 5, Data.ResultType);
 +    suspend(*this, Data, false);
++    if (Data.ScopeEntered.isValid()) {
++      auto *Status = call(*this, "objc3_task_group_scope_enter", Int32Ty,
++                           {Builder.CreateLoad(Data.Owner)});
++      Builder.CreateStore(Builder.CreateIsNull(Status), Data.ScopeEntered);
++      checkStatus(*this, Data, Status);
++    }
 +    checkCancelled(*this, Data);
 +    if (Callable.hasAttr<ObjC3IsolationThunkAttr>()) {
 +      auto Entry = emitObjC3IsolationEntry(*this, Callable,
@@ -25691,6 +25704,54 @@ index 000000000..39d067003
 +      EmitBranchThroughCleanup(Data.Final);
 +    }
 +    EmitBlock(Final);
++    if (Data.ScopeEntered.isValid()) {
++      auto *Join = createBasicBlock("objc3.scope.join");
++      auto *Joined = createBasicBlock("objc3.scope.joined");
++      Builder.CreateCondBr(Builder.CreateLoad(Data.ScopeEntered), Join, Joined);
++      EmitBlock(Join);
++      Address JoinStatus = CreateTempAlloca(Int32Ty, CharUnits::fromQuantity(4),
++                                            "objc3.scope.status");
++      Builder.CreateStore(Builder.getInt32(5), JoinStatus);
++      auto *Owner = Builder.CreateLoad(Data.Owner);
++      auto *Cancel = Builder.CreateOr(
++          Builder.CreateICmpNE(Builder.CreateLoad(Data.Kind), Builder.getInt32(0)),
++          Builder.CreateIsNotNull(call(*this, "objc3_task_is_cancel_requested",
++                                         Int32Ty, {Owner})));
++      auto *Status = call(*this, "objc3_task_group_scope_finish", Int32Ty,
++          {Owner, Builder.CreateZExt(Cancel, Int32Ty),
++           JoinStatus.emitRawPointer(*this)});
++      auto *Wait = createBasicBlock("objc3.scope.wait");
++      auto *NotRegistered = createBasicBlock("objc3.scope.registration.failed");
++      Builder.CreateCondBr(Builder.CreateIsNull(Status), Wait, NotRegistered);
++      EmitBlock(NotRegistered);
++      // A forced scope cleanup may already have completed this active task.
++      // Every other failure violates the compiler/runtime reservation contract;
++      // never publish success or destroy live scope work on that path.
++      auto *Invalid = createBasicBlock("objc3.scope.invalid");
++      Builder.CreateCondBr(Builder.CreateICmpEQ(Status, Builder.getInt32(4)),
++                            Joined, Invalid);
++      EmitBlock(Invalid);
++      EmitTrapCall(llvm::Intrinsic::trap);
++      Builder.CreateUnreachable();
++      Builder.ClearInsertionPoint();
++      EmitBlock(Wait);
++      suspend(*this, Data, false);
++      auto *Failed = createBasicBlock("objc3.scope.cleanup.failed");
++      auto *Finished = createBasicBlock("objc3.scope.cleanup.finished");
++      Builder.CreateCondBr(Builder.CreateIsNotNull(Builder.CreateLoad(JoinStatus)),
++                            Failed, Finished);
++      EmitBlock(Failed);
++      replaceError(*this, Data, serviceError(*this, Builder.CreateLoad(JoinStatus)));
++      Builder.CreateStore(Builder.getInt32(1), Data.Kind);
++      EmitBranch(Finished);
++      EmitBlock(Finished);
++      auto *Cancelled = call(*this, "objc3_task_is_cancel_requested", Int32Ty,
++                               {Builder.CreateLoad(Data.Owner)});
++      Builder.CreateStore(Builder.CreateSelect(Builder.CreateIsNotNull(Cancelled),
++          Builder.getInt32(2), Builder.CreateLoad(Data.Kind)), Data.Kind);
++      EmitBranch(Joined);
++      EmitBlock(Joined);
++    }
 +    Address Completion = CreateTempAlloca(completionType(CGM),
 +        CharUnits::fromQuantity(8), "objc3.completion");
 +    Builder.CreateMemSet(Completion, Builder.getInt8(0), Builder.getInt64(48));
@@ -25819,6 +25880,12 @@ index 000000000..39d067003
 +    } else if (getEvaluationKind(Data.LogicalResult) == TEK_Scalar) {
 +      EmitStoreOfScalar(EmitScalarExpr(E),
 +          MakeAddrLValue(Source, Data.LogicalResult), true);
++    } else if (getLangOpts().ObjCAutoRefCount &&
++               containsObjC3CarrierManagedStorage(Data.LogicalResult)) {
++      // A native frame stages a complete independent owner before any return
++      // cleanup or scope suspension. Grant the same destination/initialization
++      // guard used by qualified ARC locals, arguments and ordinary returns.
++      emitObjC3CarrierARCValueInit(*this, E, Source);
 +    } else {
 +      EmitAnyExprToMem(E, Source, Qualifiers(), true);
 +    }
@@ -27788,3 +27855,33 @@ index 000000000..3a212330f
 +static int wrong_hidden_parameter(int) __attribute__((alias("checked"),unused)); // expected-warning {{alias and aliasee have different types}}
 +static int future_checked(int value) __objc3_async_frame __objc3_throws(id<Error>) { return value; } // expected-note {{aliasee is declared here}}
 +static int wrong_error_domain(int) __objc3_async_frame __objc3_throws(id<NarrowError>) __attribute__((alias("future_checked"),unused)); // expected-warning {{alias and aliasee have different types}}
+diff --git a/clang/test/ObjC3/CodeGen/native-group-scope.m b/clang/test/ObjC3/CodeGen/native-group-scope.m
+new file mode 100644
+index 000000000..5818abe57
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-group-scope.m
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -debug-info-kind=standalone -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++extern void source_cleanup(void);
++int scoped_value(void) __objc3_async_frame __attribute__((objc_task_group)) {
++  defer { source_cleanup(); }
++  return 42;
++}
++// CHECK-LABEL: define{{.*}}scoped_value
++// CHECK: call i32 @objc3_task_group_scope_enter
++// CHECK: {{call|invoke}} void @{{.*}}source_cleanup
++// CHECK: call i32 @objc3_task_group_scope_finish
++// CHECK: call i8 @llvm.coro.suspend
++// CHECK: call i32 @objc3_task_complete
++
++#if __has_feature(objc_arc)
++Optional(id) scoped_owned(id value) __objc3_async_frame __attribute__((objc_task_group)) {
++  return Some(id, value);
++}
++// ARC-LABEL: define{{.*}}scoped_owned
++// ARC: call i32 @objc3_task_group_scope_enter
++// ARC: call i32 @objc3_task_group_scope_finish
++#endif

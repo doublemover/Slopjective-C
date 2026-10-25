@@ -49,6 +49,17 @@ void check_destination(objc3_actor_t *actor, objc3_executor_t *executor) {
 }
 int pause(int value) __objc3_async { return value; }
 int raw_pause(int value) __objc3_async_frame { return value; }
+int raw_scope_child(void) __objc3_async_frame __attribute__((objc_task_group)) {
+  assert(objc3_task_group_scope_current());
+  return 21;
+}
+int raw_scope_parent(void) __objc3_async_frame __attribute__((objc_task_group)) {
+  auto *group = objc3_task_group_scope_current();
+  assert(group);
+  auto child = std::move(__objc3_async_from_frame<int>(raw_scope_child())).start_child();
+  assert(objc3_task_group_add(group, child.native_handle()) == OBJC3_SERVICE_OK);
+  return 42;
+}
 int parent(State *state) __objc3_async {
   if (state->cancelled) objc3_task_request_cancel(state->parent);
   state->direct = objc3_task_spawn(^int(void) __objc3_async {
@@ -137,6 +148,12 @@ int main() {
   assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
+  {
+    auto scoped = std::move(__objc3_async_from_frame<int>(raw_scope_parent())).start_on(actor);
+    uint32_t executed = 0;
+    assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+    assert(scoped.result() == 42);
+  }
   bool failed = false;
   try { (void)OBJC_TASK_SPAWN(^int(void) __objc3_async { return 0; }); }
   catch (const objc3::service_failure &failure) {

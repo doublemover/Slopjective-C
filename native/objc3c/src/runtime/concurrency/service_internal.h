@@ -61,6 +61,8 @@ struct ObjC3TaskQuiescenceObserver {
   std::shared_ptr<ObjC3TaskQuiescenceObserver> next;
 };
 
+struct ObjC3TaskGroupScope;
+
 struct objc3_task final {
   struct AwaitTarget {
     std::mutex mutex;
@@ -100,6 +102,13 @@ struct objc3_task final {
   bool await_cancellation_shielded{false};
   bool cancel_after_cleanup{false};
   bool cancel_wake_pending{false};
+  // A compiler scope reserves its finalization waiter before executing user
+  // work. The reservation itself does not keep a suspended task alive.
+  std::shared_ptr<ObjC3TaskGroupScope> group_scope;
+  std::shared_ptr<void> group_scope_owner;
+  bool group_scope_entered{false};
+  bool group_scope_joining{false};
+  bool group_scope_forced{false};
   uint64_t await_generation{0};
   objc3_service_status *await_status{nullptr};
   objc3_task_t **await_result_task{nullptr};
