@@ -42,7 +42,9 @@ The newly enrolled typed-keypath package gate covers 12 modes and source-free,
 relocated consumers, including readonly rejection and cross-image metadata
 identity. A workspace inventory regression guards against dropping another
 maintained package example. Focused native import checks and provider emission
-pass; the expanded 32-gate SDK qualification is pending. Remaining items in the
+pass, and the complete package preflight passes 12 modes / 36 executions /
+12 readonly rejections against an unpublished candidate. The expanded 32-gate
+SDK qualification is pending. Remaining items in the
 completion sequence are implementation work, followed by their own validation.
 
 ## Published implementation checkpoint

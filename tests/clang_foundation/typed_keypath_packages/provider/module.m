@@ -9,11 +9,17 @@ __attribute__((objc_root_class))
 @property(nonatomic) PackagePathPair pair;
 - (void)dealloc;
 @end
+static unsigned live_roots;
+unsigned package_live_roots(void) { return live_roots; }
 @implementation PackagePathRoot
 @synthesize count = _count, pair = _pair;
-+ (instancetype)new { return class_createInstance(self, 0); }
++ (instancetype)new {
+  PackagePathRoot *root = class_createInstance(self, 0);
+  ++live_roots;
+  return root;
+}
 - (int)identity { return _count + 100; }
-- (void)dealloc { object_dispose(self); }
+- (void)dealloc { --live_roots; object_dispose(self); }
 @end
 WritableKeyPath<PackagePathRoot *, int> package_count_path(void) {
   return @keypath(PackagePathRoot, count);

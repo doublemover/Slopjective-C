@@ -2,9 +2,13 @@
 @import fixture.TypedKeyPaths;
 #include <assert.h>
 #include <string.h>
+#include <objc/runtime.h>
+#include <objc/objc-arc.h>
 int main(void) {
+  unsigned initial_roots = package_live_roots();
   @autoreleasepool {
     PackagePathRoot *root = [PackagePathRoot new];
+    assert(package_live_roots() == initial_roots + 1);
     WritableKeyPath<PackagePathRoot *, int> path = package_count_path();
     KeyPathSet(path, root, 42);
     assert(KeyPathGet(path, root) == 42);
@@ -18,16 +22,18 @@ int main(void) {
     assert(!strcmp(metadata->path, "count"));
     const objc3_keypath_descriptor_v2 *local =
         KeyPathMetadata(@keypath(PackagePathRoot, count));
-    assert(objc3_keypath_equal_v2(metadata, local));
-    assert(!objc3_keypath_equal_v2(metadata,
-        KeyPathMetadata(package_identity_path())));
+    int equal = 0;
+    assert(objc3_keypath_equal_v2(metadata, local, &equal) == 0 && equal);
+    assert(objc3_keypath_equal_v2(metadata,
+        KeyPathMetadata(package_identity_path()), &equal) == 0 && !equal);
     PackagePathPair pair = {1L, 17L};
     root.pair = pair;
     KeyPathSet(package_field_path(), root, 42L);
     pair = root.pair;
     assert(pair.first == 42L && pair.second == 17L);
 #if !__has_feature(objc_arc)
-    [root release];
+    objc_release(root);
 #endif
   }
+  assert(package_live_roots() == initial_roots);
 }
