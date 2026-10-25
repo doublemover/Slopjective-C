@@ -197,9 +197,12 @@ int native_pool_slices(std::shared_ptr<std::atomic<unsigned>> destroyed,
   return value->number;
 }
 
+static std::atomic<unsigned> actor_owned_creations{0};
+unsigned native_actor_owned_creations() { return actor_owned_creations.load(); }
 int native_actor_owned(objc3_actor_t *first, objc3_actor_t *second,
                        bool fail) __objc3_async {
   NativeAsyncValue *value = [NativeAsyncValue new];
+  ++actor_owned_creations;
 #if !__has_feature(objc_arc)
   struct release_owner {
     NativeAsyncValue *value;

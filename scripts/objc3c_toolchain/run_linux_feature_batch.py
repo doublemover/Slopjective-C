@@ -58,7 +58,18 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
               headers: Path | None = None, include_root: Path | None = None,
               runtime_library: Path | None = None, objc_runtime: Path | None = None,
               fixtures: Path | None = None, features=FEATURES,
-              transports=("source", "pch")) -> dict:
+              transports=("source", "pch"), sanitizer: str | None = None,
+              resource_root: Path | None = None) -> dict:
+    if sanitizer not in (None, "address,undefined", "thread"):
+        raise ValueError("unsupported native feature sanitizer: " + sanitizer)
+    if sanitizer and (runtime_library is None or resource_root is None):
+        raise ValueError("sanitizers require an explicit instrumented runtime library and resource root")
+    instrumentation = []
+    if resource_root is not None:
+        resource_root = resource_root.resolve(strict=True)
+        instrumentation += ["-resource-dir", str(resource_root)]
+    if sanitizer:
+        instrumentation += ["-fsanitize=" + sanitizer, "-fno-omit-frame-pointer"]
     sdk = sdk.resolve(strict=True)
     output = output.resolve()
     compiler = (compiler or sdk / "bin/clang").resolve(strict=True)
@@ -80,11 +91,17 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     report_path = output / "batch.json"
     report_path.unlink(missing_ok=True)
     env = environment(sdk)
+    if sanitizer:
+        env.setdefault("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1")
+        env.setdefault("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1")
+        env.setdefault("TSAN_OPTIONS", "halt_on_error=1")
     env["LD_LIBRARY_PATH"] = os.pathsep.join((str(objc_runtime.parent), str(sdk / "lib")))
     report = {"schema": "objc3c.linux-development-features.v1", "status": "running",
               "compiler": str(compiler), "runtime_library": str(runtime_library),
               "headers": str(headers), "include_root": str(include_root),
               "objc_runtime": str(objc_runtime), "fixtures": str(fixtures),
+              "sanitizer": sanitizer,
+              "resource_root": str(resource_root) if resource_root else None,
               "commands": [], "cases": []}
 
     def invoke(label, argv, cwd):
@@ -104,7 +121,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
             raise RuntimeError("native feature command failed: " + label)
 
     def flags(case, language, standard, ownership, optimization, work):
-        result = ["--no-default-config", "-x", language, "-std=" + standard,
+        result = ["--no-default-config", *instrumentation, "-x", language, "-std=" + standard,
             "-" + optimization, "-g", "-UNDEBUG", "-fblocks", "-fexceptions",
             "-fmodules", "-fmodules-cache-path=" + str(work / "modules"),
             "-I" + str(work / "include"),
@@ -146,7 +163,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     def execute(case, objects, work, suffix=""):
         executable = work / ("witness" + suffix)
         invoke(case.name + suffix + "-link", [sdk / "bin/clang++", "--no-default-config",
-            "-fuse-ld=lld", *objects, runtime_library, objc_runtime, "-pthread",
+            *instrumentation, "-fuse-ld=lld", *objects, runtime_library, objc_runtime, "-pthread",
             "-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff",
             "-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff",
             "-Wl,-rpath," + str(objc_runtime.parent), "-o", executable], work)
@@ -256,6 +273,8 @@ def main():
     parser.add_argument("output", type=Path)
     for name in ("compiler", "headers", "include-root", "runtime-library", "objc-runtime", "fixtures"):
         parser.add_argument("--" + name, type=Path)
+    parser.add_argument("--sanitizer", choices=("address,undefined", "thread"))
+    parser.add_argument("--resource-root", type=Path)
     parser.add_argument("--feature", action="append", choices=FEATURES)
     parser.add_argument("--transport", action="append", choices=("source", "pch"))
     args = parser.parse_args()
@@ -263,7 +282,8 @@ def main():
         ("compiler", "headers", "include_root", "runtime_library", "objc_runtime", "fixtures")}
     report = run_batch(args.sdk, args.output, **options,
                        features=tuple(dict.fromkeys(args.feature or FEATURES)),
-                       transports=tuple(dict.fromkeys(args.transport or ("source", "pch"))))
+                       transports=tuple(dict.fromkeys(args.transport or ("source", "pch"))),
+                       sanitizer=args.sanitizer, resource_root=args.resource_root)
     print(json.dumps({"status": report["status"], "cases": len(report["cases"]),
                       "commands": len(report["commands"])}, sort_keys=True))
 

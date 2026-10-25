@@ -740,6 +740,7 @@ int main() {
   objc3_task_group_t *group = nullptr;
   assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
   const auto before_hopped = native_object_destructions();
+  const auto before_created = native_actor_owned_creations();
   std::vector<objc3::task_handle<int>> hopped;
   for (unsigned index = 0; index != 32; ++index) {
     auto value = native_actor_owned(first, second, index % 2).start_on(first);
@@ -759,7 +760,11 @@ int main() {
     } catch (const objc3::task_cancelled &) {
     }
   }
-  assert(native_object_destructions() == before_hopped + 32);
+  // Group failure can cancel a sibling before its lazy body starts. Only
+  // entered bodies construct this owner; join must destroy every such owner.
+  const auto created = native_actor_owned_creations() - before_created;
+  assert(created > 0 && created <= 32);
+  assert(native_object_destructions() == before_hopped + created);
   hopped.clear();
   const auto before_results = native_result_destructions();
   std::vector<objc3::task_handle<NativeAsyncResult *>> objects;

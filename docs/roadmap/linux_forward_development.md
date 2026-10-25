@@ -39,7 +39,10 @@ one-argument C++ `reset` parsing, physical async function hashes for UBSan and
 ramp exception scratch accidentally spilled into a freed coroutine frame.
 The structured runtime's global-pool fixture now joins all four callbacks before
 its stack gate dies. Its ASan/UBSan and TSan O0/O2 runs pass, as do all 12 task/
-group-await sanitizer configurations; remaining async instrumentation is active.
+group-await sanitizer configurations and all 40 C-frame ABI sanitizer executions.
+Both complete feature instrumentation matrices pass: 168 configurations / 942
+commands under ASan/UBSan, and another 168 / 942 under TSan. The native C++ async
+matrix is finishing its cancellation-owner accounting regression.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
@@ -121,7 +124,12 @@ without an SDK archive rebuild. All 168 configurations now pass against the
 development compiler/runtime. Mixed async provider/consumer ownership, frame
 allocation failures, exceptions, task cancellation, checked errors and independent
 result owners are exercised. The same runner is enrolled in SDK packaging and
-fresh-distribution qualification.
+fresh-distribution qualification. Development runs can also instrument all five
+families with `--sanitizer address,undefined` or `--sanitizer thread`. Supply
+`--runtime-library` built with the same instrumentation and `--resource-root`
+pointing to matching Clang sanitizer runtimes. The runner applies the flags to
+source, PCH and final links and records the mode in its report. Services and
+clients are instrumented; GNU libobjc is loaded as shipped.
 
 ## Existing evidence
 
