@@ -71,8 +71,9 @@ The Linux runtime profile locks the native ARC policy and exact patch bytes.
 
 The runtime builder accepts an explicit sanitizer and binds the compiler/runtime
 libraries into its separate development build identity. Allocator-failure
-witnesses use link wrapping, preserving sanitizer interceptors. A worker-signal
-fixture now finishes notifying while holding its lifetime handoff mutex.
+witnesses use link wrapping, preserving sanitizer interceptors. Worker-signal
+and callback-fence fixtures now complete their lifetime handoffs before stack
+state can be destroyed.
 Normal, ASan/UBSan and TSan standalone suites pass after those repairs.
 
 Broader source and coordinated SDK delivery checks follow this coherent span.

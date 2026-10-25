@@ -44,12 +44,15 @@ struct Gate {
   std::condition_variable changed;
   bool entered = false;
   bool released = false;
+  bool departed = false;
   void arrive() {
     std::unique_lock<std::mutex> lock(mutex);
     entered = true;
     changed.notify_all();
     assert(changed.wait_for(lock, std::chrono::seconds(5),
                             [this] { return released; }));
+    departed = true;
+    changed.notify_all();
   }
   void wait() {
     std::unique_lock<std::mutex> lock(mutex);
@@ -57,9 +60,13 @@ struct Gate {
                             [this] { return entered; }));
   }
   void release() {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::unique_lock<std::mutex> lock(mutex);
     released = true;
     changed.notify_all();
+    // The stack gate may leave scope immediately after this handoff. Wait for
+    // arrive() to finish accessing it, rather than only unblocking the worker.
+    assert(changed.wait_for(lock, std::chrono::seconds(5),
+                            [this] { return departed; }));
   }
 };
 
