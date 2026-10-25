@@ -68,6 +68,9 @@ switching and the legacy retained-return slot are removed. Return-value claiming
 checks nonempty pool bounds and handles nil without reading before pool storage.
 A failed pool allocation terminates rather than losing an autorelease owner.
 The Linux runtime profile locks the native ARC policy and exact patch bytes.
+All nine GNUstep client tests pass, including a regression that registers an
+optional `NSAutoreleasePool` class while a native token is live, then checks
+nested draining, weak clearing and nil return-value claiming.
 
 The runtime builder accepts an explicit sanitizer and binds the compiler/runtime
 libraries into its separate development build identity. Allocator-failure
