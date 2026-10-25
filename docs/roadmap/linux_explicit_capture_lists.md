@@ -14,7 +14,12 @@ an item without a modifier selects strong/value capture. Identically named
 ordinary variables remain usable as capture items. Duplicate bindings,
 malformed items, nonlocal bindings and invalid ownership/type combinations are
 diagnosed. Other ordinary captures in the body keep native implicit-capture
-rules; owning resources require an explicit move.
+rules; owning by-value resource captures require an explicit move. An ordinary
+`__block` resource capture shares the forwarded slot without copying its cleanup
+obligation. The source's lexical cleanup closes and invalidates that slot, even
+while a heap Block still references it. General shared-resource alias proof in
+Strict System remains gated; concurrent shared `__block` capture diagnostics
+remain enforced.
 
 Explicit items register captures before parsing the body, including unused
 items. Creation initializes fields in written order even when the physical

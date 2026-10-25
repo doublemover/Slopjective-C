@@ -9,7 +9,7 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **351 native Clang regressions** pass, with three
+The resumed compiler build and **352 native Clang regressions** pass, with three
 unsupported cases. Four standalone runtime suites and 83 focused tooling tests
 also pass, including ASan/UBSan runs of all four runtime suites. All five feature
 families pass: 168 configurations and 942 commands (captures/keypaths/spawn 24
@@ -47,6 +47,9 @@ Installed-library checks additionally fixed profile-safe concurrency imports,
 matching nonthrowing system-helper definitions and false resource leaks through
 synthetic terminating EH edges. Ordinary leak and cleanup-family rejections
 remain enforced; full Core/Strict/System profile claims remain reserved.
+Ordinary shared `__block` resource references retain the source's lexical cleanup
+and sentinel invalidation, while owning by-value captures require an explicit
+move. The full defer source/PCH matrix passes all 100 commands after this repair.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
