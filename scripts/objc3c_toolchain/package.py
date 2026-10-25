@@ -246,9 +246,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/async-c-abi')
     shutil.copytree(repo / 'tests/clang_foundation/native_async',
                     prefix / 'share/objc3c/examples/native-async')
-    for source, installed in SOURCE_PACKAGE_EXAMPLES.items():
-        shutil.copytree(repo / 'tests/clang_foundation' / source,
-                        prefix / 'share/objc3c/examples' / installed)
+    for fixture_name, installed_name in SOURCE_PACKAGE_EXAMPLES.items():
+        shutil.copytree(repo / 'tests/clang_foundation' / fixture_name,
+                        prefix / 'share/objc3c/examples' / installed_name)
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
