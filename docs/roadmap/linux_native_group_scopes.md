@@ -65,7 +65,8 @@ groups, ancestor rejection, last-owner abandonment, actor-discarded resumes and
 an exception after registering an earlier shielded cleanup. Source fixtures add
 pending scalar returns, original checked-error identity, owned optional results,
 receiver ownership, body-await abandonment and nested C++ explicit-frame scopes
-on an actor. Compiler regressions cover implicit calls, deferred cleanup,
+on an actor. Pending and already-ready worker children also verify actor
+restoration and quiescence fences. Compiler regressions cover implicit calls, deferred cleanup,
 C++ explicit-frame lowering, ARC debug information and exception admission.
 
 Ordinary C++ task-coroutine scope lowering, the remaining abstract group-library
