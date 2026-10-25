@@ -9,6 +9,25 @@ feature matrices. See the [integration acceptance receipt](../support/linux_nati
 for the exact binaries, archive and scope. Compiler automatic structured-scope
 finalization and the complete abstract group library remain open.
 
+## Native handle adapters and Linux pool policy
+
+[Native task/group joins](linux_async_handle_joins.md) bridge existing retained
+handles into native C async definitions and C++ lazy tasks. They preserve result
+and error identity, retain independent leases, queue nonblocking continuations,
+and reject hidden own/direct-parent dependency cycles. Group construction leaves
+registration open; first resume closes the tree and joins complete quiescence.
+The concurrency module is 2.1.0; service ABI 4 and frame ABI 1 are unchanged.
+
+Full GNU runtime instrumentation exposed a lazy global autorelease-mode race.
+The Linux patch now uses native per-thread ARC pools exclusively, with no
+Foundation mode switch or legacy retained-return slot. Native tokens remain
+valid across late `NSAutoreleasePool` class registration. Nil return-value
+claiming preserves an empty pool. All nine GNUstep client tests and five
+standalone service suites pass; the latter also pass under ASan/UBSan and TSan.
+The [current delivery record](../support/linux_async_handle_join_acceptance.json)
+binds source reports and the coordinated SDK status. Automatic structured-scope
+finalization and native C group-result iteration remain implementation work.
+
 ## Structured child cancellation
 
 `objc3_task_start_child`, including `objc3_async_frame_start_child`, now registers

@@ -3,9 +3,12 @@
 The Linux SDK implements suspension-safe `@autoreleasepool` scopes in
 Objective-C 3.0 C++ coroutines, including ordinary C++ coroutine syntax. Source
 identity is `llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`. The
-[acceptance receipt](../support/linux_async_lexical_pool_acceptance.json) binds
-its exact archive to the compiler, runtime, sanitizer and fresh-distribution
-reports.
+[compiler-milestone receipt](../support/linux_async_lexical_pool_acceptance.json)
+binds that archive to its compiler, runtime, sanitizer and fresh-distribution
+reports. The [current delivery](../support/linux_async_handle_join_acceptance.json)
+reuses this unchanged compiler foundation with native task/group joins and the
+Linux native ARC-only runtime policy. Its exact qualification scope is recorded
+separately.
 
 Each lexical scope owns a frame-resident pool-token slot. A potentially
 suspending await drains active pools from inner to outer before `await_suspend`

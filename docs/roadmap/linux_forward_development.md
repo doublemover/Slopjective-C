@@ -9,43 +9,49 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The combined delivery checkpoint passes **356 native Clang/index/query regressions**
-(353 in the ObjC3 suite), with three unsupported cases, and all 166 native
-AST/matcher/source-tooling contracts. Compiler, editor and debugger targets build;
-all 32 facade suites, eight GNUstep runtime integration tests, 37 installed
-consumer checks and 13 selected native integration nodes pass. All **33 installed
-SDK qualification gates** pass against the frozen source identity
+The current SDK reuses the unchanged, verified LLVM foundation: **356 native
+Clang/index/query regressions** (353 ObjC3), three unsupported cases and 166
+AST/matcher/source-tooling contracts. Compiler, editor and debugger targets build.
+The runtime/header delivery passes all 32 facade suites, **nine GNUstep client
+tests**, 37 installed consumer checks, 13 selected native integration nodes and
+all **33 installed SDK qualification gates**. Compiler source identity is
 `llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`.
-The exact archive passes fresh Debian 13 and Ubuntu 26.04 qualification, including
-ordinary-user compiler, package, runtime and debugger consumers. The
-[current acceptance receipt](../support/linux_async_lexical_pool_acceptance.json)
-records the exact source, archive, reports and publication reconciliation.
+The [current acceptance receipt](../support/linux_async_handle_join_acceptance.json)
+records exact source, runtime policy, archive and report hashes. Fresh Debian 13
+and Ubuntu 26.04 both pass that exact archive, including ordinary-user
+compiler, package, runtime and debugger consumers. Owned containers are removed.
 
-The five feature families pass 168 configurations / 942 commands against the
-installed SDK. Earlier source `49f322e67e0d` development runs pass the same complete matrix under
-ASan/UBSan and TSan: another 336 configurations / 1,884 commands. The later C++
-pool change passes all 16 targeted native async sanitizer configurations with
-source `e4f1a276e662`. Four standalone
-runtime suites pass normally and under ASan/UBSan; the additional structured,
-task/group-await, native C++ async and C-frame ABI sanitizer suites also pass.
-The earlier broad package/source-graph/audit batch passes 160 tests. Current
-delivery/cache/publication checks pass 44 tests, plus 12 feature-authority and
-onboarding tests. GitHub documentation and tooling checks pass; overlapping
-batches are not summed.
-Public async/actor predicates and full Core/Strict conformance remain reserved.
+The installed five-family matrix passes 168 configurations / 942 commands. The
+current source spawn/join matrix passes 24 configurations / 108 commands
+normally, under ASan/UBSan and under TSan. All 12 coroutine/group configurations
+and all 16 native C++ async configurations pass targeted instrumentation. Those
+sanitizer runs instrument GNU libobjc as well as project services and clients.
+All five standalone runtime suites pass normally, under ASan/UBSan and under
+TSan. Current tooling passes 63 tests, with one skipped dependency check and
+12 passing subtests. Earlier source `49f322e67e0d` retains both complete
+five-family sanitizer matrices: 336 configurations / 1,884 commands. An earlier broader
+package/source-graph/audit batch passed 160 tests. These historical scopes are
+not repeated or summed into the current counts. Public async/actor predicates
+and full Core/Strict/System conformance remain reserved.
 
-## Active handle-await source span
+## Native handle joins and runtime cutover
 
-[Native task/group handle joins](linux_async_handle_joins.md) now provide lazy
+[Native task/group handle joins](linux_async_handle_joins.md) provide lazy
 shared-frame adapters, typed C declarations with checked error transport, and
 C++ raw-handle adoption/group finishing. Independent handle/result ownership,
-nonblocking quiescence and hidden self-cycle rejection are implemented. Focused
-runtime, C source/PCH and C++ checks pass, including the spawn and coroutine
-sanitizer matrices. Full GNU runtime instrumentation also repaired a global
-autorelease mode-switch race: Linux now uses native per-thread ARC pools with
-no Foundation fallback. Coordinated delivery validation follows the source span. These concurrency 2.1.0 headers/runtime changes are newer than the
-accepted 33-gate archive. Automatic structured-scope finalization and native
-group iteration remain open; ordinary joins do not shield caller unwind.
+nonblocking quiescence and hidden own/direct-parent cycle rejection are
+implemented. The concurrency 2.1.0 headers and services are included in the new
+33-gate SDK. Nontrivial C++ results work through the raw task adapter; nontrivial
+values in compiler-defined explicit C-frame definitions remain gated.
+
+Full GNU runtime instrumentation exposed and repaired a global autorelease
+mode-switch race. Linux now uses native per-thread ARC pools exclusively, with
+no Foundation fallback or legacy retained-return slot. Native pool tokens remain
+valid across late class registration; nil return claiming preserves an empty
+pool. Allocation-failure witnesses preserve sanitizer interceptors, and worker
+fixtures finish their handoffs before stack state is destroyed.
+Automatic structured-scope finalization, cancellation-shielded caller unwind
+and native C group-result iteration remain implementation work.
 
 ## Coverage and lexical pool delivery
 
@@ -114,15 +120,15 @@ There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
 
-| Span                | Authored implementation                                                                                                                                                                                                                           | Continued implementation                                                                                                           |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                         | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                         |
-| Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                         | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                    |
-| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction                                                                       | Nontrivial C++ values in the explicit C-frame ABI, dynamic stack storage, handle-await protocols and structured scope lowering     |
-| Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                             | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
-| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                  | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
-| Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library                                                      |
-| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner                                                  | Remaining package/profile projections and full profile conformance                                                                 |
+| Span                | Authored implementation                                                                                                                                                                                                                           | Continued implementation                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                         | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                            |
+| Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                         | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                       |
+| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group handle joins, allocation failure transport, suspension-safe pools and typed-effect template deduction                                                            | Nontrivial C++ values in the explicit C-frame ABI, dynamic stack storage, native group-result iteration and structured scope lowering |
+| Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                             | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior    |
+| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                  | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values             |
+| Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library                                                         |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner                                                  | Remaining package/profile projections and full profile conformance                                                                    |
 
 Per-feature detail and authored witnesses:
 
@@ -197,16 +203,19 @@ families with `--sanitizer address,undefined` or `--sanitizer thread`. Supply
 `--runtime-library` built with the same instrumentation and `--resource-root`
 pointing to matching Clang sanitizer runtimes. The runner applies the flags to
 source, PCH and final links and records the mode in its report. Services and
-clients are instrumented; GNU libobjc is loaded as shipped.
+clients are instrumented. For full GNU runtime instrumentation, build a separate
+variant with `scripts.objc3c_toolchain_runtime.build_linux --sanitizer` and pass
+its shared library with `--objc-runtime`. The current spawn, coroutine/group
+and native async sanitizer runs use that instrumented GNU runtime.
 
 ## Existing evidence
 
-The current [lexical pool acceptance receipt](../support/linux_async_lexical_pool_acceptance.json)
-binds the compiler implementation, source identity, 33-gate release, targeted
-instrumentation and fresh-distribution reports. The archive has seal
-`c929e57a21e1e192fba1805401021b9d7cfa85cc5e20993e6d8fc1cedfb173d1`,
-435,210,510 bytes and SHA-256
-`c68e1f321db01c3de9d0c09f03ed483ac4449d46211a72cb7d487940ff64595e`.
+The current [handle-join acceptance receipt](../support/linux_async_handle_join_acceptance.json)
+binds the unchanged compiler foundation, new runtime/header source, all 33
+installed gates and targeted fully instrumented GNU runtime checks. The archive
+has seal `7654027c98ec27fc0c8469f8b0090de024150bd4d04b35b1d65edc4aceb940bb`,
+435,235,575 bytes and SHA-256
+`5e7b2e28b84048406c66af975459d5b4032bef8c381d36565723edbdbb5b5ba0`.
 
 The host release runs all 33 installed gates. The recorded fresh-distribution
 scope installs that exact archive, checks relocation, embedding and debugging,
@@ -217,7 +226,8 @@ an ordinary user. Owned containers are removed after qualification.
 The earlier [integration receipt](../support/linux_native_feature_integration_acceptance.json)
 retains its source `49f322e67e0d` broader instrumentation results. The
 [package receipt](../support/linux_keypath_package_acceptance.json) records the
-intermediate 32-gate delivery. These are historical scopes, rather than evidence
+intermediate 32-gate delivery. The [lexical pool receipt](../support/linux_async_lexical_pool_acceptance.json)
+records the previous 33-gate archive. These are historical scopes, rather than evidence
 that every earlier sanitizer matrix was rerun with the newer compiler. Full
 Core/Strict/System profiles, native Linux AArch64 and the remaining implementation
 roadmap stay open.

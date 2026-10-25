@@ -76,10 +76,19 @@ cancellation without suspension; `task_yield` queues a new resume and observes
 cancellation when execution continues. Code without an await, checkpoint or
 yield remains responsible for its own cancellation checks.
 
-The development runtime also adds [nonblocking closed-group joins](linux_task_group_await.md)
-through `objc3_task_group_await` and `objc3::task_group_handle`. This addition has
-focused regression and installed qualification wiring; execution and SDK
-acceptance for the changed inputs remain pending.
+The runtime also implements [nonblocking closed-group joins and typed result
+iteration](linux_task_group_await.md) through `objc3_task_group_await`,
+`objc3_task_group_await_next` and `objc3::task_group_handle`. The 12-mode normal
+coroutine/group matrix and 12 sanitizer configurations pass. The instrumented
+GNU runtime participates in the current sanitizer runs.
+
+[Raw handle adapters](linux_async_handle_joins.md) expose
+`objc3::join_task<T>(task)` and `objc3::finish_task_group(group)`. They return lazy
+tasks with independent ownership acquired at construction. Nontrivial C++
+results use the existing result operations; failed type adoption disposes only
+the adapter, preserving the caller's original handle. A group adapter closes
+the tree on first resume and joins quiescence. These explicit joins do not
+introduce automatic structured-scope cleanup.
 
 Releasing the last suspended parent handle terminalizes its task and destroys
 its frame. Child callbacks carry a separate lifetime token and generation, not a

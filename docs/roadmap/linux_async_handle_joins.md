@@ -1,8 +1,10 @@
 # Native task and group handle joins
 
-This source span adds nonblocking handle awaits on the existing shared frame
-ABI. It follows the [33-gate delivery](../support/linux_async_lexical_pool_acceptance.json);
-that installed archive does not include these newer runtime/header changes.
+This Linux delivery adds nonblocking handle awaits on the existing shared frame
+ABI. The [acceptance receipt](../support/linux_async_handle_join_acceptance.json)
+binds the source checkpoint, native ARC-only runtime policy, new SDK archive
+and exact validation reports. It reuses the unchanged verified LLVM foundation
+from the [lexical pool delivery](../support/linux_async_lexical_pool_acceptance.json).
 The concurrency module's source version is 2.1.0. Runtime service ABI 4, async
 frame ABI 1, native extension ABI 21 and interface schema 2.1 are unchanged.
 
@@ -79,9 +81,15 @@ and callback-fence fixtures now complete their lifetime handoffs before stack
 state can be destroyed.
 Normal, ASan/UBSan and TSan standalone suites pass after those repairs.
 
-Broader source and coordinated SDK delivery checks follow this coherent span.
-The current 33-gate SDK remains the earlier delivery; source validation does not
-claim these newer headers/runtime changes are already present in that archive.
+The coordinated delivery passes all 33 installed SDK gates, including the
+168-configuration feature matrix, source-free packages and compiler witnesses.
+All 32 facade suites, nine GNUstep client tests, 37 installed consumers and
+13 selected native integration nodes pass. The new installed SDK includes these
+headers and services. The exact archive passes fresh Debian 13 and Ubuntu 26.04
+qualification, including ordinary-user consumers, relocation and the expanded
+feature/package/compiler witnesses. Owned containers are removed. The unchanged
+compiler foundation retains its 356 regression and 166 native-contract passes
+without repeating that compiler build.
 
 These joins supply a prerequisite for structured-scope lowering. Automatic
 scope finalization, shielded caller unwind, native group-result iteration and

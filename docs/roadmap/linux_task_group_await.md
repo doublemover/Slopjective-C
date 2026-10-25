@@ -1,10 +1,14 @@
 # Linux nonblocking task-group joins
 
-The development runtime adds `objc3_task_group_await`,
+The Linux runtime implements `objc3_task_group_await`,
 `objc3_task_group_await_next` and the retained C++ `objc3::task_group_handle`.
-These changes await build, execution, sanitizer and
-installed-SDK validation. Existing acceptance receipts describe their recorded
-SDK inputs and do not qualify this addition.
+The coroutine/group matrix passes all 12 normal configurations and all 12
+sanitizer configurations. ASan/UBSan and TSan instrument the services and the
+current GNU Objective-C runtime. The coordinated SDK passes all 33 installed gates, including the
+[native handle adapters](linux_async_handle_joins.md) and native ARC-only pool
+policy. The [delivery receipt](../support/linux_async_handle_join_acceptance.json)
+records exact source and archive evidence. Fresh Debian 13 and Ubuntu 26.04
+qualification both pass, with ordinary-user consumers and owned-container cleanup.
 
 ```cpp
 #include <objc3c/runtime/objc3_task.hpp>
@@ -94,9 +98,12 @@ This handle exposes shared library ownership. Callers explicitly close and join
 groups before releasing their last owner. Cancellation of one waiting parent
 leaves shared group tasks running; `group.cancel()` requests cancellation of the
 group tree. Dispatch failure terminalizes an unreachable parent as cancellation.
-The compiler-recognized structured task scope, its automatic cancellation and
-scope-exit join, native C async syntax and public async/actor capabilities remain
-separate milestones.
+Native C async definitions can now use typed task joins and
+`objc3_task_group_join_async` through the shared frame ABI. Native C syntax for
+group-result iteration, the compiler-recognized structured task scope with
+automatic cancellation/scope-exit join, and public async/actor capabilities
+remain separate milestones. An ordinary adapter await does not shield the
+original caller's scope cleanup from cancellation.
 
 The new exported symbol requires the matching runtime archive. Service ABI 4
 record layouts are unchanged, and there is no fallback to a blocking operation.
@@ -122,5 +129,9 @@ ordering, type rejection without consumption, queued drain, cancellation on
 both sides of reservation, abandoned frames and actor-inherited private
 children. Object and Block task handles remain usable after the producing
 groups and original handles are released, including present nil results.
-These witnesses reuse the source-free async C ABI and instrumented runtime
-qualification paths; their changed inputs still require fresh validation.
+These witnesses pass in the source-free async C ABI and instrumented runtime
+qualification paths recorded by the coordinated delivery receipts. The C++
+group witness additionally covers `join_task<T>` with nontrivial results and
+`finish_task_group`, including release of original handles and continuation on
+a different executor. Source-free C++ consumers, DWARF validation and O0 debugger
+checks remain enrolled in the installed coroutine gate.
