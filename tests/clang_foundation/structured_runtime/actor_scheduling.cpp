@@ -82,7 +82,7 @@ struct Gate {
   std::mutex mutex;
   std::condition_variable changed;
   bool entered = false, open = false;
-  unsigned entrants = 0;
+  unsigned entrants = 0, departures = 0;
 };
 void gate_callback(void *opaque) {
   auto &gate = *static_cast<Gate *>(opaque);
@@ -92,6 +92,8 @@ void gate_callback(void *opaque) {
   gate.changed.notify_all();
   assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
                                [&] { return gate.open; }));
+  ++gate.departures;
+  gate.changed.notify_all();
 }
 
 void exercise(bool manual, bool actor, bool fairness, bool actor_witness,
@@ -434,6 +436,13 @@ void canonical_executor_defaults() {
     std::unique_lock lock(global_probe.mutex);
     assert(global_probe.changed.wait_for(lock, std::chrono::seconds(5),
                                          [&] { return global_probe.ran; }));
+  }
+  // A later queued callback can finish while another pool worker still uses
+  // this stack gate. Join every gate callback before destroying its storage.
+  {
+    std::unique_lock lock(gate.mutex);
+    assert(gate.changed.wait_for(lock, std::chrono::seconds(5),
+                                 [&] { return gate.departures == 4; }));
   }
   objc3_executor_release(global);
 }

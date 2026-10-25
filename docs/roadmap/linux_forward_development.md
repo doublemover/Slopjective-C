@@ -9,7 +9,7 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **349 native Clang regressions** pass, with three
+The resumed compiler build and **350 native Clang regressions** pass, with three
 unsupported cases. Four standalone runtime suites and 83 focused tooling tests
 also pass, including ASan/UBSan runs of all four runtime suites. All five feature
 families pass: 168 configurations and 942 commands (captures/keypaths/spawn 24
@@ -34,7 +34,12 @@ facade suites now pass across the collector and focused repair runs. C++ actor
 entry additionally preserves method `nothrow`, establishes generated thunk frame
 identity before code generation, and admits implicit ARC cleanup of transitively
 Sendable aggregate fields. Required unchecked-transfer notes no longer depend
-on a preceding warning.
+on a preceding warning. Postponed instrumentation also exposed and repaired
+one-argument C++ `reset` parsing, physical async function hashes for UBSan and
+ramp exception scratch accidentally spilled into a freed coroutine frame.
+The structured runtime's global-pool fixture now joins all four callbacks before
+its stack gate dies. Its ASan/UBSan and TSan O0/O2 runs pass, as do all 12 task/
+group-await sanitizer configurations; remaining async instrumentation is active.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.

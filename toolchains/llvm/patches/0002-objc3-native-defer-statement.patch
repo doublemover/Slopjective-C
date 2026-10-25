@@ -584,10 +584,10 @@ index 9a97d52fd..7b762fe9a 100644
 +}
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
-index 000000000..20b83e18c
+index 000000000..8132bdb55
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,471 @@
+@@ -0,0 +1,500 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -596,6 +596,8 @@ index 000000000..20b83e18c
 +//
 +//===----------------------------------------------------------------------===//
 +
++#include "clang/AST/Attr.h"
++#include "clang/AST/Expr.h"
 +#include "clang/Basic/DiagnosticParse.h"
 +#include "clang/Basic/ObjC3Syntax.h"
 +#include "clang/Parse/Parser.h"
@@ -942,7 +944,8 @@ index 000000000..20b83e18c
 +}
 +
 +ExprResult Parser::ParseObjC3ResourceExpression() {
-+  ObjC3Syntax Syntax = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName());
++  IdentifierInfo *Identifier = Tok.getIdentifierInfo();
++  ObjC3Syntax Syntax = classifyObjC3Syntax(Identifier->getName());
 +  using Kind = ObjC3ResourceExpr::Kind;
 +  Kind Operation = Syntax == ObjC3Syntax::Take    ? Kind::Take
 +                   : Syntax == ObjC3Syntax::Reset ? Kind::Reset
@@ -959,6 +962,32 @@ index 000000000..20b83e18c
 +    return ExprError();
 +  }
 +  ExprResult Replacement;
++  if (Operation == Kind::Reset && Tok.is(tok::r_paren)) {
++    const auto *Reference =
++        dyn_cast<DeclRefExpr>(Operand.get()->IgnoreParenImpCasts());
++    const auto *Variable = Reference ? dyn_cast<VarDecl>(Reference->getDecl())
++                                     : nullptr;
++    if (!Variable || !Variable->hasAttr<ObjCResourceAttr>()) {
++      // reset has two operands only in resource syntax. Preserve ordinary
++      // one-argument calls, including unqualified C++ smart-pointer members.
++      UnqualifiedId Name;
++      Name.setIdentifier(Identifier, Keyword);
++      CXXScopeSpec Scope;
++      ExprResult Callee = Actions.ActOnIdExpression(
++          getCurScope(), Scope, SourceLocation(), Name,
++          /*HasTrailingLParen=*/true, /*IsAddressOfOperand=*/false);
++      if (Callee.isInvalid()) {
++        Parens.skipToEnd();
++        return ExprError();
++      }
++      Expr *Argument = Operand.get();
++      ExprResult Call = Actions.ActOnCallExpr(
++          getCurScope(), Callee.get(), Parens.getOpenLocation(),
++          MutableArrayRef<Expr *>(&Argument, 1), Tok.getLocation());
++      Parens.consumeClose();
++      return Call;
++    }
++  }
 +  if (Operation == Kind::Reset) {
 +    if (ExpectAndConsume(tok::comma)) {
 +      Parens.skipToEnd();

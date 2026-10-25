@@ -41259,10 +41259,10 @@ index 000000000..297bcd557
 +#endif
 diff --git a/clang/test/ObjC3/Parser/resource-contextual-empty-call.m b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
 new file mode 100644
-index 000000000..4dfa639eb
+index 000000000..ae9e8e6da
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,25 @@
 +// RUN: %clang_cc1 -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
 +// expected-no-diagnostics
@@ -41275,6 +41275,19 @@ index 000000000..4dfa639eb
 +  reset();
 +  discard();
 +}
++
++#ifdef __cplusplus
++template <class T> struct Pointer {
++  T *release();
++  void reset(T *);
++  void assign(Pointer &other) { reset(other.release()); }
++  void clear() { reset(nullptr); }
++};
++void member_calls(Pointer<int> &value, Pointer<int> &other) {
++  value.assign(other);
++  value.clear();
++}
++#endif
 diff --git a/clang/test/ObjC3/Parser/borrowed-eof-recovery.c b/clang/test/ObjC3/Parser/borrowed-eof-recovery.c
 new file mode 100644
 index 000000000..d3f640832
