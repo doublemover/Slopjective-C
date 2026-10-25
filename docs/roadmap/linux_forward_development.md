@@ -9,15 +9,15 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The combined delivery checkpoint passes **355 native Clang/index/query regressions**
-(352 in the ObjC3 suite), with three unsupported cases, and all 166 native
+The combined delivery checkpoint passes **356 native Clang/index/query regressions**
+(353 in the ObjC3 suite), with three unsupported cases, and all 166 native
 AST/matcher/source-tooling contracts. Compiler, editor and debugger targets build;
 all 32 facade suites, eight GNUstep runtime integration tests, 37 installed
-consumer checks and 13 selected native integration nodes pass. All **32 installed
+consumer checks and 13 selected native integration nodes pass. All **33 installed
 SDK qualification gates** pass against the frozen source identity
-`llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3`.
-The exact archive also passes the recorded native-feature scope on pinned
-Debian 13 and Ubuntu 26.04, including ordinary-user consumers.
+`llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`.
+Fresh Debian 13 and Ubuntu 26.04 checks of this archive are running. The earlier
+32-gate delivery passed both distributions with its recorded source identity.
 
 The five feature families pass 168 configurations / 942 commands against the
 installed SDK. Separate development runs pass the same complete matrix under
@@ -48,16 +48,17 @@ The audit also found unenrolled capture diagnostic/IR/persistence and spawn
 fixtures. The new compiler-witness runner passes 153 commands, 24 source/PCH
 executions and 24 intended rejections using the published compiler and repaired
 source fixtures. Persistence now copies Blocks through the native runtime,
-including MRC, instead of requiring Foundation Block methods. The next SDK adds
-this runner, its fixtures and FileCheck as a **33rd gate**. These additions are not
-in the published 32-gate archive.
+including MRC, instead of requiring Foundation Block methods. The new SDK includes
+this runner, its fixtures and FileCheck as a **33rd gate**, which passes against
+the sealed installed candidate. The 32-gate receipt predates these additions.
 
 The next compiler source span implements [C++ coroutine lexical autorelease
 pools](linux_async_lexical_pools.md): drain before publishing a suspended frame,
 reopen on its actual continuation thread, restore scopes on throwing suspension,
 and close exactly once on normal/exceptional exits. Focused IR and ARC/MRC runtime
-preflights pass. Combined compiler regression, sanitizer and 33-gate SDK validation
-are in progress; the published archive still contains source identity `49f322e67e0d`.
+preflights pass. The complete 356 compiler regressions, 166 native contracts, 16 native C++ async
+sanitizer configurations and all 33 installed SDK gates now pass. Fresh Debian/Ubuntu
+archive checks are running.
 Remaining items below are actual implementation work followed by validation.
 
 ## Published implementation checkpoint
@@ -186,10 +187,10 @@ hashes to the foundation, installed-consumer, sanitizer and fresh-distribution
 reports. It records the precise scope of each run rather than treating development
 instrumentation as a rebuild of the final archive.
 
-The current [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
+The earlier [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
 records SDK seal
 `6b7dcd87d22fe675574c1131221d29771d9359aac1944b66e7a3cae45bc7cc0f`;
-its 434,694,917-byte archive has SHA-256
+its historical 434,694,917-byte archive has SHA-256
 `303e84dad4f2a741d9ccd94c20eaa92bc2b3e94dc7d913bcf32793c8f5ecacad`.
 The host release runs all 32 installed gates. Fresh-distribution scope installs
 that exact archive, checks relocation, embedding and debugging, then executes

@@ -24,8 +24,9 @@ Focused development checks pass: compiler build, the new C++ pool IR test and
 existing C pool IR test, plus C++20 ARC/O0 and C++23 MRC/O2 native async preflights.
 The runtime witnesses cover nested pools, ready/vetoed/throwing awaits,
 cross-thread resume, suspended destruction on another thread, six nested scopes,
-exceptions and existing manual/worker/actor executor hops. Broader regression,
-sanitizer and SDK qualification for this source span remain postponed.
+exceptions and existing manual/worker/actor executor hops. The complete compiler run passes 356 regressions and 166 native contracts;
+all 16 native C++ async sanitizer configurations and all 33 installed SDK gates
+pass. Exact archive qualification on fresh Debian/Ubuntu is running.
 
 This changes code generation without adding an AST statement or runtime record
 layout. Native extension ABI 21 and the existing task/frame service versions

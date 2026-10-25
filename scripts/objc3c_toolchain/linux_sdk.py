@@ -21,7 +21,9 @@ from .qualify_installed import qualify_installed
 from .sdk_example import write_json
 
 
-PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
+# FileCheck is added by project packaging, with its bytes bound separately in
+# input_identity. It must not mutate the reusable LLVM foundation signature.
+PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'bin/FileCheck', 'lib/libobjc',
                         'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
                         'include/objc3/', 'include/runtime/', 'share/objc3c/')
 
