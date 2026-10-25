@@ -93,7 +93,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 0,
+        "minor": 1,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -109,11 +109,13 @@
         "named executor registration, retained lookup and affinity queries",
         "native C function, method and Block frame lowering (authored)",
         "canonical frame-versus-task callable ABI and C++ frame bridge (authored)",
-        "cancellation-shielded cleanup joins and explicit-destination children (authored)"
+        "cancellation-shielded cleanup joins and explicit-destination children (authored)",
+        "typed native C task-handle join declarations and checked error transport (source)",
+        "lazy task/group handle frame adapters and C++ raw-handle joins (source)"
       ],
       "remaining": [
-        "public spawn lowering and structured scope finalization",
-        "awaited isolation and executor crossing lowering",
+        "remaining spawn/capture forms and automatic structured scope finalization",
+        "remaining awaited isolation/executor crossing forms and native group iteration",
         "complete strict concurrency and Sendable enforcement"
       ]
     },

@@ -35,7 +35,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
     sources = [repo / 'native/objc3c/src/runtime' / name for name in (
         'services/error_service.cpp', 'services/objc_task_error.cpp',
         'services/carrier_service.cpp',
-        'concurrency/service_executor.cpp', 'concurrency/service_task.cpp',
+        'concurrency/service_executor.cpp', 'concurrency/service_task.cpp', 'concurrency/service_async_join.cpp',
         'concurrency/service_group.cpp', 'concurrency/service_actor.cpp',
         'concurrency/service_actor_object.cpp',
         'concurrency/service_public.cpp')]

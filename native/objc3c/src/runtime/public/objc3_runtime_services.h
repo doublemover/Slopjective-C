@@ -275,6 +275,22 @@ objc3_service_status objc3_async_frame_spawn(objc3_async_frame *frame,
 objc3_service_status objc3_async_frame_detach(objc3_async_frame *frame,
                                               objc3_task_t **out_task);
 
+/* Lazy nonblocking adapters for existing shared handles. Success writes one
+ * independently owned frame; failure leaves out_frame unchanged. The caller
+ * supplies empty/uninitialized output storage. Task adaptation requires a known
+ * canonical result type and retains the dependency until frame destruction.
+ * Cancellation/disposal of an adapter releases its lease without independently
+ * cancelling the shared dependency. Group adaptation retains the group, closes
+ * its complete tree on first resume, and awaits quiescence with a VOID result.
+ * Adapters reject joins of their direct structured parent, including group
+ * membership, to prevent hiding a self-cycle behind the additional frame.
+ * They do not create an implicit structured scope or shield caller unwind.
+ */
+objc3_service_status objc3_async_frame_from_task(objc3_task_t *dependency,
+                                                objc3_async_frame *out_frame);
+objc3_service_status objc3_async_frame_from_group(objc3_task_group_t *group,
+                                                 objc3_async_frame *out_frame);
+
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own
  * a bounded scheduling thread. enqueue transfers no ownership of context.

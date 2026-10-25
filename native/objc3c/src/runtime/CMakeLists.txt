@@ -18,6 +18,7 @@ add_library(objc3_runtime_services STATIC
   services/carrier_service.cpp
   concurrency/service_executor.cpp
   concurrency/service_task.cpp
+  concurrency/service_async_join.cpp
   concurrency/service_group.cpp
   concurrency/service_actor.cpp
   concurrency/service_actor_object.cpp
@@ -54,7 +55,9 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
   add_executable(objc3_async_error_bridge_test
     "${_repo}/tests/clang_foundation/structured_runtime/error_bridge.cpp")
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
-  foreach(_test task_services structured_runtime async_error_bridge keypath_service)
+  add_executable(objc3_async_handle_join_test
+    "${_repo}/tests/clang_foundation/async_handle_joins/runtime.cpp")
+  foreach(_test task_services structured_runtime async_error_bridge keypath_service async_handle_join)
     target_link_libraries(objc3_${_test}_test PRIVATE objc3_runtime_services)
     target_compile_options(objc3_${_test}_test PRIVATE -UNDEBUG)
     add_test(NAME objc3_${_test} COMMAND objc3_${_test}_test)

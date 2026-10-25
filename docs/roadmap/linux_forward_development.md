@@ -34,6 +34,17 @@ onboarding tests. GitHub documentation and tooling checks pass; overlapping
 batches are not summed.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
+## Active handle-await source span
+
+[Native task/group handle joins](linux_async_handle_joins.md) now provide lazy
+shared-frame adapters, typed C declarations with checked error transport, and
+C++ raw-handle adoption/group finishing. Independent handle/result ownership,
+nonblocking quiescence and hidden self-cycle rejection are implemented. Focused
+runtime, C source/PCH and C++ preflights pass; broader validation follows the
+source span. These concurrency 2.1.0 headers/runtime changes are newer than the
+accepted 33-gate archive. Automatic structured-scope finalization and native
+group iteration remain open; ordinary joins do not shield caller unwind.
+
 ## Coverage and lexical pool delivery
 
 A coverage audit found that the separately authored typed-keypath package fixture
@@ -114,7 +125,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 Per-feature detail and authored witnesses:
 
 - [Borrowed pointers](linux_borrowed_pointers.md) and [explicit captures](linux_explicit_capture_lists.md).
-- [Native C definitions](linux_native_c_definitions.md), [shared async ABI](linux_async_c_abi.md) and [structured runtime](linux_structured_runtime_next.md).
+- [Native C definitions](linux_native_c_definitions.md), [shared async ABI](linux_async_c_abi.md), [handle joins](linux_async_handle_joins.md) and [structured runtime](linux_structured_runtime_next.md).
 - [Isolation and Sendable](linux_native_isolation_sendable.md).
 - [Typed key paths](linux_typed_keypaths.md).
 - [Native module contracts](linux_native_interface_contracts.md).

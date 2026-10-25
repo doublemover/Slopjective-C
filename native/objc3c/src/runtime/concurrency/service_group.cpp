@@ -894,6 +894,17 @@ objc3_service_status await_group(TaskGroup *group, objc3_task_t *parent,
 }
 } // namespace
 
+bool task_group_contains_target(
+    TaskGroup *group, const std::shared_ptr<objc3_task::AwaitTarget> &target) {
+  if (!group || !target) return false;
+  std::lock_guard<std::mutex> lock(group->mutex);
+  for (const auto &entry : group->tasks)
+    if (entry.task->await_target == target) return true;
+  for (auto *child : group->children)
+    if (task_group_contains_target(child, target)) return true;
+  return false;
+}
+
 objc3_service_status task_group_await(TaskGroup *group, objc3_task_t *parent,
                                       objc3_service_status *out_status) {
   return await_group(group, parent, out_status, false);

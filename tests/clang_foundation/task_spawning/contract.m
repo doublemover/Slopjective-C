@@ -27,6 +27,8 @@ __attribute__((objc_root_class))
 #endif
 @end
 
+#include "handle_joins.h"
+
 typedef struct SpawnState {
   objc3_actor_t *actor;
   objc3_executor_t *source, *global;
@@ -191,6 +193,7 @@ int main(void) {
     objc3_task_release(state.parent);
     objc3_task_group_release(state.group);
   }
+  handle_join_witnesses(source);
   unsigned error_destroyed = 0;
   checked_spawn_error_ownership(&error_destroyed);
   wait_for_destructions(&error_destroyed, 1);

@@ -826,6 +826,33 @@ public:
   }
 };
 
+/* Borrow an existing raw C handle into a lazy typed await. The adapter takes
+ * its own lease immediately. Failure/type rejection releases only that lease;
+ * the caller's original handle remains owned by the caller. */
+template <class T> task<T> join_task(objc3_task_t *dependency) {
+  objc3_async_frame frame{};
+  task_detail::check(objc3_async_frame_from_task(dependency, &frame));
+  try {
+    return task<T>::from_native(&frame);
+  } catch (...) {
+    (void)objc3_async_frame_dispose(&frame);
+    throw;
+  }
+}
+
+/* Close on first resume and join the retained group tree without blocking.
+ * This explicit library operation does not establish an implicit scope. */
+inline task<void> finish_task_group(task_group_handle group) {
+  objc3_async_frame frame{};
+  task_detail::check(objc3_async_frame_from_group(group.native_handle(), &frame));
+  try {
+    return task<void>::from_native(&frame);
+  } catch (...) {
+    (void)objc3_async_frame_dispose(&frame);
+    throw;
+  }
+}
+
 } // namespace objc3
 
 // Reserved compiler hook. The canonical source function retains its logical

@@ -159,6 +159,27 @@ static inline objc3_task_t *objc3_task_detached(objc3_task_throwing_work work)
 }
 #endif
 
+#ifndef __cplusplus
+/* Declare a typed native await entry for an existing C task handle. The result
+ * is validated against the task's canonical descriptor before copy-out; a
+ * mismatched declaration reports TYPE_MISMATCH. Typedefs support records,
+ * objects and Blocks without erasing their native ownership/result kind.
+ * Checked task errors retain their source domain on the explicit variant.
+ * These declarations use the shared frame ABI, not a source callback body. */
+#define OBJC_TASK_JOIN_DECLARE(name, result_type) \
+  extern result_type name(objc3_task_t *) __objc3_async_frame \
+      __asm__("__objc3_task_join_frame")
+#define OBJC_TASK_JOIN_DECLARE_THROWING(name, result_type, error_type) \
+  extern result_type name(objc3_task_t *) __objc3_async_frame \
+      __objc3_throws(error_type) __asm__("__objc3_task_join_frame")
+
+/* Close and nonblockingly join an existing group tree. The group is retained
+ * by the lazy frame, independently of the caller's handle. Ordinary caller
+ * cancellation remains observable; this is an explicit join, not a scope. */
+extern void objc3_task_group_join_async(objc3_task_group_t *)
+    __objc3_async_frame __asm__("__objc3_task_group_join_frame");
+#endif
+
 /* Direct recognized calls preserve one evaluation, capture diagnostics and
  * child/detached metadata at the user's original macro argument site. */
 #define OBJC_TASK_SPAWN(block_expr) objc3_task_spawn((block_expr))
