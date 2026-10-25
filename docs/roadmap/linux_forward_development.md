@@ -28,7 +28,24 @@ The latest package/source-graph/audit tooling batch passes 153 tests, alongside
 focused installer, runtime, source-seal and distribution-runner checks.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
-## Active implementation checkpoint
+## Active package follow-up
+
+The receipt below covers the published `fc84b2203` checkpoint. A coverage audit
+found that the separately authored typed-keypath package fixture was absent
+from its 31 enrolled gates. Package compilation now enables SDK Clang modules
+with a private cache in the owned build output. Interface emission recognizes
+canonical system-library imports only when their module name and exact public
+header match the library inventory; public dependency checking remains active.
+Builtin `instancetype` is preserved without requiring an external package.
+
+The newly enrolled typed-keypath package gate covers 12 modes and source-free,
+relocated consumers, including readonly rejection and cross-image metadata
+identity. A workspace inventory regression guards against dropping another
+maintained package example. Focused native import checks and provider emission
+pass; the expanded 32-gate SDK qualification is pending. Remaining items in the
+completion sequence are implementation work, followed by their own validation.
+
+## Published implementation checkpoint
 
 The completed implementation is exported into maintained compiler patches,
 sealed and delivered as the current Linux SDK. C++ frame definitions and the

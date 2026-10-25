@@ -141,6 +141,15 @@ def runtime_link_flags(sdk: Path) -> list[str]:
             '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff']
 
 
+def native_module_compile_flags(language: str, output: Path) -> list[str]:
+    # Canonical objc3 library imports use Clang modules alongside the facade's
+    # source-free package imports. Cache derived PCM files in the owned build
+    # output, never in the sealed SDK or a shared home-directory cache.
+    if language == 'c++':
+        return []
+    return ['-fmodules', '-fmodules-cache-path=' + str(output / '.clang-modules')]
+
+
 def coroutine_compile_flags(language: str) -> list[str]:
     return ['-fcoro-aligned-allocation'] if '++' in language else []
 
@@ -191,7 +200,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     stages = {}
     common = [str(sdk / 'bin/objc3c')]
     mode = ['--objc3', '--target', target, '--runtime', 'gnustep-2.2']
-    flags = ['--', '--no-default-config', '-std=c17', '-fblocks', '-' + optimization, '-g',
+    flags = ['--', '--no-default-config', '-std=c17', *native_module_compile_flags('objective-c', output), '-fblocks', '-' + optimization, '-g',
              '-Wno-pragma-once-outside-header']
     base = {'sdk_seal': sdk_identity, 'sdk_root': str(sdk), 'recipe_sha256': recipe,
             'source_root': str(sources), 'output_root': str(output),

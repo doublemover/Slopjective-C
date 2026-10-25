@@ -12,6 +12,7 @@
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/Module.h"
 #include "clang/Basic/TargetInfo.h"
 
 namespace objc3::clang_foundation {
@@ -109,6 +110,31 @@ bool ResultDescriptorMatches(clang::QualType type,
 }
 
 } // namespace
+
+bool IsQualifiedStandardLibraryImport(const clang::ImportDecl *declaration,
+                                      const clang::ASTContext &context) {
+  const auto *module = declaration ? declaration->getImportedModule() : nullptr;
+  if (!module || !module->IsSystem)
+    return false;
+  const auto name = module->getFullModuleName();
+  const auto &source = context.getSourceManager();
+  for (const auto &contract : runtime_interface::kStandardLibraryHeaders) {
+    if (name != contract.module)
+      continue;
+    // Canonical submodules each own exactly one public header. Do not admit a
+    // module which adds, excludes, or redirects headers under a trusted name.
+    const auto headers = module->getAllHeaders();
+    if (headers.size() != 1 ||
+        module->getHeaders(clang::Module::HK_Normal).size() != 1)
+      return false;
+    const auto file = source.translateFile(headers.front().Entry);
+    if (file.isInvalid())
+      return false;
+    const auto bytes = source.getBufferDataOrNone(file);
+    return bytes && ComputeInterfaceSourceSha256(*bytes) == contract.sha256;
+  }
+  return false;
+}
 
 llvm::StringRef RuntimeInterfaceSemantic() {
   return runtime_interface::kSemantic;

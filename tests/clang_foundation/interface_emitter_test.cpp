@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <string>
@@ -13,6 +16,8 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/ADT/SmallString.h"
 
 using namespace objc3::clang_foundation;
 
@@ -44,6 +49,61 @@ void TestOrdinaryCDeclarationsRoundTrip() {
   assert(decoded->declarations.size() >= 4);
   assert(decoded->canonical_source_sha256 ==
          ComputeInterfaceSourceSha256(emitted.source_bytes));
+}
+
+void TestStandardLibraryImportsAndInstancetype() {
+  llvm::SmallString<128> unique;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-sdk-module-contract", unique));
+  const std::filesystem::path root(unique.c_str());
+  for (const std::string mode : {"valid", "changed-header", "foreign-module",
+                                 "non-system", "extra-header", "public-sdk-type"}) {
+    const auto directory = root / mode;
+    std::filesystem::create_directory(directory);
+    const auto header = directory / "core.h";
+    std::filesystem::copy_file(
+        std::filesystem::path(OBJC3_INTERFACE_TEST_STDLIB_HEADERS) / "core.h", header);
+    if (mode == "changed-header") {
+      std::ofstream output(header, std::ios::app);
+      output << "\n/* modified public SDK header */\n";
+    }
+    const std::string module = mode == "foreign-module" ? "foreign.core" : "objc3.core";
+    {
+      std::ofstream output(directory / "module.modulemap");
+      output << "module " << (mode == "foreign-module" ? "foreign" : "objc3")
+             << (mode == "non-system" ? "" : " [system]")
+             << " { explicit module core { header \"core.h\" ";
+      if (mode == "extra-header") {
+        std::ofstream extra(directory / "extra.h");
+        extra << "typedef int unexpected_sdk_type;\n";
+        output << "header \"extra.h\" ";
+      }
+      output << "export * } }\n";
+    }
+    const std::string source = "@import " + module + ";\n" +
+        "__attribute__((objc_root_class)) @interface ExportedRoot\n"
+        "+ (instancetype)new;\n@end\n" +
+        (mode == "public-sdk-type" ? "objc3_byte_span imported_span(void);\n"
+                                    : "int exported_value(void);\n");
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+        {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu",
+         "-fmodules", "-fmodules-cache-path=" + (directory / "cache").string(),
+         "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR,
+         "-I" + directory.string()}, "sdk-module-interface.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    const auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.sdk", "test");
+    if (mode == "valid") {
+      assert(emitted.success);
+      assert(emitted.source_bytes.find("instancetype") != std::string::npos);
+      assert(emitted.source_bytes.find("@import") == std::string::npos);
+    } else {
+      assert(!emitted.success && emitted.source_bytes.empty());
+      const char *expected = mode == "public-sdk-type" ? "O3IFC112" : "O3IFC111";
+      assert(std::any_of(emitted.diagnostics.begin(), emitted.diagnostics.end(),
+          [&](const auto &diagnostic) { return diagnostic.code == expected; }));
+    }
+  }
+  std::filesystem::remove_all(root);
 }
 
 void TestNativeOwnershipContractsRoundTrip() {
@@ -813,6 +873,7 @@ void TestBoundedCxxSemanticInterfaces() {
 
 int main() {
   TestOrdinaryCDeclarationsRoundTrip();
+  TestStandardLibraryImportsAndInstancetype();
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
   TestConsumedAndMethodOwnershipRoundTrips();

@@ -185,7 +185,9 @@ implementation does not qualify arbitrary cross-profile package projection.
 Authored additional witnesses cover mixed direct/indirect/Block/method calls,
 C++ checked frame awaits, PCH persistence, callback mangling, cache separation,
 frame-only C++ calls without the task header, incompatible ABI redeclarations and
-assignments, and adoption-failure ownership. These remain unbuilt and unrun.
+assignments, and adoption-failure ownership. The coordinated native compiler
+and facade/PCH suites execute these fixtures.
 
-Public async/await and actor capability predicates remain reserved. The existing
-SDK/archive documentation continues to describe its previously built sources.
+Public async/await and actor capability predicates remain reserved. The
+[integration receipt](../support/linux_native_feature_integration_acceptance.json)
+identifies the published compiler and SDK checkpoint.

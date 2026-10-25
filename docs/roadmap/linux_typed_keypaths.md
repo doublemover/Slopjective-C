@@ -141,7 +141,7 @@ erase those ownership requirements. Nullable final properties are supported.
 Optional `root[path]` sugar and explicit NSString KVC boxing are not implemented. These boundaries must remain visible in inventory
 and conformance reporting.
 
-Pending fixtures cover parser/sema diagnostics, C17 and C++20/23 PCH import,
+Maintained fixtures cover parser/sema diagnostics, C17 and C++20/23 PCH import,
 native AST import, source printing/reparse, concrete generic roots, incompatible
 library metadata, native metadata-service failures/equality, and separate native
 translation units exercising exact-once evaluation, aggregates, custom selectors,
@@ -152,5 +152,12 @@ PCH fixtures cover signatures preceding the metadata header and nested generic,
 callback, pointer, and member-pointer nullability identity. Runtime fixtures also
 cover nullable short-circuit counts, Block results, root release by a later
 operand, exceptional snapshot cleanup, and retained getter result balancing.
-`tests/clang_foundation/typed_keypath_packages` supplies native source-package
-and import fixtures. None has been executed in this development phase.
+`tests/clang_foundation/typed_keypath_packages` supplies the separately authored
+native source-package fixture. It was missing from the 31-gate published SDK
+qualification. The new `qualify_typed_keypath_packages` gate distributes and
+executes it across 12 C17/C++20/C++23 ARC/MRC O0/O2 configurations: source build,
+full reuse, publication/relocation, provider-source removal and source-free
+consumption, plus a rejected readonly setter in each mode. It also compares
+producer and consumer key-path metadata identities. Expanded SDK qualification
+is pending; the earlier 24-case runtime matrix did not establish this package
+coverage.

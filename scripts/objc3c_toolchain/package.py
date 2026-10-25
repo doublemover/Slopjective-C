@@ -121,6 +121,21 @@ def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, count
     return evidence
 
 
+# Source workspace examples are distributed as executable qualification inputs.
+# Tests discover maintained workspaces independently to catch forgotten staging.
+SOURCE_PACKAGE_EXAMPLES = {
+    'source_graph': 'packages',
+    'ownership_projection': 'ownership-projection',
+    'public_module_surface': 'public-module-surface',
+    'api_availability': 'api-availability',
+    'module_spi': 'module-spi',
+    'module_names': 'module-names',
+    'native_async_packages': 'native-async-packages',
+    'async_c_frame_packages': 'async-c-frame-packages',
+    'typed_keypath_packages': 'typed-keypath-packages',
+}
+
+
 def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
     from compression import zstd
 
@@ -200,7 +215,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_carrier_debugger.py', 'qualify_carrier_debugger.py'),
                                 ('qualify_recursive_carriers.py', 'qualify_recursive_carriers.py'),
                                 ('qualify_native_async.py', 'qualify_native_async.py'),
-                                ('qualify_native_async_packages.py', 'qualify_native_async_packages.py')):
+                                ('qualify_native_async_packages.py', 'qualify_native_async_packages.py'),
+                                ('qualify_typed_keypath_packages.py', 'qualify_typed_keypath_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copyfile(repo / 'scripts/objc3c_native_validation/defer_source.py',
                     builder / 'defer_source.py')
@@ -218,18 +234,6 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/recursive-carriers')
     shutil.copytree(repo / 'tests/clang_foundation/defer_control_flow',
                     prefix / 'share/objc3c/examples/defer-control-flow')
-    shutil.copytree(repo / 'tests/clang_foundation/source_graph',
-                    prefix / 'share/objc3c/examples/packages')
-    shutil.copytree(repo / 'tests/clang_foundation/ownership_projection',
-                    prefix / 'share/objc3c/examples/ownership-projection')
-    shutil.copytree(repo / 'tests/clang_foundation/public_module_surface',
-                    prefix / 'share/objc3c/examples/public-module-surface')
-    shutil.copytree(repo / 'tests/clang_foundation/api_availability',
-                    prefix / 'share/objc3c/examples/api-availability')
-    shutil.copytree(repo / 'tests/clang_foundation/module_spi',
-                    prefix / 'share/objc3c/examples/module-spi')
-    shutil.copytree(repo / 'tests/clang_foundation/module_names',
-                    prefix / 'share/objc3c/examples/module-names')
     shutil.copytree(repo / 'tests/clang_foundation/structured_runtime',
                     prefix / 'share/objc3c/examples/structured-runtime')
     shutil.copytree(repo / 'tests/clang_foundation/task_coroutines',
@@ -242,10 +246,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/async-c-abi')
     shutil.copytree(repo / 'tests/clang_foundation/native_async',
                     prefix / 'share/objc3c/examples/native-async')
-    shutil.copytree(repo / 'tests/clang_foundation/native_async_packages',
-                    prefix / 'share/objc3c/examples/native-async-packages')
-    shutil.copytree(repo / 'tests/clang_foundation/async_c_frame_packages',
-                    prefix / 'share/objc3c/examples/async-c-frame-packages')
+    for source, installed in SOURCE_PACKAGE_EXAMPLES.items():
+        shutil.copytree(repo / 'tests/clang_foundation' / source,
+                        prefix / 'share/objc3c/examples' / installed)
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
@@ -309,6 +312,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_recursive_carriers import qualify as qualify_recursive_carriers
     from .qualify_native_async import qualify as qualify_async
     from .qualify_native_async_packages import qualify as qualify_async_packages
+    from .qualify_typed_keypath_packages import qualify as qualify_keypath_packages
 
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
@@ -340,6 +344,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_async_c_abi': partial(qualify_async_c_abi, prefix, validation_report.parent / 'installed-async-c-abi'),
         'installed_native_async': partial(qualify_async, prefix, validation_report.parent / 'installed-native-async'),
         'installed_native_async_packages': partial(qualify_async_packages, prefix, validation_report.parent / 'installed-native-async-packages'),
+        'installed_typed_keypath_packages': partial(qualify_keypath_packages, prefix, validation_report.parent / 'installed-typed-keypath-packages'),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),

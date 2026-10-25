@@ -481,7 +481,8 @@ class TypeDependencyVisitor final
     if (context_.getLangOpts().ObjC && declaration) {
       for (const auto *builtin :
            {context_.getObjCIdDecl(), context_.getObjCClassDecl(),
-            context_.getObjCSelDecl()}) {
+            context_.getObjCSelDecl(),
+            const_cast<clang::ASTContext &>(context_).getObjCInstanceTypeDecl()}) {
         if (declaration == builtin ||
             (builtin && !declaration->hasAttrs() &&
              declaration->getIdentifier() == builtin->getIdentifier() &&
@@ -737,6 +738,8 @@ class InterfaceCollector final
    }
 
   bool VisitImportDecl(clang::ImportDecl *declaration) {
+    if (IsQualifiedStandardLibraryImport(declaration, context_))
+      return true;
     if (IsInMainFile(context_, declaration->getLocation())) {
       const auto *module = declaration->getImportedModule();
       AddDiagnostic(result_, "O3IFC111",

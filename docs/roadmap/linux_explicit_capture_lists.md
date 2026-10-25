@@ -145,13 +145,14 @@ under ARC/MRC. The
 fixtures cover source/PCH runtime snapshots, contextual names, zeroing weak and
 unsafe captures, moved-from values, heap copies sharing one resource, address
 callbacks, sentinels, left-to-right C++ capture effects, construction failure,
-heap-copy rollback and IR ownership operations. They are authored evidence,
-not passing results.
+heap-copy rollback and IR ownership operations. The native/facade suites and
+24-case source/PCH runtime matrix execute these inputs.
 
 Further fixtures cover captured resource operations, transferred owners,
 deferred discard during unwind, ordinary/return/goto exits, nested creation
 scopes, precise Block lifetime receivers and throwing full-expression
-temporaries after object/resource/C++ moves. These remain unexecuted.
+temporaries after object/resource/C++ moves. The C++ exception and ARC return
+cleanup executables are included in the source-transport runtime matrix.
 `return_failures.h`/`.m` and the C++ exception fixture additionally cover prepared
 retained/autoreleased and `id`-erased Block results, failed return temporaries,
 nested catches, and both escaping and locally handled deferred checked errors.
@@ -160,7 +161,7 @@ Remaining boundaries include unqualified/mixed/C++ carrier move captures,
 potentially
 throwing resource final disposal, unqualified foreign/raw return staging,
 broad exceptional CFG capture admission and
-end-to-end validation of the combined native compiler packets. Borrowed escape
-and concurrent-transfer admission are implemented by their owning slices and
-must be verified with these capture paths. Native source is exported and sealed
+remaining ownership/profile projections. Borrowed escape and concurrent-transfer
+admission are implemented by their owning slices and exercised with the capture
+paths in the native/facade and runtime matrices. Native source is exported and sealed
 centrally by the root agent; no nested LLVM Git commit is part of this work.

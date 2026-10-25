@@ -13,12 +13,12 @@ import sys
 import time
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
+    from .sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 else:
     # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
     # bytecode out of that installation without changing library callers.
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
+    from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 
 WORKSPACE = 'objc3c.source-workspace.v4'
 PACKAGE = 'objc3c.source-package.v4'
@@ -280,7 +280,8 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         if name != APP:
             for declaration in config['exports']:
                 command += ['--export-declaration', declaration]
-        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']), '-fblocks', '-' + optimization,
+        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']),
+                    *native_module_compile_flags(config['language'], output), '-fblocks', '-' + optimization,
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         # A source implementation edit rebuilds that package. Importers depend

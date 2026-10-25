@@ -28,6 +28,22 @@ set(_runtime_services_header "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_runtime_services_header}")
 file(SHA256 "${_runtime_services_header}" _runtime_services_header_sha256)
 file(READ "${_runtime_services_header}" _runtime_services_header_source)
+# SDK module imports are header imports, not unpublished facade dependencies.
+# Bind the allowed names to the exact public headers in the library inventory.
+set(_stdlib_inventory "${_objc3_repo}/stdlib/module_inventory.json")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_stdlib_inventory}")
+file(READ "${_stdlib_inventory}" _stdlib_inventory_json)
+string(JSON _stdlib_module_count LENGTH "${_stdlib_inventory_json}" canonical_modules)
+math(EXPR _stdlib_last_module "${_stdlib_module_count} - 1")
+set(_stdlib_header_contracts "")
+foreach(_stdlib_index RANGE 0 ${_stdlib_last_module})
+  string(JSON _stdlib_module GET "${_stdlib_inventory_json}" canonical_modules ${_stdlib_index} module)
+  string(JSON _stdlib_header GET "${_stdlib_inventory_json}" canonical_modules ${_stdlib_index} header)
+  set(_stdlib_path "${_objc3_repo}/stdlib/${_stdlib_header}")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_stdlib_path}")
+  file(SHA256 "${_stdlib_path}" _stdlib_header_sha256)
+  string(APPEND _stdlib_header_contracts "  {\"${_stdlib_module}\", \"${_stdlib_header_sha256}\"},\n")
+endforeach()
 configure_file(runtime_interface_header.h.in runtime_interface_header.h @ONLY)
 target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
@@ -219,6 +235,9 @@ if (BUILD_TESTING)
   target_include_directories(objc3_interface_emitter_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation clangTooling)
+  target_compile_definitions(objc3_interface_emitter_test PRIVATE
+    OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
+    OBJC3_INTERFACE_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
   add_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
   add_executable(objc3_isolation_contracts_test
     ../../../../tests/clang_foundation/isolation_contracts_test.cpp)
