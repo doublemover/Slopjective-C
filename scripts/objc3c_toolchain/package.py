@@ -361,7 +361,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
                              data['seal_sha256'], suite, counts)
-    priority = ('installed_recursive_carriers', 'installed_async_c_abi',
+    priority = ('installed_typed_keypath_packages',
+                'installed_recursive_carriers', 'installed_async_c_abi',
                 'installed_stdlib', 'installed_match_results',
                 'installed_task_coroutines', 'installed_native_async',
                 'installed_carrier_debugger', 'installed_optional_access',
