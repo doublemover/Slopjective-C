@@ -59,7 +59,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
     "${_repo}/tests/clang_foundation/async_handle_joins/runtime.cpp")
   # Link wrapping preserves sanitizer-provided operator-new interceptors.
   target_link_options(objc3_async_handle_join_test PRIVATE
-    "LINKER:--wrap=_ZnwmRKSt9nothrow_t")
+    "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
+    "LINKER:--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t")
   target_link_options(objc3_async_error_bridge_test PRIVATE
     "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
     "LINKER:--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t")

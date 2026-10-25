@@ -291,6 +291,36 @@ objc3_service_status objc3_async_frame_from_task(objc3_task_t *dependency,
 objc3_service_status objc3_async_frame_from_group(objc3_task_group_t *group,
                                                  objc3_async_frame *out_frame);
 
+/* Compiler-owned Optional<T> construction plan. Version 1 uses a one-byte
+ * discriminant (0=None, 1=Some) and an AST-provided payload offset. Neither
+ * offset is reconstructed from T in the runtime. result_ops owns the complete
+ * Optional, including nested object/Block/carrier storage. Callback code must
+ * outlive all frames/results; factories copy descriptors, identity bytes and
+ * operation tables. Obtain this plan through the native compiler builtin. */
+typedef struct objc3_async_group_next_plan {
+  uint32_t struct_size;
+  uint32_t version;
+  const objc3_async_result_type *element_type;
+  const objc3_async_result_type *result_type;
+  const objc3_value_ops *result_ops;
+  uint64_t payload_offset;
+  uint64_t tag_offset;
+  uint32_t tag_size;
+  uint32_t reserved;
+} objc3_async_group_next_plan;
+
+/* Lazy typed completion-order iteration. First resume closes the group tree.
+ * Some owns an independent copy of the selected value; None means all direct
+ * children were consumed (nested groups are not flattened). Type mismatch
+ * consumes nothing. After reservation, cancellation/copy failure consumes that
+ * item and releases its owner during frame cleanup. Child errors/cancellation
+ * propagate unchanged. No caller output slot is borrowed across suspension.
+ * Disposal/cancellation does not independently cancel the shared group. Output
+ * storage follows the unchanged-on-failure factory convention above. */
+objc3_service_status objc3_async_frame_from_group_next(
+    objc3_task_group_t *group, const objc3_async_group_next_plan *plan,
+    objc3_async_frame *out_frame);
+
 /* A serial executor runs one callback at a time. Manual executors advance only
  * through pump, allowing explicit main-thread ownership. Worker executors own
  * a bounded scheduling thread. enqueue transfers no ownership of context.
