@@ -192,6 +192,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_task_coroutines.py', 'qualify_task_coroutines.py'),
                                 ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
                                 ('qualify_stdlib.py', 'qualify_stdlib.py'),
+                                ('run_linux_feature_batch.py', 'run_linux_feature_batch.py'),
                                 ('qualify_match_results.py', 'qualify_match_results.py'),
                                 ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
                                 ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),

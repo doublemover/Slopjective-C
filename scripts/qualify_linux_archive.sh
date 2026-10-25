@@ -101,6 +101,9 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" 
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
 fi
 if [ "$qualification_scope" = full ] || [ "$qualification_scope" = native-features ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/run_linux_feature_batch.py" \
+  "$OBJC3C_SDK_ROOT" ./native-feature-evidence \
+  --fixtures "$OBJC3C_SDK_ROOT/share/objc3c/examples/linux-features"
 for native_suite in guard_bindings optional_access recursive_carriers carrier_debugger; do
   python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_$native_suite.py" \
     --sdk-root "$OBJC3C_SDK_ROOT" --output "./$native_suite-evidence"

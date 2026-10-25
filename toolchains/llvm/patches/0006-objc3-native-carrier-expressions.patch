@@ -848,7 +848,7 @@ index fdefb6d6b..e32759c03 100644
 +  VisitStmt(S->getStorage());
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..19a1d4e1d 100644
+index 74209f579..b04976c4c 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -896,7 +896,7 @@ index 74209f579..19a1d4e1d 100644
        } else if (TernaryMiddle.isInvalid()) {
          // If we're using '>>' as an operator within a template
          // argument list (in C++98), suggest the addition of
-@@ -890,6 +900,93 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +900,94 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -938,7 +938,8 @@ index 74209f579..19a1d4e1d 100644
 +      return Res;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
-+        NextToken().is(tok::l_paren)) {
++        NextToken().is(tok::l_paren) &&
++        GetLookAheadToken(2).isNot(tok::r_paren)) {
 +      ObjC3Syntax Syntax = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName());
 +      if (Syntax == ObjC3Syntax::Take || Syntax == ObjC3Syntax::Reset ||
 +          Syntax == ObjC3Syntax::Discard) {
@@ -990,7 +991,7 @@ index 74209f579..19a1d4e1d 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
-@@ -1632,6 +1729,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -1632,6 +1730,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
  
        [[fallthrough]];
      case tok::period:
@@ -998,7 +999,7 @@ index 74209f579..19a1d4e1d 100644
      case tok::arrow:
        break;
  
-@@ -1934,6 +2032,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+@@ -1934,6 +2033,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
  
        break;
      }
@@ -1020,7 +1021,7 @@ index 74209f579..19a1d4e1d 100644
      case tok::arrow:
      case tok::period: {
        // postfix-expression: p-e '->' template[opt] id-expression
-@@ -3330,6 +3443,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+@@ -3330,6 +3444,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
    // Inform sema that we are starting a block.
    Actions.ActOnBlockStart(CaretLoc, getCurScope());
  

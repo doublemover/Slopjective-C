@@ -9,11 +9,12 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **345 native Clang regressions** pass, with three
-unsupported cases. Four standalone runtime suites and 60 focused tooling tests
-also pass, including ASan/UBSan runs of all four runtime suites. Capture, keypath
-and spawn execution each pass 24 configurations; isolation passes 48. The async
-matrix and combined SDK qualification remain in progress.
+The resumed compiler build and **346 native Clang regressions** pass, with three
+unsupported cases. Four standalone runtime suites and 83 focused tooling tests
+also pass, including ASan/UBSan runs of all four runtime suites. All five feature
+families pass: 168 configurations and 942 commands (captures/keypaths/spawn 24
+each; async/isolation 48 each). All 166 native AST/matcher/source-tooling contract tests pass; compiler, editor
+and debugger targets build. Combined SDK qualification remains in progress.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
 ## Active implementation checkpoint
@@ -21,7 +22,8 @@ Public async/actor predicates and full Core/Strict conformance remain reserved.
 Development has resumed with a solo integration span. The six prior agents are
 parked. Maintained code and canonical compiler patches preserve their completed
 work. C++ frame definitions and the five-family feature runner are integrated;
-the remaining compiler, editor, debugger and contract-test targets are building.
+compiler/editor/debugger targets and their contract suites pass. Installed SDK
+qualification is the active delivery step.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
@@ -99,8 +101,11 @@ key-path, native C async, isolation and spawn witnesses against an already-built
 It covers source/PCH, C17/C++20/C++23, ARC/MRC, O0/O2 and mixed async provider
 ownership in private temporary directories, retaining only logs and a batch
 report. Explicit compiler/header/library overrides support development testing
-without an SDK archive rebuild. The runner is now being executed against the development compiler/runtime;
-completed C17 capture cases cover source/PCH, ARC/MRC and O0/O2.
+without an SDK archive rebuild. All 168 configurations now pass against the
+development compiler/runtime. Mixed async provider/consumer ownership, frame
+allocation failures, exceptions, task cancellation, checked errors and independent
+result owners are exercised. The same runner is enrolled in SDK packaging and
+fresh-distribution qualification.
 
 ## Existing evidence
 
@@ -117,7 +122,8 @@ The active older SDK is identified by
 [defer delivery evidence](../support/linux_defer_scope_release_acceptance.json)
 and [guard AST evidence](../support/linux_guard_ast_acceptance.json). No new SDK
 archive, installed-feature PASS or complete profile claim is implied by new
-source commits. Validation remains deferred until the combined implementation checkpoint.
+source commits. Current development results are recorded above; combined
+foundation/facade/installed-consumer validation is underway.
 
 ## Development operation
 
@@ -149,5 +155,5 @@ ctest --test-dir out/runtime-development --output-on-failure
 
 This reuses the production service target and does not require a compiler SDK.
 The task-service, structured-runtime, checked-error-bridge and key-path service
-suites pass normally and under ASan/UBSan. The native compiler and four feature
-families pass; the remaining async matrix and SDK qualification are in progress.
+suites pass normally and under ASan/UBSan. The native compiler and all five feature
+families pass; combined SDK qualification is in progress.

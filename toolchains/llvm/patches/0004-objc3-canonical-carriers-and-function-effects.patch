@@ -2561,7 +2561,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..6c932344e 100644
+index d743717ad..1e530c2fb 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2743,9 +2743,9 @@ index d743717ad..6c932344e 100644
          QualType FoundUT = FoundTypedef->getUnderlyingType();
 -        if (Importer.IsStructurallyEquivalent(FromUT, FoundUT)) {
 +        auto FromContract = getObjC3ResourceTypeContract(Importer.getFromContext(),
-+            Importer.getFromContext().getTypedefType(ElaboratedTypeKeyword::None, {}, D));
++            Importer.getFromContext().getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D));
 +        auto ToContract = getObjC3ResourceTypeContract(Importer.getToContext(),
-+            Importer.getToContext().getTypedefType(ElaboratedTypeKeyword::None, {}, FoundTypedef));
++            Importer.getToContext().getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, FoundTypedef));
 +        bool HasContract = FromContract.Cleanup || FromContract.Family || FromContract.Invalid ||
 +                           ToContract.Cleanup || ToContract.Family || ToContract.Invalid;
 +        if (Importer.IsStructurallyEquivalent(FromUT, FoundUT) &&
@@ -3358,7 +3358,47 @@ index d743717ad..6c932344e 100644
  }
  
  namespace {
-@@ -11049,3 +11667,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -9857,6 +10475,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+ 
+   // FIXME: Is there some kind of AttrVisitor to use here?
+   switch (FromAttr->getKind()) {
++  case attr::ObjCRequiresCleanup: {
++    const auto *From = cast<ObjCRequiresCleanupAttr>(FromAttr);
++    AI.importAttr(From, AI.importArg(From->getClose()).value());
++    break;
++  }
++  case attr::ObjCInvalid: {
++    const auto *From = cast<ObjCInvalidAttr>(FromAttr);
++    AI.importAttr(From, AI.importArg(From->getInvalid()).value());
++    break;
++  }
++  case attr::ObjCResourceFamily: {
++    const auto *From = cast<ObjCResourceFamilyAttr>(FromAttr);
++    AI.importAttr(From, Import(From->getFamily()));
++    break;
++  }
++  case attr::ObjCResourceCloseFor: {
++    const auto *From = cast<ObjCResourceCloseForAttr>(FromAttr);
++    AI.importAttr(From, AI.importArg(From->getResourceTypedef()).value());
++    break;
++  }
++  case attr::ObjCCleanup: {
++    const auto *From = cast<ObjCCleanupAttr>(FromAttr);
++    AI.importAttr(From, AI.importArg(From->getClose()).value(),
++                  From->getByAddress(), AI.importArg(From->getCall()).value());
++    break;
++  }
++  case attr::ObjCResource: {
++    const auto *From = cast<ObjCResourceAttr>(FromAttr);
++    AI.importAttr(From, AI.importArg(From->getClose()).value(),
++                  AI.importArg(From->getInvalid()).value(), From->getByAddress(),
++                  AI.importArg(From->getCall()).value());
++    break;
++  }
+   case attr::Aligned: {
+     auto *From = cast<AlignedAttr>(FromAttr);
+     if (From->isAlignmentExpr())
+@@ -11049,3 +11700,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -3376,7 +3416,7 @@ index d743717ad..6c932344e 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..626fb9369 100644
+index e0b62591a..1f294dbb7 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -3599,9 +3639,9 @@ index e0b62591a..626fb9369 100644
      return false;
  
 +  auto A = getObjC3ResourceTypeContract(Context.FromCtx,
-+      Context.FromCtx.getTypedefType(ElaboratedTypeKeyword::None, {}, D1));
++      Context.FromCtx.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D1));
 +  auto B = getObjC3ResourceTypeContract(Context.ToCtx,
-+      Context.ToCtx.getTypedefType(ElaboratedTypeKeyword::None, {}, D2));
++      Context.ToCtx.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D2));
 +  if (bool(A.Cleanup) != bool(B.Cleanup) || bool(A.Family) != bool(B.Family) ||
 +      bool(A.Invalid) != bool(B.Invalid))
 +    return false;
@@ -26927,10 +26967,10 @@ index fb0b3c150..e48e62946 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..c39d815b6
+index 000000000..4e0ab55de
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,655 @@
+@@ -0,0 +1,656 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27339,6 +27379,7 @@ index 000000000..c39d815b6
 +  index::indexTopLevelDecls(To->getASTContext(), To->getPreprocessor(),
 +                            Declarations, Index, Options);
 +  EXPECT_EQ(4u, Index.count("slot", index::SymbolRole::Reference));
++  EXPECT_EQ(1u, Index.count("close_handle", index::SymbolRole::Reference));
 +  std::string Printed;
 +  llvm::raw_string_ostream OS(Printed);
 +  Function->getBody()->printPretty(OS, nullptr,
@@ -30666,7 +30707,7 @@ index 5987cb4a0..0bd2eb932 100644
      if (Attr->getValueAsBit("AcceptsExprPack"))
        VariadicExprArgument("DelayedArgs", R.getName())
 diff --git a/clang-tools-extra/clangd/FindTarget.cpp b/clang-tools-extra/clangd/FindTarget.cpp
-index 41c9cddfe..1338354a2 100644
+index 41c9cddfe..9b4e778df 100644
 --- a/clang-tools-extra/clangd/FindTarget.cpp
 +++ b/clang-tools-extra/clangd/FindTarget.cpp
 @@ -8,6 +8,7 @@
@@ -30725,7 +30766,17 @@ index 41c9cddfe..1338354a2 100644
        // Skip destructor calls to avoid duplication: TypeLoc within will be
        // visited separately.
        if (llvm::isa<CXXDestructorDecl>(E->getFoundDecl().getDecl()))
-@@ -949,14 +963,64 @@ public:
+@@ -862,6 +876,9 @@ refInTypeLoc(TypeLoc L, const HeuristicResolver *Resolver) {
+     }
+ 
+     void VisitTagTypeLoc(TagTypeLoc L) {
++      ObjC3KeyPathInfo KeyPath;
++      if (getObjC3KeyPathInfo(L.getType(), KeyPath))
++        return;
+       Refs.push_back(ReferenceLoc{L.getQualifierLoc(),
+                                   L.getNameLoc(),
+                                   /*IsDecl=*/false,
+@@ -949,14 +966,64 @@ public:
    }
  
    bool TraverseOpaqueValueExpr(OpaqueValueExpr *OVE) {
@@ -30790,7 +30841,7 @@ index 41c9cddfe..1338354a2 100644
      // Traverse only the syntactic form to find the *written* references.
      // (The semantic form also contains lots of duplication)
      return RecursiveASTVisitor::TraverseStmt(POE->getSyntacticForm());
-@@ -1029,6 +1093,7 @@ public:
+@@ -1029,6 +1096,7 @@ public:
    }
  
  private:
@@ -30799,7 +30850,7 @@ index 41c9cddfe..1338354a2 100644
    /// recurse into child nodes, e.g. do not expect references for constructor
    /// initializers
 diff --git a/clang-tools-extra/clangd/Hover.cpp b/clang-tools-extra/clangd/Hover.cpp
-index fab77af3e..3ebb479f2 100644
+index fab77af3e..f992ecc00 100644
 --- a/clang-tools-extra/clangd/Hover.cpp
 +++ b/clang-tools-extra/clangd/Hover.cpp
 @@ -14,6 +14,7 @@
@@ -30821,7 +30872,7 @@ index fab77af3e..3ebb479f2 100644
  #include "clang/AST/OperationKinds.h"
  #include "clang/AST/PrettyPrinter.h"
  #include "clang/AST/RecordLayout.h"
-@@ -48,6 +53,7 @@
+@@ -48,10 +53,12 @@
  #include "clang/Basic/Specifiers.h"
  #include "clang/Basic/TokenKinds.h"
  #include "clang/Index/IndexSymbol.h"
@@ -30829,7 +30880,12 @@ index fab77af3e..3ebb479f2 100644
  #include "clang/Tooling/Syntax/Tokens.h"
  #include "llvm/ADT/ArrayRef.h"
  #include "llvm/ADT/DenseSet.h"
-@@ -140,9 +146,32 @@ std::string getNamespaceScope(const Decl *D) {
+ #include "llvm/ADT/STLExtras.h"
++#include "llvm/ADT/SmallString.h"
+ #include "llvm/ADT/SmallVector.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/ADT/StringRef.h"
+@@ -140,9 +147,32 @@ std::string getNamespaceScope(const Decl *D) {
    return "";
  }
  
@@ -30862,7 +30918,7 @@ index fab77af3e..3ebb479f2 100644
      if (auto *IE = VD->getInit()) {
        // Initializers might be huge and result in lots of memory allocations in
        // some catostrophic cases. Such long lists are not useful in hover cards
-@@ -721,6 +750,57 @@ HoverInfo getHoverContents(const NamedDecl *D, const PrintingPolicy &PP,
+@@ -721,6 +751,57 @@ HoverInfo getHoverContents(const NamedDecl *D, const PrintingPolicy &PP,
    }
  
    HI.Definition = printDefinition(D, PP, TB);
@@ -30920,7 +30976,7 @@ index fab77af3e..3ebb479f2 100644
    return HI;
  }
  
-@@ -959,6 +1039,65 @@ std::optional<HoverInfo> getHoverContents(const SelectionTree::Node *N,
+@@ -959,6 +1040,67 @@ std::optional<HoverInfo> getHoverContents(const SelectionTree::Node *N,
                                            const SymbolIndex *Index) {
    std::optional<HoverInfo> HI;
  
@@ -30972,8 +31028,10 @@ index fab77af3e..3ebb479f2 100644
 +          "with its declared invalid value.";
 +      break;
 +    }
-+    const std::string WrittenName =
-+        Lexer::getSpelling(Resource->getBuiltinLoc(), AST.getSourceManager(),
++    llvm::SmallString<64> SpellingBuffer;
++    const StringRef WrittenName =
++        Lexer::getSpelling(Resource->getBuiltinLoc(), SpellingBuffer,
++                           AST.getSourceManager(),
 +                           AST.getASTContext().getLangOpts());
 +    if (WrittenName == "take" || WrittenName == "reset" ||
 +        WrittenName == "discard")
@@ -30986,7 +31044,7 @@ index fab77af3e..3ebb479f2 100644
    if (const StringLiteral *SL = dyn_cast<StringLiteral>(E)) {
      // Print the type and the size for string literals
      HI = getStringLiteralContents(SL, PP);
-@@ -1377,9 +1516,59 @@ std::optional<HoverInfo> getHover(ParsedAST &AST, Position Pos,
+@@ -1377,9 +1519,59 @@ std::optional<HoverInfo> getHover(ParsedAST &AST, Position Pos,
          SelectionTree::createRight(AST.getASTContext(), TB, Offset, Offset);
      if (const SelectionTree::Node *N = ST.commonAncestor()) {
        // FIXME: Fill in HighlightRange with range coming from N->ASTNode.
@@ -31262,10 +31320,18 @@ index b79ffc7d5..7ee0efeea 100644
        N.Selected = SelectionTree::Unselected;
      if (N.Selected || !N.Children.empty()) {
 diff --git a/clang-tools-extra/clangd/SemanticHighlighting.cpp b/clang-tools-extra/clangd/SemanticHighlighting.cpp
-index 5d9336fa6..6a31b597e 100644
+index 5d9336fa6..225c4698b 100644
 --- a/clang-tools-extra/clangd/SemanticHighlighting.cpp
 +++ b/clang-tools-extra/clangd/SemanticHighlighting.cpp
-@@ -671,6 +671,52 @@ public:
+@@ -22,6 +22,7 @@
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/DeclarationName.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/TypeLoc.h"
+ #include "clang/Basic/SourceLocation.h"
+@@ -671,6 +672,52 @@ public:
      return true;
    }
  
@@ -31318,7 +31384,7 @@ index 5d9336fa6..6a31b597e 100644
    bool VisitConditionalOperator(ConditionalOperator *Op) {
      H.addToken(Op->getQuestionLoc(), HighlightingKind::Operator);
      H.addToken(Op->getColonLoc(), HighlightingKind::Operator);
-@@ -962,6 +1008,7 @@ public:
+@@ -962,6 +1009,7 @@ public:
      switch (A->getKind()) {
      case attr::Override:
      case attr::Final:
@@ -31326,7 +31392,7 @@ index 5d9336fa6..6a31b597e 100644
        H.addToken(A->getLocation(), HighlightingKind::Modifier);
        break;
      default:
-@@ -1064,7 +1111,7 @@ getSemanticHighlightings(ParsedAST &AST, bool IncludeInactiveRegionTokens) {
+@@ -1064,7 +1112,7 @@ getSemanticHighlightings(ParsedAST &AST, bool IncludeInactiveRegionTokens) {
                    {SymbolTag::Virtual, HighlightingModifier::Virtual},
                    {SymbolTag::Abstract, HighlightingModifier::Abstract},
                    // Declaration and Definition are handled separately below.
@@ -31376,10 +31442,10 @@ index d596ba77e..bfa65d4f3 100644
    ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 new file mode 100644
-index 000000000..136e5c6ad
+index 000000000..f3b669737
 --- /dev/null
 +++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
-@@ -0,0 +1,445 @@
+@@ -0,0 +1,448 @@
 +//===--- ObjC3SourceToolsTests.cpp - Native Objective-C editor contracts
 +//----===//
 +//
@@ -31635,11 +31701,11 @@ index 000000000..136e5c6ad
 +TEST(ObjC3SourceTools, ExplicitCaptureReferencesAndRenameStartAtCapture) {
 +  Annotations A(R"objc(
 +    int work(int [[value]]) {
-+      void (^block)(void) = ^[move [[val^ue]]] { (void)[[value]]; };
++      void (^block)(void) = ^[move [[val~ue]]] { (void)[[value]]; };
 +      block();
 +      return [[value]];
 +    }
-+  )objc");
++  )objc", llvm::Annotations::Markers().setPoint("~"));
 +  auto TU = objc3TU(A.code());
 +  TU.ExtraArgs.push_back("-fblocks");
 +  auto AST = TU.build();
@@ -31656,11 +31722,11 @@ index 000000000..136e5c6ad
 +TEST(ObjC3SourceTools, CaptureModifiersAreContextualAndHaveOwnershipHover) {
 +  Annotations A(R"objc(
 +    void work(id object, int weak) {
-+      void (^owned)(void) = ^[$modifier[[str^ong]] object] { (void)object; };
++      void (^owned)(void) = ^[$modifier[[str~ong]] object] { (void)object; };
 +      void (^named)(void) = ^[$name[[weak]]] { (void)weak; };
 +      owned(); named();
 +    }
-+  )objc");
++  )objc", llvm::Annotations::Markers().setPoint("~"));
 +  auto TU = objc3TU(A.code());
 +  TU.ExtraArgs.push_back("-fblocks");
 +  auto AST = TU.build();
@@ -31678,7 +31744,9 @@ index 000000000..136e5c6ad
 +  ASSERT_NE(At("modifier"), Tokens.end());
 +  EXPECT_EQ(At("modifier")->Kind, HighlightingKind::Modifier);
 +  ASSERT_NE(At("name"), Tokens.end());
-+  EXPECT_EQ(At("name")->Kind, HighlightingKind::LocalVariable);
++  // The bare capture names the original parameter; it is not a modifier or
++  // a new local declaration.
++  EXPECT_EQ(At("name")->Kind, HighlightingKind::Parameter);
 +}
 +
 +TEST(ObjC3SourceTools, LifetimeOperatorsHaveHoverTokensAndSingleReferences) {
@@ -31736,11 +31804,11 @@ index 000000000..136e5c6ad
 +TEST(ObjC3SourceTools, CaptureReferencesRemainDistinctAcrossUnusedItems) {
 +  Annotations A(R"objc(
 +    int work(int [[left]], int right) {
-+      void (^block)(void) = ^[move [[le^ft]], move right] {};
++      void (^block)(void) = ^[move [[le~ft]], move right] {};
 +      block();
 +      return [[left]] + right;
 +    }
-+  )objc");
++  )objc", llvm::Annotations::Markers().setPoint("~"));
 +  auto TU = objc3TU(A.code());
 +  TU.ExtraArgs.push_back("-fblocks");
 +  auto AST = TU.build();
@@ -31803,7 +31871,8 @@ index 000000000..136e5c6ad
 +        for (const auto *Target : Ref.Targets) {
 +          PathReferences +=
 +              Target->getIdentifier() && Target->getName() == "path";
-+          EXPECT_FALSE(Target->getNameAsString().starts_with("__objc3_"));
++          EXPECT_FALSE(llvm::StringRef(Target->getNameAsString())
++                           .starts_with("__objc3_"));
 +          EXPECT_NE(Target->getNameAsString(), "KeyPathGet");
 +        }
 +      },
@@ -32039,7 +32108,7 @@ index 000000000..bf4a60c08
 +  return Reference ? dyn_cast<VarDecl>(Reference->getDecl()) : nullptr;
 +}
 diff --git a/clang/lib/Index/IndexBody.cpp b/clang/lib/Index/IndexBody.cpp
-index 1979117d4..c5b667ec6 100644
+index 1979117d4..ee6b0880c 100644
 --- a/clang/lib/Index/IndexBody.cpp
 +++ b/clang/lib/Index/IndexBody.cpp
 @@ -95,6 +95,14 @@ public:
@@ -32057,7 +32126,31 @@ index 1979117d4..c5b667ec6 100644
      } else if (auto CE = dyn_cast<CallExpr>(Parent)) {
        if (CE->getCallee()->IgnoreParenCasts() == E) {
          addCallRole(Roles, Relations);
-@@ -399,6 +407,23 @@ public:
+@@ -381,6 +389,23 @@ public:
+     return base::TraverseCXXOperatorCallExpr(E, Q);
+   }
+ 
++  bool TraverseDeclStmt(DeclStmt *S, DataRecursionQueue *Q = nullptr) {
++    // indexDeclGroupRef already traverses each initializer. Walking the same
++    // local declaration again duplicates references in its initializer.
++    if (IndexCtx.shouldIndexFunctionLocalSymbols()) {
++      if (!WalkUpFromDeclStmt(S))
++        return false;
++      // Declaration indexing covers types and initializers, but attributes
++      // still contain written callback/sentinel references.
++      for (Decl *D : S->decls())
++        for (Attr *A : D->attrs())
++          if (!TraverseAttr(A))
++            return false;
++      return true;
++    }
++    return base::TraverseDeclStmt(S, Q);
++  }
++
+   bool VisitDeclStmt(DeclStmt *S) {
+     if (IndexCtx.shouldIndexFunctionLocalSymbols()) {
+       IndexCtx.indexDeclGroupRef(S->getDeclGroup());
+@@ -399,6 +424,23 @@ public:
      return true;
    }
  
@@ -40994,3 +41087,21 @@ index 000000000..297bcd557
 +#endif
 +int use_core(void) { return profile_core(); }
 +#endif
+diff --git a/clang/test/ObjC3/Parser/resource-contextual-empty-call.m b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
+new file mode 100644
+index 000000000..4dfa639eb
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/resource-contextual-empty-call.m
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++void take(void);
++void reset(void);
++void discard(void);
++void ordinary_calls(void) {
++  take();
++  reset();
++  discard();
++}

@@ -283,6 +283,7 @@ PACKETS = {
         "clang/test/ObjC3/Parser/guard-c-mode.m",
         "clang/test/ObjC3/Parser/guard-conditions.mm",
         "clang/test/ObjC3/Parser/guard-contextual.mm",
+        "clang/test/ObjC3/Parser/resource-contextual-empty-call.m",
         "clang/test/ObjC3/Parser/guard-disabled.mm",
         "clang/test/ObjC3/Parser/guard-lookahead.mm",
         "clang/test/ObjC3/Parser/guard-pch.mm",

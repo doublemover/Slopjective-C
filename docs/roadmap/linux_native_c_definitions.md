@@ -105,11 +105,12 @@ statement layout is required.
 
 ## Authored coverage and validation status
 
-The resumed native compiler build and 345 Clang regressions pass. Runtime
+The resumed native compiler build and 346 Clang regressions pass. Runtime
 execution exposed and fixed duplicate frame-root cleanup and a deferred release
 edge whose destination could be deleted during block simplification. Await
-completion outputs now carry the required service header. The mixed-ownership
-async matrix and installed SDK qualification remain in progress.
+completion outputs now carry the required service header. All 48 async runtime
+configurations pass across ARC/MRC provider/consumer pairs, C17/C++20/C++23,
+O0/O2 and source/PCH transport. Installed SDK qualification remains in progress.
 
 New native compiler fixtures cover definition IR, private child awaits, loop
 locals, lexical cleanup, checked recovery that awaits again, native exceptions,
@@ -122,9 +123,9 @@ receiver ownership, copied Block captures, nil sends, and a separately compiled
 C++ carrier consumer. A C++ frame factory also exercises C++ → C → C++ value
 and exception transport.
 
-Qualification must later build the compiler and run those fixtures in C17
-ARC/MRC provider/consumer pairs and C++20/23 consumers, then exercise resumed
-frames, sanitizer instrumentation and source-free semantic/package transport.
+The development runner executes those fixtures against the current compiler.
+Combined qualification must still cover sanitizer instrumentation and source-free
+semantic/package transport against the new installed SDK.
 No existing SDK receipt establishes acceptance of this new source.
 
 ## Remaining definition work
@@ -169,7 +170,7 @@ construction/destruction uses the ordinary cleanup stack. Reference and
 nontrivial record parameters/results and implicit C++ member receivers remain
 diagnosed. Native frame bodies use return and __objc3_await; C++ coroutine
 keywords remain rejected. Its C++20/C++23 IR witnesses and definition-boundary diagnostics now pass;
-the mixed-language execution matrix remains in progress. Compiler-created isolated synchronous entry thunks use the native
+all 48 mixed-language execution configurations pass. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable
 arguments have independent frame owners under ARC and MRC before any hop.
 
