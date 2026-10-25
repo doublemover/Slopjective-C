@@ -80,7 +80,16 @@ static void join_check_failure(objc3_executor_t *executor, objc3_task_t *task,
   assert(objc3_async_error_get_service(completion.error,&actual)==OBJC3_SERVICE_OK && actual==expected);
   objc3_task_release(task);
 }
+extern void *join_pool_push(void) __asm__("objc_autoreleasePoolPush");
+extern void join_pool_pop(void *) __asm__("objc_autoreleasePoolPop");
+extern void *join_claim_return(void *) __asm__("objc_retainAutoreleasedReturnValue");
+extern unsigned long objc_arc_autorelease_count_np(void);
 static void handle_join_witnesses(objc3_executor_t *executor) {
+  void *empty_pool=join_pool_push();
+  unsigned long before=objc_arc_autorelease_count_np();
+  assert(join_claim_return(NULL)==NULL);
+  assert(objc_arc_autorelease_count_np()==before);
+  join_pool_pop(empty_pool);
   objc3_task_t *integer = join_start(executor,join_int_source());
   join_check_value(executor,join_start(executor,join_int_client(integer)),42);
   join_check_failure(executor,join_start(executor,join_mismatch_client(integer)),OBJC3_SERVICE_TYPE_MISMATCH);

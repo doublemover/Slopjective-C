@@ -40,8 +40,10 @@ Public async/actor predicates and full Core/Strict conformance remain reserved.
 shared-frame adapters, typed C declarations with checked error transport, and
 C++ raw-handle adoption/group finishing. Independent handle/result ownership,
 nonblocking quiescence and hidden self-cycle rejection are implemented. Focused
-runtime, C source/PCH and C++ preflights pass; broader validation follows the
-source span. These concurrency 2.1.0 headers/runtime changes are newer than the
+runtime, C source/PCH and C++ checks pass, including the spawn and coroutine
+sanitizer matrices. Full GNU runtime instrumentation also repaired a global
+autorelease mode-switch race: Linux now uses native per-thread ARC pools with
+no Foundation fallback. Coordinated delivery validation follows the source span. These concurrency 2.1.0 headers/runtime changes are newer than the
 accepted 33-gate archive. Automatic structured-scope finalization and native
 group iteration remain open; ordinary joins do not shield caller unwind.
 

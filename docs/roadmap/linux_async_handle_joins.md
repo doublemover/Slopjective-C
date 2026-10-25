@@ -54,14 +54,30 @@ C++ uses `objc3::join_task<T>(raw_handle)` and
 independent handles immediately, and release failed adoptions without consuming
 the caller's reference. Nontrivial C++ results use the existing result operations.
 
-Focused checks pass: standalone runtime build/lifecycle execution, C17 ARC/O0
-source and MRC/O2 PCH spawn witnesses, and a C++23 MRC/O2 coroutine/group preflight.
-Witnesses cover scalar/record/void/object/Block results, checked errors, independent
-leases, lazy closure, cancellation, type mismatch, failed allocation/copy,
-empty groups, nested/self cycles and nontrivial C++ string results. The existing
-spawn and coroutine runners enroll these source witnesses; sanitizer runtime
-source lists include the new adapter member. Broader source validation follows
-this coherent span. No SDK archive is rebuilt during this development step.
+Source checks pass: the 24-mode spawn/join matrix, all 12 coroutine/group
+configurations, and all five standalone runtime suites. The C matrix also passes
+24 modes under ASan/UBSan and 24 under TSan. TSan uses a separately built,
+fully instrumented GNU Objective-C runtime so its Block retain/release atomics
+participate in the happens-before graph. The coroutine sanitizer matrix passes
+all 12 configurations, including cross-executor nontrivial C++ results.
+
+Full runtime instrumentation exposed a race in GNU libobjc's lazy global
+`NSAutoreleasePool` mode switch. The pinned Linux GNUstep 2.2 patch now uses
+native per-thread ARC pools exclusively. Foundation fallback callbacks, mode
+switching and the legacy retained-return slot are removed. Return-value claiming
+checks nonempty pool bounds and handles nil without reading before pool storage.
+A failed pool allocation terminates rather than losing an autorelease owner.
+The Linux runtime profile locks the native ARC policy and exact patch bytes.
+
+The runtime builder accepts an explicit sanitizer and binds the compiler/runtime
+libraries into its separate development build identity. Allocator-failure
+witnesses use link wrapping, preserving sanitizer interceptors. A worker-signal
+fixture now finishes notifying while holding its lifetime handoff mutex.
+Normal, ASan/UBSan and TSan standalone suites pass after those repairs.
+
+Broader source and coordinated SDK delivery checks follow this coherent span.
+The current 33-gate SDK remains the earlier delivery; source validation does not
+claim these newer headers/runtime changes are already present in that archive.
 
 These joins supply a prerequisite for structured-scope lowering. Automatic
 scope finalization, shielded caller unwind, native group-result iteration and

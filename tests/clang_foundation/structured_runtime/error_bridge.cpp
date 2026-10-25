@@ -13,15 +13,16 @@ enum class AllocationFailure { None, Record, Payload };
 thread_local AllocationFailure failure = AllocationFailure::None;
 struct Object { unsigned owners = 1, destroyed = 0; };
 }
-void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
+extern "C" void *__wrap__ZnwmRKSt9nothrow_t(
+    std::size_t size, const std::nothrow_t &) noexcept {
   if (failure == AllocationFailure::Record) {
     failure = AllocationFailure::None;
     return nullptr;
   }
   try { return ::operator new(size); } catch (...) { return nullptr; }
 }
-void *operator new(std::size_t size, std::align_val_t alignment,
-                   const std::nothrow_t &) noexcept {
+extern "C" void *__wrap__ZnwmSt11align_val_tRKSt9nothrow_t(
+    std::size_t size, std::align_val_t alignment, const std::nothrow_t &) noexcept {
   if (failure == AllocationFailure::Payload) {
     failure = AllocationFailure::None;
     return nullptr;

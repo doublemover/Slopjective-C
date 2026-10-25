@@ -5,12 +5,10 @@
 #include <initializer_list>
 
 static bool reject_allocation, reject_copy;
-void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
+extern "C" void *__wrap__ZnwmRKSt9nothrow_t(
+    std::size_t size, const std::nothrow_t &) noexcept {
   if (reject_allocation) return nullptr;
   try { return ::operator new(size); } catch (...) { return nullptr; }
-}
-void operator delete(void *pointer, const std::nothrow_t &) noexcept {
-  ::operator delete(pointer);
 }
 extern "C" objc3_async_frame __objc3_task_join_frame(objc3_task_t *);
 extern "C" objc3_async_frame __objc3_task_group_join_frame(objc3_task_group_t *);

@@ -124,6 +124,9 @@ if (BUILD_TESTING)
   add_executable(objc3_async_error_bridge_test
     ../../../../tests/clang_foundation/structured_runtime/error_bridge.cpp)
   target_link_libraries(objc3_async_error_bridge_test PRIVATE objc3_runtime_services)
+  target_link_options(objc3_async_error_bridge_test PRIVATE
+    "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
+    "LINKER:--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t")
   add_test(NAME objc3_async_error_bridge COMMAND objc3_async_error_bridge_test)
   add_executable(objc3_keypath_service_test ../../tests/keypath_service_test.cpp)
   target_link_libraries(objc3_keypath_service_test PRIVATE objc3_runtime_services)

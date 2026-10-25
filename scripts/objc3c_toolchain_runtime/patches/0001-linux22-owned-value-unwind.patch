@@ -11,6 +11,270 @@ index 3f0733757..e6b303498 100644
  
  list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
  target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
+diff --git a/arc.mm b/arc.mm
+index fbba14c03..f96a1521c 100644
+--- a/arc.mm
++++ b/arc.mm
+@@ -91,12 +91,6 @@ extern "C"
+ }
+ #endif
+ 
+-@interface NSAutoreleasePool
+-+ (Class)class;
+-+ (id)new;
+-- (void)release;
+-@end
+-
+ #define POOL_SIZE (4096 / sizeof(void*) - (2 * sizeof(void*)))
+ /**
+  * Structure used for ARC-managed autorelease pools.  This structure should be
+@@ -125,7 +119,6 @@ struct arc_autorelease_pool
+ struct arc_tls
+ {
+ 	struct arc_autorelease_pool *pool;
+-	id returnRetained;
+ };
+ 
+ /**
+@@ -211,32 +204,16 @@ static void emptyPool(struct arc_tls *tls, void *stop)
+ #ifdef arc_tls_store
+ static TLS_CALLBACK(cleanupPools)(struct arc_tls* tls)
+ {
+-	if (tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
+ 	if (NULL != tls->pool)
+ 	{
+ 		emptyPool(tls, NULL);
+ 		assert(NULL == tls->pool);
+ 	}
+-	if (tls->returnRetained)
+-	{
+-		cleanupPools(tls);
+-	}
+ 	free(tls);
+ }
+ #endif
+ 
+ 
+-static Class AutoreleasePool;
+-static IMP NewAutoreleasePool;
+-static IMP DeleteAutoreleasePool;
+-static IMP AutoreleaseAdd;
+-
+-static BOOL useARCAutoreleasePool;
+-
+ static const long refcount_shift = 1;
+ /**
+  * We use the top bit of the reference count to indicate whether an object has
+@@ -401,64 +378,24 @@ static inline void release(id obj)
+ 	return ManualRetainReleaseMessage(obj, release, void(*)(id, SEL));
+ }
+ 
+-static inline void initAutorelease(void)
+-{
+-	if (Nil == AutoreleasePool)
+-	{
+-		AutoreleasePool = objc_getClass("NSAutoreleasePool");
+-		if (Nil == AutoreleasePool)
+-		{
+-			useARCAutoreleasePool = YES;
+-		}
+-		else
+-		{
+-			useARCAutoreleasePool = (0 != class_getInstanceMethod(AutoreleasePool,
+-			                                                      SELECTOR(_ARCCompatibleAutoreleasePool)));
+-			if (!useARCAutoreleasePool)
+-			{
+-				[AutoreleasePool class];
+-				NewAutoreleasePool = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                                   SELECTOR(new));
+-				DeleteAutoreleasePool = class_getMethodImplementation(AutoreleasePool,
+-				                                                      SELECTOR(release));
+-				AutoreleaseAdd = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                               SELECTOR(addObject:));
+-			}
+-		}
+-	}
+-}
+-
++// GNUstep 2.2 uses native per-thread ARC pools exclusively. Switching a
++// process-global mode after class lookup races with concurrent callbacks and
++// makes live token interpretation depend on later Foundation loading.
+ static inline id autorelease(id obj)
+ {
+-	//fprintf(stderr, "Autoreleasing %p\n", obj);
+-	if (useARCAutoreleasePool)
+-	{
+-		struct arc_tls *tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			*pool->insert = obj;
+-			pool->insert++;
+-			return obj;
+-		}
+-	}
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		initAutorelease();
+-		if (0 != AutoreleaseAdd)
+-		{
+-			AutoreleaseAdd(AutoreleasePool, SELECTOR(addObject:), obj);
+-		}
+-		return obj;
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	return ManualRetainReleaseMessage(obj, autorelease, id(*)(id, SEL));
++	*pool->insert++ = obj;
++	return obj;
+ }
+ 
+ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_np(void)
+@@ -498,58 +435,24 @@ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_for_object_np(id
+ 
+ extern "C" OBJC_PUBLIC void *objc_autoreleasePoolPush(void)
+ {
+-	initAutorelease();
+-	struct arc_tls* tls = getARCThreadData();
+-	// If there is an object in the return-retained slot, then we need to
+-	// promote it to the real autorelease pool BEFORE pushing the new
+-	// autorelease pool.  If we don't, then it may be prematurely autoreleased.
+-	if ((NULL != tls) && (nil != tls->returnRetained))
+-	{
+-		autorelease(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
+-	if (useARCAutoreleasePool)
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			// If there is no autorelease pool allocated for this thread, then
+-			// we lazily allocate one the first time something is autoreleased.
+-			return (NULL != tls->pool) ? tls->pool->insert : NULL;
+-		}
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	initAutorelease();
+-	if (0 == NewAutoreleasePool) { return NULL; }
+-	return NewAutoreleasePool(AutoreleasePool, SELECTOR(new));
++	return tls->pool->insert;
+ }
+ extern "C" OBJC_PUBLIC void objc_autoreleasePoolPop(void *pool)
+ {
+-	if (useARCAutoreleasePool)
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			if (NULL != tls->pool)
+-			{
+-				emptyPool(tls, pool);
+-			}
+-			return;
+-		}
+-	}
+-	DeleteAutoreleasePool(static_cast<id>(pool), SELECTOR(release));
+-	struct arc_tls* tls = getARCThreadData();
+-	if (tls && tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	if (NULL != tls->pool) { emptyPool(tls, pool); }
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+@@ -563,47 +466,19 @@ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+ 
+ extern "C" OBJC_PUBLIC id objc_autoreleaseReturnValue(id obj)
+ {
+-	if (!useARCAutoreleasePool) 
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			objc_autorelease(tls->returnRetained);
+-			tls->returnRetained = obj;
+-			return obj;
+-		}
+-	}
+ 	return objc_autorelease(obj);
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_retainAutoreleasedReturnValue(id obj)
+ {
+-	// If the previous object was released  with objc_autoreleaseReturnValue()
+-	// just before return, then it will not have actually been autoreleased.
+-	// Instead, it will have been stored in TLS.  We just remove it from TLS
+-	// and undo the fake autorelease.
+-	//
+-	// If the object was not returned with objc_autoreleaseReturnValue() then
+-	// we actually autorelease the fake object. and then retain the argument.
+-	// In tis case, this is equivalent to objc_retain().
+-	struct arc_tls* tls = getARCThreadData();
+-	if (NULL != tls)
++	if (nil == obj) { return nil; }
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL != tls && NULL != tls->pool &&
++	    tls->pool->insert > tls->pool->pool &&
++	    *(tls->pool->insert - 1) == obj)
+ 	{
+-		// If we're using our own autorelease pool, just pop the object from the top
+-		if (useARCAutoreleasePool)
+-		{
+-			if ((NULL != tls->pool) &&
+-			    (*(tls->pool->insert-1) == obj))
+-			{
+-				tls->pool->insert--;
+-				return obj;
+-			}
+-		}
+-		else if (obj == tls->returnRetained)
+-		{
+-			tls->returnRetained = NULL;
+-			return obj;
+-		}
++		tls->pool->insert--;
++		return obj;
+ 	}
+ 	return objc_retain(obj);
+ }
 diff --git a/blocks_runtime.m b/blocks_runtime.m
 index 91ab85d94..39b18d208 100644
 --- a/blocks_runtime.m

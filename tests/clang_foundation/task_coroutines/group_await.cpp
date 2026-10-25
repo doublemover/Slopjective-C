@@ -1202,29 +1202,33 @@ objc3::task<std::string> raw_join_text() {
   co_return std::string("owned raw task result");
 }
 void raw_handle_frame_adapters() {
-  auto *destination = executor();
-  auto original = raw_join_text().start(destination);
-  bool rejected = false;
-  try { (void)objc3::join_task<int>(original.native_handle()); }
-  catch (const objc3::service_failure &failure) {
-    rejected = failure.status() == OBJC3_SERVICE_TYPE_MISMATCH;
+  for (bool workers : {false, true}) {
+    auto *source = executor(!workers);
+    auto *destination = workers ? executor(false) : source;
+    auto original = raw_join_text().start(source);
+    bool rejected = false;
+    try { (void)objc3::join_task<int>(original.native_handle()); }
+    catch (const objc3::service_failure &failure) {
+      rejected = failure.status() == OBJC3_SERVICE_TYPE_MISMATCH;
+    }
+    assert(rejected);
+    auto adapter = objc3::join_task<std::string>(original.native_handle());
+    original = {};
+    auto joined = std::move(adapter).start(destination);
+    if (workers) joined.wait(); else pump(destination);
+    assert(joined.result() == "owned raw task result");
+    auto group = objc3::task_group_handle::create();
+    auto member = raw_join_text().start(source);
+    group.add(member);
+    auto group_frame = objc3::finish_task_group(group);
+    group = {};
+    auto finished = std::move(group_frame).start(destination);
+    if (workers) finished.wait(); else pump(destination);
+    finished.result();
+    assert(member.result() == "owned raw task result");
+    if (workers) objc3_executor_release(destination);
+    objc3_executor_release(source);
   }
-  assert(rejected);
-  auto adapter = objc3::join_task<std::string>(original.native_handle());
-  original = {};
-  auto joined = std::move(adapter).start(destination);
-  pump(destination);
-  assert(joined.result() == "owned raw task result");
-  auto group = objc3::task_group_handle::create();
-  auto member = raw_join_text().start(destination);
-  group.add(member);
-  auto group_frame = objc3::finish_task_group(group);
-  group = {};
-  auto finished = std::move(group_frame).start(destination);
-  pump(destination);
-  finished.result();
-  assert(member.result() == "owned raw task result");
-  objc3_executor_release(destination);
 }
 } // namespace
 

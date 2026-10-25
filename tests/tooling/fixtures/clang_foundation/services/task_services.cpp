@@ -634,10 +634,10 @@ struct WorkerSignal {
 
 void signal_worker(void *opaque) {
   auto *signal = static_cast<WorkerSignal *>(opaque);
-  {
-    std::lock_guard<std::mutex> lock(signal->mutex);
-    signal->ready = true;
-  }
+  std::lock_guard<std::mutex> lock(signal->mutex);
+  signal->ready = true;
+  // The waiter may destroy this stack state as soon as it reacquires the lock.
+  // Finish notifying before handing that lifetime back to the waiter.
   signal->condition.notify_one();
 }
 

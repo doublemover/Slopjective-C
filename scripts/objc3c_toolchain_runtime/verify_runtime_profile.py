@@ -51,6 +51,9 @@ def main() -> int:
         if profile.get("blocks_provider") != "libobjc2-embedded":
             return fail("profile must select exactly the embedded Blocks provider")
 
+    if args.profile == "linux-x86_64" and profile.get("autorelease_pool_policy") != "native-arc-only":
+        return fail("Linux GNUstep 2.2 requires native ARC pools without a Foundation mode switch")
+
     if args.profile == "windows-x86_64":
         if profile.get("runtime_build_drivers") != ["clang.exe", "clang++.exe"]:
             return fail("canonical Windows runtime build must use clang/clang++ GNU drivers")
