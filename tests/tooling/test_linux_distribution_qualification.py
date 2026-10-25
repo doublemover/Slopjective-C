@@ -92,4 +92,8 @@ def test_both_distributions_run_with_bounded_parallelism_and_clean_up(tmp_path, 
     creates = [command for command in commands if '--cpus' in command]
     assert len(creates) == 2
     assert all(command[command.index('--cpus') + 1] == '2' for command in creates)
+    for command in creates:
+        temporary_mounts = [command[i + 1] for i, value in enumerate(command)
+                            if value == '--tmpfs']
+        assert temporary_mounts == ['/tmp:rw,exec,nosuid,nodev,size=1g']
     assert json.loads((output / 'qualification.json').read_text()) == result

@@ -91,9 +91,10 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
             create_log = output / (distribution + '-create.log')
             run_log = output / (distribution + '.log')
             cleanup_log = output / (distribution + '-cleanup.log')
+            # SDK relocation/reinstall temporarily holds two extracted copies.
+            # Keep installations on disk; only disposable consumers use tmpfs.
             command = [*docker, 'run', '--detach', '--name', name, '--cpus', '2',
                        '--memory', '5g', '--cap-add', 'SYS_PTRACE',
-                       '--tmpfs', '/opt:rw,exec,nosuid,nodev,size=3g',
                        '--tmpfs', '/tmp:rw,exec,nosuid,nodev,size=1g',
                        '--mount', mount(archive, '/release.tar.zst'),
                        '--mount', mount(qualifier, '/qualify.sh')]
