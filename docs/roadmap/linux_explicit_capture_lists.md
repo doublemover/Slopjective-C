@@ -157,6 +157,13 @@ cleanup executables are included in the source-transport runtime matrix.
 retained/autoreleased and `id`-erased Block results, failed return temporaries,
 nested catches, and both escaping and locally handled deferred checked errors.
 
+The additional compiler-witness runner executes the authored sema/IR checks,
+strict resource diagnostics and 24 persistence source/PCH variants. It passes
+153 commands and 24 intended rejections against the published compiler with
+repaired source fixtures. The MRC persistence fixture now uses native Block copy
+with an explicit retained result contract. This runner and these fixture repairs
+are enrolled for the next SDK; they are absent from the 32-gate archive.
+
 Remaining boundaries include unqualified/mixed/C++ carrier move captures,
 potentially
 throwing resource final disposal, unqualified foreign/raw return staging,

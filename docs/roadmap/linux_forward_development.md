@@ -13,7 +13,7 @@ The combined delivery checkpoint passes **355 native Clang/index/query regressio
 (352 in the ObjC3 suite), with three unsupported cases, and all 166 native
 AST/matcher/source-tooling contracts. Compiler, editor and debugger targets build;
 all 32 facade suites, eight GNUstep runtime integration tests, 37 installed
-consumer checks and 13 selected native integration nodes pass. All **31 installed
+consumer checks and 13 selected native integration nodes pass. All **32 installed
 SDK qualification gates** pass against the frozen source identity
 `llvmorg-23.1.3-0d261d1ca552-49f322e67e0d-00b75dc3`.
 The exact archive also passes the recorded native-feature scope on pinned
@@ -24,28 +24,41 @@ installed SDK. Separate development runs pass the same complete matrix under
 ASan/UBSan and TSan: another 336 configurations / 1,884 commands. Four standalone
 runtime suites pass normally and under ASan/UBSan; the additional structured,
 task/group-await, native C++ async and C-frame ABI sanitizer suites also pass.
-The latest package/source-graph/audit tooling batch passes 153 tests, alongside
+The latest package/source-graph/audit tooling batch passes 160 tests, alongside
 focused installer, runtime, source-seal and distribution-runner checks.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
-## Active package follow-up
+## Package coverage correction and active compiler span
 
-The receipt below covers the published `fc84b2203` checkpoint. A coverage audit
-found that the separately authored typed-keypath package fixture was absent
-from its 31 enrolled gates. Package compilation now enables SDK Clang modules
-with a private cache in the owned build output. Interface emission recognizes
-canonical system-library imports only when their module name and exact public
-header match the library inventory; public dependency checking remains active.
-Builtin `instancetype` is preserved without requiring an external package.
+A coverage audit found that the separately authored typed-keypath package fixture
+was absent from the earlier 31 enrolled gates. Package compilation now enables
+SDK Clang modules with a private cache. Interface emission accepts canonical
+system-library imports only when their module name and exact public header match
+the library inventory; public dependency checking remains active. Builtin
+`instancetype` no longer requires an external package.
 
-The newly enrolled typed-keypath package gate covers 12 modes and source-free,
-relocated consumers, including readonly rejection and cross-image metadata
-identity. A workspace inventory regression guards against dropping another
-maintained package example. Focused native import checks and provider emission
-pass, and the complete package preflight passes 12 modes / 36 executions /
-12 readonly rejections against an unpublished candidate. The expanded 32-gate
-SDK qualification is pending. Remaining items in the
-completion sequence are implementation work, followed by their own validation.
+The expanded **32-gate SDK passes**, including 12 typed-keypath package modes,
+36 executions and 12 readonly rejections, source-free relocated consumers and
+cross-image metadata identity. Fresh Debian 13 and Ubuntu 26.04 pass the same
+archive. The [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
+binds this checkpoint to its reports. The earlier 31-gate receipt remains evidence
+for its narrower scope; it did not establish this package coverage.
+
+The audit also found unenrolled capture diagnostic/IR/persistence and spawn
+fixtures. The new compiler-witness runner passes 153 commands, 24 source/PCH
+executions and 24 intended rejections using the published compiler and repaired
+source fixtures. Persistence now copies Blocks through the native runtime,
+including MRC, instead of requiring Foundation Block methods. The next SDK adds
+this runner, its fixtures and FileCheck as a **33rd gate**. These additions are not
+in the published 32-gate archive.
+
+The next compiler source span implements [C++ coroutine lexical autorelease
+pools](linux_async_lexical_pools.md): drain before publishing a suspended frame,
+reopen on its actual continuation thread, restore scopes on throwing suspension,
+and close exactly once on normal/exceptional exits. Focused IR and ARC/MRC runtime
+preflights pass. Combined compiler regression, sanitizer and 33-gate SDK validation
+are in progress; the published archive still contains source identity `49f322e67e0d`.
+Remaining items below are actual implementation work followed by validation.
 
 ## Published implementation checkpoint
 
@@ -84,7 +97,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 | --- | --- | --- |
 | Borrowed pointers | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap |
 | Explicit captures | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership |
-| Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Nontrivial C++ frame parameters/results, dynamic stack storage, C++ task pool handling, handle-await protocols and structured scope lowering |
+| Async frames | Native C functions/methods/Blocks; lazy frames, owned results/errors, child awaits, allocation failure transport, suspension-safe pools and typed-effect template deduction | Nontrivial C++ frame parameters/results, dynamic stack storage, handle-await protocols and structured scope lowering; C++ lexical pool source is implemented and undergoing validation |
 | Isolation/Sendable | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values |
 | Structured runtime | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, inherited/detached starts and recognized spawn APIs/macros | Compiler-owned structured scope finalization, complete abstract group library |
@@ -167,22 +180,23 @@ clients are instrumented; GNU libobjc is loaded as shipped.
 
 ## Existing evidence
 
-The current [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
+The earlier [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
 binds the implementation commit, source/patch identity, SDK release and archive
 hashes to the foundation, installed-consumer, sanitizer and fresh-distribution
 reports. It records the precise scope of each run rather than treating development
 instrumentation as a rebuild of the final archive.
 
-The accepted SDK seal is
-`26d7e520de88f61d6143ad9e0d7d8ebcd16f4f4a6f573cf652ce4099e15286d4`;
-its 434,700,253-byte archive has SHA-256
-`4a91b2d9b5e0a08eba8d8cd5b1222d107b5c6ee4bb007c36988013000dfa88bd`.
-The fresh-distribution scope installs that exact archive, checks relocation,
-embedding and debugging, then executes the five feature families and selected
-carrier/control-flow consumers as an ordinary user. The host release runs all 31 installed
-gates. Neither scope establishes full Core/Strict/System profiles or native Linux
-AArch64 support. Earlier defer/guard receipts remain historical evidence for
-their recorded inputs, rather than the authority for this SDK.
+The current [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
+records SDK seal
+`6b7dcd87d22fe675574c1131221d29771d9359aac1944b66e7a3cae45bc7cc0f`;
+its 434,694,917-byte archive has SHA-256
+`303e84dad4f2a741d9ccd94c20eaa92bc2b3e94dc7d913bcf32793c8f5ecacad`.
+The host release runs all 32 installed gates. Fresh-distribution scope installs
+that exact archive, checks relocation, embedding and debugging, then executes
+the five feature families and selected package/carrier/control-flow consumers as
+an ordinary user. Neither scope establishes full Core/Strict/System profiles or
+native Linux AArch64 support. Later compiler-source preflights and capture/spawn
+fixture repairs do not establish archive coverage for those newer inputs.
 
 ## Development operation
 

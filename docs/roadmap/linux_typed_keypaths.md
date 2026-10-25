@@ -158,6 +158,7 @@ qualification. The new `qualify_typed_keypath_packages` gate distributes and
 executes it across 12 C17/C++20/C++23 ARC/MRC O0/O2 configurations: source build,
 full reuse, publication/relocation, provider-source removal and source-free
 consumption, plus a rejected readonly setter in each mode. It also compares
-producer and consumer key-path metadata identities. Expanded SDK qualification
-is pending; the earlier 24-case runtime matrix did not establish this package
-coverage.
+producer and consumer key-path metadata identities. The expanded 32-gate SDK and fresh Debian/Ubuntu qualification pass: 12 modes,
+36 executions and 12 readonly rejections. The [package acceptance receipt](../support/linux_keypath_package_acceptance.json)
+records the exact archive and scope. The earlier 24-case runtime matrix did not
+establish this package coverage.
