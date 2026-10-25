@@ -9,18 +9,19 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The resumed compiler build and **342 native Clang regressions** pass, with three
+The resumed compiler build and **345 native Clang regressions** pass, with three
 unsupported cases. Four standalone runtime suites and 60 focused tooling tests
-also pass. The broader feature execution matrix and SDK qualification remain in
-progress.
+also pass, including ASan/UBSan runs of all four runtime suites. Capture, keypath
+and spawn execution each pass 24 configurations; isolation passes 48. The async
+matrix and combined SDK qualification remain in progress.
 Public async/actor predicates and full Core/Strict conformance remain reserved.
 
 ## Active implementation checkpoint
 
 Development has resumed with a solo integration span. The six prior agents are
 parked. Maintained code and canonical compiler patches preserve their completed
-work; the next batch integrates C++ frame definitions and the deferred feature
-runner before combined validation.
+work. C++ frame definitions and the five-family feature runner are integrated;
+the remaining compiler, editor, debugger and contract-test targets are building.
 There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
@@ -148,5 +149,5 @@ ctest --test-dir out/runtime-development --output-on-failure
 
 This reuses the production service target and does not require a compiler SDK.
 The task-service, structured-runtime, checked-error-bridge and key-path service
-suites pass at this resumed checkpoint. Language fixture execution and SDK
-qualification still depend on completing the compiler build.
+suites pass normally and under ASan/UBSan. The native compiler and four feature
+families pass; the remaining async matrix and SDK qualification are in progress.

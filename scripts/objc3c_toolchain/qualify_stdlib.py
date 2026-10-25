@@ -173,7 +173,7 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
                 run('system-profile-' + profile, [compiler, *common,
                     '-x', 'objective-c', '-std=c17', '-fobjc3-profile=' + profile,
                     '-fsyntax-only', invalid], root,
-                    failure='objc3.system requires the strict-system profile')
+                    failure="requires feature 'objc3_strict_system'")
             invalid.write_text('@import objc3.core;\n')
             run('major-version-mismatch', [compiler, *common, '-x', 'objective-c',
                 '-std=c17', '-DOBJC3_STDLIB_REQUIRED_MAJOR=99', '-fsyntax-only', invalid],

@@ -47,7 +47,7 @@ static void capture_failed_heap_copy(void) {
     CaptureIntBlock __unsafe_unretained stack = ^[move handle, later] { return handle; };
     CAPTURE_CHECK(handle == -1 && capture_closed == before && stack() == 61);
     try {
-      auto failed = [stack copy];
+      auto failed = capture_heap_copy(stack);
       (void)failed;
       CAPTURE_CHECK(0);
     } catch (const CaptureFailure &) {

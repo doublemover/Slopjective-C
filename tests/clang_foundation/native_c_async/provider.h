@@ -50,7 +50,7 @@ int native_c_foreign(id exception, int *cleanups) __objc3_async_frame;
 - (int)value:(int)delta __objc3_async_frame;
 @end
 __attribute__((objc_root_class))
-@interface NativeCAsyncWorker <NativeCAsyncMethods> {
+@interface NativeCAsyncWorker <NativeCAsyncMethods, NativeCError> {
   Class isa;
 @public
   int number;

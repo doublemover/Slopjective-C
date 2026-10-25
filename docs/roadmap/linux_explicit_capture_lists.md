@@ -1,10 +1,10 @@
 # Linux explicit Block capture lists
 
 Part 8.8 now has a native implementation in the shared development compiler.
-This work has **not been built or executed**: validation was deliberately
-postponed while the six implementation agents develop the language together.
-No SDK, archive, acceptance receipt or profile-conformance claim follows from
-these source changes.
+The native compiler regressions and all 24 runtime configurations pass across
+C17/C++20/C++23, ARC/MRC, O0/O2 and source/PCH transport, including exceptional
+creation and return cleanup. Installed SDK qualification remains in progress;
+these development checks do not establish profile conformance.
 
 ## Implemented ownership contract
 

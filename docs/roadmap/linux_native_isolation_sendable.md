@@ -6,10 +6,10 @@ The implementation is in the canonical Clang source under
 `out/toolchains/objc3-development/src/clang`; the root compiler packet exporter
 owns the corresponding maintained LLVM patch and manifest.
 
-Implementation and regression sources have been authored. Compiler builds,
-regression execution, sanitizer runs, SDK production, and qualification are
-intentionally deferred. This document records implemented source changes, not
-validation results or a public actor capability claim.
+The native compiler regressions and all 48 isolation execution configurations
+pass across C17/C++20/C++23, ARC/MRC providers and consumers, O0/O2 and source/PCH
+transport. Four runtime suites also pass under ASan/UBSan. Installed SDK
+qualification remains in progress; public actor capability claims remain gated.
 
 ## Declaration identity
 

@@ -5,5 +5,5 @@ module objc3 {
   explicit module collections { header "collections.h" export * }
   explicit module concurrency { header "concurrency.h" export * }
   explicit module keypath { header "keypath.h" export * }
-  explicit module system { header "system.h" export * }
+  explicit module system { requires objc3_strict_system header "system.h" export * }
 }

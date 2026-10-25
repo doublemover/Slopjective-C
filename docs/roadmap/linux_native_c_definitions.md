@@ -105,9 +105,11 @@ statement layout is required.
 
 ## Authored coverage and validation status
 
-Development was explicitly authorized ahead of validation. No compiler build,
-fixture execution, test suite, sanitizer run or qualification command has been
-run for this slice. The implementation and fixtures remain unverified source.
+The resumed native compiler build and 345 Clang regressions pass. Runtime
+execution exposed and fixed duplicate frame-root cleanup and a deferred release
+edge whose destination could be deleted during block simplification. Await
+completion outputs now carry the required service header. The mixed-ownership
+async matrix and installed SDK qualification remain in progress.
 
 New native compiler fixtures cover definition IR, private child awaits, loop
 locals, lexical cleanup, checked recovery that awaits again, native exceptions,

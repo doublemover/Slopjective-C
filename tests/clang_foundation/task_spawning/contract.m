@@ -1,6 +1,7 @@
 #include <objc3/concurrency.h>
 #include <objc3/errors.h>
 #include <assert.h>
+#include "ownership_wait.h"
 
 @protocol Sendable @end
 extern id class_createInstance(Class, __SIZE_TYPE__) __attribute__((ns_returns_retained));
@@ -192,7 +193,7 @@ int main(void) {
   }
   unsigned error_destroyed = 0;
   checked_spawn_error_ownership(&error_destroyed);
-  assert(__atomic_load_n(&error_destroyed, __ATOMIC_ACQUIRE) == 1);
+  wait_for_destructions(&error_destroyed, 1);
   assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
   assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
   objc3_actor_release(actor);

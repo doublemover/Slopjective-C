@@ -4650,7 +4650,7 @@ index e84e05e8e..a022353dc 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..ca517e830 100644
+index 6a0d127fb..e964973ea 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -4798,7 +4798,7 @@ index 6a0d127fb..ca517e830 100644
  
    // Find the result expression, if any.
    const Expr *resultExpr = E->getResultExpr();
-@@ -7347,7 +7443,11 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7443,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -4806,7 +4806,15 @@ index 6a0d127fb..ca517e830 100644
 +        if (IsKeyPath && ov->getType()->isObjCRetainableType())
 +          opaqueData = OVMA::bind(CGF, ov, RValue::get(
 +              emitObjC3KeyPathOperandSnapshot(CGF, ov->getSourceExpr())));
-+        else
++        else if (IsKeyPath && ov->getType()->isRecordType()) {
++          // Aggregate OVEs normally alias their source storage. Key-path
++          // operands are values and must survive mutation by later arguments.
++          Address Snapshot = CGF.CreateMemTemp(ov->getType(), "objc3.keypath.value");
++          CGF.EmitAnyExprToMem(ov->getSourceExpr(), Snapshot,
++                              ov->getType().getQualifiers(), true);
++          opaqueData = OVMA::bind(CGF, ov,
++              CGF.MakeAddrLValue(Snapshot, ov->getType()));
++        } else
 +          opaqueData = OVMA::bind(CGF, ov, ov->getSourceExpr());
  
          // If this is the result, also evaluate the result now.
@@ -10944,7 +10952,7 @@ index 9742b496c..18eba1fca 100644
      llvm::Value *Offset = TheModule.getGlobalVariable(name);
      if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..18b33bda2 100644
+index 27e74d966..2f240b1a6 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,13 @@
@@ -11240,7 +11248,7 @@ index 27e74d966..18b33bda2 100644
  
      // Cleanups must end with an insert point.
      CGF.EnsureInsertPoint();
-@@ -2067,10 +2177,224 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
+@@ -2067,10 +2177,229 @@ struct EmitDeferredStatement final : EHScopeStack::Cleanup {
  };
  } // namespace
  
@@ -11376,12 +11384,14 @@ index 27e74d966..18b33bda2 100644
 +    llvm::BasicBlock *Target, unsigned Index) {
 +  if (!ObjC3Defers || !Index) return Target;
 +  ObjC3PartialReleaseEdge Edge;
-+  Edge.Destination = Target;
 +  Edge.Index = Index;
 +  for (const auto &Scope : ObjC3Defers->Scopes)
 +    if (Scope->Active) Edge.Scopes.push_back(Scope.get());
 +  if (Edge.Scopes.empty()) return Target;
 +  Edge.Entry = createBasicBlock("scope.release.edge");
++  // Keep an IR use until this deferred edge is emitted. Finished-block
++  // deletion and forwarding-block simplification must see this continuation.
++  llvm::UncondBrInst::Create(Target, Edge.Entry);
 +  auto *Result = Edge.Entry;
 +  ObjC3Defers->Edges.push_back(std::move(Edge));
 +  return Result;
@@ -11403,12 +11413,15 @@ index 27e74d966..18b33bda2 100644
 +  // records exist. Destination identity keeps a local jump inside a running
 +  // deferred body from draining the enclosing transfer's pending releases.
 +  for (const auto &Edge : ObjC3Defers->Edges) {
++    auto *Continuation = cast<llvm::UncondBrInst>(Edge.Entry->getTerminator());
++    llvm::BasicBlock *Destination = Continuation->getSuccessor();
++    Continuation->eraseFromParent();
 +    EmitBlock(Edge.Entry);
 +    EHScopeStack::Cleanup::Flags Normal;
 +    for (auto *Scope : llvm::reverse(Edge.Scopes))
 +      for (const auto &Release : llvm::reverse(Scope->Releases))
 +        emitPendingSourceRelease(*this, *Release, Normal, Edge.Index);
-+    EmitBranch(Edge.Destination);
++    EmitBranch(Destination);
 +    Builder.ClearInsertionPoint();
 +  }
 +  Builder.restoreIP(SavedIP);
@@ -11465,7 +11478,7 @@ index 27e74d966..18b33bda2 100644
  /// CollectStatementsForCase - Given the body of a 'switch' statement and a
  /// constant value that is being switched on, see if we can dead code eliminate
  /// the body of the switch to a simple series of statements to emit.  Basically,
-@@ -2378,6 +2702,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2378,6 +2707,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
          incrementProfileCounter(Case);
        RunCleanupsScope ExecutedScope(*this);
  
@@ -11474,7 +11487,7 @@ index 27e74d966..18b33bda2 100644
        if (S.getInit())
          EmitStmt(S.getInit());
  
-@@ -2386,6 +2712,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2386,6 +2717,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
        if (S.getConditionVariable())
          EmitDecl(*S.getConditionVariable(), /*EvaluateConditionDecl=*/true);
  
@@ -11485,7 +11498,7 @@ index 27e74d966..18b33bda2 100644
        // At this point, we are no longer "within" a switch instance, so
        // we can temporarily enforce this to ensure that any embedded case
        // statements are not emitted.
-@@ -2410,6 +2740,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
+@@ -2410,6 +2745,8 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
  
    RunCleanupsScope ConditionScope(*this);
  
@@ -22632,7 +22645,7 @@ index 977f81a64..0b4525e9e 100644
        llvm::BasicBlock *NormalExit = Builder.GetInsertBlock();
 diff --git a/clang/lib/CodeGen/CGObjC3Defer.h b/clang/lib/CodeGen/CGObjC3Defer.h
 new file mode 100644
-index 000000000..2fced3064
+index 000000000..9475e6d2f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Defer.h
 @@ -0,0 +1,93 @@
@@ -22709,7 +22722,7 @@ index 000000000..2fced3064
 +  llvm::SmallVector<std::unique_ptr<ObjC3PendingRelease>, 4> Releases;
 +};
 +struct ObjC3PartialReleaseEdge {
-+  llvm::BasicBlock *Entry, *Destination;
++  llvm::BasicBlock *Entry;
 +  unsigned Index;
 +  llvm::SmallVector<ObjC3ReleaseScope *, 4> Scopes;
 +};
@@ -24766,10 +24779,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..e740804d1
+index 000000000..a428ef908
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,933 @@
+@@ -0,0 +1,938 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25335,7 +25348,6 @@ index 000000000..e740804d1
 +  {
 +    RunCleanupsScope FrameScope(*this);
 +    EHStack.pushCleanup<FreeFrame>(NormalAndEHCleanup, Data.Id, Data.Frame);
-+    Data.Destroy = getJumpDestInCurrentScope(Free);
 +    Builder.CreateStore(nullPtr(*this), Data.Owner);
 +    Builder.CreateStore(nullPtr(*this), Data.Error);
 +    Builder.CreateStore(Builder.getInt32(0), Data.Kind);
@@ -25409,6 +25421,9 @@ index 000000000..e740804d1
 +    }
 +    if (isObjC3AsyncThrowingFunction(*this))
 +      emitObjC3PendingErrorProlog(*this);
++    // Destroy source scopes on the way to Free; the frame scope itself owns
++    // these captures and destroys them once when Free forces its cleanups.
++    Data.Destroy = getJumpDestInCurrentScope(Free);
 +    Data.Final = getJumpDestInCurrentScope(Final);
 +
 +    storeField(*this, ReturnValue, 0, Builder.getInt32(40));
@@ -25654,6 +25669,9 @@ index 000000000..e740804d1
 +
 +  Address Completion = CreateTempAlloca(completionType(CGM),
 +      CharUnits::fromQuantity(8), "objc3.await.completion");
++  Builder.CreateMemSet(Completion, Builder.getInt8(0), Builder.getInt64(48));
++  storeField(*this, Completion, 0, Builder.getInt32(48));
++  storeField(*this, Completion, 1, Builder.getInt32(ServiceABI));
 +  Status = call(*this, "objc3_task_get_completion", Int32Ty,
 +      {Dependency, Completion.emitRawPointer(*this)});
 +  checkStatus(*this, Data, Status);
@@ -27337,3 +27355,25 @@ index 000000000..13eabd4b8
 +  return __objc3_await leaf(value);
 +}
 +@end
+diff --git a/clang/test/ObjC3/CodeGen/block-capture-cxx-move.mm b/clang/test/ObjC3/CodeGen/block-capture-cxx-move.mm
+new file mode 100644
+index 000000000..07d0e891f
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/block-capture-cxx-move.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++struct MoveValue {
++  int value;
++  MoveValue(int);
++  MoveValue(const MoveValue &);
++  MoveValue(MoveValue &&) noexcept;
++  ~MoveValue();
++};
++// CHECK-LABEL: define{{.*}} @_Z7capturev
++// CHECK: {{call|invoke}} void @_ZN9MoveValueC1EOS_
++void capture() {
++  MoveValue source(7);
++  int (^block)() = ^[move source] { return source.value; };
++  (void)block();
++}
++// CHECK: {{call|invoke}} void @_ZN9MoveValueC1ERKS_

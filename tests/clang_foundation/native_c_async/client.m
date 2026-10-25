@@ -1,6 +1,10 @@
+#include <stdio.h>
 #include "provider.h"
 #include <assert.h>
 #include <string.h>
+#ifndef NATIVE_C_PROVIDER_ARC
+#define NATIVE_C_PROVIDER_ARC __has_feature(objc_arc)
+#endif
 #define TYPE_ID(T) __builtin_objc3_type_identity((T *)0)
 #define RESULT(T, K) {sizeof(objc3_async_result_type), OBJC3_ASYNC_ABI_VERSION, \
   sizeof(T), __alignof__(T), K, 0, TYPE_ID(T), sizeof(TYPE_ID(T))-1, 0}
@@ -66,14 +70,14 @@ static void references(objc3_executor_t *executor) {
   @autoreleasepool {
     void *source = new_probe();
     objc3_async_frame frame = native_c_object((__bridge id)source, &cleanups);
-#if __has_feature(objc_arc)
+#if NATIVE_C_PROVIDER_ARC
     // The lazy frame already owns its ARC parameter. MRC parameters remain
     // borrowed and their source owner is kept until execution finishes.
     probe_release(source);
 #endif
     objc3_task_t *task = start(&frame, executor, 0);
     finish(task, executor);
-#if !__has_feature(objc_arc)
+#if !NATIVE_C_PROVIDER_ARC
     probe_release(source);
 #endif
     typedef __unsafe_unretained id ObjectABI;
@@ -142,7 +146,18 @@ int main(void) {
     objc3_task_t *task = start(&frame, executor, actor);
     finish(task, executor);
     int result = -1;
-    assert(objc3_task_copy_result(task, &int_type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    objc3_service_status copied = objc3_task_copy_result(task, &int_type, &int_ops, &result);
+    if (copied != OBJC3_SERVICE_OK) {
+      objc3_completion observed = {sizeof(observed), OBJC3_SERVICE_ABI_VERSION};
+      objc3_task_get_completion(task, &observed);
+      objc3_service_status service = OBJC3_SERVICE_OK;
+      objc3_async_error_get_service(observed.error, &service);
+      fprintf(stderr, "service failure=%d\n", (int)service);
+      fprintf(stderr, "integer result copy failed: status=%d completion=%d expected=%s actual=%s\n",
+          (int)copied, (int)observed.kind, int_type.identity,
+          observed.result_type ? observed.result_type->identity : "<none>");
+    }
+    assert(copied == OBJC3_SERVICE_OK);
     assert(result == 28 && __atomic_load_n(&cleanups, __ATOMIC_ACQUIRE) == 9);
     objc3_task_release(task);
 

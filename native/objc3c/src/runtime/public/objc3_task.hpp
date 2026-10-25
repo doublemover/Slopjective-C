@@ -488,7 +488,16 @@ public:
     basic_task get_return_object() noexcept {
       return basic_task(coroutine::from_promise(*this));
     }
-    std::suspend_always initial_suspend() noexcept { return {}; }
+    struct initial_awaiter {
+      promise_type *promise;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(coroutine) const noexcept {}
+      void await_resume() const {
+        if (objc3_task_is_cancel_requested(promise->owner))
+          throw task_cancelled();
+      }
+    };
+    initial_awaiter initial_suspend() noexcept { return {this}; }
     std::suspend_always final_suspend() noexcept { return {}; }
     void unhandled_exception() noexcept {
       failed = true;

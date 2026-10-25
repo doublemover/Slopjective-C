@@ -8,13 +8,14 @@ static objc3_service_status copy_int(void *to, const void *from) {
   memcpy(to, from, sizeof(int));
   return OBJC3_SERVICE_OK;
 }
+static objc3_service_status move_int(void *to, void *from) { return copy_int(to, from); }
 static void destroy_int(void *p) { (void)p; }
 static const objc3_value_ops int_ops = {sizeof(objc3_value_ops),
                                         OBJC3_VALUE_OPS_VERSION,
                                         sizeof(int),
                                         _Alignof(int),
                                         copy_int,
-                                        copy_int,
+                                        move_int,
                                         destroy_int};
 static objc3_task_t *start(objc3_async_frame *frame) {
   objc3_task_t *task = 0;

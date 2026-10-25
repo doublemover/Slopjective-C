@@ -105,18 +105,21 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
 
     def flags(case, language, standard, ownership, optimization, work):
         result = ["--no-default-config", "-x", language, "-std=" + standard,
-            "-" + optimization, "-g", "-UNDEBUG", "-fobjc-version=3",
-            "-fobjc-runtime=gnustep-2.2", "-fblocks", "-fexceptions",
-            "-fobjc-exceptions", "-fobjc-arc-exceptions",
+            "-" + optimization, "-g", "-UNDEBUG", "-fblocks", "-fexceptions",
             "-fmodules", "-fmodules-cache-path=" + str(work / "modules"),
             "-I" + str(work / "include"),
             "-I" + str(headers)]
-        if language != "c++":
+        if language.startswith("objective-c"):
+            result.extend(("-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+                           "-fobjc-exceptions", "-fobjc-arc-exceptions"))
             result.append("-fobjc-arc" if ownership == "arc" else "-fno-objc-arc")
         if "++" in language:
             result.append("-fcoro-aligned-allocation")
         if case.feature in ("isolation", "spawn"):
             result.append("-fobjc3-strict-concurrency")
+        if case.feature == "async":
+            result.append("-DNATIVE_C_PROVIDER_ARC=" +
+                          ("1" if case.provider_ownership == "arc" else "0"))
         return result
 
     def compile_source(case, source, work, *, language=None, standard=None,

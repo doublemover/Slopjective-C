@@ -3,9 +3,10 @@
 This development slice implements the language and library boundary in Part 3
 §3.6 and standard-library contract S.2.6/S.3.3. It is authored against the
 canonical development LLVM sourcetree and the Linux GNUstep 2.2 native runtime.
-Builds, execution, PCH tests, native interface round trips, and SDK qualification
-are deliberately postponed. This document records implementation and pending
-fixtures, not successful validation or a profile conformance claim.
+Native compiler regressions and all 24 source/PCH runtime configurations pass
+across C17/C++20/C++23, ARC/MRC and O0/O2, including exact-once record snapshots
+and C++ operand failures. Native interface round trips and installed SDK
+qualification remain in progress; full profile conformance remains reserved.
 
 ```objc
 @import objc3.keypath;

@@ -631,3 +631,16 @@ index 000000000..3b1ff38b3
 +// MISMATCH: has a different compiler identity; rebuild it with this toolchain
 +// MALFORMED: has a malformed compiler identity; rebuild it with this toolchain
 +// MISSING: has no compiler identity; rebuild it with this toolchain
+diff --git a/clang/lib/Basic/Module.cpp b/clang/lib/Basic/Module.cpp
+index 3e2f66f27..2a16794b6 100644
+--- a/clang/lib/Basic/Module.cpp
++++ b/clang/lib/Basic/Module.cpp
+@@ -114,6 +114,8 @@ static bool hasFeature(StringRef Feature, const LangOptions &LangOpts,
+                         .Case("gnuinlineasm", LangOpts.GNUAsm)
+                         .Case("objc", LangOpts.ObjC)
+                         .Case("objc_arc", LangOpts.ObjCAutoRefCount)
++                        .Case("objc3_strict_system",
++                              LangOpts.ObjC3 && LangOpts.ObjC3Profile == 3)
+                         .Case("opencl", LangOpts.OpenCL)
+                         .Case("tls", Target.isTLSSupported())
+                         .Case("zvector", LangOpts.ZVector)

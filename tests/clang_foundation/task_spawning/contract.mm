@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cassert>
 #include <initializer_list>
+#include "ownership_wait.h"
 
 @protocol Sendable @end
 @protocol SpawnFailure <Error, Sendable> @end
@@ -143,7 +144,7 @@ int main() {
   }
   unsigned error_destroyed = 0;
   checked_spawn_error_ownership(&error_destroyed);
-  assert(__atomic_load_n(&error_destroyed, __ATOMIC_ACQUIRE) == 1);
+  wait_for_destructions(&error_destroyed, 1);
   assert(failed);
   for (bool cancelled : {false, true}) {
     State state;

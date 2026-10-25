@@ -8633,7 +8633,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..70d196e94 100644
+index 5d4c5ff7d..25f28d9ac 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -9234,7 +9234,7 @@ index 5d4c5ff7d..70d196e94 100644
      Expr *CopyExpr = nullptr;
      if (getLangOpts().CPlusPlus && Cap.isCopyCapture()) {
        if (auto *Record = Cap.getCaptureType()->getAsCXXRecordDecl()) {
-@@ -17161,6 +17613,29 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17613,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -9247,9 +9247,11 @@ index 5d4c5ff7d..70d196e94 100644
 +              Context, NestedNameSpecifierLoc(), SourceLocation(), Var, false,
 +              Loc, Var->getType().getNonReferenceType(), VK_LValue);
 +          if (!Initializer.isInvalid()) {
-+            Initializer = ImpCastExprToType(
-+                Initializer.get(), Initializer.get()->getType(), CK_NoOp,
-+                VK_XValue);
++            // ImpCastExprToType elides same-type casts, including the value
++            // category change needed here. Preserve this explicit xvalue.
++            Initializer = ImplicitCastExpr::Create(
++                Context, Initializer.get()->getType(), CK_NoOp,
++                Initializer.get(), nullptr, VK_XValue, FPOptionsOverride());
 +            Initializer = PerformCopyInitialization(
 +                InitializedEntity::InitializeBlock(Var->getLocation(),
 +                                                    Cap.getCaptureType()),
@@ -9264,7 +9266,7 @@ index 5d4c5ff7d..70d196e94 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17668,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17670,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -9290,7 +9292,7 @@ index 5d4c5ff7d..70d196e94 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17703,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17705,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -9301,7 +9303,7 @@ index 5d4c5ff7d..70d196e94 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +19979,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +19981,20 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -9322,7 +9324,7 @@ index 5d4c5ff7d..70d196e94 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20007,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20009,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -37710,10 +37712,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..fc5cbd751
+index 000000000..6786e811c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,972 @@
+@@ -0,0 +1,979 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -38083,6 +38085,13 @@ index 000000000..fc5cbd751
 +    for (const Expr *Argument : Arguments) {
 +      QualType TransferType = transferSource(Argument)->getType();
 +      if (TransferType->isBlockPointerType()) {
++        // A null work item never transfers a capture environment. Its runtime
++        // startup rejection remains available under strict checking.
++        if (Argument->IgnoreParenCasts()->isNullPointerConstant(
++                S.Context, Expr::NPC_ValueDependentIsNotNull)) {
++          ++Index;
++          continue;
++        }
 +        if (const auto *Block = knownBlockLiteral(Argument)) {
 +          llvm::SmallPtrSet<const BlockDecl *, 8> Active;
 +          Invalid |= checkKnownConcurrentBlock(
@@ -38716,10 +38725,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..d270872d0
+index 000000000..5b5393c5e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1264 @@
+@@ -0,0 +1,1278 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -39188,9 +39197,18 @@ index 000000000..d270872d0
 +}
 +
 +Expr *field(Sema &S, Expr *Base, FieldDecl *Field) {
++  // C++ member access materializes a record prvalue and produces an xvalue.
++  // Building the MemberExpr directly loses that conversion for descriptor
++  // temporaries, including readonly keypath conversions.
++  if (S.getLangOpts().CPlusPlus) {
++    ExprResult Converted = S.TemporaryMaterializationConversion(Base);
++    assert(!Converted.isInvalid() && "generated keypath base conversion failed");
++    Base = Converted.get();
++  }
 +  auto *Selection = MemberExpr::CreateImplicit(
 +      S.Context, Base, false, Field, Field->getType(),
-+      Base->isLValue() ? VK_LValue : VK_PRValue, OK_Ordinary);
++      Base->isLValue() ? VK_LValue : Base->isXValue() ? VK_XValue : VK_PRValue,
++      OK_Ordinary);
 +  Selection->setMemberLoc(Base->getEndLoc());
 +  return Selection;
 +}
@@ -39964,6 +39982,11 @@ index 000000000..d270872d0
 +    Captured.push_back(Value.get());
 +  }
 +  Path = Captured[0];
++  // Descriptor-only operations have one operand and one use. Defer its
++  // evaluation to that use; eager aggregate OVE storage would be materialized
++  // twice by the constant evaluator's member-access path.
++  if (Kind == 2 || Kind == 3)
++    cast<OpaqueValueExpr>(Path)->setIsUnique(true);
 +  ExprResult Result;
 +  if (Kind == 3) {
 +    Result = Info.Read ? field(*this, Path, Info.Read) : Path;
@@ -40897,3 +40920,77 @@ index 000000000..a90418213
 +  defer { __objc3_throw(error); } // expected-error {{an ObjC3 error may not escape a defer body}}
 +  return ^{ return 1; };
 +}
+diff --git a/clang/lib/AST/DeclBase.cpp b/clang/lib/AST/DeclBase.cpp
+index 70f61fa57..244eaa20b 100644
+--- a/clang/lib/AST/DeclBase.cpp
++++ b/clang/lib/AST/DeclBase.cpp
+@@ -2202,6 +2202,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
+     return;
+   }
+ 
++  // An external lookup may publish this exact imported declaration while
++  // satisfying the query above. Reentrant native type lookups can reach that
++  // path before the lexical lookup rebuild finishes; do not insert it twice.
++  if (llvm::is_contained(DeclNameEntries.getLookupResult(), D))
++    return;
+   DeclNameEntries.addOrReplaceDecl(D);
+ }
+ 
+diff --git a/clang/test/ObjC3/Sema/Inputs/profile-modules/core.h b/clang/test/ObjC3/Sema/Inputs/profile-modules/core.h
+new file mode 100644
+index 000000000..3021fe9aa
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/profile-modules/core.h
+@@ -0,0 +1 @@
++int profile_core(void);
+diff --git a/clang/test/ObjC3/Sema/Inputs/profile-modules/module.modulemap b/clang/test/ObjC3/Sema/Inputs/profile-modules/module.modulemap
+new file mode 100644
+index 000000000..cc7899fa3
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/profile-modules/module.modulemap
+@@ -0,0 +1,4 @@
++module ProfileTest {
++ explicit module core { header "core.h" export * }
++ explicit module system { requires objc3_strict_system header "system.h" export * }
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/profile-modules/system.h b/clang/test/ObjC3/Sema/Inputs/profile-modules/system.h
+new file mode 100644
+index 000000000..608543888
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/profile-modules/system.h
+@@ -0,0 +1 @@
++int profile_system(void);
+diff --git a/clang/test/ObjC3/Sema/module-reentrant-async-lookup.m b/clang/test/ObjC3/Sema/module-reentrant-async-lookup.m
+new file mode 100644
+index 000000000..745e7d5cd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/module-reentrant-async-lookup.m
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fmodules -fimplicit-module-maps -fmodules-cache-path=%t -fsyntax-only -verify %s
++// expected-no-diagnostics
++#include <stddef.h>
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++int lazy_entry(int value) __objc3_async_frame;
++typedef struct { int state; } LocalState;
++max_align_t aligned_storage;
++LocalState state;
+diff --git a/clang/test/ObjC3/Sema/profile-module-features.m b/clang/test/ObjC3/Sema/profile-module-features.m
+new file mode 100644
+index 000000000..297bcd557
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/profile-module-features.m
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fmodules -fimplicit-module-maps -I%S/Inputs/profile-modules -fmodules-cache-path=%t-core -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc3-profile=strict-system -fmodules -fimplicit-module-maps -I%S/Inputs/profile-modules -fmodules-cache-path=%t-system -DSYSTEM -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc3-profile=strict -fmodules -fimplicit-module-maps -I%S/Inputs/profile-modules -fmodules-cache-path=%t-strict -DNEGATIVE -fsyntax-only -verify -verify-ignore-unexpected=note %s
++@import ProfileTest.core;
++#ifdef NEGATIVE
++@import ProfileTest.system; // expected-error@Inputs/profile-modules/module.modulemap:3 {{requires feature 'objc3_strict_system'}}
++#else
++// expected-no-diagnostics
++#ifdef SYSTEM
++@import ProfileTest.system;
++int use_system(void) { return profile_system(); }
++#endif
++int use_core(void) { return profile_core(); }
++#endif
