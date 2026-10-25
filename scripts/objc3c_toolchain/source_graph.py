@@ -13,12 +13,12 @@ import sys
 import time
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
+    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 else:
     # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
     # bytecode out of that installation without changing library callers.
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
+    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 
 WORKSPACE = 'objc3c.source-workspace.v4'
 PACKAGE = 'objc3c.source-package.v4'
@@ -205,8 +205,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     env.pop('LD_AUDIT', None)
 
     def verify():
-        subprocess.run([sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
-                       env=env, check=True, capture_output=True, timeout=120)
+        verify_installed_sdk(sdk, env=env)
 
     verify()
     sdk_data = json.loads((sdk / 'objc3-sdk.json').read_text())

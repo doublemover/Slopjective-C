@@ -176,6 +176,13 @@ tooling checks now establish the combined checkpoint; language execution and
 SDK qualification follow once compilation succeeds. Broaden checks only to
 resolve failures or unresolved concerns.
 
+Installed qualification gates audit the frozen SDK's full contents at entry
+and exit. Nested source/package operations reuse that gate's manifest binding,
+explicitly propagated to its case workers. This scope has no persistent cache;
+standalone build commands retain full verification. Mutation, failed-consumer,
+nested-scope and worker-isolation regressions pass. A local measurement executes
+100 nested checks with two full audits in about five seconds under contention.
+
 Runtime-only development can configure `native/objc3c/src/runtime` directly:
 
 ```sh

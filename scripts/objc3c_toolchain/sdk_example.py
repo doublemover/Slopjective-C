@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+from contextvars import ContextVar
 import fcntl
 import hashlib
 import json
@@ -19,6 +21,53 @@ REPORT = 'objc3c.source-module-build.v1'
 def digest(path: Path) -> str:
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+_verified_sdks: ContextVar[dict[Path, str]] = ContextVar('verified_sdks', default={})
+
+
+def _audit_sdk(sdk: Path, env: dict | None = None) -> None:
+    subprocess.run([os.sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
+                   env=environment(sdk) if env is None else env,
+                   check=True, capture_output=True, timeout=120)
+
+
+def verify_installed_sdk(sdk: Path, *, env: dict | None = None) -> None:
+    sdk = sdk.resolve(strict=True)
+    expected = _verified_sdks.get().get(sdk)
+    if expected is None:
+        _audit_sdk(sdk, env)
+    elif digest(sdk / 'objc3-sdk.json') != expected:
+        raise ValueError('SDK manifest changed during qualification')
+
+
+@contextmanager
+def sdk_verification(sdk: Path):
+    """Audit a frozen qualification input at both boundaries, even on failure.
+
+    Nested operations share this thread's audit. Ordinary build commands still
+    audit on every invocation. No verification cache survives this scope.
+    """
+    sdk = sdk.resolve(strict=True)
+    sessions = _verified_sdks.get()
+    if sdk in sessions:
+        verify_installed_sdk(sdk)
+        yield
+        return
+    expected = digest(sdk / 'objc3-sdk.json')
+    _audit_sdk(sdk)
+    if digest(sdk / 'objc3-sdk.json') != expected:
+        raise ValueError('SDK manifest changed during qualification')
+    token = _verified_sdks.set({**sessions, sdk: expected})
+    try:
+        yield
+    finally:
+        _verified_sdks.reset(token)
+        if digest(sdk / 'objc3-sdk.json') != expected:
+            raise ValueError('SDK manifest changed during qualification')
+        _audit_sdk(sdk)
+        if digest(sdk / 'objc3-sdk.json') != expected:
+            raise ValueError('SDK manifest changed during qualification')
 
 
 def hashes(paths) -> dict:
@@ -120,8 +169,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
         raise ValueError('a sealed installed SDK is required')
 
     def verify():
-        subprocess.run([os.sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
-                       env=env, check=True, capture_output=True, timeout=120)
+        verify_installed_sdk(sdk, env=env)
 
     if sealed:
         verify()

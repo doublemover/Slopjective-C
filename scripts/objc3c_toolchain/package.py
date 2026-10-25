@@ -363,7 +363,14 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                 'installed_guard_bindings', 'installed_defer_control_flow')
     tasks = {**{name: tasks[name] for name in priority},
              **{name: task for name, task in tasks.items() if name not in priority}}
-    qualification = _run_qualifications(tasks, workers)
+    from .sdk_example import sdk_verification
+
+    def qualify_frozen_sdk(task):
+        with sdk_verification(prefix):
+            return task()
+
+    qualification = _run_qualifications(
+        {name: partial(qualify_frozen_sdk, task) for name, task in tasks.items()}, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():

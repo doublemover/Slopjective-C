@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 import hashlib
 import json
 import os
@@ -147,7 +148,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     # Each case has its own temporary source tree and log prefix. Joining the
     # executor preserves evidence from other cases when any one case fails.
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *case) for case in cases]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *case) for case in cases]
         for case, future in zip(cases, futures):
             try:
                 built, rejected = future.result()

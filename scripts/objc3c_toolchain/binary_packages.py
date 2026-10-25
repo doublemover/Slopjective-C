@@ -15,11 +15,11 @@ import sys
 import tempfile
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
+    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, verify_installed_sdk, write_json
     from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 else:
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
+    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, verify_installed_sdk, write_json
     from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 
 SCHEMA = 'objc3c.binary-package.v3'
@@ -53,8 +53,7 @@ def lock(root: Path, name: str):
 
 
 def sdk_identity(sdk: Path) -> dict:
-    subprocess.run([sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
-                   env=environment(sdk), check=True, capture_output=True, timeout=120)
+    verify_installed_sdk(sdk)
     return json.loads((sdk / 'objc3-sdk.json').read_text())
 
 

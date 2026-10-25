@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import json
@@ -170,7 +171,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     configurations = [(*mode, opt) for mode in modes for opt in ('O0', 'O2')]
     cases, failures = [], []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *case) for case in configurations]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *case) for case in configurations]
         for future in futures:
             try: cases.append(future.result())
             except Exception as error: failures.append(str(error))
