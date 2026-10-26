@@ -29,6 +29,11 @@ anonymous namespace do not become exports. Unsupported public declarations
 suppress both interface outputs. The required `objc3.cxx-data-interfaces.v1`
 semantic capability cannot be erased from C++ sidecars.
 
+The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
+aggregate methods in the lifecycle capability and canonical member identity.
+Changing an ordinary method to a deleted declaration invalidates the module
+semantic fingerprint.
+
 Objective-C++ source imports retain position-sensitive visibility and qualified
 lookup, including overload selection. C++20 preprocessing defers registered
 names to the semantic registry before native module loading. Unregistered names

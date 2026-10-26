@@ -9,25 +9,29 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current SDK passes a rebuilt LLVM foundation: **370 native Clang/index/query
+The current SDK reuses the accepted LLVM foundation: **370 native Clang/index/query
 regressions** (367 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
 contracts. Compiler, editor and debugger targets build. The delivery passes all
 32 facade suites, **nine GNUstep client tests**, 37 installed consumer checks,
 13 selected native integration nodes and all **33 installed SDK qualification
 gates**. Compiler source identity is
 `llvmorg-23.1.3-0d261d1ca552-5c304c44df6d-00b75dc3`.
-The [current acceptance receipt](../support/linux_cxx_class_lifecycle_acceptance.json)
+The [current acceptance receipt](../support/linux_cxx_deleted_member_acceptance.json)
 records exact source, runtime policy, archive and report hashes. Fresh Debian 13
-and Ubuntu 26.04 both pass that exact archive, including ordinary-user compiler,
-package, runtime and debugger consumers. Both owned containers are removed.
+and Ubuntu 26.04 pass that exact archive in the affected C++ class/package scope,
+including installation, relocation, ordinary-user compiler/package consumers,
+embedding and debugger audits. Both owned containers are removed. The preceding
+[2.8.0 receipt](../support/linux_cxx_class_lifecycle_acceptance.json) retains its
+broader fresh 168-configuration / 966-command feature matrices.
 
 The installed five-family matrix passes 168 configurations / 966 commands.
 The current class lifecycle preflights pass eight C++20/23 ARC/MRC O0/O2 cases
 in each normal, ASan/UBSan and TSan mode (24 cases / 96 commands). Unchanged
 service archives and sanitizer GNU variants retain their qualified identities;
-the normal source preflight uses the accepted 2.7.0 GNU runtime. The installed
+the normal source preflight uses the accepted 2.8.0 GNU runtime. The installed
 SDK rebuilds GNU with the current compiler and binds the final source checkpoint.
-One focused compiler/PCH regression and 22 native tooling checks pass. The final
+The focused compiler/PCH regression retains its accepted LLVM evidence.
+All 29 native tooling/qualification checks pass. The final
 12 feature-authority/onboarding checks overlap the tooling scope.
 
 The preceding [2.7.0 frame-binding receipt](../support/linux_cxx_frame_borrow_acceptance.json)
@@ -47,11 +51,13 @@ Core/Strict/System conformance remain reserved.
 
 ## Deleted C++ aggregate member identity
 
-The [2.8.1 source correction](linux_cxx_deleted_members.md) binds deleted ordinary
+The [2.8.1 delivery](linux_cxx_deleted_members.md) binds deleted ordinary
 methods on public aggregates to the lifecycle capability and semantic fingerprint.
 It closes a reproduced cache-identity collision. The corrected source-free package
-fixture requires the imported method to remain unavailable. SDK delivery is in
-progress; the accepted 2.8.0 archive and its qualification remain above.
+fixture requires the imported method to remain unavailable. All source
+preflights, installed gates and focused exact-archive distribution
+checks pass. The required capability and canonical deletion state prevent the
+cache collision; ordinary aggregate method identities remain unchanged.
 
 ## Nonvirtual C++ class lifecycle packages
 

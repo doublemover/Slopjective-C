@@ -7,6 +7,10 @@ the source checkpoint, current SDK, archive and qualification reports.
 Extension ABI 21, semantic interface schema 2.1, service ABI 4 and
 frame ABI 1 are unchanged; compiler-dependent artifacts require regeneration.
 
+The [2.8.1 correction](linux_cxx_deleted_members.md) additionally binds deleted
+ordinary aggregate methods to this capability and semantic fingerprint. Its
+receipt records the current SDK; this page retains the original class milestone.
+
 Published classes may declare private/protected/public instance fields and
 out-of-line members, constructors, destructors, copy/move operations and conversion functions.
 Mutable fields and deleted declarations retain their native meaning. Callers
