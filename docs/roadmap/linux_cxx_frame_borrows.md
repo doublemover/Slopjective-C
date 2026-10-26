@@ -27,6 +27,12 @@ extend a temporary's lifetime. Cancellation does not transfer ownership to the
 frame. These rules do not provide actor isolation or Sendable guarantees, and
 full profile conformance remains reserved.
 
+Captured parameter debug locations follow the independent frame storage while
+preserving their source argument identities. Resumed reference bindings and
+owned value captures remain inspectable after the ramp has returned. A focused
+IR check requires the frame-slot declaration; DWARF verification and LLDB inspect
+both `this` and a reference argument after suspension and evaluate their sum.
+
 Reference results remain rejected by the shared value/void task-result contract.
 Nontrivial class semantic-package projections retain their separate bounds.
 Source-free package witnesses extend the existing public aggregate/member

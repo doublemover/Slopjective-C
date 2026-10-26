@@ -25003,10 +25003,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..ac3cfa020
+index 000000000..6823aab76
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1262 @@
+@@ -0,0 +1,1273 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25817,6 +25817,15 @@ index 000000000..ac3cfa020
 +    // CXXThisValue is the ordinary ABI-adjusted receiver SSA value. LLVM's
 +    // coroutine splitter spills it when it is live past initial suspension;
 +    // it remains borrowed, including secondary-base adjustment thunks.
++    auto BindCaptureDebugInfo = [&](const VarDecl *P, Address Copy) {
++      auto *Parameter = dyn_cast<ParmVarDecl>(P);
++      auto *DI = getDebugInfo();
++      if (!Parameter || !DI || !CGM.getCodeGenOpts().hasReducedDebugInfo())
++        return;
++      if (auto *Variable = DI->getParamDbgMappings().lookup(Parameter))
++        DI->EmitDeclareOfArgVariable(P, Copy.emitRawPointer(*this),
++                                     Variable->getArg(), Builder);
++    };
 +    SmallVector<std::pair<const VarDecl *, Address>, 8> Originals;
 +    for (const VarDecl *P : Parameters) {
 +      QualType T = P->getType();
@@ -25835,6 +25844,7 @@ index 000000000..ac3cfa020
 +        // independent pointer slot through every suspension and cleanup edge.
 +        Builder.CreateStore(Builder.CreateLoad(Original), Copy);
 +        LocalDeclMap.find(P)->second = Copy;
++        BindCaptureDebugInfo(P, Copy);
 +        continue;
 +      }
 +      auto *Reference = DeclRefExpr::Create(getContext(), NestedNameSpecifierLoc(),
@@ -25866,6 +25876,7 @@ index 000000000..ac3cfa020
 +        EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
 +      }
 +      LocalDeclMap.find(P)->second = Copy;
++      BindCaptureDebugInfo(P, Copy);
 +      if (Receiver || TransferredReference) {
 +        // Dedicated owners cover MRC transfers and pseudo-strong self, too.
 +      } else if (containsObjC3CarrierManagedStorage(T))
@@ -28259,10 +28270,11 @@ index 000000000..b06d9466d
 +void ordinary_storage(int n) { int values[n]; observe(values); }
 diff --git a/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm b/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm
 new file mode 100644
-index 000000000..b214c1462
+index 000000000..0432e7cba
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -debug-info-kind=standalone -dwarf-version=5 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefix=DEBUG
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -x objective-c++ /dev/null -disable-llvm-passes -emit-llvm -o - | FileCheck %s
@@ -28273,6 +28285,8 @@ index 000000000..b214c1462
 +  int value;
 +};
 +extern int leaf() __objc3_async_frame;
++// DEBUG-LABEL: define{{.*}} @_Z6borrowR11Noncopyable
++// DEBUG: #dbg_declare(ptr %value.async.reference,
 +// CHECK-LABEL: define{{.*}} @_Z6borrowR11Noncopyable
 +// CHECK: %value.async.reference = alloca ptr, align 8
 +// CHECK: load ptr, ptr %value.addr
