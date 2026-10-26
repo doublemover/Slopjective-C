@@ -35,3 +35,8 @@ package contract requires RTTI, preventing mixed RTTI vtable/consumer contracts.
 Broader compiler/facade/runtime/sanitizer validation and installed/archive gates
 remain deferred to the combined implementation batch. Public profile predicates
 and native Linux AArch64 remain open.
+
+The [source progress receipt](../support/linux_cxx_namespaces_progress.json)
+binds the implementation checkpoint, two focused facade suites and the source-free
+C++20 ARC O0 smoke (one case / four commands). The smoke includes the preceding
+virtual-class fixture; overlapping runs are not summed.
