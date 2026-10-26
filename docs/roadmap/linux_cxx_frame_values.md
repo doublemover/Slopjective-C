@@ -70,8 +70,8 @@ Ubuntu 26.04 as an ordinary user, including relocation, source-free packages
 and debugger consumers. Both owned containers are removed.
 
 The [2.6.0 delivery](linux_dynamic_frame_storage.md) continues with dynamic
-frame storage. Borrowed C++ references and implicit receivers are implemented by the
-[2.7.0 source span](linux_cxx_frame_borrows.md). Nontrivial C++ class publication through the bounded semantic-package projection remains
+frame storage. Borrowed C++ references and implicit receivers are delivered by the
+[2.7.0 delivery](linux_cxx_frame_borrows.md). Nontrivial C++ class publication through the bounded semantic-package projection remains
 separate work. The latter currently restricts exported classes to its established
 aggregate/out-of-line-method contract. Ordinary source/header C++ ABI use of
 these frame values does not promote package or full-profile admission. Public

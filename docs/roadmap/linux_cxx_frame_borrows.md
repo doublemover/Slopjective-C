@@ -1,10 +1,12 @@
 # C++ reference bindings and native-frame receivers
 
-The concurrency 2.7.0 source span admits borrowed C++ reference parameters and
+Concurrency 2.7.0 admits borrowed C++ reference parameters and
 implicit receivers in explicit `__objc3_async_frame` definitions. This matches
-the existing ordinary C++ task-coroutine lifetime contract. The accepted SDK is
-still the [2.6.0 dynamic-storage delivery](linux_dynamic_frame_storage.md) until
-coordinated delivery of this span completes. Service ABI 4, frame ABI 1,
+the existing ordinary C++ task-coroutine lifetime contract. The
+[acceptance receipt](../support/linux_cxx_frame_borrow_acceptance.json) binds the
+source checkpoint, rebuilt compiler, source instrumentation, installed SDK and
+exact-archive Debian/Ubuntu checks. The preceding
+[2.6.0 dynamic-storage delivery](linux_dynamic_frame_storage.md) retains its scope. Service ABI 4, frame ABI 1,
 extension ABI 21 and semantic interface schema 2.1 are unchanged.
 
 Each reference parameter gets an independent pointer slot in the lazy frame.
@@ -44,5 +46,29 @@ deleted-copy referents, rvalue forwarding, exact destruction counts, cancellatio
 unstarted disposal, arrays, function references, pointer rebinding, overloaded
 calls, secondary-base virtual dispatch, borrowed group joins and owned C++23
 explicit-object receivers. Compiler fixtures cover native IR, PCH replay and
-reference-result rejection. Coordinated normal and sanitizer validation is in
-progress; package execution follows with the rebuilt SDK.
+reference-result rejection.
+
+The final C17/C++20/23 source/PCH matrix passes 24 configurations / 132 commands
+in each normal, ASan/UBSan and TSan mode (72 / 396 total). C17 is included because
+parameter debug rebinding also applies to C frames. The unchanged service and
+sanitizer GNU libraries are reused; normal GNU comes from the accepted 2.6.0 SDK.
+A cloud restart interrupted ASan after 20 completed cases; the remaining four
+were resumed against the same compiler and their reports combined explicitly.
+The earlier C++-only preflight scopes are not added to these final totals.
+
+The rebuilt foundation passes 369 Clang/index/query regressions (366 ObjC3),
+three unsupported cases and 166 AST/matcher/clangd contracts. All 32 facade
+suites, nine GNU clients, 37 installed consumer checks, 13 integration nodes
+(76 runtime checks) and 33 installed SDK gates pass. The installed feature
+matrix covers 168 configurations / 966 commands. Native async packages pass
+12 modes / 36 executions, including eight C++ reference/member modes and four
+C-frame scope modes. Two focused compiler/PCH tests and 22 tooling checks pass;
+the final 12 authority/onboarding checks overlap that tooling scope.
+
+The exact archive passes fresh Debian 13 and Ubuntu 26.04 as ordinary users,
+including relocation, source-free packages, compiler witnesses, the expanded
+feature matrix and debugger clients. Both owned containers are removed. One
+SDK installation and archive remain after superseded-artifact cleanup.
+An earlier candidate was stopped before packaging to repair the debug location
+gap; the cloud restart also interrupted the replacement before publication.
+Diagnostic reports remain, and no interrupted candidate published an archive.
