@@ -90,6 +90,7 @@ void TestThreeModuleSemanticLookupAndIdentity() {
                                 "         hasValue(zero) + isOk(value); "
                                 "}");
   consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
   consumer.imported_interfaces = {
       ImportOf(a_path, a.interface_artifact->identity),
       ImportOf(b_path, b.interface_artifact->identity)};
@@ -169,6 +170,7 @@ void TestDuplicateLookupNamesAreRejected() {
   assert(a.success && b.success && a.interface_artifact && b.interface_artifact);
   auto consumer = ModuleRequest(root / "use.m", "", "int use(void) { return collide(); }");
   consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
   consumer.imported_interfaces = {
       ImportOf(a_path, a.interface_artifact->identity),
       ImportOf(b_path, b.interface_artifact->identity)};
@@ -230,6 +232,38 @@ void TestCompleteExportIdentitiesAndPrivateDirectLookup() {
   }
   consumer.source_text = "int field_is_not_global(void) { return code; }\n";
   assert(!Compile(consumer).success);
+  fs::remove_all(root);
+}
+
+void TestLaterCxxOverloadConflicts() {
+  const auto root = fs::temp_directory_path() / "objc3-cxx-overload-collision";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  auto cpp = [&](const char *file, const char *module, const char *source) {
+    auto request = ModuleRequest(root / file, module, source);
+    request.language = BaseLanguage::Cxx;
+    request.objc3 = false;
+    request.objc_runtime.clear();
+    request.arguments = {"-std=c++20"};
+    request.interface_output_path =
+        (root / (std::string(module) + ".objc3i")).string();
+    return request;
+  };
+  auto left = cpp("left.cpp", "left", "int clash(int); long clash(long);");
+  auto right = cpp("right.cpp", "right", "double clash(long);");
+  auto a = Compile(left), b = Compile(right);
+  assert(a.success && b.success);
+  auto consumer = cpp("client.cpp", "", "void use() {}");
+  consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
+  consumer.imported_interfaces = {
+      ImportOf(left.interface_output_path, a.interface_artifact->identity),
+      ImportOf(right.interface_output_path, b.interface_artifact->identity)};
+  auto rejected = Compile(consumer);
+  assert(!rejected.success);
+  assert(std::any_of(rejected.interface_import_diagnostics.begin(),
+                     rejected.interface_import_diagnostics.end(),
+                     [](const auto &d) { return d.code == "O3IFC132"; }));
   fs::remove_all(root);
 }
 
@@ -295,5 +329,6 @@ int main() {
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();
   TestRelativeArtifactsAndResponseFileLayoutFlags();
+  TestLaterCxxOverloadConflicts();
   return 0;
 }

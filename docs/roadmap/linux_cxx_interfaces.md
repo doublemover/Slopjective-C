@@ -1,6 +1,6 @@
 # Linux C++ semantic interfaces
 
-Extension ABI 19 defines bounded C++ and Objective-C++ semantic interfaces on
+Extension ABI 21 and semantic interface schema 2.1 define bounded C++ and Objective-C++ semantic interfaces on
 Linux x86-64 with GNUstep 2.2. The module identity includes the language,
 standard, Blocks mode, ownership, semantic profile, runtime, target and compiler
 patch identity. Regenerate every dependent object and interface for this cutover.
@@ -19,8 +19,10 @@ by [the C++ async callable contract](linux_async_cxx_callables.md). They require
 `objc3.cxx-member-interfaces.v1`, canonical static/instance and effect identity,
 and module-owned native symbols.
 
-Records with bases, explicit special members, inline or template methods, private
-fields, member initializers or nested declarations are rejected. Public templates, named
+The [2.8.0 source span](linux_cxx_class_lifecycles.md) admits bounded nonvirtual
+classes with private fields and out-of-line lifecycle members under the required
+`objc3.cxx-class-lifecycles.v1` capability. Bases, virtual dispatch, concrete inline
+or template methods, member initializers and nested declarations remain rejected. Public templates, named
 namespaces, default arguments, inline definitions and constant-expression
 exports require further modeling. Private implementation declarations inside an
 anonymous namespace do not become exports. Unsupported public declarations

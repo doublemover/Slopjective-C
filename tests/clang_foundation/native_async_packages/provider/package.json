@@ -9,6 +9,11 @@
   "provider_ownership": "arc",
   "exports": [
     "native_module_value",
+    "NativeClassStats",
+    "NativeClassValue",
+    "NativeMoveOnly",
+    "native_module_class",
+    "native_module_move_only",
     "native_module_scoped",
     "native_module_reference",
     "NativeModuleResult",

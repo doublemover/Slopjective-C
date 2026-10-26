@@ -55,6 +55,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
+    kCxxClassLifecycleSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -159,7 +160,7 @@ bool CheckExportCollisions(
     const std::vector<InterfaceDeclarationIdentity> &declarations,
     bool allow_function_overloads,
     std::vector<InterfaceContractDiagnostic> &diagnostics) {
-  std::map<std::string, InterfaceDeclarationIdentity> by_name;
+  std::map<std::string, std::vector<InterfaceDeclarationIdentity>> by_name;
   for (const auto &decl : declarations) {
     if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
         decl.kind == "ObjCIvar" || decl.kind == "Field" ||
@@ -171,21 +172,26 @@ bool CheckExportCollisions(
                                     : is_tag                    ? "tag:"
                                                                 : "ordinary:") +
                                    decl.qualified_name;
-    const auto found = by_name.find(lookup_key);
-    if (found == by_name.end()) {
-      by_name.emplace(lookup_key, decl);
-      continue;
+    auto &prior_declarations = by_name[lookup_key];
+    bool repeated = false;
+    for (const auto &prior : prior_declarations) {
+      if (SameInterfaceDeclarationIdentity(prior, decl)) {
+        repeated = true;
+        continue; // The same canonical declaration can be re-exported.
+      }
+      if (allow_function_overloads && prior.stable_id != decl.stable_id &&
+          ((prior.kind == "Function" && decl.kind == "Function") ||
+           (IsCxxMemberDeclarationKind(prior.kind) &&
+            IsCxxMemberDeclarationKind(decl.kind))))
+        continue;
+      Add(diagnostics, "O3IFC132",
+          "multiple imported modules provide incompatible declarations with "
+          "the same lookup name",
+          decl.qualified_name);
+      return false;
     }
-    const auto &prior = found->second;
-    if (SameInterfaceDeclarationIdentity(prior, decl))
-      continue; // Same canonical export re-exported through two modules.
-    if (allow_function_overloads && prior.kind == "Function" &&
-        decl.kind == "Function" && prior.stable_id != decl.stable_id)
-      continue;
-    Add(diagnostics, "O3IFC132",
-        "multiple imported modules provide incompatible declarations with the same lookup name",
-        decl.qualified_name);
-    return false;
+    if (!repeated)
+      prior_declarations.push_back(decl);
   }
   return true;
 }

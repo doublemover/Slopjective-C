@@ -116,8 +116,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
   }
 
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
-    return method->getAccess() == clang::AS_public &&
-           IsTopLevel(method->getParent());
+    return IsTopLevel(method->getParent());
 
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
     const auto *owner =
@@ -167,6 +166,28 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
   return true;
 }
 
+bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
+  if (!record || !record->isCompleteDefinition())
+    return false;
+  if (record->hasUserDeclaredConstructor() ||
+      record->hasUserDeclaredDestructor() ||
+      record->hasUserDeclaredCopyAssignment() ||
+      record->hasUserDeclaredMoveAssignment())
+    return true;
+  for (const auto *member : record->decls())
+    if (!member->isImplicit()) {
+      if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(member)) {
+        if (field->getAccess() != clang::AS_public || field->isMutable())
+          return true;
+      } else if (const auto *method =
+                     llvm::dyn_cast<clang::CXXMethodDecl>(member))
+        if (method->getAccess() != clang::AS_public ||
+            llvm::isa<clang::CXXConversionDecl>(method))
+          return true;
+    }
+  return false;
+}
+
 std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                                 const clang::ASTContext &context) {
   std::string text;
@@ -191,6 +212,18 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
     out << "incomplete;";
   }
   out << '}';
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      HasClassLifecycle(cxx)) {
+    out << ";cxx-class-lifecycle:v1;trivial=" << cxx->isTrivial()
+        << ";trivially-copyable=" << cxx->isTriviallyCopyable()
+        << ";standard-layout=" << cxx->isStandardLayout()
+        << ";register-passing=" << cxx->canPassInRegisters()
+        << ";nontrivial-dtor-for-call="
+        << cxx->hasNonTrivialDestructorForCall();
+    for (const auto *field : cxx->fields())
+      out << ";field-access=" << static_cast<unsigned>(field->getAccess())
+          << ":mutable=" << field->isMutable();
+  }
   out.flush();
   return text;
 }
@@ -646,30 +679,27 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     supported =
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
-        record->isAggregate() && !record->isUnion() &&
-        record->getNumBases() == 0 && !record->isPolymorphic() &&
-        !record->hasUserDeclaredConstructor() &&
-        !record->hasUserDeclaredDestructor() &&
-        !record->hasUserDeclaredCopyConstructor() &&
-        !record->hasUserDeclaredMoveConstructor() &&
-        !record->hasUserDeclaredCopyAssignment() &&
-        !record->hasUserDeclaredMoveAssignment();
+        !record->isUnion() && record->getNumBases() == 0 &&
+        !record->isPolymorphic();
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
         continue;
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
       if (field) {
-        supported &= field->getAccess() == clang::AS_public &&
-                     !field->isMutable() && !field->hasInClassInitializer();
+        supported &= !field->hasInClassInitializer();
         continue;
       }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
-      supported &= method && !llvm::isa<clang::CXXConversionDecl>(method) &&
-                   method->getAccess() == clang::AS_public &&
-                   !method->isTemplated() && !method->isVirtual() &&
-                   !method->isInlined() && !method->isDefaulted() &&
-                   !method->isDeleted() && !method->isConstexpr() &&
+      supported &= method && !method->isTemplated() && !method->isVirtual() &&
+                   (!method->isInlined() || method->isDeleted()) &&
+                   !method->isDefaulted() && !method->isConstexpr() &&
                    !method->getTrailingRequiresClause();
+      if (const auto *ctor =
+              llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(method))
+        supported &= ctor->getExplicitSpecifier().getExpr() == nullptr;
+      if (const auto *conversion =
+              llvm::dyn_cast_or_null<clang::CXXConversionDecl>(method))
+        supported &= conversion->getExplicitSpecifier().getExpr() == nullptr;
       if (method)
         for (const auto *parameter : method->parameters())
           supported &= !parameter->hasDefaultArg();
@@ -699,12 +729,13 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                                        declaration->getASTContext()));
   }
   if (!supported)
-    AddDiagnostic(result, "O3IFC101",
-                  "C++ semantic interfaces require global declarations and "
-                  "public aggregate records and out-of-line public methods without "
-                  "templates, bases, explicit "
-                  "special members, defaults, or nested declarations",
-                  declaration->getQualifiedNameAsString());
+    AddDiagnostic(
+        result, "O3IFC101",
+        "C++ semantic interfaces require global declarations and "
+        "nonvirtual records with out-of-line members or deleted declarations, "
+        "without templates, bases, defaulted/constexpr members, "
+        "member initializers, defaults, or nested declarations",
+        declaration->getQualifiedNameAsString());
   return supported;
 }
 
@@ -1153,9 +1184,25 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
-  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative))
+  if (const auto *method =
+          llvm::dyn_cast<clang::CXXMethodDecl>(representative)) {
     identity.canonical_type_identity += method->isStatic()
         ? ";cxx-method=static" : ";cxx-method=instance";
+    if (HasClassLifecycle(method->getParent())) {
+      identity.canonical_type_identity +=
+          ";cxx-class-lifecycle:v1;access=" +
+          std::to_string(static_cast<unsigned>(method->getAccess())) +
+          ";deleted=" +
+          (method->isDeleted() ? std::string("1") : std::string("0"));
+      if (const auto *ctor = llvm::dyn_cast<clang::CXXConstructorDecl>(method))
+        identity.canonical_type_identity +=
+            ctor->isExplicit() ? ";explicit=1" : ";explicit=0";
+      if (const auto *conversion =
+              llvm::dyn_cast<clang::CXXConversionDecl>(method))
+        identity.canonical_type_identity +=
+            conversion->isExplicit() ? ";explicit=1" : ";explicit=0";
+    }
+  }
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
     identity.canonical_type_identity += ";api-availability=" + availability;
@@ -1320,7 +1367,9 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
-    if (declaration.kind == "CXXMethod")
+    if (HasCxxClassLifecycleIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxClassLifecycleSemantic);
+    if (IsCxxMemberDeclarationKind(declaration.kind))
       sidecar.required_semantics.push_back("objc3.cxx-member-interfaces.v1");
     if (declaration.kind == "ObjCMethod" &&
         declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
@@ -1358,13 +1407,14 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.canonical-function-effects.v1",
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",
-    "objc3.native-ownership-contracts.v1",
-    "objc3.isolation-contracts.v1",
-    "objc3.typed-keypaths.v1",
-    "objc3.async-entry-abi.v1",
+      "objc3.native-ownership-contracts.v1",
+      "objc3.isolation-contracts.v1",
+      "objc3.typed-keypaths.v1",
+      "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
+      kCxxClassLifecycleSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1456,6 +1506,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
+    kCxxClassLifecycleSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

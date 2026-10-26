@@ -218,8 +218,11 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         const auto &old = *prior.identity;
         if (SameInterfaceDeclarationIdentity(old, decl))
           continue;
-        if (target_.allow_function_overloads && old.kind == "Function" &&
-            decl.kind == "Function" && old.stable_id != decl.stable_id)
+        if (target_.allow_function_overloads &&
+            old.stable_id != decl.stable_id &&
+            ((old.kind == "Function" && decl.kind == "Function") ||
+             (IsCxxMemberDeclarationKind(old.kind) &&
+              IsCxxMemberDeclarationKind(decl.kind))))
           continue;
         reason = "source import '" + importing_module.str() +
             "' conflicts with visible declaration '" + decl.qualified_name +

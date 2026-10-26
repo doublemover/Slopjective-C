@@ -322,9 +322,19 @@ llvm::Error ValidateForEncoding(
   const bool has_names =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
                   [](const auto &d) { return !d.native_symbol_name.empty(); });
+  const bool has_lifecycle =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassLifecycleIdentity);
+  const bool lifecycle_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassLifecycleSemantic) != sidecar.required_semantics.end();
+  if (has_lifecycle != lifecycle_capability)
+    return Invalid(
+        "C++ class lifecycle declarations and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
-      [](const auto &d) { return d.kind == "CXXMethod"; });
+      [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });
   const bool member_capability = std::find(
       sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
       "objc3.cxx-member-interfaces.v1") != sidecar.required_semantics.end();

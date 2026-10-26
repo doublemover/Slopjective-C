@@ -137,6 +137,14 @@ def check_cpp_metadata(metadata):
             'cxx-task-v1' not in scope_effects.get('async_abi_identity', '') or
             'task-boundary:4' not in scope_effects.get('actor_isolation_identity', '')):
         raise ValueError('C++ task scope lost its callable ABI or group contract')
+    if 'objc3.cxx-class-lifecycles.v1' not in metadata['required_semantics']:
+        raise ValueError('nontrivial C++ class package lost its lifecycle capability')
+    for kind in ('CXXConstructor', 'CXXDestructor', 'CXXConversion'):
+        if not any(row['kind'] == kind for row in metadata['declarations']):
+            raise ValueError('nontrivial C++ class package lost declaration kind: ' + kind)
+    for name in ('NativeClassValue', 'NativeMoveOnly'):
+        if ';cxx-class-lifecycle:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('class package lost structural lifecycle identity: ' + name)
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

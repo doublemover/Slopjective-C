@@ -19127,7 +19127,7 @@ index 000000000..be8c12416
 +} // namespace clang
 +#endif // LLVM_CLANG_AST_OBJC3MODULENAMES_H
 diff --git a/clang/lib/AST/Mangle.cpp b/clang/lib/AST/Mangle.cpp
-index 76c51b8d9..df916197c 100644
+index 76c51b8d9..2fe982a87 100644
 --- a/clang/lib/AST/Mangle.cpp
 +++ b/clang/lib/AST/Mangle.cpp
 @@ -17,6 +17,7 @@
@@ -19161,7 +19161,24 @@ index 76c51b8d9..df916197c 100644
  
  enum CCMangling {
    CCM_Other,
-@@ -366,8 +365,7 @@ void MangleContext::mangleMSGuidDecl(const MSGuidDecl *GD,
+@@ -277,8 +276,15 @@ void MangleContext::mangleName(GlobalDecl GD, raw_ostream &Out) {
+ 
+     if (ALA->getLabel().starts_with(LLDBManglingABI::FunctionLabelPrefix))
+       emitLLDBAsmLabel(ALA->getLabel(), GD, Out);
+-    else
++    else {
+       Out << ALA->getLabel();
++      if (ALA->getLabel().starts_with("__objc3_m_")) {
++        if (isa<CXXConstructorDecl>(D))
++          Out << "_ctor_" << static_cast<unsigned>(GD.getCtorType());
++        else if (isa<CXXDestructorDecl>(D))
++          Out << "_dtor_" << static_cast<unsigned>(GD.getDtorType());
++      }
++    }
+ 
+     return;
+   }
+@@ -366,8 +372,7 @@ void MangleContext::mangleMSGuidDecl(const MSGuidDecl *GD,
    }
  }
  
@@ -19171,7 +19188,7 @@ index 76c51b8d9..df916197c 100644
                                        raw_ostream &Out) {
    unsigned discriminator = getBlockId(BD, false);
    if (ID) {
-@@ -380,7 +378,7 @@ void MangleContext::mangleGlobalBlock(const BlockDecl *BD,
+@@ -380,7 +385,7 @@ void MangleContext::mangleGlobalBlock(const BlockDecl *BD,
    if (discriminator == 0)
      Out << "_block_invoke";
    else
@@ -19180,7 +19197,7 @@ index 76c51b8d9..df916197c 100644
  }
  
  void MangleContext::mangleCtorBlock(const CXXConstructorDecl *CD,
-@@ -392,8 +390,8 @@ void MangleContext::mangleCtorBlock(const CXXConstructorDecl *CD,
+@@ -392,8 +397,8 @@ void MangleContext::mangleCtorBlock(const CXXConstructorDecl *CD,
    mangleFunctionBlock(*this, Buffer, BD, ResStream);
  }
  
@@ -19191,7 +19208,7 @@ index 76c51b8d9..df916197c 100644
                                      raw_ostream &ResStream) {
    SmallString<64> Buffer;
    llvm::raw_svector_ostream Out(Buffer);
-@@ -442,12 +440,37 @@ void MangleContext::mangleObjCMethodName(const ObjCMethodDecl *MD,
+@@ -442,12 +447,37 @@ void MangleContext::mangleObjCMethodName(const ObjCMethodDecl *MD,
                                           bool includeCategoryNamespace,
                                           bool useDirectABI) const {
    if (getASTContext().getLangOpts().ObjCRuntime.isGNUFamily()) {

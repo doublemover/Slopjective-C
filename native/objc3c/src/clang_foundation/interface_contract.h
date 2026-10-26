@@ -53,6 +53,20 @@ struct InterfaceDeclarationIdentity {
   std::string native_symbol_name;
 };
 
+inline bool IsCxxMemberDeclarationKind(const std::string &kind) {
+  return kind == "CXXMethod" || kind == "CXXConstructor" ||
+         kind == "CXXDestructor" || kind == "CXXConversion";
+}
+inline constexpr const char *kCxxClassLifecycleSemantic =
+    "objc3.cxx-class-lifecycles.v1";
+inline bool
+HasCxxClassLifecycleIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.kind == "CXXConstructor" || d.kind == "CXXDestructor" ||
+         d.kind == "CXXConversion" ||
+         d.canonical_type_identity.find(";cxx-class-lifecycle:v1;") !=
+             std::string::npos;
+}
+
 // Compare the complete declaration contract, including every modeled effect.
 [[nodiscard]] bool
 SameInterfaceDeclarationIdentity(const InterfaceDeclarationIdentity &left,

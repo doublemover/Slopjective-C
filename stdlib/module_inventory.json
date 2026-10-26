@@ -93,7 +93,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 7,
+        "minor": 8,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -126,13 +126,15 @@
         "lexical heap-backed VLA storage and invocation-lifetime builtin alloca in native C frames (source)",
         "checked dynamic allocation sizing, alignment and owned out-of-memory transport (source)",
         "borrowed C++ lvalue/rvalue reference bindings and implicit native-frame receivers (source)",
-        "native-frame virtual/member-pointer dispatch and owned C++23 explicit-object value receivers (source)"
+        "native-frame virtual/member-pointer dispatch and owned C++23 explicit-object value receivers (source)",
+        "bounded nonvirtual C++ class lifecycle packages with private layout and owned structor variants (source)",
+        "source-free nontrivial C++ frame values and move-only class parameters (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "nontrivial C++ class semantic-package projections and remaining broader profile contracts"
+        "C++ inheritance/virtual/inline/template class projections and remaining broader profile contracts"
       ]
     },
     {

@@ -247,6 +247,29 @@ int main() {
   if (objc3_executor_pump(executor, 300, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42) return 14;
   pending = {};
+  {
+    NativeClassStats stats{};
+    {
+      NativeClassValue value(&stats, 42);
+      NativeClassValue copy(value);
+      NativeClassValue moved(std::move(copy));
+      copy = value;
+      moved = std::move(copy);
+      if (!static_cast<bool>(moved) || moved.number() != 42) return 41;
+      auto member = __objc3_async_from_frame<int>(value.asyncNumber()).start(executor);
+      auto task = __objc3_async_from_frame<NativeClassValue>(
+          native_module_class(std::move(moved))).start(executor);
+      auto unique = __objc3_async_from_frame<int>(
+          native_module_move_only(NativeMoveOnly(42))).start(executor);
+      if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
+          member.result() != 42 || task.result().number() != 42 ||
+          unique.result() != 42) return 42;
+      NativeClassValue *heap = new NativeClassValue(value);
+      if (heap->number() != 42) return 43;
+      delete heap;
+    }
+    if (stats.live || stats.copied < 2 || stats.moved < 2 || !stats.destroyed) return 44;
+  }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

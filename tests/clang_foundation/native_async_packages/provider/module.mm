@@ -203,3 +203,72 @@ native_module_checked_block native_module_checked_factory() __objc3_async {
     return __objc3_try(__objc3_await native_module_record(n, fail));
   };
 }
+
+struct NativeClassStats { int live; int copied; int moved; int destroyed; };
+class NativeClassValue {
+  NativeClassStats *stats;
+  int storage;
+  mutable int reads;
+  int checkedStorage() const;
+public:
+  NativeClassValue(NativeClassStats *, int);
+  NativeClassValue(const NativeClassValue &);
+  NativeClassValue(NativeClassValue &&) noexcept;
+  NativeClassValue &operator=(const NativeClassValue &);
+  NativeClassValue &operator=(NativeClassValue &&) noexcept;
+  ~NativeClassValue() noexcept;
+  explicit operator bool() const;
+  int number() const;
+  int asyncNumber() const __objc3_async_frame;
+};
+NativeClassValue::NativeClassValue(NativeClassStats *s, int n)
+    : stats(s), storage(n), reads(0) { ++stats->live; }
+NativeClassValue::NativeClassValue(const NativeClassValue &v)
+    : stats(v.stats), storage(v.storage), reads(0) { ++stats->live; ++stats->copied; }
+NativeClassValue::NativeClassValue(NativeClassValue &&v) noexcept
+    : stats(v.stats), storage(v.storage), reads(0) {
+  ++stats->live; ++stats->moved; v.storage = -1;
+}
+NativeClassValue &NativeClassValue::operator=(const NativeClassValue &v) {
+  if (this != &v) {
+    --stats->live; stats = v.stats; ++stats->live;
+    storage = v.storage; ++stats->copied;
+  }
+  return *this;
+}
+NativeClassValue &NativeClassValue::operator=(NativeClassValue &&v) noexcept {
+  if (this != &v) {
+    --stats->live; stats = v.stats; ++stats->live;
+    storage = v.storage; v.storage = -1; ++stats->moved;
+  }
+  return *this;
+}
+NativeClassValue::~NativeClassValue() noexcept { --stats->live; ++stats->destroyed; }
+int NativeClassValue::checkedStorage() const { ++reads; return storage; }
+int NativeClassValue::number() const { return checkedStorage(); }
+NativeClassValue::operator bool() const { return storage >= 0; }
+int NativeClassValue::asyncNumber() const __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return number();
+}
+NativeClassValue native_module_class(NativeClassValue value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value;
+}
+class NativeMoveOnly {
+  int storage;
+public:
+  explicit NativeMoveOnly(int);
+  NativeMoveOnly(const NativeMoveOnly &) = delete;
+  NativeMoveOnly(NativeMoveOnly &&) noexcept;
+  ~NativeMoveOnly() noexcept;
+  int number() const;
+};
+NativeMoveOnly::NativeMoveOnly(int n) : storage(n) {}
+NativeMoveOnly::NativeMoveOnly(NativeMoveOnly &&v) noexcept : storage(v.storage) { v.storage = -1; }
+NativeMoveOnly::~NativeMoveOnly() noexcept { storage = -1; }
+int NativeMoveOnly::number() const { return storage; }
+int native_module_move_only(NativeMoveOnly value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value.number();
+}

@@ -28308,3 +28308,24 @@ index 000000000..0432e7cba
 +  __objc3_await leaf();
 +  return value;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/module-owned-cxx-structors.cpp b/clang/test/ObjC3/CodeGen/module-owned-cxx-structors.cpp
+new file mode 100644
+index 000000000..b8f6b78dd
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-owned-cxx-structors.cpp
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -include-pch %t -x c++ /dev/null -emit-llvm -o - | FileCheck %s
++struct Value {
++  int number;
++  Value(int) __asm__("__objc3_m_ctor");
++  ~Value() __asm__("__objc3_m_dtor");
++};
++Value::Value(int n) : number(n) {}
++Value::~Value() { number = 0; }
++// CHECK-DAG: @__objc3_m_ctor_ctor_0
++// CHECK-DAG: @__objc3_m_ctor_ctor_1
++// CHECK-DAG: @__objc3_m_dtor_dtor_1
++// CHECK-DAG: @__objc3_m_dtor_dtor_2
++void run() { Value value(42); }

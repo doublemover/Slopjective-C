@@ -41,6 +41,17 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## Nonvirtual C++ class lifecycle packages
+
+The [2.8.0 source span](linux_cxx_class_lifecycles.md) adds bounded nonvirtual
+class publication with private layout, out-of-line lifecycle/conversion members,
+deleted declarations and module-owned constructor/destructor variants. Source-free
+consumers execute nontrivial frame results and move-only parameters. Required
+capability and overload-collision checks preserve the complete import contract.
+Source qualification passes 24 cases / 96 commands across normal, ASan/UBSan
+and TSan modes; the accepted 2.7.0 delivery remains above until SDK qualification.
+Inheritance, virtual/inline/template class projections retain their separate bounds.
+
 ## C++ borrowed native-frame bindings
 
 The [2.7.0 delivery](linux_cxx_frame_borrows.md) admits C++ reference parameters

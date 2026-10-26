@@ -49,6 +49,15 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int private_namespace_global = 0;
       int private_namespace_helper() { return private_namespace_global; }
     }
+    class NamedValue {
+      int storage;
+    public:
+      explicit NamedValue(int);
+      NamedValue(const NamedValue&);
+      ~NamedValue();
+      int get() const;
+      explicit operator bool() const;
+    };
     #endif
   )";
   r.source_text = R"(
@@ -65,6 +74,15 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     int module_global = 42;
     int implementation_helper(void) { return 1; }
   )";
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
+    *r.source_text += R"(
+      NamedValue::NamedValue(int n) : storage(n) {}
+      NamedValue::NamedValue(const NamedValue &v) : storage(v.storage) {}
+      NamedValue::~NamedValue() { storage = -1; }
+      int NamedValue::get() const { return storage; }
+      NamedValue::operator bool() const { return storage >= 0; }
+      int class_user() { NamedValue a(42); NamedValue b(a); return b.get(); }
+    )";
   if (r.objc3)
     *r.source_text += R"(
     @protocol Root
@@ -100,6 +118,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int MemberValue::operator()(int n) const { return slot + n; }
     )";
     r.interface_exports.push_back("MemberValue");
+    r.interface_exports.push_back("NamedValue");
   }
 
   if (r.objc3)
@@ -121,7 +140,8 @@ void Success(const CompileResult &r) {
 const std::vector<llvm::StringRef> semantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",        "objc3.ownership-projection.v1",
+    "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
+    "objc3.cxx-class-lifecycles.v1",       "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1"};
 void Check(const fs::path &root, BaseLanguage language,
@@ -136,7 +156,8 @@ void Check(const fs::path &root, BaseLanguage language,
       built.interface_artifact->source_bytes, semantics);
   assert(sidecar);
   for (const auto &d : sidecar->declarations) {
-    if (d.kind == "Function" || d.kind == "CXXMethod" || d.kind == "Var" || d.kind == "ObjCInterface" ||
+    if (d.kind == "Function" || IsCxxMemberDeclarationKind(d.kind) ||
+        d.kind == "Var" || d.kind == "ObjCInterface" ||
         d.kind == "ObjCProtocol" || d.kind == "ObjCCategory") {
       assert(!d.native_symbol_name.empty());
       assert(d.native_symbol_name ==
@@ -158,6 +179,20 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(ir.find("_i_Root__directValue") == std::string::npos);
   }
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    bool constructor = false, destructor = false;
+    for (const auto &d : sidecar->declarations) {
+      if (d.kind == "CXXConstructor") {
+        constructor = true;
+        assert(ir.find(d.native_symbol_name + "_ctor_0") != std::string::npos);
+        assert(ir.find(d.native_symbol_name + "_ctor_1") != std::string::npos);
+      }
+      if (d.kind == "CXXDestructor") {
+        destructor = true;
+        assert(ir.find(d.native_symbol_name + "_dtor_1") != std::string::npos);
+        assert(ir.find(d.native_symbol_name + "_dtor_2") != std::string::npos);
+      }
+    }
+    assert(constructor && destructor);
     assert(ir.find("private_template") == std::string::npos);
     assert(ir.find("private_variable") == std::string::npos);
     assert(ir.find("private_initializer") == std::string::npos);

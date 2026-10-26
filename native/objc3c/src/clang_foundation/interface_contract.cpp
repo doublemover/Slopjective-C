@@ -278,9 +278,20 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result, "O3IFC016",
         "C++ declarations are missing their semantic interface capability",
         expected.canonical_name);
-  const bool has_cxx_members =
+  const bool has_lifecycle =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
-                  [](const auto &d) { return d.kind == "CXXMethod"; });
+                  HasCxxClassLifecycleIdentity);
+  const bool lifecycle_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassLifecycleSemantic) != sidecar.required_semantics.end();
+  if (has_lifecycle != lifecycle_capability)
+    Add(result, "O3IFC026",
+        "C++ class lifecycle declarations and required capability must agree",
+        expected.canonical_name);
+  const bool has_cxx_members = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });
   if (has_cxx_members != std::binary_search(required.begin(), required.end(),
                                             "objc3.cxx-member-interfaces.v1"))
     Add(result, "O3IFC021",

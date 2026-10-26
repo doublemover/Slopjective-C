@@ -705,6 +705,56 @@ void TestManagedIvarAndPropertyRoundTrip() {
   }
 }
 
+void TestCxxClassLifecycles() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1"};
+  const std::vector<std::string> args = {"-x", "c++", "-std=c++20",
+                                         "--target=x86_64-unknown-linux-gnu"};
+  const char *source =
+      "class Value { int value; mutable int reads; "
+      "int helper() const; public: explicit Value(int); Value(const Value&); "
+      "Value(Value&&); Value& operator=(const Value&); Value& "
+      "operator=(Value&&); "
+      "~Value() noexcept; explicit operator bool() const; int get() const; }; "
+      "class MoveOnly { int value; public: MoveOnly(int); "
+      "MoveOnly(const MoveOnly&)=delete; MoveOnly(MoveOnly&&); ~MoveOnly(); };";
+  auto ast =
+      clang::tooling::buildASTFromCodeWithArgs(source, args, "classes.cpp");
+  assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+  auto emitted =
+      EmitSemanticInterface(ast->getASTContext(), "fixture.classes", "test");
+  for (const auto &d : emitted.diagnostics)
+    std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+  assert(emitted.success);
+  auto decoded = DecodeSemanticInterfaceSidecar(
+      emitted.sidecar_json, emitted.source_bytes, semantics);
+  assert(decoded);
+  bool ctor = false, dtor = false, conversion = false, deleted = false;
+  for (const auto &d : decoded->declarations) {
+    ctor |= d.kind == "CXXConstructor";
+    dtor |= d.kind == "CXXDestructor";
+    conversion |= d.kind == "CXXConversion";
+    deleted |=
+        d.canonical_type_identity.find(";deleted=1") != std::string::npos;
+  }
+  assert(ctor && dtor && conversion && deleted);
+  auto round = clang::tooling::buildASTFromCodeWithArgs(
+      emitted.source_bytes, args, "round-classes.cpp");
+  assert(round && !round->getDiagnostics().hasErrorOccurred());
+  auto regenerated =
+      EmitSemanticInterface(round->getASTContext(), "fixture.classes", "test");
+  assert(regenerated.success && regenerated.identity.semantic_fingerprint ==
+                                    emitted.identity.semantic_fingerprint);
+  std::erase(decoded->required_semantics, "objc3.cxx-class-lifecycles.v1");
+  decoded->module.semantic_fingerprint =
+      ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+  auto invalid = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+  assert(!invalid);
+  assert(llvm::toString(invalid.takeError()).find("class lifecycle") !=
+         std::string::npos);
+}
+
 void TestBoundedCxxSemanticInterfaces() {
   {
     const std::vector<llvm::StringRef> semantics = {
@@ -848,10 +898,12 @@ void TestBoundedCxxSemanticInterfaces() {
        {"namespace nested { int api(); }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : Base { int second; };",
-        "struct Special { Special(); int value; };",
+
         "struct Method { int value; inline int get() const { return value; } "
         "};",
-        "class Hidden { int value; };", "struct Default { int value=42; };",
+        "struct Default { int value=42; };",
+        "struct Conditional { explicit(true) Conditional(int); };",
+        "struct Defaulted { Defaulted() = default; };",
         "struct Nested { struct Inner { int value; }; Inner child; };",
         "int api(int argument=42);", "inline int api() { return 42; }",
         "extern constexpr int exported=42;", "extern const int exported=42;",
@@ -886,5 +938,6 @@ int main() {
   TestDirectMethodIdentityRoundTrip();
   TestManagedIvarAndPropertyRoundTrip();
   TestBoundedCxxSemanticInterfaces();
+  TestCxxClassLifecycles();
   return 0;
 }

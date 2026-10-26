@@ -28,9 +28,9 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration) {
   if (declaration.native_symbol_name.empty())
     return true;
-  if (declaration.kind != "Function" && declaration.kind != "CXXMethod" &&
-      declaration.kind != "Var" &&
-      declaration.kind != "ObjCInterface" &&
+  if (declaration.kind != "Function" &&
+      !IsCxxMemberDeclarationKind(declaration.kind) &&
+      declaration.kind != "Var" && declaration.kind != "ObjCInterface" &&
       declaration.kind != "ObjCProtocol" && declaration.kind != "ObjCCategory")
     return false;
   std::string owner = module.canonical_name;
@@ -115,8 +115,6 @@ public:
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() ||
         (!decl->getIdentifier() && !llvm::isa<clang::CXXMethodDecl>(decl)) ||
-        llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl,
-                  clang::CXXConversionDecl>(decl) ||
         !IsModuleOwnedSource(context_, decl->getLocation(), source_root_))
       return true;
     const auto *owner = decl->getDeclContext();
@@ -139,7 +137,7 @@ public:
     if (!value && !runtime)
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl))
-      if (function->getDescribedFunctionTemplate() ||
+      if (function->isDeleted() || function->getDescribedFunctionTemplate() ||
           function->getType()->isDependentType())
         return true;
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(decl))
