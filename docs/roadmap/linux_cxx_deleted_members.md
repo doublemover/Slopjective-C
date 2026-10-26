@@ -16,12 +16,14 @@ expression to prove that the imported method is unavailable.
 The preceding [2.8.0 SDK](../support/linux_cxx_class_lifecycle_acceptance.json)
 retains its full foundation, installed and fresh-distribution evidence. The
 [corrected SDK acceptance](../support/linux_cxx_deleted_member_acceptance.json)
-records the active archive and source checkpoint. LLVM, GNU runtime sources,
+records the 2.8.1 archive and source checkpoint. LLVM, GNU runtime sources,
 runtime services and
 public ABI revisions are unchanged. All 33 installed gates pass against the
 new SDK; fresh Debian/Ubuntu checks pass the affected class/package boundary,
 including installation, relocation, ordinary-user consumers and debugger audits.
 The broader fresh feature matrix retains its explicit 2.8.0 archive scope.
+
+The newer [2.9.0 delivery](linux_cxx_class_structure.md) is now active.
 
 All eight C++20/23 ARC/MRC O0/O2 package preflights pass in each normal,
 ASan/UBSan and TSan mode (24 cases / 96 commands). Four interface suites and

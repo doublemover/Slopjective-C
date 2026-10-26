@@ -9,14 +9,14 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current SDK reuses the accepted LLVM foundation: **370 native Clang/index/query
-regressions** (367 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
+The current SDK rebuilds and checks the LLVM foundation: **371 native Clang/index/query
+regressions** (368 ObjC3), three unsupported cases and 167 AST/matcher/source-tooling
 contracts. Compiler, editor and debugger targets build. The delivery passes all
 32 facade suites, **nine GNUstep client tests**, 37 installed consumer checks,
 13 selected native integration nodes and all **33 installed SDK qualification
 gates**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-5c304c44df6d-00b75dc3`.
-The [current acceptance receipt](../support/linux_cxx_deleted_member_acceptance.json)
+`llvmorg-23.1.3-0d261d1ca552-e926e2771bde-00b75dc3`.
+The [current acceptance receipt](../support/linux_cxx_class_structure_acceptance.json)
 records exact source, runtime policy, archive and report hashes. Fresh Debian 13
 and Ubuntu 26.04 pass that exact archive in the affected C++ class/package scope,
 including installation, relocation, ordinary-user compiler/package consumers,
@@ -25,12 +25,12 @@ embedding and debugger audits. Both owned containers are removed. The preceding
 broader fresh 168-configuration / 966-command feature matrices.
 
 The installed five-family matrix passes 168 configurations / 966 commands.
-The current class lifecycle preflights pass eight C++20/23 ARC/MRC O0/O2 cases
+The current class structure preflights pass eight C++20/23 ARC/MRC O0/O2 cases
 in each normal, ASan/UBSan and TSan mode (24 cases / 96 commands). Unchanged
 service archives and sanitizer GNU variants retain their qualified identities;
-the normal source preflight uses the accepted 2.8.0 GNU runtime. The installed
+the normal source preflight uses the accepted 2.8.1 GNU runtime. The installed
 SDK rebuilds GNU with the current compiler and binds the final source checkpoint.
-The focused compiler/PCH regression retains its accepted LLVM evidence.
+The current compiler/PCH regression and native importer/printer tests pass.
 All 29 native tooling/qualification checks pass. The final
 12 feature-authority/onboarding checks overlap the tooling scope.
 
@@ -51,12 +51,14 @@ Core/Strict/System conformance remain reserved.
 
 ## Nonvirtual C++ bases and defaulted members
 
-The [2.9.0 source span](linux_cxx_class_structure.md) adds nonvirtual single and
+The [accepted 2.9.0 delivery](linux_cxx_class_structure.md) adds nonvirtual single and
 multiple inheritance, empty-base layout, access-aware base identity and in-class
 defaulted special members. It also repairs native printer/importer state needed
 for stable defaulted APIs. New execution fixtures cover nontrivial derived frame
-values and receiver adjustment. Source validation passes; SDK delivery is deferred
-for this implementation batch, so the accepted 2.8.1 archive remains above.
+values and receiver adjustment. Source validation, all 33 installed SDK gates and
+focused exact-archive Debian/Ubuntu qualification pass. Source-free immutable
+native async packages pass 12 modes / 36 executions on the host and each fresh
+distribution, including eight C++ class structure modes.
 
 ## Deleted C++ aggregate member identity
 
@@ -151,7 +153,7 @@ evidence separately.
 
 [Native C-frame group scopes](linux_native_group_scopes.md) provide implicit
 finalization for functions and Objective-C methods marked `objc_task_group`.
-The current concurrency module is **2.7.0**. A fresh group admits only structured
+The current concurrency module is **2.9.0**. A fresh group admits only structured
 descendants. Preallocated guards preserve frame captures, pending results and
 checked errors through cancellation, abandonment and actor discard. Lexical
 locals/defers follow source exit; the implicit final join waits for complete
@@ -357,18 +359,19 @@ and native async sanitizer runs use that instrumented GNU runtime.
 
 ## Existing evidence
 
-The current [C++ binding acceptance receipt](../support/linux_cxx_frame_borrow_acceptance.json)
-binds the rebuilt compiler, runtime/header source, all 33 installed gates and
-fully instrumented GNU runtime checks. The archive has seal
-`67d956c3c4defce330897e18f49f142311a8ebdaccdd297dde23ad92e18bc04b`,
-435,409,218 bytes and SHA-256
-`cd13702b10e011a34d3257a70bbc86e5d6e4fdb9a99c041cf0bef9629107c1a5`.
+The current [C++ class structure receipt](../support/linux_cxx_class_structure_acceptance.json)
+binds the compiler, runtime/header source, all 33 installed gates and focused
+fresh class/package consumers. The archive has seal
+`0fc4def2426bd3bfd62f7288d4fcb1a73bed8cd27392edf05cd80dcb0024bcc3`,
+435,540,872 bytes and SHA-256
+`7209b98fd7b906b32c1f46121d822668d2917b4d2544540391db4d116c07a402`.
 
-The host release runs all 33 installed gates. This exact archive also passes
-fresh-distribution qualification: install/relocation/reinstall, embedding,
-debugging, runtime/async consumers, compiler/package gates, all five feature
-families and selected carrier/control-flow consumers execute as an ordinary
-user. Both owned containers are removed. Superseded SDK/runtime artifacts are
+The host release passes the complete 168-configuration / 966-command feature
+matrix. The exact archive passes focused fresh Debian/Ubuntu installation,
+relocation/reinstall, embedding and debugging. Ordinary-user checks cover C++
+interfaces, native async packages and the common stdlib matrix. Broader fresh
+feature matrices retain their explicitly historical 2.8.0 receipt scope.
+Both owned containers are removed. Superseded SDK/runtime artifacts are
 reclaimed; one SDK installation and archive remain, with development facade and
 GNU client configurations bound to the current installation.
 

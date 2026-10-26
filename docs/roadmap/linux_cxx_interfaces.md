@@ -21,18 +21,22 @@ and module-owned native symbols.
 
 The [2.8.0 delivery](linux_cxx_class_lifecycles.md) admits bounded nonvirtual
 classes with private fields and out-of-line lifecycle members under the required
-`objc3.cxx-class-lifecycles.v1` capability. Bases, virtual dispatch, concrete inline
-or template methods, member initializers and nested declarations remain rejected. Public templates, named
+`objc3.cxx-class-lifecycles.v1` capability. The 2.9.0 delivery below extends this
+with nonvirtual bases and in-class defaulted special members. Virtual dispatch,
+concrete inline or template methods, member
+initializers and nested declarations remain rejected. Public templates, named
 namespaces, default arguments, inline definitions and constant-expression
 exports require further modeling. Private implementation declarations inside an
 anonymous namespace do not become exports. Unsupported public declarations
 suppress both interface outputs. The required `objc3.cxx-data-interfaces.v1`
 semantic capability cannot be erased from C++ sidecars.
 
-The [2.9.0 source span](linux_cxx_class_structure.md) additionally models
+The [accepted 2.9.0 delivery](linux_cxx_class_structure.md) additionally models
 nonvirtual bases and in-class defaulted special members. Its base/defaulting
-capability is mandatory; the accepted SDK remains 2.8.1 until that source span
-receives installed and archive qualification.
+capability is mandatory. All installed gates and the exact-archive focused
+Debian/Ubuntu class-package checks pass; the
+[acceptance receipt](../support/linux_cxx_class_structure_acceptance.json) binds
+the compiler, SDK and qualification evidence.
 
 The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
 aggregate methods in the lifecycle capability and canonical member identity.

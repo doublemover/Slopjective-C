@@ -1,11 +1,12 @@
 # Nonvirtual C++ base and defaulted-member packages
 
-The concurrency 2.9.0 source span admits nonvirtual single/multiple inheritance,
-empty bases and in-class defaulted special members in semantic interfaces.
-The active SDK remains the accepted
-[2.8.1 delivery](../support/linux_cxx_deleted_member_acceptance.json).
-The [source progress receipt](../support/linux_cxx_class_structure_progress.json)
-binds the implementation and source-only validation. The new compiler identity is
+The accepted concurrency 2.9.0 delivery admits nonvirtual single/multiple
+inheritance, empty bases and in-class defaulted special members in semantic interfaces.
+The [acceptance receipt](../support/linux_cxx_class_structure_acceptance.json)
+binds the source checkpoint, installed SDK and exact archive. The earlier
+[source progress receipt](../support/linux_cxx_class_structure_progress.json)
+retains its source-only checkpoint and deferred checks; those delivery checks
+are now complete. The compiler identity is
 `llvmorg-23.1.3-0d261d1ca552-e926e2771bde-00b75dc3`.
 Extension ABI 21, interface schema 2.1, service ABI 4 and frame ABI 1 are unchanged;
 regenerate compiler-dependent artifacts for this source cutover.
@@ -52,8 +53,22 @@ variants are reused; normal GNU and runtime headers come from accepted 2.8.1.
 All 32 source facade suites, 14 installed publication-rejection fixtures and
 29 tooling checks pass.
 
-SDK packaging is deferred for this implementation batch. Installed qualification,
-immutable package publication/relocation and the focused fresh Debian/Ubuntu
-class-package checks must bind the new SDK before it replaces 2.8.1. Source
-preflight results do not establish those delivery checks. Public async/actor
-predicates and full Core/Strict/System conformance remain reserved.
+The coordinated SDK build passes all 32 facade suites, nine GNU runtime client
+tests, 37 installed consumer checks, 13 integration nodes / 76 runtime executions
+and all 33 installed gates. The installed five-family matrix passes 168
+configurations / 966 commands. Immutable source-free native async packages pass
+12 modes / 36 executions, including eight C++ structure modes, and exercise
+publication, installation and relocation without provider recompilation.
+
+Fresh Debian 13 and Ubuntu 26.04 pass the same archive in `cxx-class-packages`
+scope. Ordinary-user checks cover 12 native async package modes / 36 executions, 12 C++
+interface executions / 98 commands / 18 rejection cases, and the common stdlib
+40-execution / 258-command matrix per distribution. Installation, relocation,
+reinstallation, embedding and debugger audits pass. The broader fresh feature
+matrix retains its historical 2.8.0 archive scope; the complete installed feature
+matrix above binds this new SDK. Both owned containers are removed.
+
+Superseded delivery artifacts are reclaimed; one SDK installation and archive
+remain. Development frontend and GNU client paths bind the current installation.
+Public async/actor predicates, full Core/Strict/System conformance, native Linux
+AArch64 and the remaining implementation roadmap stay open.
