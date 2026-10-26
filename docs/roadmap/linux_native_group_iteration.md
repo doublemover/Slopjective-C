@@ -3,8 +3,8 @@
 The Linux SDK adds completion-order iteration through the existing shared
 frame ABI. The [acceptance receipt](../support/linux_native_group_iteration_acceptance.json)
 binds that compiler, runtime, installed checks and exact archive. The original
-concurrency module version was 2.2.0; the current [scope SDK](linux_cxx_group_scopes.md)
-ships 2.4.0. Service ABI 4, frame ABI 1, native extension ABI 21 and
+concurrency module version was 2.2.0; the current [frame-value SDK](linux_cxx_frame_values.md)
+ships 2.5.0. Service ABI 4, frame ABI 1, native extension ABI 21 and
 interface schema 2.1 are unchanged.
 
 ```objective-c
@@ -85,7 +85,7 @@ libobjc, project services and clients together. All five standalone runtime
 suites pass in all three modes. Three focused compiler regressions pass,
 including ARC debug-info verification and checked alias diagnostics. The
 [acceptance record](../support/linux_native_group_iteration_acceptance.json)
-binds these source checks. The current rebuilt compiler passes 364 Clang/index/query
+binds these source checks. The current rebuilt compiler passes 367 Clang/index/query
 regressions and 166 native contracts; all 32 facade suites, nine GNUstep clients,
 37 installed consumers, 13 selected integration nodes and all 33 installed SDK
 gates pass. That exact archive also passes fresh Debian 13 and Ubuntu 26.04

@@ -1,13 +1,14 @@
 # C++ coroutine structured group scopes
 
-The concurrency module 2.4.0 extends `objc_task_group` to ordinary C++
+The 2.4.0 concurrency delivery extended `objc_task_group` to ordinary C++
 task coroutines and native Objective-C 3.0 C++ async functions/methods. This
 development span uses the existing service ABI 4, frame ABI 1, extension ABI 21
 and semantic interface schema 2.1. The
 [acceptance receipt](../support/linux_cxx_group_scope_acceptance.json) binds the
 source checkpoint, rebuilt compiler, runtime matrices and coordinated SDK delivery.
 The preceding [C-frame scope receipt](../support/linux_native_group_scope_acceptance.json)
-retains its historical source and archive evidence.
+retains its historical source and archive evidence. The current
+[2.5.0 frame-value delivery](linux_cxx_frame_values.md) retains these scope contracts.
 
 ```objective-c++
 #include <objc3c/runtime/objc3_task.hpp>
@@ -105,5 +106,5 @@ continues to supply explicit task/group joins. Custom promises without the
 reserved scope protocol receive a diagnostic.
 Unannotated task coroutines retain explicit joins. Remaining abstract group
 library forms, broader ownership/isolation/profile contracts, nontrivial values
-in compiler-defined explicit C frames and native Linux AArch64 remain separate
+in semantic-package class projections and native Linux AArch64 remain separate
 work. Public async/actor and full-profile predicates stay reserved.

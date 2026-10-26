@@ -55,7 +55,7 @@ errors at final suspension until shielded group quiescence, then publishes
 without resuming the completed coroutine. `with_task_group` retains its callable
 through callback-frame cleanup and provides an independent child group for user
 iteration and joins. Grouped starts register membership before dispatch. The
-[current acceptance](../support/linux_cxx_group_scope_acceptance.json) binds
+[current acceptance](../support/linux_cxx_frame_value_acceptance.json) binds
 source and installed evidence separately.
 
 Awaiting a handle always queues a continuation on the parent's executor, even
@@ -88,9 +88,10 @@ yield remains responsible for its own cancellation checks.
 
 The runtime also implements [nonblocking closed-group joins and typed result
 iteration](linux_task_group_await.md) through `objc3_task_group_await`,
-`objc3_task_group_await_next` and `objc3::task_group_handle`. The 12-mode normal
-coroutine/group matrix and 12 sanitizer configurations pass. The instrumented
-GNU runtime participates in the current sanitizer runs.
+`objc3_task_group_await_next` and `objc3::task_group_handle`. The installed 12-mode normal
+coroutine/group matrix passes. The [preceding source delivery](../support/linux_cxx_group_scope_acceptance.json)
+retains its 12 dedicated coroutine sanitizer configurations. Current frame-value
+source/PCH instrumentation is bound by the current acceptance.
 
 [Raw handle adapters](linux_async_handle_joins.md) expose
 `objc3::join_task<T>(task)` and `objc3::finish_task_group(group)`. They return lazy

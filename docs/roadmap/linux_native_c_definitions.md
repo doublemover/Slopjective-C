@@ -165,16 +165,14 @@ An Objective-C++ `__objc3_await` of a declared frame call adapts through
 `__objc3_async_from_frame<R>`. This helper adopts the owned lazy carrier and
 disposes it before rethrowing if descriptor validation or adoption fails. The
 compiler retains the original logical source call for checked-error analysis.
-Frame-only calls need the C runtime header; adapted awaits also need
-`objc3_task.hpp`. Explicit C++ frame-ABI definitions use the native frame generator rather than
-C++ promise lowering. Free functions, Blocks and Objective-C methods admit
-value parameters and trivially copyable results/parameters; C++ lexical local
-construction/destruction uses the ordinary cleanup stack. Reference and
-nontrivial record parameters/results and implicit C++ member receivers remain
-diagnosed in that delivery. The source
-[2.5.0 frame-value span](linux_cxx_frame_values.md) replaces the nontrivial value
-restriction with typed construction/destruction hooks, including move-only value
-parameters. References and implicit C++ receivers remain gated. Native frame bodies use return and __objc3_await; C++ coroutine
+Frame-only calls with ordinary C values need the C runtime header; adapted
+awaits and typed C++ storage also need `objc3_task.hpp`. Explicit C++ frame-ABI
+definitions use the native frame generator rather than C++ promise lowering.
+The [2.5.0 value delivery](linux_cxx_frame_values.md) admits nontrivial results,
+move-only value parameters and const copying through typed construction and
+destruction hooks. Private record/enum results share the task bridge's nominal
+descriptor. References, implicit C++ receivers and dynamic stack storage remain
+gated. Native frame bodies use return and __objc3_await; C++ coroutine
 keywords remain rejected. Its C++20/C++23 IR witnesses and definition-boundary diagnostics now pass;
 all 48 mixed-language execution configurations pass. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable

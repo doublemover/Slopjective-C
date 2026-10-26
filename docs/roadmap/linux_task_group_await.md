@@ -2,11 +2,13 @@
 
 The Linux runtime implements `objc3_task_group_await`,
 `objc3_task_group_await_next` and the retained C++ `objc3::task_group_handle`.
-The coroutine/group matrix passes all 12 normal configurations and all 12
-sanitizer configurations. ASan/UBSan and TSan instrument the services and the
-current GNU Objective-C runtime. The coordinated SDK passes all 33 installed gates, including the
+The installed coroutine/group matrix passes all 12 normal configurations. The
+preceding [2.4.0 receipt](../support/linux_cxx_group_scope_acceptance.json) retains
+its 12 dedicated sanitizer configurations with instrumented services and GNU
+Objective-C runtime. Current frame-value/source-PCH instrumentation is bound
+separately by the delivery receipt below. The coordinated SDK passes all 33 installed gates, including the
 [native handle adapters](linux_async_handle_joins.md) and native ARC-only pool
-policy. The [delivery receipt](../support/linux_cxx_group_scope_acceptance.json)
+policy. The [delivery receipt](../support/linux_cxx_frame_value_acceptance.json)
 records exact source and archive evidence. Fresh Debian 13 and Ubuntu 26.04
 qualification both pass, with ordinary-user consumers and owned-container cleanup.
 

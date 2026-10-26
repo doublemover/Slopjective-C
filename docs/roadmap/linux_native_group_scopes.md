@@ -3,8 +3,8 @@
 The Linux SDK implements compiler-owned group scopes for native C-frame
 function and Objective-C method definitions carrying `objc_task_group`.
 The original concurrency module was 2.3.0. The current
-[C++ scope delivery](linux_cxx_group_scopes.md) retains these contracts in 2.4.0. The
-[acceptance receipt](../support/linux_cxx_group_scope_acceptance.json) binds
+[frame-value delivery](linux_cxx_frame_values.md) retains these contracts in 2.5.0. The
+[acceptance receipt](../support/linux_cxx_frame_value_acceptance.json) binds
 the source, compiler/runtime checks and installed archive. The exact archive
 passes fresh Debian 13 and Ubuntu 26.04 qualification, including ordinary-user
 consumers, source-free packages, relocation and debugging. Both owned containers
@@ -76,7 +76,7 @@ The maintained native async package gate also exports a scoped C-frame provider,
 checks its physical frame and task-group metadata, then consumes it after source
 removal and package relocation. Its four C17 ARC/MRC O0/O2 package modes are part
 of the combined SDK and fresh-distribution checks. The rebuilt compiler passes
-364 Clang/index/query regressions and 166 native contracts. All five standalone
+367 Clang/index/query regressions and 166 native contracts. All five standalone
 runtime suites and 24 spawn configurations pass normally, under ASan/UBSan and
 under TSan; the broader C-frame/coroutine/native-async instrumentation also
 passes with instrumented GNU libobjc. All 33 installed SDK gates pass.

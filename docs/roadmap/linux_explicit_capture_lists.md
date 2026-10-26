@@ -163,7 +163,7 @@ strict resource diagnostics and 24 persistence source/PCH variants. It passes
 repaired source fixtures. The MRC persistence fixture now uses native Block copy
 with an explicit retained result contract. This runner and these fixture repairs
 pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
-[current receipt](../support/linux_cxx_group_scope_acceptance.json) records
+[current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 the scope. They remain absent from the earlier 32-gate archive.
 
 Remaining boundaries include unqualified/mixed/C++ carrier move captures,

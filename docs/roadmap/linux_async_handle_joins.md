@@ -6,7 +6,7 @@ binds the source checkpoint, native ARC-only runtime policy, new SDK archive
 and exact validation reports. It reuses the unchanged verified LLVM foundation
 from the [lexical pool delivery](../support/linux_async_lexical_pool_acceptance.json).
 The original handle-join module version was 2.1.0. The current
-[group-scope delivery](linux_cxx_group_scopes.md) ships version 2.4.0
+[frame-value delivery](linux_cxx_frame_values.md) ships version 2.5.0
 and a rebuilt compiler; its acceptance record covers the expanded checks.
 Runtime service ABI 4, async
 frame ABI 1, native extension ABI 21 and interface schema 2.1 are unchanged.
@@ -97,6 +97,6 @@ without repeating that compiler build.
 These joins supply a prerequisite for structured-scope lowering. Native C-frame
 and ordinary C++ task-coroutine scopes now implement implicit shielded finalization.
 Complete profile admission and remaining abstract group forms stay open.
-Native C group-result iteration remains available in the current 2.4.0 headers.
+Native C group-result iteration remains available in the current 2.5.0 headers.
 A normal adapter await cannot substitute for the runtime's direct
 cancellation-shielded cleanup registration.

@@ -17,7 +17,7 @@ handles into native C async definitions and C++ lazy tasks. They preserve result
 and error identity, retain independent leases, queue nonblocking continuations,
 and reject hidden own/direct-parent dependency cycles. Group construction leaves
 registration open; first resume closes the tree and joins complete quiescence.
-The concurrency module is 2.4.0; service ABI 4 and frame ABI 1 are unchanged.
+The concurrency module is 2.5.0; service ABI 4 and frame ABI 1 are unchanged.
 
 Full GNU runtime instrumentation exposed a lazy global autorelease-mode race.
 The Linux patch now uses native per-thread ARC pools exclusively, with no
@@ -25,7 +25,7 @@ Foundation mode switch or legacy retained-return slot. Native tokens remain
 valid across late `NSAutoreleasePool` class registration. Nil return-value
 claiming preserves an empty pool. All nine GNUstep client tests and five
 standalone service suites pass; the latter also pass under ASan/UBSan and TSan.
-The [current delivery record](../support/linux_cxx_group_scope_acceptance.json)
+The [current delivery record](../support/linux_cxx_frame_value_acceptance.json)
 binds source reports and the coordinated SDK status. Compiler-owned
 [C++ task-coroutine scopes](linux_cxx_group_scopes.md) retain pending values and
 errors through shielded finalization without resuming a completed coroutine.
@@ -327,8 +327,9 @@ The canonical compiler implements the C++ typed-E overload dependency:
 deduction of ObjC3 function-effect `ErrorType`, exact async/frame effect matching,
 and used-template-parameter tracking. Header overload resolution and execution
 pass in the spawn matrix. Bounded ordinary C++ raw-frame definitions admit value
-parameters and trivially copyable parameters/results; references, nontrivial
-values and implicit C++ `this` retain targeted diagnostics.
+parameters and nontrivial results through the [typed value hooks](linux_cxx_frame_values.md),
+including move-only parameters and shared private-result descriptors. References
+and implicit C++ `this` retain targeted diagnostics.
 
 `tests/clang_foundation/task_spawning` authors C17 and C++20/23 direct/macro
 equivalence, cancellation before spawn, preserved actor affinity through
@@ -367,8 +368,8 @@ hide loss of the last ordinary task owner.
 Source/PCH, source-free packages, nontrivial result ownership, normal/throwing
 and cancelled exits, actor/manual/worker destinations, failed allocation and
 abandoned frames have maintained witnesses. Remaining abstract group forms,
-nontrivial C++ values in explicit C-frame definitions and broader profile
-admission stay open. Public async/actor and full-profile predicates stay reserved.
+dynamic stack storage, nontrivial class semantic-package projections and broader
+profile admission stay open. Public async/actor and full-profile predicates stay reserved.
 
 Typed async callback deduction treats ErrorType as a deducible type position,
 requires exact async/frame representation, and preserves throwing domains.

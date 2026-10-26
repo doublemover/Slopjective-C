@@ -5,7 +5,7 @@ Objective-C 3.0 C++ coroutines, including ordinary C++ coroutine syntax. Source
 identity is `llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`. The
 [compiler-milestone receipt](../support/linux_async_lexical_pool_acceptance.json)
 binds that archive to its compiler, runtime, sanitizer and fresh-distribution
-reports. The [current delivery](../support/linux_cxx_group_scope_acceptance.json)
+reports. The [current delivery](../support/linux_cxx_frame_value_acceptance.json)
 rebuilds the compiler foundation with native C-frame group scopes, guarded
 carrier return staging, group iteration and physical alias checks. It retains
 native task/group joins and the Linux native ARC-only runtime policy; its complete

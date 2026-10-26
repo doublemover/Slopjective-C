@@ -1,9 +1,11 @@
 # C++ values in explicit native frames
 
-The source concurrency module 2.5.0 extends explicit `__objc3_async_frame`
-definitions to nontrivial C++ value parameters and results. The installed SDK
-remains the qualified [2.4.0 group-scope delivery](../support/linux_cxx_group_scope_acceptance.json)
-until this implementation span completes validation and coordinated packaging.
+The concurrency module 2.5.0 extends explicit `__objc3_async_frame` definitions
+to nontrivial C++ value parameters and results. The
+[acceptance receipt](../support/linux_cxx_frame_value_acceptance.json) binds final
+source, compiler, runtime matrices, installed SDK and exact archive evidence.
+The preceding [2.4.0 scope delivery](../support/linux_cxx_group_scope_acceptance.json)
+retains its historical evidence.
 Service ABI 4, frame ABI 1, extension ABI 21 and interface schema 2.1 are unchanged.
 
 ```objective-c++
@@ -60,8 +62,12 @@ all clients and new frame operations are rebuilt with instrumentation.
 Integration also disables ordinary NRVO storage reuse in native frames. The
 physical return slot contains the frame carrier, so a logical C++ result local
 must retain its own correctly aligned storage, including across an await.
-An over-aligned record regression covers this distinction. SDK qualification
-and delivery remain pending this coherent source checkpoint.
+An over-aligned record regression covers this distinction. The rebuilt compiler
+passes 367 Clang/index/query regressions and 166 native contracts. All 32 facade
+suites, nine GNUstep clients, 37 installed consumers, 13 integration nodes and
+33 installed SDK gates pass. The exact archive passes pinned Debian 13 and
+Ubuntu 26.04 as an ordinary user, including relocation, source-free packages
+and debugger consumers. Both owned containers are removed.
 
 Reference parameters, implicit C++ `this`, dynamic stack storage, and nontrivial
 C++ class publication through the bounded semantic-package projection remain

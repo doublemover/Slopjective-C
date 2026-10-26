@@ -16,7 +16,7 @@ results with compiler-defined layout and copy/destruction operations.
 results/errors through implicit shielded cleanup and forced abandonment. The
 current SDK passes all 33 installed gates, including shared-frame source-free
 consumers, native C/C++ execution and debugger checks. The
-[current receipt](../support/linux_cxx_group_scope_acceptance.json) records
+[current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 that delivery and its fresh-distribution status. Public async/actor predicates
 and full profile conformance remain reserved.
 
