@@ -48,6 +48,13 @@ lifetime of a shared dependency. Tasks can also start on actor mailboxes and
 [hop between retained destinations](linux_task_hops.md), preserving affinity
 through later yields and dependency waits.
 
+The authored [C++ group-scope span](linux_cxx_group_scopes.md) adds automatic
+finalization for `objc_task_group` coroutine definitions and a retained
+`task_group_handle::current_scope()` view. Its promise keeps pending returns and
+errors at final suspension until shielded group quiescence, then publishes
+without resuming the completed coroutine. The current installed acceptance
+remains linked from that development record until qualification is complete.
+
 Awaiting a handle always queues a continuation on the parent's executor, even
 when the dependency is already complete. It never blocks a worker, pumps a manual
 executor or runs the parent inline on the dependency's executor. C clients use

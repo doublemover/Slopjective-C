@@ -13,15 +13,19 @@
  * explicitly join owned tasks/groups; these functions do not establish an
  * implicit structured group scope. */
 
-/* Native C-frame functions/methods marked objc_task_group own a fresh group
+/* Native C-frame and C++ task functions/methods marked objc_task_group own a
+ * fresh group
  * from first resume through implicit finalization. Obtain its borrowed handle
  * with objc3_task_group_scope_current(), and add only structured descendants
  * created by child spawn/start. Normal exit closes and joins; checked failure,
  * cancellation and lost continuations also cancel unfinished scope work.
  * Defers/body locals follow lexical exit; frame captures and staged results/
  * errors remain owned through the join. Exceptions-enabled definitions require
- * Objective-C exception handling. Ordinary C++ task coroutines retain explicit
- * joins until their corresponding scope lowering is implemented. */
+ * Objective-C exception handling for C frames. C++ task coroutines use the
+ * reserved scope-aware promise protocol; pending results and native/checked
+ * errors remain in the final-suspended frame until quiescence. Their completion
+ * notification publishes without resuming the completed coroutine. C++ callers
+ * may use task_group_handle::current_scope() for a retained group view. */
 
 /* Native async callable lowering is currently admitted in the compatibility
  * profile. Other profiles can use the shared C service ABI above without
@@ -29,6 +33,22 @@
 #if defined(__OBJC__) && __OBJC3_PROFILE__ == 0
 #ifdef __cplusplus
 #include <objc3c/runtime/objc3_task.hpp>
+
+namespace objc3 {
+/* The callback returns a lazy task and receives an independently retained group
+ * view. Keep its callable object in this frame through callback completion and
+ * the final group join, including coroutine callbacks that borrow their closure.
+ * Tasks added by the callback must be structured descendants. */
+template <class T = void, class Work>
+task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
+  if constexpr (std::is_void_v<T>) {
+    co_await work(task_group_handle::current_scope());
+    co_return;
+  } else {
+    co_return co_await work(task_group_handle::current_scope());
+  }
+}
+} // namespace objc3
 
 /* Both native async entry representations preserve the source result type.
  * A Block factory owns its captures in the lazy frame before returning, in ARC

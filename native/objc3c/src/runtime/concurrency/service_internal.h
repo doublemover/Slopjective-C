@@ -84,6 +84,11 @@ struct objc3_task final {
   };
 
   std::atomic<uint32_t> references{1};
+  // Cleanup waiters keep records alive without disguising the loss of all
+  // ordinary task owners. Serialize release-side liveness decisions separately
+  // from task/group state; cancellation and destruction run outside this lock.
+  std::mutex reference_mutex;
+  uint32_t cleanup_references{0};
   std::atomic<bool> cancel_requested{false};
   mutable std::mutex mutex;
   std::condition_variable completed;
@@ -144,6 +149,8 @@ bool objc3_executor_internal_retain(objc3_executor_t *executor);
 void objc3_executor_internal_release(objc3_executor_t *executor);
 bool objc3_task_internal_retain(objc3_task_t *task);
 void objc3_task_internal_release(objc3_task_t *task);
+bool objc3_task_cleanup_retain(objc3_task_t *task);
+void objc3_task_cleanup_release(objc3_task_t *task);
 void objc3_service_run_task_resume(void *context);
 void objc3_task_destroy_frame(void *frame, objc3_frame_destroy destroy);
 objc3_task_t *objc3_task_current_callback() noexcept;

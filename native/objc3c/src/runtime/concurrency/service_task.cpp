@@ -447,8 +447,29 @@ bool objc3_task_internal_retain(objc3_task_t *task) {
   return task && objc3::services::try_retain(task->references);
 }
 
-void objc3_task_internal_release(objc3_task_t *task) {
-  if (task->references.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+namespace {
+void release_task_reference(objc3_task_t *task, bool check_cleanup) {
+  bool last, only_cleanup = false;
+  {
+    std::lock_guard<std::mutex> lock(task->reference_mutex);
+    const auto previous = task->references.fetch_sub(1, std::memory_order_acq_rel);
+    last = previous == 1;
+    if (!last && check_cleanup && task->cleanup_references &&
+        previous - 1 == task->cleanup_references) {
+      // Own a temporary reference before unlocking: a notification can retire
+      // the last cleanup lease concurrently. This hold is released below
+      // without repeating the same orphan check.
+      task->references.fetch_add(1, std::memory_order_relaxed);
+      only_cleanup = true;
+    }
+  }
+  if (only_cleanup) {
+    // An explicit cleanup await without a compiler scope keeps its established
+    // lease semantics. Compiler scopes instead cancel their unfinished work;
+    // an earlier shielded dependency still finishes before their own cleanup.
+    (void)objc3::services::task_group_scope_abort(task);
+    release_task_reference(task, false);
+  } else if (last) {
     bool needs_cancel;
     {
       std::lock_guard<std::mutex> lock(task->mutex);
@@ -458,11 +479,33 @@ void objc3_task_internal_release(objc3_task_t *task) {
       // Keep the record alive across cancellation callbacks and their reentry.
       task->references.store(1, std::memory_order_release);
       cancel_task(task);
-      objc3_task_internal_release(task);
+      release_task_reference(task, true);
     } else {
       delete task;
     }
   }
+}
+} // namespace
+
+void objc3_task_internal_release(objc3_task_t *task) {
+  release_task_reference(task, true);
+}
+
+bool objc3_task_cleanup_retain(objc3_task_t *task) {
+  if (!task) return false;
+  std::lock_guard<std::mutex> lock(task->reference_mutex);
+  if (!objc3_task_internal_retain(task)) return false;
+  ++task->cleanup_references;
+  return true;
+}
+
+void objc3_task_cleanup_release(objc3_task_t *task) {
+  if (!task) return;
+  {
+    std::lock_guard<std::mutex> lock(task->reference_mutex);
+    --task->cleanup_references;
+  }
+  release_task_reference(task, true);
 }
 
 namespace {

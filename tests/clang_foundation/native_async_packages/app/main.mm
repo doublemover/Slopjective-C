@@ -183,6 +183,11 @@ int main() {
       executed != 2 || pending.result() != 42)
     return 2;
   pending = {};
+  auto scoped = native_module_scoped(41).start(executor);
+  if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
+      scoped.result() != 42)
+    return 39;
+  scoped = {};
   auto object = native_module_object(40).start(executor);
   auto block = native_module_block(40).start(executor);
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK)

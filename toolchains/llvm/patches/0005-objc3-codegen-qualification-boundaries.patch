@@ -20992,10 +20992,10 @@ index 000000000..2aa06c88c
 +// CHECK-DAG: @_ZGR{{[0-9]+}}__objc3_m_reference_ =
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
 new file mode 100644
-index 000000000..771b59585
+index 000000000..3d37c0a9b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,55 @@
 +#ifndef NATIVE_ASYNC_TASK_TEST_H
 +#define NATIVE_ASYNC_TASK_TEST_H
 +#include "../../../CodeGenCoroutines/Inputs/coroutine.h"
@@ -21011,6 +21011,7 @@ index 000000000..771b59585
 +    bool __objc3_error_raised = false;
 +    task get_return_object();
 +    std::suspend_always initial_suspend() noexcept;
++    std::suspend_always __objc3_group_initial_suspend() noexcept;
 +    std::suspend_always final_suspend() noexcept;
 +    void unhandled_exception();
 +    void return_value(T);
@@ -21030,6 +21031,7 @@ index 000000000..771b59585
 +    bool __objc3_error_raised = false;
 +    task get_return_object();
 +    std::suspend_always initial_suspend() noexcept;
++    std::suspend_always __objc3_group_initial_suspend() noexcept;
 +    std::suspend_always final_suspend() noexcept;
 +    void unhandled_exception();
 +    void return_void();
@@ -27885,3 +27887,41 @@ index 000000000..5818abe57
 +// ARC: call i32 @objc3_task_group_scope_enter
 +// ARC: call i32 @objc3_task_group_scope_finish
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/cxx-group-scope.mm b/clang/test/ObjC3/CodeGen/cxx-group-scope.mm
+new file mode 100644
+index 000000000..ada117a7e
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/cxx-group-scope.mm
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -debug-info-kind=standalone -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#include "Inputs/native-async-task.h"
++
++objc3::task<int> scoped() __attribute__((objc_task_group));
++objc3::task<int> scoped() { co_return 42; }
++// CHECK-LABEL: define{{.*}} @_Z6scopedv
++// CHECK: call{{.*}} @{{.*}}__objc3_group_initial_suspend
++// CHECK-NOT: call{{.*}} @{{.*}}12initial_suspend
++// CHECK: call{{.*}} @{{.*}}final_suspend
++
++int native_scoped() __objc3_async __attribute__((objc_task_group)) { return 42; }
++// CHECK-LABEL: define{{.*}} @_Z13native_scopedv
++// CHECK: call{{.*}} @{{.*}}__objc3_group_initial_suspend
++
++template<class T> objc3::task<T> generic(T value)
++    __attribute__((objc_task_group)) { co_return value; }
++auto instantiated = generic(42);
++
++struct Worker {
++  objc3::task<void> run() __attribute__((objc_task_group)) { co_return; }
++};
++auto member = Worker{}.run();
++
++__attribute__((objc_root_class))
++@interface ScopeMethod
++- (int)run __objc3_async __attribute__((objc_task_group));
++@end
++@implementation ScopeMethod
++- (int)run __objc3_async { return 42; }
++@end

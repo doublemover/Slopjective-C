@@ -51,7 +51,7 @@ struct TaskGroup final {
     JoinWaiter() = default;
     JoinWaiter(const JoinWaiter &) = delete;
     ~JoinWaiter() {
-      objc3_task_release(owned_parent);
+      objc3_task_cleanup_release(owned_parent);
     }
   };
 
@@ -905,8 +905,8 @@ objc3_service_status await_group(TaskGroup *group, objc3_task_t *parent,
   auto &waiter = registration.front();
   waiter.cleanup = cleanup;
   if (cleanup) {
-    waiter.owned_parent = objc3_task_retain(parent);
-    if (!waiter.owned_parent) return OBJC3_SERVICE_NOT_READY;
+    if (!objc3_task_cleanup_retain(parent)) return OBJC3_SERVICE_NOT_READY;
+    waiter.owned_parent = parent;
     auto *retained = task_group_retain(group);
     if (!retained) return OBJC3_SERVICE_NOT_READY;
     try {
@@ -1025,8 +1025,8 @@ void register_scope_join(const std::shared_ptr<ObjC3TaskGroupScope> &scope,
                          objc3_task_t *parent) {
   auto &waiter = scope->reservation.front();
   waiter.cleanup = true;
-  waiter.owned_parent = objc3_task_retain(parent);
-  if (!waiter.owned_parent) std::terminate();
+  if (!objc3_task_cleanup_retain(parent)) std::terminate();
+  waiter.owned_parent = parent;
   waiter.scope = scope;
   waiter.continuation = {parent->await_target, UINT64_MAX};
   std::list<TaskGroup::JoinWaiter> ready;

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cassert>
 #include <initializer_list>
+#include <memory>
 #include "ownership_wait.h"
 
 @protocol Sendable @end
@@ -142,12 +143,144 @@ void checked_spawn_error_ownership(unsigned *destroyed) {
 #endif
 }
 }
+namespace {
+struct CxxScopeState {
+  objc3::task_handle<int> child;
+  unsigned exited = 0;
+};
+struct ScopedCallback {
+  struct State {
+    objc3::task_handle<void> gate;
+    unsigned ran = 0, destroyed = 0;
+    bool fail = false;
+  } *state;
+  std::shared_ptr<int> owner;
+  ~ScopedCallback() { if (owner) ++state->destroyed; }
+  ScopedCallback(State *state, std::shared_ptr<int> owner)
+      : state(state), owner(std::move(owner)) {}
+  ScopedCallback(ScopedCallback &&) = default;
+  ScopedCallback(const ScopedCallback &) = delete;
+  objc3::task<void> child() {
+    co_await state->gate;
+    assert(owner && *owner == 42);
+    ++state->ran;
+    co_return;
+  }
+  objc3::task<int> operator()(objc3::task_group_handle group) {
+    auto task = child().start_child();
+    group.add(task);
+    if (state->fail) throw 73;
+    co_return 42;
+  }
+};
+void callback_group_owns_callable_until_quiescence(objc3_executor_t *source) {
+  for (bool fail : {false, true}) {
+    ScopedCallback::State state;
+    state.fail = fail;
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.executor = source;
+    options.resume = [](objc3_task_t *, void *) {};
+    options.result_type = objc3::task_detail::result_type<void>();
+    objc3_task_t *gate = nullptr;
+    assert(objc3_task_start(&options, &gate) == OBJC3_SERVICE_OK);
+    auto *owned = objc3_task_retain(gate);
+    state.gate = objc3::task_handle<void>::adopt_native(&owned);
+    auto value = std::make_shared<int>(42);
+    std::weak_ptr<int> witness = value;
+    auto task = objc3::with_task_group<int>(ScopedCallback(&state, std::move(value))).start(source);
+    uint32_t executed = 0;
+    assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+    if (!fail) {
+      objc3_completion completion{};
+      assert(objc3_task_get_completion(task.native_handle(), &completion) ==
+             OBJC3_SERVICE_NOT_READY);
+      assert(!witness.expired() && state.destroyed == 0 && state.ran == 0);
+    }
+    objc3_completion completion{};
+    completion.struct_size = sizeof(completion);
+    completion.version = OBJC3_SERVICE_ABI_VERSION;
+    completion.kind = OBJC3_COMPLETION_SUCCESS;
+    completion.result_type = objc3::task_detail::result_type<void>();
+    assert(objc3_task_complete(gate, &completion) == OBJC3_SERVICE_OK);
+    assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+    if (fail) {
+      bool caught = false;
+      try { (void)task.result(); }
+      catch (int error) { caught = error == 73; }
+      assert(caught && state.ran == 0);
+    } else {
+      assert(task.result() == 42 && state.ran == 1);
+    }
+    assert(witness.expired() && state.destroyed == 1);
+    objc3_task_release(gate);
+  }
+  auto empty_result = objc3::with_task_group([](objc3::task_group_handle group)
+                                               -> objc3::task<void> {
+    auto child = pause(42).start_child();
+    group.add(child);
+    co_return;
+  }).start(source);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  empty_result.result();
+}
+int cxx_checked_scope(CxxScopeState *state, id<SpawnFailure> error, bool fail)
+    __objc3_async __objc3_throws(id<SpawnFailure>)
+    __attribute__((objc_task_group)) {
+  defer { ++state->exited; }
+  state->child = OBJC_TASK_SPAWN(^int(void) __objc3_async {
+    return __objc3_await pause(21);
+  });
+  objc3::task_group_handle::current_scope().add(state->child);
+  if (fail) throwError(error);
+  return 42;
+}
+void checked_cxx_scope_exits(objc3_executor_t *source) {
+  for (bool fail : {false, true}) {
+    unsigned destroyed = 0;
+    SpawnError *object = [SpawnError new];
+    object->destroyed = &destroyed;
+    CxxScopeState state;
+    auto task = cxx_checked_scope(&state, object, fail).start(source);
+    uint32_t executed = 0;
+    assert(objc3_executor_pump(source, 1, &executed) == OBJC3_SERVICE_OK);
+    assert(state.exited == 1);
+    objc3_completion completion{};
+    assert(objc3_task_get_completion(task.native_handle(), &completion) ==
+           OBJC3_SERVICE_NOT_READY);
+    assert(bool(objc3_task_is_cancel_requested(state.child.native_handle())) == fail);
+    assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+    if (fail) {
+      bool caught = false;
+      try { (void)task.result(); }
+      catch (const objc3::task_error &failure) {
+        caught = objc3::task_detail::__objc3_task_error_object(failure.native_handle()) ==
+                 (__bridge void *)object;
+      }
+      assert(caught);
+    } else {
+      assert(task.result() == 42 && state.child.result() == 21);
+    }
+    task = {};
+#if !__has_feature(objc_arc)
+    release_source((__bridge void *)object);
+#endif
+    object = nullptr;
+    wait_for_destructions(&destroyed, 1);
+  }
+}
+} // namespace
+
 int main() {
   objc3_executor_t *source = nullptr, *global = nullptr;
   objc3_actor_t *actor = nullptr;
   assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
+  checked_cxx_scope_exits(source);
+  callback_group_owns_callable_until_quiescence(source);
   {
     auto scoped = std::move(__objc3_async_from_frame<int>(raw_scope_parent())).start_on(actor);
     uint32_t executed = 0;

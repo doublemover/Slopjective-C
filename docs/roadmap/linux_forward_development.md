@@ -38,6 +38,24 @@ scope. Historical and overlapping batches are not summed into current counts.
 Public async/actor predicates and full Core/Strict/System conformance remain
 reserved.
 
+## Active C++ coroutine group-scope span
+
+[C++ task-coroutine scopes](linux_cxx_group_scopes.md) extend the compiler-owned
+protocol to ordinary coroutine syntax and native C++ async bodies. The source
+concurrency module is 2.4.0. A scope-aware initial awaiter reserves the guard
+before body entry; promise state retains nontrivial values and errors through
+the final join, publishing without resuming a completed coroutine. A retained
+current-scope view shares the existing descendant-only group tree.
+
+Authored witnesses cover normal/throwing/cancelled exits, nested scopes, actor
+publication, worker cleanup fences, failed entry/result copying, abandoned body
+awaits/final suspension and earlier shielded cleanup. Source-free package
+coverage includes the C++ task entry and group identity. The rebuilt compiler,
+three focused compiler regressions, 24 normal spawn source/PCH configurations,
+12 normal coroutine configurations and 15 targeted tooling tests pass. Sanitizer
+and delivery checks are in progress; the accepted SDK above remains the 2.3.0
+C-frame scope delivery.
+
 ## Native C-frame group scopes
 
 [Native C-frame group scopes](linux_native_group_scopes.md) provide implicit

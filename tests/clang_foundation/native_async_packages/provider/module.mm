@@ -69,6 +69,17 @@ int native_module_value(int value) __objc3_async {
   return value + 1;
 }
 
+static objc3::task<void> module_scope_child() {
+  co_await objc3::task_yield;
+  co_return;
+}
+int native_module_scoped(int value) __objc3_async
+    __attribute__((objc_task_group)) {
+  auto child = module_scope_child().start_child();
+  objc3::task_group_handle::current_scope().add(child);
+  return value + 1;
+}
+
 objc3_async_frame native_module_frame(int value) {
   return native_module_value(value).release_native();
 }

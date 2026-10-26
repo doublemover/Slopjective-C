@@ -131,6 +131,12 @@ def check_cpp_metadata(metadata):
     if not has_checked_async(objc_methods):
         raise ValueError('native async interface lost Objective-C method effects')
     names = {row['qualified_name']: row for row in metadata['declarations']}
+    scope = names.get('native_module_scoped', {})
+    scope_effects = scope.get('effects', {})
+    if (not has_async(scope) or
+            'cxx-task-v1' not in scope_effects.get('async_abi_identity', '') or
+            'task-boundary:4' not in scope_effects.get('actor_isolation_identity', '')):
+        raise ValueError('C++ task scope lost its callable ABI or group contract')
     for name in ('native_module_frame', 'native_module_object_frame',
                  'native_module_block_frame'):
         if name not in names:

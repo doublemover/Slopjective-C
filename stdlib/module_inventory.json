@@ -93,7 +93,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 3,
+        "minor": 4,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -115,10 +115,13 @@
         "compiler-owned native C Optional<T> group-next plans",
         "native C completion-order group iteration with independent Some/None ownership",
         "compiler-owned native C-frame function/method group scopes (source)",
-        "preallocated scope finalization and forced-abandonment quiescence (source)"
+        "preallocated scope finalization and forced-abandonment quiescence (source)",
+        "C++ task-coroutine automatic group scopes and retained current-scope views (source)",
+        "final-suspended C++ result/error ownership through shielded quiescence (source)",
+        "with_task_group callback tasks with callable ownership through child quiescence (source)"
       ],
       "remaining": [
-        "remaining spawn/capture forms and C++ task-coroutine structured scope finalization",
+        "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement"
       ]

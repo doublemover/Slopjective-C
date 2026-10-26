@@ -11,6 +11,15 @@
 #include <thread>
 #include <vector>
 
+// Inject the entry service's documented failure without replacing allocator or
+// sanitizer interceptors. Only the group-await executable wraps this symbol.
+static std::atomic<bool> fail_scope_entry{false};
+extern "C" objc3_service_status __real_objc3_task_group_scope_enter(objc3_task_t *);
+extern "C" objc3_service_status __wrap_objc3_task_group_scope_enter(objc3_task_t *task) {
+  if (fail_scope_entry.exchange(false)) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  return __real_objc3_task_group_scope_enter(task);
+}
+
 namespace {
 void pump(objc3_executor_t *executor, uint32_t limit = UINT32_MAX) {
   uint32_t executed = 0;
@@ -31,11 +40,13 @@ void pending(objc3_task_t *task) {
 }
 
 void complete(objc3_task_t *task,
-              objc3_completion_kind kind = OBJC3_COMPLETION_SUCCESS) {
+              objc3_completion_kind kind = OBJC3_COMPLETION_SUCCESS,
+              const objc3_async_result_type *type = nullptr) {
   objc3_completion completion{};
   completion.struct_size = sizeof(completion);
   completion.version = OBJC3_SERVICE_ABI_VERSION;
   completion.kind = kind;
+  completion.result_type = type;
   assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
 }
 
@@ -1239,7 +1250,329 @@ void raw_handle_frame_adapters() {
 }
 } // namespace
 
+#ifdef __OBJC__
+namespace cpp_scopes {
+struct State {
+  objc3_task_t *parent = nullptr, *child = nullptr;
+  objc3_task_group_t *group = nullptr;
+  objc3_executor_t *child_executor = nullptr;
+  objc3::task_handle<void> dependency;
+  objc3::task_group_handle earlier_cleanup;
+  HeldFrame frame;
+  unsigned entered = 0, exited = 0;
+  uint64_t expected_actor = 0, expected_executor = 0;
+  unsigned published = 0;
+  bool fail = false, pause = false;
+  ~State() {
+    objc3_task_group_release(group);
+    objc3_task_release(child);
+  }
+};
+struct Exit {
+  State *state;
+  ~Exit() { ++state->exited; }
+};
+struct Failure { std::shared_ptr<int> value; };
+
+objc3::task<std::shared_ptr<int>> scoped(State *, std::shared_ptr<int>)
+    __attribute__((objc_task_group));
+// Attribute inheritance and ordinary C++ coroutine syntax share the native
+// async promise protocol, including nontrivial parameter/result ownership.
+objc3::task<std::shared_ptr<int>> scoped(State *state,
+                                        std::shared_ptr<int> value) {
+  ++state->entered;
+  Exit exit{state};
+  auto group = objc3::task_group_handle::current_scope();
+  assert(group.native_handle() == objc3_task_group_scope_current());
+  state->group = objc3_task_group_retain(group.native_handle());
+  auto nested = group.child();
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = state->child_executor;
+  options.frame = &state->frame;
+  options.resume = held_resume;
+  options.destroy = held_destroy;
+  assert(objc3_task_start_child_on(state->parent, &options, &state->child) ==
+         OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(nested.native_handle(), state->child) ==
+         OBJC3_SERVICE_OK);
+  if (state->pause) (void)co_await state->dependency;
+  if (state->earlier_cleanup) co_await state->earlier_cleanup.cancel_and_join();
+  if (state->fail) throw Failure{value};
+  co_return value;
+}
+
+void exits_and_abandonment() {
+  auto *destination = executor();
+  for (unsigned mode = 0; mode != 6; ++mode) {
+    State state;
+    state.child_executor = destination;
+    state.fail = mode == 1;
+    state.pause = mode == 5;
+    auto value = std::make_shared<int>(42);
+    std::weak_ptr<int> witness = value;
+    HeldFrame dependency_frame;
+    auto *dependency = start_held(destination, dependency_frame,
+                                  objc3::task_detail::result_type<void>());
+    auto *owned_dependency = objc3_task_retain(dependency);
+    state.dependency = objc3::task_handle<void>::adopt_native(&owned_dependency);
+    objc3_actor_t *actor = nullptr;
+    assert(objc3_actor_create(destination, &actor) == OBJC3_SERVICE_OK);
+    auto parent = scoped(&state, std::move(value)).start_on(actor);
+    state.parent = parent.native_handle();
+    pump(destination);
+    assert(state.entered == 1 && state.exited == (state.pause ? 0u : 1u));
+    assert(!witness.expired());
+    pending(state.parent);
+    assert(bool(objc3_task_is_cancel_requested(state.child)) == state.fail);
+    if (mode == 2) parent.cancel();
+    if (mode == 3 || mode == 5) parent = {};
+    if (mode == 2 || mode == 3 || mode == 5) {
+      assert(objc3_task_is_cancel_requested(state.child));
+      assert(!witness.expired());
+    }
+    complete(state.child, (mode == 1 || mode == 2 || mode == 3 || mode == 5)
+                              ? OBJC3_COMPLETION_CANCELLED
+                              : OBJC3_COMPLETION_SUCCESS);
+    if (mode == 4) {
+      // Discard a queued finalization notification, after the body reached
+      // final suspend. Its coroutine must be destroyed, never resumed again.
+      assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    }
+    pump(destination);
+    assert(state.exited == 1 && state.frame.destroyed == 1);
+    if (mode == 0) {
+      assert(*parent.result() == 42);
+    } else if (mode == 1) {
+      bool caught = false;
+      try { (void)parent.result(); }
+      catch (const Failure &failure) { caught = *failure.value == 42; }
+      assert(caught);
+    } else if (mode == 2 || mode == 4) {
+      bool caught = false;
+      try { (void)parent.result(); }
+      catch (const objc3::task_cancelled &) { caught = true; }
+      assert(caught);
+    }
+    parent = {};
+    assert(witness.expired());
+    // A late ordinary await notification must not touch an abandoned frame.
+    complete(dependency, OBJC3_COMPLETION_SUCCESS,
+             objc3::task_detail::result_type<void>());
+    pump(destination);
+    objc3_task_release(dependency);
+    objc3_actor_release(actor);
+  }
+  objc3_executor_release(destination);
+}
+
+objc3::task<std::shared_ptr<int>> nested(State *outer, State *inner,
+                                        std::shared_ptr<int> value)
+    __attribute__((objc_task_group)) {
+  ++outer->entered;
+  Exit exit{outer};
+  auto child = scoped(inner, value).start_child();
+  inner->parent = child.native_handle();
+  objc3::task_group_handle::current_scope().add(child);
+  co_return value;
+}
+void nested_and_worker_quiescence() {
+  auto *destination = executor();
+  State outer, inner;
+  inner.child_executor = destination;
+  auto value = std::make_shared<int>(42);
+  std::weak_ptr<int> witness = value;
+  auto parent = nested(&outer, &inner, std::move(value)).start(destination);
+  outer.parent = parent.native_handle();
+  pump(destination);
+  assert(outer.entered == 1 && inner.entered == 1);
+  assert(outer.exited == 1 && inner.exited == 1 && !witness.expired());
+  pending(outer.parent);
+  complete(inner.child);
+  pump(destination);
+  assert(*parent.result() == 42 && inner.frame.destroyed == 1);
+  parent = {};
+  assert(witness.expired());
+
+  auto *worker = executor(false);
+  State state;
+  state.child_executor = worker;
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(destination, &actor) == OBJC3_SERVICE_OK);
+  auto frame = scoped(&state, std::make_shared<int>(42)).release_native();
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.actor = actor;
+  options.frame = frame.context;
+  options.resume = frame.resume;
+  options.destroy = frame.destroy;
+  options.result_type = frame.result_type;
+  options.completion_context = &state;
+  state.expected_actor = objc3_actor_identity(actor);
+  state.expected_executor = objc3_executor_identity(destination);
+  options.completion = [](void *opaque, const objc3_completion *completion) {
+    auto &state = *static_cast<State *>(opaque);
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+    assert(facts.actor_identity == state.expected_actor &&
+           facts.executor_identity == state.expected_executor);
+    assert(completion->kind == OBJC3_COMPLETION_SUCCESS);
+    ++state.published;
+  };
+  objc3_task_t *started = nullptr;
+  assert(objc3_task_start(&options, &started) == OBJC3_SERVICE_OK);
+  frame = {};
+  auto task = objc3::task_handle<std::shared_ptr<int>>::adopt_native(&started);
+  state.parent = task.native_handle();
+  pump(destination);
+  Gate fence;
+  assert(objc3_executor_enqueue(worker, [](void *opaque) {
+    static_cast<Gate *>(opaque)->arrive();
+  }, &fence) == OBJC3_SERVICE_OK);
+  fence.wait();
+  fence.release();
+  Gate destruction;
+  state.frame.destruction_gate = &destruction;
+  std::thread finish([&] { complete(state.child); });
+  destruction.wait();
+  pump(destination);
+  pending(state.parent);
+  destruction.release();
+  finish.join();
+  pending(state.parent);
+  assert(state.published == 0);
+  pump(destination);
+  assert(*task.result() == 42 && state.frame.destroyed == 1 && state.published == 1);
+  task = {};
+  objc3_actor_release(actor);
+  objc3_executor_release(worker);
+  objc3_executor_release(destination);
+}
+
+objc3::task<void> empty(unsigned *entered) __attribute__((objc_task_group)) {
+  assert(objc3::task_group_handle::current_scope());
+  ++*entered;
+  co_return;
+}
+void lazy_empty_and_preentry_cancel() {
+  auto *destination = executor();
+  unsigned entered = 0;
+  { auto discarded = empty(&entered); }
+  assert(entered == 0);
+  auto task = empty(&entered).start(destination);
+  pump(destination, 1);
+  assert(entered == 1);
+  pending(task.native_handle());
+  pump(destination);
+  task.result();
+  auto cancelled = empty(&entered).start(destination);
+  cancelled.cancel();
+  pump(destination);
+  bool caught = false;
+  try { cancelled.result(); }
+  catch (const objc3::task_cancelled &) { caught = true; }
+  assert(caught && entered == 1);
+  objc3_executor_release(destination);
+}
+
+void failed_entry_reclaims_parameters() {
+  auto *destination = executor();
+  State state;
+  auto value = std::make_shared<int>(42);
+  std::weak_ptr<int> witness = value;
+  auto task = scoped(&state, std::move(value)).start(destination);
+  state.parent = task.native_handle();
+  fail_scope_entry = true;
+  pump(destination);
+  bool caught = false;
+  try { (void)task.result(); }
+  catch (const objc3::service_failure &failure) {
+    caught = failure.status() == OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  assert(caught && !fail_scope_entry && state.entered == 0 && state.exited == 0);
+  assert(witness.expired() && !state.child && !state.group);
+  objc3_executor_release(destination);
+}
+
+void abandonment_finishes_earlier_cleanup_first() {
+  auto *destination = executor();
+  State state;
+  state.child_executor = destination;
+  state.earlier_cleanup = objc3::task_group_handle::create();
+  HeldFrame earlier_frame;
+  auto *earlier = start_held(destination, earlier_frame);
+  assert(objc3_task_group_add(state.earlier_cleanup.native_handle(), earlier) ==
+         OBJC3_SERVICE_OK);
+  auto value = std::make_shared<int>(42);
+  std::weak_ptr<int> witness = value;
+  auto task = scoped(&state, std::move(value)).start(destination);
+  state.parent = task.native_handle();
+  pump(destination);
+  assert(state.entered == 1 && state.exited == 0);
+  task = {};
+  // Last-owner loss may not destroy locals or replace a pre-existing shielded
+  // await. Child cancellation is inherited immediately; both joins still wait.
+  assert(!witness.expired() && state.exited == 0);
+  assert(objc3_task_is_cancel_requested(state.child));
+  complete(state.child, OBJC3_COMPLETION_CANCELLED);
+  pump(destination);
+  assert(state.exited == 0 && !witness.expired());
+  complete(earlier, OBJC3_COMPLETION_CANCELLED);
+  pump(destination);
+  assert(state.exited == 1 && witness.expired());
+  assert(state.frame.destroyed == 1 && earlier_frame.destroyed == 1);
+  objc3_task_release(earlier);
+  objc3_executor_release(destination);
+}
+
+objc3::task<CopyAllocationFailure> scoped_copy_failure(
+    std::shared_ptr<std::atomic<unsigned>> live)
+    __attribute__((objc_task_group)) {
+  assert(objc3::task_group_handle::current_scope());
+  co_return CopyAllocationFailure(std::move(live));
+}
+void result_copy_failure_after_join() {
+  auto *destination = executor();
+  auto live = std::make_shared<std::atomic<unsigned>>(0);
+  auto task = scoped_copy_failure(live).start(destination);
+  pump(destination, 1);
+  pending(task.native_handle());
+  assert(*live == 1);
+  pump(destination);
+  bool caught = false;
+  try { (void)task.result(); }
+  catch (const objc3::service_failure &failure) {
+    caught = failure.status() == OBJC3_SERVICE_OUT_OF_MEMORY;
+  }
+  assert(caught && *live == 0);
+  objc3_executor_release(destination);
+}
+
+void run() {
+  bool rejected = false;
+  try { (void)objc3::task_group_handle::current_scope(); }
+  catch (const objc3::service_failure &failure) {
+    rejected = failure.status() == OBJC3_SERVICE_INVALID_ARGUMENT;
+  }
+  assert(rejected);
+  exits_and_abandonment();
+  nested_and_worker_quiescence();
+  lazy_empty_and_preentry_cancel();
+  result_copy_failure_after_join();
+  failed_entry_reclaims_parameters();
+  abandonment_finishes_earlier_cleanup_first();
+}
+} // namespace cpp_scopes
+#endif
+
 int main() {
+#ifdef __OBJC__
+  cpp_scopes::run();
+#endif
   raw_handle_frame_adapters();
   raw_quiescence_and_nested_waiters();
   cycle_rejection();

@@ -292,7 +292,8 @@ template <class T> struct checked_dependency {
 } // namespace task_detail
 
 /* A retained terminal result or running task. Releasing the last handle while
- * suspended cancels and destroys its frame. Explicit cancellation wakes await;
+ * suspended cancels and destroys its frame after owned scope cleanup.
+ * Explicit cancellation wakes await;
  * a shared dependency continues independently. Destruction does not wait for
  * the dependency's completion. */
 template <class T> class basic_task_handle {
@@ -353,9 +354,10 @@ struct task_group_cleanup_request;
 
 /* A retained shared group, with explicit close and cancellation. Awaiting a
  * closed handle joins its complete task tree without blocking a worker. This
- * is a library handle, not a compiler-recognized structured task-group scope:
- * destruction releases ownership, and abandoning one await does not cancel
- * the shared tasks. Close and join before releasing the last caller owner. */
+ * handle alone does not create a compiler-owned structured task-group scope.
+ * Destruction releases ownership, and abandoning one await does not cancel the
+ * shared tasks. Close and join before releasing the last caller owner, unless
+ * this is a current_scope() view whose compiler guard owns finalization. */
 class [[nodiscard]] task_group_handle {
   objc3_task_group_t *group_ = nullptr;
   explicit task_group_handle(objc3_task_group_t *owned) noexcept
@@ -367,6 +369,13 @@ public:
     objc3_task_group_t *group = nullptr;
     task_detail::check(objc3_task_group_create(nullptr, &group));
     return task_group_handle(group);
+  }
+  // Independent retained view of this callback's compiler-owned scope. This
+  // accessor neither creates a scope nor transfers its finalization obligation.
+  static task_group_handle current_scope() {
+    auto *group = objc3_task_group_scope_current();
+    if (!group) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    return task_group_handle(objc3_task_group_retain(group));
   }
   task_group_handle child() const {
     if (!group_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
@@ -467,6 +476,12 @@ public:
     // and reaches final suspension through the ordinary coroutine cleanups.
     objc3_error_t *__objc3_error = nullptr;
     bool __objc3_error_raised = false;
+    // Reserved compiler protocol selected only for objc_task_group bodies.
+    // A completed coroutine stays at final suspend while the runtime joins its
+    // group. The final notification publishes without resuming that coroutine.
+    bool __objc3_group_entered = false;
+    bool __objc3_group_finishing = false;
+    objc3_service_status __objc3_group_status = OBJC3_SERVICE_NOT_READY;
     ~promise_type() { objc3_error_release(__objc3_error); }
     void __objc3_clear_error() noexcept {
       auto *previous = std::exchange(__objc3_error, nullptr);
@@ -490,14 +505,22 @@ public:
     }
     struct initial_awaiter {
       promise_type *promise;
+      bool group_scope = false;
       bool await_ready() const noexcept { return false; }
       void await_suspend(coroutine) const noexcept {}
       void await_resume() const {
+        if (group_scope) {
+          task_detail::check(objc3_task_group_scope_enter(promise->owner));
+          promise->__objc3_group_entered = true;
+        }
         if (objc3_task_is_cancel_requested(promise->owner))
           throw task_cancelled();
       }
     };
     initial_awaiter initial_suspend() noexcept { return {this}; }
+    initial_awaiter __objc3_group_initial_suspend() noexcept {
+      return {this, true};
+    }
     std::suspend_always final_suspend() noexcept { return {}; }
     void unhandled_exception() noexcept {
       failed = true;
@@ -688,7 +711,14 @@ public:
       completion.version = OBJC3_SERVICE_ABI_VERSION;
       completion.kind = OBJC3_COMPLETION_SUCCESS;
       objc3_error_t *error = nullptr;
-      if (__objc3_error_raised && !failed) {
+      if (__objc3_group_entered && objc3_task_is_cancel_requested(owner)) {
+        completion.kind = OBJC3_COMPLETION_CANCELLED;
+      } else if (__objc3_group_entered &&
+                 __objc3_group_status != OBJC3_SERVICE_OK) {
+        error = task_detail::service_error(__objc3_group_status);
+        completion.kind = OBJC3_COMPLETION_ERROR;
+        completion.error = error;
+      } else if (__objc3_error_raised && !failed) {
         error = objc3_error_retain(__objc3_error);
         if (!error)
           error = task_detail::service_error(__objc3_error
@@ -749,11 +779,27 @@ public:
           std::terminate();
       }
     }
+    bool __objc3_finish_group_scope() noexcept {
+      if (!__objc3_group_entered || __objc3_group_finishing)
+        return true;
+      __objc3_group_finishing = true;
+      const auto status = objc3_task_group_scope_finish(
+          owner, failed || __objc3_error_raised ||
+                     objc3_task_is_cancel_requested(owner),
+          &__objc3_group_status);
+      if (status == OBJC3_SERVICE_OK ||
+          status == OBJC3_SERVICE_ALREADY_COMPLETED)
+        return false;
+      // Entry reserved finalization storage. A failed registration here must
+      // never publish a result or release a frame still owning live children.
+      std::terminate();
+    }
     static void resume(objc3_task_t *owner, void *frame) noexcept {
       auto handle = coroutine::from_address(frame);
       handle.promise().owner = owner;
-      handle.resume();
-      if (handle.done())
+      if (!handle.done())
+        handle.resume();
+      if (handle.done() && handle.promise().__objc3_finish_group_scope())
         handle.promise().publish();
     }
     static void destroy(void *frame) noexcept {

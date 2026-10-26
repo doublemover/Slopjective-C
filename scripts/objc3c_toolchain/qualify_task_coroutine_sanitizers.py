@@ -59,7 +59,8 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                 env['LD_LIBRARY_PATH'] = str(objc_runtime.parent)
                 flags = []
                 if ownership != 'none':
-                    flags = ['-x', 'objective-c++', '-fobjc-runtime=gnustep-2.2', '-fblocks',
+                    flags = ['-x', 'objective-c++', '-fobjc-version=3',
+                             '-fobjc-runtime=gnustep-2.2', '-fblocks',
                              '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc']
                 run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
                     '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
@@ -75,7 +76,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                     '--no-default-config', '-std=c++20', '-g', '-' + optimization,
                     '-UNDEBUG', '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
                     '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
-                    '-pthread', '-fuse-ld=lld',
+                    '-pthread', '-fuse-ld=lld', '-Wl,--wrap=objc3_task_group_scope_enter',
                     '-I' + str(repo / 'native/objc3c/src'),
                     '-I' + str(repo / 'native/objc3c/src/runtime/public'),
                     *sources, *flags, fixture / 'group_await.cpp',

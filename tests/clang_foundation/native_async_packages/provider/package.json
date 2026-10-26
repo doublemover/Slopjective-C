@@ -9,6 +9,7 @@
   "provider_ownership": "arc",
   "exports": [
     "native_module_value",
+    "native_module_scoped",
     "NativeModuleResult",
     "native_module_reader",
     "native_module_object",

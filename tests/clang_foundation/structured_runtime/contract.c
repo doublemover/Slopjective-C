@@ -888,7 +888,7 @@ static void scope_parent_resume(objc3_task_t *task, void *opaque) {
 }
 static void compiler_scope_runtime(int mode) {
   ScopeProbe probe = ZERO_INIT;
-  probe.body_wait = mode >= 2; probe.cancel = mode != 0;
+  probe.body_wait = mode >= 2 && mode != 5; probe.cancel = mode != 0;
   probe.earlier_cleanup = mode == 4;
   objc3_executor_t *source = NULL;
   objc3_actor_t *actor = NULL;
@@ -905,9 +905,11 @@ static void compiler_scope_runtime(int mode) {
   uint32_t executed = 0;
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   assert(probe.resumes == 1 && !probe.parent_destroyed && !probe.child_destroyed);
-  if (mode == 2) {
-    /* The ordinary body dependency holds only a weak continuation. */
+  if (mode == 2 || mode == 5) {
+    /* Body awaits are weak; final cleanup leases keep the record alive but
+     * must not hide the loss of its last ordinary owner. */
     objc3_task_release(parent); parent = NULL;
+    assert(objc3_task_is_cancel_requested(probe.child));
   } else if (mode == 3) {
     assert(objc3_task_schedule_resume(parent) == OBJC3_SERVICE_OK);
     assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
@@ -938,6 +940,7 @@ static void compiler_scope_runtime(int mode) {
 
 int main(void) {
   for (int mode = 0; mode != 4; ++mode) compiler_scope_runtime(mode);
+  compiler_scope_runtime(5);
 #ifdef __cplusplus
   compiler_scope_runtime(4);
 #endif
