@@ -171,7 +171,10 @@ C++ promise lowering. Free functions, Blocks and Objective-C methods admit
 value parameters and trivially copyable results/parameters; C++ lexical local
 construction/destruction uses the ordinary cleanup stack. Reference and
 nontrivial record parameters/results and implicit C++ member receivers remain
-diagnosed. Native frame bodies use return and __objc3_await; C++ coroutine
+diagnosed in that delivery. The source
+[2.5.0 frame-value span](linux_cxx_frame_values.md) replaces the nontrivial value
+restriction with typed construction/destruction hooks, including move-only value
+parameters. References and implicit C++ receivers remain gated. Native frame bodies use return and __objc3_await; C++ coroutine
 keywords remain rejected. Its C++20/C++23 IR witnesses and definition-boundary diagnostics now pass;
 all 48 mixed-language execution configurations pass. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable

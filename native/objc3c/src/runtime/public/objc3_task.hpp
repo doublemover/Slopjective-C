@@ -174,7 +174,8 @@ struct result_traits<T, std::enable_if_t<retained_result<T>>> {
 
 template <class T> struct value_ops {
   static_assert(std::is_copy_constructible_v<T> &&
-                std::is_nothrow_destructible_v<T>);
+                std::is_nothrow_destructible_v<T>,
+                "task results require copy construction and nonthrowing destruction");
   static objc3_service_status copy(void *destination,
                                    const void *source) noexcept {
     try {
@@ -918,6 +919,24 @@ inline task<void> finish_task_group(task_group_handle group) {
 // Reserved compiler hook. The canonical source function retains its logical
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
+
+// Reserved explicit-frame storage hooks. Sema instantiates these ordinary C++
+// functions, so overload resolution, access, deleted members, constraints and
+// implicit special-member definitions follow the source language and persist
+// through ordinary template/PCH serialization. No promise layout crosses C.
+template <class T>
+const objc3_value_ops *__objc3_async_frame_value_ops() noexcept {
+  return objc3::task_detail::result_ops<T>();
+}
+
+template <class T>
+void __objc3_async_frame_capture(void *destination, void *source) {
+  static_assert(std::is_constructible_v<T, T &&>,
+                "explicit frame parameters must be constructible from their value parameter");
+  static_assert(std::is_nothrow_destructible_v<T>,
+                "explicit frame parameters require nonthrowing destruction");
+  ::new (destination) T(std::move(*static_cast<T *>(source)));
+}
 
 // Reserved explicit C-frame entry bridge. The by-value argument owns the lazy
 // frame immediately, including when descriptor validation rejects adoption.

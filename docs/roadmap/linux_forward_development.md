@@ -40,6 +40,13 @@ reserved.
 
 ## C++ coroutine group scopes
 
+The next authored span adds [nontrivial C++ values in explicit native frames](linux_cxx_frame_values.md)
+under source concurrency module 2.5.0. Value parameters construct independent
+frame captures, including move-only owners; typed result operations preserve
+copy/destruction contracts. The source/PCH lifetime matrix passes normally and
+under both sanitizers (72 configurations / 324 commands); delivery is pending.
+The accepted installed SDK above remains the 2.4.0 scope delivery.
+
 [C++ task-coroutine scopes](linux_cxx_group_scopes.md) extend the compiler-owned
 protocol to ordinary coroutine syntax and native C++ async bodies. The source
 concurrency module is 2.4.0. A scope-aware initial awaiter reserves the guard

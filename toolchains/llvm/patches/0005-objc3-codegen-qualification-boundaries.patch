@@ -3998,7 +3998,7 @@ index 7421733ef..1d3ed014c 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..a022353dc 100644
+index e84e05e8e..399783084 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,20 @@
@@ -4313,7 +4313,20 @@ index e84e05e8e..a022353dc 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1532,7 +1756,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1518,7 +1742,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+             ? CGM.getOpenMPRuntime().getAddressOfLocalVariable(*this, &D)
+             : Address::invalid();
+ 
+-  bool NRVO = getLangOpts().ElideConstructors && D.isNRVOVariable();
++  // A native async entry physically returns its frame carrier. Logical result
++  // objects belong to private frame storage; the ramp's sret slot cannot hold
++  // an NRVO local, particularly after suspension or for over-aligned records.
++  bool NRVO = getLangOpts().ElideConstructors && D.isNRVOVariable() &&
++              !ObjC3CAsync.Data;
+ 
+   if (getLangOpts().OpenMP && OpenMPLocalAddr.isValid()) {
+     address = OpenMPLocalAddr;
+@@ -1532,7 +1760,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -4323,7 +4336,7 @@ index e84e05e8e..a022353dc 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1770,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1774,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -4333,7 +4346,7 @@ index e84e05e8e..a022353dc 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1704,7 +1930,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1704,7 +1934,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -4351,7 +4364,7 @@ index e84e05e8e..a022353dc 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +1978,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +1982,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -4387,7 +4400,7 @@ index e84e05e8e..a022353dc 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +2012,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +2016,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -4413,7 +4426,7 @@ index e84e05e8e..a022353dc 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2215,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2219,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -4423,7 +4436,7 @@ index e84e05e8e..a022353dc 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2228,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2232,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -4441,7 +4454,7 @@ index e84e05e8e..a022353dc 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2023,6 +2299,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -2023,6 +2303,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
      return emitZeroOrPatternForAutoVarInit(type, D, Loc);
    };
  
@@ -4461,7 +4474,7 @@ index e84e05e8e..a022353dc 100644
    if (isTrivialInitializer(Init))
      return initializeWhatIsTechnicallyUninitialized(Loc);
  
-@@ -2191,7 +2480,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2191,7 +2484,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      if (var->isARCPseudoStrong()) return;
  
      // Otherwise, consider whether to use an EH cleanup or not.
@@ -4471,7 +4484,7 @@ index e84e05e8e..a022353dc 100644
  
      // Use the imprecise destroyer by default.
      if (!var->hasAttr<ObjCPreciseLifetimeAttr>())
-@@ -2199,6 +2489,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2493,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -4479,7 +4492,7 @@ index e84e05e8e..a022353dc 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2509,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2513,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -4504,7 +4517,7 @@ index e84e05e8e..a022353dc 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2539,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2543,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -4613,7 +4626,7 @@ index e84e05e8e..a022353dc 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2243,6 +2646,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2243,6 +2650,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
      emitAutoVarTypeCleanup(emission, dtorKind);
    }
  
@@ -4633,7 +4646,7 @@ index e84e05e8e..a022353dc 100644
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
        D.hasAttr<ObjCPreciseLifetimeAttr>()) {
-@@ -2271,8 +2687,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2691,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -4653,7 +4666,7 @@ index e84e05e8e..a022353dc 100644
  }
  
  CodeGenFunction::Destroyer *
-@@ -2285,6 +2711,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2715,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -4662,7 +4675,7 @@ index e84e05e8e..a022353dc 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3124,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3128,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -24957,10 +24970,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..446dc9421
+index 000000000..d087a9e40
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1083 @@
+@@ -0,0 +1,1124 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24970,6 +24983,7 @@ index 000000000..446dc9421
 +// return, suspension destruction, checked failure and cancellation alike.
 +//===----------------------------------------------------------------------===//
 +#include "CGCleanup.h"
++#include "CGCall.h"
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
 +#include "CGObjC3ArcCarriers.h"
@@ -24981,6 +24995,7 @@ index 000000000..446dc9421
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
 +#include "clang/AST/Mangle.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/StmtObjC.h"
@@ -25127,6 +25142,36 @@ index 000000000..446dc9421
 +  F->setDoesNotThrow();
 +  return F;
 +}
++bool hasCxxFrameStorage(CodeGenFunction &CGF, QualType T) {
++  return CGF.getLangOpts().CPlusPlus && T->isRecordType() &&
++         !T.isTriviallyCopyableType(CGF.getContext());
++}
++
++RValue cxxFrameStorageCall(CodeGenFunction &CGF, QualType T, StringRef Name,
++                           ArrayRef<llvm::Value *> Values) {
++  // Sema resolved and instantiated this reserved template. The specialization
++  // is ordinary AST, including when the enclosing definition came from PCH.
++  auto &Ctx = CGF.getContext();
++  for (NamedDecl *D : Ctx.getTranslationUnitDecl()->lookup(&Ctx.Idents.get(Name))) {
++    auto *Template = dyn_cast<FunctionTemplateDecl>(D);
++    if (!Template) continue;
++    for (FunctionDecl *Function : Template->specializations()) {
++      const auto *Args = Function->getTemplateSpecializationArgs();
++      if (!Args || Args->size() != 1 ||
++          !Ctx.hasSameType(Args->get(0).getAsType(), T))
++        continue;
++      CallArgList CallArgs;
++      for (unsigned I = 0; I != Values.size(); ++I)
++        CallArgs.add(RValue::get(Values[I]), Function->getParamDecl(I)->getType());
++      return CGF.EmitCall(CGF.CGM.getTypes().arrangeFunctionDeclaration(Function),
++          CGCallee::forDirect(CGF.CGM.GetAddrOfFunction(Function),
++                             CGCalleeInfo(GlobalDecl(Function))),
++          ReturnValueSlot(), CallArgs);
++    }
++  }
++  llvm_unreachable("Sema did not instantiate explicit C++ frame storage hook");
++}
++
 +llvm::Value *valueOps(CodeGenFunction &CGF, QualType T) {
 +  unsigned Kind = resultKind(T);
 +  if (Kind == 3) return nullPtr(CGF);
@@ -25135,6 +25180,9 @@ index 000000000..446dc9421
 +                {CGF.Builder.getInt32(Kind)});
 +  auto &CGM = CGF.CGM;
 +  T = resultStorageType(CGF.getContext(), T);
++  if (hasCxxFrameStorage(CGF, T))
++    return cxxFrameStorageCall(CGF, T, "__objc3_async_frame_value_ops", {})
++        .getScalarVal();
 +  if (auto *Existing = CGM.ObjC3CAsyncValueOps.lookup(T))
 +    return Existing;
 +  auto *Type = llvm::StructType::get(CGF.Int32Ty, CGF.Int32Ty, CGF.Int64Ty,
@@ -25637,6 +25685,12 @@ index 000000000..446dc9421
 +                                             : EmitARCRetainNonBlock(Value);
 +        EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
 +        EHStack.pushCleanup<ReleaseCapture>(NormalAndEHCleanup, Owned);
++      } else if (hasCxxFrameStorage(*this, T)) {
++        // Construct an independent owner from the ABI value parameter. Native
++        // construction failure unwinds the ramp and already-built captures;
++        // the source body and initial suspension have not executed yet.
++        cxxFrameStorageCall(*this, T, "__objc3_async_frame_capture",
++            {Copy.emitRawPointer(*this), Original.emitRawPointer(*this)});
 +      } else {
 +        EmitExprAsInit(Initializer, Synthetic, MakeAddrLValue(Copy, T), false);
 +      }
@@ -27655,10 +27709,10 @@ index 000000000..f2c2cf767
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
 diff --git a/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm b/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm
 new file mode 100644
-index 000000000..13eabd4b8
+index 000000000..fb5ae3658
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-cxx-frame-definitions.mm
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,40 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#include "Inputs/native-c-async-frame.h"
@@ -27678,6 +27732,13 @@ index 000000000..13eabd4b8
 +int parent(int value) __objc3_async_frame {
 +  Scope scope(value);
 +  return __objc3_await leaf(value);
++}
++struct alignas(128) Result { long words[16]; };
++// CHECK-LABEL: define{{.*}} @_Z12local_resultv
++// CHECK: %result = alloca %struct.Result, align 128
++Result local_result() __objc3_async_frame {
++  Result result{};
++  return result;
 +}
 +int (^block)(int) __objc3_async_frame = ^int(int value) __objc3_async_frame {
 +  Scope scope(value);
