@@ -67,9 +67,16 @@ def qualify(sdk: Path, output: Path) -> dict:
                     raise ValueError('native async interface lost its exact SDK frame contract')
                 if language == 'objective-c++':
                     check_cpp_metadata(metadata)
-                elif {row['qualified_name'] for row in metadata['declarations']} != {
-                        'c_frame_factory', 'c_frame_destroyed'}:
-                    raise ValueError('C frame interface lost its exported factories')
+                else:
+                    names = {row['qualified_name']: row for row in metadata['declarations']}
+                    if set(names) != {'c_frame_factory', 'c_frame_destroyed', 'c_frame_scoped'}:
+                        raise ValueError('C frame interface lost its exported factories/scopes')
+                    scope = names['c_frame_scoped']
+                    effects = scope.get('effects', {})
+                    if (not has_async(scope) or
+                            'c-frame-v1' not in effects.get('async_abi_identity', '') or
+                            'task-boundary:4' not in effects.get('actor_isolation_identity', '')):
+                        raise ValueError('C frame scope lost its callable ABI or group contract')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],

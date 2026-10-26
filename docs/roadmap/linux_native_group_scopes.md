@@ -63,11 +63,17 @@ group locks.
 Maintained runtime witnesses exercise normal and cancelled finalization, nested
 groups, ancestor rejection, last-owner abandonment, actor-discarded resumes and
 an exception after registering an earlier shielded cleanup. Source fixtures add
-pending scalar returns, original checked-error identity, owned optional results,
+pending scalar returns, original checked-error identity, escaping native
+exceptions, owned optional results,
 receiver ownership, body-await abandonment and nested C++ explicit-frame scopes
 on an actor. Pending and already-ready worker children also verify actor
 restoration and quiescence fences. Compiler regressions cover implicit calls, deferred cleanup,
 C++ explicit-frame lowering, ARC debug information and exception admission.
+
+The maintained native async package gate also exports a scoped C-frame provider,
+checks its physical frame and task-group metadata, then consumes it after source
+removal and package relocation. Its four C17 ARC/MRC O0/O2 package modes are part
+of the combined SDK and fresh-distribution checks.
 
 Ordinary C++ task-coroutine scope lowering, the remaining abstract group-library
 forms and broader ownership/isolation/profile admission remain implementation

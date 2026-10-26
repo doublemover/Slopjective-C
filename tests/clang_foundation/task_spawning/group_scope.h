@@ -55,6 +55,12 @@ static int source_scope_suspended(SourceScope *state)
   __objc3_await join_existing_void(state->child);
   return 42;
 }
+static int source_scope_foreign(SourceScope *state, SpawnOwner *error)
+    __objc3_async_frame __attribute__((objc_task_group)) {
+  source_scope_add(state);
+  defer { ++state->exited; }
+  @throw error;
+}
 static void source_scope_abandoned(void *opaque, const objc3_completion *done) {
   SourceScope *state = opaque;
   assert(done->kind == OBJC3_COMPLETION_CANCELLED && state->child_destroyed == 1);
@@ -134,7 +140,7 @@ static void group_scope_witnesses(objc3_executor_t *source) {
   assert(!objc3_task_group_scope_current());
   source_scope_worker(source, 0);
   source_scope_worker(source, 1);
-  const unsigned modes = 6;
+  const unsigned modes = 7;
   for (unsigned mode = 0; mode != modes; ++mode) {
     if (mode == 3 && !__has_feature(objc_arc)) continue;
     unsigned destroyed = 0;
@@ -148,7 +154,8 @@ static void group_scope_witnesses(objc3_executor_t *source) {
       if (mode == 3) frame = source_scope_owned(&state, owner);
       else
 #endif
-      frame = mode == 5 ? [owner scopeValue:&state] :
+      frame = mode == 6 ? source_scope_foreign(&state, owner) :
+              mode == 5 ? [owner scopeValue:&state] :
               mode == 1 ? source_scope_error(&state, owner) :
               mode == 4 ? source_scope_suspended(&state) : source_scope_value(&state);
       state.parent = join_start(source, frame);
@@ -174,7 +181,7 @@ static void group_scope_witnesses(objc3_executor_t *source) {
       } else completion = join_completion(source, state.parent);
       assert(state.child_destroyed == 1);
       if (mode != 4) assert(completion.kind == (mode == 1 ? OBJC3_COMPLETION_ERROR :
-                                mode == 2 ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
+                                (mode == 2 || mode == 6) ? OBJC3_COMPLETION_CANCELLED : OBJC3_COMPLETION_SUCCESS));
       if (!mode || mode == 5) assert(*(const int *)completion.payload == 42);
       if (mode == 1) {
         assert(objc3_error_payload(completion.error));
