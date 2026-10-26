@@ -24970,10 +24970,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..d087a9e40
+index 000000000..2c9e5098a
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1124 @@
+@@ -0,0 +1,1133 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25016,7 +25016,7 @@ index 000000000..d087a9e40
 +  Address Kind = Address::invalid();
 +  Address ScopeEntered = Address::invalid();
 +  llvm::Value *ResultOps = nullptr;
-+  llvm::Constant *ResultType = nullptr;
++  llvm::Value *ResultType = nullptr;
 +  QualType LogicalResult;
 +  CodeGenFunction::JumpDest Destroy;
 +  CodeGenFunction::JumpDest Final;
@@ -25241,6 +25241,15 @@ index 000000000..d087a9e40
 +  Descriptor->setAlignment(llvm::Align(8));
 +  CGF.CGM.ObjC3CAsyncResultTypes[T] = Descriptor;
 +  return Descriptor;
++}
++llvm::Value *frameResultDescriptor(CodeGenFunction &CGF, QualType T) {
++  T = resultStorageType(CGF.getContext(), T);
++  if (CGF.getLangOpts().CPlusPlus &&
++      (T->isRecordType() || T->isEnumeralType()) &&
++      T->getLinkage() != Linkage::External)
++    return cxxFrameStorageCall(CGF, T, "__objc3_async_frame_result_type", {})
++        .getScalarVal();
++  return resultDescriptor(CGF, T);
 +}
 +llvm::Value *invokeOp(CodeGenFunction &CGF, llvm::Value *Ops, unsigned Index,
 +               ArrayRef<llvm::Value *> Args) {
@@ -25582,7 +25591,7 @@ index 000000000..d087a9e40
 +  Data.ResultLive = CreateTempAlloca(Builder.getInt1Ty(), CharUnits::One(), "objc3.result.live");
 +  if (!Data.LogicalResult->isVoidType())
 +    Data.Result = CreateMemTemp(Data.LogicalResult, "objc3.task.result");
-+  Data.ResultType = resultDescriptor(*this, Data.LogicalResult);
++  Data.ResultType = frameResultDescriptor(*this, Data.LogicalResult);
 +  Data.Suspend = createBasicBlock("objc3.coro.suspend");
 +  auto *Free = createBasicBlock("objc3.coro.free");
 +  auto *Final = createBasicBlock("objc3.coro.final");
@@ -26033,7 +26042,7 @@ index 000000000..d087a9e40
 +  }
 +  EmitBlock(Success);
 +  QualType T = resultStorageType(getContext(), E.getType());
-+  llvm::Constant *Descriptor = resultDescriptor(*this, T);
++  llvm::Value *Descriptor = frameResultDescriptor(*this, T);
 +  llvm::Value *Ops = valueOps(*this, T);
 +  bool Temporary = T->isVoidType() || Slot.isIgnored();
 +  Address Result = T->isVoidType() ? Address::invalid()

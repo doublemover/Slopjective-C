@@ -930,6 +930,13 @@ const objc3_value_ops *__objc3_async_frame_value_ops() noexcept {
 }
 
 template <class T>
+const objc3_async_result_type *__objc3_async_frame_result_type() noexcept {
+  // Native frames and typed task adapters must share this exact per-type
+  // descriptor, including its nominal token for anonymous/local C++ types.
+  return objc3::task_detail::result_type<T>();
+}
+
+template <class T>
 void __objc3_async_frame_capture(void *destination, void *source) {
   static_assert(std::is_constructible_v<T, T &&>,
                 "explicit frame parameters must be constructible from their value parameter");

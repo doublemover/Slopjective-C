@@ -1234,7 +1234,7 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..5d5fcb5fc 100644
+index 2cb79b6ba..9d09ebb75 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,135 @@
@@ -1317,7 +1317,7 @@ index 2cb79b6ba..5d5fcb5fc 100644
 +def err_objc3_async_frame_cpp_storage : Error<
 +  "C++ frame async definitions require value parameters and cannot capture an implicit this parameter">;
 +def err_objc3_async_frame_cpp_hook : Error<
-+  "nontrivial C++ frame storage requires installed <objc3_task.hpp> template '%0'">;
++  "typed C++ frame storage requires installed <objc3_task.hpp> template '%0'">;
 +def err_objc3_async_c_frame_header : Error<
 +  "native Objective-C async frame calls require the installed <objc3_runtime_services.h> frame declaration">;
 +def err_objc3_async_c_frame_layout : Error<
@@ -35838,10 +35838,10 @@ index 9adba1943..a2aefba93 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..22fca925b
+index 000000000..8606f8ff1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,267 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -35935,14 +35935,8 @@ index 000000000..22fca925b
 +}
 +
 +namespace {
-+bool requireCxxFrameStorage(Sema &S, QualType T, SourceLocation Loc,
-+                            bool Capture) {
-+  if (!Capture) T = T.getCanonicalType().getUnqualifiedType();
-+  if (T->isDependentType() || !T->isRecordType() ||
-+      T.isTriviallyCopyableType(S.Context))
-+    return false;
-+  StringRef Name = Capture ? "__objc3_async_frame_capture"
-+                           : "__objc3_async_frame_value_ops";
++bool instantiateCxxFrameStorageHook(Sema &S, QualType T, SourceLocation Loc,
++                                     StringRef Name, bool Capture) {
 +  LookupResult Hook(S, &S.Context.Idents.get(Name), Loc, Sema::LookupOrdinaryName);
 +  Hook.suppressDiagnostics();
 +  S.LookupQualifiedName(Hook, S.Context.getTranslationUnitDecl());
@@ -35973,6 +35967,22 @@ index 000000000..22fca925b
 +  }
 +  S.InstantiateFunctionDefinition(Loc, Function, true, true);
 +  return Function->isInvalidDecl();
++}
++
++bool requireCxxFrameStorage(Sema &S, QualType T, SourceLocation Loc,
++                            bool Capture) {
++  if (T->isDependentType()) return false;
++  if (!Capture) T = T.getCanonicalType().getUnqualifiedType();
++  if (T->isRecordType() && !T.isTriviallyCopyableType(S.Context))
++    if (instantiateCxxFrameStorageHook(S, T, Loc,
++            Capture ? "__objc3_async_frame_capture"
++                    : "__objc3_async_frame_value_ops", Capture))
++      return true;
++  if (!Capture && (T->isRecordType() || T->isEnumeralType()) &&
++      T->getLinkage() != Linkage::External)
++    return instantiateCxxFrameStorageHook(S, T, Loc,
++                                          "__objc3_async_frame_result_type", false);
++  return false;
 +}
 +
 +class AsyncMonitorVisitor : public RecursiveASTVisitor<AsyncMonitorVisitor> {
@@ -41310,7 +41320,7 @@ index 000000000..1a2cb18d6
 +}
 diff --git a/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 new file mode 100644
-index 000000000..c2c121a84
+index 000000000..544c05909
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 @@ -0,0 +1,13 @@
@@ -41318,8 +41328,8 @@ index 000000000..c2c121a84
 +#include "../CodeGen/Inputs/native-c-async-frame.h"
 +struct Value { Value(const Value &); ~Value(); };
 +int reference(int &value) __objc3_async_frame { return value; } // expected-error {{C++ frame async definitions require value parameters}}
-+int copy(Value value) __objc3_async_frame { return 1; } // expected-error {{nontrivial C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_capture'}}
-+Value result() __objc3_async_frame { __builtin_unreachable(); } // expected-error {{nontrivial C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_value_ops'}}
++int copy(Value value) __objc3_async_frame { return 1; } // expected-error {{typed C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_capture'}}
++Value result() __objc3_async_frame { __builtin_unreachable(); } // expected-error {{typed C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_value_ops'}}
 +struct Member {
 +  int method() __objc3_async_frame { return 1; } // expected-error {{cannot capture an implicit this parameter}}
 +};
@@ -41671,3 +41681,31 @@ index 000000000..be5e90257
 +  ~Immovable() noexcept;
 +};
 +int no_capture(Immovable value) __objc3_async_frame { return 42; }
+diff --git a/clang/test/ObjC3/AST/cxx-frame-private-pch.mm b/clang/test/ObjC3/AST/cxx-frame-private-pch.mm
+new file mode 100644
+index 000000000..72f394f48
+--- /dev/null
++++ b/clang/test/ObjC3/AST/cxx-frame-private-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -emit-pch -x objective-c++-header %s -o %t.pch
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -include-pch %t.pch -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef CXX_FRAME_PRIVATE_PCH
++#define CXX_FRAME_PRIVATE_PCH
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++template<class T> const void *__objc3_async_frame_value_ops() noexcept { return nullptr; }
++template<class T> const void *__objc3_async_frame_result_type() noexcept { return nullptr; }
++template<class T> void __objc3_async_frame_capture(void *, void *) {}
++namespace {
++struct Value { Value(); Value(const Value &); ~Value() noexcept; };
++enum class Code { answer = 42 };
++}
++inline Value private_value(Value value) __objc3_async_frame { return value; }
++inline Code private_code() __objc3_async_frame { return Code::answer; }
++#else
++objc3_async_frame use() { Value value; return private_value(value); }
++objc3_async_frame use_enum() { return private_code(); }
++// CHECK-DAG: define{{.*}}private_value
++// CHECK-DAG: call{{.*}}__objc3_async_frame_result_type
++// CHECK-DAG: define{{.*}}private_code
++// CHECK-DAG: call{{.*}}__objc3_async_frame_result_type
++#endif

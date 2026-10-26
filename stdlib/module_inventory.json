@@ -121,7 +121,8 @@
         "with_task_group callback tasks with callable ownership through child quiescence (source)",
         "registration-before-dispatch group children and callback-frame quiescence (source)",
         "nontrivial C++ explicit-frame value parameters/results and typed construction/destruction hooks (source)",
-        "move-only frame captures, const value copying and partial construction unwind (source)"
+        "move-only frame captures, const value copying and partial construction unwind (source)",
+        "shared native-frame/C++ task descriptors for private C++ record and enum results (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

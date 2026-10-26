@@ -75,7 +75,34 @@ FrameValue frame_value_scope(FrameValue value) __objc3_async_frame
   return value;
 }
 
+namespace {
+struct PrivateFrameValue : FrameValue {
+  using FrameValue::FrameValue;
+};
+enum class PrivateFrameEnum { answer = 42 };
+PrivateFrameValue private_frame_value(PrivateFrameValue value) __objc3_async_frame {
+  return value;
+}
+PrivateFrameEnum private_frame_enum() __objc3_async_frame {
+  return PrivateFrameEnum::answer;
+}
+}
+
 inline void frame_cxx_value_contract(objc3_executor_t *source) {
+  {
+    FrameValueCounts counts;
+    {
+      auto task = __objc3_async_from_frame<PrivateFrameValue>(
+          private_frame_value(PrivateFrameValue(&counts, 42))).start(source);
+      auto enumeration = __objc3_async_from_frame<PrivateFrameEnum>(
+          private_frame_enum()).start(source);
+      uint32_t executed = 0;
+      assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+      assert(task.result().value == 42);
+      assert(enumeration.result() == PrivateFrameEnum::answer);
+    }
+    assert(counts.live == 0);
+  }
   {
     FrameValueCounts counts;
     auto frame = frame_value_leaf(FrameValue(&counts, 42));

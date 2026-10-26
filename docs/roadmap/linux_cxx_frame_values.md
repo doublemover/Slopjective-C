@@ -31,6 +31,13 @@ special-member definitions. Code generation resolves those ordinary template
 specializations after source parsing, specialization and PCH replay; it does
 not synthesize a byte copy for a nontrivial C++ value.
 
+Private record and enum results also use `__objc3_async_frame_result_type<T>`.
+Native frames and typed task adapters share the same descriptor and nominal
+identity token within a translation unit. Private types in distinct translation
+units remain distinct. These private C++ results require the task header even
+when their storage is trivial; the C-only header cannot supply the shared C++
+type identity. Private record/enum and PCH witnesses cover this boundary.
+
 Results require copy construction and nonthrowing destruction, matching the
 shared task result contract. Parameters require construction from their value
 parameter and nonthrowing destruction. Result copy failure preserves the bridge's
@@ -44,7 +51,7 @@ nested native awaits, pre-entry cancellation, throwing partial capture
 construction, result-copy failure and scoped finalization. Focused compiler
 fixtures cover missing storage hooks, rejected ownership contracts, dependent
 definitions and PCH replay.
-The rebuilt compiler passes all four focused regressions. The maintained
+The rebuilt compiler passes all five focused regressions. The maintained
 source/PCH spawn matrix passes 24 configurations / 108 commands in each normal,
 ASan/UBSan and TSan mode (72 / 324 total). GNU-backed sanitizer runs reuse the
 unchanged qualified service libraries and instrumented GNU runtime variants;
