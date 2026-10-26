@@ -1,13 +1,13 @@
 # Native C-frame structured group scopes
 
-This source span implements compiler-owned group scopes for native C-frame
+The Linux SDK implements compiler-owned group scopes for native C-frame
 function and Objective-C method definitions carrying `objc_task_group`.
-The concurrency module source version is 2.3.0. The installed
-[group-iteration SDK](../support/linux_native_group_iteration_acceptance.json)
-predates this span; a new SDK acceptance claim follows the combined source
-and installed validation batch. All five standalone runtime suites and all 24
-normal source/PCH spawn configurations pass. Two focused compiler regressions
-pass, including the ARC return guard and exception-admission checks. Public async/actor and full-profile predicates
+The concurrency module is 2.3.0. The
+[acceptance receipt](../support/linux_native_group_scope_acceptance.json) binds
+the source, compiler/runtime checks and installed archive. The exact archive
+passes fresh Debian 13 and Ubuntu 26.04 qualification, including ordinary-user
+consumers, source-free packages, relocation and debugging. Both owned containers
+are removed. Public async/actor and full-profile predicates
 remain reserved. Service ABI 4, frame ABI 1, extension ABI 21 and interface
 schema 2.1 are unchanged.
 
@@ -64,16 +64,21 @@ Maintained runtime witnesses exercise normal and cancelled finalization, nested
 groups, ancestor rejection, last-owner abandonment, actor-discarded resumes and
 an exception after registering an earlier shielded cleanup. Source fixtures add
 pending scalar returns, original checked-error identity, escaping native
-exceptions, owned optional results,
-receiver ownership, body-await abandonment and nested C++ explicit-frame scopes
+exceptions, owned optional results, receiver ownership, body-await abandonment
+and nested C++ explicit-frame scopes
 on an actor. Pending and already-ready worker children also verify actor
-restoration and quiescence fences. Compiler regressions cover implicit calls, deferred cleanup,
-C++ explicit-frame lowering, ARC debug information and exception admission.
+restoration and quiescence fences. Compiler regressions cover implicit calls,
+deferred cleanup, C++ explicit-frame lowering, ARC debug information and exception
+admission.
 
 The maintained native async package gate also exports a scoped C-frame provider,
 checks its physical frame and task-group metadata, then consumes it after source
 removal and package relocation. Its four C17 ARC/MRC O0/O2 package modes are part
-of the combined SDK and fresh-distribution checks.
+of the combined SDK and fresh-distribution checks. The rebuilt compiler passes
+361 Clang/index/query regressions and 166 native contracts. All five standalone
+runtime suites and 24 spawn configurations pass normally, under ASan/UBSan and
+under TSan; the broader C-frame/coroutine/native-async instrumentation also
+passes with instrumented GNU libobjc. All 33 installed SDK gates pass.
 
 Ordinary C++ task-coroutine scope lowering, the remaining abstract group-library
 forms and broader ownership/isolation/profile admission remain implementation

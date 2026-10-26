@@ -11,10 +11,12 @@ functions, methods and Blocks with frame-resident values, owned results/errors,
 cleanup and child awaits. [Task/group handle adapters](linux_async_handle_joins.md)
 bridge existing retained handles into those definitions and C++ lazy tasks.
 [Native C group iteration](linux_native_group_iteration.md) adds owned optional
-results with compiler-defined layout and copy/destruction operations. The
+results with compiler-defined layout and copy/destruction operations.
+[Native C-frame group scopes](linux_native_group_scopes.md) preserve staged
+results/errors through implicit shielded cleanup and forced abandonment. The
 current SDK passes all 33 installed gates, including shared-frame source-free
 consumers, native C/C++ execution and debugger checks. The
-[current receipt](../support/linux_native_group_iteration_acceptance.json) records
+[current receipt](../support/linux_native_group_scope_acceptance.json) records
 that delivery and its fresh-distribution status. Public async/actor predicates
 and full profile conformance remain reserved.
 
@@ -242,8 +244,9 @@ for functions, methods and Blocks, including suspension-safe ownership and
 checked errors. Recognized spawn APIs, admitted isolation entry forms and native
 task/group joins are implemented and covered by the current SDK gates. These
 bounded surfaces do not promote public async/actor predicates or complete
-profiles. Automatic structured-scope finalization, native C group-result
-iteration and other remaining forms are tracked in the current Linux roadmap.
+profiles. Native C group-result iteration and compiler-owned C-frame scopes are
+delivered by the current SDK. Ordinary C++ task-coroutine scopes and other
+remaining forms are tracked in the current Linux roadmap.
 Native Linux AArch64 implementation and qualification also remain open; the
 recorded native-host evidence is Linux x86-64.
 

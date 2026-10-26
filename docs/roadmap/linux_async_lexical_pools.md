@@ -5,11 +5,12 @@ Objective-C 3.0 C++ coroutines, including ordinary C++ coroutine syntax. Source
 identity is `llvmorg-23.1.3-0d261d1ca552-e4f1a276e662-00b75dc3`. The
 [compiler-milestone receipt](../support/linux_async_lexical_pool_acceptance.json)
 binds that archive to its compiler, runtime, sanitizer and fresh-distribution
-reports. The [current delivery](../support/linux_native_group_iteration_acceptance.json)
-rebuilds the compiler foundation with native C group iteration, awaited carrier
-ownership and physical alias checks. It retains native task/group joins and the
-Linux native ARC-only runtime policy; its complete compiler and installed SDK
-checks pass. Fresh Debian 13 and Ubuntu 26.04 qualification both pass.
+reports. The [current delivery](../support/linux_native_group_scope_acceptance.json)
+rebuilds the compiler foundation with native C-frame group scopes, guarded
+carrier return staging, group iteration and physical alias checks. It retains
+native task/group joins and the Linux native ARC-only runtime policy; its complete
+compiler and installed SDK checks pass. Fresh Debian 13 and Ubuntu 26.04
+qualification both pass, including ordinary-user consumers and container cleanup.
 
 Each lexical scope owns a frame-resident pool-token slot. A potentially
 suspending await drains active pools from inner to outer before `await_suspend`
