@@ -9,27 +9,31 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current SDK passes a rebuilt LLVM foundation: **369 native Clang/index/query
-regressions** (366 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
+The current SDK passes a rebuilt LLVM foundation: **370 native Clang/index/query
+regressions** (367 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
 contracts. Compiler, editor and debugger targets build. The delivery passes all
 32 facade suites, **nine GNUstep client tests**, 37 installed consumer checks,
 13 selected native integration nodes and all **33 installed SDK qualification
 gates**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-a1fc0ea22f7c-00b75dc3`.
-The [current acceptance receipt](../support/linux_cxx_frame_borrow_acceptance.json)
+`llvmorg-23.1.3-0d261d1ca552-5c304c44df6d-00b75dc3`.
+The [current acceptance receipt](../support/linux_cxx_class_lifecycle_acceptance.json)
 records exact source, runtime policy, archive and report hashes. Fresh Debian 13
 and Ubuntu 26.04 both pass that exact archive, including ordinary-user compiler,
 package, runtime and debugger consumers. Both owned containers are removed.
 
-The installed five-family matrix passes 168 configurations / 966 commands. The
-current source/PCH reference/receiver, dynamic-storage, scope and frame-value matrix passes 24 configurations /
-132 commands in each normal, ASan/UBSan and TSan mode (72 / 396 total). Current
-clients and generated frame, binding and debug operations are rebuilt; unchanged service and
-instrumented GNU runtime libraries retain their qualified binary identities.
-Two focused compiler regressions and 22 native tooling checks pass. The final
-12 feature-authority/onboarding checks also pass after receipt reconciliation.
-GitHub documentation and tooling checks pass on the pushed implementation.
+The installed five-family matrix passes 168 configurations / 966 commands.
+The current class lifecycle preflights pass eight C++20/23 ARC/MRC O0/O2 cases
+in each normal, ASan/UBSan and TSan mode (24 cases / 96 commands). Unchanged
+service archives and sanitizer GNU variants retain their qualified identities;
+the normal source preflight uses the accepted 2.7.0 GNU runtime. The installed
+SDK rebuilds GNU with the current compiler and binds the final source checkpoint.
+One focused compiler/PCH regression and 22 native tooling checks pass. The final
+12 feature-authority/onboarding checks overlap the tooling scope.
 
+The preceding [2.7.0 frame-binding receipt](../support/linux_cxx_frame_borrow_acceptance.json)
+retains its source/PCH reference/receiver, dynamic-storage, scope and frame-value
+matrix: 24 configurations / 132 commands in each normal, ASan/UBSan and TSan mode
+(72 / 396 total), including resumed-parameter debugger probes.
 The preceding [2.6.0 dynamic-storage receipt](../support/linux_dynamic_frame_storage_acceptance.json)
 retains its 72 / 396 source and 168 / 966 installed matrices.
 The preceding [2.5.0 frame-value receipt](../support/linux_cxx_frame_value_acceptance.json)
@@ -43,13 +47,13 @@ Core/Strict/System conformance remain reserved.
 
 ## Nonvirtual C++ class lifecycle packages
 
-The [2.8.0 source span](linux_cxx_class_lifecycles.md) adds bounded nonvirtual
+The [2.8.0 delivery](linux_cxx_class_lifecycles.md) adds bounded nonvirtual
 class publication with private layout, out-of-line lifecycle/conversion members,
 deleted declarations and module-owned constructor/destructor variants. Source-free
 consumers execute nontrivial frame results and move-only parameters. Required
 capability and overload-collision checks preserve the complete import contract.
 Source qualification passes 24 cases / 96 commands across normal, ASan/UBSan
-and TSan modes; the accepted 2.7.0 delivery remains above until SDK qualification.
+and TSan modes. All installed gates and exact-archive distribution checks pass.
 Inheritance, virtual/inline/template class projections retain their separate bounds.
 
 ## C++ borrowed native-frame bindings
@@ -65,8 +69,9 @@ inspects both `this` and a reference argument after suspension.
 All source/PCH instrumentation, rebuilt foundation, installed gates and exact
 archive distribution checks pass. Source-free C++ package consumers exercise
 reference parameters and const/ref-qualified aggregate member receivers after
-provider removal and relocation. Nontrivial class package projections retain
-their existing bounds; reference results retain the shared value/void limit.
+provider removal and relocation. The 2.8.0 delivery adds bounded nonvirtual
+class lifecycle projections;
+reference results retain the shared value/void limit.
 
 ## Dynamic native-frame storage
 
@@ -237,15 +242,15 @@ There are no feature worktrees or ignored draft
 implementations. The canonical LLVM authoring tree remains under the existing
 ignored build root; exported patches are its version-controlled source inputs.
 
-| Span                | Authored implementation                                                                                                                                                                                                                                                                                          | Continued implementation                                                                                                           |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                                                                                        | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                         |
-| Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                                                                                        | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                    |
-| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect deduction, heap-owned dynamic storage, borrowed C++ bindings and captured-parameter debug locations | Nontrivial class semantic-package projections and broader profile admission                                                        |
-| Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                                                                                            | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
-| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                                                                 | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
-| Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros                                                | Complete abstract group library and broader profile admission                                                                      |
-| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner                                                                                                                 | Remaining package/profile projections and full profile conformance                                                                 |
+| Span                | Authored implementation                                                                                                                                                                                                                                                                                                                            | Continued implementation                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                                                                                                                          | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                         |
+| Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                                                                                                                          | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                    |
+| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect deduction, heap-owned dynamic storage, borrowed C++ bindings, captured-parameter debug locations and bounded class lifecycle packages | C++ inheritance/virtual/inline/template class projections and broader profile admission                                            |
+| Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                                                                                                                              | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
+| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                                                                                                   | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
+| Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros                                                                                  | Complete abstract group library and broader profile admission                                                                      |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner                                                                                                                                                   | Remaining package/profile projections and full profile conformance                                                                 |
 
 Per-feature detail and authored witnesses:
 

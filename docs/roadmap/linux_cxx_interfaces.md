@@ -19,7 +19,7 @@ by [the C++ async callable contract](linux_async_cxx_callables.md). They require
 `objc3.cxx-member-interfaces.v1`, canonical static/instance and effect identity,
 and module-owned native symbols.
 
-The [2.8.0 source span](linux_cxx_class_lifecycles.md) admits bounded nonvirtual
+The [2.8.0 delivery](linux_cxx_class_lifecycles.md) admits bounded nonvirtual
 classes with private fields and out-of-line lifecycle members under the required
 `objc3.cxx-class-lifecycles.v1` capability. Bases, virtual dispatch, concrete inline
 or template methods, member initializers and nested declarations remain rejected. Public templates, named
@@ -50,10 +50,10 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 ```
 
-The [source-bound acceptance receipt](../support/linux_cxx_interface_acceptance.json)
-records the exact ABI 12 archive, compiler and runtime source, installed
-qualification, sanitizer and debugger evidence, and fresh Debian 13 and Ubuntu
-26.04 results.
+The [current class lifecycle receipt](../support/linux_cxx_class_lifecycle_acceptance.json)
+records the exact current archive and qualification. The earlier
+[interface acceptance receipt](../support/linux_cxx_interface_acceptance.json)
+retains the historical ABI 12 aggregate-interface, sanitizer and debugger scope.
 
 This declaration subset uses the existing native call and ownership bounds.
 Public Optional/Result, synchronous throws, async/await and actors remain

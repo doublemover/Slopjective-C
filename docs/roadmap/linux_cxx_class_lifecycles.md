@@ -1,13 +1,14 @@
 # Nonvirtual C++ class lifecycle packages
 
-The concurrency 2.8.0 source span extends semantic packages beyond aggregate
-records to bounded nonvirtual classes. The accepted SDK remains the
-[2.7.0 delivery](linux_cxx_frame_borrows.md) until coordinated qualification
-completes. Extension ABI 21, semantic interface schema 2.1, service ABI 4 and
+The concurrency 2.8.0 delivery extends semantic packages beyond aggregate
+records to bounded nonvirtual classes. The
+[acceptance receipt](../support/linux_cxx_class_lifecycle_acceptance.json) binds
+the source checkpoint, current SDK, archive and qualification reports.
+Extension ABI 21, semantic interface schema 2.1, service ABI 4 and
 frame ABI 1 are unchanged; compiler-dependent artifacts require regeneration.
 
-Published classes may declare private/protected/public fields and out-of-line
-members, constructors, destructors, copy/move operations and conversion functions.
+Published classes may declare private/protected/public instance fields and
+out-of-line members, constructors, destructors, copy/move operations and conversion functions.
 Mutable fields and deleted declarations retain their native meaning. Callers
 can construct, assign, move and destroy objects, use heap storage, and pass
 nontrivial class values through the existing typed native-frame bridge.
@@ -40,5 +41,12 @@ Maintained fixtures cover canonical round trips, required-capability rejection,
 owned structor symbols, overload conflicts, private layout and actual source-free
 execution. The package provider exports copyable and move-only classes; consumers
 exercise lifecycle operations, private access through public methods, heap
-construction and typed async values after provider source removal. All eight C++20/23 ARC/MRC O0/O2 cases pass in each normal, ASan/UBSan and
-TSan mode (24 cases / 96 commands). Coordinated SDK qualification remains.
+construction and typed async values after provider source removal.
+All eight C++20/23 ARC/MRC O0/O2 cases pass in each normal, ASan/UBSan and
+TSan mode (24 cases / 96 commands). The rebuilt foundation passes 370 compiler
+regressions and 166 native contracts; all 32 facade suites, nine GNUstep clients,
+37 installed consumers and 33 SDK gates pass. The installed native async package
+gate executes 12 modes / 36 consumers, including eight C++ lifecycle modes and
+four C-frame modes after source removal and package relocation. Fresh Debian 13
+and Ubuntu 26.04 pass the exact archive as ordinary users. Both owned containers
+are removed; superseded SDK outputs are reclaimed.
