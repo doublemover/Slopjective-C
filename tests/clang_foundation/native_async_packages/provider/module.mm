@@ -107,6 +107,7 @@ struct NativeModuleWorker {
   int value(int) const __objc3_async;
   int checked(int, bool) const __objc3_async __objc3_throws(id<NativeModuleError>);
   int operator()(int) const __objc3_async;
+  int frame_borrow(int &) const & __objc3_async_frame;
 };
 int NativeModuleWorker::value(int n) const __objc3_async {
   return bias + __objc3_await native_module_value(n - 1);
@@ -117,6 +118,16 @@ int NativeModuleWorker::checked(int n, bool fail) const
 }
 int NativeModuleWorker::operator()(int n) const __objc3_async {
   return __objc3_await value(n);
+}
+
+static int native_module_borrow_leaf() __objc3_async_frame { return 0; }
+int NativeModuleWorker::frame_borrow(int &extra) const & __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return bias + extra;
+}
+int native_module_reference(int &value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value;
 }
 
 struct NativeModuleValue { int number; long padding[5]; };

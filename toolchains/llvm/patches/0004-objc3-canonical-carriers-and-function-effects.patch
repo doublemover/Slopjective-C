@@ -35838,10 +35838,10 @@ index 9adba1943..a2aefba93 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..b88b11e53
+index 000000000..3ee266491
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,237 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -36056,19 +36056,9 @@ index 000000000..b88b11e53
 +    return true;
 +  }
 +  if (S.getLangOpts().CPlusPlus) {
-+    // Frame captures own their value parameters before initial suspension.
-+    // References and implicit this still have no independent lifetime owner.
-+    auto Unsupported = [&](QualType T) {
-+      return T->isReferenceType();
-+    };
-+    bool Invalid = Unsupported(Type->getReturnType());
-+    for (QualType T : Type->param_types()) Invalid |= Unsupported(T);
-+    if (const auto *Method = dyn_cast<CXXMethodDecl>(Callable))
-+      Invalid |= !Method->isStatic();
-+    if (Invalid) {
-+      S.Diag(Callable->getLocation(), diag::err_objc3_async_frame_cpp_storage);
-+      return true;
-+    }
++    // Value parameters own independent captures. Reference parameters and the
++    // implicit C++ receiver retain ordinary coroutine borrowing: the caller
++    // keeps their referents alive until the task and frame have quiesced.
 +    if (requireCxxFrameStorage(S, Type->getReturnType(),
 +                               Callable->getLocation(), false))
 +      return true;
@@ -41300,23 +41290,25 @@ index 000000000..1a2cb18d6
 +}
 diff --git a/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 new file mode 100644
-index 000000000..578a42149
+index 000000000..dec0fdefa
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,15 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
 +#include "../CodeGen/Inputs/native-c-async-frame.h"
 +struct Value { Value(const Value &); ~Value(); };
-+int reference(int &value) __objc3_async_frame { return value; } // expected-error {{C++ frame async definitions require value parameters}}
++int reference(int &value) __objc3_async_frame { return value; }
 +int copy(Value value) __objc3_async_frame { return 1; } // expected-error {{typed C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_capture'}}
 +Value result() __objc3_async_frame { __builtin_unreachable(); } // expected-error {{typed C++ frame storage requires installed <objc3_task.hpp> template '__objc3_async_frame_value_ops'}}
 +struct Member {
-+  int method() __objc3_async_frame { return 1; } // expected-error {{cannot capture an implicit this parameter}}
++  int method() __objc3_async_frame { return 1; }
 +};
 +int dynamic(int count) __objc3_async_frame {
 +  (void)__builtin_alloca(count);
 +  return count;
 +}
++
++int &reference_result(int &value) __objc3_async_frame { return value; } // expected-error {{native async task lowering requires}}
 diff --git a/clang/test/ObjC3/Sema/defer-checked-return-negative.m b/clang/test/ObjC3/Sema/defer-checked-return-negative.m
 new file mode 100644
 index 000000000..a90418213

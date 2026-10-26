@@ -10,6 +10,7 @@
   "exports": [
     "native_module_value",
     "native_module_scoped",
+    "native_module_reference",
     "NativeModuleResult",
     "native_module_reader",
     "native_module_object",

@@ -172,7 +172,8 @@ The [2.5.0 value delivery](linux_cxx_frame_values.md) admits nontrivial results,
 move-only value parameters and const copying through typed construction and
 destruction hooks. Private record/enum results share the task bridge's nominal
 descriptor. The [2.6.0 delivery](linux_dynamic_frame_storage.md) adds heap-owned
-dynamic frame storage. References and implicit C++ receivers remain gated. Native frame bodies use return and __objc3_await; C++ coroutine
+dynamic frame storage. The [2.7.0 source span](linux_cxx_frame_borrows.md) admits borrowed references
+and implicit C++ receivers under ordinary coroutine lifetime rules. Native frame bodies use return and __objc3_await; C++ coroutine
 keywords remain rejected. Its C++20/C++23 IR witnesses and definition-boundary diagnostics now pass;
 all 48 mixed-language execution configurations pass. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable

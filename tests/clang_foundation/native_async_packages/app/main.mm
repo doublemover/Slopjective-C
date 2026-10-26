@@ -215,6 +215,18 @@ int main() {
   pending = {};
   NativeModuleWorker worker{40};
   auto *base = static_cast<NativeModuleWorker *>(&worker);
+  {
+    int extra = 1;
+    auto member = &NativeModuleWorker::frame_borrow;
+    auto frame = (worker.*member)(extra);
+    static_assert(std::is_same_v<decltype(frame), objc3_async_frame>);
+    auto borrowed = __objc3_async_from_frame<int>(frame).start(executor);
+    int answer = 1;
+    auto referenced = __objc3_async_from_frame<int>(native_module_reference(answer)).start(executor);
+    extra = 2; answer = 42;
+    if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
+        borrowed.result() != 42 || referenced.result() != 42) return 40;
+  }
   pending = member_application(worker, *base, actor).start(executor);
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42) return 10;

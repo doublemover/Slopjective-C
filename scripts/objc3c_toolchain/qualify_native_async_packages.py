@@ -137,6 +137,12 @@ def check_cpp_metadata(metadata):
             'cxx-task-v1' not in scope_effects.get('async_abi_identity', '') or
             'task-boundary:4' not in scope_effects.get('actor_isolation_identity', '')):
         raise ValueError('C++ task scope lost its callable ABI or group contract')
+    for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
+        declaration = names.get(name, {})
+        if (not has_async(declaration) or
+                'c-frame-v1' not in declaration.get('effects', {}).get('async_abi_identity', '') or
+                not declaration.get('native_symbol_name')):
+            raise ValueError('native borrowed frame lost its callable/member identity: ' + name)
     for name in ('native_module_frame', 'native_module_object_frame',
                  'native_module_block_frame'):
         if name not in names:

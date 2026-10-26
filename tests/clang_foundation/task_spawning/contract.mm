@@ -9,6 +9,7 @@
 #include <mutex>
 #include "ownership_wait.h"
 #include "cxx_frame_values.h"
+#include "cxx_frame_borrows.h"
 
 @protocol Sendable @end
 @protocol SpawnFailure <Error, Sendable> @end
@@ -391,6 +392,7 @@ void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
   objc3_actor_t *actor = nullptr;
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   frame_cxx_value_contract(source);
+  cxx_frame_borrow_contract(source);
   auto rejected = objc3::with_task_group<int>(RejectedQueueFactory{actor, &entered}).start_on(actor);
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   caught = false;

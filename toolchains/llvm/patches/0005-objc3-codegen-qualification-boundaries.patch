@@ -25003,10 +25003,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..53427fae6
+index 000000000..ac3cfa020
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1248 @@
+@@ -0,0 +1,1262 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25814,6 +25814,9 @@ index 000000000..53427fae6
 +      EHStack.pushCleanup<ReleaseCapture>(NormalAndEHCleanup, BlockPointer);
 +      llvm::append_range(Parameters, Block->parameters());
 +    }
++    // CXXThisValue is the ordinary ABI-adjusted receiver SSA value. LLVM's
++    // coroutine splitter spills it when it is live past initial suspension;
++    // it remains borrowed, including secondary-base adjustment thunks.
 +    SmallVector<std::pair<const VarDecl *, Address>, 8> Originals;
 +    for (const VarDecl *P : Parameters) {
 +      QualType T = P->getType();
@@ -25821,8 +25824,19 @@ index 000000000..53427fae6
 +      if (auto *Alloca = dyn_cast<llvm::AllocaInst>(Original.getBasePointer()))
 +        Alloca->setMetadata(llvm::LLVMContext::MD_coro_outside_frame,
 +                            llvm::MDNode::get(getLLVMContext(), {}));
-+      Address Copy = CreateMemTemp(T, Twine(P->getName()) + ".async.capture");
++      Address Copy = T->isReferenceType()
++          ? CreateTempAlloca(ConvertTypeForMem(T), getPointerAlign(),
++                              Twine(P->getName()) + ".async.reference")
++          : CreateMemTemp(T, Twine(P->getName()) + ".async.capture");
 +      Originals.push_back({P, Original});
++      if (T->isReferenceType()) {
++        // Copy the binding, never initialize/copy/destroy the referred object.
++        // The ABI argument slot belongs to the ramp; the lazy frame owns this
++        // independent pointer slot through every suspension and cleanup edge.
++        Builder.CreateStore(Builder.CreateLoad(Original), Copy);
++        LocalDeclMap.find(P)->second = Copy;
++        continue;
++      }
 +      auto *Reference = DeclRefExpr::Create(getContext(), NestedNameSpecifierLoc(),
 +          SourceLocation(), const_cast<VarDecl *>(P), false,
 +          P->getLocation(), T, VK_LValue);
@@ -28243,3 +28257,40 @@ index 000000000..b06d9466d
 +// CHECK: alloca i32, i64
 +// CHECK: @llvm.stackrestore
 +void ordinary_storage(int n) { int values[n]; observe(values); }
+diff --git a/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm b/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm
+new file mode 100644
+index 000000000..b214c1462
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cxx-frame-borrows.mm
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -x objective-c++ /dev/null -disable-llvm-passes -emit-llvm -o - | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++struct Noncopyable {
++  Noncopyable(const Noncopyable &) = delete;
++  ~Noncopyable();
++  int value;
++};
++extern int leaf() __objc3_async_frame;
++// CHECK-LABEL: define{{.*}} @_Z6borrowR11Noncopyable
++// CHECK: %value.async.reference = alloca ptr, align 8
++// CHECK: load ptr, ptr %value.addr
++// CHECK: store ptr {{.*}}, ptr %value.async.reference
++// CHECK: @llvm.coro.suspend
++// CHECK: load ptr, ptr %value.async.reference
++int borrow(Noncopyable &value) __objc3_async_frame {
++  __objc3_await leaf();
++  return value.value;
++}
++struct Receiver {
++  int value;
++  int run() const & __objc3_async_frame;
++};
++// CHECK-LABEL: define{{.*}} @_ZNKR8Receiver3runEv
++// CHECK: @llvm.coro.suspend
++// CHECK: getelementptr inbounds nuw %struct.Receiver
++int Receiver::run() const & __objc3_async_frame {
++  __objc3_await leaf();
++  return value;
++}
