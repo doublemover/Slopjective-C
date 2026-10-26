@@ -69,8 +69,9 @@ suites, nine GNUstep clients, 37 installed consumers, 13 integration nodes and
 Ubuntu 26.04 as an ordinary user, including relocation, source-free packages
 and debugger consumers. Both owned containers are removed.
 
-Reference parameters, implicit C++ `this`, dynamic stack storage, and nontrivial
-C++ class publication through the bounded semantic-package projection remain
+The [2.6.0 source span](linux_dynamic_frame_storage.md) continues with dynamic
+frame storage. Reference parameters, implicit C++ `this`, and nontrivial C++
+class publication through the bounded semantic-package projection remain
 separate work. The latter currently restricts exported classes to its established
 aggregate/out-of-line-method contract. Ordinary source/header C++ ABI use of
 these frame values does not promote package or full-profile admission. Public

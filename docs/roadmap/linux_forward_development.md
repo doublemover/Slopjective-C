@@ -37,6 +37,16 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## Dynamic native-frame storage
+
+The [2.6.0 dynamic-storage source span](linux_dynamic_frame_storage.md) admits
+lexical VLAs and invocation-lifetime builtin allocas, with suspension-safe heap
+ownership, checked sizing, explicit alignment and owned allocation failures.
+The maintained C/C++ spawn witnesses cover cancellation, defer ordering, backward
+jumps, deterministic OOM and storage held through registered child-group joins.
+Coordinated source instrumentation and SDK delivery are in progress; the accepted
+installed 2.5.0 checkpoint remains recorded above until they complete.
+
 ## Nontrivial C++ explicit-frame values
 
 [C++ frame values](linux_cxx_frame_values.md) ship in concurrency module 2.5.0.
@@ -50,8 +60,8 @@ reuse the factory's physical frame-carrier return slot. Private record and enum
 results share the typed task bridge's nominal descriptor within a translation
 unit while remaining distinct across translation units. Source/PCH and
 instrumented lifetime witnesses cover both repairs. Reference parameters,
-implicit C++ receivers, dynamic stack storage and nontrivial class semantic
-package projections remain open.
+implicit C++ receivers and nontrivial class semantic package projections remain
+open. Dynamic storage is implemented in the source span above.
 
 ## C++ coroutine group scopes
 
@@ -198,7 +208,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                                         | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                         |
 | Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                                         | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                    |
-| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools and typed-effect template deduction                                | Dynamic stack storage, reference parameters and implicit C++ receivers                                                             |
+| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect template deduction and heap-owned dynamic storage    | Reference parameters and implicit C++ receivers                                                                                    |
 | Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                                             | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                  | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
 | Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros | Complete abstract group library and broader profile admission                                                                      |

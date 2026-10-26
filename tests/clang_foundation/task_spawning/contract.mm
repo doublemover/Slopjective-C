@@ -447,11 +447,14 @@ void checked_cxx_scope_exits(objc3_executor_t *source) {
 }
 } // namespace
 
+#include "dynamic_frame_storage.h"
+
 int main() {
   objc3_executor_t *source = nullptr, *global = nullptr;
   objc3_actor_t *actor = nullptr;
   assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   checked_cxx_scope_exits(source);
   callback_group_owns_callable_until_quiescence(source);

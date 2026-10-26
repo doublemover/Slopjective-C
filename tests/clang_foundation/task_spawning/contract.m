@@ -156,11 +156,14 @@ static void checked_spawn_error_ownership(unsigned *destroyed) {
 #endif
 }
 
+#include "dynamic_frame_storage.h"
+
 int main(void) {
   objc3_executor_t *source = NULL, *global = NULL;
   objc3_actor_t *actor = NULL;
   assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
+  dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   assert(!objc3_task_spawn((objc3_task_work)0));
   assert(!objc3_task_detached((objc3_task_work)0));

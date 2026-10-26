@@ -171,8 +171,8 @@ definitions use the native frame generator rather than C++ promise lowering.
 The [2.5.0 value delivery](linux_cxx_frame_values.md) admits nontrivial results,
 move-only value parameters and const copying through typed construction and
 destruction hooks. Private record/enum results share the task bridge's nominal
-descriptor. References, implicit C++ receivers and dynamic stack storage remain
-gated. Native frame bodies use return and __objc3_await; C++ coroutine
+descriptor. The [2.6.0 source span](linux_dynamic_frame_storage.md) adds heap-owned
+dynamic frame storage. References and implicit C++ receivers remain gated. Native frame bodies use return and __objc3_await; C++ coroutine
 keywords remain rejected. Its C++20/C++23 IR witnesses and definition-boundary diagnostics now pass;
 all 48 mixed-language execution configurations pass. Compiler-created isolated synchronous entry thunks use the native
 frame generator and its cancellation/cleanup machinery; their retainable

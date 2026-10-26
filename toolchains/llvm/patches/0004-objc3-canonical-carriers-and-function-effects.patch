@@ -35838,10 +35838,10 @@ index 9adba1943..a2aefba93 100644
    return visitor.VarWillBeReased ? nullptr : visitor.Capturer;
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..8606f8ff1
+index 000000000..b88b11e53
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,267 @@
+@@ -0,0 +1,247 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -36037,27 +36037,7 @@ index 000000000..8606f8ff1
 +      Failed |= requireCxxFrameStorage(S, E->getType(), E->getKeywordLoc(), false);
 +    return true;
 +  }
-+  bool VisitVarDecl(VarDecl *D) {
-+    if (D->hasLocalStorage() && D->getType()->isVariablyModifiedType()) {
-+      S.Diag(D->getLocation(), diag::err_objc3_async_c_dynamic_storage);
-+      Failed = true;
-+    }
-+    return true;
-+  }
-+  bool VisitCallExpr(CallExpr *E) {
-+    if (const FunctionDecl *F = E->getDirectCallee())
-+      switch (F->getBuiltinID()) {
-+      case Builtin::BI__builtin_alloca:
-+      case Builtin::BI__builtin_alloca_uninitialized:
-+      case Builtin::BI__builtin_alloca_with_align:
-+      case Builtin::BI__builtin_alloca_with_align_uninitialized:
-+        S.Diag(E->getExprLoc(), diag::err_objc3_async_c_dynamic_storage);
-+        Failed = true;
-+        break;
-+      default: break;
-+      }
-+    return true;
-+  }
++
 +};
 +} // namespace
 +
@@ -40554,7 +40534,7 @@ index 000000000..db307630e
 +#endif
 diff --git a/clang/test/ObjC3/Sema/native-c-async-definitions.m b/clang/test/ObjC3/Sema/native-c-async-definitions.m
 new file mode 100644
-index 000000000..0c9c4b8fc
+index 000000000..933ab9414
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-c-async-definitions.m
 @@ -0,0 +1,31 @@
@@ -40570,11 +40550,11 @@ index 000000000..0c9c4b8fc
 +  __objc3_await leaf(1); // expected-error {{native await requires an async Objective-C or Objective-C++20/23 function context}}
 +}
 +int vla(int count) __objc3_async {
-+  int values[count]; // expected-error {{async frames require fixed-size automatic storage}}
++  int values[count];
 +  return __objc3_await leaf(values[0]);
 +}
 +int dynamic(int count) __objc3_async {
-+  void *p = __builtin_alloca(count); // expected-error {{async frames require fixed-size automatic storage}}
++  void *p = __builtin_alloca(count);
 +  return __objc3_await leaf(p != 0);
 +}
 +int invalid_defer(void) __objc3_async {
@@ -41320,7 +41300,7 @@ index 000000000..1a2cb18d6
 +}
 diff --git a/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 new file mode 100644
-index 000000000..544c05909
+index 000000000..578a42149
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-cxx-frame-boundaries.mm
 @@ -0,0 +1,13 @@
@@ -41334,7 +41314,7 @@ index 000000000..544c05909
 +  int method() __objc3_async_frame { return 1; } // expected-error {{cannot capture an implicit this parameter}}
 +};
 +int dynamic(int count) __objc3_async_frame {
-+  (void)__builtin_alloca(count); // expected-error {{require fixed-size automatic storage}}
++  (void)__builtin_alloca(count);
 +  return count;
 +}
 diff --git a/clang/test/ObjC3/Sema/defer-checked-return-negative.m b/clang/test/ObjC3/Sema/defer-checked-return-negative.m

@@ -3998,10 +3998,10 @@ index 7421733ef..1d3ed014c 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..399783084 100644
+index e84e05e8e..8fd1f6dc1 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
-@@ -11,12 +11,20 @@
+@@ -11,12 +11,21 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGBlocks.h"
@@ -4009,6 +4009,7 @@ index e84e05e8e..399783084 100644
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3Defer.h"
++#include "CGObjC3Async.h"
 +#include "CGObjC3Resources.h"
 +#include "CGObjC3MixedCarriers.h"
  #include "CGCXXABI.h"
@@ -4022,7 +4023,7 @@ index e84e05e8e..399783084 100644
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "ConstantEmitter.h"
-@@ -30,6 +38,7 @@
+@@ -30,6 +39,7 @@
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DeclOpenACC.h"
  #include "clang/AST/DeclOpenMP.h"
@@ -4030,7 +4031,7 @@ index e84e05e8e..399783084 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +501,101 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +502,101 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -4132,7 +4133,7 @@ index e84e05e8e..399783084 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -527,19 +631,30 @@ namespace {
+@@ -527,19 +632,30 @@ namespace {
        bool NRVO = flags.isForNormalCleanup() && NRVOFlag;
  
        llvm::BasicBlock *SkipDtorBB = nullptr;
@@ -4166,7 +4167,7 @@ index e84e05e8e..399783084 100644
      }
  
      virtual ~DestroyNRVOVariable() = default;
-@@ -816,6 +931,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
+@@ -816,6 +932,7 @@ void CodeGenFunction::EmitScalarInit(const Expr *init, const ValueDecl *D,
    // If we're emitting a value with lifetime, we have to do the
    // initialization *before* we leave the cleanup scopes.
    if (auto *EWC = dyn_cast<ExprWithCleanups>(init)) {
@@ -4174,7 +4175,7 @@ index e84e05e8e..399783084 100644
      CodeGenFunction::RunCleanupsScope Scope(*this);
      return EmitScalarInit(EWC->getSubExpr(), D, lvalue, capturedByInit);
    }
-@@ -1354,9 +1470,115 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,9 +1471,115 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -4293,7 +4294,7 @@ index e84e05e8e..399783084 100644
  }
  
  /// Emit a lifetime.begin marker if some criteria are satisfied.
-@@ -1487,7 +1709,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
+@@ -1487,7 +1710,8 @@ static bool shouldExtendLifetime(const ASTContext &Context,
  /// EmitAutoVarAlloca - Emit the alloca and debug information for a
  /// local variable.  Does not emit initialization or destruction.
  CodeGenFunction::AutoVarEmission
@@ -4303,7 +4304,7 @@ index e84e05e8e..399783084 100644
    QualType Ty = D.getType();
    assert(
        Ty.getAddressSpace() == LangAS::Default ||
-@@ -1505,7 +1728,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1505,7 +1729,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      EmitVariablyModifiedType(Ty);
  
    auto *DI = getDebugInfo();
@@ -4313,7 +4314,7 @@ index e84e05e8e..399783084 100644
  
    Address address = Address::invalid();
    RawAddress AllocaAddr = RawAddress::invalid();
-@@ -1518,7 +1742,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1518,7 +1743,11 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
              ? CGM.getOpenMPRuntime().getAddressOfLocalVariable(*this, &D)
              : Address::invalid();
  
@@ -4326,7 +4327,7 @@ index e84e05e8e..399783084 100644
  
    if (getLangOpts().OpenMP && OpenMPLocalAddr.isValid()) {
      address = OpenMPLocalAddr;
-@@ -1532,7 +1760,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1532,7 +1761,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
      // isConstantInitializer produces wrong answers for structs with
      // reference or bitfield members, and a few other cases, and checking
      // for POD-ness protects us from some of these.
@@ -4336,7 +4337,7 @@ index e84e05e8e..399783084 100644
          (D.isConstexpr() ||
           ((Ty.isPODType(getContext()) ||
             getContext().getBaseElementType(Ty)->isObjCObjectPointerType()) &&
-@@ -1545,7 +1774,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1545,7 +1775,8 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
        // in OpenCL.
        bool NeedsDtor =
            D.needsDestruction(getContext()) == QualType::DK_cxx_destructor;
@@ -4346,7 +4347,26 @@ index e84e05e8e..399783084 100644
             Ty.getAddressSpace() == LangAS::opencl_constant) &&
            (CGM.getCodeGenOpts().MergeAllConstants && !NRVO &&
             !isEscapingByRef &&
-@@ -1704,7 +1934,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1690,6 +1921,18 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+       }
+     }
+ 
++    if (!VarAllocated && ObjC3CAsync.Data) {
++      auto VlaSize = getVLASize(Ty);
++      auto *ElementBytes = llvm::ConstantInt::get(
++          SizeTy, getContext().getTypeSizeInChars(VlaSize.Type).getQuantity());
++      auto *Bytes = emitObjC3CAsyncCheckedMultiply(*this, VlaSize.NumElts,
++                                                   ElementBytes);
++      auto *Memory = emitObjC3CAsyncStorage(*this, Bytes, alignment, &D);
++      address = Address(Memory, ConvertTypeForMem(VlaSize.Type), alignment);
++      AllocaAddr = address;
++      VarAllocated = true;
++    }
++
+     if (!VarAllocated) {
+       if (!DidCallStackSave) {
+         // Save the stack.
+@@ -1704,7 +1947,16 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
  
          // Push a cleanup block and restore the stack there.
          // FIXME: in general circumstances, this should be an EH cleanup.
@@ -4364,7 +4384,7 @@ index e84e05e8e..399783084 100644
        }
  
        auto VlaSize = getVLASize(Ty);
-@@ -1743,10 +1982,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1743,10 +1995,32 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    if (D.hasAttr<AnnotateAttr>() && HaveInsertPoint())
      EmitVarAnnotations(&D, address.emitRawPointer(*this));
  
@@ -4400,7 +4420,7 @@ index e84e05e8e..399783084 100644
  
    // Analogous to lifetime markers, we use a 'cleanup' to emit fake.use
    // calls for local variables. We are exempting volatile variables and
-@@ -1755,12 +2016,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
+@@ -1755,12 +2029,21 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
    // overhead.
    if (CGM.getCodeGenOpts().getExtendVariableLiveness() ==
        CodeGenOptions::ExtendVariableLivenessKind::All) {
@@ -4426,7 +4446,7 @@ index e84e05e8e..399783084 100644
  }
  
  static bool isCapturedBy(const VarDecl &, const Expr *);
-@@ -1949,7 +2219,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
+@@ -1949,7 +2232,8 @@ void CodeGenFunction::emitZeroOrPatternForAutoVarInit(QualType type,
    }
  }
  
@@ -4436,7 +4456,7 @@ index e84e05e8e..399783084 100644
    assert(emission.Variable && "emission was not valid!");
  
    // If this was emitted as a global constant, we're done.
-@@ -1961,7 +2232,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -1961,7 +2245,16 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
    QualType type = D.getType();
  
    // If this local has an initializer, emit it now.
@@ -4454,7 +4474,7 @@ index e84e05e8e..399783084 100644
  
    // If we are at an unreachable point, we don't need to emit the initializer
    // unless it contains a label.
-@@ -2023,6 +2303,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
+@@ -2023,6 +2316,19 @@ void CodeGenFunction::EmitAutoVarInit(const AutoVarEmission &emission) {
      return emitZeroOrPatternForAutoVarInit(type, D, Loc);
    };
  
@@ -4474,7 +4494,7 @@ index e84e05e8e..399783084 100644
    if (isTrivialInitializer(Init))
      return initializeWhatIsTechnicallyUninitialized(Loc);
  
-@@ -2191,7 +2484,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2191,7 +2497,8 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      if (var->isARCPseudoStrong()) return;
  
      // Otherwise, consider whether to use an EH cleanup or not.
@@ -4484,7 +4504,7 @@ index e84e05e8e..399783084 100644
  
      // Use the imprecise destroyer by default.
      if (!var->hasAttr<ObjCPreciseLifetimeAttr>())
-@@ -2199,6 +2493,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2199,6 +2506,7 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
      break;
  
    case QualType::DK_objc_weak_lifetime:
@@ -4492,7 +4512,7 @@ index e84e05e8e..399783084 100644
      break;
  
    case QualType::DK_nontrivial_c_struct:
-@@ -2218,8 +2513,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
+@@ -2218,8 +2526,22 @@ void CodeGenFunction::emitAutoVarTypeCleanup(
    // Use an EH cleanup in array destructors iff the destructor itself
    // is being pushed as an EH cleanup.
    bool useEHCleanup = (cleanupKind & EHCleanup);
@@ -4517,7 +4537,7 @@ index e84e05e8e..399783084 100644
  }
  
  void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
-@@ -2234,8 +2543,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2556,106 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -4626,7 +4646,7 @@ index e84e05e8e..399783084 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2243,6 +2650,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2243,6 +2663,19 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
      emitAutoVarTypeCleanup(emission, dtorKind);
    }
  
@@ -4646,7 +4666,7 @@ index e84e05e8e..399783084 100644
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
        D.hasAttr<ObjCPreciseLifetimeAttr>()) {
-@@ -2271,8 +2691,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2271,8 +2704,18 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
        Flags |= BLOCK_FIELD_IS_WEAK;
      enterByrefCleanup(NormalAndEHCleanup, emission.Addr, Flags,
                        /*LoadBlockVarAddr*/ false,
@@ -4666,7 +4686,7 @@ index e84e05e8e..399783084 100644
  }
  
  CodeGenFunction::Destroyer *
-@@ -2285,6 +2715,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
+@@ -2285,6 +2728,8 @@ CodeGenFunction::getDestroyer(QualType::DestructionKind kind) {
      return destroyARCStrongPrecise;
    case QualType::DK_objc_weak_lifetime:
      return destroyARCWeak;
@@ -4675,7 +4695,7 @@ index e84e05e8e..399783084 100644
    case QualType::DK_nontrivial_c_struct:
      return destroyNonTrivialCStruct;
    }
-@@ -2696,9 +3128,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +3141,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -11647,7 +11667,7 @@ index 853f038c4..5c2a965fe 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..05747a0d3 100644
+index 7629b42dd..72a7f74ba 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -1,3 +1,4 @@
@@ -11655,19 +11675,20 @@ index 7629b42dd..05747a0d3 100644
  //===--- CodeGenFunction.cpp - Emit LLVM Code from ASTs for a Function ----===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -19,6 +20,11 @@
+@@ -19,6 +20,12 @@
  #include "CGHLSLRuntime.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenModule.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3Defer.h"
++#include "CGObjC3Async.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "CGObjC3TypedErrors.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
  #include "clang/AST/ASTContext.h"
-@@ -289,6 +295,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
+@@ -289,6 +296,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
      case Type::IncompleteArray:
      case Type::VariableArray:
      case Type::Record:
@@ -11676,7 +11697,7 @@ index 7629b42dd..05747a0d3 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -418,8 +426,15 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -418,8 +427,15 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
      PopCleanupBlocks(PrologueCleanupDepth);
    }
  
@@ -11692,7 +11713,7 @@ index 7629b42dd..05747a0d3 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -437,6 +452,7 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -437,6 +453,7 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
    // rather than that of the end of the function's scope '}'.
    uint64_t RetKeyInstructionsAtomGroup = Loc ? Loc->getAtomGroup() : 0;
    ApplyDebugLocation AL(*this, Loc);
@@ -11700,7 +11721,7 @@ index 7629b42dd..05747a0d3 100644
    EmitFunctionEpilog(*CurFnInfo, EmitRetDbgLoc, EndLoc,
                       RetKeyInstructionsAtomGroup);
    EmitEndEHSpec(CurCodeDecl);
-@@ -604,6 +620,20 @@ bool CodeGenFunction::AlwaysEmitXRayTypedEvents() const {
+@@ -604,6 +621,20 @@ bool CodeGenFunction::AlwaysEmitXRayTypedEvents() const {
  
  llvm::ConstantInt *
  CodeGenFunction::getUBSanFunctionTypeHash(QualType Ty) const {
@@ -11721,7 +11742,7 @@ index 7629b42dd..05747a0d3 100644
    // Remove any (C++17) exception specifications, to allow calling e.g. a
    // noexcept function through a non-noexcept pointer.
    if (!Ty->isFunctionNoProtoType())
-@@ -884,8 +914,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -884,8 +915,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
    // are not aware of how to move the extra UBSan instructions across the split
    // coroutine boundaries.
    if (D && SanOpts.has(SanitizerKind::Null))
@@ -11731,7 +11752,7 @@ index 7629b42dd..05747a0d3 100644
        SanOpts.Mask &= ~SanitizerKind::Null;
  
    // Apply xray attributes to the function (as a string, for now)
-@@ -1274,7 +1303,17 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1304,17 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
@@ -11749,7 +11770,7 @@ index 7629b42dd..05747a0d3 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1494,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1495,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -11765,7 +11786,7 @@ index 7629b42dd..05747a0d3 100644
  
    return ResTy;
  }
-@@ -1463,10 +1511,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,10 +1512,18 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -11784,7 +11805,7 @@ index 7629b42dd..05747a0d3 100644
  
    CGM.getTargetCodeGenInfo().checkFunctionABI(CGM, FD);
  
-@@ -1542,10 +1598,13 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1542,10 +1599,13 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
        Loc = SpecDecl->getLocation();
  
    Stmt *Body = FD->getBody();
@@ -11799,7 +11820,7 @@ index 7629b42dd..05747a0d3 100644
        ShouldEmitLifetimeMarkers = true;
  
      // Initialize helper which will detect jumps which can cause invalid
-@@ -1622,7 +1681,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1622,7 +1682,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
      EmitCall(FnInfo, GDStubCallee, ReturnValueSlot(), CallArgs, nullptr, false,
               Loc);
    } else if (Body) {
@@ -11811,7 +11832,19 @@ index 7629b42dd..05747a0d3 100644
    } else
      llvm_unreachable("no definition for emitted function");
  
-@@ -2556,6 +2618,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2511,7 +2574,10 @@ CodeGenFunction::getVLASize(const VariableArrayType *type) {
+     } else {
+       // It's undefined behavior if this wraps around, so mark it that way.
+       // FIXME: Teach -fsanitize=undefined to trap this.
+-      numElements = Builder.CreateNUWMul(numElements, vlaSize);
++      numElements = ObjC3CAsync.Data
++                        ? emitObjC3CAsyncCheckedMultiply(*this, numElements,
++                                                         vlaSize)
++                        : Builder.CreateNUWMul(numElements, vlaSize);
+     }
+   } while ((type = getContext().getAsVariableArrayType(elementType)));
+ 
+@@ -2556,6 +2622,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -24970,10 +25003,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..2c9e5098a
+index 000000000..53427fae6
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1133 @@
+@@ -0,0 +1,1248 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -24986,6 +25019,7 @@ index 000000000..2c9e5098a
 +#include "CGCall.h"
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Async.h"
++#include "CGObjC3Defer.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ManagedStorage.h"
@@ -25010,6 +25044,7 @@ index 000000000..2c9e5098a
 +  llvm::Value *Id = nullptr;
 +  llvm::Value *Frame = nullptr;
 +  Address Owner = Address::invalid();
++  Address DynamicAllocations = Address::invalid();
 +  Address Result = Address::invalid();
 +  Address ResultLive = Address::invalid();
 +  Address Error = Address::invalid();
@@ -25301,6 +25336,37 @@ index 000000000..2c9e5098a
 +    call(CGF, "free", CGF.VoidTy, {Memory});
 +  }
 +};
++void freeDynamicStorage(CodeGenFunction &CGF, Address Slot) {
++  auto *Memory = CGF.Builder.CreateLoad(Slot);
++  CGF.Builder.CreateStore(nullPtr(CGF), Slot);
++  call(CGF, "free", CGF.VoidTy, {Memory});
++}
++struct FreeDynamicStorage final : EHScopeStack::Cleanup {
++  Address Slot;
++  explicit FreeDynamicStorage(Address Slot) : Slot(Slot) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    freeDynamicStorage(CGF, Slot);
++  }
++};
++struct FreeDynamicAllocations final : EHScopeStack::Cleanup {
++  Address Head;
++  explicit FreeDynamicAllocations(Address Head) : Head(Head) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    auto *Next = CGF.createBasicBlock("objc3.alloca.next");
++    auto *Release = CGF.createBasicBlock("objc3.alloca.release");
++    auto *Done = CGF.createBasicBlock("objc3.alloca.released");
++    CGF.EmitBranch(Next);
++    CGF.EmitBlock(Next);
++    auto *Node = CGF.Builder.CreateLoad(Head);
++    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Node), Release, Done);
++    CGF.EmitBlock(Release);
++    Address Link(Node, CGF.Int8PtrTy, Head.getAlignment());
++    CGF.Builder.CreateStore(CGF.Builder.CreateLoad(Link), Head);
++    call(CGF, "free", CGF.VoidTy, {Node});
++    CGF.EmitBranch(Next);
++    CGF.EmitBlock(Done);
++  }
++};
 +struct DisposeChild final : EHScopeStack::Cleanup {
 +  Address Frame, Child;
 +  DisposeChild(Address Frame, Address Child) : Frame(Frame), Child(Child) {}
@@ -25569,6 +25635,83 @@ index 000000000..2c9e5098a
 +};
 +} // namespace
 +
++namespace {
++llvm::Value *checkedStorageArithmetic(CodeGenFunction &CGF,
++                                      llvm::Intrinsic::ID Op,
++                                      llvm::Value *Left, llvm::Value *Right) {
++  auto *Checked = CGF.Builder.CreateCall(CGF.CGM.getIntrinsic(Op, {CGF.SizeTy}),
++                                         {Left, Right});
++  auto *Overflow = CGF.Builder.CreateExtractValue(Checked, 1);
++  auto *Failed = CGF.createBasicBlock("objc3.storage.overflow");
++  auto *Ready = CGF.createBasicBlock("objc3.storage.size");
++  CGF.Builder.CreateCondBr(Overflow, Failed, Ready);
++  CGF.EmitBlock(Failed);
++  auto &Data = *CGF.ObjC3CAsync.Data;
++  replaceError(CGF, Data, serviceError(CGF, CGF.Builder.getInt32(3)));
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(1), Data.Kind);
++  CGF.EmitBranchThroughCleanup(Data.Final);
++  CGF.EmitBlock(Ready);
++  return CGF.Builder.CreateExtractValue(Checked, 0);
++}
++}
++
++llvm::Value *clang::CodeGen::emitObjC3CAsyncCheckedMultiply(
++    CodeGenFunction &CGF, llvm::Value *Left, llvm::Value *Right) {
++  return checkedStorageArithmetic(CGF, llvm::Intrinsic::umul_with_overflow,
++                                  Left, Right);
++}
++
++llvm::Value *clang::CodeGen::emitObjC3CAsyncStorage(
++    CodeGenFunction &CGF, llvm::Value *Bytes, CharUnits RequestedAlignment,
++    const VarDecl *Owner) {
++  auto &Data = *CGF.ObjC3CAsync.Data;
++  // One pointer-sized, aligned header links builtin allocas until frame exit.
++  // A lexical VLA owns its allocation directly and is released after its users.
++  CharUnits Alignment = std::max(RequestedAlignment,
++                                 CGF.getPointerAlign());
++  auto *Align = llvm::ConstantInt::get(CGF.SizeTy, Alignment.getQuantity());
++  auto *Mask = llvm::ConstantInt::get(CGF.SizeTy, Alignment.getQuantity() - 1);
++  Bytes = CGF.Builder.CreateZExtOrTrunc(Bytes, CGF.SizeTy);
++  if (!Owner)
++    Bytes = checkedStorageArithmetic(CGF, llvm::Intrinsic::uadd_with_overflow,
++                                     Bytes, Align);
++  // A zero-byte VLA still has a nonnull owner. Never call aligned_alloc(0).
++  Bytes = CGF.Builder.CreateSelect(CGF.Builder.CreateIsNull(Bytes), Align, Bytes);
++  auto *Padded = checkedStorageArithmetic(CGF, llvm::Intrinsic::uadd_with_overflow,
++                                          Bytes, Mask);
++  auto *Rounded = CGF.Builder.CreateAnd(Padded, CGF.Builder.CreateNot(Mask));
++  auto *Memory = call(CGF, "aligned_alloc", CGF.Int8PtrTy, {Align, Rounded});
++  auto *Failed = CGF.createBasicBlock("objc3.storage.failed");
++  auto *Ready = CGF.createBasicBlock("objc3.storage.ready");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Memory), Failed, Ready);
++  CGF.EmitBlock(Failed);
++  replaceError(CGF, Data, serviceError(CGF, CGF.Builder.getInt32(3)));
++  CGF.Builder.CreateStore(CGF.Builder.getInt32(1), Data.Kind);
++  CGF.EmitBranchThroughCleanup(Data.Final);
++  CGF.EmitBlock(Ready);
++  if (!Owner) {
++    Address Link(Memory, CGF.Int8PtrTy, Alignment);
++    CGF.Builder.CreateStore(CGF.Builder.CreateLoad(Data.DynamicAllocations), Link);
++    CGF.Builder.CreateStore(Memory, Data.DynamicAllocations);
++    return CGF.Builder.CreateInBoundsGEP(CGF.Int8Ty, Memory, Align,
++                                         "objc3.alloca.storage");
++  }
++  Address Slot = CGF.CreateTempAlloca(CGF.Int8PtrTy, CGF.getPointerAlign(),
++                                      "objc3.vla.owner");
++  CGF.Builder.CreateStore(Memory, Slot);
++  if (CGF.hasObjC3DeferredSourceOwner(Owner))
++    CGF.EHStack.pushCleanup<EmitObjC3OrderedRelease>(
++        NormalAndEHCleanup, CGF.registerObjC3SourceRelease(
++            Owner, Slot, true,
++            [](CodeGenFunction &CGF, Address Storage,
++               EHScopeStack::Cleanup::Flags) {
++              freeDynamicStorage(CGF, Storage);
++            }));
++  else
++    CGF.EHStack.pushCleanup<FreeDynamicStorage>(NormalAndEHCleanup, Slot);
++  return Memory;
++}
++
 +void clang::CodeGen::pushObjC3AsyncPoolReopenCleanup(
 +    CodeGenFunction &CGF, llvm::ArrayRef<Address> Pools) {
 +  CGF.EHStack.pushCleanupWithExtra<ReopenAutoreleasePools>(EHCleanup,
@@ -25632,6 +25775,11 @@ index 000000000..2c9e5098a
 +  {
 +    RunCleanupsScope FrameScope(*this);
 +    EHStack.pushCleanup<FreeFrame>(NormalAndEHCleanup, Data.Id, Data.Frame);
++    Data.DynamicAllocations = CreateTempAlloca(
++        Int8PtrTy, getPointerAlign(), "objc3.alloca.head");
++    Builder.CreateStore(nullPtr(*this), Data.DynamicAllocations);
++    EHStack.pushCleanup<FreeDynamicAllocations>(NormalAndEHCleanup,
++                                                Data.DynamicAllocations);
 +    Builder.CreateStore(nullPtr(*this), Data.Owner);
 +    Builder.CreateStore(nullPtr(*this), Data.Error);
 +    Builder.CreateStore(Builder.getInt32(0), Data.Kind);
@@ -26109,10 +26257,10 @@ index 000000000..2c9e5098a
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..f07bd5c4e
+index 000000000..13dbb4797
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,38 @@
 +//===--- CGObjC3Async.h - Native C async checked continuation ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
@@ -26125,9 +26273,17 @@ index 000000000..f07bd5c4e
 +namespace clang {
 +class CoawaitExpr;
 +class CallExpr;
++class CharUnits;
++class VarDecl;
 +namespace CodeGen {
 +class CodeGenFunction;
 +class Address;
++// Dynamic native-frame storage never lives on the resuming thread's stack.
++// An owner gives a VLA lexical lifetime; no owner gives builtin alloca lifetime.
++llvm::Value *emitObjC3CAsyncStorage(CodeGenFunction &, llvm::Value *Bytes,
++                                   CharUnits Alignment, const VarDecl *Owner);
++llvm::Value *emitObjC3CAsyncCheckedMultiply(CodeGenFunction &, llvm::Value *,
++                                           llvm::Value *);
 +llvm::Value *emitObjC3AsyncGroupNextPlan(CodeGenFunction &, const CallExpr &);
 +// A C++ coroutine owns slots, never live thread-local pool tokens, across a
 +// suspension. C frames keep their corresponding private slot vector.
@@ -27846,7 +28002,7 @@ index 000000000..fd8cb9ca8
 +  co_return;
 +}
 diff --git a/clang/lib/CodeGen/CGBuiltin.cpp b/clang/lib/CodeGen/CGBuiltin.cpp
-index 37846bbb0..e45130fda 100644
+index 37846bbb0..281b71e37 100644
 --- a/clang/lib/CodeGen/CGBuiltin.cpp
 +++ b/clang/lib/CodeGen/CGBuiltin.cpp
 @@ -16,6 +16,7 @@
@@ -27857,7 +28013,60 @@ index 37846bbb0..e45130fda 100644
  #include "CGOpenCLRuntime.h"
  #include "CGRecordLayout.h"
  #include "CGValue.h"
-@@ -6402,6 +6403,8 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
+@@ -154,7 +155,7 @@ Value *CodeGenFunction::EmitTargetBuiltinExpr(unsigned BuiltinID,
+                                    getTarget().getTriple().getArch());
+ }
+ 
+-static void initializeAlloca(CodeGenFunction &CGF, AllocaInst *AI, Value *Size,
++static void initializeAlloca(CodeGenFunction &CGF, Value *AI, Value *Size,
+                              Align AlignmentInBytes) {
+   ConstantInt *Byte;
+   switch (CGF.getLangOpts().getTrivialAutoVarInit()) {
+@@ -4985,11 +4986,18 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
+         CGM.getContext()
+             .toCharUnitsFromBits(TI.getSuitableAlign())
+             .getAsAlign();
+-    AllocaInst *AI = Builder.CreateAlloca(Builder.getInt8Ty(), Size);
+-    AI->setAlignment(SuitableAlignmentInBytes);
++    Value *AI;
++    if (ObjC3CAsync.Data)
++      AI = emitObjC3CAsyncStorage(*this, Size,
++          CharUnits::fromQuantity(SuitableAlignmentInBytes.value()), nullptr);
++    else {
++      auto *Stack = Builder.CreateAlloca(Builder.getInt8Ty(), Size);
++      Stack->setAlignment(SuitableAlignmentInBytes);
++      AI = Stack;
++    }
+     if (BuiltinID != Builtin::BI__builtin_alloca_uninitialized)
+       initializeAlloca(*this, AI, Size, SuitableAlignmentInBytes);
+-    if (AI->getAddressSpace() !=
++    if (AI->getType()->getPointerAddressSpace() !=
+         CGM.getContext().getTargetAddressSpace(
+             E->getType()->getPointeeType().getAddressSpace())) {
+       llvm::Type *Ty = CGM.getTypes().ConvertType(E->getType());
+@@ -5006,11 +5014,18 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
+     unsigned AlignmentInBits = AlignmentInBitsCI->getZExtValue();
+     const Align AlignmentInBytes =
+         CGM.getContext().toCharUnitsFromBits(AlignmentInBits).getAsAlign();
+-    AllocaInst *AI = Builder.CreateAlloca(Builder.getInt8Ty(), Size);
+-    AI->setAlignment(AlignmentInBytes);
++    Value *AI;
++    if (ObjC3CAsync.Data)
++      AI = emitObjC3CAsyncStorage(*this, Size,
++          CharUnits::fromQuantity(AlignmentInBytes.value()), nullptr);
++    else {
++      auto *Stack = Builder.CreateAlloca(Builder.getInt8Ty(), Size);
++      Stack->setAlignment(AlignmentInBytes);
++      AI = Stack;
++    }
+     if (BuiltinID != Builtin::BI__builtin_alloca_with_align_uninitialized)
+       initializeAlloca(*this, AI, Size, AlignmentInBytes);
+-    if (AI->getAddressSpace() !=
++    if (AI->getType()->getPointerAddressSpace() !=
+         CGM.getContext().getTargetAddressSpace(
+             E->getType()->getPointeeType().getAddressSpace())) {
+       llvm::Type *Ty = CGM.getTypes().ConvertType(E->getType());
+@@ -6402,6 +6417,8 @@ RValue CodeGenFunction::EmitBuiltinExpr(const GlobalDecl GD, unsigned BuiltinID,
    case Builtin::BI__fastfail:
      return RValue::get(EmitMSVCBuiltinExpr(MSVCIntrin::__fastfail, E));
  
@@ -27995,3 +28204,42 @@ index 000000000..ada117a7e
 +@implementation ScopeMethod
 +- (int)run __objc3_async { return 42; }
 +@end
+diff --git a/clang/test/ObjC3/CodeGen/native-frame-dynamic-storage.m b/clang/test/ObjC3/CodeGen/native-frame-dynamic-storage.m
+new file mode 100644
+index 000000000..b06d9466d
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-frame-dynamic-storage.m
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ftrivial-auto-var-init=zero -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ZERO
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -x objective-c /dev/null -disable-llvm-passes -emit-llvm -o - | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++extern int child(void) __objc3_async_frame;
++extern void observe(void *);
++// CHECK-LABEL: define{{.*}} void @dynamic_storage(
++// CHECK: @llvm.umul.with.overflow.i64
++// CHECK: @llvm.uadd.with.overflow.i64
++// CHECK: call ptr @aligned_alloc(i64 128,
++// CHECK: call i32 @objc3_async_error_create_service(i32 3,
++// CHECK: objc3.storage.ready:
++// CHECK: store ptr {{.*}}, ptr %objc3.vla.owner
++// CHECK: call ptr @aligned_alloc(i64 128,
++// ZERO: call void @llvm.memset{{.*}}i8 0
++// CHECK: call void @observe
++// CHECK: @objc3_async_frame_start_child
++// CHECK: call void @free
++// CHECK: objc3.alloca.release:
++// CHECK: call void @free
++int dynamic_storage(int n) __objc3_async_frame {
++  int values[n][2] __attribute__((aligned(128)));
++  void *bytes = __builtin_alloca_with_align(n, 1024);
++  observe(bytes);
++  values[0][0] = __objc3_await child();
++  return values[0][0];
++}
++// CHECK-LABEL: define{{.*}} void @ordinary_storage(
++// CHECK: @llvm.stacksave
++// CHECK: alloca i32, i64
++// CHECK: @llvm.stackrestore
++void ordinary_storage(int n) { int values[n]; observe(values); }

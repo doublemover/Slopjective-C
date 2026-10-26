@@ -93,7 +93,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 5,
+        "minor": 6,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -122,13 +122,15 @@
         "registration-before-dispatch group children and callback-frame quiescence (source)",
         "nontrivial C++ explicit-frame value parameters/results and typed construction/destruction hooks (source)",
         "move-only frame captures, const value copying and partial construction unwind (source)",
-        "shared native-frame/C++ task descriptors for private C++ record and enum results (source)"
+        "shared native-frame/C++ task descriptors for private C++ record and enum results (source)",
+        "lexical heap-backed VLA storage and invocation-lifetime builtin alloca in native C frames (source)",
+        "checked dynamic allocation sizing, alignment and owned out-of-memory transport (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "nontrivial C++ class semantic-package projections and dynamic native-frame stack storage"
+        "nontrivial C++ class semantic-package projections, reference parameters and implicit C++ receivers"
       ]
     },
     {

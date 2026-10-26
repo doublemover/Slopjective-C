@@ -206,7 +206,11 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                                           encoding="utf-8")
                         extra = pch(case, header, work)
                     client = work / ("contract.m" if case.language == "objective-c" else "contract.mm")
-                    execute(case, [compile_source(case, client, work, extra=extra)], work)
+                    storage_allocator = compile_source(case,
+                        work / "storage_allocator.m", work, language="objective-c",
+                        standard="c17", output_name="storage-allocator.o")
+                    execute(case, [compile_source(case, client, work, extra=extra),
+                                   storage_allocator], work)
                     opts = flags(case, case.language, case.standard, case.ownership,
                                  case.optimization, work)
                     invoke(case.name + "-diagnostics", [compiler, *opts, *extra,
