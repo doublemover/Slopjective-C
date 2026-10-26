@@ -4,7 +4,8 @@ The concurrency 2.9.0 source span admits nonvirtual single/multiple inheritance,
 empty bases and in-class defaulted special members in semantic interfaces.
 The active SDK remains the accepted
 [2.8.1 delivery](../support/linux_cxx_deleted_member_acceptance.json).
-The new compiler source identity is
+The [source progress receipt](../support/linux_cxx_class_structure_progress.json)
+binds the implementation and source-only validation. The new compiler identity is
 `llvmorg-23.1.3-0d261d1ca552-e926e2771bde-00b75dc3`.
 Extension ABI 21, interface schema 2.1, service ABI 4 and frame ABI 1 are unchanged;
 regenerate compiler-dependent artifacts for this source cutover.
