@@ -322,6 +322,8 @@ if (BUILD_TESTING)
   add_executable(objc3_task_group_await_test "${_task_group_await_object}")
   set_target_properties(objc3_task_group_await_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_task_group_await_test PRIVATE objc3_runtime_services)
+  target_link_options(objc3_task_group_await_test PRIVATE
+    "LINKER:--wrap=objc3_task_group_scope_enter")
   add_test(NAME objc3_task_group_await COMMAND objc3_task_group_await_test)
   set_tests_properties(objc3_task_group_await PROPERTIES TIMEOUT 45)
   add_executable(objc3_generic_collection_service_test

@@ -4,6 +4,9 @@
 #include <cassert>
 #include <initializer_list>
 #include <memory>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include "ownership_wait.h"
 
 @protocol Sendable @end
@@ -226,6 +229,119 @@ void callback_group_owns_callable_until_quiescence(objc3_executor_t *source) {
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   empty_result.result();
 }
+
+struct CallbackFenceState {
+  objc3_executor_t *worker = nullptr;
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool entered = false, release = false, fence = false;
+  std::atomic<unsigned> callable_destroyed{0};
+};
+struct CallbackFenceValue {
+  CallbackFenceState *state;
+  bool original = true;
+  explicit CallbackFenceValue(CallbackFenceState *state) : state(state) {}
+  CallbackFenceValue(const CallbackFenceValue &other)
+      : state(other.state), original(false) {}
+  CallbackFenceValue(CallbackFenceValue &&other) noexcept
+      : state(other.state), original(std::exchange(other.original, false)) {}
+  ~CallbackFenceValue() {
+    if (!original) return;
+    std::unique_lock<std::mutex> lock(state->mutex);
+    state->entered = true;
+    state->changed.notify_all();
+    assert(state->changed.wait_for(lock, std::chrono::seconds(5),
+                                   [&] { return state->release; }));
+    assert(state->callable_destroyed == 0);
+  }
+};
+struct CallbackFenceWork {
+  CallbackFenceState *state;
+  std::shared_ptr<int> owner = std::make_shared<int>(42);
+  explicit CallbackFenceWork(CallbackFenceState *state) : state(state) {}
+  CallbackFenceWork(CallbackFenceWork &&) = default;
+  ~CallbackFenceWork() { if (owner) ++state->callable_destroyed; }
+  objc3::task<CallbackFenceValue> operator()(objc3::task_group_handle) {
+    co_await objc3::hop_to(state->worker);
+    co_return CallbackFenceValue(state);
+  }
+};
+void callback_frame_cleanup_is_scope_work(objc3_executor_t *source) {
+  CallbackFenceState state;
+  assert(objc3_executor_create(0, &state.worker) == OBJC3_SERVICE_OK);
+  auto task = objc3::with_task_group<CallbackFenceValue>(CallbackFenceWork(&state)).start(source);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock<std::mutex> lock(state.mutex);
+    assert(state.changed.wait_for(lock, std::chrono::seconds(5), [&] { return state.entered; }));
+  }
+  // The callback's terminal result is available; its frame is still inside a
+  // value destructor on another worker. Joining only terminal completion would
+  // destroy the callable too soon and let the enclosing scope return here.
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion completion{};
+  assert(objc3_task_get_completion(task.native_handle(), &completion) == OBJC3_SERVICE_NOT_READY);
+  assert(state.callable_destroyed == 0);
+  assert(objc3_executor_enqueue(state.worker, [](void *opaque) {
+    auto &state = *static_cast<CallbackFenceState *>(opaque);
+    std::lock_guard<std::mutex> lock(state.mutex);
+    state.fence = true;
+    state.changed.notify_all();
+  }, &state) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock<std::mutex> lock(state.mutex);
+    state.release = true;
+    state.changed.notify_all();
+    assert(state.changed.wait_for(lock, std::chrono::seconds(5), [&] { return state.fence; }));
+  }
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  assert(task.result().state == &state && state.callable_destroyed == 1);
+  task = {};
+  objc3_executor_release(state.worker);
+}
+
+objc3::task<int> rejected_callback(unsigned *entered) {
+  ++*entered;
+  co_return 42;
+}
+struct ClosedGroupFactory {
+  unsigned *entered;
+  objc3::task<int> operator()(objc3::task_group_handle group) {
+    group.close();
+    return rejected_callback(entered);
+  }
+};
+struct RejectedQueueFactory {
+  objc3_actor_t *actor;
+  unsigned *entered;
+  objc3::task<int> operator()(objc3::task_group_handle) {
+    assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    return rejected_callback(entered);
+  }
+};
+void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
+  unsigned entered = 0;
+  auto task = objc3::with_task_group<int>(ClosedGroupFactory{&entered}).start(source);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  bool caught = false;
+  try { (void)task.result(); }
+  catch (const objc3::service_failure &failure) {
+    caught = failure.status() == OBJC3_SERVICE_CLOSED;
+  }
+  assert(caught && entered == 0);
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
+  auto rejected = objc3::with_task_group<int>(RejectedQueueFactory{actor, &entered}).start_on(actor);
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  caught = false;
+  try { (void)rejected.result(); }
+  catch (const objc3::task_cancelled &) { caught = true; }
+  assert(caught && entered == 0);
+  rejected = {};
+  objc3_actor_release(actor);
+}
 int cxx_checked_scope(CxxScopeState *state, id<SpawnFailure> error, bool fail)
     __objc3_async __objc3_throws(id<SpawnFailure>)
     __attribute__((objc_task_group)) {
@@ -281,6 +397,8 @@ int main() {
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   checked_cxx_scope_exits(source);
   callback_group_owns_callable_until_quiescence(source);
+  callback_frame_cleanup_is_scope_work(source);
+  callback_registration_failure_runs_no_body(source);
   {
     auto scoped = std::move(__objc3_async_from_frame<int>(raw_scope_parent())).start_on(actor);
     uint32_t executed = 0;

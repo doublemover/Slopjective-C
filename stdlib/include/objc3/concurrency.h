@@ -41,11 +41,15 @@ namespace objc3 {
  * Tasks added by the callback must be structured descendants. */
 template <class T = void, class Work>
 task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
+  auto group = task_group_handle::current_scope();
+  // Awaiting completion alone does not join callback frame/callback cleanup.
+  // Registration must precede dispatch, including failed-start paths.
+  auto callback = work(group).start_child(group);
   if constexpr (std::is_void_v<T>) {
-    co_await work(task_group_handle::current_scope());
+    co_await callback;
     co_return;
   } else {
-    co_return co_await work(task_group_handle::current_scope());
+    co_return co_await callback;
   }
 }
 } // namespace objc3

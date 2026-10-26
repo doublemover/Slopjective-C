@@ -136,7 +136,43 @@ static void source_scope_worker(objc3_executor_t *source, int ready) {
   objc3_task_group_release(state.group); objc3_task_group_release(fence);
   objc3_actor_release(state.actor); objc3_executor_release(state.children);
 }
+static void grouped_native_child(unsigned *entered) __objc3_async_frame {
+  ++*entered;
+}
+static int grouped_native_entry(unsigned *entered)
+    __objc3_async_frame __attribute__((objc_task_group)) {
+  objc3_async_frame frame = grouped_native_child(entered);
+  objc3_task_t *child = NULL;
+  assert(objc3_async_frame_spawn_in_group(&frame,
+      objc3_task_group_scope_current(), &child) == OBJC3_SERVICE_OK);
+  assert(!frame.context);
+  objc3_task_release(child);
+  return 42;
+}
+static void grouped_native_entry_witness(objc3_executor_t *source) {
+  unsigned entered = 0;
+  objc3_task_group_t *group = NULL;
+  assert(objc3_task_group_create(NULL, &group) == OBJC3_SERVICE_OK);
+  objc3_async_frame frame = grouped_native_child(&entered);
+  void *original = frame.context;
+  objc3_task_t *task = NULL;
+  assert(objc3_async_frame_spawn_in_group(&frame, group, &task) == OBJC3_SERVICE_NOT_READY);
+  assert(!task && frame.context == original && entered == 0);
+  assert(objc3_async_frame_dispose(&frame) == OBJC3_SERVICE_OK);
+  objc3_task_group_release(group);
+  frame = grouped_native_entry(&entered);
+  assert(objc3_async_frame_start(&frame, source, NULL, &task) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(source, 1, &executed) == OBJC3_SERVICE_OK);
+  objc3_completion completion = {0};
+  assert(entered == 0 && objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  assert(entered == 1 && objc3_task_get_completion(task, &completion) == OBJC3_SERVICE_OK);
+  assert(completion.kind == OBJC3_COMPLETION_SUCCESS && *(const int *)completion.payload == 42);
+  objc3_task_release(task);
+}
 static void group_scope_witnesses(objc3_executor_t *source) {
+  grouped_native_entry_witness(source);
   assert(!objc3_task_group_scope_current());
   source_scope_worker(source, 0);
   source_scope_worker(source, 1);

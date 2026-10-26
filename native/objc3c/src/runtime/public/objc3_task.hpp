@@ -865,6 +865,14 @@ public:
     task_detail::check(objc3_async_frame_spawn(&frame_, &started));
     return task_handle<T>(started);
   }
+  // Register before dispatch: a scope can join this frame even when its
+  // completion is published on another worker before destruction finishes.
+  task_handle<T> start_child(const task_group_handle &group) && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_spawn_in_group(
+        &frame_, group.native_handle(), &started));
+    return task_handle<T>(started);
+  }
   task_handle<T> detach() && {
     objc3_task_t *started = nullptr;
     task_detail::check(objc3_async_frame_detach(&frame_, &started));

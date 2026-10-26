@@ -75,8 +75,8 @@ static objc3::task<void> module_scope_child() {
 }
 int native_module_scoped(int value) __objc3_async
     __attribute__((objc_task_group)) {
-  auto child = module_scope_child().start_child();
-  objc3::task_group_handle::current_scope().add(child);
+  auto group = objc3::task_group_handle::current_scope();
+  (void)module_scope_child().start_child(group);
   return value + 1;
 }
 

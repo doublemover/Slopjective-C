@@ -73,8 +73,7 @@ int c_frame_scoped(int value) __objc3_async_frame __attribute__((objc_task_group
   assert(group);
   objc3_async_frame frame = scope_child(value);
   objc3_task_t *child = NULL;
-  assert(objc3_async_frame_spawn(&frame, &child) == OBJC3_SERVICE_OK);
-  assert(objc3_task_group_add(group, child) == OBJC3_SERVICE_OK);
+  assert(objc3_async_frame_spawn_in_group(&frame, group, &child) == OBJC3_SERVICE_OK);
   objc3_task_release(child);
   return value;
 }

@@ -118,7 +118,8 @@
         "preallocated scope finalization and forced-abandonment quiescence (source)",
         "C++ task-coroutine automatic group scopes and retained current-scope views (source)",
         "final-suspended C++ result/error ownership through shielded quiescence (source)",
-        "with_task_group callback tasks with callable ownership through child quiescence (source)"
+        "with_task_group callback tasks with callable ownership through child quiescence (source)",
+        "registration-before-dispatch group children and callback-frame quiescence (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

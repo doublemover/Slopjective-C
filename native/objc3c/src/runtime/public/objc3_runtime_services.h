@@ -272,6 +272,13 @@ objc3_service_status objc3_async_frame_start_child_on(
  * the standard header performs capture checking at that source boundary. */
 objc3_service_status objc3_async_frame_spawn(objc3_async_frame *frame,
                                              objc3_task_t **out_task);
+/* Structured child entry with group registration before its first resume can
+ * run. Inherits the current task's destination/cancellation ancestry. A failed
+ * start preserves the frame and clears out_task. Registration failure runs no
+ * body. Failed queue publication leaves a cancelled, frame-less group member
+ * whose observers remain joinable; frame disposal still belongs to the caller. */
+objc3_service_status objc3_async_frame_spawn_in_group(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task);
 objc3_service_status objc3_async_frame_detach(objc3_async_frame *frame,
                                               objc3_task_t **out_task);
 

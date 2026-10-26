@@ -511,7 +511,8 @@ void objc3_task_cleanup_release(objc3_task_t *task) {
 namespace {
 objc3_service_status start_task(
     const objc3_task_start_options *options, objc3_task_t **out_task,
-    objc3_task_t *parent = nullptr) {
+    objc3_task_t *parent = nullptr,
+    objc3::services::TaskGroup *group = nullptr) {
   if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
   if (!options || options->struct_size < sizeof(objc3_task_start_options) ||
@@ -603,12 +604,38 @@ objc3_service_status start_task(
       return OBJC3_SERVICE_OUT_OF_MEMORY;
     }
   }
+  if (group) {
+    const auto registered = objc3::services::task_group_add_task(group, task);
+    if (registered != OBJC3_SERVICE_OK) {
+      // The caller still owns the unstarted frame. No body can observe its
+      // borrowed captures before group registration succeeds.
+      {
+        std::lock_guard<std::mutex> lock(task->mutex);
+        task->frame = nullptr;
+        task->frame_destroyed = true;
+        task->terminal = true;
+      }
+      objc3_task_internal_release(task);
+      return registered;
+    }
+  }
   const objc3_service_status queued = objc3_task_schedule_resume(task);
   if (queued != OBJC3_SERVICE_OK) {
-    task->frame = nullptr;
     {
       std::lock_guard<std::mutex> lock(task->mutex);
-      task->terminal = true;
+      task->frame = nullptr;
+      task->frame_destroyed = true;
+      if (!group) task->terminal = true;
+    }
+    if (group) {
+      // Registration is already visible. Publish a cancelled, frame-less
+      // member so joins remain quiescent even when queue publication fails.
+      // Frame disposal stays with the caller, as on every failed start.
+      objc3_completion cancelled{};
+      cancelled.struct_size = sizeof(cancelled);
+      cancelled.version = OBJC3_SERVICE_ABI_VERSION;
+      cancelled.kind = OBJC3_COMPLETION_CANCELLED;
+      (void)objc3_task_complete(task, &cancelled);
     }
     objc3_task_internal_release(task);
     return queued;
@@ -626,7 +653,8 @@ extern "C" objc3_service_status objc3_task_start(
 namespace {
 objc3_service_status start_child(
     objc3_task_t *parent, const objc3_task_start_options *options,
-    objc3_task_t **out_task, bool explicit_destination) {
+    objc3_task_t **out_task, bool explicit_destination,
+    objc3::services::TaskGroup *group = nullptr) {
   if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
   if (!parent || current_service_task != parent || !options ||
@@ -650,7 +678,7 @@ objc3_service_status start_child(
       else inherited.executor = parent->executor;
     }
   }
-  return start_task(&inherited, out_task, parent);
+  return start_task(&inherited, out_task, parent, group);
 }
 } // namespace
 
@@ -1253,7 +1281,8 @@ objc3_service_status start_async_frame(objc3_async_frame *frame,
                                        objc3_executor_t *executor,
                                        objc3_actor_t *actor,
                                        objc3_task_t *parent,
-                                       objc3_task_t **out_task) {
+                                       objc3_task_t **out_task,
+                                       objc3::services::TaskGroup *group = nullptr) {
   if (!out_task)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_task = nullptr;
@@ -1270,8 +1299,7 @@ objc3_service_status start_async_frame(objc3_async_frame *frame,
   options.destroy = frame->destroy;
   options.result_type = frame->result_type;
   const auto started = parent
-      ? (executor || actor ? objc3_task_start_child_on(parent, &options, out_task)
-                           : objc3_task_start_child(parent, &options, out_task))
+      ? start_child(parent, &options, out_task, executor || actor, group)
       : objc3_task_start(&options, out_task);
   if (started == OBJC3_SERVICE_OK)
     *frame = {};
@@ -1294,6 +1322,18 @@ objc3_async_frame_start_child(objc3_async_frame *frame, objc3_task_t *parent,
     return OBJC3_SERVICE_INVALID_ARGUMENT;
   }
   return start_async_frame(frame, nullptr, nullptr, parent, out_task);
+}
+
+extern "C" objc3_service_status objc3_async_frame_spawn_in_group(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  const auto status = objc3_async_frame_validate(frame);
+  if (status != OBJC3_SERVICE_OK) return status;
+  if (!current_service_task) return OBJC3_SERVICE_NOT_READY;
+  return start_async_frame(frame, nullptr, nullptr, current_service_task,
+      out_task, reinterpret_cast<objc3::services::TaskGroup *>(group));
 }
 
 extern "C" objc3_service_status objc3_async_frame_start_child_on(
