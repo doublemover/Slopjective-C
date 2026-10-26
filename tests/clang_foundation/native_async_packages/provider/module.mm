@@ -324,3 +324,68 @@ int native_module_aggregate(NativeAggregate value) __objc3_async_frame {
   __objc3_await native_module_borrow_leaf();
   return (int)value.first + value.second;
 }
+
+
+struct NativeDispatchStats { int live; int destroyed; };
+struct NativeVirtualRoot {
+  NativeDispatchStats *stats;
+  int number;
+  NativeVirtualRoot(NativeDispatchStats *, int);
+  NativeVirtualRoot(const NativeVirtualRoot &);
+  virtual ~NativeVirtualRoot();
+  virtual int score() const = 0;
+  virtual NativeVirtualRoot *self() noexcept;
+  virtual int frame(int &) const & __objc3_async_frame;
+};
+struct NativeVirtualLeft : virtual NativeVirtualRoot {
+  NativeVirtualLeft(NativeDispatchStats *, int);
+  int score() const override;
+};
+struct NativeVirtualRight : virtual NativeVirtualRoot {
+  NativeVirtualRight(NativeDispatchStats *, int);
+  virtual int right() const;
+};
+struct NativeVirtualDiamond final : NativeVirtualLeft, NativeVirtualRight {
+  int tail;
+  NativeVirtualDiamond(NativeDispatchStats *, int);
+  NativeVirtualDiamond(const NativeVirtualDiamond &) = default;
+  NativeVirtualDiamond(NativeVirtualDiamond &&) = default;
+  ~NativeVirtualDiamond() override = default;
+  int score() const override final;
+  NativeVirtualDiamond *self() noexcept override;
+  int frame(int &) const & __objc3_async_frame override;
+};
+NativeVirtualRoot::NativeVirtualRoot(NativeDispatchStats *s, int n)
+    : stats(s), number(n) { ++stats->live; }
+NativeVirtualRoot::NativeVirtualRoot(const NativeVirtualRoot &v)
+    : stats(v.stats), number(v.number) { ++stats->live; }
+NativeVirtualRoot::~NativeVirtualRoot() { --stats->live; ++stats->destroyed; }
+NativeVirtualRoot *NativeVirtualRoot::self() noexcept { return this; }
+int NativeVirtualRoot::frame(int &extra) const & __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return number + extra;
+}
+NativeVirtualLeft::NativeVirtualLeft(NativeDispatchStats *s, int n)
+    : NativeVirtualRoot(s, n) {}
+int NativeVirtualLeft::score() const { return number; }
+NativeVirtualRight::NativeVirtualRight(NativeDispatchStats *s, int n)
+    : NativeVirtualRoot(s, n) {}
+int NativeVirtualRight::right() const { return number; }
+NativeVirtualDiamond::NativeVirtualDiamond(NativeDispatchStats *s, int n)
+    : NativeVirtualRoot(s, n), NativeVirtualLeft(s, n),
+      NativeVirtualRight(s, n), tail(22) {}
+int NativeVirtualDiamond::score() const { return number + tail; }
+NativeVirtualDiamond *NativeVirtualDiamond::self() noexcept { return this; }
+int NativeVirtualDiamond::frame(int &extra) const & __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return score() + extra;
+}
+NativeVirtualDiamond native_module_virtual(NativeVirtualDiamond value)
+    __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value;
+}
+
+bool native_module_virtual_is(NativeVirtualRoot *value) {
+  return dynamic_cast<NativeVirtualDiamond *>(value) != nullptr;
+}

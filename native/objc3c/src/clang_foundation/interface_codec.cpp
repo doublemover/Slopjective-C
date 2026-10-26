@@ -343,6 +343,17 @@ llvm::Error ValidateForEncoding(
       (has_structure && !has_lifecycle))
     return Invalid("C++ class structure declarations require matching "
                    "structure and lifecycle capabilities");
+  const bool has_dispatch =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassDispatchIdentity);
+  const bool dispatch_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassDispatchSemantic) != sidecar.required_semantics.end();
+  if (has_dispatch != dispatch_capability ||
+      (has_dispatch && !has_lifecycle))
+    return Invalid("C++ class dispatch declarations require matching dispatch "
+                   "and lifecycle capabilities");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

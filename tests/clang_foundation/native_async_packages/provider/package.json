@@ -47,7 +47,14 @@
     "NativeDerivedValue",
     "NativeAccessValue",
     "native_module_derived",
-    "native_module_aggregate"
+    "native_module_aggregate",
+    "NativeDispatchStats",
+    "NativeVirtualRoot",
+    "NativeVirtualLeft",
+    "NativeVirtualRight",
+    "NativeVirtualDiamond",
+    "native_module_virtual",
+    "native_module_virtual_is"
   ],
   "dependencies": []
 }

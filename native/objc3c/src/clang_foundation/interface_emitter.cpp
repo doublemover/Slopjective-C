@@ -169,7 +169,9 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
 bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
   if (!record || !record->isCompleteDefinition())
     return false;
-  if (record->getNumBases() != 0 || record->hasUserDeclaredConstructor() ||
+  if (record->isDynamicClass() || record->hasAttr<clang::FinalAttr>() ||
+      record->getNumBases() != 0 ||
+      record->hasUserDeclaredConstructor() ||
       record->hasUserDeclaredDestructor() ||
       record->hasUserDeclaredCopyAssignment() ||
       record->hasUserDeclaredMoveAssignment())
@@ -191,7 +193,7 @@ bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
 bool HasClassStructure(const clang::CXXRecordDecl *record) {
   if (!record || !record->isCompleteDefinition())
     return false;
-  if (record->getNumBases() != 0)
+  if (record->isDynamicClass() || record->getNumBases() != 0)
     return true;
   for (const auto *method : record->methods())
     if (!method->isImplicit() && method->getMostRecentDecl()->isDefaulted())
@@ -266,6 +268,31 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                                : layout.getBaseClassOffset(owner))
                  .getQuantity();
     }
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition() &&
+      (cxx->isDynamicClass() || cxx->hasAttr<clang::FinalAttr>())) {
+    const auto &layout = context.getASTRecordLayout(cxx);
+    out << ";cxx-class-dispatch:v1;dynamic=" << cxx->isDynamicClass()
+        << ";polymorphic=" << cxx->isPolymorphic()
+        << ";abstract=" << cxx->isAbstract()
+        << ";final=" << cxx->hasAttr<clang::FinalAttr>()
+        << ";nv-size=" << layout.getNonVirtualSize().getQuantity()
+        << ";nv-align=" << layout.getNonVirtualAlignment().getQuantity()
+        << ";primary-virtual=" << layout.isPrimaryBaseVirtual();
+    if (const auto *primary = layout.getPrimaryBase())
+      out << ";primary=" << ReadInterfaceDeclarationStableId(primary);
+    // Include every transitive virtual base in native layout order, not only
+    // the direct bases. This binds diamond sharing and receiver adjustments.
+    for (const auto &base : cxx->vbases())
+      out << ";vbase=" << CanonicalType(base.getType(), context) << ":offset="
+          << layout.getVBaseClassOffset(base.getType()->getAsCXXRecordDecl())
+                 .getQuantity();
+    // Declaration order determines new virtual slots. The sidecar's sorted
+    // declaration table alone cannot distinguish reordered virtual functions.
+    for (const auto *method : cxx->methods())
+      if (!method->isImplicit() && method->isVirtual())
+        out << ";virtual-slot=" << ReadInterfaceDeclarationStableId(method);
   }
   out.flush();
   return text;
@@ -733,8 +760,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     supported =
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
-        !record->isUnion() && record->getNumVBases() == 0 &&
-        !record->isPolymorphic();
+        !record->isUnion();
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
         continue;
@@ -745,7 +771,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
-          method && !method->isTemplated() && !method->isVirtual() &&
+          method && !method->isTemplated() &&
           (!method->isInlined() || method->isDeleted() ||
            IsInClassDefaultedSpecialMember(method)) &&
           (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method)) &&
@@ -791,11 +817,11 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
                   "C++ semantic interfaces require global declarations and "
-                  "nonvirtual records with nonvirtual bases, out-of-line "
+                  "records with native bases and virtual dispatch, out-of-line "
                   "members, deleted "
                   "declarations or in-class defaulted special members, without "
                   "templates, "
-                  "virtual bases, concrete inline/constexpr members, "
+                  "concrete inline/constexpr members, "
                   "member initializers, defaults, or nested declarations",
                   declaration->getQualifiedNameAsString());
   return supported;
@@ -941,6 +967,18 @@ class InterfaceCollector final
         }
         continue;
       }
+      if (llvm::isa<clang::CXXRecordDecl>(declaration)) {
+        if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute);
+            tag && tag->tags_size() == 1 &&
+            tag->tags_begin()->starts_with("__objc3_m_") &&
+            ReadNativeSymbolName(declaration) == *tag->tags_begin())
+          continue;
+        if (llvm::isa<clang::FinalAttr>(attribute))
+          continue;
+      }
+      if (llvm::isa<clang::CXXMethodDecl>(declaration) &&
+          llvm::isa<clang::FinalAttr, clang::OverrideAttr>(attribute))
+        continue;
       if ((llvm::isa<clang::FunctionDecl, clang::VarDecl>(declaration) &&
            llvm::isa<clang::AsmLabelAttr>(attribute)) ||
           (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl>(
@@ -1274,6 +1312,16 @@ bool ReadInterfaceDeclarationIdentity(
                         : "explicit") +
         ";user-provided=" + std::to_string(method->isUserProvided()) +
         ";inline=" + std::to_string(method->isInlined());
+  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative);
+      method && method->isVirtual()) {
+    identity.canonical_type_identity +=
+        ";cxx-class-dispatch:v1;virtual=1;pure=" +
+        std::to_string(method->isPureVirtual()) +
+        ";final=" + std::to_string(method->hasAttr<clang::FinalAttr>());
+    for (const auto *overridden : method->overridden_methods())
+      identity.canonical_type_identity +=
+          ";override=" + ReadInterfaceDeclarationStableId(overridden);
+  }
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
     identity.canonical_type_identity += ";api-availability=" + availability;
@@ -1438,6 +1486,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (HasCxxClassDispatchIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxClassDispatchSemantic);
     if (HasCxxClassStructureIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClassStructureSemantic);
     if (HasCxxClassLifecycleIdentity(declaration))
@@ -1489,6 +1539,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.cxx-member-interfaces.v1",
       kCxxClassLifecycleSemantic,
       kCxxClassStructureSemantic,
+      kCxxClassDispatchSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1555,8 +1606,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (!SameDeclaration(emitted_identities[i], reparsed_identities[i])) {
       AddDiagnostic(result, "O3IFC123",
                     "reparsed declaration USR or canonical signature differs from source AST: " +
-                        emitted_identities[i].canonical_type_identity + " -> " +
-                        reparsed_identities[i].canonical_type_identity,
+                        emitted_identities[i].canonical_type_identity +
+                        " [native=" + emitted_identities[i].native_symbol_name +
+                        "] -> " + reparsed_identities[i].canonical_type_identity +
+                        " [native=" + reparsed_identities[i].native_symbol_name + "]",
                     emitted_identities[i].stable_id);
       result.source_bytes.clear();
       return result;
@@ -1582,6 +1635,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.cxx-member-interfaces.v1",
     kCxxClassLifecycleSemantic,
     kCxxClassStructureSemantic,
+    kCxxClassDispatchSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

@@ -9,6 +9,10 @@ static_assert(native_public_first<NativeDerivedValue>);
 static_assert(!native_public_first<NativeAccessValue>);
 static_assert(std::is_trivially_copyable_v<NativeDefaultedValue>);
 static_assert(std::is_aggregate_v<NativeAggregate>);
+static_assert(std::is_abstract_v<NativeVirtualRoot>);
+static_assert(std::is_polymorphic_v<NativeVirtualDiamond>);
+static_assert(std::is_final_v<NativeVirtualDiamond>);
+static_assert(std::has_virtual_destructor_v<NativeVirtualRoot>);
 
 static_assert(std::is_same_v<decltype(native_module_object(1)),
                              objc3::task<NativeModuleResult *>>);
@@ -306,6 +310,32 @@ int main() {
       if (copied.first + copied.value != 42 || NativeAccessValue(42).total() != 42) return 48;
     }
     if (stats.live || !stats.copied || !stats.moved || !stats.destroyed) return 49;
+  }
+  {
+    NativeDispatchStats stats{};
+    {
+      NativeVirtualDiamond value(&stats, 20);
+      NativeVirtualRoot *root = &value;
+      NativeVirtualRight *right = &value;
+      NativeVirtualLeft *left = dynamic_cast<NativeVirtualLeft *>(right);
+      if (root->score() != 42 || right->right() != 20 || !left ||
+          static_cast<NativeVirtualRoot *>(left) != root ||
+          root->self() != root || dynamic_cast<void *>(root) != &value ||
+          !native_module_virtual_is(root)) return 50;
+      int extra = 0;
+      auto frame = __objc3_async_from_frame<int>(root->frame(extra)).start(executor);
+      auto member = &NativeVirtualRoot::score;
+      if ((value.*member)() != 42) return 51;
+      NativeVirtualDiamond copied(value);
+      auto result = __objc3_async_from_frame<NativeVirtualDiamond>(
+          native_module_virtual(std::move(copied))).start(executor);
+      if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
+          frame.result() != 42 || result.result().score() != 42) return 52;
+      NativeVirtualRoot *heap = new NativeVirtualDiamond(value);
+      if (heap->score() != 42) return 53;
+      delete heap;
+    }
+    if (stats.live || !stats.destroyed) return 54;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

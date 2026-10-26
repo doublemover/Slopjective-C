@@ -2571,7 +2571,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..14bd8a17e 100644
+index d743717ad..2f73517eb 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2924,7 +2924,7 @@ index d743717ad..14bd8a17e 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4382,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4382,57 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2939,6 +2939,17 @@ index d743717ad..14bd8a17e 100644
 +                      .IgnoreParens()
 +                      .getAs<FunctionProtoTypeLoc>();
 +    if (FromFPTL && ToFPTL) {
++      // Trivial type locations manufacture a range for a resolved noexcept
++      // specification. Keep the original spelling so defaulted virtual
++      // destructors do not acquire an explicit exception contract on import.
++      SourceRange ExceptionRange = FromFPTL.getExceptionSpecRange();
++      ExpectedSLoc ExceptionBegin = import(ExceptionRange.getBegin());
++      if (!ExceptionBegin)
++        return ExceptionBegin.takeError();
++      ExpectedSLoc ExceptionEnd = import(ExceptionRange.getEnd());
++      if (!ExceptionEnd)
++        return ExceptionEnd.takeError();
++      ToFPTL.setExceptionSpecRange(SourceRange(*ExceptionBegin, *ExceptionEnd));
 +      ExpectedSLoc AsyncLoc = import(FromFPTL.getObjC3AsyncLoc());
 +      if (!AsyncLoc)
 +        return AsyncLoc.takeError();
@@ -2971,7 +2982,7 @@ index d743717ad..14bd8a17e 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4286,10 +4533,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4286,10 +4544,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    ToFunction->setLexicalDeclContext(LexicalDC);
    ToFunction->setVirtualAsWritten(D->isVirtualAsWritten());
    ToFunction->setTrivial(D->isTrivial());
@@ -2986,7 +2997,7 @@ index d743717ad..14bd8a17e 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -5062,6 +5312,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5323,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -3006,7 +3017,7 @@ index d743717ad..14bd8a17e 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5387,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5398,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -3014,7 +3025,7 @@ index d743717ad..14bd8a17e 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5402,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5413,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -3023,7 +3034,7 @@ index d743717ad..14bd8a17e 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5904,6 +6170,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6181,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -3039,7 +3050,7 @@ index d743717ad..14bd8a17e 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6351,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6362,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -3049,7 +3060,7 @@ index d743717ad..14bd8a17e 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -7328,6 +7606,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7617,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3147,7 +3158,7 @@ index d743717ad..14bd8a17e 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8144,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8155,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3326,7 +3337,7 @@ index d743717ad..14bd8a17e 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8625,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8636,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3343,7 +3354,7 @@ index d743717ad..14bd8a17e 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9386,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9397,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -3397,7 +3408,7 @@ index d743717ad..14bd8a17e 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9664,8 +10262,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10273,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3412,7 +3423,7 @@ index d743717ad..14bd8a17e 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10317,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10328,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3511,7 +3522,7 @@ index d743717ad..14bd8a17e 100644
  }
  
  namespace {
-@@ -9857,6 +10549,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10560,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -3551,7 +3562,7 @@ index d743717ad..14bd8a17e 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -11049,3 +11774,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +11785,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -3888,7 +3899,7 @@ index e0b62591a..97b77c2dd 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..9b88eaeb7 100644
+index 4be3e977b..6c94c7c5c 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -4205,7 +4216,7 @@ index 4be3e977b..9b88eaeb7 100644
 +    // native attributes when printing a reusable declaration contract.
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
++        !isa<AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
 +             ObjCRequiresCleanupAttr, ObjCResourceFamilyAttr, ObjCInvalidAttr,
@@ -27268,10 +27279,10 @@ index fb0b3c150..e48e62946 100644
      break;
 diff --git a/clang/unittests/AST/ObjC3ConditionToolingTest.cpp b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
 new file mode 100644
-index 000000000..cb83e69cf
+index 000000000..a3fbb99e1
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ConditionToolingTest.cpp
-@@ -0,0 +1,704 @@
+@@ -0,0 +1,771 @@
 +//===--- ObjC3ConditionToolingTest.cpp - Native source consumers ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27974,6 +27985,73 @@ index 000000000..cb83e69cf
 +    }
 +    EXPECT_GE(Members, 5u);
 +    EXPECT_TRUE(DeletedDefault);
++  }
++}
++
++
++TEST(ObjC3ClassPrinter, PreservesOwnedTypeABITagsInInterfaces) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    auto AST = tooling::buildASTFromCodeWithArgs(
++        "struct __attribute__((abi_tag(\"__objc3_m_type_owner\"))) Value { "
++        "virtual ~Value(); virtual int get() const=0; };", {"-xc++", Standard});
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    PrintingPolicy Policy(AST->getASTContext().getPrintingPolicy());
++    Policy.PolishForDeclaration = true;
++    std::string Printed;
++    llvm::raw_string_ostream OS(Printed);
++    AST->getASTContext().getTranslationUnitDecl()->print(OS, Policy);
++    EXPECT_NE(std::string::npos, Printed.find("abi_tag(\"__objc3_m_type_owner\")"));
++    EXPECT_NE(std::string::npos, Printed.find("virtual int get() const = 0"));
++  }
++}
++
++TEST(ObjC3ClassImporter, PreservesVirtualDiamondContracts) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    std::vector<std::string> Args = {"-xc++", Standard};
++    auto From = tooling::buildASTFromCodeWithArgs(
++        "struct __attribute__((abi_tag(\"__objc3_m_root\"))) Root { "
++        "int n; virtual ~Root(); virtual int get() const=0; }; "
++        "struct Left : virtual Root { int get() const override; }; "
++        "struct Right : virtual Root {}; "
++        "struct Diamond final : Left, Right { ~Diamond() override=default; "
++        "int get() const override final; }; "
++        "void use(Diamond d) { Diamond copied(d); }", Args);
++    auto To = tooling::buildASTFromCodeWithArgs("", Args);
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                         From->getASTContext(), From->getFileManager(), false);
++    unsigned Records = 0;
++    for (Decl *D : From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto *Record = dyn_cast<CXXRecordDecl>(D);
++      if (!Record || !Record->isCompleteDefinition()) continue;
++      auto Imported = Importer.Import(Record);
++      ASSERT_TRUE(static_cast<bool>(Imported)) << llvm::toString(Imported.takeError());
++      auto *Copy = cast<CXXRecordDecl>(*Imported);
++      EXPECT_EQ(Record->isAbstract(), Copy->isAbstract());
++      EXPECT_EQ(Record->isPolymorphic(), Copy->isPolymorphic());
++      EXPECT_EQ(Record->getNumVBases(), Copy->getNumVBases());
++      EXPECT_EQ(Record->hasAttr<FinalAttr>(), Copy->hasAttr<FinalAttr>());
++      if (Record->hasAttr<AbiTagAttr>()) {
++        ASSERT_TRUE(Copy->hasAttr<AbiTagAttr>());
++        EXPECT_EQ(*Record->getAttr<AbiTagAttr>()->tags_begin(),
++                  *Copy->getAttr<AbiTagAttr>()->tags_begin());
++      }
++      for (const auto *Method : Copy->methods())
++        if (!Method->isImplicit() && Method->getNameAsString() == "get")
++          for (const auto *Original : Record->methods())
++            if (!Original->isImplicit() && Original->getNameAsString() == "get")
++              EXPECT_EQ(Original->size_overridden_methods(),
++                        Method->size_overridden_methods());
++      for (const auto *Method : Copy->methods())
++        if (Method->isExplicitlyDefaulted()) {
++          EXPECT_TRUE(Method->getExceptionSpecSourceRange().isInvalid());
++          EXPECT_TRUE(Method->isDefaulted());
++        }
++      ++Records;
++    }
++    EXPECT_EQ(4u, Records);
 +  }
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-c.m b/clang/test/ObjC3/Sema/guard-binding-c.m

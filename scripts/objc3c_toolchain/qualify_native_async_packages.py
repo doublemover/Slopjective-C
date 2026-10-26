@@ -162,6 +162,21 @@ def check_cpp_metadata(metadata):
     access = names['NativeAccessValue']['canonical_type_identity']
     if ':access=private' not in access or ':access=protected' not in access:
         raise ValueError('C++ class package lost private/protected base access')
+    if 'objc3.cxx-class-dispatch.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ class package lost its virtual dispatch capability')
+    for name in ('NativeVirtualRoot', 'NativeVirtualLeft', 'NativeVirtualRight', 'NativeVirtualDiamond'):
+        row = names.get(name, {})
+        identity = row.get('canonical_type_identity', '')
+        if (';cxx-class-dispatch:v1;' not in identity or
+                not row.get('native_symbol_name', '').startswith('__objc3_m_')):
+            raise ValueError('C++ class package lost dispatch/type ownership: ' + name)
+    diamond = names['NativeVirtualDiamond']['canonical_type_identity']
+    if ';vbase=' not in diamond or ';final=1' not in diamond:
+        raise ValueError('C++ class package lost shared virtual base/final identity')
+    root_score = names.get('NativeVirtualRoot::score', {}).get('canonical_type_identity', '')
+    final_score = names.get('NativeVirtualDiamond::score', {}).get('canonical_type_identity', '')
+    if ';pure=1' not in root_score or ';override=' not in final_score or ';final=1' not in final_score:
+        raise ValueError('C++ class package lost pure/override/final member contracts')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

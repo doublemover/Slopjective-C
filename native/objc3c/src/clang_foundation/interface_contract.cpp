@@ -302,6 +302,18 @@ InterfaceContractValidation ValidateSemanticInterface(
         "C++ class structure declarations require matching structure and "
         "lifecycle capabilities",
         expected.canonical_name);
+  const bool has_dispatch =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassDispatchIdentity);
+  const bool dispatch_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassDispatchSemantic) != sidecar.required_semantics.end();
+  if (has_dispatch != dispatch_capability ||
+      (has_dispatch && !has_lifecycle))
+    Add(result, "O3IFC028",
+        "C++ class dispatch declarations require matching dispatch and "
+        "lifecycle capabilities", expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

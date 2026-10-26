@@ -72,3 +72,7 @@ Superseded delivery artifacts are reclaimed; one SDK installation and archive
 remain. Development frontend and GNU client paths bind the current installation.
 Public async/actor predicates, full Core/Strict/System conformance, native Linux
 AArch64 and the remaining implementation roadmap stay open.
+
+The [2.10.0 source milestone](linux_cxx_class_dispatch.md) extends these bounds
+to virtual bases and dispatch. Its implementation and focused checks are
+separate from this accepted 2.9.0 archive.

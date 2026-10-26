@@ -57,6 +57,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-member-interfaces.v1",
     kCxxClassLifecycleSemantic,
     kCxxClassStructureSemantic,
+    kCxxClassDispatchSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

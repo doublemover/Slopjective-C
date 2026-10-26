@@ -60,8 +60,9 @@ void-success operations to checked `id<Error>` propagation. `resultFromErrorOut(
 BOOL/error-out APIs: it runs the operation before capturing outputs, ignores
 error storage on success, and lets the domain factory normalize even a missing
 error on failure. It accepts NSError-style object slots without requiring a
-Foundation dependency in the library. Domain-specific factories retain the API's error meaning. These additions require the next SDK
-build and installed validation; the current released archive predates them.
+Foundation dependency in the library. Domain-specific factories retain the API's error meaning. The accepted
+[2.9.0 SDK](../docs/support/linux_cxx_class_structure_acceptance.json) includes
+these adapters and their positive/negative strict-profile factory checks.
 
 The concurrency module exposes the shared task/frame, group, cancellation,
 executor and serial actor ABI. Include `<objc3c/runtime/objc3_task.hpp>` explicitly

@@ -5,6 +5,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
@@ -30,7 +31,8 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
     return true;
   if (declaration.kind != "Function" &&
       !IsCxxMemberDeclarationKind(declaration.kind) &&
-      declaration.kind != "Var" && declaration.kind != "ObjCInterface" &&
+      declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
+      declaration.kind != "ObjCInterface" &&
       declaration.kind != "ObjCProtocol" && declaration.kind != "ObjCCategory")
     return false;
   std::string owner = module.canonical_name;
@@ -96,6 +98,11 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
     return label->getLabel().str();
   if (const auto *name = declaration->getAttr<clang::ObjCRuntimeNameAttr>())
     return name->getMetadataName().str();
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
+    if (const auto *tag = record->getCanonicalDecl()->getAttr<clang::AbiTagAttr>();
+        tag && tag->tags_size() == 1 &&
+        tag->tags_begin()->starts_with("__objc3_m_"))
+      return tag->tags_begin()->str();
   if (llvm::isa<clang::ObjCCategoryDecl>(declaration))
     for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
       if (a->getAnnotation().starts_with("objc3.module-name:"))
@@ -134,7 +141,13 @@ public:
     const bool runtime =
         llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
                   clang::ObjCCategoryDecl>(decl);
-    if (!value && !runtime)
+    auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+    if (!value && !runtime && !record)
+      return true;
+    if (record && (record->isDependentContext() ||
+                   record->getDescribedClassTemplate() ||
+                   record->getTemplateSpecializationKind() !=
+                       clang::TSK_Undeclared))
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl))
       if (function->isDeleted() || function->getDescribedFunctionTemplate() ||
@@ -168,8 +181,14 @@ public:
         foreign |=
             prior != decl && !prior->isImplicit() &&
             !IsModuleOwnedSource(context_, prior->getLocation(), source_root_);
+    if (record)
+      for (const auto *prior : record->redecls())
+        foreign |= prior != decl && !prior->isImplicit() &&
+                   !IsModuleOwnedSource(context_, prior->getLocation(),
+                                        source_root_);
     if (foreign) {
       const bool definition =
+          (record && record->isThisDeclarationADefinition()) ||
           (llvm::isa<clang::FunctionDecl>(decl) &&
            llvm::cast<clang::FunctionDecl>(decl)
                ->doesThisDeclarationHaveABody()) ||
@@ -189,6 +208,19 @@ public:
             return Error(decl, "module-owned category requires one native name "
                                "without arguments");
         }
+    }
+    if (record) {
+      for (auto *redecl : record->redecls()) {
+        if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
+          if (tag->tags_size() != 1 || *tag->tags_begin() != expected)
+            return Error(decl, "explicit type ABI tag conflicts with its owning module");
+        } else {
+          llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
+          redecl->addAttr(clang::AbiTagAttr::Create(
+              context_, &owned_tag, 1, redecl->getSourceRange()));
+        }
+      }
+      return true;
     }
     const auto prior = ReadNativeSymbolName(decl);
     if (!prior.empty()) {

@@ -75,6 +75,14 @@ HasCxxClassStructureIdentity(const InterfaceDeclarationIdentity &d) {
          std::string::npos;
 }
 
+inline constexpr const char *kCxxClassDispatchSemantic =
+    "objc3.cxx-class-dispatch.v1";
+inline bool
+HasCxxClassDispatchIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-class-dispatch:v1;") !=
+         std::string::npos;
+}
+
 // Compare the complete declaration contract, including every modeled effect.
 [[nodiscard]] bool
 SameInterfaceDeclarationIdentity(const InterfaceDeclarationIdentity &left,

@@ -841,6 +841,72 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxClassDispatch() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
+      "objc3.cxx-class-dispatch.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args = {
+        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args,
+                                                        "dispatch.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.dispatch",
+                                   "test");
+    };
+    const std::string source =
+        "struct Root { int n; Root(); virtual ~Root(); "
+        "virtual int get() const = 0; virtual Root *self(); }; "
+        "struct Left : virtual Root { Left(); int get() const override; }; "
+        "struct Right : virtual Root { Right(); virtual int right() const; }; "
+        "struct Diamond final : Left, Right { Diamond(); ~Diamond() override; "
+        "int get() const override final; Diamond *self() override; };";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    assert(std::any_of(decoded->declarations.begin(), decoded->declarations.end(),
+                       [](const auto &d) {
+      return d.qualified_name == "Diamond" &&
+             d.canonical_type_identity.find(";vbase=") != std::string::npos &&
+             d.canonical_type_identity.find(";final=1") != std::string::npos;
+    }));
+    assert(std::any_of(decoded->declarations.begin(), decoded->declarations.end(),
+                       [](const auto &d) {
+      return d.qualified_name == "Diamond::get" &&
+             d.canonical_type_identity.find(";override=") != std::string::npos &&
+             d.canonical_type_identity.find(";final=1") != std::string::npos;
+    }));
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics, "objc3.cxx-class-dispatch.v1");
+    decoded->module.semantic_fingerprint =
+        ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+    auto ordered = emit("struct V { virtual int a(); virtual int b(); };");
+    auto reversed = emit("struct V { virtual int b(); virtual int a(); };");
+    assert(ordered.success && reversed.success &&
+           ordered.identity.semantic_fingerprint != reversed.identity.semantic_fingerprint);
+    auto pure = emit("struct V { virtual int a()=0; };");
+    auto concrete = emit("struct V { virtual int a(); };");
+    assert(pure.success && concrete.success &&
+           pure.identity.semantic_fingerprint != concrete.identity.semantic_fingerprint);
+    auto ordinary = emit("struct R { int n; }; struct V : R {};");
+    auto shared = emit("struct R { int n; }; struct V : virtual R {};");
+    assert(ordinary.success && shared.success &&
+           ordinary.identity.semantic_fingerprint != shared.identity.semantic_fingerprint);
+    auto final = emit("struct V final { virtual int a(); };");
+    assert(final.success && final.identity.semantic_fingerprint != concrete.identity.semantic_fingerprint);
+  }
+}
+
 void TestCxxClassLifecycles() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1034,7 +1100,7 @@ void TestBoundedCxxSemanticInterfaces() {
        {"namespace nested { int api(); }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
-        "second; };",
+        "second=1; };",
 
         "struct Method { int value; inline int get() const { return value; } "
         "};",
@@ -1080,6 +1146,7 @@ int main() {
   TestBoundedCxxSemanticInterfaces();
   TestCxxClassLifecycles();
   TestCxxClassStructure();
+  TestCxxClassDispatch();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }
