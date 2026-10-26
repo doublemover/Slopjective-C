@@ -38,10 +38,10 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
     inputs += sorted((repo / 'native/objc3c/src/runtime/public').glob('*.hpp'))
     cases, commands = [], []
 
-    def run(label, argv, environment):
+    def run(label, argv, environment, *, cwd=None):
         log = output / (label + '.log')
         with log.open('w') as stream:
-            result = subprocess.run(list(map(str, argv)), env=environment, stdout=stream,
+            result = subprocess.run(list(map(str, argv)), env=environment, cwd=cwd, stdout=stream,
                                     stderr=subprocess.STDOUT, timeout=180)
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
         if result.returncode:
@@ -62,25 +62,30 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                     flags = ['-x', 'objective-c++', '-fobjc-version=3',
                              '-fobjc-runtime=gnustep-2.2', '-fblocks',
                              '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc']
-                run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
+                common = [compiler_root / 'bin/clang++', '--no-default-config',
                     '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
                     '-fcoro-aligned-allocation',
-                    '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
+                    '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread',
                     '-I' + str(repo / 'native/objc3c/src'),
-                    '-I' + str(repo / 'native/objc3c/src/runtime/public'),
-                    *sources, *flags, fixture / 'provider.cpp', fixture / 'client.cpp',
-                    '-x', 'none', objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable], env)
+                    '-I' + str(repo / 'native/objc3c/src/runtime/public')]
+                # Language options apply to the whole driver invocation. Keep
+                # services in C++, and reuse their instrumented objects for the
+                # provider/client and group consumer in this ownership mode.
+                objects_dir = work / 'runtime-objects'
+                objects_dir.mkdir()
+                objects = [objects_dir / (source.stem + '.o') for source in sources]
+                run(label + '-runtime-build', [*common, '-c', *sources], env,
+                    cwd=objects_dir)
+                run(label + '-build', [*common, '-fuse-ld=lld', *flags,
+                    fixture / 'provider.cpp', fixture / 'client.cpp',
+                    '-x', 'none', *objects, objc_runtime,
+                    '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable], env)
                 run(label + '-execute', [executable], env)
                 group_executable = work / (label + '-group-await')
-                run(label + '-group-await-build', [compiler_root / 'bin/clang++',
-                    '--no-default-config', '-std=c++20', '-g', '-' + optimization,
-                    '-UNDEBUG', '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
-                    '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
-                    '-pthread', '-fuse-ld=lld', '-Wl,--wrap=objc3_task_group_scope_enter',
-                    '-I' + str(repo / 'native/objc3c/src'),
-                    '-I' + str(repo / 'native/objc3c/src/runtime/public'),
-                    *sources, *flags, fixture / 'group_await.cpp',
-                    '-x', 'none', objc_runtime,
+                run(label + '-group-await-build', [*common, '-fuse-ld=lld',
+                    '-Wl,--wrap=objc3_task_group_scope_enter',
+                    *flags, fixture / 'group_await.cpp',
+                    '-x', 'none', *objects, objc_runtime,
                     '-Wl,-rpath,' + str(objc_runtime.parent), '-o', group_executable], env)
                 run(label + '-group-await-execute', [group_executable], env)
                 cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,

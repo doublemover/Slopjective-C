@@ -54,7 +54,8 @@ def test_failed_native_provider_replaces_stale_success(tmp_path, monkeypatch):
     assert report['commands'][0]['exit_code'] == 1
 
 
-def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch):
+@pytest.mark.parametrize('failed_command', [0, 1])
+def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch, failed_command):
     compiler, resources, output = (tmp_path / name for name in ('compiler', 'resources', 'output'))
     compiler.mkdir()
     resources.mkdir()
@@ -62,24 +63,33 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch):
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
     calls = []
+    runtime_workspaces = []
 
     def run(argv, **kwargs):
         calls.append(argv)
         kwargs['stdout'].write('forced sanitizer failure\n')
-        Path(argv[-1]).write_bytes(b'partial executable')
-        return SimpleNamespace(returncode=1)
+        if kwargs.get('cwd'):
+            runtime_workspaces.append(kwargs['cwd'])
+            (kwargs['cwd'] / 'partial.o').write_bytes(b'partial runtime object')
+        else:
+            Path(argv[-1]).write_bytes(b'partial executable')
+        return SimpleNamespace(returncode=int(len(calls) > failed_command))
 
     monkeypatch.setattr(sanitizers.subprocess, 'run', run)
-    with pytest.raises(ValueError, match='address-undefined-O0-none-build'):
+    monkeypatch.setattr(sanitizers, 'configurations', lambda: [('address,undefined', 'O0', 'arc')])
+    with pytest.raises(ValueError, match='address-undefined-O0-arc-'):
         sanitizers.qualify(tmp_path, compiler, resources, output)
     report = json.loads(receipt.read_text())
     assert report['status'] == 'FAIL' and not report['executions']
-    assert len(calls) == 1 and '-fsanitize=address,undefined' in calls[0]
+    assert len(calls) == failed_command + 1 and '-fsanitize=address,undefined' in calls[0]
     assert '-fcoro-aligned-allocation' in calls[0]
-    executable = Path(calls[0][-1])
-    assert executable.parent != output
-    assert not executable.parent.exists()
-    assert report['commands'][0]['log_sha256'] == sanitizers.digest(output / 'address-undefined-O0-none-build.log')
+    assert '-fobjc-version=3' not in calls[0] and '-x' not in calls[0]
+    if failed_command:
+        assert '-fobjc-version=3' in calls[1] and 'objective-c++' in calls[1]
+        assert not Path(calls[1][-1]).exists()
+    assert runtime_workspaces and all(not path.exists() for path in runtime_workspaces)
+    log = output / (report['commands'][-1]['name'] + '.log')
+    assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log)
 
 
 def test_sanitizers_instrument_arc_mrc_and_native_cpp():
