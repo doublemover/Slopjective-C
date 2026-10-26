@@ -121,10 +121,12 @@ def check_cpp_metadata(metadata):
     if not has_checked_async(metadata['declarations']):
         raise ValueError('native async interface erased checked error identity')
     members = [row for row in metadata['declarations']
-               if row.get('kind') == 'CXXMethod']
+               if row.get('kind') in ('CXXMethod', 'CXXConstructor',
+                                      'CXXDestructor', 'CXXConversion')]
     if (not members or not has_checked_async(members)
             or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
-            or any(not row.get('native_symbol_name') for row in members)):
+            or any(not row.get('native_symbol_name') for row in members
+                   if ';deleted=1' not in row.get('canonical_type_identity', ''))):
         raise ValueError('native async interface lost owned C++ member contracts')
     objc_methods = [row for row in metadata['declarations']
                     if row.get('kind') == 'ObjCMethod']
