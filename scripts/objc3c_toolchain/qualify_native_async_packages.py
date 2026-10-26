@@ -142,9 +142,12 @@ def check_cpp_metadata(metadata):
     for kind in ('CXXConstructor', 'CXXDestructor', 'CXXConversion'):
         if not any(row['kind'] == kind for row in metadata['declarations']):
             raise ValueError('nontrivial C++ class package lost declaration kind: ' + kind)
-    for name in ('NativeClassValue', 'NativeMoveOnly'):
+    for name in ('NativeClassValue', 'NativeMoveOnly', 'NativeDeletedMember'):
         if ';cxx-class-lifecycle:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
             raise ValueError('class package lost structural lifecycle identity: ' + name)
+    deleted_member = names.get('NativeDeletedMember::number', {})
+    if ';deleted=1' not in deleted_member.get('canonical_type_identity', ''):
+        raise ValueError('deleted aggregate member lost its unavailable declaration identity')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

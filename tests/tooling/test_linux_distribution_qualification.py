@@ -97,3 +97,30 @@ def test_both_distributions_run_with_bounded_parallelism_and_clean_up(tmp_path, 
                             if value == '--tmpfs']
         assert temporary_mounts == ['/tmp:rw,exec,nosuid,nodev,size=1g']
     assert json.loads((output / 'qualification.json').read_text()) == result
+
+
+@pytest.mark.parametrize('marker,passes', [('C++ class package', True), ('native feature', False)])
+def test_class_scope_requires_matching_evidence(tmp_path, monkeypatch, marker, passes):
+    _, release, output = release_inputs(tmp_path)
+    executions = []
+
+    def run(argv, **kwargs):
+        if 'exec' in argv:
+            executions.append(argv)
+            kwargs['stdout'].write('Unprivileged Linux ' + marker + ' consumer: PASS\n'
+                                   'Fresh Linux ' + marker + ' qualification: PASS\n')
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(qualification.subprocess, 'run', run)
+    if passes:
+        result = qualification.qualify(release, output, distributions=['debian13'],
+                                       scope='cxx-class-packages')
+        assert result['status'] == 'PASS'
+    else:
+        with pytest.raises(ValueError, match='qualification failed'):
+            qualification.qualify(release, output, distributions=['debian13'],
+                                  scope='cxx-class-packages')
+    assert executions[0][-1] == 'cxx-class-packages'
+    result = json.loads((output / 'qualification.json').read_text())
+    assert result['scope'] == 'cxx-class-packages'
+    assert result['distributions'][0]['container_removed']

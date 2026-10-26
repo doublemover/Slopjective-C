@@ -181,7 +181,7 @@ bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
           return true;
       } else if (const auto *method =
                      llvm::dyn_cast<clang::CXXMethodDecl>(member))
-        if (method->getAccess() != clang::AS_public ||
+        if (method->getAccess() != clang::AS_public || method->isDeleted() ||
             llvm::isa<clang::CXXConversionDecl>(method))
           return true;
     }

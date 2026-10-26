@@ -3,7 +3,7 @@
 set -eu
 qualification_scope=${4:-full}
 case "$qualification_scope" in
-  full|task-destinations|stdlib|match-results|defer-control-flow|native-features) ;;
+  full|task-destinations|stdlib|match-results|defer-control-flow|native-features|cxx-class-packages) ;;
   *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
 esac
 archive=$1
@@ -149,11 +149,18 @@ for optimization in O0 O2; do
 done
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-transfer
 fi
+if [ "$qualification_scope" = cxx-class-packages ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
+fi
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \
   -o 'breakpoint set --name main' -o run -o 'expression -- cleanup_order + 42' -o continue ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 if [ "$qualification_scope" = full ]; then
   printf 'Unprivileged Linux SDK consumer: PASS\n'
+elif [ "$qualification_scope" = cxx-class-packages ]; then
+  printf 'Unprivileged Linux C++ class package consumer: PASS\n'
 elif [ "$qualification_scope" = native-features ]; then
   printf 'Unprivileged Linux native feature consumer: PASS\n'
 elif [ "$qualification_scope" = match-results ]; then
@@ -168,6 +175,8 @@ fi
 SH
 if [ "$qualification_scope" = full ]; then
   printf 'Fresh Linux archive qualification: PASS\n'
+elif [ "$qualification_scope" = cxx-class-packages ]; then
+  printf 'Fresh Linux C++ class package qualification: PASS\n'
 elif [ "$qualification_scope" = native-features ]; then
   printf 'Fresh Linux native feature qualification: PASS\n'
 elif [ "$qualification_scope" = match-results ]; then

@@ -38,7 +38,8 @@
     "native_module_checked_factory",
     "native_module_frame",
     "native_module_object_frame",
-    "native_module_block_frame"
+    "native_module_block_frame",
+    "NativeDeletedMember"
   ],
   "dependencies": []
 }

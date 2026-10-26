@@ -94,7 +94,7 @@
       "module_semver": {
         "major": 2,
         "minor": 8,
-        "patch": 0
+        "patch": 1
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",

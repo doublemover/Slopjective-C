@@ -705,6 +705,41 @@ void TestManagedIvarAndPropertyRoundTrip() {
   }
 }
 
+void TestDeletedAggregateMemberIdentity() {
+  const std::vector<std::string> args = {"-x", "c++", "-std=c++20",
+                                         "--target=x86_64-unknown-linux-gnu"};
+  auto emit = [&](const char *source) {
+    auto ast =
+        clang::tooling::buildASTFromCodeWithArgs(source, args, "aggregate.cpp");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto result =
+        EmitSemanticInterface(ast->getASTContext(), "fixture.deleted", "test");
+    assert(result.success);
+    return result;
+  };
+  auto ordinary = emit("struct Plain { int value; int get() const; };");
+  auto deleted = emit("struct Plain { int value; int get() const = delete; };");
+  assert(ordinary.identity.semantic_fingerprint !=
+         deleted.identity.semantic_fingerprint);
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1"};
+  auto decoded = DecodeSemanticInterfaceSidecar(
+      deleted.sidecar_json, deleted.source_bytes, semantics);
+  assert(decoded);
+  assert(std::find(decoded->required_semantics.begin(),
+                   decoded->required_semantics.end(),
+                   "objc3.cxx-class-lifecycles.v1") !=
+         decoded->required_semantics.end());
+  assert(std::any_of(decoded->declarations.begin(), decoded->declarations.end(),
+                     [](const auto &d) {
+                       return d.kind == "CXXMethod" &&
+                              d.qualified_name == "Plain::get" &&
+                              d.canonical_type_identity.find(";deleted=1") !=
+                                  std::string::npos;
+                     }));
+}
+
 void TestCxxClassLifecycles() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -939,5 +974,6 @@ int main() {
   TestManagedIvarAndPropertyRoundTrip();
   TestBoundedCxxSemanticInterfaces();
   TestCxxClassLifecycles();
+  TestDeletedAggregateMemberIdentity();
   return 0;
 }

@@ -272,3 +272,8 @@ int native_module_move_only(NativeMoveOnly value) __objc3_async_frame {
   __objc3_await native_module_borrow_leaf();
   return value.number();
 }
+
+struct NativeDeletedMember {
+  int value;
+  int number() const = delete;
+};

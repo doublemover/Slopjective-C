@@ -1,6 +1,9 @@
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
 @import fixture.NativeAsync;
+template<class T> concept native_has_number = requires(const T &value) { value.number(); };
+static_assert(!native_has_number<NativeDeletedMember>);
+static_assert(sizeof(NativeDeletedMember) == sizeof(int));
 static_assert(std::is_same_v<decltype(native_module_object(1)),
                              objc3::task<NativeModuleResult *>>);
 static_assert(std::is_same_v<decltype(native_module_block(1)),

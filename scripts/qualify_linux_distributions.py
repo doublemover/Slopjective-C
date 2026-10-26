@@ -21,6 +21,10 @@ IMAGES = {
 }
 
 
+SCOPES = {'native-features': 'native feature',
+          'cxx-class-packages': 'C++ class package'}
+
+
 def digest(path: Path) -> str:
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -34,12 +38,14 @@ def mount(source: Path, target: str) -> str:
 
 
 def qualify(release_file: Path, output: Path, *, distributions=None,
-            docker_host='unix:///var/run/docker.sock') -> dict:
+            docker_host='unix:///var/run/docker.sock', scope='native-features') -> dict:
+    if scope not in SCOPES:
+        raise ValueError('unknown fresh qualification scope: ' + scope)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / 'qualification.json'
     report = {'schema': 'objc3c.fresh-linux-distributions.v1', 'status': 'running',
-              'scope': 'native-features', 'distributions': []}
+              'scope': scope, 'distributions': []}
     started = time.monotonic()
     receipt_lock = threading.RLock()
 
@@ -87,7 +93,7 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
             with receipt_lock:
                 report['distributions'].append(record)
             persist()
-            print(distribution + ': qualifying native features', flush=True)
+            print(distribution + ': qualifying ' + SCOPES[scope] + ' consumers', flush=True)
             create_log = output / (distribution + '-create.log')
             run_log = output / (distribution + '.log')
             cleanup_log = output / (distribution + '-cleanup.log')
@@ -113,13 +119,13 @@ def qualify(release_file: Path, output: Path, *, distributions=None,
                          '> /etc/apt/apt.conf.d/99objc-proxy-ca; fi; '
                          'printf "#!/bin/sh\\nexit 0\\n" > /tmp/exec-probe; '
                          'chmod +x /tmp/exec-probe; /tmp/exec-probe; '
-                         'exec sh /qualify.sh /release.tar.zst "$1" /opt/objc3 native-features')
+                         'exec sh /qualify.sh /release.tar.zst "$1" /opt/objc3 "$2"')
                 code = run([*docker, 'exec', name, 'sh', '-ec', setup, 'qualify',
-                            archive_hash], run_log, 1800)
+                            archive_hash, scope], run_log, 1800)
                 update_record(record, exit_code=code, log_sha256=digest(run_log))
                 text = run_log.read_text(errors='replace')
-                markers = ('Unprivileged Linux native feature consumer: PASS',
-                           'Fresh Linux native feature qualification: PASS')
+                markers = ('Unprivileged Linux ' + SCOPES[scope] + ' consumer: PASS',
+                           'Fresh Linux ' + SCOPES[scope] + ' qualification: PASS')
                 if code or any(marker not in text for marker in markers):
                     raise ValueError(distribution + ': fresh archive qualification failed')
                 update_record(record, status='PASS', tmpfs_execution_verified=True)
@@ -164,9 +170,10 @@ def main():
     parser.add_argument('--release', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--distribution', choices=IMAGES, action='append')
+    parser.add_argument('--scope', choices=SCOPES, default='native-features')
     args = parser.parse_args()
-    report = qualify(args.release, args.output, distributions=args.distribution)
-    print(report['status'] + ': exact archive passed fresh native feature consumers')
+    report = qualify(args.release, args.output, distributions=args.distribution, scope=args.scope)
+    print(report['status'] + ': exact archive passed fresh ' + SCOPES[args.scope] + ' consumers')
 
 
 if __name__ == '__main__':

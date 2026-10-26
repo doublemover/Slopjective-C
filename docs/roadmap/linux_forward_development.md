@@ -45,6 +45,14 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## Deleted C++ aggregate member identity
+
+The [2.8.1 source correction](linux_cxx_deleted_members.md) binds deleted ordinary
+methods on public aggregates to the lifecycle capability and semantic fingerprint.
+It closes a reproduced cache-identity collision. The corrected source-free package
+fixture requires the imported method to remain unavailable. SDK delivery is in
+progress; the accepted 2.8.0 archive and its qualification remain above.
+
 ## Nonvirtual C++ class lifecycle packages
 
 The [2.8.0 delivery](linux_cxx_class_lifecycles.md) adds bounded nonvirtual
