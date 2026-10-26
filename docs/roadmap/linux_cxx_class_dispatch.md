@@ -36,6 +36,12 @@ namespace exports retain their separate implementation boundaries. Extension
 ABI 21, interface schema 2.1, service ABI 4 and frame ABI 1 are unchanged;
 compiler-dependent objects, PCH, interfaces and packages require regeneration.
 
+The [source progress receipt](../support/linux_cxx_class_dispatch_progress.json)
+records three focused native contracts, the emitter and module-name suites, and
+one source-free C++20 ARC O0 execution case (four commands). Compiler/editor/
+debugger targets compile and stage. These focused checks pass; broader matrices
+remain deferred.
+
 This is a source implementation milestone. Broad source/sanitizer validation,
 installed SDK gates and exact-archive fresh-distribution qualification belong to
 the later coordinated batch. Public async/actor predicates, full profile
