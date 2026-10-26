@@ -31,6 +31,7 @@ struct TaskGroup final {
     bool consumed{false};
     bool failed{false};
     bool scope_cancel_requested{false};
+    bool scope_body{false};
     uint64_t completion_order{0};
   };
   struct NextWaiter {
@@ -72,6 +73,7 @@ struct TaskGroup final {
   uint64_t next_completion_order{1};
   bool closed{false};
   bool cancelled{false};
+  bool explicitly_cancelled{false};
   bool first_failure_seen{false};
   bool failure_propagation_failed{false};
 
@@ -183,15 +185,18 @@ struct CancellationBatch {
 };
 
 objc3_service_status mark_group_cancel(TaskGroup *group,
-                                       CancellationBatch &cancellations);
+                                       CancellationBatch &cancellations,
+                                       bool automatic = false);
 
 objc3_service_status cancel_group_siblings_locked(
     TaskGroup *group, CancellationBatch &cancellations,
     TaskGroup *failed_child = nullptr,
-    objc3_task_t *failed_task = nullptr) {
+    objc3_task_t *failed_task = nullptr, bool automatic = false) {
   group->cancelled = true;
+  if (!automatic) group->explicitly_cancelled = true;
   for (auto &entry : group->tasks)
-    if (!entry.completed && entry.task != failed_task) {
+    if (!entry.completed && entry.task != failed_task &&
+        !(automatic && entry.scope_body)) {
       const auto status = cancellations.request(entry.task);
       if (status != OBJC3_SERVICE_OK) return status;
     }
@@ -199,7 +204,8 @@ objc3_service_status cancel_group_siblings_locked(
     if (child == failed_child) continue;
     auto *retained = task_group_retain(child);
     if (!retained) return OBJC3_SERVICE_NOT_READY;
-    const objc3_service_status status = mark_group_cancel(retained, cancellations);
+    const objc3_service_status status = mark_group_cancel(retained, cancellations,
+                                                          automatic);
     task_group_release(retained);
     if (status != OBJC3_SERVICE_OK) return status;
   }
@@ -207,9 +213,11 @@ objc3_service_status cancel_group_siblings_locked(
 }
 
 objc3_service_status mark_group_cancel(TaskGroup *group,
-                                       CancellationBatch &cancellations) {
+                                       CancellationBatch &cancellations,
+                                       bool automatic) {
   std::lock_guard<std::mutex> lock(group->mutex);
-  return cancel_group_siblings_locked(group, cancellations);
+  return cancel_group_siblings_locked(group, cancellations, nullptr, nullptr,
+                                       automatic);
 }
 
 bool contains_task(TaskGroup *group, objc3_task_t *task) {
@@ -503,7 +511,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
         if (!group->first_failure_seen) {
           group->first_failure_seen = true;
           propagation_status = cancel_group_siblings_locked(
-              group, cancellations, nullptr, task);
+              group, cancellations, nullptr, task, true);
         }
         propagate_failure = propagation_status == OBJC3_SERVICE_OK;
       }
@@ -528,7 +536,7 @@ void task_completed(void *opaque, const objc3_completion *completion) {
         } else if (!parent->first_failure_seen) {
           parent->first_failure_seen = true;
           propagation_status = cancel_group_siblings_locked(
-              parent, cancellations, failed_child);
+              parent, cancellations, failed_child, nullptr, true);
         }
       }
       parent->changed.notify_all();
@@ -604,7 +612,7 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
   try { group = new (std::nothrow) TaskGroup; }
   catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
   if (!group) return OBJC3_SERVICE_OUT_OF_MEMORY;
-  bool cancelled = false;
+  bool cancelled = false, explicitly_cancelled = false;
   if (parent) {
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (parent->closed) { delete group; return OBJC3_SERVICE_CLOSED; }
@@ -622,13 +630,18 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
     group->parent_link = parent->self_link;
     group->scope_target = parent->scope_target;
     cancelled = parent->cancelled;
+    explicitly_cancelled = parent->explicitly_cancelled;
   }
   *out_group = group;
-  if (cancelled) (void)task_group_cancel(group);
+  if (cancelled) {
+    CancellationBatch cancellations;
+    (void)mark_group_cancel(group, cancellations, !explicitly_cancelled);
+  }
   return OBJC3_SERVICE_OK;
 }
 
-objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
+objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task,
+                                        bool scope_body) {
   if (!group || !task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   // A compiler scope admits only its structured descendants. Cancellation
   // ancestry therefore also proves that adding this task cannot introduce an
@@ -678,8 +691,10 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
     else {
       try {
         group->tasks.push_back({task});
+        group->tasks.back().scope_body = scope_body;
         ++group->registrations_inflight;
-        cancelled = group->cancelled;
+        cancelled = group->cancelled &&
+                    (!scope_body || group->explicitly_cancelled);
       } catch (...) { insertion = OBJC3_SERVICE_OUT_OF_MEMORY; }
     }
   }
@@ -721,7 +736,8 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
                               [task](const auto &entry) {
                                 return entry.task == task;
                               });
-    if (group->cancelled && found != group->tasks.end() && !found->completed)
+    if (group->cancelled && found != group->tasks.end() && !found->completed &&
+        (!found->scope_body || group->explicitly_cancelled))
       cancel_after_registration = true;
   }
   if (cancel_after_registration) objc3_task_request_cancel(task);
@@ -994,6 +1010,7 @@ void cancel_scope_tree(TaskGroup *group) {
     {
       std::lock_guard<std::mutex> lock(group->mutex);
       group->cancelled = true;
+      group->explicitly_cancelled = true;
       for (auto &entry : group->tasks) {
         if (entry.completed || entry.scope_cancel_requested) continue;
         if (!objc3_task_internal_retain(entry.task)) std::terminate();

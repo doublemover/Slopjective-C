@@ -873,6 +873,12 @@ public:
         &frame_, group.native_handle(), &started));
     return task_handle<T>(started);
   }
+  task_handle<T> __objc3_start_group_body(const task_group_handle &scope) && {
+    objc3_task_t *started = nullptr;
+    task_detail::check(objc3_async_frame_spawn_scope_body(
+        &frame_, scope.native_handle(), &started));
+    return task_handle<T>(started);
+  }
   task_handle<T> detach() && {
     objc3_task_t *started = nullptr;
     task_detail::check(objc3_async_frame_detach(&frame_, &started));

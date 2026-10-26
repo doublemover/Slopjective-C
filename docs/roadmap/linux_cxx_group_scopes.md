@@ -39,13 +39,18 @@ Membership uses the existing descendant-only admission and nested-group rules.
 
 The canonical module also supplies `objc3::with_task_group<T>(work)` (`T`
 defaults to `void`). Its callback receives a retained group view and returns a
-lazy task. The callback is registered as a group member before dispatch. The
-helper awaits it and joins its frame/callback cleanup and added descendants
+lazy task. The callback is registered in the helper's private scope before
+dispatch; its argument is a separate child group for user membership and
+iteration. The helper awaits the callback and joins its frame/callback cleanup and added descendants
 before publishing the result. The callable is a frame
 parameter retained through the final join, including when its coroutine
 callback or children borrow their closure. Throwing callbacks cancel unfinished
 group members. This helper is available in the module's admitted Objective-C 3.0
 C++ compatibility surface; ordinary handles remain independent.
+Automatic sibling-failure cancellation preserves the callback body so it can
+retrieve, rethrow or handle the original child error. Explicit cancellation and
+abandonment still request its cancellation. The reserved body-entry operation
+is restricted to the active task's compiler-owned scope root.
 `task<T>::start_child(group)` and the shared C entry
 `objc3_async_frame_spawn_in_group` expose the same registration-before-dispatch
 operation. Failed starts preserve the caller's lazy frame; a registration
@@ -79,8 +84,10 @@ suspension, actor discard, nested scopes, earlier shielded cleanup and worker
 frame-destruction fences. The source-free package gate exports a scoped C++
 provider, checks its `cxx-task-v1`/task-group metadata and consumes it after source
 removal and relocation. Callback-helper witnesses also cover move-only closure
-ownership beyond callback completion, worker-side callback frame destruction,
-registration/queue rejection, exceptions and void results. The rebuilt
+ownership beyond callback completion, callback-side result iteration/join,
+worker-side callback frame destruction,
+registration/queue rejection, original-error handling/recovery, explicit
+cancellation, exceptions and void results. The rebuilt
 compiler and three focused compiler regressions pass. All 24 spawn source/PCH
 configurations (108 commands), 12 normal coroutine configurations (114 commands)
 and 15 targeted tooling tests pass. Sanitizer and installed delivery checks

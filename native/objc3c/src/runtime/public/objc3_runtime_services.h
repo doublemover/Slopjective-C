@@ -279,6 +279,13 @@ objc3_service_status objc3_async_frame_spawn(objc3_async_frame *frame,
  * whose observers remain joinable; frame disposal still belongs to the caller. */
 objc3_service_status objc3_async_frame_spawn_in_group(
     objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task);
+/* Reserved scope-body entry for compiler/library callback scopes. group must be
+ * the current task's compiler-owned root. Joins the callback's quiescence while
+ * automatic sibling failure cancels member work without cancelling this body,
+ * so it can retrieve/handle the original error. Explicit cancellation and
+ * abandonment still cancel it. Startup ownership matches spawn_in_group. */
+objc3_service_status objc3_async_frame_spawn_scope_body(
+    objc3_async_frame *frame, objc3_task_group_t *group, objc3_task_t **out_task);
 objc3_service_status objc3_async_frame_detach(objc3_async_frame *frame,
                                               objc3_task_t **out_task);
 

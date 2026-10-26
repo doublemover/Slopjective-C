@@ -15,7 +15,8 @@ void task_group_release(TaskGroup *group);
 // Token identity avoids retaining an awaiting ancestor or reusing its address.
 bool task_group_contains_target(
     TaskGroup *group, const std::shared_ptr<objc3_task::AwaitTarget> &target);
-objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task);
+objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task,
+                                        bool scope_body = false);
 objc3_service_status task_group_close(TaskGroup *group);
 objc3_service_status task_group_cancel(TaskGroup *group);
 objc3_service_status task_group_next_completed(TaskGroup *group,

@@ -228,6 +228,47 @@ void callback_group_owns_callable_until_quiescence(objc3_executor_t *source) {
   uint32_t executed = 0;
   assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
   empty_result.result();
+  auto iterated = objc3::with_task_group<int>([](objc3::task_group_handle group)
+                                                -> objc3::task<int> {
+    (void)pause(21).start_child(group);
+    (void)pause(23).start_child(group);
+    group.close();
+    auto first = co_await group.next<int>();
+    auto second = co_await group.next<int>();
+    assert(first && second);
+    auto exhausted = co_await group.next<int>();
+    assert(!exhausted);
+    co_await group;
+    co_return first.result() + second.result();
+  }).start(source);
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  assert(iterated.result() == 44);
+  for (bool recover : {false, true}) {
+    auto errors = objc3::with_task_group<int>([recover](objc3::task_group_handle group)
+                                                 -> objc3::task<int> {
+      auto failed = []() -> objc3::task<int> {
+        throw 73;
+        co_return 0;
+      };
+      (void)failed().start_child(group);
+      group.close();
+      auto member = co_await group.next<int>();
+      try { co_return member.result(); }
+      catch (int error) {
+        if (recover) co_return error + 1;
+        throw;
+      }
+    }).start(source);
+    assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+    if (recover) {
+      assert(errors.result() == 74);
+    } else {
+      bool caught = false;
+      try { (void)errors.result(); }
+      catch (int error) { caught = error == 73; }
+      assert(caught);
+    }
+  }
 }
 
 struct CallbackFenceState {
@@ -308,7 +349,9 @@ objc3::task<int> rejected_callback(unsigned *entered) {
 struct ClosedGroupFactory {
   unsigned *entered;
   objc3::task<int> operator()(objc3::task_group_handle group) {
-    group.close();
+    auto scope = objc3::task_group_handle::current_scope();
+    assert(scope.native_handle() != group.native_handle());
+    scope.close();
     return rejected_callback(entered);
   }
 };
@@ -317,6 +360,13 @@ struct RejectedQueueFactory {
   unsigned *entered;
   objc3::task<int> operator()(objc3::task_group_handle) {
     assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    return rejected_callback(entered);
+  }
+};
+struct CancelledScopeFactory {
+  unsigned *entered;
+  objc3::task<int> operator()(objc3::task_group_handle) {
+    objc3::task_group_handle::current_scope().cancel();
     return rejected_callback(entered);
   }
 };
@@ -330,6 +380,12 @@ void callback_registration_failure_runs_no_body(objc3_executor_t *source) {
   catch (const objc3::service_failure &failure) {
     caught = failure.status() == OBJC3_SERVICE_CLOSED;
   }
+  assert(caught && entered == 0);
+  auto cancelled = objc3::with_task_group<int>(CancelledScopeFactory{&entered}).start(source);
+  assert(objc3_executor_pump(source, UINT32_MAX, &executed) == OBJC3_SERVICE_OK);
+  caught = false;
+  try { (void)cancelled.result(); }
+  catch (const objc3::task_cancelled &) { caught = true; }
   assert(caught && entered == 0);
   objc3_actor_t *actor = nullptr;
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
