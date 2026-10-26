@@ -369,7 +369,7 @@ Source/PCH, source-free packages, nontrivial result ownership, normal/throwing
 and cancelled exits, actor/manual/worker destinations, failed allocation and
 abandoned frames have maintained witnesses. Remaining abstract group forms,
 nontrivial class semantic-package projections and broader profile admission stay
-open. The [2.6.0 source span](linux_dynamic_frame_storage.md) adds dynamic storage. Public async/actor and full-profile predicates stay reserved.
+open. The [2.6.0 delivery](linux_dynamic_frame_storage.md) adds dynamic storage. Public async/actor and full-profile predicates stay reserved.
 
 Typed async callback deduction treats ErrorType as a deducible type position,
 requires exact async/frame representation, and preserves throwing domains.

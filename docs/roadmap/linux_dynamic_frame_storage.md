@@ -1,9 +1,11 @@
 # Dynamic storage in native async frames
 
-The concurrency 2.6.0 source milestone admits variable-length local arrays and
-builtin `alloca` in Linux x86-64 explicit native frames. The accepted installed
-SDK remains the [2.5.0 delivery](linux_cxx_frame_values.md) until the coordinated
-SDK build and qualification for this span completes. Service ABI 4, frame ABI 1,
+Concurrency 2.6.0 admits variable-length local arrays and builtin `alloca` in
+Linux x86-64 explicit native frames. The
+[acceptance receipt](../support/linux_dynamic_frame_storage_acceptance.json)
+binds the source checkpoint, rebuilt compiler, instrumented matrices, installed
+SDK and exact-archive Debian/Ubuntu evidence. The preceding
+[2.5.0 frame-value delivery](linux_cxx_frame_values.md) retains its original scope. Service ABI 4, frame ABI 1,
 extension ABI 21 and interface schema 2.1 are unchanged.
 
 A native frame can resume on another executor thread. Dynamic storage therefore
@@ -38,6 +40,23 @@ lexical defer reads, cancellation, backward jumps, foreign exception cleanup,
 structured final joins, unstarted disposal, four arithmetic-overflow edges and
 two deterministic allocator failures. A separate C allocator fixture delegates
 to `posix_memalign`, keeping allocator ownership visible to sanitizers.
+
+The source/PCH matrix passes 24 configurations / 132 commands in each normal,
+ASan/UBSan and TSan mode (72 / 396 total). Clients and generated allocation and
+cleanup operations are rebuilt; unchanged service archives and instrumented GNU
+runtime variants are reused. The normal source run uses the accepted 2.5.0 GNU
+runtime. The new SDK rebuilds GNU with the new compiler and passes nine clients.
+
+The rebuilt foundation passes 368 Clang/index/query regressions (365 ObjC3),
+three unsupported cases and 166 native AST/matcher/clangd contracts. All 32
+facade suites, 37 installed consumer checks, 13 selected integration nodes
+(76 runtime checks) and 33 installed SDK gates pass. The installed five-family
+matrix covers 168 configurations / 966 commands. Three focused compiler/PCH
+regressions and 22 tooling checks pass; the final 12 authority/onboarding checks
+overlap that tooling scope. Both fresh Debian 13 and Ubuntu 26.04 pass the exact
+archive as ordinary users, including relocation, packages and debugger clients.
+Both owned containers are removed. One active SDK and archive remain after
+superseded-artifact cleanup.
 
 C++ reference parameters, implicit receivers, nontrivial class semantic-package
 projection and full profile conformance remain separate milestones.

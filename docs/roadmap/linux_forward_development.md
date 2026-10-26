@@ -9,27 +9,29 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current SDK passes a rebuilt LLVM foundation: **367 native Clang/index/query
-regressions** (364 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
+The current SDK passes a rebuilt LLVM foundation: **368 native Clang/index/query
+regressions** (365 ObjC3), three unsupported cases and 166 AST/matcher/source-tooling
 contracts. Compiler, editor and debugger targets build. The delivery passes all
 32 facade suites, **nine GNUstep client tests**, 37 installed consumer checks,
 13 selected native integration nodes and all **33 installed SDK qualification
 gates**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-5792c487fc5b-00b75dc3`.
-The [current acceptance receipt](../support/linux_cxx_frame_value_acceptance.json)
+`llvmorg-23.1.3-0d261d1ca552-20ec9169ff00-00b75dc3`.
+The [current acceptance receipt](../support/linux_dynamic_frame_storage_acceptance.json)
 records exact source, runtime policy, archive and report hashes. Fresh Debian 13
 and Ubuntu 26.04 both pass that exact archive, including ordinary-user compiler,
 package, runtime and debugger consumers. Both owned containers are removed.
 
-The installed five-family matrix passes 168 configurations / 942 commands. The
-current source/PCH spawn, scope and C++ frame-value matrix passes 24 configurations /
-108 commands in each normal, ASan/UBSan and TSan mode (72 / 324 total). Current
+The installed five-family matrix passes 168 configurations / 966 commands. The
+current source/PCH dynamic-storage, spawn, scope and C++ frame-value matrix passes 24 configurations /
+132 commands in each normal, ASan/UBSan and TSan mode (72 / 396 total). Current
 clients and generated frame/value operations are rebuilt; unchanged service and
 instrumented GNU runtime libraries retain their qualified binary identities.
-Five focused compiler regressions and 22 native tooling checks pass. The final
+Three focused compiler regressions and 22 native tooling checks pass. The final
 12 feature-authority/onboarding checks also pass after receipt reconciliation.
 GitHub documentation and tooling checks pass on the pushed implementation.
 
+The preceding [2.5.0 frame-value receipt](../support/linux_cxx_frame_value_acceptance.json)
+retains its 72 / 324 source and 168 / 942 installed matrices.
 The preceding [2.4.0 scope receipt](../support/linux_cxx_group_scope_acceptance.json)
 retains its broader source 156 / 842 matrices and standalone service suites.
 Earlier source `49f322e67e0d` retains both complete five-family sanitizer matrices
@@ -39,13 +41,14 @@ Core/Strict/System conformance remain reserved.
 
 ## Dynamic native-frame storage
 
-The [2.6.0 dynamic-storage source span](linux_dynamic_frame_storage.md) admits
+The [2.6.0 dynamic-storage delivery](linux_dynamic_frame_storage.md) admits
 lexical VLAs and invocation-lifetime builtin allocas, with suspension-safe heap
 ownership, checked sizing, explicit alignment and owned allocation failures.
 The maintained C/C++ spawn witnesses cover cancellation, defer ordering, backward
 jumps, deterministic OOM and storage held through registered child-group joins.
-Coordinated source instrumentation and SDK delivery are in progress; the accepted
-installed 2.5.0 checkpoint remains recorded above until they complete.
+All three source instrumentation modes, rebuilt foundation, installed SDK gates
+and exact-archive fresh-distribution checks pass. The acceptance receipt above
+binds the complete delivery; earlier scopes retain their original evidence.
 
 ## Nontrivial C++ explicit-frame values
 
@@ -61,13 +64,13 @@ results share the typed task bridge's nominal descriptor within a translation
 unit while remaining distinct across translation units. Source/PCH and
 instrumented lifetime witnesses cover both repairs. Reference parameters,
 implicit C++ receivers and nontrivial class semantic package projections remain
-open. Dynamic storage is implemented in the source span above.
+open. Dynamic storage is delivered above.
 
 ## C++ coroutine group scopes
 
 [C++ task-coroutine scopes](linux_cxx_group_scopes.md) extend the compiler-owned
 protocol to ordinary coroutine syntax and native C++ async bodies. The current
-concurrency module is 2.5.0. A scope-aware initial awaiter reserves the guard
+concurrency module is 2.6.0. A scope-aware initial awaiter reserves the guard
 before body entry; promise state retains nontrivial values and errors through
 the final join, publishing without resuming a completed coroutine. A retained
 current-scope view shares the existing descendant-only group tree.
@@ -83,14 +86,14 @@ Explicit cancellation still cancels the whole scope. Cleanup leases cannot hide
 last-owner abandonment during final joins or earlier shielded cleanup.
 
 The preceding 2.4.0 receipt records its 156 / 842 source matrices. The current
-receipt binds the 2.5.0 frame-value span, installed gates and fresh-distribution
+receipt binds the 2.6.0 dynamic-storage span, installed gates and fresh-distribution
 evidence separately.
 
 ## Native C-frame group scopes
 
 [Native C-frame group scopes](linux_native_group_scopes.md) provide implicit
 finalization for functions and Objective-C methods marked `objc_task_group`.
-The current concurrency module is **2.5.0**. A fresh group admits only structured
+The current concurrency module is **2.6.0**. A fresh group admits only structured
 descendants. Preallocated guards preserve frame captures, pending results and
 checked errors through cancellation, abandonment and actor discard. Lexical
 locals/defers follow source exit; the implicit final join waits for complete
@@ -111,7 +114,7 @@ abstract group-library forms stay open.
 `Optional(T)` results, compiler-owned layout/ownership plans and queued
 completion-order reservation. It preserves present nil values, checked errors,
 type rejection without consumption and cancellation ownership. The concurrency
-module shipped as 2.2.0 and is retained by the 2.5.0 SDK. Awaited ARC carriers
+module shipped as 2.2.0 and is retained by the 2.6.0 SDK. Awaited ARC carriers
 gain initialization guards and cleanup
 of discarded owned results, including qualified enclosing records. Physical
 alias checks retain hidden error-output and logical error-domain contracts.
@@ -124,7 +127,7 @@ Native C-frame and ordinary C++ task-coroutine scope finalization are delivered 
 shared-frame adapters, typed C declarations with checked error transport, and
 C++ raw-handle adoption/group finishing. Independent handle/result ownership,
 nonblocking quiescence and hidden own/direct-parent cycle rejection are
-implemented. The concurrency 2.5.0 headers and services are included in the current
+implemented. The concurrency 2.6.0 headers and services are included in the current
 33-gate SDK. Nontrivial C++ results work through raw task adapters and the
 explicit frame definitions described above.
 
@@ -295,12 +298,12 @@ and native async sanitizer runs use that instrumented GNU runtime.
 
 ## Existing evidence
 
-The current [group-scope acceptance receipt](../support/linux_cxx_frame_value_acceptance.json)
+The current [dynamic-storage acceptance receipt](../support/linux_dynamic_frame_storage_acceptance.json)
 binds the rebuilt compiler, runtime/header source, all 33 installed gates and
 fully instrumented GNU runtime checks. The archive has seal
-`6973580606a81af858cc0d5440024bee2d3344ceaa0262cae742ab5911b59774`,
-435,372,508 bytes and SHA-256
-`8932c07c1f262d3192cb14ae3fc30fb1e69a363f3fc70c4e3946be69ebf7dfd8`.
+`f2dacb38501f53860aa7920ab09e71aeab56b318afc8d479e530331e7fe2fa31`,
+435,388,280 bytes and SHA-256
+`b0f12194d653b5eaec9455eff4aebdabc45f6ee61a0a3d2ab5a14d7d70cbb2fa`.
 
 The host release runs all 33 installed gates. This exact archive also passes
 fresh-distribution qualification: install/relocation/reinstall, embedding,

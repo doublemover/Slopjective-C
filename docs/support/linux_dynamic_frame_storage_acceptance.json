@@ -1,0 +1,309 @@
+{
+  "schema": "objc3c.linux-dynamic-frame-storage-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-26",
+  "scope": "Linux x86-64 / GNUstep 2.2 native C-frame VLA and builtin alloca storage across suspension, lexical cleanup, cancellation, checked sizing/OOM and structured child-group joins",
+  "qualified_source_checkpoint": "cf88b1823687bd12d2889a01bf851f327b7cf98d",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-20ec9169ff00-00b75dc3",
+  "compiler_patch_digest": "20ec9169ff00cfce9df86bb3c40942cb7e8b6b7edb717b9408d68b5db39092a2",
+  "concurrency_module_version": "2.6.0",
+  "extension_abi_revision": 21,
+  "semantic_interface_schema": "2.1",
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "runtime_profile": {
+    "target_triple": "x86_64-unknown-linux-gnu",
+    "runtime_family": "libobjc2",
+    "runtime_release": "2.3",
+    "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+    "objc_abi_flag": "-fobjc-runtime=gnustep-2.2",
+    "blocks_provider": "libobjc2-embedded",
+    "runtime_build_with_clang_cl": false,
+    "foundation_required_for_runtime_fixture": false,
+    "runtime_source": "https://github.com/gnustep/libobjc2.git",
+    "robin_map_release": "v1.4.1",
+    "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+    "robin_map_source": "https://github.com/Tessil/robin-map.git",
+    "llvm_stage0_version": "23.1.3",
+    "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+    "cmake_version": "4.4.4",
+    "ninja_version": "1.13.2",
+    "runtime_build_drivers": ["clang", "clang++"],
+    "runtime_linker": "ld.lld",
+    "runtime_generator": "Ninja",
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33",
+    "source_patches": [
+      {
+        "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+        "sha256": "fbff619f599ef104406ad17921fd00f1dfe90762372b87cfaf9762a62412edaf"
+      }
+    ],
+    "autorelease_pool_policy": "native-arc-only"
+  },
+  "verification": {
+    "source_overlay_matrices": [
+      {
+        "mode": null,
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 132,
+        "report": {
+          "path": "out/native-validation/dynamic-storage-normal/batch.json",
+          "sha256": "452925ce9284e873d28ec0005d4257c07ae0e43b80bd88789f9e35c0f2269b4c"
+        },
+        "compiler_sha256": "399f791980525c4aee1aec80cb8c4ab4278067ed3ae661542163de50d7a5268c",
+        "runtime_services_sha256": "eb1c10cdcae1b2dcdd3360da4350b91764fa685ff4a9f49fd277d38e1815a642",
+        "gnu_runtime_sha256": "590608207e74d6106b9cb3d4f4c07a724d314d41a1e06c17adb483ae4b930d1c"
+      },
+      {
+        "mode": "address,undefined",
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 132,
+        "report": {
+          "path": "out/native-validation/dynamic-storage-asan/batch.json",
+          "sha256": "71b70deb485ebe5b2870e525670e1cc27e9d26e2092e35a63d305f8463ed90fa"
+        },
+        "compiler_sha256": "399f791980525c4aee1aec80cb8c4ab4278067ed3ae661542163de50d7a5268c",
+        "runtime_services_sha256": "b697dd314f91347fa9010620ca7932745c86e1d85a932a9637daeeeeaababc03",
+        "gnu_runtime_sha256": "902d18ac74adbfeed6c3d8a860aa41709b73e5d4473b48bf33aec523fd991cfc"
+      },
+      {
+        "mode": "thread",
+        "status": "PASS",
+        "configurations": 24,
+        "commands": 132,
+        "report": {
+          "path": "out/native-validation/dynamic-storage-tsan/batch.json",
+          "sha256": "2019b9d7a3bd027ccf88ff079c71022037fb189f34450c8cb832847d6d511245"
+        },
+        "compiler_sha256": "399f791980525c4aee1aec80cb8c4ab4278067ed3ae661542163de50d7a5268c",
+        "runtime_services_sha256": "a6346d2682f263025cc8abb62cd054eed3e7735fd5ed7535fab4ac7aa3931c4e",
+        "gnu_runtime_sha256": "63aafeff52101da79aca6a29d66391ef1382049c8384a768ef8766237f2f32a4"
+      }
+    ],
+    "source_overlay_totals": {
+      "configurations": 72,
+      "commands": 396
+    },
+    "source_overlay_scope": "Development compiler and clients rebuilt, including generated allocation and cleanup code. Unchanged service archives and sanitizer GNU variants are reused; normal GNU comes from the accepted 2.5.0 SDK. Installed and fresh-distribution checks bind the packaged compiler separately.",
+    "runtime_service_reuse": {
+      "prior_acceptance": {
+        "path": "docs/support/linux_cxx_frame_value_acceptance.json",
+        "sha256": "91956e561e71033961bacaad788d51fbb0625b305c82e575c9864934c5a74f2a"
+      },
+      "concurrency_sources_unchanged": true,
+      "source_binary_snapshot": {
+        "path": "out/session/dynamic-storage-source-binaries.json",
+        "sha256": "d9fca6bab58ff9351c91ea567ac0f92c86be8ebfd762a7bcd980791ab7158d28"
+      }
+    },
+    "compiler_focused_regressions": {
+      "passed": 3,
+      "log": {
+        "path": "out/dynamic-storage-focused.log",
+        "sha256": "0cc9a299c14644c821a75e6eb788b09795059bb5bbb21ed22a4ca02862625f38"
+      }
+    },
+    "tooling": {
+      "passed": 22,
+      "log": {
+        "path": "out/dynamic-storage-tooling.log",
+        "sha256": "398f82d33280ecd36ba0df12d04038fa0bb6114ccafc8f72d48213ee43427c8e"
+      }
+    },
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261026T164607.385779Z/report.json",
+        "sha256": "8d681ba795970af32da14403f55bdbb56e226649c5c6998cc29c120a87b35bd8"
+      },
+      "regressions_passed": 368,
+      "objc3_regressions_passed": 365,
+      "unsupported": 3,
+      "native_contract_tests_passed": {
+        "ast": 104,
+        "matchers": 5,
+        "dynamic_matchers": 41,
+        "clangd": 16
+      },
+      "reuse": false
+    },
+    "installed_gates": {
+      "installed_compiler_witnesses": "PASS",
+      "installed_typed_keypath_packages": "PASS",
+      "installed_recursive_carriers": "PASS",
+      "installed_async_c_abi": "PASS",
+      "installed_stdlib": "PASS",
+      "installed_match_results": "PASS",
+      "installed_task_coroutines": "PASS",
+      "installed_native_async": "PASS",
+      "installed_carrier_debugger": "PASS",
+      "installed_optional_access": "PASS",
+      "installed_guard_bindings": "PASS",
+      "installed_defer_control_flow": "PASS",
+      "installed_source_modules": "PASS",
+      "installed_source_graph": "PASS",
+      "installed_binary_packages": "PASS",
+      "installed_ownership_projections": "PASS",
+      "installed_public_surfaces": "PASS",
+      "installed_api_availability": "PASS",
+      "installed_module_spi": "PASS",
+      "installed_module_names": "PASS",
+      "installed_structured_runtime": "PASS",
+      "installed_native_features": "PASS",
+      "installed_native_async_packages": "PASS",
+      "installed_carrier_calls": "PASS",
+      "installed_runtime_carrier_calls": "PASS",
+      "installed_managed_throws": "PASS",
+      "installed_direct_calls": "PASS",
+      "installed_nested_calls": "PASS",
+      "installed_captured_carriers": "PASS",
+      "installed_array_carriers": "PASS",
+      "installed_record_carriers": "PASS",
+      "installed_heap_carriers": "PASS",
+      "installed_cxx_interfaces": "PASS"
+    },
+    "installed_native_features": {
+      "status": "pass",
+      "commands": 966,
+      "cases": 168
+    },
+    "installed_compiler_witnesses": {
+      "status": "PASS",
+      "commands": 153,
+      "cases": 24,
+      "executions": 24,
+      "rejections": 24
+    },
+    "installed_typed_keypath_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36,
+      "rejections": 12
+    },
+    "installed_native_async_packages": {
+      "status": "PASS",
+      "cases": 12,
+      "executions": 36
+    },
+    "facade_suites_passed": 32,
+    "installed_consumer_checks": {
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/7ff620cc9f19db0cf3c71bc0dcdf753dddb16951cfb2fc787c596258a62caa2a/installed-qualification/summary.json",
+        "sha256": "c27f90ddf5485609e6ad92ebdb021e73d4e3445eb281423168ad1ef90f926d07"
+      },
+      "passed": 37
+    },
+    "shipped_gnu_runtime": {
+      "build_report": {
+        "path": "out/toolchains/linux-sdk-builds/7ff620cc9f19db0cf3c71bc0dcdf753dddb16951cfb2fc787c596258a62caa2a/runtime-report.json",
+        "sha256": "99e1681b14ec46e63f6252a3fc8e9cf892f7a7ba7aad43f8c189d63ab989e6cc"
+      },
+      "client_log": {
+        "path": "out/toolchains/linux-sdk-builds/7ff620cc9f19db0cf3c71bc0dcdf753dddb16951cfb2fc787c596258a62caa2a/runtime-tests.log",
+        "sha256": "4e7f56d361b95264474a5b621f16f73158b6dda04e51c4229162121cf340f07d"
+      },
+      "client_tests_passed": 9,
+      "native_arc_only": true
+    },
+    "native_integration": {
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261026T165152101007Z/summary.json",
+        "sha256": "ff6cef8601caafc51c494298cd9094b8cbdac3ed44b4c20b13f71a77db2193b5"
+      },
+      "selected_nodes": 13,
+      "runtime_count": 76
+    },
+    "documentation_authority_onboarding": {
+      "passed": 12,
+      "overlaps_targeted_tooling_scope": true,
+      "log": {
+        "path": "out/session/dynamic-storage-final-authority.log",
+        "sha256": "e9b29f42e72804aedf5a269d4507aafa7270b39400c6923bbb014d8a335fe788"
+      }
+    }
+  },
+  "qualified_source_inputs": {
+    "scripts/objc3c_toolchain/run_linux_feature_batch.py": "f4fb0a75ad538aff40296a7fbbec6b864a1132aa93a2bf5d5e053b9731ff79e2",
+    "stdlib/module_inventory.json": "cc25473d958448931fde08e963d96cbf7b2b3b07ea4baff105c5c1b20012c210",
+    "tests/clang_foundation/task_spawning/contract.m": "034d55c0ce37fc63487c4d6055e59fa47e1b6909bac40e3d8c08b6c8bbb1d9aa",
+    "tests/clang_foundation/task_spawning/contract.mm": "06269043f27be2348a2f2b4d3a4b80f8959bd54846860b9cdecc66fd44266055",
+    "tests/clang_foundation/task_spawning/dynamic_frame_storage.h": "968b40fb2f4f39f0f2b9791d0861933a00a087a01e91e0435a30a0748b9dab85",
+    "tests/clang_foundation/task_spawning/dynamic_frame_storage.m": "5a13de93e26ee8a0aaa6b5b749f078eef2c3714f7e603bf0326428a0022869f9",
+    "tests/clang_foundation/task_spawning/storage_allocator.m": "eb551a5710e51c15bbf24ec39f713e36791533d81104d741275fdc3452e5a95d",
+    "toolchains/llvm/manifest.json": "ccaa05b821370962154a955ed6163c5ea65e4d8a5e5d57c3c2a6e0e72ac22d20",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "780dfda729fdcb7fe8508feffafde9683b31fd32c03a34d86747538e6a061d3b",
+    "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "83c7d284b6c6d431ac1e6ee3b1e27409a4dc50fcd5b870ad39effb7900d9ba1e"
+  },
+  "sdk": {
+    "input_identity": "7ff620cc9f19db0cf3c71bc0dcdf753dddb16951cfb2fc787c596258a62caa2a",
+    "release_receipt": {
+      "path": "out/toolchains/linux-sdk-builds/7ff620cc9f19db0cf3c71bc0dcdf753dddb16951cfb2fc787c596258a62caa2a/release.json",
+      "sha256": "3cbe58adf10cd91f63a534691796273735b11d04126855992d8f72967095d9e5"
+    },
+    "seal_sha256": "f2dacb38501f53860aa7920ab09e71aeab56b318afc8d479e530331e7fe2fa31",
+    "archive": "llvmorg-23.1.3-0d261d1ca552-20ec9169ff00-00b75dc3-linux-x86_64-f2dacb38501f5386.tar.zst",
+    "archive_sha256": "b0f12194d653b5eaec9455eff4aebdabc45f6ee61a0a3d2ab5a14d7d70cbb2fa",
+    "archive_bytes": 435388280,
+    "installed_manifest_sha256": "636de2c673ea37c60da6f42503ff2f14ad1a78516ea0e29a16a1ffbec0a2792a",
+    "compiler_sha256": "057ec055de51d17bc6dbe336eb6f85c93620a976a7a98c02cee250a5a672a950",
+    "frontend_sha256": "99b1950caf02b2c6bc1934f9465270ef1c86fbc1543c890941fc7ae8ed4aa652",
+    "gnu_runtime_sha256": "f7841919ca22bc8adbf34ad80b827da94a7421908c495d72d1704db6642ca470",
+    "runtime_services_sha256": "34bb79e6716eec9a6774d74811183a992743d63c57ebd9d07ad9fda9e449edb1"
+  },
+  "fresh_distributions": {
+    "report": {
+      "path": "out/native-validation/dynamic-storage-fresh-linux/qualification.json",
+      "sha256": "93d890e3c977fea053427357fad3cc2c46e920870e112c932a87418be75a8aab"
+    },
+    "scope": "native-features",
+    "qualifier_sha256": "55ae50e328c9bf5fd0db196402635ab4458128a30bdb1088e8148a7de83b35d3",
+    "distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "9962675365a887896593cc132579de8391f56f12a92308aae0c9a77bf475a695",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "status": "PASS",
+        "ordinary_user": true,
+        "exit_code": 0,
+        "log_sha256": "da6cc79b042f7821be50ca26baa5800e254f28853663116f382dd06ca07ebd87",
+        "tmpfs_execution_verified": true,
+        "container_removed": true
+      }
+    ]
+  },
+  "publication": {
+    "build_candidate_reclaimed": true,
+    "frontend_test_executable_bytes_reclaimed": 3144020336,
+    "foundation_cache_hit": false,
+    "source_inputs_frozen_through_packaging": true,
+    "development_paths_rebound_to_current_sdk": true,
+    "development_rebind_log": {
+      "path": "out/session/dynamic-storage-development-rebind.log",
+      "sha256": "807fa1447550b549e386e7c3a20ac7e13fdfdf2573ac620f14ea58f949861bf5"
+    },
+    "superseded_artifact_cleanup": {
+      "path": "out/session/dynamic-storage-delivery-cleanup.json",
+      "sha256": "5b59114bd49d2a7a382a96facfcb0a3eae027087cd5f0ed1706ab3a27908d952"
+    },
+    "retained_sdk_installations": 1,
+    "retained_sdk_archives": 1
+  },
+  "remaining_implementation": [
+    "Reference parameters and implicit C++ this in explicit native frames",
+    "Nontrivial C++ class semantic-package projections and remaining abstract group-library forms",
+    "Remaining ownership/isolation/keypath/type/package/profile specification surfaces and native Linux AArch64"
+  ]
+}
