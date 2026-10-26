@@ -3,9 +3,9 @@ namespace Nested { int api(); }
 #elif CASE == 2
 template<class T> struct Generic { T value; };
 #elif CASE == 3
-struct Defaulted { Defaulted() = default; int value; };
+struct Defaulted { Defaulted(); int value; }; Defaulted::Defaulted() = default;
 #elif CASE == 4
-struct Base { int value; }; struct Derived : Base { int second; };
+struct Base { int value; }; struct Derived : virtual Base { int second; };
 #elif CASE == 5
 struct Methods { int value; int get() const { return value; } };
 #elif CASE == 6

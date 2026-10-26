@@ -740,6 +740,107 @@ void TestDeletedAggregateMemberIdentity() {
                      }));
 }
 
+void TestCxxClassStructure() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args = {"-x", "c++", standard,
+                                           "--target=x86_64-unknown-linux-gnu"};
+    auto emit = [&](const std::string &source,
+                    const std::vector<std::string> &exports =
+                        std::vector<std::string>{}) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args,
+                                                          "structure.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.structure",
+                                   "test", {}, {}, {}, exports);
+    };
+    const char *source =
+        "struct Empty {}; struct First { int first; }; struct Second { long "
+        "second; }; "
+        "struct Derived : Empty, First, protected Second { int last; "
+        "Derived()=default; Derived(const Derived&)=default; "
+        "Derived(Derived&&)=default; "
+        "Derived& operator=(const Derived&)=default; Derived& "
+        "operator=(Derived&&)=default; "
+        "~Derived()=default; int sum() const; }; "
+        "struct Reference { int &value; Reference()=default; Reference(const "
+        "Reference&)=default; };";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    bool bases = false, defaulted = false, deleted_default = false;
+    for (const auto &d : decoded->declarations) {
+      if (d.kind == "CXXRecord" && d.qualified_name == "Derived") {
+        bases =
+            d.canonical_type_identity.find(";base=") != std::string::npos &&
+            d.canonical_type_identity.find(":offset=8") != std::string::npos &&
+            d.canonical_type_identity.find(":access=protected") !=
+                std::string::npos;
+      }
+      defaulted |=
+          d.canonical_type_identity.find(";defaulted=1;") != std::string::npos;
+      deleted_default |=
+          d.qualified_name == "Reference::Reference" &&
+          d.canonical_type_identity.find(";deleted=1") != std::string::npos;
+    }
+    assert(bases && defaulted && deleted_default);
+    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes,
+                                                          args, "round.cpp");
+    assert(round && !round->getDiagnostics().hasErrorOccurred());
+    auto regenerated = EmitSemanticInterface(round->getASTContext(),
+                                             "fixture.structure", "test");
+    assert(regenerated.success &&
+           regenerated.source_bytes == emitted.source_bytes &&
+           regenerated.identity.semantic_fingerprint ==
+               emitted.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics, "objc3.cxx-class-structure.v1");
+    decoded->module.semantic_fingerprint =
+        ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased);
+    llvm::consumeError(erased.takeError());
+    auto first = emit("struct A {}; struct B {}; struct D : A, B {};");
+    auto reversed = emit("struct A {}; struct B {}; struct D : B, A {};");
+    assert(first.success && reversed.success &&
+           first.identity.semantic_fingerprint !=
+               reversed.identity.semantic_fingerprint);
+    auto pub =
+        emit("struct B { int n; }; class D : public B { public: D(); };");
+    auto priv =
+        emit("struct B { int n; }; class D : private B { public: D(); };");
+    assert(pub.success && priv.success &&
+           pub.identity.semantic_fingerprint !=
+               priv.identity.semantic_fingerprint);
+    const std::string stable =
+        "struct Stable { int n; Stable()=default; Stable(const "
+        "Stable&)=default; ~Stable()=default; };";
+    auto unused = emit(stable, {"Stable"});
+    auto used =
+        emit(stable + " void use() { Stable a{}; Stable b(a); }", {"Stable"});
+    assert(unused.success && used.success &&
+           unused.source_bytes == used.source_bytes &&
+           unused.identity.semantic_fingerprint ==
+               used.identity.semantic_fingerprint);
+    auto derived_exception = emit("struct E { int n; E()=default; };");
+    auto explicit_exception =
+        emit("struct E { int n; E() noexcept(false)=default; };");
+    assert(derived_exception.success && explicit_exception.success &&
+           derived_exception.identity.semantic_fingerprint !=
+               explicit_exception.identity.semantic_fingerprint);
+    auto excluded =
+        emit("struct Base { int n; }; struct Derived : Base {};", {"Derived"});
+    assert(!excluded.success &&
+           std::any_of(excluded.diagnostics.begin(), excluded.diagnostics.end(),
+                       [](const auto &d) { return d.code == "O3IFC156"; }));
+  }
+}
+
 void TestCxxClassLifecycles() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -932,13 +1033,17 @@ void TestBoundedCxxSemanticInterfaces() {
   for (const char *source :
        {"namespace nested { int api(); }",
         "template<class T> struct Generic { T value; };",
-        "struct Base { int value; }; struct Derived : Base { int second; };",
+        "struct Base { int value; }; struct Derived : virtual Base { int "
+        "second; };",
 
         "struct Method { int value; inline int get() const { return value; } "
         "};",
         "struct Default { int value=42; };",
         "struct Conditional { explicit(true) Conditional(int); };",
-        "struct Defaulted { Defaulted() = default; };",
+        "struct Defaulted { Defaulted(); }; Defaulted::Defaulted() = default;",
+        "struct Comparison { int n; bool operator==(const Comparison&) const = "
+        "default; };",
+        "struct Immediate { consteval Immediate() = default; };",
         "struct Nested { struct Inner { int value; }; Inner child; };",
         "int api(int argument=42);", "inline int api() { return 42; }",
         "extern constexpr int exported=42;", "extern const int exported=42;",
@@ -974,6 +1079,7 @@ int main() {
   TestManagedIvarAndPropertyRoundTrip();
   TestBoundedCxxSemanticInterfaces();
   TestCxxClassLifecycles();
+  TestCxxClassStructure();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

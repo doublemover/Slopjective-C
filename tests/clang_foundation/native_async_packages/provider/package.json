@@ -39,7 +39,15 @@
     "native_module_frame",
     "native_module_object_frame",
     "native_module_block_frame",
-    "NativeDeletedMember"
+    "NativeDeletedMember",
+    "NativeEmptyBase",
+    "NativeFirstBase",
+    "NativeAggregate",
+    "NativeDefaultedValue",
+    "NativeDerivedValue",
+    "NativeAccessValue",
+    "native_module_derived",
+    "native_module_aggregate"
   ],
   "dependencies": []
 }

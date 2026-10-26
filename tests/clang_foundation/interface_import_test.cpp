@@ -235,6 +235,35 @@ void TestCompleteExportIdentitiesAndPrivateDirectLookup() {
   fs::remove_all(root);
 }
 
+void TestCxxBaseAndDefaultedImports() {
+  const auto root = fs::temp_directory_path() / "objc3-cxx-structure-import";
+  fs::remove_all(root); fs::create_directories(root);
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto provider = ModuleRequest(root / "provider.cpp", "fixture.structure",
+        "struct Empty {}; struct Base { int n; }; "
+        "class Access : private Base, protected Empty { public: Access(int); int get() const; }; "
+        "struct Derived : Base, Empty { Derived()=default; Derived(const Derived&)=default; ~Derived()=default; }; ");
+    provider.language = BaseLanguage::Cxx; provider.objc3 = false; provider.objc_runtime.clear();
+    provider.arguments = {standard};
+    provider.interface_output_path = (root / "structure.objc3i").string();
+    auto built = Compile(provider);
+    assert(built.success && built.interface_artifact);
+    auto consumer = provider;
+    consumer.module_name.clear(); consumer.package_identity.clear();
+    consumer.interface_output_path.clear(); consumer.emit_semantic_interface = false;
+    consumer.input_path = (root / "consumer.cpp").string();
+    consumer.source_text =
+        "template<class T> concept public_base = requires(T *p) { static_cast<Base *>(p); }; "
+        "static_assert(public_base<Derived>); static_assert(!public_base<Access>); "
+        "static_assert(__is_standard_layout(Access)); "
+        "int use() { Derived d{}; d.n=42; Derived copy(d); Access a(42); return copy.n+a.get(); }";
+    consumer.imported_interfaces = {ImportOf(provider.interface_output_path, built.interface_artifact->identity)};
+    auto imported = Compile(consumer);
+    assert(imported.success && HasImported(imported, "Derived"));
+  }
+  fs::remove_all(root);
+}
+
 void TestLaterCxxOverloadConflicts() {
   const auto root = fs::temp_directory_path() / "objc3-cxx-overload-collision";
   fs::remove_all(root);
@@ -330,5 +359,6 @@ int main() {
   TestCompleteExportIdentitiesAndPrivateDirectLookup();
   TestRelativeArtifactsAndResponseFileLayoutFlags();
   TestLaterCxxOverloadConflicts();
+  TestCxxBaseAndDefaultedImports();
   return 0;
 }

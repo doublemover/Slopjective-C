@@ -4,6 +4,12 @@
 template<class T> concept native_has_number = requires(const T &value) { value.number(); };
 static_assert(!native_has_number<NativeDeletedMember>);
 static_assert(sizeof(NativeDeletedMember) == sizeof(int));
+template<class T> concept native_public_first = requires(T *p) { static_cast<NativeFirstBase *>(p); };
+static_assert(native_public_first<NativeDerivedValue>);
+static_assert(!native_public_first<NativeAccessValue>);
+static_assert(std::is_trivially_copyable_v<NativeDefaultedValue>);
+static_assert(std::is_aggregate_v<NativeAggregate>);
+
 static_assert(std::is_same_v<decltype(native_module_object(1)),
                              objc3::task<NativeModuleResult *>>);
 static_assert(std::is_same_v<decltype(native_module_block(1)),
@@ -272,6 +278,34 @@ int main() {
       delete heap;
     }
     if (stats.live || stats.copied < 2 || stats.moved < 2 || !stats.destroyed) return 44;
+  }
+  {
+    NativeClassStats stats{};
+    {
+      NativeDerivedValue value(&stats, 20);
+      NativeDerivedValue copy(value);
+      NativeDerivedValue moved(std::move(copy));
+      copy = value; moved = std::move(copy);
+      NativeClassValue *base = &value;
+      if ((void *)base == (void *)&value || base->number() != 20 || value.sum() != 42) return 45;
+      int extra = 0;
+      auto frame = __objc3_async_from_frame<int>(value.asyncTotal(extra)).start(executor);
+      auto member = &NativeClassValue::asyncNumber;
+      auto inherited = __objc3_async_from_frame<int>((value.*member)()).start(executor);
+      auto result = __objc3_async_from_frame<NativeDerivedValue>(native_module_derived(std::move(moved))).start(executor);
+      NativeAggregate aggregate{{}, {30}, 12};
+      auto plain = __objc3_async_from_frame<int>(native_module_aggregate(aggregate)).start(executor);
+      if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
+          frame.result() != 42 || inherited.result() != 20 || result.result().sum() != 42 || plain.result() != 42) return 46;
+      NativeDerivedValue *heap = new NativeDerivedValue(value);
+      if (heap->sum() != 42) return 47;
+      delete heap;
+      NativeDefaultedValue pod{}; pod.first = 30; pod.value = 12;
+      NativeDefaultedValue copied(pod); NativeDefaultedValue movedPod(std::move(copied));
+      pod = movedPod; copied = std::move(pod);
+      if (copied.first + copied.value != 42 || NativeAccessValue(42).total() != 42) return 48;
+    }
+    if (stats.live || !stats.copied || !stats.moved || !stats.destroyed) return 49;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

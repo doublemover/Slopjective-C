@@ -277,3 +277,50 @@ struct NativeDeletedMember {
   int value;
   int number() const = delete;
 };
+
+struct NativeEmptyBase {};
+struct NativeFirstBase { long first; };
+struct NativeAggregate : NativeEmptyBase, NativeFirstBase { int second; };
+struct NativeDefaultedValue : NativeFirstBase {
+  int value;
+  NativeDefaultedValue() = default;
+  NativeDefaultedValue(const NativeDefaultedValue &) = default;
+  NativeDefaultedValue(NativeDefaultedValue &&) = default;
+  NativeDefaultedValue &operator=(const NativeDefaultedValue &) = default;
+  NativeDefaultedValue &operator=(NativeDefaultedValue &&) = default;
+  ~NativeDefaultedValue() = default;
+};
+class NativeDerivedValue : public NativeEmptyBase, public NativeFirstBase, public NativeClassValue {
+  int tail;
+public:
+  NativeDerivedValue(NativeClassStats *, int);
+  NativeDerivedValue(const NativeDerivedValue &) = default;
+  NativeDerivedValue(NativeDerivedValue &&) = default;
+  NativeDerivedValue &operator=(const NativeDerivedValue &) = default;
+  NativeDerivedValue &operator=(NativeDerivedValue &&) = default;
+  ~NativeDerivedValue() = default;
+  int sum() const;
+  int asyncTotal(const int &) const __objc3_async_frame;
+};
+NativeDerivedValue::NativeDerivedValue(NativeClassStats *stats, int n)
+    : NativeEmptyBase{}, NativeFirstBase{20}, NativeClassValue(stats, n), tail(2) {}
+int NativeDerivedValue::sum() const { return (int)first + number() + tail; }
+int NativeDerivedValue::asyncTotal(const int &extra) const __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return sum() + extra;
+}
+class NativeAccessValue : private NativeFirstBase, protected NativeEmptyBase {
+public:
+  explicit NativeAccessValue(int);
+  int total() const;
+};
+NativeAccessValue::NativeAccessValue(int n) : NativeFirstBase{n}, NativeEmptyBase{} {}
+int NativeAccessValue::total() const { return (int)first; }
+NativeDerivedValue native_module_derived(NativeDerivedValue value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value;
+}
+int native_module_aggregate(NativeAggregate value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return (int)value.first + value.second;
+}

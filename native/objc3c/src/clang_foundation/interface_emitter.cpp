@@ -169,7 +169,7 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
 bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
   if (!record || !record->isCompleteDefinition())
     return false;
-  if (record->hasUserDeclaredConstructor() ||
+  if (record->getNumBases() != 0 || record->hasUserDeclaredConstructor() ||
       record->hasUserDeclaredDestructor() ||
       record->hasUserDeclaredCopyAssignment() ||
       record->hasUserDeclaredMoveAssignment())
@@ -186,6 +186,32 @@ bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
           return true;
     }
   return false;
+}
+
+bool HasClassStructure(const clang::CXXRecordDecl *record) {
+  if (!record || !record->isCompleteDefinition())
+    return false;
+  if (record->getNumBases() != 0)
+    return true;
+  for (const auto *method : record->methods())
+    if (!method->isImplicit() && method->getMostRecentDecl()->isDefaulted())
+      return true;
+  return false;
+}
+
+bool IsInClassDefaultedSpecialMember(const clang::CXXMethodDecl *method) {
+  if (!method)
+    return false;
+  method = method->getMostRecentDecl();
+  const auto effects =
+      ReadCanonicalFunctionEffects(method->getType(), method->getASTContext());
+  return !effects.is_async && !effects.is_throwing &&
+         method->isExplicitlyDefaulted() && !method->isOutOfLine() &&
+         !method->isConsteval() &&
+         (llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl>(
+              method) ||
+          method->isCopyAssignmentOperator() ||
+          method->isMoveAssignmentOperator());
 }
 
 std::string RecordLayoutIdentity(const clang::RecordDecl *record,
@@ -223,6 +249,23 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
     for (const auto *field : cxx->fields())
       out << ";field-access=" << static_cast<unsigned>(field->getAccess())
           << ":mutable=" << field->isMutable();
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      HasClassStructure(cxx)) {
+    out << ";cxx-class-structure:v1;aggregate=" << cxx->isAggregate()
+        << ";empty=" << cxx->isEmpty();
+    const auto &layout = context.getASTRecordLayout(cxx);
+    for (const auto &base : cxx->bases()) {
+      const auto *owner = base.getType()->getAsCXXRecordDecl();
+      out << ";base=" << CanonicalType(base.getType(), context) << ":access="
+          << (base.getAccessSpecifier() == clang::AS_public      ? "public"
+              : base.getAccessSpecifier() == clang::AS_protected ? "protected"
+                                                                 : "private")
+          << ":virtual=" << base.isVirtual() << ":offset="
+          << (base.isVirtual() ? layout.getVBaseClassOffset(owner)
+                               : layout.getBaseClassOffset(owner))
+                 .getQuantity();
+    }
   }
   out.flush();
   return text;
@@ -332,6 +375,13 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     if (const auto *proto = type->getAs<clang::FunctionProtoType>()) {
       auto info = proto->getExtProtoInfo();
       info.ExtInfo = info.ExtInfo.withProducesResult(false);
+      // Defaulted implicit exception specifications are derived from the bound
+      // base/member declarations. Their evaluation is lazy and must not make
+      // an interface identity depend on whether the provider used the member.
+      if (function->isExplicitlyDefaulted() &&
+          function->getExceptionSpecSourceRange().isInvalid())
+        info.ExceptionSpec =
+            clang::FunctionProtoType::ExceptionSpecInfo(clang::EST_None);
       type = context.getFunctionType(proto->getReturnType(), proto->getParamTypes(), info);
     } else if (const auto *no_proto = type->getAs<clang::FunctionNoProtoType>()) {
       type = context.getFunctionNoProtoType(no_proto->getReturnType(),
@@ -629,6 +679,10 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+      record && record->isCompleteDefinition())
+    for (const auto &base : record->bases())
+      check(base.getType());
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     check(property->getType());
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -679,7 +733,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     supported =
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
-        !record->isUnion() && record->getNumBases() == 0 &&
+        !record->isUnion() && record->getNumVBases() == 0 &&
         !record->isPolymorphic();
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
@@ -690,10 +744,13 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         continue;
       }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
-      supported &= method && !method->isTemplated() && !method->isVirtual() &&
-                   (!method->isInlined() || method->isDeleted()) &&
-                   !method->isDefaulted() && !method->isConstexpr() &&
-                   !method->getTrailingRequiresClause();
+      supported &=
+          method && !method->isTemplated() && !method->isVirtual() &&
+          (!method->isInlined() || method->isDeleted() ||
+           IsInClassDefaultedSpecialMember(method)) &&
+          (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method)) &&
+          (!method->isConstexpr() || IsInClassDefaultedSpecialMember(method)) &&
+          !method->getTrailingRequiresClause();
       if (const auto *ctor =
               llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(method))
         supported &= ctor->getExplicitSpecifier().getExpr() == nullptr;
@@ -705,6 +762,9 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           supported &= !parameter->hasDefaultArg();
     }
   }
+  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
+    if (method->getMostRecentDecl()->isDefaulted())
+      supported &= IsInClassDefaultedSpecialMember(method);
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl, clang::UsingDecl,
@@ -729,13 +789,15 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                                        declaration->getASTContext()));
   }
   if (!supported)
-    AddDiagnostic(
-        result, "O3IFC101",
-        "C++ semantic interfaces require global declarations and "
-        "nonvirtual records with out-of-line members or deleted declarations, "
-        "without templates, bases, defaulted/constexpr members, "
-        "member initializers, defaults, or nested declarations",
-        declaration->getQualifiedNameAsString());
+    AddDiagnostic(result, "O3IFC101",
+                  "C++ semantic interfaces require global declarations and "
+                  "nonvirtual records with nonvirtual bases, out-of-line "
+                  "members, deleted "
+                  "declarations or in-class defaulted special members, without "
+                  "templates, "
+                  "virtual bases, concrete inline/constexpr members, "
+                  "member initializers, defaults, or nested declarations",
+                  declaration->getQualifiedNameAsString());
   return supported;
 }
 
@@ -1203,6 +1265,15 @@ bool ReadInterfaceDeclarationIdentity(
             conversion->isExplicit() ? ";explicit=1" : ";explicit=0";
     }
   }
+  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative);
+      method && method->isDefaulted())
+    identity.canonical_type_identity +=
+        ";cxx-class-structure:v1;defaulted=1;constexpr=derived;exception=" +
+        std::string(method->getExceptionSpecSourceRange().isInvalid()
+                        ? "derived"
+                        : "explicit") +
+        ";user-provided=" + std::to_string(method->isUserProvided()) +
+        ";inline=" + std::to_string(method->isInlined());
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
     identity.canonical_type_identity += ";api-availability=" + availability;
@@ -1367,6 +1438,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (HasCxxClassStructureIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxClassStructureSemantic);
     if (HasCxxClassLifecycleIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClassLifecycleSemantic);
     if (IsCxxMemberDeclarationKind(declaration.kind))
@@ -1415,6 +1488,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.cxx-data-interfaces.v1",
       "objc3.cxx-member-interfaces.v1",
       kCxxClassLifecycleSemantic,
+      kCxxClassStructureSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1507,6 +1581,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
     kCxxClassLifecycleSemantic,
+    kCxxClassStructureSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

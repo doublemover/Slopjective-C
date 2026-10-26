@@ -49,6 +49,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int private_namespace_global = 0;
       int private_namespace_helper() { return private_namespace_global; }
     }
+    struct NamedPrefix { long prefix; };
     class NamedValue {
       int storage;
     public:
@@ -57,6 +58,15 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       ~NamedValue();
       int get() const;
       explicit operator bool() const;
+    };
+    class NamedDerived : public NamedPrefix, public NamedValue {
+    public: explicit NamedDerived(int);
+    };
+    struct NamedDefaults : NamedPrefix {
+      int n;
+      NamedDefaults() noexcept(false)=default;
+      NamedDefaults(const NamedDefaults&) noexcept=default;
+      ~NamedDefaults()=default;
     };
     #endif
   )";
@@ -81,7 +91,12 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       NamedValue::~NamedValue() { storage = -1; }
       int NamedValue::get() const { return storage; }
       NamedValue::operator bool() const { return storage >= 0; }
-      int class_user() { NamedValue a(42); NamedValue b(a); return b.get(); }
+      NamedDerived::NamedDerived(int n) : NamedPrefix{1}, NamedValue(n) {}
+      int class_user() {
+        NamedValue a(42); NamedValue b(a); NamedDerived derived(42);
+        NamedDefaults d{}; d.n=42; NamedDefaults copied(d);
+        return b.get() + derived.get() + copied.n;
+      }
     )";
   if (r.objc3)
     *r.source_text += R"(
@@ -118,7 +133,9 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       int MemberValue::operator()(int n) const { return slot + n; }
     )";
     r.interface_exports.push_back("MemberValue");
-    r.interface_exports.push_back("NamedValue");
+    r.interface_exports.insert(
+        r.interface_exports.end(),
+        {"NamedValue", "NamedPrefix", "NamedDerived", "NamedDefaults"});
   }
 
   if (r.objc3)
@@ -138,11 +155,17 @@ void Success(const CompileResult &r) {
   assert(r.success);
 }
 const std::vector<llvm::StringRef> semantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
-    "objc3.cxx-class-lifecycles.v1",       "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
+    "objc3.canonical-function-effects.v1",
+    "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.cxx-member-interfaces.v1",
+    "objc3.cxx-class-lifecycles.v1",
+    "objc3.cxx-class-structure.v1",
+    "objc3.ownership-projection.v1",
+    "objc3.api-availability.v1",
+    "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
@@ -170,7 +193,8 @@ void Check(const fs::path &root, BaseLanguage language,
   for (const auto &d : sidecar->declarations) {
     if (d.kind == "ObjCProtocol")
       continue; // Protocol metadata is emitted on use.
-    if (!d.native_symbol_name.empty())
+    if (!d.native_symbol_name.empty() &&
+        d.canonical_type_identity.find(";defaulted=1;") == std::string::npos)
       assert(ir.find(d.native_symbol_name) != std::string::npos);
   }
   if (request.objc3) {
@@ -181,12 +205,16 @@ void Check(const fs::path &root, BaseLanguage language,
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
     bool constructor = false, destructor = false;
     for (const auto &d : sidecar->declarations) {
-      if (d.kind == "CXXConstructor") {
+      if (d.kind == "CXXConstructor" &&
+          d.canonical_type_identity.find(";defaulted=1;") ==
+              std::string::npos) {
         constructor = true;
         assert(ir.find(d.native_symbol_name + "_ctor_0") != std::string::npos);
         assert(ir.find(d.native_symbol_name + "_ctor_1") != std::string::npos);
       }
-      if (d.kind == "CXXDestructor") {
+      if (d.kind == "CXXDestructor" &&
+          d.canonical_type_identity.find(";defaulted=1;") ==
+              std::string::npos) {
         destructor = true;
         assert(ir.find(d.native_symbol_name + "_dtor_1") != std::string::npos);
         assert(ir.find(d.native_symbol_name + "_dtor_2") != std::string::npos);
@@ -228,6 +256,10 @@ void Check(const fs::path &root, BaseLanguage language,
     consumer.source_text = "int client(Child *value, id<Root> protocol) { "
                            "return module_value(module_global) + [value "
                            "directValue] + [value extra] + [protocol value]; }";
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
+    *consumer.source_text +=
+        " int structure_client() { NamedDerived v(42); NamedDefaults d{}; "
+        "d.n=42; NamedDefaults copy(d); return v.get()+copy.n; }";
   InterfaceImportInput imported;
   imported.source_path = request.interface_output_path;
   imported.locked_identity = original;

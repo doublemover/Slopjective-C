@@ -49,6 +49,15 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## Nonvirtual C++ bases and defaulted members
+
+The [2.9.0 source span](linux_cxx_class_structure.md) adds nonvirtual single and
+multiple inheritance, empty-base layout, access-aware base identity and in-class
+defaulted special members. It also repairs native printer/importer state needed
+for stable defaulted APIs. New execution fixtures cover nontrivial derived frame
+values and receiver adjustment. Source validation passes; SDK delivery is deferred
+for this implementation batch, so the accepted 2.8.1 archive remains above.
+
 ## Deleted C++ aggregate member identity
 
 The [2.8.1 delivery](linux_cxx_deleted_members.md) binds deleted ordinary
@@ -260,7 +269,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Borrowed pointers   | Contextual types, returned-owner contracts, strict CFG provenance/expiry/escape checking, nested aggregate/array paths, finite alias joins, guard/match forwarding, representation copies and noescape/constructor checks                                                                                                                          | Remaining conservative alias/union/MRC/lambda boundaries documented in the feature roadmap                                         |
 | Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                                                                                                                          | Plain/mixed/C++ carrier moves, throwing resource disposal and general exceptional CFG ownership                                    |
-| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect deduction, heap-owned dynamic storage, borrowed C++ bindings, captured-parameter debug locations and bounded class lifecycle packages | C++ inheritance/virtual/inline/template class projections and broader profile admission                                            |
+| Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect deduction, heap-owned dynamic storage, borrowed C++ bindings, captured-parameter debug locations and bounded class lifecycle packages | C++ virtual-base/virtual-dispatch and concrete inline/constexpr/template class projections and broader profile admission           |
 | Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                                                                                                                              | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                                                                                                   | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
 | Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros                                                                                  | Complete abstract group library and broader profile admission                                                                      |

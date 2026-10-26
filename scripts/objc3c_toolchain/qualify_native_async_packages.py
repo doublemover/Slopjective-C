@@ -150,6 +150,18 @@ def check_cpp_metadata(metadata):
     deleted_member = names.get('NativeDeletedMember::number', {})
     if ';deleted=1' not in deleted_member.get('canonical_type_identity', ''):
         raise ValueError('deleted aggregate member lost its unavailable declaration identity')
+    if 'objc3.cxx-class-structure.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ class package lost its base/defaulting capability')
+    for name in ('NativeAggregate', 'NativeDefaultedValue', 'NativeDerivedValue', 'NativeAccessValue'):
+        identity = names.get(name, {}).get('canonical_type_identity', '')
+        if ';cxx-class-structure:v1;' not in identity or ';base=' not in identity:
+            raise ValueError('C++ class package lost base layout identity: ' + name)
+    if not any(';defaulted=1;' in row.get('canonical_type_identity', '')
+               for row in metadata['declarations']):
+        raise ValueError('C++ class package lost defaulted special member identity')
+    access = names['NativeAccessValue']['canonical_type_identity']
+    if ':access=private' not in access or ':access=protected' not in access:
+        raise ValueError('C++ class package lost private/protected base access')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

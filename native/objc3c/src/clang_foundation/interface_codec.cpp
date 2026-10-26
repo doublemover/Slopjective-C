@@ -332,6 +332,17 @@ llvm::Error ValidateForEncoding(
   if (has_lifecycle != lifecycle_capability)
     return Invalid(
         "C++ class lifecycle declarations and required capability must agree");
+  const bool has_structure =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxClassStructureIdentity);
+  const bool structure_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxClassStructureSemantic) != sidecar.required_semantics.end();
+  if (has_structure != structure_capability ||
+      (has_structure && !has_lifecycle))
+    return Invalid("C++ class structure declarations require matching "
+                   "structure and lifecycle capabilities");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

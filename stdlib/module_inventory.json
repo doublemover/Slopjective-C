@@ -93,8 +93,8 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 8,
-        "patch": 1
+        "minor": 9,
+        "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
@@ -128,13 +128,15 @@
         "borrowed C++ lvalue/rvalue reference bindings and implicit native-frame receivers (source)",
         "native-frame virtual/member-pointer dispatch and owned C++23 explicit-object value receivers (source)",
         "bounded nonvirtual C++ class lifecycle packages with private layout and owned structor variants (source)",
-        "source-free nontrivial C++ frame values and move-only class parameters (source)"
+        "source-free nontrivial C++ frame values and move-only class parameters (source)",
+        "nonvirtual single/multiple inheritance and empty-base layout in semantic packages (source)",
+        "in-class defaulted special members with stable derived exception contracts and native import state (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "C++ inheritance/virtual/inline/template class projections and remaining broader profile contracts"
+        "C++ virtual-base/virtual-dispatch, concrete inline/constexpr/template class projections and remaining broader profile contracts"
       ]
     },
     {

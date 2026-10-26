@@ -56,6 +56,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
     kCxxClassLifecycleSemantic,
+    kCxxClassStructureSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -620,7 +621,10 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       if (!ReadInterfaceDeclarationIdentity(named, target_context, actual) ||
           !SameInterfaceDeclarationIdentity(expected, actual)) {
         Add(report.diagnostics, "O3IFC144",
-            "ASTImporter changed an exported declaration's canonical type, layout, or effects",
+            "ASTImporter changed an exported declaration's canonical type, "
+            "layout, or effects: " +
+                expected.canonical_type_identity + " -> " +
+                actual.canonical_type_identity,
             expected.stable_id);
         return report;
       }
