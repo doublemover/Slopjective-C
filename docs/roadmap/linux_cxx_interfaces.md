@@ -42,6 +42,11 @@ virtual dispatch, pure/final/covariant overrides and module-owned C++ type ABI
 names. It requires `objc3.cxx-class-dispatch.v1`; SDK 2.9.0 remains active until
 that source batch receives coordinated installed/archive qualification.
 
+The [2.11.0 source milestone](linux_cxx_namespaces.md) adds named/nested/inline
+namespace exports and namespace aliases under `objc3.cxx-namespaces.v1`, with
+namespace-wide or qualified leaf selection. Its source checks and deferred
+validation remain separate from the accepted SDK.
+
 The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
 aggregate methods in the lifecycle capability and canonical member identity.
 Changing an ordinary method to a deleted declaration invalidates the module

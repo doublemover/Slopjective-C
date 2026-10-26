@@ -33,6 +33,7 @@
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/ScopeExit.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/SHA256.h"
 #include "llvm/Support/VirtualFileSystem.h"
@@ -62,10 +63,31 @@ bool IsInMainFile(const clang::ASTContext &context,
   return IsModuleOwnedSource(context, location, source_root);
 }
 
+std::string InterfaceQualifiedName(const clang::NamedDecl *declaration) {
+  clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());
+  policy.SuppressInlineNamespace = static_cast<unsigned>(
+      clang::PrintingPolicy::SuppressInlineNamespaceMode::None);
+  std::string text;
+  llvm::raw_string_ostream stream(text);
+  declaration->printQualifiedName(stream, policy);
+  return text;
+}
+
 bool IsTopLevel(const clang::NamedDecl *declaration) {
   const auto *context = declaration->getDeclContext();
-  while (context && llvm::isa<clang::LinkageSpecDecl>(context))
-    context = context->getParent();
+  while (context) {
+    if (llvm::isa<clang::LinkageSpecDecl>(context)) {
+      context = context->getParent();
+      continue;
+    }
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(context)) {
+      if (space->isAnonymousNamespace())
+        return false;
+      context = context->getParent();
+      continue;
+    }
+    break;
+  }
   return context && context->isTranslationUnit();
 }
 
@@ -95,6 +117,10 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
 
   if (IsTopLevel(declaration)) {
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+      return !space->isAnonymousNamespace();
+    if (llvm::isa<clang::NamespaceAliasDecl>(declaration))
+      return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
       return !llvm::isa<clang::CXXMethodDecl>(function) &&
              function->isExternallyVisible();
@@ -274,6 +300,7 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
       (cxx->isDynamicClass() || cxx->hasAttr<clang::FinalAttr>())) {
     const auto &layout = context.getASTRecordLayout(cxx);
     out << ";cxx-class-dispatch:v1;dynamic=" << cxx->isDynamicClass()
+        << ";rtti=" << context.getLangOpts().RTTI
         << ";polymorphic=" << cxx->isPolymorphic()
         << ";abstract=" << cxx->isAbstract()
         << ";final=" << cxx->hasAttr<clang::FinalAttr>()
@@ -382,6 +409,14 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
            std::to_string(static_cast<unsigned>(property->getPropertyAttributes()));
+  if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(declaration))
+    return "namespace-alias{target=" +
+           ReadInterfaceDeclarationStableId(alias->getAliasedNamespace()) +
+           ";namespace=" + ReadInterfaceDeclarationStableId(alias->getNamespace()) +
+           "};cxx-namespaces:v1;";
+  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+    return std::string("namespace{") + space->getQualifiedNameAsString() +
+           ";inline=" + std::to_string(space->isInline()) + "}";
   if (const auto *record = llvm::dyn_cast<clang::RecordDecl>(declaration))
     return RecordLayoutIdentity(record, context);
   if (const auto *enumeration = llvm::dyn_cast<clang::EnumDecl>(declaration))
@@ -440,7 +475,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 std::string ExportRootName(const clang::NamedDecl *declaration) {
   while (declaration) {
     if (IsTopLevel(declaration))
-      return declaration->getQualifiedNameAsString();
+      return InterfaceQualifiedName(declaration);
     declaration =
         llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
   }
@@ -499,10 +534,17 @@ std::string AvailabilityIdentity(const clang::NamedDecl *declaration) {
 
 bool SelectedExport(const clang::NamedDecl *declaration,
                     const std::vector<std::string> &exports) {
-  return exports.empty() ||
-         std::find(exports.begin(), exports.end(), "*") != exports.end() ||
-         std::find(exports.begin(), exports.end(),
-                   ExportRootName(declaration)) != exports.end();
+  if (exports.empty() ||
+      std::find(exports.begin(), exports.end(), "*") != exports.end())
+    return true;
+  const auto root = ExportRootName(declaration);
+  return std::any_of(exports.begin(), exports.end(), [&](const auto &name) {
+    // Selecting a namespace admits its public descendants. Selecting a leaf
+    // retains the namespace declarations needed to look that leaf up.
+    return root == name || root.starts_with(name + "::") ||
+           (llvm::isa<clang::NamespaceDecl>(declaration) &&
+            name.starts_with(root + "::"));
+  });
 }
 
 bool ValidateExportNames(const std::vector<std::string> &exports,
@@ -706,6 +748,14 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(declaration)) {
+    const auto *target = alias->getAliasedNamespace();
+    visitor.CheckVisibility(target);
+    if (!IsInMainFile(context, target->getLocation(), source_root) &&
+        !visitor.IsResolved(target))
+      AddDiagnostic(result, "O3IFC112", "namespace alias target has no resolved interface identity",
+                    target->getQualifiedNameAsString());
+  }
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       record && record->isCompleteDefinition())
     for (const auto &base : record->bases())
@@ -760,7 +810,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     supported =
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
-        !record->isUnion();
+        !record->isUnion() &&
+        (!record->isDynamicClass() || record->getASTContext().getLangOpts().RTTI);
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
         continue;
@@ -794,10 +845,11 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl, clang::UsingDecl,
-                   clang::UsingDirectiveDecl, clang::NamespaceAliasDecl>(
+                   clang::UsingDirectiveDecl>(
             declaration);
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
-      supported &= space->isAnonymousNamespace();
+      for (const auto *attribute : space->attrs())
+        supported &= attribute->isImplicit();
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
         function && function->isExternallyVisible()) {
       supported &= !function->isTemplated() &&
@@ -816,13 +868,13 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
-                  "C++ semantic interfaces require global declarations and "
+                  "C++ semantic interfaces require global or named namespace declarations and "
                   "records with native bases and virtual dispatch, out-of-line "
                   "members, deleted "
                   "declarations or in-class defaulted special members, without "
                   "templates, "
                   "concrete inline/constexpr members, "
-                  "member initializers, defaults, or nested declarations",
+                  "member initializers, default arguments, or nested class declarations",
                   declaration->getQualifiedNameAsString());
   return supported;
 }
@@ -847,7 +899,7 @@ class InterfaceCollector final
          continue;
        if (std::none_of(root_declarations_.begin(), root_declarations_.end(),
                         [&](const auto *root) {
-                          return root->getQualifiedNameAsString() == name;
+                          return InterfaceQualifiedName(root) == name;
                         }))
          AddDiagnostic(result_, "O3IFC155",
                        "export selection does not name an eligible public root "
@@ -1029,7 +1081,9 @@ class InterfaceCollector final
         !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                    clang::ObjCIvarDecl, clang::FieldDecl,
                    clang::EnumConstantDecl>(declaration))
-      root_declarations_.push_back(declaration);
+      if (!llvm::isa<clang::NamespaceDecl>(declaration) ||
+          namespace_roots_.insert(ReadInterfaceDeclarationStableId(declaration)).second)
+        root_declarations_.push_back(declaration);
 
     InterfaceDeclarationIdentity identity;
     if (!ReadInterfaceDeclarationIdentity(declaration, context_, identity)) {
@@ -1061,6 +1115,14 @@ class InterfaceCollector final
     if (found == declarations_.end() ||
         (!IsDefinition(found->second) && IsDefinition(representative)))
       declarations_[stable_id] = representative;
+    if (const auto prior = identities_.find(stable_id);
+        prior != identities_.end() &&
+        prior->second.qualified_name != identity.qualified_name) {
+      AddDiagnostic(result_, "O3IFC180",
+                    "one native declaration cannot publish multiple lookup names",
+                    identity.qualified_name);
+      return true;
+    }
     identities_[stable_id] = std::move(identity);
     return true;
   }
@@ -1100,11 +1162,12 @@ private:
   std::map<std::string, clang::NamedDecl *> declarations_;
   std::map<std::string, InterfaceDeclarationIdentity> identities_;
   std::vector<clang::NamedDecl *> root_declarations_;
+  std::set<std::string> namespace_roots_;
   bool uses_function_effects_ = false;
   bool uses_runtime_frame_ = false;
 };
 
-void PrintRootDeclaration(clang::NamedDecl *declaration,
+void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
                           llvm::raw_ostream &out) {
   const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
@@ -1122,7 +1185,8 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   policy.PolishForDeclaration = true;
   // Member names inside a record must be relative to that record. Fully
   // qualified function spelling would print invalid `Worker::get` inside it.
-  if (llvm::isa<clang::CXXRecordDecl>(declaration))
+  if (llvm::isa<clang::CXXRecordDecl>(declaration) ||
+      declaration->getDeclContext()->getRedeclContext()->isNamespace())
     policy.FullyQualifiedName = false;
 
   if (llvm::isa<clang::FunctionDecl>(declaration)) {
@@ -1170,6 +1234,38 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   out << ";\n";
   if (c_linkage)
     out << "}\n";
+}
+
+void PrintRootDeclaration(clang::NamedDecl *declaration,
+                          clang::ASTContext &context,
+                          llvm::raw_ostream &out) {
+  std::vector<const clang::NamespaceDecl *> scopes;
+  for (const auto *dc = declaration->getDeclContext(); dc; dc = dc->getParent())
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(dc))
+      scopes.push_back(space);
+  std::reverse(scopes.begin(), scopes.end());
+  for (const auto *space : scopes)
+    out << (space->isInline() ? "inline namespace " : "namespace ")
+        << space->getName() << " {\n";
+  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+    out << (space->isInline() ? "inline namespace " : "namespace ")
+        << space->getName() << " {}\n";
+  else {
+    auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+    const auto qualifier = function ? function->getQualifierLoc()
+                                    : clang::NestedNameSpecifierLoc();
+    auto restore = llvm::make_scope_exit([&] {
+      if (function) function->setQualifierInfo(qualifier);
+    });
+    // Out-of-line source definitions retain an explicit qualifier even with
+    // FullyQualifiedName disabled. The enclosing wrappers already supply it.
+    if (function && !scopes.empty()) function->setQualifierInfo({});
+    PrintUnscopedRootDeclaration(declaration, context, out);
+  }
+  for (const auto *space : scopes) {
+    (void)space;
+    out << "}\n";
+  }
 }
 
 std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
@@ -1261,7 +1357,8 @@ std::string ReadInterfaceDeclarationStableId(
   // Native USRs encode filenames for C typedefs because those names have no
   // linkage. Module provenance provides the provider identity; physical source
   // and canonical artifact filenames must not change the exported type name.
-  if (llvm::isa<clang::TypedefNameDecl>(declaration) && IsTopLevel(declaration))
+  if (llvm::isa<clang::TypedefNameDecl>(declaration) &&
+      declaration->getDeclContext()->getRedeclContext()->isTranslationUnit())
     return "c:@T@" + declaration->getNameAsString();
   return usr.str().str();
 }
@@ -1278,7 +1375,7 @@ bool ReadInterfaceDeclarationIdentity(
   identity.spi_group = ReadInterfaceSPIGroup(representative);
   identity.native_symbol_name = ReadNativeSymbolName(representative);
   identity.kind = declaration->getDeclKindName();
-  identity.qualified_name = declaration->getQualifiedNameAsString();
+  identity.qualified_name = InterfaceQualifiedName(declaration);
   if (identity.qualified_name.empty())
     identity.qualified_name = declaration->getNameAsString();
   identity.canonical_type_identity =
@@ -1321,6 +1418,20 @@ bool ReadInterfaceDeclarationIdentity(
     for (const auto *overridden : method->overridden_methods())
       identity.canonical_type_identity +=
           ";override=" + ReadInterfaceDeclarationStableId(overridden);
+  }
+  std::vector<const clang::NamespaceDecl *> scopes;
+  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+    scopes.push_back(space);
+  for (const auto *dc = declaration->getDeclContext(); dc; dc = dc->getParent())
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(dc))
+      scopes.push_back(space);
+  if (!scopes.empty()) {
+    std::reverse(scopes.begin(), scopes.end());
+    identity.canonical_type_identity += ";cxx-namespaces:v1;";
+    for (const auto *space : scopes)
+      identity.canonical_type_identity +=
+          "scope=" + ReadInterfaceDeclarationStableId(space) +
+          ":inline=" + std::to_string(space->isInline()) + ";";
   }
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
@@ -1486,6 +1597,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (HasCxxNamespaceIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxNamespaceSemantic);
     if (HasCxxClassDispatchIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClassDispatchSemantic);
     if (HasCxxClassStructureIdentity(declaration))
@@ -1540,6 +1653,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       kCxxClassLifecycleSemantic,
       kCxxClassStructureSemantic,
       kCxxClassDispatchSemantic,
+      kCxxNamespaceSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1636,6 +1750,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClassLifecycleSemantic,
     kCxxClassStructureSemantic,
     kCxxClassDispatchSemantic,
+    kCxxNamespaceSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

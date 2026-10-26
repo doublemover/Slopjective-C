@@ -54,7 +54,10 @@
     "NativeVirtualRight",
     "NativeVirtualDiamond",
     "native_module_virtual",
-    "native_module_virtual_is"
+    "native_module_virtual_is",
+    "NativePublished",
+    "NativeOther",
+    "NativeAlias"
   ],
   "dependencies": []
 }

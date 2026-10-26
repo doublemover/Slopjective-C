@@ -83,6 +83,13 @@ HasCxxClassDispatchIdentity(const InterfaceDeclarationIdentity &d) {
          std::string::npos;
 }
 
+inline constexpr const char *kCxxNamespaceSemantic =
+    "objc3.cxx-namespaces.v1";
+inline bool HasCxxNamespaceIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-namespaces:v1;") !=
+         std::string::npos;
+}
+
 // Compare the complete declaration contract, including every modeled effect.
 [[nodiscard]] bool
 SameInterfaceDeclarationIdentity(const InterfaceDeclarationIdentity &left,

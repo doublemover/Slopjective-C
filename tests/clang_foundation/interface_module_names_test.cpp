@@ -61,6 +61,10 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       NamedDiamond(); ~NamedDiamond() override;
       int get() const override final; NamedDiamond *self() override;
     };
+    namespace NamedScope {
+      struct Point { int n; };
+      int increment(Point);
+    }
     struct NamedPrefix { long prefix; };
     class NamedValue {
       int storage;
@@ -98,6 +102,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
   )";
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
     *r.source_text += R"(
+      int NamedScope::increment(Point point) { return point.n + 1; }
       NamedRoot::NamedRoot() : n(42) {}
       NamedRoot::~NamedRoot() {}
       NamedRoot *NamedRoot::self() { return this; }
@@ -159,7 +164,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     r.interface_exports.insert(
         r.interface_exports.end(),
         {"NamedValue", "NamedPrefix", "NamedDerived", "NamedDefaults",
-         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond"});
+         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope"});
   }
 
   if (r.objc3)
@@ -188,6 +193,7 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.cxx-class-lifecycles.v1",
     "objc3.cxx-class-structure.v1",
     "objc3.cxx-class-dispatch.v1",
+    "objc3.cxx-namespaces.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -325,7 +331,8 @@ void Check(const fs::path &root, BaseLanguage language,
         "d.n=42; NamedDefaults copy(d); return v.get()+copy.n; }"
         " int dispatch_client() { NamedDiamond d; NamedRoot *r=&d; "
         "NamedRight *right=dynamic_cast<NamedRight*>(r); "
-        "return r->get()+right->right()+(r->self()==r); }";
+        "return r->get()+right->right()+(r->self()==r); }"
+        " int namespace_client() { return NamedScope::increment(NamedScope::Point{41}); }";
   InterfaceImportInput imported;
   imported.source_path = request.interface_output_path;
   imported.locked_identity = original;
@@ -378,6 +385,10 @@ void Check(const fs::path &root, BaseLanguage language,
     conflict.source_text =
         "struct __attribute__((abi_tag(\"foreign_tag\"))) Tagged { int n; };";
     conflict.interface_exports = {"Tagged"};
+    assert(!Compile(conflict).success);
+    conflict.source_text = "namespace Q { extern \"C\" int api(); } "
+                           "namespace R { extern \"C\" int api(); }";
+    conflict.interface_exports = {"Q", "R"};
     assert(!Compile(conflict).success);
     conflict.source_text = "inline int module_global = 42;";
     conflict.interface_exports = {"module_global"};

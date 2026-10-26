@@ -841,6 +841,76 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxNamedNamespaces() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-namespaces.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args = {
+        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+    auto emit = [&](const std::string &source,
+                    const std::vector<std::string> &exports = std::vector<std::string>{}) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "namespaces.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.namespaces",
+                                   "test", {}, {}, {}, exports);
+    };
+    const std::string source =
+        "namespace A { using Value=int; struct Node { Value n; }; "
+        "int api(Node); int overload(int); long overload(long); "
+        "namespace { int helper() { return 1; } } } "
+        "namespace B { using Value=long; } "
+        "namespace A { int api(Node v) { return v.n + helper(); } } "
+        "namespace Outer { inline namespace v1 { struct Token { int n; }; "
+        "int run(Token); } }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+    assert(emitted.success && emitted.source_bytes.find("helper") == std::string::npos);
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    std::string a, b;
+    for (const auto &d : decoded->declarations) {
+      if (d.qualified_name == "A::Value") a=d.stable_id;
+      if (d.qualified_name == "B::Value") b=d.stable_id;
+    }
+    assert(!a.empty() && !b.empty() && a != b);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto selected = emit(source, {"A::Node", "A::Value", "A::api"});
+    assert(selected.success && selected.source_bytes.find("namespace B") == std::string::npos &&
+           selected.source_bytes.find("overload") == std::string::npos);
+    auto whole = emit(source, {"A"});
+    assert(whole.success && whole.source_bytes.find("overload") != std::string::npos &&
+           whole.source_bytes.find("namespace B") == std::string::npos);
+    auto excluded = emit(source, {"A::api"});
+    assert(!excluded.success);
+    auto aliases = emit(source + " namespace Alias = A; namespace Again = Alias;");
+    assert(aliases.success);
+    auto alias_round = emit(aliases.source_bytes);
+    assert(alias_round.success && alias_round.source_bytes == aliases.source_bytes &&
+           alias_round.identity.semantic_fingerprint == aliases.identity.semantic_fingerprint);
+    assert(!emit(source + " namespace Alias = A;", {"Alias"}).success);
+    assert(emit(source, {"Outer::v1::Token", "Outer::v1::run"}).success);
+    std::erase(decoded->required_semantics, "objc3.cxx-namespaces.v1");
+    decoded->module.semantic_fingerprint =
+        ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+    auto external = emit("namespace Q { int api(); } int Q::api() { return 42; }");
+    assert(external.success && external.source_bytes.find("Q::api") == std::string::npos);
+    assert(emit("namespace Q { extern \"C\" int api(); } "
+                "namespace R { extern \"C\" int api(); }").success);
+    assert(emit("namespace Q { extern \"C\" int api(); }").success);
+    auto ordinary = emit("namespace X { int api(); }");
+    auto inlined = emit("inline namespace X { int api(); }");
+    assert(ordinary.success && inlined.success &&
+           ordinary.identity.semantic_fingerprint != inlined.identity.semantic_fingerprint);
+  }
+}
+
 void TestCxxClassDispatch() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -890,6 +960,13 @@ void TestCxxClassDispatch() {
         ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
     assert(!erased); llvm::consumeError(erased.takeError());
+    auto no_rtti_args = args;
+    no_rtti_args.push_back("-fno-rtti");
+    auto no_rtti = clang::tooling::buildASTFromCodeWithArgs(
+        "struct V { virtual int get(); };", no_rtti_args, "no-rtti.cpp");
+    assert(no_rtti && !no_rtti->getDiagnostics().hasErrorOccurred());
+    assert(!EmitSemanticInterface(no_rtti->getASTContext(),
+                                  "fixture.no-rtti", "test").success);
     auto ordered = emit("struct V { virtual int a(); virtual int b(); };");
     auto reversed = emit("struct V { virtual int b(); virtual int a(); };");
     assert(ordered.success && reversed.success &&
@@ -1097,7 +1174,7 @@ void TestBoundedCxxSemanticInterfaces() {
     enum_identity = emitted.identity.semantic_fingerprint;
   }
   for (const char *source :
-       {"namespace nested { int api(); }",
+       {"namespace nested { inline int api() { return 42; } }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
         "second=1; };",
@@ -1147,6 +1224,7 @@ int main() {
   TestCxxClassLifecycles();
   TestCxxClassStructure();
   TestCxxClassDispatch();
+  TestCxxNamedNamespaces();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

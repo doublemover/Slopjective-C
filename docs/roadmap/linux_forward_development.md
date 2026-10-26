@@ -49,6 +49,14 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ namespace exports
+
+The [2.11.0 source milestone](linux_cxx_namespaces.md) adds named/nested/inline
+namespace and namespace-alias exports, complete scoped identity, selective
+publication and source-free namespaced native-frame consumers. It builds on the
+virtual-class source span below. SDK 2.9.0 remains active; broad validation and
+installed/archive delivery remain deferred for the combined implementation batch.
+
 ## C++ virtual class packages
 
 The [2.10.0 source milestone](linux_cxx_class_dispatch.md) adds virtual bases,

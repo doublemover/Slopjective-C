@@ -177,6 +177,16 @@ def check_cpp_metadata(metadata):
     final_score = names.get('NativeVirtualDiamond::score', {}).get('canonical_type_identity', '')
     if ';pure=1' not in root_score or ';override=' not in final_score or ';final=1' not in final_score:
         raise ValueError('C++ class package lost pure/override/final member contracts')
+    if 'objc3.cxx-namespaces.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its named namespace capability')
+    for name in ('NativePublished', 'NativePublished::v1', 'NativePublished::v1::Value',
+                 'NativePublished::v1::frame', 'NativeOther::Scalar'):
+        if ';cxx-namespaces:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost namespace/inline scope identity: ' + name)
+    aliases = [names.get(name, {}).get('stable_id')
+               for name in ('NativePublished::v1::Scalar', 'NativeOther::Scalar')]
+    if not all(aliases) or aliases[0] == aliases[1]:
+        raise ValueError('C++ namespace aliases lost distinct native declaration identities')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

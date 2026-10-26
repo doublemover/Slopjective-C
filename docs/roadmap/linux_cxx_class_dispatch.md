@@ -46,3 +46,6 @@ This is a source implementation milestone. Broad source/sanitizer validation,
 installed SDK gates and exact-archive fresh-distribution qualification belong to
 the later coordinated batch. Public async/actor predicates, full profile
 conformance and native Linux AArch64 remain open.
+
+The [2.11.0 source milestone](linux_cxx_namespaces.md) additionally admits named
+namespace exports; this receipt retains the earlier 2.10.0 checkpoint.

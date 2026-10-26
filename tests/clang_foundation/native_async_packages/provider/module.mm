@@ -389,3 +389,22 @@ NativeVirtualDiamond native_module_virtual(NativeVirtualDiamond value)
 bool native_module_virtual_is(NativeVirtualRoot *value) {
   return dynamic_cast<NativeVirtualDiamond *>(value) != nullptr;
 }
+
+namespace NativePublished {
+inline namespace v1 {
+  using Scalar = long;
+  struct Value { int number; };
+  extern int bias;
+  int add(Value);
+  int frame(Value) __objc3_async_frame;
+}
+}
+namespace NativeOther { using Scalar = int; }
+int NativePublished::v1::bias = 2;
+int NativePublished::v1::add(Value value) { return value.number + bias; }
+int NativePublished::v1::frame(Value value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return add(value);
+}
+
+namespace NativeAlias = NativePublished;

@@ -354,6 +354,15 @@ llvm::Error ValidateForEncoding(
       (has_dispatch && !has_lifecycle))
     return Invalid("C++ class dispatch declarations require matching dispatch "
                    "and lifecycle capabilities");
+  const bool has_namespaces =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  HasCxxNamespaceIdentity);
+  const bool namespace_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                kCxxNamespaceSemantic) != sidecar.required_semantics.end();
+  if (has_namespaces != namespace_capability)
+    return Invalid("C++ namespace identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

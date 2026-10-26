@@ -1,5 +1,5 @@
 #if CASE == 1
-namespace Nested { int api(); }
+namespace Nested { inline int api() { return 42; } }
 #elif CASE == 2
 template<class T> struct Generic { T value; };
 #elif CASE == 3
