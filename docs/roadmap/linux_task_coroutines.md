@@ -48,12 +48,15 @@ lifetime of a shared dependency. Tasks can also start on actor mailboxes and
 [hop between retained destinations](linux_task_hops.md), preserving affinity
 through later yields and dependency waits.
 
-The authored [C++ group-scope span](linux_cxx_group_scopes.md) adds automatic
+The delivered [C++ group-scope span](linux_cxx_group_scopes.md) adds automatic
 finalization for `objc_task_group` coroutine definitions and a retained
 `task_group_handle::current_scope()` view. Its promise keeps pending returns and
 errors at final suspension until shielded group quiescence, then publishes
-without resuming the completed coroutine. The current installed acceptance
-remains linked from that development record until qualification is complete.
+without resuming the completed coroutine. `with_task_group` retains its callable
+through callback-frame cleanup and provides an independent child group for user
+iteration and joins. Grouped starts register membership before dispatch. The
+[current acceptance](../support/linux_cxx_group_scope_acceptance.json) binds
+source and installed evidence separately.
 
 Awaiting a handle always queues a continuation on the parent's executor, even
 when the dependency is already complete. It never blocks a worker, pumps a manual
@@ -142,8 +145,9 @@ suspension, a 2,048-level await chain, group integration and worker races.
 The sanitizer owner builds the task, executor, group, actor and value/error
 service implementations together with provider and consumer frames. It runs
 ASan/LeakSanitizer/UBSan and ThreadSanitizer at O0/O2 in C++20 and Objective-C++ (C++20 mode)
-ARC/MRC. The underlying GNUstep Objective-C runtime is the selected SDK binary;
-these probes do not claim to rebuild it with instrumentation.
+ARC/MRC. Current source qualification supplies matching instrumented GNUstep
+runtime variants, so GNU libobjc, project services and clients are checked
+together. Installed qualification binds the packaged runtime separately.
 
 The pinned GNUstep source also fixes selector/dispatch lock ordering. Registration
 acquires the runtime lock before mutating selectors and grows dispatch tables
@@ -152,8 +156,8 @@ operation. Dispatch's built-in selectors initialize before classes can receive
 messages, avoiding lazy registration under the class-initialization lock. The
 ARC/MRC threaded coroutine probes retain TSan's lock-order diagnostics.
 
-The [acceptance receipt](../support/linux_async_cxx_callables_acceptance.json) binds
-the installed SDK, its source and runtime identities, native/debugger matrices,
-sanitizer instrumentation and fresh Debian/Ubuntu executions. The
+The earlier [task-bridge receipt](../support/linux_async_cxx_callables_acceptance.json)
+retains its source/runtime identities and native/debugger evidence. The current
+acceptance linked above records the expanded source instrumentation and delivery. The
 [latency report](../support/linux_async_cxx_callables_latency.json) records five quiet
 runs against the current regression budgets.

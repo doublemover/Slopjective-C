@@ -16,7 +16,7 @@ results with compiler-defined layout and copy/destruction operations.
 results/errors through implicit shielded cleanup and forced abandonment. The
 current SDK passes all 33 installed gates, including shared-frame source-free
 consumers, native C/C++ execution and debugger checks. The
-[current receipt](../support/linux_native_group_scope_acceptance.json) records
+[current receipt](../support/linux_cxx_group_scope_acceptance.json) records
 that delivery and its fresh-distribution status. Public async/actor predicates
 and full profile conformance remain reserved.
 
@@ -79,6 +79,17 @@ The existing task scheduler owns successful starts. It serializes resumes,
 preserves actor destinations, wakes cancellation and destroys frames exactly
 once. A private child can inherit its parent's destination through the same C
 API used by C++ awaits.
+
+`objc3_async_frame_spawn_in_group` starts a structured child on the current
+task's destination and registers group membership before publishing its first
+resume. Descendant admission, cancellation ancestry and group closure are checked
+before any body runs. Failure clears the task output and preserves the caller's
+owned frame for retry or disposal. A failed queue publication leaves a cancelled,
+frame-less group member, so group observers remain joinable without taking the
+caller's frame. The C++ `task<T>::start_child(group)` uses this same operation.
+The reserved scope-body variant is restricted to the current compiler-owned root
+and preserves callback error handling during automatic sibling-failure cancellation.
+Explicit cancellation still applies to that body.
 
 ## Typed completions
 
@@ -244,9 +255,9 @@ for functions, methods and Blocks, including suspension-safe ownership and
 checked errors. Recognized spawn APIs, admitted isolation entry forms and native
 task/group joins are implemented and covered by the current SDK gates. These
 bounded surfaces do not promote public async/actor predicates or complete
-profiles. Native C group-result iteration and compiler-owned C-frame scopes are
-delivered by the current SDK. Ordinary C++ task-coroutine scopes and other
-remaining forms are tracked in the current Linux roadmap.
+profiles. Native C group-result iteration and compiler-owned C-frame and C++
+task-coroutine scopes are delivered by the current SDK. Other remaining forms
+are tracked in the current Linux roadmap.
 Native Linux AArch64 implementation and qualification also remain open; the
 recorded native-host evidence is Linux x86-64.
 

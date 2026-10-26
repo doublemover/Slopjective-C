@@ -6,7 +6,7 @@ The coroutine/group matrix passes all 12 normal configurations and all 12
 sanitizer configurations. ASan/UBSan and TSan instrument the services and the
 current GNU Objective-C runtime. The coordinated SDK passes all 33 installed gates, including the
 [native handle adapters](linux_async_handle_joins.md) and native ARC-only pool
-policy. The [delivery receipt](../support/linux_native_group_scope_acceptance.json)
+policy. The [delivery receipt](../support/linux_cxx_group_scope_acceptance.json)
 records exact source and archive evidence. Fresh Debian 13 and Ubuntu 26.04
 qualification both pass, with ordinary-user consumers and owned-container cleanup.
 
@@ -102,9 +102,9 @@ Native C async definitions can now use typed task joins and
 `objc3_task_group_join_async` through the shared frame ABI. The
 [native C iteration helpers](linux_native_group_iteration.md) return owned
 `Optional(T)` results through compiler-owned layout plans. Compiler-recognized
-[native C-frame scopes](linux_native_group_scopes.md) now add implicit shielded
-finalization. Ordinary C++ task-coroutine scopes and public async/actor
-capabilities remain separate milestones. An ordinary adapter await
+[native C-frame scopes](linux_native_group_scopes.md) and
+[C++ task-coroutine scopes](linux_cxx_group_scopes.md) add implicit shielded
+finalization. Public async/actor capabilities remain reserved. An ordinary adapter await
 does not shield the original caller's scope cleanup from cancellation.
 
 The new exported symbol requires the matching runtime archive. Service ABI 4

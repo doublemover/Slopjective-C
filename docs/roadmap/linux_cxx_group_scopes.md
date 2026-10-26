@@ -1,11 +1,13 @@
 # C++ coroutine structured group scopes
 
-The source concurrency module 2.4.0 extends `objc_task_group` to ordinary C++
+The concurrency module 2.4.0 extends `objc_task_group` to ordinary C++
 task coroutines and native Objective-C 3.0 C++ async functions/methods. This
 development span uses the existing service ABI 4, frame ABI 1, extension ABI 21
-and semantic interface schema 2.1. The accepted installed SDK remains the
-[C-frame scope delivery](../support/linux_native_group_scope_acceptance.json)
-until this combined compiler/library span is qualified and packaged.
+and semantic interface schema 2.1. The
+[acceptance receipt](../support/linux_cxx_group_scope_acceptance.json) binds the
+source checkpoint, rebuilt compiler, runtime matrices and coordinated SDK delivery.
+The preceding [C-frame scope receipt](../support/linux_native_group_scope_acceptance.json)
+retains its historical source and archive evidence.
 
 ```objective-c++
 #include <objc3c/runtime/objc3_task.hpp>
@@ -88,10 +90,15 @@ ownership beyond callback completion, callback-side result iteration/join,
 worker-side callback frame destruction,
 registration/queue rejection, original-error handling/recovery, explicit
 cancellation, exceptions and void results. The rebuilt
-compiler and three focused compiler regressions pass. All 24 spawn source/PCH
-configurations (108 commands), 12 normal coroutine configurations (114 commands)
-and 15 targeted tooling tests pass. Sanitizer and installed delivery checks
-follow this coherent source span.
+compiler and three focused compiler regressions pass. Source validation covers
+156 configurations / 842 commands: 24 spawn source/PCH configurations in each
+normal/ASanUBSan/TSan mode, 12 normal and 12 sanitizer coroutine configurations,
+40 shared C-frame ABI sanitizer configurations, 16 native C++ async sanitizer
+configurations and four structured-runtime sanitizer configurations. GNU libobjc,
+project services and clients are instrumented together in GNU-backed sanitizer
+runs. All five standalone runtime suites pass normally and under both sanitizers;
+22 targeted tooling tests pass. Installed and fresh-distribution evidence is
+recorded separately in the receipt.
 
 The annotation requires Objective-C 3.0 C++ language mode; the plain C++ bridge
 continues to supply explicit task/group joins. Custom promises without the

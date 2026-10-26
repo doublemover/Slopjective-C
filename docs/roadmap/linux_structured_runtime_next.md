@@ -6,9 +6,9 @@ standalone runtime suites, native feature matrices and installed structured,
 task/group-await, async and spawn consumers. Development instrumentation passes
 ASan/UBSan and TSan for the structured runtime, task/group-await and five-family
 feature matrices. See the [integration acceptance receipt](../support/linux_native_feature_integration_acceptance.json)
-for the historical binaries, archive and scope. Ordinary C++ task-coroutine
-scopes and remaining abstract group-library forms stay open; the current
-native C-frame scope delivery is linked below.
+for the historical binaries, archive and scope. Compiler-owned scopes now cover
+native C frames and ordinary C++ task coroutines. Remaining abstract group-library
+forms and complete profile admission stay open.
 
 ## Native handle adapters and Linux pool policy
 
@@ -17,7 +17,7 @@ handles into native C async definitions and C++ lazy tasks. They preserve result
 and error identity, retain independent leases, queue nonblocking continuations,
 and reject hidden own/direct-parent dependency cycles. Group construction leaves
 registration open; first resume closes the tree and joins complete quiescence.
-The concurrency module is 2.3.0; service ABI 4 and frame ABI 1 are unchanged.
+The concurrency module is 2.4.0; service ABI 4 and frame ABI 1 are unchanged.
 
 Full GNU runtime instrumentation exposed a lazy global autorelease-mode race.
 The Linux patch now uses native per-thread ARC pools exclusively, with no
@@ -25,9 +25,10 @@ Foundation mode switch or legacy retained-return slot. Native tokens remain
 valid across late `NSAutoreleasePool` class registration. Nil return-value
 claiming preserves an empty pool. All nine GNUstep client tests and five
 standalone service suites pass; the latter also pass under ASan/UBSan and TSan.
-The [current delivery record](../support/linux_native_group_scope_acceptance.json)
-binds source reports and the coordinated SDK status. Automatic structured-scope
-finalization for ordinary C++ task coroutines remains implementation work.
+The [current delivery record](../support/linux_cxx_group_scope_acceptance.json)
+binds source reports and the coordinated SDK status. Compiler-owned
+[C++ task-coroutine scopes](linux_cxx_group_scopes.md) retain pending values and
+errors through shielded finalization without resuming a completed coroutine.
 [Native C-frame scopes](linux_native_group_scopes.md) now supply shielded
 finalization and forced-abandonment cleanup.
 Native C group-result iteration is delivered through the typed helpers linked below.
@@ -336,11 +337,11 @@ checked error identity, capture deallocation, failed-start ownership cleanup,
 and strict diagnostic parity. All 24 source/PCH configurations pass across
 ARC/MRC, O0/O2 and C17/C++20/C++23, both normally and under ASan/UBSan and TSan.
 The installed feature gate covers the same matrix.
-These APIs retain explicit task/group joining unless used inside an admitted
-native C-frame scope. Ordinary C++ task-coroutine scopes and the remaining
-abstract group-library forms stay open.
+These APIs retain explicit task/group joining outside admitted native C-frame
+or C++ task-coroutine scopes and `with_task_group`. Remaining abstract group-library
+forms stay open.
 
-## Native C-frame scopes and the next C++ milestone
+## Compiler-owned C and C++ scopes
 
 [Native C-frame scopes](linux_native_group_scopes.md) now implement the bounded
 function/method contract in Part 7 §7.5.2.3. A fresh group, descendant admission
@@ -349,20 +350,25 @@ normal exit, cancellation and lost continuations. Scoped C-frame providers also
 survive source-free package publication and relocation. Explicit adapter awaits
 remain independent of this compiler-owned scope.
 
-The next compiler milestone extends this protocol to ordinary C++ task
-coroutines. Promise/frame state must distinguish a pending finalization join
-from terminal coroutine completion, retaining return/exception owners and
-respecting lexical cleanup. A coroutine suspended at final suspend must not be
-resumed as an ordinary body continuation. The selected actor/executor and nested
-scope order must survive cancellation and failed dispatch. Runtime guard
-reservation, descendant identity and earlier shielded-dependency handling are
-available to that lowering.
+[C++ task-coroutine scopes](linux_cxx_group_scopes.md) extend this protocol to
+ordinary coroutine and native C++ async bodies. A reserved promise entry hook
+establishes the scope before source entry. Final suspension retains pending
+return/exception owners until complete quiescence; the notification publishes
+without resuming the completed coroutine. Actor/executor affinity and nested
+cleanup order survive cancellation, abandonment and failed dispatch.
 
-Admission requires source/PCH, imported callable identity, normal/throwing and
-cancelled exits, nontrivial result ownership, actor/manual/worker destinations,
-nested scopes, failed allocation and abandoned frames. The current explicit
-APIs and C-frame scopes remain bounded until those C++ paths exist. Public
-async/actor and full-profile predicates stay reserved.
+`with_task_group` owns its callable through callback-frame cleanup. Atomic
+grouped starts register membership before dispatch. Its private root owns the
+callback; a separate user group supports result iteration and joins. Automatic
+sibling-error cancellation preserves the callback's error-handling path, while
+explicit cancellation still cancels the complete scope. Cleanup leases cannot
+hide loss of the last ordinary task owner.
+
+Source/PCH, source-free packages, nontrivial result ownership, normal/throwing
+and cancelled exits, actor/manual/worker destinations, failed allocation and
+abandoned frames have maintained witnesses. Remaining abstract group forms,
+nontrivial C++ values in explicit C-frame definitions and broader profile
+admission stay open. Public async/actor and full-profile predicates stay reserved.
 
 Typed async callback deduction treats ErrorType as a deducible type position,
 requires exact async/frame representation, and preserves throwing domains.

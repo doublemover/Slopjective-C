@@ -165,4 +165,4 @@ establish this package coverage.
 
 The later 33-gate SDK retains this complete package matrix and passes it on fresh
 Debian and Ubuntu with the newer compiler; see the
-[current acceptance receipt](../support/linux_native_group_scope_acceptance.json).
+[current acceptance receipt](../support/linux_cxx_group_scope_acceptance.json).
