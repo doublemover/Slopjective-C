@@ -25,7 +25,9 @@ PCH and AST import retain literal spelling and typed accessors. The source-free
 package fixture adds a public bit-field record and a provider-owned path with
 consumer-side metadata equality.
 
-Initial native and runtime checks pass. Broader compiler/frontend, source/PCH,
+The [focused receipt](../support/linux_keypath_record_fields_progress.json)
+records four native regressions, native AST import and two source/PCH runtime
+configurations (12 commands). Broader compiler/frontend, source/PCH,
 sanitizer and package validation follows the combined source batch. The accepted
 SDK remains [2.29.0](../support/linux_source_batch_2_29_acceptance.json), carrying
 keypath 2.1.0. Nullable writable traversal and nonnull/scalar/aggregate nullable
