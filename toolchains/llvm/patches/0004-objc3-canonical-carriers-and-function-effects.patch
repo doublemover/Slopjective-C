@@ -37791,16 +37791,17 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..b4d653bd1
+index 000000000..be94d678c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2750 @@
+@@ -0,0 +1,2821 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
++#include "clang/AST/StmtCXX.h"
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3KeyPath.h"
@@ -38030,7 +38031,7 @@ index 000000000..b4d653bd1
 +  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
 +  struct OwnerSummary {
-+    SmallVector<const VarDecl *, 4> Borrowed, Consumed, Invoked;
++    SmallVector<const VarDecl *, 4> Borrowed, Consumed, Invoked, Mutated;
 +  };
 +  using OwnerSummaryCache = llvm::DenseMap<const Expr *, OwnerSummary>;
 +  std::shared_ptr<OwnerSummaryCache> OwnerSummaries = std::make_shared<OwnerSummaryCache>();
@@ -38039,6 +38040,8 @@ index 000000000..b4d653bd1
 +  mutable llvm::SmallPtrSet<const VarDecl *, 16> AcquiredOwnerRoots;
 +  mutable llvm::SmallPtrSet<const VarDecl *, 16> ConsumedOwnerRoots;
 +  mutable llvm::SmallPtrSet<const VarDecl *, 16> InvokedCallableCaptures;
++  llvm::SmallPtrSet<const VarDecl *, 16> SummaryCaptures;
++  mutable llvm::SmallPtrSet<const VarDecl *, 16> MutatedCaptures;
 +  bool IsOwnerSummary = false;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
@@ -38614,6 +38617,7 @@ index 000000000..b4d653bd1
 +    Summary.addOrigin(nullptr, nullptr);
 +    for (const auto &Capture : Captures) {
 +      Summary.addVariable(Capture.Variable);
++      Summary.SummaryCaptures.insert(Capture.Variable);
 +      QualType Type = Capture.Variable->getType();
 +      const auto *Record = Type->getAsCXXRecordDecl();
 +      if (Type->isBlockPointerType() || Type->isFunctionPointerType() ||
@@ -38639,6 +38643,7 @@ index 000000000..b4d653bd1
 +      if (Summary.AcquiredOwnerRoots.count(Capture.Variable)) Result.Borrowed.push_back(Capture.Variable);
 +      if (Summary.ConsumedOwnerRoots.count(Capture.Variable)) Result.Consumed.push_back(Capture.Variable);
 +      if (Summary.InvokedCallableCaptures.count(Capture.Variable)) Result.Invoked.push_back(Capture.Variable);
++      if (Summary.MutatedCaptures.count(Capture.Variable)) Result.Mutated.push_back(Capture.Variable);
 +    }
 +    (*OwnerSummaries)[Closure] = Result;
 +    return Result;
@@ -39396,6 +39401,8 @@ index 000000000..b4d653bd1
 +  void store(const Stmt *Operation, Storage Destination, const Value &V,
 +             Facts &State, bool Emit, bool Replace = false,
 +             const Value *Effects = nullptr) {
++    if (IsOwnerSummary && SummaryCaptures.count(Destination.first))
++      MutatedCaptures.insert(Destination.first);
 +    if (V.any() && Emit) {
 +      if (InheritedLambdaStorage.count(Destination.first))
 +        diagnose(Operation, "persistent storage in a C++ lambda capture");
@@ -39715,6 +39722,22 @@ index 000000000..b4d653bd1
 +        }
 +      }
 +    }
++    if (IsOwnerSummary) {
++      const auto Formals = formalParameters(callee(Invocation));
++      const FunctionProtoType *Prototype = callPrototype(Invocation);
++      for (unsigned I = 0; I != Count; ++I) {
++        unsigned Formal = formalIndex(Invocation, I);
++        QualType Type;
++        if (Formal < Formals.size()) Type = Formals[Formal]->getType();
++        else if (Prototype && Formal < Prototype->getNumParams()) Type = Prototype->getParamType(Formal);
++        const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation));
++        bool AddressBuiltin = Function && Function->getBuiltinID() && Function->getName() == "__builtin_addressof";
++        if ((!Type.isNull() && Type->isReferenceType() && !Type->getPointeeType().isConstQualified()) || AddressBuiltin) {
++          Storage Target = storage(argument(Invocation, I), &State);
++          if (SummaryCaptures.count(Target.first)) MutatedCaptures.insert(Target.first);
++        }
++      }
++    }
 +    if (Emit) {
 +      if (!Actions.getLangOpts().ObjCAutoRefCount)
 +        if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation);
@@ -39835,6 +39858,12 @@ index 000000000..b4d653bd1
 +      if (!Statement)
 +        continue;
 +      const Stmt *Node = Statement->getStmt();
++      if (IsOwnerSummary)
++        if (const auto *Unary = dyn_cast<UnaryOperator>(Node);
++            Unary && (Unary->getOpcode() == UO_AddrOf || Unary->isIncrementDecrementOp())) {
++          Storage Target = storage(Unary->getSubExpr(), &State);
++          if (SummaryCaptures.count(Target.first)) MutatedCaptures.insert(Target.first);
++        }
 +      if (const auto *Expression = dyn_cast<Expr>(Node))
 +        if (auto Found = ExpressionSlots.find(Expression); Found != ExpressionSlots.end()) {
 +          unsigned Slot = Found->second;
@@ -40016,8 +40045,17 @@ index 000000000..b4d653bd1
 +              auto Initializer = Lambda->capture_init_begin();
 +              for (const auto &Capture : Lambda->captures()) {
 +                const Expr *Init = *Initializer++;
++                const auto Summary = OwnerSummaries->lookup(Lambda);
++                const auto *Variable = Capture.capturesVariable()
++                    ? dyn_cast<VarDecl>(Capture.getCapturedVar()) : nullptr;
++                QualType Type = Variable ? Variable->getType().getNonReferenceType() : QualType();
++                bool MutableOwnerReference = Variable && Capture.getCaptureKind() == LCK_ByRef &&
++                    llvm::is_contained(Summary.Mutated, Variable) &&
++                    (Type->isPointerType() || Type->isObjCObjectPointerType() ||
++                     Type->isBlockPointerType() ||
++                     (Type->getAsCXXRecordDecl() && Type->getAsCXXRecordDecl()->isLambda()));
 +                if ((Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State).any()) &&
-+                    (value(Init, State).any() ||
++                    (MutableOwnerReference || value(Init, State).any() ||
 +                     (Capture.capturesVariable() &&
 +                      llvm::is_contained(FutureBorrowCaptures.lookup(Lambda), Capture.getCapturedVar()))))
 +                  diagnose(Lambda, "a C++ lambda reference capture requiring an explicit lifetime contract");
@@ -40081,9 +40119,42 @@ index 000000000..b4d653bd1
 +              const bool NestedInvalid = Nested.check();
 +              Invalid |= NestedInvalid;
 +              if (!NestedInvalid && Lambda &&
-+                  (State.CapturedValues[Slot].any() || !FutureBorrowCaptures.lookup(Lambda).empty()) &&
-+                  (Lambda->isMutable() || Lambda->isGenericLambda()))
-+                diagnose(Lambda, "a mutable or generic C++ lambda capture requiring additional lifetime contracts");
++                  (State.CapturedValues[Slot].any() || !FutureBorrowCaptures.lookup(Lambda).empty())) {
++                bool RequiresContract = Lambda->isGenericLambda();
++                if (Lambda->isMutable()) {
++                  const auto *Prototype = Lambda->getCallOperator()->getType()->getAs<FunctionProtoType>();
++                  RequiresContract |= isa<CoroutineBodyStmt>(Lambda->getBody()) ||
++                      (Prototype && Prototype->getObjC3FunctionEffects().Async);
++                  const auto Summary = OwnerSummaries->lookup(Lambda);
++                  for (const auto &Capture : closureCaptures(Lambda)) {
++                    Value Payload = Capture.Initializer ? value(Capture.Initializer, State)
++                        : contents({Capture.Variable, nullptr}, Capture.Variable->getType(), State);
++                    QualType CaptureType = Capture.Variable->getType().getNonReferenceType();
++                    const auto *Record = CaptureType->getAsCXXRecordDecl();
++                    RequiresContract |= CaptureType->isRecordType() && (!Record || !Record->isLambda());
++                    bool HoldsPayload = false;
++                    for (const auto &Owned : owningClosureCaptures(Lambda))
++                      if (Owned.Variable == Capture.Variable) {
++                        RequiresContract |= llvm::is_contained(Summary.Consumed, Capture.Variable);
++                        Value Identity = Owned.Initializer ? ownerIdentity(Owned.Initializer, State)
++                            : State.OwnerIdentities[Slots.lookup({Owned.Variable, nullptr})];
++                        const Value &Loans = State.CapturedValues[Slot];
++                        for (int Bit = Loans.find_first(); Bit >= 0; Bit = Loans.find_next(Bit)) {
++                          const Origin &O = Origins[Bit / 2];
++                          HoldsPayload |= O.HeldByClosure == Lambda && O.Identity &&
++                              Identity.test(OwnerRoots.lookup(O.Identity));
++                        }
++                      }
++                    bool Sensitive = HoldsPayload || Payload.any() ||
++                        llvm::is_contained(Summary.Borrowed, Capture.Variable) ||
++                        llvm::is_contained(Summary.Consumed, Capture.Variable) ||
++                        llvm::is_contained(Summary.Invoked, Capture.Variable);
++                    RequiresContract |= Sensitive && llvm::is_contained(Summary.Mutated, Capture.Variable);
++                  }
++                }
++                if (RequiresContract)
++                  diagnose(Lambda, "a mutable or generic C++ lambda capture requiring additional lifetime contracts");
++              }
 +            }
 +          }
 +        }
@@ -44476,7 +44547,7 @@ index 000000000..81b4197d7
 +struct BorrowedAddress { const char **pointer; };
 diff --git a/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 new file mode 100644
-index 000000000..596f77639
+index 000000000..0e3670e20
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 @@ -0,0 +1,136 @@
@@ -44569,7 +44640,7 @@ index 000000000..596f77639
 +}
 +void mutable_capture(id owner) {
 +  const char *pointer=bytes(owner);
-+  auto work=[pointer]() mutable {use_noescape(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  auto work=[pointer]() mutable {use_noescape(pointer);};
 +  work();
 +}
 +void generic_capture(id owner) {
@@ -45350,7 +45421,7 @@ index 000000000..be1320b34
 +@end
 diff --git a/clang/test/ObjC3/Sema/borrowed-future-captures.mm b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 new file mode 100644
-index 000000000..5016b898a
+index 000000000..7e8e6b55c
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 @@ -0,0 +1,170 @@
@@ -45425,7 +45496,7 @@ index 000000000..5016b898a
 +  work();
 +}
 +void unqualified_mutable(void *owner) {
-+  auto work=[owner]()mutable{future_use(future_bytes(owner));}; // expected-error {{mutable or generic C++ lambda capture}}
++  auto work=[owner]()mutable{future_use(future_bytes(owner));};
 +  work();
 +}
 +void unqualified_generic(void *owner) {
@@ -46054,5 +46125,111 @@ index 000000000..f54b1fbd5
 +  auto work=[alias=owner]{closure_consume(alias);};
 +  work();
 +  closure_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-mutable-captures.h b/clang/test/ObjC3/Sema/Inputs/borrowed-mutable-captures.h
+new file mode 100644
+index 000000000..cebcb2d2e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-mutable-captures.h
+@@ -0,0 +1,8 @@
++typedef borrowed const char *MutableBytes;
++MutableBytes mutable_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++MutableBytes mutable_object_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void mutable_use(const char *pointer __attribute__((noescape)));
++void mutable_consume(void *owner __attribute__((cf_consumed)));
++void mutable_inspect(const char *const *pointer __attribute__((noescape)));
++void mutable_read_reference(const char *const &pointer __attribute__((noescape)));
++void mutable_write_reference(const char *&pointer __attribute__((noescape)));
+diff --git a/clang/test/ObjC3/Sema/borrowed-mutable-captures.mm b/clang/test/ObjC3/Sema/borrowed-mutable-captures.mm
+new file mode 100644
+index 000000000..7ff398a98
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-mutable-captures.mm
+@@ -0,0 +1,86 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-mutable-captures.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-mutable-captures.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-mutable-captures.h"
++#endif
++void mutable_payload_counter(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer,count=0]()mutable{++count;mutable_use(pointer);};
++  work();work();
++}
++void mutable_owner_counter(void *owner) {
++  auto work=[owner,count=0]()mutable{++count;mutable_use(mutable_bytes(owner));};
++  work();work();
++}
++void mutable_reference_counter(void *owner,int &count) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer,&count]()mutable{++count;mutable_use(pointer);};
++  work();work();
++}
++void mutable_readonly_reference(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer]()mutable{mutable_read_reference(pointer);};
++  work();work();
++}
++void mutable_capture_expires(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer,count=0]()mutable{++count;mutable_use(pointer);};
++  work();
++  mutable_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void mutable_consuming_capture(void *owner) {
++  auto work=[owner,count=0]()mutable{++count;mutable_use(mutable_bytes(owner));mutable_consume(owner);};
++  work();
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void overwritten_before_borrow(void *owner,void *replacement) {
++  auto work=[owner,replacement,count=0]()mutable{++count;owner=replacement;mutable_use(mutable_bytes(owner));};
++  mutable_consume(owner);
++  work();work();
++}
++void retargeted_owner(void *owner,void *replacement) {
++  auto work=[owner,replacement]()mutable{mutable_use(mutable_bytes(owner));owner=replacement;}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void retargeted_payload(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer]()mutable{mutable_use(pointer);pointer=nullptr;}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void writable_reference_exposure(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer]()mutable{mutable_write_reference(pointer);mutable_use(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void address_exposure(void *owner) {
++  const char *pointer=mutable_bytes(owner);
++  auto work=[pointer]()mutable{mutable_inspect(&pointer);mutable_use(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void referenced_owner_mutation(void *owner) {
++  auto work=[&owner]{owner=nullptr;}; // expected-error {{C++ lambda reference capture}}
++  const char *pointer=mutable_bytes(owner);
++  work();mutable_use(pointer);
++}
++#if __has_feature(objc_arc)
++void held_payload_owner_retarget(id owner) {
++  const char *pointer=mutable_object_bytes(owner);
++  auto work=[owner,pointer]()mutable{mutable_use(pointer);owner=nullptr;}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++#endif
++#if __has_feature(objc_arc)
++void independently_held_mutable_payload(id owner) {
++  const char *pointer=mutable_object_bytes(owner);
++  auto work=[owner,pointer,count=0]()mutable{++count;mutable_use(pointer);};
++  owner=nullptr;
++  work();work();
 +}
 +#endif

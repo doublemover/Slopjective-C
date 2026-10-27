@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Mutable lambda capture precision
+
+The [System 2.11.0 source span](linux_borrowed_mutable_captures.md) admits mutable
+synchronous lambdas whose lifetime-sensitive captures stay stable while ordinary
+scalar state changes. CFG summaries qualify writes and address/reference exposure,
+including ARC captures keeping another loan alive. Broader checks remain batched
+after implementation; SDK 2.33 is the accepted archive.
+
 ## Consumption through local closures
 
 The [System 2.10.0 source span](linux_borrowed_closure_consumption.md) propagates

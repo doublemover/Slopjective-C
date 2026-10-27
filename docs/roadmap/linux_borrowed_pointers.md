@@ -156,3 +156,6 @@ annotated family-release effects and native/interface family contracts.
 
 The [System 2.10.0 local invocation span](linux_borrowed_closure_consumption.md)
 propagates known closure consumption and ARC callback writeback facts.
+
+The [System 2.11.0 mutable capture span](linux_borrowed_mutable_captures.md)
+qualifies stable lifetime-sensitive storage alongside mutable scalar state.

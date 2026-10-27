@@ -340,13 +340,22 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
              "void f(id o){const char *p=bytes(o);auto work=[&p]{use_noescape(p);};work();}",
              "void f(id o){const char *p=0;auto work=[&p]{escape(p);};p=bytes(o);work();}",
              "void f(id o){const char *p=0;AddressHolder h{&p};auto work=[h]{escape(*h.pointer);};p=bytes(o);work();}",
-             "void f(id o){const char *p=bytes(o);auto work=[p]()mutable{use_noescape(p);};work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p](auto){use_noescape(p);};work(0);}",
              "void f(id o,int choose){const char *p=0;if(choose){auto work=[&p]{escape(p);};sink(work);}p=bytes(o);}",
              "void f(id o){auto work=[o,p=(const char*)0]()mutable{p=bytes(o);};work();}",
              "void f(id o){struct V{mutable const char *p;};auto work=[o,v=V{0}]{v.p=bytes(o);};work();}"})
       Expect(Request(Root,LambdaHeader+Code,Language,Standard,ARC),false,"borrowed pointer escapes");
+    for(const std::string &Code:{
+        "void f(id o){const char*p=bytes(o);auto work=[p,count=0]()mutable{++count;use_noescape(p);};work();work();}",
+        "void f(id o,int &count){const char*p=bytes(o);auto work=[p,&count]()mutable{++count;use_noescape(p);};work();}"})
+      Expect(Request(Root,LambdaHeader+Code,Language,Standard,ARC),true);
+    Expect(Request(Root,LambdaHeader+
+        "void f(id o){const char*p=bytes(o);auto work=[p]()mutable{use_noescape(p);p=nullptr;};work();}",
+        Language,Standard,ARC),false,"mutable or generic C++ lambda capture");
     if (ARC) {
+      Expect(Request(Root,LambdaHeader+
+          "void f(id o){const char*p=bytes(o);auto work=[o,p]()mutable{use_noescape(p);o=nullptr;};work();}",
+          Language,Standard,ARC),false,"mutable or generic C++ lambda capture");
       Expect(Request(Root,LambdaHeader+
           "void f(id o){const char *p=bytes(o);auto work=[o,p]{(void)o;use_noescape(p);};o=0;work();}",
           Language,Standard,ARC),true);
@@ -606,7 +615,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));\n"
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
       "void dispatch_foreign(ForeignCallback);void dispatch_foreign(void (*)(ForeignRef));\n"
-      "inline void foreign_scoped(ForeignRef owner){auto work=[owner]{foreign_use(foreign_bytes(owner));};work();}\n"
+      "inline void foreign_scoped(ForeignRef owner){auto work=[owner,count=0]()mutable{++count;foreign_use(foreign_bytes(owner));};work();work();}\n"
       "inline void foreign_release_locally(ForeignRef owner __attribute__((cf_consumed))){const char*p=foreign_bytes(owner);auto work=[owner]{foreign_consume(owner);};foreign_use(p);work();}\n"
       "__attribute__((objc_root_class)) @interface ForeignContract\n"
       "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
