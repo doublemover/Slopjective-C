@@ -40,8 +40,9 @@ Full language/profile conformance and native Linux AArch64 remain open.
 The [2.35.0 source span](linux_task_frame_interop.md) adds native-frame awaits of
 C++ tasks and supported task-ABI isolation targets. It preserves qualified
 records, ARC ownership, checked errors, actor/executor destinations and lexical
-class/super dispatch through the shared owned carrier. Source qualification is
-in progress; SDK 2.33 remains the accepted installed archive.
+class/super dispatch through the shared owned carrier. Focused compiler,
+frontend, source-free package and sanitizer witnesses pass; SDK 2.33 remains the
+accepted installed archive.
 
 ## Published async definitions
 

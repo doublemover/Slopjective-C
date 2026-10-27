@@ -48,7 +48,12 @@ cover pre-entry cancellation, cancellation while the C++ task is suspended,
 failed entry allocation and exact record cleanup. Compiler replay covers direct
 C++20 MRC and C++23 ARC PCH inputs, including message and super entry.
 
-Source qualification is in progress. SDK 2.33 remains the accepted archive.
+The [focused receipt](../support/linux_task_frame_interop_progress.json) records
+379 compiler regressions, 182 native unit tests, two frontend suites, 14 tooling
+tests, 24 source-free package configurations / 96 commands, and two runtime
+smoke configurations / 15 commands in each normal and ASan/UBSan mode. The
+combined five-family/sanitizer batch is deferred until the next source batch is
+coherent. SDK 2.33 remains the accepted archive.
 Service ABI 4, frame ABI 1, extension ABI 21 and interface schema 2.2 remain in
 use; regenerate compiler-dependent inputs for the source cutover. MRC/CF
 consumption, init-family entry, unqualified dynamic Class receivers, automatic
