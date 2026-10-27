@@ -531,3 +531,11 @@ definitions, under `objc3.cxx-friends.v1`.
 The [2.24.0 source milestone](linux_cxx_local_expressions.md) preserves published
 Block bodies/captures and GNU statement expressions under required
 `objc3.cxx-block-expressions.v1` and `objc3.cxx-statement-expressions.v1` contracts.
+
+The [combined 2.24.0 source validation](../support/linux_source_batch_2_24_progress.json)
+passes the native/frontend/C++ package batch, all five-family source/PCH feature
+matrices in normal/ASan/UBSan/TSan modes, compiler witnesses and async/task/
+structured-runtime instrumentation. Exception cleanup additionally repairs and
+rebuilds the pinned GNU runtime's DWARF decoder; full-width LEB values use defined
+unsigned operations. Installed/archive delivery and the implementation backlog
+remain separate obligations.
