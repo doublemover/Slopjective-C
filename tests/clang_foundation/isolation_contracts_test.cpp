@@ -451,6 +451,20 @@ struct __attribute__((objc_unsafe_sendable)) ResourcePacket { Handle value; };
               "union PacketUnion cross(union PacketUnion value) __objc3_async {"
               "return __objc3_await union_entry(value);}"),
          "awaited isolated entry requires");
+  Success(Compile(Make(R"(
+@interface Root (ClassEntries)
++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
+@end
+int class_cross(int value) __objc3_async {
+  return __objc3_await [Counter classValue:value];
+}
+)")));
+  Reject(Make(R"(
+@interface Root (ClassEntries)
++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
+@end
+int class_cross(int value) { return [Counter classValue:value]; }
+)"), "cross-executor entry requires an explicit await");
   const std::string Consuming =
       "int consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
       " __attribute__((objc_executor(main)));\n"
@@ -598,6 +612,10 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
 - (struct ModulePacket)transformPacket:(struct ModulePacket)packet
     __attribute__((nothrow));
 - (int)consumeSelf __attribute__((nothrow, ns_consumes_self));
++ (int)classConsume:(__attribute__((ns_consumed)) SafeMessage *)message
+    __attribute__((nothrow, objc_executor(main)));
++ (struct ModulePacket)classPacket:(struct ModulePacket)packet
+    __attribute__((nothrow, objc_executor(main)));
 @end
 )";
   auto From = Parse(Source, Cxx, Arc);
@@ -665,7 +683,8 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
                         : "#include \"objc3_runtime_services.h\"\n") + R"(
 int client_consuming(Counter *counter, SafeMessage *message) __objc3_async {
   int first=__objc3_await module_consume(message);
-  return first+__objc3_await [counter consumeSelf];
+  int second=__objc3_await [Counter classConsume:message];
+  return first+second+__objc3_await [counter consumeSelf];
 }
 )";
     Success(Compile(Consumer));
@@ -673,6 +692,10 @@ int client_consuming(Counter *counter, SafeMessage *message) __objc3_async {
   Consumer.source_text =
       std::string(Cxx ? "#include \"objc3_task.hpp\"\n"
                       : "#include \"objc3_runtime_services.h\"\n") + R"(
+struct ModulePacket client_class_packet(struct ModulePacket packet)
+    __objc3_async {
+  return __objc3_await [Counter classPacket:packet];
+}
 struct ModulePacket client_packet(Counter *counter, struct ModulePacket packet)
     __objc3_async {
   struct ModulePacket value=__objc3_await packet_entry(packet);

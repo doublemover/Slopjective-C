@@ -112,7 +112,9 @@ cancellation/allocation-failure adoption and owning message-operand snapshots.
 MRC/CF consumption and init-family entry remain gated. C++ targets must have a nonthrowing
 native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
-Ordinary C++ task-ABI isolated target entries, class/super messages, and unsupported callable
+The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
+messages, including inherited dispatch and ARC consumed parameters. Ordinary
+C++ task-ABI isolated target entries, super messages, and unsupported callable
 shapes still receive targeted diagnostics. The compiler does not automatically
 associate object allocation with actor mailboxes. These remaining obligations prevent a full actor conformance claim.
 

@@ -38913,10 +38913,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..c4fc10318
+index 000000000..919c750a8
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1113 @@
+@@ -0,0 +1,1125 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -39682,6 +39682,8 @@ index 000000000..c4fc10318
 +                                  const ObjCExecutorAttr *Executor,
 +                                  bool ActorEntry, SourceLocation Loc) {
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
++  const bool HasReceiver = Message &&
++      Message->getReceiverKind() == ObjCMessageExpr::Instance;
 +  auto *TU = S.Context.getTranslationUnitDecl();
 +  std::string Prefix =
 +      "__objc3_isolation_entry_" + std::to_string(Loc.getRawEncoding());
@@ -39694,7 +39696,7 @@ index 000000000..c4fc10318
 +  Info.ObjC3Effects.Async = true;
 +  Info.ObjC3Effects.AsyncFrame = true;
 +  SmallVector<QualType, 4> Types;
-+  if (Message)
++  if (HasReceiver)
 +    Types.push_back(Message->getInstanceReceiver()->getType());
 +  llvm::append_range(Types, Original->param_types());
 +  SmallVector<const ParmVarDecl *, 4> SourceParameters;
@@ -39706,8 +39708,8 @@ index 000000000..c4fc10318
 +  bool HasConsumed = false;
 +  for (unsigned I = 0; I != Types.size(); ++I) {
 +    const bool Consumed = S.getLangOpts().ObjCAutoRefCount &&
-+        (Message && I == 0 ? Target->hasAttr<NSConsumesSelfAttr>()
-+                          : SourceParameters[I - (Message ? 1 : 0)]
++        (HasReceiver && I == 0 ? Target->hasAttr<NSConsumesSelfAttr>()
++                              : SourceParameters[I - (HasReceiver ? 1 : 0)]
 +                                ->hasAttr<NSConsumedAttr>());
 +    if (!Consumed) continue;
 +    HasConsumed = true;
@@ -39766,7 +39768,11 @@ index 000000000..c4fc10318
 +      Arguments.push_back(Argument);
 +    }
 +    ExprResult Value;
-+    if (Message) {
++    if (Message && !HasReceiver) {
++      Value = S.ObjC().BuildClassMessageImplicit(
++          Message->getClassReceiver(), false, Loc, Message->getSelector(),
++          const_cast<ObjCMethodDecl *>(cast<ObjCMethodDecl>(Target)), Arguments);
++    } else if (Message) {
 +      ExprResult Receiver = S.DefaultLvalueConversion(Arguments.front());
 +      if (Receiver.isInvalid())
 +        return nullptr;
@@ -39915,9 +39921,14 @@ index 000000000..c4fc10318
 +    for (const auto *Parameter : cast<FunctionDecl>(Target)->parameters())
 +      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  } else {
++    const bool Instance =
++        Message->getReceiverKind() == ObjCMessageExpr::Instance;
++    const bool NamedClass =
++        Message->getReceiverKind() == ObjCMessageExpr::Class;
 +    Shape &=
-+        Message->getReceiverKind() == ObjCMessageExpr::Instance &&
-+        Message->getInstanceReceiver()->getType()->isObjCObjectPointerType() &&
++        ((Instance &&
++          Message->getInstanceReceiver()->getType()->isObjCObjectPointerType()) ||
++         (NamedClass && !Target->hasAttr<NSConsumesSelfAttr>())) &&
 +        (!Target->hasAttr<NSConsumesSelfAttr>() || getLangOpts().ObjCAutoRefCount) &&
 +        cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init;
 +    for (const auto *Parameter : cast<ObjCMethodDecl>(Target)->parameters())
@@ -39929,7 +39940,7 @@ index 000000000..c4fc10318
 +    return ExprError();
 +  }
 +  bool Failed = false;
-+  if (Message)
++  if (Message && Message->getReceiverKind() == ObjCMessageExpr::Instance)
 +    Failed |= checkTransfer(
 +        *this, transferSource(Message->getInstanceReceiver())->getType(),
 +        Message->getInstanceReceiver()->getExprLoc(), "isolated receiver",
@@ -39992,7 +40003,8 @@ index 000000000..c4fc10318
 +    Captures.push_back(Opaque);
 +    return true;
 +  };
-+  if (!Capture(Target->hasAttr<NSConsumesSelfAttr>()
++  if (Message->getReceiverKind() == ObjCMessageExpr::Instance &&
++      !Capture(Target->hasAttr<NSConsumesSelfAttr>()
 +                   ? uninitializeConsumedArgument(Message->getInstanceReceiver())
 +                   : Message->getInstanceReceiver()))
 +    return ExprError();

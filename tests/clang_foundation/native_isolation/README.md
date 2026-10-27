@@ -39,3 +39,10 @@ consuming receivers, retained self results and native-frame targets. Receiver
 and argument snapshots survive later operands clearing their original owners;
 throwing later arguments unwind the snapshots. Each successful, cancelled or
 allocation-failed entry has exact destruction and target-invocation checks.
+
+The 2.32 source additions exercise named class messages directly in the client
+translation unit, including C++ callers. Inherited dispatch preserves the
+written class; scalar, record, void, retained object and native-frame results
+observe their destination executor. Consumed object/Block class parameters use
+the ARC provider. Cancellation checks target invocation and source evaluation
+counts independently.

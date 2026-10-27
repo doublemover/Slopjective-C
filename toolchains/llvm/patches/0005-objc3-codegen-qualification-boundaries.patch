@@ -27622,10 +27622,10 @@ index 000000000..627a1dc0b
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h
 new file mode 100644
-index 000000000..cb704fe5c
+index 000000000..e39aea223
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-entry.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +#ifndef NATIVE_ISOLATION_ENTRY_H
 +#define NATIVE_ISOLATION_ENTRY_H
 +#include "native-c-async-frame.h"
@@ -27635,7 +27635,12 @@ index 000000000..cb704fe5c
 +  return __objc3_await isolated_pch_entry(value);
 +}
 +@protocol Sendable @end
-+__attribute__((objc_root_class)) @interface PCHRoot <Sendable> @end
++__attribute__((objc_root_class)) @interface PCHRoot <Sendable>
+++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
++@end
++static inline int pch_class_parent(int value) __objc3_async_frame {
++  return __objc3_await [PCHRoot classValue:value];
++}
 +actor class PCHActor : PCHRoot
 +- (int)read __attribute__((nothrow));
 +@end
@@ -27744,10 +27749,10 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..01ffc7c32
+index 000000000..50a6c876a
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,108 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC-CHECK
 +#include "Inputs/native-c-async-frame.h"
@@ -27848,12 +27853,20 @@ index 000000000..01ffc7c32
 +  return __objc3_await [message consumeSelf];
 +}
 +#endif
++
++@interface Message (ClassEntry)
+++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
++@end
++int class_parent(void) __objc3_async_frame {
++  return __objc3_await [Message classValue:source_argument()];
++}
++// CHECK-DAG: @._OBJC_REF_CLASS_Message
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 new file mode 100644
-index 000000000..f58b74678
+index 000000000..ab169e147
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,30 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c-header -emit-pch -o %t %S/Inputs/native-isolation-entry.h
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c-header -emit-pch -o %t.arc %S/Inputs/native-isolation-entry.h
@@ -27878,6 +27891,12 @@ index 000000000..f58b74678
 +// CHECK-DAG: call i32 @objc3_async_frame_start_child
 +// CHECK-DAG: call i32 @objc3_actor_get_for_object
 +// CHECK-DAG: call void @objc3_actor_release
++
++objc3_async_frame use_pch_class(int value) {
++  return pch_class_parent(value);
++}
++// CHECK-DAG: define internal void @pch_class_parent
++// CHECK-DAG: @._OBJC_REF_CLASS_PCHRoot
 diff --git a/clang/lib/CodeGen/CGException.cpp b/clang/lib/CodeGen/CGException.cpp
 index 99dfaa80b..6d07d652a 100644
 --- a/clang/lib/CodeGen/CGException.cpp

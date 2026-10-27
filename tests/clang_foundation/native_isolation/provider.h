@@ -14,6 +14,14 @@ actor class HopCounter : HopObject { int value; }
 - (int)read __attribute__((nothrow));
 - (HopPacket)transform:(HopPacket)packet __attribute__((nothrow));
 @end
+@interface HopObject (ClassEntries)
++ (int)classScalar:(int)value __attribute__((nothrow, objc_executor(main)));
++ (HopPacket)classPacket:(HopPacket)value __attribute__((nothrow, objc_executor(global)));
++ (int)classFrame:(int)value __objc3_async_frame
+    __attribute__((nothrow, objc_executor(named("native.isolation"))));
++ (HopObject *)newOnMain __attribute__((nothrow, ns_returns_retained, objc_executor(main)));
++ (void)classVoid __attribute__((nothrow, objc_executor(main)));
+@end
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,6 +54,9 @@ void hop_consumed_reset(int);
 int hop_consumed_arguments(void);
 int hop_consumed_entries(void);
 int hop_throwing_argument(void);
+int hop_class_argument(objc3_executor_t *);
+int hop_class_arguments(void);
+int hop_class_entries(void);
 #ifdef __cplusplus
 }
 #endif

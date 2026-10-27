@@ -79,6 +79,10 @@ static int drop_sender(HopObject *__strong *slot) {
 }
 
 @interface HopObject (Consumption)
++ (int)consumeClassObject:(__attribute__((ns_consumed)) HopObject *)value
+    __attribute__((nothrow, objc_executor(main)));
++ (int)consumeClassWork:(__attribute__((ns_consumed)) ConsumedWork)work
+    __attribute__((nothrow, objc_executor(main)));
 - (int)consumeAfter:(int)delta
     __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
 - (int)consumeObject:(__attribute__((ns_consumed)) HopObject *)value after:(int)delta
@@ -91,6 +95,14 @@ static int drop_sender(HopObject *__strong *slot) {
     __attribute__((ns_consumes_self, ns_returns_retained, nothrow, objc_executor(main)));
 @end
 @implementation HopObject (Consumption)
++ (int)consumeClassObject:(__attribute__((ns_consumed)) HopObject *)value {
+  consumed_on_main();
+  return [value number];
+}
++ (int)consumeClassWork:(__attribute__((ns_consumed)) ConsumedWork)work {
+  consumed_on_main();
+  return work();
+}
 - (int)consumeAfter:(int)delta {
   consumed_on_main();
   return [self number]+delta;
@@ -161,7 +173,16 @@ int hop_consumed_roundtrip(int kind, objc3_executor_t *caller)
     assert(!receiver);
     break;
   }
-  case 10: {
+  case 10:
+    result=__objc3_await [HopObject consumeClassObject:consumed_source(caller)];
+    break;
+  case 11: {
+    HopObject *object=consumed_source(caller);
+    ConsumedWork work=^{return [object number];};
+    result=__objc3_await [HopObject consumeClassWork:work];
+    break;
+  }
+  case 12: {
     HopObject *receiver=consumed_source(caller);
     result=__objc3_await [receiver consumeAfter:hop_throwing_argument()];
     break;

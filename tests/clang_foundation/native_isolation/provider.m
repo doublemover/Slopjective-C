@@ -148,3 +148,45 @@ int hop_packet_roundtrip(HopCounter *counter, objc3_executor_t *caller)
   assert(packet.weights[0]==10 && packet.weights[1]==20 && packet.weights[2]==32);
   return packet.value;
 }
+
+static int class_arguments, class_entries;
+int hop_class_argument(objc3_executor_t *caller) {
+  assert(objc3_executor_is_current(caller));
+  __atomic_fetch_add(&class_arguments,1,__ATOMIC_RELEASE);
+  return 1;
+}
+int hop_class_arguments(void) {
+  return __atomic_load_n(&class_arguments,__ATOMIC_ACQUIRE);
+}
+int hop_class_entries(void) {
+  return __atomic_load_n(&class_entries,__ATOMIC_ACQUIRE);
+}
+extern Class objc_getClass(const char *);
+@implementation HopObject (ClassEntries)
++ (int)classScalar:(int)value {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
+  return value+41;
+}
++ (HopPacket)classPacket:(HopPacket)value {
+  assert(objc3_executor_is_current(global_executor));
+  assert(self==objc_getClass("HopCounter"));
+  __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
+  value.value+=1;
+  return value;
+}
++ (int)classFrame:(int)value __objc3_async_frame {
+  assert(objc3_executor_is_current(named_executor));
+  __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
+  return value+41;
+}
++ (HopObject *)newOnMain {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
+  return [self new];
+}
++ (void)classVoid {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
+}
+@end

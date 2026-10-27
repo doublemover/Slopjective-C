@@ -60,6 +60,35 @@ static int task_packet_entry(HopCounter *counter,
   return packet.value;
 }
 #endif
+static int class_roundtrip(int kind, objc3_executor_t *destination)
+    __objc3_async_frame {
+  int result=0;
+  switch (kind) {
+  case 0:
+    result=__objc3_await [HopObject classScalar:hop_class_argument(destination)];
+    break;
+  case 1: {
+    HopPacket source={hop_class_argument(destination)+40,{10,20,30}};
+    HopPacket value=__objc3_await [HopCounter classPacket:source];
+    assert(source.value==41 && value.weights[2]==30);
+    result=value.value;
+    break;
+  }
+  case 2:
+    result=__objc3_await [HopCounter classFrame:hop_class_argument(destination)];
+    break;
+  case 3:
+    result=[(__objc3_await [HopObject newOnMain]) number];
+    break;
+  case 4:
+    __objc3_await [HopObject classVoid];
+    result=42;
+    break;
+  default: assert(!"unknown class entry case");
+  }
+  assert(objc3_executor_is_current(destination));
+  return result;
+}
 int main(void) {
   @autoreleasepool {
     assert(objc3_executor_create(1, &caller) == OBJC3_SERVICE_OK);
@@ -193,6 +222,37 @@ int main(void) {
       sched_yield();
     assert(hop_cxx_value_live() == 0);
 
+    for (int kind=0; kind!=5; ++kind) {
+      int entries_before=hop_class_entries();
+      int arguments_before=hop_class_arguments();
+      int destroyed_before=hop_destroyed();
+      frame=class_roundtrip(kind, caller);
+      type=frame.result_type;
+      task=start(&frame);
+      assert(finish(task).kind==OBJC3_COMPLETION_SUCCESS);
+      result=0;
+      assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK);
+      assert(result==42 && hop_class_entries()==entries_before+1);
+      assert(hop_class_arguments()==arguments_before+(kind<3));
+      objc3_task_release(task);
+      int expected_destroyed=destroyed_before+(kind==3);
+      for (unsigned step=0; step!=1000000 && hop_destroyed()!=expected_destroyed; ++step)
+        sched_yield();
+      assert(hop_destroyed()==expected_destroyed);
+
+      entries_before=hop_class_entries();
+      arguments_before=hop_class_arguments();
+      frame=class_roundtrip(kind, caller);
+      task=start(&frame);
+      assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK && count==1);
+      objc3_task_request_cancel(task);
+      assert(finish(task).kind==OBJC3_COMPLETION_CANCELLED);
+      assert(hop_class_entries()==entries_before);
+      assert(hop_class_arguments()==arguments_before+(kind<3));
+      objc3_task_release(task);
+      assert(hop_destroyed()==expected_destroyed);
+    }
+
     frame = hop_cxx_actor_roundtrip(counter, caller);
     type = frame.result_type;
     task = start(&frame);
@@ -206,7 +266,7 @@ int main(void) {
       sched_yield();
     assert(hop_cxx_value_live() == 0 && hop_cxx_packet_live() == 0);
 
-    for (int kind = 0; kind != 10; ++kind) {
+    for (int kind = 0; kind != 12; ++kind) {
       int expected_objects = (kind == 4 || kind == 8) ? 2 : 1;
       int destroyed_before = hop_destroyed();
       hop_consumed_reset(0);
@@ -257,7 +317,7 @@ int main(void) {
     }
     int snapshot_destroyed_before = hop_destroyed();
     hop_consumed_reset(0);
-    frame = hop_consumed_roundtrip(10, caller);
+    frame = hop_consumed_roundtrip(12, caller);
     task = start(&frame);
     assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
     assert(hop_consumed_arguments() == 1 && hop_consumed_entries() == 0);

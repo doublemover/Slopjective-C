@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 31,
+        "minor": 32,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",

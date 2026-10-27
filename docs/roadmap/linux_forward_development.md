@@ -589,3 +589,10 @@ awaited entries. Owning receiver/argument snapshots preserve message evaluation
 when later operands clear their original owners, with balanced exceptional
 cleanup. MRC/CF consumption, init-family entry, class/super crossings and ordinary
 C++ task-ABI targets remain open; accepted SDK delivery remains 2.29.0.
+
+The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
+messages at qualified executor entries, preserving inherited class dispatch,
+retained results and consumed arguments. Focused source/PCH runtime and native
+frontend/codegen checks pass; combined validation and SDK delivery follow the
+implementation batch. Super messages and unqualified dynamic Class receivers
+remain separate work.
