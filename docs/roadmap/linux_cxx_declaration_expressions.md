@@ -25,3 +25,6 @@ bodies, dependent templates, unnamed nested types and broader ownership/profile
 contracts remain separate work. The accepted SDK remains
 [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad source,
 sanitizer and installed/archive qualification are deferred for the combined batch.
+
+Focused source evidence is recorded in the
+[declaration expression receipt](../support/linux_cxx_declaration_expressions_progress.json).
