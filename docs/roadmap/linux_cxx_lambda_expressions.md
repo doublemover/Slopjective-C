@@ -26,3 +26,6 @@ complete borrowed/MRC capture or language/profile conformance. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
 combined source batch.
+
+Focused checks and the complete native compiler batch are recorded in the
+[lambda progress receipt](../support/linux_cxx_lambda_expressions_progress.json).
