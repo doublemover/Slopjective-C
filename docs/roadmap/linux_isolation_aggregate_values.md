@@ -35,3 +35,8 @@ class/super message entry, automatic actor association or full profile
 conformance. The accepted SDK remains
 [2.29.0](../support/linux_source_batch_2_29_acceptance.json) while the next source
 implementation batch is developed and validated.
+
+The [focused progress receipt](../support/linux_isolation_aggregate_values_progress.json)
+records the compiler/tool build, two native codegen/PCH regressions, the frontend
+contract suite and 48 configurations / 312 commands in each normal and ASan/UBSan
+source/PCH matrix. Broader batch validation and SDK delivery remain separate.
