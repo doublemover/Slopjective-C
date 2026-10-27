@@ -42,6 +42,15 @@ suites**, **15 tooling tests** and **24 source-free package configurations /
 cases remain unsupported. These source checks include mutable and record-captured
 consuming closure publication; SDK 2.33 remains the accepted archive.
 
+The [current operand/fill source receipt](../support/linux_operand_fill_ownership_progress.json)
+records **400 compiler regressions**, **190 native unit tests**, all **33 frontend
+suites** and **331 tooling tests** (three Windows/PowerShell checks skipped).
+Normal, ASan/UBSan and TSan each pass the complete five-family source/PCH matrix:
+**168 configurations / 1,158 commands per mode**. Source-free packages pass
+**24 configurations / 96 commands** across normal, eager-import and ASan/UBSan
+execution, including builtin bodies, complete fills and counted captured releases.
+SDK 2.33 remains the accepted archive; installed delivery follows this batch.
+
 ## Known memory-fill ownership effects
 
 The [System 2.13.0 source span](linux_borrowed_memory_fills.md) recognizes known

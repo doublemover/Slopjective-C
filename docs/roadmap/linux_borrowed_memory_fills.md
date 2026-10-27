@@ -31,3 +31,8 @@ contexts. Ordinary libc declarations, unknown lookalike names and user-provided
 definitions retain the existing export/dependency checks. Object-emitting import
 witnesses cover both admitted and rejected dependencies; source-free packages
 execute complete fills and counted record-captured consumption.
+
+The [combined operand/fill receipt](../support/linux_operand_fill_ownership_progress.json)
+records completed native/frontend/tooling checks, all three complete runtime
+matrices and focused source-free package execution. Installed SDK delivery is
+a separate checkpoint.

@@ -30,3 +30,8 @@ batched after implementation. SDK 2.33 remains the accepted archive.
 This span does not admit MRC/CF consumed crossings, init-family entry, dynamic
 Class qualification or automatic actor association. Runtime/frame ABI layouts
 and full profile conformance claims are unchanged.
+
+The [combined operand/fill receipt](../support/linux_operand_fill_ownership_progress.json)
+records completed native/frontend/tooling checks, all three complete runtime
+matrices and focused source-free package execution. Installed SDK delivery is
+a separate checkpoint.
