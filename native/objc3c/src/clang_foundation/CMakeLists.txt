@@ -28,6 +28,10 @@ set(_runtime_services_header "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_runtime_services_header}")
 file(SHA256 "${_runtime_services_header}" _runtime_services_header_sha256)
 file(READ "${_runtime_services_header}" _runtime_services_header_source)
+set(_runtime_task_header "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_runtime_task_header}")
+file(SHA256 "${_runtime_task_header}" _runtime_task_header_sha256)
+file(READ "${_runtime_task_header}" _runtime_task_header_source)
 # SDK module imports are header imports, not unpublished facade dependencies.
 # Bind the allowed names to the exact public headers in the library inventory.
 set(_stdlib_inventory "${_objc3_repo}/stdlib/module_inventory.json")

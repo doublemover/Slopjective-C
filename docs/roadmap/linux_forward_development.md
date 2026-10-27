@@ -19,18 +19,30 @@ cases unsupported) and **179 native unit tests**. This delivery qualifies that e
 foundation and passes all **33 frontend suites**, nine GNUstep client tests,
 37 installed consumer commands, 13 native integration nodes and all **33 installed
 SDK gates**. The installed five-family matrix passes **168 configurations and
-966 commands**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-da2a9f68497e-00b75dc3`.
+1,110 commands**. Compiler source identity is
+`llvmorg-23.1.3-0d261d1ca552-e3f042ad7bc3-00b75dc3`.
 
-The [current acceptance receipt](../support/linux_source_batch_2_29_acceptance.json)
+The [current acceptance receipt](../support/linux_source_batch_2_33_acceptance.json)
 binds the exact archive, compiler/runtime identities and qualification reports.
-That archive passes focused C++ package qualification on fresh **Debian 13** and
-**Ubuntu 26.04** as ordinary users, including installation, source-free consumers,
-relocation, embedding and debugger audits. Both owned containers are removed.
-The [combined source receipt](../support/linux_source_batch_2_24_progress.json)
-and later focused capture/local-type receipts retain source/PCH and sanitizer
-scope; the fresh-container scope is explicitly bounded to affected C++ packages.
+That archive passes the native-feature suite on fresh **Debian 13** and
+**Ubuntu 26.04** as ordinary users, including the complete five-family matrix,
+expanded key-path packages, relocation/reinstall, embedding and debugger audits.
+Both owned containers are removed. The
+[combined source receipt](../support/linux_source_batch_2_33_progress.json)
+records the complete normal, ASan/UBSan and TSan matrices, each with
+168 configurations / 1,110 commands, plus 287 tooling tests.
+Earlier milestone sections retain their historical source-checkpoint status;
+the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
+
+## Published async definitions
+
+The [2.34.0 source span](linux_published_async_bodies.md) publishes concrete
+inline native-frame and ordinary C++ task bodies around logical async calls and
+isolation entries. Source projection retains written dependencies, native import
+preserves coroutine/template origins, and backend registration supplies imported
+helper definitions. Required async-definition semantics and exact task-header
+provenance bound the contract. SDK 2.33 remains the accepted installation.
 
 Earlier bounded implementation and qualification checkpoints follow.
 
@@ -420,7 +432,7 @@ milestone; earlier tooling coverage does not establish new feature coverage.
    support. Repeat the fresh-distribution archive checks for each future cutover.
 
 This is a hard cutover project. Native extension ABI 21 and semantic interface
-schema 2.1 require explicit physical async ABI identity; old interfaces/packages
+schema 2.2 require explicit physical async ABI and export-root identity; old interfaces/packages
 must be rebuilt. Source, headers, objects, PCH, interfaces, packages and SDK
 artifacts must agree when a
 contract changes. Broad source-language/ownership projections remain gated until

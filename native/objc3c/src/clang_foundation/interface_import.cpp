@@ -14,6 +14,7 @@
 #include "clang_foundation/interface_validation.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/ASTImporterSharedState.h"
 #include "clang/AST/Decl.h"
@@ -73,6 +74,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxBlockExpressionSemantic,
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
+    kCxxAsyncDefinitionSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -171,6 +173,40 @@ public:
     return true;
   }
   std::set<clang::NamedDecl *> Declarations;
+};
+
+// Native header templates may already have concrete definitions in the
+// consumer. Only newly imported executable definitions need backend delivery.
+class FunctionDefinitionSnapshot final
+    : public clang::RecursiveASTVisitor<FunctionDefinitionSnapshot> {
+public:
+  bool shouldVisitImplicitCode() const { return true; }
+  bool shouldVisitTemplateInstantiations() const { return true; }
+  bool VisitFunctionDecl(clang::FunctionDecl *function) {
+    if (function->doesThisDeclarationHaveABody())
+      Definitions.insert(function->getCanonicalDecl());
+    return true;
+  }
+  std::set<const clang::FunctionDecl *> Definitions;
+};
+
+class DefinitionTrackingImporter final : public clang::ASTImporter {
+public:
+  using clang::ASTImporter::ASTImporter;
+  const std::set<const clang::FunctionDecl *> *Existing = nullptr;
+  std::vector<clang::NamedDecl *> Definitions;
+  void Imported(clang::Decl *from, clang::Decl *to) override {
+    auto *function=llvm::dyn_cast<clang::FunctionDecl>(to);
+    const auto *source=llvm::dyn_cast<clang::FunctionDecl>(from);
+    if (function && source && source->doesThisDeclarationHaveABody() &&
+        function->doesThisDeclarationHaveABody() &&
+        !function->isDependentContext() &&
+        (function->isInlined() ||
+         function->getTemplateSpecializationKind()==clang::TSK_ImplicitInstantiation ||
+         function->hasAttr<clang::ObjC3IsolationThunkAttr>()) &&
+        !Existing->count(function->getCanonicalDecl()))
+      Definitions.push_back(function);
+  }
 };
 
 bool CheckExportCollisions(
@@ -426,7 +462,9 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     }
     if (!diagnostics.empty()) return nullptr;
     auto ast_arguments = target.ast_arguments;
-    AddRuntimeInterfaceFiles(virtual_files, ast_arguments);
+    AddRuntimeInterfaceFiles(virtual_files, ast_arguments,
+        module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
+            std::string::npos);
     ast_arguments.push_back("-iquote");
     ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
     module.ast = clang::tooling::buildASTFromCodeWithArgs(
@@ -566,7 +604,10 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         *target_context.getTranslationUnitDecl());
   NamedDeclarationSnapshot preexisting;
   preexisting.TraverseDecl(target_context.getTranslationUnitDecl());
+  FunctionDefinitionSnapshot existing_definitions;
+  existing_definitions.TraverseDecl(target_context.getTranslationUnitDecl());
   std::set<std::string> recorded_ids;
+  std::vector<clang::NamedDecl *> auxiliary_definitions;
   std::vector<std::unique_ptr<clang::ASTImporter>> importers;
   for (auto index : impl_->import_order) {
     auto &module = impl_->modules[index];
@@ -598,10 +639,11 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     std::set<std::string> expected_ids;
     for (const auto &identity : module.sidecar.declarations)
       expected_ids.insert(identity.stable_id);
-    auto importer = std::make_unique<clang::ASTImporter>(
+    auto importer = std::make_unique<DefinitionTrackingImporter>(
         target_context, target_file_manager,
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
+    importer->Existing=&existing_definitions.Definitions;
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.
@@ -620,7 +662,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       if (!imported) {
         Add(report.diagnostics, "O3IFC142",
             ModuleImportFailure(module.sidecar.module,
-                llvm::Twine("could not import an exported declaration: ") +
+                llvm::Twine("could not import exported declaration '") +
+                    expected.qualified_name + "': " +
                     llvm::toString(imported.takeError())), expected.stable_id);
         return report;
       }
@@ -666,6 +709,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       }
     }
     report.dependency_order.push_back(module.sidecar.module.canonical_name);
+    auxiliary_definitions.insert(auxiliary_definitions.end(),
+        importer->Definitions.begin(),importer->Definitions.end());
     importers.push_back(std::move(importer));
   }
   // Dependencies required only to spell a visible provider's public types
@@ -755,10 +800,24 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       [&](const auto *left, const auto *right) {
         return manager.isBeforeInTranslationUnit(left->getLocation(), right->getLocation());
       });
-  report.inline_definitions.erase(std::unique(report.inline_definitions.begin(),
-      report.inline_definitions.end()), report.inline_definitions.end());
+  // Header/template instantiations can have independent SourceManager roots.
+  // Keep their dependency import order instead of comparing unrelated roots.
+  report.inline_definitions.insert(report.inline_definitions.begin(),
+      auxiliary_definitions.begin(),auxiliary_definitions.end());
+  std::set<const clang::Decl *> registered_definitions;
+  std::erase_if(report.inline_definitions, [&](const auto *declaration) {
+    return !registered_definitions.insert(declaration->getCanonicalDecl()).second;
+  });
   report.success = true;
   return report;
+}
+
+bool InterfaceImportSession::RequiresTaskHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
+           std::string::npos;
+  });
 }
 
 bool InterfaceImportSession::RequiresRuntimeHeader() const {

@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 33,
+        "minor": 34,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -158,7 +158,8 @@
         "Awaited executor/actor aggregate entry with native frame value storage, ARC-managed record fields and move-only C++ parameter forwarding (source)",
         "ARC consuming isolated parameters and receivers with consumed function-type identity, adopting ramp parameters and independent frame ownership (source)",
         "Named class messages at awaited executor entries, preserving inherited dispatch, native-frame/retained results and ARC consumed object/Block parameters (source)",
-        "Awaited instance/class/category super messages with lexical superclass lookup, independently captured self, actor mailbox entry and ARC consuming receivers (source)"
+        "Awaited instance/class/category super messages with lexical superclass lookup, independently captured self, actor mailbox entry and ARC consuming receivers (source)",
+        "Published native-frame and C++ task bodies around logical awaits/isolation entries with source dependency identity, exact task-header provenance, imported coroutine/template origins and concrete helper backend registration (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

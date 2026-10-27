@@ -113,7 +113,11 @@
     "native_published_local_type",
     "native_local_constant",
     "native_local_lambda",
-    "native_local_type_bridge"
+    "native_local_type_bridge",
+    "native_isolated_entry",
+    "native_published_isolation_frame",
+    "native_published_isolation_task",
+    "native_published_task_await"
   ],
   "dependencies": []
 }

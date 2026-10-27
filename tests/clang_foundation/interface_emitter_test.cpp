@@ -367,6 +367,94 @@ void TestCAsyncPhysicalABIRoundTrips() {
   }
 }
 
+void TestPublishedIsolationBodies() {
+  std::vector<std::string> args={"-x", "objective-c++", "-std=c++20",
+      "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+      "--target=x86_64-unknown-linux-gnu"};
+  clang::tooling::FileContentMappings files;
+  AddRuntimeInterfaceFiles(files,args);
+  const std::string source=R"(
+#include <objc3c/runtime/objc3_runtime_services.h>
+int isolated_entry(int value) noexcept __attribute__((objc_executor(main)));
+inline int published_entry(int value) __objc3_async_frame {
+  return __objc3_await isolated_entry(value);
+}
+)";
+  auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,
+      "published-isolation.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(),files);
+  assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+  auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.isolation.bodies","test");
+  for (const auto &diagnostic:emitted.diagnostics)
+    std::fprintf(stderr,"%s: %s\n",diagnostic.code.c_str(),
+                 diagnostic.message.c_str());
+  assert(emitted.success);
+  assert(emitted.source_bytes.find("__objc3_isolation_entry_")==std::string::npos);
+  assert(emitted.source_bytes.find("__objc3_await isolated_entry")!=std::string::npos);
+  const std::vector<llvm::StringRef> supported={
+      "objc3.cxx-data-interfaces.v1", "objc3.canonical-function-effects.v1",
+      "objc3.isolation-contracts.v1", "objc3.async-entry-abi.v1",
+      kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,RuntimeInterfaceSemantic()};
+  auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,
+                                              emitted.source_bytes,supported);
+  assert(decoded);
+  std::erase(decoded->required_semantics,kCxxAsyncDefinitionSemantic);
+  auto stripped=EncodeSemanticInterfaceSidecar(*decoded,supported);
+  assert(!stripped);
+  llvm::consumeError(stripped.takeError());
+  auto round=clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes,args,
+      "reconstructed-isolation.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(),files);
+  assert(round && !round->getDiagnostics().hasErrorOccurred());
+  auto regenerated=EmitSemanticInterface(round->getASTContext(),"fixture.isolation.bodies","test");
+  assert(regenerated.success && regenerated.identity.semantic_fingerprint==
+         emitted.identity.semantic_fingerprint);
+  auto private_dependency=EmitSemanticInterface(ast->getASTContext(),
+      "fixture.isolation.bodies","test",{},{},{},{"published_entry"});
+  assert(!private_dependency.success && std::any_of(
+      private_dependency.diagnostics.begin(),private_dependency.diagnostics.end(),
+      [](const auto &diagnostic) { return diagnostic.code=="O3IFC156"; }));
+  std::string changed=source;
+  changed.replace(changed.find("isolated_entry(value)"),
+                  std::string("isolated_entry(value)").size(),
+                  "isolated_entry(value + 1)");
+  auto changed_ast=clang::tooling::buildASTFromCodeWithArgs(changed,args,
+      "changed-isolation.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),
+      clang::tooling::getClangStripDependencyFileAdjuster(),files);
+  assert(changed_ast && !changed_ast->getDiagnostics().hasErrorOccurred());
+  auto changed_interface=EmitSemanticInterface(changed_ast->getASTContext(),
+      "fixture.isolation.bodies","test");
+  assert(changed_interface.success && changed_interface.identity.semantic_fingerprint!=
+         emitted.identity.semantic_fingerprint);
+
+  auto task_args=args;
+  task_args.push_back("-fcoro-aligned-allocation");
+  task_args.push_back(std::string("-resource-dir=")+OBJC3_INTERFACE_TEST_RESOURCE_DIR);
+  clang::tooling::FileContentMappings task_files;
+  AddRuntimeInterfaceFiles(task_files,task_args,true);
+  const std::string task_source=R"(
+#include <objc3c/runtime/objc3_task.hpp>
+inline int published_task(int value) __objc3_async { return value; }
+)";
+  for (bool changed_runtime : {false,true}) {
+    auto inputs=task_files;
+    if (changed_runtime)
+      for (auto &file : inputs)
+        if (llvm::StringRef(file.first).ends_with("/objc3_task.hpp"))
+          file.second+="\n// Changed runtime contract.\n";
+    auto task_ast=clang::tooling::buildASTFromCodeWithArgs(task_source,task_args,
+        "published-task.mm","clang-tool",std::make_shared<clang::PCHContainerOperations>(),
+        clang::tooling::getClangStripDependencyFileAdjuster(),inputs);
+    assert(task_ast && !task_ast->getDiagnostics().hasErrorOccurred());
+    auto task_interface=EmitSemanticInterface(task_ast->getASTContext(),
+        "fixture.task.body","test");
+    assert(task_interface.success!=changed_runtime);
+    if (changed_runtime)
+      assert(std::any_of(task_interface.diagnostics.begin(),task_interface.diagnostics.end(),
+          [](const auto &diagnostic) { return diagnostic.code=="O3IFC112"; }));
+  }
+}
+
 void TestCAsyncPhysicalABIImportBoundaries() {
   // Frame ABI is a property of the callable type, not of the destination AST.
   // A C++ consumer simultaneously owns task-returning and frame-returning
@@ -1917,6 +2005,7 @@ int main() {
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIRoundTrips();
   TestCAsyncPhysicalABIImportBoundaries();
+  TestPublishedIsolationBodies();
   TestObjectiveCContainerRoundTrips();
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();

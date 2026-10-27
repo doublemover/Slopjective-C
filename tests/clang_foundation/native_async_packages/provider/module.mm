@@ -808,3 +808,22 @@ inline int native_published_plain_native_capture(int value) {
   return null_data==(int *)0 && null_function==(NativeCaptureFunction)0
       ? moved() : -5;
 }
+
+int native_isolated_entry(int value) noexcept __attribute__((objc_executor(main)));
+int native_isolated_entry(int value) noexcept {
+  objc3_executor_t *destination=nullptr;
+  if (objc3_executor_get_main(&destination)!=OBJC3_SERVICE_OK ||
+      !objc3_executor_is_current(destination)) __builtin_trap();
+  objc3_executor_release(destination);
+  return value+2;
+}
+inline int native_published_isolation_frame(int value) __objc3_async_frame {
+  return __objc3_await native_isolated_entry(value);
+}
+inline int native_published_isolation_task(int value) __objc3_async {
+  return __objc3_await native_isolated_entry(value);
+}
+
+inline int native_published_task_await(int value) __objc3_async {
+  return __objc3_await native_module_value(value);
+}

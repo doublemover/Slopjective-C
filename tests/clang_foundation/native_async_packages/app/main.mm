@@ -275,6 +275,24 @@ int main() {
   if (objc3_executor_create(1, &executor) != OBJC3_SERVICE_OK)
     return 1;
   {
+    objc3_executor_t *main_destination=nullptr;
+    if (objc3_executor_get_main(&main_destination)!=OBJC3_SERVICE_OK) return 96;
+    auto frame=__objc3_async_from_frame<int>(native_published_isolation_frame(40)).start(executor);
+    auto task=native_published_isolation_task(40).start(executor);
+    for (unsigned step=0;step!=1000;++step) {
+      uint32_t count=0;
+      if (objc3_executor_pump(main_destination,32,&count)!=OBJC3_SERVICE_OK ||
+          objc3_executor_pump(executor,32,&count)!=OBJC3_SERVICE_OK) return 97;
+      objc3_completion first{sizeof(first),OBJC3_SERVICE_ABI_VERSION};
+      objc3_completion second{sizeof(second),OBJC3_SERVICE_ABI_VERSION};
+      if (objc3_task_get_completion(frame.native_handle(),&first)==OBJC3_SERVICE_OK &&
+          objc3_task_get_completion(task.native_handle(),&second)==OBJC3_SERVICE_OK) break;
+    }
+    if (frame.result()!=42 || task.result()!=42) return 98;
+    objc3_executor_release(main_destination);
+  }
+
+  {
     auto frame=__objc3_async_from_frame<int>(NativeDefaults::frame()).start(executor);
     if (NativeDefaults::evaluations!=6) return 70;
     uint32_t completed=0;
@@ -341,6 +359,10 @@ int main() {
       executed != 2 || pending.result() != 42)
     return 2;
   pending = {};
+  auto published_task=native_published_task_await(41).start(executor);
+  if (objc3_executor_pump(executor, UINT32_MAX, &executed)!=OBJC3_SERVICE_OK ||
+      published_task.result()!=42) return 101;
+  published_task={};
   auto scoped = native_module_scoped(41).start(executor);
   if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
       scoped.result() != 42)

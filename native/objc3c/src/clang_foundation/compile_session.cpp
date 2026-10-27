@@ -101,6 +101,8 @@ class Diagnostics final : public clang::DiagnosticConsumer {
 // file lets the parser finish the header and its linkage scope before importing.
 constexpr const char *kEagerRuntimeHeader =
     "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerTaskHeader =
+    "/__objc3_import_runtime/objc3_task.hpp";
 constexpr const char *kEagerRuntimePrelude =
     "/__objc3_import_runtime/prelude.h";
 constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
@@ -478,9 +480,13 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       auto &preprocessor = invocation->getPreprocessorOpts();
       preprocessor.addRemappedFile(kEagerRuntimeHeader,
           llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(), kEagerRuntimeHeader).release());
+      const bool needs_task=import_session_->RequiresTaskHeader();
+      if (needs_task)
+        preprocessor.addRemappedFile(kEagerTaskHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(), kEagerTaskHeader).release());
       preprocessor.addRemappedFile(kEagerRuntimePrelude,
           llvm::MemoryBuffer::getMemBufferCopy(
-              std::string("#include \"") + kEagerRuntimeHeader + "\"\n" +
+              std::string("#include \"") + (needs_task ? kEagerTaskHeader : kEagerRuntimeHeader) + "\"\n" +
               "typedef void " + kEagerRuntimeReady + ";\n", kEagerRuntimePrelude).release());
       preprocessor.Includes.insert(preprocessor.Includes.begin(), kEagerRuntimePrelude);
     }

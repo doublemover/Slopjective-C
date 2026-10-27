@@ -29,16 +29,17 @@ checks consumer-only code/data emission without runtime-bearing declarations.
 Subsequent source milestones add [defaulted comparisons](linux_cxx_defaulted_comparisons.md),
 [out-of-line defaulting](linux_cxx_out_of_line_defaulting.md) and
 [local non-generic lambdas](linux_cxx_lambda_expressions.md). Dependent templates,
-local classes and generic lambdas remain separate work.
+generic lambdas remain separate work. [Named local classes and enums](linux_cxx_local_types.md)
+are modeled at source milestone 2.29.0.
 [Published Block/statement expressions](linux_cxx_local_expressions.md) are
 modeled at source milestone 2.24.0. [Thread-local data](linux_cxx_thread_local.md) is modeled at source milestone
 2.22.0.
 The [2.16.0 header coordination milestone](linux_eager_semantic_imports.md)
 subsequently enables the full runtime fixture through eager imports as well.
-This does not claim broader ownership or profile conformance. The accepted SDK
-remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
-source/sanitizer matrices and installed/archive delivery remain deferred for the
-combined implementation batch.
+This does not claim broader ownership or profile conformance. The [2.33.0 acceptance receipt](../support/linux_source_batch_2_33_acceptance.json)
+records the combined source/sanitizer matrices and installed/archive delivery.
+[Published async bodies](linux_published_async_bodies.md) are the next source
+extension and are qualified separately.
 
 Focused source evidence is recorded in the
 [definition milestone receipt](../support/linux_cxx_definitions_progress.json).

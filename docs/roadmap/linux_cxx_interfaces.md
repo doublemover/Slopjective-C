@@ -137,3 +137,7 @@ The [2.29.0 source milestone](linux_cxx_local_types.md) retains concrete named
 local classes and enums, nested members and executable lifecycles under required
 `objc3.cxx-local-types.v1` semantics. Lexical type/member identities survive
 provider relocation and interface regeneration.
+
+[Published async bodies](linux_published_async_bodies.md) extend concrete inline
+definitions to source-projected native awaits and isolated entry calls in source
+2.34.0. The current installed SDK remains 2.33.0 while this span is qualified.

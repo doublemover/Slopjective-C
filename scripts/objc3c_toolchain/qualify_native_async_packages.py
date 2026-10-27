@@ -133,6 +133,16 @@ def check_cpp_metadata(metadata):
     if not has_checked_async(objc_methods):
         raise ValueError('native async interface lost Objective-C method effects')
     names = {row['qualified_name']: row for row in metadata['declarations']}
+    if 'objc3.cxx-async-definitions.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its async-definition capability')
+    for name, abi in (('native_published_isolation_frame', 'c-frame-v1'),
+                      ('native_published_isolation_task', 'cxx-task-v1'),
+                      ('native_published_task_await', 'cxx-task-v1')):
+        declaration = names.get(name, {})
+        if (not has_async(declaration) or
+                ';cxx-async-definitions:v1;' not in declaration.get('canonical_type_identity', '') or
+                abi not in declaration.get('effects', {}).get('async_abi_identity', '')):
+            raise ValueError('published async body lost its contract: ' + name)
     scope = names.get('native_module_scoped', {})
     scope_effects = scope.get('effects', {})
     if (not has_async(scope) or

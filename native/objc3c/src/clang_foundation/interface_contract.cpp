@@ -415,6 +415,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxStatementExpressionSemantic) != sidecar.required_semantics.end();
   if (has_statements != statements_capability)
     Add(result, "O3IFC042", "C++ statements expression identity and required capability must agree", expected.canonical_name);
+  const bool has_async_definitions = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAsyncDefinitionIdentity);
+  const bool async_definition_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
+  if (has_async_definitions != async_definition_capability)
+    Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
   const bool has_local_types = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLocalTypeIdentity);
   const bool local_types_capability = std::find(

@@ -52,6 +52,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-block-expressions.v1",
     "objc3.cxx-statement-expressions.v1",
     "objc3.cxx-local-types.v1",
+    "objc3.cxx-async-definitions.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

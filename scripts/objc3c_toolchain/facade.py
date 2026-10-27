@@ -10,7 +10,8 @@ def facade_identity(repo: Path) -> dict:
     repo = repo.resolve()
     root = repo / 'native/objc3c'
     files = {root / 'CMakeLists.txt', repo / 'scripts/objc3c_toolchain/facade.py',
-             root / 'src/runtime/public/objc3_runtime_services.h'}
+             root / 'src/runtime/public/objc3_runtime_services.h',
+             root / 'src/runtime/public/objc3_task.hpp'}
     library = repo / 'stdlib'
     catalog = library / 'module_inventory.json'
     files.add(catalog)

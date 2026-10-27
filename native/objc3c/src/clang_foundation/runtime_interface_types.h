@@ -19,6 +19,8 @@ bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
                                  const clang::ASTContext &context);
 llvm::StringRef RuntimeInterfaceSemantic();
 llvm::StringRef RuntimeInterfaceHeaderSource();
+llvm::StringRef RuntimeTaskHeaderSource();
+bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context);
 
 // System modules from the canonical SDK library inventory need no facade
 // dependency artifact. Public signature types still undergo normal dependency
@@ -32,6 +34,6 @@ bool IsQualifiedStandardLibraryImport(const clang::ImportDecl *declaration,
 // target compiler's builtin types, rather than the host libc's headers.
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
-    std::vector<std::string> &arguments);
+    std::vector<std::string> &arguments, bool cxx_task_definitions = false);
 
 } // namespace objc3::clang_foundation

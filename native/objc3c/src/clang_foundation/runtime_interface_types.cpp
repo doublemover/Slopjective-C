@@ -9,6 +9,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/CanonicalType.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/SourceManager.h"
@@ -144,13 +145,46 @@ llvm::StringRef RuntimeInterfaceHeaderSource() {
   return runtime_interface::kHeaderSource;
 }
 
+llvm::StringRef RuntimeTaskHeaderSource() {
+  return runtime_interface::kTaskHeaderSource;
+}
+
+bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context) {
+  const auto &source = context.getSourceManager();
+  for (const auto *declaration : context.getTranslationUnitDecl()->lookup(
+           &context.Idents.get("__objc3_async_task"))) {
+    if (!llvm::isa<clang::TypeAliasTemplateDecl>(declaration))
+      continue;
+    const auto location = source.getSpellingLoc(declaration->getLocation());
+    if (location.isInvalid())
+      continue;
+    bool invalid = false;
+    const auto bytes = source.getBufferData(source.getFileID(location), &invalid);
+    if (!invalid && ComputeInterfaceSourceSha256(bytes) ==
+                        runtime_interface::kTaskHeaderSha256)
+      return true;
+  }
+  return false;
+}
+
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
-    std::vector<std::string> &arguments) {
+    std::vector<std::string> &arguments, bool cxx_task_definitions) {
   constexpr const char *root = "/__objc3_canonical_runtime";
   files.emplace_back(std::string(root) +
                          "/objc3c/runtime/objc3_runtime_services.h",
                      runtime_interface::kHeaderSource);
+  for (const auto &file : files)
+    cxx_task_definitions |= file.second.find(
+        "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos;
+  if (cxx_task_definitions) {
+    files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_task.hpp",
+                       runtime_interface::kTaskHeaderSource);
+    // The complete C++ bridge needs its standard-library headers, rather than
+    // the minimal C-only integer/size typedef projection below.
+    arguments.insert(arguments.end(), {"-I", root});
+    return;
+  }
   files.emplace_back(std::string(root) + "/stddef.h",
                      "#ifndef OBJC3_CANONICAL_STDDEF_H\n"
                      "#define OBJC3_CANONICAL_STDDEF_H\n"
