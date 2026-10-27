@@ -278,6 +278,19 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
     Expect(Request(Root,ConsumedHeader+
         "struct Sink{Sink(id owner __attribute__((ns_consumed)));};void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);Sink sink(o);use_noescape(p);}",
         Language,Standard,ARC),ARC,ARC ? "" : "borrowed pointer escapes");
+    const std::string ExceptionHeader=ConsumedHeader+
+        "void consume_noexcept(id owner __attribute__((ns_consumed)),int unused) noexcept;\n"
+        "int argument_that_may_throw();\n";
+    auto BeforeEntry=Request(Root,ExceptionHeader+
+        "void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);try{consume_noexcept(o,argument_that_may_throw());}catch(...){use_noescape(p);}}",
+        Language,Standard,ARC);
+    BeforeEntry.arguments.push_back("-fexceptions");
+    Expect(BeforeEntry,true);
+    auto AfterEntry=Request(Root,ExceptionHeader+
+        "void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);try{consume_claim(o,0);}catch(...){use_noescape(p);}}",
+        Language,Standard,ARC);
+    AfterEntry.arguments.push_back("-fexceptions");
+    Expect(AfterEntry,ARC,ARC ? "" : "borrowed pointer escapes");
   }
   const std::string SelfHeader=Header+
       "__attribute__((objc_root_class)) @interface BorrowedSelf\n"
