@@ -9131,7 +9131,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..a11102444 100644
+index 5d4c5ff7d..38dde1511 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -9456,7 +9456,7 @@ index 5d4c5ff7d..a11102444 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -16922,6 +17132,209 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -16922,6 +17132,210 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -9574,7 +9574,8 @@ index 5d4c5ff7d..a11102444 100644
 +      CarrierMove =
 +          (getObjC3CarrierRuntimeEncoding(Context, ValueType, Encoding) ||
 +           (getLangOpts().CPlusPlus && hasObjC3CarrierCppPayload(ValueType) &&
-+            !hasObjC3CarrierManagedPayload(ValueType))) &&
++            (!hasObjC3CarrierManagedPayload(ValueType) ||
++             getLangOpts().ObjCAutoRefCount))) &&
 +          isMutableObjC3CaptureCarrierTree(Context, ValueType);
 +      if (!CarrierMove) {
 +        Reject("carrier move Block capture requires a qualified carrier "
@@ -9666,7 +9667,7 @@ index 5d4c5ff7d..a11102444 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17460,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17461,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -9711,7 +9712,7 @@ index 5d4c5ff7d..a11102444 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17505,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17506,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -9721,7 +9722,7 @@ index 5d4c5ff7d..a11102444 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,9 +17588,39 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,9 +17589,41 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -9735,7 +9736,9 @@ index 5d4c5ff7d..a11102444 100644
 -      if (auto *Record = Cap.getCaptureType()->getAsCXXRecordDecl()) {
 +      QualType CaptureType = Cap.getCaptureType();
 +      if (hasObjC3CarrierCppPayload(CaptureType) &&
-+          !hasObjC3CarrierManagedPayload(CaptureType)) {
++          (!hasObjC3CarrierManagedPayload(CaptureType) ||
++           (getLangOpts().ObjCAutoRefCount &&
++            Explicit != BSI->ObjC3ExplicitCaptures.end()))) {
 +        // Keep independent selected-arm recipes: creation may move, but every
 +        // later heap copy must initialize from the Block's const field.
 +        EnterExpressionEvaluationContext EvalContext(
@@ -9762,7 +9765,7 @@ index 5d4c5ff7d..a11102444 100644
          // The capture logic needs the destructor, so make sure we mark it.
          // Usually this is unnecessary because most local variables have
          // their destructors marked at declaration time, but parameters are
-@@ -17161,6 +17639,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17642,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -9794,7 +9797,7 @@ index 5d4c5ff7d..a11102444 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17696,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17699,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -9820,7 +9823,7 @@ index 5d4c5ff7d..a11102444 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17731,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17734,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -9831,7 +9834,7 @@ index 5d4c5ff7d..a11102444 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +20007,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +20010,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -9856,7 +9859,7 @@ index 5d4c5ff7d..a11102444 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20039,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20042,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.

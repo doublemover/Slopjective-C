@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 25,
+        "minor": 26,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -149,7 +149,8 @@
         "C++ thread-local global/class-static/inline data and local-static definitions with per-thread initialization/destruction and shared native ownership (source)",
         "Concrete C++ hidden/inline/out-of-line friend functions and friend types with record-bound contracts, ADL, access and consistent export/SPI ownership (source)",
         "Published C++/Objective-C++ Block bodies, native byref/explicit/nested capture contracts and GNU statement expressions with source-free evaluation (source)",
-        "ARC/MRC plain and pure C++ Optional/Result Block captures with selected-arm moves, const heap copies and partial construction cleanup (source)"
+        "ARC/MRC plain and pure C++ Optional/Result Block captures with selected-arm moves, const heap copies and partial construction cleanup (source)",
+        "Explicit ARC mixed C++/managed carrier captures and owned match snapshots with frozen selection, independent native/managed cleanup ordering and heap-copy rollback (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

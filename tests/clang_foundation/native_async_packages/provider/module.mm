@@ -735,3 +735,22 @@ inline int native_published_carrier_capture(int value) {
   auto plain_move=^[move plain] {return plain ?? 0;};
   return moved_from==0 ? moved()+plain_move() : -1;
 }
+
+inline int native_published_mixed_capture(int value) {
+#if __has_feature(objc_arc)
+  NativeModuleResult *owner=[NativeModuleResult new];
+  [owner setNumber:value];
+  __objc3_result(id,NativeStatementLifetime) source=
+      __objc3_ok(id,NativeStatementLifetime,owner);
+  owner=(id)0;
+  auto moved=^[move source] {
+    return __objc3_match (source) {
+      case .Ok(let object) => [(NativeModuleResult *)object number];
+      case .Err(let object) => object.value;
+    };
+  };
+  return moved();
+#else
+  return value;
+#endif
+}

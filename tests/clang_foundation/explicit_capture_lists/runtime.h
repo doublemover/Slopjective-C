@@ -673,6 +673,104 @@ static void capture_cpp_carrier_move_suite(void) {
   }
   CAPTURE_CHECK(CaptureMoveRecord::live == 0);
 }
+#if __has_feature(objc_arc)
+static void capture_mixed_carrier_move_suite(void) {
+  using Mixed = __objc3_result(id, CaptureMoveRecord);
+  int before = capture_destroyed;
+  {
+    CaptureObject *owner = [CaptureObject make:88];
+    Mixed source = __objc3_ok(id, CaptureMoveRecord, owner);
+    owner = (id)0;
+    {
+      defer { CAPTURE_CHECK(capture_destroyed == before); }
+      CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+        return __objc3_match (source) {
+          case .Ok(let value) => value ? ((CaptureObject *)value)->value : -1;
+          case .Err(let error) => error.value;
+        };
+      };
+      int moved_from = __objc3_match (source) {
+        case .Ok(let value) => value == (id)0;
+        case .Err(let error) => 0;
+      };
+      CAPTURE_CHECK(moved_from && stack() == 88);
+      CaptureIntBlock first = capture_heap_copy(stack);
+      CaptureIntBlock second = capture_heap_copy(stack);
+      CAPTURE_CHECK(first() == 88 && second() == 88 && capture_destroyed == before);
+      first = second = (id)0;
+    }
+    CAPTURE_CHECK(capture_destroyed == before + 1);
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    Mixed source = __objc3_err(id, CaptureMoveRecord, CaptureMoveRecord(89));
+    {
+      defer { CAPTURE_CHECK(CaptureMoveRecord::live == 1); }
+      CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+        return __objc3_match (source) {
+          case .Ok(let value) => -1;
+          case .Err(let error) => error.value;
+        };
+      };
+      int after = __objc3_match (source) {
+        case .Ok(let value) => 0;
+        case .Err(let error) => error.value;
+      };
+      CAPTURE_CHECK(after == -1 && stack() == 89);
+      CaptureIntBlock heap = capture_heap_copy(stack);
+      CAPTURE_CHECK(heap() == 89);
+      heap = (id)0;
+    }
+    CAPTURE_CHECK(CaptureMoveRecord::live == 1);
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0 && capture_destroyed == before + 1);
+  {
+    using WeakMixed = __objc3_result(id __weak, CaptureMoveRecord);
+    CaptureObject *owner = [CaptureObject make:90];
+    WeakMixed source = __objc3_ok(id __weak, CaptureMoveRecord, owner);
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      return __objc3_match (source) {
+        case .Ok(let value) => value ? ((CaptureObject *)value)->value : -1;
+        case .Err(let error) => error.value;
+      };
+    };
+    int moved_from = __objc3_match (source) {
+      case .Ok(let value) => value == (id)0;
+      case .Err(let error) => 0;
+    };
+    CAPTURE_CHECK(moved_from && stack() == 90);
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    CAPTURE_CHECK(heap() == 90);
+    owner = (id)0;
+    CAPTURE_CHECK(heap() == -1 && stack() == -1 && capture_destroyed == before + 2);
+    heap = (id)0;
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    CaptureObject *owner = [CaptureObject make:93];
+    Mixed inner = __objc3_ok(id, CaptureMoveRecord, owner);
+    Optional(Mixed) source = Some(Mixed, moveValue(inner));
+    owner = (id)0;
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      guard let selected = source else { return -2; }
+      return __objc3_match (selected) {
+        case .Ok(let value) => value ? ((CaptureObject *)value)->value : -1;
+        case .Err(let error) => error.value;
+      };
+    };
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    CAPTURE_CHECK(stack() == 93 && heap() == 93);
+    guard let selected = source else { ++capture_failures; return; }
+    int zero = __objc3_match (selected) {
+      case .Ok(let value) => value == (id)0;
+      case .Err(let error) => 0;
+    };
+    CAPTURE_CHECK(zero);
+    heap = (id)0;
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 3 && CaptureMoveRecord::live == 0);
+}
+#endif
 struct CaptureOrder {
   int *source;
   int observed;
@@ -688,6 +786,9 @@ template<class T> static int capture_template(T value) {
 static void capture_cpp_suite(void) {
   capture_record_move_suite();
   capture_cpp_carrier_move_suite();
+#if __has_feature(objc_arc)
+  capture_mixed_carrier_move_suite();
+#endif
   int source = 23;
   CaptureOrder later(&source);
   auto ordered = ^[move source, later] {

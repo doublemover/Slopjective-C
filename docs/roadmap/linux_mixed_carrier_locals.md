@@ -43,8 +43,13 @@ retain native moved-from storage and preserve source discriminants.
 
 The existing general ARC operation and call ABI predicates remain unchanged.
 Mixed values do not acquire implicit assignment, by-value callable transfer,
-array storage, enclosing record fields, or closure capture through this local
-lifetime work. Prvalue tag queries are also outside this slice. Those uses
+array storage or enclosing record fields through this local lifetime work.
+Explicit ARC Block captures now compose the selected-arm construction recipes
+with independent native/managed cleanup records; their [capture contract](linux_explicit_capture_lists.md)
+also covers creation moves, heap copies, rollback and deferred managed releases.
+Implicit Block and C++ lambda captures remain outside that admission. Mixed
+match snapshots retain selected ownership through arm evaluation. Prvalue tag
+queries are also outside this slice. Those uses
 produce diagnostics before an unqualified native operation is emitted. An
 ordinary C++ payload that itself hides ARC storage or another carrier remains
 outside the leaf qualification proof. MRC and volatile mixed carriers remain
@@ -55,6 +60,6 @@ with separately compiled reference providers and PCH consumers. It includes
 strong, weak, unsafe and Block alternatives; native C++ copy/move/destructor
 counts; failed transfers; initializer rollback; native destructor exceptions;
 and the ordering of C++ actions and managed releases around `defer`. Rejection
-cases cover implicit assignment, callable ABI, arrays, fields, Blocks, lambda
-capture, MRC and volatility. Qualification records bind the actual installed
+cases cover implicit assignment, callable ABI, arrays, fields, implicit Blocks,
+lambda capture, MRC and volatility. Qualification records bind the actual installed
 compiler, frontend, runtime, fixture contents and SDK seal.

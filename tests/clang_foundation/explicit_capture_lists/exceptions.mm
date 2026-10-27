@@ -178,6 +178,55 @@ static void capture_failed_carrier_constructor(void) {
   }
   CAPTURE_CHECK(CaptureCarrierThrow::live == 0);
 }
+#if __has_feature(objc_arc)
+static void capture_failed_mixed_creation(void) {
+  int before = capture_destroyed;
+  {
+    CaptureObject *owner = [CaptureObject make:91];
+    __objc3_result(id, CaptureMoveRecord) source =
+        __objc3_ok(id, CaptureMoveRecord, owner);
+    owner = (id)0;
+    CaptureThrowLater later;
+    CaptureThrowLater::copies = 0;
+    CaptureThrowLater::fail_on = 1;
+    try {
+      auto failed = ^[move source, later] { (void)later; };
+      (void)failed;
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(capture_destroyed == before + 1);
+      int empty = __objc3_match (source) {
+        case .Ok(let value) => value == (id)0;
+        case .Err(let error) => 0;
+      };
+      CAPTURE_CHECK(empty);
+    }
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 1 && CaptureMoveRecord::live == 0);
+  {
+    __objc3_result(id, CaptureMoveRecord) source =
+        __objc3_err(id, CaptureMoveRecord, CaptureMoveRecord(92));
+    CaptureThrowLater later;
+    CaptureThrowLater::copies = 0;
+    CaptureThrowLater::fail_on = 2;
+    CaptureIntBlock __unsafe_unretained stack = ^[move source, later] {
+      (void)later;
+      return __objc3_match (source) {
+        case .Ok(let value) => -1;
+        case .Err(let error) => error.value;
+      };
+    };
+    try {
+      CaptureIntBlock failed = capture_heap_copy(stack);
+      (void)failed;
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(CaptureMoveRecord::live == 2 && stack() == 92);
+    }
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+}
+#endif
 static int capture_failed_replacement(void) { throw CaptureFailure{}; }
 static bool capture_replace_throws;
 static void capture_resource_operation_unwind(void) {
@@ -415,6 +464,9 @@ int main(void) {
   capture_failed_carrier_creation();
   capture_failed_carrier_heap_copy();
   capture_failed_carrier_constructor();
+#if __has_feature(objc_arc)
+  capture_failed_mixed_creation();
+#endif
   capture_resource_operation_unwind();
   capture_failed_full_expression();
   capture_failed_lifetime_receiver(false);

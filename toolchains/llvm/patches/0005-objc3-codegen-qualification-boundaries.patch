@@ -2577,7 +2577,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..ca7a5cfd1 100644
+index 0683a4937..99f59316a 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -1,3 +1,4 @@
@@ -2585,7 +2585,7 @@ index 0683a4937..ca7a5cfd1 100644
  //===--- CGBlocks.cpp - Emit LLVM Code for declarations ---------*- C++ -*-===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -14,8 +15,17 @@
+@@ -14,8 +15,18 @@
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
@@ -2593,6 +2593,7 @@ index 0683a4937..ca7a5cfd1 100644
 +#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
@@ -2603,7 +2604,7 @@ index 0683a4937..ca7a5cfd1 100644
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "ConstantEmitter.h"
-@@ -32,6 +42,62 @@
+@@ -32,6 +43,69 @@
  using namespace clang;
  using namespace CodeGen;
  
@@ -2617,7 +2618,10 @@ index 0683a4937..ca7a5cfd1 100644
 +  }
 +};
 +void destroyObjC3CapturedValue(CodeGenFunction &CGF, Address Addr, QualType Type) {
-+  if (supportsObjC3CarrierCppLocalLifetime(CGF.CGM, Type) &&
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type)) {
++    emitObjC3MixedCarrierDestroyPayload(CGF, Type, Addr, true,
++                                      true, true, true);
++  } else if (supportsObjC3CarrierCppLocalLifetime(CGF.CGM, Type) &&
 +      !hasObjC3CarrierManagedPayload(Type)) {
 +    bool Emitted = emitObjC3CarrierDestroyActivePayload(CGF, Type, Addr, false);
 +    assert(Emitted && "admitted C++ carrier must destroy its selected arm");
@@ -2647,7 +2651,7 @@ index 0683a4937..ca7a5cfd1 100644
 +}
 +// Capture recipes use an opaque root so stack/nested/heap sources all bind
 +// to their own physical field rather than the original source declaration.
-+void initializeObjC3CppCapture(CodeGenFunction &CGF,
++void initializeObjC3RecipeCapture(CodeGenFunction &CGF,
 +                               const BlockDecl::Capture &Capture,
 +                               Address Destination, Address Source, bool Move) {
 +  const Expr *Recipe = Move ? Capture.getObjC3InitExpr() : Capture.getCopyExpr();
@@ -2656,9 +2660,13 @@ index 0683a4937..ca7a5cfd1 100644
 +  const auto *Root = cast<OpaqueValueExpr>(Transfer->getSource());
 +  CodeGenFunction::OpaqueValueMapping Bind(
 +      CGF, Root, CGF.MakeAddrLValue(Source, Root->getType()));
-+  emitObjC3CarrierCppValueInit(CGF, Recipe, Destination);
++  if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Recipe->getType()))
++    emitObjC3MixedCarrierValueInit(CGF, Recipe, Destination);
++  else
++    emitObjC3CarrierCppValueInit(CGF, Recipe, Destination);
 +  if (Move)
-+    clearObjC3MovedCaptureCarrier(CGF, Capture.getVariable()->getType(), Source);
++    clearObjC3MovedCaptureCarrier(CGF, Capture.getVariable()->getType(), Source,
++                                /*ManagedAlreadyMoved=*/false);
 +}
 +} // namespace
 +
@@ -2666,7 +2674,7 @@ index 0683a4937..ca7a5cfd1 100644
  CGBlockInfo::CGBlockInfo(const BlockDecl *block, StringRef name)
      : Name(name), CXXThisIndex(0), CanBeGlobal(false), NeedsCopyDispose(false),
        NoEscape(false), HasCXXObject(false), UsesStret(false),
-@@ -453,6 +519,7 @@ static llvm::Constant *tryCaptureAsConstant(CodeGenModule &CGM,
+@@ -453,6 +527,7 @@ static llvm::Constant *tryCaptureAsConstant(CodeGenModule &CGM,
  
    // We can only do this if the variable is const.
    if (!type.isConstQualified()) return nullptr;
@@ -2674,7 +2682,7 @@ index 0683a4937..ca7a5cfd1 100644
  
    // Furthermore, in C++ we have to worry about mutable fields:
    // C++ [dcl.type.cv]p4:
-@@ -533,6 +600,10 @@ static void initializeForBlockHeader(CodeGenModule &CGM, CGBlockInfo &info,
+@@ -533,6 +608,10 @@ static void initializeForBlockHeader(CodeGenModule &CGM, CGBlockInfo &info,
  static QualType getCaptureFieldType(const CodeGenFunction &CGF,
                                      const BlockDecl::Capture &CI) {
    const VarDecl *VD = CI.getVariable();
@@ -2685,7 +2693,7 @@ index 0683a4937..ca7a5cfd1 100644
  
    // If the variable is captured by an enclosing block or lambda expression,
    // use the type of the capture field.
-@@ -616,7 +687,9 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -616,7 +695,9 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
      // Otherwise, build a layout chunk with the size and alignment of
      // the declaration.
@@ -2696,7 +2704,7 @@ index 0683a4937..ca7a5cfd1 100644
        info.SortedCaptures.push_back(
            CGBlockInfo::Capture::makeConstant(constant, &CI));
        continue;
-@@ -624,6 +697,15 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -624,6 +705,15 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
      QualType VT = getCaptureFieldType(*CGF, CI);
  
@@ -2712,7 +2720,7 @@ index 0683a4937..ca7a5cfd1 100644
      if (CGM.getLangOpts().CPlusPlus)
        if (const CXXRecordDecl *record = VT->getAsCXXRecordDecl())
          if (CI.hasCopyExpr() || !record->hasTrivialDestructor()) {
-@@ -762,6 +844,26 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -762,6 +852,28 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
  /// Emit a block literal expression in the current function.
  llvm::Value *CodeGenFunction::EmitBlockLiteral(const BlockExpr *blockExpr) {
@@ -2726,7 +2734,9 @@ index 0683a4937..ca7a5cfd1 100644
 +    if (supportsObjC3CarrierRuntimeCallABI(CGM, Type) ||
 +        supportsObjC3PlainCarrierRuntimeABI(CGM, Type) ||
 +        (hasObjC3CarrierCppPayload(Type) &&
-+         supportsObjC3CarrierCppLocalLifetime(CGM, Type)) ||
++         (supportsObjC3CarrierCppLocalLifetime(CGM, Type) ||
++          (Capture.hasCopyExpr() &&
++           supportsObjC3MixedCarrierLocalLifetime(CGM, Type)))) ||
 +        supportsObjC3ManagedRecordRuntimeABI(CGM, Type))
 +      continue;
 +    if (diagnoseUnsupportedObjC3ValueABI(CGM, Type,
@@ -2739,7 +2749,7 @@ index 0683a4937..ca7a5cfd1 100644
    // If the block has no captures, we won't have a pre-computed
    // layout for it.
    if (!blockExpr->getBlockDecl()->hasCaptures())
-@@ -930,6 +1032,17 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -930,6 +1042,17 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      if (capture.isConstant()) continue;
  
      QualType type = capture.fieldType();
@@ -2757,7 +2767,7 @@ index 0683a4937..ca7a5cfd1 100644
  
      // This will be a [[type]]*, except that a byref entry will just be
      // an i8**.
-@@ -961,8 +1074,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -961,8 +1084,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      } else {
        DeclRefExpr declRef(getContext(), const_cast<VarDecl *>(variable),
                            /*RefersToEnclosingVariableOrCapture*/ CI.isNested(),
@@ -2767,13 +2777,12 @@ index 0683a4937..ca7a5cfd1 100644
        src = EmitDeclRefLValue(&declRef).getAddress();
      };
  
-@@ -981,6 +1093,16 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -981,6 +1103,15 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
        // Write that void* into the capture field.
        Builder.CreateStore(byrefPointer, blockField);
  
-+    } else if (CI.hasCopyExpr() && hasObjC3CarrierCppPayload(type) &&
-+               !hasObjC3CarrierManagedPayload(type)) {
-+      initializeObjC3CppCapture(
++    } else if (CI.hasCopyExpr() && hasObjC3CarrierCppPayload(type)) {
++      initializeObjC3RecipeCapture(
 +          *this, CI, blockField, src,
 +          CI.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move);
 +
@@ -2784,7 +2793,7 @@ index 0683a4937..ca7a5cfd1 100644
      // If we have a copy constructor, evaluate that into the block field.
      } else if (const Expr *copyExpr = CI.getCopyExpr()) {
        if (blockDecl->isConversionFromLambda()) {
-@@ -997,6 +1119,60 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -997,6 +1128,60 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
          EmitSynthesizedCXXCopyCtor(blockField, src, copyExpr);
        }
  
@@ -2845,7 +2854,7 @@ index 0683a4937..ca7a5cfd1 100644
      // If it's a reference variable, copy the reference into the block field.
      } else if (type->getAs<ReferenceType>()) {
        Builder.CreateStore(src.emitRawPointer(*this), blockField);
-@@ -1047,6 +1223,15 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1047,6 +1232,15 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
                       /*captured by init*/ false);
      }
  
@@ -2861,13 +2870,16 @@ index 0683a4937..ca7a5cfd1 100644
      // Push a cleanup for the capture if necessary.
      if (!blockInfo.NoEscape && !blockInfo.NeedsCopyDispose)
        continue;
-@@ -1056,9 +1241,13 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1056,9 +1250,16 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      if (CI.isByRef())
        continue;
  
 +    const bool IsObjC3Carrier = supportsObjC3CarrierRuntimeCallABI(CGM, type) ||
 +        (hasObjC3CarrierCppPayload(type) &&
-+         supportsObjC3CarrierCppLocalLifetime(CGM, type));
++         (supportsObjC3CarrierCppLocalLifetime(CGM, type) ||
++          supportsObjC3MixedCarrierLocalLifetime(CGM, type)));
++    const bool IsMixedObjC3Carrier =
++        supportsObjC3MixedCarrierLocalLifetime(CGM, type);
 +    const bool IsObjC3Resource = CI.isObjC3ResourceCapture();
      // Ignore objects that aren't destructed.
      QualType::DestructionKind dtorKind = type.isDestructedType();
@@ -2876,7 +2888,7 @@ index 0683a4937..ca7a5cfd1 100644
        continue;
  
      CodeGenFunction::Destroyer *destroyer;
-@@ -1069,7 +1258,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1069,7 +1270,11 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      // For const-qualified captures, emit clang.arc.use to ensure the captured
      // object doesn't get released while we are still depending on its validity
      // within the block.
@@ -2889,7 +2901,7 @@ index 0683a4937..ca7a5cfd1 100644
          type.getObjCLifetime() == Qualifiers::OCL_Strong &&
          CGM.getCodeGenOpts().OptimizationLevel != 0) {
        assert(CGM.getLangOpts().ObjCAutoRefCount &&
-@@ -1082,7 +1275,8 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1082,7 +1287,8 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
      }
  
      CleanupKind cleanupKind = NormalCleanup;
@@ -2899,45 +2911,62 @@ index 0683a4937..ca7a5cfd1 100644
      if (useArrayEHCleanup)
        cleanupKind = NormalAndEHCleanup;
  
-@@ -1100,7 +1294,36 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+@@ -1100,7 +1306,53 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
        return false;
      };
  
 -    if (IsBlockDeclInRetExpr())
 +    ObjC3ReleaseScope *ReleaseScope = nullptr;
 +    if (CI.isObjC3Explicit() && !IsObjC3Resource &&
-+        hasOnlyObjC3ImplicitManagedDestruction(getContext(), type))
++        (IsMixedObjC3Carrier ||
++         hasOnlyObjC3ImplicitManagedDestruction(getContext(), type)))
 +      ReleaseScope = getObjC3ReleaseScope(blockInfo.getBlockExpr());
 +
 +    if (CI.isObjC3Explicit()) {
-+      auto *FieldCleanup = registerObjC3BlockCaptureCleanup(
-+          *this, blockField, type, destroyer, useArrayEHCleanup);
-+      if (IsBlockDeclInRetExpr()) {
-+        pushFullExprCleanup<DestroyObjC3BlockCapture>(cleanupKind, FieldCleanup);
-+        continue;
-+      }
-+      // Construction rollback stays immediate; the enclosing full-expression
-+      // guard covers the later interval while temporary destructors execute.
-+      pushCleanupAndDeferDeactivation<DestroyObjC3BlockCapture>(
-+          cleanupKind, FieldCleanup);
-+      if (ReleaseScope) {
-+        auto *Release = registerObjC3SourceRelease(
-+            ReleaseScope, blockField, cleanupKind & EHCleanup,
-+            [FieldCleanup](CodeGenFunction &CGF, Address,
-+                           EHScopeStack::Cleanup::Flags F) {
-+              emitObjC3BlockCaptureCleanup(CGF, FieldCleanup,
-+                                           F.isForEHCleanup());
-+            });
-+        pushCleanupAfterFullExpr<EmitObjC3OrderedRelease>(cleanupKind, Release);
++      llvm::SmallVector<ObjC3BlockCaptureCleanup *, 2> FieldCleanups;
++      if (IsMixedObjC3Carrier) {
++        Address Selection =
++            snapshotObjC3MixedCarrierCleanupSelection(*this, type, blockField);
++        // Native actions stay at their capture position; managed releases join
++        // the source scope's ordered queue. Both share the original selection.
++        for (auto Partition : {ObjC3BlockCapturePartition::Native,
++                               ObjC3BlockCapturePartition::Managed})
++          FieldCleanups.push_back(registerObjC3BlockCaptureCleanup(
++              *this, blockField, type, destroyer, useArrayEHCleanup,
++              Partition, Selection));
 +      } else {
-+        pushCleanupAfterFullExpr<DestroyObjC3BlockCapture>(cleanupKind,
-+                                                         FieldCleanup);
++        FieldCleanups.push_back(registerObjC3BlockCaptureCleanup(
++            *this, blockField, type, destroyer, useArrayEHCleanup));
++      }
++      for (auto *FieldCleanup : FieldCleanups) {
++        if (IsBlockDeclInRetExpr()) {
++          pushFullExprCleanup<DestroyObjC3BlockCapture>(cleanupKind, FieldCleanup);
++          continue;
++        }
++        // Construction rollback stays immediate; the enclosing full-expression
++        // guard covers the later interval while temporary destructors execute.
++        pushCleanupAndDeferDeactivation<DestroyObjC3BlockCapture>(
++            cleanupKind, FieldCleanup);
++        if (ReleaseScope &&
++            FieldCleanup->Partition != ObjC3BlockCapturePartition::Native) {
++          auto *Release = registerObjC3SourceRelease(
++              ReleaseScope, blockField, cleanupKind & EHCleanup,
++              [FieldCleanup](CodeGenFunction &CGF, Address,
++                             EHScopeStack::Cleanup::Flags F) {
++                emitObjC3BlockCaptureCleanup(CGF, FieldCleanup,
++                                             F.isForEHCleanup());
++              });
++          pushCleanupAfterFullExpr<EmitObjC3OrderedRelease>(cleanupKind, Release);
++        } else {
++          pushCleanupAfterFullExpr<DestroyObjC3BlockCapture>(cleanupKind,
++                                                           FieldCleanup);
++        }
 +      }
 +    } else if (IsBlockDeclInRetExpr())
        pushDestroy(cleanupKind, blockField, type, destroyer, useArrayEHCleanup);
      else
        pushLifetimeExtendedDestroy(cleanupKind, blockField, type, destroyer,
-@@ -1250,7 +1473,10 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
+@@ -1250,7 +1502,10 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
    Address addr = Builder.CreateStructGEP(LoadBlockStruct(), capture.getIndex(),
                                           "block.capture.addr");
  
@@ -2949,7 +2978,7 @@ index 0683a4937..ca7a5cfd1 100644
      // addr should be a void** right now.  Load, then cast the result
      // to byref*.
  
-@@ -1262,7 +1488,7 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
+@@ -1262,7 +1517,7 @@ Address CodeGenFunction::GetAddrOfBlockDecl(const VarDecl *variable) {
                                   variable->getName());
    }
  
@@ -2958,7 +2987,7 @@ index 0683a4937..ca7a5cfd1 100644
            capture.fieldType()->isReferenceType()) &&
           "the capture field of a non-escaping variable should have a "
           "reference type");
-@@ -1282,6 +1508,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+@@ -1282,6 +1537,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
  llvm::Constant *
  CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
                                      StringRef Name) {
@@ -2969,7 +2998,7 @@ index 0683a4937..ca7a5cfd1 100644
    if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
      return Block;
  
-@@ -1449,7 +1679,12 @@ void CodeGenFunction::setBlockContextParameter(const ImplicitParamDecl *D,
+@@ -1449,7 +1708,12 @@ void CodeGenFunction::setBlockContextParameter(const ImplicitParamDecl *D,
  Address CodeGenFunction::LoadBlockStruct() {
    assert(BlockInfo && "not in a block invocation function!");
    assert(BlockPointer && "no block pointer set!");
@@ -2983,7 +3012,7 @@ index 0683a4937..ca7a5cfd1 100644
  }
  
  llvm::Function *CodeGenFunction::GenerateBlockFunction(
-@@ -1501,6 +1736,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1501,6 +1765,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  
    // Create the function declaration.
    const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
@@ -2999,7 +3028,7 @@ index 0683a4937..ca7a5cfd1 100644
    const CGFunctionInfo &fnInfo =
      CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
    if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
-@@ -1521,8 +1765,16 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1521,8 +1794,16 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
                       llvm::ConstantExpr::getPointerCast(fn, GenVoidPtrTy));
    }
  
@@ -3017,7 +3046,7 @@ index 0683a4937..ca7a5cfd1 100644
                  blockDecl->getLocation(),
                  blockInfo.getBlockExpr()->getBody()->getBeginLoc());
  
-@@ -1541,6 +1793,8 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1541,6 +1822,8 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
      auto NL = ApplyDebugLocation::CreateEmpty(*this);
      Builder.CreateStore(BlockPointer, Alloca);
      BlockPointerDbgLoc = Alloca.emitRawPointer(*this);
@@ -3026,7 +3055,7 @@ index 0683a4937..ca7a5cfd1 100644
    }
  
    // If we have a C++ 'this' reference, go ahead and force it into
-@@ -1569,22 +1823,36 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1569,22 +1852,36 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    // Save a spot to insert the debug information for all the DeclRefExprs.
    llvm::BasicBlock *entry = Builder.GetInsertBlock();
    llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
@@ -3067,7 +3096,7 @@ index 0683a4937..ca7a5cfd1 100644
    else
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
-@@ -1629,6 +1897,12 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1629,6 +1926,12 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  static std::pair<BlockCaptureEntityKind, BlockFieldFlags>
  computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
                                 const LangOptions &LangOpts) {
@@ -3075,12 +3104,12 @@ index 0683a4937..ca7a5cfd1 100644
 +    return std::make_pair(BlockCaptureEntityKind::ObjC3Resource,
 +                          BlockFieldFlags());
 +  if (!CI.isByRef() && CI.hasCopyExpr() &&
-+      hasObjC3CarrierCppPayload(T) && !hasObjC3CarrierManagedPayload(T))
++      hasObjC3CarrierCppPayload(T))
 +    return std::make_pair(BlockCaptureEntityKind::ObjC3Carrier, BlockFieldFlags());
    if (CI.getCopyExpr()) {
      assert(!CI.isByRef());
      // don't bother computing flags
-@@ -1642,6 +1916,11 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1642,6 +1945,11 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -3092,7 +3121,7 @@ index 0683a4937..ca7a5cfd1 100644
    if (T.hasAddressDiscriminatedPointerAuth())
      return std::make_pair(
          BlockCaptureEntityKind::AddressDiscriminatedPointerAuth, Flags);
-@@ -1652,6 +1931,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -1652,6 +1960,7 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      Flags = BLOCK_FIELD_IS_BLOCK;
  
    switch (T.isNonTrivialToPrimitiveCopy()) {
@@ -3100,7 +3129,7 @@ index 0683a4937..ca7a5cfd1 100644
    case QualType::PCK_Struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -1737,7 +2017,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1737,7 +2046,11 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
    std::string Str;
    ASTContext &Ctx = CGM.getContext();
    const BlockDecl::Capture &CI = *Cap.Cap;
@@ -3113,7 +3142,7 @@ index 0683a4937..ca7a5cfd1 100644
  
    BlockCaptureEntityKind Kind;
    BlockFieldFlags Flags;
-@@ -1766,6 +2050,25 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1766,6 +2079,24 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      Str += llvm::to_string(TyStr.size()) + TyStr.c_str();
      break;
    }
@@ -3123,8 +3152,7 @@ index 0683a4937..ca7a5cfd1 100644
 +  case BlockCaptureEntityKind::ObjC3Carrier: {
 +    std::string Encoding;
 +    bool Encoded = getObjC3CarrierRuntimeEncoding(Ctx, CaptureTy, Encoding);
-+    if (!Encoded && hasObjC3CarrierCppPayload(CaptureTy) &&
-+        !hasObjC3CarrierManagedPayload(CaptureTy)) {
++    if (!Encoded && hasObjC3CarrierCppPayload(CaptureTy)) {
 +      llvm::raw_string_ostream Out(Encoding);
 +      CGM.getCXXABI().getMangleContext().mangleCanonicalTypeName(CaptureTy, Out);
 +      Encoded = true;
@@ -3139,7 +3167,7 @@ index 0683a4937..ca7a5cfd1 100644
    case BlockCaptureEntityKind::ARCWeak:
      Str += "w";
      break;
-@@ -1808,6 +2111,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+@@ -1808,6 +2139,15 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
      break;
    }
    case BlockCaptureEntityKind::NonTrivialCStruct: {
@@ -3155,7 +3183,7 @@ index 0683a4937..ca7a5cfd1 100644
      bool IsVolatile = CaptureTy.isVolatileQualified();
      CharUnits Alignment = BlockAlignment.alignmentAtOffset(Cap.getOffset());
  
-@@ -1861,23 +2173,35 @@ static std::string getCopyDestroyHelperFuncName(
+@@ -1861,23 +2201,35 @@ static std::string getCopyDestroyHelperFuncName(
  static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
                                 Address Field, QualType CaptureType,
                                 BlockFieldFlags Flags, bool ForCopyHelper,
@@ -3194,7 +3222,7 @@ index 0683a4937..ca7a5cfd1 100644
        CGF.pushDestroy(Kind, Field, CaptureType, Destroyer, Kind & EHCleanup);
      }
      break;
-@@ -1972,7 +2296,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1972,7 +2324,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        continue;
  
      const BlockDecl::Capture &CI = *capture.Cap;
@@ -3203,7 +3231,7 @@ index 0683a4937..ca7a5cfd1 100644
      BlockFieldFlags flags = capture.CopyFlags;
  
      unsigned index = capture.getIndex();
-@@ -1980,6 +2304,17 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1980,6 +2332,16 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      Address dstField = Builder.CreateStructGEP(dst, index);
  
      switch (capture.CopyKind) {
@@ -3211,9 +3239,8 @@ index 0683a4937..ca7a5cfd1 100644
 +      copyObjC3BlockResource(*this, dstField, srcField);
 +      break;
 +    case BlockCaptureEntityKind::ObjC3Carrier:
-+      if (hasObjC3CarrierCppPayload(captureType) &&
-+          !hasObjC3CarrierManagedPayload(captureType))
-+        initializeObjC3CppCapture(*this, CI, dstField, srcField, false);
++      if (CI.hasCopyExpr() && hasObjC3CarrierCppPayload(captureType))
++        initializeObjC3RecipeCapture(*this, CI, dstField, srcField, false);
 +      else
 +        initializeObjC3Capture(*this, captureType, dstField, srcField,
 +                              CI.getVariable()->getLocation());
@@ -3221,7 +3248,7 @@ index 0683a4937..ca7a5cfd1 100644
      case BlockCaptureEntityKind::CXXRecord:
        // If there's an explicit copy expression, we do that.
        assert(CI.getCopyExpr() && "copy expression for variable is missing");
-@@ -1989,7 +2324,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1989,7 +2351,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
        EmitARCCopyWeak(dstField, srcField);
        break;
      case BlockCaptureEntityKind::AddressDiscriminatedPointerAuth: {
@@ -3230,7 +3257,7 @@ index 0683a4937..ca7a5cfd1 100644
        PointerAuthQualifier PointerAuth = Type.getPointerAuth();
        assert(PointerAuth && PointerAuth.isAddressDiscriminated());
        EmitPointerAuthCopy(PointerAuth, Type, dstField, srcField);
-@@ -1999,7 +2334,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -1999,7 +2361,7 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      case BlockCaptureEntityKind::NonTrivialCStruct: {
        // If this is a C struct that requires non-trivial copy construction,
        // emit a call to its copy constructor.
@@ -3239,7 +3266,7 @@ index 0683a4937..ca7a5cfd1 100644
        callCStructCopyConstructor(MakeAddrLValue(dstField, varType),
                                   MakeAddrLValue(srcField, varType));
        break;
-@@ -2024,7 +2359,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2024,7 +2386,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
          // Unless EH cleanup is required, we don't need this anymore, so kill
          // it. It's not quite worth the annoyance to avoid creating it in the
          // first place.
@@ -3249,7 +3276,7 @@ index 0683a4937..ca7a5cfd1 100644
            if (auto *I = cast_or_null<llvm::Instruction>(
                    dstField.getPointerIfNotSigned()))
              I->eraseFromParent();
-@@ -2051,7 +2387,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2051,7 +2414,8 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
      // Ensure that we destroy the copied object if an exception is thrown later
      // in the helper function.
      pushCaptureCleanup(capture.CopyKind, dstField, captureType, flags,
@@ -3259,7 +3286,7 @@ index 0683a4937..ca7a5cfd1 100644
    }
  
    FinishFunction();
-@@ -2071,6 +2408,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
+@@ -2071,6 +2435,9 @@ getBlockFieldFlagsForObjCObjectPointer(const BlockDecl::Capture &CI,
  static std::pair<BlockCaptureEntityKind, BlockFieldFlags>
  computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
                                    const LangOptions &LangOpts) {
@@ -3269,7 +3296,7 @@ index 0683a4937..ca7a5cfd1 100644
    if (CI.isEscapingByref()) {
      BlockFieldFlags Flags = BLOCK_FIELD_IS_BYREF;
      if (T.isObjCGCWeak())
-@@ -2078,6 +2418,11 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2078,6 +2445,11 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
    }
  
@@ -3281,7 +3308,7 @@ index 0683a4937..ca7a5cfd1 100644
    switch (T.isDestructedType()) {
    case QualType::DK_cxx_destructor:
      return std::make_pair(BlockCaptureEntityKind::CXXRecord, BlockFieldFlags());
-@@ -2090,6 +2435,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+@@ -2090,6 +2462,7 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
      // Support __weak direct captures.
      return std::make_pair(BlockCaptureEntityKind::ARCWeak,
                            getBlockFieldFlagsForObjCObjectPointer(CI, T));
@@ -3289,7 +3316,7 @@ index 0683a4937..ca7a5cfd1 100644
    case QualType::DK_nontrivial_c_struct:
      return std::make_pair(BlockCaptureEntityKind::NonTrivialCStruct,
                            BlockFieldFlags());
-@@ -2168,8 +2514,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
+@@ -2168,8 +2541,9 @@ CodeGenFunction::GenerateDestroyHelperFunction(const CGBlockInfo &blockInfo) {
      Address srcField = Builder.CreateStructGEP(src, capture.getIndex());
  
      pushCaptureCleanup(capture.DisposeKind, srcField,
@@ -3301,7 +3328,7 @@ index 0683a4937..ca7a5cfd1 100644
    }
  
    cleanups.ForceCleanup();
-@@ -2555,7 +2902,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
+@@ -2555,7 +2929,8 @@ CodeGenFunction::buildByrefHelpers(llvm::StructType &byrefType,
    // If type is a non-trivial C struct type that is non-trivial to
    // destructly move or destroy, build the copy and dispose helpers.
    if (type.isNonTrivialToPrimitiveDestructiveMove() == QualType::PCK_Struct ||
@@ -3311,7 +3338,7 @@ index 0683a4937..ca7a5cfd1 100644
      return ::buildByrefHelpers(
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
-@@ -2866,9 +3214,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
+@@ -2866,9 +3241,27 @@ void CodeGenFunction::BuildBlockRelease(llvm::Value *V, BlockFieldFlags flags,
  
  void CodeGenFunction::enterByrefCleanup(CleanupKind Kind, Address Addr,
                                          BlockFieldFlags Flags,
@@ -9016,10 +9043,10 @@ index 000000000..fbe5ef7b7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
-index 000000000..c05bff1a3
+index 000000000..f82584fb5
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.cpp
-@@ -0,0 +1,532 @@
+@@ -0,0 +1,546 @@
 +//===--- CGObjC3Match.cpp - Native ObjC3 match lowering ------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
@@ -9027,6 +9054,7 @@ index 000000000..c05bff1a3
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ManagedStorage.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CGObjC3ResultExpr.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -9077,12 +9105,17 @@ index 000000000..c05bff1a3
 +  }
 +};
 +
-+struct DestroyCppMatchSnapshot final : EHScopeStack::Cleanup {
++struct DestroyCarrierMatchSnapshot final : EHScopeStack::Cleanup {
 +  QualType Type;
 +  Address Storage;
-+  DestroyCppMatchSnapshot(QualType Type, Address Storage)
++  DestroyCarrierMatchSnapshot(QualType Type, Address Storage)
 +      : Type(Type), Storage(Storage) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
++    if (supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type)) {
++      emitObjC3MixedCarrierDestroyPayload(CGF, Type, Storage, true,
++                                        true, true, true);
++      return;
++    }
 +    bool Emitted = emitObjC3CarrierDestroyActivePayload(CGF, Type, Storage, false);
 +    assert(Emitted && "admitted C++ match snapshot lost its destruction recipe");
 +    (void)Emitted;
@@ -9126,12 +9159,20 @@ index 000000000..c05bff1a3
 +                     State.IsResult)) {
 +    const bool Managed = supportsObjC3CarrierARCLocalLifetime(CGF.CGM, State.Type);
 +    const bool Cpp = supportsObjC3CarrierCppLocalLifetime(CGF.CGM, State.Type);
-+    if (!Managed && !Cpp &&
++    const bool Mixed = supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, State.Type);
++    if (!Managed && !Cpp && !Mixed &&
 +        !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, State.Type)) {
 +      CGF.ErrorUnsupported(Owner, "ObjC3 match with managed carrier payload");
 +      return false;
 +    }
-+    if (Managed) {
++    if (Mixed) {
++      // This full-expression snapshot owns one selected native/managed leaf.
++      // It is not a committed source local and needs immediate complete cleanup.
++      State.Storage = CGF.CreateMemTemp(State.Type, "objc3.match.mixed.scrutinee");
++      emitObjC3MixedCarrierValueInit(CGF, Expression, State.Storage);
++      CGF.pushFullExprCleanup<DestroyCarrierMatchSnapshot>(
++          NormalAndEHCleanup, State.Type, State.Storage);
++    } else if (Managed) {
 +      // A managed binding borrows an owned snapshot. A guard or body may
 +      // replace the original carrier without invalidating any binding.
 +      State.Storage = CGF.CreateMemTemp(State.Type, "objc3.match.owned.scrutinee");
@@ -9157,7 +9198,7 @@ index 000000000..c05bff1a3
 +        CGF.setObjC3CarrierLocalInitState(Saved);
 +      }
 +      if (Cpp && hasObjC3CarrierCppLocalDestructor(CGF.CGM, State.Type))
-+        CGF.pushFullExprCleanup<DestroyCppMatchSnapshot>(
++        CGF.pushFullExprCleanup<DestroyCarrierMatchSnapshot>(
 +            NormalAndEHCleanup, State.Type, State.Storage);
 +    }
 +    State.Tag = emitObjC3CarrierLoadTag(CGF, State.Storage, State.Type,
@@ -22151,10 +22192,10 @@ index 000000000..bff3f2e04
 +// CHECK: attributes #[[TRANSPORT]] = { {{(mustprogress )?}}noinline {{(nounwind )?}}optnone
 diff --git a/clang/lib/CodeGen/CGObjC3Conditions.cpp b/clang/lib/CodeGen/CGObjC3Conditions.cpp
 new file mode 100644
-index 000000000..caf8ee07e
+index 000000000..78d944899
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Conditions.cpp
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,240 @@
 +//===--- CGObjC3Conditions.cpp - Ordered condition ownership ---------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGDebugInfo.h"
@@ -22162,6 +22203,7 @@ index 000000000..caf8ee07e
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3Defer.h"
 +#include "CGObjC3ManagedStorage.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
 +#include "clang/AST/Attr.h"
@@ -22208,7 +22250,10 @@ index 000000000..caf8ee07e
 +      bool Precise = Variable->hasAttr<ObjCPreciseLifetimeAttr>();
 +      bool StrongEH = CGF.getARCCleanupKind() & EHCleanup;
 +      bool Carrier = isa<ObjC3OptionalType, ObjC3ResultType>(Type.getTypePtr());
-+      if (Carrier && supportsObjC3CarrierARCLocalLifetime(CGF.CGM, Type)) {
++      if (Carrier && supportsObjC3MixedCarrierLocalLifetime(CGF.CGM, Type)) {
++        emitObjC3MixedCarrierDestroyPayload(CGF, Type, Storage, true,
++                                          true, true, true);
++      } else if (Carrier && supportsObjC3CarrierARCLocalLifetime(CGF.CGM, Type)) {
 +        emitObjC3CarrierDestroyActiveARCPayload(CGF, Type, Storage, Precise,
 +                                               StrongEH, true);
 +      } else if (supportsObjC3ManagedRecordLifetime(CGF.CGM, Type)) {
@@ -23819,10 +23864,10 @@ index 000000000..b64f7d116
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3MixedCarriers.h b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
 new file mode 100644
-index 000000000..14975550b
+index 000000000..940717984
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3MixedCarriers.h
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,55 @@
 +//===--- CGObjC3MixedCarriers.h - Mixed ARC/C++ carrier locals -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3MIXEDCARRIERS_H
@@ -23841,8 +23886,10 @@ index 000000000..14975550b
 +class CodeGenModule;
 +
 +/// Automatic direct carrier trees with native ARC pointer leaves and ordinary
-+/// C++ object leaves. This does not admit assignment, capture, enclosing record
-+/// storage, or the by-value call ABI of a nontrivial C++ payload.
++/// C++ object leaves. Explicit Block captures reuse these construction recipes
++/// with separate native/managed cleanup partitions. This does not admit
++/// assignment, enclosing record storage, or the by-value call ABI of a
++/// nontrivial C++ payload.
 +bool supportsObjC3MixedCarrierLocalLifetime(CodeGenModule &, QualType);
 +
 +void emitObjC3MixedCarrierValueInit(CodeGenFunction &, const Expr *, Address);
@@ -26443,13 +26490,14 @@ index 000000000..13dbb4797
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
 new file mode 100644
-index 000000000..ac1ab920d
+index 000000000..624dcb78f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,489 @@
 +//===--- CGObjC3BlockCaptures.cpp - Explicit Block capture owners -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3BlockCaptures.h"
++#include "CGObjC3MixedCarriers.h"
 +#include "CGCall.h"
 +#include "CGDebugInfo.h"
 +#include "CGObjC3Carriers.h"
@@ -26688,7 +26736,8 @@ index 000000000..ac1ab920d
 +
 +ObjC3BlockCaptureCleanup *clang::CodeGen::registerObjC3BlockCaptureCleanup(
 +    CodeGenFunction &CGF, Address Field, QualType Type,
-+    CodeGenFunction::Destroyer *Destroyer, bool UseArrayEHCleanup) {
++    CodeGenFunction::Destroyer *Destroyer, bool UseArrayEHCleanup,
++    ObjC3BlockCapturePartition Partition, Address Selection) {
 +  auto *Capture = new (CGF.getContext()) ObjC3BlockCaptureCleanup{
 +      nullptr,
 +      CGF.CreateTempAlloca(CGF.Int8PtrTy, CGF.getPointerAlign(),
@@ -26696,7 +26745,7 @@ index 000000000..ac1ab920d
 +      CGF.CreateTempAlloca(CGF.Builder.getInt1Ty(), CharUnits::One(),
 +                          "objc3.capture.live"),
 +      Field.getElementType(), Field.getAlignment(), Type, Destroyer,
-+      UseArrayEHCleanup};
++      UseArrayEHCleanup, Selection, Partition};
 +  CGBuilderTy EntryBuilder(CGF.CGM, CGF.AllocaInsertPt);
 +  EntryBuilder.CreateStore(CGF.Builder.getFalse(), Capture->Live);
 +  CGF.Builder.CreateStore(Field.emitRawPointer(CGF), Capture->StoragePointer);
@@ -26717,8 +26766,16 @@ index 000000000..ac1ab920d
 +  CGF.Builder.CreateStore(CGF.Builder.getFalse(), Capture->Live);
 +  Address Field(CGF.Builder.CreateLoad(Capture->StoragePointer),
 +                Capture->ElementType, Capture->Alignment);
-+  CGF.emitDestroy(Field, Capture->Type, Capture->Destroyer,
-+                  !ForEHCleanup && Capture->UseArrayEHCleanup);
++  if (Capture->Partition != ObjC3BlockCapturePartition::All) {
++    assert(Capture->Selection.isValid() && "mixed capture selection is frozen");
++    bool Native = Capture->Partition == ObjC3BlockCapturePartition::Native;
++    emitObjC3MixedCarrierDestroyPayload(CGF, Capture->Type, Field, true,
++                                       Native, !Native, !Native,
++                                       Capture->Selection);
++  } else {
++    CGF.emitDestroy(Field, Capture->Type, Capture->Destroyer,
++                    !ForEHCleanup && Capture->UseArrayEHCleanup);
++  }
 +  CGF.EmitBranch(Done);
 +  CGF.EmitBlock(Done);
 +}
@@ -26876,7 +26933,8 @@ index 000000000..ac1ab920d
 +
 +void clang::CodeGen::clearObjC3MovedCaptureCarrier(CodeGenFunction &CGF,
 +                                                    QualType Type,
-+                                                    Address Source) {
++                                                    Address Source,
++                                                    bool ManagedAlreadyMoved) {
 +  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(Type);
 +  auto ClearArm = [&](FieldDecl *Field, ObjC3CarrierPayloadArm Arm) {
 +    if (!Field || Field->getType()->isVoidType())
@@ -26885,14 +26943,25 @@ index 000000000..ac1ab920d
 +    Address Storage = getObjC3CarrierPayloadAddress(CGF, Source, Type, Arm);
 +    if (isa<ObjC3OptionalType, ObjC3ResultType>(
 +            Payload.getCanonicalType().getTypePtr())) {
-+      clearObjC3MovedCaptureCarrier(CGF, Payload, Storage);
++      clearObjC3MovedCaptureCarrier(CGF, Payload, Storage, ManagedAlreadyMoved);
 +      return;
 +    }
 +    // Native ARC move has already left these initialized slots nil, including
 +    // the source of objc_moveWeak. Do not overwrite a weak registration.
 +    if (Payload.getObjCLifetime() == Qualifiers::OCL_Strong ||
-+        Payload.getObjCLifetime() == Qualifiers::OCL_Weak)
++        Payload.getObjCLifetime() == Qualifiers::OCL_Weak) {
++      if (!ManagedAlreadyMoved) {
++        // Semantic mixed-tree member initialization acquired the destination's
++        // ownership. Relinquish the source after successful construction.
++        auto *Null = llvm::Constant::getNullValue(CGF.ConvertType(Payload));
++        if (Payload.getObjCLifetime() == Qualifiers::OCL_Weak)
++          CGF.EmitARCStoreWeak(Storage, Null, true);
++        else
++          CGF.EmitARCStoreStrong(CGF.MakeAddrLValue(Storage, Payload), Null,
++                                false);
++      }
 +      return;
++    }
 +    // C++ move construction defines its own valid moved-from object state.
 +    // Its destructor still runs in the original source carrier.
 +    if (!Payload->getAsCXXRecordDecl())
@@ -26916,10 +26985,10 @@ index 000000000..ac1ab920d
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.h b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
 new file mode 100644
-index 000000000..d278042dc
+index 000000000..c98407304
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.h
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,87 @@
 +//===--- CGObjC3BlockCaptures.h - Explicit Block capture owners -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3BLOCKCAPTURES_H
@@ -26936,6 +27005,7 @@ index 000000000..d278042dc
 +namespace CodeGen {
 +class CodeGenFunction;
 +class CodeGenModule;
++enum class ObjC3BlockCapturePartition { All, Native, Managed };
 +struct ObjC3BlockCaptureCleanup {
 +  ObjC3BlockCaptureCleanup *Next = nullptr;
 +  Address StoragePointer, Live;
@@ -26944,6 +27014,8 @@ index 000000000..d278042dc
 +  QualType Type;
 +  void (*Destroyer)(CodeGenFunction &, Address, QualType);
 +  bool UseArrayEHCleanup;
++  Address Selection = Address::invalid();
++  ObjC3BlockCapturePartition Partition = ObjC3BlockCapturePartition::All;
 +};
 +struct ObjC3BlockCaptureFullExprData;
 +/// Keep a rollback owner below the ordinary full-expression temporary stack.
@@ -26968,7 +27040,9 @@ index 000000000..d278042dc
 +ObjC3BlockCaptureCleanup *registerObjC3BlockCaptureCleanup(
 +    CodeGenFunction &CGF, Address Field, QualType Type,
 +    void (*Destroyer)(CodeGenFunction &, Address, QualType),
-+    bool UseArrayEHCleanup);
++    bool UseArrayEHCleanup,
++    ObjC3BlockCapturePartition Partition = ObjC3BlockCapturePartition::All,
++    Address Selection = Address::invalid());
 +void emitObjC3BlockCaptureCleanup(CodeGenFunction &CGF,
 +                                ObjC3BlockCaptureCleanup *Capture,
 +                                bool ForEHCleanup);
@@ -26992,7 +27066,8 @@ index 000000000..d278042dc
 +/// Active-arm move has already transferred strong/weak leaves. Clear remaining
 +/// selected scalar/unsafe leaves while retaining a valid source discriminant.
 +void clearObjC3MovedCaptureCarrier(CodeGenFunction &CGF, QualType Type,
-+                                   Address Source);
++                                   Address Source,
++                                   bool ManagedAlreadyMoved = true);
 +/// Destroyer compatible with native lexical/lifetime-extended capture cleanup.
 +/// The owner callback frees only the resource; this operation always frees its
 +/// allocation, including when the native cleanup callback throws.

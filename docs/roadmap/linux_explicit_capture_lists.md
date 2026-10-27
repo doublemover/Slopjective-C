@@ -84,9 +84,21 @@ leaves are zeroed. Stack exit, failed later captures and failed heap copies dest
 only completed, active payloads. Move-only leaves remain rejected because ordinary
 Blocks must be copyable. Capture recipes persist through PCH and AST import.
 
+Explicit mixed ARC/C++ carrier captures use the same recursively resolved
+construction recipes under ARC. A successful move relinquishes selected strong
+or weak source storage after acquiring destination ownership; C++ leaves retain
+their native moved-from state. Heap copies own independent selected payloads.
+The stack capture keeps separate native and managed cleanup records sharing one
+saved active-leaf selection. C++ destruction stays in source-action order while
+managed releases join the enclosing source scope's queue after deferred actions.
+Construction rollback and heap disposal destroy the complete selected value.
+Mixed match snapshots own their selected payload through arm evaluation, and
+nested binding snapshots use recursive semantic copies.
+
 Nested const, volatile, atomic or resource-contracted move payloads remain
-rejected. Mixed ARC/C++ carriers, unqualified ownership-bearing leaves and
-unmodeled runtime leaf encodings remain separate boundaries.
+rejected. Implicit mixed captures, MRC mixed ownership, unqualified
+ownership-bearing leaves and unmodeled runtime leaf encodings remain separate
+boundaries.
 
 ## Resource ownership across Block copies
 
@@ -177,8 +189,8 @@ pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
 [current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 the scope. They remain absent from the earlier 32-gate archive.
 
-Remaining boundaries include mixed ARC/C++ carrier move captures and unqualified
-ownership-bearing/runtime leaf types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
+Remaining boundaries include implicit mixed captures, MRC mixed ownership and
+unqualified ownership-bearing/runtime leaf types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
 broad exceptional CFG capture admission and
 remaining ownership/profile projections. Borrowed escape and concurrent-transfer
 admission are implemented by their owning slices and exercised with the capture

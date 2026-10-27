@@ -106,7 +106,8 @@
     "NativeStatementLifetime",
     "native_statement_live",
     "native_module_virtual_deallocations",
-    "native_published_carrier_capture"
+    "native_published_carrier_capture",
+    "native_published_mixed_capture"
   ],
   "dependencies": []
 }

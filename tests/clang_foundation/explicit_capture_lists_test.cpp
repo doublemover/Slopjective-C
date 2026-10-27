@@ -144,6 +144,14 @@ void semantics(const fs::path &Root, BaseLanguage Language,
     expect(request(Root,
         "struct R{R()=default;R(const R&)=delete;R(R&&)=default;};void f(){Optional(R) x=Some(R,R());invoke(^[move x]{});}",
         Language, Standard, ARC), false, "deleted");
+    if (ARC) {
+      expect(request(Root,
+          "struct R{R()=default;R(const R&)=default;R(R&&)=default;~R(){}};void f(id o){__objc3_result(id,R) x=__objc3_ok(id,R,o);invoke(^[move x]{});}",
+          Language, Standard, ARC), true);
+      expect(request(Root,
+          "struct R{R()=default;R(const R&)=delete;R(R&&)=default;};void f(id o){__objc3_result(id,R) x=__objc3_ok(id,R,o);invoke(^[move x]{});}",
+          Language, Standard, ARC), false, "deleted");
+    }
     expect(request(Root,
         "template<class T> int f(T x){auto b=^[move x]{return x;};return b()+x;} int g(){return f(42);}",
         Language, Standard, ARC), true);
@@ -262,6 +270,11 @@ int capture_carrier_provider(void) {
   auto block=^[move source]{return __objc3_has_value(source);};
   return block();
 }
+int capture_mixed_provider(id value) {
+  __objc3_result(id,CaptureRecord) source=__objc3_ok(id,CaptureRecord,value);
+  auto block=^[move source]{return (int)__objc3_is_ok(source);};
+  return block();
+}
 void capture_nested_resource_provider(void) {
   int handle __attribute__((objc_resource(close=close_handle,invalid=-1)))=31;
   void (^outer)(void)=^[move handle]{
@@ -280,6 +293,7 @@ void capture_nested_resource_provider(void) {
   check_body(Provider);
   check_record_body(function(*From, "capture_record_provider"));
   check_carrier_body(function(*From, "capture_carrier_provider"));
+  check_carrier_body(function(*From, "capture_mixed_provider"));
   check_nested_resource_body(function(*From, "capture_nested_resource_provider"));
   clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
       From->getASTContext(), From->getFileManager(), false);
@@ -293,6 +307,9 @@ void capture_nested_resource_provider(void) {
   auto ImportedCarrier = Importer.Import(function(*From, "capture_carrier_provider"));
   assert(ImportedCarrier);
   check_carrier_body(llvm::cast<clang::FunctionDecl>(*ImportedCarrier));
+  auto ImportedMixed = Importer.Import(function(*From, "capture_mixed_provider"));
+  assert(ImportedMixed);
+  check_carrier_body(llvm::cast<clang::FunctionDecl>(*ImportedMixed));
   auto ImportedNested = Importer.Import(function(*From, "capture_nested_resource_provider"));
   assert(ImportedNested);
   check_nested_resource_body(llvm::cast<clang::FunctionDecl>(*ImportedNested));
@@ -312,6 +329,7 @@ void capture_nested_resource_provider(void) {
   check_body(function(*Reloaded, "capture_provider"));
   check_record_body(function(*Reloaded, "capture_record_provider"));
   check_carrier_body(function(*Reloaded, "capture_carrier_provider"));
+  check_carrier_body(function(*Reloaded, "capture_mixed_provider"));
   check_nested_resource_body(function(*Reloaded, "capture_nested_resource_provider"));
 }
 } // namespace
