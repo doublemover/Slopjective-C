@@ -136,3 +136,8 @@ namespace, alias and using declarations retain their native scopes. Binary
 packages validate those roots and selected namespace ancestry instead of
 inferring public roots from declaration kinds. The schema cutover rejects 2.1
 interfaces; regenerate interfaces, packages and compiler-dependent build outputs.
+
+The [2.29.0 source milestone](linux_cxx_local_types.md) retains concrete named
+local classes and enums, nested members and executable lifecycles under required
+`objc3.cxx-local-types.v1` semantics. Lexical type/member identities survive
+provider relocation and interface regeneration.

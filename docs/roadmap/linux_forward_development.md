@@ -368,7 +368,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 | Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void and retained object results                                                                                                                                                                            | Explicitly gated argument/call forms, task-ABI async targets, automatic actor association and complete Strict Concurrency behavior |
 | Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                                                                                                                 | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values          |
 | Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros                                                                                                | Complete abstract group library and broader profile admission                                                                      |
-| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.1 physical async ABI identities, clangd source relationships and development feature runner                                                                                                                                                                 | Remaining package/profile projections and full profile conformance                                                                 |
+| Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.2 physical async ABI/export-root identities, clangd source relationships and development feature runner                                                                                                                                                     | Remaining package/profile projections and full profile conformance                                                                 |
 
 Per-feature detail and authored witnesses:
 
@@ -560,3 +560,17 @@ mixed ARC/C++ Block capture ownership. Its [focused evidence](../support/linux_n
 records normal/ASan source/PCH capture matrices, four recursive mixed runtime
 cases, AST/PCH persistence and eight source-free package cases. Mixed C++ lambda
 captures, MRC mixed ownership and the installed SDK cutover remain pending.
+
+The [2.28.0 source milestone](linux_immutable_packages.md) binds native export
+roots in semantic interface schema 2.2. Binary packages validate scoped roots,
+class members and friends directly; anonymous C typedefs retain their owned tag
+definitions. The [focused receipt](../support/linux_native_export_roots_progress.json)
+records three frontend suites, 179 tooling tests and eight source-free C++
+package configurations with real inventory verification and offline installation.
+
+The [2.29.0 source milestone](linux_cxx_local_types.md) adds concrete named local
+classes and enums in published definitions, including nested types, member
+bodies, native lifecycle, virtual dispatch, RTTI and constexpr evaluation. Lexical
+identities replace physical file-based references; local types remain excluded
+from exported signatures. Templates, generic/public closures and the broader
+ownership, isolation, key-path and profile backlog remain open.

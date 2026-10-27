@@ -693,6 +693,42 @@ inline int native_published_block(int value) {
 inline int native_published_statement(int value) {
   return ({ int first=value; int second=2; first+second; });
 }
+inline int native_published_local_type(int value) {
+  int destroyed=0;
+  int answer=0;
+  {
+    enum class Kind : unsigned {delta=2};
+    struct Base { virtual ~Base() {} virtual int get(int delta) const=0; };
+    struct Value final : Base {
+      int n;
+      int *destroyed;
+      Value(int n,int *destroyed):n(n),destroyed(destroyed) {}
+      Value(const Value &source):n(source.n),destroyed(source.destroyed) {}
+      ~Value() {++*destroyed;}
+      int get(int delta) const override {return n+delta;}
+      struct Nested {int n;};
+    };
+    Value first(value,&destroyed);
+    Value copy(first);
+    Base *base=&copy;
+    if (dynamic_cast<Value *>(base)!=&copy) return 0;
+    Value::Nested nested{base->get((int)Kind::delta)};
+    answer=nested.n;
+  }
+  return destroyed==2 ? answer : 0;
+}
+inline constexpr int native_local_constant() {
+  enum class Kind {delta=2};
+  struct Value {int n; constexpr int get() const {return n+(int)Kind::delta;}};
+  return Value{40}.get();
+}
+inline int native_local_lambda(int value) {
+  return [value] {
+    struct Value {int n; int get() const {return n+2;}};
+    return Value{value}.get();
+  }();
+}
+int native_local_type_bridge(int value) {return native_published_local_type(value);}
 static int native_statement_live_count=0;
 struct NativeStatementLifetime {
   int value;

@@ -332,6 +332,9 @@ int main() {
   if (native_published_carrier_capture(2)!=44 || native_statement_live()!=0) return 95;
   if (native_published_mixed_capture(42)!=42 || native_statement_live()!=0) return 96;
   if (native_published_plain_native_capture(40)!=42) return 97;
+  static_assert(native_local_constant()==42);
+  if (native_published_local_type(40)!=42 || native_local_type_bridge(40)!=42 ||
+      native_local_lambda(40)!=42) return 98;
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||

@@ -454,6 +454,13 @@ llvm::Error ValidateForEncoding(
       kCxxStatementExpressionSemantic) != sidecar.required_semantics.end();
   if (has_statements != statements_capability)
     return Invalid("C++ statements expression identity and required capability must agree");
+  const bool has_local_types = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLocalTypeIdentity);
+  const bool local_types_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxLocalTypeSemantic) != sidecar.required_semantics.end();
+  if (has_local_types != local_types_capability)
+    return Invalid("C++ local type identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

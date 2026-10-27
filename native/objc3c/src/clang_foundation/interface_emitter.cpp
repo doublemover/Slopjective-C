@@ -287,6 +287,13 @@ bool PublishesVariableInitializer(const clang::VarDecl *variable) {
                                       variable->getASTContext())));
 }
 
+bool IsExpressionLocalTag(const clang::TagDecl *declaration) {
+  for (const auto *scope = declaration->getDeclContext(); scope;
+       scope = scope->getParent())
+    if (scope->isFunctionOrMethod()) return true;
+  return false;
+}
+
 // Bind spelling, typed native nodes and every resolved reference. Text alone
 // cannot distinguish identically spelled defaults that select different overloads.
 // Length delimiters keep user strings from introducing synthetic identity fields.
@@ -327,6 +334,17 @@ public:
     for (const auto &capture : expression->captures()) {
       Add("capture:" + std::to_string(capture.getCaptureKind()));
       if (capture.capturesVariable()) Local(capture.getCapturedVar());
+    }
+    return true;
+  }
+  bool VisitTagDecl(clang::TagDecl *declaration) {
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+        record && record->isLambda()) return true;
+    if (IsExpressionLocalTag(declaration)) {
+      Local(declaration);
+      Add("local-tag:" + std::to_string(locals_.at(declaration->getCanonicalDecl())));
+      Add(declaration->clang::Decl::getDeclKindName());
+      Add(declaration->getNameAsString());
     }
     return true;
   }
@@ -396,21 +414,36 @@ public:
   }
   void Reference(const clang::NamedDecl *declaration) {
     if (!declaration) { Add("<none>"); return; }
+    if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
+        tag && IsExpressionLocalTag(tag)) Local(tag);
     if (const auto found = locals_.find(declaration->getCanonicalDecl()); found != locals_.end()) {
       Add("local:" + std::to_string(found->second)); return;
     }
-    if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(declaration->getDeclContext());
-        owner && owner->isLambda()) {
+    if (const auto *owner = llvm::dyn_cast<clang::TagDecl>(declaration->getDeclContext());
+        owner && (IsExpressionLocalTag(owner) ||
+                  (llvm::isa<clang::CXXRecordDecl>(owner) &&
+                   llvm::cast<clang::CXXRecordDecl>(owner)->isLambda()))) {
       Local(owner);
-      Add("closure-member:" + std::to_string(locals_.at(owner->getCanonicalDecl())));
+      Add("local-type-member:" + std::to_string(locals_.at(owner->getCanonicalDecl())));
       Add(declaration->getDeclKindName());
+      // Native lambda constructor/destructor names contain physical locations.
+      // Their operator/type contract already distinguishes closure members.
+      const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(owner);
+      if (!record || !record->isLambda()) Add(declaration->getNameAsString());
       if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
         Add(std::to_string(function->getOverloadedOperator()));
         Add(ExpressionType(function->getType()));
       } else if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
         unsigned index = 0;
-        for (const auto *member : owner->fields()) { if (member == field) break; ++index; }
+        for (const auto *member : llvm::cast<clang::RecordDecl>(owner)->fields()) {
+          if (member == field) break;
+          ++index;
+        }
         Add(std::to_string(index));
+      } else if (const auto *constant = llvm::dyn_cast<clang::EnumConstantDecl>(declaration)) {
+        llvm::SmallString<32> value;
+        constant->getInitVal().toString(value, 10);
+        Add(value);
       }
       return;
     }
@@ -560,9 +593,22 @@ public:
     blocks |= variable->hasAttr<clang::BlocksAttr>(); return true;
   }
   bool VisitStmtExpr(clang::StmtExpr *) { statements = true; return true; }
+  bool VisitTagDecl(clang::TagDecl *declaration) {
+    const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+    types |= IsExpressionLocalTag(declaration) && !(record && record->isLambda());
+    return true;
+  }
   bool blocks = false;
   bool statements = false;
+  bool types = false;
 };
+bool HasDeclarationLocalType(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    LocalExpressionFinder finder;
+    finder.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return finder.types;
+  });
+}
 bool HasDeclarationLocalExpression(const clang::NamedDecl *declaration, bool block) {
   return HasPublishedExpression(declaration, [=](const clang::Stmt *statement) {
     LocalExpressionFinder finder;
@@ -1163,6 +1209,9 @@ bool ValidateExportNames(const std::vector<std::string> &exports,
   return true;
 }
 
+bool IsBoundedCxxDeclaration(const clang::NamedDecl *, InterfaceEmissionArtifact &,
+                             const std::vector<std::string> &);
+
 class TypeDependencyVisitor final
     : public clang::RecursiveASTVisitor<TypeDependencyVisitor> {
  public:
@@ -1215,6 +1264,7 @@ class TypeDependencyVisitor final
     target = target->getUnderlyingDecl();
     if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(target->getDeclContext());
         owner && owner->isLambda()) return;
+    if (in_expression_ && IsLocalExpressionContext(target->getDeclContext())) return;
     if (lambda_locals_.count(target->getCanonicalDecl())) return;
     if (lambda_contexts_.count(
             clang::Decl::castFromDeclContext(target->getDeclContext())->getCanonicalDecl())) return;
@@ -1240,6 +1290,7 @@ class TypeDependencyVisitor final
     body_function_ = nullptr;
   }
   bool VisitVarDecl(clang::VarDecl *variable) {
+    if (in_expression_) TraverseType(variable->getType());
     if (body_function_)
       for (const auto *attribute : variable->attrs())
         if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr>(attribute)) UnsupportedExpression();
@@ -1248,8 +1299,31 @@ class TypeDependencyVisitor final
   bool VisitTagDecl(clang::TagDecl *declaration) {
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
         record && record->isLambda()) return true;
-    if (body_function_ && declaration->getDeclContext()->isFunctionOrMethod())
+    if (IsExpressionLocalTag(declaration) &&
+        (!in_expression_ || !declaration->getIdentifier() ||
+         !IsBoundedCxxDeclaration(declaration, result_, exports_)))
       return UnsupportedExpression();
+    return true;
+  }
+  bool IsLocalExpressionContext(const clang::DeclContext *scope) const {
+    for (; scope; scope = scope->getParent()) {
+      if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(scope);
+          tag && IsExpressionLocalTag(tag)) return true;
+      if (body_function_ &&
+          clang::Decl::castFromDeclContext(scope)->getCanonicalDecl() ==
+              body_function_->getCanonicalDecl()) return true;
+      if (lambda_contexts_.count(clang::Decl::castFromDeclContext(scope)->getCanonicalDecl()))
+        return true;
+    }
+    return false;
+  }
+  bool VisitFieldDecl(clang::FieldDecl *declaration) {
+    if (in_expression_) TraverseType(declaration->getType());
+    return true;
+  }
+  bool VisitFunctionDecl(clang::FunctionDecl *declaration) {
+    if (in_expression_ && IsLocalExpressionContext(declaration->getDeclContext()))
+      TraverseType(declaration->getType());
     return true;
   }
   bool VisitExpr(clang::Expr *expression) {
@@ -1313,6 +1387,9 @@ class TypeDependencyVisitor final
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
         record && record->isLambda())
       return in_expression_ ? true : UnsupportedExpression();
+    if (IsExpressionLocalTag(declaration))
+      return in_expression_ && IsLocalExpressionContext(declaration->getDeclContext())
+                 ? true : UnsupportedExpression();
     CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
@@ -1913,6 +1990,23 @@ private:
   bool uses_runtime_frame_ = false;
 };
 
+class LocalDefinitionPrintingCallbacks final : public clang::PrintingCallbacks {
+public:
+  explicit LocalDefinitionPrintingCallbacks(const clang::NamedDecl *declaration) {
+    if (const auto *scope = llvm::dyn_cast<clang::DeclContext>(declaration))
+      visible_.insert(scope);
+    for (const auto *scope = declaration->getDeclContext(); scope;
+         scope = scope->getParent()) visible_.insert(scope);
+  }
+  bool isScopeVisible(const clang::DeclContext *scope) const override {
+    const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(scope);
+    return visible_.count(scope) || scope->isFunctionOrMethod() ||
+           (record && record->isLambda());
+  }
+private:
+  std::set<const clang::DeclContext *> visible_;
+};
+
 void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
                           llvm::raw_ostream &out, bool declaration_only = false) {
@@ -1929,6 +2023,14 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
   policy.PolishForDeclaration = true;
+  LocalDefinitionPrintingCallbacks local_scopes(declaration);
+  if (HasDeclarationLocalType(declaration)) {
+    // A local type can be qualified by its local record or enum, but never
+    // by a function spelling such as `api(int)::Value`. Enclosing scopes are
+    // already visible where this root's canonical definition is printed.
+    policy.Callbacks = &local_scopes;
+    policy.FullyQualifiedName = false;
+  }
   if (const auto *alias = llvm::dyn_cast<clang::TypedefNameDecl>(declaration))
     if (const auto *tag = alias->getUnderlyingType()->getAs<clang::TagType>();
         tag && !tag->getDecl()->getIdentifier() &&
@@ -2263,6 +2365,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";cxx-block-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, false))
     identity.canonical_type_identity += ";cxx-statement-expressions:v1;";
+  if (HasDeclarationLocalType(representative))
+    identity.canonical_type_identity += ";cxx-local-types:v1;";
   if (context.getLangOpts().CPlusPlus && HasDeclarationThreadLocal(representative)) {
     identity.canonical_type_identity += ";cxx-thread-local:v1;";
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(representative))
@@ -2491,6 +2595,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxBlockExpressionSemantic);
     if (HasCxxStatementExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxStatementExpressionSemantic);
+    if (HasCxxLocalTypeIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxLocalTypeSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2563,6 +2669,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxFriendSemantic,
     kCxxBlockExpressionSemantic,
     kCxxStatementExpressionSemantic,
+    kCxxLocalTypeSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2682,6 +2789,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxFriendSemantic,
     kCxxBlockExpressionSemantic,
     kCxxStatementExpressionSemantic,
+    kCxxLocalTypeSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

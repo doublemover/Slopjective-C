@@ -185,6 +185,24 @@ int main() {
                                     availability.canonical_source_sha256,
                                     {decl}, {"objc3.api-availability.v1"})
               .ok());
+  auto local_types = sidecar;
+  auto local_declaration = decl;
+  local_declaration.canonical_type_identity += ";cxx-local-types:v1;";
+  local_types.declarations = {local_declaration};
+  assert(!ValidateSemanticInterface(local_types, module,
+                                    local_types.canonical_source_sha256,
+                                    {local_declaration}, {kCxxLocalTypeSemantic})
+              .ok());
+  local_types.required_semantics = {kCxxLocalTypeSemantic};
+  assert(ValidateSemanticInterface(local_types, module,
+                                   local_types.canonical_source_sha256,
+                                   {local_declaration}, {kCxxLocalTypeSemantic})
+             .ok());
+  local_types.declarations = {decl};
+  assert(!ValidateSemanticInterface(local_types, module,
+                                    local_types.canonical_source_sha256,
+                                    {decl}, {kCxxLocalTypeSemantic})
+              .ok());
   drift.canonical_type_identity = "long ()";
   assert(!ValidateSemanticInterface(
               sidecar, module, sidecar.canonical_source_sha256, {drift}, {})

@@ -900,6 +900,81 @@ void TestCxxLocalExpressions() {
   }
 }
 
+void TestCxxLocalTypes() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-member-interfaces.v1", "objc3.cxx-declaration-expressions.v1",
+      "objc3.cxx-lambda-expressions.v1", "objc3.cxx-local-types.v1",
+      "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source, const char *filename = "local-types.cpp") {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-xc++", standard, "--target=x86_64-unknown-linux-gnu"}, filename);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),
+          ast->getASTContext().getTranslationUnitDecl(), "fixture.localtypes", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.localtypes", "test");
+    };
+    const std::string source =
+        "inline int local_types(int n) { enum class Kind : unsigned {delta=2}; "
+        "struct Value { int n; explicit Value(int x):n(x) {} "
+        "Value(const Value &v):n(v.n) {} virtual ~Value() {} "
+        "virtual int get(int delta) const {return n+delta;} "
+        "struct Nested {int n;}; }; "
+        "Value first(n); Value copy(first); Value *base=&copy; "
+        "Value::Nested nested{base->get((int)Kind::delta)}; "
+        "return nested.n; } "
+        "inline int local_lambda(int n) { return [n] { "
+        "struct Value {int n; int get() const {return n+2;}}; "
+        "return Value{n}.get(); }(); }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    assert(std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(),
+                     kCxxLocalTypeSemantic) != decoded->required_semantics.end());
+    auto round = emit(emitted.source_bytes, "regenerated.cpp");
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto relocated = emit(source, "another-provider.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto changed = source;
+    changed.replace(changed.find("delta=2"), std::string("delta=2").size(), "delta=3");
+    auto different = emit(changed);
+    assert(different.success && different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    changed = source;
+    changed.replace(changed.find("return n+delta"), std::string("return n+delta").size(),
+                    "return n+delta+1");
+    auto changed_member = emit(changed);
+    assert(changed_member.success &&
+           changed_member.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    auto defaults = emit(
+        "namespace Api { int defaulted(int n=[] { struct Local {int n;}; return Local{42}.n; }()); "
+        "struct Holder { int n=[] {struct Local {int n;}; return Local{42}.n;}(); "
+        "int get() const {struct Local {int n;}; return Local{n}.n;} }; }");
+    assert(defaults.success);
+    auto defaults_round = emit(defaults.source_bytes);
+    assert(defaults_round.success && defaults_round.source_bytes == defaults.source_bytes &&
+           defaults_round.identity.semantic_fingerprint == defaults.identity.semantic_fingerprint);
+    auto erased = *decoded;
+    std::erase(erased.required_semantics, kCxxLocalTypeSemantic);
+    erased.module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(erased));
+    auto invalid = EncodeSemanticInterfaceSidecar(erased, semantics);
+    assert(!invalid); llvm::consumeError(invalid.takeError());
+    auto escapes = emit("inline auto escape() { struct Local {int n;}; return Local{42}; }");
+    assert(!escapes.success);
+    for (const auto *boundary : {
+             "static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}",
+             "inline int call() {union Local {int n;}; return Local{42}.n;}",
+             "inline int call() {struct {int n;} value{42}; return value.n;}"}) {
+      auto rejected = emit(boundary);
+      assert(!rejected.success);
+    }
+  }
+}
+
 void TestCarrierExpressionRoundtrip() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
@@ -1865,6 +1940,7 @@ int main() {
   TestCxxFriends();
   TestNativeExportRoots();
   TestCxxLocalExpressions();
+  TestCxxLocalTypes();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

@@ -154,6 +154,10 @@ inline constexpr const char *kCxxStatementExpressionSemantic = "objc3.cxx-statem
 inline bool HasCxxStatementExpressionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-statement-expressions:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v1";
+inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-local-types:v1;") != std::string::npos;
+}
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);

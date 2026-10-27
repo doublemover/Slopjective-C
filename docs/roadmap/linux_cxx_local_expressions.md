@@ -22,7 +22,8 @@ prototype source locations also retain their imported parameter links.
 Source fixtures exercise ordinary/explicit move captures, nested Blocks, shared
 byref mutation, default arguments/member initialization and statement-expression
 results with nontrivial C++ lifetime. Provider sources are removed before
-consumer compilation. Generic closures and ordinary local type definitions
+consumer compilation. The [2.29.0 source milestone](linux_cxx_local_types.md)
+subsequently adds concrete named local type definitions. Generic closures
 remain separate implementation work; this does not establish full ownership,
 async/task or language/profile conformance.
 

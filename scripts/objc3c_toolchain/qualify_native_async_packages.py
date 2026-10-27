@@ -201,6 +201,7 @@ def check_cpp_metadata(metadata):
     for semantic, name, marker in (
         ('objc3.cxx-block-expressions.v1', 'native_published_block', ';cxx-block-expressions:v1;'),
         ('objc3.cxx-statement-expressions.v1', 'native_published_statement', ';cxx-statement-expressions:v1;'),
+        ('objc3.cxx-local-types.v1', 'native_published_local_type', ';cxx-local-types:v1;'),
     ):
         if semantic not in metadata.get('required_semantics', []):
             raise AssertionError('missing local expression capability: ' + semantic)
