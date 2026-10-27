@@ -43,6 +43,13 @@ integrated-type ARC restrictions, and records release effects and analyzer
 summaries. PCH/import, declarations and source-free interfaces retain contracts.
 SDK 2.33 remains the accepted archive.
 
+The [combined System 2.7–2.9 source receipt](../support/linux_closure_family_ownership_progress.json)
+records **395 compiler regressions**, **190 native unit tests**, all **33 frontend
+suites**, **15 tooling tests** and **24 source-free package configurations /
+96 commands** across normal, eager-import and ASan/UBSan execution. Three platform
+compiler cases remain unsupported. Broader combined runtime/sanitizer validation
+and SDK delivery follow a larger implementation batch.
+
 ## Evaluated borrowed getter owners
 
 The [System 2.8.0 source span](linux_borrowed_getter_snapshots.md) snapshots loans

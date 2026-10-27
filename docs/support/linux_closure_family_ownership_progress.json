@@ -1,0 +1,132 @@
+{
+  "schema": "objc3c.linux-closure-family-ownership-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "64b1c69b2bc9b263ef071fd6dd9461605d0b0f1b",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-f83d07fa376d-00b75dc3",
+  "compiler_patch_digest": "f83d07fa376dce5d9d57750a2cdfac6a747f6a0507a51d64501f39a3bb425fec",
+  "system_module_version": "2.9.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "scope": [
+    "System 2.7: cached synchronous closure owner-use summaries, local aliases, future invocation/copy/escape requirements and independent owner/pin protection",
+    "System 2.8: borrowed getter owner-argument acquisition snapshots through later argument replacement/consumption and conditional/comma/message/operator evaluation",
+    "System 2.9: canonical retainable-family declarations and operations, alias/redeclaration and ARC checks, borrowed release effects and static analyzer summaries",
+    "Family-aware structural equivalence and ODR hashing, consumer-owned imported identifiers, recursive declaration merging and canonical interface transport",
+    "Source-free C++ packages with exact foreign consumption, retained callbacks, ownership-distinct overloads and ARC integrated-family alias lifetime/destruction"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/retainable-family-import-foundation-build.json",
+      "sha256": "beb6edcc0fa1344490def0695da1ab7245e685a68070d04ff79d015a480137d0"
+    },
+    "source_verification": {
+      "path": "out/retainable-family-import-source-verification.json",
+      "sha256": "de8419eb79d99763453d993da0b8a4628e3ac5691b21ecb7b5fb6249d383e372"
+    },
+    "native": {
+      "compiler_regressions_passed": 395,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 190,
+      "report": {
+        "path": "out/retainable-family-import-native-batch.json",
+        "sha256": "dc7f15bae5280cf0ee726ba3ad8aa62a58a12c2ec43c75304df919429158af48"
+      },
+      "logs": [
+        {
+          "path": "out/retainable-family-import-native-0.log",
+          "sha256": "0db3bc1a8dc84ed54a403fcf5784430fcc300a46ad4457e9cf89ab4217d1528d"
+        },
+        {
+          "path": "out/retainable-family-import-native-1.log",
+          "sha256": "c5f98723b8dee870de0e1f00603b0c9e9c4ec56e4f5943093a7e93a642563f0c"
+        },
+        {
+          "path": "out/retainable-family-import-native-2.log",
+          "sha256": "885e187789fb1b1fddc02d9a5ca66f8dc404a044d23577e48528d826575c4066"
+        },
+        {
+          "path": "out/retainable-family-import-native-3.log",
+          "sha256": "6548df422f453ee20dad895b806f1c6650535fa8a2bf8ce78ad110fd43434e50"
+        },
+        {
+          "path": "out/retainable-family-import-native-4.log",
+          "sha256": "4dbc1d90a7685c042327ba73e784d1d51c73de6bfbd042a174493a2e7bd02622"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/retainable-family-import-all-frontend-build.log",
+        "sha256": "25982a75fce5e4dd5c3393fb5c90b39f9cab0526290fbc8ba8a3bec33d21e408"
+      },
+      "tests": {
+        "path": "out/retainable-family-import-all-frontend-tests.log",
+        "sha256": "7b1ebd1f54db61efa207bdc6cebd13dbbc8ce8ee0e921fc4f7ae03b66898bb3a"
+      }
+    },
+    "tooling": {
+      "tests_passed": 15,
+      "log": {
+        "path": "out/retainable-family-import-tooling.log",
+        "sha256": "a4876bbfbe6f088ec1a37e33302839e65799694e4352764fc0a739c1084f5a6f"
+      }
+    },
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/retainable-family-import-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/retainable-family-import-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/retainable-family-import-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+          }
+        }
+      ]
+    },
+    "binaries": {
+      "build_clang": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/bin/clang",
+        "sha256": "a378a97701d4a780fccca28ff19029ddd25b5bdd47f2aa2f76ba73f34716a807"
+      },
+      "stage_clang": {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang",
+        "sha256": "9b9a17aeba5f7dd72463e3268c1bf714852045300cf48ccbec4b73f2e02dc649"
+      },
+      "facade": {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "588e1e5d1bacbba4a6333d2bd8e2f00d93d749e37b7f13a500692ca1c6ae33fe"
+      }
+    }
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "acceptance_receipt": "docs/support/linux_source_batch_2_33_acceptance.json",
+    "broader_combined_runtime_and_sanitizer_batch": "deferred to a larger implementation batch",
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  }
+}

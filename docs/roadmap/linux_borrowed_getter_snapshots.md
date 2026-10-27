@@ -23,3 +23,7 @@ repeat the key rejection and selected-owner acceptance cases. General indirect
 owners, ownership counts and interprocedural effects remain open. Full Strict
 System conformance is not claimed. Compiler identity changes require rebuilding
 dependent PCH, interfaces and packages; runtime/extension ABI layouts are unchanged.
+
+The [combined ownership receipt](../support/linux_closure_family_ownership_progress.json)
+records this span with the other System 2.7–2.9 spans, including complete native/frontend checks
+and focused source-free package execution. SDK 2.33 remains the accepted archive.

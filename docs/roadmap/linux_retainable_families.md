@@ -42,3 +42,10 @@ checks exact destruction after the final alias ends. General manual
 counts, indirect operation metadata, complete transfer/optimizer analysis and
 full Strict System conformance remain open. Optional family sugar is outside
 this canonical-header span. SDK 2.33 remains the accepted installed archive.
+
+The [combined System 2.7–2.9 source receipt](../support/linux_closure_family_ownership_progress.json)
+records 395 compiler regressions, 190 native unit tests, all 33 frontend suites,
+15 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan modes. Three platform cases are unsupported.
+Broader combined runtime/sanitizer validation and SDK delivery follow a larger
+implementation batch.

@@ -36,3 +36,7 @@ nested captures, local and overwritten/conditional aliases, Block bodies,
 independent ARC/explicit Block owners, object pins and pin expiry, escape
 boundaries and a twelve-level nested summary. Frontend witnesses add source-free
 publication/reparse of a concrete local borrowing closure.
+
+The [combined ownership receipt](../support/linux_closure_family_ownership_progress.json)
+records this span with the other System 2.7–2.9 spans, including complete native/frontend checks
+and focused source-free package execution. SDK 2.33 remains the accepted archive.
