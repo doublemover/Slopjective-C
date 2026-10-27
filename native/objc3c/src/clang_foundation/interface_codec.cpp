@@ -374,6 +374,14 @@ llvm::Error ValidateForEncoding(
   const bool using_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
                                      kCxxUsingSemantic)!=sidecar.required_semantics.end();
   if(has_using!=using_capability) return Invalid("C++ using identity and required capability must agree");
+  const bool has_expressions = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(),
+      HasCxxDeclarationExpressionIdentity);
+  const bool expression_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxDeclarationExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_expressions != expression_capability)
+    return Invalid("C++ declaration expression identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

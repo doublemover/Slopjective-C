@@ -462,3 +462,26 @@ struct NativeInherited : NativeClassValue {
 };
 
 using enum NativeFamily::Kind;
+
+namespace NativeDefaults {
+  extern int evaluations;
+  int seed();
+  int accept(int n=seed());
+  int accept(int n);
+  struct Aggregate { int value=seed(); int extra{2}; };
+  struct Object {
+    int value=seed();
+    Object()=default;
+    Object(int n, int delta=seed());
+    int get(int delta=seed()) const;
+  };
+  int frame(int n=seed()) __objc3_async_frame;
+}
+int NativeDefaults::evaluations=0;
+int NativeDefaults::seed() { ++evaluations; return 40; }
+int NativeDefaults::accept(int n) { return n+2; }
+NativeDefaults::Object::Object(int n,int delta) : value(n+delta) {}
+int NativeDefaults::Object::get(int delta) const { return value+delta; }
+int NativeDefaults::frame(int n) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf(); return n+2;
+}

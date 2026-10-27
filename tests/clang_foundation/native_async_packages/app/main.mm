@@ -194,9 +194,29 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  {
+    NativeDefaults::evaluations=0;
+    if (NativeDefaults::accept()!=42 || NativeDefaults::evaluations!=1) return 65;
+    NativeDefaults::Aggregate aggregate{};
+    if (aggregate.value+aggregate.extra!=42 || NativeDefaults::evaluations!=2) return 66;
+    NativeDefaults::Object implicit;
+    if (implicit.value!=40 || NativeDefaults::evaluations!=3) return 67;
+    NativeDefaults::Object explicit_value(2);
+    if (explicit_value.value!=42 || NativeDefaults::evaluations!=4) return 68;
+    if (implicit.get()!=80 || NativeDefaults::evaluations!=5) return 69;
+
+  }
+
   objc3_executor_t *executor = nullptr;
   if (objc3_executor_create(1, &executor) != OBJC3_SERVICE_OK)
     return 1;
+  {
+    auto frame=__objc3_async_from_frame<int>(NativeDefaults::frame()).start(executor);
+    if (NativeDefaults::evaluations!=6) return 70;
+    uint32_t completed=0;
+    if (objc3_executor_pump(executor,100,&completed)!=OBJC3_SERVICE_OK ||
+        frame.result()!=42 || NativeDefaults::evaluations!=6) return 71;
+  }
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||

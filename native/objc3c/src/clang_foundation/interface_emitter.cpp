@@ -222,6 +222,75 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
   return true;
 }
 
+// Bind spelling, typed native nodes and every resolved reference. Text alone
+// cannot distinguish identically spelled defaults that select different overloads.
+// Length delimiters keep user strings from introducing synthetic identity fields.
+class DeclarationExpressionIdentity final
+    : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
+public:
+  explicit DeclarationExpressionIdentity(const clang::ASTContext &context)
+      : context_(context) {}
+  void Add(llvm::StringRef value) {
+    bytes_ += std::to_string(value.size()) + ":" + value.str();
+  }
+  bool VisitExpr(clang::Expr *expression) {
+    Add(expression->getStmtClassName());
+    Add(CanonicalType(expression->getType(), context_));
+    Add(std::to_string(expression->getValueKind()));
+    return true;
+  }
+  bool VisitCastExpr(clang::CastExpr *expression) {
+    Add(expression->getCastKindName());
+    return true;
+  }
+  bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
+    Reference(expression->getDecl()); return true;
+  }
+  bool VisitMemberExpr(clang::MemberExpr *expression) {
+    Reference(expression->getMemberDecl()); return true;
+  }
+  bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {
+    Reference(expression->getConstructor()); return true;
+  }
+  bool VisitCXXNewExpr(clang::CXXNewExpr *expression) {
+    Reference(expression->getOperatorNew());
+    Reference(expression->getOperatorDelete());
+    return true;
+  }
+  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
+    Reference(expression->getOperatorDelete()); return true;
+  }
+  bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
+    Reference(expression->getMethodDecl()); return true;
+  }
+  void Reference(const clang::NamedDecl *declaration) {
+    if (!declaration) { Add("<none>"); return; }
+    Add(ReadInterfaceDeclarationStableId(declaration));
+    Add(ReadNativeSymbolName(declaration));
+  }
+  std::string Get(clang::Expr *expression) {
+    clang::PrintingPolicy policy(context_.getLangOpts());
+    policy.PrintAsCanonical = true;
+    policy.AnonymousTagNameStyle = static_cast<unsigned>(
+        clang::PrintingPolicy::AnonymousTagMode::Plain);
+    std::string printed;
+    llvm::raw_string_ostream stream(printed);
+    expression->printPretty(stream, nullptr, policy);
+    Add(printed);
+    TraverseStmt(expression);
+    llvm::SHA256 hash; hash.update(bytes_);
+    return llvm::toHex(hash.final(), true);
+  }
+private:
+  const clang::ASTContext &context_;
+  std::string bytes_;
+};
+
+std::string DeclarationExpressionContract(const clang::Expr *expression,
+                                           const clang::ASTContext &context) {
+  return DeclarationExpressionIdentity(context).Get(const_cast<clang::Expr *>(expression));
+}
+
 bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
   if (!record || !record->isCompleteDefinition())
     return false;
@@ -371,6 +440,27 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                              ":access="+CxxAccessName(using_decl->getAccess()));
     if(!using_members.empty()) out << ";cxx-using:v1;";
     for(const auto &member:using_members) out << "using=" << member << ';';
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> expressions;
+    for (const auto *field : cxx->fields())
+      if (field->hasInClassInitializer())
+        expressions.insert("field=" + ReadInterfaceDeclarationStableId(field) + ":" +
+            DeclarationExpressionContract(field->getInClassInitializer(), context));
+    for (const auto *method : cxx->methods())
+      if (!method->isImplicit()) {
+        unsigned index = 0;
+        for (const auto *parameter : method->getMostRecentDecl()->parameters()) {
+          if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
+            expressions.insert("method=" + ReadInterfaceDeclarationStableId(method) + ":" +
+                std::to_string(index) + ":" +
+                DeclarationExpressionContract(parameter->getDefaultArg(), context));
+          ++index;
+        }
+      }
+    if (!expressions.empty()) out << ";cxx-declaration-expressions:v1;";
+    for (const auto &expression : expressions) out << expression << ';';
   }
   out.flush();
   return text;
@@ -522,14 +612,27 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       type = context.getFunctionNoProtoType(no_proto->getReturnType(),
           no_proto->getExtInfo().withProducesResult(false));
     }
-    return CanonicalType(type, context) +
+    std::string identity = CanonicalType(type, context) +
            (context.getLangOpts().CPlusPlus
                 ? ";language-linkage=" + std::to_string(static_cast<unsigned>(
                                              function->getLanguageLinkage()))
                 : "");
+    unsigned index = 0;
+    for (const auto *parameter : function->parameters()) {
+      if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
+        identity += ";cxx-declaration-expressions:v1;default=" +
+            std::to_string(index) + ":" +
+            DeclarationExpressionContract(parameter->getDefaultArg(), context) + ";";
+      ++index;
+    }
+    return identity;
   }
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
     std::string identity = CanonicalType(value->getType(), context);
+    if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(value);
+        field && field->hasInClassInitializer())
+      identity += ";cxx-declaration-expressions:v1;init=" +
+          DeclarationExpressionContract(field->getInClassInitializer(), context) + ";";
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(value);
         variable && context.getLangOpts().CPlusPlus)
       identity +=
@@ -688,6 +791,50 @@ class TypeDependencyVisitor final
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRecordType(type, traverse_qualifier);
   }
 
+  void CheckExpressionReference(const clang::NamedDecl *target) {
+    if (!target) return;
+    target = target->getUnderlyingDecl();
+    CheckVisibility(target);
+    if (target->getDeclContext()->isFunctionOrMethod() ||
+        (!target->isExternallyVisible() && IsTopLevel(target)) ||
+        (!IsInMainFile(context_, target->getLocation()) && !IsResolved(target)))
+      AddDiagnostic(result_, "O3IFC112",
+                    "declaration expression references a non-public or unresolved dependency",
+                    target->getQualifiedNameAsString());
+  }
+  bool VisitExpr(clang::Expr *expression) {
+    TraverseType(expression->getType());
+    return true;
+  }
+  bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
+    CheckExpressionReference(expression->getDecl()); return true;
+  }
+  bool VisitMemberExpr(clang::MemberExpr *expression) {
+    CheckExpressionReference(expression->getMemberDecl()); return true;
+  }
+  bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {
+    CheckExpressionReference(expression->getConstructor()); return true;
+  }
+  bool VisitCXXNewExpr(clang::CXXNewExpr *expression) {
+    CheckExpressionReference(expression->getOperatorNew());
+    CheckExpressionReference(expression->getOperatorDelete());
+    return true;
+  }
+  bool VisitCXXDeleteExpr(clang::CXXDeleteExpr *expression) {
+    CheckExpressionReference(expression->getOperatorDelete()); return true;
+  }
+  bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
+    CheckExpressionReference(expression->getMethodDecl()); return true;
+  }
+  bool VisitLambdaExpr(clang::LambdaExpr *) { return UnsupportedExpression(); }
+  bool VisitBlockExpr(clang::BlockExpr *) { return UnsupportedExpression(); }
+  bool VisitStmtExpr(clang::StmtExpr *) { return UnsupportedExpression(); }
+  bool UnsupportedExpression() {
+    AddDiagnostic(result_, "O3IFC101",
+                  "declaration expressions with local declarations or captures require additional contracts");
+    return false;
+  }
+
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
     CheckVisibility(declaration);
@@ -821,6 +968,13 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    for (const auto *parameter : function->parameters())
+      if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
+        visitor.TraverseStmt(const_cast<clang::Expr *>(parameter->getDefaultArg()));
+  if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration);
+      field && field->hasInClassInitializer())
+    visitor.TraverseStmt(field->getInClassInitializer());
   auto check_reference=[&](const clang::NamedDecl *target) {
     visitor.CheckVisibility(target);
     if (!IsInMainFile(context,target->getLocation(),source_root) && !visitor.IsResolved(target))
@@ -901,10 +1055,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
         continue;
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
-      if (field) {
-        supported &= !field->hasInClassInitializer();
-        continue;
-      }
+      if (field) continue;
       if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
@@ -926,9 +1077,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (const auto *conversion =
               llvm::dyn_cast_or_null<clang::CXXConversionDecl>(method))
         supported &= conversion->getExplicitSpecifier().getExpr() == nullptr;
-      if (method)
-        for (const auto *parameter : method->parameters())
-          supported &= !parameter->hasDefaultArg();
     }
   }
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
@@ -945,8 +1093,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       supported &= !function->isTemplated() &&
                    !function->getTrailingRequiresClause() &&
                    !function->isInlined() && !function->isDefaulted();
-      for (const auto *parameter : function->parameters())
-        supported &= !parameter->hasDefaultArg();
     }
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->isExternallyVisible())
@@ -964,7 +1110,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                   "declarations or in-class defaulted special members, without "
                   "templates, "
                   "concrete inline/constexpr members, "
-                  "member initializers, default arguments, or unnamed nested types",
+                  "local declaration expressions or unnamed nested types",
                   declaration->getQualifiedNameAsString());
   return supported;
 }
@@ -1712,6 +1858,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
     if (HasCxxUsingIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxUsingSemantic);
+    if (HasCxxDeclarationExpressionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxDeclarationExpressionSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -1773,6 +1921,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       kCxxNamespaceSemantic,
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
+    kCxxDeclarationExpressionSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1872,6 +2021,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxNamespaceSemantic,
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
+    kCxxDeclarationExpressionSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

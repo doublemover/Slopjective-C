@@ -52,7 +52,7 @@ nested named class, enum and alias declarations under `objc3.cxx-nested-types.v1
 and preserves namespace SPI/private-dependency lookup boundaries.
 
 The [2.13.0 source milestone](linux_cxx_using.md) adds using declarations,
-inherited constructors and using-directives under `objc3.cxx-using.v1`.
+inherited constructors, using-enum and using-directives under `objc3.cxx-using.v1`.
 
 The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
 aggregate methods in the lifecycle capability and canonical member identity.
@@ -88,3 +88,7 @@ retains the historical ABI 12 aggregate-interface, sanitizer and debugger scope.
 This declaration subset uses the existing native call and ownership bounds.
 Public Optional/Result, synchronous throws, async/await and actors remain
 reserved until their public syntax and complete contracts are qualified.
+
+The [2.14.0 source milestone](linux_cxx_declaration_expressions.md) binds concrete
+default arguments and member initializers, resolved expression dependencies and
+native expression identity under `objc3.cxx-declaration-expressions.v1`.

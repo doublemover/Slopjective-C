@@ -65,7 +65,8 @@
     "using_calculate",
     "@using:NativeUsingApi",
     "NativeInherited",
-    "@using-enum:NativeFamily::Kind"
+    "@using-enum:NativeFamily::Kind",
+    "NativeDefaults"
   ],
   "dependencies": []
 }

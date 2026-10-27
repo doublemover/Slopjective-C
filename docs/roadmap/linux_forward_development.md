@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ default arguments and member initializers
+
+The [2.14.0 source milestone](linux_cxx_declaration_expressions.md) binds concrete
+declaration expressions, native reference targets and required export/SPI
+boundaries. Member defaults also participate in containing record identity.
+Broad source and SDK/archive validation remain deferred for the source batch.
+
 ## C++ using declarations and namespace lookup
 
 The [2.13.0 source milestone](linux_cxx_using.md) adds namespace/member using

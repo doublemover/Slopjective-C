@@ -841,6 +841,59 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxDeclarationExpressions() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
+      "objc3.cxx-nested-types.v1", "objc3.cxx-namespaces.v1",
+      "objc3.cxx-declaration-expressions.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args = {
+        "-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+    auto emit = [&](const std::string &source,
+                    const std::vector<std::string> &exports = std::vector<std::string>{}) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "defaults.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.defaults", "test", {}, {}, {}, exports);
+    };
+    const std::string source =
+        "namespace Defaults { int seed(); int accept(int n=seed()); int accept(int n); "
+        "struct Value { int first=seed(); int second{first+2}; int slots[2]={20,22}; "
+        "Value()=default; Value(int n, int delta=seed()); int get(int n=seed()) const; }; "
+        "struct Aggregate { int value=42; }; int aggregate(Aggregate a={}); }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto different_default = emit("int api(int n=42);");
+    auto other_default = emit("int api(int n=43);");
+    assert(different_default.success && other_default.success &&
+           different_default.identity.semantic_fingerprint != other_default.identity.semantic_fingerprint);
+    auto first = emit("struct Data { int n=42; };");
+    auto second = emit("struct Data { int n=43; };");
+    assert(first.success && second.success &&
+           first.identity.semantic_fingerprint != second.identity.semantic_fingerprint);
+    auto excluded = emit("int hidden(); int api(int n=hidden());", {"api"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(), excluded.diagnostics.end(),
+        [](const auto &d) { return d.code == "O3IFC156"; }));
+    auto local = emit("static int hidden(); int api(int n=hidden());");
+    assert(!local.success && std::any_of(local.diagnostics.begin(), local.diagnostics.end(),
+        [](const auto &d) { return d.code == "O3IFC112"; }));
+    auto spi = emit("__attribute__((annotate(\"objc3.spi:secret\"))) int hidden(); int api(int n=hidden());");
+    assert(!spi.success && std::any_of(spi.diagnostics.begin(), spi.diagnostics.end(),
+        [](const auto &d) { return d.code == "O3IFC158"; }));
+    std::erase(decoded->required_semantics, "objc3.cxx-declaration-expressions.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxUsingDeclarations() {
   const std::vector<llvm::StringRef> semantics={
       "objc3.cxx-data-interfaces.v1","objc3.cxx-member-interfaces.v1",
@@ -1255,18 +1308,18 @@ void TestBoundedCxxSemanticInterfaces() {
        {"namespace nested { inline int api() { return 42; } }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
-        "second=1; };",
+        "second=1; int get() const { return second; } };",
 
         "struct Method { int value; inline int get() const { return value; } "
         "};",
-        "struct Default { int value=42; };",
+        "struct Default { int value=[] { return 42; }(); };",
         "struct Conditional { explicit(true) Conditional(int); };",
         "struct Defaulted { Defaulted(); }; Defaulted::Defaulted() = default;",
         "struct Comparison { int n; bool operator==(const Comparison&) const = "
         "default; };",
         "struct Immediate { consteval Immediate() = default; };",
-        "struct Nested { struct Inner { int value=42; }; Inner child; };",
-        "int api(int argument=42);", "inline int api() { return 42; }",
+        "struct Nested { struct Inner { int value=[] { return 42; }(); }; Inner child; };",
+        "int api(int argument=[] { return 42; }());", "inline int api() { return 42; }",
         "extern constexpr int exported=42;", "extern const int exported=42;",
         "constexpr int evaluated() { return 42; }",
         "union Overlap { int one; long two; };"}) {
@@ -1305,6 +1358,7 @@ int main() {
   TestCxxNamedNamespaces();
   TestCxxNestedTypes();
   TestCxxUsingDeclarations();
+  TestCxxDeclarationExpressions();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }
