@@ -106,8 +106,10 @@ original scalar boundary to native record values, ARC-managed record fields and
 C++ parameter/result storage hooks. Owned C++ parameters move into the target
 call; results retain the native frame's copy/destruction requirements. Resource
 storage, unqualified nested leaves and MRC managed aggregates remain rejected.
-Consuming parameters/receivers remain rejected until their
-cancellation-time adoption is implemented. C++ targets must have a nonthrowing
+The [2.31.0 source milestone](linux_isolation_consuming_ownership.md) adds ARC
+consumed object/Block parameters and consuming instance receivers, with
+cancellation/allocation-failure adoption and owning message-operand snapshots.
+MRC/CF consumption and init-family entry remain gated. C++ targets must have a nonthrowing
 native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
 Ordinary C++ task-ABI isolated target entries, class/super messages, and unsupported callable

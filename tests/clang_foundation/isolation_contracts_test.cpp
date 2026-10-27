@@ -451,6 +451,32 @@ struct __attribute__((objc_unsafe_sendable)) ResourcePacket { Handle value; };
               "union PacketUnion cross(union PacketUnion value) __objc3_async {"
               "return __objc3_await union_entry(value);}"),
          "awaited isolated entry requires");
+  const std::string Consuming =
+      "int consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
+      " __attribute__((objc_executor(main)));\n"
+      "@interface Counter (Consumption)\n"
+      "- (int)take:(__attribute__((ns_consumed)) SafeMessage *)value "
+      "__attribute__((nothrow));\n"
+      "- (int)finish __attribute__((nothrow, ns_consumes_self));\n"
+      "- (int)finishAfter:(int)value __attribute__((nothrow, ns_consumes_self));\n@end\n"
+      "int consume_cross(Counter *counter, SafeMessage *value) __objc3_async {"
+      "int first=__objc3_await consume(value);"
+      "int second=__objc3_await [counter take:value];"
+      "return first+second+__objc3_await [counter finish];}";
+  if (Arc) {
+    Success(Compile(Make(Consuming)));
+    Success(Compile(Make(Consuming +
+        "int clear_counter(Counter *__strong *value) {*value=0;return 0;}\n"
+        "int consume_snapshot(Counter *counter) __objc3_async {"
+        "return __objc3_await [counter finishAfter:clear_counter(&counter)];}")));
+  } else
+    Reject(Make(Consuming), "awaited isolated entry requires");
+  Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
+              "int cf_consume(__attribute__((cf_consumed)) CFTokenRef value)" + NoThrow +
+              " __attribute__((objc_executor(main)));\n"
+              "int cf_cross(CFTokenRef value) __objc3_async {"
+              "return __objc3_await cf_consume(value);}"),
+         "awaited isolated entry requires");
   Success(
       Compile(Make("__attribute__((objc_executor(main), ns_returns_retained)) "
                    "SafeMessage *owned_result(void)" +
@@ -566,9 +592,12 @@ void *spawn(Work) __attribute__((objc_task_spawn));
 struct ModulePacket { int value; double weights[3]; };
 struct ModulePacket packet_entry(struct ModulePacket)
     __attribute__((objc_executor(main), nothrow));
+int module_consume(__attribute__((ns_consumed)) SafeMessage *)
+    __attribute__((objc_executor(main), nothrow));
 @interface Counter (Packets)
 - (struct ModulePacket)transformPacket:(struct ModulePacket)packet
     __attribute__((nothrow));
+- (int)consumeSelf __attribute__((nothrow, ns_consumes_self));
 @end
 )";
   auto From = Parse(Source, Cxx, Arc);
@@ -630,6 +659,17 @@ struct ModulePacket packet_entry(struct ModulePacket)
       Request("int client(Counter *c) { return [c stable]; }", Cxx, Arc);
   Consumer.imported_interfaces = {Input};
   Success(Compile(Consumer));
+  if (Arc) {
+    Consumer.source_text =
+        std::string(Cxx ? "#include \"objc3_task.hpp\"\n"
+                        : "#include \"objc3_runtime_services.h\"\n") + R"(
+int client_consuming(Counter *counter, SafeMessage *message) __objc3_async {
+  int first=__objc3_await module_consume(message);
+  return first+__objc3_await [counter consumeSelf];
+}
+)";
+    Success(Compile(Consumer));
+  }
   Consumer.source_text =
       std::string(Cxx ? "#include \"objc3_task.hpp\"\n"
                       : "#include \"objc3_runtime_services.h\"\n") + R"(

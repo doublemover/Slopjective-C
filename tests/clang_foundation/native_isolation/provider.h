@@ -40,6 +40,12 @@ int hop_cxx_packet_entries(void);
 void hop_cxx_packet_fail_move(int);
 int hop_cxx_value_roundtrip(objc3_executor_t *) __objc3_async_frame;
 int hop_cxx_value_live(void);
+int hop_cxx_actor_roundtrip(HopCounter *, objc3_executor_t *) __objc3_async_frame;
+int hop_consumed_roundtrip(int, objc3_executor_t *) __objc3_async_frame;
+void hop_consumed_reset(int);
+int hop_consumed_arguments(void);
+int hop_consumed_entries(void);
+int hop_throwing_argument(void);
 #ifdef __cplusplus
 }
 #endif

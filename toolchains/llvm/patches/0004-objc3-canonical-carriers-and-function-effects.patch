@@ -1234,7 +1234,7 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..4f5591bb4 100644
+index 2cb79b6ba..8674c4693 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,135 @@
@@ -1264,7 +1264,7 @@ index 2cb79b6ba..4f5591bb4 100644
 +def err_objc3_isolation_hop_unavailable : Error<
 +  "native %select{actor|executor}0 crossing requires executor-hop lowering">;
 +def err_objc3_isolation_hop_shape : Error<
-+  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with supported value arguments/results, non-consuming parameters, and a nonthrowing C++ exception specification">;
++  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with qualified value/ownership contracts and a nonthrowing C++ exception specification">;
 +def err_objc3_isolated_state : Error<
 +  "actor-isolated state %0 is accessible only on the same actor; use an awaited actor member">;
 +def err_objc3_sendable_transfer : Error<
@@ -38913,10 +38913,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..f2fe5196c
+index 000000000..c4fc10318
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1044 @@
+@@ -0,0 +1,1113 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -39697,6 +39697,30 @@ index 000000000..f2fe5196c
 +  if (Message)
 +    Types.push_back(Message->getInstanceReceiver()->getType());
 +  llvm::append_range(Types, Original->param_types());
++  SmallVector<const ParmVarDecl *, 4> SourceParameters;
++  if (Message)
++    llvm::append_range(SourceParameters, cast<ObjCMethodDecl>(Target)->parameters());
++  else
++    llvm::append_range(SourceParameters, cast<FunctionDecl>(Target)->parameters());
++  SmallVector<FunctionProtoType::ExtParameterInfo, 4> ParameterInfos(Types.size());
++  bool HasConsumed = false;
++  for (unsigned I = 0; I != Types.size(); ++I) {
++    const bool Consumed = S.getLangOpts().ObjCAutoRefCount &&
++        (Message && I == 0 ? Target->hasAttr<NSConsumesSelfAttr>()
++                          : SourceParameters[I - (Message ? 1 : 0)]
++                                ->hasAttr<NSConsumedAttr>());
++    if (!Consumed) continue;
++    HasConsumed = true;
++    ParameterInfos[I] = ParameterInfos[I].withIsConsumed(true);
++    // The ramp adopts the caller's +1 and owns it independently of the frame
++    // copy. Its ordinary ARC parameter cleanup also runs if frame creation
++    // fails. A weak/unowned source expression does not change this ownership.
++    auto Quals = Types[I].getQualifiers();
++    Quals.removeObjCLifetime();
++    Quals.addObjCLifetime(Qualifiers::OCL_Strong);
++    Types[I] = S.Context.getQualifiedType(Types[I].getUnqualifiedType(), Quals);
++  }
++  if (HasConsumed) Info.ExtParameterInfos = ParameterInfos.data();
 +  QualType Type =
 +      S.Context.getFunctionType(Original->getReturnType(), Types, Info);
 +  // Register the native frame representation before publishing the body to
@@ -39721,6 +39745,8 @@ index 000000000..f2fe5196c
 +        &S.Context.Idents.get("argument" + std::to_string(I)), Types[I],
 +        S.Context.getTrivialTypeSourceInfo(Types[I], Loc), SC_None, nullptr);
 +    Param->setImplicit();
++    if (ParameterInfos[I].isConsumed())
++      Param->addAttr(NSConsumedAttr::CreateImplicit(S.Context));
 +    Thunk->addDecl(Param);
 +    Params.push_back(Param);
 +  }
@@ -39800,11 +39826,23 @@ index 000000000..f2fe5196c
 +  return Reference && Reference->getDecl() == Method->getSelfDecl();
 +}
 +
-+bool consumesIsolatedParameter(const ParmVarDecl *Parameter) {
-+  return Parameter->hasAttr<NSConsumedAttr>() ||
++bool unsupportedIsolatedConsumption(const Sema &S, const ParmVarDecl *Parameter) {
++  const bool ARCConsumed = S.getLangOpts().ObjCAutoRefCount &&
++      Parameter->getType()->isObjCRetainableType();
++  return (Parameter->hasAttr<NSConsumedAttr>() && !ARCConsumed) ||
 +         Parameter->hasAttr<CFConsumedAttr>() ||
 +         Parameter->hasAttr<ObjCResourceAttr>() ||
 +         Parameter->getType()->isReferenceType();
++}
++
++Expr *uninitializeConsumedArgument(Expr *Argument) {
++  // Source calls have already undergone consumed-parameter initialization.
++  // The adopting thunk redoes that initialization for its own consumed ABI;
++  // retaining the first ARCProduceObject would manufacture a second +1.
++  if (auto *Cast = dyn_cast<ImplicitCastExpr>(Argument);
++      Cast && Cast->getCastKind() == CK_ARCProduceObject)
++    return Cast->getSubExpr();
++  return Argument;
 +}
 +
 +const FunctionProtoType *isolationCalleeFunctionType(Sema &S,
@@ -39875,15 +39913,15 @@ index 000000000..f2fe5196c
 +    Shape &= !isa<CXXMethodDecl>(Target) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
 +    for (const auto *Parameter : cast<FunctionDecl>(Target)->parameters())
-+      Shape &= !consumesIsolatedParameter(Parameter);
++      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  } else {
 +    Shape &=
 +        Message->getReceiverKind() == ObjCMessageExpr::Instance &&
 +        Message->getInstanceReceiver()->getType()->isObjCObjectPointerType() &&
-+        !Target->hasAttr<NSConsumesSelfAttr>() &&
++        (!Target->hasAttr<NSConsumesSelfAttr>() || getLangOpts().ObjCAutoRefCount) &&
 +        cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init;
 +    for (const auto *Parameter : cast<ObjCMethodDecl>(Target)->parameters())
-+      Shape &= !consumesIsolatedParameter(Parameter);
++      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  }
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);
@@ -39907,6 +39945,14 @@ index 000000000..f2fe5196c
 +                            "isolated checked error", Target);
 +  if (Failed)
 +    return ExprError();
++  if (getLangOpts().ObjCAutoRefCount) {
++    ArrayRef<ParmVarDecl *> Parameters = Message
++        ? cast<ObjCMethodDecl>(Target)->parameters()
++        : cast<FunctionDecl>(Target)->parameters();
++    for (unsigned I = 0; I != Parameters.size(); ++I)
++      if (Parameters[I]->hasAttr<NSConsumedAttr>())
++        SourceArguments[I] = uninitializeConsumedArgument(SourceArguments[I]);
++  }
 +  auto *Thunk =
 +      buildIsolationThunk(*this, Source, Target, FT, Executor, ActorEntry, Loc);
 +  if (!Thunk)
@@ -39921,15 +39967,38 @@ index 000000000..f2fe5196c
 +  SmallVector<Expr *, 4> Semantics;
 +  SmallVector<Expr *, 4> Captures;
 +  auto Capture = [&](Expr *Value) {
++    if (getLangOpts().ObjCAutoRefCount &&
++        Value->getType()->isObjCRetainableType()) {
++      ExprResult Loaded = DefaultLvalueConversion(Value);
++      if (Loaded.isInvalid())
++        return false;
++      Value = Loaded.get();
++      // Bind an owning value before evaluating the next operand. Loading a
++      // receiver/argument only at thunk-call initialization is too late: a
++      // later operand may clear its last strong owner. The balanced ARC
++      // temporary also releases this snapshot if a later operand throws.
++      Value = ImplicitCastExpr::Create(
++          Context, Value->getType(), CK_ARCProduceObject, Value, nullptr,
++          VK_PRValue, FPOptionsOverride());
++      Value = ImplicitCastExpr::Create(
++          Context, Value->getType(), CK_ARCConsumeObject, Value, nullptr,
++          VK_PRValue, FPOptionsOverride());
++      Cleanup.setExprNeedsCleanups(true);
++    }
 +    auto *Opaque = new (Context)
 +        OpaqueValueExpr(Value->getExprLoc(), Value->getType(),
 +                        Value->getValueKind(), Value->getObjectKind(), Value);
 +    Semantics.push_back(Opaque);
 +    Captures.push_back(Opaque);
++    return true;
 +  };
-+  Capture(Message->getInstanceReceiver());
++  if (!Capture(Target->hasAttr<NSConsumesSelfAttr>()
++                   ? uninitializeConsumedArgument(Message->getInstanceReceiver())
++                   : Message->getInstanceReceiver()))
++    return ExprError();
 +  for (auto *Argument : SourceArguments)
-+    Capture(Argument);
++    if (!Capture(Argument))
++      return ExprError();
 +  ExprResult Frame = BuildCallExpr(nullptr, Callee.get(), Loc, Captures, Loc);
 +  if (Frame.isInvalid())
 +    return ExprError();

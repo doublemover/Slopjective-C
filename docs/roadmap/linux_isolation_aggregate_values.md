@@ -10,8 +10,9 @@ ARC record fields retain their native strong/weak copy and destruction
 operations. MRC records containing Objective-C or Block references remain
 excluded until their independent aggregate ownership is modeled. Resource
 leaves, references, volatile/atomic storage and unsupported nested value forms
-are rejected by the entry shape check. Consuming parameters and receivers remain
-a separate implementation boundary.
+are rejected by the entry shape check. ARC consuming parameters and receivers are implemented by the subsequent
+[2.31.0 source milestone](linux_isolation_consuming_ownership.md); MRC/CF
+consumption remains a separate implementation boundary.
 
 C++ thunks instantiate the same typed capture/result hooks as explicit native
 frames. This preserves construction, access/deletion checks, copyable result

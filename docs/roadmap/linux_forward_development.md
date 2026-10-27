@@ -582,3 +582,10 @@ construction/destruction contracts; xvalue forwarding avoids hidden copies.
 Maintained witnesses add source-free record contracts, actor/caller restoration,
 cancellation and failure at successive C++ moves. The accepted SDK remains
 2.29.0 while this implementation batch is validated.
+
+The [2.31.0 source milestone](linux_isolation_consuming_ownership.md) adds ARC
+consumed object/Block parameters and consuming instance receivers at supported
+awaited entries. Owning receiver/argument snapshots preserve message evaluation
+when later operands clear their original owners, with balanced exceptional
+cleanup. MRC/CF consumption, init-family entry, class/super crossings and ordinary
+C++ task-ABI targets remain open; accepted SDK delivery remains 2.29.0.

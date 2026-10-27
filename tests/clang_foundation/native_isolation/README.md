@@ -32,3 +32,10 @@ admission. `cxx-packet.mm` supplies move-only parameter and successive throwing
 construction witnesses. Both implementation sources are removed before client
 and PCH compilation. Their expanded validation is recorded separately from the
 earlier 48-configuration acceptance above.
+
+The 2.31 source additions compile `consuming.m` under ARC independently of the
+other provider's ownership mode. It checks transferred object/Block parameters,
+consuming receivers, retained self results and native-frame targets. Receiver
+and argument snapshots survive later operands clearing their original owners;
+throwing later arguments unwind the snapshots. Each successful, cancelled or
+allocation-failed entry has exact destruction and target-invocation checks.

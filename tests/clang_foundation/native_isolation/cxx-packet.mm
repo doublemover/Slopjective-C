@@ -2,6 +2,8 @@
 #include "objc3_task.hpp"
 #include <assert.h>
 
+extern "C" int hop_throwing_argument(void) { throw 77; }
+
 static int live_packets, packet_entries, move_count, fail_move;
 struct __attribute__((objc_unsafe_sendable)) MovePacket {
   int value;
@@ -78,4 +80,30 @@ extern "C" int hop_cxx_value_roundtrip(objc3_executor_t *caller)
 }
 extern "C" int hop_cxx_value_live(void) {
   return __atomic_load_n(&live_values,__ATOMIC_ACQUIRE);
+}
+
+@interface HopCounter (CxxValues)
+- (CopyPacket)copyPacket:(CopyPacket)value __attribute__((nothrow));
+- (int)movePacket:(MovePacket)value __attribute__((nothrow));
+@end
+@implementation HopCounter (CxxValues)
+- (CopyPacket)copyPacket:(CopyPacket)value {
+  value.value+=2;
+  return value;
+}
+- (int)movePacket:(MovePacket)value {
+  __atomic_fetch_add(&packet_entries,1,__ATOMIC_RELEASE);
+  return value.value;
+}
+@end
+extern "C" int hop_cxx_actor_roundtrip(HopCounter *counter,
+                                       objc3_executor_t *caller)
+    __objc3_async_frame {
+  CopyPacket source(40);
+  CopyPacket result=__objc3_await [counter copyPacket:static_cast<CopyPacket &&>(source)];
+  assert(source.value==0 && objc3_executor_is_current(caller));
+  MovePacket moved(42);
+  int value=__objc3_await [counter movePacket:static_cast<MovePacket &&>(moved)];
+  assert(moved.value==0 && objc3_executor_is_current(caller));
+  return result.value+value-42;
 }

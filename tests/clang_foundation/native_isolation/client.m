@@ -193,6 +193,81 @@ int main(void) {
       sched_yield();
     assert(hop_cxx_value_live() == 0);
 
+    frame = hop_cxx_actor_roundtrip(counter, caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    assert(result == 42);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 &&
+         (hop_cxx_value_live() || hop_cxx_packet_live()); ++step)
+      sched_yield();
+    assert(hop_cxx_value_live() == 0 && hop_cxx_packet_live() == 0);
+
+    for (int kind = 0; kind != 10; ++kind) {
+      int expected_objects = (kind == 4 || kind == 8) ? 2 : 1;
+      int destroyed_before = hop_destroyed();
+      hop_consumed_reset(0);
+      frame = hop_consumed_roundtrip(kind, caller);
+      type = frame.result_type;
+      task = start(&frame);
+      assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+      result = 0;
+      assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+      assert(result == 42 && hop_consumed_arguments() == expected_objects &&
+             hop_consumed_entries() == 1);
+      objc3_task_release(task);
+      for (unsigned step = 0; step != 1000000 &&
+           hop_destroyed() != destroyed_before + expected_objects; ++step)
+        sched_yield();
+      assert(hop_destroyed() == destroyed_before + expected_objects);
+
+      destroyed_before = hop_destroyed();
+      hop_consumed_reset(0);
+      frame = hop_consumed_roundtrip(kind, caller);
+      task = start(&frame);
+      assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+      assert(hop_consumed_arguments() == expected_objects);
+      objc3_task_request_cancel(task);
+      assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+      assert(hop_consumed_entries() == 0);
+      objc3_task_release(task);
+      for (unsigned step = 0; step != 1000000 &&
+           hop_destroyed() != destroyed_before + expected_objects; ++step)
+        sched_yield();
+      assert(hop_destroyed() == destroyed_before + expected_objects);
+
+      destroyed_before = hop_destroyed();
+      hop_consumed_reset(1);
+      frame = hop_consumed_roundtrip(kind, caller);
+      task = start(&frame);
+      objc3_completion failure = finish(task);
+      assert(failure.kind == OBJC3_COMPLETION_ERROR);
+      objc3_service_status service = OBJC3_SERVICE_OK;
+      assert(objc3_async_error_get_service(failure.error, &service) == OBJC3_SERVICE_OK &&
+             service == OBJC3_SERVICE_OUT_OF_MEMORY);
+      assert(hop_consumed_entries() == 0 && hop_consumed_arguments() == expected_objects);
+      objc3_task_release(task);
+      for (unsigned step = 0; step != 1000000 &&
+           hop_destroyed() != destroyed_before + expected_objects; ++step)
+        sched_yield();
+      assert(hop_destroyed() == destroyed_before + expected_objects);
+    }
+    int snapshot_destroyed_before = hop_destroyed();
+    hop_consumed_reset(0);
+    frame = hop_consumed_roundtrip(10, caller);
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+    assert(hop_consumed_arguments() == 1 && hop_consumed_entries() == 0);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 &&
+         hop_destroyed() != snapshot_destroyed_before + 1; ++step)
+      sched_yield();
+    assert(hop_destroyed() == snapshot_destroyed_before + 1);
+    hop_consumed_reset(0);
+
     int before = hop_destroyed();
     frame = hop_owned_packet_roundtrip(caller);
     type = frame.result_type;
