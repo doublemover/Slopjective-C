@@ -14,7 +14,9 @@
     "package_identity_path",
     "package_field_path",
     "package_narrowed_path",
-    "package_live_roots"
+    "package_live_roots",
+    "PackagePathBits",
+    "package_bits_path"
   ],
   "dependencies": []
 }

@@ -86,11 +86,15 @@ int main() {
   const char *source = R"objc(
 #include "runtime/public/objc3_keypath.h"
 typedef struct ASTPathPair { long first, second; } ASTPathPair;
+struct ASTLeft { int left; };
+struct ASTRight { long right; };
+struct ASTInherited : ASTLeft, ASTRight { unsigned bits:3; };
 __attribute__((objc_root_class))
 @interface ASTPathRoot
 @property(nonatomic) int count;
 @property(nonatomic, readonly) int identity;
 @property(nonatomic) ASTPathPair pair;
+@property(nonatomic) ASTInherited inherited;
 @end
 WritableKeyPath<ASTPathRoot *, int> writable_path(void) {
   return @keypath(ASTPathRoot, count);
@@ -100,6 +104,12 @@ KeyPath<ASTPathRoot *, int> readonly_path(void) {
 }
 WritableKeyPath<ASTPathRoot *, long> field_path(void) {
   return @keypath(ASTPathRoot, pair.first);
+}
+WritableKeyPath<ASTPathRoot *, long> inherited_path(void) {
+  return @keypath(ASTPathRoot, inherited.right);
+}
+WritableKeyPath<ASTPathRoot *, unsigned> bit_path(void) {
+  return @keypath(ASTPathRoot, inherited.bits);
 }
 int apply_path(ASTPathRoot * _Nonnull root) {
   auto path = writable_path();
@@ -162,6 +172,22 @@ template int template_application<1>(ASTPathRoot * _Nonnull);
   field_out.flush();
   assert(field_printed.find("@keypath(ASTPathRoot * _Nonnull, pair.first)") !=
          std::string::npos);
+
+  for (const char *name : {"inherited_path", "bit_path"}) {
+    auto imported_record = importer.Import(function(*provider, name));
+    assert(imported_record);
+    auto *record_target = llvm::cast<clang::FunctionDecl>(*imported_record);
+    clang::ObjC3KeyPathInfo record_info;
+    assert(clang::getObjC3KeyPathInfo(record_target->getReturnType(), record_info));
+    assert(record_info.Set && record_info.Value->isIntegerType());
+    std::string record_printed;
+    llvm::raw_string_ostream record_out(record_printed);
+    record_target->print(record_out, policy);
+    record_out.flush();
+    assert(record_printed.find("@keypath(ASTPathRoot * _Nonnull, inherited.") !=
+           std::string::npos);
+    assert(record_printed.find("__objc3_keypath_get_") == std::string::npos);
+  }
 
   auto imported_application = importer.Import(function(*provider, "apply_path"));
   assert(imported_application);

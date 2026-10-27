@@ -1,3 +1,5 @@
+# Native typed key-path witnesses
+
 These native-library fixtures pass all 24 source/PCH configurations normally
 and under ASan/UBSan and TSan, and pass the installed SDK feature gate. See the
 [integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json).
@@ -27,3 +29,9 @@ Native interface and facade contracts pass in the coordinated SDK build.
 constructor after a later operand releases the root's source owner. The checks
 require the completed root snapshot and partially copied capture to unwind
 without leaks or an accessor call. This fixture passes in the same matrix.
+
+The keypath 2.2 source additions exercise named signed/unsigned bit-fields and
+C++ fields inherited from separate base subobjects. Field setters preserve
+siblings and perform one property read/writeback. Provider and consumer paths
+compare their structural metadata, including the actual base declaration owner.
+These additions enter the next combined source validation batch.

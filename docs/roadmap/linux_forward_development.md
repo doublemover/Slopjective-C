@@ -596,3 +596,9 @@ retained results and consumed arguments. Focused source/PCH runtime and native
 frontend/codegen checks pass; combined validation and SDK delivery follow the
 implementation batch. Super messages and unqualified dynamic Class receivers
 remain separate work.
+
+The [keypath 2.2.0 source extension](linux_keypath_record_fields.md) adds named
+bit-fields and inherited C++ record fields, with native access/lookup, base
+adjustment, signed/truncated values and exact-once property writeback. Initial
+native/runtime checks pass; combined validation and SDK delivery follow this
+source batch.

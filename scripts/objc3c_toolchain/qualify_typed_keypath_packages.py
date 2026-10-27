@@ -30,11 +30,12 @@ def check_metadata(metadata: dict) -> None:
     if SEMANTIC not in metadata['required_semantics']:
         raise ValueError('typed key-path interface lost its required semantic')
     declarations = {row['qualified_name']: row for row in metadata['declarations']}
-    for name in ('PackagePathRoot', 'PackagePathPair'):
+    for name in ('PackagePathRoot', 'PackagePathPair', 'PackagePathBits'):
         if name not in declarations:
             raise ValueError('typed key-path interface lost public type: ' + name)
     for name, writable in (('package_count_path', True),
                            ('package_field_path', True),
+                           ('package_bits_path', True),
                            ('package_identity_path', False),
                            ('package_narrowed_path', False)):
         identity = declarations.get(name, {}).get('canonical_type_identity', '')

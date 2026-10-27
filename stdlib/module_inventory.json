@@ -172,7 +172,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 1,
+        "minor": 2,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -184,7 +184,8 @@
         "cross-translation-unit type and descriptor identity",
         "record-field traversal and exact-once property writeback (authored)",
         "exact writable-to-readonly narrowing and source-only type signatures (authored)",
-        "bounded readonly nullable traversal and retained application operand snapshots (authored)"
+        "bounded readonly nullable traversal and retained application operand snapshots (authored)",
+        "Named native bit-fields and unambiguous inherited C++ record fields with native access, base adjustment, signed/truncated values and exact-once property writeback (source)"
       ],
       "remaining": [
         "nullable chains with nonnull/scalar/aggregate results and writable traversal",

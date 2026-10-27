@@ -25,7 +25,8 @@ int update(Person * _Nonnull person) {
 ```
 
 The canonical module is the singular `objc3.keypath`, with capability
-`objc3.cap.keypath`. `keypath.h` supplies semantic version 2.1.0 and the public
+`objc3.cap.keypath`. The accepted SDK uses semantic version 2.1.0; the current `keypath.h` source
+supplies 2.2.0 and the public
 immutable metadata ABI. `KeyPath<Root, Value>` and
 `WritableKeyPath<Root, Value>` are compiler-owned native record type
 constructors. Root class names and class pointer types normalize to a nonnull
@@ -131,13 +132,16 @@ compatibility bit.
 Current fail-closed boundaries are nullable intermediate traversal to a
 nonnull/scalar/aggregate result, nullable-chain writes, incomplete class/protocol
 identity, open Objective-C generic arguments, dependent types,
-nontrivial/anonymous/union record traversal, inherited fields, bit-fields,
+nontrivial/anonymous/union record traversal,
 reference fields, nontrivial value payloads, async/throwing accessors,
 actor-isolated/executor-affine properties, and borrowed or scalar resource
 ownership that would lose provenance through a value getter. Native
 `objc_returns_inner_pointer` accessors and consuming accessor receivers or setter
 parameters also diagnose, since the stored Root/Value callable contract cannot
 erase those ownership requirements. Nullable final properties are supported.
+The [record-field source extension](linux_keypath_record_fields.md) admits named
+bit-fields and unambiguous inherited C++ fields, with native lookup/access and
+base adjustment.
 Optional `root[path]` sugar and explicit NSString KVC boxing are not implemented. These boundaries must remain visible in inventory
 and conformance reporting.
 

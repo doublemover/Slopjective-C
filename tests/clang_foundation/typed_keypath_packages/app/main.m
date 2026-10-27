@@ -31,6 +31,14 @@ int main(void) {
     KeyPathSet(package_field_path(), root, 42L);
     pair = root.pair;
     assert(pair.first == 42L && pair.second == 17L);
+    PackagePathBits bits={1,-9,91};
+    root.bits=bits;
+    KeyPathSet(package_bits_path(),root,10U);
+    bits=root.bits;
+    assert(bits.value==2U && bits.small==-9 && bits.sibling==91);
+    assert(KeyPathGet(package_bits_path(),root)==2U);
+    assert(objc3_keypath_equal_v2(KeyPathMetadata(package_bits_path()),
+        KeyPathMetadata(@keypath(PackagePathRoot,bits.value)),&equal)==0 && equal);
 #if !__has_feature(objc_arc)
     objc_release(root);
 #endif

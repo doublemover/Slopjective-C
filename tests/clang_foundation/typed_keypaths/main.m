@@ -226,6 +226,41 @@ int main(void) {
     actual = root.pair;
     assert(actual.first == 41L && actual.second == 22L);
 
+    PathBits bits={1,-3,91};
+    root.bits=bits;
+    path_bits_reads=path_bits_sets=0;
+    WritableKeyPath<RuntimePathNode *, unsigned> bits_path=runtime_bits_path();
+    KeyPathSet(bits_path,root,10U);
+    assert(path_bits_reads==1 && path_bits_sets==1);
+    assert(KeyPathGet(bits_path,root)==2U);
+    bits=root.bits;
+    assert(bits.value==2U && bits.small==-3 && bits.sibling==91);
+    WritableKeyPath<RuntimePathNode *, int> signed_bits=@keypath(RuntimePathNode,bits.small);
+    KeyPathSet(signed_bits,root,-9);
+    assert(KeyPathGet(signed_bits,root)==-9);
+    bits=root.bits;
+    assert(bits.value==2U && bits.small==-9 && bits.sibling==91);
+    int bits_equal=0;
+    assert(objc3_keypath_equal_v2(KeyPathMetadata(bits_path),
+        KeyPathMetadata(@keypath(RuntimePathNode,bits.value)),&bits_equal)==0 && bits_equal);
+    assert(objc3_keypath_component_v2_at(KeyPathMetadata(bits_path),1,&part)==0);
+    assert(part->flags & OBJC3_KEYPATH_COMPONENT_RECORD_FIELD);
+#ifdef __cplusplus
+    PathInherited inherited;
+    inherited.left=17; inherited.right=21; inherited.tail=91;
+    root.inherited=inherited;
+    path_inherited_reads=path_inherited_sets=0;
+    auto inherited_path=runtime_inherited_path();
+    KeyPathSet(inherited_path,root,42L);
+    assert(path_inherited_reads==1 && path_inherited_sets==1);
+    assert(KeyPathGet(inherited_path,root)==42L);
+    inherited=root.inherited;
+    assert(inherited.left==17 && inherited.right==42L && inherited.tail==91);
+    assert(objc3_keypath_component_v2_at(KeyPathMetadata(inherited_path),1,&part)==0);
+    assert(strstr(part->owner_type,"PathInherited") &&
+           strstr(part->declaration_owner,"PathRight"));
+#endif
+
     // Property copying remains the native setter's job. The key-path record
     // stores no captured object and does not bypass copy/strong semantics.
     KeyPathSet(@keypath(RuntimePathNode, copied), root, child);

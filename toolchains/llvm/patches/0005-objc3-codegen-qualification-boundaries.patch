@@ -27331,10 +27331,10 @@ index 000000000..3ea5d6666
 +// CHECK: objc3_task_copy_result
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m b/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m
 new file mode 100644
-index 000000000..dd7d33b13
+index 000000000..1c7942956
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypath-record-fields.m
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,35 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MRC
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +#include "../Inputs/keypath-abi.h"
@@ -27347,6 +27347,8 @@ index 000000000..dd7d33b13
 +  return @keypath(RecordRoot, record.first);
 +}
 +// CHECK-DAG: c"record.first\00"
++// CHECK-DAG: c"bits.value\00"
++// CHECK-DAG: c"bits.small\00"
 +// CHECK: define internal void @__objc3_keypath_set_
 +// MRC: call ptr @{{llvm.objc.retain|objc_retain}}
 +// CHECK: call {{.*}}@objc_msgSend
@@ -27354,6 +27356,20 @@ index 000000000..dd7d33b13
 +// CHECK: store i64
 +// CHECK: call void @objc_msgSend
 +// MRC: call void @{{llvm.objc.release|objc_release}}
++
++typedef struct PathBits { unsigned value:3; signed small:5; unsigned sibling:7; } PathBits;
++@interface RecordRoot (Bits)
++@property(nonatomic) PathBits bits;
++@end
++WritableKeyPath<RecordRoot *, unsigned> bits_path(void) {
++  return @keypath(RecordRoot, bits.value);
++}
++WritableKeyPath<RecordRoot *, int> signed_bits_path(void) {
++  return @keypath(RecordRoot, bits.small);
++}
++// CHECK: define internal void @__objc3_keypath_set_
++// CHECK: and i16
++// CHECK: or i16
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypaths.m b/clang/test/ObjC3/CodeGen/typed-keypaths.m
 new file mode 100644
 index 000000000..ef1aae95f

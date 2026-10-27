@@ -5,6 +5,7 @@
 int path_child_reads, path_count_reads, path_count_sets;
 int path_copies, path_destroyed;
 int path_pair_reads, path_pair_sets;
+int path_bits_reads, path_bits_sets, path_inherited_reads, path_inherited_sets;
 int path_throw_pair_getter, path_throw_pair_setter;
 int path_optional_reads, path_value_reads, path_callback_reads;
 int path_throw_optional_value;
@@ -31,6 +32,12 @@ int path_throw_optional_value;
   if (path_throw_pair_setter) @throw self;
   _pair = value;
 }
+- (PathBits)bits { ++path_bits_reads; return _bits; }
+- (void)setBits:(PathBits)value { ++path_bits_sets; _bits=value; }
+#ifdef __cplusplus
+- (PathInherited)inherited { ++path_inherited_reads; return _inherited; }
+- (void)setInherited:(PathInherited)value { ++path_inherited_sets; _inherited=value; }
+#endif
 - (int)identity { return _count + 100; }
 - (RuntimePathNode *)readChild { ++path_child_reads; return _child; }
 - (void)writeChild:(RuntimePathNode *)child {
@@ -113,3 +120,12 @@ KeyPath<RuntimePathNode *, int> runtime_identity_path(void) {
 WritableKeyPath<RuntimePathNode *, PathPair> runtime_pair_path(void) {
   return @keypath(RuntimePathNode, pair);
 }
+
+WritableKeyPath<RuntimePathNode *, unsigned> runtime_bits_path(void) {
+  return @keypath(RuntimePathNode, bits.value);
+}
+#ifdef __cplusplus
+WritableKeyPath<RuntimePathNode *, long> runtime_inherited_path(void) {
+  return @keypath(RuntimePathNode, inherited.right);
+}
+#endif

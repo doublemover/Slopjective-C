@@ -40072,10 +40072,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..5b5393c5e
+index 000000000..bca122e5a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1278 @@
+@@ -0,0 +1,1294 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -41045,27 +41045,43 @@ index 000000000..5b5393c5e
 +        return ExprError();
 +      }
 +      FieldDecl *Field = nullptr;
-+      for (FieldDecl *Candidate : Record->fields())
-+        if (Candidate->getIdentifier() == Members[I]) {
-+          Field = Candidate;
-+          break;
++      if (auto *CXX = dyn_cast<CXXRecordDecl>(Record)) {
++        // Native lookup preserves hiding, inherited using declarations,
++        // ambiguous subobjects and effective base/member accessibility.
++        LookupResult Lookup(*this, Members[I], MemberLocs[I], LookupMemberName);
++        Lookup.suppressDiagnostics();
++        LookupQualifiedName(Lookup, CXX);
++        Field = Lookup.getAsSingle<FieldDecl>();
++        if (Field) {
++          // Use the object-aware check, including protected-object rules and
++          // its normal access diagnostic. The quiet type-member probe can
++          // reject an expression without emitting an error.
++          auto *Object = new (Context)
++              OpaqueValueExpr(MemberLocs[I], Current, VK_LValue);
++          if (CheckMemberOperatorAccess(MemberLocs[I], Object,
++                                        SourceRange(MemberLocs[I]),
++                                        Lookup.begin().getPair()) != AR_accessible)
++            return ExprError();
 +        }
++      } else {
++        for (FieldDecl *Candidate : Record->fields())
++          if (Candidate->getIdentifier() == Members[I]) {
++            Field = Candidate;
++            break;
++          }
++      }
 +      if (!Field) {
 +        reject(*this, MemberLocs[I],
-+               "key-path component must name a visible direct record field");
++               "key-path component must name an unambiguous visible record field");
 +        return ExprError();
 +      }
-+      if (Field->isBitField() || Field->getType()->isReferenceType()) {
++      if (Field->getType()->isReferenceType()) {
 +        reject(*this, MemberLocs[I],
-+               "key-path record fields cannot be bit-fields or references");
++               "key-path record fields cannot be references");
 +        return ExprError();
 +      }
 +      if (DiagnoseUseOfDecl(Field, MemberLocs[I]))
 +        return ExprError();
-+      if (auto *CXX = dyn_cast<CXXRecordDecl>(Record))
-+        if (CheckMemberAccess(MemberLocs[I], CXX,
-+                DeclAccessPair::make(Field, Field->getAccess())) != AR_accessible)
-+          return ExprError();
 +      QualType Value = normalizeValue(*this, Field->getType());
 +      Component Part{nullptr, Field, Current, Value, MemberLocs[I]};
 +      Components.push_back(Part);
@@ -41387,10 +41403,10 @@ index 4d7efed23..d3d4a5c2f 100644
    ObjCPropertyAttribute::Kind SAttr = SuperProperty->getPropertyAttributes();
 diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypaths.h b/clang/test/ObjC3/AST/Inputs/typed-keypaths.h
 new file mode 100644
-index 000000000..ced017272
+index 000000000..aecc4599f
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/Inputs/typed-keypaths.h
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,38 @@
 +#include "../../Inputs/keypath-abi.h"
 +__attribute__((objc_root_class))
 +@interface ImportedPathNode
@@ -41410,12 +41426,31 @@ index 000000000..ced017272
 +static inline int importedGet(ImportedPathNode * _Nonnull root) {
 +  return KeyPathGet(importedPath(), root);
 +}
++
++typedef struct ImportedPathBits { unsigned value:3; signed small:5; } ImportedPathBits;
++@interface ImportedPathNode (Bits)
++@property(nonatomic) ImportedPathBits bits;
++@end
++static inline WritableKeyPath<ImportedPathNode *, unsigned> importedBitsPath(void) {
++  return @keypath(ImportedPathNode, bits.value);
++}
++#ifdef __cplusplus
++struct ImportedLeft { int left; };
++struct ImportedRight { long right; };
++struct ImportedDerived : ImportedLeft, ImportedRight { int tail; };
++@interface ImportedPathNode (Inherited)
++@property(nonatomic) ImportedDerived inherited;
++@end
++static inline WritableKeyPath<ImportedPathNode *, long> importedInheritedPath(void) {
++  return @keypath(ImportedPathNode, inherited.right);
++}
++#endif
 diff --git a/clang/test/ObjC3/AST/typed-keypaths-pch.m b/clang/test/ObjC3/AST/typed-keypaths-pch.m
 new file mode 100644
-index 000000000..be091d191
+index 000000000..e37cb4c91
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/typed-keypaths-pch.m
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,15 @@
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -o %t.pch %S/Inputs/typed-keypaths.h
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.cxx.pch %S/Inputs/typed-keypaths.h
@@ -41425,6 +41460,10 @@ index 000000000..be091d191
 +  WritableKeyPath<ImportedPathNode *, int> kp = importedPath();
 +  KeyPathSet(kp, root, 42);
 +  KeyPathSet(importedFieldPath(), root, 41L);
++  KeyPathSet(importedBitsPath(), root, 10U);
++#ifdef __cplusplus
++  KeyPathSet(importedInheritedPath(), root, 42L);
++#endif
 +  return KeyPathGet(kp, root) + importedGet(root);
 +}
 diff --git a/clang/test/ObjC3/AST/typed-keypaths-print.m b/clang/test/ObjC3/AST/typed-keypaths-print.m
@@ -41599,10 +41638,10 @@ index 000000000..d172593fa
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-record-fields.m b/clang/test/ObjC3/Sema/typed-keypath-record-fields.m
 new file mode 100644
-index 000000000..f25f8c852
+index 000000000..edcafb409
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-record-fields.m
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,67 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +#include "../Inputs/keypath-abi.h"
@@ -41636,10 +41675,40 @@ index 000000000..f25f8c852
 +  (void)value;
 +  KeyPathSet(readonly_record_path(), root, 1L); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
 +  KeyPathSet(const_field_path(), root, 1); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
-+  (void)@keypath(RecordPathRoot, record.missing); // expected-error {{key-path component must name a visible direct record field}}
-+  (void)@keypath(RecordPathRoot, bitRecord.bits); // expected-error {{key-path record fields cannot be bit-fields or references}}
++  (void)@keypath(RecordPathRoot, record.missing); // expected-error {{key-path component must name an unambiguous visible record field}}
++  WritableKeyPath<RecordPathRoot *, unsigned> bits = @keypath(RecordPathRoot, bitRecord.bits);
++  KeyPathSet(bits, root, 10U);
++  (void)KeyPathGet(bits, root);
 +  (void)@keypath(RecordPathRoot, unionRecord.value); // expected-error {{key-path record traversal requires a complete trivially copyable nonunion record without borrowed/resource ownership}}
 +}
++
++#ifdef __cplusplus
++struct BaseField { int value; }; // expected-note {{member is declared here}}
++struct OtherField { int value; };
++struct InheritedField : BaseField { int sibling; };
++struct HiddenField : BaseField { long value; };
++struct PrivateField : private BaseField {}; // expected-note {{constrained by private inheritance here}}
++struct AmbiguousField : BaseField, OtherField {};
++struct ProtectedField { protected: int value; };
++struct PublicUsingField : ProtectedField { using ProtectedField::value; };
++@interface RecordPathRoot (Inherited)
++@property(nonatomic) InheritedField inherited;
++@property(nonatomic) HiddenField hidden;
++@property(nonatomic) PrivateField privateBase;
++@property(nonatomic) AmbiguousField ambiguous;
++@property(nonatomic) PublicUsingField published;
++@end
++void inherited_fields(RecordPathRoot * _Nonnull root) {
++  WritableKeyPath<RecordPathRoot *, int> inherited = @keypath(RecordPathRoot, inherited.value);
++  KeyPathSet(inherited, root, 42);
++  WritableKeyPath<RecordPathRoot *, long> hidden = @keypath(RecordPathRoot, hidden.value);
++  KeyPathSet(hidden, root, 42L);
++  WritableKeyPath<RecordPathRoot *, int> published = @keypath(RecordPathRoot, published.value);
++  KeyPathSet(published, root, 42);
++  (void)@keypath(RecordPathRoot, privateBase.value); // expected-error {{'value' is a private member of 'BaseField'}}
++  (void)@keypath(RecordPathRoot, ambiguous.value); // expected-error {{key-path component must name an unambiguous visible record field}}
++}
++#endif
 diff --git a/clang/test/ObjC3/Sema/typed-keypaths.m b/clang/test/ObjC3/Sema/typed-keypaths.m
 new file mode 100644
 index 000000000..2ab3c034f

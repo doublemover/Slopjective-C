@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 1u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 2u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -30,6 +30,10 @@
  * returns nil without evaluating later components. Such paths never permit
  * KeyPathSet, even when individual component properties have setters.
  * Nonnull/scalar/aggregate results through nullable intermediates diagnose.
+ * Named bit-fields preserve native value truncation and sibling storage. C++
+ * inherited record fields use native lookup and base adjustment, with normal
+ * access, hiding and ambiguity rules. Field setters update one property
+ * snapshot and write it back once.
  * KVC string boxing and optional root[kp] syntax remain outside this surface. */
 
 #endif
