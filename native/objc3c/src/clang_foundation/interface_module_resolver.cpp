@@ -38,6 +38,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-class-structure.v1",
     "objc3.cxx-class-dispatch.v1",
     "objc3.cxx-namespaces.v1",
+    "objc3.cxx-nested-types.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

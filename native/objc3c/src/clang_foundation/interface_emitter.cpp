@@ -91,6 +91,18 @@ bool IsTopLevel(const clang::NamedDecl *declaration) {
   return context && context->isTranslationUnit();
 }
 
+bool IsPublishedType(const clang::NamedDecl *declaration) {
+  if (IsTopLevel(declaration)) return true;
+  const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(declaration->getDeclContext());
+  return owner && IsPublishedType(owner);
+}
+
+const char *CxxAccessName(clang::AccessSpecifier access) {
+  return access == clang::AS_public ? "public" :
+         access == clang::AS_protected ? "protected" :
+         access == clang::AS_private ? "private" : "none";
+}
+
 bool IsPublicContainer(const clang::DeclContext *context,
                        const clang::ASTContext &ast,
                        const std::string &source_root = {}) {
@@ -141,19 +153,22 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
   }
 
+  if (llvm::isa<clang::TypeDecl>(declaration) &&
+      llvm::isa<clang::CXXRecordDecl>(declaration->getDeclContext()))
+    return IsPublishedType(declaration);
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
-    return IsTopLevel(method->getParent());
+    return IsPublishedType(method->getParent());
 
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
     const auto *owner =
         llvm::dyn_cast<clang::RecordDecl>(field->getDeclContext());
     return field->getIdentifier() && owner &&
-           (!context.getLangOpts().CPlusPlus || IsTopLevel(owner));
+           (!context.getLangOpts().CPlusPlus || IsPublishedType(owner));
   }
   if (llvm::isa<clang::EnumConstantDecl>(declaration))
     return llvm::isa<clang::EnumDecl>(declaration->getDeclContext()) &&
            (!context.getLangOpts().CPlusPlus ||
-            IsTopLevel(
+            IsPublishedType(
                 llvm::cast<clang::EnumDecl>(declaration->getDeclContext())));
   if (llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                 clang::ObjCIvarDecl>(declaration))
@@ -320,6 +335,20 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
     for (const auto *method : cxx->methods())
       if (!method->isImplicit() && method->isVirtual())
         out << ";virtual-slot=" << ReadInterfaceDeclarationStableId(method);
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> nested;
+    for (const auto *member : cxx->decls())
+      if (!member->isImplicit())
+        if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member))
+          nested.insert("nested-type=" + ReadInterfaceDeclarationStableId(type) +
+                        ":kind=" + type->getDeclKindName() +
+                        ":access=" + CxxAccessName(type->getAccess()) + ";");
+    // Import dependencies can materialize nested types before their owner.
+    // Unlike fields and virtual slots, nested type declaration order is not ABI.
+    if (!nested.empty()) out << ";cxx-nested-types:v1;";
+    for (const auto &type : nested) out << type;
   }
   out.flush();
   return text;
@@ -820,6 +849,12 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         supported &= !field->hasInClassInitializer();
         continue;
       }
+      if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
+        if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
+          supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl());
+        supported &= IsBoundedCxxDeclaration(type, result);
+        continue;
+      }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
           method && !method->isTemplated() &&
@@ -874,7 +909,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                   "declarations or in-class defaulted special members, without "
                   "templates, "
                   "concrete inline/constexpr members, "
-                  "member initializers, default arguments, or nested class declarations",
+                  "member initializers, default arguments, or unnamed nested types",
                   declaration->getQualifiedNameAsString());
   return supported;
 }
@@ -1433,6 +1468,11 @@ bool ReadInterfaceDeclarationIdentity(
           "scope=" + ReadInterfaceDeclarationStableId(space) +
           ":inline=" + std::to_string(space->isInline()) + ";";
   }
+  if (llvm::isa<clang::TypeDecl>(declaration) &&
+      llvm::isa<clang::CXXRecordDecl>(declaration->getDeclContext()))
+    identity.canonical_type_identity +=
+        std::string(";cxx-nested-types:v1;access=") +
+        CxxAccessName(declaration->getAccess());
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
     identity.canonical_type_identity += ";api-availability=" + availability;
@@ -1597,6 +1637,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (HasCxxNestedTypeIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNamespaceSemantic);
     if (HasCxxClassDispatchIdentity(declaration))
@@ -1654,6 +1696,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       kCxxClassStructureSemantic,
       kCxxClassDispatchSemantic,
       kCxxNamespaceSemantic,
+    kCxxNestedTypeSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1751,6 +1794,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClassStructureSemantic,
     kCxxClassDispatchSemantic,
     kCxxNamespaceSemantic,
+    kCxxNestedTypeSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

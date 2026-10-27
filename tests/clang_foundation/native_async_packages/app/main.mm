@@ -15,6 +15,11 @@ static_assert(std::is_final_v<NativeVirtualDiamond>);
 static_assert(std::has_virtual_destructor_v<NativeVirtualRoot>);
 static_assert(std::is_same_v<NativePublished::Scalar, long>);
 static_assert(std::is_same_v<NativeOther::Scalar, int>);
+template<class T> concept native_has_hidden_type = requires { typename T::Hidden; };
+template<class T> concept native_has_counter_type = requires { typename T::Counter; };
+static_assert(!native_has_hidden_type<NativeFamily> && !native_has_counter_type<NativeFamily>);
+static_assert(std::is_same_v<NativeFamily::Result,NativeFamily::Value>);
+static_assert(static_cast<unsigned>(NativeFamily::Kind::Answer)==42);
 
 static_assert(std::is_same_v<decltype(native_module_object(1)),
                              objc3::task<NativeModuleResult *>>);
@@ -347,6 +352,21 @@ int main() {
         NativePublished::frame(value)).start(executor);
     if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
         frame.result() != 42) return 56;
+  }
+  {
+    NativeClassStats stats{};
+    {
+      NativeFamily family(&stats,40);
+      NativeFamily::Result value(family.stored);
+      NativeFamily::PublicHidden hidden{42};
+      if(value.sum()!=42 || hidden.token!=42) return 57;
+      auto member=__objc3_async_from_frame<int>(family.stored.frame()).start(executor);
+      auto result=__objc3_async_from_frame<NativeFamily::Result>(
+          native_module_nested(std::move(value))).start(executor);
+      if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+         member.result()!=42 || result.result().sum()!=42) return 58;
+    }
+    if(stats.live || !stats.destroyed) return 59;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

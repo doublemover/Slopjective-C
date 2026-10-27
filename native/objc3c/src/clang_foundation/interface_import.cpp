@@ -59,6 +59,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxClassStructureSemantic,
     kCxxClassDispatchSemantic,
     kCxxNamespaceSemantic,
+    kCxxNestedTypeSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -651,6 +652,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   // neither directly imported nor re-exported to this consumer.
   std::set<std::string> hidden_ids;
   std::set<std::string> visible_ids;
+  std::set<std::string> hidden_namespace_ids;
+  std::set<std::string> visible_namespace_ids;
   for (const auto &module : impl_->modules) {
     for (const auto &identity : module.sidecar.declarations) {
       auto &destination =
@@ -661,8 +664,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
               ? visible_ids
               : hidden_ids;
       destination.insert(identity.stable_id);
+      auto &namespace_destination =
+          impl_->visible_modules.count(module.sidecar.module.canonical_name) &&
+                  IsGrantedSPI(identity, module.input.spi_groups)
+              ? visible_namespace_ids : hidden_namespace_ids;
+      namespace_destination.insert(identity.stable_id);
     }
   }
+  for (const auto &id : visible_namespace_ids) hidden_namespace_ids.erase(id);
   for (const auto &id : visible_ids) hidden_ids.erase(id);
   auto *target_tu = target_context.getTranslationUnitDecl();
   // Keep the lexical declarations and redeclaration chains intact. Imported
@@ -693,6 +702,33 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     }
   }
 
+  // Importing a namespace recursively imports its contents. Its public name
+  // must not expose ungranted SPI or members of a private dependency. Keep
+  // lexical declarations for ABI/type references and control namespace lookup.
+  // A later direct import or SPI grant can promote a previously hidden member.
+  for (auto *named : all_declarations.Declarations) {
+    if (named->isImplicit() || !named->getIdentifier()) continue;
+    auto *scope = named->getDeclContext();
+    while (scope && scope->isTransparentContext()) scope=scope->getParent();
+    if (!scope || !scope->isNamespace()) continue;
+    scope=scope->getPrimaryContext();
+    const auto id = ReadInterfaceDeclarationStableId(named);
+    if (id.empty()) continue;
+    auto *table=scope->buildLookup();
+    auto found=table ? table->find(named->getDeclName()) : clang::StoredDeclsMap::iterator();
+    if (visible_namespace_ids.count(id)) {
+      bool present=false;
+      if (table && found!=table->end() && !found->second.isNull())
+        for (auto *entry : found->second.getLookupResult())
+          present |= entry->getCanonicalDecl()==named->getCanonicalDecl();
+      if (!present) scope->makeDeclVisibleInContext(named);
+    } else if (!preexisting.Declarations.count(named) && hidden_namespace_ids.count(id) &&
+               table && found!=table->end() && !found->second.isNull()) {
+      const auto entries=found->second.getLookupResult();
+      if (std::find(entries.begin(),entries.end(),named)!=entries.end())
+        found->second.remove(named);
+    }
+  }
   report.success = true;
   return report;
 }

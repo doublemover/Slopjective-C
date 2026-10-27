@@ -187,6 +187,13 @@ def check_cpp_metadata(metadata):
                for name in ('NativePublished::v1::Scalar', 'NativeOther::Scalar')]
     if not all(aliases) or aliases[0] == aliases[1]:
         raise ValueError('C++ namespace aliases lost distinct native declaration identities')
+    if 'objc3.cxx-nested-types.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its nested type capability')
+    for name in ('NativeFamily','NativeFamily::Value','NativeFamily::Kind','NativeFamily::Result'):
+        if ';cxx-nested-types:v1;' not in names.get(name,{}).get('canonical_type_identity',''):
+            raise ValueError('C++ package lost nested type identity: '+name)
+    if ';access=private' not in names.get('NativeFamily::Hidden',{}).get('canonical_type_identity',''):
+        raise ValueError('C++ package lost private nested access')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

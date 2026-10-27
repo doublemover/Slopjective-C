@@ -363,6 +363,13 @@ llvm::Error ValidateForEncoding(
                 kCxxNamespaceSemantic) != sidecar.required_semantics.end();
   if (has_namespaces != namespace_capability)
     return Invalid("C++ namespace identity and required capability must agree");
+  const bool has_nested = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(), HasCxxNestedTypeIdentity);
+  const bool nested_capability =
+      std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+                kCxxNestedTypeSemantic) != sidecar.required_semantics.end();
+  if (has_nested != nested_capability)
+    return Invalid("C++ nested type identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

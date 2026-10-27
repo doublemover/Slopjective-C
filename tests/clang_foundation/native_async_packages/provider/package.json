@@ -57,7 +57,9 @@
     "native_module_virtual_is",
     "NativePublished",
     "NativeOther",
-    "NativeAlias"
+    "NativeAlias",
+    "NativeFamily",
+    "native_module_nested"
   ],
   "dependencies": []
 }

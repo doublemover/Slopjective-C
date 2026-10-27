@@ -841,6 +841,48 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxNestedTypes() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-nested-types.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args={"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"};
+    auto emit=[&](const std::string &source) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"nested.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.nested","test");
+    };
+    auto emitted=emit("class Family { struct Hidden { int token; }; "
+        "protected: using Counter=long; public: enum class Kind:unsigned { One=1, Two=2 }; "
+        "struct Value { int n; Kind kind; int get() const; }; "
+        "using Result=Value; using PublicHidden=Hidden; Value stored; }; "
+        "int Family::Value::get() const { return n; }");
+    for (const auto &d:emitted.diagnostics)
+      std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+    assert(emitted.success);
+    auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,semantics);
+    assert(decoded);
+    bool hidden=false,alias=false,method=false,enumerator=false;
+    for(const auto &d:decoded->declarations) {
+      hidden |= d.qualified_name=="Family::Hidden" && d.canonical_type_identity.find(";access=private")!=std::string::npos;
+      alias |= d.qualified_name=="Family::Result" && d.kind=="TypeAlias";
+      method |= d.qualified_name=="Family::Value::get";
+      enumerator |= d.qualified_name=="Family::Kind::Two";
+    }
+    assert(hidden && alias && method && enumerator);
+    auto round=emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes==emitted.source_bytes &&
+           round.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+    auto pub=emit("struct Family { struct Value { int n; }; }; ");
+    auto priv=emit("class Family { struct Value { int n; }; }; ");
+    assert(pub.success && priv.success && pub.identity.semantic_fingerprint!=priv.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics,"objc3.cxx-nested-types.v1");
+    decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
+    assert(!erased);llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxNamedNamespaces() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1187,7 +1229,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "struct Comparison { int n; bool operator==(const Comparison&) const = "
         "default; };",
         "struct Immediate { consteval Immediate() = default; };",
-        "struct Nested { struct Inner { int value; }; Inner child; };",
+        "struct Nested { struct Inner { int value=42; }; Inner child; };",
         "int api(int argument=42);", "inline int api() { return 42; }",
         "extern constexpr int exported=42;", "extern const int exported=42;",
         "constexpr int evaluated() { return 42; }",
@@ -1225,6 +1267,7 @@ int main() {
   TestCxxClassStructure();
   TestCxxClassDispatch();
   TestCxxNamedNamespaces();
+  TestCxxNestedTypes();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

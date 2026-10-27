@@ -65,6 +65,13 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       struct Point { int n; };
       int increment(Point);
     }
+    class NamedFamily {
+      struct Hidden { int n; };
+    public:
+      struct Value { int n; int get() const; };
+      using Result=Value;
+      enum class Kind : unsigned { Answer=42 };
+    };
     struct NamedPrefix { long prefix; };
     class NamedValue {
       int storage;
@@ -102,6 +109,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
   )";
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx)
     *r.source_text += R"(
+      int NamedFamily::Value::get() const { return n; }
       int NamedScope::increment(Point point) { return point.n + 1; }
       NamedRoot::NamedRoot() : n(42) {}
       NamedRoot::~NamedRoot() {}
@@ -164,7 +172,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     r.interface_exports.insert(
         r.interface_exports.end(),
         {"NamedValue", "NamedPrefix", "NamedDerived", "NamedDefaults",
-         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope"});
+         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope", "NamedFamily"});
   }
 
   if (r.objc3)
@@ -194,6 +202,7 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.cxx-class-structure.v1",
     "objc3.cxx-class-dispatch.v1",
     "objc3.cxx-namespaces.v1",
+    "objc3.cxx-nested-types.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -332,7 +341,8 @@ void Check(const fs::path &root, BaseLanguage language,
         " int dispatch_client() { NamedDiamond d; NamedRoot *r=&d; "
         "NamedRight *right=dynamic_cast<NamedRight*>(r); "
         "return r->get()+right->right()+(r->self()==r); }"
-        " int namespace_client() { return NamedScope::increment(NamedScope::Point{41}); }";
+        " int namespace_client() { return NamedScope::increment(NamedScope::Point{41}); }"
+        " int nested_client() { NamedFamily::Result value{42}; return value.get(); }";
   InterfaceImportInput imported;
   imported.source_path = request.interface_output_path;
   imported.locked_identity = original;

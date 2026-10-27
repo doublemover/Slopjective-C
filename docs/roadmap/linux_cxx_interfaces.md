@@ -47,6 +47,10 @@ namespace exports and namespace aliases under `objc3.cxx-namespaces.v1`, with
 namespace-wide or qualified leaf selection. Its source checks and deferred
 validation remain separate from the accepted SDK.
 
+The [2.12.0 source milestone](linux_cxx_nested_types.md) additionally admits
+nested named class, enum and alias declarations under `objc3.cxx-nested-types.v1`
+and preserves namespace SPI/private-dependency lookup boundaries.
+
 The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
 aggregate methods in the lifecycle capability and canonical member identity.
 Changing an ordinary method to a deleted declaration invalidates the module

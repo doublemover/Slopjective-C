@@ -49,6 +49,14 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ nested types and namespace visibility
+
+The [2.12.0 source milestone](linux_cxx_nested_types.md) adds nested named
+classes, enums and aliases, native nested access control and source-free nested
+frame values. It also prevents public namespaces from exposing ungranted SPI or
+private dependency members, while supporting later explicit grant promotion.
+SDK/archive delivery and broad validation remain deferred for the source batch.
+
 ## C++ namespace exports
 
 The [2.11.0 source milestone](linux_cxx_namespaces.md) adds named/nested/inline

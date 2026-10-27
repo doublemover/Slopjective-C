@@ -324,6 +324,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   if (has_namespaces != namespace_capability)
     Add(result, "O3IFC029", "C++ namespace identity and required capability must agree",
         expected.canonical_name);
+  const bool has_nested = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(), HasCxxNestedTypeIdentity);
+  const bool nested_capability =
+      std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+                kCxxNestedTypeSemantic) != sidecar.required_semantics.end();
+  if (has_nested != nested_capability)
+    Add(result, "O3IFC030", "C++ nested type identity and required capability must agree",
+        expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

@@ -19,7 +19,7 @@ inline int api() { return 42; }
 #elif CASE == 10
 extern constexpr int exported=42;
 #elif CASE == 11
-struct Nested { struct Inner { int value; }; Inner child; };
+struct Nested { struct Inner { int value=42; }; Inner child; };
 #elif CASE == 12
 union Overlap { int one; long two; };
 #elif CASE == 13

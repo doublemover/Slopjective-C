@@ -408,3 +408,36 @@ int NativePublished::v1::frame(Value value) __objc3_async_frame {
 }
 
 namespace NativeAlias = NativePublished;
+
+class NativeFamily {
+  struct Hidden { int token; };
+protected:
+  using Counter=long;
+public:
+  enum class Kind : unsigned { First=20, Answer=42 };
+  class Value : public NativeClassValue {
+    int extra;
+  public:
+    Value(NativeClassStats *, int);
+    Value(const Value &) = default;
+    Value(Value &&) = default;
+    ~Value() = default;
+    int sum() const;
+    int frame() const __objc3_async_frame;
+  };
+  using Result=Value;
+  using PublicHidden=Hidden;
+  Value stored;
+  NativeFamily(NativeClassStats *, int);
+};
+NativeFamily::Value::Value(NativeClassStats *stats, int n)
+    : NativeClassValue(stats,n), extra(2) {}
+int NativeFamily::Value::sum() const { return number()+extra; }
+int NativeFamily::Value::frame() const __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf(); return sum();
+}
+NativeFamily::NativeFamily(NativeClassStats *stats,int n) : stored(stats,n) {}
+NativeFamily::Result native_module_nested(NativeFamily::Result value)
+    __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf(); return value;
+}
