@@ -42,6 +42,14 @@ suites**, **15 tooling tests** and **24 source-free package configurations /
 cases remain unsupported. These source checks include mutable and record-captured
 consuming closure publication; SDK 2.33 remains the accepted archive.
 
+## Known memory-fill ownership effects
+
+The [System 2.13.0 source span](linux_borrowed_memory_fills.md) recognizes known
+memory-fill destinations as nonescaping writes and clears obsolete provenance
+only after a proven complete direct-local overwrite. Partial, uncertain and
+wildcard sibling facts remain conservative; owner overwrites expire old loans.
+Broader checks remain batched with the isolation operand span.
+
 ## Isolation operand ownership
 
 The [concurrency 2.37.0 source span](linux_isolation_operand_snapshots.md) gives

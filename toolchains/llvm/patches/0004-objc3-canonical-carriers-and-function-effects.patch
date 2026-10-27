@@ -37791,10 +37791,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..9b2f7cbd8
+index 000000000..cd74d9233
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2979 @@
+@@ -0,0 +1,3061 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -38279,6 +38279,9 @@ index 000000000..9b2f7cbd8
 +      if (Offset->getOpcode() == BO_Comma || Offset->isAssignmentOp())
 +        return referent(Offset->getRHS(), State, Depth + 1);
 +    }
++    if (const auto *Call = dyn_cast<CallExpr>(E))
++      if (Call->getType()->isPointerType() && fillingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++        return directFillDestination(Call->getArg(0));
 +    Storage Source = storage(E, State);
 +    if (E->getType()->isArrayType() && Source.first)
 +      return indexedStorage(Source, 0);
@@ -39340,6 +39343,9 @@ index 000000000..9b2f7cbd8
 +    if (Acquisitions.count(E))
 +      return acquired(E, State);
 +    if (const auto *Call = dyn_cast<CallExpr>(E))
++      if (fillingBuiltin(Call->getDirectCallee()) && Call->getNumArgs() && Call->getType()->isPointerType())
++        return directFillDestination(Call->getArg(0)).first ? empty() : value(Call->getArg(0), State);
++    if (const auto *Call = dyn_cast<CallExpr>(E))
 +      if (copyingBuiltin(Call->getDirectCallee()) && Call->getNumArgs()) {
 +        StringRef Name = Call->getDirectCallee()->getName();
 +        Name.consume_front("__builtin_");
@@ -39508,7 +39514,8 @@ index 000000000..9b2f7cbd8
 +        AddEffects(effects(Member->getImplicitObjectArgument(), State));
 +    }
 +    if (!modeledRecordCopy(callee(Invocation)) &&
-+        !copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))))
++        !copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) &&
++        !fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))))
 +      for (unsigned I = 0; I != Count; ++I)
 +        if (safeParameter(Invocation, I)) AddEffects(effects(argument(Invocation, I), State));
 +    if (IsOwnerSummary)
@@ -39700,6 +39707,77 @@ index 000000000..9b2f7cbd8
 +      initializeAggregate(Operation, {Destination, nullptr}, Destination->getType(),
 +                          Initializer, State, Emit);
 +  }
++  Storage directLocalStorage(const Expr *E) const {
++    if (!E) return {};
++    E = E->IgnoreParenCasts();
++    if (const auto *Reference = dyn_cast<DeclRefExpr>(E))
++      if (const auto *Variable = dyn_cast<VarDecl>(Reference->getDecl());
++          Variable && Variable->hasLocalStorage() && !Variable->getType()->isReferenceType())
++        return {Variable, nullptr};
++    if (const auto *Member = dyn_cast<MemberExpr>(E))
++      if (!Member->isArrow() && isa<FieldDecl>(Member->getMemberDecl()))
++        return fieldStorage(directLocalStorage(Member->getBase()), Member->getMemberDecl());
++    if (const auto *Element = dyn_cast<ArraySubscriptExpr>(E)) {
++      const Expr *Base = Element->getBase()->IgnoreParenCasts();
++      auto Index = Element->getIdx()->getIntegerConstantExpr(Context);
++      if (Base->getType()->isArrayType() && Index && !Index->isNegative() && Index->getActiveBits() <= 63)
++        return indexedStorage(directLocalStorage(Base), Index->getZExtValue());
++    }
++    return {};
++  }
++  Storage directFillDestination(const Expr *Pointer) const {
++    if (!Pointer) return {};
++    Pointer = Pointer->IgnoreParenCasts();
++    if (const auto *Address = dyn_cast<UnaryOperator>(Pointer))
++      if (Address->getOpcode() == UO_AddrOf) return directLocalStorage(Address->getSubExpr());
++    if (Pointer->getType()->isArrayType()) return indexedStorage(directLocalStorage(Pointer), 0);
++    return {};
++  }
++  bool fillingBuiltin(const FunctionDecl *Function) const {
++    if (!Function || !Function->getBuiltinID()) return false;
++    StringRef Name = Function->getName();Name.consume_front("__builtin_");
++    return Name == "memset" || Name == "memset_inline" ||
++           Name == "__memset_chk" || Name == "bzero";
++  }
++  void fillRepresentation(const CallExpr *Call, Facts &State, bool Emit) {
++    StringRef Name = Call->getDirectCallee()->getName();Name.consume_front("__builtin_");
++    unsigned AmountIndex = Name == "bzero" ? 1 : 2;
++    if (Call->getNumArgs() <= AmountIndex) return;
++    auto Amount = Call->getArg(AmountIndex)->getIntegerConstantExpr(Context);
++    if (!Amount || Amount->isNegative() || Amount->getActiveBits() > 64 || Amount->isZero()) return;
++    Storage Destination = directFillDestination(Call->getArg(0));
++    if (!Destination.first || hasUnknownIndex(Destination)) return;
++    auto HasExactSize = [&](Storage Location) {
++      QualType Type = storageType(Location);
++      return !Type.isNull() && !Type->isIncompleteType() && !Type->isVariablyModifiedType() &&
++          Amount->getZExtValue() == uint64_t(Context.getTypeSizeInChars(Type).getQuantity());
++    };
++    // Array decay and &array[0] can denote the complete array, including a
++    // nested array field. Other element addresses clear only that element.
++    if (Destination.Index == 0) {
++      Storage Array = Destination;Array.Index = -1;
++      QualType Type = storageType(Array);
++      if (!Type.isNull() && Type->isArrayType() && HasExactSize(Array)) Destination = Array;
++    }
++    if (!HasExactSize(Destination)) return;
++    Value Cleared = empty();
++    for (const auto &[Location, Index] : Slots) {
++      if (Location.first != Destination.first) continue;
++      unsigned Current = path(Location), Prefix = path(Destination);
++      while (Current && Current != Prefix) Current = Paths[Current].Parent;
++      // A wildcard array summary also describes untouched siblings. Only an
++      // exact path prefix can justify discarding its provenance.
++      if (Current != Prefix) continue;
++      store(Call, Location, Cleared, State, Emit, true, &Cleared);
++      State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
++    }
++    if (!path(Destination) && OwnerRoots.count(Destination.first)) {
++      if (IsOwnerSummary && SummaryCaptures.count(Destination.first))
++        ConsumedOwnerRoots.insert(Destination.first);
++      expire(Destination.first, State);
++      State.UnownedOwners.set(Slots.lookup({Destination.first, nullptr}));
++    }
++  }
 +  Storage pointedStorage(const Expr *Pointer, const Facts &State) const {
 +    return referent(Pointer, &State);
 +  }
@@ -39840,9 +39918,10 @@ index 000000000..9b2f7cbd8
 +          isObjC3BorrowedType(Context, Formal->getType().getNonReferenceType()))
 +        return true;
 +    }
-+    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(Callee))
-+      if (copyingBuiltin(Function))
-+        return true;
++    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(Callee)) {
++      if (copyingBuiltin(Function)) return true;
++      if (fillingBuiltin(Function)) return Index == 0;
++    }
 +    if (const auto *Prototype = callPrototype(Call))
 +      if (Index < Prototype->getNumParams())
 +        return Prototype->getExtParameterInfo(Index).isNoEscape() ||
@@ -39869,6 +39948,7 @@ index 000000000..9b2f7cbd8
 +      Count = Construction->getNumArgs();
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) {
 +      const FunctionDecl *Function = Call->getDirectCallee();
++      if (fillingBuiltin(Function)) fillRepresentation(Call, State, Emit);
 +      if (copyingBuiltin(Function) && Count >= 3) {
 +        StringRef Name = Function->getName();
 +        Name.consume_front("__builtin_");
@@ -39923,6 +40003,8 @@ index 000000000..9b2f7cbd8
 +      for (unsigned I = 0; I != Count; ++I) {
 +        const Expr *Argument = argument(Invocation, I);
 +        Value V = value(Argument, State);
++        if (I == 0 && fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) &&
++            directFillDestination(Argument).first) V = empty();
 +        unsigned FormalIndex = formalIndex(Invocation, I);
 +        auto Formals = formalParameters(callee(Invocation));
 +        if ((FormalIndex < Formals.size() &&
@@ -46483,4 +46565,125 @@ index 000000000..d813086fc
 +  };
 +  Holder holder{inner}; // expected-error {{argument without a non-escaping lifetime contract}}
 +  auto outer=[holder]{holder.callback();};outer();path_use(p);
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-memory-fills.h b/clang/test/ObjC3/Sema/Inputs/borrowed-memory-fills.h
+new file mode 100644
+index 000000000..dcabb6013
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-memory-fills.h
+@@ -0,0 +1,7 @@
++typedef borrowed const char *FillBytes;
++FillBytes fill_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void fill_use(const char *pointer __attribute__((noescape)));
++void fill_escape(const char *pointer);
++void fill_consume(void *owner __attribute__((cf_consumed)));
++struct FillHolder {const char *pointer;};
++struct FillPair {struct FillHolder first,second;};
+diff --git a/clang/test/ObjC3/Sema/borrowed-memory-fills.m b/clang/test/ObjC3/Sema/borrowed-memory-fills.m
+new file mode 100644
+index 000000000..df7efb30b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-memory-fills.m
+@@ -0,0 +1,102 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-fills.h -o %t-c17False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-fills.h -o %t-c17True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-fills.h -o %t-c++23False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-fills.h -o %t-c++23True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-memory-fills.h"
++#endif
++void complete_record(void *owner) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin_memset(&holder,0,sizeof holder);fill_escape(holder.pointer);
++}
++void complete_array(void *owner) {
++  const char *array[2]={fill_bytes(owner),fill_bytes(owner)};
++  __builtin_memset(array,0,sizeof array);fill_escape(array[0]);fill_escape(array[1]);
++}
++void returned_destination(void *owner) {
++  const char *pointer=fill_bytes(owner);
++  const char **slot=(const char**)__builtin_memset(&pointer,0,sizeof pointer);
++  fill_escape(*slot);
++}
++void nested_selected_field(void *owner) {
++  struct FillPair pair={{fill_bytes(owner)},{fill_bytes(owner)}};
++  __builtin_memset(&pair.first,0,sizeof pair.first);fill_escape(pair.first.pointer);
++  fill_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void selected_array_element(void *owner) {
++  const char *array[2]={fill_bytes(owner),fill_bytes(owner)};
++  __builtin_memset(&array[1],0,sizeof array[1]);fill_escape(array[1]);
++  fill_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void partial_fill(void *owner) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin_memset(&holder,0,1);
++  fill_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void unknown_fill(void *owner,__SIZE_TYPE__ count) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin_memset(&holder,0,count);
++  fill_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void zero_fill(void *owner) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin_memset(&holder,0,0);
++  fill_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void bzero_fill(void *owner) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin_bzero(&holder,sizeof holder);fill_escape(holder.pointer);
++}
++void checked_fill(void *owner) {
++  struct FillHolder holder={fill_bytes(owner)};
++  __builtin___memset_chk(&holder,0,sizeof holder,sizeof holder);fill_escape(holder.pointer);
++}
++void overwrite_expired_payload(void *owner) {
++  const char *pointer=fill_bytes(owner);fill_consume(owner);
++  __builtin_memset(&pointer,0,sizeof pointer);fill_escape(pointer);
++}
++void overwrite_required_owner(void *owner) {
++  const char *pointer=fill_bytes(owner);__builtin_memset(&owner,0,sizeof owner);
++  fill_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void write_live_region(void *owner) {
++  char *pointer=(char*)fill_bytes(owner);__builtin_memset(pointer,0,1);
++}
++void write_expired_region(void *owner) {
++  char *pointer=(char*)fill_bytes(owner);fill_consume(owner);
++  __builtin_memset(pointer,0,1); // expected-error {{after its owner lifetime ended}}
++}
++void filling_does_not_invoke(void *owner) {
++  const char *pointer=fill_bytes(owner);void (^work)(void)=^{fill_consume(owner);};
++  __builtin_memset(&work,0,0);fill_use(pointer);
++}
++void uncertain_alias(void *owner,int choose) {
++  struct FillHolder one={fill_bytes(owner)},two={fill_bytes(owner)};
++  struct FillHolder *target=choose ? &one : &two;__builtin_memset(target,0,sizeof one);
++  fill_escape(one.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  fill_escape(two.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void byte_contains_pointer(void *owner,void *destination) {
++  const char *pointer=fill_bytes(owner);
++  __builtin_memset(destination,(int)(__UINTPTR_TYPE__)pointer,1); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++
++void unknown_array_summary(void *owner,int index) {
++  const char *array[2]={0,0};array[index]=fill_bytes(owner);
++  __builtin_memset(&array[1],0,sizeof array[1]);
++  fill_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void unknown_array_complete_clear(void *owner,int index) {
++  const char *array[2]={0,0};array[index]=fill_bytes(owner);
++  __builtin_memset(array,0,sizeof array);fill_escape(array[0]);fill_escape(array[1]);
 +}

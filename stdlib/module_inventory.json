@@ -207,7 +207,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 12,
+        "minor": 13,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -230,7 +230,8 @@
         "Canonical retainable-family typedef and unary operation attributes, alias/redeclaration checks, integrated-type ARC restrictions, borrowed release effects, analyzer summaries and native/interface persistence (source)",
         "Known consumption through concrete local Block/lambda calls, separate callable effect facts and invoked-capture summaries, copies/aggregate aliases, may-consumption callback boundaries and ARC copy-in/writeback provenance (source)",
         "Qualified synchronous mutable C++ lambdas with stable lifetime-sensitive captures and unrelated scalar mutation, CFG mutation/exposure summaries, independent ARC holding-capture dependencies and reference-owner mutation checks (source)",
-        "Field- and element-sensitive invocation summaries for callable members of captured records and arrays, nested/init/copy capture forwarding and structural ARC record copies (source)"
+        "Field- and element-sensitive invocation summaries for callable members of captured records and arrays, nested/init/copy capture forwarding and structural ARC record copies (source)",
+        "Known memory-fill nonescape/write-only contracts, exact direct local overwrite kills for borrowed/callable/address provenance, nested arrays/fields, owner expiry and preserved wildcard/partial/uncertain facts (source)"
       ],
       "remaining": [
         "remaining borrowed alias/escape and required diagnostic boundaries",

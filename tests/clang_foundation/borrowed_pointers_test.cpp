@@ -76,6 +76,17 @@ void Expect(const CompileRequest &R, bool Success,
 }
 void SemanticCases(const fs::path &Root, BaseLanguage Language,
                     const std::string &Standard, bool ARC) {
+  const std::string FillHeader=Header+
+      "typedef borrowed const char *FillBytes;\n"
+      "FillBytes fill_bytes(void*) __attribute__((objc_returns_borrowed(owner_index=0)));\n";
+  for(const std::string &Code:{
+      "void f(void*o){struct H{const char*p;};struct H h={fill_bytes(o)};__builtin_memset(&h,0,sizeof h);escape(h.p);}",
+      "void f(void*o){const char*p=fill_bytes(o);const char**q=(const char**)__builtin_memset(&p,0,sizeof p);escape(*q);}"})
+    Expect(Request(Root,FillHeader+Code,Language,Standard,ARC),true);
+  for(const std::string &Code:{
+      "void f(void*o){struct H{const char*p;};struct H h={fill_bytes(o)};__builtin_memset(&h,0,1);escape(h.p);}",
+      "void f(void*o,int i){const char*a[2]={0,0};a[i]=fill_bytes(o);__builtin_memset(&a[1],0,sizeof a[1]);escape(a[0]);}"})
+    Expect(Request(Root,FillHeader+Code,Language,Standard,ARC),false,"argument without a non-escaping lifetime contract");
   const std::string CallableHeader =
       "typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));\n"
       "typedef void (*ConsumedCallback)(id __attribute__((ns_consumed)));\n"
@@ -99,6 +110,8 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "typedef borrowed const char *ForeignBytes;\n"
       "ForeignBytes foreign_bytes(ForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
       "void foreign_use(const char *pointer __attribute__((noescape)));\n"
+      "void foreign_escape(const char *pointer);\n"
+      "inline void foreign_clear(ForeignRef owner){struct H{const char*p;};H h{foreign_bytes(owner)};__builtin_memset(&h,0,sizeof h);foreign_escape(h.p);}\n"
       "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)),int unused);\n"
       "void foreign_pair(ForeignRef owner __attribute__((cf_consumed)),const char *pointer __attribute__((noescape)));\n"
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)),int unused);\n"
@@ -655,7 +668,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
         BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Client.imported_interfaces={Input};
     Expect(Client,true);
-    Client.source_text="void overloads(ForeignRef owner,ForeignCallback callback,void(*plain)(ForeignRef)){foreign_scoped(owner);foreign_release_locally(owner);dispatch_foreign(callback);dispatch_foreign(plain);}";
+    Client.source_text="void overloads(ForeignRef owner,ForeignCallback callback,void(*plain)(ForeignRef)){foreign_scoped(owner);foreign_release_locally(owner);foreign_clear(owner);dispatch_foreign(callback);dispatch_foreign(plain);}";
     Expect(Client,true);
     Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");
