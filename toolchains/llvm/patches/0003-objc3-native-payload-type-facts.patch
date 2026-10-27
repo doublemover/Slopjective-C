@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..22df1bbc8
+index 000000000..d78092203
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,712 @@
+@@ -0,0 +1,747 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1481,6 +1481,41 @@ index 000000000..22df1bbc8
 +      }
 +  EXPECT_EQ(Copies,1u);
 +  EXPECT_EQ(ThrowingCalls,0u);
++}
++
++TEST(ObjC3TypeContracts, PolishedDeclarationsPreserveForeignConsumedParameters) {
++  for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC) Args.push_back("-fobjc-arc");
++    auto AST=parse(R"(
++      typedef void (*ForeignCallback)(void * __attribute__((cf_consumed)));
++      void consume(void *owner __attribute__((cf_consumed)));
++      __attribute__((objc_root_class)) @interface ForeignReceiver
++      - (void)consume:(void * __attribute__((cf_consumed)))owner;
++      @end
++    )",Args);
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    PrintingPolicy Policy(AST->getASTContext().getLangOpts());
++    Policy.PolishForDeclaration=true;
++    std::string Printed;llvm::raw_string_ostream Out(Printed);
++    for(const Decl *Declaration:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(!Declaration->isImplicit() &&
++          AST->getSourceManager().isWrittenInMainFile(Declaration->getLocation())) {
++        Declaration->print(Out,Policy);Out << ";\n";
++      }
++    auto Reparsed=parse(Printed,Args);
++    ASSERT_TRUE(Reparsed);
++    ASSERT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
++    const auto *Function=findFunction(Reparsed->getASTContext(),"consume");
++    ASSERT_TRUE(Function);
++    EXPECT_TRUE(Function->getParamDecl(0)->hasAttr<CFConsumedAttr>());
++    EXPECT_TRUE(Function->getType()->castAs<FunctionProtoType>()->getExtParameterInfo(0).isCFConsumed());
++    const auto *Receiver=cast<ObjCInterfaceDecl>(lookup(Reparsed->getASTContext(),"ForeignReceiver"));
++    ASSERT_NE(Receiver->instmeth_begin(),Receiver->instmeth_end());
++    EXPECT_TRUE((*Receiver->instmeth_begin())->getParamDecl(0)->hasAttr<CFConsumedAttr>()) << Printed;
++  }
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644

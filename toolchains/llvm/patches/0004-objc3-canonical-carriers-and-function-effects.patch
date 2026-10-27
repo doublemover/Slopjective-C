@@ -4245,7 +4245,7 @@ index e0b62591a..a84968f39 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..4b411da27 100644
+index 4be3e977b..1cfce43fc 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -4568,7 +4568,7 @@ index 4be3e977b..4b411da27 100644
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
 +             ObjCRequiresCleanupAttr, ObjCResourceFamilyAttr, ObjCInvalidAttr,
-+             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr,
++             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr, CFConsumedAttr,
 +             NSConsumesSelfAttr>(A) &&
 +        !(isa<NamespaceDecl>(D) && isa<VisibilityAttr, TypeVisibilityAttr>(A)) &&
 +        !(isa<ObjCMethodDecl>(D) &&
@@ -5041,7 +5041,7 @@ index 4be3e977b..4b411da27 100644
 +    // These are parameter contracts, not attributes on the method result.
 +    // Keep them inside the written method parameter's type parentheses.
 +    for (const Attr *Attribute : Parameter->attrs())
-+      if (isa<NoEscapeAttr, NSConsumedAttr>(Attribute)) {
++      if (isa<NoEscapeAttr, NSConsumedAttr, CFConsumedAttr>(Attribute)) {
 +        Attribute->printPretty(Out, Policy);
 +        Out << ' ';
 +      }

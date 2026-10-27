@@ -519,7 +519,10 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "ForeignBytes foreign_bytes(ForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
       "void foreign_use(const char *pointer __attribute__((noescape)));\n"
       "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));\n"
-      "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n";
+      "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
+      "__attribute__((objc_root_class)) @interface ForeignContract\n"
+      "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
+      "@end\n";
   for (bool ARC : {false,true}) {
     auto Emission = Request(Root,Provider,BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Emission.emit_semantic_interface=true;
@@ -546,6 +549,8 @@ void ForeignPersistenceCases(const fs::path &Root) {
     Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");
     Client.source_text="void expired_callback(ForeignRef owner,ForeignCallback callback){const char*p=foreign_bytes(owner);callback(owner);foreign_use(p);}";
+    Expect(Client,false,"after its owner lifetime ended");
+    Client.source_text="void expired_message(ForeignContract *_Nonnull receiver,ForeignRef owner){const char*p=foreign_bytes(owner);[receiver dropForeign:owner];foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");
     Client.source_text="void erased(ForeignCallback callback){(void)(void(*)(ForeignRef))callback;}";
     Expect(Client,false,"callable cast changes an ownership");
