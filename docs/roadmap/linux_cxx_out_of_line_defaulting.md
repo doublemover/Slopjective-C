@@ -24,3 +24,6 @@ ownership/profile contracts retain their explicit boundaries. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
 combined source batch.
+
+Focused source evidence is recorded in the
+[out-of-line defaulting receipt](../support/linux_cxx_out_of_line_defaulting_progress.json).
