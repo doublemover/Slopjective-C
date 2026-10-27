@@ -38,6 +38,9 @@ metadata operations and subscript updates under source-directed and eager import
 Native witnesses cover C17/C++20/23 diagnostics, source/PCH printing and codegen,
 AST import, clangd operand hover/rename/highlighting, public inline interface re-emission, source-free provider/consumer
 updates, operand order, record values, key replacement and root destruction.
-Broader source matrices and installed SDK delivery follow this implementation
-batch. Nullable writable traversal, dependent/effectful/isolated paths, owned or
+The [combined source receipt](../support/linux_keypath_subscripts_progress.json)
+records 405 compiler tests, 191 native unit tests, 33 frontend suites and 331
+tooling tests. Normal, ASan/UBSan and TSan each pass 168 configurations / 1,158
+commands. Source-free key-path and C++ packages pass 60 configurations / 240
+commands. Installed SDK delivery remains pending. Nullable writable traversal, dependent/effectful/isolated paths, owned or
 borrowed resource values and optional KVC boxing remain separate work.

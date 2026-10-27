@@ -1,0 +1,241 @@
+{
+  "schema": "objc3c.linux-keypath-subscript-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "9f16f9085704ba9687e1973e5b522e2a8972c116",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-709d6ccca7a2-00b75dc3",
+  "compiler_patch_digest": "709d6ccca7a26e7447d99fefcb9963052e8d6f52c45815fe44704d4b429e9efa",
+  "concurrency_module_version": "2.37.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "service_abi": 4,
+  "frame_abi": 1,
+  "scope": [
+    "Typed root[path] reads, writes, compound assignments and prefix/postfix increments with converted assignment results and ordinary property update semantics",
+    "Independent source-ordered root/key/value snapshots, frozen path selection, ARC/MRC full-expression and EH cleanup, record writeback and throwing Block-copy rollback",
+    "Native subscript AST import and source/PCH diagnostics, printing and codegen; genuine internal/surrounding unsequenced conflicts remain diagnosed",
+    "Published inline key-path bodies use written dependency traversal and location-independent public operation/literal fingerprints; generated private helpers remain compiler-owned",
+    "Pinned metadata header projection and eager preloading before native merge unify opaque descriptors with subsequent SDK definitions; required subscript/typed capabilities enforce consumer admission",
+    "Clangd written operand hover, rename, references and highlighting; semantic accessors do not create public operator tokens",
+    "System 2.14 large captured callable arrays preserve unrepresented initializer effects and conservative wildcard invocation summaries, including the 63/64 boundary and 128-element nested/copied captures"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/keypath-subscripts-batch-foundation-build.json",
+      "sha256": "5c606e3b3afa4a198dab665ba72ad6dd411117dce656145f2a47ec4df4e4a5fc",
+      "bytes": 6590
+    },
+    "source_verification": {
+      "path": "out/keypath-subscripts-batch-source-verification.json",
+      "sha256": "01b6b5f9ffa07212aef6c8ebb45f666998a77b789231d2b881dc814eadee62cb",
+      "bytes": 7444
+    },
+    "native": {
+      "compiler_regressions_passed": 405,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 191,
+      "report": {
+        "path": "out/keypath-subscripts-batch-native-batch.json",
+        "sha256": "b9c5ca0ff659a0030dd46f6d53a7cdf5fb0ce9411e0205535bb34c65d66ec48c",
+        "bytes": 2046
+      },
+      "logs": [
+        {
+          "path": "out/keypath-subscripts-batch-native-0.log",
+          "sha256": "98454ebab902a8ed67dadb5a89cdb32e441ab3d449f779c51fc1a70663c8d48e",
+          "bytes": 6699
+        },
+        {
+          "path": "out/keypath-subscripts-batch-native-1.log",
+          "sha256": "1ebf2c12f561ef2b762bf5accf4ba522e8bc11f89ccc6e62823906ede2710d7e",
+          "bytes": 33052
+        },
+        {
+          "path": "out/keypath-subscripts-batch-native-2.log",
+          "sha256": "5cc66f170133c7d555dcff25efce2b77b4292acc1092868d9028ac1ddbbb7541",
+          "bytes": 1113
+        },
+        {
+          "path": "out/keypath-subscripts-batch-native-3.log",
+          "sha256": "9ccb4cc58c5c2ef1356814e46bbbefb90357e38deddc5be6f59cf17577f85f78",
+          "bytes": 4603
+        },
+        {
+          "path": "out/keypath-subscripts-batch-native-4.log",
+          "sha256": "f12abc75400d525c34ba94ee98be57c78b0ec12d17cb3873c674c598d261a5d9",
+          "bytes": 5165
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "checkpoint": {
+        "path": "out/keypath-subscripts-batch-frontend-checkpoint.json",
+        "sha256": "9846b921367adc2fe0420554bdbbf5fe1fa2e3204959eb09ce0adc3d581e46ae",
+        "bytes": 1070
+      },
+      "compiled_binaries": [
+        {
+          "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+          "sha256": "4b465abb27f8128fb3d6db2f473602b81fbea5e94b5466bc8ae41d293a2a3c24",
+          "bytes": 201206432
+        }
+      ]
+    },
+    "tooling": {
+      "tests_passed": 331,
+      "tests_skipped": 3,
+      "skipped_scope": "Windows/PowerShell-only checks",
+      "subtests_passed": 33,
+      "log": {
+        "path": "out/keypath-subscripts-batch-tooling.log",
+        "sha256": "3acd1c23f2c801833b9842785804baee5578ffe4c29d79760d964169a59aba47",
+        "bytes": 490
+      }
+    },
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/keypath-subscripts-batch-features-normal/batch.json",
+          "sha256": "8c95ba4c8485cb218106d9df6919d0cf4829528433995fc428b3a3675148f48f",
+          "bytes": 1198811
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/keypath-subscripts-batch-features-asan/batch.json",
+          "sha256": "d78530ebd2b0c93dac3ed38507a5df8aec173cb15bd227a64dfd6ff768d034b1",
+          "bytes": 1264199
+        }
+      },
+      {
+        "mode": "tsan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/keypath-subscripts-batch-features-tsan/batch.json",
+          "sha256": "6a9ce6116274b491a059fd022971a364885a86270120b0d0784f9156251b12be",
+          "bytes": 1252681
+        }
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 60,
+      "commands_passed": 240,
+      "typed_keypath_configurations_passed": 36,
+      "cpp_async_configurations_passed": 24,
+      "checkpoint": {
+        "path": "out/keypath-subscripts-batch-package-checkpoint.json",
+        "sha256": "73b94ac97297487effbffccccccfd423ed3ce9be91bd40ee38c9f4f58b947651",
+        "bytes": 4287
+      },
+      "modes": [
+        {
+          "family": "typed-packages",
+          "mode": "normal",
+          "configurations_passed": 12,
+          "commands_passed": 48,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-typed-packages-normal/qualification.json",
+            "sha256": "b0f660ea6c331078765f8e9cea9cba4e2d186a5ea5d0070aa06dc56718c828ab",
+            "bytes": 6707
+          }
+        },
+        {
+          "family": "typed-packages",
+          "mode": "normal-eager",
+          "configurations_passed": 12,
+          "commands_passed": 48,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-typed-packages-normal-eager/qualification.json",
+            "sha256": "e0b9f0c8d6da67396da3d5f33498af55a127d5e1f4f4431da0dad9d1a72c2fa4",
+            "bytes": 6697
+          }
+        },
+        {
+          "family": "typed-packages",
+          "mode": "asan",
+          "configurations_passed": 12,
+          "commands_passed": 48,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-typed-packages-asan/qualification.json",
+            "sha256": "5d27a72464bea0a5f9082109d5b391a8749d30843829c7ec5f23a5a777c57df8",
+            "bytes": 6705
+          }
+        },
+        {
+          "family": "packages",
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "family": "packages",
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "family": "packages",
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/keypath-subscripts-batch-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "compiler_binaries": [
+      {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/bin/clang",
+        "sha256": "d97311193f45270554021fe61d50ba445f2cde242e74bab101a82faa9f2eb701",
+        "bytes": 184617912
+      },
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang",
+        "sha256": "20cee8b05f98398f7d0f29ee97308d67ad7666f2d78e64055742f6fb5e302a9f",
+        "bytes": 184617912
+      },
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clangd",
+        "sha256": "013fde1c4a57ff51612407e7fe626fb0f40673a65264495f868298a5788d0bc4",
+        "bytes": 81845296
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "acceptance_receipt": "docs/support/linux_source_batch_2_33_acceptance.json",
+    "unpublished_previous_candidate_stopped_for_system_2_14_fix": true,
+    "unpublished_candidate_prefix_reclaimed": true,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Remaining implementation tracked by the Linux roadmap and module inventory",
+    "Installed SDK delivery of post-2.33 source spans",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

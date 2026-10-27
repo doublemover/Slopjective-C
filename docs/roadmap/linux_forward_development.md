@@ -51,6 +51,14 @@ Normal, ASan/UBSan and TSan each pass the complete five-family source/PCH matrix
 execution, including builtin bodies, complete fills and counted captured releases.
 SDK 2.33 remains the accepted archive; installed delivery follows this batch.
 
+The [key-path/subscript source receipt](../support/linux_keypath_subscripts_progress.json)
+qualifies System **2.14** and keypath **2.3** with **405 compiler tests**, **191
+native unit tests**, all **33 frontend suites** and **331 tooling tests**. Normal,
+ASan/UBSan and TSan each pass **168 configurations / 1,158 commands**. Source-free
+key-path and C++ packages pass **60 configurations / 240 commands**, including
+eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
+candidate was stopped for the array fix and its unused prefix reclaimed.
+
 ## Typed key-path subscripts
 
 The [keypath 2.3.0 source span](linux_keypath_subscripts.md) implements typed
