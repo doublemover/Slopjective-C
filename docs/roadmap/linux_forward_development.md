@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Consumption through local closures
+
+The [System 2.10.0 source span](linux_borrowed_closure_consumption.md) propagates
+known captured-owner consumption through local Block/lambda invocations and
+invoked callable captures. Separate effect facts preserve non-invoking copies,
+local aggregate/array aliases and ARC callback writeback provenance. Broader
+checks remain batched after implementation; SDK 2.33 is the accepted archive.
+
 ## Canonical retainable C families
 
 The [System 2.9.0 source span](linux_retainable_families.md) implements canonical

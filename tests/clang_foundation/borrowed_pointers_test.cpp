@@ -132,6 +132,14 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root,ForeignHeader+
       "void f(ForeignRef o){void(^work)(void)=^{foreign_use(foreign_bytes(o));};foreign_consume(o,0);work();}",
       Language,Standard,ARC),false,"captured owner lifetime ended");
+  for(const std::string &Case:{
+      "void f(ForeignRef owner){const char*p=foreign_bytes(owner);void(^work)(void)=^{foreign_consume(owner,0);};work();foreign_use(p);}",
+      "void f(ForeignRef owner){void(^work)(void)=^{foreign_use(foreign_bytes(owner));foreign_consume(owner,0);};work();work();}",
+      "void f(ForeignRef owner){const char*p=foreign_bytes(owner);void(^inner)(void)=^{foreign_consume(owner,0);};void(^outer)(void)=^{inner();};outer();foreign_use(p);}"})
+    Expect(Request(Root,ForeignHeader+Case,Language,Standard,ARC),false,"borrowed pointer escapes");
+  Expect(Request(Root,ForeignHeader+
+      "void f(ForeignRef owner){const char*p=foreign_bytes(owner);void(^inner)(void)=^{foreign_consume(owner,0);};void(^unused)(void)=^{(void)inner;};unused();foreign_use(p);}",
+      Language,Standard,ARC),true);
   if (Language == BaseLanguage::ObjectiveCxx) {
     for(const std::string &Case:{
         "void f(ForeignRef o){auto work=[o]{foreign_use(foreign_bytes(o));};foreign_consume(o,0);work();}",
@@ -147,6 +155,13 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
     Expect(Request(Root,Header+
         "void f(id o){auto work=[o]{use_noescape(bytes(o));};o=0;work();}",
         Language,Standard,ARC),ARC,ARC ? "" : "after its owner lifetime ended");
+    for(const std::string &Case:{
+        "void f(ForeignRef owner){const char*p=foreign_bytes(owner);auto work=[owner]{foreign_consume(owner,0);};auto copy=work;foreign_use(p);copy();foreign_use(p);}",
+        "void f(ForeignRef owner){const char*p=foreign_bytes(owner);auto inner=[owner]{foreign_consume(owner,0);};auto outer=[inner]{inner();};outer();foreign_use(p);}"})
+      Expect(Request(Root,ForeignHeader+Case,Language,Standard,ARC),false,"after its owner lifetime ended");
+    Expect(Request(Root,ForeignHeader+
+        "void f(ForeignRef owner){const char*p=foreign_bytes(owner);auto inner=[owner]{foreign_consume(owner,0);};auto unused=[inner]{(void)inner;};unused();foreign_use(p);}",
+        Language,Standard,ARC),true);
     const std::string GetterHeader=ForeignHeader+
         "ForeignBytes getter(ForeignRef owner,int unused) __attribute__((objc_returns_borrowed(owner_index=0)));\n";
     for(const std::string &Case:{
@@ -592,6 +607,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
       "void dispatch_foreign(ForeignCallback);void dispatch_foreign(void (*)(ForeignRef));\n"
       "inline void foreign_scoped(ForeignRef owner){auto work=[owner]{foreign_use(foreign_bytes(owner));};work();}\n"
+      "inline void foreign_release_locally(ForeignRef owner __attribute__((cf_consumed))){const char*p=foreign_bytes(owner);auto work=[owner]{foreign_consume(owner);};foreign_use(p);work();}\n"
       "__attribute__((objc_root_class)) @interface ForeignContract\n"
       "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
       "@end\n";
@@ -618,7 +634,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
         BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Client.imported_interfaces={Input};
     Expect(Client,true);
-    Client.source_text="void overloads(ForeignRef owner,ForeignCallback callback,void(*plain)(ForeignRef)){foreign_scoped(owner);dispatch_foreign(callback);dispatch_foreign(plain);}";
+    Client.source_text="void overloads(ForeignRef owner,ForeignCallback callback,void(*plain)(ForeignRef)){foreign_scoped(owner);foreign_release_locally(owner);dispatch_foreign(callback);dispatch_foreign(plain);}";
     Expect(Client,true);
     Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");

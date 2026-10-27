@@ -153,3 +153,6 @@ preserves owner loans across subsequent argument effects.
 
 The [System 2.9.0 canonical family span](linux_retainable_families.md) adds
 annotated family-release effects and native/interface family contracts.
+
+The [System 2.10.0 local invocation span](linux_borrowed_closure_consumption.md)
+propagates known closure consumption and ARC callback writeback facts.

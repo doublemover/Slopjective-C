@@ -206,7 +206,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 9,
+        "minor": 10,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -226,7 +226,8 @@
         "Block lifetime slot-copy acquisition and ARC consumed-argument copy exception edges, exact completed-binding cleanup prefixes and callback contract checks through arrays/deep pointer containers (source)",
         "Cached CFG summaries of future owner use in concrete C++ lambda/Block bodies, local aliases, copied/init/nested captures, independent owner/pin protection and consumed-owner invocation/escape checks (source)",
         "Borrowed getter owner-argument loan snapshots across later argument replacement/consumption, conditional/comma selection, message/operator dispatch and independent pin protection (source)",
-        "Canonical retainable-family typedef and unary operation attributes, alias/redeclaration checks, integrated-type ARC restrictions, borrowed release effects, analyzer summaries and native/interface persistence (source)"
+        "Canonical retainable-family typedef and unary operation attributes, alias/redeclaration checks, integrated-type ARC restrictions, borrowed release effects, analyzer summaries and native/interface persistence (source)",
+        "Known consumption through concrete local Block/lambda calls, separate callable effect facts and invoked-capture summaries, copies/aggregate aliases, may-consumption callback boundaries and ARC copy-in/writeback provenance (source)"
       ],
       "remaining": [
         "remaining borrowed alias/escape and required diagnostic boundaries",
