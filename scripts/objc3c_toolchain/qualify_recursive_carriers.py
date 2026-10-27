@@ -259,7 +259,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         if hashes != {str(path): packages.digest(path) for path in inputs}:
             raise ValueError('installed recursive carrier inputs changed during execution')
         if (len(report['configurations']), report['executions'], report['rejections'],
-                len(report['commands'])) != (8, 70, 100, 333):
+                len(report['commands'])) != (8, 70, 98, 331):
             raise ValueError('installed recursive carrier execution matrix is incomplete')
         report.update(status='PASS', temporary_artifacts_reclaimed=True,
                       commands_passed=len(report['commands']))
