@@ -1,6 +1,7 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
@@ -350,10 +351,40 @@ void TestRelativeArtifactsAndResponseFileLayoutFlags() {
   assert(fs::current_path() == caller_directory);
   fs::remove_all(root);
 }
+void TestPinnedRuntimeTypesSurvivePreparedImport() {
+  const auto root=fs::temp_directory_path()/"objc3-runtime-declaration-import";
+  fs::remove_all(root);
+  fs::create_directories(root/"include/objc3c/runtime");
+  {
+    std::ofstream header(root/"include/objc3c/runtime/objc3_runtime_services.h");
+    header<<RuntimeInterfaceHeaderSource().str();
+  }
+  auto provider=ModuleRequest(root/"provider.m","test.runtime_types",
+      "#include <objc3c/runtime/objc3_runtime_services.h>\n"
+      "int runtime_actor(objc3_actor_t *actor);\n"
+      "objc3_task_t *runtime_task(objc3_task_t *task);\n");
+  provider.arguments.push_back("-I"+(root/"include").string());
+  const auto interface_path=root/"runtime.objc3i";
+  provider.interface_output_path=interface_path.string();
+  auto emitted=Compile(provider);
+  assert(emitted.success && emitted.interface_artifact && emitted.interface_artifact->success);
+  fs::remove_all(root/"include");
+  auto consumer=ModuleRequest(root/"consumer.m","",
+      "int use_runtime(void) {return runtime_actor((objc3_actor_t *)0) +\n"
+      "    (runtime_task((objc3_task_t *)0)!=(objc3_task_t *)0);}\n");
+  consumer.emit_semantic_interface=false;
+  consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity)};
+  auto imported=Compile(consumer);
+  assert(imported.success && HasImported(imported,"runtime_actor") &&
+         HasImported(imported,"runtime_task"));
+  fs::remove_all(root);
+}
+
 } // namespace
 
 int main() {
   TestThreeModuleSemanticLookupAndIdentity();
+  TestPinnedRuntimeTypesSurvivePreparedImport();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();

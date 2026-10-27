@@ -35,6 +35,15 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Published SDK runtime awaiters
+
+The [2.36.0 source span](linux_published_runtime_awaiters.md) admits pinned SDK
+runtime declarations in public signatures and concrete inline async bodies.
+Checkpoint/yield, executor/actor hops, task handles and completion-order groups
+retain written dependencies under required runtime-declaration semantics.
+Application-defined opaque types and changed runtime headers remain rejected.
+SDK 2.33 remains the accepted archive.
+
 ## Task and frame interoperability
 
 The [2.35.0 source span](linux_task_frame_interop.md) adds native-frame awaits of

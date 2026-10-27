@@ -146,6 +146,21 @@ def check_cpp_metadata(metadata):
                 ';cxx-async-definitions:v1;' not in declaration.get('canonical_type_identity', '') or
                 abi not in declaration.get('effects', {}).get('async_abi_identity', '')):
             raise ValueError('published async body lost its contract: ' + name)
+    if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    for name in ('native_published_runtime', 'native_published_group',
+                 'native_published_raw_task', 'native_published_actor',
+                 'NativePublishedRuntime::run'):
+        declaration = names.get(name, {})
+        identity = declaration.get('canonical_type_identity', '')
+        if (not has_async(declaration) or
+                ';sdk-runtime-declarations:v1;' not in identity or
+                ';cxx-async-definitions:v1;' not in identity or
+                'cxx-task-v1' not in declaration.get('effects', {}).get('async_abi_identity', '')):
+            raise ValueError('published runtime request lost its contract: ' + name)
+    if ';sdk-runtime-declarations:v1;' not in names.get(
+            'native_published_checkpoint', {}).get('canonical_type_identity', ''):
+        raise ValueError('published runtime constant lost its contract')
     scope = names.get('native_module_scoped', {})
     scope_effects = scope.get('effects', {})
     if (not has_async(scope) or

@@ -21,6 +21,10 @@ llvm::StringRef RuntimeInterfaceSemantic();
 llvm::StringRef RuntimeInterfaceHeaderSource();
 llvm::StringRef RuntimeTaskHeaderSource();
 bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context);
+bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
+                                          const clang::ASTContext &context);
+bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
+                                       const clang::ASTContext &context);
 
 // System modules from the canonical SDK library inventory need no facade
 // dependency artifact. Public signature types still undergo normal dependency

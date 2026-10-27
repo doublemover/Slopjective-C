@@ -75,6 +75,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
     kCxxAsyncDefinitionSemantic,
+    kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -258,6 +259,9 @@ struct InterfaceImportSession::Impl {
     InterfaceImportInput input;
     SemanticInterfaceSidecar sidecar;
     std::string source_bytes;
+    // Tooling's virtual-file MemoryBuffers borrow these strings. Keep them
+    // alive until after the AST, including deferred source location imports.
+    clang::tooling::FileContentMappings virtual_files;
     std::unique_ptr<clang::ASTUnit> ast;
   };
   InterfaceImportTarget target;
@@ -427,7 +431,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   for (const auto &name : graph.topological_order) {
     const auto index = module_index.at(name);
     auto &module = impl->modules[index];
-    clang::tooling::FileContentMappings virtual_files;
+    auto &virtual_files=module.virtual_files;
     llvm::SmallString<256> include_directory(module.input.source_path);
     llvm::sys::path::remove_filename(include_directory);
     std::vector<InterfaceSourceArtifact> dependency_sources;

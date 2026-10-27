@@ -40,6 +40,8 @@ binds the compiler, source, public header and reports.
 
 SDK 2.33 remains the accepted installed archive; this milestone does not imply a
 new SDK delivery or full profile conformance. Dependent/generic bodies, public
-closure types and unmodeled runtime/custom awaiter operands remain separate work.
+closure types and arbitrary custom coroutine promises remain separate work.
+The [2.36.0 source span](linux_published_runtime_awaiters.md) adds pinned SDK
+runtime requests and public service/task declarations.
 The [2.35.0 source span](linux_task_frame_interop.md) adds nonisolated frame
 adapters in ordinary task bodies and native-frame bodies awaiting C++ tasks.

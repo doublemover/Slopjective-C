@@ -15,9 +15,22 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Module.h"
 #include "clang/Basic/TargetInfo.h"
+#include "llvm/ADT/STLExtras.h"
 
 namespace objc3::clang_foundation {
 namespace {
+
+bool DeclarationHeaderMatches(const clang::NamedDecl *declaration,
+                              const clang::ASTContext &context,
+                              llvm::StringRef expected) {
+  if (!declaration) return false;
+  const auto &source=context.getSourceManager();
+  const auto location=source.getSpellingLoc(declaration->getLocation());
+  if (location.isInvalid()) return false;
+  bool invalid=false;
+  const auto bytes=source.getBufferData(source.getFileID(location),&invalid);
+  return !invalid && ComputeInterfaceSourceSha256(bytes)==expected;
+}
 
 bool HeaderMatches(const clang::NamedDecl *declaration,
                    const clang::ASTContext &context) {
@@ -32,6 +45,22 @@ bool HeaderMatches(const clang::NamedDecl *declaration,
   auto bytes = source.getBufferData(source.getFileID(location), &invalid);
   return !invalid && ComputeInterfaceSourceSha256(bytes) ==
                          runtime_interface::kHeaderSha256;
+}
+
+bool ServiceContractMatches(const clang::ASTContext &context) {
+  bool frame_contract=false;
+  const auto *tu=context.getTranslationUnitDecl();
+  for (const auto *frame:tu->lookup(&context.Idents.get("objc3_async_frame")))
+    frame_contract |= IsQualifiedRuntimeFrameType(frame,context);
+  if (!frame_contract) return false;
+  for (const char *name:{"objc3_task","objc3_executor","objc3_error",
+                         "objc3_task_group","objc3_actor"})
+    for (const auto *declaration:tu->lookup(&context.Idents.get(name)))
+      if (const auto *tag=llvm::dyn_cast<clang::TagDecl>(declaration))
+        if (const auto *definition=tag->getDefinition())
+          if (!DeclarationHeaderMatches(definition,context,runtime_interface::kHeaderSha256))
+            return false;
+  return true;
 }
 
 template <size_t N>
@@ -150,6 +179,7 @@ llvm::StringRef RuntimeTaskHeaderSource() {
 }
 
 bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context) {
+  if (!ServiceContractMatches(context)) return false;
   const auto &source = context.getSourceManager();
   for (const auto *declaration : context.getTranslationUnitDecl()->lookup(
            &context.Idents.get("__objc3_async_task"))) {
@@ -165,6 +195,75 @@ bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context) {
       return true;
   }
   return false;
+}
+
+bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
+                                          const clang::ASTContext &context) {
+  if (!declaration) return false;
+  const auto name=declaration->getQualifiedNameAsString();
+  // These public C-header dependencies carry only a target builtin type. The
+  // canonical reparse uses the compiler's corresponding integer/size typedefs;
+  // ownership attributes or a different representation are never equivalent.
+  if (const auto *alias=llvm::dyn_cast<clang::TypedefNameDecl>(declaration);
+      alias && !alias->hasAttrs()) {
+    clang::QualType expected;
+    if (name=="size_t") expected=context.getSizeType();
+    else if (name=="uint32_t") expected=context.UnsignedIntTy;
+    else if (name=="uint64_t") expected=context.UnsignedLongTy;
+    if (!expected.isNull())
+      return context.hasSameType(alias->getUnderlyingType(),expected) &&
+             ServiceContractMatches(context);
+  }
+  if (!llvm::StringRef(name).starts_with("objc3_") &&
+      !llvm::StringRef(name).starts_with("OBJC3_")) return false;
+  if (!context.getTargetInfo().getTriple().isOSLinux() ||
+      context.getTargetInfo().getTriple().getArch()!=llvm::Triple::x86_64 ||
+      !DeclarationHeaderMatches(declaration,context,runtime_interface::kHeaderSha256))
+    return false;
+  if (!ServiceContractMatches(context)) return false;
+  // Opaque service types cannot acquire an application-provided definition.
+  if (const auto *tag=llvm::dyn_cast<clang::TagDecl>(declaration))
+    if (const auto *definition=tag->getDefinition())
+      if (!DeclarationHeaderMatches(definition,context,runtime_interface::kHeaderSha256))
+        return false;
+  return true;
+}
+
+bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
+                                       const clang::ASTContext &context) {
+  if (!context.getLangOpts().CPlusPlus || !declaration)
+    return false;
+  const std::string qualified_name=declaration->getQualifiedNameAsString();
+  llvm::StringRef name=qualified_name;
+  if (!name.consume_front("objc3::") || name.contains("::promise_type"))
+    return false;
+  if (!DeclarationHeaderMatches(declaration,context,runtime_interface::kTaskHeaderSha256) ||
+      !IsQualifiedRuntimeTaskHeader(context)) return false;
+  for (const clang::DeclContext *scope=declaration->getDeclContext();scope;
+       scope=scope->getParent())
+    if (const auto *tag=llvm::dyn_cast<clang::TagDecl>(scope))
+      if (const auto *definition=tag->getDefinition())
+        if (!DeclarationHeaderMatches(definition,context,runtime_interface::kTaskHeaderSha256))
+          return false;
+  // Public task aliases retain this SDK-owned sugar in instantiated result
+  // expressions. Admit the alias, not the private traits record or its members.
+  if (llvm::isa<clang::TypedefNameDecl>(declaration) &&
+      declaration->getName()=="abi_type") {
+    const auto *owner=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(
+        declaration->getDeclContext());
+    if (owner && owner->getSpecializedTemplate()->getQualifiedNameAsString()==
+                     "objc3::task_detail::result_traits" &&
+        DeclarationHeaderMatches(owner,context,runtime_interface::kTaskHeaderSha256))
+      return true;
+  }
+  const auto root=name.take_until([](char c) { return c=='<' || c==':'; });
+  static constexpr const char *public_names[]={
+      "basic_task", "basic_task_handle", "task", "task_handle",
+      "task_group_handle", "task_group_next_request", "task_group_cleanup_request",
+      "task_destination", "hop_to", "task_checkpoint", "task_checkpoint_t",
+      "task_yield", "task_yield_t", "service_failure", "task_cancelled", "task_error",
+      "join_task", "finish_task_group"};
+  return llvm::is_contained(public_names,root);
 }
 
 void AddRuntimeInterfaceFiles(

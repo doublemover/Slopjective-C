@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 35,
+        "minor": 36,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -161,7 +161,8 @@
         "Awaited instance/class/category super messages with lexical superclass lookup, independently captured self, actor mailbox entry and ARC consuming receivers (source)",
         "Published native-frame and C++ task bodies around logical awaits/isolation entries with source dependency identity, exact task-header provenance, imported coroutine/template origins and concrete helper backend registration (source)",
         "Native-frame awaits of C++ task factories and awaited task-ABI executor/actor entries with owned frame transfer, records, objects, checked errors, ARC consuming ownership and lexical class/super dispatch (source)",
-        "Objective-C 3 ns_consumed Block parameters preserve native ownership metadata and copying/adoption instead of ignoring the attribute (source)"
+        "Objective-C 3 ns_consumed Block parameters preserve native ownership metadata and copying/adoption instead of ignoring the attribute (source)",
+        "Pinned public SDK runtime declarations and source-projected runtime await requests in published C++ task bodies (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

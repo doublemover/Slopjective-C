@@ -848,3 +848,52 @@ inline int native_published_task_entry(int value) __objc3_async {
 inline int native_published_frame_await(int &value) __objc3_async {
   return __objc3_await native_module_reference(value);
 }
+
+inline int native_published_runtime(int value,objc3_executor_t *destination)
+    __objc3_async {
+  __objc3_await objc3::task_checkpoint;
+  __objc3_await objc3::task_yield;
+  __objc3_await objc3::hop_to(destination);
+  if (!objc3_executor_is_current(destination)) return 0;
+  auto child=native_module_value(value).start(destination);
+  int result=__objc3_await child;
+  return result+1;
+}
+inline int native_published_group(int value) __objc3_async
+    __attribute__((objc_task_group)) {
+  auto group=objc3::task_group_handle::current_scope();
+  auto child=native_module_value(value).start_child(group);
+  group.close();
+  auto completed=__objc3_await group.next<int>();
+  if (!completed) return 0;
+  int result=completed.result();
+  auto end=__objc3_await group.next<int>();
+  if (end) return 0;
+  __objc3_await group;
+  return result+1;
+}
+inline int native_published_raw_task(objc3_task_t *task) __objc3_async {
+  return __objc3_await objc3::join_task<int>(task);
+}
+inline int native_published_actor(int value,objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  objc3_current_actor_facts facts{};
+  facts.struct_size=sizeof(facts);
+  facts.version=1;
+  if (objc3_actor_current_facts(&facts)!=OBJC3_SERVICE_OK ||
+      facts.actor_identity!=objc3_actor_identity(actor)) return 0;
+  __objc3_await objc3::task_yield;
+  return objc3_actor_current_facts(&facts)==OBJC3_SERVICE_OK &&
+         facts.actor_identity==objc3_actor_identity(actor) ? value : 0;
+}
+
+inline constexpr auto native_published_checkpoint=objc3::task_checkpoint;
+struct NativePublishedRuntime {
+  int bias;
+  int run(int value,objc3_executor_t *destination) __objc3_async {
+    __objc3_await native_published_checkpoint;
+    __objc3_await objc3::hop_to(destination);
+    __objc3_await objc3::task_yield;
+    return objc3_executor_is_current(destination) ? value+bias : 0;
+  }
+};

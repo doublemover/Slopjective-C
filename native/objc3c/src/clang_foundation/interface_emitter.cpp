@@ -307,6 +307,83 @@ const clang::Stmt *PublishedFunctionBody(const clang::FunctionDecl *function) {
   return function->getBody();
 }
 
+const clang::Expr *PublishedAwaitSource(const clang::CoawaitExpr *await,
+                                        const clang::FunctionDecl *function,
+                                        const clang::ASTContext &context) {
+  if (const auto *source=clang::getObjC3AwaitSourceExpression(await))
+    return source;
+  const auto *type=clang::getObjC3CallableFunctionType(function);
+  if (type && type->getObjC3FunctionEffects().Async &&
+      !type->getObjC3FunctionEffects().AsyncFrame &&
+      IsQualifiedRuntimeTaskHeader(context))
+    return await->getOperand();
+  return nullptr;
+}
+
+class RuntimeDeclarationFinder final
+    : public clang::RecursiveASTVisitor<RuntimeDeclarationFinder> {
+public:
+  explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
+      : context_(context) {}
+  bool Found=false;
+  void Reference(const clang::NamedDecl *declaration) {
+    Found |= IsQualifiedRuntimeServiceDeclaration(declaration,context_) ||
+             IsQualifiedRuntimeTaskDeclaration(declaration,context_);
+  }
+  bool VisitTagType(clang::TagType *type) { Reference(type->getDecl()); return true; }
+  bool VisitTypedefType(clang::TypedefType *type) { Reference(type->getDecl()); return true; }
+  bool VisitExpr(clang::Expr *expr) { TraverseType(expr->getType()); return true; }
+  bool VisitDeclRefExpr(clang::DeclRefExpr *expr) { Reference(expr->getDecl()); return true; }
+  bool VisitMemberExpr(clang::MemberExpr *expr) { Reference(expr->getMemberDecl()); return true; }
+  bool VisitCXXConstructExpr(clang::CXXConstructExpr *expr) { Reference(expr->getConstructor()); return true; }
+  bool TraverseDecl(clang::Decl *declaration) {
+    if (auto *function=llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration)) {
+      const auto *previous=function_;
+      function_=function;
+      auto restore=llvm::scope_exit([&] { function_=previous; });
+      TraverseType(function->getType());
+      for (const auto *parameter:function->parameters())
+        if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
+          TraverseStmt(const_cast<clang::Expr *>(parameter->getDefaultArg()));
+      if (PublishesFunctionBody(function)) {
+        if (const auto *constructor=llvm::dyn_cast<clang::CXXConstructorDecl>(function))
+          for (const auto *initializer:constructor->inits())
+            if (initializer->isWritten()) TraverseStmt(initializer->getInit());
+        TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(function)));
+      }
+      return true;
+    }
+    if (auto *variable=llvm::dyn_cast_or_null<clang::VarDecl>(declaration);
+        variable && variable->hasGlobalStorage() && !variable->isLocalVarDecl()) {
+      TraverseType(variable->getType());
+      if (PublishesVariableInitializer(variable)) TraverseStmt(variable->getInit());
+      return true;
+    }
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseDecl(declaration);
+  }
+  bool TraverseCoroutineBodyStmt(clang::CoroutineBodyStmt *body,
+                                 DataRecursionQueue * = nullptr) {
+    return TraverseStmt(body->getBody());
+  }
+  bool TraverseCoawaitExpr(clang::CoawaitExpr *await,DataRecursionQueue * = nullptr) {
+    if (const auto *source=PublishedAwaitSource(await,function_,context_)) {
+      Found |= !clang::getObjC3AwaitSourceExpression(await);
+      return TraverseStmt(const_cast<clang::Expr *>(source));
+    }
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseCoawaitExpr(await,nullptr);
+  }
+private:
+  const clang::ASTContext &context_;
+  const clang::FunctionDecl *function_=nullptr;
+};
+
+bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
+                                   const clang::ASTContext &context) {
+  RuntimeDeclarationFinder finder(context);
+  finder.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
+  return finder.Found;
+}
+
 class DeclarationExpressionIdentity final
     : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
 public:
@@ -470,7 +547,7 @@ public:
   }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
-    if (const auto *source=clang::getObjC3AwaitSourceExpression(expression))
+    if (const auto *source=PublishedAwaitSource(expression,function_,context_))
       return WalkUpFromCoawaitExpr(expression) &&
              TraverseStmt(const_cast<clang::Expr *>(source));
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
@@ -1282,6 +1359,15 @@ class TypeDependencyVisitor final
        UsesRuntimeFrame = true;
        return true;
      }
+     if (IsQualifiedRuntimeServiceDeclaration(declaration,context_)) {
+       UsesRuntimeFrame=true;
+       return true;
+     }
+     if (IsQualifiedRuntimeTaskDeclaration(declaration,context_)) {
+       UsesCxxTaskRuntime=true;
+       UsesRuntimeFrame=true;
+       return true;
+     }
      const auto stable_id = ReadInterfaceDeclarationStableId(declaration);
      return !stable_id.empty() && resolved_ids_.count(stable_id);
    }
@@ -1400,12 +1486,19 @@ class TypeDependencyVisitor final
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
         TraverseCoreturnStmt(statement,nullptr);
   }
+  bool TraverseCoroutineBodyStmt(clang::CoroutineBodyStmt *,
+                                 DataRecursionQueue * = nullptr) {
+    // The enclosing published function has already been projected to its
+    // written body. Nested coroutine callables need their own body contract.
+    return UnsupportedExpression();
+  }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
-    if (const auto *source=clang::getObjC3AwaitSourceExpression(expression)) {
+    if (const auto *source=PublishedAwaitSource(expression,body_function_,context_)) {
       const auto *type=clang::getObjC3AsyncCalleeFunctionType(source);
-      UsesCxxTaskRuntime |= type && type->getObjC3FunctionEffects().Async &&
-                           !type->getObjC3FunctionEffects().AsyncFrame;
+      UsesCxxTaskRuntime |= !clang::getObjC3AwaitSourceExpression(expression) ||
+                           (type && type->getObjC3FunctionEffects().Async &&
+                            !type->getObjC3FunctionEffects().AsyncFrame);
       return WalkUpFromCoawaitExpr(expression) &&
              TraverseStmt(const_cast<clang::Expr *>(source));
     }
@@ -2150,7 +2243,10 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
        IsOutOfLineDefaultedDefinition(body_function)) &&
       body_function->hasAttr<clang::AsmLabelAttr>();
   auto restore_definition = llvm::scope_exit([&] {
-    if (has_label_definition) body_function->setAttrs(saved_attributes);
+    if (has_label_definition) {
+      body_function->dropAttrs();
+      body_function->setAttrs(saved_attributes);
+    }
     for (const auto &[parameter, inherited] : saved_defaults)
       parameter->setHasInheritedDefaultArg(inherited);
   });
@@ -2460,6 +2556,8 @@ bool ReadInterfaceDeclarationIdentity(
     if (type && type->getObjC3FunctionEffects().Async)
       identity.canonical_type_identity += ";cxx-async-definitions:v1;";
   }
+  if (HasRuntimeDeclarationContract(representative,context))
+    identity.canonical_type_identity += ";sdk-runtime-declarations:v1;";
   if (HasDeclarationLocalType(representative))
     identity.canonical_type_identity += ";cxx-local-types:v1;";
   if (context.getLangOpts().CPlusPlus && HasDeclarationThreadLocal(representative)) {
@@ -2692,6 +2790,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxBlockExpressionSemantic);
     if (HasCxxStatementExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxStatementExpressionSemantic);
+    if (HasSdkRuntimeDeclarationIdentity(declaration))
+      sidecar.required_semantics.push_back(kSdkRuntimeDeclarationSemantic);
     if (HasCxxAsyncDefinitionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxAsyncDefinitionSemantic);
     if (HasCxxLocalTypeIdentity(declaration))
@@ -2770,6 +2870,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
     kCxxAsyncDefinitionSemantic,
+    kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2892,6 +2993,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
     kCxxAsyncDefinitionSemantic,
+    kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

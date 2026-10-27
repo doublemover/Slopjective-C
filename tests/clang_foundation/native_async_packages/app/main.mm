@@ -376,6 +376,21 @@ int main() {
   if (objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
       frame_await.result()!=42) return 102;
   frame_await={};
+  objc3_executor_t *runtime_destination=nullptr;
+  if (objc3_executor_create(1,&runtime_destination)!=OBJC3_SERVICE_OK) return 105;
+  {
+    NativePublishedRuntime publisher{2};
+    auto member=publisher.run(40,runtime_destination).start(executor);
+    auto runtime=native_published_runtime(40,runtime_destination).start(executor);
+    auto group=native_published_group(40).start(executor);
+    auto leaf=native_module_value(41).start(executor);
+    auto joined=native_published_raw_task(leaf.native_handle()).start(executor);
+    if (objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+        objc3_executor_pump(runtime_destination,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+        runtime.result()!=42 || group.result()!=42 || joined.result()!=42 ||
+        member.result()!=42) return 103;
+  }
+  objc3_executor_release(runtime_destination);
   auto scoped = native_module_scoped(41).start(executor);
   if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
       scoped.result() != 42)
@@ -396,6 +411,11 @@ int main() {
   objc3_actor_t *actor = nullptr;
   if (objc3_actor_create(executor, &actor) != OBJC3_SERVICE_OK)
     return 3;
+  {
+    auto runtime=native_published_actor(42,actor).start(executor);
+    if (objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+        runtime.result()!=42) return 104;
+  }
   pending = actor_application(actor).start(executor);
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42)

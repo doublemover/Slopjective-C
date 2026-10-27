@@ -467,6 +467,105 @@ inline int task_from_frame(int value) __objc3_async {
   }
 }
 
+void TestPublishedRuntimeDeclarations() {
+  std::vector<std::string> args={"-x","objective-c++","-std=c++20",
+      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+      "--target=x86_64-unknown-linux-gnu","-fcoro-aligned-allocation",
+      "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+  clang::tooling::FileContentMappings files;
+  AddRuntimeInterfaceFiles(files,args,true);
+  const std::string source=R"(
+#include <objc3c/runtime/objc3_task.hpp>
+inline int runtime_requests(objc3_executor_t *destination,objc3_task_t *child)
+    __objc3_async {
+  __objc3_await objc3::task_checkpoint;
+  __objc3_await objc3::task_yield;
+  __objc3_await objc3::hop_to(destination);
+  return __objc3_await objc3::join_task<int>(child);
+}
+inline int runtime_group(int value) __objc3_async
+    __attribute__((objc_task_group));
+inline int runtime_group(int value) __objc3_async {
+  auto group=objc3::task_group_handle::current_scope();
+  group.close();
+  auto end=__objc3_await group.next<int>();
+  __objc3_await group;
+  return end ? 0 : value;
+}
+int private_implementation() {return objc3_executor_is_current(nullptr);}
+inline int actor_request(objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  objc3_current_actor_facts facts{};
+  facts.struct_size=sizeof(facts);
+  facts.version=1;
+  return objc3_actor_current_facts(&facts)==OBJC3_SERVICE_OK &&
+         facts.actor_identity==objc3_actor_identity(actor) ? 42 : 0;
+}
+)";
+  auto build=[&](const std::string &text,const auto &inputs) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,args,
+        "runtime-declarations.mm","clang-tool",
+        std::make_shared<clang::PCHContainerOperations>(),
+        clang::tooling::getClangStripDependencyFileAdjuster(),inputs);
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    return ast;
+  };
+  auto ast=build(source,files);
+  assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+      "fixture.runtime","test",{}));
+  auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.runtime","test");
+  for (const auto &d:emitted.diagnostics)
+    std::fprintf(stderr,"%s: %s [%s]\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(emitted.success);
+  assert(emitted.source_bytes.find("promise_type")==std::string::npos);
+  const std::vector<llvm::StringRef> supported={
+      "objc3.cxx-data-interfaces.v1","objc3.canonical-function-effects.v1",
+      "objc3.isolation-contracts.v1","objc3.async-entry-abi.v1",
+      kCxxDefinitionSemantic,kCxxAsyncDefinitionSemantic,
+      kSdkRuntimeDeclarationSemantic,RuntimeInterfaceSemantic(),
+      "objc3.module-owned-names.v1"};
+  auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
+  assert(decoded);
+  assert(std::all_of(decoded->declarations.begin(),decoded->declarations.end(),
+      [](const auto &d) {return HasSdkRuntimeDeclarationIdentity(d)==
+          (d.qualified_name!="private_implementation");}));
+  auto old_reader=supported;
+  std::erase(old_reader,kSdkRuntimeDeclarationSemantic);
+  auto unsupported=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old_reader);
+  assert(!unsupported);
+  llvm::consumeError(unsupported.takeError());
+  auto unpinned=*decoded;
+  std::erase(unpinned.required_semantics,RuntimeInterfaceSemantic().str());
+  auto unpinned_encoding=EncodeSemanticInterfaceSidecar(unpinned,supported);
+  assert(!unpinned_encoding);
+  llvm::consumeError(unpinned_encoding.takeError());
+  std::erase(decoded->required_semantics,kSdkRuntimeDeclarationSemantic);
+  auto stripped=EncodeSemanticInterfaceSidecar(*decoded,supported);
+  assert(!stripped);
+  llvm::consumeError(stripped.takeError());
+  auto round=build(emitted.source_bytes,files);
+  auto regenerated=EmitSemanticInterface(round->getASTContext(),"fixture.runtime","test");
+  assert(regenerated.success && regenerated.identity.semantic_fingerprint==
+         emitted.identity.semantic_fingerprint);
+  // Printing an asm-labelled definition must restore every non-label attribute.
+  auto repeated=EmitSemanticInterface(ast->getASTContext(),"fixture.runtime","test");
+  assert(repeated.success && repeated.source_bytes==emitted.source_bytes);
+  for (const std::string suffix : {"/objc3_task.hpp","/objc3_runtime_services.h"}) {
+    auto changed=files;
+    for (auto &file:changed)
+      if (llvm::StringRef(file.first).ends_with(suffix)) file.second+="\n// changed SDK\n";
+    auto changed_ast=build(source,changed);
+    assert(!EmitSemanticInterface(changed_ast->getASTContext(),"fixture.runtime","test").success);
+  }
+  for (const std::string rejected : {
+      "struct objc3_task { int application_owned; };\ninline objc3_task_t *opaque(objc3_task_t *p) {return p;}\n",
+      "inline int hidden() {return (int)objc3::task_detail::result_traits<int>::storage_size;}\n"}) {
+    auto rejected_ast=build("#include <objc3c/runtime/objc3_task.hpp>\n"+rejected,files);
+    auto rejected_interface=EmitSemanticInterface(rejected_ast->getASTContext(),"fixture.runtime","test");
+    assert(!rejected_interface.success);
+  }
+}
+
 void TestCAsyncPhysicalABIImportBoundaries() {
   // Frame ABI is a property of the callable type, not of the destination AST.
   // A C++ consumer simultaneously owns task-returning and frame-returning
@@ -2018,6 +2117,7 @@ int main() {
   TestCAsyncPhysicalABIRoundTrips();
   TestCAsyncPhysicalABIImportBoundaries();
   TestPublishedIsolationBodies();
+  TestPublishedRuntimeDeclarations();
   TestObjectiveCContainerRoundTrips();
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();

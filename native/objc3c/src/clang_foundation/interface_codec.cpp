@@ -454,6 +454,17 @@ llvm::Error ValidateForEncoding(
       kCxxStatementExpressionSemantic) != sidecar.required_semantics.end();
   if (has_statements != statements_capability)
     return Invalid("C++ statements expression identity and required capability must agree");
+  const bool has_sdk_runtime = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasSdkRuntimeDeclarationIdentity);
+  const bool sdk_runtime_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kSdkRuntimeDeclarationSemantic) != sidecar.required_semantics.end();
+  if (has_sdk_runtime != sdk_runtime_capability)
+    return Invalid("SDK runtime declaration identity and required capability must agree");
+  if (has_sdk_runtime && std::none_of(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      [](const auto &semantic) { return semantic.starts_with("objc3.sdk-runtime-frames.v4."); }))
+    return Invalid("SDK runtime declarations require their pinned runtime header contract");
   const bool has_async_definitions = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAsyncDefinitionIdentity);
   const bool async_definition_capability = std::find(

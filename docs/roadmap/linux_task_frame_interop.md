@@ -57,5 +57,8 @@ coherent. SDK 2.33 remains the accepted archive.
 Service ABI 4, frame ABI 1, extension ABI 21 and interface schema 2.2 remain in
 use; regenerate compiler-dependent inputs for the source cutover. MRC/CF
 consumption, init-family entry, unqualified dynamic Class receivers, automatic
-actor association, runtime/custom awaiter publication and full profile
+actor association, arbitrary custom coroutine promises and full profile
 conformance remain separate work.
+
+The [2.36.0 source span](linux_published_runtime_awaiters.md) adds publication of
+pinned SDK runtime requests and service/task declarations.
