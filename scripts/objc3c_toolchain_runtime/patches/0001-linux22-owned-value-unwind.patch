@@ -433,6 +433,32 @@ index a6f164172..4b2a9c4d5 100644
  
  	struct objc_method *initializeSlot = skipMeta ? 0 :
  			objc_dtable_lookup(dtable, initializeSel->index);
+diff --git a/dwarf_eh.h b/dwarf_eh.h
+index e06a58557..131bf32ce 100644
+--- a/dwarf_eh.h
++++ b/dwarf_eh.h
+@@ -105,7 +105,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
+ 		// Get the base 128 digit 
+ 		digit = (**data) & 0x7f;
+ 		// Add it to the current value
+-		uleb += digit << bit;
++		uleb += (uint64_t)digit << bit;
+ 		// Increase the shift value
+ 		bit += 7;
+ 		// Proceed to the next octet
+@@ -131,10 +131,10 @@ static int64_t read_sleb128(unsigned char** data)
+ 	// Read as if it's signed
+ 	uint64_t uleb = read_leb128(data, &bits);
+ 	// If the most significant bit read is 1, then we need to sign extend it
+-	if (uleb >> (bits-1) == 1)
++	if (bits < 64 && (uleb >> (bits-1)) == 1)
+ 	{
+ 		// Sign extend by setting all bits in front of it to 1
+-		uleb |= ((int64_t)-1) << bits;
++		uleb |= UINT64_MAX << bits;
+ 	}
+ 	return (int64_t)uleb;
+ }
 diff --git a/eh_personality.c b/eh_personality.c
 index d638d9772..7f1fefdc6 100644
 --- a/eh_personality.c
