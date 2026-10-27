@@ -22,3 +22,6 @@ This does not expand capture transfer, actor migration or profile conformance.
 The accepted SDK remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json);
 combined source/sanitizer matrices and installed/archive qualification remain
 scheduled for the coordinated source-batch cutover.
+
+Focused checks are recorded in the
+[thread-local progress receipt](../support/linux_cxx_thread_local_progress.json).
