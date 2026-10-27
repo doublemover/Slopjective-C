@@ -34,7 +34,9 @@ Focused qualification passes six compiler regressions, 120 native AST tests,
 four interface suites and 14 tooling tests. Source-free packages pass eight
 C++20/23 × ARC/MRC × O0/O2 configurations in each source-directed, eager and
 ASan/UBSan mode (24 configurations / 96 commands). The isolation source/PCH
-runtime matrices are being completed separately.
+runtime matrix passes all 48 configurations / 360 commands in each normal and
+ASan/UBSan mode. The [focused receipt](../support/linux_published_async_bodies_progress.json)
+binds the compiler, source, public header and reports.
 
 SDK 2.33 remains the accepted installed archive; this milestone does not imply a
 new SDK delivery or full profile conformance. Dependent/generic bodies, public
