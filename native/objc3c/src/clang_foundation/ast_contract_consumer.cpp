@@ -85,6 +85,7 @@ class ContractConsumer final : public clang::ASTConsumer,
     identity.stable_id = usr.str().str();
     identity.kind = decl->getDeclKindName();
     identity.qualified_name = decl->getQualifiedNameAsString();
+    identity.export_root = ReadInterfaceExportRoot(decl);
     clang::QualType type;
     if (auto *value = llvm::dyn_cast<clang::ValueDecl>(decl)) type = value->getType();
     if (auto *type_decl = llvm::dyn_cast<clang::TypeDecl>(decl))

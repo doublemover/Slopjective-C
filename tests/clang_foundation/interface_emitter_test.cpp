@@ -30,7 +30,9 @@ void TestOrdinaryCDeclarationsRoundTrip() {
       "typedef struct Point { int x; int y; } Point;\n"
       "extern int shared_value;\n"
       "int add_points(Point lhs, Point rhs);\n"
-      "typedef enum Kind { first = 2, second = 9 } Kind;\n";
+      "typedef enum Kind { first = 2, second = 9 } Kind;\n"
+      "typedef struct { int element; } AnonymousAlias;\n"
+      "AnonymousAlias use_alias(AnonymousAlias value);\n";
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       source, {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "interface_fixture.c");
@@ -38,6 +40,9 @@ void TestOrdinaryCDeclarationsRoundTrip() {
 
   auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.points",
                                        "test-package");
+  for (const auto &diagnostic : emitted.diagnostics)
+    std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                 diagnostic.message.c_str());
   assert(emitted.success);
   assert(emitted.diagnostics.empty());
   assert(!emitted.identity.semantic_fingerprint.empty());
@@ -49,6 +54,13 @@ void TestOrdinaryCDeclarationsRoundTrip() {
   assert(static_cast<bool>(decoded));
   assert(decoded->module.canonical_name == "fixture.points");
   assert(decoded->declarations.size() >= 4);
+  bool alias_field = false;
+  for (const auto &row : decoded->declarations)
+    if (row.kind == "Field" && row.qualified_name.ends_with("element")) {
+      assert(row.export_root == "AnonymousAlias");
+      alias_field = true;
+    }
+  assert(alias_field);
   assert(decoded->canonical_source_sha256 ==
          ComputeInterfaceSourceSha256(emitted.source_bytes));
 }
@@ -920,6 +932,36 @@ void TestCarrierExpressionRoundtrip() {
         "inline int precedence(int a,int b,int c){return a+b*c;}");
     assert(different.success &&
            different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+  }
+}
+
+void TestNativeExportRoots() {
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        "namespace Api { struct Box { int n; inline static int count=0; "
+        "friend int probe(Box value){return value.n;} }; int value(); "
+        "enum class Kind {one}; } namespace Short=Api; using Api::value; "
+        "using namespace Api; using enum Api::Kind;",
+        {"-xc++",standard,"--target=x86_64-unknown-linux-gnu"},"export-roots.cpp");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.roots","test");
+    assert(emitted.success);
+    const llvm::StringRef semantics[]={"objc3.cxx-data-interfaces.v1",
+        "objc3.cxx-member-interfaces.v1",kCxxDeclarationExpressionSemantic,
+        kCxxClassLifecycleSemantic,kCxxNamespaceSemantic,kCxxDefinitionSemantic,
+        kCxxUsingSemantic,kCxxFriendSemantic};
+    auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,semantics);
+    assert(decoded);
+    bool field=false, data=false, friend_function=false, alias=false, directive=false;
+    for (const auto &row:decoded->declarations) {
+      if (row.qualified_name=="Api::Box::n") {assert(row.export_root=="Api::Box");field=true;}
+      if (row.qualified_name=="Api::Box::count") {assert(row.export_root=="Api::Box");data=true;}
+      if (row.qualified_name=="Api::probe") {assert(row.export_root=="Api::Box");friend_function=true;}
+      if (row.qualified_name=="Short") {assert(row.export_root=="Short");alias=true;}
+      if (row.kind=="UsingDirective") {assert(row.export_root=="@using:Api");directive=true;}
+      assert(!row.export_root.empty());
+    }
+    assert(field && data && friend_function && alias && directive);
   }
 }
 
@@ -1821,6 +1863,7 @@ int main() {
   TestCxxLambdaExpressions();
   TestCxxThreadLocalData();
   TestCxxFriends();
+  TestNativeExportRoots();
   TestCxxLocalExpressions();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();

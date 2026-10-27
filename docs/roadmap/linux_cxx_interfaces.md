@@ -1,6 +1,6 @@
 # Linux C++ semantic interfaces
 
-Extension ABI 21 and semantic interface schema 2.1 define bounded C++ and Objective-C++ semantic interfaces on
+Extension ABI 21 and semantic interface schema 2.2 define bounded C++ and Objective-C++ semantic interfaces on
 Linux x86-64 with GNUstep 2.2. The module identity includes the language,
 standard, Blocks mode, ownership, semantic profile, runtime, target and compiler
 patch identity. Regenerate every dependent object and interface for this cutover.
@@ -129,3 +129,10 @@ definitions, under `objc3.cxx-friends.v1`.
 The [2.24.0 source milestone](linux_cxx_local_expressions.md) preserves published
 Block bodies/captures and GNU statement expressions under required
 `objc3.cxx-block-expressions.v1` and `objc3.cxx-statement-expressions.v1` contracts.
+
+The 2.28.0 source milestone binds each declaration to its native export root in
+schema 2.2. Class members and friend functions retain their owning class policy;
+namespace, alias and using declarations retain their native scopes. Binary
+packages validate those roots and selected namespace ancestry instead of
+inferring public roots from declaration kinds. The schema cutover rejects 2.1
+interfaces; regenerate interfaces, packages and compiler-dependent build outputs.

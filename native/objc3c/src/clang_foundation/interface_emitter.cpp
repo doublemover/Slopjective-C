@@ -1065,6 +1065,10 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 std::string ExportRootName(const clang::NamedDecl *declaration) {
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration) {
+    if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
+        tag && !tag->getIdentifier())
+      if (const auto *alias = tag->getTypedefNameForAnonDecl())
+        declaration = alias;
     if (IsTopLevel(declaration))
       return InterfaceQualifiedName(declaration);
     declaration =
@@ -1820,7 +1824,12 @@ class InterfaceCollector final
                    clang::EnumConstantDecl>(declaration))
       if (!llvm::isa<clang::NamespaceDecl>(declaration) ||
           namespace_roots_.insert(ReadInterfaceDeclarationStableId(declaration)).second)
-        root_declarations_.push_back(declaration);
+        // An unnamed tag belongs to its typedef's declaration group. Printing
+        // it separately loses that ownership and invents a named tag when the
+        // typedef is reparsed. The typedef printer emits its owned definition.
+        if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
+            !tag || tag->getIdentifier() || !tag->getTypedefNameForAnonDecl())
+          root_declarations_.push_back(declaration);
 
     InterfaceDeclarationIdentity identity;
     if (!ReadInterfaceDeclarationIdentity(declaration, context_, identity)) {
@@ -1920,6 +1929,11 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
   policy.PolishForDeclaration = true;
+  if (const auto *alias = llvm::dyn_cast<clang::TypedefNameDecl>(declaration))
+    if (const auto *tag = alias->getUnderlyingType()->getAs<clang::TagType>();
+        tag && !tag->getDecl()->getIdentifier() &&
+        tag->getDecl()->getTypedefNameForAnonDecl() == alias)
+      policy.IncludeTagDefinition = true;
   // Member names inside a record must be relative to that record. Fully
   // qualified function spelling would print invalid `Worker::get` inside it.
   if (llvm::isa<clang::CXXRecordDecl>(declaration) ||
@@ -2068,7 +2082,7 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
 
 bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                      const InterfaceDeclarationIdentity &b) {
-  return std::tie(a.stable_id, a.kind, a.qualified_name, a.spi_group,
+  return std::tie(a.stable_id, a.kind, a.qualified_name, a.export_root, a.spi_group,
                   a.native_symbol_name, a.canonical_type_identity,
                   a.effects.is_async, a.effects.is_throwing,
                   a.effects.throws_kind, a.effects.error_type_identity,
@@ -2076,7 +2090,7 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                   a.effects.executor_affinity_identity,
                   a.effects.ownership_identity,
                   a.effects.async_abi_identity) ==
-         std::tie(b.stable_id, b.kind, b.qualified_name, b.spi_group,
+         std::tie(b.stable_id, b.kind, b.qualified_name, b.export_root, b.spi_group,
                   b.native_symbol_name, b.canonical_type_identity,
                   b.effects.is_async, b.effects.is_throwing,
                   b.effects.throws_kind, b.effects.error_type_identity,
@@ -2087,6 +2101,10 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
 }
 
 }  // namespace
+
+std::string ReadInterfaceExportRoot(const clang::NamedDecl *declaration) {
+  return ExportRootName(declaration);
+}
 
 std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
@@ -2171,6 +2189,7 @@ bool ReadInterfaceDeclarationIdentity(
   identity.spi_group = ReadInterfaceSPIGroup(representative);
   identity.native_symbol_name = ReadNativeSymbolName(representative);
   identity.kind = declaration->getDeclKindName();
+  identity.export_root = ExportRootName(declaration);
   identity.qualified_name = InterfaceQualifiedName(declaration);
   if (identity.qualified_name.empty())
     identity.qualified_name = declaration->getNameAsString();

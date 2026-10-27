@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 27,
+        "minor": 28,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -152,7 +152,8 @@
         "ARC/MRC plain and pure C++ Optional/Result Block captures with selected-arm moves, const heap copies and partial construction cleanup (source)",
         "Explicit ARC mixed C++/managed carrier captures and owned match snapshots with frozen selection, independent native/managed cleanup ordering and heap-copy rollback (source)",
         "Native plain Optional/Result captures for typed/function/member pointers, complex values and C aggregate leaves with shared typed copy operations (source)",
-        "Implicit mixed ARC/C++ Block capture copy recipes and full-expression rollback with partitioned source cleanup ordering (source)"
+        "Implicit mixed ARC/C++ Block capture copy recipes and full-expression rollback with partitioned source cleanup ordering (source)",
+        "Native declaration export roots in semantic interface schema 2.2 with namespace/class/friend/using policy verification for immutable source-free packages (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

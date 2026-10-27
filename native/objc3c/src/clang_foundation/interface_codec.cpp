@@ -191,6 +191,7 @@ Object EncodeDeclaration(const InterfaceDeclarationIdentity &declaration) {
       {"stable_id", declaration.stable_id},
       {"kind", declaration.kind},
       {"qualified_name", declaration.qualified_name},
+      {"export_root", declaration.export_root},
       {"canonical_type_identity", declaration.canonical_type_identity},
       {"effects", EncodeEffects(declaration.effects)}};
   if (!declaration.native_symbol_name.empty())
@@ -206,7 +207,7 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   const auto *object = value.getAsObject();
   if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
   if (auto error = CheckKeys(*object,
-                             {"stable_id", "kind", "qualified_name",
+                             {"stable_id", "kind", "qualified_name", "export_root",
                               "canonical_type_identity", "effects", "spi_group",
                               "native_symbol_name"},
                              path))
@@ -235,6 +236,7 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   READ_DECL_FIELD(stable_id, "stable_id");
   READ_DECL_FIELD(kind, "kind");
   READ_DECL_FIELD(qualified_name, "qualified_name");
+  READ_DECL_FIELD(export_root, "export_root");
   READ_DECL_FIELD(canonical_type_identity, "canonical_type_identity");
 #undef READ_DECL_FIELD
   auto *effects = object->getObject("effects");
@@ -489,12 +491,13 @@ llvm::Error ValidateForEncoding(
   std::set<std::string> declaration_ids;
   for (const auto &declaration : sidecar.declarations) {
     if (declaration.stable_id.empty() || declaration.kind.empty() ||
-        declaration.qualified_name.empty() || declaration.canonical_type_identity.empty())
+        declaration.qualified_name.empty() || declaration.export_root.empty() ||
+        declaration.canonical_type_identity.empty())
       return Invalid("declaration identity fields must be nonempty");
     if (!declaration_ids.insert(declaration.stable_id).second)
       return Invalid(llvm::formatv("duplicate declaration stable id '{0}'", declaration.stable_id).str());
     for (const auto *value : {&declaration.stable_id, &declaration.kind,
-                              &declaration.qualified_name,
+                              &declaration.qualified_name, &declaration.export_root,
                               &declaration.canonical_type_identity,
                               &declaration.effects.throws_kind,
                               &declaration.effects.error_type_identity,

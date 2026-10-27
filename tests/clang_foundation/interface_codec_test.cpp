@@ -7,6 +7,8 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/JSON.h"
+#include "llvm/Support/FormatVariadic.h"
 
 using namespace objc3::clang_foundation;
 
@@ -18,7 +20,7 @@ InterfaceModuleIdentity Module(std::string name, std::string fingerprint) {
       "canonical-c18",    "package-main"};
 }
 
-bool Fails(llvm::Expected<SemanticInterfaceSidecar> result) {
+template <class T> bool Fails(llvm::Expected<T> result) {
   if (result)
     return false;
   llvm::consumeError(result.takeError());
@@ -45,12 +47,14 @@ int main() {
                                  "objc3.async-entry-abi.v1"};
   InterfaceDeclarationIdentity function{
       "c:@F@answer", "function", "A::answer", "int ()", {}};
+  function.export_root = "A::answer";
   function.effects.is_async = true;
   function.effects.async_abi_identity = "v1:4:type11:cxx-task-v1";
   function.effects.throws_kind = "none";
   function.effects.ownership_identity = "borrowed-param-0";
   InterfaceDeclarationIdentity global{
       "c:@answerCount", "global", "A::answerCount", "unsigned long", {}};
+  global.export_root = "A::answerCount";
   original.declarations = {global, function};
   original.dependencies = {{Module("Base", "sha256:base"), true, true}};
 
@@ -61,6 +65,20 @@ int main() {
   auto decoded = DecodeSemanticInterfaceSidecar(*encoded, source, supported);
   assert(decoded);
   assert(decoded->schema_major == original.schema_major);
+  assert(decoded->schema_minor == 2);
+  assert(decoded->declarations[0].export_root == "A::answer");
+  auto changed_root = *decoded;
+  changed_root.declarations[0].export_root = "Other";
+  assert(BuildSemanticFingerprintInput(changed_root) !=
+         BuildSemanticFingerprintInput(*decoded));
+  auto missing_root_json = llvm::json::parse(*encoded);
+  assert(missing_root_json);
+  missing_root_json->getAsObject()->getArray("declarations")->front()
+      .getAsObject()->erase("export_root");
+  auto missing_root = DecodeSemanticInterfaceSidecar(
+      llvm::formatv("{0}", *missing_root_json).str(), source, supported);
+  assert(!missing_root);
+  llvm::consumeError(missing_root.takeError());
   assert(decoded->module.canonical_name == original.module.canonical_name);
   assert(decoded->module.semantic_fingerprint ==
          original.module.semantic_fingerprint);
@@ -125,7 +143,7 @@ int main() {
   assert(
       Fails(DecodeSemanticInterfaceSidecar(future_schema, source, supported)));
   auto retired_schema =
-      ReplaceOnce(*encoded, "\"schema_minor\":1", "\"schema_minor\":0");
+      ReplaceOnce(*encoded, "\"schema_minor\":2", "\"schema_minor\":1");
   assert(
       Fails(DecodeSemanticInterfaceSidecar(retired_schema, source, supported)));
   auto missing_abi = ReplaceOnce(
@@ -146,11 +164,12 @@ int main() {
 
   SemanticInterfaceSidecar duplicate = original;
   duplicate.declarations.push_back(function);
-  assert(!EncodeSemanticInterfaceSidecar(duplicate, supported));
+  assert(Fails(EncodeSemanticInterfaceSidecar(duplicate, supported)));
   auto invalid_utf8 = original;
   invalid_utf8.module.canonical_name = std::string("\xff", 1);
-  assert(!EncodeSemanticInterfaceSidecar(invalid_utf8, supported));
+  assert(Fails(EncodeSemanticInterfaceSidecar(invalid_utf8, supported)));
   auto unsupported =
       EncodeSemanticInterfaceSidecar(original, no_supported_semantics);
   assert(!unsupported);
+  llvm::consumeError(unsupported.takeError());
 }

@@ -6,7 +6,7 @@
 namespace objc3::clang_foundation {
 
 inline constexpr unsigned kInterfaceSchemaMajor = 2;
-inline constexpr unsigned kInterfaceSchemaMinor = 1;
+inline constexpr unsigned kInterfaceSchemaMinor = 2;
 inline constexpr const char *kInterfaceSchemaId =
     "objc3c.semantic-interface.v2";
 
@@ -51,6 +51,9 @@ struct InterfaceDeclarationIdentity {
   // Empty for public API. A named SPI group is a required semantic contract.
   std::string spi_group;
   std::string native_symbol_name;
+  // Native declaration owning this row's export policy. Class members and
+  // friend functions bind to their class; namespace descendants retain scope.
+  std::string export_root;
 };
 
 inline bool IsCxxMemberDeclarationKind(const std::string &kind) {

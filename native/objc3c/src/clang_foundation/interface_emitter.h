@@ -19,6 +19,10 @@ namespace objc3::clang_foundation {
 [[nodiscard]] std::string
 ReadInterfaceLanguageProfile(const clang::LangOptions &language);
 
+// Native declaration owning the selected export policy of a row.
+[[nodiscard]] std::string
+ReadInterfaceExportRoot(const clang::NamedDecl *declaration);
+
 // SPI applies to a complete exported root, including its native members.
 [[nodiscard]] std::string
 ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);

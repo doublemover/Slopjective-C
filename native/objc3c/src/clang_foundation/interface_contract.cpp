@@ -42,6 +42,7 @@ std::string DeclarationKey(const InterfaceDeclarationIdentity &d) {
       << d.effects.actor_isolation_identity << '\n'
       << d.effects.executor_affinity_identity << '\n'
       << d.effects.ownership_identity;
+  Field(out, "export-root", d.export_root);
   Field(out, "async-entry-abi", d.effects.async_abi_identity);
   if (!d.spi_group.empty())
     Field(out, "spi-group", d.spi_group);
@@ -131,7 +132,7 @@ bool IsGrantedSPI(const InterfaceDeclarationIdentity &declaration,
 bool SameInterfaceDeclarationIdentity(
     const InterfaceDeclarationIdentity &left,
     const InterfaceDeclarationIdentity &right) {
-  return std::tie(left.stable_id, left.kind, left.qualified_name,
+  return std::tie(left.stable_id, left.kind, left.qualified_name, left.export_root,
                   left.canonical_type_identity, left.spi_group,
                   left.native_symbol_name, left.effects.is_async,
                   left.effects.is_throwing, left.effects.throws_kind,
@@ -140,7 +141,7 @@ bool SameInterfaceDeclarationIdentity(
                   left.effects.executor_affinity_identity,
                   left.effects.ownership_identity,
                   left.effects.async_abi_identity) ==
-         std::tie(right.stable_id, right.kind, right.qualified_name,
+         std::tie(right.stable_id, right.kind, right.qualified_name, right.export_root,
                   right.canonical_type_identity, right.spi_group,
                   right.native_symbol_name, right.effects.is_async,
                   right.effects.is_throwing, right.effects.throws_kind,

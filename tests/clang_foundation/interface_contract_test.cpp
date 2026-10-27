@@ -17,6 +17,7 @@ static void TestNativeContractCapabilities() {
   auto module = Id("contracts", "sha256:contracts");
   InterfaceDeclarationIdentity declaration{
       "c:@F@borrow", "function", "borrow", "char *(int)", {}};
+  declaration.export_root = "borrow";
   declaration.effects.ownership_identity =
       "native-contracts:v1:returns-borrowed:0";
   SemanticInterfaceSidecar sidecar;
@@ -73,6 +74,7 @@ static void TestAsyncABIContracts() {
   auto module = Id("async.frames", "sha256:frames");
   InterfaceDeclarationIdentity frame{
       "c:@F@fetch", "Function", "fetch", "int (int) __objc3_async_frame", {}};
+  frame.export_root = "fetch";
   frame.effects.is_async = true;
   frame.effects.async_abi_identity = "v1:4:type10:c-frame-v1";
   assert(IsValidAsyncABIIdentity(frame.effects));
@@ -126,10 +128,16 @@ int main() {
   auto module = Id("A", "sha256:aaa");
   InterfaceDeclarationIdentity decl{
       "c:@F@answer", "function", "A::answer", "int ()", {}};
+  decl.export_root = "A::answer";
   SemanticInterfaceSidecar sidecar;
   sidecar.module = module;
   sidecar.canonical_source_sha256 = std::string(64, 'a');
   sidecar.declarations = {decl};
+  auto forged_root = sidecar;
+  forged_root.declarations.front().export_root = "Unrelated";
+  assert(!SameInterfaceDeclarationIdentity(forged_root.declarations.front(), decl));
+  assert(!ValidateSemanticInterface(forged_root, module,
+          sidecar.canonical_source_sha256, {decl}, {}).ok());
   assert(ValidateSemanticInterface(sidecar, module,
                                    sidecar.canonical_source_sha256, {decl}, {})
              .ok());

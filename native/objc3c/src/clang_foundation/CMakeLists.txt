@@ -154,6 +154,12 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/interface_contract_test.cpp)
   target_link_libraries(objc3_interface_contract_test PRIVATE objc3c_clang_foundation)
   add_test(NAME objc3_interface_contract COMMAND objc3_interface_contract_test)
+  add_executable(objc3_interface_codec_test
+    ../../../../tests/clang_foundation/interface_codec_test.cpp)
+  target_include_directories(objc3_interface_codec_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_codec_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_interface_codec COMMAND objc3_interface_codec_test)
   add_executable(objc3_interface_import_test
     ../../../../tests/clang_foundation/interface_import_test.cpp)
   target_include_directories(objc3_interface_import_test SYSTEM PRIVATE
@@ -345,7 +351,7 @@ if (BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
       "$<TARGET_FILE:objc3_text_file_cli>")
   set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
-  foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
+  foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_interface_codec_test objc3_compile_session_test
       objc3_ownership_projection_test objc3_module_method_names_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test objc3_isolation_contracts_test
       objc3_explicit_capture_lists_test objc3_borrowed_pointers_test

@@ -144,16 +144,30 @@ def verify_files(root: Path, manifest: dict, *, exact: bool):
         sidecar = json.loads((root / f'modules/{name}/{name}.objc3i.json').read_text())
         if not isinstance(sidecar, dict) or sidecar.get('module') != row['module']:
             raise ValueError('binary package sidecar differs from its module identity')
+        # Schema 2.2 binds export ownership in native metadata. A declaration
+        # kind alone cannot distinguish namespace descendants, static members
+        # and friends from independent public roots.
+        declarations = sidecar.get('declarations')
+        if (sidecar.get('schema_major') != 2 or sidecar.get('schema_minor') != 2 or
+                not isinstance(declarations, list) or
+                any(not isinstance(declaration, dict) or
+                    any(not isinstance(declaration.get(key), str) or not declaration[key]
+                        for key in ('kind', 'qualified_name', 'export_root'))
+                    for declaration in declarations)):
+            raise ValueError('binary exports require native schema 2.2 root identities')
+        names = {declaration['qualified_name'] for declaration in declarations}
+        roots = {declaration['export_root'] for declaration in declarations}
+        namespaces = {declaration['qualified_name'] for declaration in declarations
+                      if declaration['kind'] == 'Namespace'}
+        if not roots <= names:
+            raise ValueError('binary exports reference an absent native root')
         if row['exports'] != ['*']:
-            root_kinds = {'Function', 'Var', 'Record', 'CXXRecord', 'Enum', 'Typedef',
-                          'TypeAlias', 'ObjCInterface', 'ObjCProtocol', 'ObjCCategory'}
-            declarations = sidecar.get('declarations')
-            if (not isinstance(declarations, list) or
-                    any(not isinstance(declaration, dict) or
-                        not isinstance(declaration.get('kind'), str) or
-                        not isinstance(declaration.get('qualified_name'), str) for declaration in declarations) or
-                    {declaration.get('qualified_name') for declaration in declarations
-                     if declaration.get('kind') in root_kinds} != set(row['exports'])):
+            selected = set(row['exports'])
+            if not selected <= roots or any(
+                    not any(root == wanted or root.startswith(wanted + '::') or
+                            (root in namespaces and wanted.startswith(root + '::'))
+                            for wanted in selected)
+                    for root in roots):
                 raise ValueError('binary exports differ from the native public root declarations')
         projection = sidecar.get('ownership_projection')
         projected = row['provider_ownership'] != row['ownership']
