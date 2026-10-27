@@ -120,3 +120,7 @@ The [System 2.1.0 source span](linux_borrowed_cpp_captures.md) extends the
 mandatory pass to qualified C++ lambda value captures and their nested bodies.
 It rejects hidden alias escapes, future reference/address mutations and
 persistent capture storage, with independent ARC capture-owner snapshots.
+
+The [System 2.2.0 source span](linux_borrowed_manual_release.md) tracks manual
+instance-release messages through known owner aliases and independent pins.
+Other MRC/foreign consumption and indirect/interprocedural effects remain open.

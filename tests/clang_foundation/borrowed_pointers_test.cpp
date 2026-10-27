@@ -251,6 +251,43 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
              "borrowed pointer escapes");
   }
+  const std::string SelfHeader=Header+
+      "__attribute__((objc_root_class)) @interface BorrowedSelf\n"
+      "- (void)usePointer;\n@end\n@implementation BorrowedSelf\n";
+  Expect(Request(Root,SelfHeader+
+      "- (void)usePointer {const char *p=bytes(self);use_noescape(p);}@end",
+      Language,Standard,ARC),true);
+  Expect(Request(Root,SelfHeader+
+      "- (void)usePointer {escape(bytes(self));}@end",
+      Language,Standard,ARC),false,"borrowed pointer escapes");
+  if (!ARC) {
+    const std::string ManualHeader=Header+
+        "__attribute__((objc_root_class)) @interface ManualOwner\n"
+        "- (oneway void)release;\n@end\n";
+    for (const auto &Code : std::vector<std::string>{
+             "void f(ManualOwner *_Nonnull o){const char*p=bytes(o);use_noescape(p);[o release];}",
+             "void f(ManualOwner *_Nonnull o){keepAlive(o);const char*p=bytes(o);[o release];use_noescape(p);use_noescape(bytes(o));}",
+             "void f(ManualOwner *_Nonnull o){ManualOwner *_Nonnull a=o;const char*p=bytes(o);withLifetime(o){[a release];use_noescape(p);use_noescape(bytes(o));}}",
+             "void f(ManualOwner *_Nonnull o,ManualOwner *_Nonnull r){[o release];o=r;use_noescape(bytes(o));}"})
+      Expect(Request(Root,ManualHeader+Code,Language,Standard,ARC),true);
+    for (const auto &Code : std::vector<std::string>{
+             "void f(ManualOwner *_Nonnull o){const char*p=bytes(o);[o release];use_noescape(p);}",
+             "void f(ManualOwner *_Nonnull o){ManualOwner *_Nonnull a=o;const char*p=bytes(o);[a release];use_noescape(p);}",
+             "void f(ManualOwner *_Nonnull o){ManualOwner *_Nonnull a=o;const char*p=bytes(a);[o release];use_noescape(p);}",
+             "void f(ManualOwner *_Nonnull o,int c){const char*p=bytes(o);if(c)[o release];use_noescape(p);}",
+             "void f(ManualOwner *_Nonnull o){[o release];use_noescape(bytes(o));}",
+             "int f(ManualOwner *_Nonnull o){[o release];return bytes(o)[0];}",
+             "void f(ManualOwner *_Nonnull o){[o release];ManualOwner *_Nonnull a=o;use_noescape(bytes(a));}",
+             "void f(ManualOwner *_Nonnull o){[o release];keepAlive(o);use_noescape(bytes(o));}",
+             "void f(ManualOwner *_Nonnull o){const char*p=bytes(o);withLifetime(o){[o release];use_noescape(p);}use_noescape(p);}",
+             "void f(ManualOwner *_Nonnull o){[o release];void(^work)(void)=^{use_noescape(bytes(o));};work();}"})
+      Expect(Request(Root,ManualHeader+Code,Language,Standard,ARC),false,"borrowed pointer escapes");
+    if (Language==BaseLanguage::ObjectiveCxx)
+      for (const auto &Code : std::vector<std::string>{
+               "void f(ManualOwner *_Nonnull o){[o release];auto work=[o]{use_noescape(bytes(o));};work();}",
+               "void f(ManualOwner *_Nonnull o){[o release];auto work=[copy=o]{use_noescape(bytes(copy));};work();}"})
+        Expect(Request(Root,ManualHeader+Code,Language,Standard,ARC),false,"borrowed pointer escapes");
+  }
   auto Compatibility = Request(Root, Header + "void f(id o) { global_pointer=bytes(o); }",
                                 Language, Standard, ARC);
   Compatibility.profile = SemanticProfile::Compatibility;

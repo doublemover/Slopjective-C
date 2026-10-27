@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Manual owner release and borrowed loans
+
+The [System 2.2.0 source span](linux_borrowed_manual_release.md) tracks manual
+instance-release messages, known aliases and conditional owner-claim state.
+Earlier lifetime pins remain independent; late pins and expired new acquisitions
+are rejected. Nested Block/lambda bodies inherit that state. Other manual and
+foreign consumption effects remain open. SDK 2.33 remains the accepted archive.
+
 ## Borrowed C++ lambda captures
 
 The [System 2.1.0 source span](linux_borrowed_cpp_captures.md) preserves borrowed
