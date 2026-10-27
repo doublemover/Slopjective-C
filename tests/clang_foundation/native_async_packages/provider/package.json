@@ -141,7 +141,11 @@
     "native_retained_create",
     "native_retained_callback",
     "native_result_destructions",
-    "native_foreign_select"
+    "native_foreign_select",
+    "NativeIntegratedOpaque",
+    "NativeIntegratedRef",
+    "NativeIntegratedAlias",
+    "native_integrated_value"
   ],
   "dependencies": []
 }

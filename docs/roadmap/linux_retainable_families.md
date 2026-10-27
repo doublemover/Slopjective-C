@@ -36,7 +36,9 @@ Maintained witnesses cover C17/C++20/23 under ARC/MRC, PCH, invalid signatures,
 conflicting declarations, borrowed release effects, native ARC/pointer ABI,
 analyzer retain/release balance, AST import, polished reparse and source-free
 interfaces. The runtime package fixture also publishes a canonical family and
-release operation with its existing exact-consumption witness. General manual
+release operation with its existing exact-consumption witness. An integrated
+family alias keeps an object alive after its original ARC owner is cleared and
+checks exact destruction after the final alias ends. General manual
 counts, indirect operation metadata, complete transfer/optimizer analysis and
 full Strict System conformance remain open. Optional family sugar is outside
 this canonical-header span. SDK 2.33 remains the accepted installed archive.

@@ -163,6 +163,8 @@ def check_cpp_metadata(metadata):
         raise ValueError('published runtime constant lost its contract')
     for name, contract in (
             ('NativeForeignRef', ':retainable-family'),
+            ('NativeIntegratedRef', 'objc-integrated'),
+            ('NativeIntegratedAlias', 'objc-integrated'),
             ('native_foreign_consume', 'family-release'),
             ('NativeForeignConsumer', ':cf-consumed'),
             ('native_foreign_consume', ':cf-consumed'),

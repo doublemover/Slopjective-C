@@ -934,3 +934,14 @@ int native_result_destructions() {return native_result_destruction_count;}
 
 int native_foreign_select(NativeForeignConsumer) {return 42;}
 int native_foreign_select(void (*)(NativeForeignRef)) {return 43;}
+
+struct NativeIntegratedOpaque {unsigned char opaque;};
+using NativeIntegratedRef __attribute__((NSObject,objc_retainable_family(NativeIntegrated))) = NativeIntegratedOpaque *;
+using NativeIntegratedAlias=NativeIntegratedRef;
+int native_integrated_value(NativeIntegratedAlias _Nonnull owner) {
+#if __has_feature(objc_arc)
+  return [(__bridge NativeModuleResult *_Nonnull)owner number];
+#else
+  return [(NativeModuleResult *_Nonnull)owner number];
+#endif
+}

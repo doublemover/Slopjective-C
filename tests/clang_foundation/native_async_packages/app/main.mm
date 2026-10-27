@@ -234,6 +234,23 @@ int main() {
     }
     if(native_result_destructions()!=before+1) return 105;
   }
+  {
+    const int before=native_result_destructions();
+    {
+      id result=native_retained_create(42);
+#if __has_feature(objc_arc)
+      NativeIntegratedAlias _Nonnull view=(__bridge NativeIntegratedAlias _Nonnull)result;
+      result=nil;
+      if(native_integrated_value(view)!=42) return 107;
+      view=nullptr;
+#else
+      consumer_result_owner cleanup{result};
+      NativeIntegratedAlias _Nonnull view=(NativeIntegratedAlias _Nonnull)result;
+      if(native_integrated_value(view)!=42) return 107;
+#endif
+    }
+    if(native_result_destructions()!=before+1) return 108;
+  }
   if (NativeHiddenScope::get({40})!=42 || NativeHiddenScope::later(40)!=42 ||
       NativeVersioned::get({40})!=42) return 85;
 
