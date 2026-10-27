@@ -28,3 +28,7 @@ separate boundaries. The accepted SDK remains
 [2.9.0](../support/linux_cxx_class_structure_acceptance.json). Broad source,
 sanitizer, installed and archive validation remain deferred to the combined
 implementation batch.
+
+The [source progress receipt](../support/linux_cxx_nested_types_progress.json)
+records three focused facade suites and one source-free C++20 ARC O0 smoke
+(four commands), including the namespace SPI import/promotion fixtures.
