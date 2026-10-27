@@ -520,6 +520,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "void foreign_use(const char *pointer __attribute__((noescape)));\n"
       "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));\n"
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
+      "void dispatch_foreign(ForeignCallback);void dispatch_foreign(void (*)(ForeignRef));\n"
       "__attribute__((objc_root_class)) @interface ForeignContract\n"
       "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
       "@end\n";
@@ -545,6 +546,8 @@ void ForeignPersistenceCases(const fs::path &Root) {
         "void preserved(ForeignCallback callback){ForeignCallback copy=(ForeignCallback)callback;(void)copy;}",
         BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Client.imported_interfaces={Input};
+    Expect(Client,true);
+    Client.source_text="void overloads(ForeignCallback callback,void(*plain)(ForeignRef)){dispatch_foreign(callback);dispatch_foreign(plain);}";
     Expect(Client,true);
     Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");

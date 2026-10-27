@@ -4,7 +4,10 @@ The System 2.5.0 source span gives `cf_consumed` parameters a distinct native
 callable-type flag. Direct functions/messages, typed function/Block callbacks,
 C++ constructors, operators and member pointers retain the foreign ownership
 obligation under ARC and MRC. Canonical printing, PCH, AST import and source-free
-interfaces preserve it. Implicit erasure, conflicting unannotated function declarations
+interfaces preserve it. Named parameters retain the annotation under canonical
+declaration polishing; Itanium callback/member-pointer mangling distinguishes
+foreign-consumed overloads. Native type/declaration USRs retain consumed,
+noescape and retained-result callback contracts. Implicit erasure, conflicting unannotated function declarations
 and explicit casts changing the contract diagnose.
 
 Foreign consumption is manual under both memory modes. The borrowed-flow pass

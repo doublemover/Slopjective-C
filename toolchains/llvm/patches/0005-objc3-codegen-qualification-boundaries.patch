@@ -28991,3 +28991,33 @@ index 000000000..5f8aa6c1a
 +// CHECK: call void %{{.*}}(ptr
 +// CHECK-NOT: @objc_retain
 +// CHECK-NOT: @objc_release
+diff --git a/clang/test/ObjC3/CodeGen/foreign-consumed-mangling.mm b/clang/test/ObjC3/CodeGen/foreign-consumed-mangling.mm
+new file mode 100644
+index 000000000..78a603261
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/foreign-consumed-mangling.mm
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++typedef void (*Plain)(void *);
++typedef void (*Consumed)(void * __attribute__((cf_consumed)));
++int identify(Plain) {return 1;}
++int identify(Consumed) {return 2;}
++struct CFMembers {};
++typedef void (CFMembers::*PlainMember)(void *);
++typedef void (CFMembers::*ConsumedMember)(void * __attribute__((cf_consumed)));
++int identify(PlainMember) {return 3;}
++int identify(ConsumedMember) {return 4;}
++int select() {return identify(Plain{})+identify(Consumed{})+identify(PlainMember{})+identify(ConsumedMember{});}
++// Ownership-distinct callback/member-pointer overloads need distinct names.
++// CHECK-LABEL: define{{.*}} i32 @_Z8identifyPFvPvE(
++// CHECK-LABEL: define{{.*}} i32 @_Z8identifyPFvU11cf_consumedPvE(
++// CHECK-LABEL: define{{.*}} i32 @_Z8identifyM9CFMembersFvPvE(
++// CHECK-LABEL: define{{.*}} i32 @_Z8identifyM9CFMembersFvU11cf_consumedPvE(
++// CHECK-LABEL: define{{.*}} i32 @_Z6selectv(
++// CHECK: call{{.*}} i32 @_Z8identifyPFvPvE(
++// CHECK: call{{.*}} i32 @_Z8identifyPFvU11cf_consumedPvE(
++// CHECK: call{{.*}} i32 @_Z8identifyM9CFMembersFvPvE(
++// CHECK: call{{.*}} i32 @_Z8identifyM9CFMembersFvU11cf_consumedPvE(

@@ -170,6 +170,12 @@ def check_cpp_metadata(metadata):
         declaration = names.get(name, {})
         if contract not in declaration.get('effects', {}).get('ownership_identity', ''):
             raise ValueError('source-free package lost callable ownership: ' + name)
+    ownership_overloads = [row for row in metadata['declarations']
+                           if row.get('qualified_name') == 'native_foreign_select']
+    if (len(ownership_overloads) != 2 or
+            len({row['stable_id'] for row in ownership_overloads}) != 2 or
+            len({row.get('native_symbol_name') for row in ownership_overloads}) != 2):
+        raise ValueError('foreign callback overloads lost distinct USRs or native symbols')
     scope = names.get('native_module_scoped', {})
     scope_effects = scope.get('effects', {})
     if (not has_async(scope) or

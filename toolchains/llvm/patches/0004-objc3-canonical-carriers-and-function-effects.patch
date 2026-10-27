@@ -5241,7 +5241,7 @@ index 4be3e977b..1cfce43fc 100644
        NamedDecl *ND = cast<DeclRefExpr>(*I)->getDecl();
        ND->printQualifiedName(Out);
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index 172a19f8f..09a9fd37b 100644
+index 172a19f8f..8a2cbb222 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
 @@ -1062,6 +1062,18 @@ const RecordDecl *CXXNameMangler::GetLocalClassDecl(const Decl *D) {
@@ -5272,7 +5272,16 @@ index 172a19f8f..09a9fd37b 100644
    case Type::Atomic:
    case Type::Pipe:
    case Type::MacroQualified:
-@@ -3707,6 +3721,17 @@ CXXNameMangler::mangleExtParameterInfo(FunctionProtoType::ExtParameterInfo PI) {
+@@ -3701,12 +3715,26 @@ CXXNameMangler::mangleExtParameterInfo(FunctionProtoType::ExtParameterInfo PI) {
+ 
+   if (PI.isNoEscape())
+     mangleVendorQualifier("noescape");
++
++  if (PI.isCFConsumed())
++    mangleVendorQualifier("cf_consumed");
+ }
+ 
+ // <type>          ::= <function-type>
  // <function-type> ::= [<CV-qualifiers>] F [Y]
  //                      <bare-function-type> [<ref-qualifier>] E
  void CXXNameMangler::mangleType(const FunctionProtoType *T) {
@@ -5290,7 +5299,7 @@ index 172a19f8f..09a9fd37b 100644
    unsigned SMEAttrs = T->getAArch64SMEAttributes();
  
    if (SMEAttrs)
-@@ -4626,6 +4651,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
+@@ -4626,6 +4654,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
    mangleType(T->getValueType());
  }
  
@@ -5313,7 +5322,7 @@ index 172a19f8f..09a9fd37b 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
-@@ -5505,6 +5546,62 @@ recurse:
+@@ -5505,6 +5549,62 @@ recurse:
      break;
    }
  
@@ -5376,7 +5385,7 @@ index 172a19f8f..09a9fd37b 100644
    case Expr::CXXTypeidExprClass: {
      NotPrimaryExpr();
      const CXXTypeidExpr *TIE = cast<CXXTypeidExpr>(E);
-@@ -5978,6 +6075,46 @@ recurse:
+@@ -5978,6 +6078,46 @@ recurse:
    case Expr::HLSLOutArgExprClass:
      llvm_unreachable(
          "cannot mangle hlsl temporary value; mangling wrong thing?");
@@ -13536,7 +13545,7 @@ index 6b598d26c..2a59bc5d7 100644
    }
  
 diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-index 5f689ad32..5f9e11b87 100644
+index 5f689ad32..6f5218769 100644
 --- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 +++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 @@ -725,6 +725,23 @@ void USRGenerator::VisitType(QualType T) {
@@ -13563,8 +13572,22 @@ index 5f689ad32..5f9e11b87 100644
      if (const BuiltinType *BT = T->getAs<BuiltinType>()) {
        switch (BT->getKind()) {
        case BuiltinType::Void:
-@@ -996,6 +1013,16 @@ void USRGenerator::VisitType(QualType T) {
+@@ -989,13 +1006,28 @@ void USRGenerator::VisitType(QualType T) {
+       Out << 'F';
+       VisitType(FT->getReturnType());
+       Out << '(';
+-      for (const auto &I : FT->param_types()) {
++      for (unsigned I = 0; I != FT->getNumParams(); ++I) {
+         Out << '#';
+-        VisitType(I);
++        VisitType(FT->getParamType(I));
++        if (LangOpts.ObjC3 && FT->getExtParameterInfo(I).getOpaqueValue())
++          Out << ":objc3.parameter<"
++              << unsigned(FT->getExtParameterInfo(I).getOpaqueValue()) << '>';
+       }
        Out << ')';
++      if (LangOpts.ObjC3 && FT->getExtInfo().getProducesResult())
++        Out << ":objc3.retained";
        if (FT->isVariadic())
          Out << '.';
 +      auto Effects = FT->getObjC3FunctionEffects();
@@ -18537,10 +18560,10 @@ index 000000000..6b3cc6b29
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3IndexIdentityTest.cpp b/clang/unittests/AST/ObjC3IndexIdentityTest.cpp
 new file mode 100644
-index 000000000..203b1a0d2
+index 000000000..11dbbf3c9
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3IndexIdentityTest.cpp
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,139 @@
 +//===- ObjC3IndexIdentityTest.cpp - Canonical extension USRs
 +//---------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -18555,6 +18578,7 @@ index 000000000..203b1a0d2
 +#include "gtest/gtest.h"
 +
 +#include <iterator>
++#include <set>
 +#include <string>
 +
 +using namespace clang;
@@ -18635,6 +18659,47 @@ index 000000000..203b1a0d2
 +  EXPECT_FALSE(index::generateUSRForDecl(*Iterator++, First));
 +  EXPECT_FALSE(index::generateUSRForDecl(*Iterator, Second));
 +  EXPECT_NE(First, Second);
++}
++
++TEST(ObjC3IndexIdentity, CallableOwnershipDistinguishesTypesAndOverloads) {
++  for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC) Args.push_back("-fobjc-arc");
++    auto AST=tooling::buildASTFromCodeWithArgs(R"(
++      typedef void (*Plain)(id);
++      typedef void (*ObjectConsumed)(id __attribute__((ns_consumed)));
++      typedef void (*ForeignConsumed)(id __attribute__((cf_consumed)));
++      typedef void (*NoEscape)(id __attribute__((noescape)));
++      typedef id (*Factory)(void);
++      typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));
++      void choose(Plain);void choose(ObjectConsumed);void choose(ForeignConsumed);void choose(NoEscape);
++    )",Args,"objc3-callable-usr.mm");
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto &Context=AST->getASTContext();
++    std::set<std::string> CallbackTypes,Overloads;
++    for(const char *Name:{"Plain","ObjectConsumed","ForeignConsumed","NoEscape"}) {
++      auto Declarations=Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++      ASSERT_FALSE(Declarations.empty());
++      CallbackTypes.insert(typeUSR(Context.getTypeDeclType(cast<TypedefNameDecl>(Declarations.front())),Context));
++    }
++    EXPECT_EQ(CallbackTypes.size(),4u);
++    auto Declarations=Context.getTranslationUnitDecl()->lookup(&Context.Idents.get("choose"));
++    for(const NamedDecl *Declaration:Declarations) {
++      llvm::SmallString<128> Buffer;
++      EXPECT_FALSE(index::generateUSRForDecl(Declaration,Buffer));
++      Overloads.insert(Buffer.str().str());
++    }
++    EXPECT_EQ(Overloads.size(),4u);
++    std::set<std::string> Factories;
++    for(const char *Name:{"Factory","RetainedFactory"}) {
++      auto Found=Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++      ASSERT_FALSE(Found.empty());
++      Factories.insert(typeUSR(Context.getTypeDeclType(cast<TypedefNameDecl>(Found.front())),Context));
++    }
++    EXPECT_EQ(Factories.size(),2u);
++  }
 +}
 +
 +} // namespace

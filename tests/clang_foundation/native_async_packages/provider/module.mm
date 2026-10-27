@@ -930,3 +930,6 @@ id native_retained_create(int value) __attribute__((ns_returns_retained)) {
 }
 NativeRetainedFactory native_retained_callback() {return native_retained_create;}
 int native_result_destructions() {return native_result_destruction_count;}
+
+int native_foreign_select(NativeForeignConsumer) {return 42;}
+int native_foreign_select(void (*)(NativeForeignRef)) {return 43;}

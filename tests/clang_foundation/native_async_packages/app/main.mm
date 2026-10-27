@@ -214,6 +214,8 @@ int main() {
     NativeForeignRef owner=native_foreign_create(&counts,42);
     if(*native_foreign_borrow(owner)!=42) return 101;
     NativeForeignConsumer callback=native_foreign_callback();
+    if(native_foreign_select(callback)!=42 ||
+       native_foreign_select(+[](NativeForeignRef){})!=43) return 106;
     native_foreign_forward(callback,owner);
     if(counts.consumed!=1 || counts.destroyed!=1) return 102;
     owner=native_foreign_create(&counts,43);
