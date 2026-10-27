@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..a5af1a0c8
+index 000000000..46b9ea203
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,827 @@
+@@ -0,0 +1,838 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1545,6 +1545,17 @@ index 000000000..a5af1a0c8
 +    const auto *Family=getObjC3RetainableFamily(To->getASTContext(),Alias->getUnderlyingType());
 +    ASSERT_TRUE(Family);
 +    EXPECT_EQ(Family->getFamily()->getName(),"Example");
++    EXPECT_EQ(Family->getFamily(), &To->getASTContext().Idents.get("Example"));
++    llvm::SmallPtrSet<const FunctionDecl *, 4> CanonicalDrops;
++    for(const auto *Declaration : To->getASTContext().getTranslationUnitDecl()->lookup(
++        &To->getASTContext().Idents.get("drop")))
++      if(const auto *Function = dyn_cast<FunctionDecl>(Declaration)) {
++        CanonicalDrops.insert(Function->getCanonicalDecl());
++        const auto *Operation = getObjC3FamilyOperation(Function);
++        ASSERT_TRUE(Operation);
++        EXPECT_EQ(getObjC3FamilyOperationName(Operation), &To->getASTContext().Idents.get("Example"));
++      }
++    EXPECT_EQ(CanonicalDrops.size(), 1u);
 +    EXPECT_TRUE(Alias->getUnderlyingType()->isObjCRetainableType());
 +    EXPECT_TRUE(findFunction(To->getASTContext(),"drop")->hasAttr<ObjCFamilyReleaseAttr>());
 +    PrintingPolicy Policy(From->getASTContext().getLangOpts());

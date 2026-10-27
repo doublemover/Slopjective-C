@@ -24,7 +24,10 @@ not add general ownership counts to the mandatory borrowed CFG analysis.
 Native structural equivalence and ODR hashing distinguish family types and
 operations across AST contexts; incompatible declarations cannot be unified.
 Generated PCH/AST import and polished declarations preserve family markers,
-operation names and `NSObject`. Native interface ownership identity includes the
+operation names and `NSObject`. Imported family identifiers belong to the
+consumer AST context; operation contracts are installed before recursive
+redeclaration import so compatible declarations keep one canonical function.
+Native interface ownership identity includes the
 family name, integration status and operation. Source-free readers reparse those
 canonical declarations under the existing required native-ownership semantic;
 changed contracts cannot reuse an earlier locked interface identity.
