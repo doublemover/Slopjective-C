@@ -11,7 +11,7 @@ from pathlib import Path
 from .core import ToolchainError, build_plan, prepare, seal_development, verify_development
 
 
-def main(argv: list[str] | None = None) -> int:
+def _parser():
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
     binary = commands.add_parser("packages", help="publish, install or consume immutable offline packages")
@@ -65,6 +65,16 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--source-dir", type=Path, help="sealed development source directory")
     plan.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"),
                       help="native build host (defaults to the current host)")
+    return parser, frozenset(commands.choices)
+
+
+def repository_commands() -> frozenset[str]:
+    """Return registered commands without executing any workflow."""
+    return _parser()[1]
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser, _ = _parser()
     args = parser.parse_args(argv)
     try:
         if args.command == "packages":
