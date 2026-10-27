@@ -29,3 +29,6 @@ bodies must change semantic fingerprints; erasing the capability is rejected.
 This source milestone does not establish complete C++ template, ownership,
 async or profile conformance. Installed SDK/archive delivery follows the
 coordinated implementation batch.
+
+The [focused progress receipt](../support/linux_cxx_local_types_progress.json)
+records the frontend/tooling checks and normal/ASan source-free package matrices.
