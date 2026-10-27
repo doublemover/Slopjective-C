@@ -553,3 +553,10 @@ and nested binding copies. Its [focused evidence](../support/linux_mixed_carrier
 records normal/ASan source/PCH capture matrices, native regressions, AST/PCH
 persistence and source-free package checks. Implicit and MRC mixed captures,
 unqualified carrier leaves and the installed SDK cutover remain pending.
+
+The [2.27.0 source milestone](linux_explicit_capture_lists.md) adds native plain
+carrier leaf captures, shared complex copy/construction lowering and implicit
+mixed ARC/C++ Block capture ownership. Its [focused evidence](../support/linux_native_carrier_captures_progress.json)
+records normal/ASan source/PCH capture matrices, four recursive mixed runtime
+cases, AST/PCH persistence and eight source-free package cases. Mixed C++ lambda
+captures, MRC mixed ownership and the installed SDK cutover remain pending.
