@@ -38913,10 +38913,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..919c750a8
+index 000000000..dffe8701c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1125 @@
+@@ -0,0 +1,1147 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -39677,13 +39677,14 @@ index 000000000..919c750a8
 +  return false;
 +}
 +
-+FunctionDecl *buildIsolationThunk(Sema &S, Expr *Source, const Decl *Target,
++FunctionDecl *buildIsolationThunk(Sema &S, Expr *Source, Expr *SourceReceiver,
++                                  const Decl *Target,
 +                                  const FunctionProtoType *Original,
 +                                  const ObjCExecutorAttr *Executor,
-+                                  bool ActorEntry, SourceLocation Loc) {
++                                  bool ActorEntry, ObjCMethodDecl *SuperContext,
++                                  SourceLocation Loc) {
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
-+  const bool HasReceiver = Message &&
-+      Message->getReceiverKind() == ObjCMessageExpr::Instance;
++  const bool HasReceiver = SourceReceiver != nullptr;
 +  auto *TU = S.Context.getTranslationUnitDecl();
 +  std::string Prefix =
 +      "__objc3_isolation_entry_" + std::to_string(Loc.getRawEncoding());
@@ -39697,7 +39698,7 @@ index 000000000..919c750a8
 +  Info.ObjC3Effects.AsyncFrame = true;
 +  SmallVector<QualType, 4> Types;
 +  if (HasReceiver)
-+    Types.push_back(Message->getInstanceReceiver()->getType());
++    Types.push_back(SourceReceiver->getType());
 +  llvm::append_range(Types, Original->param_types());
 +  SmallVector<const ParmVarDecl *, 4> SourceParameters;
 +  if (Message)
@@ -39734,6 +39735,11 @@ index 000000000..919c750a8
 +      S.Context, TU, Loc, Loc, &S.Context.Idents.get(Name), Type,
 +      S.Context.getTrivialTypeSourceInfo(Type, Loc), SC_Static);
 +  Thunk->setImplicit();
++  // A super send uses the source method's lexical lookup context, while its
++  // receiver is the independently owned first frame parameter. Native lexical
++  // declaration contexts preserve this relationship through PCH/AST import.
++  if (SuperContext)
++    Thunk->setLexicalDeclContext(SuperContext);
 +  Thunk->addAttr(ObjC3IsolationThunkAttr::CreateImplicit(
 +      S.Context, ActorEntry,
 +      !Original->getObjC3FunctionEffects().Async &&
@@ -39753,7 +39759,7 @@ index 000000000..919c750a8
 +    Params.push_back(Param);
 +  }
 +  Thunk->setParams(Params);
-+  TU->addDecl(Thunk);
++  Thunk->getLexicalDeclContext()->addDecl(Thunk);
 +  {
 +    Sema::SynthesizedFunctionScope Scope(S, Thunk);
 +    SmallVector<Expr *, 4> Arguments;
@@ -39781,6 +39787,12 @@ index 000000000..919c750a8
 +          Message->getSelector(),
 +          const_cast<ObjCMethodDecl *>(cast<ObjCMethodDecl>(Target)),
 +          MutableArrayRef<Expr *>(Arguments).drop_front());
++      if (!Value.isInvalid() && SuperContext) {
++        auto *Built = cast<ObjCMessageExpr>(
++            Value.get()->IgnoreImplicit()->IgnoreParenImpCasts());
++        Built->setSuper(Message->getSuperLoc(), Message->getSuperType(),
++                        Message->getReceiverKind() == ObjCMessageExpr::SuperInstance);
++      }
 +    } else {
 +      auto *Function = const_cast<FunctionDecl *>(cast<FunctionDecl>(Target));
 +      ExprResult Callee = S.BuildDeclRefExpr(Function, Function->getType(),
@@ -39894,6 +39906,15 @@ index 000000000..919c750a8
 +      return ExprError();
 +    return Operand;
 +  }
++  ObjCMethodDecl *SuperContext = nullptr;
++  Expr *SourceReceiver = Message ? Message->getInstanceReceiver() : nullptr;
++  if (Message && (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
++                  Message->getReceiverKind() == ObjCMessageExpr::SuperClass)) {
++    SuperContext = getCurMethodDecl();
++    if (SuperContext)
++      SourceReceiver = BuildDeclRefExpr(SuperContext->getSelfDecl(),
++          SuperContext->getSelfDecl()->getType(), VK_LValue, Message->getSuperLoc());
++  }
 +  SmallVector<Expr *, 4> SourceArguments;
 +  if (Call)
 +    llvm::append_range(SourceArguments, Call->arguments());
@@ -39902,8 +39923,8 @@ index 000000000..919c750a8
 +  // Preserve pre-call argument evaluation on the caller. A nested crossing is
 +  // never authorized merely because the outer call has an explicit await.
 +  IsolationBodyChecker Arguments(*this, Callable, true);
-+  if (Message && Message->getInstanceReceiver())
-+    Arguments.Visit(Message->getInstanceReceiver());
++  if (SourceReceiver)
++    Arguments.Visit(SourceReceiver);
 +  for (auto *Argument : SourceArguments)
 +    Arguments.Visit(Argument);
 +  if (Arguments.failed())
@@ -39922,12 +39943,14 @@ index 000000000..919c750a8
 +      Shape &= !unsupportedIsolatedConsumption(*this, Parameter);
 +  } else {
 +    const bool Instance =
-+        Message->getReceiverKind() == ObjCMessageExpr::Instance;
++        Message->getReceiverKind() == ObjCMessageExpr::Instance ||
++        (SuperContext && Message->getReceiverKind() == ObjCMessageExpr::SuperInstance);
 +    const bool NamedClass =
-+        Message->getReceiverKind() == ObjCMessageExpr::Class;
++        Message->getReceiverKind() == ObjCMessageExpr::Class ||
++        (SuperContext && Message->getReceiverKind() == ObjCMessageExpr::SuperClass);
 +    Shape &=
 +        ((Instance &&
-+          Message->getInstanceReceiver()->getType()->isObjCObjectPointerType()) ||
++          SourceReceiver->getType()->isObjCObjectPointerType()) ||
 +         (NamedClass && !Target->hasAttr<NSConsumesSelfAttr>())) &&
 +        (!Target->hasAttr<NSConsumesSelfAttr>() || getLangOpts().ObjCAutoRefCount) &&
 +        cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init;
@@ -39940,11 +39963,9 @@ index 000000000..919c750a8
 +    return ExprError();
 +  }
 +  bool Failed = false;
-+  if (Message && Message->getReceiverKind() == ObjCMessageExpr::Instance)
-+    Failed |= checkTransfer(
-+        *this, transferSource(Message->getInstanceReceiver())->getType(),
-+        Message->getInstanceReceiver()->getExprLoc(), "isolated receiver",
-+        Target);
++  if (SourceReceiver && Message->getReceiverKind() != ObjCMessageExpr::SuperClass)
++    Failed |= checkTransfer(*this, transferSource(SourceReceiver)->getType(),
++                            SourceReceiver->getExprLoc(), "isolated receiver", Target);
 +  for (const Expr *Argument : SourceArguments)
 +    Failed |=
 +        checkTransfer(*this, transferSource(Argument)->getType(),
@@ -39965,7 +39986,8 @@ index 000000000..919c750a8
 +        SourceArguments[I] = uninitializeConsumedArgument(SourceArguments[I]);
 +  }
 +  auto *Thunk =
-+      buildIsolationThunk(*this, Source, Target, FT, Executor, ActorEntry, Loc);
++      buildIsolationThunk(*this, Source, SourceReceiver, Target, FT, Executor,
++                          ActorEntry, SuperContext, Loc);
 +  if (!Thunk)
 +    return ExprError();
 +  ExprResult Callee = BuildDeclRefExpr(Thunk, Thunk->getType(), VK_LValue, Loc);
@@ -40003,10 +40025,10 @@ index 000000000..919c750a8
 +    Captures.push_back(Opaque);
 +    return true;
 +  };
-+  if (Message->getReceiverKind() == ObjCMessageExpr::Instance &&
++  if (SourceReceiver &&
 +      !Capture(Target->hasAttr<NSConsumesSelfAttr>()
-+                   ? uninitializeConsumedArgument(Message->getInstanceReceiver())
-+                   : Message->getInstanceReceiver()))
++                   ? uninitializeConsumedArgument(SourceReceiver)
++                   : SourceReceiver))
 +    return ExprError();
 +  for (auto *Argument : SourceArguments)
 +    if (!Capture(Argument))

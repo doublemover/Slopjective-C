@@ -73,9 +73,9 @@ int hop_destroyed(void) {
 @end
 void *hop_new_counter(void) {
 #if __has_feature(objc_arc)
-  return (__bridge_retained void *)[HopCounter new];
+  return (__bridge_retained void *)[HopSuperActor new];
 #else
-  return (void *)[HopCounter new];
+  return (void *)[HopSuperActor new];
 #endif
 }
 static int source_argument(void) {
@@ -190,3 +190,122 @@ extern Class objc_getClass(const char *);
   __atomic_fetch_add(&class_entries,1,__ATOMIC_RELEASE);
 }
 @end
+
+static int super_arguments, super_entries;
+static _Thread_local int fail_super_factory;
+int hop_super_arguments(void) {
+  return __atomic_load_n(&super_arguments,__ATOMIC_ACQUIRE);
+}
+int hop_super_entries(void) {
+  return __atomic_load_n(&super_entries,__ATOMIC_ACQUIRE);
+}
+void hop_super_fail_factory(int fail) { fail_super_factory=fail; }
+int hop_super_argument(objc3_executor_t *caller) {
+  assert(objc3_executor_is_current(caller));
+  __atomic_fetch_add(&super_arguments,1,__ATOMIC_RELEASE);
+  if (fail_super_factory) {
+    fail_super_factory=0;
+    hop_fail_next_frame_allocation();
+  }
+  return 1;
+}
+@implementation HopSuperBase
+- (int)superValue:(int)value {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+  return value+41;
+}
++ (int)superClassValue:(int)value {
+  assert(objc3_executor_is_current(named_executor));
+  assert(self==objc_getClass("HopSuperChild"));
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+  return value+41;
+}
+- (HopPacket)superPacket:(HopPacket)value {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+  value.value+=1;
+  return value;
+}
+- (HopObject *)newSuperObject:(int)value {
+  assert(value==1 && objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+  return [HopObject new];
+}
+@end
+@implementation HopSuperChild
+// Different overrides make accidental dynamic dispatch observable.
+- (int)superValue:(int)value { return value+899; }
++ (int)superClassValue:(int)value { return value+899; }
+- (int)superRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int value=__objc3_await [super superValue:hop_super_argument(caller)];
+  assert(objc3_executor_is_current(caller));
+  return value;
+}
++ (int)superClassRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int value=__objc3_await [super superClassValue:hop_super_argument(caller)];
+  assert(objc3_executor_is_current(caller));
+  return value;
+}
+- (int)superPacketRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  HopPacket source={hop_super_argument(caller)+40,{10,20,30}};
+  HopPacket value=__objc3_await [super superPacket:source];
+  assert(source.value==41 && value.weights[2]==30 &&
+         objc3_executor_is_current(caller));
+  return value.value;
+}
+- (int)superObjectRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int result=[(__objc3_await [super newSuperObject:hop_super_argument(caller)]) number];
+  assert(objc3_executor_is_current(caller));
+  return result;
+}
+@end
+@implementation HopSuperChild (SuperCategory)
+- (int)superCategoryRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int value=__objc3_await [super superValue:hop_super_argument(caller)];
+  assert(objc3_executor_is_current(caller));
+  return value;
+}
+@end
+extern void super_release_object(void *) __asm__("objc_release");
+objc3_async_frame hop_super_frame(int kind, objc3_executor_t *caller) {
+  if (kind==1) return [HopSuperChild superClassRoundtrip:caller];
+  HopSuperChild *receiver=[HopSuperChild new];
+  objc3_async_frame frame;
+  switch (kind) {
+  case 0: frame=[receiver superRoundtrip:caller]; break;
+  case 2: frame=[receiver superCategoryRoundtrip:caller]; break;
+  case 3: frame=[receiver superPacketRoundtrip:caller]; break;
+  case 4: frame=[receiver superObjectRoundtrip:caller]; break;
+  default: assert(!"unknown super entry case");
+  }
+#if !__has_feature(objc_arc)
+  super_release_object((void *)receiver);
+#endif
+  return frame;
+}
+
+void hop_super_enter_main(void) {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+}
+@implementation HopCounter (ActorSuper)
+- (int)actorTouch:(int)amount {
+  objc3_current_actor_facts facts={sizeof(facts),OBJC3_ACTOR_SERVICE_VERSION};
+  assert(objc3_actor_current_facts(&facts)==OBJC3_SERVICE_OK);
+  assert(facts.actor_identity==expected_actor);
+  __atomic_fetch_add(&super_entries,1,__ATOMIC_RELEASE);
+  value+=amount;
+  return value;
+}
+@end
+@implementation HopSuperActor
+- (int)actorSuperRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int value=__objc3_await [super actorTouch:hop_super_argument(caller)-1];
+  assert(objc3_executor_is_current(caller));
+  return value>=42 ? 42 : 0;
+}
+@end
+objc3_async_frame hop_super_actor_frame(HopCounter *counter, objc3_executor_t *caller) {
+  return [(HopSuperActor *)counter actorSuperRoundtrip:caller];
+}

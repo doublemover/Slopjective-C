@@ -12,8 +12,8 @@ Arguments retain receiver-free, exactly-once semantic bindings before lazy frame
 creation. Synchronous and native-frame methods use the existing typed result,
 checked-error and cancellation paths. ARC consumed object/Block parameters use
 the adopting parameter ABI from the preceding ownership milestone. Retained
-results preserve native return ownership under ARC and MRC. Super messages,
-init-family entry, unqualified dynamic Class receivers and ordinary C++
+results preserve native return ownership under ARC and MRC. [Super messages](linux_isolation_super_entries.md) are added by the subsequent
+2.33.0 source milestone. Init-family entry, unqualified dynamic Class receivers and ordinary C++
 task-ABI targets remain separate work.
 
 Maintained runtime cases cover scalar, record, void, retained object and

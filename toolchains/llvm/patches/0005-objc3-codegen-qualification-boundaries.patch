@@ -5637,7 +5637,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..ffdf6e3be 100644
+index c724a063b..d0a374947 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,13 @@
@@ -5684,7 +5684,46 @@ index c724a063b..ffdf6e3be 100644
    // Only the lookup mechanism and first two arguments of the method
    // implementation vary between runtimes.  We can get the receiver and
    // arguments in generic code.
-@@ -677,9 +706,17 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+@@ -625,6 +654,22 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+   CGObjCRuntime &Runtime = CGM.getObjCRuntime();
+   bool isSuperMessage = false;
+   bool isClassMessage = false;
++  const auto *SuperContext = dyn_cast<ObjCMethodDecl>(CurFuncDecl);
++  const FunctionDecl *SuperThunk = nullptr;
++  if (const auto *Function = dyn_cast<FunctionDecl>(CurFuncDecl);
++      Function && Function->hasAttr<ObjC3IsolationThunkAttr>()) {
++    SuperContext = dyn_cast<ObjCMethodDecl>(Function->getLexicalDeclContext());
++    if (SuperContext)
++      SuperThunk = Function;
++  }
++  auto LoadSuperSelf = [&]() -> llvm::Value * {
++    if (!SuperThunk)
++      return LoadObjCSelf();
++    auto *Parameter = SuperThunk->getParamDecl(0);
++    return EmitLoadOfScalar(
++        MakeAddrLValue(GetAddrOfLocalVar(Parameter), Parameter->getType()),
++        E->getExprLoc());
++  };
+   ObjCInterfaceDecl *OID = nullptr;
+   // Find the receiver
+   QualType ReceiverType;
+@@ -653,13 +698,13 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+ 
+   case ObjCMessageExpr::SuperInstance:
+     ReceiverType = E->getSuperType();
+-    Receiver = LoadObjCSelf();
++    Receiver = LoadSuperSelf();
+     isSuperMessage = true;
+     break;
+ 
+   case ObjCMessageExpr::SuperClass:
+     ReceiverType = E->getSuperType();
+-    Receiver = LoadObjCSelf();
++    Receiver = LoadSuperSelf();
+     isSuperMessage = true;
+     isClassMessage = true;
+     break;
+@@ -677,9 +722,17 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
      Receiver = EmitARCRetainAutorelease(ReceiverType, Receiver);
  
    QualType ResultType = method ? method->getReturnType() : E->getType();
@@ -5702,7 +5741,20 @@ index c724a063b..ffdf6e3be 100644
  
    // For delegate init calls in ARC, do an unsafe store of null into
    // self.  This represents the call taking direct ownership of that
-@@ -804,12 +841,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
+@@ -700,8 +753,10 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+ 
+   RValue result;
+   if (isSuperMessage) {
+-    // super is only valid in an Objective-C method
+-    const ObjCMethodDecl *OMD = cast<ObjCMethodDecl>(CurFuncDecl);
++    // A private isolation entry retains the original method's lexical
++    // super lookup while loading self from its independent frame capture.
++    const ObjCMethodDecl *OMD = SuperContext;
++    assert(OMD && "super message requires a lexical Objective-C method");
+     bool isCategoryImpl = isa<ObjCCategoryImplDecl>(OMD->getDeclContext());
+     result = Runtime.GenerateMessageSendSuper(*this, Return, ResultType,
+                                               E->getSelector(),
+@@ -804,12 +859,23 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
      args.push_back(OMD->getCmdDecl());
  
    args.append(OMD->param_begin(), OMD->param_end());
@@ -5728,7 +5780,7 @@ index c724a063b..ffdf6e3be 100644
  
    if (OMD->isDirectMethod()) {
      CGM.getObjCRuntime().GenerateDirectMethodPrologue(*this, Fn, OMD, CD);
-@@ -832,11 +880,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -832,11 +898,27 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  /// Generate an Objective-C method.  An Objective-C method is a C function with
  /// its pointer, name, and types registered in the class structure.
  void CodeGenFunction::GenerateObjCMethod(const ObjCMethodDecl *OMD) {
@@ -5759,7 +5811,7 @@ index c724a063b..ffdf6e3be 100644
    FinishFunction(OMD->getBodyRBrace());
  }
  
-@@ -1166,12 +1230,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
+@@ -1166,12 +1248,23 @@ CodeGenFunction::generateObjCGetterBody(const ObjCImplementationDecl *classImpl,
  
    ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
  
@@ -5783,7 +5835,7 @@ index c724a063b..ffdf6e3be 100644
      } else {
        ObjCIvarDecl *ivar = propImpl->getPropertyIvarDecl();
        emitCPPObjectAtomicGetterCall(*this, ReturnValue.emitRawPointer(*this),
-@@ -1792,17 +1867,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
+@@ -1792,17 +1885,22 @@ void CodeGenFunction::GenerateObjCCtorDtorMethod(ObjCImplementationDecl *IMP,
      // Suppress the final autorelease in ARC.
      AutoreleaseResult = false;
  
@@ -5811,7 +5863,7 @@ index c724a063b..ffdf6e3be 100644
      // constructor returns 'self'.
      CodeGenTypes &Types = CGM.getTypes();
      QualType IdTy(CGM.getContext().getObjCIdType());
-@@ -1996,6 +2076,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -1996,6 +2094,7 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
  
    // Initialize the element variable.
    RunCleanupsScope elementVariableScope(*this);
@@ -5819,7 +5871,7 @@ index c724a063b..ffdf6e3be 100644
    bool elementIsVariable;
    LValue elementLValue;
    QualType elementType;
-@@ -2091,6 +2172,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
+@@ -2091,6 +2190,8 @@ void CodeGenFunction::EmitObjCForCollectionStmt(const ObjCForCollectionStmt &S){
    BreakContinueStack.push_back(BreakContinue(S, LoopEnd, AfterBody));
    {
      RunCleanupsScope Scope(*this);
@@ -5828,7 +5880,7 @@ index c724a063b..ffdf6e3be 100644
      EmitStmt(S.getBody());
    }
    BreakContinueStack.pop_back();
-@@ -2380,6 +2463,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+@@ -2380,6 +2481,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
  /// if it can prove that the block never escapes except down the stack.
  llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
                                                   bool mandatory) {
@@ -5847,7 +5899,7 @@ index c724a063b..ffdf6e3be 100644
    llvm::Value *result
      = emitARCValueOperation(*this, value, nullptr,
                              CGM.getObjCEntrypoints().objc_retainBlock,
-@@ -3525,6 +3620,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -3525,6 +3638,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5855,7 +5907,7 @@ index c724a063b..ffdf6e3be 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3636,7 @@ llvm::Value *
+@@ -3540,6 +3654,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5863,7 +5915,7 @@ index c724a063b..ffdf6e3be 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3747,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3765,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5871,7 +5923,7 @@ index c724a063b..ffdf6e3be 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3719,6 +3817,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3835,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
@@ -28648,3 +28700,77 @@ index 000000000..a1f96dcf8
 +// which runs destructors but never calls operator delete.
 +// CHECK-DAG: define {{.*}}void @_ZTv{{[^ (]*}}__objc3_m_derived_dtor_dtor_1v
 +// CHECK-DAG: define {{.*}}void @_ZTv{{[^ (]*}}__objc3_m_derived_dtor_dtor_0v
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-super-entry.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-super-entry.h
+new file mode 100644
+index 000000000..99ca0b21c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-super-entry.h
+@@ -0,0 +1,29 @@
++#ifndef NATIVE_ISOLATION_SUPER_ENTRY_H
++#define NATIVE_ISOLATION_SUPER_ENTRY_H
++#include "native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface SuperBase <Sendable>
++- (int)baseValue:(int)value __attribute__((nothrow, objc_executor(main)));
+++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(named("super.class"))));
++@end
++@interface SuperChild : SuperBase
++- (int)entry:(int)value __objc3_async_frame;
+++ (int)classEntry:(int)value __objc3_async_frame;
++@end
++@implementation SuperChild
++- (int)entry:(int)value __objc3_async_frame {
++  return __objc3_await [super baseValue:value];
++}
+++ (int)classEntry:(int)value __objc3_async_frame {
++  return __objc3_await [super classValue:value];
++}
++@end
++@interface SuperChild (CategoryEntry)
++- (int)categoryEntry:(int)value __objc3_async_frame;
++@end
++@implementation SuperChild (CategoryEntry)
++- (int)categoryEntry:(int)value __objc3_async_frame {
++  return __objc3_await [super baseValue:value];
++}
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-isolation-super-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-super-entry.m
+new file mode 100644
+index 000000000..fc604c6f3
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-isolation-super-entry.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-isolation-super-entry.h"
++// CHECK-DAG: @objc_msg_lookup_super
++// CHECK-DAG: @objc3_executor_get_main
++// CHECK-DAG: @objc3_executor_get_named
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: @objc3_async_frame_start_child
+diff --git a/clang/test/ObjC3/CodeGen/native-isolation-super-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-super-pch.m
+new file mode 100644
+index 000000000..d8901bade
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-isolation-super-pch.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -emit-pch -o %t %S/Inputs/native-isolation-super-entry.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t.arc %S/Inputs/native-isolation-super-entry.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc -include-pch %t.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-isolation-super-entry.h"
++objc3_async_frame use_super(SuperChild *object) {
++  return [object entry:42];
++}
++objc3_async_frame use_class_super(void) {
++  return [SuperChild classEntry:42];
++}
++objc3_async_frame use_category_super(SuperChild *object) {
++  return [object categoryEntry:42];
++}
++// CHECK-DAG: @objc_msg_lookup_super
++// CHECK-DAG: @objc3_executor_get_main
++// CHECK-DAG: @objc3_executor_get_named
++// CHECK-DAG: @objc3_task_hop

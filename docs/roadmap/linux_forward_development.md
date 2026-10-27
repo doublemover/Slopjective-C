@@ -587,18 +587,24 @@ The [2.31.0 source milestone](linux_isolation_consuming_ownership.md) adds ARC
 consumed object/Block parameters and consuming instance receivers at supported
 awaited entries. Owning receiver/argument snapshots preserve message evaluation
 when later operands clear their original owners, with balanced exceptional
-cleanup. MRC/CF consumption, init-family entry, class/super crossings and ordinary
+cleanup. MRC/CF consumption, init-family entry and ordinary
 C++ task-ABI targets remain open; accepted SDK delivery remains 2.29.0.
 
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
 messages at qualified executor entries, preserving inherited class dispatch,
 retained results and consumed arguments. Focused source/PCH runtime and native
 frontend/codegen checks pass; combined validation and SDK delivery follow the
-implementation batch. Super messages and unqualified dynamic Class receivers
-remain separate work.
+implementation batch. Super messages are added by the subsequent 2.33.0 source milestone;
+unqualified dynamic Class receivers remain separate work.
 
 The [keypath 2.2.0 source extension](linux_keypath_record_fields.md) adds named
 bit-fields and inherited C++ record fields, with native access/lookup, base
 adjustment, signed/truncated values and exact-once property writeback. Initial
 native/runtime checks pass; combined validation and SDK delivery follow this
 source batch.
+
+The [2.33.0 source milestone](linux_isolation_super_entries.md) adds awaited
+instance/class/category super messages, preserving lexical superclass lookup
+with independently owned self. Actor-super entry, ARC consuming receivers,
+record/retained results and ordinary C++ task callers are covered by maintained
+runtime and PCH witnesses. Combined validation follows this implementation batch.

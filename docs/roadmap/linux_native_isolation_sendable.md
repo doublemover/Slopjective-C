@@ -114,8 +114,11 @@ native exception contract, including `nothrow` on Objective-C 3.0 methods; arbit
 synthesized. Nested isolated argument expressions require their own await.
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
 messages, including inherited dispatch and ARC consumed parameters. Ordinary
-C++ task-ABI isolated target entries, super messages, and unsupported callable
-shapes still receive targeted diagnostics. The compiler does not automatically
+C++ task-ABI isolated target entries and unsupported callable
+shapes still receive targeted diagnostics. The
+[2.33.0 source milestone](linux_isolation_super_entries.md) adds instance/class
+super entry, preserving source class/category lookup, captured self and actor
+mailbox entry across native frames and C++ task callers. The compiler does not automatically
 associate object allocation with actor mailboxes. These remaining obligations prevent a full actor conformance claim.
 
 A provably non-suspending native await evaluates its original operand and warns

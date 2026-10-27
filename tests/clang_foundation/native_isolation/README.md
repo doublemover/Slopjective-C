@@ -46,3 +46,10 @@ written class; scalar, record, void, retained object and native-frame results
 observe their destination executor. Consumed object/Block class parameters use
 the ARC provider. Cancellation checks target invocation and source evaluation
 counts independently.
+
+The 2.33 source additions distinguish lexical super dispatch from differing
+subclass overrides. Instance/class/category, actor-super and ARC consuming-self
+cases check success, cancellation and failed entry allocation, with exact
+argument/entry/destruction counts. C++ clients add ordinary task-method super
+entry. The original actor fixture now uses an actor subclass to cover inherited
+mailbox identity while preserving its existing actor/executor assertions.

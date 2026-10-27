@@ -465,6 +465,28 @@ int class_cross(int value) __objc3_async {
 @end
 int class_cross(int value) { return [Counter classValue:value]; }
 )"), "cross-executor entry requires an explicit await");
+  Success(Compile(Make(R"(
+@interface SuperBase : SafeMessage
+- (int)baseValue:(int)value __attribute__((nothrow, objc_executor(main)));
++ (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
+@end
+@interface SuperChild : SuperBase
+- (int)frameEntry:(int)value __objc3_async_frame;
+- (int)taskEntry:(int)value __objc3_async;
++ (int)classEntry:(int)value __objc3_async_frame;
+@end
+@implementation SuperChild
+- (int)frameEntry:(int)value __objc3_async_frame {
+  return __objc3_await [super baseValue:value];
+}
+- (int)taskEntry:(int)value __objc3_async {
+  return __objc3_await [super baseValue:value];
+}
++ (int)classEntry:(int)value __objc3_async_frame {
+  return __objc3_await [super classValue:value];
+}
+@end
+)")));
   const std::string Consuming =
       "int consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
       " __attribute__((objc_executor(main)));\n"

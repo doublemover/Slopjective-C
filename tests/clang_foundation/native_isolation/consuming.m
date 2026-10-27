@@ -16,6 +16,7 @@ void *aligned_alloc(size_t alignment, size_t size) {
   void *memory=0;
   return posix_memalign(&memory,alignment,size)==0 ? memory : 0;
 }
+void hop_fail_next_frame_allocation(void) { fail_frame_allocation=1; }
 void hop_consumed_reset(int fail_factory) {
   __atomic_store_n(&consumed_arguments,0,__ATOMIC_RELEASE);
   __atomic_store_n(&consumed_entries,0,__ATOMIC_RELEASE);
@@ -191,4 +192,29 @@ int hop_consumed_roundtrip(int kind, objc3_executor_t *caller)
   }
   assert(objc3_executor_is_current(caller));
   return result;
+}
+
+@interface HopSuperBase (SuperConsumption)
+- (int)consumeSuper:(int)value
+    __attribute__((ns_consumes_self, nothrow, objc_executor(main)));
+@end
+@implementation HopSuperBase (SuperConsumption)
+- (int)consumeSuper:(int)value {
+  hop_super_enter_main();
+  return [self number]+value-1;
+}
+@end
+@interface HopSuperChild (SuperConsumption)
+- (int)consumedSuperRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
+@end
+@implementation HopSuperChild (SuperConsumption)
+- (int)consumedSuperRoundtrip:(objc3_executor_t *)caller __objc3_async_frame {
+  int value=__objc3_await [super consumeSuper:hop_super_argument(caller)];
+  assert(objc3_executor_is_current(caller));
+  return value;
+}
+@end
+objc3_async_frame hop_super_consumed_frame(objc3_executor_t *caller) {
+  HopSuperChild *receiver=[HopSuperChild new];
+  return [receiver consumedSuperRoundtrip:caller];
 }

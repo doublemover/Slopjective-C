@@ -43,6 +43,16 @@ static objc3_completion finish(objc3_task_t *task) {
   return completion;
 }
 #ifdef __cplusplus
+@interface HopSuperChild (CxxTaskSuper)
+- (int)taskSuper:(objc3_executor_t *)destination __objc3_async;
+@end
+@implementation HopSuperChild (CxxTaskSuper)
+- (int)taskSuper:(objc3_executor_t *)destination __objc3_async {
+  int value=__objc3_await [super superValue:1];
+  assert(objc3_executor_is_current(destination));
+  return value;
+}
+@end
 static int task_actor_entry(HopCounter *counter,
                             objc3_executor_t *destination) __objc3_async {
   int value = __objc3_await [counter add:1];
@@ -253,6 +263,55 @@ int main(void) {
       assert(hop_destroyed()==expected_destroyed);
     }
 
+    for (int kind=0; kind!=7; ++kind) {
+      for (int outcome=0; outcome!=3; ++outcome) {
+        int arguments_before=hop_super_arguments();
+        int entries_before=hop_super_entries();
+        int destroyed_before=hop_destroyed();
+        hop_super_fail_factory(outcome==2);
+        frame=kind==5 ? hop_super_actor_frame(counter,caller) :
+              kind==6 ? hop_super_consumed_frame(caller) : hop_super_frame(kind,caller);
+        type=frame.result_type;
+        task=start(&frame);
+        if (outcome==1) {
+          assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK && count==1);
+          objc3_task_request_cancel(task);
+        }
+        objc3_completion completion=finish(task);
+        if (outcome==0) {
+          assert(completion.kind==OBJC3_COMPLETION_SUCCESS);
+          result=0;
+          assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK);
+          assert(result==42);
+        } else if (outcome==1) {
+          assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
+        } else {
+          assert(completion.kind==OBJC3_COMPLETION_ERROR);
+          objc3_service_status service=OBJC3_SERVICE_OK;
+          assert(objc3_async_error_get_service(completion.error,&service)==OBJC3_SERVICE_OK &&
+                 service==OBJC3_SERVICE_OUT_OF_MEMORY);
+        }
+        assert(hop_super_arguments()==arguments_before+1);
+        assert(hop_super_entries()==entries_before+(outcome==0));
+        objc3_task_release(task);
+        int expected_destroyed=destroyed_before+(kind!=1 && kind!=5)+(kind==4 && outcome==0);
+        for (unsigned step=0; step!=1000000 && hop_destroyed()!=expected_destroyed; ++step)
+          sched_yield();
+        assert(hop_destroyed()==expected_destroyed);
+      }
+    }
+
+#ifdef __cplusplus
+    {
+      HopSuperChild *super_receiver=[HopSuperChild new];
+      auto super_task=[super_receiver taskSuper:caller].start(caller);
+      assert(finish(super_task.native_handle()).kind==OBJC3_COMPLETION_SUCCESS);
+      assert(super_task.result()==42);
+#if !__has_feature(objc_arc)
+      release_object((void *)super_receiver);
+#endif
+    }
+#endif
     frame = hop_cxx_actor_roundtrip(counter, caller);
     type = frame.result_type;
     task = start(&frame);

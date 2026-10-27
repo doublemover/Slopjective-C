@@ -22,6 +22,30 @@ actor class HopCounter : HopObject { int value; }
 + (HopObject *)newOnMain __attribute__((nothrow, ns_returns_retained, objc_executor(main)));
 + (void)classVoid __attribute__((nothrow, objc_executor(main)));
 @end
+@interface HopCounter (ActorSuper)
+- (int)actorTouch:(int)value __attribute__((nothrow));
+@end
+actor class HopSuperActor : HopCounter
+- (int)actorSuperRoundtrip:(objc3_executor_t *)caller __objc3_async_frame
+    __attribute__((objc_nonisolated));
+@end
+@interface HopSuperBase : HopObject
+- (int)superValue:(int)value __attribute__((nothrow, objc_executor(main)));
++ (int)superClassValue:(int)value
+    __attribute__((nothrow, objc_executor(named("native.isolation"))));
+- (HopPacket)superPacket:(HopPacket)value __attribute__((nothrow, objc_executor(main)));
+- (HopObject *)newSuperObject:(int)value
+    __attribute__((nothrow, ns_returns_retained, objc_executor(main)));
+@end
+@interface HopSuperChild : HopSuperBase
+- (int)superRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
++ (int)superClassRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
+- (int)superPacketRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
+- (int)superObjectRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
+@end
+@interface HopSuperChild (SuperCategory)
+- (int)superCategoryRoundtrip:(objc3_executor_t *)caller __objc3_async_frame;
+@end
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,6 +81,15 @@ int hop_throwing_argument(void);
 int hop_class_argument(objc3_executor_t *);
 int hop_class_arguments(void);
 int hop_class_entries(void);
+objc3_async_frame hop_super_frame(int, objc3_executor_t *);
+int hop_super_arguments(void);
+int hop_super_entries(void);
+void hop_super_fail_factory(int);
+int hop_super_argument(objc3_executor_t *);
+void hop_super_enter_main(void);
+objc3_async_frame hop_super_actor_frame(HopCounter *, objc3_executor_t *);
+objc3_async_frame hop_super_consumed_frame(objc3_executor_t *);
+void hop_fail_next_frame_allocation(void);
 #ifdef __cplusplus
 }
 #endif
