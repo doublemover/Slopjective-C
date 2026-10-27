@@ -19,8 +19,10 @@ Source-free execution checks native type traits, calls through provider-owned
 structor variants, and nontrivial class values passed and returned by a native
 async frame.
 
-Consteval defaulted special members, dependent/templates and broader
-ownership/profile contracts retain their explicit boundaries. The accepted SDK
+The [2.19.0 immediate defaulting milestone](linux_cxx_immediate_defaulting.md)
+subsequently adds consteval members and explicit out-of-line constexpr state.
+Dependent/templates and broader ownership/profile contracts retain their
+explicit boundaries. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
 combined source batch.

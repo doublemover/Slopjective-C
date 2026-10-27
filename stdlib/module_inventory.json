@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 18,
+        "minor": 19,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -142,7 +142,8 @@
         "concrete inline/constexpr/consteval functions, constructors and inline/constant/class-static data definitions with source-free consumer bodies (source)",
         "eager runtime-bearing semantic imports with pinned header prelude, full lock registry identities and source-free inline code/data emission (source)",
         "native defaulted member and hidden-friend comparison package contracts, ADL and source-free comparisons (source)",
-        "out-of-line defaulted C++ special members with user-provided lifecycle ABI, source-free construction and nontrivial frame values (source)"
+        "out-of-line defaulted C++ special members with user-provided lifecycle ABI, source-free construction and nontrivial frame values (source)",
+        "in-class/out-of-line consteval defaulted special members and immediate comparisons with source-free constant evaluation (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

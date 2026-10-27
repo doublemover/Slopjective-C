@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ immediate defaulted members
+
+The [2.19.0 source milestone](linux_cxx_immediate_defaulting.md) binds consteval
+defaulted members and explicit out-of-line constexpr state, preserving native
+constant evaluation across package boundaries. SDK/archive work and broad
+validation remain deferred.
+
 ## C++ out-of-line defaulted special members
 
 The [2.18.0 source milestone](linux_cxx_out_of_line_defaulting.md) binds native

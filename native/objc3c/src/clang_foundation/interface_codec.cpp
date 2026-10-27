@@ -403,6 +403,13 @@ llvm::Error ValidateForEncoding(
       kCxxOutOfLineDefaultingSemantic) != sidecar.required_semantics.end();
   if (has_out_of_line_defaulting != defaulting_capability)
     return Invalid("C++ out-of-line defaulting identity and required capability must agree");
+  const bool has_immediate_defaulting = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxImmediateDefaultingIdentity);
+  const bool immediate_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxImmediateDefaultingSemantic) != sidecar.required_semantics.end();
+  if (has_immediate_defaulting != immediate_capability)
+    return Invalid("C++ immediate defaulting identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

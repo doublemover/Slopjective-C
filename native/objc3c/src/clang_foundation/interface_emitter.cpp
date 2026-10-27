@@ -408,7 +408,6 @@ bool IsSupportedDefaultedSpecialMember(const clang::CXXMethodDecl *method) {
       ReadCanonicalFunctionEffects(method->getType(), method->getASTContext());
   return !effects.is_async && !effects.is_throwing &&
          method->isExplicitlyDefaulted() &&
-         !method->isConsteval() &&
          (llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl>(
               method) ||
           method->isCopyAssignmentOperator() ||
@@ -584,6 +583,21 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
         defaulted.insert(ReadInterfaceDeclarationStableId(method));
     if (!defaulted.empty()) out << ";cxx-out-of-line-defaulting:v1;";
     for (const auto &member : defaulted) out << "defaulted=" << member << ';';
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> immediate;
+    auto add = [&](const clang::FunctionDecl *function) {
+      if (function && function->getMostRecentDecl()->isExplicitlyDefaulted() && function->isConsteval())
+        immediate.insert(ReadInterfaceDeclarationStableId(function));
+    };
+    for (const auto *member : cxx->decls()) {
+      add(llvm::dyn_cast<clang::FunctionDecl>(member));
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member))
+        add(llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()));
+    }
+    if (!immediate.empty()) out << ";cxx-immediate-defaulting:v1;";
+    for (const auto &member : immediate) out << "immediate=" << member << ';';
   }
   out.flush();
   return text;
@@ -1853,8 +1867,9 @@ bool ReadInterfaceDeclarationIdentity(
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative);
       method && method->isDefaulted() && !IsInClassDefaultedComparison(method))
     identity.canonical_type_identity +=
-        ";cxx-class-structure:v1;defaulted=1;constexpr=derived;exception=" +
-        std::string(method->getExceptionSpecSourceRange().isInvalid()
+        ";cxx-class-structure:v1;defaulted=1;constexpr=" +
+        (method->isOutOfLine() ? std::to_string(method->isConstexpr()) : std::string("derived")) +
+        ";exception=" + std::string(method->getExceptionSpecSourceRange().isInvalid()
                         ? "derived"
                         : "explicit") +
         ";user-provided=" + std::to_string(method->isUserProvided()) +
@@ -1882,6 +1897,9 @@ bool ReadInterfaceDeclarationIdentity(
   }
   if (IsOutOfLineDefaultedDefinition(representative))
     identity.canonical_type_identity += ";cxx-out-of-line-defaulting:v1;";
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative);
+      function && function->isExplicitlyDefaulted() && function->isConsteval())
+    identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
   std::vector<const clang::NamespaceDecl *> scopes;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
     scopes.push_back(space);
@@ -2075,6 +2093,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxDefaultedComparisonSemantic);
     if (HasCxxOutOfLineDefaultingIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxOutOfLineDefaultingSemantic);
+    if (HasCxxImmediateDefaultingIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxImmediateDefaultingSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2140,6 +2160,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,
+    kCxxImmediateDefaultingSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2252,6 +2273,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,
+    kCxxImmediateDefaultingSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

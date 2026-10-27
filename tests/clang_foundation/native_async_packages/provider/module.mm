@@ -559,3 +559,24 @@ NativeOutOfLineDefaulted::~NativeOutOfLineDefaulted()=default;
 NativeOutOfLineDefaulted native_module_defaulted(NativeOutOfLineDefaulted value) __objc3_async_frame {
   __objc3_await native_module_borrow_leaf(); return value;
 }
+
+struct NativeImmediate {
+  int value=42;
+  consteval NativeImmediate()=default;
+  consteval bool operator==(const NativeImmediate &) const=default;
+  constexpr int get() const { return value; }
+};
+struct NativeImmediateOut {
+  int value=42;
+  consteval NativeImmediateOut();
+};
+consteval NativeImmediateOut::NativeImmediateOut()=default;
+inline constexpr NativeImmediate native_immediate{};
+inline constexpr NativeImmediateOut native_immediate_out{};
+
+struct NativeConstexprOut {
+  int value=42;
+  constexpr NativeConstexprOut();
+};
+constexpr NativeConstexprOut::NativeConstexprOut()=default;
+inline constexpr NativeConstexprOut native_constexpr_out{};

@@ -121,6 +121,11 @@ inline constexpr const char *kCxxOutOfLineDefaultingSemantic =
 inline bool HasCxxOutOfLineDefaultingIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-out-of-line-defaulting:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxImmediateDefaultingSemantic =
+    "objc3.cxx-immediate-defaulting.v1";
+inline bool HasCxxImmediateDefaultingIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-immediate-defaulting:v1;") != std::string::npos;
+}
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);

@@ -73,7 +73,13 @@
     "NativeDerivedComparable",
     "native_module_compare",
     "NativeOutOfLineDefaulted",
-    "native_module_defaulted"
+    "native_module_defaulted",
+    "NativeImmediate",
+    "NativeImmediateOut",
+    "native_immediate",
+    "native_immediate_out",
+    "NativeConstexprOut",
+    "native_constexpr_out"
   ],
   "dependencies": []
 }

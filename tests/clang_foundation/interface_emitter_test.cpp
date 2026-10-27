@@ -842,6 +842,48 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxImmediateDefaulting() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
+      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-defaulted-comparisons.v1", "objc3.cxx-out-of-line-defaulting.v1",
+      "objc3.cxx-immediate-defaulting.v1", "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "immediate.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.immediate", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.immediate", "test");
+    };
+    const std::string source = "struct Immediate { int n=42; consteval Immediate()=default; "
+        "consteval bool operator==(const Immediate&) const=default; "
+        "constexpr int get() const { return n; } }; "
+        "struct Out { int n=42; consteval Out(); }; consteval Out::Out()=default; "
+        "inline constexpr Immediate answer{}; inline constexpr Out other{};";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto constexpr_source = source;
+    for (std::size_t pos=0; (pos=constexpr_source.find("consteval",pos))!=std::string::npos; pos+=9)
+      constexpr_source.replace(pos,9,"constexpr");
+    auto ordinary = emit(constexpr_source);
+    assert(ordinary.success && ordinary.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics, "objc3.cxx-immediate-defaulting.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxOutOfLineDefaulting() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1449,10 +1491,8 @@ void TestBoundedCxxSemanticInterfaces() {
         "};",
         "struct Default { int value=[] { return 42; }(); };",
         "struct Conditional { explicit(true) Conditional(int); };",
-        "struct Defaulted { consteval Defaulted(); }; consteval Defaulted::Defaulted() = default;",
         "struct Comparison { int n; friend bool operator==(const Comparison &a, const Comparison &b) "
         "{ return a.n==b.n; } };",
-        "struct Immediate { consteval Immediate() = default; };",
         "struct Nested { struct Inner { int value=[] { return 42; }(); }; Inner child; };",
         "int api(int argument=[] { return 42; }());", "inline int api() { return [] { return 42; }(); }",
         "extern constexpr int exported=[] { return 42; }();", "extern const int exported=[] { return 42; }();",
@@ -1497,6 +1537,7 @@ int main() {
   TestCxxDefinitions();
   TestCxxDefaultedComparisons();
   TestCxxOutOfLineDefaulting();
+  TestCxxImmediateDefaulting();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

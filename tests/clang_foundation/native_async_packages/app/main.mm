@@ -196,6 +196,18 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 
 int main() {
   {
+    static_assert(NativeImmediate{}.get()==42);
+    static_assert(NativeImmediate{}==NativeImmediate{});
+    static_assert(NativeImmediateOut{}.value==42);
+    static_assert(NativeConstexprOut{}.value==42 && native_constexpr_out.value==42);
+    NativeConstexprOut ordinary;
+    if (ordinary.value!=42) return 84;
+    static_assert(native_immediate.get()==42 && native_immediate_out.value==42);
+    NativeImmediate value{};
+    if (value.get()!=42 || (&native_immediate)->get()!=42) return 83;
+  }
+
+  {
     static_assert(NativeComparable{42,{1,2}}==NativeComparable{42,{1,2}});
     static_assert(NativeComparable{42,{1,2}}!=NativeComparable{42,{2,1}});
     static_assert(NativeFriendComparable{{42,{1,2}}}!=NativeFriendComparable{{43,{1,2}}});

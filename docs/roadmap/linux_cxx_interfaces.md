@@ -104,3 +104,7 @@ in-class defaulted member/hidden-friend comparisons with required
 The [2.18.0 source milestone](linux_cxx_out_of_line_defaulting.md) preserves
 out-of-line defaulted special members, native user-provided lifecycle ABI and
 provider-owned definitions under `objc3.cxx-out-of-line-defaulting.v1`.
+
+The [2.19.0 source milestone](linux_cxx_immediate_defaulting.md) preserves
+consteval defaulted members and explicit out-of-line constexpr state under
+`objc3.cxx-immediate-defaulting.v1` semantics.
