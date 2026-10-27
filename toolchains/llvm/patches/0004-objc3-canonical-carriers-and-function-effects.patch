@@ -45409,24 +45409,24 @@ index 000000000..96034dd71
 +void FamilyUse(const char *pointer __attribute__((noescape)));
 diff --git a/clang/test/ObjC3/Sema/retainable-families.m b/clang/test/ObjC3/Sema/retainable-families.m
 new file mode 100644
-index 000000000..133192a7e
+index 000000000..63b94e884
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/retainable-families.m
 @@ -0,0 +1,72 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc,c %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc,cxx %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/retainable-families.h -o %t-c17-mrc.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc,c %s
 +// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -emit-pch %S/Inputs/retainable-families.h -o %t-c17-arc.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c17-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c17-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc,c %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/retainable-families.h -o %t-c++23-mrc.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc,cxx %s
 +// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -emit-pch %S/Inputs/retainable-families.h -o %t-c++23-arc.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c++23-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c++23-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc,cxx %s
 +#ifndef FROM_PCH
 +#include "Inputs/retainable-families.h"
 +#endif
@@ -45484,7 +45484,7 @@ index 000000000..133192a7e
 +typedef struct FamilyObject *RepeatedFamily __attribute__((objc_retainable_family(Example)));
 +typedef struct FamilyObject *RepeatedFamily __attribute__((objc_retainable_family(Other))); // expected-error {{typedef redeclaration changes its family}}
 +void preserved_signature(FamilyRef value);
-+void preserved_signature(void *value); // expected-error {{conflicting retainable family function type contract}}
++void preserved_signature(void *value); // c-error {{conflicting retainable family function type contract}}
 diff --git a/clang/test/ObjC3/Sema/retainable-family-analyzer.m b/clang/test/ObjC3/Sema/retainable-family-analyzer.m
 new file mode 100644
 index 000000000..a8f05a840
