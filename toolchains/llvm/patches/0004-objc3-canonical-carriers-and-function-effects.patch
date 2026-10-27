@@ -37208,10 +37208,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..c49400a03
+index 000000000..cf463e701
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2162 @@
+@@ -0,0 +1,2147 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37437,7 +37437,6 @@ index 000000000..c49400a03
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
-+  llvm::DenseMap<const VarDecl *, SmallVector<const LambdaExpr *, 2>> ReferenceCaptures;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedLambdaStorage;
 +  llvm::DenseMap<std::pair<const Expr *, unsigned>, unsigned> ClosureLoans;
@@ -37878,8 +37877,6 @@ index 000000000..c49400a03
 +        if (Capture.capturesVariable())
 +          if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar())) {
 +            addVariable(Variable);
-+            if (Capture.getCaptureKind() == LCK_ByRef)
-+              ReferenceCaptures[Variable].push_back(Lambda);
 +          }
 +      for (const Expr *Initializer : Lambda->capture_inits())
 +        collect(Initializer, Scope);
@@ -38443,17 +38440,12 @@ index 000000000..c49400a03
 +      if (InheritedLambdaStorage.count(Destination.first))
 +        diagnose(Operation, "persistent storage in a C++ lambda capture");
 +      bool ReferenceCaptured = InheritedReferenceCaptures.count(Destination.first);
-+      auto Captures = ReferenceCaptures.find(Destination.first);
-+      if (Captures != ReferenceCaptures.end())
-+        for (const auto *Lambda : Captures->second)
-+          ReferenceCaptured |= State.CaptureReady.test(ClosureSlots.lookup(Lambda));
-+      for (unsigned I = 0; I != State.CapturedReferenceTargets.size(); ++I)
-+        if (State.CaptureReady.test(I)) {
-+          const Value &Targets = State.CapturedReferenceTargets[I];
-+          for (int Target = Targets.find_first(); Target >= 0;
-+               Target = Targets.find_next(Target))
-+            ReferenceCaptured |= location(Target).first == Destination.first;
-+        }
++      // A capture on any incoming path can already have escaped. Snapshot
++      // readiness is a must fact; reference hazards deliberately use may facts.
++      for (const Value &Targets : State.CapturedReferenceTargets)
++        for (int Target = Targets.find_first(); Target >= 0;
++             Target = Targets.find_next(Target))
++          ReferenceCaptured |= location(Target).first == Destination.first;
 +      if (ReferenceCaptured)
 +        diagnose(Operation, "mutation of storage captured by reference by a C++ lambda");
 +      if (!Destination.first || !Destination.first->hasLocalStorage())
@@ -38993,17 +38985,10 @@ index 000000000..c49400a03
 +                  if (Capture.capturesVariable())
 +                    if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
 +                      Nested.InheritedLambdaStorage.insert(Variable);
-+              for (unsigned I = 0; I != State.CapturedReferenceTargets.size(); ++I)
-+                if (State.CaptureReady.test(I)) {
-+                  const auto &Targets = State.CapturedReferenceTargets[I];
-+                  for (int Target = Targets.find_first(); Target >= 0;
-+                       Target = Targets.find_next(Target))
-+                    if (const VarDecl *Variable = location(Target).first)
-+                      Nested.InheritedReferenceCaptures.insert(Variable);
-+                }
-+              for (const auto &[Variable, Captures] : ReferenceCaptures)
-+                for (const auto *CapturedBy : Captures)
-+                  if (State.CaptureReady.test(ClosureSlots.lookup(CapturedBy)))
++              for (const Value &Targets : State.CapturedReferenceTargets)
++                for (int Target = Targets.find_first(); Target >= 0;
++                     Target = Targets.find_next(Target))
++                  if (const VarDecl *Variable = location(Target).first)
 +                    Nested.InheritedReferenceCaptures.insert(Variable);
 +              // Seed the enclosing storage graph for ordinary aliases and
 +              // transitive address captures, before initializing init-captures.
@@ -43302,10 +43287,10 @@ index 000000000..81b4197d7
 +struct BorrowedAddress { const char **pointer; };
 diff --git a/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 new file mode 100644
-index 000000000..d888e75d1
+index 000000000..596f77639
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,136 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -fsyntax-only -verify %s
@@ -43387,6 +43372,11 @@ index 000000000..d888e75d1
 +  auto work=[holder] {escape(*holder.pointer);};
 +  pointer=bytes(owner); // expected-error {{mutation of storage captured by reference}}
 +  work();
++}
++void conditional_reference(id owner,int choose) {
++  const char *pointer=nullptr;
++  if (choose) {auto work=[&pointer] {escape(pointer);};sink(work);}
++  pointer=bytes(owner); // expected-error {{mutation of storage captured by reference}}
 +}
 +void mutable_capture(id owner) {
 +  const char *pointer=bytes(owner);

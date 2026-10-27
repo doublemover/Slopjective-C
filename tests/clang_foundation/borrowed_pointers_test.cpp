@@ -223,6 +223,7 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
              "void f(id o){const char *p=0;AddressHolder h{&p};auto work=[h]{escape(*h.pointer);};p=bytes(o);work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p]()mutable{use_noescape(p);};work();}",
              "void f(id o){const char *p=bytes(o);auto work=[p](auto){use_noescape(p);};work(0);}",
+             "void f(id o,int choose){const char *p=0;if(choose){auto work=[&p]{escape(p);};sink(work);}p=bytes(o);}",
              "void f(id o){auto work=[o,p=(const char*)0]()mutable{p=bytes(o);};work();}",
              "void f(id o){struct V{mutable const char *p;};auto work=[o,v=V{0}]{v.p=bytes(o);};work();}"})
       Expect(Request(Root,LambdaHeader+Code,Language,Standard,ARC),false,"borrowed pointer escapes");
