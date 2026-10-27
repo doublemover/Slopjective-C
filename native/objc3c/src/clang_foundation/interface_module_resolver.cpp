@@ -46,6 +46,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-out-of-line-defaulting.v1",
     "objc3.cxx-immediate-defaulting.v1",
     "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-lambda-expressions.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

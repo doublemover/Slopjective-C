@@ -112,3 +112,7 @@ consteval defaulted members and explicit out-of-line constexpr state under
 The [2.20.0 source milestone](linux_cxx_namespace_attributes.md) preserves modeled
 namespace attributes, contextual visibility and inherited namespace SPI policy
 under `objc3.cxx-namespace-attributes.v1`.
+
+The [2.21.0 source milestone](linux_cxx_lambda_expressions.md) binds local
+non-generic lambda expressions, captures and copied closures in inline/default
+contracts under `objc3.cxx-lambda-expressions.v1`.

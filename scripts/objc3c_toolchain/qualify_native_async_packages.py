@@ -198,6 +198,11 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using capability')
     if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
         raise ValueError('C++ package lost its using-directive')
+    if 'objc3.cxx-lambda-expressions.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its lambda-expression capability')
+    for name in ('native_closure', 'NativeClosureDefaults', 'native_closure_frame'):
+        if ';cxx-lambda-expressions:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost lambda-expression identity: ' + name)
     if 'objc3.cxx-namespace-attributes.v1' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its namespace attribute capability')
     for name in ('NativeHiddenScope', 'NativeVersioned::v2'):

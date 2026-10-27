@@ -131,6 +131,10 @@ inline constexpr const char *kCxxNamespaceAttributeSemantic =
 inline bool HasCxxNamespaceAttributeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-namespace-attributes:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxLambdaExpressionSemantic = "objc3.cxx-lambda-expressions.v1";
+inline bool HasCxxLambdaExpressionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-lambda-expressions:v1;") != std::string::npos;
+}
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);

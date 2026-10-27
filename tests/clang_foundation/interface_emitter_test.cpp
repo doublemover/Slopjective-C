@@ -842,6 +842,49 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxLambdaExpressions() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-lambda-expressions.v1", "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "closures.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.closures", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.closures", "test");
+    };
+    const std::string source =
+        "int api(int n=[base=40] { return base+2; }()); "
+        "struct Value { int n=[] { return 40; }(); int get(int delta=[] {return 2;}()) const {return n+delta;} }; "
+        "inline int compute(int n) { auto first=[base=n](int delta) {return base+delta;}; "
+        "auto second=[copy=first] {return copy(2);}; int state=n; "
+        "auto reference=[&state](int delta) {state+=delta; return state;}; "
+        "auto invoke=[&] {return reference(2);}; return invoke()==second() ? second() : 0; }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto changed = source;
+    changed.replace(changed.find("copy(2)"), 7, "copy(3)");
+    auto different = emit(changed);
+    assert(different.success && different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    auto generic = emit("inline int generic(int n) { return [](auto value) {return value;}(n); }");
+    assert(!generic.success);
+    std::erase(decoded->required_semantics, "objc3.cxx-lambda-expressions.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxNamespaceAttributes() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-namespaces.v1",
@@ -1540,21 +1583,21 @@ void TestBoundedCxxSemanticInterfaces() {
     enum_identity = emitted.identity.semantic_fingerprint;
   }
   for (const char *source :
-       {"namespace nested { inline int api() { return [] { return 42; }(); } }",
+       {"namespace nested { inline int api() { return [](auto value) { return value; }(42); } }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
-        "second=1; int get() const { return [] { return 42; }(); } };",
+        "second=1; int get() const { return [](auto value) { return value; }(42); } };",
 
-        "struct Method { int value; inline int get() const { return [] { return 42; }(); } "
+        "struct Method { int value; inline int get() const { return [](auto value) { return value; }(42); } "
         "};",
-        "struct Default { int value=[] { return 42; }(); };",
+        "struct Default { int value=[](auto value) { return value; }(42); };",
         "struct Conditional { explicit(true) Conditional(int); };",
         "struct Comparison { int n; friend bool operator==(const Comparison &a, const Comparison &b) "
         "{ return a.n==b.n; } };",
-        "struct Nested { struct Inner { int value=[] { return 42; }(); }; Inner child; };",
-        "int api(int argument=[] { return 42; }());", "inline int api() { return [] { return 42; }(); }",
-        "extern constexpr int exported=[] { return 42; }();", "extern const int exported=[] { return 42; }();",
-        "constexpr int evaluated() { return [] { return 42; }(); }",
+        "struct Nested { struct Inner { int value=[](auto value) { return value; }(42); }; Inner child; };",
+        "int api(int argument=[](auto value) { return value; }(42));", "inline int api() { return [](auto value) { return value; }(42); }",
+        "extern constexpr int exported=[](auto value) { return value; }(42);", "extern const int exported=[](auto value) { return value; }(42);",
+        "constexpr int evaluated() { return [](auto value) { return value; }(42); }",
         "union Overlap { int one; long two; };"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
@@ -1597,6 +1640,7 @@ int main() {
   TestCxxOutOfLineDefaulting();
   TestCxxImmediateDefaulting();
   TestCxxNamespaceAttributes();
+  TestCxxLambdaExpressions();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

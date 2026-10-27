@@ -25,7 +25,7 @@ namespace objc3::clang_foundation {
 namespace {
 
 namespace fs = std::filesystem;
-const std::array<llvm::StringRef, 27> kSupportedSemantics = {
+const std::array<llvm::StringRef, 28> kSupportedSemantics = {
     "objc3.canonical-function-effects.v1",
     "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",
@@ -48,6 +48,7 @@ const std::array<llvm::StringRef, 27> kSupportedSemantics = {
     "objc3.cxx-out-of-line-defaulting.v1",
     "objc3.cxx-immediate-defaulting.v1",
     "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-lambda-expressions.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

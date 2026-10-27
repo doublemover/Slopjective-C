@@ -280,6 +280,13 @@ int main() {
     uint32_t done=0;
     if (objc3_executor_pump(executor,100,&done)!=OBJC3_SERVICE_OK || returned.result().get()!=42) return 82;
   }
+  {
+    NativeClosureDefaults defaults;
+    if (defaults.get()!=42 || native_closure(40)!=42) return 86;
+    auto frame=__objc3_async_from_frame<int>(native_closure_frame()).start(executor);
+    uint32_t done=0;
+    if (objc3_executor_pump(executor,100,&done)!=OBJC3_SERVICE_OK || frame.result()!=42) return 87;
+  }
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||

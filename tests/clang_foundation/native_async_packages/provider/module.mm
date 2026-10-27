@@ -595,3 +595,20 @@ namespace NativeVersioned {
   }
 }
 int NativeVersioned::v2::get(Value value) { return value.n+2; }
+
+inline int native_closure(int value) {
+  int current=value;
+  auto bump=[&current](int delta) { current+=delta; return current; };
+  auto invoke=[&] { return bump(2); };
+  if (invoke()!=value+2) return 0;
+  auto add=[base=value](int delta) { return base+delta; };
+  auto apply=[copy=add] { return copy(2); };
+  return apply();
+}
+struct NativeClosureDefaults {
+  int value=[] { return 40; }();
+  int get(int delta=[] { return 2; }()) const { return value+delta; }
+};
+int native_closure_frame(int value=[base=40] { return base; }()) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf(); return native_closure(value);
+}

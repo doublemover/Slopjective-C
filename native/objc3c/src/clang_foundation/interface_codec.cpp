@@ -417,6 +417,13 @@ llvm::Error ValidateForEncoding(
       kCxxNamespaceAttributeSemantic) != sidecar.required_semantics.end();
   if (has_namespace_attributes != namespace_attribute_capability)
     return Invalid("C++ namespace attribute identity and required capability must agree");
+  const bool has_lambdas = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLambdaExpressionIdentity);
+  const bool lambda_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_lambdas != lambda_capability)
+    return Invalid("C++ lambda identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

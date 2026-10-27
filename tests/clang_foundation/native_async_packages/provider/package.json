@@ -81,7 +81,10 @@
     "NativeConstexprOut",
     "native_constexpr_out",
     "NativeHiddenScope",
-    "NativeVersioned"
+    "NativeVersioned",
+    "native_closure",
+    "NativeClosureDefaults",
+    "native_closure_frame"
   ],
   "dependencies": []
 }

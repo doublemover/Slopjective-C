@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ local lambda expressions
+
+The [2.21.0 source milestone](linux_cxx_lambda_expressions.md) binds local
+non-generic closures, capture/member identities and referenced dependencies in
+inline/default contracts. SDK/archive work and broad frontend/sanitizer
+validation remain deferred.
+
 ## C++ namespace attributes and policy
 
 The [2.20.0 source milestone](linux_cxx_namespace_attributes.md) binds modeled
