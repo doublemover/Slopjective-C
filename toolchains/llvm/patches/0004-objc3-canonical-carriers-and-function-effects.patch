@@ -3918,7 +3918,7 @@ index d743717ad..3e26f08f3 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..a84968f39 100644
+index e0b62591a..1c2506c60 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -4084,16 +4084,18 @@ index e0b62591a..a84968f39 100644
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -890,6 +1032,8 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -890,6 +1032,10 @@ bool ASTStructuralEquivalence::isEquivalent(
    if (T1.isNull() || T2.isNull())
      return T1.isNull() && T2.isNull();
  
++  if (!sameObjC3RetainableFamilyType(Context.FromCtx, T1, Context.ToCtx, T2))
++    return false;
 +  if (!sameObjC3BorrowedType(Context.FromCtx, T1, Context.ToCtx, T2))
 +    return false;
    QualType OrigT1 = T1;
    QualType OrigT2 = T2;
  
-@@ -963,6 +1107,23 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -963,6 +1109,23 @@ bool ASTStructuralEquivalence::isEquivalent(
        return false;
      break;
  
@@ -4117,7 +4119,7 @@ index e0b62591a..a84968f39 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,9 +1307,26 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,9 +1309,26 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -4144,10 +4146,15 @@ index e0b62591a..a84968f39 100644
        if (!IsStructurallyEquivalent(Context, Proto1->getParamType(I),
                                      Proto2->getParamType(I)))
          return false;
-@@ -2446,12 +2624,43 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2446,12 +2626,55 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
++  if (!sameObjC3RetainableFamilyType(Context.FromCtx,
++      Context.FromCtx.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D1),
++      Context.ToCtx,
++      Context.ToCtx.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D2)))
++    return false;
 +  auto A = getObjC3ResourceTypeContract(Context.FromCtx,
 +      Context.FromCtx.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, D1));
 +  auto B = getObjC3ResourceTypeContract(Context.ToCtx,
@@ -4182,13 +4189,20 @@ index e0b62591a..a84968f39 100644
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       FunctionDecl *D1, FunctionDecl *D2) {
++  const Attr *FirstOperation = getObjC3FamilyOperation(D1);
++  const Attr *SecondOperation = getObjC3FamilyOperation(D2);
++  if (bool(FirstOperation) != bool(SecondOperation) ||
++      (FirstOperation &&
++       (FirstOperation->getKind() != SecondOperation->getKind() ||
++        getObjC3FamilyOperationName(FirstOperation)->getName() !=
++        getObjC3FamilyOperationName(SecondOperation)->getName()))) return false;
 +  if (!sameObjC3BorrowedSignature(Context.FromCtx, D1, Context.ToCtx, D2))
 +    return false;
 +  if (!haveSameObjC3Isolation(D1, D2)) return false;
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2698,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2489,6 +2712,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -4199,7 +4213,7 @@ index e0b62591a..a84968f39 100644
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2813,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2600,6 +2827,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -4217,7 +4231,7 @@ index e0b62591a..a84968f39 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3008,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+@@ -2784,8 +3022,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -5790,24 +5804,30 @@ index 59732ff0f..0d5627100 100644
                                           SourceRange Range) {
    QualType ElementType = T->getElementType();
 diff --git a/clang/lib/AST/ODRHash.cpp b/clang/lib/AST/ODRHash.cpp
-index 46a4e256e..caf0afacb 100644
+index 46a4e256e..ff08b8318 100644
 --- a/clang/lib/AST/ODRHash.cpp
 +++ b/clang/lib/AST/ODRHash.cpp
-@@ -17,9 +17,79 @@
+@@ -17,9 +17,92 @@
  #include "clang/AST/DeclVisitor.h"
  #include "clang/AST/NestedNameSpecifier.h"
  #include "clang/AST/TypeVisitor.h"
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3Borrowed.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
  
  using namespace clang;
  
 +namespace {
-+void addObjC3BorrowedTypeIdentity(llvm::FoldingSetNodeID &ID,
++void addObjC3OwnershipTypeIdentity(llvm::FoldingSetNodeID &ID,
 +                                  const ASTContext &Context, QualType Type) {
 +  ID.AddBoolean(!Type.isNull());
 +  if (Type.isNull())
 +    return;
++  if (const auto *Family = getObjC3RetainableFamily(Context, Type)) {
++    ID.AddString("objc3.retainable-family");
++    ID.AddString(Family->getFamily()->getName());
++    ID.AddBoolean(Type->isObjCRetainableType());
++  }
 +  ID.AddBoolean(isObjC3BorrowedType(Context, Type));
 +  while (true) {
 +    QualType Next = Type.getSingleStepDesugaredType(Context);
@@ -5818,40 +5838,47 @@ index 46a4e256e..caf0afacb 100644
 +  if (Type->isPointerType() || Type->isReferenceType() ||
 +      Type->isBlockPointerType()) {
 +    ID.AddInteger(1);
-+    addObjC3BorrowedTypeIdentity(ID, Context, Type->getPointeeType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Type->getPointeeType());
 +  } else if (const auto *Array = dyn_cast<ArrayType>(Type.getTypePtr())) {
 +    ID.AddInteger(2);
-+    addObjC3BorrowedTypeIdentity(ID, Context, Array->getElementType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Array->getElementType());
 +  } else if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Type.getTypePtr())) {
 +    ID.AddInteger(4);
-+    addObjC3BorrowedTypeIdentity(ID, Context, Optional->getElementType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Optional->getElementType());
 +  } else if (const auto *Result = dyn_cast<ObjC3ResultType>(Type.getTypePtr())) {
 +    ID.AddInteger(5);
-+    addObjC3BorrowedTypeIdentity(ID, Context, Result->getSuccessType());
-+    addObjC3BorrowedTypeIdentity(ID, Context, Result->getErrorType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Result->getSuccessType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Result->getErrorType());
 +  } else if (const auto *Function = dyn_cast<FunctionType>(Type.getTypePtr())) {
 +    ID.AddInteger(3);
-+    addObjC3BorrowedTypeIdentity(ID, Context, Function->getReturnType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Function->getReturnType());
 +    if (const auto *Prototype = dyn_cast<FunctionProtoType>(Function)) {
 +      ID.AddInteger(Prototype->getNumParams());
 +      for (QualType Parameter : Prototype->param_types())
-+        addObjC3BorrowedTypeIdentity(ID, Context, Parameter);
++        addObjC3OwnershipTypeIdentity(ID, Context, Parameter);
 +    }
 +  } else {
 +    ID.AddInteger(0);
 +  }
 +}
-+void addObjC3BorrowedIdentity(llvm::FoldingSetNodeID &ID, const Decl *D) {
++void addObjC3OwnershipIdentity(llvm::FoldingSetNodeID &ID, const Decl *D) {
 +  const ASTContext &Context = D->getASTContext();
 +  if (const auto *Value = dyn_cast<ValueDecl>(D))
-+    addObjC3BorrowedTypeIdentity(ID, Context, Value->getType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Value->getType());
 +  if (const auto *Alias = dyn_cast<TypedefNameDecl>(D))
-+    addObjC3BorrowedTypeIdentity(ID, Context, Alias->getUnderlyingType());
++    addObjC3OwnershipTypeIdentity(ID, Context,
++        Context.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, Alias));
 +  if (const auto *Method = dyn_cast<ObjCMethodDecl>(D)) {
-+    addObjC3BorrowedTypeIdentity(ID, Context, Method->getReturnType());
++    addObjC3OwnershipTypeIdentity(ID, Context, Method->getReturnType());
 +    for (const ParmVarDecl *Parameter : Method->parameters())
-+      addObjC3BorrowedTypeIdentity(ID, Context, Parameter->getType());
++      addObjC3OwnershipTypeIdentity(ID, Context, Parameter->getType());
 +  }
++  if (const auto *Function = dyn_cast<FunctionDecl>(D))
++    if (const Attr *Operation = getObjC3FamilyOperation(Function)) {
++      ID.AddString(isa<ObjCFamilyRetainAttr>(Operation) ? "objc3.family-retain" :
++          isa<ObjCFamilyReleaseAttr>(Operation) ? "objc3.family-release" : "objc3.family-autorelease");
++      ID.AddString(getObjC3FamilyOperationName(Operation)->getName());
++    }
 +  const auto *Contract = getObjC3BorrowedReturnContract(D);
 +  ID.AddBoolean(Contract);
 +  if (Contract)
@@ -5873,16 +5900,16 @@ index 46a4e256e..caf0afacb 100644
  void ODRHash::AddStmt(const Stmt *S) {
    assert(S && "Expecting non-null pointer.");
    S->ProcessODRHash(ID, *this);
-@@ -302,6 +372,8 @@ public:
+@@ -302,6 +385,8 @@ public:
    }
  
    void Visit(const Decl *D) {
 +    addObjC3IsolationIdentity(ID, D);
-+    addObjC3BorrowedIdentity(ID, D);
++    addObjC3OwnershipIdentity(ID, D);
      ID.AddInteger(D->getKind());
      Inherited::Visit(D);
    }
-@@ -392,6 +464,8 @@ public:
+@@ -392,6 +477,8 @@ public:
  
    void VisitObjCMethodDecl(const ObjCMethodDecl *Method) {
      ID.AddInteger(Method->getDeclKind());
@@ -5891,7 +5918,7 @@ index 46a4e256e..caf0afacb 100644
      Hash.AddBoolean(Method->isInstanceMethod()); // false if class method
      Hash.AddBoolean(Method->isVariadic());
      Hash.AddBoolean(Method->isSynthesizedAccessorStub());
-@@ -641,6 +715,7 @@ void ODRHash::AddRecordDecl(const RecordDecl *Record) {
+@@ -641,6 +728,7 @@ void ODRHash::AddRecordDecl(const RecordDecl *Record) {
  }
  
  void ODRHash::AddObjCInterfaceDecl(const ObjCInterfaceDecl *IF) {
@@ -5899,16 +5926,16 @@ index 46a4e256e..caf0afacb 100644
    AddDecl(IF);
  
    auto *SuperClass = IF->getSuperClass();
-@@ -690,6 +765,8 @@ void ODRHash::AddFunctionDecl(const FunctionDecl *Function,
+@@ -690,6 +778,8 @@ void ODRHash::AddFunctionDecl(const FunctionDecl *Function,
      DC = DC->getParent();
    }
  
 +  addObjC3IsolationIdentity(ID, Function);
-+  addObjC3BorrowedIdentity(ID, Function);
++  addObjC3OwnershipIdentity(ID, Function);
    ID.AddInteger(Function->getDeclKind());
  
    const auto *SpecializationArgs = Function->getTemplateSpecializationArgs();
-@@ -1052,8 +1129,17 @@ public:
+@@ -1052,8 +1142,17 @@ public:
  
    void VisitFunctionProtoType(const FunctionProtoType *T) {
      ID.AddInteger(T->getNumParams());
@@ -5928,6 +5955,19 @@ index 46a4e256e..caf0afacb 100644
  
      VisitFunctionType(T);
    }
+@@ -1185,6 +1284,12 @@ public:
+   }
+ 
+   void VisitTypedefType(const TypedefType *T) {
++    if (const auto *Family = getObjC3RetainableFamily(
++        T->getDecl()->getASTContext(), QualType(T, 0))) {
++      ID.AddString("objc3.retainable-family");
++      ID.AddString(Family->getFamily()->getName());
++      ID.AddBoolean(T->isObjCRetainableType());
++    }
+     ID.AddInteger(llvm::to_underlying(T->getKeyword()));
+     AddNestedNameSpecifier(T->getQualifier());
+     AddDecl(T->getDecl());
 diff --git a/clang/lib/AST/ObjC3MatchNodes.cpp b/clang/lib/AST/ObjC3MatchNodes.cpp
 new file mode 100644
 index 000000000..ee728c92d
@@ -36176,10 +36216,10 @@ index 000000000..654755f39
 +}
 diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
 new file mode 100644
-index 000000000..2f6150a7f
+index 000000000..41f1b70a9
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ResourceTypes.h
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,181 @@
 +//===--- ObjC3ResourceTypes.h - Scalar resource typedef contracts -*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -36204,8 +36244,10 @@ index 000000000..2f6150a7f
 +  }
 +  return nullptr;
 +}
-+inline bool sameObjC3RetainableFamilyType(const ASTContext &Context,
-+                                         QualType Left, QualType Right) {
++inline bool sameObjC3RetainableFamilyType(const ASTContext &LeftContext,
++                                         QualType Left,
++                                         const ASTContext &RightContext,
++                                         QualType Right) {
 +  SmallVector<std::pair<QualType, QualType>, 16> Pending{{Left, Right}};
 +  llvm::SmallDenseSet<std::pair<const Type *, const Type *>, 16> Seen;
 +  while (!Pending.empty()) {
@@ -36215,13 +36257,13 @@ index 000000000..2f6150a7f
 +      continue;
 +    }
 +    if (!Seen.insert({L.getTypePtr(), R.getTypePtr()}).second) continue;
-+    const auto *A = getObjC3RetainableFamily(Context, L);
-+    const auto *B = getObjC3RetainableFamily(Context, R);
++    const auto *A = getObjC3RetainableFamily(LeftContext, L);
++    const auto *B = getObjC3RetainableFamily(RightContext, R);
 +    if (bool(A) != bool(B) || (A &&
-+        (A->getFamily() != B->getFamily() ||
++        (A->getFamily()->getName() != B->getFamily()->getName() ||
 +         L->isObjCRetainableType() != R->isObjCRetainableType()))) return false;
-+    L = L.getDesugaredType(Context);
-+    R = R.getDesugaredType(Context);
++    L = L.getDesugaredType(LeftContext);
++    R = R.getDesugaredType(RightContext);
 +    if ((L->isPointerType() && R->isPointerType()) ||
 +        (L->isReferenceType() && R->isReferenceType()) ||
 +        (L->isBlockPointerType() && R->isBlockPointerType()))
@@ -36236,11 +36278,18 @@ index 000000000..2f6150a7f
 +            Pending.emplace_back(LP->getParamType(I), RP->getParamType(I));
 +      }
 +    }
-+    if (const auto *LA = Context.getAsArrayType(L))
-+      if (const auto *RA = Context.getAsArrayType(R))
++    if (const auto *LM = L->getAs<MemberPointerType>())
++      if (const auto *RM = R->getAs<MemberPointerType>())
++        Pending.emplace_back(LM->getPointeeType(), RM->getPointeeType());
++    if (const auto *LA = LeftContext.getAsArrayType(L))
++      if (const auto *RA = RightContext.getAsArrayType(R))
 +        Pending.emplace_back(LA->getElementType(), RA->getElementType());
 +  }
 +  return true;
++}
++inline bool sameObjC3RetainableFamilyType(const ASTContext &Context,
++                                         QualType Left, QualType Right) {
++  return sameObjC3RetainableFamilyType(Context, Left, Context, Right);
 +}
 +inline const IdentifierInfo *getObjC3FamilyOperationName(const Attr *Attribute) {
 +  if (const auto *A = dyn_cast<ObjCFamilyRetainAttr>(Attribute)) return A->getFamily();
@@ -45487,16 +45536,17 @@ index 000000000..63b94e884
 +void preserved_signature(void *value); // c-error {{conflicting retainable family function type contract}}
 diff --git a/clang/test/ObjC3/Sema/retainable-family-analyzer.m b/clang/test/ObjC3/Sema/retainable-family-analyzer.m
 new file mode 100644
-index 000000000..a8f05a840
+index 000000000..6d3e4516b
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/retainable-family-analyzer.m
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,25 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -analyze -analyzer-checker=core,osx.cocoa.RetainCount -analyzer-output=text -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -analyze -analyzer-checker=core,osx.cocoa.RetainCount -analyzer-output=text -verify %s
 +typedef struct FamilyObject *FamilyRef __attribute__((objc_retainable_family(Example)));
 +FamilyRef create(void) __attribute__((cf_returns_retained));
 +FamilyRef hold(FamilyRef value) __attribute__((objc_family_retain(Example)));
 +void drop(FamilyRef value) __attribute__((objc_family_release(Example)));
++FamilyRef schedule(FamilyRef value) __attribute__((objc_family_autorelease(Example)));
 +void use(FamilyRef value);
 +void balanced(void) {
 +  FamilyRef owner=create();
@@ -45509,4 +45559,9 @@ index 000000000..a8f05a840
 +  FamilyRef owner=create(); // expected-note {{Call to function 'create' returns a Core Foundation object of type 'FamilyRef' with a +1 retain count}}
 +  drop(owner); // expected-note {{Object released}}
 +  drop(owner); // expected-warning {{Reference-counted object is used after it is released}} expected-note {{Reference-counted object is used after it is released}}
++}
++void autorelease_balance(void) {
++  FamilyRef owner=create();
++  FamilyRef alias=schedule(owner);
++  use(alias);
 +}

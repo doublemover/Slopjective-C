@@ -21,6 +21,8 @@ static analyzer receives explicit increment/decrement/autorelease summaries and
 identity-result behavior, independent of function naming conventions. This does
 not add general ownership counts to the mandatory borrowed CFG analysis.
 
+Native structural equivalence and ODR hashing distinguish family types and
+operations across AST contexts; incompatible declarations cannot be unified.
 Generated PCH/AST import and polished declarations preserve family markers,
 operation names and `NSObject`. Native interface ownership identity includes the
 family name, integration status and operation. Source-free readers reparse those
