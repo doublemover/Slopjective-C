@@ -32,3 +32,8 @@ consumption/expiry, overwritten aliases and independent/retargeted ARC holders.
 Frontend witnesses add the key positive/negative cases and source-free publication
 of a concrete mutable borrowing closure. Broader frontend/package and SDK checks
 remain batched after implementation; runtime and extension ABI layouts are unchanged.
+
+The [combined System 2.10–2.12 receipt](../support/linux_captured_callable_ownership_progress.json)
+records the completed native, frontend and focused source-free package batch.
+Broader runtime/sanitizer matrices and installed delivery retain their separate
+checkpoints.

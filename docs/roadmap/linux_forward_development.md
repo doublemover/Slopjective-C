@@ -35,13 +35,20 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+The [System 2.10–2.12 source receipt](../support/linux_captured_callable_ownership_progress.json)
+records **398 compiler regressions**, **190 native unit tests**, all **33 frontend
+suites**, **15 tooling tests** and **24 source-free package configurations /
+96 commands** across normal, eager-import and ASan/UBSan execution. Three platform
+cases remain unsupported. These source checks include mutable and record-captured
+consuming closure publication; SDK 2.33 remains the accepted archive.
+
 ## Captured callable paths
 
 The [System 2.12.0 source span](linux_borrowed_callable_paths.md) forwards known
 invocation effects through callable fields and array elements of captured records.
 Only invoked paths contribute effects; nested captures, aggregate init-captures,
 constant/dynamic indices and structural ARC copies share the same storage facts.
-Broader validation follows the accumulated implementation batch.
+The combined source receipt above records its native/frontend/package checks.
 
 ## Mutable lambda capture precision
 

@@ -25,3 +25,8 @@ lambda forwarding. Frontend witnesses repeat lifetime and precision checks and
 publish a concrete record-captured consuming closure through a source-free
 interface. Broader validation is batched with System 2.10–2.11; SDK 2.33 remains
 the accepted archive. Full Strict System conformance is not claimed.
+
+The [combined System 2.10–2.12 receipt](../support/linux_captured_callable_ownership_progress.json)
+records the completed native, frontend and focused source-free package batch.
+Broader runtime/sanitizer matrices and installed delivery retain their separate
+checkpoints.

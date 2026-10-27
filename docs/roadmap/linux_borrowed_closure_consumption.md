@@ -36,3 +36,8 @@ and publish a safe concrete consuming closure in a source-free inline body.
 Broader native/frontend/package validation remains batched after implementation.
 Full Strict System conformance is not claimed. Runtime/extension ABI layouts
 remain unchanged; compiler-dependent PCH, interfaces and packages must be rebuilt.
+
+The [combined System 2.10–2.12 receipt](../support/linux_captured_callable_ownership_progress.json)
+records the completed native, frontend and focused source-free package batch.
+Broader runtime/sanitizer matrices and installed delivery retain their separate
+checkpoints.
