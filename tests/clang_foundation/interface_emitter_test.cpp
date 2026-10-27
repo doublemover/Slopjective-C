@@ -842,6 +842,50 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxThreadLocalData() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-definitions.v1", "objc3.cxx-thread-local.v1", "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "thread-data.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.threads", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.threads", "test");
+    };
+    const std::string source =
+        "int initial(); thread_local int external=40; inline thread_local int shared=initial(); "
+        "struct State { static thread_local int value; inline static thread_local int shared=initial(); }; "
+        "thread_local int State::value=40; "
+        "inline int local() { static thread_local int n=initial(); return ++n; }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    assert(emitted.source_bytes.find("extern thread_local int external") != std::string::npos);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto changed = source;
+    changed.replace(changed.find("thread_local int external"), 13, "");
+    auto ordinary = emit(changed);
+    assert(ordinary.success && ordinary.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    auto local_ordinary = source;
+    local_ordinary.replace(local_ordinary.find("static thread_local int n"),
+                           std::string("static thread_local int n").size(), "static int n");
+    auto local_changed = emit(local_ordinary);
+    assert(local_changed.success && local_changed.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics, "objc3.cxx-thread-local.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxLambdaExpressions() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1641,6 +1685,7 @@ int main() {
   TestCxxImmediateDefaulting();
   TestCxxNamespaceAttributes();
   TestCxxLambdaExpressions();
+  TestCxxThreadLocalData();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

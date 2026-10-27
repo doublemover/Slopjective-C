@@ -116,3 +116,8 @@ under `objc3.cxx-namespace-attributes.v1`.
 The [2.21.0 source milestone](linux_cxx_lambda_expressions.md) binds local
 non-generic lambda expressions, captures and copied closures in inline/default
 contracts under `objc3.cxx-lambda-expressions.v1`.
+
+The [2.22.0 source milestone](linux_cxx_thread_local.md) preserves C++ thread-local
+global/class-static/inline data and local static storage under
+`objc3.cxx-thread-local.v1`, including native per-thread lifetime and shared
+provider/consumer storage.

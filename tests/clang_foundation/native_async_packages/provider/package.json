@@ -84,7 +84,18 @@
     "NativeVersioned",
     "native_closure",
     "NativeClosureDefaults",
-    "native_closure_frame"
+    "native_closure_frame",
+    "native_thread_initializer",
+    "NativeThreadLifetime",
+    "native_thread_value",
+    "native_inline_thread_value",
+    "NativeThreadState",
+    "native_thread_object",
+    "native_inline_thread_object",
+    "native_local_thread_value",
+    "native_thread_local_bridge",
+    "native_thread_sum",
+    "native_thread_lifetimes"
   ],
   "dependencies": []
 }

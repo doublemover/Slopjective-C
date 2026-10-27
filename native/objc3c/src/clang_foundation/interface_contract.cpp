@@ -386,6 +386,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
   if (has_lambdas != lambda_capability)
     Add(result, "O3IFC038", "C++ lambda identity and required capability must agree", expected.canonical_name);
+  const bool has_thread_local = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxThreadLocalIdentity);
+  const bool thread_local_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxThreadLocalSemantic) != sidecar.required_semantics.end();
+  if (has_thread_local != thread_local_capability)
+    Add(result, "O3IFC039", "C++ thread-local identity and required capability must agree", expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

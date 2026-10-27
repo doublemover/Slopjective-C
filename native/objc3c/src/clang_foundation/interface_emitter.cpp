@@ -336,6 +336,8 @@ public:
   bool VisitVarDecl(clang::VarDecl *declaration) {
     if (declaration->isLocalVarDeclOrParm()) Local(declaration);
     Add(ExpressionType(declaration->getType()));
+    Add("storage:" + std::to_string(declaration->getStorageClass()));
+    Add("thread-storage:" + std::to_string(declaration->getTSCSpec()));
     return true;
   }
   void Add(llvm::StringRef value) {
@@ -490,6 +492,35 @@ bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
       if (!member->isImplicit())
         if (const auto *named = llvm::dyn_cast<clang::NamedDecl>(member))
           if (llvm::isa<clang::FieldDecl, clang::FunctionDecl>(named) && HasDeclarationLambda(named)) return true;
+  return false;
+}
+
+class ThreadLocalFinder final : public clang::RecursiveASTVisitor<ThreadLocalFinder> {
+public:
+  bool VisitVarDecl(clang::VarDecl *variable) {
+    found |= variable->getTLSKind() != clang::VarDecl::TLS_None;
+    return true;
+  }
+  bool found = false;
+};
+bool HasDeclarationThreadLocal(const clang::NamedDecl *declaration) {
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
+    return variable->getTLSKind() != clang::VarDecl::TLS_None;
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      PublishesFunctionBody(function)) {
+    if (const auto *definition = function->getDefinition()) {
+      ThreadLocalFinder finder;
+      finder.TraverseStmt(definition->getBody());
+      if (finder.found) return true;
+    }
+  }
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+      record && record->isCompleteDefinition())
+    for (const auto *member : record->decls())
+      if (!member->isImplicit())
+        if (const auto *named = llvm::dyn_cast<clang::NamedDecl>(member))
+          if (llvm::isa<clang::VarDecl, clang::FunctionDecl>(named) &&
+              HasDeclarationThreadLocal(named)) return true;
   return false;
 }
 
@@ -681,6 +712,7 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
             ":type=" + CanonicalType(variable->getType(), context) +
             ":inline=" + std::to_string(variable->isInline()) +
             ":constexpr=" + std::to_string(variable->isConstexpr()) +
+            ":thread-storage=" + std::to_string(variable->getTSCSpec()) +
             ":access=" + CxxAccessName(variable->getAccess()) +
             ":init=" + (PublishesVariableInitializer(variable) && variable->hasInit()
                 ? DeclarationExpressionContract(variable->getInit(), context) : "none"));
@@ -1403,8 +1435,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         continue;
       }
       if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(member)) {
-        supported &= variable->isStaticDataMember() && !variable->getDescribedVarTemplate() &&
-                     variable->getTLSKind() == clang::VarDecl::TLS_None;
+        supported &= variable->isStaticDataMember() && !variable->getDescribedVarTemplate();
         continue;
       }
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
@@ -1450,10 +1481,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                    !function->getTrailingRequiresClause() &&
                    (!function->isDefaulted() || IsInClassDefaultedComparison(function));
     }
-    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
-        variable && variable->isExternallyVisible())
-      supported &=
-          variable->getTLSKind() == clang::VarDecl::TLS_None;
   }
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
@@ -2085,6 +2112,12 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
+  if (context.getLangOpts().CPlusPlus && HasDeclarationThreadLocal(representative)) {
+    identity.canonical_type_identity += ";cxx-thread-local:v1;";
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(representative))
+      identity.canonical_type_identity += "specifier=" + std::to_string(variable->getTSCSpec()) +
+          ";kind=" + std::to_string(variable->getTLSKind()) + ";";
+  }
   bool namespace_attributes = false;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(representative)) {
     std::string facts;
@@ -2299,6 +2332,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxNamespaceAttributeSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
+    if (HasCxxThreadLocalIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxThreadLocalSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2367,6 +2402,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxImmediateDefaultingSemantic,
     kCxxNamespaceAttributeSemantic,
     kCxxLambdaExpressionSemantic,
+    kCxxThreadLocalSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2482,6 +2518,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxImmediateDefaultingSemantic,
     kCxxNamespaceAttributeSemantic,
     kCxxLambdaExpressionSemantic,
+    kCxxThreadLocalSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

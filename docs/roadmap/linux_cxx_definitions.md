@@ -29,8 +29,9 @@ checks consumer-only code/data emission without runtime-bearing declarations.
 Subsequent source milestones add [defaulted comparisons](linux_cxx_defaulted_comparisons.md),
 [out-of-line defaulting](linux_cxx_out_of_line_defaulting.md) and
 [local non-generic lambdas](linux_cxx_lambda_expressions.md). Dependent templates,
-local classes, generic lambdas, Block/statement expressions and thread-local data
-remain separate work.
+local classes, generic lambdas and Block/statement expressions remain separate
+work. [Thread-local data](linux_cxx_thread_local.md) is modeled at source milestone
+2.22.0.
 The [2.16.0 header coordination milestone](linux_eager_semantic_imports.md)
 subsequently enables the full runtime fixture through eager imports as well.
 This does not claim broader ownership or profile conformance. The accepted SDK

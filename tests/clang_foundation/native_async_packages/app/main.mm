@@ -1,6 +1,20 @@
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
+#include <pthread.h>
 @import fixture.NativeAsync;
+struct native_thread_observation { bool passed; const void *ordinary; const void *shared; };
+static void *native_thread_worker(void *context) {
+  auto *observation=static_cast<native_thread_observation *>(context);
+  observation->ordinary=&native_thread_value;
+  observation->shared=&native_inline_thread_object;
+  observation->passed=native_thread_sum()==240 && native_local_thread_value()==41 &&
+      native_thread_local_bridge()==42;
+  ++native_thread_value; ++native_inline_thread_value;
+  ++NativeThreadState::value; ++NativeThreadState::shared;
+  ++native_thread_object.value; ++native_inline_thread_object.value;
+  observation->passed &= native_thread_sum()==246;
+  return nullptr;
+}
 template<class T> concept native_has_number = requires(const T &value) { value.number(); };
 static int imported_dynamic_order=NativeInline::ordered;
 static_assert(!native_has_number<NativeDeletedMember>);
@@ -286,6 +300,19 @@ int main() {
     auto frame=__objc3_async_from_frame<int>(native_closure_frame()).start(executor);
     uint32_t done=0;
     if (objc3_executor_pump(executor,100,&done)!=OBJC3_SERVICE_OK || frame.result()!=42) return 87;
+  }
+  {
+    if (native_thread_sum()!=240 || native_local_thread_value()!=41 ||
+        native_thread_local_bridge()!=42 || native_thread_lifetimes(0)!=2 ||
+        native_thread_lifetimes(1)!=0) return 88;
+    native_thread_value+=2;
+    native_thread_observation observation{};
+    pthread_t worker;
+    if (pthread_create(&worker,nullptr,native_thread_worker,&observation)!=0) return 89;
+    if (pthread_join(worker,nullptr)!=0 || !observation.passed ||
+        observation.ordinary==&native_thread_value || observation.shared==&native_inline_thread_object ||
+        native_thread_sum()!=242 || native_thread_lifetimes(0)!=4 ||
+        native_thread_lifetimes(1)!=2) return 90;
   }
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;

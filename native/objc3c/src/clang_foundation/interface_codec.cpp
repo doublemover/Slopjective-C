@@ -424,6 +424,13 @@ llvm::Error ValidateForEncoding(
       kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
   if (has_lambdas != lambda_capability)
     return Invalid("C++ lambda identity and required capability must agree");
+  const bool has_thread_local = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxThreadLocalIdentity);
+  const bool thread_local_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxThreadLocalSemantic) != sidecar.required_semantics.end();
+  if (has_thread_local != thread_local_capability)
+    return Invalid("C++ thread-local identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

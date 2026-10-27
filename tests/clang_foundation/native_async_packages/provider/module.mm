@@ -612,3 +612,39 @@ struct NativeClosureDefaults {
 int native_closure_frame(int value=[base=40] { return base; }()) __objc3_async_frame {
   __objc3_await native_module_borrow_leaf(); return native_closure(value);
 }
+
+static int native_thread_constructed=0;
+static int native_thread_destroyed=0;
+int native_thread_initializer() { return 40; }
+struct NativeThreadLifetime {
+  int value;
+  NativeThreadLifetime();
+  ~NativeThreadLifetime();
+};
+NativeThreadLifetime::NativeThreadLifetime() : value(40) {
+  __atomic_add_fetch(&native_thread_constructed,1,__ATOMIC_SEQ_CST);
+}
+NativeThreadLifetime::~NativeThreadLifetime() {
+  __atomic_add_fetch(&native_thread_destroyed,1,__ATOMIC_SEQ_CST);
+}
+thread_local int native_thread_value=40;
+inline thread_local int native_inline_thread_value=native_thread_initializer();
+struct NativeThreadState {
+  static thread_local int value;
+  inline static thread_local int shared=native_thread_initializer();
+};
+thread_local int NativeThreadState::value=40;
+thread_local NativeThreadLifetime native_thread_object;
+inline thread_local NativeThreadLifetime native_inline_thread_object;
+inline int native_local_thread_value() {
+  static thread_local int value=native_thread_initializer();
+  return ++value;
+}
+int native_thread_local_bridge() { return native_local_thread_value(); }
+int native_thread_sum() {
+  return native_thread_value + native_inline_thread_value + NativeThreadState::value +
+      NativeThreadState::shared + native_thread_object.value + native_inline_thread_object.value;
+}
+int native_thread_lifetimes(int destroyed) {
+  return __atomic_load_n(destroyed ? &native_thread_destroyed : &native_thread_constructed,__ATOMIC_SEQ_CST);
+}

@@ -518,3 +518,8 @@ This reuses the production service target and does not require a compiler SDK.
 The task-service, structured-runtime, checked-error-bridge and key-path service
 suites pass normally and under ASan/UBSan. The native compiler and all five feature
 families pass, and the coordinated SDK qualification passes all installed gates.
+
+The [2.22.0 source milestone](linux_cxx_thread_local.md) preserves C++ thread-local
+global/class-static/inline data and local static storage under
+`objc3.cxx-thread-local.v1`, including native per-thread lifetime and shared
+provider/consumer storage.

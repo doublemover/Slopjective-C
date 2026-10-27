@@ -135,6 +135,10 @@ inline constexpr const char *kCxxLambdaExpressionSemantic = "objc3.cxx-lambda-ex
 inline bool HasCxxLambdaExpressionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-lambda-expressions:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxThreadLocalSemantic = "objc3.cxx-thread-local.v1";
+inline bool HasCxxThreadLocalIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-thread-local:v1;") != std::string::npos;
+}
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);
