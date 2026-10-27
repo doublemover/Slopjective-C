@@ -51,6 +51,15 @@ Normal, ASan/UBSan and TSan each pass the complete five-family source/PCH matrix
 execution, including builtin bodies, complete fills and counted captured releases.
 SDK 2.33 remains the accepted archive; installed delivery follows this batch.
 
+## Captured arrays beyond eager storage tracking
+
+The [System 2.14.0 source span](linux_borrowed_large_arrays.md) preserves
+unrepresented array initializer effects and wildcard invocation summaries for
+larger captures. Small arrays retain precise element selection. Fresh exact
+initialization resets prior summaries without losing unions inside unknown
+parents. The SDK candidate was interrupted before publication to include this
+fix; SDK 2.33 remains accepted.
+
 ## Known memory-fill ownership effects
 
 The [System 2.13.0 source span](linux_borrowed_memory_fills.md) recognizes known

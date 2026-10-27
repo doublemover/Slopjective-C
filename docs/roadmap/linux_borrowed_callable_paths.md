@@ -30,3 +30,8 @@ The [combined System 2.10–2.12 receipt](../support/linux_captured_callable_own
 records the completed native, frontend and focused source-free package batch.
 Broader runtime/sanitizer matrices and installed delivery retain their separate
 checkpoints.
+
+The [System 2.14 array extension](linux_borrowed_large_arrays.md) preserves
+conservative effects beyond eager element tracking. Its large-array summaries
+can include unrepresented siblings; precise selection applies within the eager
+range.

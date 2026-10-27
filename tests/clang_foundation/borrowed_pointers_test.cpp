@@ -375,6 +375,11 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
         "void f(void*a,void*b){const char*p=path_bytes(b);auto one=[a]{path_consume(a);};auto two=[b]{path_consume(b);};struct H{decltype(one) a;decltype(two) b;};H h{one,two};auto work=[h]{h.a();};work();use_noescape(p);}",
         "void f(void*a,void*b){const char*p=path_bytes(a);void(^callbacks[2])()={^{path_consume(a);},^{path_consume(b);}};auto work=[callbacks]{callbacks[1]();};work();use_noescape(p);}"})
       Expect(Request(Root,PathHeader+Code,Language,Standard,ARC),true);
+    std::string LargeArray=PathHeader+
+        "void f(void*o,int index){const char*p=path_bytes(o);void(^callbacks[128])()={";
+    for(int i=0;i!=127;++i)LargeArray+="^{},";
+    LargeArray+="^{path_consume(o);}};auto work=[callbacks,index]{callbacks[index]();};work();use_noescape(p);}";
+    Expect(Request(Root,LargeArray,Language,Standard,ARC),false,"after its owner lifetime ended");
     if (ARC) {
       Expect(Request(Root,LambdaHeader+
           "void f(id o){const char*p=bytes(o);auto work=[o,p]()mutable{use_noescape(p);o=nullptr;};work();}",

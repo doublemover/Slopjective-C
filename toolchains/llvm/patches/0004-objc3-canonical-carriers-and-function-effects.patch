@@ -37791,10 +37791,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..cd74d9233
+index 000000000..ab2aa84c2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3061 @@
+@@ -0,0 +1,3106 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -38639,8 +38639,19 @@ index 000000000..cd74d9233
 +    for (unsigned I = 0; I != Locations.size(); ++I) {
 +      auto &Descriptor = PathsToSeed[I];
 +      bool HasUnknown = llvm::any_of(Descriptor.Components, [](const PathNode &P) {return !P.Field && P.Index == -2;});
++      bool FullyTracked = true;
++      QualType CurrentType = Descriptor.Variable->getType().getNonReferenceType();
++      for (const auto &Component : Descriptor.Components) {
++        if (Component.Field) {CurrentType = Component.Field->getType();continue;}
++        const auto *Array = Context.getAsArrayType(CurrentType);
++        const auto *Bound = dyn_cast_or_null<ConstantArrayType>(Array);
++        if (Component.Index == -2)
++          FullyTracked &= Bound && Bound->getSize().getActiveBits() <= 6;
++        if (!Array) {FullyTracked = false;break;}
++        CurrentType = Array->getElementType();
++      }
 +      bool Covered = false;
-+      if (HasUnknown)
++      if (HasUnknown && FullyTracked)
 +        for (const auto &Other : PathsToSeed) {
 +          if (Other.Variable != Descriptor.Variable || Other.Components.size() != Descriptor.Components.size()) continue;
 +          bool Match = true;
@@ -39676,7 +39687,41 @@ index 000000000..cd74d9233
 +            !Location.second && Location.Index != -1)
 +          Elements.push_back(Location);
 +      }
++      if (List && !hasUnknownIndex(Destination))
++        for (Storage Element : Elements)
++          if (Element.Index == -2)
++            for (const auto &[Location, Index] : Slots) {
++              if (Location.first != Element.first) continue;
++              unsigned Current = path(Location), Prefix = path(Element);
++              while (Current && Current != Prefix) Current = Paths[Current].Parent;
++              if (Current != Prefix) continue;
++              Value Cleared = empty();
++              store(Operation, Location, Cleared, State, Emit, true, &Cleared);
++              State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
++            }
 +      for (Storage Element : Elements) {
++        if (List && Element.Index == -2) {
++          // Preserve initializer effects outside the eager/observed element
++          // paths. A wildcard may alias any later index; dropping these leaves
++          // loses callbacks captured by a larger array.
++          for (unsigned I = 0; I != List->getNumInits(); ++I) {
++            bool Tracked = llvm::any_of(Elements, [I](Storage Other) {
++              return Other.Index >= 0 && uint64_t(Other.Index) == I;
++            });
++            if (!Tracked)
++              initializeAggregate(Operation, Element, Array->getElementType(),
++                                  List->getInit(I), State, Emit, Depth + 1);
++          }
++          // The summary is a set of possible addresses, never the final
++          // initializer's single referent.
++          for (const auto &[Location, Index] : Slots) {
++            if (Location.first != Element.first) continue;
++            unsigned Current = path(Location), Prefix = path(Element);
++            while (Current && Current != Prefix) Current = Paths[Current].Parent;
++            if (Current == Prefix) State.LocalTargets[Index] = {};
++          }
++          continue;
++        }
 +        const Expr *ElementInit = List && Element.Index >= 0 &&
 +                                         static_cast<uint64_t>(Element.Index) < List->getNumInits()
 +                                      ? List->getInit(Element.Index) : nullptr;
@@ -46686,4 +46731,84 @@ index 000000000..df7efb30b
 +void unknown_array_complete_clear(void *owner,int index) {
 +  const char *array[2]={0,0};array[index]=fill_bytes(owner);
 +  __builtin_memset(array,0,sizeof array);fill_escape(array[0]);fill_escape(array[1]);
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-large-callable-arrays.h b/clang/test/ObjC3/Sema/Inputs/borrowed-large-callable-arrays.h
+new file mode 100644
+index 000000000..22d9b8723
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-large-callable-arrays.h
+@@ -0,0 +1,14 @@
++typedef borrowed const char *LargeBytes;
++LargeBytes large_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void large_use(const char *pointer __attribute__((noescape)));
++void large_consume(void *owner __attribute__((cf_consumed)));
++#define LARGE_EMPTY_1 ^{}
++#define LARGE_EMPTY_2 LARGE_EMPTY_1,LARGE_EMPTY_1
++#define LARGE_EMPTY_4 LARGE_EMPTY_2,LARGE_EMPTY_2
++#define LARGE_EMPTY_8 LARGE_EMPTY_4,LARGE_EMPTY_4
++#define LARGE_EMPTY_16 LARGE_EMPTY_8,LARGE_EMPTY_8
++#define LARGE_EMPTY_32 LARGE_EMPTY_16,LARGE_EMPTY_16
++#define LARGE_EMPTY_64 LARGE_EMPTY_32,LARGE_EMPTY_32
++#define LARGE_EMPTY_62 LARGE_EMPTY_32,LARGE_EMPTY_16,LARGE_EMPTY_8,LARGE_EMPTY_4,LARGE_EMPTY_2
++#define LARGE_EMPTY_63 LARGE_EMPTY_62,LARGE_EMPTY_1
++#define LARGE_EMPTY_127 LARGE_EMPTY_64,LARGE_EMPTY_63
+diff --git a/clang/test/ObjC3/Sema/borrowed-large-callable-arrays.mm b/clang/test/ObjC3/Sema/borrowed-large-callable-arrays.mm
+new file mode 100644
+index 000000000..3e923fcc8
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-large-callable-arrays.mm
+@@ -0,0 +1,54 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-large-callable-arrays.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-large-callable-arrays.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-large-callable-arrays.h"
++#endif
++void captured_boundary64(void *owner,int index) {
++  const char *p=large_bytes(owner);
++  void (^callbacks[64])(void)={LARGE_EMPTY_63,^{large_consume(owner);}};
++  auto work=[callbacks,index]{callbacks[index]();};work();
++  large_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void captured_large128(void *owner,int index) {
++  const char *p=large_bytes(owner);
++  void (^callbacks[128])(void)={LARGE_EMPTY_127,^{large_consume(owner);}};
++  auto work=[callbacks,index]{callbacks[index]();};auto copy=work;copy();
++  large_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void captured_observed127(void *owner) {
++  const char *p=large_bytes(owner);
++  void (^callbacks[128])(void)={LARGE_EMPTY_127,^{large_consume(owner);}};
++  auto work=[callbacks]{callbacks[127]();};work();
++  large_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void captured_nested_record(void *owner,int index) {
++  const char *p=large_bytes(owner);
++  struct Holder{void (^callbacks[128])(void);};
++  Holder holder{{LARGE_EMPTY_127,^{large_consume(owner);}}};
++  auto work=[holder,index]{holder.callbacks[index]();};work();
++  large_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void precise_boundary63(void *owner) {
++  const char *p=large_bytes(owner);
++  void (^callbacks[63])(void)={LARGE_EMPTY_62,^{large_consume(owner);}};
++  auto work=[callbacks]{callbacks[0]();};work();large_use(p);
++}
++void fresh_large_array(void *owner) {
++  for(int iteration=0;iteration!=2;++iteration) {
++    void *local=owner;
++    void (^callbacks[128])(void)={LARGE_EMPTY_127,^{large_use(large_bytes(local));}};
++    auto work=[callbacks]{callbacks[0]();};work();
++  }
++}
++void zeroed_large_array(void *owner,int index) {
++  const char *p=large_bytes(owner);
++  void (^callbacks[128])(void)={LARGE_EMPTY_127,^{large_consume(owner);}};
++  __builtin_memset(callbacks,0,sizeof callbacks);
++  (void)index;large_use(p);
 +}
