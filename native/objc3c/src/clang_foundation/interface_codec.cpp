@@ -396,6 +396,13 @@ llvm::Error ValidateForEncoding(
       kCxxDefaultedComparisonSemantic) != sidecar.required_semantics.end();
   if (has_comparisons != comparison_capability)
     return Invalid("C++ defaulted comparison identity and required capability must agree");
+  const bool has_out_of_line_defaulting = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxOutOfLineDefaultingIdentity);
+  const bool defaulting_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxOutOfLineDefaultingSemantic) != sidecar.required_semantics.end();
+  if (has_out_of_line_defaulting != defaulting_capability)
+    return Invalid("C++ out-of-line defaulting identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

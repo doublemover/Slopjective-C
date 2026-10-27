@@ -71,7 +71,9 @@
     "NativeComparable",
     "NativeFriendComparable",
     "NativeDerivedComparable",
-    "native_module_compare"
+    "native_module_compare",
+    "NativeOutOfLineDefaulted",
+    "native_module_defaulted"
   ],
   "dependencies": []
 }

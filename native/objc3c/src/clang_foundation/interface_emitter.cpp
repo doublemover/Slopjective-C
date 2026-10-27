@@ -400,19 +400,25 @@ bool HasClassStructure(const clang::CXXRecordDecl *record) {
   return false;
 }
 
-bool IsInClassDefaultedSpecialMember(const clang::CXXMethodDecl *method) {
+bool IsSupportedDefaultedSpecialMember(const clang::CXXMethodDecl *method) {
   if (!method)
     return false;
   method = method->getMostRecentDecl();
   const auto effects =
       ReadCanonicalFunctionEffects(method->getType(), method->getASTContext());
   return !effects.is_async && !effects.is_throwing &&
-         method->isExplicitlyDefaulted() && !method->isOutOfLine() &&
+         method->isExplicitlyDefaulted() &&
          !method->isConsteval() &&
          (llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl>(
               method) ||
           method->isCopyAssignmentOperator() ||
           method->isMoveAssignmentOperator());
+}
+
+bool IsOutOfLineDefaultedDefinition(const clang::NamedDecl *declaration) {
+  const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration);
+  return method && method->isExplicitlyDefaulted() && method->isOutOfLine() &&
+         IsSupportedDefaultedSpecialMember(method);
 }
 
 std::string RecordLayoutIdentity(const clang::RecordDecl *record,
@@ -569,6 +575,15 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
     }
     if (!comparisons.empty()) out << ";cxx-defaulted-comparisons:v1;";
     for (const auto &comparison : comparisons) out << "comparison=" << comparison << ';';
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> defaulted;
+    for (const auto *method : cxx->methods())
+      if (!method->isImplicit() && IsOutOfLineDefaultedDefinition(method->getMostRecentDecl()))
+        defaulted.insert(ReadInterfaceDeclarationStableId(method));
+    if (!defaulted.empty()) out << ";cxx-out-of-line-defaulting:v1;";
+    for (const auto &member : defaulted) out << "defaulted=" << member << ';';
   }
   out.flush();
   return text;
@@ -1230,7 +1245,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
           method && !method->isTemplated() &&
-          (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method) ||
+          (!method->isDefaulted() || IsSupportedDefaultedSpecialMember(method) ||
            IsInClassDefaultedComparison(method)) &&
           !method->getTrailingRequiresClause();
       if (const auto *ctor =
@@ -1243,7 +1258,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
     if (method->getMostRecentDecl()->isDefaulted())
-      supported &= IsInClassDefaultedSpecialMember(method) || IsInClassDefaultedComparison(method);
+      supported &= IsSupportedDefaultedSpecialMember(method) || IsInClassDefaultedComparison(method);
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl>(declaration);
@@ -1266,7 +1281,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                   "C++ semantic interfaces require global or named namespace declarations and "
                   "records with native bases and virtual dispatch, out-of-line "
                   "members, deleted "
-                  "declarations or in-class defaulted special members, without "
+                  "declarations or native defaulted special members, without "
                   "templates, "
                   "local declaration expressions or unnamed nested types",
                   declaration->getQualifiedNameAsString());
@@ -1461,7 +1476,8 @@ class InterfaceCollector final
     // Preserve declaration/redeclaration order, including incomplete tag
     // declarations needed by signatures that precede the eventual definition.
     // The sidecar still records one semantic identity per USR below.
-    if (IsTopLevel(declaration) && !FriendOwner(declaration) &&
+    if ((IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
+        !FriendOwner(declaration) &&
         !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                    clang::ObjCIvarDecl, clang::FieldDecl,
                    clang::EnumConstantDecl>(declaration))
@@ -1603,8 +1619,9 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   auto *body_function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
   clang::AttrVec saved_attributes;
   std::vector<std::pair<clang::ParmVarDecl *, bool>> saved_defaults;
-  const bool has_label_definition = !declaration_only && body_function && PublishesFunctionBody(body_function) &&
-      body_function->doesThisDeclarationHaveABody() &&
+  const bool has_label_definition = !declaration_only && body_function &&
+      ((PublishesFunctionBody(body_function) && body_function->doesThisDeclarationHaveABody()) ||
+       IsOutOfLineDefaultedDefinition(body_function)) &&
       body_function->hasAttr<clang::AsmLabelAttr>();
   auto restore_definition = llvm::scope_exit([&] {
     if (has_label_definition) body_function->setAttrs(saved_attributes);
@@ -1863,6 +1880,8 @@ bool ReadInterfaceDeclarationIdentity(
     if (const auto *owner = FriendOwner(function))
       identity.canonical_type_identity += "friend-owner=" + ReadInterfaceDeclarationStableId(owner) + ";";
   }
+  if (IsOutOfLineDefaultedDefinition(representative))
+    identity.canonical_type_identity += ";cxx-out-of-line-defaulting:v1;";
   std::vector<const clang::NamespaceDecl *> scopes;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
     scopes.push_back(space);
@@ -2054,6 +2073,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxDefinitionSemantic);
     if (HasCxxDefaultedComparisonIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDefaultedComparisonSemantic);
+    if (HasCxxOutOfLineDefaultingIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxOutOfLineDefaultingSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2118,6 +2139,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxDeclarationExpressionSemantic,
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
+    kCxxOutOfLineDefaultingSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2229,6 +2251,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxDeclarationExpressionSemantic,
     kCxxDefinitionSemantic,
     kCxxDefaultedComparisonSemantic,
+    kCxxOutOfLineDefaultingSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

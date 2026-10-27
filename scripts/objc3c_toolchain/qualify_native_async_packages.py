@@ -198,6 +198,10 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using capability')
     if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
         raise ValueError('C++ package lost its using-directive')
+    if 'objc3.cxx-out-of-line-defaulting.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its out-of-line defaulting capability')
+    if ';cxx-out-of-line-defaulting:v1;' not in names.get('NativeOutOfLineDefaulted', {}).get('canonical_type_identity', ''):
+        raise ValueError('C++ package lost record-owned out-of-line defaulting identity')
     if 'objc3.cxx-defaulted-comparisons.v1' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its defaulted-comparison capability')
     for name in ('NativeComparable', 'NativeFriendComparable', 'NativeDerivedComparable'):

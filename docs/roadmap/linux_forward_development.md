@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ out-of-line defaulted special members
+
+The [2.18.0 source milestone](linux_cxx_out_of_line_defaulting.md) binds native
+user-provided special-member ABI and preserves out-of-line defaulted definitions
+with their namespace and module-owned symbols. SDK/archive work and broad
+validation remain deferred.
+
 ## C++ defaulted comparisons
 
 The [2.17.0 source milestone](linux_cxx_defaulted_comparisons.md) binds native

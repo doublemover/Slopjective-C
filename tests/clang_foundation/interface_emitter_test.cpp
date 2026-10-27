@@ -842,6 +842,45 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxOutOfLineDefaulting() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
+      "objc3.cxx-class-dispatch.v1", "objc3.cxx-namespaces.v1",
+      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-out-of-line-defaulting.v1",
+      "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "defaulting.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.defaulting", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.defaulting", "test");
+    };
+    const std::string source = "namespace Model { struct Value { int n=40; Value(); "
+        "Value(const Value&); Value(Value&&); Value& operator=(const Value&); "
+        "Value& operator=(Value&&); ~Value(); }; "
+        "Value::Value()=default; Value::Value(const Value&)=default; Value::Value(Value&&)=default; "
+        "Value& Value::operator=(const Value&)=default; Value& Value::operator=(Value&&)=default; "
+        "Value::~Value()=default; class Abstract { public: virtual ~Abstract()=0; }; "
+        "Abstract::~Abstract()=default; }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics, "objc3.cxx-out-of-line-defaulting.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxDefaultedComparisons() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1410,7 +1449,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "};",
         "struct Default { int value=[] { return 42; }(); };",
         "struct Conditional { explicit(true) Conditional(int); };",
-        "struct Defaulted { Defaulted(); }; Defaulted::Defaulted() = default;",
+        "struct Defaulted { consteval Defaulted(); }; consteval Defaulted::Defaulted() = default;",
         "struct Comparison { int n; friend bool operator==(const Comparison &a, const Comparison &b) "
         "{ return a.n==b.n; } };",
         "struct Immediate { consteval Immediate() = default; };",
@@ -1457,6 +1496,7 @@ int main() {
   TestCxxDeclarationExpressions();
   TestCxxDefinitions();
   TestCxxDefaultedComparisons();
+  TestCxxOutOfLineDefaulting();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

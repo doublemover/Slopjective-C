@@ -100,3 +100,7 @@ under required `objc3.cxx-definitions.v1` semantics.
 The [2.17.0 source milestone](linux_cxx_defaulted_comparisons.md) adds native
 in-class defaulted member/hidden-friend comparisons with required
 `objc3.cxx-defaulted-comparisons.v1` semantics and record-bound comparison identity.
+
+The [2.18.0 source milestone](linux_cxx_out_of_line_defaulting.md) preserves
+out-of-line defaulted special members, native user-provided lifecycle ABI and
+provider-owned definitions under `objc3.cxx-out-of-line-defaulting.v1`.

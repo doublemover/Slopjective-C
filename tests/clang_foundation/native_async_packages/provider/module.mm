@@ -538,3 +538,24 @@ struct NativeDerivedComparable : NativeComparable {
 bool native_module_compare(NativeFriendComparable first, NativeFriendComparable second) {
   return first==second;
 }
+
+class NativeOutOfLineDefaulted {
+  int value=40;
+public:
+  NativeOutOfLineDefaulted();
+  NativeOutOfLineDefaulted(const NativeOutOfLineDefaulted &);
+  NativeOutOfLineDefaulted(NativeOutOfLineDefaulted &&);
+  NativeOutOfLineDefaulted &operator=(const NativeOutOfLineDefaulted &);
+  NativeOutOfLineDefaulted &operator=(NativeOutOfLineDefaulted &&);
+  ~NativeOutOfLineDefaulted();
+  int get() const { return value+2; }
+};
+NativeOutOfLineDefaulted::NativeOutOfLineDefaulted()=default;
+NativeOutOfLineDefaulted::NativeOutOfLineDefaulted(const NativeOutOfLineDefaulted &)=default;
+NativeOutOfLineDefaulted::NativeOutOfLineDefaulted(NativeOutOfLineDefaulted &&)=default;
+NativeOutOfLineDefaulted &NativeOutOfLineDefaulted::operator=(const NativeOutOfLineDefaulted &)=default;
+NativeOutOfLineDefaulted &NativeOutOfLineDefaulted::operator=(NativeOutOfLineDefaulted &&)=default;
+NativeOutOfLineDefaulted::~NativeOutOfLineDefaulted()=default;
+NativeOutOfLineDefaulted native_module_defaulted(NativeOutOfLineDefaulted value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf(); return value;
+}

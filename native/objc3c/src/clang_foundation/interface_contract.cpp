@@ -358,6 +358,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxDefaultedComparisonSemantic) != sidecar.required_semantics.end();
   if (has_comparisons != comparison_capability)
     Add(result, "O3IFC034", "C++ defaulted comparison identity and required capability must agree", expected.canonical_name);
+  const bool has_out_of_line_defaulting = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxOutOfLineDefaultingIdentity);
+  const bool defaulting_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxOutOfLineDefaultingSemantic) != sidecar.required_semantics.end();
+  if (has_out_of_line_defaulting != defaulting_capability)
+    Add(result, "O3IFC035", "C++ out-of-line defaulting identity and required capability must agree", expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

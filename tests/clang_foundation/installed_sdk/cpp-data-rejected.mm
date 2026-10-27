@@ -3,7 +3,7 @@ namespace Nested { inline int api() { return [] { return 42; }(); } }
 #elif CASE == 2
 template<class T> struct Generic { T value; };
 #elif CASE == 3
-struct Defaulted { Defaulted(); int value; }; Defaulted::Defaulted() = default;
+struct Defaulted { consteval Defaulted(); }; consteval Defaulted::Defaulted() = default;
 #elif CASE == 4
 struct Base { int value; }; struct Derived : virtual Base { int second=1; int get() const { return [] { return 42; }(); } };
 #elif CASE == 5

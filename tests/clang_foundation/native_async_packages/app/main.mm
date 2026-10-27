@@ -252,6 +252,19 @@ int main() {
     if (objc3_executor_pump(executor,100,&completed)!=OBJC3_SERVICE_OK ||
         frame.result()!=42 || NativeDefaults::evaluations!=6) return 71;
   }
+  {
+    static_assert(!std::is_trivially_copyable_v<NativeOutOfLineDefaulted>);
+    static_assert(!std::is_trivially_default_constructible_v<NativeOutOfLineDefaulted>);
+    NativeOutOfLineDefaulted value;
+    NativeOutOfLineDefaulted copy(value);
+    NativeOutOfLineDefaulted moved(std::move(copy));
+    copy=value;
+    copy=std::move(moved);
+    if (value.get()!=42 || copy.get()!=42) return 81;
+    auto returned=__objc3_async_from_frame<NativeOutOfLineDefaulted>(native_module_defaulted(std::move(value))).start(executor);
+    uint32_t done=0;
+    if (objc3_executor_pump(executor,100,&done)!=OBJC3_SERVICE_OK || returned.result().get()!=42) return 82;
+  }
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||
