@@ -28,6 +28,13 @@ visibility. Interfaces using subscript bodies require
 unknown capability or the missing typed-key-path dependency. The interface schema
 and key-path layout remain 2.2 and 2 respectively.
 
+Eager consumers parse the pinned metadata header before native AST merging.
+This binds opaque signature descriptors to the same complete SDK types used by
+later explicit imports. Both the runtime and key-path preludes finish their
+linkage scopes before the importer runs; combined task/key-path dependencies
+share that readiness point. Source-free C17/C++20/23 package witnesses exercise
+metadata operations and subscript updates under source-directed and eager import.
+
 Native witnesses cover C17/C++20/23 diagnostics, source/PCH printing and codegen,
 AST import, clangd operand hover/rename/highlighting, public inline interface re-emission, source-free provider/consumer
 updates, operand order, record values, key replacement and root destruction.

@@ -145,7 +145,8 @@ void KeyPathSubscriptBodies(const fs::path &root,const std::string &standard,boo
   input.locked_identity=built.interface_artifact->identity;
   auto client=Request(root/"indexed-client.mm",BaseLanguage::ObjectiveCxx,standard,arc,R"(
       int client(InlinePathRoot *_Nonnull root,WritableKeyPath<InlinePathRoot*,int> path) {
-        return indexed_roundtrip(root,path,10);
+        const objc3_keypath_descriptor_v2 *metadata=KeyPathMetadata(path);
+        return indexed_roundtrip(root,path,10)+(objc3_keypath_validate_v2(metadata)==0);
       }
   )");
   client.imported_interfaces={input};client.emit=EmitKind::Object;

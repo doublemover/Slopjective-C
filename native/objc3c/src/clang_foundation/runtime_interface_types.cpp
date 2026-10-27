@@ -174,6 +174,10 @@ llvm::StringRef RuntimeInterfaceHeaderSource() {
   return runtime_interface::kHeaderSource;
 }
 
+llvm::StringRef RuntimeKeyPathHeaderSource() {
+  return runtime_interface::kKeyPathHeaderSource;
+}
+
 llvm::StringRef RuntimeTaskHeaderSource() {
   return runtime_interface::kTaskHeaderSource;
 }

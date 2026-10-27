@@ -20,6 +20,7 @@ bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
 llvm::StringRef RuntimeInterfaceSemantic();
 llvm::StringRef RuntimeInterfaceHeaderSource();
 llvm::StringRef RuntimeTaskHeaderSource();
+llvm::StringRef RuntimeKeyPathHeaderSource();
 bool IsQualifiedRuntimeTaskHeader(const clang::ASTContext &context);
 bool IsQualifiedRuntimeServiceDeclaration(const clang::NamedDecl *declaration,
                                           const clang::ASTContext &context);

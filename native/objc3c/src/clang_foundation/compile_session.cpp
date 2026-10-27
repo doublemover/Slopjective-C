@@ -101,6 +101,8 @@ class Diagnostics final : public clang::DiagnosticConsumer {
 // file lets the parser finish the header and its linkage scope before importing.
 constexpr const char *kEagerRuntimeHeader =
     "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerKeyPathHeader =
+    "/__objc3_import_runtime/objc3_keypath.h";
 constexpr const char *kEagerTaskHeader =
     "/__objc3_import_runtime/objc3_task.hpp";
 constexpr const char *kEagerRuntimePrelude =
@@ -119,7 +121,7 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
-    if (session_ && session_->RequiresRuntimeHeader()) {
+    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader())) {
       deferred_context_ = &context;
       waiting_for_runtime_ = true;
       return;
@@ -476,19 +478,28 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
         return false;
       }
     }
-    if (import_session_ && import_session_->RequiresRuntimeHeader()) {
+    if (import_session_ && (import_session_->RequiresRuntimeHeader() ||
+                            import_session_->RequiresKeyPathHeader())) {
       auto &preprocessor = invocation->getPreprocessorOpts();
-      preprocessor.addRemappedFile(kEagerRuntimeHeader,
-          llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(), kEagerRuntimeHeader).release());
-      const bool needs_task=import_session_->RequiresTaskHeader();
-      if (needs_task)
-        preprocessor.addRemappedFile(kEagerTaskHeader,
-            llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(), kEagerTaskHeader).release());
+      std::string prelude;
+      if (import_session_->RequiresRuntimeHeader()) {
+        preprocessor.addRemappedFile(kEagerRuntimeHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(),kEagerRuntimeHeader).release());
+        const bool needs_task=import_session_->RequiresTaskHeader();
+        if (needs_task)
+          preprocessor.addRemappedFile(kEagerTaskHeader,
+              llvm::MemoryBuffer::getMemBufferCopy(RuntimeTaskHeaderSource(),kEagerTaskHeader).release());
+        prelude+=std::string("#include \"")+(needs_task?kEagerTaskHeader:kEagerRuntimeHeader)+"\"\n";
+      }
+      if (import_session_->RequiresKeyPathHeader()) {
+        preprocessor.addRemappedFile(kEagerKeyPathHeader,
+            llvm::MemoryBuffer::getMemBufferCopy(RuntimeKeyPathHeaderSource(),kEagerKeyPathHeader).release());
+        prelude+=std::string("#include \"")+kEagerKeyPathHeader+"\"\n";
+      }
+      prelude+=std::string("typedef void ")+kEagerRuntimeReady+";\n";
       preprocessor.addRemappedFile(kEagerRuntimePrelude,
-          llvm::MemoryBuffer::getMemBufferCopy(
-              std::string("#include \"") + (needs_task ? kEagerTaskHeader : kEagerRuntimeHeader) + "\"\n" +
-              "typedef void " + kEagerRuntimeReady + ";\n", kEagerRuntimePrelude).release());
-      preprocessor.Includes.insert(preprocessor.Includes.begin(), kEagerRuntimePrelude);
+          llvm::MemoryBuffer::getMemBufferCopy(prelude,kEagerRuntimePrelude).release());
+      preprocessor.Includes.insert(preprocessor.Includes.begin(),kEagerRuntimePrelude);
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
                                                std::move(containers), diagnostics);
