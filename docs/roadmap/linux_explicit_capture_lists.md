@@ -72,7 +72,11 @@ responsibility. The runtime witness covers that +0-alias case.
 
 Qualified Linux Optional/Result moves use selected-arm storage operations in
 C17 and C++20/C++23. Plain scalar carrier trees work under ARC and MRC without
-managed copy/dispose hooks. Moves clear only selected scalar/unsafe leaves;
+managed copy/dispose hooks. Their native capture qualifier also covers typed
+object/function pointers, C++ member pointers, complex numbers and recursively
+plain C records/arrays without requiring a callable encoding. Optional and Result
+share typed complex leaf copies; Result construction uses native evaluation kinds.
+Moves clear only selected scalar/unsafe leaves;
 absent Optional payloads and inactive Result arms remain unread. Source tags,
 including nested tags, stay valid. ARC moves transfer strong/weak leaves through
 the existing owned-carrier copy contract.
@@ -84,7 +88,7 @@ leaves are zeroed. Stack exit, failed later captures and failed heap copies dest
 only completed, active payloads. Move-only leaves remain rejected because ordinary
 Blocks must be copyable. Capture recipes persist through PCH and AST import.
 
-Explicit mixed ARC/C++ carrier captures use the same recursively resolved
+Mixed ARC/C++ carrier captures use the same recursively resolved
 construction recipes under ARC. A successful move relinquishes selected strong
 or weak source storage after acquiring destination ownership; C++ leaves retain
 their native moved-from state. Heap copies own independent selected payloads.
@@ -96,9 +100,9 @@ Mixed match snapshots own their selected payload through arm evaluation, and
 nested binding snapshots use recursive semantic copies.
 
 Nested const, volatile, atomic or resource-contracted move payloads remain
-rejected. Implicit mixed captures, MRC mixed ownership, unqualified
-ownership-bearing leaves and unmodeled runtime leaf encodings remain separate
-boundaries.
+rejected. C++ lambda mixed captures, MRC mixed ownership, unqualified
+ownership-bearing leaves and unmodeled leaf storage remain separate boundaries.
+Raw pointer captures preserve pointer values without extending pointee lifetime.
 
 ## Resource ownership across Block copies
 
@@ -189,8 +193,8 @@ pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
 [current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 the scope. They remain absent from the earlier 32-gate archive.
 
-Remaining boundaries include implicit mixed captures, MRC mixed ownership and
-unqualified ownership-bearing/runtime leaf types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
+Remaining boundaries include C++ lambda mixed captures, MRC mixed ownership and
+unqualified ownership-bearing and unmodeled leaf storage types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
 broad exceptional CFG capture admission and
 remaining ownership/profile projections. Borrowed escape and concurrent-transfer
 admission are implemented by their owning slices and exercised with the capture

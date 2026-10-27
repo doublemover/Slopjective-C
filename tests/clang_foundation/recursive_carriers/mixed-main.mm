@@ -196,6 +196,19 @@ static int source_ordering() {
   return 0;
 }
 
+static int implicit_block_captures() {
+  mixed_reset();
+  {
+    MixedTree source = Err(MixedManaged, MixedNative, Some(MixedItem, MixedItem(7)));
+    {
+      int (^__unsafe_unretained capture)(void) = ^{ return (int)isOk(source); };
+      if (capture() || mixed_copies != 1 || mixed_live != 2) return 24;
+    }
+    if (mixed_live != 1 || mixed_destructions != 1) return 25;
+  }
+  return mixed_live || mixed_destructions != 2 ? 26 : 0;
+}
+
 int main() {
   if (int code = strong_leaf()) return code;
   if (int code = native_leaf()) return code;
@@ -204,5 +217,6 @@ int main() {
   if (int code = block_leaf()) return code;
   if (int code = rollback_and_unwind()) return code;
   if (int code = source_ordering()) return code;
+  if (int code = implicit_block_captures()) return code;
   return 0;
 }

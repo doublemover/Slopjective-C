@@ -77,6 +77,8 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       "void f(id source) { invoke(^[move source] { (void)source; }); }",
       "int f(void) { int x=42; int (^b)(void)=^[move x]{return x;}; return b()+x; }",
       "void f(void){Optional(int) v=Some(int,42);invoke(^[move v]{(void)v;});}",
+      "void f(int *p){Optional(int*) v=Some(int*,p);invoke(^[move v]{(void)v;});}",
+      "void f(void (*p)(void)){Optional(void(*)(void)) v=Some(void(*)(void),p);invoke(^[move v]{(void)v;});}",
       "void f(void){Optional(Optional(int)) v=Some(Optional(int),None(int));invoke(^[move v]{(void)v;});}",
       "void f(void){__objc3_result(int,int) v=__objc3_err(int,int,42);invoke(^[move v]{(void)v;});}",
       "int f(void) { __block int x=42; int (^b)(void)=^[x]{return x;}; x=9; return b(); }",
@@ -131,6 +133,14 @@ void semantics(const fs::path &Root, BaseLanguage Language,
   };
   for (const auto &[Source, Message] : Rejected)
     expect(request(Root, Source, Language, Standard, ARC), false, Message);
+  if (Language == BaseLanguage::ObjectiveC) {
+    expect(request(Root,
+        "struct R{int values[2];int *p;};void f(){struct R r={{1,2},0};Optional(struct R) x=Some(struct R,r);invoke(^[move x]{});}",
+        Language, Standard, ARC), true);
+    expect(request(Root,
+        "struct R{const int x;};void f(){struct R r={1};Optional(struct R) x=Some(struct R,r);invoke(^[move x]{});}",
+        Language, Standard, ARC), false, "mutable, nonresource payloads");
+  }
   if (Language == BaseLanguage::ObjectiveCxx) {
     expect(request(Root,
         "struct R { int x; R()=default; R(const R&)=default; R(R&&v) noexcept:x(v.x){v.x=-1;} }; void f(void){R x{};invoke(^[move x]{});}",
@@ -231,6 +241,18 @@ void check_carrier_body(clang::FunctionDecl *Function) {
   assert(llvm::isa<clang::OpaqueValueExpr>(Move->getSource()));
   assert(llvm::isa<clang::OpaqueValueExpr>(Copy->getSource()));
 }
+void check_implicit_carrier_body(clang::FunctionDecl *Function) {
+  Blocks Visitor;
+  Visitor.TraverseStmt(Function->getBody());
+  assert(Visitor.Values.size() == 1);
+  auto *Block = Visitor.Values[0]->getBlockDecl();
+  assert(!Block->hasObjC3CaptureList() && Block->captures().size() == 1);
+  const auto &Capture = Block->captures()[0];
+  assert(!Capture.getObjC3InitExpr() && Capture.getCopyExpr());
+  const auto *Copy = llvm::cast<clang::ObjC3CarrierTransferExpr>(
+      Capture.getCopyExpr()->IgnoreImplicit());
+  assert(!Copy->isMove() && Copy->getSource()->getType().isConstQualified());
+}
 void check_nested_resource_body(clang::FunctionDecl *Function) {
   Blocks Visitor;
   Visitor.TraverseStmt(Function->getBody());
@@ -275,6 +297,11 @@ int capture_mixed_provider(id value) {
   auto block=^[move source]{return (int)__objc3_is_ok(source);};
   return block();
 }
+int capture_implicit_mixed_provider(id value) {
+  __objc3_result(id,CaptureRecord) source=__objc3_ok(id,CaptureRecord,value);
+  auto block=^{return (int)__objc3_is_ok(source);};
+  return block();
+}
 void capture_nested_resource_provider(void) {
   int handle __attribute__((objc_resource(close=close_handle,invalid=-1)))=31;
   void (^outer)(void)=^[move handle]{
@@ -294,6 +321,7 @@ void capture_nested_resource_provider(void) {
   check_record_body(function(*From, "capture_record_provider"));
   check_carrier_body(function(*From, "capture_carrier_provider"));
   check_carrier_body(function(*From, "capture_mixed_provider"));
+  check_implicit_carrier_body(function(*From, "capture_implicit_mixed_provider"));
   check_nested_resource_body(function(*From, "capture_nested_resource_provider"));
   clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
       From->getASTContext(), From->getFileManager(), false);
@@ -310,6 +338,9 @@ void capture_nested_resource_provider(void) {
   auto ImportedMixed = Importer.Import(function(*From, "capture_mixed_provider"));
   assert(ImportedMixed);
   check_carrier_body(llvm::cast<clang::FunctionDecl>(*ImportedMixed));
+  auto ImportedImplicit = Importer.Import(function(*From, "capture_implicit_mixed_provider"));
+  assert(ImportedImplicit);
+  check_implicit_carrier_body(llvm::cast<clang::FunctionDecl>(*ImportedImplicit));
   auto ImportedNested = Importer.Import(function(*From, "capture_nested_resource_provider"));
   assert(ImportedNested);
   check_nested_resource_body(llvm::cast<clang::FunctionDecl>(*ImportedNested));
@@ -330,6 +361,7 @@ void capture_nested_resource_provider(void) {
   check_record_body(function(*Reloaded, "capture_record_provider"));
   check_carrier_body(function(*Reloaded, "capture_carrier_provider"));
   check_carrier_body(function(*Reloaded, "capture_mixed_provider"));
+  check_implicit_carrier_body(function(*Reloaded, "capture_implicit_mixed_provider"));
   check_nested_resource_body(function(*Reloaded, "capture_nested_resource_provider"));
 }
 } // namespace

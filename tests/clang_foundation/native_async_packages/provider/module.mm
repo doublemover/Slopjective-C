@@ -743,6 +743,8 @@ inline int native_published_mixed_capture(int value) {
   __objc3_result(id,NativeStatementLifetime) source=
       __objc3_ok(id,NativeStatementLifetime,owner);
   owner=(id)0;
+  auto snapshot=^{return (int)__objc3_is_ok(source);};
+  if (!snapshot()) return -1;
   auto moved=^[move source] {
     return __objc3_match (source) {
       case .Ok(let object) => [(NativeModuleResult *)object number];
@@ -753,4 +755,20 @@ inline int native_published_mixed_capture(int value) {
 #else
   return value;
 #endif
+}
+
+using NativeCaptureFunction = int (*)(int);
+inline int native_published_plain_native_capture(int value) {
+  Optional(int *) data=Some(int *, &value);
+  Optional(NativeCaptureFunction) function=
+      Some(NativeCaptureFunction, native_published_statement);
+  auto moved=^[move data, move function] {
+    guard let pointer=data else {return -1;}
+    guard let call=function else {return -2;}
+    return call(*pointer);
+  };
+  guard let null_data=data else {return -3;}
+  guard let null_function=function else {return -4;}
+  return null_data==(int *)0 && null_function==(NativeCaptureFunction)0
+      ? moved() : -5;
 }

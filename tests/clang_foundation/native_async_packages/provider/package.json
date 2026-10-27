@@ -107,7 +107,9 @@
     "native_statement_live",
     "native_module_virtual_deallocations",
     "native_published_carrier_capture",
-    "native_published_mixed_capture"
+    "native_published_mixed_capture",
+    "NativeCaptureFunction",
+    "native_published_plain_native_capture"
   ],
   "dependencies": []
 }

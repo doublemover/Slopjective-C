@@ -337,6 +337,96 @@ static void capture_plain_carrier_move_suite(void) {
   }
 }
 
+static int capture_native_function(int value) { return value + 2; }
+typedef int (*CaptureNativeFunction)(int);
+typedef __complex__ double CaptureNativeComplex;
+struct CaptureNativeRecord { int values[2]; int *pointer; };
+static void capture_plain_native_carrier_suite(void) {
+  int value = 94;
+  Optional(int *) source = Some(int *, &value);
+  CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+    guard let pointer = source else { return -1; }
+    return pointer ? *pointer : 0;
+  };
+  guard let zero = source else { ++capture_failures; return; }
+  CAPTURE_CHECK(zero == (int *)0 && stack() == 94);
+  CaptureIntBlock heap = capture_heap_copy(stack);
+  CAPTURE_CHECK(heap() == 94);
+#if !__has_feature(objc_arc)
+  _Block_release(heap);
+#endif
+  {
+    Optional(CaptureNativeFunction) function = Some(CaptureNativeFunction, capture_native_function);
+    CaptureIntBlock __unsafe_unretained moved = ^[move function] {
+      guard let call = function else { return -1; }
+      return call(93);
+    };
+    guard let null_function = function else { ++capture_failures; return; }
+    CAPTURE_CHECK(null_function == (CaptureNativeFunction)0 && moved() == 95);
+    CaptureIntBlock heap_function = capture_heap_copy(moved);
+    CAPTURE_CHECK(heap_function() == 95);
+#if !__has_feature(objc_arc)
+    _Block_release(heap_function);
+#endif
+  }
+  {
+    CaptureNativeComplex number;
+    __real__ number = 47; __imag__ number = 49;
+    Optional(CaptureNativeComplex) complex_source = Some(CaptureNativeComplex, number);
+    CaptureIntBlock __unsafe_unretained moved = ^[move complex_source] {
+      guard let selected = complex_source else { return -1; }
+      return (int)(__real__ selected + __imag__ selected);
+    };
+    guard let complex_zero = complex_source else { ++capture_failures; return; }
+    CAPTURE_CHECK(__real__ complex_zero == 0 && __imag__ complex_zero == 0);
+    CaptureIntBlock complex_heap = capture_heap_copy(moved);
+    CAPTURE_CHECK(complex_heap() == 96);
+#if !__has_feature(objc_arc)
+    _Block_release(complex_heap);
+#endif
+  }
+  for (int success = 0; success != 2; ++success) {
+    CaptureNativeComplex number;
+    __real__ number = 47; __imag__ number = 49;
+    __objc3_result(CaptureNativeComplex, CaptureNativeComplex) result = success
+        ? __objc3_ok(CaptureNativeComplex, CaptureNativeComplex, number)
+        : __objc3_err(CaptureNativeComplex, CaptureNativeComplex, number);
+    CaptureIntBlock __unsafe_unretained moved = ^[move result] {
+      return __objc3_match (result) {
+        case .Ok(let selected) => (int)(__real__ selected + __imag__ selected);
+        case .Err(let selected) => -(int)(__real__ selected + __imag__ selected);
+      };
+    };
+    CAPTURE_CHECK(__objc3_is_ok(result) == success);
+    int zero = __objc3_match (result) {
+      case .Ok(let selected) => (int)(__real__ selected + __imag__ selected);
+      case .Err(let selected) => (int)(__real__ selected + __imag__ selected);
+    };
+    CaptureIntBlock result_heap = capture_heap_copy(moved);
+    CAPTURE_CHECK(zero == 0 && result_heap() == (success ? 96 : -96));
+#if !__has_feature(objc_arc)
+    _Block_release(result_heap);
+#endif
+  }
+#ifndef __cplusplus
+  {
+    struct CaptureNativeRecord record = {{47, 50}, &value};
+    Optional(struct CaptureNativeRecord) aggregate = Some(struct CaptureNativeRecord, record);
+    CaptureIntBlock __unsafe_unretained moved = ^[move aggregate] {
+      guard let selected = aggregate else { return -1; }
+      return selected.values[0] + selected.values[1];
+    };
+    guard let empty = aggregate else { ++capture_failures; return; }
+    CAPTURE_CHECK(empty.values[0] == 0 && empty.values[1] == 0 && empty.pointer == (int *)0);
+    CaptureIntBlock aggregate_heap = capture_heap_copy(moved);
+    CAPTURE_CHECK(aggregate_heap() == 97);
+#if !__has_feature(objc_arc)
+    _Block_release(aggregate_heap);
+#endif
+  }
+#endif
+}
+
 #if __has_feature(objc_arc)
 static void capture_carrier_move_suite(void) {
   int before = capture_destroyed;
@@ -747,6 +837,24 @@ static void capture_mixed_carrier_move_suite(void) {
   }
   CAPTURE_CHECK(CaptureMoveRecord::live == 0);
   {
+    Mixed source = __objc3_err(id, CaptureMoveRecord, CaptureMoveRecord(94));
+    {
+      defer { CAPTURE_CHECK(CaptureMoveRecord::live == 1); }
+      CaptureIntBlock __unsafe_unretained snapshot = ^{
+        return __objc3_match (source) {
+          case .Ok(let value) => -1;
+          case .Err(let error) => error.value;
+        };
+      };
+      CAPTURE_CHECK(snapshot() == 94);
+      CaptureIntBlock heap = capture_heap_copy(snapshot);
+      CAPTURE_CHECK(heap() == 94 && CaptureMoveRecord::live == 3);
+      heap = (id)0;
+    }
+    CAPTURE_CHECK(CaptureMoveRecord::live == 1);
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
     CaptureObject *owner = [CaptureObject make:93];
     Mixed inner = __objc3_ok(id, CaptureMoveRecord, owner);
     Optional(Mixed) source = Some(Mixed, moveValue(inner));
@@ -771,6 +879,30 @@ static void capture_mixed_carrier_move_suite(void) {
   CAPTURE_CHECK(capture_destroyed == before + 3 && CaptureMoveRecord::live == 0);
 }
 #endif
+struct CaptureNativeMember {
+  int value;
+  int add(int delta) const { return value + delta; }
+};
+static void capture_member_pointer_carrier_suite(void) {
+  using Data = int CaptureNativeMember::*;
+  using Method = int (CaptureNativeMember::*)(int) const;
+  Optional(Data) source = Some(Data, &CaptureNativeMember::value);
+  Optional(Method) method = Some(Method, &CaptureNativeMember::add);
+  CaptureIntBlock __unsafe_unretained moved = ^[move source, move method] {
+    guard let member = source else { return -1; }
+    guard let call = method else { return -2; }
+    CaptureNativeMember object{98};
+    return object.*member + (object.*call)(2);
+  };
+  guard let null_member = source else { ++capture_failures; return; }
+  guard let null_method = method else { ++capture_failures; return; }
+  CAPTURE_CHECK(null_member == nullptr && null_method == nullptr);
+  CaptureIntBlock heap = capture_heap_copy(moved);
+  CAPTURE_CHECK(heap() == 198);
+#if !__has_feature(objc_arc)
+  _Block_release(heap);
+#endif
+}
 struct CaptureOrder {
   int *source;
   int observed;
@@ -786,6 +918,7 @@ template<class T> static int capture_template(T value) {
 static void capture_cpp_suite(void) {
   capture_record_move_suite();
   capture_cpp_carrier_move_suite();
+  capture_member_pointer_carrier_suite();
 #if __has_feature(objc_arc)
   capture_mixed_carrier_move_suite();
 #endif
@@ -801,6 +934,7 @@ static void capture_cpp_suite(void) {
 static void capture_suite(void) {
   capture_scalar_suite();
   capture_plain_carrier_move_suite();
+  capture_plain_native_carrier_suite();
   capture_object_suite();
   capture_defer_suite();
 #if __has_feature(objc_arc)

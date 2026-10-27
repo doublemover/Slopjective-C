@@ -22,13 +22,6 @@ void replace_mixed_carrier(MixedTree &source) { new (&source) MixedTree{}; }
 #else
 void delete_mixed_carrier(MixedTree *source) { delete source; }
 #endif
-#elif defined(REJECT_MIXED_CAPTURE)
-#include "mixed-boundary.h"
-void mixed_capture() {
-  MixedTree source = Err(MixedManaged, MixedNative, None(MixedItem));
-  void (^capture)(void) = ^{ (void)source; };
-  capture();
-}
 #elif defined(REJECT_MIXED_RECORD)
 #include "mixed-boundary.h"
 struct MixedContainer {

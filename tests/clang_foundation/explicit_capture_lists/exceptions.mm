@@ -318,6 +318,20 @@ static void capture_failed_full_expression(void) {
                   CaptureMoveRecord::live == live_before);
   }
 }
+#if __has_feature(objc_arc)
+static void capture_implicit_mixed_full_expression(void) {
+  __objc3_result(id, CaptureMoveRecord) source =
+      __objc3_err(id, CaptureMoveRecord, CaptureMoveRecord(95));
+  try {
+    CaptureIntBlock __unsafe_unretained failed =
+        (CaptureThrowingTemporary{}, ^{ return (int)__objc3_is_ok(source); });
+    (void)failed;
+    CAPTURE_CHECK(0);
+  } catch (const CaptureFailure &) {
+    CAPTURE_CHECK(CaptureMoveRecord::live == 1);
+  }
+}
+#endif
 static void capture_failed_lifetime_receiver(bool bounded) {
   int destroyed_before = capture_destroyed, closed_before = capture_closed;
   CaptureObject *source = [CaptureObject make:98];
@@ -469,6 +483,9 @@ int main(void) {
 #endif
   capture_resource_operation_unwind();
   capture_failed_full_expression();
+#if __has_feature(objc_arc)
+  capture_implicit_mixed_full_expression();
+#endif
   capture_failed_lifetime_receiver(false);
   capture_failed_lifetime_receiver(true);
   capture_committed_field_unwind();

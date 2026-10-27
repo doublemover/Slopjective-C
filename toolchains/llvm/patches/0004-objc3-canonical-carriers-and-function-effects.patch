@@ -9131,7 +9131,7 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..38dde1511 100644
+index 5d4c5ff7d..cbe4a41ee 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -1,3 +1,6 @@
@@ -9456,7 +9456,7 @@ index 5d4c5ff7d..38dde1511 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -16922,6 +17132,210 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -16922,6 +17132,211 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -9573,6 +9573,7 @@ index 5d4c5ff7d..38dde1511 100644
 +      std::string Encoding;
 +      CarrierMove =
 +          (getObjC3CarrierRuntimeEncoding(Context, ValueType, Encoding) ||
++           isObjC3PlainCarrierCaptureType(Context, ValueType, /*IsMove=*/true) ||
 +           (getLangOpts().CPlusPlus && hasObjC3CarrierCppPayload(ValueType) &&
 +            (!hasObjC3CarrierManagedPayload(ValueType) ||
 +             getLangOpts().ObjCAutoRefCount))) &&
@@ -9667,7 +9668,7 @@ index 5d4c5ff7d..38dde1511 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17461,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17462,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -9712,7 +9713,7 @@ index 5d4c5ff7d..38dde1511 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17506,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17507,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -9722,7 +9723,7 @@ index 5d4c5ff7d..38dde1511 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,9 +17589,41 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,9 +17590,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -9737,8 +9738,7 @@ index 5d4c5ff7d..38dde1511 100644
 +      QualType CaptureType = Cap.getCaptureType();
 +      if (hasObjC3CarrierCppPayload(CaptureType) &&
 +          (!hasObjC3CarrierManagedPayload(CaptureType) ||
-+           (getLangOpts().ObjCAutoRefCount &&
-+            Explicit != BSI->ObjC3ExplicitCaptures.end()))) {
++           getLangOpts().ObjCAutoRefCount)) {
 +        // Keep independent selected-arm recipes: creation may move, but every
 +        // later heap copy must initialize from the Block's const field.
 +        EnterExpressionEvaluationContext EvalContext(

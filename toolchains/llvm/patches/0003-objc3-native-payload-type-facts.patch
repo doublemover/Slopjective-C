@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..3f918093c
+index 000000000..e98defc57
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,162 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -30,6 +30,11 @@ index 000000000..3f918093c
 +class ASTContext;
 +/// Managed leaves in a recursively nested Optional/Result storage graph.
 +bool hasObjC3CarrierManagedPayload(QualType Type);
++/// Native plain carrier fields captured by value do not need Objective-C
++/// callable encodings. Bound the complete leaf graph and reject ownership,
++/// volatile/atomic/resource storage; moves additionally require mutable leaves.
++bool isObjC3PlainCarrierCaptureType(const ASTContext &Context, QualType Type,
++                                   bool IsMove = false);
 +/// Whether a carrier occurs by value in this object, including array and record
 +/// subobjects. Pointers and references are views, never owned subobjects.
 +bool containsObjC3CarrierManagedStorage(QualType Type);
@@ -187,10 +192,10 @@ index e3f74d73f..3609394b1 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..33ae24aee
+index 000000000..d9b55af08
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,528 @@
+@@ -0,0 +1,568 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -199,6 +204,7 @@ index 000000000..33ae24aee
 +//===----------------------------------------------------------------------===//
 +
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclCXX.h"
@@ -332,6 +338,45 @@ index 000000000..33ae24aee
 +  };
 +  return !Type.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
 +      Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
++}
++
++bool clang::isObjC3PlainCarrierCaptureType(const ASTContext &Context,
++                                           QualType Type, bool IsMove) {
++  if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
++                           Type.getCanonicalType().getTypePtr()))
++    return false;
++  unsigned Budget = 256;
++  auto Check = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
++    if (T.isNull() || Depth > 64 || Budget == 0 || T->isDependentType() ||
++        T.isVolatileQualified() || T->isAtomicType() ||
++        (IsMove && T.isConstQualified()) ||
++        T.getObjCLifetime() != Qualifiers::OCL_None ||
++        getObjC3ResourceTypeContract(Context, T).Cleanup)
++      return false;
++    --Budget;
++    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++      return Self(Self, Optional->getElementType(), Depth + 1);
++    if (const auto *Result = T->getAs<ObjC3ResultType>())
++      return Self(Self, Result->getSuccessType(), Depth + 1) &&
++             Self(Self, Result->getErrorType(), Depth + 1);
++    if (const auto *Array = Context.getAsArrayType(T))
++      return isa<ConstantArrayType>(Array) &&
++             Self(Self, Array->getElementType(), Depth + 1);
++    if (const auto *Record = T->getAs<RecordType>()) {
++      const auto *Definition = Record->getDecl()->getDefinition();
++      if (!Definition || isa<CXXRecordDecl>(Definition))
++        return false;
++      for (const auto *Field : Definition->fields())
++        if (!Self(Self, Field->getType(), Depth + 1))
++          return false;
++      return true;
++    }
++    return (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
++            T->isRealFloatingType() || T->isPointerType() ||
++            T->isMemberPointerType() || T->isAnyComplexType()) &&
++           !T->isObjCObjectPointerType() && !T->isBlockPointerType();
++  };
++  return Check(Check, Type, 0);
 +}
 +
 +void clang::collectObjC3CarrierCppPayloadTypes(

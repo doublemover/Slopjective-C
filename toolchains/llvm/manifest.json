@@ -19,15 +19,15 @@
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "7fdf64c65213f45b7d552450be638078d92b2d94ee9af74e5741f27dd31e0049"
+      "sha256": "be0a1cf7d1565948d7dfcaaf94ba5df50f0e08e760be4d16d608132e367d27aa"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "22ed79349713cbb338b3198cd075b0b1b18091424faab58de2aa14c6ef97fa57"
+      "sha256": "4f179b29c3d13b6547820f57ba52c3d67452239a2c85784eb67d4137d8ce19fe"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "054896116dba4e8b2beacb74ca8871710309e4b7e229d124d293f335778494e6"
+      "sha256": "7d06cb2efebff03065287d68d8976a3eb273948a1cfe63f6c3333ed1f3515402"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",

@@ -2577,7 +2577,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..99f59316a 100644
+index 0683a4937..ccfe1b2ae 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -1,3 +1,4 @@
@@ -2732,7 +2732,7 @@ index 0683a4937..99f59316a 100644
 +    // By-value records use native C/C++ subobject operations. Byref helpers
 +    // relocate the owned value to the forwarding cell before stack cleanup.
 +    if (supportsObjC3CarrierRuntimeCallABI(CGM, Type) ||
-+        supportsObjC3PlainCarrierRuntimeABI(CGM, Type) ||
++        supportsObjC3PlainCarrierCapture(CGM, Type) ||
 +        (hasObjC3CarrierCppPayload(Type) &&
 +         (supportsObjC3CarrierCppLocalLifetime(CGM, Type) ||
 +          (Capture.hasCopyExpr() &&
@@ -2840,7 +2840,7 @@ index 0683a4937..99f59316a 100644
 +          *this, type, blockField, src, variable->getLocation(),
 +          CI.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move);
 +
-+    } else if (supportsObjC3PlainCarrierRuntimeABI(CGM, type)) {
++    } else if (supportsObjC3PlainCarrierCapture(CGM, type)) {
 +      // Only the selected arm is initialized. A moved-from carrier keeps its
 +      // discriminant and nested tags while its active scalar leaves become zero.
 +      bool Emitted = emitObjC3CarrierCopyPayload(
@@ -2863,7 +2863,7 @@ index 0683a4937..99f59316a 100644
 +    if (CI.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move &&
 +        !CI.isObjC3ResourceCapture() && !CI.getObjC3InitExpr() &&
 +        !hasObjC3CarrierManagedPayload(type) &&
-+        !supportsObjC3PlainCarrierRuntimeABI(CGM, type) &&
++        !supportsObjC3PlainCarrierCapture(CGM, type) &&
 +        !type->isObjCRetainableType())
 +      EmitNullInitialization(src, sourceType);
 +
@@ -2917,12 +2917,12 @@ index 0683a4937..99f59316a 100644
  
 -    if (IsBlockDeclInRetExpr())
 +    ObjC3ReleaseScope *ReleaseScope = nullptr;
-+    if (CI.isObjC3Explicit() && !IsObjC3Resource &&
++    if ((CI.isObjC3Explicit() || IsMixedObjC3Carrier) && !IsObjC3Resource &&
 +        (IsMixedObjC3Carrier ||
 +         hasOnlyObjC3ImplicitManagedDestruction(getContext(), type)))
 +      ReleaseScope = getObjC3ReleaseScope(blockInfo.getBlockExpr());
 +
-+    if (CI.isObjC3Explicit()) {
++    if (CI.isObjC3Explicit() || IsMixedObjC3Carrier) {
 +      llvm::SmallVector<ObjC3BlockCaptureCleanup *, 2> FieldCleanups;
 +      if (IsMixedObjC3Carrier) {
 +        Address Selection =
@@ -5884,10 +5884,10 @@ index c724a063b..ffdf6e3be 100644
  
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..91ad2841d
+index 000000000..7975d386f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,236 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -5967,6 +5967,12 @@ index 000000000..91ad2841d
 +    return false;
 +  std::string Encoding;
 +  return getObjC3CarrierRuntimeEncoding(CGM.getContext(), Type, Encoding);
++}
++
++bool CodeGen::supportsObjC3PlainCarrierCapture(CodeGenModule &CGM, QualType Type) {
++  return isObjC3PlainCarrierCaptureType(CGM.getContext(), Type) &&
++         supportsPlainObjC3CarrierStorageLifetime(CGM, Type) &&
++         supportsObjC3CarrierCopyPayload(CGM, Type);
 +}
 +
 +bool CodeGen::diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM,
@@ -6120,10 +6126,10 @@ index 000000000..91ad2841d
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.h b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
 new file mode 100644
-index 000000000..bcbfe16d2
+index 000000000..0b4e60866
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +//===--- CGObjC3ABIBoundaries.h - Unqualified native boundaries -*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6141,6 +6147,7 @@ index 000000000..bcbfe16d2
 +                                           bool IsTargetDefaultMSABI);
 +// Plain carriers admit selected-arm copies without ARC copy/dispose hooks.
 +bool supportsObjC3PlainCarrierRuntimeABI(CodeGenModule &CGM, QualType Type);
++bool supportsObjC3PlainCarrierCapture(CodeGenModule &CGM, QualType Type);
 +bool diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
 +                                      SourceLocation Loc);
 +// Direct carriers use their selected-arm adapters. Whole enclosing aggregates
@@ -7124,10 +7131,10 @@ index 000000000..fdf223326
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..64bf07d36
+index 000000000..eecf4e38b
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1432 @@
+@@ -0,0 +1,1404 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -7722,41 +7729,13 @@ index 000000000..64bf07d36
 +    CodeGenFunction &CGF, QualType PayloadType, Address Destination,
 +    Address Source, bool DestinationIsVolatile, bool SourceIsVolatile,
 +    bool IsInitialization, SourceLocation Loc, unsigned Depth) {
-+  if (Depth > 64 || PayloadType.isNull())
-+    return false;
-+  ASTContext &Ctx = CGF.getContext();
-+  QualType Canonical = Ctx.getCanonicalType(PayloadType);
-+  const Type *Ty = Canonical.getTypePtr();
-+  if (Ty->isVoidType())
-+    return true;
-+  if (isa<ObjC3OptionalType>(Ty))
-+    return emitOptionalCopyImpl(CGF, Canonical, Destination, Source,
-+                                DestinationIsVolatile, SourceIsVolatile,
-+                                IsInitialization, Loc, Depth);
-+  if (isa<ObjC3ResultType>(Ty))
-+    return emitObjC3ResultCopy(CGF, Canonical, Destination, Source,
-+                               DestinationIsVolatile, SourceIsVolatile,
-+                               IsInitialization, Loc);
 +  if (!supportsOptionalCopyPayload(CGF.CGM, PayloadType, Depth))
 +    return false;
-+  const bool SrcVolatile = SourceIsVolatile || PayloadType.isVolatileQualified();
-+  const bool DstVolatile = DestinationIsVolatile || PayloadType.isVolatileQualified();
-+  if (Ty->isScalarType()) {
-+    llvm::Value *Value =
-+        CGF.EmitLoadOfScalar(Source, SrcVolatile, PayloadType, Loc);
-+    if (!Value)
-+      return false;
-+    CGF.EmitStoreOfScalar(Value, Destination, DstVolatile, PayloadType,
-+                          AlignmentSource::Type, IsInitialization);
-+    return true;
-+  }
-+  if (!Ty->isAggregateType() ||
-+      containsNestedCarrierValue(Ctx, PayloadType))
-+    return false;
-+  const uint64_t Size = Ctx.getTypeSizeInChars(PayloadType).getQuantity();
-+  CGF.Builder.CreateMemMove(Destination, Source, CGF.Builder.getInt64(Size),
-+                            DstVolatile || SrcVolatile);
-+  return true;
++  // Optional and Result must use the same leaf operations. In particular,
++  // complex values require native complex loads/stores, not scalar emission.
++  return emitOptionalCopyPayload(CGF, PayloadType, Destination, Source,
++                                  DestinationIsVolatile, SourceIsVolatile,
++                                  IsInitialization, Loc, Depth);
 +}
 +
 +bool CodeGen::emitObjC3OptionalCopy(CodeGenFunction &CGF,
@@ -9622,7 +9601,7 @@ index 000000000..fc63348bc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ResultExpr.cpp b/clang/lib/CodeGen/CGObjC3ResultExpr.cpp
 new file mode 100644
-index 000000000..0c2cd4a1c
+index 000000000..627992d1e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ResultExpr.cpp
 @@ -0,0 +1,282 @@
@@ -9734,7 +9713,7 @@ index 000000000..0c2cd4a1c
 +            PayloadType.getCanonicalType().getTypePtr()) &&
 +        !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, PayloadType)) {
 +      emitObjC3CarrierCppValueInit(CGF, Payload, PayloadStorage);
-+    } else if (PayloadType->isScalarType()) {
++    } else if (CodeGenFunction::hasScalarEvaluationKind(PayloadType)) {
 +      llvm::Value *Value = CGF.EmitScalarExpr(Payload);
 +      CGF.EmitStoreOfScalar(Value, PayloadStorage, PayloadIsVolatile,
 +                            PayloadType, AlignmentSource::Type,
@@ -26490,10 +26469,10 @@ index 000000000..13dbb4797
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
 new file mode 100644
-index 000000000..624dcb78f
+index 000000000..8f88e0fc4
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3BlockCaptures.cpp
-@@ -0,0 +1,489 @@
+@@ -0,0 +1,498 @@
 +//===--- CGObjC3BlockCaptures.cpp - Explicit Block capture owners -----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3BlockCaptures.h"
@@ -26508,6 +26487,7 @@ index 000000000..624dcb78f
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/Stmt.h"
 +#include "llvm/IR/DataLayout.h"
 +#include "llvm/IR/DerivedTypes.h"
@@ -26522,21 +26502,29 @@ index 000000000..624dcb78f
 +} // namespace clang::CodeGen
 +
 +namespace {
-+bool containsExplicitBlockCapture(const Stmt *Statement) {
++bool containsOwnedBlockCapture(const Stmt *Statement) {
 +  if (!Statement) return false;
 +  if (const auto *Argument = dyn_cast<CXXDefaultArgExpr>(Statement))
-+    return containsExplicitBlockCapture(Argument->getExpr());
++    return containsOwnedBlockCapture(Argument->getExpr());
 +  if (const auto *Initializer = dyn_cast<CXXDefaultInitExpr>(Statement))
-+    return containsExplicitBlockCapture(Initializer->getExpr());
++    return containsOwnedBlockCapture(Initializer->getExpr());
 +  if (const auto *Lambda = dyn_cast<LambdaExpr>(Statement)) {
 +    for (const Expr *Initializer : Lambda->capture_inits())
-+      if (containsExplicitBlockCapture(Initializer)) return true;
++      if (containsOwnedBlockCapture(Initializer)) return true;
 +    return false;
 +  }
-+  if (const auto *Block = dyn_cast<BlockExpr>(Statement))
-+    return Block->getBlockDecl()->hasObjC3CaptureList();
++  if (const auto *Block = dyn_cast<BlockExpr>(Statement)) {
++    if (Block->getBlockDecl()->hasObjC3CaptureList())
++      return true;
++    for (const auto &Capture : Block->getBlockDecl()->captures()) {
++      QualType Type = Capture.getVariable()->getType();
++      if (hasObjC3CarrierCppPayload(Type) && hasObjC3CarrierManagedPayload(Type))
++        return true;
++    }
++    return false;
++  }
 +  for (const Stmt *Child : Statement->children())
-+    if (containsExplicitBlockCapture(Child)) return true;
++    if (containsOwnedBlockCapture(Child)) return true;
 +  return false;
 +}
 +struct RollbackBlockCaptureFullExpr final : EHScopeStack::Cleanup {
@@ -26698,7 +26686,7 @@ index 000000000..624dcb78f
 +    CodeGenFunction &CGF, const Expr *Expression) : CGF(CGF) {
 +  if (!CGF.getLangOpts().ObjC3 ||
 +      (!CGF.getLangOpts().Exceptions && !CGF.getLangOpts().ObjCExceptions) ||
-+      !containsExplicitBlockCapture(Expression))
++      !containsOwnedBlockCapture(Expression))
 +    return;
 +  Previous = CGF.ObjC3BlockCaptureFullExpr;
 +  // Both this descriptor and its capture records outlive deferred EH emission
