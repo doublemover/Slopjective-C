@@ -842,6 +842,64 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxNamespaceAttributes() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-namespaces.v1",
+      "objc3.cxx-namespace-attributes.v1", "objc3.module-owned-names.v1",
+      "objc3.api-availability.v1", "objc3.api-partitions.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "namespace_attributes.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.attributes", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.attributes", "test");
+    };
+    const std::string source =
+        "namespace __attribute__((visibility(\"hidden\"))) Hidden { struct Value { int n; }; int get(Value); } "
+        "namespace Hidden { int later(); } "
+        "namespace __attribute__((type_visibility(\"hidden\"))) Typed { struct Value { int n; }; } "
+        "namespace __attribute__((availability(macos,introduced=10.1,deprecated=10.2,message=\"old\"))) Available { int api(); } "
+        "namespace [[deprecated(\"old ;cxx-class-dispatch:v1;\")]] Old { int get(); } "
+        "namespace __attribute__((annotate(\"objc3.spi:Testing\"))) Private { int secret(); struct Secret { int n; }; } "
+        "namespace Version { inline namespace __attribute__((abi_tag(\"v2\"))) v2 { struct Value { int n; }; int get(Value); } }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    assert(std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(),
+                     "objc3.cxx-class-dispatch.v1") == decoded->required_semantics.end());
+    assert(std::any_of(decoded->declarations.begin(), decoded->declarations.end(), [](const auto &d) {
+      return d.qualified_name == "Hidden::get" && d.canonical_type_identity.find(
+          ";visibility=" + std::to_string(clang::HiddenVisibility) + ";") != std::string::npos;
+    }));
+    for (const auto &d : decoded->declarations)
+      if (d.qualified_name == "Private" || d.qualified_name.starts_with("Private::"))
+        assert(d.spi_group == "Testing");
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto changed = source;
+    changed.replace(changed.find("hidden"), 6, "default");
+    auto visible = emit(changed);
+    assert(visible.success && visible.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+    auto late = emit("namespace Late { int first(); } namespace __attribute__((visibility(\"hidden\"))) Late { int later(); }");
+    assert(!late.success);
+    auto unknown = emit("namespace __attribute__((annotate(\"other\"))) Unknown { int api(); }");
+    assert(!unknown.success);
+    auto conflict = emit("namespace __attribute__((annotate(\"objc3.spi:Testing\"))) Private { "
+        "__attribute__((annotate(\"objc3.spi:Other\"))) int api(); }");
+    assert(!conflict.success);
+    std::erase(decoded->required_semantics, "objc3.cxx-namespace-attributes.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxImmediateDefaulting() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1538,6 +1596,7 @@ int main() {
   TestCxxDefaultedComparisons();
   TestCxxOutOfLineDefaulting();
   TestCxxImmediateDefaulting();
+  TestCxxNamespaceAttributes();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

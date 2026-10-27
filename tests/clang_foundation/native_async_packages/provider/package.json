@@ -79,7 +79,9 @@
     "native_immediate",
     "native_immediate_out",
     "NativeConstexprOut",
-    "native_constexpr_out"
+    "native_constexpr_out",
+    "NativeHiddenScope",
+    "NativeVersioned"
   ],
   "dependencies": []
 }

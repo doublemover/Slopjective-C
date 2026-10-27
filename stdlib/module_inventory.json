@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 19,
+        "minor": 20,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -143,13 +143,14 @@
         "eager runtime-bearing semantic imports with pinned header prelude, full lock registry identities and source-free inline code/data emission (source)",
         "native defaulted member and hidden-friend comparison package contracts, ADL and source-free comparisons (source)",
         "out-of-line defaulted C++ special members with user-provided lifecycle ABI, source-free construction and nontrivial frame values (source)",
-        "in-class/out-of-line consteval defaulted special members and immediate comparisons with source-free constant evaluation (source)"
+        "in-class/out-of-line consteval defaulted special members and immediate comparisons with source-free constant evaluation (source)",
+        "modeled namespace availability/visibility/ABI-tag/SPI attributes, inherited group policy and native visibility identity (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Dependent/template class bodies and captured/local-type inline definitions, unnamed nested types, namespace attributes and dependent lookup projections and broader profile contracts"
+        "Dependent/template class bodies and captured/local-type inline definitions, unnamed nested types, unmodeled namespace attributes and dependent lookup projections and broader profile contracts"
       ]
     },
     {

@@ -198,6 +198,11 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using capability')
     if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
         raise ValueError('C++ package lost its using-directive')
+    if 'objc3.cxx-namespace-attributes.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its namespace attribute capability')
+    for name in ('NativeHiddenScope', 'NativeVersioned::v2'):
+        if ';cxx-namespace-attributes:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost namespace attribute identity: ' + name)
     if 'objc3.cxx-immediate-defaulting.v1' not in metadata.get('required_semantics', []):
         raise ValueError('C++ package lost its immediate defaulting capability')
     for name in ('NativeImmediate', 'NativeImmediateOut'):

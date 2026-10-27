@@ -580,3 +580,18 @@ struct NativeConstexprOut {
 };
 constexpr NativeConstexprOut::NativeConstexprOut()=default;
 inline constexpr NativeConstexprOut native_constexpr_out{};
+
+namespace __attribute__((visibility("hidden"))) NativeHiddenScope {
+  struct Value { int n; };
+  int get(Value);
+}
+namespace NativeHiddenScope { int later(int); }
+int NativeHiddenScope::get(Value value) { return value.n+2; }
+int NativeHiddenScope::later(int n) { return n+2; }
+namespace NativeVersioned {
+  inline namespace __attribute__((abi_tag("v2"))) v2 {
+    struct Value { int n; };
+    int get(Value);
+  }
+}
+int NativeVersioned::v2::get(Value value) { return value.n+2; }

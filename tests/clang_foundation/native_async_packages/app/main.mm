@@ -195,6 +195,9 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  if (NativeHiddenScope::get({40})!=42 || NativeHiddenScope::later(40)!=42 ||
+      NativeVersioned::get({40})!=42) return 85;
+
   {
     static_assert(NativeImmediate{}.get()==42);
     static_assert(NativeImmediate{}==NativeImmediate{});

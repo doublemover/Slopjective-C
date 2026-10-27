@@ -85,6 +85,55 @@ std::string InterfaceQualifiedName(const clang::NamedDecl *declaration) {
   return text;
 }
 
+std::string HashInterfaceFacts(llvm::StringRef facts) {
+  llvm::SHA256 hash; hash.update(facts);
+  return llvm::toHex(hash.final(), true);
+}
+
+bool IsModeledNamespaceAttribute(const clang::Attr *attribute) {
+  if (llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr, clang::AvailabilityAttr,
+                clang::VisibilityAttr, clang::TypeVisibilityAttr, clang::AbiTagAttr>(attribute))
+    return true;
+  const auto *annotation = llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+  return annotation && annotation->getAnnotation().starts_with("objc3.spi:");
+}
+
+std::string NamespaceAttributeText(const clang::Attr *attribute,
+                                  const clang::ASTContext &context) {
+  clang::PrintingPolicy policy(context.getLangOpts());
+  std::string text;
+  llvm::raw_string_ostream stream(text);
+  if (const auto *availability = llvm::dyn_cast<clang::AvailabilityAttr>(attribute)) {
+    auto quote = [&](llvm::StringRef value) { stream << '\"'; stream.write_escaped(value); stream << '\"'; };
+    stream << "__attribute__((availability(" << availability->getPlatform()->getName();
+    if (!availability->getIntroduced().empty()) stream << ", introduced=" << availability->getIntroduced();
+    if (!availability->getDeprecated().empty()) stream << ", deprecated=" << availability->getDeprecated();
+    if (!availability->getObsoleted().empty()) stream << ", obsoleted=" << availability->getObsoleted();
+    if (availability->getUnavailable()) stream << ", unavailable";
+    if (availability->getEnvironment()) stream << ", environment=" << availability->getEnvironment()->getName();
+    if (availability->getStrict()) stream << ", strict";
+    if (!availability->getReplacement().empty()) { stream << ", replacement="; quote(availability->getReplacement()); }
+    if (!availability->getMessage().empty()) { stream << ", message="; quote(availability->getMessage()); }
+    stream << ")))";
+  } else attribute->printPretty(stream, policy);
+  return text;
+}
+
+std::set<std::string> NamespaceAttributes(const clang::NamespaceDecl *space, bool canonical = true) {
+  std::set<std::string> attributes;
+  for (const auto *attribute : (canonical ? space->getCanonicalDecl() : space)->attrs())
+    if (!attribute->isImplicit())
+      attributes.insert(NamespaceAttributeText(attribute, space->getASTContext()));
+  return attributes;
+}
+
+void PrintNamespaceHead(const clang::NamespaceDecl *space, llvm::raw_ostream &out,
+                         bool attributes) {
+  out << (space->isInline() ? "inline namespace " : "namespace ");
+  for (const auto &attribute : NamespaceAttributes(space, attributes)) out << attribute << ' ';
+  out << space->getName();
+}
+
 bool IsTopLevel(const clang::NamedDecl *declaration) {
   const auto *context = declaration->getDeclContext();
   while (context) {
@@ -196,6 +245,8 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
 }
 
 clang::NamedDecl *Representative(clang::NamedDecl *declaration) {
+  if (auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+    return space->getCanonicalDecl();
   if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     return function->getMostRecentDecl();
   if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
@@ -1276,9 +1327,17 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl>(declaration);
-    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
+      const auto original = NamespaceAttributes(space);
       for (const auto *attribute : space->attrs())
-        supported &= attribute->isImplicit();
+        if (!attribute->isImplicit()) {
+          supported &= IsModeledNamespaceAttribute(attribute);
+          // Namespace defaults must be stable across extensions. Applying a
+          // later attribute retroactively can change earlier symbol visibility.
+          if (!attribute->isInherited())
+            supported &= original.count(NamespaceAttributeText(attribute, space->getASTContext()));
+        }
+    }
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
         function && function->isExternallyVisible()) {
       supported &= !function->isTemplated() &&
@@ -1430,8 +1489,17 @@ class InterfaceCollector final
                         declaration->getQualifiedNameAsString());
           return true;
         }
+        for (const auto *scope = declaration->getDeclContext(); scope; scope = scope->getParent())
+          if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(scope)) {
+            const auto parent_group = ReadInterfaceSPIGroup(space);
+            if (!parent_group.empty() && parent_group != group)
+              AddDiagnostic(result_, "O3IFC157", "nested SPI root conflicts with its namespace group",
+                            declaration->getQualifiedNameAsString());
+          }
         continue;
       }
+      if (llvm::isa<clang::NamespaceDecl>(declaration) && IsModeledNamespaceAttribute(attribute))
+        continue;
       if (llvm::isa<clang::CXXRecordDecl>(declaration)) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute);
             tag && tag->tags_size() == 1 &&
@@ -1689,12 +1757,14 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(dc))
       scopes.push_back(space);
   std::reverse(scopes.begin(), scopes.end());
-  for (const auto *space : scopes)
-    out << (space->isInline() ? "inline namespace " : "namespace ")
-        << space->getName() << " {\n";
-  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
-    out << (space->isInline() ? "inline namespace " : "namespace ")
-        << space->getName() << " {}\n";
+  for (const auto *space : scopes) {
+    PrintNamespaceHead(space, out, false);
+    out << " {\n";
+  }
+  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
+    PrintNamespaceHead(space, out, true);
+    out << " {}\n";
+  }
   else {
     auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
     const auto qualifier = function ? function->getQualifierLoc()
@@ -1766,14 +1836,21 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
 std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration && !IsTopLevel(declaration))
-    declaration =
-        llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
-  if (!declaration)
-    return {};
-  declaration = Representative(const_cast<clang::NamedDecl *>(declaration));
-  for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
-    if (a->getAnnotation().starts_with("objc3.spi:"))
-      return a->getAnnotation().drop_front(10).str();
+    declaration = llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
+  for (const clang::DeclContext *scope = declaration ? declaration->getDeclContext() : nullptr;
+       declaration;) {
+    const auto *root = Representative(const_cast<clang::NamedDecl *>(declaration));
+    for (const auto *attribute : root->specific_attrs<clang::AnnotateAttr>())
+      if (attribute->getAnnotation().starts_with("objc3.spi:"))
+        return attribute->getAnnotation().drop_front(10).str();
+    declaration = nullptr;
+    for (; scope; scope = scope->getParent())
+      if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(scope)) {
+        declaration = space;
+        scope = scope->getParent();
+        break;
+      }
+  }
   return {};
 }
 
@@ -1900,6 +1977,21 @@ bool ReadInterfaceDeclarationIdentity(
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative);
       function && function->isExplicitlyDefaulted() && function->isConsteval())
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
+  bool namespace_attributes = false;
+  if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(representative)) {
+    std::string facts;
+    for (const auto &attribute : NamespaceAttributes(space)) {
+      namespace_attributes = true;
+      facts += std::to_string(attribute.size()) + ":" + attribute;
+    }
+    if (!facts.empty()) identity.canonical_type_identity += ";namespace-attributes=" + HashInterfaceFacts(facts);
+  }
+  for (const auto *scope = representative->getDeclContext(); scope; scope = scope->getParent())
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(scope))
+      namespace_attributes |= !NamespaceAttributes(space).empty();
+  if (namespace_attributes)
+    identity.canonical_type_identity += ";cxx-namespace-attributes:v1;visibility=" +
+        std::to_string(representative->getVisibility()) + ";";
   std::vector<const clang::NamespaceDecl *> scopes;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
     scopes.push_back(space);
@@ -1921,7 +2013,7 @@ bool ReadInterfaceDeclarationIdentity(
         CxxAccessName(declaration->getAccess());
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
-    identity.canonical_type_identity += ";api-availability=" + availability;
+    identity.canonical_type_identity += ";api-availability=" + HashInterfaceFacts(availability);
   if (auto *value = llvm::dyn_cast<clang::ValueDecl>(representative)) {
     identity.effects = ReadCanonicalFunctionEffects(value->getType(), context);
     const auto lifetime = value->getType().getObjCLifetime();
@@ -2095,6 +2187,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxOutOfLineDefaultingSemantic);
     if (HasCxxImmediateDefaultingIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxImmediateDefaultingSemantic);
+    if (HasCxxNamespaceAttributeIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxNamespaceAttributeSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2161,6 +2255,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,
     kCxxImmediateDefaultingSemantic,
+    kCxxNamespaceAttributeSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2274,6 +2369,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxDefaultedComparisonSemantic,
     kCxxOutOfLineDefaultingSemantic,
     kCxxImmediateDefaultingSemantic,
+    kCxxNamespaceAttributeSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

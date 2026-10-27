@@ -47,7 +47,7 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.cxx-namespaces.v1"};
+    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||
@@ -75,6 +75,10 @@ void Check(const fs::path &root, BaseLanguage language,
   )";
   const bool cpp = language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx;
   if (cpp) source += R"(
+    namespace SPI(Testing) GroupSPI {
+      int secret() { return 22; }
+      struct Secret { int n; };
+    }
     namespace ScopedSPI {
       int visible() { return 20; }
       SPI(Testing) int secret() { return 22; }
@@ -113,7 +117,7 @@ void Check(const fs::path &root, BaseLanguage language,
       "secret()",      "secret_global",  "sizeof(struct Secret)",
       "secret_choice", "(SecretAlias)0", "other()"};
   if (cpp)
-    expressions.insert(expressions.end(), {"ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)"});
+    expressions.insert(expressions.end(), {"ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)", "GroupSPI::secret()", "sizeof(GroupSPI::Secret)"});
   if (objc)
     expressions.insert(expressions.end(),
                        {"sizeof(SecretRoot*)", "sizeof(id<SecretProtocol>)"});
@@ -198,6 +202,8 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(!Compile(scoped).success);
     scoped.imported_interfaces[0].spi_groups={"Testing"};
     CheckResult(Compile(scoped));
+    scoped.source_text="int f() { return GroupSPI::secret()+sizeof(GroupSPI::Secret); }";
+    CheckResult(Compile(scoped));
     if (objc) {
       scoped.imported_interfaces.clear();
       scoped.source_directed_imports=true;
@@ -211,7 +217,7 @@ void Check(const fs::path &root, BaseLanguage language,
       scoped_parent.locked_identity=top_artifact.identity;
       scoped.module_imports={scoped_leaf,scoped_parent};
       scoped.source_text="@import SPI.Top;\nint before() { return ScopedSPI::visible(); } "
-                         "\n@import SPI.Leaf;\nint after() { return ScopedSPI::secret(); }";
+                         "\n@import SPI.Leaf;\nint after() { return ScopedSPI::secret()+GroupSPI::secret(); }";
       CheckResult(Compile(scoped));
       scoped.module_imports[0].spi_groups.clear();
       scoped.source_text="@import SPI.Leaf;\nint f() { return ScopedSPI::secret(); }";

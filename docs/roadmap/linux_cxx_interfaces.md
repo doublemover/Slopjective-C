@@ -108,3 +108,7 @@ provider-owned definitions under `objc3.cxx-out-of-line-defaulting.v1`.
 The [2.19.0 source milestone](linux_cxx_immediate_defaulting.md) preserves
 consteval defaulted members and explicit out-of-line constexpr state under
 `objc3.cxx-immediate-defaulting.v1` semantics.
+
+The [2.20.0 source milestone](linux_cxx_namespace_attributes.md) preserves modeled
+namespace attributes, contextual visibility and inherited namespace SPI policy
+under `objc3.cxx-namespace-attributes.v1`.
