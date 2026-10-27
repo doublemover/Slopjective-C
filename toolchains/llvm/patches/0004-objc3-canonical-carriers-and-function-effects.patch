@@ -37422,10 +37422,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..4421e468e
+index 000000000..980d7282d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2493 @@
+@@ -0,0 +1,2543 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37635,6 +37635,8 @@ index 000000000..4421e468e
 +    Value UnownedOwners;
 +    SmallVector<Value, 16> EvaluatedValues;
 +    SmallVector<Value, 16> EvaluatedOwners;
++    SmallVector<Value, 16> EvaluatedAcquisitions;
++    Value AcquisitionReady;
 +    SmallVector<Storage, 16> EvaluatedTargets;
 +    SmallVector<Value, 16> EvaluatedMayTargets;
 +    Value EvaluatedReady;
@@ -37660,6 +37662,7 @@ index 000000000..4421e468e
 +  bool IsOwnerSummary = false;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
++  llvm::DenseMap<const Expr *, SmallVector<const Expr *, 2>> OwnerEvaluations;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedLambdaStorage;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedUnownedOwners;
@@ -37999,6 +38002,24 @@ index 000000000..4421e468e
 +    if (!llvm::is_contained(Owners, Owner))
 +      Owners.push_back(Owner);
 +  }
++  void collectOwnerEvaluations(const Expr *Owner, const Expr *Invocation) {
++    if (!Owner) return;
++    Owner = Owner->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Owner))
++      return collectOwnerEvaluations(Cleanups->getSubExpr(), Invocation);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Owner))
++      return collectOwnerEvaluations(Opaque->getSourceExpr(), Invocation);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Owner)) {
++      collectOwnerEvaluations(Conditional->getTrueExpr(), Invocation);
++      collectOwnerEvaluations(Conditional->getFalseExpr(), Invocation);
++      return;
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(Owner))
++      if (Binary->getOpcode() == BO_Comma)
++        return collectOwnerEvaluations(Binary->getRHS(), Invocation);
++    if (isa<DeclRefExpr>(Owner))
++      OwnerEvaluations[Owner].push_back(Invocation);
++  }
 +  void collectBindings(const Stmt *Node) {
 +    if (!Node || isa<BlockExpr>(Node))
 +      return;
@@ -38062,6 +38083,10 @@ index 000000000..4421e468e
 +        addStorage(storage(E), E->getType());
 +      if (const auto *Contract = getObjC3BorrowedReturnContract(callee(E))) {
 +        const Expr *OwnerExpr = ownerArgument(E, Contract->getOwnerIndex());
++        // Snapshot a stable slot load at its evaluation, before subsequent
++        // arguments can replace or consume the binding. The loan is not yet
++        // exposed to user code, but ordinary expiry must already affect it.
++        collectOwnerEvaluations(OwnerExpr, E);
 +        SmallVector<const VarDecl *, 2> Owners;
 +        ownerVariables(OwnerExpr, Owners);
 +        if (Owners.empty())
@@ -38358,14 +38383,20 @@ index 000000000..4421e468e
 +    return (PinSources.lookup(Binding) == O.Owner && State.SamePins.test(P)) ||
 +           (O.Identity && Identities.count() == 1);
 +  }
-+  Value acquired(const Stmt *Node, const Facts &State) const {
++  Value acquired(const Stmt *Node, const Facts &State,
++                 bool UseSnapshot = true, const Expr *SnapshotSource = nullptr) const {
++    if (UseSnapshot)
++      if (const auto *Expression = dyn_cast<Expr>(Node))
++        if (auto Slot = ExpressionSlots.find(Expression);
++            Slot != ExpressionSlots.end() && State.AcquisitionReady.test(Slot->second))
++          return State.EvaluatedAcquisitions[Slot->second];
 +    Value Result = empty();
 +    auto Found = Acquisitions.find(Node);
 +    if (Found == Acquisitions.end())
 +      return Result;
 +    for (unsigned I : Found->second) {
 +      const Origin &O = Origins[I];
-+      if (O.Pin)
++      if (O.Pin || (SnapshotSource && O.Owner != variable(SnapshotSource)))
 +        continue;
 +      if (O.Owner) {
 +        auto Slot = Slots.find({O.Owner, nullptr});
@@ -38775,6 +38806,8 @@ index 000000000..4421e468e
 +    for (Value &V : State.CapturedValues)
 +      ExpireValue(V);
 +    for (Value &V : State.EvaluatedValues)
++      ExpireValue(V);
++    for (Value &V : State.EvaluatedAcquisitions)
 +      ExpireValue(V);
 +    if (auto Slot = Slots.find({Owner, nullptr}); Slot != Slots.end())
 +      State.OwnerIdentities[Slot->second].reset();
@@ -39277,6 +39310,13 @@ index 000000000..4421e468e
 +          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
 +        }
++      if (const auto *Expression = dyn_cast<Expr>(Node))
++        if (auto Found = OwnerEvaluations.find(Expression); Found != OwnerEvaluations.end())
++          for (const Expr *Invocation : Found->second) {
++            unsigned Slot = ExpressionSlots.lookup(Invocation);
++            State.EvaluatedAcquisitions[Slot] = acquired(Invocation, State, false, Expression);
++            State.AcquisitionReady.set(Slot);
++          }
 +      if (const auto *Declaration = dyn_cast<DeclStmt>(Node)) {
 +        for (const Decl *D : Declaration->decls())
 +          if (const auto *Variable = dyn_cast<VarDecl>(D)) {
@@ -39617,6 +39657,10 @@ index 000000000..4421e468e
 +      Evaluated |= Source.EvaluatedValues[I];
 +      Changed |= Evaluated != Destination.EvaluatedValues[I];
 +      Destination.EvaluatedValues[I] = std::move(Evaluated);
++      Value Acquisition = Destination.EvaluatedAcquisitions[I];
++      Acquisition |= Source.EvaluatedAcquisitions[I];
++      Changed |= Acquisition != Destination.EvaluatedAcquisitions[I];
++      Destination.EvaluatedAcquisitions[I] = std::move(Acquisition);
 +      Value Owners = Destination.EvaluatedOwners[I];
 +      Owners |= Source.EvaluatedOwners[I];
 +      Changed |= Owners != Destination.EvaluatedOwners[I];
@@ -39631,6 +39675,10 @@ index 000000000..4421e468e
 +        Changed = true;
 +      }
 +    }
++    Value AcquisitionReady = Destination.AcquisitionReady;
++    AcquisitionReady &= Source.AcquisitionReady;
++    Changed |= AcquisitionReady != Destination.AcquisitionReady;
++    Destination.AcquisitionReady = std::move(AcquisitionReady);
 +    Value EvaluatedReady = Destination.EvaluatedReady;
 +    EvaluatedReady &= Source.EvaluatedReady;
 +    Changed |= EvaluatedReady != Destination.EvaluatedReady;
@@ -39731,6 +39779,8 @@ index 000000000..4421e468e
 +    Initial.CaptureReady.resize(ClosureSlots.size());
 +    Initial.EvaluatedValues.assign(ExpressionSlots.size(), empty());
 +    Initial.EvaluatedOwners.assign(ExpressionSlots.size(), Value(OwnerRoots.size()));
++    Initial.EvaluatedAcquisitions.assign(ExpressionSlots.size(), empty());
++    Initial.AcquisitionReady.resize(ExpressionSlots.size());
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
@@ -44897,4 +44947,94 @@ index 000000000..5016b898a
 +  };
 +  future_consume(owner);
 +  work0(); // expected-error {{after its owner lifetime ended}}
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-getter-snapshots.h b/clang/test/ObjC3/Sema/Inputs/borrowed-getter-snapshots.h
+new file mode 100644
+index 000000000..02b8dd424
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-getter-snapshots.h
+@@ -0,0 +1,13 @@
++typedef borrowed const char *SnapshotBytes;
++SnapshotBytes snapshot_bytes(void *owner,int unused) __attribute__((objc_returns_borrowed(owner_index=0)));
++SnapshotBytes snapshot_object_bytes(id owner,int unused) __attribute__((objc_returns_borrowed(owner_index=0)));
++void snapshot_use(const char *pointer __attribute__((noescape)));
++void snapshot_consume(void *owner __attribute__((cf_consumed)));
++#ifdef __cplusplus
++struct SnapshotGetter {
++  SnapshotBytes operator()(void *owner,int unused) const __attribute__((objc_returns_borrowed(owner_index=0)));
++};
++#endif
++__attribute__((objc_root_class)) @interface SnapshotOwner
++- (SnapshotBytes)bytesFor:(void *)owner after:(int)unused __attribute__((objc_returns_borrowed(owner_index=0)));
++@end
+diff --git a/clang/test/ObjC3/Sema/borrowed-getter-snapshots.mm b/clang/test/ObjC3/Sema/borrowed-getter-snapshots.mm
+new file mode 100644
+index 000000000..fb9902f38
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-getter-snapshots.mm
+@@ -0,0 +1,65 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-getter-snapshots.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-getter-snapshots.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-getter-snapshots.h"
++#endif
++void retargeted_argument(void *owner,void *replacement) {
++  auto pointer=snapshot_bytes(owner,(owner=replacement,0)); // expected-warning {{unsequenced modification and access}} expected-error {{storage of a value whose owner lifetime has ended}}
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void consumed_argument(void *owner) {
++  auto pointer=snapshot_bytes(owner,(snapshot_consume(owner),0)); // expected-error {{storage of a value whose owner lifetime has ended}}
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void restored_binding(void *owner,void *replacement) {
++  void *old=owner;
++  auto pointer=snapshot_bytes(owner,(owner=replacement,owner=old,0)); // expected-warning {{unsequenced modification and access}} expected-error {{storage of a value whose owner lifetime has ended}}
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void stable_argument(void *owner,void *replacement) {
++  auto pointer=snapshot_bytes(owner,(replacement=nullptr,0));
++  snapshot_use(pointer);
++  snapshot_consume(owner);
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void object_pin(id owner,id replacement) {
++  keepAlive(owner);
++  auto pointer=snapshot_object_bytes(owner,(owner=replacement,0)); // expected-warning {{unsequenced modification and access}}
++  snapshot_use(pointer);
++}
++void operator_argument(SnapshotGetter getter,void *owner,void *replacement) {
++  auto pointer=getter(owner,(owner=replacement,0)); // expected-warning {{unsequenced modification and access}} expected-error {{storage of a value whose owner lifetime has ended}}
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void method_argument(SnapshotOwner *_Nonnull receiver,void *owner,void *replacement) {
++  auto pointer=[receiver bytesFor:owner after:(owner=replacement,0)]; // expected-warning {{unsequenced modification and access}} expected-error {{storage of a value whose owner lifetime has ended}}
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void repeated_acquisition(void *owner,int count) {
++  for(int i=0;i<count;++i) {
++    auto pointer=snapshot_bytes(owner,0);
++    snapshot_use(pointer);
++  }
++}
++void conditional_selected_owner(bool choice,void *owner,void *other) {
++  auto pointer=snapshot_bytes(choice?owner:other,0);
++  snapshot_consume(owner);
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void constant_selected_owner(void *owner,void *other) {
++  auto pointer=snapshot_bytes(true?owner:other,0);
++  snapshot_consume(other);
++  snapshot_use(pointer);
++}
++void comma_owner(void *owner,void *other) {
++  auto pointer=snapshot_bytes((snapshot_consume(other),owner),0);
++  snapshot_use(pointer);
++  snapshot_consume(owner);
++  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
 +}

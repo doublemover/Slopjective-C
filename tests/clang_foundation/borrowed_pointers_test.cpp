@@ -147,6 +147,17 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
     Expect(Request(Root,Header+
         "void f(id o){auto work=[o]{use_noescape(bytes(o));};o=0;work();}",
         Language,Standard,ARC),ARC,ARC ? "" : "after its owner lifetime ended");
+    const std::string GetterHeader=ForeignHeader+
+        "ForeignBytes getter(ForeignRef owner,int unused) __attribute__((objc_returns_borrowed(owner_index=0)));\n";
+    for(const std::string &Case:{
+        "void f(ForeignRef o,ForeignRef r){const char*p=getter(o,(o=r,0));foreign_use(p);}",
+        "void f(ForeignRef o){const char*p=getter(o,(foreign_consume(o,0),0));foreign_use(p);}",
+        "void f(ForeignRef o,ForeignRef r){ForeignRef old=o;const char*p=getter(o,(o=r,o=old,0));foreign_use(p);}"})
+      Expect(Request(Root,GetterHeader+Case,Language,Standard,ARC),false,
+             "storage of a value whose owner lifetime has ended");
+    Expect(Request(Root,GetterHeader+
+        "void f(ForeignRef o,ForeignRef other){const char*p=getter(true?o:other,0);foreign_consume(other,0);foreign_use(p);}",
+        Language,Standard,ARC),true);
     const auto BlockExceptions = ForeignHeader+
         "void consume_block_noexcept(OwnerBlock __attribute__((ns_consumed))) noexcept;\n"
         "void consume_foreign_block_noexcept(ForeignRef __attribute__((cf_consumed)),OwnerBlock __attribute__((ns_consumed))) noexcept;\n";
