@@ -125,8 +125,20 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       Language,Standard,ARC),ARC,ARC ? "" : "after its owner lifetime ended");
   Expect(Request(Root,ForeignHeader+
       "void f(OwnerBlock o){keepAlive(o);const char*p=block_bytes(o);consume_block_owner(o);foreign_use(p);}",
-      Language,Standard,ARC),false,"control flow whose borrowed owner lifetime cannot be proved");
+      Language,Standard,ARC),true);
+  Expect(Request(Root,ForeignHeader+
+      "void f(void){ForeignCallback callbacks[2]={0,0};(void)(ForeignPlain *)callbacks;}",
+      Language,Standard,ARC),false,"callable cast changes an ownership");
   if (Language == BaseLanguage::ObjectiveCxx) {
+    const auto BlockExceptions = ForeignHeader+
+        "void consume_block_noexcept(OwnerBlock __attribute__((ns_consumed))) noexcept;\n"
+        "void consume_foreign_block_noexcept(ForeignRef __attribute__((cf_consumed)),OwnerBlock __attribute__((ns_consumed))) noexcept;\n";
+    Expect(Request(Root,BlockExceptions+
+        "void f(OwnerBlock o){try{keepAlive(o);consume_block_noexcept(o);}catch(...){foreign_use(block_bytes(o));}}",
+        Language,Standard,ARC),true);
+    Expect(Request(Root,BlockExceptions+
+        "void f(ForeignRef o,OwnerBlock b){const char*p=foreign_bytes(o);try{consume_foreign_block_noexcept(o,b);}catch(...){foreign_use(p);}}",
+        Language,Standard,ARC),true);
     const auto Exceptions = ForeignHeader+
         "void consume_foreign_noexcept(ForeignRef __attribute__((cf_consumed)),int) noexcept;\n"
         "int foreign_argument_that_may_throw();\n";

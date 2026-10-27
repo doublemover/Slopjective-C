@@ -49,3 +49,8 @@ borrowed owner-return contracts and retained-result callback aliases. Its
 source-free consumer checks exact foreign consumption/destruction counts and
 retained object destruction after callback invocation. The qualifier requires
 the corresponding ownership identities in the distributed interface.
+
+The [System 2.6.0 source span](linux_borrowed_block_pins.md) supplies the CFG
+acquisition/unwind model for lifetime pins loaded from ordinary Block slots and
+for ARC consumed Block argument copies. Other implicit Block copy boundaries
+remain as documented there.

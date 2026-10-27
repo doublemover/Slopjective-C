@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..96984ab0a
+index 000000000..22df1bbc8
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,618 @@
+@@ -0,0 +1,712 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -779,6 +779,7 @@ index 000000000..96984ab0a
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/Analysis/CFG.h"
 +#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/ODRHash.h"
 +#include "clang/AST/DeclCXX.h"
@@ -1387,6 +1388,99 @@ index 000000000..96984ab0a
 +    Second.AddQualType(findFunction(To, "callback")->getType());
 +    EXPECT_NE(First.CalculateHash(), Second.CalculateHash()) << Attribute;
 +  }
++}
++
++TEST(ObjC3TypeContracts, BlockPinFailureReleasesOnlyCompletedBindingPrefix) {
++  for (bool ARC : {false, true}) {
++    std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "-fblocks",
++        "-fexceptions", "-fcxx-exceptions", "-fobjc-exceptions"};
++    if (ARC) Args.push_back("-fobjc-arc");
++    auto AST = parse("typedef void(^Work)(void);void exercise(id owner,Work block){keepAlive(owner);keepAlive(block);}",Args);
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto *Function = const_cast<FunctionDecl *>(findFunction(AST->getASTContext(), "exercise"));
++    ASSERT_TRUE(Function);
++    CFG::BuildOptions Options;
++    Options.setAllAlwaysAdd(); Options.AddEHEdges=true;
++    Options.AddLifetime=true; Options.AddImplicitDtors=true;
++    auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++    ASSERT_TRUE(Graph);
++    const VarDecl *Earlier=nullptr,*CopyBinding=nullptr;
++    const CFGBlock *Success=nullptr;
++    for(const CFGBlock *Block:*Graph)
++      for(const CFGElement &Element:*Block)
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Declaration=dyn_cast<DeclStmt>(Statement->getStmt()))
++            if(const auto *Variable=dyn_cast<VarDecl>(Declaration->getSingleDecl()))
++              if(Variable->hasAttr<ObjC3LifetimeBindingAttr>()) {
++                if(Variable->getType()->isBlockPointerType()) {
++                  CopyBinding=Variable;Success=Block;
++                } else Earlier=Variable;
++              }
++    ASSERT_TRUE(Earlier && CopyBinding && Success);
++    const CFGBlock *Copy=nullptr;
++    for(auto Predecessor:Success->preds())
++      if(const CFGBlock *Block=Predecessor.getReachableBlock())
++        if(Block->succ_size()==2) Copy=Block;
++    ASSERT_TRUE(Copy && "the implicit copy needs a separate failure edge");
++    auto Edge=Copy->succ_begin();++Edge;
++    const CFGBlock *Failure=Edge->getReachableBlock();
++    ASSERT_TRUE(Failure);
++    SmallVector<const CFGBlock *,8> Pending{Failure};
++    llvm::SmallPtrSet<const CFGBlock *,16> Seen;
++    unsigned EarlierReleases=0,FailedReleases=0,FailedInitializations=0;
++    while(!Pending.empty()) {
++      const CFGBlock *Block=Pending.pop_back_val();
++      if(!Seen.insert(Block).second) continue;
++      for(const CFGElement &Element:*Block) {
++        if(auto Release=Element.getAs<CFGObjC3LifetimeRelease>()) {
++          EarlierReleases+=Release->getVarDecl()==Earlier;
++          FailedReleases+=Release->getVarDecl()==CopyBinding;
++        }
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Declaration=dyn_cast<DeclStmt>(Statement->getStmt()))
++            FailedInitializations+=Declaration->isSingleDecl() &&
++                Declaration->getSingleDecl()==CopyBinding;
++      }
++      for(auto Successor:Block->succs())
++        if(const CFGBlock *Next=Successor.getReachableBlock()) Pending.push_back(Next);
++    }
++    EXPECT_EQ(EarlierReleases,1u);
++    EXPECT_EQ(FailedReleases,0u);
++    EXPECT_EQ(FailedInitializations,0u);
++  }
++}
++
++TEST(ObjC3TypeContracts, ConsumedBlockCopyThrowsBeforeNoexceptCallWithoutPins) {
++  auto AST=parse(R"(
++    typedef void(^Work)(void);
++    void consume(void * __attribute__((cf_consumed)), Work __attribute__((ns_consumed))) noexcept;
++    void exercise(void *owner,Work block){try{consume(owner,block);}catch(...) {}}
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3",
++      "-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
++      "-fexceptions","-fcxx-exceptions","-fobjc-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Function=const_cast<FunctionDecl *>(findFunction(AST->getASTContext(),"exercise"));
++  ASSERT_TRUE(Function);
++  CFG::BuildOptions Options;
++  Options.setAllAlwaysAdd();Options.AddEHEdges=true;Options.AddLifetime=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++  ASSERT_TRUE(Graph);
++  unsigned Copies=0,ThrowingCalls=0;
++  for(const CFGBlock *Block:*Graph)
++    for(const CFGElement &Element:*Block)
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        if(const auto *Cast=dyn_cast<ImplicitCastExpr>(Statement->getStmt());
++            Cast && Cast->getCastKind()==CK_ARCProduceObject &&
++            Cast->getType()->isBlockPointerType()) {
++          ++Copies;EXPECT_EQ(Block->succ_size(),2u);
++        }
++        if(isa<CallExpr>(Statement->getStmt()) && Block->succ_size()>1) ++ThrowingCalls;
++      }
++  EXPECT_EQ(Copies,1u);
++  EXPECT_EQ(ThrowingCalls,0u);
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644

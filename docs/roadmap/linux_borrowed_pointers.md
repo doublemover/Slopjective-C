@@ -137,3 +137,8 @@ The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) adds
 annotated foreign consumption under ARC/MRC, consumed Block owner claims and
 bound C++ member-call contracts. Ownership-bearing parameter metadata contributes
 to native structural equivalence and ODR identity.
+
+The [System 2.6.0 source span](linux_borrowed_block_pins.md) admits ordinary
+Block-slot lifetime pins with separate copy-failure cleanup and models ARC
+consumed-argument copies before callee entry. Callable contract checks also
+follow native arrays and deep pointer containers.

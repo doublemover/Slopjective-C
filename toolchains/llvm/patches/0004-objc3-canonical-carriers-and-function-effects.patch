@@ -37357,10 +37357,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..9a11dc710
+index 000000000..78ccabc8c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2383 @@
+@@ -0,0 +1,2384 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -39651,12 +39651,13 @@ index 000000000..9a11dc710
 +      Destination->isVoidType() || Destination->isBooleanType() ||
 +      Source->isNullPointerConstant(S.Context, Expr::NPC_ValueDependentIsNotNull))
 +    return false;
-+  auto Function = [](QualType Type) -> const FunctionType * {
-+    for (unsigned Depth = 0; Depth != 16; ++Depth) {
++  auto Function = [&](QualType Type) -> const FunctionType * {
++    for (;;) {
 +      if (const auto *F = Type->getAs<FunctionType>()) return F;
 +      if (const auto *P = Type->getAs<PointerType>()) Type = P->getPointeeType();
 +      else if (const auto *P = Type->getAs<MemberPointerType>()) Type = P->getPointeeType();
 +      else if (const auto *R = Type->getAs<ReferenceType>()) Type = R->getPointeeType();
++      else if (const auto *A = S.Context.getAsArrayType(Type)) Type = A->getElementType();
 +      else return nullptr;
 +    }
 +    return nullptr;
@@ -44294,7 +44295,7 @@ index 000000000..fcba7bbdd
 +@end
 diff --git a/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m b/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m
 new file mode 100644
-index 000000000..7d21864bb
+index 000000000..69559379d
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m
 @@ -0,0 +1,118 @@
@@ -44369,7 +44370,7 @@ index 000000000..7d21864bb
 +  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
 +#endif
 +}
-+void pinned_block_owner(BorrowOwnerBlock owner) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++void pinned_block_owner(BorrowOwnerBlock owner) {
 +  keepAlive(owner);
 +  const char *pointer=block_bytes(owner);
 +  consume_block_owner(owner);
@@ -44416,3 +44417,117 @@ index 000000000..7d21864bb
 +
 +void foreign_lost_contract(ForeignRef owner __attribute__((cf_consumed))); // expected-note {{previous declaration is here}}
 +void foreign_lost_contract(ForeignRef owner) {} // expected-error {{conflicting types}}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-block-pins.h b/clang/test/ObjC3/Sema/Inputs/borrowed-block-pins.h
+new file mode 100644
+index 000000000..c58936792
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-block-pins.h
+@@ -0,0 +1,11 @@
++typedef void (^PinnedBlockOwner)(void);
++typedef borrowed const char *PinnedBlockBytes;
++PinnedBlockBytes pinned_block_bytes(PinnedBlockOwner owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++PinnedBlockBytes pinned_foreign_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void pinned_use(const char *pointer __attribute__((noescape)));
++void pinned_consume(PinnedBlockOwner owner __attribute__((ns_consumed)));
++#ifdef __cplusplus
++void pinned_consume_noexcept(PinnedBlockOwner owner __attribute__((ns_consumed))) noexcept;
++void pinned_foreign_noexcept(void *owner __attribute__((cf_consumed)),PinnedBlockOwner block __attribute__((ns_consumed))) noexcept;
++void pinned_foreign_throwing(void *owner __attribute__((cf_consumed)),PinnedBlockOwner block __attribute__((ns_consumed)));
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-block-pins.m b/clang/test/ObjC3/Sema/borrowed-block-pins.m
+new file mode 100644
+index 000000000..024dbd901
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-block-pins.m
+@@ -0,0 +1,66 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -emit-pch %S/Inputs/borrowed-block-pins.h -o %t-c.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -include-pch %t-c.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch %S/Inputs/borrowed-block-pins.h -o %t-c-arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t-c-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch %S/Inputs/borrowed-block-pins.h -o %t-cxx.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t-cxx.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch %S/Inputs/borrowed-block-pins.h -o %t-cxx-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t-cxx-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#if __has_feature(objc_arc) && !defined(__cplusplus)
++// expected-no-diagnostics
++#endif
++#ifndef FROM_PCH
++#include "Inputs/borrowed-block-pins.h"
++#endif
++void lexical_pin(PinnedBlockOwner owner) {
++  keepAlive(owner);
++  const char *pointer=pinned_block_bytes(owner);
++  pinned_consume(owner);
++  pinned_use(pointer);
++}
++void bounded_pin(PinnedBlockOwner owner) {
++  withLifetime(owner) {
++    const char *pointer=pinned_block_bytes(owner);
++    pinned_consume(owner);
++    pinned_use(pointer);
++  }
++}
++void expired_pin(PinnedBlockOwner owner) {
++  const char *pointer=0;
++  withLifetime(owner) {
++    pointer=pinned_block_bytes(owner);
++    pinned_consume(owner);
++    pinned_use(pointer);
++  }
++#if __has_feature(objc_arc)
++  pinned_use(pointer);
++#else
++  pinned_use(pointer); // expected-error {{after its owner lifetime ended}}
++#endif
++}
++#ifdef __cplusplus
++void pin_copy_failure(PinnedBlockOwner owner) {
++  try {
++    keepAlive(owner);
++    pinned_consume_noexcept(owner);
++  } catch(...) {
++    pinned_use(pinned_block_bytes(owner));
++  }
++}
++void before_noexcept_entry(void *owner,PinnedBlockOwner block) {
++  const char *pointer=pinned_foreign_bytes(owner);
++  try {pinned_foreign_noexcept(owner,block);}
++  catch(...) {pinned_use(pointer);}
++}
++void after_throwing_entry(void *owner,PinnedBlockOwner block) {
++  const char *pointer=pinned_foreign_bytes(owner);
++  try {pinned_foreign_throwing(owner,block);}
++  catch(...) {pinned_use(pointer);} // expected-error {{after its owner lifetime ended}}
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/callable-container-casts.m b/clang/test/ObjC3/Sema/callable-container-casts.m
+new file mode 100644
+index 000000000..4029ef4b9
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/callable-container-casts.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++typedef void (*Consumed)(void * __attribute__((cf_consumed)));
++typedef void (*Plain)(void *);
++typedef Consumed ********************TwentyPointers;
++void array_erasure(void) {
++  Consumed callbacks[2]={0,0};
++  (void)(Plain *)callbacks; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  Consumed (*matrix)[2]=&callbacks;
++  (void)(Plain **)matrix; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  Consumed *same=(Consumed *)callbacks;
++  (void)same;
++}
++void deep_erasure(TwentyPointers callbacks) {
++  (void)(Plain ********************)callbacks; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  TwentyPointers same=(TwentyPointers)callbacks;
++  (void)same;
++}

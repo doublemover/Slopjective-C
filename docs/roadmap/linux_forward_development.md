@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Block lifetime copy and unwind
+
+The [System 2.6.0 source span](linux_borrowed_block_pins.md) models Block pin
+acquisition and ARC consumed-argument copies as separate throwing CFG operations.
+Failed copies unwind only completed bindings and preserve pre-entry owner claims.
+Callable ownership checks also follow arrays and deep pointer containers.
+SDK 2.33 remains the accepted archive.
+
 ## Foreign consumption and Block owners
 
 The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) preserves
