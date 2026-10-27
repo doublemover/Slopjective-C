@@ -2,6 +2,7 @@
 #define NATIVE_ISOLATION_PROVIDER_H
 #include "objc3_runtime_services.h"
 @protocol Sendable @end
+typedef struct HopPacket { int value; double weights[3]; } HopPacket;
 __attribute__((objc_root_class))
 @interface HopObject <Sendable> { Class isa; }
 + (id)new __attribute__((nothrow));
@@ -11,6 +12,7 @@ actor class HopCounter : HopObject { int value; }
 - (int)add:(int)amount
     __attribute__((nothrow, objc_executor(named("native.isolation"))));
 - (int)read __attribute__((nothrow));
+- (HopPacket)transform:(HopPacket)packet __attribute__((nothrow));
 @end
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +28,18 @@ int hop_destroyed(void);
 int hop_roundtrip(HopCounter *, objc3_executor_t *) __objc3_async_frame;
 int hop_nil_roundtrip(void) __objc3_async_frame;
 HopObject *hop_owned_roundtrip(void) __objc3_async_frame;
+int hop_packet_roundtrip(HopCounter *, objc3_executor_t *) __objc3_async_frame;
+int hop_packet_arguments(void);
+int hop_packet_entries(void);
+HopPacket hop_packet_on_main(HopPacket)
+    __attribute__((nothrow, objc_executor(main)));
+int hop_owned_packet_roundtrip(objc3_executor_t *) __objc3_async_frame;
+int hop_cxx_packet_roundtrip(objc3_executor_t *) __objc3_async_frame;
+int hop_cxx_packet_live(void);
+int hop_cxx_packet_entries(void);
+void hop_cxx_packet_fail_move(int);
+int hop_cxx_value_roundtrip(objc3_executor_t *) __objc3_async_frame;
+int hop_cxx_value_live(void);
 #ifdef __cplusplus
 }
 #endif

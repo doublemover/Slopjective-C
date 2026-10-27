@@ -23,3 +23,12 @@ ARC/MRC C17/C++20/23 calls, exact named lookup bytes, PCH/import/ODR metadata an
 source-free contract preservation. The C++ task caller also enters a C provider's
 actor and checks destination restoration and independent result ownership.
 Public actor/Strict Concurrency conformance remains gated by the capability matrix.
+
+The 2.30 source additions exercise record arguments/results, array fields,
+caller restoration, actor entry and cancellation before target execution.
+`owned-packet.m` is compiled independently under ARC in every client/provider
+combination and proves managed record ownership without granting MRC aggregate
+admission. `cxx-packet.mm` supplies move-only parameter and successive throwing
+construction witnesses. Both implementation sources are removed before client
+and PCH compilation. Their expanded validation is recorded separately from the
+earlier 48-configuration acceptance above.

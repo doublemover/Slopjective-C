@@ -7,6 +7,7 @@ static objc3_executor_t *caller_executor, *main_executor, *global_executor,
     *named_executor;
 static uint64_t expected_actor;
 static int arguments, entries, cleanups, destroyed;
+static int packet_arguments, packet_entries;
 void hop_configure(objc3_executor_t *caller, objc3_executor_t *main,
                    objc3_executor_t *global, objc3_executor_t *named,
                    uint64_t actor_identity) {
@@ -16,12 +17,19 @@ void hop_configure(objc3_executor_t *caller, objc3_executor_t *main,
   named_executor = named;
   expected_actor = actor_identity;
   arguments = entries = cleanups = 0;
+  packet_arguments = packet_entries = 0;
 }
 int hop_arguments(void) {
   return __atomic_load_n(&arguments, __ATOMIC_ACQUIRE);
 }
 int hop_entries(void) { return __atomic_load_n(&entries, __ATOMIC_ACQUIRE); }
 int hop_cleanups(void) { return __atomic_load_n(&cleanups, __ATOMIC_ACQUIRE); }
+int hop_packet_arguments(void) {
+  return __atomic_load_n(&packet_arguments, __ATOMIC_ACQUIRE);
+}
+int hop_packet_entries(void) {
+  return __atomic_load_n(&packet_entries, __ATOMIC_ACQUIRE);
+}
 int hop_destroyed(void) {
   return __atomic_load_n(&destroyed, __ATOMIC_ACQUIRE);
 }
@@ -52,6 +60,15 @@ int hop_destroyed(void) {
 }
 - (int)read {
   return value;
+}
+- (HopPacket)transform:(HopPacket)packet {
+  objc3_current_actor_facts facts = {sizeof(facts), OBJC3_ACTOR_SERVICE_VERSION};
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_identity == expected_actor);
+  __atomic_fetch_add(&packet_entries, 1, __ATOMIC_RELEASE);
+  packet.value += 1;
+  packet.weights[2] += 1;
+  return packet;
 }
 @end
 void *hop_new_counter(void) {
@@ -109,4 +126,25 @@ static HopObject *owned_object(void) {
 }
 HopObject *hop_owned_roundtrip(void) __objc3_async_frame {
   return __objc3_await owned_object();
+}
+static HopPacket packet_argument(void) {
+  assert(objc3_executor_is_current(caller_executor));
+  __atomic_fetch_add(&packet_arguments, 1, __ATOMIC_RELEASE);
+  return (HopPacket){40,{10,20,30}};
+}
+HopPacket hop_packet_on_main(HopPacket packet) {
+  assert(objc3_executor_is_current(main_executor));
+  __atomic_fetch_add(&packet_entries, 1, __ATOMIC_RELEASE);
+  packet.value += 1;
+  packet.weights[2] += 1;
+  return packet;
+}
+int hop_packet_roundtrip(HopCounter *counter, objc3_executor_t *caller)
+    __objc3_async_frame {
+  HopPacket packet=__objc3_await hop_packet_on_main(packet_argument());
+  assert(objc3_executor_is_current(caller));
+  packet=__objc3_await [counter transform:packet];
+  assert(objc3_executor_is_current(caller));
+  assert(packet.weights[0]==10 && packet.weights[1]==20 && packet.weights[2]==32);
+  return packet.value;
 }

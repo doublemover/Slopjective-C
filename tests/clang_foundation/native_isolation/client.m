@@ -49,6 +49,16 @@ static int task_actor_entry(HopCounter *counter,
   assert(objc3_executor_is_current(destination));
   return value;
 }
+static int task_packet_entry(HopCounter *counter,
+                             objc3_executor_t *destination) __objc3_async {
+  HopPacket source={40,{10,20,30}};
+  HopPacket packet=__objc3_await hop_packet_on_main(source);
+  assert(objc3_executor_is_current(destination));
+  packet=__objc3_await [counter transform:packet];
+  assert(objc3_executor_is_current(destination));
+  assert(source.value==40 && source.weights[2]==30 && packet.weights[2]==32);
+  return packet.value;
+}
 #endif
 int main(void) {
   @autoreleasepool {
@@ -77,6 +87,15 @@ int main(void) {
            hop_cleanups() == 1);
     objc3_task_release(task);
 
+    frame = hop_packet_roundtrip(counter, caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    assert(result == 42 && hop_packet_arguments() == 1 && hop_packet_entries() == 2);
+    objc3_task_release(task);
+
     frame = hop_nil_roundtrip();
     type = frame.result_type;
     task = start(&frame);
@@ -103,6 +122,17 @@ int main(void) {
     assert(hop_arguments() == 1 && hop_entries() == 0 && hop_cleanups() == 1);
     objc3_task_release(task);
 
+    hop_configure(caller, main_destination, global, named,
+                  objc3_actor_identity(actor));
+    frame = hop_packet_roundtrip(counter, caller);
+    task = start(&frame);
+    assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+    assert(hop_packet_arguments() == 1);
+    objc3_task_request_cancel(task);
+    assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+    assert(hop_packet_arguments() == 1 && hop_packet_entries() == 0);
+    objc3_task_release(task);
+
 #ifdef __cplusplus
     // Exercise a C++ task caller entering the C provider's actor through a
     // generated native frame, then returning to the original destination.
@@ -111,8 +141,71 @@ int main(void) {
       assert(finish(parent.native_handle()).kind == OBJC3_COMPLETION_SUCCESS);
       assert(parent.result() == 43);
     }
+    {
+      auto parent = task_packet_entry(counter, caller).start(caller);
+      assert(finish(parent.native_handle()).kind == OBJC3_COMPLETION_SUCCESS);
+      assert(parent.result() == 42);
+    }
 #endif
+    assert(hop_cxx_packet_live() == 0);
+    frame = hop_cxx_packet_roundtrip(caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    assert(result == 42 && hop_cxx_packet_entries() == 1);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 && hop_cxx_packet_live() != 0; ++step)
+      sched_yield();
+    assert(hop_cxx_packet_live() == 0);
+    frame = hop_cxx_packet_roundtrip(caller);
+    task = start(&frame);
+    assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+    objc3_task_request_cancel(task);
+    assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 && hop_cxx_packet_live() != 0; ++step)
+      sched_yield();
+    assert(hop_cxx_packet_entries() == 1 && hop_cxx_packet_live() == 0);
+    for (int failed_move = 1; failed_move <= 3; ++failed_move) {
+      hop_cxx_packet_fail_move(failed_move);
+      frame = hop_cxx_packet_roundtrip(caller);
+      task = start(&frame);
+      assert(finish(task).kind == OBJC3_COMPLETION_CANCELLED);
+      objc3_task_release(task);
+      for (unsigned step = 0; step != 1000000 && hop_cxx_packet_live() != 0; ++step)
+        sched_yield();
+      assert(hop_cxx_packet_entries() == 1 && hop_cxx_packet_live() == 0);
+    }
+    hop_cxx_packet_fail_move(0);
+
+    assert(hop_cxx_value_live() == 0);
+    frame = hop_cxx_value_roundtrip(caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    assert(result == 42);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 && hop_cxx_value_live() != 0; ++step)
+      sched_yield();
+    assert(hop_cxx_value_live() == 0);
+
     int before = hop_destroyed();
+    frame = hop_owned_packet_roundtrip(caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+    assert(result == 42);
+    objc3_task_release(task);
+    for (unsigned step = 0; step != 1000000 && hop_destroyed() == before; ++step)
+      sched_yield();
+    assert(hop_destroyed() == before + 1);
+    before = hop_destroyed();
     @autoreleasepool {
       frame = hop_owned_roundtrip();
       type = frame.result_type;

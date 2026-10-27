@@ -1234,7 +1234,7 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..9d09ebb75 100644
+index 2cb79b6ba..4f5591bb4 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,135 @@
@@ -1264,7 +1264,7 @@ index 2cb79b6ba..9d09ebb75 100644
 +def err_objc3_isolation_hop_unavailable : Error<
 +  "native %select{actor|executor}0 crossing requires executor-hop lowering">;
 +def err_objc3_isolation_hop_shape : Error<
-+  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with scalar or void result, non-consuming scalar arguments, and a nonthrowing C++ exception specification">;
++  "awaited isolated entry requires a direct, non-variadic synchronous or native-frame call with supported value arguments/results, non-consuming parameters, and a nonthrowing C++ exception specification">;
 +def err_objc3_isolated_state : Error<
 +  "actor-isolated state %0 is accessible only on the same actor; use an awaited actor member">;
 +def err_objc3_sendable_transfer : Error<
@@ -38913,14 +38913,15 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..150d6e3f0
+index 000000000..f2fe5196c
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,999 @@
+@@ -0,0 +1,1044 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Isolation.h"
++#include "SemaObjC3Effects.h"
 +#include "clang/AST/ASTConsumer.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclCXX.h"
@@ -39623,6 +39624,39 @@ index 000000000..150d6e3f0
 +         T->isNullPtrType() || T->isObjCRetainableType();
 +}
 +
++// Aggregate entries use the same typed capture/result operations as ordinary
++// native frames. Keep resource transfer and MRC managed aggregate storage out
++// of this value-copy boundary until their independent ownership is modeled.
++bool isolationFrameValue(Sema &S, QualType T, bool Result) {
++  if (isolationFrameScalar(T, Result)) return true;
++  if (!T->isRecordType()) return false;
++  unsigned Budget = 256;
++  auto Check = [&](auto &&Self, QualType Value, unsigned Depth) -> bool {
++    if (Value.isNull() || Depth > 64 || Budget == 0 ||
++        Value->isDependentType() || Value.isVolatileQualified() ||
++        Value->isAtomicType() || Value->isReferenceType() ||
++        getObjC3ResourceTypeContract(S.Context, Value).Cleanup)
++      return false;
++    --Budget;
++    if (Value->isObjCRetainableType()) return S.getLangOpts().ObjCAutoRefCount;
++    if (const auto *Array = S.Context.getAsArrayType(Value))
++      return isa<ConstantArrayType>(Array) &&
++             Self(Self, Array->getElementType(), Depth + 1);
++    if (const auto *Record = Value->getAs<RecordType>()) {
++      const auto *Definition = Record->getDecl()->getDefinition();
++      if (!Definition || Definition->isUnion()) return false;
++      for (const auto *Field : Definition->fields())
++        if (!Self(Self, Field->getType(), Depth + 1)) return false;
++      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
++        for (const auto &Base : Class->bases())
++          if (!Self(Self, Base.getType(), Depth + 1)) return false;
++      return true;
++    }
++    return isolationFrameScalar(Value, false);
++  };
++  return Check(Check, T, 0);
++}
++
 +bool isolationResultIsOwned(const Decl *Target) {
 +  if (Target->hasAttr<NSReturnsRetainedAttr>())
 +    return true;
@@ -39695,9 +39729,16 @@ index 000000000..150d6e3f0
 +  {
 +    Sema::SynthesizedFunctionScope Scope(S, Thunk);
 +    SmallVector<Expr *, 4> Arguments;
-+    for (auto *Param : Params)
-+      Arguments.push_back(
-+          S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc));
++    for (auto *Param : Params) {
++      Expr *Argument = S.BuildDeclRefExpr(Param, Param->getType(), VK_LValue, Loc);
++      // The frame already owns an independent value parameter. Move that
++      // value into the target call rather than requiring another C++ copy.
++      if (S.getLangOpts().CPlusPlus && Param->getType()->isRecordType())
++        Argument = ImplicitCastExpr::Create(
++            S.Context, Param->getType(), CK_NoOp, Argument, nullptr,
++            VK_XValue, FPOptionsOverride());
++      Arguments.push_back(Argument);
++    }
 +    ExprResult Value;
 +    if (Message) {
 +      ExprResult Receiver = S.DefaultLvalueConversion(Arguments.front());
@@ -39736,6 +39777,10 @@ index 000000000..150d6e3f0
 +    Stmt *Return = ReturnStmt::Create(S.Context, Loc, Value.get(), nullptr);
 +    Thunk->setBody(CompoundStmt::Create(S.Context, {Return},
 +                                        FPOptionsOverride(), Loc, Loc));
++    if (checkObjC3CAsyncBody(S, Thunk, Thunk->getBody())) {
++      Thunk->setInvalidDecl();
++      return nullptr;
++    }
 +  }
 +  S.Consumer.HandleTopLevelDecl(DeclGroupRef(Thunk));
 +  return Thunk;
@@ -39821,11 +39866,11 @@ index 000000000..150d6e3f0
 +    return ExprError();
 +  bool Shape = !FT->isVariadic() &&
 +               FT->getNumParams() == SourceArguments.size() &&
-+               isolationFrameScalar(FT->getReturnType(), true) &&
++               isolationFrameValue(*this, FT->getReturnType(), true) &&
 +               (!getLangOpts().CPlusPlus || FT->isNothrow() ||
 +                Target->hasAttr<NoThrowAttr>());
 +  for (QualType T : FT->param_types())
-+    Shape &= isolationFrameScalar(T, false);
++    Shape &= isolationFrameValue(*this, T, false);
 +  if (Call) {
 +    Shape &= !isa<CXXMethodDecl>(Target) &&
 +             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());

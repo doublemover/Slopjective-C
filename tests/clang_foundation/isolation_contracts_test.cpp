@@ -393,12 +393,63 @@ int actor_cross(Counter *c) __objc3_async { return __objc3_await [c read]; }
     Success(Cross);
     assert(!Has(Cross, "native await operand does not suspend"));
   }
-  Reject(Make("struct PairResult { int value; };\n"
+  Success(Compile(Make("struct PairResult { int value; };\n"
               "__attribute__((objc_executor(main))) struct PairResult "
               "record_result(void)" +
               NoThrow +
               ";\nstruct PairResult bounded(void) __objc3_async { return "
-              "__objc3_await record_result(); }"),
+              "__objc3_await record_result(); }")));
+  Success(Compile(Make("struct Packet { int value; double weights[3]; };\n"
+              "__attribute__((objc_executor(main))) struct Packet "
+              "record_entry(struct Packet)" + NoThrow +
+              ";\nstruct Packet cross(struct Packet value) __objc3_async { return "
+              "__objc3_await record_entry(value); }")));
+  if (Arc)
+    Success(Compile(Make("struct OwnedPacket { SafeMessage *object; int value; };\n"
+                "__attribute__((objc_executor(main))) struct OwnedPacket "
+                "owned_entry(struct OwnedPacket)" + NoThrow +
+                ";\nstruct OwnedPacket cross(struct OwnedPacket value) __objc3_async { return "
+                "__objc3_await owned_entry(value); }")));
+  else
+    Reject(Make("struct OwnedPacket { SafeMessage *object; };\n"
+                "__attribute__((objc_executor(main))) struct OwnedPacket "
+                "owned_entry(struct OwnedPacket)" + NoThrow +
+                ";\nstruct OwnedPacket cross(struct OwnedPacket value) __objc3_async { return "
+                "__objc3_await owned_entry(value); }"),
+           "awaited isolated entry requires");
+  Reject(Make("struct UnsafePacket { MutableMessage *object; };\n"
+              "__attribute__((objc_executor(main))) struct UnsafePacket "
+              "unsafe_entry(struct UnsafePacket)" + NoThrow +
+              ";\nstruct UnsafePacket cross(struct UnsafePacket value) __objc3_async { return "
+              "__objc3_await unsafe_entry(value); }"),
+         Arc ? "non-Sendable type" : "awaited isolated entry requires");
+  if (Cxx)
+    Success(Compile(Make(R"(
+struct __attribute__((objc_unsafe_sendable)) MovePacket {
+  int value;
+  MovePacket(const MovePacket &)=delete;
+  MovePacket(MovePacket &&)=default;
+  ~MovePacket() noexcept {}
+};
+int move_entry(MovePacket) noexcept __attribute__((objc_executor(main)));
+int move_cross(MovePacket value) __objc3_async {
+  return __objc3_await move_entry(static_cast<MovePacket &&>(value));
+}
+)")));
+  Reject(Make(R"(
+void close_handle(int);
+typedef int Handle __attribute__((objc_requires_cleanup(close_handle)));
+struct __attribute__((objc_unsafe_sendable)) ResourcePacket { Handle value; };
+)" + std::string("struct ResourcePacket resource_entry(struct ResourcePacket)") +
+              NoThrow + " __attribute__((objc_executor(main)));\n"
+              "struct ResourcePacket cross(struct ResourcePacket value) __objc3_async {"
+              "return __objc3_await resource_entry(value);}"),
+         "awaited isolated entry requires");
+  Reject(Make("union PacketUnion { int value; double other; };\n"
+              "union PacketUnion union_entry(union PacketUnion)" + NoThrow +
+              " __attribute__((objc_executor(main)));\n"
+              "union PacketUnion cross(union PacketUnion value) __objc3_async {"
+              "return __objc3_await union_entry(value);}"),
          "awaited isolated entry requires");
   Success(
       Compile(Make("__attribute__((objc_executor(main), ns_returns_retained)) "
@@ -512,6 +563,13 @@ void CheckPrintAndPersistence(bool Cxx, bool Arc) {
 __attribute__((objc_executor(named("db.\"quoted\"")))) int named_entry(void);
 typedef void (^Work)(void) __objc3_async;
 void *spawn(Work) __attribute__((objc_task_spawn));
+struct ModulePacket { int value; double weights[3]; };
+struct ModulePacket packet_entry(struct ModulePacket)
+    __attribute__((objc_executor(main), nothrow));
+@interface Counter (Packets)
+- (struct ModulePacket)transformPacket:(struct ModulePacket)packet
+    __attribute__((nothrow));
+@end
 )";
   auto From = Parse(Source, Cxx, Arc);
   auto *Counter = Named<clang::ObjCInterfaceDecl>(*From, "Counter");
@@ -571,6 +629,16 @@ void *spawn(Work) __attribute__((objc_task_spawn));
   auto Consumer =
       Request("int client(Counter *c) { return [c stable]; }", Cxx, Arc);
   Consumer.imported_interfaces = {Input};
+  Success(Compile(Consumer));
+  Consumer.source_text =
+      std::string(Cxx ? "#include \"objc3_task.hpp\"\n"
+                      : "#include \"objc3_runtime_services.h\"\n") + R"(
+struct ModulePacket client_packet(Counter *counter, struct ModulePacket packet)
+    __objc3_async {
+  struct ModulePacket value=__objc3_await packet_entry(packet);
+  return __objc3_await [counter transformPacket:value];
+}
+)";
   Success(Compile(Consumer));
   Consumer.source_text = "int client(Counter *c) { return [c read]; }";
   auto CrossModule = Compile(Consumer);

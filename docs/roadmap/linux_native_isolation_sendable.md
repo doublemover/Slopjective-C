@@ -23,17 +23,17 @@ attribute spelling.
 
 The native compiler recognizes these canonical attributes:
 
-| Attribute | Native contract |
-| --- | --- |
-| `objc_executor(main)` | Main executor affinity |
-| `objc_executor(global)` | Global executor affinity |
-| `objc_executor(named("identity"))` | Exact named executor affinity |
-| `objc_nonisolated` | Nonisolated actor instance method or property |
-| `objc_unsafe_sendable` | Explicit unchecked type admission |
-| `objc_task_spawn` | Child task API classification |
-| `objc_task_detached` | Detached task API classification |
-| `objc_task_group` | Structured group scope API classification |
-| `objc_actor_nonreentrant` | Targeted v1 deferred-feature error |
+| Attribute                          | Native contract                               |
+| ---------------------------------- | --------------------------------------------- |
+| `objc_executor(main)`              | Main executor affinity                        |
+| `objc_executor(global)`            | Global executor affinity                      |
+| `objc_executor(named("identity"))` | Exact named executor affinity                 |
+| `objc_nonisolated`                 | Nonisolated actor instance method or property |
+| `objc_unsafe_sendable`             | Explicit unchecked type admission             |
+| `objc_task_spawn`                  | Child task API classification                 |
+| `objc_task_detached`               | Detached task API classification              |
+| `objc_task_group`                  | Structured group scope API classification     |
+| `objc_actor_nonreentrant`          | Targeted v1 deferred-feature error            |
 
 Named executor identities are nonempty ordinary string literal bytes, with no
 embedded NUL, normalization, or case folding. The internal `named:` prefix is
@@ -70,7 +70,7 @@ ivar expression does not create an actor entry. Nonisolated methods cannot read
 or write actor storage through an implicit `self` proof.
 
 Await operands are checked before native frame or C++ awaitable conversion.
-Direct synchronous executor calls with scalar arguments and scalar/void results
+Direct synchronous executor calls with qualified value arguments and results
 now form a private native async-frame thunk. Its source arguments evaluate once
 on the caller, and object/block arguments receive independent frame leases under
 ARC and MRC. The child frame resolves the exact main/global/named executor,
@@ -101,8 +101,12 @@ entry, so its continuation inherits the hopped destination while the original
 caller keeps its own destination. Checked async errors retain the native checked
 transport rather than constructing a C++ promise inside the private frame.
 
-The initial thunk value boundary excludes C++ nontrivial values and aggregate
-results. Consuming parameters/receivers remain rejected until their
+The [2.30.0 source milestone](linux_isolation_aggregate_values.md) extends the
+original scalar boundary to native record values, ARC-managed record fields and
+C++ parameter/result storage hooks. Owned C++ parameters move into the target
+call; results retain the native frame's copy/destruction requirements. Resource
+storage, unqualified nested leaves and MRC managed aggregates remain rejected.
+Consuming parameters/receivers remain rejected until their
 cancellation-time adoption is implemented. C++ targets must have a nonthrowing
 native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.

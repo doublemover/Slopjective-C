@@ -194,10 +194,18 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     provider = compile_source(case, work / "provider.m", work,
                         language="objective-c", standard="c17", ownership=case.provider_ownership,
                         output_name="provider.o")
+                    owned_packet = compile_source(case, work / "owned-packet.m", work,
+                        language="objective-c", standard="c17", ownership="arc",
+                        output_name="owned-packet.o")
+                    cxx_packet = compile_source(case, work / "cxx-packet.mm", work,
+                        language="objective-c++", standard="c++20", ownership=case.provider_ownership,
+                        output_name="cxx-packet.o")
                     (work / "provider.m").unlink()
+                    (work / "owned-packet.m").unlink()
+                    (work / "cxx-packet.mm").unlink()
                     extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
                     client = compile_source(case, work / "client.m", work, extra=extra)
-                    execute(case, [provider, client], work)
+                    execute(case, [provider, owned_packet, cxx_packet, client], work)
                 elif case.feature == "spawn":
                     extra = []
                     if case.transport == "pch":

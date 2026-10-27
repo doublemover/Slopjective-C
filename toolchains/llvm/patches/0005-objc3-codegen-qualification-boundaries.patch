@@ -27736,12 +27736,12 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..c01bde977
+index 000000000..70c66bae4
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,88 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC-CHECK
 +#include "Inputs/native-c-async-frame.h"
 +@protocol Sendable @end
 +__attribute__((objc_root_class)) @interface Message <Sendable> @end
@@ -27803,6 +27803,31 @@ index 000000000..c01bde977
 +}
 +// CHECK-DAG: {{call|invoke}} void @checked_frame
 +// CHECK-DAG: {{call|invoke}} ptr @__objc3_task_error_object
++
++typedef struct HopPacket { int value; double weights[3]; } HopPacket;
++extern HopPacket packet_entry(HopPacket)
++    __attribute__((objc_executor(main)));
++HopPacket packet_parent(HopPacket value) __objc3_async_frame {
++  return __objc3_await packet_entry(value);
++}
++// CHECK-DAG: {{call|invoke}}{{.*}} @packet_entry
++@interface Counter (Packets)
++- (HopPacket)transform:(HopPacket)value __attribute__((nothrow));
++@end
++HopPacket packet_actor_parent(Counter *counter, HopPacket value)
++    __objc3_async_frame {
++  return __objc3_await [counter transform:value];
++}
++
++#if __has_feature(objc_arc)
++typedef struct OwnedHopPacket { Message *object; int value; } OwnedHopPacket;
++extern OwnedHopPacket owned_packet_entry(OwnedHopPacket)
++    __attribute__((objc_executor(global)));
++OwnedHopPacket owned_packet_parent(OwnedHopPacket value) __objc3_async_frame {
++  return __objc3_await owned_packet_entry(value);
++}
++// ARC-CHECK-DAG: {{call|invoke}}{{.*}} @owned_packet_entry
++#endif
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 new file mode 100644
 index 000000000..8f99e9078
