@@ -33,3 +33,8 @@ association remain separate implementation work. This source milestone does not
 change the runtime ABI or claim full actor/profile conformance. The accepted SDK
 remains [2.29.0](../support/linux_source_batch_2_29_acceptance.json) until the next
 combined source batch is qualified and delivered.
+
+The [focused progress receipt](../support/linux_isolation_consuming_ownership_progress.json)
+records the compiler/tool build, two native codegen/PCH regressions, the frontend
+contract suite and 48 configurations / 360 commands in each normal and ASan/UBSan
+source/PCH matrix. Combined SDK delivery remains deferred to the next source batch.

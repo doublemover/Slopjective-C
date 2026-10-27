@@ -1,0 +1,75 @@
+{
+  "schema": "objc3c.linux-isolation-consuming-ownership-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "cded0c12eba93239adda88e0372e7383409f9c15",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-0605a78e2396-00b75dc3",
+  "compiler_patch_digest": "0605a78e2396075d7dff138a039cfee57f0df23ec8f5f1f58381c37229d1ce56",
+  "concurrency_module_version": "2.31.0",
+  "interface_schema": "2.2",
+  "scope": [
+    "ARC consumed object/Block parameters and consuming instance receivers at qualified executor/actor entries",
+    "Independent ramp/frame adoption through cancellation and allocation failure, with single consumed-argument initialization",
+    "Owning receiver-first message operands survive later argument owner destruction and unwind on argument exceptions",
+    "Nontrivial C++ actor-message parameters/results, source-free ownership contracts and native PCH reconstruction"
+  ],
+  "verification": {
+    "foundation_compile": {
+      "path": "out/isolation-consuming-foundation-build.json",
+      "sha256": "b2a0dbd417b5b4d2831b16637a92f8512f6420297450f668f99e36e310719455"
+    },
+    "native_codegen": {
+      "tests_passed": 2,
+      "log": {
+        "path": "out/isolation-consuming-native-codegen.log",
+        "sha256": "09d5289df416e1bf1e2bbddd3adf15262b18c7a9b3b1b6f1ac4cc69adf3852b7"
+      }
+    },
+    "facade": {
+      "suites_passed": ["isolation_contracts"],
+      "log": {
+        "path": "out/isolation-consuming-contracts-test.log",
+        "sha256": "f0f77de0185529d35684c1b26aeab6dde31ea6386a80e17df5a55fd9d7694544"
+      }
+    },
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations": 48,
+        "commands": 360,
+        "report": {
+          "path": "out/native-validation/isolation-consuming-normal/batch.json",
+          "sha256": "dcdf4751a7899cad5297d44d8c9be45758f51d3d4650c42ffd3458039567a968"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations": 48,
+        "commands": 360,
+        "report": {
+          "path": "out/native-validation/isolation-consuming-asan/batch.json",
+          "sha256": "fdf2fc42f8182a03caaaf27ad7104f871786d4f41228f9043a76675c6defc13f"
+        }
+      }
+    ],
+    "source_binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "bd969c09945a3317471980014249c7c2c184ba199a89a9bb7d66c1aeb766ad72"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "04e7ba09929c11ab0b3683bc49e297908125b42d8681f7b45c6bc7d51359d8c9"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.29.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "MRC/CF consumption, init-family entry and unsupported ownership storage",
+    "Ordinary C++ task-ABI isolated targets, class/super entry and automatic actor association",
+    "Combined compiler/tooling/native qualification after the next implementation batch",
+    "Full language/profile conformance and native Linux AArch64 qualification"
+  ]
+}
