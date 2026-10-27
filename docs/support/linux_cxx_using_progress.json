@@ -1,0 +1,116 @@
+{
+  "schema": "objc3c.linux-cxx-using-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "d7bbb8fe82e6cd39a10103660c10a48141dbc3eb",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a270ca5416a1-00b75dc3",
+  "compiler_patch_digest": "a270ca5416a1fc06ffd513299196bb08b71254ed0684a054cbcfbe564bee30b5",
+  "concurrency_module_version": "2.13.0",
+  "required_semantics": ["objc3.cxx-using.v1"],
+  "source_inputs": {
+    "native/objc3c/src/clang_foundation/interface_artifact_io.cpp": "abc90ab98c8844097d7dd98009a57e51f3a621aaa79a6a6cd9fcf2cdfbb344d8",
+    "native/objc3c/src/clang_foundation/interface_codec.cpp": "8dfc57cdb560acc4870ed8bb672f6b3a99910b424b62d17ae093e9049d6c07f0",
+    "native/objc3c/src/clang_foundation/interface_contract.cpp": "109485f8c4c2be904d3be4ca879284c36269423bbd0d38d09c06e82bc79834f3",
+    "native/objc3c/src/clang_foundation/interface_contract.h": "8e10ec9e122c7eb2398a41f8706a4481c0e29f7d6b8a9e35bcef1063d31e699d",
+    "native/objc3c/src/clang_foundation/interface_emitter.cpp": "877c3bba1480b4115fc8fa7242f267e63718a5978eb12629184f4bf239149b8b",
+    "native/objc3c/src/clang_foundation/interface_import.cpp": "d3cb33264abaf58cd8babdfe630ea3d626c8a42c8cccb4ab258ad9a5d6e4605a",
+    "native/objc3c/src/clang_foundation/interface_module_resolver.cpp": "0950724b361c2e11773807cee23ac7bc7877bc3fb230c311ec6fe5942eba21b0",
+    "native/objc3c/src/clang_foundation/interface_source_import_bridge.cpp": "5fb4a692293f29b38022894064519920f4794768fc6a28ac3b7ef7aff159e67e",
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "108d0c610c09abc28109587357b55fed61c328861538b29448eb0b6a2fd14235",
+    "stdlib/module_inventory.json": "feb8c39803cab2590a6c2bfb7a2ec6a31c8a4305f590a5d2fff84ef4355a5851",
+    "tests/clang_foundation/interface_emitter_test.cpp": "71c61167f9169c398a3e0ee5d7f0146fa6a165ac8075afb396cca10d1c2a167a",
+    "tests/clang_foundation/interface_module_names_test.cpp": "304876d9f0896fde7cd1858775176a97f6141708362541e02a719d271e2eed60",
+    "tests/clang_foundation/native_async_packages/app/main.mm": "3ccdf92f697c7188f99a421c736fa19b4a0a0b22aacb7dc9063f611bf0cc48c2",
+    "tests/clang_foundation/native_async_packages/provider/module.mm": "5d0ccf597fe5ad3e7a04a06103da702df2f4c20736422fea35fab9e61a14bce5",
+    "tests/clang_foundation/native_async_packages/provider/package.json": "001599e5a4b620ffef5d24fb1bba70e8eee18f5b569c4c4723fbc3be3283d12e",
+    "toolchains/llvm/manifest.json": "96e607b5e0c9019683bdf10cd38b5906803d8f6ee4435741cd99be9b9ac87cc1",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "c7644c50579247f8d4aead4d9fe01aced71eaab7f294b291d5139e408f3a045c"
+  },
+  "source_binary_snapshot": {
+    "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c": "da8b48bac1c97b9822bba63f41d18fc4498162d1e87fe618bd15a61eb6dbd439",
+    "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang": "d1bd735d437569413e57f407b92daa0de716d64548d66fd3fbf65230563abc55"
+  },
+  "inherited_compiler_progress": {
+    "path": "docs/support/linux_cxx_nested_types_progress.json",
+    "sha256": "0beb4b093c5bb763a97c7e9067b6fd8e34f99c7b0722317520200d15da01596e"
+  },
+  "verification": {
+    "facade_compile_log": {
+      "path": "out/cxx-using-compile.log",
+      "sha256": "29821aeb4ae81cecb3de16afb195e913ecb874bb73419bcd5dad67dbe7390a76"
+    },
+    "focused_facade_suites": [
+      {
+        "suite": "interface_emitter",
+        "status": "PASS",
+        "log": {
+          "path": "out/cxx-using-emitter.log",
+          "sha256": "92f23ae3ced667a9f51830689661fff67ea3d513d37f318cc7260b5881b9b937"
+        }
+      },
+      {
+        "suite": "interface_module_names",
+        "status": "PASS",
+        "log": {
+          "path": "out/cxx-using-names.log",
+          "sha256": "b6b9b1baf58918776eac454b66462174245d7f1eb95189a9d51a4778f262fc1f"
+        }
+      },
+      {
+        "suite": "interface_spi",
+        "status": "PASS",
+        "log": {
+          "path": "out/cxx-using-spi.log",
+          "sha256": "dcd5c4c40cc636d116e43682221dc292ba4b3594d8f30c5ad35a9e86333ff057"
+        }
+      }
+    ],
+    "source_free_smoke": {
+      "cases": 1,
+      "commands": 4,
+      "standard": "c++20",
+      "ownership": "arc",
+      "optimization": "O0",
+      "provider_source_removed": true,
+      "report": {
+        "path": "out/native-validation/cxx-using-smoke-normal/qualification.json",
+        "sha256": "2c3c9c0ad8422c5ea8c1c248665200239f168239610904a1135dd577a423905c"
+      }
+    },
+    "scope": "New source frontend/compiler with accepted 2.9.0 runtime/headers and unchanged development services. Smoke includes previous fixtures; overlapping results are not summed.",
+    "foundation_build": {
+      "path": "out/cxx-using-foundation-build.json",
+      "sha256": "62051beba1d5352acc7d00d4c6f6f458e9e3d33f9bdc3dd7869a89e42acc76ee"
+    },
+    "focused_native_suites": {
+      "status": "PASS",
+      "tests": 2,
+      "filter": "ObjC3UsingImporter.*:ObjC3DeclarationPrinter.*",
+      "log": {
+        "path": "out/cxx-using-native.log",
+        "sha256": "2c6e3b8451bfb5bd68a652a0f125c8ee70295f04745de2f3cc8801bc82e05630"
+      }
+    }
+  },
+  "active_sdk": {
+    "changed": false,
+    "concurrency_module_version": "2.9.0",
+    "seal": "0fc4def2426bd3bfd62f7288d4fcb1a73bed8cd27392edf05cd80dcb0024bcc3",
+    "acceptance": {
+      "path": "docs/support/linux_cxx_class_structure_acceptance.json",
+      "sha256": "e099d1065d1e4b789fbc2348f3912b440920cae51b2b5ff2d9a99e20532f3091"
+    }
+  },
+  "deferred_validation": [
+    "Complete source facade/native compiler matrices for the combined implementation batch",
+    "C++20/23 ARC/MRC O0/O2 and ASan/UBSan/TSan source-free execution matrices",
+    "All installed SDK gates and immutable package publication/relocation",
+    "Exact-archive fresh Debian/Ubuntu checks at the next coordinated SDK cutover"
+  ],
+  "remaining_implementation": [
+    "Concrete inline/constexpr/template bodies, defaulted comparisons and out-of-line defaulting",
+    "Member initializers, default arguments, unnamed nested types, namespace attributes and dependent lookup projections",
+    "Remaining ownership, concurrency, isolation, keypath, type/library/profile contracts and native Linux AArch64"
+  ],
+  "profile_conformance_claimed": false,
+  "scope": "Using declarations, overload introductions, namespace directives, using-enum and inherited constructors/members. Native importer retains access; printer retains enum type aliases and suppresses inherited default-argument repetitions."
+}

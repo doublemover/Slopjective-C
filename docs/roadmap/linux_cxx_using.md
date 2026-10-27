@@ -28,3 +28,6 @@ spelling and avoids repeating inherited default arguments. The active SDK remain
 sanitizer and installed/archive qualification remain deferred to the combined
 implementation batch. Dependent/template declarations, expression
 contracts and broader profile/ownership work retain their explicit boundaries.
+
+Focused source evidence is recorded in the
+[using milestone receipt](../support/linux_cxx_using_progress.json).
