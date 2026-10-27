@@ -23,3 +23,6 @@ friends and broader ownership/profile contracts remain separate work. The active
 SDK remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
 combined source batch.
+
+Focused source evidence is recorded in the
+[immediate defaulting receipt](../support/linux_cxx_immediate_defaulting_progress.json).
