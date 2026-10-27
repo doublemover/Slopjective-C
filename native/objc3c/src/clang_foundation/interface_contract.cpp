@@ -471,6 +471,9 @@ InterfaceContractValidation ValidateSemanticInterface(
       Add(result, "O3IFC020",
           "native symbol name differs from its module ownership contract",
           d.stable_id);
+  if (std::binary_search(required.begin(), required.end(), "objc3.keypath-subscripts.v1") &&
+      !std::binary_search(required.begin(), required.end(), "objc3.typed-keypaths.v1"))
+    Add(result, "O3IFC046", "key-path subscripts are missing their typed key-path capability");
   const bool effect_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations)

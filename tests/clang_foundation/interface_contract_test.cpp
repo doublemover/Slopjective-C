@@ -28,7 +28,7 @@ static void TestNativeContractCapabilities() {
   const std::vector<std::string> supported = {
       "objc3.canonical-function-effects.v1",
       "objc3.native-ownership-contracts.v1", "objc3.isolation-contracts.v1",
-      "objc3.typed-keypaths.v1"};
+      "objc3.typed-keypaths.v1", "objc3.keypath-subscripts.v1"};
   assert(!ValidateSemanticInterface(sidecar, module,
                                     sidecar.canonical_source_sha256,
                                     {declaration}, supported)
@@ -63,6 +63,9 @@ static void TestNativeContractCapabilities() {
                                     sidecar.canonical_source_sha256,
                                     {declaration}, supported)
               .ok());
+  sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
+  assert(!ValidateSemanticInterface(sidecar,module,sidecar.canonical_source_sha256,
+                                    {declaration},supported).ok());
   sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
   assert(ValidateSemanticInterface(sidecar, module,
                                    sidecar.canonical_source_sha256,

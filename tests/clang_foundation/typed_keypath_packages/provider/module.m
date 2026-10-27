@@ -40,3 +40,10 @@ KeyPath<PackagePathRoot *, int> package_narrowed_path(void) {
 WritableKeyPath<PackagePathRoot *, unsigned> package_bits_path(void) {
   return @keypath(PackagePathRoot, bits.value);
 }
+
+int package_indexed_update(PackagePathRoot *_Nonnull root,
+    WritableKeyPath<PackagePathRoot*,int> path,int value) {
+  int assigned=(root[path]=value);int increased=(root[path]+=2);
+  int before=root[path]++;int after=++root[path];
+  return assigned+increased+before+after;
+}

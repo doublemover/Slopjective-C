@@ -29,6 +29,55 @@ static int consume_readonly(KeyPath<RuntimePathNode *, int> path,
   return KeyPathGet(path, root);
 }
 
+static void check_subscripts(void) {
+  RuntimePathNode *root __attribute__((objc_precise_lifetime))=[RuntimePathNode newWithCount:11];
+  RuntimePathNode *child __attribute__((objc_precise_lifetime))=[RuntimePathNode newWithCount:17];
+  root.child=child;
+  WritableKeyPath<RuntimePathNode*,int> path=runtime_nested_path();
+  path_evaluations=root_evaluations=value_evaluations=operand_sequence=0;
+  int reads=path_count_reads,sets=path_count_sets;
+  assert(once_root(root)[once_path()]==17);
+  assert(operand_sequence==21 && path_evaluations==1 && root_evaluations==1);
+  assert(path_count_reads==reads+1 && path_count_sets==sets);
+  operand_sequence=0;
+  assert((once_root(root)[once_path()]=once_value())==42);
+  assert(operand_sequence==213 && path_evaluations==2 && root_evaluations==2 && value_evaluations==1);
+  assert(path_count_reads==reads+1 && path_count_sets==sets+1);
+  reads=path_count_reads;sets=path_count_sets;
+  assert((root[path]+=8)==50);
+  assert(path_count_reads==reads+1 && path_count_sets==sets+1);
+  assert(root[path]++==50);assert(++root[path]==52);
+  assert(--root[path]==51);assert(root[path]--==51);assert(root[path]==50);
+  long wide=44;assert((root[path]=wide)==44);
+  WritableKeyPath<RuntimePathNode*,int> selected=path;
+  root[selected]=(selected=@keypath(RuntimePathNode,count),39);
+  assert(root.count==11 && child.count==39);
+  selected=path;
+  assert((root[selected]+=(selected=@keypath(RuntimePathNode,count),3))==42);
+  assert(root.count==11 && child.count==42);
+  KeyPath<RuntimePathNode*,int> read=path;assert(root[read]==42);
+  PathPair pair={31,32};
+  WritableKeyPath<RuntimePathNode*,PathPair> pair_path=runtime_pair_path();
+  PathPair assigned=(root[pair_path]=pair);
+  assert(assigned.first==31 && assigned.second==32);
+  assert(root[pair_path].first==31 && root[pair_path].second==32);
+  WritableKeyPath<RuntimePathNode*,long> first=@keypath(RuntimePathNode,pair.first);
+  assert((root[first]+=11)==42 && root.pair.second==32);
+  int before=path_destroyed;
+  RuntimePathNode *snapshot_owner=[RuntimePathNode newWithCount:5];
+#if __has_feature(objc_arc)
+  __weak RuntimePathNode *witness=snapshot_owner;
+  snapshot_owner[(snapshot_owner=nil,@keypath(RuntimePathNode,count))]=6;
+  assert(witness==nil);
+#else
+  snapshot_owner[(objc_release(snapshot_owner),snapshot_owner=nil,@keypath(RuntimePathNode,count))]=6;
+#endif
+  assert(path_destroyed==before+1);
+#if !__has_feature(objc_arc)
+  objc_release(child);objc_release(root);
+#endif
+}
+
 int main(void) {
   @autoreleasepool {
     RuntimePathNode *root = [RuntimePathNode newWithCount:1];
@@ -293,4 +342,5 @@ int main(void) {
 #endif
   }
   assert(path_destroyed >= 3);
+  check_subscripts();
 }

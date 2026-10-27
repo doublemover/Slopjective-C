@@ -141,8 +141,9 @@ erase those ownership requirements. Nullable final properties are supported.
 The [record-field source extension](linux_keypath_record_fields.md) admits named
 bit-fields and unambiguous inherited C++ fields, with native lookup/access and
 base adjustment.
-Optional `root[path]` sugar and explicit NSString KVC boxing are not implemented. These boundaries must remain visible in inventory
-and conformance reporting.
+The [keypath 2.3 source extension](linux_keypath_subscripts.md) implements
+`root[path]` reads and writable updates. Explicit NSString KVC boxing remains
+open and must stay visible in inventory and conformance reporting.
 
 Maintained fixtures cover parser/sema diagnostics, C17 and C++20/23 PCH import,
 native AST import, source printing/reparse, concrete generic roots, incompatible

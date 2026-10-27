@@ -77,6 +77,8 @@ PACKETS = {
         "clang/lib/Sema/SemaObjC3Isolation.cpp",
         "clang/lib/Sema/SemaObjC3Isolation.h",
         "clang/lib/Sema/SemaObjC3KeyPath.cpp",
+        "clang/lib/Sema/SemaObjC3KeyPath.h",
+        "clang/lib/Sema/SemaPseudoObject.cpp",
         "clang/lib/Sema/SemaObjCProperty.cpp",
         "clang/test/ObjC3/Inputs/keypath-abi.h",
         "clang/test/ObjC3/Parser/optional-access.mm",

@@ -16,6 +16,10 @@ int main(void) {
     assert(KeyPathGet(read, root) == 42);
     assert(KeyPathGet(package_narrowed_path(), root) == 42);
     assert(KeyPathGet(package_identity_path(), root) == 142);
+    assert(root[read]==42);
+    assert(package_indexed_update(root,path,10)==48);
+    assert(root[path]==14);
+    assert((root[path]=42)==42);
     const objc3_keypath_descriptor_v2 *metadata = KeyPathMetadata(path);
     assert(objc3_keypath_validate_v2(metadata) == 0);
     assert(strstr(metadata->root_type, "objc-runtime=") != 0);

@@ -4875,7 +4875,7 @@ index e84e05e8e..8fd1f6dc1 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..d119699af 100644
+index 6a0d127fb..aaf57cf7b 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -5014,12 +5014,21 @@ index 6a0d127fb..d119699af 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7408,15 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7408,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
 +  ObjC3KeyPathApplicationInfo KeyPath;
-+  const bool IsKeyPath = getObjC3KeyPathApplication(E, KeyPath);
++  const Expr *Syntax = E->getSyntacticForm()->IgnoreParenImpCasts();
++  if (const auto *Assignment = dyn_cast<BinaryOperator>(Syntax); Assignment && Assignment->isAssignmentOp())
++    Syntax = Assignment->getLHS()->IgnoreParenImpCasts();
++  if (const auto *Increment = dyn_cast<UnaryOperator>(Syntax); Increment && Increment->isIncrementDecrementOp())
++    Syntax = Increment->getSubExpr()->IgnoreParenImpCasts();
++  const auto *Subscript = dyn_cast<ObjCSubscriptRefExpr>(Syntax);
++  ObjC3KeyPathInfo SubscriptInfo;
++  const bool IsKeyPathSubscript = Subscript &&
++      getObjC3KeyPathInfo(Subscript->getKeyExpr()->getType(), SubscriptInfo);
++  const bool IsKeyPath = IsKeyPathSubscript || getObjC3KeyPathApplication(E, KeyPath);
  
    // Find the result expression, if any.
    const Expr *resultExpr = E->getResultExpr();
@@ -5030,7 +5039,7 @@ index 6a0d127fb..d119699af 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7447,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7456,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -29139,3 +29148,28 @@ index 000000000..908ad6573
 +#ifdef __cplusplus
 +}
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-subscripts.m b/clang/test/ObjC3/CodeGen/typed-keypath-subscripts.m
+new file mode 100644
+index 000000000..e2b62dffb
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-keypath-subscripts.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++#include "../Inputs/keypath-abi.h"
++__attribute__((objc_root_class))
++@interface SnapshotPathRoot
++@property(nonatomic) int count;
++@end
++int later_operand(void);
++void subscript_snapshot_before_later_operand(SnapshotPathRoot * _Nonnull root) {
++  root[@keypath(SnapshotPathRoot,count)]=later_operand();
++}
++// A successful root retain is installed before evaluating a potentially
++// throwing later operand; normal and exceptional exits both release it.
++// CHECK-LABEL: define {{.*}}@subscript_snapshot_before_later_operand
++// CHECK: {{call|invoke}} {{.*}}@{{llvm.objc.retain|objc_retain}}
++// CHECK: invoke i32 @later_operand
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
++// CHECK: landingpad
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}

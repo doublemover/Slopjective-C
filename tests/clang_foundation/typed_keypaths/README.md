@@ -35,3 +35,10 @@ C++ fields inherited from separate base subobjects. Field setters preserve
 siblings and perform one property read/writeback. Provider and consumer paths
 compare their structural metadata, including the actual base declaration owner.
 These additions enter the next combined source validation batch.
+
+The keypath 2.3 source additions exercise typed subscripts, assignment results,
+compound updates, prefix/postfix operations, root/key/value order, frozen path
+selection, record writeback and independent root lifetime snapshots. The C++
+throwing-Block-copy witness runs through both explicit and subscript setters.
+Native source/PCH diagnostics additionally distinguish sequenced key-path
+operands from genuine conflicts within an operand or a surrounding expression.

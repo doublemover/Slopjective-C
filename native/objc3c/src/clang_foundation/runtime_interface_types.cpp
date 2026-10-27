@@ -273,6 +273,8 @@ void AddRuntimeInterfaceFiles(
   files.emplace_back(std::string(root) +
                          "/objc3c/runtime/objc3_runtime_services.h",
                      runtime_interface::kHeaderSource);
+  files.emplace_back(std::string(root) + "/objc3c/runtime/objc3_keypath.h",
+                     runtime_interface::kKeyPathHeaderSource);
   for (const auto &file : files)
     cxx_task_definitions |= file.second.find(
         "#include <objc3c/runtime/objc3_task.hpp>") != std::string::npos;

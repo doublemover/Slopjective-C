@@ -542,6 +542,9 @@ llvm::Error ValidateForEncoding(
     if (!supported.count(semantic))
       return Invalid(llvm::formatv("unknown required semantic '{0}'", semantic).str());
   }
+  if (required.count("objc3.keypath-subscripts.v1") &&
+      !required.count("objc3.typed-keypaths.v1"))
+    return Invalid("key-path subscripts are missing their typed key-path capability");
   for (const auto &declaration : sidecar.declarations) {
     const auto &effects = declaration.effects;
     if (!IsValidAsyncABIIdentity(effects))

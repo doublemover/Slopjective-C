@@ -18,6 +18,8 @@ struct SnapshotCapture {
 };
 
 int main() {
+  const bool modes[]={false,true};
+  for (bool subscript : modes) {
   @autoreleasepool {
     SnapshotCapture captured(42);
     PathCallback __unsafe_unretained stack = ^{ return captured.value; };
@@ -30,7 +32,14 @@ int main() {
     SnapshotCapture::fail_copy = true;
     bool failed = false;
     try {
-      KeyPathSet(@keypath(RuntimePathNode, callback), owner,
+      if (subscript) {
+        owner[@keypath(RuntimePathNode,callback)]=
+#if __has_feature(objc_arc)
+            (owner=nil,stack);
+#else
+            (objc_release(owner),stack);
+#endif
+      } else KeyPathSet(@keypath(RuntimePathNode, callback), owner,
 #if __has_feature(objc_arc)
           (owner = nil, stack)
 #else
@@ -48,6 +57,7 @@ int main() {
 #if __has_feature(objc_arc)
     assert(witness == nil);
 #endif
+  }
   }
   assert(SnapshotCapture::live == 0);
 }

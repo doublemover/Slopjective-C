@@ -384,6 +384,21 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
   return finder.Found;
 }
 
+clang::Expr *KeyPathSubscriptSyntax(clang::PseudoObjectExpr *expression) {
+  auto *syntax=expression->getSyntacticForm()->IgnoreParenImpCasts();
+  auto *base=syntax;
+  if (auto *assignment=llvm::dyn_cast<clang::BinaryOperator>(base);
+      assignment && assignment->isAssignmentOp())
+    base=assignment->getLHS()->IgnoreParenImpCasts();
+  if (auto *increment=llvm::dyn_cast<clang::UnaryOperator>(base);
+      increment && increment->isIncrementDecrementOp())
+    base=increment->getSubExpr()->IgnoreParenImpCasts();
+  clang::ObjC3KeyPathInfo info;
+  auto *subscript=llvm::dyn_cast<clang::ObjCSubscriptRefExpr>(base);
+  return subscript && clang::getObjC3KeyPathInfo(subscript->getKeyExpr()->getType(),info)
+      ? syntax : nullptr;
+}
+
 class DeclarationExpressionIdentity final
     : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
 public:
@@ -557,8 +572,33 @@ public:
                                 DataRecursionQueue * = nullptr) {
     if (const auto *source=clang::getObjC3IsolationSourceSyntax(expression))
       return TraverseStmt(const_cast<clang::Expr *>(source));
+    clang::ObjC3KeyPathApplicationInfo application;
+    if (clang::getObjC3KeyPathApplication(expression,application)) {
+      Add("keypath-application:"+std::to_string(application.Operation));
+      Add(ExpressionType(expression->getType()));
+      for (auto *argument:application.Syntax->arguments())
+        if (!TraverseStmt(const_cast<clang::Expr *>(argument))) return false;
+      return true;
+    }
+    if (auto *syntax=KeyPathSubscriptSyntax(expression)) {
+      Add("keypath-subscript");Add(ExpressionType(expression->getType()));
+      return TraverseStmt(syntax);
+    }
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
         TraversePseudoObjectExpr(expression,nullptr);
+  }
+  bool TraverseOpaqueValueExpr(clang::OpaqueValueExpr *expression,
+                               DataRecursionQueue * = nullptr) {
+    return TraverseStmt(expression->getSourceExpr());
+  }
+  bool TraverseCompoundLiteralExpr(clang::CompoundLiteralExpr *expression,
+                                   DataRecursionQueue * = nullptr) {
+    if (const auto *path=clang::getObjC3KeyPathLiteralPath(expression)) {
+      Add("keypath-literal");Add(ExpressionType(expression->getType()));Add(path->getString());
+      return true;
+    }
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
+        TraverseCompoundLiteralExpr(expression,nullptr);
   }
   // Native printers insert protective parentheses for carrier operators. A
   // reparse retains those ParenExpr nodes; they do not change typed semantics.
@@ -1389,6 +1429,12 @@ class TypeDependencyVisitor final
         builtin->getName().starts_with("__builtin_") &&
         builtin->getDeclContext()->getRedeclContext()->isTranslationUnit() && !builtin->hasBody())
       return;
+    if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(target);
+        method && method->isImplicit()) {
+      clang::ObjC3KeyPathInfo info;
+      if (clang::getObjC3KeyPathInfo(context_.getCanonicalTagType(method->getParent()), info))
+        return;
+    }
     if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(target->getDeclContext());
         owner && owner->isLambda()) return;
     if (in_expression_ && IsLocalExpressionContext(target->getDeclContext())) return;
@@ -1516,8 +1562,34 @@ class TypeDependencyVisitor final
                                 DataRecursionQueue * = nullptr) {
     if (const auto *source=clang::getObjC3IsolationSourceSyntax(expression))
       return TraverseStmt(const_cast<clang::Expr *>(source));
+    clang::ObjC3KeyPathApplicationInfo application;
+    if (clang::getObjC3KeyPathApplication(expression, application)) {
+      UsesTypedKeyPaths = true;
+      for (auto *argument : application.Syntax->arguments())
+        if (!TraverseStmt(const_cast<clang::Expr *>(argument))) return false;
+      return true;
+    }
+    if (auto *syntax=KeyPathSubscriptSyntax(expression)) {
+      UsesKeyPathSubscripts = UsesTypedKeyPaths = true;
+      return TraverseStmt(syntax);
+    }
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
         TraversePseudoObjectExpr(expression,nullptr);
+  }
+  bool TraverseOpaqueValueExpr(clang::OpaqueValueExpr *expression,
+                               DataRecursionQueue * = nullptr) {
+    return TraverseStmt(expression->getSourceExpr());
+  }
+  bool TraverseCompoundLiteralExpr(clang::CompoundLiteralExpr *expression,
+                                   DataRecursionQueue * = nullptr) {
+    if (clang::getObjC3KeyPathLiteralPath(expression)) {
+      // The public spelling is @keypath(Root, path). Its private descriptor
+      // and accessors are reconstructed by the pinned consumer compiler.
+      UsesTypedKeyPaths = true;
+      return TraverseType(expression->getType());
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
+        TraverseCompoundLiteralExpr(expression,nullptr);
   }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression, DataRecursionQueue * = nullptr) {
     if (expression->isGenericLambda()) return UnsupportedExpression();
@@ -1650,6 +1722,8 @@ class TypeDependencyVisitor final
   bool UsesCanonicalFunctionEffects = false;
   bool UsesRuntimeFrame = false;
   bool UsesCxxTaskRuntime = false;
+  bool UsesTypedKeyPaths = false;
+  bool UsesKeyPathSubscripts = false;
 
 private:
   bool in_expression_ = false;
@@ -1675,7 +1749,9 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            bool &uses_runtime_frame,
                            bool &uses_cxx_task_runtime,
                            const std::vector<std::string> &exports = {},
-                           const std::string &source_root = {}) {
+                           const std::string &source_root = {},
+                           bool *uses_typed_keypaths = nullptr,
+                           bool *uses_keypath_subscripts = nullptr) {
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
                                 ReadInterfaceSPIGroup(declaration),
                                 source_root);
@@ -1767,6 +1843,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     visitor.CheckVisibility(category->getClassInterface());
   uses_runtime_frame |= visitor.UsesRuntimeFrame;
   uses_cxx_task_runtime |= visitor.UsesCxxTaskRuntime;
+  if (uses_typed_keypaths) *uses_typed_keypaths |= visitor.UsesTypedKeyPaths;
+  if (uses_keypath_subscripts) *uses_keypath_subscripts |= visitor.UsesKeyPathSubscripts;
   if (visitor.UsesCxxTaskRuntime && !IsQualifiedRuntimeTaskHeader(context))
     AddDiagnostic(result, "O3IFC112",
                   "published bodies using C++ tasks require the exact SDK task runtime header",
@@ -1947,7 +2025,8 @@ class InterfaceCollector final
           IsInMainFile(context_, declaration->getLocation()) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
         CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
-                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_);
+                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_,
+                              &uses_typed_keypaths_, &uses_keypath_subscripts_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -2108,7 +2187,8 @@ class InterfaceCollector final
     const std::string stable_id = identity.stable_id;
     uses_function_effects_ |=
         CheckTypeDependencies(representative, context_, result_, resolved_ids_,
-                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_);
+                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_,
+                              &uses_typed_keypaths_, &uses_keypath_subscripts_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||
@@ -2148,6 +2228,8 @@ class InterfaceCollector final
   bool UsesCanonicalFunctionEffects() const { return uses_function_effects_; }
   bool UsesRuntimeFrame() const { return uses_runtime_frame_; }
   bool UsesCxxAsyncBodies() const { return uses_cxx_async_bodies_; }
+  bool UsesTypedKeyPaths() const { return uses_typed_keypaths_; }
+  bool UsesKeyPathSubscripts() const { return uses_keypath_subscripts_; }
 
 private:
   clang::ASTContext &context_;
@@ -2166,6 +2248,8 @@ private:
   bool uses_function_effects_ = false;
   bool uses_runtime_frame_ = false;
   bool uses_cxx_async_bodies_ = false;
+  bool uses_typed_keypaths_ = false;
+  bool uses_keypath_subscripts_ = false;
 };
 
 class LocalDefinitionPrintingCallbacks final : public clang::PrintingCallbacks {
@@ -2711,6 +2795,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     source << "#include <objc3c/runtime/objc3_task.hpp>\n";
   else if (collector.UsesRuntimeFrame())
     source << "#include <objc3c/runtime/objc3_runtime_services.h>\n";
+  if (collector.UsesTypedKeyPaths())
+    source << "#include <objc3c/runtime/objc3_keypath.h>\n";
   auto ordered_dependencies = resolved_dependencies;
   std::sort(ordered_dependencies.begin(), ordered_dependencies.end(),
       [](const auto &a, const auto &b) {
@@ -2772,6 +2858,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     sidecar.required_semantics.push_back("objc3.cxx-data-interfaces.v1");
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
+  if (collector.UsesTypedKeyPaths())
+    sidecar.required_semantics.push_back("objc3.typed-keypaths.v1");
+  if (collector.UsesKeyPathSubscripts())
+    sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
   for (const auto &declaration : sidecar.declarations) {
     if (!declaration.spi_group.empty())
       sidecar.required_semantics.push_back("objc3.api-partitions.v1");
@@ -2859,6 +2949,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.native-ownership-contracts.v1",
       "objc3.isolation-contracts.v1",
       "objc3.typed-keypaths.v1",
+    "objc3.keypath-subscripts.v1",
       "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
@@ -2982,6 +3073,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.native-ownership-contracts.v1",
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
+    "objc3.keypath-subscripts.v1",
     "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",

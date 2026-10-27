@@ -5,7 +5,7 @@
 #include <objc3c/runtime/objc3_keypath.h>
 
 #define OBJC3_KEYPATH_MODULE_SEMVER_MAJOR 2u
-#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 2u
+#define OBJC3_KEYPATH_MODULE_SEMVER_MINOR 3u
 #define OBJC3_KEYPATH_MODULE_SEMVER_PATCH 0u
 
 /* KeyPath<Root, Value> and WritableKeyPath<Root, Value> are compiler-owned
@@ -34,6 +34,11 @@
  * inherited record fields use native lookup and base adjustment, with normal
  * access, hiding and ambiguity rules. Field setters update one property
  * snapshot and write it back once.
- * KVC string boxing and optional root[kp] syntax remain outside this surface. */
+ * root[kp] applies a typed key path. Writable paths also support assignment,
+ * compound assignment and prefix/postfix increment/decrement. Operands are
+ * captured in written root, key, value order. Assignment returns the converted
+ * setter input; compound updates perform one get and one set. These updates
+ * provide ordinary property semantics, without atomic read/modify/write.
+ * Explicit NSString KVC boxing remains outside this surface. */
 
 #endif

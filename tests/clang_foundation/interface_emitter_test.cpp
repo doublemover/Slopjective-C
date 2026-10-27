@@ -227,6 +227,80 @@ void TestOpaqueKeyPathSignatureRoundTrips() {
   }
 }
 
+void TestKeyPathSubscriptBodies() {
+  for (const char *standard : {"c++20", "c++23"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args={"-x","objective-c++",std::string("-std=")+standard,
+          "-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;
+      AddRuntimeInterfaceFiles(files,args);
+      args.push_back("-include");args.push_back("objc3c/runtime/objc3_keypath.h");
+      auto parse=[&](llvm::StringRef source,llvm::StringRef file) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      };
+      auto ast=parse(R"(
+        __attribute__((objc_root_class)) @interface IndexedRoot
+        @property(nonatomic) int count;
+        @end
+        inline int indexed_read(IndexedRoot *_Nonnull root,KeyPath<IndexedRoot*,int> path) {
+          return root[path];
+        }
+        inline int indexed_write(IndexedRoot *_Nonnull root,WritableKeyPath<IndexedRoot*,int> path,int value) {
+          int assigned=(root[path]=value);int updated=(root[path]+=2);
+          return assigned+updated+root[path]++ + ++root[path];
+        }
+        inline int indexed_literal(IndexedRoot *_Nonnull root) {
+          return root[@keypath(IndexedRoot,count)];
+        }
+        inline int explicit_literal(IndexedRoot *_Nonnull root) {
+          return KeyPathGet(@keypath(IndexedRoot,count),root);
+        }
+      )","indexed-provider.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      const std::vector<std::string> exports={"IndexedRoot","indexed_read","indexed_write",
+                                             "indexed_literal","explicit_literal"};
+      const auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.indexed","test",{},{},{},exports);
+      for (const auto &d:emitted.diagnostics)
+        std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      assert(emitted.success);
+      assert(emitted.source_bytes.find("root[path]")!=std::string::npos);
+      assert(emitted.source_bytes.find("__objc3_keypath_")==std::string::npos);
+      assert(emitted.sidecar_json.find("objc3.keypath-subscripts.v1")!=std::string::npos);
+      const std::vector<llvm::StringRef> supported={"objc3.typed-keypaths.v1",
+          "objc3.keypath-subscripts.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
+          "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};
+      auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
+      if (!decoded) { llvm::errs()<<llvm::toString(decoded.takeError())<<"\n"; assert(false); }
+      auto relocated=parse(emitted.source_bytes,"indexed-consumer.mm");
+      assert(relocated && !relocated->getDiagnostics().hasErrorOccurred());
+      auto repeated=EmitSemanticInterface(relocated->getASTContext(),"fixture.indexed","test",{},{},{},exports);
+      assert(repeated.success && repeated.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+      const std::vector<llvm::StringRef> old={"objc3.typed-keypaths.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
+          "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};
+      auto rejected=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old);
+      assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto damaged=*decoded;
+      std::erase(damaged.required_semantics,"objc3.typed-keypaths.v1");
+      auto missing=EncodeSemanticInterfaceSidecar(damaged,supported);
+      assert(!missing);llvm::consumeError(missing.takeError());
+      auto hidden=parse(R"(
+        __attribute__((objc_root_class)) @interface IndexedRoot @end
+        WritableKeyPath<IndexedRoot*,int> hidden_path();
+        inline int indexed_read(IndexedRoot *_Nonnull root) {return root[hidden_path()];}
+      )","indexed-hidden.mm");
+      assert(hidden && !hidden->getDiagnostics().hasErrorOccurred());
+      auto excluded=EmitSemanticInterface(hidden->getASTContext(),"fixture.indexed","test",
+          {},{},{},{"IndexedRoot","indexed_read"});
+      assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC156";}));
+    }
+  }
+}
+
 void TestConsumedAndMethodOwnershipRoundTrips() {
   for (const char *language : {"objective-c", "objective-c++"}) {
     for (bool arc : {false, true}) {
@@ -2112,6 +2186,7 @@ int main() {
   TestStandardLibraryImportsAndInstancetype();
   TestNativeOwnershipContractsRoundTrip();
   TestOpaqueKeyPathSignatureRoundTrips();
+  TestKeyPathSubscriptBodies();
   TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIRoundTrips();

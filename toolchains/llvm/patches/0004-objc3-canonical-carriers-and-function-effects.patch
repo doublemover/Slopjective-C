@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..dfe873eb9 100644
+index d743717ad..66d587cbd 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2691,7 +2691,15 @@ index d743717ad..dfe873eb9 100644
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -1426,6 +1469,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -705,6 +748,7 @@ namespace clang {
+     ExpectedStmt
+     VisitSubstNonTypeTemplateParmPackExpr(SubstNonTypeTemplateParmPackExpr *E);
+     ExpectedStmt VisitPseudoObjectExpr(PseudoObjectExpr *E);
++    ExpectedStmt VisitObjCSubscriptRefExpr(ObjCSubscriptRefExpr *E);
+     ExpectedStmt VisitCXXParenListInitExpr(CXXParenListInitExpr *E);
+     ExpectedStmt VisitCXXExpansionSelectExpr(CXXExpansionSelectExpr *E);
+ 
+@@ -1426,6 +1470,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2719,7 +2727,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1677,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1613,6 +1678,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -2731,7 +2739,7 @@ index d743717ad..dfe873eb9 100644
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1695,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1696,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2774,7 +2782,7 @@ index d743717ad..dfe873eb9 100644
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1926,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
+@@ -1821,6 +1927,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -2788,7 +2796,7 @@ index d743717ad..dfe873eb9 100644
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2517,7 +2629,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
+@@ -2517,7 +2630,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -2797,7 +2805,7 @@ index d743717ad..dfe873eb9 100644
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2638,18 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2526,6 +2639,18 @@ Error ASTNodeImporter::ImportDefinition(
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -2816,7 +2824,7 @@ index d743717ad..dfe873eb9 100644
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2559,6 +2683,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2684,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2843,7 +2851,7 @@ index d743717ad..dfe873eb9 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2938,6 +3082,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2938,6 +3083,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
    if (ToD)
      return ToD;
  
@@ -2857,7 +2865,7 @@ index d743717ad..dfe873eb9 100644
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3134,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2983,12 +3135,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -2873,7 +2881,7 @@ index d743717ad..dfe873eb9 100644
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3148,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2996,7 +3149,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -2882,7 +2890,7 @@ index d743717ad..dfe873eb9 100644
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3156,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -3004,6 +3157,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -2896,7 +2904,7 @@ index d743717ad..dfe873eb9 100644
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3244,18 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3245,18 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -2916,7 +2924,7 @@ index d743717ad..dfe873eb9 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3222,6 +3392,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
+@@ -3222,6 +3393,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
      return ToAlias;
  
    ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
@@ -2925,7 +2933,7 @@ index d743717ad..dfe873eb9 100644
  
    ToAlias->setAccess(D->getAccess());
    ToAlias->setLexicalDeclContext(LexicalDC);
-@@ -3456,6 +3628,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3456,6 +3629,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -2940,7 +2948,7 @@ index d743717ad..dfe873eb9 100644
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3643,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3463,9 +3644,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -2951,7 +2959,7 @@ index d743717ad..dfe873eb9 100644
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3996,6 +4174,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3996,6 +4175,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3024,7 +3032,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4052,6 +4296,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,6 +4297,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
@@ -3037,7 +3045,7 @@ index d743717ad..dfe873eb9 100644
          if (IsStructuralMatch(D, FoundFunction)) {
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
-@@ -4120,6 +4370,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4371,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3045,7 +3053,7 @@ index d743717ad..dfe873eb9 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4426,57 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4427,57 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -3103,7 +3111,7 @@ index d743717ad..dfe873eb9 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4286,10 +4588,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4286,10 +4589,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    ToFunction->setLexicalDeclContext(LexicalDC);
    ToFunction->setVirtualAsWritten(D->isVirtualAsWritten());
    ToFunction->setTrivial(D->isTrivial());
@@ -3118,7 +3126,7 @@ index d743717ad..dfe873eb9 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4635,19 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4330,6 +4636,19 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    }
    ToFunction->setParams(Parameters);
  
@@ -3138,7 +3146,7 @@ index d743717ad..dfe873eb9 100644
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4897,6 +5215,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4897,6 +5216,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3150,7 +3158,7 @@ index d743717ad..dfe873eb9 100644
    ToVar->setQualifierInfo(ToQualifierLoc);
    ToVar->setAccess(D->getAccess());
    ToVar->setLexicalDeclContext(LexicalDC);
-@@ -5062,6 +5385,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5386,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -3170,7 +3178,7 @@ index d743717ad..dfe873eb9 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5460,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5461,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -3178,7 +3186,7 @@ index d743717ad..dfe873eb9 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5475,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5476,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -3187,7 +3195,7 @@ index d743717ad..dfe873eb9 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5479,6 +5818,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5479,6 +5819,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
                                D->hasTypename()))
      return ToUsing;
  
@@ -3195,7 +3203,7 @@ index d743717ad..dfe873eb9 100644
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5517,6 +5857,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+@@ -5517,6 +5858,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -3203,7 +3211,7 @@ index d743717ad..dfe873eb9 100644
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5723,6 +6064,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
+@@ -5723,6 +6065,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
                                ToQualifierLoc, Loc, Name, ToEllipsisLoc))
      return ToUsing;
  
@@ -3211,7 +3219,7 @@ index d743717ad..dfe873eb9 100644
    ToUsing->setAccess(D->getAccess());
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
-@@ -5904,6 +6246,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6247,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -3227,7 +3235,7 @@ index d743717ad..dfe873eb9 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6427,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6428,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -3237,7 +3245,7 @@ index d743717ad..dfe873eb9 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,6 +6812,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6458,6 +6813,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -3246,7 +3254,7 @@ index d743717ad..dfe873eb9 100644
  
    D2->setAccess(D->getAccess());
    D2->setLexicalDeclContext(LexicalDC);
-@@ -6777,6 +7133,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6777,6 +7134,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -3255,7 +3263,7 @@ index d743717ad..dfe873eb9 100644
  
    ToVarTD->setAccess(D->getAccess());
    ToVarTD->setLexicalDeclContext(LexicalDC);
-@@ -7051,6 +7409,8 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7051,6 +7410,8 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -3264,7 +3272,7 @@ index d743717ad..dfe873eb9 100644
  
    ToFunc->setAccess(D->getAccess());
    ToFunc->setLexicalDeclContext(LexicalDC);
-@@ -7328,6 +7688,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7689,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3362,7 +3370,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +7936,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +7937,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -3423,7 +3431,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8280,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8281,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3602,7 +3610,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8761,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8762,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3619,7 +3627,7 @@ index d743717ad..dfe873eb9 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9522,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9523,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -3673,7 +3681,29 @@ index d743717ad..dfe873eb9 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9664,8 +10398,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9497,6 +10232,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+       E->getIndex(), E->getFinal());
+ }
+ 
++ExpectedStmt ASTNodeImporter::VisitObjCSubscriptRefExpr(ObjCSubscriptRefExpr *E) {
++  Error Err = Error::success();
++  auto ToBase = importChecked(Err, E->getBaseExpr());
++  auto ToKey = importChecked(Err, E->getKeyExpr());
++  auto ToType = importChecked(Err, E->getType());
++  auto ToGetter = importChecked(Err, E->getAtIndexMethodDecl());
++  auto ToSetter = importChecked(Err, E->setAtIndexMethodDecl());
++  auto ToRBracket = importChecked(Err, E->getRBracket());
++  if (Err)
++    return std::move(Err);
++  return new (Importer.getToContext()) ObjCSubscriptRefExpr(
++      ToBase, ToKey, ToType, E->getValueKind(), E->getObjectKind(),
++      ToGetter, ToSetter, ToRBracket);
++}
++
+ ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
+   SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
+   if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
+@@ -9664,8 +10414,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3688,7 +3718,7 @@ index d743717ad..dfe873eb9 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10453,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10469,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3787,7 +3817,7 @@ index d743717ad..dfe873eb9 100644
  }
  
  namespace {
-@@ -9857,6 +10685,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10701,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -3847,7 +3877,7 @@ index d743717ad..dfe873eb9 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11004,18 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11020,18 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -3867,7 +3897,7 @@ index d743717ad..dfe873eb9 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11462,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11478,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -3880,7 +3910,7 @@ index d743717ad..dfe873eb9 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11478,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11494,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -3892,7 +3922,7 @@ index d743717ad..dfe873eb9 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11490,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11506,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3904,7 +3934,7 @@ index d743717ad..dfe873eb9 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11502,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11518,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3926,7 +3956,7 @@ index d743717ad..dfe873eb9 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +11946,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +11962,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -19407,10 +19437,10 @@ index 0573cdf95..e51931da4 100644
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..70622f95f 100644
+index 2a8395e26..eb72f650d 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
-@@ -29,9 +29,12 @@
+@@ -29,9 +29,13 @@
  #include "clang/AST/ExprObjC.h"
  #include "clang/AST/FormatString.h"
  #include "clang/AST/IgnoreExpr.h"
@@ -19419,11 +19449,12 @@ index 2a8395e26..70622f95f 100644
  #include "clang/AST/NonTrivialTypeVisitor.h"
  #include "clang/AST/OperationKinds.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3KeyPath.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
  #include "clang/AST/RecordLayout.h"
  #include "clang/AST/Stmt.h"
  #include "clang/AST/TemplateBase.h"
-@@ -2991,6 +2994,145 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
+@@ -2991,6 +2995,145 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
  
    FPOptions FPO;
    switch (BuiltinID) {
@@ -19569,7 +19600,7 @@ index 2a8395e26..70622f95f 100644
    case Builtin::BI__builtin___get_unsafe_stack_start:
    case Builtin::BI__builtin___get_unsafe_stack_bottom:
      Diag(TheCall->getBeginLoc(), diag::warn_deprecated_builtin)
-@@ -4665,6 +4807,14 @@ void Sema::CheckConstructorCall(FunctionDecl *FDecl, QualType ThisType,
+@@ -4665,6 +4808,14 @@ void Sema::CheckConstructorCall(FunctionDecl *FDecl, QualType ThisType,
  
  bool Sema::CheckFunctionCall(FunctionDecl *FDecl, CallExpr *TheCall,
                               const FunctionProtoType *Proto) {
@@ -19584,7 +19615,7 @@ index 2a8395e26..70622f95f 100644
    bool IsMemberOperatorCall = isa<CXXOperatorCallExpr>(TheCall) &&
                                isa<CXXMethodDecl>(FDecl);
    bool IsMemberFunction = isa<CXXMemberCallExpr>(TheCall) ||
-@@ -10821,6 +10971,9 @@ struct SearchNonTrivialToInitializeField
+@@ -10821,6 +10972,9 @@ struct SearchNonTrivialToInitializeField
      Super::visitWithKind(PDIK, FT, SL);
    }
  
@@ -19594,7 +19625,7 @@ index 2a8395e26..70622f95f 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
    }
-@@ -10863,6 +11016,9 @@ struct SearchNonTrivialToCopyField
+@@ -10863,6 +11017,9 @@ struct SearchNonTrivialToCopyField
      Super::visitWithKind(PCK, FT, SL);
    }
  
@@ -19604,6 +19635,46 @@ index 2a8395e26..70622f95f 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 0);
    }
+@@ -14852,6 +15009,39 @@ public:
+     Base::VisitStmt(E);
+   }
+ 
++  void VisitPseudoObjectExpr(const PseudoObjectExpr *E) {
++    ObjC3KeyPathApplicationInfo Application;
++    const Expr *Syntax = E->getSyntacticForm()->IgnoreParenImpCasts();
++    if (const auto *Assignment = dyn_cast<BinaryOperator>(Syntax);
++        Assignment && Assignment->isAssignmentOp())
++      Syntax = Assignment->getLHS()->IgnoreParenImpCasts();
++    if (const auto *Increment = dyn_cast<UnaryOperator>(Syntax);
++        Increment && Increment->isIncrementDecrementOp())
++      Syntax = Increment->getSubExpr()->IgnoreParenImpCasts();
++    const auto *Subscript = dyn_cast<ObjCSubscriptRefExpr>(Syntax);
++    ObjC3KeyPathInfo Info;
++    if (!getObjC3KeyPathApplication(E, Application) &&
++        !(Subscript && getObjC3KeyPathInfo(Subscript->getKeyExpr()->getType(), Info)))
++      return Base::VisitPseudoObjectExpr(E);
++    // Key-path bindings and accessor execution are sequenced in semantic
++    // order, including in C17. Keep operand-internal and surrounding-expression
++    // conflicts visible rather than silencing the whole application.
++    const auto OldRegion = Region;
++    SmallVector<SequenceTree::Seq, 4> Regions;
++    for (const Expr *Semantic : E->semantics()) {
++      Regions.push_back(Tree.allocate(OldRegion));
++      Region = Regions.back();
++      SequencedSubexpression Sequenced(*this);
++      if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Semantic)) {
++        if (const auto *Source = Opaque->getSourceExpr()) Visit(Source);
++      } else {
++        Visit(Semantic);
++      }
++    }
++    Region = OldRegion;
++    for (auto Child : Regions) Tree.merge(Child);
++  }
++
+   void VisitCoroutineSuspendExpr(const CoroutineSuspendExpr *CSE) {
+     for (auto *Sub : CSE->children()) {
+       const Expr *ChildExpr = dyn_cast_or_null<Expr>(Sub);
 diff --git a/clang/lib/Sema/SemaLookup.cpp b/clang/lib/Sema/SemaLookup.cpp
 index fe2763213..967a54378 100644
 --- a/clang/lib/Sema/SemaLookup.cpp
@@ -33158,7 +33229,7 @@ index b79ffc7d5..7ee0efeea 100644
        N.Selected = SelectionTree::Unselected;
      if (N.Selected || !N.Children.empty()) {
 diff --git a/clang-tools-extra/clangd/SemanticHighlighting.cpp b/clang-tools-extra/clangd/SemanticHighlighting.cpp
-index 5d9336fa6..225c4698b 100644
+index 5d9336fa6..e0e6887c8 100644
 --- a/clang-tools-extra/clangd/SemanticHighlighting.cpp
 +++ b/clang-tools-extra/clangd/SemanticHighlighting.cpp
 @@ -22,6 +22,7 @@
@@ -33169,14 +33240,27 @@ index 5d9336fa6..225c4698b 100644
  #include "clang/AST/RecursiveASTVisitor.h"
  #include "clang/AST/TypeLoc.h"
  #include "clang/Basic/SourceLocation.h"
-@@ -671,6 +672,52 @@ public:
+@@ -671,6 +672,65 @@ public:
      return true;
    }
  
 +  bool TraversePseudoObjectExpr(PseudoObjectExpr *E) {
 +    ObjC3KeyPathApplicationInfo Application;
-+    if (!getObjC3KeyPathApplication(E, Application))
++    if (!getObjC3KeyPathApplication(E, Application)) {
++      Expr *Syntax = E->getSyntacticForm()->IgnoreParenImpCasts();
++      Expr *BaseExpression = Syntax;
++      if (auto *Assignment = dyn_cast<BinaryOperator>(BaseExpression);
++          Assignment && Assignment->isAssignmentOp())
++        BaseExpression = Assignment->getLHS()->IgnoreParenImpCasts();
++      if (auto *Increment = dyn_cast<UnaryOperator>(BaseExpression);
++          Increment && Increment->isIncrementDecrementOp())
++        BaseExpression = Increment->getSubExpr()->IgnoreParenImpCasts();
++      auto *Subscript = dyn_cast<ObjCSubscriptRefExpr>(BaseExpression);
++      ObjC3KeyPathInfo Info;
++      if (Subscript && getObjC3KeyPathInfo(Subscript->getKeyExpr()->getType(), Info))
++        return TraverseStmt(Syntax);
 +      return Base::TraversePseudoObjectExpr(E);
++    }
 +    H.addToken(Application.Syntax->getBeginLoc(), HighlightingKind::Operator);
 +    for (const Expr *Argument : Application.Syntax->arguments())
 +      if (!TraverseStmt(const_cast<Expr *>(Argument)))
@@ -33222,7 +33306,7 @@ index 5d9336fa6..225c4698b 100644
    bool VisitConditionalOperator(ConditionalOperator *Op) {
      H.addToken(Op->getQuestionLoc(), HighlightingKind::Operator);
      H.addToken(Op->getColonLoc(), HighlightingKind::Operator);
-@@ -962,6 +1009,7 @@ public:
+@@ -962,6 +1022,7 @@ public:
      switch (A->getKind()) {
      case attr::Override:
      case attr::Final:
@@ -33230,7 +33314,7 @@ index 5d9336fa6..225c4698b 100644
        H.addToken(A->getLocation(), HighlightingKind::Modifier);
        break;
      default:
-@@ -1064,7 +1112,7 @@ getSemanticHighlightings(ParsedAST &AST, bool IncludeInactiveRegionTokens) {
+@@ -1064,7 +1125,7 @@ getSemanticHighlightings(ParsedAST &AST, bool IncludeInactiveRegionTokens) {
                    {SymbolTag::Virtual, HighlightingModifier::Virtual},
                    {SymbolTag::Abstract, HighlightingModifier::Abstract},
                    // Declaration and Definition are handled separately below.
@@ -33280,10 +33364,10 @@ index d596ba77e..bfa65d4f3 100644
    ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 diff --git a/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
 new file mode 100644
-index 000000000..f3b669737
+index 000000000..c9cedad52
 --- /dev/null
 +++ b/clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp
-@@ -0,0 +1,448 @@
+@@ -0,0 +1,476 @@
 +//===--- ObjC3SourceToolsTests.cpp - Native Objective-C editor contracts
 +//----===//
 +//
@@ -33728,6 +33812,34 @@ index 000000000..f3b669737
 +  auto TU = objc3TU(A.code());
 +  auto AST = TU.build();
 +  expectLocalEdits(AST, TU, A);
++}
++
++TEST(ObjC3SourceTools, KeyPathSubscriptReferencesAndHighlightingUseWrittenOperands) {
++  Annotations A(R"objc(
++    __attribute__((objc_root_class)) @interface Node @end
++    int update(WritableKeyPath<Node*,int> [[path]],Node *_Nonnull root) {
++      $root[[root]][ [[pa^th]] ]+=2;
++      return root[ [[path]] ]++;
++    }
++  )objc");
++  auto TU=objc3TU(A.code());auto AST=TU.build();
++  expectLocalEdits(AST,TU,A);
++  auto Hover=getHover(AST,A.point(),format::getLLVMStyle(),nullptr);
++  ASSERT_TRUE(Hover);EXPECT_EQ(Hover->Name,"path");
++  const auto Tokens=getSemanticHighlightings(AST,false);
++  auto Token=llvm::find_if(Tokens,[&](const HighlightingToken &Token){return Token.R==A.range("root");});
++  ASSERT_NE(Token,Tokens.end());EXPECT_EQ(Token->Kind,HighlightingKind::Parameter);
++  unsigned PathReferences=0;
++  findExplicitReferences(AST.getASTContext(),[&](ReferenceLoc Ref){
++    if (Ref.IsDecl) return;
++    for (const auto *Target:Ref.Targets) {
++      PathReferences+=Target->getIdentifier() && Target->getName()=="path";
++      EXPECT_FALSE(llvm::StringRef(Target->getNameAsString()).starts_with("__objc3_"));
++      EXPECT_NE(Target->getNameAsString(),"KeyPathGet");
++      EXPECT_NE(Target->getNameAsString(),"KeyPathSet");
++    }
++  },AST.getHeuristicResolver());
++  EXPECT_EQ(PathReferences,2u);
 +}
 +
 +} // namespace
@@ -42096,14 +42208,15 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..bca122e5a
+index 000000000..5fcb057ff
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1294 @@
+@@ -0,0 +1,1322 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
++#include "SemaObjC3KeyPath.h"
 +#include "clang/AST/ASTConsumer.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
@@ -42930,10 +43043,16 @@ index 000000000..bca122e5a
 +}
 +
 +bool nullableOperand(Sema &S, Expr *Operand) {
-+  return Operand->getType()->getNullability() == NullabilityKind::Nullable ||
-+         Operand->getType()->getNullability() == NullabilityKind::NullableResult ||
-+         Operand->isNullPointerConstant(S.Context,
-+                                       Expr::NPC_ValueDependentIsNotNull);
++  Operand = Operand->IgnoreParens();
++  if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Operand))
++    if (Opaque->getSourceExpr()) return nullableOperand(S, Opaque->getSourceExpr());
++  if (Operand->getType()->getNullability() == NullabilityKind::Nullable ||
++      Operand->getType()->getNullability() == NullabilityKind::NullableResult ||
++      Operand->isNullPointerConstant(S.Context, Expr::NPC_ValueDependentIsNotNull))
++    return true;
++  Expr::EvalResult Value;
++  return !Operand->HasSideEffects(S.Context) && Operand->EvaluateAsRValue(Value, S.Context) &&
++      Value.Val.isLValue() && Value.Val.isNullPointer();
 +}
 +
 +ExprResult captureApplicationOperand(Sema &S, Expr *Source,
@@ -43302,58 +43421,59 @@ index 000000000..bca122e5a
 +                                   RParenLoc, Initializer);
 +}
 +
-+ExprResult Sema::ActOnObjC3KeyPathApplication(
-+    unsigned Kind, ArrayRef<Expr *> Args, SourceLocation Loc,
-+    SourceLocation RParenLoc) {
-+  ExprResult Checked = CheckPlaceholderExpr(Args[0]);
++namespace {
++ExprResult buildKeyPathApplication(Sema &S, unsigned Kind, ArrayRef<Expr *> Args,
++    SourceLocation Loc, SourceLocation RParenLoc, bool AlreadyCaptured,
++    Expr **SetValue) {
++  ExprResult Checked = S.CheckPlaceholderExpr(Args[0]);
 +  if (Checked.isInvalid())
 +    return ExprError();
 +  Expr *Path = Checked.get();
 +  ObjC3KeyPathInfo Info;
 +  if (!getObjC3KeyPathInfo(Path->getType(), Info)) {
-+    reject(*this, Loc, "key-path application requires a typed key-path value");
++    reject(S, Loc, "key-path application requires a typed key-path value");
 +    return ExprError();
 +  }
 +  if (Kind == 2) {
 +    QualType Descriptor =
-+        importedType(*this, "objc3_keypath_descriptor_v2", Loc);
++        importedType(S, "objc3_keypath_descriptor_v2", Loc);
 +    QualType Component =
-+        importedType(*this, "objc3_keypath_component_v2", Loc);
++        importedType(S, "objc3_keypath_component_v2", Loc);
 +    if (Descriptor.isNull() || Component.isNull())
 +      return ExprError();
 +  }
 +  if (Kind == 1 && !Info.Set) {
-+    reject(*this, Loc, "KeyPathSet requires a WritableKeyPath value");
++    reject(S, Loc, "KeyPathSet requires a WritableKeyPath value");
 +    return ExprError();
 +  }
 +  if (Kind < 2) {
 +    Expr *Root = Args[1];
 +    const auto *Object = Root->getType()->getAs<ObjCObjectPointerType>();
 +    if (!Object || !Object->getInterfaceDecl() ||
-+        !Context.canAssignObjCInterfaces(
++        !S.Context.canAssignObjCInterfaces(
 +            Info.Root->castAs<ObjCObjectPointerType>(), Object)) {
-+      reject(*this, Root->getExprLoc(),
++      reject(S, Root->getExprLoc(),
 +             "key-path application root has an incompatible class type");
 +      return ExprError();
 +    }
-+    if (nullableOperand(*this, Root)) {
-+      reject(*this, Root->getExprLoc(),
++    if (nullableOperand(S, Root)) {
++      reject(S, Root->getExprLoc(),
 +             "key-path application requires a nonnull root");
 +      return ExprError();
 +    }
 +    if (Kind == 1 && Info.Value->canHaveNullability()) {
 +      Expr *Value = Args[2];
 +      if (Info.Value->getNullability() == NullabilityKind::NonNull &&
-+          nullableOperand(*this, Value)) {
-+        reject(*this, Value->getExprLoc(),
++          nullableOperand(S, Value)) {
++        reject(S, Value->getExprLoc(),
 +               "key-path setter requires a nonnull property value");
 +        return ExprError();
 +      }
 +      const auto *ValueObject = Value->getType()->getAs<ObjCObjectPointerType>();
 +      if (ValueObject && Info.Value->isObjCObjectPointerType() &&
-+          !Context.canAssignObjCInterfaces(
++          !S.Context.canAssignObjCInterfaces(
 +              Info.Value->castAs<ObjCObjectPointerType>(), ValueObject)) {
-+        reject(*this, Value->getExprLoc(),
++        reject(S, Value->getExprLoc(),
 +               "key-path setter value has an incompatible class type");
 +        return ExprError();
 +      }
@@ -43362,7 +43482,8 @@ index 000000000..bca122e5a
 +  SmallVector<Expr *, 4> Semantics;
 +  SmallVector<Expr *, 3> Captured;
 +  for (unsigned I = 0; I < Args.size(); ++I) {
-+    ExprResult Value = captureApplicationOperand(*this, I ? Args[I] : Path,
++    if (AlreadyCaptured) {Captured.push_back(I ? Args[I] : Path);continue;}
++    ExprResult Value = captureApplicationOperand(S, I ? Args[I] : Path,
 +                                                 Semantics);
 +    if (Value.isInvalid())
 +      return ExprError();
@@ -43376,23 +43497,42 @@ index 000000000..bca122e5a
 +    cast<OpaqueValueExpr>(Path)->setIsUnique(true);
 +  ExprResult Result;
 +  if (Kind == 3) {
-+    Result = Info.Read ? field(*this, Path, Info.Read) : Path;
++    Result = Info.Read ? field(S, Path, Info.Read) : Path;
 +  } else if (Kind == 2) {
 +    if (Info.Read)
-+      Path = field(*this, Path, Info.Read);
-+    Result = field(*this, Path, Info.Metadata);
++      Path = field(S, Path, Info.Read);
++    Result = field(S, Path, Info.Metadata);
 +  } else {
 +    FieldDecl *Callable = Kind == 1 ? Info.Set : Info.Get;
 +    if (Kind == 0 && Info.Read)
-+      Path = field(*this, Path, Info.Read);
-+    Expr *Callee = field(*this, Path, Callable);
++      Path = field(S, Path, Info.Read);
++    Expr *Callee = field(S, Path, Callable);
 +    SmallVector<Expr *, 2> CallArgs(Captured.begin() + 1, Captured.end());
-+    Result = BuildCallExpr(nullptr, Callee, Loc, CallArgs, RParenLoc);
++    Result = S.BuildCallExpr(nullptr, Callee, Loc, CallArgs, RParenLoc);
++    if (!Result.isInvalid() && Kind == 1 && SetValue) {
++      auto *Call = cast<CallExpr>(Result.get());
++      *SetValue = Call->getArg(1);
++      Captured[2] = *SetValue;
++    }
 +  }
 +  if (Result.isInvalid())
 +    return ExprError();
-+  return application(*this, Kind, Args, Captured, Semantics, Result.get(),
++  return application(S, Kind, Args, Captured, Semantics, Result.get(),
 +                     Loc, RParenLoc);
++}
++} // namespace
++ExprResult Sema::ActOnObjC3KeyPathApplication(unsigned Kind, ArrayRef<Expr *> Args,
++    SourceLocation Loc, SourceLocation RParenLoc) {
++  return buildKeyPathApplication(*this, Kind, Args, Loc, RParenLoc, false, nullptr);
++}
++ExprResult clang::captureObjC3KeyPathOperand(Sema &S, Expr *Source,
++    SmallVectorImpl<Expr *> &Semantics) {
++  return captureApplicationOperand(S, Source, Semantics);
++}
++ExprResult clang::buildObjC3CapturedKeyPathApplication(Sema &S, unsigned Kind,
++    ArrayRef<Expr *> Args, SourceLocation Loc, SourceLocation RParenLoc,
++    Expr **SetValue) {
++  return buildKeyPathApplication(S, Kind, Args, Loc, RParenLoc, true, SetValue);
 +}
 diff --git a/clang/lib/Sema/SemaObjCProperty.cpp b/clang/lib/Sema/SemaObjCProperty.cpp
 index 4d7efed23..d3d4a5c2f 100644
@@ -46811,4 +46951,324 @@ index 000000000..3e923fcc8
 +  void (^callbacks[128])(void)={LARGE_EMPTY_127,^{large_consume(owner);}};
 +  __builtin_memset(callbacks,0,sizeof callbacks);
 +  (void)index;large_use(p);
++}
+diff --git a/clang/lib/Sema/SemaObjC3KeyPath.h b/clang/lib/Sema/SemaObjC3KeyPath.h
+new file mode 100644
+index 000000000..43084cdf3
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3KeyPath.h
+@@ -0,0 +1,16 @@
++//===--- SemaObjC3KeyPath.h - Private key-path expression building -*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3KEYPATH_H
++#define LLVM_CLANG_LIB_SEMA_SEMAOBJC3KEYPATH_H
++#include "clang/Basic/SourceLocation.h"
++#include "clang/Sema/Ownership.h"
++#include "llvm/ADT/ArrayRef.h"
++#include "llvm/ADT/SmallVector.h"
++namespace clang {
++class Sema;
++ExprResult captureObjC3KeyPathOperand(Sema &, Expr *, llvm::SmallVectorImpl<Expr *> &);
++ExprResult buildObjC3CapturedKeyPathApplication(Sema &, unsigned,
++    llvm::ArrayRef<Expr *>, SourceLocation, SourceLocation, Expr **SetValue = nullptr);
++}
++#endif
+diff --git a/clang/lib/Sema/SemaPseudoObject.cpp b/clang/lib/Sema/SemaPseudoObject.cpp
+index 667366709..097b80f2c 100644
+--- a/clang/lib/Sema/SemaPseudoObject.cpp
++++ b/clang/lib/Sema/SemaPseudoObject.cpp
+@@ -29,7 +29,9 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3KeyPath.h"
+ #include "clang/Sema/SemaPseudoObject.h"
++#include "clang/AST/ObjC3KeyPath.h"
+ #include "clang/AST/ExprCXX.h"
+ #include "clang/AST/ExprObjC.h"
+ #include "clang/Basic/CharInfo.h"
+@@ -329,6 +331,10 @@ namespace {
+                                        Expr *LHS, Expr *RHS);
+    Expr *rebuildAndCaptureObject(Expr *syntacticBase) override;
+ 
++   bool isKeyPath() const {
++     ObjC3KeyPathInfo Info;
++     return S.getLangOpts().ObjC3 && getObjC3KeyPathInfo(RefExpr->getKeyExpr()->getType(), Info);
++   }
+    bool findAtIndexGetter();
+    bool findAtIndexSetter();
+ 
+@@ -415,6 +421,7 @@ ExprResult PseudoOpBuilder::complete(Expr *syntactic) {
+ /// The main skeleton for building an r-value operation.
+ ExprResult PseudoOpBuilder::buildRValueOperation(Expr *op) {
+   Expr *syntacticBase = rebuildAndCaptureObject(op);
++  if (!syntacticBase) return ExprError();
+ 
+   ExprResult getExpr = buildGet();
+   if (getExpr.isInvalid()) return ExprError();
+@@ -432,6 +439,7 @@ PseudoOpBuilder::buildAssignmentOperation(Scope *Sc, SourceLocation opcLoc,
+   assert(BinaryOperator::isAssignmentOp(opcode));
+ 
+   Expr *syntacticLHS = rebuildAndCaptureObject(LHS);
++  if (!syntacticLHS) return ExprError();
+   OpaqueValueExpr *capturedRHS = capture(RHS);
+ 
+   // In some very specific cases, semantic analysis of the RHS as an
+@@ -494,6 +502,7 @@ PseudoOpBuilder::buildIncDecOperation(Scope *Sc, SourceLocation opcLoc,
+   assert(UnaryOperator::isIncrementDecrementOp(opcode));
+ 
+   Expr *syntacticOp = rebuildAndCaptureObject(op);
++  if (!syntacticOp) return ExprError();
+ 
+   // Load the value.
+   ExprResult result = buildGet();
+@@ -1008,6 +1017,12 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
+   if (opcode != BO_Assign && !findAtIndexGetter())
+     return ExprError();
+ 
++  if (isKeyPath() && !RHS->getType().isNull() && !RHS->getType()->isRecordType() &&
++      !isa<InitListExpr>(RHS) && !RHS->hasPlaceholderType()) {
++    ExprResult Loaded = S.DefaultFunctionArrayLvalueConversion(RHS);
++    if (Loaded.isInvalid()) return ExprError();
++    RHS = Loaded.get();
++  }
+   ExprResult result =
+   PseudoOpBuilder::buildAssignmentOperation(Sc, opcLoc, opcode, LHS, RHS);
+   if (result.isInvalid()) return ExprError();
+@@ -1027,8 +1042,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+ 
+   // Capture base expression in an OVE and rebuild the syntactic
+   // form to use the OVE as its base expression.
+-  InstanceBase = capture(RefExpr->getBaseExpr());
+-  InstanceKey = capture(RefExpr->getKeyExpr());
++  if (isKeyPath()) {
++    ExprResult Base = captureObjC3KeyPathOperand(S, RefExpr->getBaseExpr(), Semantics);
++    if (Base.isInvalid()) return nullptr;
++    InstanceBase = cast<OpaqueValueExpr>(Base.get());
++    ExprResult Key = captureObjC3KeyPathOperand(S, RefExpr->getKeyExpr(), Semantics);
++    if (Key.isInvalid()) return nullptr;
++    InstanceKey = cast<OpaqueValueExpr>(Key.get());
++  } else {
++    InstanceBase = capture(RefExpr->getBaseExpr());
++    InstanceKey = capture(RefExpr->getKeyExpr());
++  }
+ 
+   syntacticBase =
+       Rebuilder(S, [=](Expr *, unsigned Idx) -> Expr * {
+@@ -1066,6 +1090,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
+ }
+ 
+ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
++  if (isKeyPath()) return true;
+   if (AtIndexGetter)
+     return true;
+ 
+@@ -1165,6 +1190,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
+ }
+ 
+ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
++  if (isKeyPath()) {
++    ObjC3KeyPathInfo Info;getObjC3KeyPathInfo(RefExpr->getKeyExpr()->getType(), Info);
++    if (Info.Set) return true;
++    S.Diag(GenericLoc, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++        "key-path subscript assignment requires a WritableKeyPath value"));
++    return false;
++  }
+   if (AtIndexSetter)
+     return true;
+ 
+@@ -1296,6 +1328,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
+ // Get the object at "Index" position in the container.
+ // [BaseExpr objectAtIndexedSubscript : IndexExpr];
+ ExprResult ObjCSubscriptOpBuilder::buildGet() {
++  if (isKeyPath()) {
++    Expr *Args[] = {InstanceKey, InstanceBase};
++    return buildObjC3CapturedKeyPathApplication(S, 0, Args, GenericLoc, RefExpr->getRBracket());
++  }
+   if (!findAtIndexGetter())
+     return ExprError();
+ 
+@@ -1325,6 +1361,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+                                            bool captureSetValueAsResult) {
+   if (!findAtIndexSetter())
+     return ExprError();
++  if (isKeyPath()) {
++    Expr *Args[] = {InstanceKey, InstanceBase, op};Expr *Value = nullptr;
++    ExprResult Set = buildObjC3CapturedKeyPathApplication(S, 1, Args, opcLoc,
++        RefExpr->getRBracket(), &Value);
++    if (Set.isInvalid()) return ExprError();
++    if (captureSetValueAsResult && CanCaptureValue(Value)) {
++      auto *Pseudo = cast<PseudoObjectExpr>(Set.get());
++      auto *Call = cast<CallExpr>(*(Pseudo->semantics_end() - 1));
++      Call->setArg(1, captureValueAsResult(Value));
++    }
++    return Set;
++  }
+   if (AtIndexSetter)
+     S.DiagnoseUseOfDecl(AtIndexSetter, GenericLoc);
+   QualType receiverType = InstanceBase->getType();
+@@ -1484,7 +1532,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
+         = dyn_cast<ObjCPropertyRefExpr>(opaqueRef)) {
+     ObjCPropertyOpBuilder builder(SemaRef, refExpr, false);
+     return builder.buildIncDecOperation(Sc, opcLoc, opcode, op);
+-  } else if (isa<ObjCSubscriptRefExpr>(opaqueRef)) {
++  } else if (const auto *Ref = dyn_cast<ObjCSubscriptRefExpr>(opaqueRef)) {
++    ObjCSubscriptOpBuilder Builder(SemaRef, const_cast<ObjCSubscriptRefExpr *>(Ref), false);
++    if (Builder.isKeyPath()) return Builder.buildIncDecOperation(Sc, opcLoc, opcode, op);
+     Diag(opcLoc, diag::err_illegal_container_subscripting_op);
+     return ExprError();
+   } else if (MSPropertyRefExpr *refExpr
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m
+new file mode 100644
+index 000000000..16af07a25
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts-empty.m
+@@ -0,0 +1 @@
++// Empty consumer of the indexed key-path PCH.
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h
+new file mode 100644
+index 000000000..09e9ff2e5
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-keypath-subscripts.h
+@@ -0,0 +1,5 @@
++#include "../../Sema/Inputs/typed-keypath-subscripts.h"
++int indexed_body(IndexNode *_Nonnull root,WritableKeyPath<IndexNode*,int> path) {
++  int value=(root[path]=7);value+=root[path]++;value+=++root[path];
++  value+=(root[path]+=2);return value+root[@keypath(IndexNode,count)];
++}
+diff --git a/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m b/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m
+new file mode 100644
+index 000000000..53626e5df
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-keypath-subscripts-print.m
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c17-False.m
++// RUN: FileCheck %s < %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c17-False.ll %t-c17-False.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -x objective-c-header %S/Inputs/typed-keypath-subscripts.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c17-False-pch.m
++// RUN: FileCheck %s < %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c17-False-pch.ll %t-c17-False-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c17-True.m
++// RUN: FileCheck %s < %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c17-True.ll %t-c17-True.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -x objective-c-header %S/Inputs/typed-keypath-subscripts.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c17-True-pch.m
++// RUN: FileCheck %s < %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c17-True-pch.ll %t-c17-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c++23-False.m
++// RUN: FileCheck %s < %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-False.ll %t-c++23-False.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch -x objective-c++-header %S/Inputs/typed-keypath-subscripts.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c++23-False-pch.m
++// RUN: FileCheck %s < %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-False-pch.ll %t-c++23-False-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %S/Inputs/typed-keypath-subscripts.h > %t-c++23-True.m
++// RUN: FileCheck %s < %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c++23-True.ll %t-c++23-True.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -x objective-c++-header %S/Inputs/typed-keypath-subscripts.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -ast-print %S/Inputs/typed-keypath-subscripts-empty.m > %t-c++23-True-pch.m
++// RUN: FileCheck %s < %t-c++23-True-pch.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o %t-c++23-True-pch.ll %t-c++23-True-pch.m
++// CHECK: int indexed_body(
++// CHECK: int value = (root[path] = 7);
++// CHECK: value += root[path]++;
++// CHECK: value += ++root[path];
++// CHECK: value += (root[path] += 2);
++// CHECK: root[@keypath(IndexNode * _Nonnull, count)]
++// CHECK-NOT: __objc3_keypath_
+diff --git a/clang/test/ObjC3/Sema/Inputs/typed-keypath-subscripts.h b/clang/test/ObjC3/Sema/Inputs/typed-keypath-subscripts.h
+new file mode 100644
+index 000000000..63b27c600
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/typed-keypath-subscripts.h
+@@ -0,0 +1,10 @@
++#include "../../Inputs/keypath-abi.h"
++typedef struct IndexPair {int first,second;} IndexPair;
++__attribute__((objc_root_class)) @interface IndexNode
++@property(nonatomic) int count;
++@property(nonatomic,readonly) int identity;
++@property(nonatomic,strong) IndexNode *_Nonnull child;
++@property(nonatomic,strong) IndexNode *_Nullable optionalChild;
++@property(nonatomic) IndexPair pair;
++@end
++__attribute__((objc_root_class)) @interface IndexOther @end
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-subscripts.m b/clang/test/ObjC3/Sema/typed-keypath-subscripts.m
+new file mode 100644
+index 000000000..fe5033612
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-subscripts.m
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/typed-keypath-subscripts.h -o %t-c17False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/typed-keypath-subscripts.h -o %t-c17True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/typed-keypath-subscripts.h -o %t-c++23False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/typed-keypath-subscripts.h -o %t-c++23True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/typed-keypath-subscripts.h"
++#endif
++int reads_and_writes(IndexNode *_Nonnull root,WritableKeyPath<IndexNode*,int> path,
++    KeyPath<IndexNode*,int> read) {
++  int first=root[read];int assigned=(root[path]=40);
++  int compound=(root[path]+=2);int prior=root[path]++;
++  int current=++root[path];--root[path];root[path]--;
++  root[path]*=2;root[path]/=2;root[path]%=43;root[path]&=31;
++  root[path]|=2;root[path]^=1;root[path]<<=1;root[path]>>=1;
++  return first+assigned+compound+prior+current+root[path];
++}
++IndexPair record_value(IndexNode *_Nonnull root,WritableKeyPath<IndexNode*,IndexPair> path) {
++  IndexPair pair={1,2};IndexPair assigned=(root[path]=pair);return assigned;
++}
++int literal_value(IndexNode *_Nonnull root) {return root[@keypath(IndexNode,count)];}
++void readonly_rejection(IndexNode *_Nonnull root,KeyPath<IndexNode*,int> read) {
++  root[read]=0; // expected-error {{subscript assignment requires a WritableKeyPath}}
++  root[read]+=1; // expected-error {{subscript assignment requires a WritableKeyPath}}
++  ++root[read]; // expected-error {{subscript assignment requires a WritableKeyPath}}
++}
++void root_rejection(IndexNode *_Nullable nullable,IndexOther *_Nonnull other,
++    KeyPath<IndexNode*,int> read) {
++  (void)nullable[read]; // expected-error {{requires a nonnull root}}
++  (void)other[read]; // expected-error {{root has an incompatible class type}}
++  (void)((IndexNode*)0)[read]; // expected-error {{requires a nonnull root}}
++}
++void null_value_rejection(IndexNode *_Nonnull root,IndexNode *_Nullable value,
++    WritableKeyPath<IndexNode*,IndexNode*_Nonnull> path) {
++  root[path]=value; // expected-error {{setter requires a nonnull property value}}
++  root[path]=(id)0; // expected-error {{setter requires a nonnull property value}}
++}
++IndexNode *_Nullable nullable_result(IndexNode *_Nonnull root) {
++  return root[@keypath(IndexNode,optionalChild.optionalChild)];
++}
+diff --git a/clang/test/ObjC3/Sema/typed-keypath-sequencing.m b/clang/test/ObjC3/Sema/typed-keypath-sequencing.m
+new file mode 100644
+index 000000000..914ca6d06
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-keypath-sequencing.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wunsequenced -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wunsequenced -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wunsequenced -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wunsequenced -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wunsequenced -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wunsequenced -fsyntax-only -verify %s
++#include "Inputs/typed-keypath-subscripts.h"
++void ordered_operands(IndexNode *_Nonnull root,WritableKeyPath<IndexNode*,int> path,
++    KeyPath<IndexNode*,int> read,int i) {
++  (void)KeyPathGet((i++,read),(i++,root));
++  KeyPathSet((i++,path),(i++,root),i++);
++  root[(i++,path)]=i++;
++  root[(i++,path)]+=i++;
++  (void)KeyPathGet(((void)(i++ + i),read),root); // expected-warning {{unsequenced modification and access to 'i'}}
++  root[path]=i++ + i; // expected-warning {{unsequenced modification and access to 'i'}}
++  (void)(root[(i++,read)]+i); // expected-warning {{unsequenced modification and access to 'i'}}
 +}

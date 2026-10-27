@@ -118,6 +118,10 @@ int apply_path(ASTPathRoot * _Nonnull root) {
   (void)KeyPathMetadata(read);
   return KeyPathGet(read, root);
 }
+int indexed_application(ASTPathRoot *_Nonnull root,WritableKeyPath<ASTPathRoot*,int> path) {
+  int assigned=(root[path]=7);int updated=(root[path]+=2);
+  return assigned+updated+root[path]++ + ++root[path]+root[@keypath(ASTPathRoot,count)];
+}
 template<int Unused> int template_application(ASTPathRoot * _Nonnull root) {
   return KeyPathGet(writable_path(), root);
 }
@@ -188,6 +192,18 @@ template int template_application<1>(ASTPathRoot * _Nonnull);
            std::string::npos);
     assert(record_printed.find("__objc3_keypath_get_") == std::string::npos);
   }
+
+  auto indexed_import=importer.Import(function(*provider,"indexed_application"));
+  assert(indexed_import);
+  std::string indexed_printed;
+  llvm::raw_string_ostream indexed_out(indexed_printed);
+  llvm::cast<clang::FunctionDecl>(*indexed_import)->print(indexed_out,policy);
+  indexed_out.flush();
+  assert(indexed_printed.find("root[path] += 2")!=std::string::npos);
+  assert(indexed_printed.find("root[path]++")!=std::string::npos);
+  assert(indexed_printed.find("__objc3_")==std::string::npos);
+  auto reparsed=parse(std::string(source)+"\n"+std::string("int reprinted_application")+indexed_printed.substr(indexed_printed.find("(")),"indexed-reparse.mm");
+  assert(reparsed && !reparsed->getDiagnostics().hasErrorOccurred());
 
   auto imported_application = importer.Import(function(*provider, "apply_path"));
   assert(imported_application);

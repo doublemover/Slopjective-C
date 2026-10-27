@@ -16,7 +16,8 @@
     "package_narrowed_path",
     "package_live_roots",
     "PackagePathBits",
-    "package_bits_path"
+    "package_bits_path",
+    "package_indexed_update"
   ],
   "dependencies": []
 }

@@ -51,6 +51,12 @@ Normal, ASan/UBSan and TSan each pass the complete five-family source/PCH matrix
 execution, including builtin bodies, complete fills and counted captured releases.
 SDK 2.33 remains the accepted archive; installed delivery follows this batch.
 
+## Typed key-path subscripts
+
+The [keypath 2.3.0 source span](linux_keypath_subscripts.md) implements typed
+`root[path]` reads, writable assignments, compound updates and increments, with
+source-ordered operand snapshots and source-free published inline syntax.
+
 ## Captured arrays beyond eager storage tracking
 
 The [System 2.14.0 source span](linux_borrowed_large_arrays.md) preserves
