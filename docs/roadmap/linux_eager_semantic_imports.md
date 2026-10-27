@@ -25,3 +25,6 @@ The active SDK remains
 source/sanitizer and installed/archive qualification remain deferred for the
 combined source batch. This milestone does not claim wider language/profile
 conformance or native Linux AArch64 qualification.
+
+Focused source evidence is recorded in the
+[eager import receipt](../support/linux_eager_semantic_imports_progress.json).
