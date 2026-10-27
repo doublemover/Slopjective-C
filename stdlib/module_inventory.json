@@ -153,13 +153,14 @@
         "Explicit ARC mixed C++/managed carrier captures and owned match snapshots with frozen selection, independent native/managed cleanup ordering and heap-copy rollback (source)",
         "Native plain Optional/Result captures for typed/function/member pointers, complex values and C aggregate leaves with shared typed copy operations (source)",
         "Implicit mixed ARC/C++ Block capture copy recipes and full-expression rollback with partitioned source cleanup ordering (source)",
-        "Native declaration export roots in semantic interface schema 2.2 with namespace/class/friend/using policy verification for immutable source-free packages (source)"
+        "Native declaration export roots in semantic interface schema 2.2 with namespace/class/friend/using policy verification for immutable source-free packages (source)",
+        "Concrete named C++ local classes, structs and enums in published definitions, defaults, member initializers and lambdas with lexical identities, native lifecycle, RTTI and constexpr evaluation (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Dependent/template class bodies and generic/local-type inline definitions, public closure types, unnamed nested types, unmodeled namespace attributes, dependent lookup projections and broader profile contracts"
+        "Dependent/template class bodies and generic inline definitions, public closure types, unnamed local/nested types, unmodeled namespace attributes, dependent lookup projections and broader profile contracts"
       ]
     },
     {

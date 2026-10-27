@@ -33,6 +33,7 @@ InterfaceEmissionArtifact MakeArtifact(
   declaration.stable_id = "c:@V@sample";
   declaration.kind = "Var";
   declaration.qualified_name = "sample";
+  declaration.export_root = "sample";
   declaration.canonical_type_identity = "int";
   sidecar.declarations.push_back(std::move(declaration));
   sidecar.module.semantic_fingerprint = ComputeInterfaceSourceSha256(
