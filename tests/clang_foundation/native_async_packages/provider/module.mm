@@ -520,3 +520,21 @@ namespace NativeInline {
 int NativeInline::provider_step(int delta) { return step(delta); }
 int NativeInline::provider_total() { return total; }
 int NativeInline::provider_updates() { return Value::updates; }
+
+struct NativeComparable {
+  int n;
+  int values[2];
+  bool operator==(const NativeComparable &) const=default;
+  bool operator!=(const NativeComparable &) const=default;
+};
+struct NativeFriendComparable {
+  NativeComparable value;
+  friend bool operator==(const NativeFriendComparable &, const NativeFriendComparable &)=default;
+};
+struct NativeDerivedComparable : NativeComparable {
+  int extra;
+  bool operator==(const NativeDerivedComparable &) const=default;
+};
+bool native_module_compare(NativeFriendComparable first, NativeFriendComparable second) {
+  return first==second;
+}

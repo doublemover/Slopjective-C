@@ -389,6 +389,13 @@ llvm::Error ValidateForEncoding(
       kCxxDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_definitions != definition_capability)
     return Invalid("C++ definition identity and required capability must agree");
+  const bool has_comparisons = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxDefaultedComparisonIdentity);
+  const bool comparison_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxDefaultedComparisonSemantic) != sidecar.required_semantics.end();
+  if (has_comparisons != comparison_capability)
+    return Invalid("C++ defaulted comparison identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

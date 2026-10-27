@@ -67,7 +67,11 @@
     "NativeInherited",
     "@using-enum:NativeFamily::Kind",
     "NativeDefaults",
-    "NativeInline"
+    "NativeInline",
+    "NativeComparable",
+    "NativeFriendComparable",
+    "NativeDerivedComparable",
+    "native_module_compare"
   ],
   "dependencies": []
 }

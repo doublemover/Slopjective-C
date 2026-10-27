@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ defaulted comparisons
+
+The [2.17.0 source milestone](linux_cxx_defaulted_comparisons.md) binds native
+member and hidden-friend comparisons, associated record export/SPI policy and
+argument-dependent lookup. Broad source and SDK/archive validation remain
+deferred for the source batch.
+
 ## Eager runtime-bearing semantic imports
 
 The [2.16.0 source milestone](linux_eager_semantic_imports.md) parses the pinned

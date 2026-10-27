@@ -341,6 +341,29 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
   return identity.Get(definition->getBody());
 }
 
+const clang::CXXRecordDecl *FriendOwner(const clang::NamedDecl *declaration) {
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      function && function->getFriendObjectKind() != clang::Decl::FOK_None)
+    return llvm::dyn_cast<clang::CXXRecordDecl>(function->getLexicalDeclContext());
+  return nullptr;
+}
+
+bool IsInClassDefaultedComparison(const clang::FunctionDecl *function) {
+  if (!function) return false;
+  function = function->getMostRecentDecl();
+  if (!function->isExplicitlyDefaulted() || !function->getLexicalDeclContext()->isRecord())
+    return false;
+  const auto effects = ReadCanonicalFunctionEffects(function->getType(), function->getASTContext());
+  if (effects.is_async || effects.is_throwing) return false;
+  switch (function->getOverloadedOperator()) {
+  case clang::OO_EqualEqual: case clang::OO_ExclaimEqual:
+  case clang::OO_Less: case clang::OO_LessEqual:
+  case clang::OO_Greater: case clang::OO_GreaterEqual:
+  case clang::OO_Spaceship: return true;
+  default: return false;
+  }
+}
+
 bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
   if (!record || !record->isCompleteDefinition())
     return false;
@@ -371,7 +394,8 @@ bool HasClassStructure(const clang::CXXRecordDecl *record) {
   if (record->isDynamicClass() || record->getNumBases() != 0)
     return true;
   for (const auto *method : record->methods())
-    if (!method->isImplicit() && method->getMostRecentDecl()->isDefaulted())
+    if (!method->isImplicit() && method->getMostRecentDecl()->isDefaulted() &&
+        !IsInClassDefaultedComparison(method))
       return true;
   return false;
 }
@@ -528,6 +552,23 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                 ? DeclarationExpressionContract(variable->getInit(), context) : "none"));
     if (!definitions.empty()) out << ";cxx-definitions:v1;";
     for (const auto &definition : definitions) out << "definition=" << definition << ';';
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> comparisons;
+    auto add = [&](const clang::FunctionDecl *function) {
+      if (IsInClassDefaultedComparison(function))
+        comparisons.insert(ReadInterfaceDeclarationStableId(function) +
+            ":operator=" + std::to_string(function->getOverloadedOperator()) +
+            ":consteval=" + std::to_string(function->isConsteval()));
+    };
+    for (const auto *member : cxx->decls()) {
+      if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(member)) add(function);
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member))
+        add(llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()));
+    }
+    if (!comparisons.empty()) out << ";cxx-defaulted-comparisons:v1;";
+    for (const auto &comparison : comparisons) out << "comparison=" << comparison << ';';
   }
   out.flush();
   return text;
@@ -731,6 +772,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 }
 
 std::string ExportRootName(const clang::NamedDecl *declaration) {
+  if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration) {
     if (IsTopLevel(declaration))
       return InterfaceQualifiedName(declaration);
@@ -1169,6 +1211,11 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
       if (field) continue;
       if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
+        supported &= IsInClassDefaultedComparison(
+            llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()));
+        continue;
+      }
       if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(member)) {
         supported &= variable->isStaticDataMember() && !variable->getDescribedVarTemplate() &&
                      variable->getTLSKind() == clang::VarDecl::TLS_None;
@@ -1183,7 +1230,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
           method && !method->isTemplated() &&
-          (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method)) &&
+          (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method) ||
+           IsInClassDefaultedComparison(method)) &&
           !method->getTrailingRequiresClause();
       if (const auto *ctor =
               llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(method))
@@ -1195,7 +1243,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
     if (method->getMostRecentDecl()->isDefaulted())
-      supported &= IsInClassDefaultedSpecialMember(method);
+      supported &= IsInClassDefaultedSpecialMember(method) || IsInClassDefaultedComparison(method);
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl>(declaration);
@@ -1206,7 +1254,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         function && function->isExternallyVisible()) {
       supported &= !function->isTemplated() &&
                    !function->getTrailingRequiresClause() &&
-                   !function->isDefaulted();
+                   (!function->isDefaulted() || IsInClassDefaultedComparison(function));
     }
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->isExternallyVisible())
@@ -1413,7 +1461,7 @@ class InterfaceCollector final
     // Preserve declaration/redeclaration order, including incomplete tag
     // declarations needed by signatures that precede the eventual definition.
     // The sidecar still records one semantic identity per USR below.
-    if (IsTopLevel(declaration) &&
+    if (IsTopLevel(declaration) && !FriendOwner(declaration) &&
         !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                    clang::ObjCIvarDecl, clang::FieldDecl,
                    clang::EnumConstantDecl>(declaration))
@@ -1685,6 +1733,7 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
 }  // namespace
 
 std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
+  if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration && !IsTopLevel(declaration))
     declaration =
         llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
@@ -1785,7 +1834,7 @@ bool ReadInterfaceDeclarationIdentity(
     }
   }
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative);
-      method && method->isDefaulted())
+      method && method->isDefaulted() && !IsInClassDefaultedComparison(method))
     identity.canonical_type_identity +=
         ";cxx-class-structure:v1;defaulted=1;constexpr=derived;exception=" +
         std::string(method->getExceptionSpecSourceRange().isInvalid()
@@ -1802,6 +1851,17 @@ bool ReadInterfaceDeclarationIdentity(
     for (const auto *overridden : method->overridden_methods())
       identity.canonical_type_identity +=
           ";override=" + ReadInterfaceDeclarationStableId(overridden);
+  }
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative);
+      IsInClassDefaultedComparison(function)) {
+    identity.canonical_type_identity += ";cxx-defaulted-comparisons:v1;operator=" +
+        std::to_string(function->getOverloadedOperator()) + ";consteval=" +
+        std::to_string(function->isConsteval()) + ";deleted=" +
+        std::to_string(function->isDeleted()) + ";inline=" +
+        std::to_string(function->isInlined()) + ";user-provided=" +
+        std::to_string(function->isUserProvided()) + ";";
+    if (const auto *owner = FriendOwner(function))
+      identity.canonical_type_identity += "friend-owner=" + ReadInterfaceDeclarationStableId(owner) + ";";
   }
   std::vector<const clang::NamespaceDecl *> scopes;
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
@@ -1992,6 +2052,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxDeclarationExpressionSemantic);
     if (HasCxxDefinitionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDefinitionSemantic);
+    if (HasCxxDefaultedComparisonIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxDefaultedComparisonSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2055,6 +2117,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
     kCxxDefinitionSemantic,
+    kCxxDefaultedComparisonSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2165,6 +2228,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
     kCxxDefinitionSemantic,
+    kCxxDefaultedComparisonSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

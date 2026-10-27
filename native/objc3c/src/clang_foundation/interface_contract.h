@@ -111,6 +111,11 @@ inline constexpr const char *kCxxDefinitionSemantic = "objc3.cxx-definitions.v1"
 inline bool HasCxxDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-definitions:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxDefaultedComparisonSemantic =
+    "objc3.cxx-defaulted-comparisons.v1";
+inline bool HasCxxDefaultedComparisonIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-defaulted-comparisons:v1;") != std::string::npos;
+}
 inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
   return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
          (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);

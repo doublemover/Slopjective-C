@@ -96,3 +96,7 @@ native expression identity under `objc3.cxx-declaration-expressions.v1`.
 The [2.15.0 source milestone](linux_cxx_definitions.md) preserves concrete inline,
 constexpr/consteval function and constructor bodies and inline/constant data
 under required `objc3.cxx-definitions.v1` semantics.
+
+The [2.17.0 source milestone](linux_cxx_defaulted_comparisons.md) adds native
+in-class defaulted member/hidden-friend comparisons with required
+`objc3.cxx-defaulted-comparisons.v1` semantics and record-bound comparison identity.

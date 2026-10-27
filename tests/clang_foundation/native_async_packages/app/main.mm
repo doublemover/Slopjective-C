@@ -196,6 +196,20 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 
 int main() {
   {
+    static_assert(NativeComparable{42,{1,2}}==NativeComparable{42,{1,2}});
+    static_assert(NativeComparable{42,{1,2}}!=NativeComparable{42,{2,1}});
+    static_assert(NativeFriendComparable{{42,{1,2}}}!=NativeFriendComparable{{43,{1,2}}});
+    NativeFriendComparable first{{42,{1,2}}}, second{{42,{1,2}}};
+    if (!(first==second) || !native_module_compare(first,second)) return 77;
+    second.value.values[1]=3;
+    if (!(first!=second) || native_module_compare(first,second)) return 78;
+    NativeDerivedComparable left{{42,{1,2}},2}, right{{42,{1,2}},2};
+    if (!(left==right)) return 79;
+    right.extra=3;
+    if (!(left!=right)) return 80;
+  }
+
+  {
     if (imported_dynamic_order!=42 || NativeInline::dynamic!=40 || NativeInline::ordered!=42) return 76;
     volatile int forty=40;
     if (NativeInline::client_only(forty)!=42) return 74;

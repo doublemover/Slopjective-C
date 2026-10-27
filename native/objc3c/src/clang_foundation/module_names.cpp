@@ -121,7 +121,7 @@ public:
   }
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() ||
-        (!decl->getIdentifier() && !llvm::isa<clang::CXXMethodDecl>(decl)) ||
+        (!decl->getIdentifier() && !llvm::isa<clang::FunctionDecl>(decl)) ||
         !IsModuleOwnedSource(context_, decl->getLocation(), source_root_))
       return true;
     const auto *owner = decl->getDeclContext();
