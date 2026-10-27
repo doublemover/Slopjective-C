@@ -36,4 +36,7 @@ Maintained witnesses cover C++20/23 under ARC and MRC, direct source and PCH,
 local/copy/noescape invocation, init/nested/record captures, captured ARC owners,
 escapes and expired calls, future reference/address mutations and persistent
 capture storage. SDK 2.33 remains the accepted installation while this compiler
-span is qualified with the next coherent source batch.
+span is developed. The [focused receipt](../support/linux_borrowed_cpp_captures_progress.json)
+records 380 compiler regressions, 182 native unit tests, all 33 frontend suites
+and 14 tooling tests. Three platform compiler cases remain unsupported. The
+combined runtime/sanitizer batch and SDK cutover follow further implementation.
