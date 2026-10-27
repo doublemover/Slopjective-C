@@ -12339,7 +12339,7 @@ index 3c45806c4..b15ae4888 100644
      if (!OnlyDeduced)
        MarkUsedTemplateParameters(Ctx,
 diff --git a/clang/lib/Sema/SemaType.cpp b/clang/lib/Sema/SemaType.cpp
-index 3f0a7304d..d9f4e69bd 100644
+index 3f0a7304d..058846336 100644
 --- a/clang/lib/Sema/SemaType.cpp
 +++ b/clang/lib/Sema/SemaType.cpp
 @@ -2703,6 +2703,9 @@ QualType Sema::BuildFunctionType(QualType T,
@@ -12404,7 +12404,19 @@ index 3f0a7304d..d9f4e69bd 100644
  
          // Otherwise, we have a function with a parameter list that is
          // potentially variadic.
-@@ -5430,6 +5467,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+@@ -5338,7 +5375,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+             D.setInvalidType();
+           }
+ 
+-          if (LangOpts.ObjCAutoRefCount && Param->hasAttr<NSConsumedAttr>()) {
++          // Objective-C 3 ownership contracts also govern MRC borrowed loans,
++          // including indirect calls whose parameter declarations are gone.
++          if ((LangOpts.ObjCAutoRefCount || LangOpts.ObjC3) &&
++              Param->hasAttr<NSConsumedAttr>()) {
+             ExtParameterInfos[i] = ExtParameterInfos[i].withIsConsumed(true);
+             HasAnyInterestingExtParameterInfos = true;
+           }
+@@ -5430,6 +5470,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
            EPI.TypeQuals.addAddressSpace(AS);
          }
          T = Context.getFunctionType(T, ParamTys, EPI);
@@ -12415,7 +12427,7 @@ index 3f0a7304d..d9f4e69bd 100644
        }
        break;
      }
-@@ -5757,6 +5798,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+@@ -5757,6 +5801,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
      }
    }
  
@@ -12423,7 +12435,7 @@ index 3f0a7304d..d9f4e69bd 100644
    assert(!T.isNull() && "T must not be null at the end of this function");
    if (!AreDeclaratorChunksValid)
      return Context.getTrivialTypeSourceInfo(T);
-@@ -6045,6 +6087,18 @@ namespace {
+@@ -6045,6 +6090,18 @@ namespace {
        Sema::GetTypeFromParser(DS.getRepAsType(), &RepTInfo);
        TL.copy(RepTInfo->getTypeLoc());
      }
@@ -12442,7 +12454,7 @@ index 3f0a7304d..d9f4e69bd 100644
      void VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc TL) {
        TypeSourceInfo *TInfo = nullptr;
        Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
-@@ -6305,6 +6359,10 @@ namespace {
+@@ -6305,6 +6362,10 @@ namespace {
          TL.setParam(tpi++, Param);
        }
        TL.setExceptionSpecRange(FTI.getExceptionSpecRange());
@@ -37208,10 +37220,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..11e93524b
+index 000000000..504761188
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2242 @@
+@@ -0,0 +1,2297 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37419,6 +37431,7 @@ index 000000000..11e93524b
 +    Value CaptureReady;
 +    Value UnownedOwners;
 +    SmallVector<Value, 16> EvaluatedValues;
++    SmallVector<Value, 16> EvaluatedOwners;
 +    SmallVector<Storage, 16> EvaluatedTargets;
 +    SmallVector<Value, 16> EvaluatedMayTargets;
 +    Value EvaluatedReady;
@@ -38002,6 +38015,13 @@ index 000000000..11e93524b
 +    }
 +    return Result;
 +  }
++  Value evaluatedOwnerIdentity(const Expr *E, const Facts &State) const {
++    if (E)
++      if (auto Slot = ExpressionSlots.find(E); Slot != ExpressionSlots.end())
++        if (State.EvaluatedReady.test(Slot->second))
++          return State.EvaluatedOwners[Slot->second];
++    return ownerIdentity(E, State);
++  }
 +  bool ownerIsUnowned(const Expr *E, const Facts &State) const {
 +    if (!E) return false;
 +    E = E->IgnoreParenCasts();
@@ -38462,23 +38482,48 @@ index 000000000..11e93524b
 +      State.SamePins.reset(Found->second);
 +    }
 +  }
-+  void observeManualRelease(const Expr *Invocation, Facts &State) const {
-+    if (Actions.getLangOpts().ObjCAutoRefCount) return;
-+    const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation);
-+    if (!Message || Message->getMethodFamily() != OMF_release ||
-+        (Message->getMethodDecl() && Message->getMethodDecl()->isClassMethod()))
-+      return;
-+    Value Identity = ownerIdentity(Message->getInstanceReceiver(), State);
-+    if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance)
-+      for (const Decl *Scope = Callable; Scope;
-+           Scope = Scope->getDeclContext()
-+                       ? Decl::castFromDeclContext(Scope->getDeclContext()) : nullptr)
-+        if (const auto *Method = dyn_cast<ObjCMethodDecl>(Scope)) {
-+          if (auto Slot = Slots.find({Method->getSelfDecl(), nullptr}); Slot != Slots.end())
-+            Identity = State.OwnerIdentities[Slot->second];
-+          break;
-+        }
-+    if (Identity.none()) return;
++  bool observeOwnerConsumption(const Expr *Invocation, Facts &State) const {
++    if (Actions.getLangOpts().ObjCAutoRefCount) return false;
++    Value Identity(OwnerRoots.size());
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) {
++      const auto *Method = Message->getMethodDecl();
++      if ((!Method || !Method->isClassMethod()) &&
++          (Message->getMethodFamily() == OMF_release ||
++           (Method && Method->hasAttr<NSConsumesSelfAttr>()))) {
++        Identity |= evaluatedOwnerIdentity(Message->getInstanceReceiver(), State);
++        if (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance)
++          for (const Decl *Scope = Callable; Scope;
++               Scope = Scope->getDeclContext()
++                           ? Decl::castFromDeclContext(Scope->getDeclContext()) : nullptr)
++            if (const auto *Current = dyn_cast<ObjCMethodDecl>(Scope)) {
++              if (auto Slot = Slots.find({Current->getSelfDecl(), nullptr}); Slot != Slots.end())
++                Identity |= State.OwnerIdentities[Slot->second];
++              break;
++            }
++      }
++    }
++    const auto Formals = formalParameters(callee(Invocation));
++    unsigned Count = 0;
++    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
++    else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) Count = Message->getNumArgs();
++    else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Invocation)) Count = Construction->getNumArgs();
++    const FunctionProtoType *Prototype = nullptr;
++    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) {
++      QualType Type = Call->getCallee()->getType();
++      if (Type->isPointerType() || Type->isBlockPointerType()) Type = Type->getPointeeType();
++      Prototype = Type->getAs<FunctionProtoType>();
++    }
++    for (unsigned I = 0; I != Count; ++I) {
++      const unsigned Formal = formalIndex(Invocation, I);
++      bool Consumed = Formal < Formals.size() &&
++                      Formals[Formal]->hasAttr<NSConsumedAttr>() &&
++                      Formals[Formal]->getType()->isObjCObjectPointerType();
++      Consumed |= Prototype && Formal < Prototype->getNumParams() &&
++                  Prototype->isParamConsumed(Formal) &&
++                  Prototype->getParamType(Formal)->isObjCObjectPointerType();
++      if (Consumed) Identity |= evaluatedOwnerIdentity(argument(Invocation, I), State);
++    }
++    if (Identity.none()) return false;
 +    SmallVector<std::pair<const VarDecl *, Value>, 8> Aliases;
 +    for (const auto &[Owner, Root] : OwnerRoots) {
 +      (void)Root;
@@ -38497,6 +38542,7 @@ index 000000000..11e93524b
 +      State.UnownedOwners.set(Slot);
 +    }
 +    State.SamePins = SamePins;
++    return !Aliases.empty();
 +  }
 +  void store(const Stmt *Operation, Storage Destination, const Value &V,
 +             Facts &State, bool Emit, bool Replace = false) {
@@ -38813,6 +38859,15 @@ index 000000000..11e93524b
 +      }
 +    }
 +    if (Emit) {
++      if (!Actions.getLangOpts().ObjCAutoRefCount)
++        if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation);
++            Message && Message->getReceiverKind() == ObjCMessageExpr::SuperInstance &&
++            Message->getMethodDecl() && Message->getMethodDecl()->hasAttr<NSConsumesSelfAttr>())
++          for (const Expr *Argument : Message->arguments())
++            if (Argument->HasSideEffects(Context)) {
++              diagnose(Message, "super receiver consumption with side-effecting arguments; bind arguments first");
++              break;
++            }
 +      const Expr *Receiver = nullptr;
 +      if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation))
 +        Receiver = Message->getInstanceReceiver();
@@ -38868,7 +38923,12 @@ index 000000000..11e93524b
 +          }
 +      }
 +    }
-+    observeManualRelease(Invocation, State);
++    if (observeOwnerConsumption(Invocation, State) && Emit)
++      for (unsigned I = 0; I != Count; ++I) {
++        const Expr *Argument = argument(Invocation, I);
++        if (hasExpired(value(Argument, State)))
++          diagnose(Argument, "a borrowed argument overlapping a consumed owner claim");
++      }
 +  }
 +  void transfer(const CFGBlock &Block, Facts &State, bool Emit) {
 +    for (const CFGElement &Element : Block) {
@@ -38895,11 +38955,13 @@ index 000000000..11e93524b
 +          unsigned Slot = Found->second;
 +          State.EvaluatedReady.reset(Slot);
 +          Value V = value(Expression, State);
++          Value Owner = ownerIdentity(Expression, State);
 +          Storage Target = referent(Expression, &State);
 +          Value Targets = possibleTargets(Expression, State);
 +          if (Targets.any() && !isObjC3BorrowedType(Context, Expression->getType()))
 +            V = empty();
 +          State.EvaluatedValues[Slot] = std::move(V);
++          State.EvaluatedOwners[Slot] = std::move(Owner);
 +          State.EvaluatedTargets[Slot] = Target;
 +          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
@@ -39237,6 +39299,10 @@ index 000000000..11e93524b
 +      Evaluated |= Source.EvaluatedValues[I];
 +      Changed |= Evaluated != Destination.EvaluatedValues[I];
 +      Destination.EvaluatedValues[I] = std::move(Evaluated);
++      Value Owners = Destination.EvaluatedOwners[I];
++      Owners |= Source.EvaluatedOwners[I];
++      Changed |= Owners != Destination.EvaluatedOwners[I];
++      Destination.EvaluatedOwners[I] = std::move(Owners);
 +      Value Targets = Destination.EvaluatedMayTargets[I];
 +      Targets |= Source.EvaluatedMayTargets[I];
 +      Changed |= Targets != Destination.EvaluatedMayTargets[I];
@@ -39345,6 +39411,7 @@ index 000000000..11e93524b
 +    Initial.CapturedReferenceTargets.assign(ClosureSlots.size(), Value(Slots.size()));
 +    Initial.CaptureReady.resize(ClosureSlots.size());
 +    Initial.EvaluatedValues.assign(ExpressionSlots.size(), empty());
++    Initial.EvaluatedOwners.assign(ExpressionSlots.size(), Value(OwnerRoots.size()));
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
@@ -43659,5 +43726,126 @@ index 000000000..c570f0077
 +  [owner release];
 +  auto work=[copy=owner] {manual_use(manual_bytes(copy));}; // expected-error {{after its owner lifetime ended}}
 +  work();
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-consumed-owners.h b/clang/test/ObjC3/Sema/Inputs/borrowed-consumed-owners.h
+new file mode 100644
+index 000000000..07f85261e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-consumed-owners.h
+@@ -0,0 +1,12 @@
++typedef borrowed const char *ConsumedBorrowedBytes;
++ConsumedBorrowedBytes consumed_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void consumed_use(const char *pointer __attribute__((noescape)));
++void consume_claim(id owner __attribute__((ns_consumed)),int unused);
++void consume_pair(id owner __attribute__((ns_consumed)),const char *pointer __attribute__((noescape)));
++typedef void (*ConsumedCallback)(id owner __attribute__((ns_consumed)),int unused);
++typedef void (^ConsumedBlock)(id owner __attribute__((ns_consumed)),int unused);
++__attribute__((objc_root_class)) @interface ConsumingOwner
++- (void)consume __attribute__((ns_consumes_self));
++- (void)consumeAfter:(int)unused __attribute__((ns_consumes_self));
++- (void)takeObject:(id __attribute__((ns_consumed)))owner;
++@end
+diff --git a/clang/test/ObjC3/Sema/borrowed-consumed-owners.m b/clang/test/ObjC3/Sema/borrowed-consumed-owners.m
+new file mode 100644
+index 000000000..f9949a112
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-consumed-owners.m
+@@ -0,0 +1,97 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-consumed-owners.h -o %t-c.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-consumed-owners.h -o %t-cxx.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-cxx.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-consumed-owners.h"
++#endif
++void direct_consume(ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  consume_claim(owner,0);
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void receiver_consume(ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  [owner consume];
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void message_argument(ConsumingOwner *_Nonnull receiver,ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  [receiver takeObject:owner];
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void indirect_consume(ConsumingOwner *_Nonnull owner,ConsumedCallback callback) {
++  const char *pointer=consumed_bytes(owner);
++  callback(owner,0);
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void block_consume(ConsumingOwner *_Nonnull owner,ConsumedBlock callback) {
++  const char *pointer=consumed_bytes(owner);
++  callback(owner,0);
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void overlapping_loan(ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  consume_pair(owner,pointer); // expected-error {{borrowed argument overlapping a consumed owner claim}}
++}
++void pinned_claim(ConsumingOwner *_Nonnull owner) {
++  keepAlive(owner);
++  const char *pointer=consumed_bytes(owner);
++  consume_pair(owner,pointer);
++  [owner consume];
++  consumed_use(pointer);
++  consumed_use(consumed_bytes(owner));
++}
++#ifdef __cplusplus
++void argument_snapshot(ConsumingOwner *_Nonnull owner,ConsumingOwner *_Nonnull replacement) {
++  ConsumingOwner *_Nonnull old=owner;
++  const char *pointer=consumed_bytes(old);
++  consume_claim(owner,(owner=replacement,0)); // cxx-warning {{unsequenced modification and access}}
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++  consumed_use(consumed_bytes(owner));
++}
++#endif
++void receiver_snapshot(ConsumingOwner *_Nonnull owner,ConsumingOwner *_Nonnull replacement) {
++  ConsumingOwner *_Nonnull old=owner;
++  const char *pointer=consumed_bytes(old);
++  ConsumingOwner *_Nonnull receiver=owner;
++  [receiver consumeAfter:(owner=replacement,0)];
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++  consumed_use(consumed_bytes(owner));
++}
++void (*erased_callback)(id,int)=consume_claim; // c-error {{incompatible function pointer types}} cxx-error {{cannot initialize}}
++void lost_contract(id owner __attribute__((ns_consumed))); // expected-note {{previous declaration is here}}
++void lost_contract(id owner) {} // expected-error {{conflicting types}}
++@interface ConsumingChild : ConsumingOwner
++- (void)drop;
++- (void)dropAfter:(ConsumingOwner *_Nonnull)replacement;
++@end
++@implementation ConsumingChild
++- (void)drop {
++  const char *pointer=consumed_bytes(self);
++  [super consume];
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++- (void)dropAfter:(ConsumingOwner *_Nonnull)replacement {
++  const char *pointer=consumed_bytes(self);
++  [super consumeAfter:(self=(ConsumingChild *)replacement,0)]; // expected-error {{super receiver consumption with side-effecting arguments}}
++  (void)pointer;
++}
++@end
++#ifdef __cplusplus
++struct ClaimSink {ClaimSink(id owner __attribute__((ns_consumed)));};
++struct ClaimCall {void operator()(id owner __attribute__((ns_consumed)));};
++void constructor_consume(ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  ClaimSink sink(owner);
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void operator_consume(ConsumingOwner *_Nonnull owner) {
++  const char *pointer=consumed_bytes(owner);
++  ClaimCall{}(owner);
++  consumed_use(pointer); // expected-error {{after its owner lifetime ended}}
 +}
 +#endif

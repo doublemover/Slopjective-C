@@ -206,7 +206,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 2,
+        "minor": 3,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -219,7 +219,8 @@
         "native withLifetime/keepAlive precise owner bindings",
         "borrowed-pointer contracts, owner provenance and escape checking (authored)",
         "Strict System C++ lambda value-capture provenance, nested/init/record aliases, noescape invocation and independent ARC owner snapshots; checked persistent/reference/mutable/generic capture boundaries (source)",
-        "MRC native instance-release effects on borrowed owner claims, known aliases and conditional joins, independent lifetime pins, new acquisitions and nested Block/C++ lambda checks (source)"
+        "MRC native instance-release effects on borrowed owner claims, known aliases and conditional joins, independent lifetime pins, new acquisitions and nested Block/C++ lambda checks (source)",
+        "MRC annotated object-consumption effects for direct/indirect callbacks, messages and C++ calls with evaluated owner identities, independent pins, overlap rejection and preserved consumed function types (source)"
       ],
       "remaining": [
         "remaining borrowed alias/escape and required diagnostic boundaries",

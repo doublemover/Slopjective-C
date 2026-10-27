@@ -37,3 +37,6 @@ The [focused receipt](../support/linux_borrowed_manual_release_progress.json)
 records 381 compiler regressions, 182 native unit tests, all 33 frontend suites
 and 14 tooling tests. Three platform cases remain unsupported. Combined runtime/
 sanitizer validation and SDK delivery follow a coherent implementation batch.
+
+The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) adds annotated
+object arguments/receivers, typed indirect calls and evaluated owner identities.

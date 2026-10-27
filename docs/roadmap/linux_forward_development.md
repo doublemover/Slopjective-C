@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Annotated consumed owners and borrowed loans
+
+The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) adds annotated
+MRC object-parameter/receiver consumption, typed function/Block callbacks and
+C++ calls. Evaluated owner identities survive later argument effects; independent
+pins protect loans and overlapping consumption is rejected. MRC consumed types
+retain their canonical ownership contract. SDK 2.33 remains the accepted archive.
+
 ## Manual owner release and borrowed loans
 
 The [System 2.2.0 source span](linux_borrowed_manual_release.md) tracks manual

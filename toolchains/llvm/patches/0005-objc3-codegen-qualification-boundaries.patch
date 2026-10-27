@@ -28859,3 +28859,25 @@ index 000000000..6d9ab5d40
 +// CHECK-DAG: call i32 @objc3_async_frame_start_child
 +// CHECK-DAG: call i32 @objc3_executor_get_main
 +// CHECK-DAG: call i32 @objc3_task_hop
+diff --git a/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
+new file mode 100644
+index 000000000..02ecfe338
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++void consume_object(id object __attribute__((ns_consumed)));
++typedef void (*ConsumedCallback)(id object __attribute__((ns_consumed)));
++void forward_object(id object) {consume_object(object);}
++void forward_callback(ConsumedCallback callback,id object) {callback(object);}
++// MRC metadata must not introduce ARC transfer retains or cleanup releases.
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-LABEL: define{{.*}} void @forward_object(
++// CHECK: call void @consume_object(
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-LABEL: define{{.*}} void @forward_callback(
++// CHECK: call void %{{.*}}(ptr
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release

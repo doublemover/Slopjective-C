@@ -251,6 +251,34 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       Expect(Request(Root, Header + Code, Language, Standard, ARC), false,
              "borrowed pointer escapes");
   }
+  const std::string ConsumedHeader=Header+
+      "void consume_claim(id owner __attribute__((ns_consumed)),int unused);\n"
+      "void consume_pair(id owner __attribute__((ns_consumed)),const char *p __attribute__((noescape)));\n"
+      "typedef void (*OwnerCallback)(id owner __attribute__((ns_consumed)),int);\n"
+      "typedef void (^OwnerBlock)(id owner __attribute__((ns_consumed)),int);\n"
+      "__attribute__((objc_root_class)) @interface ConsumedOwner\n"
+      "- (void)consume __attribute__((ns_consumes_self));\n"
+      "- (void)consumeAfter:(int)unused __attribute__((ns_consumes_self));\n@end\n";
+  for (const auto &Code : std::vector<std::string>{
+           "void f(ConsumedOwner *_Nonnull o){keepAlive(o);const char*p=bytes(o);consume_pair(o,p);use_noescape(p);}",
+           "void f(ConsumedOwner *_Nonnull o){keepAlive(o);const char*p=bytes(o);[o consume];use_noescape(p);}"})
+    Expect(Request(Root,ConsumedHeader+Code,Language,Standard,ARC),true);
+  for (const auto &Code : std::vector<std::string>{
+           "void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);consume_claim(o,0);use_noescape(p);}",
+           "void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);[o consume];use_noescape(p);}",
+           "void f(ConsumedOwner *_Nonnull o,OwnerCallback callback){const char*p=bytes(o);callback(o,0);use_noescape(p);}",
+           "void f(ConsumedOwner *_Nonnull o,OwnerBlock callback){const char*p=bytes(o);callback(o,0);use_noescape(p);}",
+           "void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);consume_pair(o,p);}"})
+    Expect(Request(Root,ConsumedHeader+Code,Language,Standard,ARC),ARC,
+           ARC ? "" : "borrowed pointer escapes");
+  if (Language==BaseLanguage::ObjectiveCxx) {
+    Expect(Request(Root,ConsumedHeader+
+        "void f(ConsumedOwner *_Nonnull o,ConsumedOwner *_Nonnull r){ConsumedOwner *_Nonnull old=o;const char*p=bytes(old);consume_claim(o,(o=r,0));use_noescape(p);}",
+        Language,Standard,ARC),ARC,ARC ? "" : "borrowed pointer escapes");
+    Expect(Request(Root,ConsumedHeader+
+        "struct Sink{Sink(id owner __attribute__((ns_consumed)));};void f(ConsumedOwner *_Nonnull o){const char*p=bytes(o);Sink sink(o);use_noescape(p);}",
+        Language,Standard,ARC),ARC,ARC ? "" : "borrowed pointer escapes");
+  }
   const std::string SelfHeader=Header+
       "__attribute__((objc_root_class)) @interface BorrowedSelf\n"
       "- (void)usePointer;\n@end\n@implementation BorrowedSelf\n";
@@ -316,7 +344,8 @@ void PersistenceCases(const fs::path &Root) {
   const std::string Provider =
       "typedef borrowed const char *BorrowedBytes;\n"
       "BorrowedBytes exported(id a,id b) __attribute__((objc_returns_borrowed(owner_index=1)));\n"
-      "void noescape_api(const char* p __attribute__((noescape)));\n";
+      "void noescape_api(const char* p __attribute__((noescape)));\n"
+      "typedef void (*ConsumedOwnerCallback)(id owner __attribute__((ns_consumed)));\n";
   const auto HeaderPath = Root / "provider.h";
   { std::ofstream Out(HeaderPath); Out << Provider; }
   auto From = Parse(Provider, HeaderPath.string());
@@ -368,6 +397,9 @@ void PersistenceCases(const fs::path &Root) {
   Expect(InterfaceClient, true);
   InterfaceClient.source_text = "const char *imported_escape(id a,id b) { return exported(a,b); }";
   Expect(InterfaceClient, false, "borrowed pointer escapes");
+  InterfaceClient.source_text=
+      "void imported_consume(id owner,ConsumedOwnerCallback callback){const char *p=exported(owner,owner);callback(owner);noescape_api(p);}";
+  Expect(InterfaceClient,false,"borrowed pointer escapes");
   auto OtherOwner = Parse(
       "typedef borrowed const char *BorrowedBytes; BorrowedBytes exported(id a,id b) __attribute__((objc_returns_borrowed(owner_index=0)));",
       (Root / "other.mm").string());

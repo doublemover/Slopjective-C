@@ -124,3 +124,7 @@ persistent capture storage, with independent ARC capture-owner snapshots.
 The [System 2.2.0 source span](linux_borrowed_manual_release.md) tracks manual
 instance-release messages through known owner aliases and independent pins.
 Other MRC/foreign consumption and indirect/interprocedural effects remain open.
+
+The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) extends known
+claim tracking to annotated object consumption and typed callbacks. General
+MRC/foreign ownership and unknown/interprocedural effects remain open.
