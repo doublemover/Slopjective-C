@@ -43,6 +43,13 @@ C-handle joins, completion-order group iteration and scope cleanup. The emitter
 fixture checks repeated canonical round trips, required semantics, exact header
 provenance, opaque definitions and private SDK dependencies.
 
+All 33 frontend suites and 14 tooling tests pass. Source-free packages pass
+C++20/23 × ARC/MRC × O0/O2 in source-directed, eager and ASan/UBSan modes:
+24 configurations / 96 commands. The
+[focused receipt](../support/linux_published_runtime_awaiters_progress.json)
+binds this source span and its reports. The broader combined feature/sanitizer
+batch remains deferred until the next implementation batch is coherent.
+
 This is a source implementation checkpoint. SDK 2.33 remains the accepted
 installed archive. Service ABI 4, frame ABI 1, native extension ABI 21 and
 interface schema 2.2 are unchanged. Dependent/generic bodies, public closure
