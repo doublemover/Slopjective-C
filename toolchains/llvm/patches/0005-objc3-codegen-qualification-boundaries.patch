@@ -28774,3 +28774,88 @@ index 000000000..d8901bade
 +// CHECK-DAG: @objc3_executor_get_main
 +// CHECK-DAG: @objc3_executor_get_named
 +// CHECK-DAG: @objc3_task_hop
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-task-frame-interop.h b/clang/test/ObjC3/CodeGen/Inputs/native-task-frame-interop.h
+new file mode 100644
+index 000000000..51dc29d5a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-task-frame-interop.h
+@@ -0,0 +1,36 @@
++#ifndef NATIVE_TASK_FRAME_INTEROP_H
++#define NATIVE_TASK_FRAME_INTEROP_H
++#include "native-async-task.h"
++#include "native-c-async-frame.h"
++template<class T>
++objc3_async_frame __objc3_async_to_frame(objc3::task<T>) noexcept;
++int task_frame_leaf(int) noexcept __objc3_async;
++int task_frame_isolated(int) noexcept __objc3_async
++    __attribute__((objc_executor(main)));
++static int task_frame_direct(int value) __objc3_async_frame {
++  return __objc3_await task_frame_leaf(value);
++}
++static int task_frame_isolation(int value) __objc3_async_frame {
++  return __objc3_await task_frame_isolated(value);
++}
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface TaskFrameRoot <Sendable>
++- (int)taskValue:(int)value __objc3_async __attribute__((nothrow,objc_executor(main)));
+++ (int)taskClassValue:(int)value __objc3_async __attribute__((nothrow,objc_executor(main)));
++@end
++static int task_frame_message(TaskFrameRoot *object,int value) __objc3_async_frame {
++  return __objc3_await [object taskValue:value];
++}
++@interface TaskFrameDerived : TaskFrameRoot
++- (int)superTask __objc3_async_frame;
+++ (int)superClassTask __objc3_async_frame;
++@end
++@implementation TaskFrameDerived
++- (int)superTask __objc3_async_frame {
++  return __objc3_await [super taskValue:42];
++}
+++ (int)superClassTask __objc3_async_frame {
++  return __objc3_await [super taskClassValue:42];
++}
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-consumed-block-entry.m b/clang/test/ObjC3/CodeGen/native-consumed-block-entry.m
+new file mode 100644
+index 000000000..ab2d3a00e
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-consumed-block-entry.m
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Werror=ignored-attributes -ast-dump %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Werror=ignored-attributes -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -Werror=ignored-attributes -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-c-async-frame.h"
++typedef int (^ConsumedBlock)(void) __attribute__((objc_unsafe_sendable));
++int consumed_work(__attribute__((ns_consumed)) ConsumedBlock work)
++    __attribute__((nothrow,objc_executor(main)));
++int native_consumed_block(ConsumedBlock work) __objc3_async_frame {
++  return __objc3_await consumed_work(work);
++}
++// AST: NSConsumedAttr
++// CHECK: @_Block_copy
++// CHECK: consumed_work
+diff --git a/clang/test/ObjC3/CodeGen/native-task-frame-interop.mm b/clang/test/ObjC3/CodeGen/native-task-frame-interop.mm
+new file mode 100644
+index 000000000..6d9ab5d40
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-task-frame-interop.mm
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -x objective-c++-header -emit-pch -o %t %S/Inputs/native-task-frame-interop.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-task-frame-interop.h"
++objc3_async_frame use_task_frame(int value) {
++  return task_frame_direct(value);
++}
++objc3_async_frame use_task_frame_isolation(int value) {
++  return task_frame_isolation(value);
++}
++objc3_async_frame use_task_message(TaskFrameRoot *object,int value) {
++  return task_frame_message(object,value);
++}
++// CHECK-DAG: __objc3_async_to_frame
++// CHECK-DAG: __objc3_isolation_entry_
++// CHECK-DAG: call i32 @objc3_async_frame_start_child
++// CHECK-DAG: call i32 @objc3_executor_get_main
++// CHECK-DAG: call i32 @objc3_task_hop

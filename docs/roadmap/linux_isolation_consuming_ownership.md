@@ -1,6 +1,6 @@
 # Consuming ownership at awaited isolation boundaries
 
-The concurrency 2.31.0 source milestone admits ARC `ns_consumed` object/Block
+The concurrency 2.31.0 source milestone admits ARC `ns_consumed` object
 parameters and `ns_consumes_self` instance receivers at supported awaited
 executor and actor entries. Synchronous and native-frame targets retain the
 existing Sendable and native C++ nonthrowing requirements.
@@ -27,9 +27,13 @@ owner during later argument evaluation and throw before frame creation. Exact
 object destruction counts, target-entry counts, caller restoration and single
 argument evaluation are checked independently.
 
-MRC consumed boundaries, Core Foundation consumption, init-family entry,
-class/super messages, ordinary C++ task-ABI targets and automatic actor
-association remain separate implementation work. This source milestone does not
+Class/super entry is implemented in sources 2.32–2.33. The
+[2.35.0 interoperability span](linux_task_frame_interop.md) adds C++ task-ABI
+targets and makes `ns_consumed` a supported Block parameter attribute in
+Objective-C 3 mode. Earlier Block witnesses exercised captured ownership; the
+new span also verifies the consumed annotation and native copying convention.
+MRC consumed boundaries, Core Foundation consumption, init-family entry and
+automatic actor association remain separate implementation work. This source milestone does not
 change the runtime ABI or claim full actor/profile conformance. The
 [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json) delivers
 this boundary with combined source and fresh native-feature validation.

@@ -945,6 +945,14 @@ void __objc3_async_frame_capture(void *destination, void *source) {
   ::new (destination) T(std::move(*static_cast<T *>(source)));
 }
 
+// Reserved task-to-frame bridge for native-frame awaits and isolation entries.
+// Both ABIs use the same owned lazy carrier. A successful transfer leaves the
+// C++ temporary empty; the native await scope owns disposal from this point.
+template <class T>
+objc3_async_frame __objc3_async_to_frame(__objc3_async_task<T> task) noexcept {
+  return std::move(task).release_native();
+}
+
 // Reserved explicit C-frame entry bridge. The by-value argument owns the lazy
 // frame immediately, including when descriptor validation rejects adoption.
 // Successful from_native consumes it; every failed adoption disposes it before

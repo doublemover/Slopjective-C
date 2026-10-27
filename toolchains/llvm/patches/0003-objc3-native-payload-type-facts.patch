@@ -1329,10 +1329,10 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..ff075ca63
+index 000000000..9029a5b9c
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,135 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1389,9 +1389,10 @@ index 000000000..ff075ca63
 +  const auto *Call = dyn_cast<CallExpr>(E);
 +  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
 +  if (FD && FD->getIdentifier() &&
-+      FD->getIdentifier()->isStr("__objc3_async_from_frame") &&
++      (FD->getIdentifier()->isStr("__objc3_async_from_frame") ||
++       FD->getIdentifier()->isStr("__objc3_async_to_frame")) &&
 +      Call->getNumArgs() == 1)
-+    return Call->getArg(0)->IgnoreParenImpCasts();
++    return Call->getArg(0)->IgnoreImplicit()->IgnoreParenImpCasts();
 +  return E;
 +}
 +inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
@@ -1447,6 +1448,8 @@ index 000000000..ff075ca63
 +  const Expr *Operand = Await->getOperand();
 +  if (const auto *Checked = getObjC3CheckedAsyncAdapterCall(Operand))
 +    Operand = Checked->getArg(0);
++  const bool FrameAdapter = getObjC3FrameAdapterSource(Operand) !=
++                            Operand->IgnoreImplicit();
 +  Operand = getObjC3FrameAdapterSource(Operand);
 +  if (const Expr *Source = getObjC3IsolationSourceSyntax(Operand))
 +    return Source;
@@ -1455,9 +1458,10 @@ index 000000000..ff075ca63
 +      !Function->getObjC3FunctionEffects().AsyncFrame)
 +    return Operand;
 +  if (Function && Function->getObjC3FunctionEffects().AsyncFrame &&
-+      isa_and_nonnull<OpaqueValueExpr>(Await->getReadyExpr()) &&
-+      isa_and_nonnull<OpaqueValueExpr>(Await->getSuspendExpr()) &&
-+      isa_and_nonnull<OpaqueValueExpr>(Await->getResumeExpr()))
++      (FrameAdapter ||
++       (isa_and_nonnull<OpaqueValueExpr>(Await->getReadyExpr()) &&
++        isa_and_nonnull<OpaqueValueExpr>(Await->getSuspendExpr()) &&
++        isa_and_nonnull<OpaqueValueExpr>(Await->getResumeExpr()))))
 +    return Operand;
 +  return nullptr;
 +}

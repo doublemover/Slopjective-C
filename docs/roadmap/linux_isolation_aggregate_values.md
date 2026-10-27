@@ -31,9 +31,9 @@ clients, ARC/MRC provider combinations and source/PCH declarations. Source-free
 interface consumers reconstruct record executor/actor signatures before forming
 their own entry thunks.
 
-This milestone does not enable ordinary C++ task-ABI isolated targets,
-class/super message entry, automatic actor association or full profile
-conformance. The [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json)
+Subsequent source milestones add class/super message entry and
+[C++ task-ABI isolated targets](linux_task_frame_interop.md). Automatic actor
+association and full profile conformance remain open. The [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json)
 delivers this boundary with combined source and fresh native-feature validation.
 
 The [focused progress receipt](../support/linux_isolation_aggregate_values_progress.json)

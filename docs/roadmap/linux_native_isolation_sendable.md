@@ -113,9 +113,10 @@ MRC/CF consumption and init-family entry remain gated. C++ targets must have a n
 native exception contract, including `nothrow` on Objective-C 3.0 methods; arbitrary C++ exception transport is not silently
 synthesized. Nested isolated argument expressions require their own await.
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
-messages, including inherited dispatch and ARC consumed parameters. Ordinary
-C++ task-ABI isolated target entries and unsupported callable
-shapes still receive targeted diagnostics. The
+messages, including inherited dispatch and ARC consumed parameters. The
+[2.35.0 interoperability span](linux_task_frame_interop.md) adds supported
+C++ task-ABI isolated targets; other unqualified callable shapes retain targeted
+diagnostics. The
 [2.33.0 source milestone](linux_isolation_super_entries.md) adds instance/class
 super entry, preserving source class/category lookup, captured self and actor
 mailbox entry across native frames and C++ task callers. The compiler does not automatically

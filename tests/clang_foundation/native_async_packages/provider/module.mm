@@ -827,3 +827,24 @@ inline int native_published_isolation_task(int value) __objc3_async {
 inline int native_published_task_await(int value) __objc3_async {
   return __objc3_await native_module_value(value);
 }
+
+int native_isolated_task_entry(int value) noexcept __objc3_async
+    __attribute__((objc_executor(main)));
+int native_isolated_task_entry(int value) noexcept __objc3_async {
+  objc3_executor_t *destination=nullptr;
+  if (objc3_executor_get_main(&destination)!=OBJC3_SERVICE_OK) __builtin_trap();
+  objc3::task_destination owner(destination);
+  objc3_executor_release(destination);
+  int result=__objc3_await native_module_value(value);
+  if (!objc3_executor_is_current(owner.executor())) __builtin_trap();
+  return result+1;
+}
+inline int native_published_task_entry_frame(int value) __objc3_async_frame {
+  return __objc3_await native_isolated_task_entry(value);
+}
+inline int native_published_task_entry(int value) __objc3_async {
+  return __objc3_await native_isolated_task_entry(value);
+}
+inline int native_published_frame_await(int &value) __objc3_async {
+  return __objc3_await native_module_reference(value);
+}

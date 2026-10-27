@@ -117,7 +117,11 @@
     "native_isolated_entry",
     "native_published_isolation_frame",
     "native_published_isolation_task",
-    "native_published_task_await"
+    "native_published_task_await",
+    "native_isolated_task_entry",
+    "native_published_task_entry_frame",
+    "native_published_task_entry",
+    "native_published_frame_await"
   ],
   "dependencies": []
 }

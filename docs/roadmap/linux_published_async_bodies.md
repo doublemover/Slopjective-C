@@ -40,5 +40,6 @@ binds the compiler, source, public header and reports.
 
 SDK 2.33 remains the accepted installed archive; this milestone does not imply a
 new SDK delivery or full profile conformance. Dependent/generic bodies, public
-closure types, nonisolated frame adapters in ordinary task bodies and unmodeled
-runtime/custom awaiter operands remain separate work.
+closure types and unmodeled runtime/custom awaiter operands remain separate work.
+The [2.35.0 source span](linux_task_frame_interop.md) adds nonisolated frame
+adapters in ordinary task bodies and native-frame bodies awaiting C++ tasks.

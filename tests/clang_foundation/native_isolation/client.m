@@ -312,6 +312,67 @@ int main(void) {
 #endif
     }
 #endif
+    frame = hop_task_abi_roundtrip(counter, caller);
+    type = frame.result_type;
+    task = start(&frame);
+    assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+    result = 0;
+    assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK);
+    assert(result==42 && hop_task_abi_entries()==1);
+    objc3_task_release(task);
+    for (unsigned step=0; step!=1000000 && hop_cxx_value_live(); ++step)
+      sched_yield();
+    assert(hop_cxx_value_live()==0);
+
+    for (int outcome=0; outcome!=4; ++outcome) {
+      int entries_before=hop_task_abi_entries();
+      frame=hop_task_abi_failure_frame(outcome==2,caller);
+      type=frame.result_type;
+      task=start(&frame);
+      if (outcome==1) {
+        assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK && count==1);
+        objc3_task_request_cancel(task);
+      } else if (outcome==3) {
+        for (unsigned step=0; step!=1000 && hop_task_abi_entries()==entries_before; ++step) {
+          assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK);
+          assert(objc3_executor_pump(main_destination,1,&count)==OBJC3_SERVICE_OK);
+        }
+        assert(hop_task_abi_entries()==entries_before+1);
+        objc3_task_request_cancel(task);
+      }
+      objc3_completion completion=finish(task);
+      if (outcome==0) {
+        assert(completion.kind==OBJC3_COMPLETION_SUCCESS);
+        result=0;
+        assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK);
+        assert(result==42 && hop_task_abi_entries()==entries_before+1);
+      } else if (outcome==2) {
+        assert(completion.kind==OBJC3_COMPLETION_ERROR);
+        objc3_service_status service=OBJC3_SERVICE_OK;
+        assert(objc3_async_error_get_service(completion.error,&service)==OBJC3_SERVICE_OK);
+        assert(service==OBJC3_SERVICE_OUT_OF_MEMORY && hop_task_abi_entries()==entries_before);
+      } else {
+        assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
+        assert(hop_task_abi_entries()==entries_before+(outcome==3));
+      }
+      objc3_task_release(task);
+      for (unsigned step=0; step!=1000000 && hop_cxx_value_live(); ++step)
+        sched_yield();
+      assert(hop_cxx_value_live()==0);
+    }
+
+    for (int kind=0; kind!=3; ++kind) {
+      frame=kind==2 ? hop_task_abi_class_roundtrip(caller) :
+                     hop_task_abi_super_frame(kind,caller);
+      type=frame.result_type;
+      task=start(&frame);
+      assert(finish(task).kind==OBJC3_COMPLETION_SUCCESS);
+      result=0;
+      assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK);
+      assert(result==42);
+      objc3_task_release(task);
+    }
+
     frame = hop_cxx_actor_roundtrip(counter, caller);
     type = frame.result_type;
     task = start(&frame);

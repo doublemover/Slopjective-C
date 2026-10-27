@@ -13,8 +13,9 @@ creation. Synchronous and native-frame methods use the existing typed result,
 checked-error and cancellation paths. ARC consumed object/Block parameters use
 the adopting parameter ABI from the preceding ownership milestone. Retained
 results preserve native return ownership under ARC and MRC. [Super messages](linux_isolation_super_entries.md) are added by the subsequent
-2.33.0 source milestone. Init-family entry, unqualified dynamic Class receivers and ordinary C++
-task-ABI targets remain separate work.
+2.33.0 source milestone; [C++ task-ABI targets](linux_task_frame_interop.md)
+follow in source 2.35.0. Init-family entry and unqualified dynamic Class receivers
+remain separate work.
 
 Maintained runtime cases cover scalar, record, void, retained object and
 native-frame results; main/global/named destinations; inherited dispatch;

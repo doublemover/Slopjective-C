@@ -432,10 +432,22 @@ inline int published_entry(int value) __objc3_async_frame {
   task_args.push_back(std::string("-resource-dir=")+OBJC3_INTERFACE_TEST_RESOURCE_DIR);
   clang::tooling::FileContentMappings task_files;
   AddRuntimeInterfaceFiles(task_files,task_args,true);
-  const std::string task_source=R"(
+  for (const std::string task_source : {std::string(R"(
 #include <objc3c/runtime/objc3_task.hpp>
 inline int published_task(int value) __objc3_async { return value; }
-)";
+)"),std::string(R"(
+#include <objc3c/runtime/objc3_task.hpp>
+int task_source_leaf(int) noexcept __objc3_async;
+inline int frame_from_task(int value) __objc3_async_frame {
+  return __objc3_await task_source_leaf(value);
+}
+)"),std::string(R"(
+#include <objc3c/runtime/objc3_task.hpp>
+int frame_source_leaf(int) __objc3_async_frame;
+inline int task_from_frame(int value) __objc3_async {
+  return __objc3_await frame_source_leaf(value);
+}
+)")})
   for (bool changed_runtime : {false,true}) {
     auto inputs=task_files;
     if (changed_runtime)

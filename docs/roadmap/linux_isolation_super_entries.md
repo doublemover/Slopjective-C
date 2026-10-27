@@ -31,8 +31,9 @@ C17 MRC and C++23 ARC implementations.
 
 The [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json)
 records combined validation, installed delivery and fresh native-feature checks.
-MRC/CF consumption, init-family entry, unqualified dynamic Class receivers,
-ordinary C++ task-ABI isolated targets and full profile conformance remain open.
+MRC/CF consumption, init-family entry, unqualified dynamic Class receivers
+and full profile conformance remain open. The [2.35.0 source span](linux_task_frame_interop.md)
+adds ordinary C++ task-ABI isolated targets, including class/super dispatch.
 
 The [combined source receipt](../support/linux_source_batch_2_33_progress.json)
 records 375 compiler regressions, 179 native unit tests, 33 frontend suites,

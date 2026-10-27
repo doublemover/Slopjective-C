@@ -137,7 +137,10 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its async-definition capability')
     for name, abi in (('native_published_isolation_frame', 'c-frame-v1'),
                       ('native_published_isolation_task', 'cxx-task-v1'),
-                      ('native_published_task_await', 'cxx-task-v1')):
+                      ('native_published_task_await', 'cxx-task-v1'),
+                      ('native_published_task_entry_frame', 'c-frame-v1'),
+                      ('native_published_task_entry', 'cxx-task-v1'),
+                      ('native_published_frame_await', 'cxx-task-v1')):
         declaration = names.get(name, {})
         if (not has_async(declaration) or
                 ';cxx-async-definitions:v1;' not in declaration.get('canonical_type_identity', '') or

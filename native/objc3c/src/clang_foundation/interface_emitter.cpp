@@ -1317,6 +1317,9 @@ class TypeDependencyVisitor final
     const auto *definition = function->getDefinition();
     if (!definition) return;
     body_function_ = definition;
+    const auto *type=clang::getObjC3CallableFunctionType(definition);
+    UsesCxxTaskRuntime |= type && type->getObjC3FunctionEffects().Async &&
+                         !type->getObjC3FunctionEffects().AsyncFrame;
     if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
       for (const auto *initializer : constructor->inits())
         if (initializer->isWritten()) TraverseStmt(initializer->getInit());
@@ -1399,9 +1402,13 @@ class TypeDependencyVisitor final
   }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
-    if (const auto *source=clang::getObjC3AwaitSourceExpression(expression))
+    if (const auto *source=clang::getObjC3AwaitSourceExpression(expression)) {
+      const auto *type=clang::getObjC3AsyncCalleeFunctionType(source);
+      UsesCxxTaskRuntime |= type && type->getObjC3FunctionEffects().Async &&
+                           !type->getObjC3FunctionEffects().AsyncFrame;
       return WalkUpFromCoawaitExpr(expression) &&
              TraverseStmt(const_cast<clang::Expr *>(source));
+    }
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
         TraverseCoawaitExpr(expression,nullptr);
   }
@@ -1542,6 +1549,7 @@ class TypeDependencyVisitor final
 
   bool UsesCanonicalFunctionEffects = false;
   bool UsesRuntimeFrame = false;
+  bool UsesCxxTaskRuntime = false;
 
 private:
   bool in_expression_ = false;
@@ -1565,6 +1573,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            InterfaceEmissionArtifact &result,
                            const std::set<std::string> &resolved_ids,
                            bool &uses_runtime_frame,
+                           bool &uses_cxx_task_runtime,
                            const std::vector<std::string> &exports = {},
                            const std::string &source_root = {}) {
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
@@ -1657,6 +1666,11 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
           llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration))
     visitor.CheckVisibility(category->getClassInterface());
   uses_runtime_frame |= visitor.UsesRuntimeFrame;
+  uses_cxx_task_runtime |= visitor.UsesCxxTaskRuntime;
+  if (visitor.UsesCxxTaskRuntime && !IsQualifiedRuntimeTaskHeader(context))
+    AddDiagnostic(result, "O3IFC112",
+                  "published bodies using C++ tasks require the exact SDK task runtime header",
+                  declaration->getQualifiedNameAsString());
   return visitor.UsesCanonicalFunctionEffects;
 }
 
@@ -1833,7 +1847,7 @@ class InterfaceCollector final
           IsInMainFile(context_, declaration->getLocation()) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
         CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
-                              uses_runtime_frame_, exports_, source_root_);
+                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -1986,22 +2000,10 @@ class InterfaceCollector final
       return true;
     }
     auto *representative = Representative(declaration);
-    if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);
-        PublishesFunctionBody(function)) {
-      const auto *type=clang::getObjC3CallableFunctionType(function);
-      uses_cxx_async_bodies_ |= type && type->getObjC3FunctionEffects().Async &&
-                              !type->getObjC3FunctionEffects().AsyncFrame;
-      if (type && type->getObjC3FunctionEffects().Async &&
-          !type->getObjC3FunctionEffects().AsyncFrame &&
-          !IsQualifiedRuntimeTaskHeader(context_))
-        AddDiagnostic(result_, "O3IFC112",
-                      "inline C++ async definitions require the exact SDK task runtime header",
-                      function->getQualifiedNameAsString());
-    }
     const std::string stable_id = identity.stable_id;
     uses_function_effects_ |=
         CheckTypeDependencies(representative, context_, result_, resolved_ids_,
-                              uses_runtime_frame_, exports_, source_root_);
+                              uses_runtime_frame_, uses_cxx_async_bodies_, exports_, source_root_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||

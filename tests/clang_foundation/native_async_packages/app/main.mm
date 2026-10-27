@@ -279,16 +279,23 @@ int main() {
     if (objc3_executor_get_main(&main_destination)!=OBJC3_SERVICE_OK) return 96;
     auto frame=__objc3_async_from_frame<int>(native_published_isolation_frame(40)).start(executor);
     auto task=native_published_isolation_task(40).start(executor);
+    auto task_entry_frame=__objc3_async_from_frame<int>(native_published_task_entry_frame(40)).start(executor);
+    auto task_entry=native_published_task_entry(40).start(executor);
     for (unsigned step=0;step!=1000;++step) {
       uint32_t count=0;
       if (objc3_executor_pump(main_destination,32,&count)!=OBJC3_SERVICE_OK ||
           objc3_executor_pump(executor,32,&count)!=OBJC3_SERVICE_OK) return 97;
       objc3_completion first{sizeof(first),OBJC3_SERVICE_ABI_VERSION};
       objc3_completion second{sizeof(second),OBJC3_SERVICE_ABI_VERSION};
+      objc3_completion third{sizeof(third),OBJC3_SERVICE_ABI_VERSION};
+      objc3_completion fourth{sizeof(fourth),OBJC3_SERVICE_ABI_VERSION};
       if (objc3_task_get_completion(frame.native_handle(),&first)==OBJC3_SERVICE_OK &&
-          objc3_task_get_completion(task.native_handle(),&second)==OBJC3_SERVICE_OK) break;
+          objc3_task_get_completion(task.native_handle(),&second)==OBJC3_SERVICE_OK &&
+          objc3_task_get_completion(task_entry_frame.native_handle(),&third)==OBJC3_SERVICE_OK &&
+          objc3_task_get_completion(task_entry.native_handle(),&fourth)==OBJC3_SERVICE_OK) break;
     }
-    if (frame.result()!=42 || task.result()!=42) return 98;
+    if (frame.result()!=42 || task.result()!=42 ||
+        task_entry_frame.result()!=42 || task_entry.result()!=42) return 98;
     objc3_executor_release(main_destination);
   }
 
@@ -363,6 +370,12 @@ int main() {
   if (objc3_executor_pump(executor, UINT32_MAX, &executed)!=OBJC3_SERVICE_OK ||
       published_task.result()!=42) return 101;
   published_task={};
+  int frame_borrow=40;
+  auto frame_await=native_published_frame_await(frame_borrow).start(executor);
+  frame_borrow=42;
+  if (objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+      frame_await.result()!=42) return 102;
+  frame_await={};
   auto scoped = native_module_scoped(41).start(executor);
   if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
       scoped.result() != 42)
