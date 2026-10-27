@@ -35,3 +35,6 @@ This does not claim broader ownership or profile conformance. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
 combined implementation batch.
+
+Focused source evidence is recorded in the
+[definition milestone receipt](../support/linux_cxx_definitions_progress.json).
