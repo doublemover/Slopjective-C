@@ -32,3 +32,8 @@ raw alias copying, pointer reads and nested Block/lambda bodies. Compiler patch
 identity requires dependent PCH, objects, interfaces and packages to be rebuilt.
 Native extension ABI 21 and runtime ABI layouts are unchanged. SDK 2.33 remains
 the accepted installed archive while further implementation is frontloaded.
+
+The [focused receipt](../support/linux_borrowed_manual_release_progress.json)
+records 381 compiler regressions, 182 native unit tests, all 33 frontend suites
+and 14 tooling tests. Three platform cases remain unsupported. Combined runtime/
+sanitizer validation and SDK delivery follow a coherent implementation batch.
