@@ -351,10 +351,17 @@ struct NativeVirtualDiamond final : NativeVirtualLeft, NativeVirtualRight {
   NativeVirtualDiamond(const NativeVirtualDiamond &) = default;
   NativeVirtualDiamond(NativeVirtualDiamond &&) = default;
   ~NativeVirtualDiamond() override = default;
+  static void operator delete(void *) noexcept;
   int score() const override final;
   NativeVirtualDiamond *self() noexcept override;
   int frame(int &) const & __objc3_async_frame override;
 };
+static int native_virtual_freed=0;
+int native_module_virtual_deallocations() { return native_virtual_freed; }
+void NativeVirtualDiamond::operator delete(void *storage) noexcept {
+  ++native_virtual_freed;
+  ::operator delete(storage);
+}
 NativeVirtualRoot::NativeVirtualRoot(NativeDispatchStats *s, int n)
     : stats(s), number(n) { ++stats->live; }
 NativeVirtualRoot::NativeVirtualRoot(const NativeVirtualRoot &v)
@@ -670,3 +677,44 @@ inline int native_friend_delayed(const NativeFriendValue &v) {return v.value+2;}
 namespace NativeFriendScope {
   struct Value { int n; friend int probe(Value v) {return v.n+2;} };
 }
+
+inline int native_published_block(int value) {
+  int original=value;
+  auto moved=^[move value]int(int delta) { return value+delta; };
+  __block int state=original;
+  auto update=^int(int delta) { state+=delta; return state; };
+  auto nested=^int(int delta) {
+    auto reader=^int(int extra) { return original+extra; };
+    return reader(delta);
+  };
+  if (value!=0 || moved(2)!=original+2 || update(2)!=original+2) return 0;
+  return nested(2);
+}
+inline int native_published_statement(int value) {
+  return ({ int first=value; int second=2; first+second; });
+}
+static int native_statement_live_count=0;
+struct NativeStatementLifetime {
+  int value;
+  NativeStatementLifetime();
+  NativeStatementLifetime(const NativeStatementLifetime &);
+  NativeStatementLifetime(NativeStatementLifetime &&);
+  ~NativeStatementLifetime();
+};
+NativeStatementLifetime::NativeStatementLifetime():value(42) {++native_statement_live_count;}
+NativeStatementLifetime::NativeStatementLifetime(const NativeStatementLifetime &source):value(source.value) {
+  ++native_statement_live_count;
+}
+NativeStatementLifetime::NativeStatementLifetime(NativeStatementLifetime &&source):value(source.value) {
+  source.value=0; ++native_statement_live_count;
+}
+NativeStatementLifetime::~NativeStatementLifetime() {--native_statement_live_count;}
+int native_statement_live() {return native_statement_live_count;}
+inline NativeStatementLifetime native_statement_value() {
+  return ({ NativeStatementLifetime value; value; });
+}
+
+struct NativeBlockDefaults {
+  int n=^int {return 40;}();
+  int get(int delta=^int {return 2;}()) const {return n+delta;}
+};

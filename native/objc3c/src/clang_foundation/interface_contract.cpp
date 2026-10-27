@@ -400,6 +400,20 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxFriendSemantic) != sidecar.required_semantics.end();
   if (has_friends != friend_capability)
     Add(result, "O3IFC040", "C++ friend identity and required capability must agree", expected.canonical_name);
+  const bool has_blocks = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxBlockExpressionIdentity);
+  const bool blocks_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxBlockExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_blocks != blocks_capability)
+    Add(result, "O3IFC041", "C++ blocks expression identity and required capability must agree", expected.canonical_name);
+  const bool has_statements = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxStatementExpressionIdentity);
+  const bool statements_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxStatementExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_statements != statements_capability)
+    Add(result, "O3IFC042", "C++ statements expression identity and required capability must agree", expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

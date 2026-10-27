@@ -20119,7 +20119,7 @@ index 39b8e50f6..b8198259f 100644
      if (CGF.getContext().getLangOpts().SanitizeAddressFieldPadding)
        return false;
 diff --git a/clang/lib/CodeGen/CGDeclCXX.cpp b/clang/lib/CodeGen/CGDeclCXX.cpp
-index 57c6bad67..855001902 100644
+index 57c6bad67..fe9c24a69 100644
 --- a/clang/lib/CodeGen/CGDeclCXX.cpp
 +++ b/clang/lib/CodeGen/CGDeclCXX.cpp
 @@ -90,7 +90,8 @@ static void EmitDeclDestroy(CodeGenFunction &CGF, const VarDecl &D,
@@ -20132,6 +20132,43 @@ index 57c6bad67..855001902 100644
      // We don't care about releasing objects during process teardown.
      assert(!D.getTLSKind() && "should have rejected this");
      return;
+@@ -565,6 +566,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+   llvm::GlobalVariable *COMDATKey =
+       supportsCOMDAT() && D->isExternallyVisible() ? Addr : nullptr;
+ 
++  const auto *ModuleName = D->getAttr<AsmLabelAttr>();
++  const bool OrderedModuleInline = D->isInline() && ModuleName &&
++      ModuleName->getLabel().starts_with("__objc3_m_");
++
+   if (D->getTLSKind()) {
+     // FIXME: Should we support init_priority for thread_local?
+     // FIXME: We only need to register one __cxa_thread_atexit function for the
+@@ -588,9 +593,10 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+     OrderGlobalInitsOrStermFinalizers Key(IPA->getPriority(),
+                                           PrioritizedCXXGlobalInits.size());
+     PrioritizedCXXGlobalInits.push_back(std::make_pair(Key, Fn));
+-  } else if (isTemplateInstantiation(D->getTemplateSpecializationKind()) ||
+-             !isUniqueGVALinkage(getContext().GetGVALinkageForVariable(D)) ||
+-             D->hasAttr<SelectAnyAttr>()) {
++  } else if (!OrderedModuleInline &&
++             (isTemplateInstantiation(D->getTemplateSpecializationKind()) ||
++              !isUniqueGVALinkage(getContext().GetGVALinkageForVariable(D)) ||
++              D->hasAttr<SelectAnyAttr>())) {
+     // For vague linkage globals, put the initializer into its own global_ctors
+     // entry with the global as a comdat key. This ensures at most one
+     // initializer per DSO runs during DSO dynamic initialization.
+@@ -653,6 +659,11 @@ CodeGenModule::EmitCXXGlobalVarDeclInitFunc(const VarDecl *D,
+       Fn->setComdat(C);
+     }
+   } else {
++    // Module inline definitions must precede dependent consumer initializers.
++    // Equal-priority llvm.global_ctors entries may be reordered or evaluated
++    // independently. Keep these guarded callbacks in the TU's lexical chain.
++    // The callbacks themselves remain local, outside the variable's COMDAT;
++    // another TU's selected variable/guard must not discard a referenced body.
+     I = DelayedCXXInitPosition.find(D); // Re-do lookup in case of re-hash.
+     if (I == DelayedCXXInitPosition.end()) {
+       CXXGlobalInits.push_back(Fn);
 diff --git a/clang/lib/CodeGen/CGNonTrivialStruct.cpp b/clang/lib/CodeGen/CGNonTrivialStruct.cpp
 index 0a383c8f9..b5566a357 100644
 --- a/clang/lib/CodeGen/CGNonTrivialStruct.cpp
@@ -28329,3 +28366,51 @@ index 000000000..b8f6b78dd
 +// CHECK-DAG: @__objc3_m_dtor_dtor_1
 +// CHECK-DAG: @__objc3_m_dtor_dtor_2
 +void run() { Value value(42); }
+diff --git a/clang/test/ObjC3/CodeGen/module-owned-inline-initialization.cpp b/clang/test/ObjC3/CodeGen/module-owned-inline-initialization.cpp
+new file mode 100644
+index 000000000..d8f7b608f
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-owned-inline-initialization.cpp
+@@ -0,0 +1,21 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -O0 -emit-llvm %s -o - | FileCheck %s --check-prefixes=CHECK,O0
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -O0 -emit-llvm %s -o - | FileCheck %s --check-prefixes=CHECK,O0
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -O2 -emit-llvm %s -o - | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -O2 -emit-llvm %s -o - | FileCheck %s
++
++int initial() noexcept;
++inline int seeded __asm__("__objc3_m_seeded") = initial();
++inline int ordered __asm__("__objc3_m_ordered") = seeded + 2;
++static int observed = ordered;
++int read() { return observed; }
++
++// The guarded inline initializers and their dependent consumer must share a
++// single lexical startup chain. Independent COMDAT ctor entries permit O2's
++// constructor evaluator to fold the consumer's read to the zero initializer.
++// CHECK: @llvm.global_ctors = appending global [1 x {{.*}}ptr null
++// O0-LABEL: define internal void @_GLOBAL__sub_I_
++// O0: call void @__cxx_global_var_init()
++// The ordered inline definition is emitted on demand after the consumer,
++// but its reserved lexical position must still precede that consumer.
++// O0-NEXT: call void @__cxx_global_var_init.2()
++// O0-NEXT: call void @__cxx_global_var_init.1()
+diff --git a/clang/test/ObjC3/CodeGen/module-owned-destructor-thunks.cpp b/clang/test/ObjC3/CodeGen/module-owned-destructor-thunks.cpp
+new file mode 100644
+index 000000000..a1f96dcf8
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-owned-destructor-thunks.cpp
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -emit-llvm %s -o - | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -emit-llvm %s -o - | FileCheck %s
++
++struct Root { virtual ~Root() __asm__("__objc3_m_root_dtor"); };
++struct Side { virtual ~Side() = default; };
++struct Derived : Side, virtual Root {
++  ~Derived() override __asm__("__objc3_m_derived_dtor");
++};
++Derived::~Derived() = default;
++
++// The two virtual adjustment thunks must target different destructor phases.
++// Collapsing their names routes virtual delete through complete destruction,
++// which runs destructors but never calls operator delete.
++// CHECK-DAG: define {{.*}}void @_ZTv{{[^ (]*}}__objc3_m_derived_dtor_dtor_1v
++// CHECK-DAG: define {{.*}}void @_ZTv{{[^ (]*}}__objc3_m_derived_dtor_dtor_0v

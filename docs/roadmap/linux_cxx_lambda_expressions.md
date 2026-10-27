@@ -20,8 +20,10 @@ call-operator parameters, default invocation and member defaults. Source-free
 consumers evaluate these expressions and call a lazy frame with a lambda default.
 Capability erasure and changed closure bodies invalidate their contracts.
 
-Generic lambdas, public closure types, Block/statement expressions and ordinary
-local type declarations remain explicit boundaries. This does not establish
+Generic lambdas, public closure types and ordinary local type declarations
+remain explicit boundaries. The [2.24.0 source milestone](linux_cxx_local_expressions.md)
+subsequently models published Block/statement expressions and repairs closure
+symbol ownership under optimization. This does not establish
 complete borrowed/MRC capture or language/profile conformance. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the

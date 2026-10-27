@@ -16,6 +16,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
+#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/ADT/SmallString.h"
@@ -842,6 +843,51 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxLocalExpressions() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-declaration-expressions.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-block-expressions.v1", "objc3.cxx-statement-expressions.v1",
+      "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-xc++",standard,"-fblocks","--target=x86_64-unknown-linux-gnu"},"local-expressions.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.locals","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.locals","test");
+    };
+    const std::string source=
+        "int api(int n=^int {return 42;}()); "
+        "struct Value { int n=^int {return 40;}(); int get(int delta=^int {return 2;}()) const {return n+delta;} }; "
+        "inline int compute(int n) { __block int state=n; "
+        "auto read=^long(int delta) {return n+delta;}; "
+        "auto change=^int(int delta) {state+=delta; return state;}; "
+        "return ({int answer=(int)read(2); answer==change(2) ? answer : 0;}); }";
+    auto emitted=emit(source);
+    for (const auto &d:emitted.diagnostics)
+      std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(emitted.success);
+    auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,semantics);
+    assert(decoded);
+    auto round=emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes==emitted.source_bytes &&
+           round.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+    auto changed=source;
+    changed.replace(changed.find("n+delta"),std::string("n+delta").size(),"n+delta+1");
+    auto different=emit(changed);
+    assert(different.success && different.identity.semantic_fingerprint!=emitted.identity.semantic_fingerprint);
+    for (const auto capability:{"objc3.cxx-block-expressions.v1","objc3.cxx-statement-expressions.v1"}) {
+      auto erased=*decoded;
+      std::erase(erased.required_semantics,capability);
+      erased.module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(erased));
+      auto invalid=EncodeSemanticInterfaceSidecar(erased,semantics);
+      assert(!invalid); llvm::consumeError(invalid.takeError());
+    }
+  }
+}
+
 void TestCxxFriends() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -943,6 +989,14 @@ void TestCxxLambdaExpressions() {
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
                                    "fixture.closures", "test", {}));
+      class ClosureNames final : public clang::RecursiveASTVisitor<ClosureNames> {
+      public:
+        bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+          assert(ReadNativeSymbolName(expression->getCallOperator()).empty());
+          return true;
+        }
+      } names;
+      names.TraverseDecl(ast->getASTContext().getTranslationUnitDecl());
       return EmitSemanticInterface(ast->getASTContext(), "fixture.closures", "test");
     };
     const std::string source =
@@ -1732,6 +1786,7 @@ int main() {
   TestCxxLambdaExpressions();
   TestCxxThreadLocalData();
   TestCxxFriends();
+  TestCxxLocalExpressions();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

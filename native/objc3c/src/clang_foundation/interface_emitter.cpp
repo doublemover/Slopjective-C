@@ -330,6 +330,23 @@ public:
     }
     return true;
   }
+  bool VisitBlockExpr(clang::BlockExpr *expression) {
+    const auto *block = expression->getBlockDecl();
+    Add("block-this:" + std::to_string(block->capturesCXXThis()));
+    Add("block-noescape:" + std::to_string(block->doesNotEscape()));
+    for (const auto *parameter : block->parameters()) {
+      Local(parameter); Add(ExpressionType(parameter->getType()));
+    }
+    for (const auto &capture : block->captures()) {
+      Reference(capture.getVariable());
+      Add("block-capture:" + std::to_string(static_cast<unsigned>(capture.getObjC3CaptureKind())));
+      Add("block-byref:" + std::to_string(capture.isByRef()));
+      Add("block-nested:" + std::to_string(capture.isNested()));
+      Add("block-resource:" + std::to_string(capture.isObjC3ResourceCapture()));
+      Add(ExpressionType(capture.getCaptureType()));
+    }
+    return true;
+  }
   bool VisitStmt(clang::Stmt *statement) {
     Add(statement->getStmtClassName()); return true;
   }
@@ -338,6 +355,10 @@ public:
     Add(ExpressionType(declaration->getType()));
     Add("storage:" + std::to_string(declaration->getStorageClass()));
     Add("thread-storage:" + std::to_string(declaration->getTSCSpec()));
+    Add("block-byref:" + std::to_string(declaration->hasAttr<clang::BlocksAttr>()));
+    Add("init-style:" + std::to_string(declaration->getInitStyle()));
+    if (!llvm::isa<clang::ParmVarDecl>(declaration))
+      Add("nrvo:" + std::to_string(declaration->isNRVOVariable()));
     return true;
   }
   void Add(llvm::StringRef value) {
@@ -481,30 +502,56 @@ bool ContainsLambda(const clang::Stmt *statement) {
   LambdaExpressionFinder finder; finder.TraverseStmt(const_cast<clang::Stmt *>(statement));
   return finder.found;
 }
-bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
+template <class Predicate>
+bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate &contains) {
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
-    for (const auto *parameter : function->parameters())
+    for (const auto *parameter : function->getMostRecentDecl()->parameters())
       if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg() &&
-          ContainsLambda(parameter->getDefaultArg())) return true;
+          contains(parameter->getDefaultArg())) return true;
     if (PublishesFunctionBody(function))
       if (const auto *definition = function->getDefinition()) {
-        if (ContainsLambda(definition->getBody())) return true;
+        if (contains(definition->getBody())) return true;
         if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
           for (const auto *initializer : constructor->inits())
-            if (initializer->isWritten() && ContainsLambda(initializer->getInit())) return true;
+            if (initializer->isWritten() && contains(initializer->getInit())) return true;
       }
   }
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration);
-      field && field->hasInClassInitializer()) return ContainsLambda(field->getInClassInitializer());
+      field && field->hasInClassInitializer()) return contains(field->getInClassInitializer());
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
-      PublishesVariableInitializer(variable) && variable->hasInit()) return ContainsLambda(variable->getInit());
+      PublishesVariableInitializer(variable) && variable->hasInit()) return contains(variable->getInit());
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       record && record->isCompleteDefinition())
-    for (const auto *member : record->decls())
-      if (!member->isImplicit())
-        if (const auto *named = llvm::dyn_cast<clang::NamedDecl>(member))
-          if (llvm::isa<clang::FieldDecl, clang::FunctionDecl>(named) && HasDeclarationLambda(named)) return true;
+    for (const auto *member : record->decls()) {
+      if (member->isImplicit()) continue;
+      const clang::NamedDecl *named = llvm::dyn_cast<clang::NamedDecl>(member);
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member))
+        named = friend_decl->getFriendDecl();
+      if (named && llvm::isa<clang::FieldDecl, clang::FunctionDecl, clang::VarDecl>(named) &&
+          HasPublishedExpression(named, contains)) return true;
+    }
   return false;
+}
+bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, ContainsLambda);
+}
+
+class LocalExpressionFinder final : public clang::RecursiveASTVisitor<LocalExpressionFinder> {
+public:
+  bool VisitBlockExpr(clang::BlockExpr *) { blocks = true; return true; }
+  bool VisitVarDecl(clang::VarDecl *variable) {
+    blocks |= variable->hasAttr<clang::BlocksAttr>(); return true;
+  }
+  bool VisitStmtExpr(clang::StmtExpr *) { statements = true; return true; }
+  bool blocks = false;
+  bool statements = false;
+};
+bool HasDeclarationLocalExpression(const clang::NamedDecl *declaration, bool block) {
+  return HasPublishedExpression(declaration, [=](const clang::Stmt *statement) {
+    LocalExpressionFinder finder;
+    finder.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return block ? finder.blocks : finder.statements;
+  });
 }
 
 class ThreadLocalFinder final : public clang::RecursiveASTVisitor<ThreadLocalFinder> {
@@ -1148,8 +1195,8 @@ class TypeDependencyVisitor final
     if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(target->getDeclContext());
         owner && owner->isLambda()) return;
     if (lambda_locals_.count(target->getCanonicalDecl())) return;
-    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target->getDeclContext());
-        function && lambda_contexts_.count(function->getCanonicalDecl())) return;
+    if (lambda_contexts_.count(
+            clang::Decl::castFromDeclContext(target->getDeclContext())->getCanonicalDecl())) return;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target->getDeclContext());
         function && body_function_ && function->getCanonicalDecl() == body_function_->getCanonicalDecl())
       return;
@@ -1174,7 +1221,7 @@ class TypeDependencyVisitor final
   bool VisitVarDecl(clang::VarDecl *variable) {
     if (body_function_)
       for (const auto *attribute : variable->attrs())
-        if (!attribute->isImplicit()) UnsupportedExpression();
+        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr>(attribute)) UnsupportedExpression();
     return true;
   }
   bool VisitTagDecl(clang::TagDecl *declaration) {
@@ -1224,8 +1271,16 @@ class TypeDependencyVisitor final
     auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; lambda_locals_ = locals; });
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression, nullptr);
   }
-  bool VisitBlockExpr(clang::BlockExpr *) { return UnsupportedExpression(); }
-  bool VisitStmtExpr(clang::StmtExpr *) { return UnsupportedExpression(); }
+  bool TraverseBlockExpr(clang::BlockExpr *expression, DataRecursionQueue * = nullptr) {
+    const auto contexts = lambda_contexts_;
+    lambda_contexts_.insert(expression->getBlockDecl());
+    auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; });
+    for (const auto &capture : expression->getBlockDecl()->captures()) {
+      CheckExpressionReference(capture.getVariable());
+      TraverseType(capture.getCaptureType());
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseBlockExpr(expression, nullptr);
+  }
   bool UnsupportedExpression() {
     AddDiagnostic(result_, "O3IFC101",
                   "declaration expressions with local declarations or captures require additional contracts");
@@ -1462,7 +1517,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         !record->isUnion() &&
         (!record->isDynamicClass() || record->getASTContext().getLangOpts().RTTI);
     for (const auto *member : record->decls()) {
-      if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
+      if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl, clang::BlockDecl>(member))
         continue;
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
       if (field) continue;
@@ -2168,6 +2223,10 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
+  if (HasDeclarationLocalExpression(representative, true))
+    identity.canonical_type_identity += ";cxx-block-expressions:v1;";
+  if (HasDeclarationLocalExpression(representative, false))
+    identity.canonical_type_identity += ";cxx-statement-expressions:v1;";
   if (context.getLangOpts().CPlusPlus && HasDeclarationThreadLocal(representative)) {
     identity.canonical_type_identity += ";cxx-thread-local:v1;";
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(representative))
@@ -2392,6 +2451,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxThreadLocalSemantic);
     if (HasCxxFriendIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxFriendSemantic);
+    if (HasCxxBlockExpressionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxBlockExpressionSemantic);
+    if (HasCxxStatementExpressionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxStatementExpressionSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2462,6 +2525,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxLambdaExpressionSemantic,
     kCxxThreadLocalSemantic,
     kCxxFriendSemantic,
+    kCxxBlockExpressionSemantic,
+    kCxxStatementExpressionSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2579,6 +2644,8 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxLambdaExpressionSemantic,
     kCxxThreadLocalSemantic,
     kCxxFriendSemantic,
+    kCxxBlockExpressionSemantic,
+    kCxxStatementExpressionSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

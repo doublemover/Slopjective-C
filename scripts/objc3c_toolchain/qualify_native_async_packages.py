@@ -198,6 +198,14 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using capability')
     if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
         raise ValueError('C++ package lost its using-directive')
+    for semantic, name, marker in (
+        ('objc3.cxx-block-expressions.v1', 'native_published_block', ';cxx-block-expressions:v1;'),
+        ('objc3.cxx-statement-expressions.v1', 'native_published_statement', ';cxx-statement-expressions:v1;'),
+    ):
+        if semantic not in metadata.get('required_semantics', []):
+            raise AssertionError('missing local expression capability: ' + semantic)
+        if marker not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise AssertionError('missing local expression identity: ' + name)
     if 'objc3.cxx-friends.v1' not in metadata.get('required_semantics', []):
         raise AssertionError('missing C++ friend capability')
     for name in ('NativeFriendValue', 'native_friend_reveal', 'native_friend_external', 'native_friend_delayed'):

@@ -321,6 +321,14 @@ int main() {
         NativeFriendReader::read(value)!=40 || native_friend_external(value)!=42 ||
         native_friend_delayed(value)!=42 || probe(NativeFriendScope::Value{40})!=42) return 91;
   }
+  {
+    if (native_statement_live()!=0) return 93;
+    auto value=native_statement_value();
+    NativeBlockDefaults defaults;
+    if (native_published_block(40)!=42 || native_published_statement(40)!=42 ||
+        value.value!=42 || native_statement_live()!=1 || defaults.get()!=42) return 92;
+  }
+  if (native_statement_live()!=0) return 94;
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||
@@ -462,9 +470,11 @@ int main() {
           native_module_virtual(std::move(copied))).start(executor);
       if (objc3_executor_pump(executor, UINT32_MAX, &executed) != OBJC3_SERVICE_OK ||
           frame.result() != 42 || result.result().score() != 42) return 52;
+      int freed=native_module_virtual_deallocations();
       NativeVirtualRoot *heap = new NativeVirtualDiamond(value);
       if (heap->score() != 42) return 53;
       delete heap;
+      if (native_module_virtual_deallocations()!=freed+1) return 95;
     }
     if (stats.live || !stats.destroyed) return 54;
   }

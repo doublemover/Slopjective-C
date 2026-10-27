@@ -98,7 +98,14 @@
     "native_thread_lifetimes",
     "NativeFriendReader",
     "NativeFriendValue",
-    "NativeFriendScope"
+    "NativeFriendScope",
+    "native_published_block",
+    "native_published_statement",
+    "native_statement_value",
+    "NativeBlockDefaults",
+    "NativeStatementLifetime",
+    "native_statement_live",
+    "native_module_virtual_deallocations"
   ],
   "dependencies": []
 }

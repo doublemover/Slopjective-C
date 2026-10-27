@@ -127,6 +127,13 @@ public:
     const auto *owner = decl->getDeclContext();
     while (owner && llvm::isa<clang::LinkageSpecDecl>(owner))
       owner = owner->getParent();
+    // Closure and local-class members have lexical ABI discriminators, not
+    // independent public USRs. The native mangler inherits module ownership
+    // from their enclosing function; a direct asm label can collapse distinct
+    // closure layouts with the same call-operator signature.
+    if (const auto *record = llvm::dyn_cast_or_null<clang::CXXRecordDecl>(owner);
+        record && (record->isLambda() || record->isLocalClass()))
+      return true;
     if (!owner || (!owner->isTranslationUnit() &&
                    !llvm::isa<clang::NamespaceDecl, clang::CXXRecordDecl>(owner)))
       return true;
