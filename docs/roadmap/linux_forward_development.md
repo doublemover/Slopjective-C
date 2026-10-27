@@ -546,3 +546,10 @@ coalescing expression contracts. Its [focused evidence](../support/linux_carrier
 records 373 native lit and 179 unit checks, three facade suites, normal and
 ASan/UBSan source/PCH capture matrices, and eight source-free C++ package cases.
 Mixed ARC/C++ captures and the installed SDK/archive cutover remain pending.
+
+The [2.26.0 source milestone](linux_explicit_capture_lists.md) composes explicit
+mixed ARC/C++ captures with separate cleanup partitions, owned match snapshots
+and nested binding copies. Its [focused evidence](../support/linux_mixed_carrier_captures_progress.json)
+records normal/ASan source/PCH capture matrices, native regressions, AST/PCH
+persistence and source-free package checks. Implicit and MRC mixed captures,
+unqualified carrier leaves and the installed SDK cutover remain pending.
