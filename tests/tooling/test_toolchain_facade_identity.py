@@ -9,7 +9,8 @@ def source_repo(tmp_path: Path) -> Path:
     for name in ('native/objc3c/CMakeLists.txt', 'scripts/objc3c_toolchain/facade.py',
                  'native/objc3c/src/clang_foundation/compile_session.cpp',
                  'native/objc3c/src/runtime/public/objc3_runtime_services.h',
-                 'native/objc3c/src/runtime/public/objc3_task.hpp'):
+                 'native/objc3c/src/runtime/public/objc3_task.hpp',
+                 'native/objc3c/src/runtime/public/objc3_keypath.h'):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('original input\n')
@@ -93,3 +94,15 @@ def test_cpp_task_header_invalidates_embedded_interface_runtime(tmp_path):
     header.write_text('modified input\n')
     os.utime(header, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
     assert facade_identity(repo)['sha256'] != before['sha256']
+
+
+def test_keypath_header_invalidates_embedded_interface_runtime(tmp_path):
+    repo = source_repo(tmp_path)
+    before = facade_identity(repo)
+    header = repo / 'native/objc3c/src/runtime/public/objc3_keypath.h'
+    stamp = header.stat()
+    header.write_text('modified input\n')
+    os.utime(header, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    changed = facade_identity(repo)
+    assert changed['sha256'] != before['sha256']
+    assert 'native/objc3c/src/runtime/public/objc3_keypath.h' in changed['inputs']
