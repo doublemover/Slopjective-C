@@ -22,7 +22,8 @@ consumed object/Block arguments; caller restoration; and cancellation before
 target entry. Source-free frontend consumers reconstruct class-method record
 and consumed ownership signatures before forming their own entry thunks.
 
-The compiler/tool build, frontend contract suite and two native codegen/PCH
+The [focused receipt](../support/linux_isolation_class_entries_progress.json)
+records the compiler/tool build, frontend contract suite and two native codegen/PCH
 regressions pass. Focused runtime validation passes C17 ARC/O0/source and C++23
 MRC/O2/PCH configurations, 15 commands total. Broader matrices and SDK delivery
 are deferred to the combined source batch. The accepted SDK remains

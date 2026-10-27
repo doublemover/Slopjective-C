@@ -156,7 +156,8 @@
         "Native declaration export roots in semantic interface schema 2.2 with namespace/class/friend/using policy verification for immutable source-free packages (source)",
         "Concrete named C++ local classes, structs and enums in published definitions, defaults, member initializers and lambdas with lexical identities, native lifecycle, RTTI and constexpr evaluation (source)",
         "Awaited executor/actor aggregate entry with native frame value storage, ARC-managed record fields and move-only C++ parameter forwarding (source)",
-        "ARC consuming isolated parameters and receivers with consumed function-type identity, adopting ramp parameters and independent frame ownership (source)"
+        "ARC consuming isolated parameters and receivers with consumed function-type identity, adopting ramp parameters and independent frame ownership (source)",
+        "Named class messages at awaited executor entries, preserving inherited dispatch, native-frame/retained results and ARC consumed object/Block parameters (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
