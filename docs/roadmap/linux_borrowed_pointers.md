@@ -132,3 +132,8 @@ MRC/foreign ownership and unknown/interprocedural effects remain open.
 The [System 2.4.0 source span](linux_callable_ownership_casts.md) preserves MRC
 retained callback results and checks explicit function/member-pointer ownership
 casts, including nested callback contracts and source-free replay.
+
+The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) adds
+annotated foreign consumption under ARC/MRC, consumed Block owner claims and
+bound C++ member-call contracts. Ownership-bearing parameter metadata contributes
+to native structural equivalence and ODR identity.

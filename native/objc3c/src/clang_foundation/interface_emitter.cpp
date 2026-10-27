@@ -1925,7 +1925,7 @@ class InterfaceCollector final
         if (owner && IsIdentityCandidate(owner, context_, source_root_))
           for (const auto *attribute : parameter->attrs()) {
             if (attribute->isImplicit() ||
-                llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute))
+                llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr, clang::CFConsumedAttr>(attribute))
               continue;
             AddDiagnostic(result_, "O3IFC116",
                 (llvm::Twine("public parameter has an attribute not modeled in the interface: ") +
@@ -2022,7 +2022,7 @@ class InterfaceCollector final
       if (llvm::isa<clang::ObjCReturnsBorrowedAttr, clang::NoThrowAttr>(attribute) &&
           llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration))
         continue;
-      if (llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr>(attribute) &&
+      if (llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr, clang::CFConsumedAttr>(attribute) &&
           llvm::isa<clang::ParmVarDecl>(declaration))
         continue;
       if (llvm::isa<clang::NSConsumesSelfAttr>(attribute) &&

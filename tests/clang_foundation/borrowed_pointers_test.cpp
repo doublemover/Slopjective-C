@@ -94,6 +94,49 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root,CallableHeader+
       "void f(ConsumedCallback p,NoEscapeCallback n){ConsumedCallback same=(ConsumedCallback)p;PlainCallback weaker=(PlainCallback)n;(void)same;(void)weaker;}",
       Language,Standard,ARC),true);
+  const std::string ForeignHeader =
+      "typedef struct ForeignOwner *ForeignRef;\n"
+      "typedef borrowed const char *ForeignBytes;\n"
+      "ForeignBytes foreign_bytes(ForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "void foreign_use(const char *pointer __attribute__((noescape)));\n"
+      "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)),int unused);\n"
+      "void foreign_pair(ForeignRef owner __attribute__((cf_consumed)),const char *pointer __attribute__((noescape)));\n"
+      "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)),int unused);\n"
+      "typedef void (*ForeignPlain)(ForeignRef,int);\n"
+      "typedef void (^OwnerBlock)(void);\n"
+      "ForeignBytes block_bytes(OwnerBlock owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "void consume_block_owner(OwnerBlock owner __attribute__((ns_consumed)));\n";
+  for (const std::string &Case : {
+           "void f(ForeignRef o){const char*p=foreign_bytes(o);foreign_consume(o,0);foreign_use(p);}",
+           "void f(ForeignRef o,ForeignCallback callback){const char*p=foreign_bytes(o);callback(o,0);foreign_use(p);}",
+           "void f(ForeignRef o){ForeignRef alias=o;const char*p=foreign_bytes(alias);foreign_consume(o,0);foreign_use(p);}",
+           "void f(ForeignRef o,int c){const char*p=foreign_bytes(o);if(c)foreign_consume(o,0);foreign_use(p);}",
+           "void f(ForeignRef o){foreign_pair(o,foreign_bytes(o));}"})
+    Expect(Request(Root,ForeignHeader+Case,Language,Standard,ARC),false,
+           "borrowed pointer escapes");
+  Expect(Request(Root,ForeignHeader+
+      "void f(ForeignCallback callback){(void)(ForeignPlain)callback;}",
+      Language,Standard,ARC),false,"callable cast changes an ownership");
+  Expect(Request(Root,ForeignHeader+
+      "void f(ForeignRef o,ForeignRef r){foreign_consume(o,0);o=r;foreign_use(foreign_bytes(o));}",
+      Language,Standard,ARC),true);
+  Expect(Request(Root,ForeignHeader+
+      "void f(OwnerBlock o){const char*p=block_bytes(o);consume_block_owner(o);foreign_use(p);}",
+      Language,Standard,ARC),ARC,ARC ? "" : "after its owner lifetime ended");
+  Expect(Request(Root,ForeignHeader+
+      "void f(OwnerBlock o){keepAlive(o);const char*p=block_bytes(o);consume_block_owner(o);foreign_use(p);}",
+      Language,Standard,ARC),false,"control flow whose borrowed owner lifetime cannot be proved");
+  if (Language == BaseLanguage::ObjectiveCxx) {
+    const auto Exceptions = ForeignHeader+
+        "void consume_foreign_noexcept(ForeignRef __attribute__((cf_consumed)),int) noexcept;\n"
+        "int foreign_argument_that_may_throw();\n";
+    Expect(Request(Root,Exceptions+
+        "void f(ForeignRef o){const char*p=foreign_bytes(o);try{consume_foreign_noexcept(o,foreign_argument_that_may_throw());}catch(...){foreign_use(p);}}",
+        Language,Standard,ARC),true);
+    Expect(Request(Root,ForeignHeader+
+        "void f(ForeignRef o){const char*p=foreign_bytes(o);try{foreign_consume(o,0);}catch(...){foreign_use(p);}}",
+        Language,Standard,ARC),false,"after its owner lifetime ended");
+  }
   const std::vector<std::string> Accepted = {
       "void f(id o) { borrowed const char *p = bytes(o); use(p); }",
       "void f(id o) { const char *p = bytes(o); void *q = (void*)p; use_noescape((const char*)q); }",
@@ -457,6 +500,45 @@ void PersistenceCases(const fs::path &Root) {
   Second.AddFunctionDecl(Function(OtherOwner->getASTContext(), "exported"));
   assert(First.CalculateHash() != Second.CalculateHash());
 }
+void ForeignPersistenceCases(const fs::path &Root) {
+  const std::string Provider =
+      "typedef struct ForeignOwner{int marker;} *ForeignRef;\n"
+      "typedef borrowed const char *ForeignBytes;\n"
+      "ForeignBytes foreign_bytes(ForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "void foreign_use(const char *pointer __attribute__((noescape)));\n"
+      "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));\n"
+      "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n";
+  for (bool ARC : {false,true}) {
+    auto Emission = Request(Root,Provider,BaseLanguage::ObjectiveCxx,"c++23",ARC);
+    Emission.emit_semantic_interface=true;
+    Emission.module_name=ARC ? "Foreign.ARC" : "Foreign.MRC";
+    Emission.package_identity="foreign-owner-contracts-v1";
+    Emission.interface_output_path=(Root/(ARC ? "ForeignARC.objc3i" : "ForeignMRC.objc3i")).string();
+    auto Emitted=Compile(Emission);
+    if (!Emitted.success) {
+      std::cerr << Emitted.failure << '\n';
+      for(const auto &D:Emitted.diagnostics) std::cerr << D.message << '\n';
+      if(Emitted.interface_artifact)
+        for(const auto &D:Emitted.interface_artifact->diagnostics) std::cerr << D.message << '\n';
+    }
+    assert(Emitted.success && Emitted.interface_artifact);
+    assert(Emitted.interface_artifact->sidecar_json.find("cf-consumed")!=std::string::npos);
+    InterfaceImportInput Input;
+    Input.source_path=Emission.interface_output_path;
+    Input.locked_identity=Emitted.interface_artifact->identity;
+    auto Client=Request(Root,
+        "void preserved(ForeignCallback callback){ForeignCallback copy=(ForeignCallback)callback;(void)copy;}",
+        BaseLanguage::ObjectiveCxx,"c++23",ARC);
+    Client.imported_interfaces={Input};
+    Expect(Client,true);
+    Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
+    Expect(Client,false,"after its owner lifetime ended");
+    Client.source_text="void expired_callback(ForeignRef owner,ForeignCallback callback){const char*p=foreign_bytes(owner);callback(owner);foreign_use(p);}";
+    Expect(Client,false,"after its owner lifetime ended");
+    Client.source_text="void erased(ForeignCallback callback){(void)(void(*)(ForeignRef))callback;}";
+    Expect(Client,false,"callable cast changes an ownership");
+  }
+}
 } // namespace
 int main() {
   const auto Stamp = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -468,5 +550,6 @@ int main() {
     SemanticCases(Root, BaseLanguage::ObjectiveCxx, "c++23", ARC);
   }
   PersistenceCases(Root);
+  ForeignPersistenceCases(Root);
   fs::remove_all(Root);
 }

@@ -127,7 +127,20 @@
     "native_published_raw_task",
     "native_published_actor",
     "native_published_checkpoint",
-    "NativePublishedRuntime"
+    "NativePublishedRuntime",
+    "NativeForeignCounts",
+    "NativeForeignOwner",
+    "NativeForeignRef",
+    "NativeForeignConsumer",
+    "native_foreign_create",
+    "native_foreign_consume",
+    "native_foreign_callback",
+    "native_foreign_forward",
+    "native_foreign_borrow",
+    "NativeRetainedFactory",
+    "native_retained_create",
+    "native_retained_callback",
+    "native_result_destructions"
   ],
   "dependencies": []
 }

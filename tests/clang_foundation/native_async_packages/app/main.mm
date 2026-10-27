@@ -209,6 +209,29 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  {
+    NativeForeignCounts counts{};
+    NativeForeignRef owner=native_foreign_create(&counts,42);
+    if(*native_foreign_borrow(owner)!=42) return 101;
+    NativeForeignConsumer callback=native_foreign_callback();
+    native_foreign_forward(callback,owner);
+    if(counts.consumed!=1 || counts.destroyed!=1) return 102;
+    owner=native_foreign_create(&counts,43);
+    callback(owner);
+    if(counts.consumed!=2 || counts.destroyed!=2) return 103;
+  }
+  {
+    const int before=native_result_destructions();
+    {
+      NativeRetainedFactory factory=native_retained_callback();
+      id result=factory(42);
+#if !__has_feature(objc_arc)
+      consumer_result_owner cleanup{result};
+#endif
+      if([(NativeModuleResult *)result number]!=42) return 104;
+    }
+    if(native_result_destructions()!=before+1) return 105;
+  }
   if (NativeHiddenScope::get({40})!=42 || NativeHiddenScope::later(40)!=42 ||
       NativeVersioned::get({40})!=42) return 85;
 

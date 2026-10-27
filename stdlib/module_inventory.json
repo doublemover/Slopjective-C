@@ -206,7 +206,7 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 4,
+        "minor": 5,
         "patch": 0
       },
       "header": "include/objc3/system.h",
@@ -221,7 +221,8 @@
         "Strict System C++ lambda value-capture provenance, nested/init/record aliases, noescape invocation and independent ARC owner snapshots; checked persistent/reference/mutable/generic capture boundaries (source)",
         "MRC native instance-release effects on borrowed owner claims, known aliases and conditional joins, independent lifetime pins, new acquisitions and nested Block/C++ lambda checks (source)",
         "MRC annotated object-consumption effects for direct/indirect callbacks, messages and C++ calls with evaluated owner identities, independent pins, overlap rejection and preserved consumed function types (source)",
-        "MRC retained-result callable metadata and Strict System explicit function/member-pointer cast checks for consumed, retained, borrowed and noescape contracts, including nested callbacks and source-free imports (source)"
+        "MRC retained-result callable metadata and Strict System explicit function/member-pointer cast checks for consumed, retained, borrowed and noescape contracts, including nested callbacks and source-free imports (source)",
+        "Distinct cf_consumed callable metadata and borrowed foreign-owner effects under ARC/MRC, consumed Block owner claims, indirect member-call contracts and ownership-significant native AST import/ODR identity (source)"
       ],
       "remaining": [
         "remaining borrowed alias/escape and required diagnostic boundaries",

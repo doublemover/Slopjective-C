@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Foreign consumption and Block owners
+
+The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) preserves
+foreign consumed-parameter types under ARC/MRC, expires known CF owner claims
+and tracks consumed Block owners. Bound C++ member calls retain consumed and
+noescape contracts. Native structural equivalence, ODR identity and source-free
+imports preserve callable metadata. SDK 2.33 remains the accepted archive.
+
 ## Callable ownership contracts
 
 The [System 2.4.0 source span](linux_callable_ownership_casts.md) preserves MRC

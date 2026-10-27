@@ -37,3 +37,7 @@ accepted archive; full Strict System conformance remains open.
 Maintained witnesses cover C17/C++20/C++23, ARC/MRC, source/PCH replay, C-style,
 C++ named/functional and builtin bit casts, nested callbacks, member pointers,
 retained-result MRC IR and source-free callback imports.
+
+The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) extends
+these checks to foreign consumed parameters and makes callable parameter metadata
+significant to native structural equivalence and ODR identity.

@@ -3,6 +3,8 @@
 #include <objc/objc-arc.h>
 id class_createInstance(Class, size_t) __attribute__((ns_returns_retained));
 
+static int native_result_destruction_count;
+
 @protocol Error @end
 @protocol NativeModuleError <Error> @end
 
@@ -26,6 +28,7 @@ __attribute__((objc_root_class))
   return value;
 }
 - (void)dealloc {
+  ++native_result_destruction_count;
   object_dispose(self);
 }
 #if !__has_feature(objc_arc)
@@ -897,3 +900,33 @@ struct NativePublishedRuntime {
     return objc3_executor_is_current(destination) ? value+bias : 0;
   }
 };
+
+// Source-free ownership witnesses use ordinary synchronous native calls too.
+struct NativeForeignCounts {int consumed;int destroyed;};
+struct NativeForeignOwner {NativeForeignCounts *counts;int value;};
+using NativeForeignRef=NativeForeignOwner *;
+using NativeForeignConsumer=void (*)(NativeForeignRef __attribute__((cf_consumed)));
+NativeForeignRef native_foreign_create(NativeForeignCounts *counts,int value) {
+  return new NativeForeignOwner{counts,value};
+}
+void native_foreign_consume(NativeForeignRef owner __attribute__((cf_consumed))) {
+  ++owner->counts->consumed;
+  ++owner->counts->destroyed;
+  delete owner;
+}
+NativeForeignConsumer native_foreign_callback() {return native_foreign_consume;}
+void native_foreign_forward(NativeForeignConsumer callback,
+                            NativeForeignRef owner __attribute__((cf_consumed))) {
+  callback(owner);
+}
+borrowed const int *native_foreign_borrow(NativeForeignRef owner)
+    __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->value;}
+using NativeRetainedFactory=id (__attribute__((ns_returns_retained)) *)(int);
+id native_retained_create(int value) __attribute__((ns_returns_retained));
+id native_retained_create(int value) __attribute__((ns_returns_retained)) {
+  NativeModuleResult *result=[NativeModuleResult new];
+  [result setNumber:value];
+  return result;
+}
+NativeRetainedFactory native_retained_callback() {return native_retained_create;}
+int native_result_destructions() {return native_result_destruction_count;}

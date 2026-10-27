@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..de356a5f7
+index 000000000..96984ab0a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,557 @@
+@@ -0,0 +1,618 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -779,6 +779,8 @@ index 000000000..de356a5f7
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/ODRHash.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -1326,6 +1328,65 @@ index 000000000..de356a5f7
 +  Native->Lookup = Registry->Lookup = ObjC3QualifiedNameLookupStatus::NotHandled;
 +  EXPECT_EQ(Multiplex->LookupObjC3QualifiedName({}, 0, Declarations), ObjC3QualifiedNameLookupStatus::NotHandled);
 +  EXPECT_TRUE(Declarations.empty());
++}
++
++TEST(ObjC3TypeContracts, ForeignConsumedCallbacksPreserveImportAndHash) {
++  for (bool ARC : {false, true}) {
++    std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
++    if (ARC) Args.push_back("-fobjc-arc");
++    auto From = parse(R"(
++      typedef void (*ForeignCallback)(void * __attribute__((cf_consumed)));
++      void consumed(void * __attribute__((cf_consumed)));
++      void ordinary(void *);
++    )", Args);
++    auto To = parse("", Args);
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    const auto *Consumed = findFunction(From->getASTContext(), "consumed");
++    const auto *Ordinary = findFunction(From->getASTContext(), "ordinary");
++    ASSERT_TRUE(Consumed && Ordinary);
++    const auto *Prototype = Consumed->getType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(Prototype->getExtParameterInfo(0).isCFConsumed());
++    EXPECT_FALSE(Prototype->isParamConsumed(0));
++    EXPECT_FALSE(From->getASTContext().hasSameType(Consumed->getType(), Ordinary->getType()));
++    ODRHash First, Second;
++    First.AddQualType(Consumed->getType());
++    Second.AddQualType(Ordinary->getType());
++    EXPECT_NE(First.CalculateHash(), Second.CalculateHash());
++    ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++        From->getASTContext(), From->getFileManager(), false);
++    auto Imported = Importer.Import(const_cast<NamedDecl *>(
++        lookup(From->getASTContext(), "ForeignCallback")));
++    ASSERT_TRUE(bool(Imported));
++    const auto *Alias = cast<TypedefNameDecl>(*Imported);
++    const auto *Callback = Alias->getUnderlyingType()->getPointeeType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(Callback->getExtParameterInfo(0).isCFConsumed());
++    EXPECT_FALSE(Callback->isParamConsumed(0));
++  }
++}
++
++TEST(ObjC3TypeContracts, CallableParameterOwnershipIsStructurallySignificant) {
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++      "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
++  auto Plain = parse("void callback(id);", Args);
++  ASSERT_TRUE(Plain);
++  for (const char *Attribute : {"ns_consumed", "cf_consumed", "noescape"}) {
++    auto Owned = parse(std::string("void callback(id __attribute__((") + Attribute + ")));", Args);
++    ASSERT_TRUE(Owned);
++    ASSERT_FALSE(Owned->getDiagnostics().hasErrorOccurred());
++    auto &From = Plain->getASTContext();
++    auto &To = Owned->getASTContext();
++    StructuralEquivalenceContext::NonEquivalentDeclSet Different;
++    StructuralEquivalenceContext Equivalence(To.getLangOpts(), From, To,
++        Different, StructuralEquivalenceKind::Default, false, false);
++    EXPECT_FALSE(Equivalence.IsEquivalent(findFunction(From, "callback")->getType(),
++                                         findFunction(To, "callback")->getType())) << Attribute;
++    ODRHash First, Second;
++    First.AddQualType(findFunction(From, "callback")->getType());
++    Second.AddQualType(findFunction(To, "callback")->getType());
++    EXPECT_NE(First.CalculateHash(), Second.CalculateHash()) << Attribute;
++  }
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644

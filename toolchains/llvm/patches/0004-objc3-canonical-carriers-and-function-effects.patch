@@ -705,7 +705,7 @@ index 41ddd88a8..775aaabda 100644
    void VisitCompoundStmt(const CompoundStmt *Node);
    void VisitCXXExpansionStmtPattern(const CXXExpansionStmtPattern *Node);
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
-index c9658775f..31581bbfe 100644
+index c9658775f..e8df34509 100644
 --- a/clang/include/clang/AST/TypeBase.h
 +++ b/clang/include/clang/AST/TypeBase.h
 @@ -1490,7 +1490,10 @@ public:
@@ -809,7 +809,31 @@ index c9658775f..31581bbfe 100644
  /// Sugar for parentheses used when specifying types.
  class ParenType : public Type, public llvm::FoldingSetNode {
    friend class ASTContext; // ASTContext creates these.
-@@ -4819,11 +4886,17 @@ public:
+@@ -4596,6 +4663,7 @@ public:
+       IsConsumed = 0x10,
+       HasPassObjSize = 0x20,
+       IsNoEscape = 0x40,
++      IsCFConsumed = 0x80,
+     };
+     unsigned char Data = 0;
+ 
+@@ -4622,6 +4690,15 @@ public:
+       return copy;
+     }
+ 
++    // Manual foreign ownership is independent of ARC's object transfer ABI.
++    bool isCFConsumed() const { return Data & IsCFConsumed; }
++    ExtParameterInfo withIsCFConsumed(bool Consumed) const {
++      ExtParameterInfo Copy = *this;
++      if (Consumed) Copy.Data |= IsCFConsumed;
++      else Copy.Data &= ~IsCFConsumed;
++      return Copy;
++    }
++
+     bool hasPassObjectSize() const { return Data & HasPassObjSize; }
+     ExtParameterInfo withHasPassObjectSize() const {
+       ExtParameterInfo Copy = *this;
+@@ -4819,11 +4896,17 @@ public:
      LLVM_PREFERRED_TYPE(bool)
      unsigned EffectsHaveConditions : 1;
      unsigned NumFunctionEffects : 4;
@@ -828,7 +852,7 @@ index c9658775f..31581bbfe 100644
    };
  
    /// A holder for extra information from attributes which aren't part of an
-@@ -5102,6 +5175,47 @@ public:
+@@ -5102,6 +5185,47 @@ public:
    }
  };
  
@@ -876,7 +900,7 @@ index c9658775f..31581bbfe 100644
  /// A FunctionEffect plus a potential boolean expression determining whether
  /// the effect is declared (e.g. nonblocking(expr)). Generally the condition
  /// expression when present, is dependent.
-@@ -5368,7 +5482,7 @@ class FunctionProtoType final
+@@ -5368,7 +5492,7 @@ class FunctionProtoType final
            FunctionType::FunctionTypeExtraAttributeInfo,
            FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
            Expr *, FunctionDecl *, FunctionType::ExtParameterInfo, Qualifiers,
@@ -885,7 +909,7 @@ index c9658775f..31581bbfe 100644
    friend class ASTContext; // ASTContext creates these.
    friend TrailingObjects;
  
-@@ -5409,6 +5523,8 @@ class FunctionProtoType final
+@@ -5409,6 +5533,8 @@ class FunctionProtoType final
    // * Optionally, an array of getNumFunctionEffects() EffectConditionExpr.
    //   Present only when getNumFunctionEffectConditions() > 0.
    //
@@ -894,7 +918,7 @@ index c9658775f..31581bbfe 100644
    // The optional FunctionTypeExtraBitfields has to be before the data
    // related to the exception specification since it contains the number
    // of exception types.
-@@ -5462,6 +5578,7 @@ public:
+@@ -5462,6 +5588,7 @@ public:
      SourceLocation EllipsisLoc;
      FunctionEffectsRef FunctionEffects;
      FunctionTypeExtraAttributeInfo ExtraAttributeInfo;
@@ -902,7 +926,7 @@ index c9658775f..31581bbfe 100644
  
      LLVM_PREFERRED_TYPE(bool)
      unsigned Variadic : 1;
-@@ -5496,6 +5613,8 @@ public:
+@@ -5496,6 +5623,8 @@ public:
        return ExceptionSpec.Type == EST_Dynamic ||
               requiresFunctionProtoTypeArmAttributes() ||
               requiresFunctionProtoTypeExtraAttributeInfo() ||
@@ -911,7 +935,7 @@ index c9658775f..31581bbfe 100644
               !FunctionEffects.empty();
      }
  
-@@ -5561,6 +5680,14 @@ private:
+@@ -5561,6 +5690,14 @@ private:
      return getNumFunctionEffects();
    }
  
@@ -926,7 +950,7 @@ index c9658775f..31581bbfe 100644
    /// Determine whether there are any argument types that
    /// contain an unexpanded parameter pack.
    static bool containsAnyUnexpandedParameterPack(const QualType *ArgArray,
-@@ -5671,9 +5798,39 @@ public:
+@@ -5671,9 +5808,39 @@ public:
      EPI.ExtraAttributeInfo = getExtraAttributeInfo();
      EPI.AArch64SMEAttributes = getAArch64SMEAttributes();
      EPI.FunctionEffects = getFunctionEffects();
@@ -3894,7 +3918,7 @@ index d743717ad..3e26f08f3 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..97b77c2dd 100644
+index e0b62591a..a84968f39 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -4093,7 +4117,7 @@ index e0b62591a..97b77c2dd 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1146,6 +1307,18 @@ bool ASTStructuralEquivalence::isEquivalent(
+@@ -1146,9 +1307,26 @@ bool ASTStructuralEquivalence::isEquivalent(
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -4112,7 +4136,15 @@ index e0b62591a..97b77c2dd 100644
      if (Proto1->getNumParams() != Proto2->getNumParams())
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
-@@ -2446,12 +2619,43 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
++      if ((Context.FromCtx.getLangOpts().ObjC3 ||
++           Context.ToCtx.getLangOpts().ObjC3) &&
++          Proto1->getExtParameterInfo(I) != Proto2->getExtParameterInfo(I))
++        return false;
++
+       if (!IsStructurallyEquivalent(Context, Proto1->getParamType(I),
+                                     Proto2->getParamType(I)))
+         return false;
+@@ -2446,12 +2624,43 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
@@ -4156,7 +4188,7 @@ index e0b62591a..97b77c2dd 100644
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2693,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2489,6 +2698,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -4167,7 +4199,7 @@ index e0b62591a..97b77c2dd 100644
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2808,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2600,6 +2813,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -4185,7 +4217,7 @@ index e0b62591a..97b77c2dd 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3003,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+@@ -2784,8 +3008,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -5742,7 +5774,7 @@ index 59732ff0f..0d5627100 100644
                                           SourceRange Range) {
    QualType ElementType = T->getElementType();
 diff --git a/clang/lib/AST/ODRHash.cpp b/clang/lib/AST/ODRHash.cpp
-index 46a4e256e..3f2718829 100644
+index 46a4e256e..caf0afacb 100644
 --- a/clang/lib/AST/ODRHash.cpp
 +++ b/clang/lib/AST/ODRHash.cpp
 @@ -17,9 +17,79 @@
@@ -5860,20 +5892,26 @@ index 46a4e256e..3f2718829 100644
    ID.AddInteger(Function->getDeclKind());
  
    const auto *SpecializationArgs = Function->getTemplateSpecializationArgs();
-@@ -1055,6 +1132,13 @@ public:
-     for (auto ParamType : T->getParamTypes())
-       AddQualType(ParamType);
+@@ -1052,8 +1129,17 @@ public:
  
+   void VisitFunctionProtoType(const FunctionProtoType *T) {
+     ID.AddInteger(T->getNumParams());
+-    for (auto ParamType : T->getParamTypes())
+-      AddQualType(ParamType);
++    for (unsigned I = 0; I != T->getNumParams(); ++I) {
++      AddQualType(T->getParamType(I));
++      ID.AddInteger(T->getExtParameterInfo(I).getOpaqueValue());
++    }
++
 +    auto ObjC3 = T->getObjC3FunctionEffects();
 +    ID.AddBoolean(ObjC3.Async);
 +    ID.AddBoolean(ObjC3.AsyncFrame);
 +    ID.AddInteger(static_cast<unsigned>(ObjC3.Throws));
 +    if (ObjC3.Throws == ObjC3ThrowsKind::Typed)
 +      AddQualType(ObjC3.ErrorType);
-+
+ 
      VisitFunctionType(T);
    }
- 
 diff --git a/clang/lib/AST/ObjC3MatchNodes.cpp b/clang/lib/AST/ObjC3MatchNodes.cpp
 new file mode 100644
 index 000000000..ee728c92d
@@ -6307,7 +6345,7 @@ index 7e72a8513..f96915a43 100644
  
  //===----------------------------------------------------------------------===//
 diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
-index e8fbffb9f..b4b981da0 100644
+index e8fbffb9f..04633b09e 100644
 --- a/clang/lib/AST/TypePrinter.cpp
 +++ b/clang/lib/AST/TypePrinter.cpp
 @@ -19,6 +19,7 @@
@@ -6367,7 +6405,15 @@ index e8fbffb9f..b4b981da0 100644
  }
  
  StringRef clang::getParameterABISpelling(ParameterABI ABI) {
-@@ -1115,6 +1144,27 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
+@@ -1028,6 +1057,7 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
+ 
+       auto EPI = T->getExtParameterInfo(i);
+       if (EPI.isConsumed()) OS << "__attribute__((ns_consumed)) ";
++      if (EPI.isCFConsumed()) OS << "__attribute__((cf_consumed)) ";
+       if (EPI.isNoEscape())
+         OS << "__attribute__((noescape)) ";
+       auto ABI = EPI.getABI();
+@@ -1115,6 +1145,27 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
      OS << "))";
    }
  
@@ -6395,7 +6441,7 @@ index e8fbffb9f..b4b981da0 100644
    if (T->hasCFIUncheckedCallee())
      OS << " __attribute__((cfi_unchecked_callee))";
  
-@@ -1228,8 +1278,6 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
+@@ -1228,8 +1279,6 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
      OS << " __attribute__((noreturn))";
    if (Info.getCmseNSCall())
      OS << " __attribute__((cmse_nonsecure_call))";
@@ -6404,7 +6450,7 @@ index e8fbffb9f..b4b981da0 100644
    if (Info.getRegParm())
      OS << " __attribute__((regparm ("
         << Info.getRegParm() << ")))";
-@@ -1246,6 +1294,8 @@ void TypePrinter::printFunctionNoProtoBefore(const FunctionNoProtoType *T,
+@@ -1246,6 +1295,8 @@ void TypePrinter::printFunctionNoProtoBefore(const FunctionNoProtoType *T,
    printBefore(T->getReturnType(), OS);
    if (!PrevPHIsEmpty.get())
      OS << '(';
@@ -6413,7 +6459,7 @@ index e8fbffb9f..b4b981da0 100644
  }
  
  void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
-@@ -1618,6 +1668,16 @@ void TypePrinter::printTagType(const TagType *T, raw_ostream &OS) {
+@@ -1618,6 +1669,16 @@ void TypePrinter::printTagType(const TagType *T, raw_ostream &OS) {
  }
  
  void TypePrinter::printRecordBefore(const RecordType *T, raw_ostream &OS) {
@@ -6430,7 +6476,7 @@ index e8fbffb9f..b4b981da0 100644
    // Print the preferred name if we have one for this type.
    if (Policy.UsePreferredNames) {
      for (const auto *PNA : T->getDecl()
-@@ -1787,7 +1847,7 @@ void TypePrinter::printTemplateSpecializationAfter(
+@@ -1787,7 +1848,7 @@ void TypePrinter::printTemplateSpecializationAfter(
                                              raw_ostream &OS) {}
  
  void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
@@ -6439,7 +6485,7 @@ index e8fbffb9f..b4b981da0 100644
      printBefore(T->getInnerType(), OS);
      OS << '(';
    } else
-@@ -1795,7 +1855,7 @@ void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
+@@ -1795,7 +1856,7 @@ void TypePrinter::printParenBefore(const ParenType *T, raw_ostream &OS) {
  }
  
  void TypePrinter::printParenAfter(const ParenType *T, raw_ostream &OS) {
@@ -6448,7 +6494,7 @@ index e8fbffb9f..b4b981da0 100644
      OS << ')';
      printAfter(T->getInnerType(), OS);
    } else
-@@ -1866,6 +1926,8 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
+@@ -1866,6 +1927,8 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
        T->getAttrKind() == attr::ObjCOwnership)
      return printBefore(T->getEquivalentType(), OS);
  
@@ -6457,7 +6503,7 @@ index e8fbffb9f..b4b981da0 100644
    if (T->getAttrKind() == attr::ObjCKindOf)
      OS << "__kindof ";
  
-@@ -1885,6 +1947,10 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
+@@ -1885,6 +1948,10 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
    else
      printBefore(T->getModifiedType(), OS);
  
@@ -6468,7 +6514,7 @@ index e8fbffb9f..b4b981da0 100644
    if (T->isMSTypeSpec()) {
      switch (T->getAttrKind()) {
      default: return;
-@@ -1932,7 +1998,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
+@@ -1932,7 +1999,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
  
    // Some attributes are printed as qualifiers before the type, so we have
    // nothing left to do.
@@ -6478,7 +6524,7 @@ index e8fbffb9f..b4b981da0 100644
        T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
      return;
  
-@@ -1940,10 +2007,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
+@@ -1940,10 +2008,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
    if (T->getAttrKind() == attr::ObjCInertUnsafeUnretained)
      return;
  
@@ -6491,7 +6537,7 @@ index e8fbffb9f..b4b981da0 100644
      return;
  
    if (T->getAttrKind() == attr::LifetimeBound) {
-@@ -2030,6 +2095,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
+@@ -2030,6 +2096,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
      // AttributedType nodes for them.
      break;
  
@@ -12408,7 +12454,7 @@ index 3c45806c4..b15ae4888 100644
      if (!OnlyDeduced)
        MarkUsedTemplateParameters(Ctx,
 diff --git a/clang/lib/Sema/SemaType.cpp b/clang/lib/Sema/SemaType.cpp
-index 3f0a7304d..8d2ee23e4 100644
+index 3f0a7304d..bb459283d 100644
 --- a/clang/lib/Sema/SemaType.cpp
 +++ b/clang/lib/Sema/SemaType.cpp
 @@ -2703,6 +2703,9 @@ QualType Sema::BuildFunctionType(QualType T,
@@ -12473,7 +12519,7 @@ index 3f0a7304d..8d2ee23e4 100644
  
          // Otherwise, we have a function with a parameter list that is
          // potentially variadic.
-@@ -5338,7 +5375,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+@@ -5338,11 +5375,19 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
              D.setInvalidType();
            }
  
@@ -12485,7 +12531,16 @@ index 3f0a7304d..8d2ee23e4 100644
              ExtParameterInfos[i] = ExtParameterInfos[i].withIsConsumed(true);
              HasAnyInterestingExtParameterInfos = true;
            }
-@@ -5430,6 +5470,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+ 
++          if (LangOpts.ObjC3 && Param->hasAttr<CFConsumedAttr>()) {
++            ExtParameterInfos[i] = ExtParameterInfos[i].withIsCFConsumed(true);
++            HasAnyInterestingExtParameterInfos = true;
++          }
++
+           if (auto attr = Param->getAttr<ParameterABIAttr>()) {
+             ExtParameterInfos[i] =
+               ExtParameterInfos[i].withABI(attr->getABI());
+@@ -5430,6 +5475,10 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
            EPI.TypeQuals.addAddressSpace(AS);
          }
          T = Context.getFunctionType(T, ParamTys, EPI);
@@ -12496,7 +12551,7 @@ index 3f0a7304d..8d2ee23e4 100644
        }
        break;
      }
-@@ -5757,6 +5801,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+@@ -5757,6 +5806,7 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
      }
    }
  
@@ -12504,7 +12559,7 @@ index 3f0a7304d..8d2ee23e4 100644
    assert(!T.isNull() && "T must not be null at the end of this function");
    if (!AreDeclaratorChunksValid)
      return Context.getTrivialTypeSourceInfo(T);
-@@ -6045,6 +6090,18 @@ namespace {
+@@ -6045,6 +6095,18 @@ namespace {
        Sema::GetTypeFromParser(DS.getRepAsType(), &RepTInfo);
        TL.copy(RepTInfo->getTypeLoc());
      }
@@ -12523,7 +12578,7 @@ index 3f0a7304d..8d2ee23e4 100644
      void VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc TL) {
        TypeSourceInfo *TInfo = nullptr;
        Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
-@@ -6305,6 +6362,10 @@ namespace {
+@@ -6305,6 +6367,10 @@ namespace {
          TL.setParam(tpi++, Param);
        }
        TL.setExceptionSpecRange(FTI.getExceptionSpecRange());
@@ -12534,7 +12589,7 @@ index 3f0a7304d..8d2ee23e4 100644
      }
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
-@@ -8108,9 +8169,10 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
+@@ -8108,9 +8174,10 @@ static bool handleFunctionTypeAttr(TypeProcessingState &state, ParsedAttr &attr,
              attr.getLoc(), unwrapped.get()->getReturnType()))
        return true;
  
@@ -37302,10 +37357,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..0d200547f
+index 000000000..9a11dc710
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2374 @@
+@@ -0,0 +1,2383 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37367,7 +37422,7 @@ index 000000000..0d200547f
 +  unsigned N = Index->getZExtValue();
 +  QualType OwnerType = Parameters[N]->getType();
 +  if (!(OwnerType->isPointerType() || OwnerType->isObjCObjectPointerType() ||
-+        OwnerType->isReferenceType()) ||
++        OwnerType->isReferenceType() || OwnerType->isBlockPointerType()) ||
 +      isObjC3BorrowedType(S.Context, OwnerType.getNonReferenceType())) {
 +    Reject("objc_returns_borrowed owner parameter must be an owning object, reference, or non-borrowed pointer");
 +    return;
@@ -37801,7 +37856,7 @@ index 000000000..0d200547f
 +    MightBorrow |= carriesBorrowedValue(Type) ||
 +                   Variable->hasAttr<NoEscapeAttr>();
 +    if ((Type->isPointerType() || Type->isObjCObjectPointerType() ||
-+         Type->isReferenceType() || Type->isArrayType()) && !isObjC3BorrowedType(Context, Type) &&
++         Type->isReferenceType() || Type->isArrayType() || Type->isBlockPointerType()) && !isObjC3BorrowedType(Context, Type) &&
 +        !OwnerRoots.count(Variable))
 +      OwnerRoots[Variable] = OwnerRoots.size();
 +    if (const auto *Record = Variable->getType()->getAs<RecordType>())
@@ -38565,10 +38620,23 @@ index 000000000..0d200547f
 +      State.SamePins.reset(Found->second);
 +    }
 +  }
++  const FunctionProtoType *callPrototype(const Expr *Invocation) const {
++    const auto *Call = dyn_cast<CallExpr>(Invocation);
++    if (!Call) return nullptr;
++    QualType Type = Call->getCallee()->getType();
++    if (Type->isPointerType() || Type->isBlockPointerType())
++      Type = Type->getPointeeType();
++    else if (Type->isSpecificPlaceholderType(BuiltinType::BoundMember)) {
++      const Expr *Bound = Call->getCallee()->IgnoreParens();
++      if (!isa<MemberExpr>(Bound) && !isa<BinaryOperator>(Bound)) return nullptr;
++      Type = Expr::findBoundMemberType(Bound);
++    }
++    return Type.isNull() ? nullptr : Type->getAs<FunctionProtoType>();
++  }
 +  bool observeOwnerConsumption(const Expr *Invocation, Facts &State) const {
-+    if (Actions.getLangOpts().ObjCAutoRefCount) return false;
++    const bool ARC = Actions.getLangOpts().ObjCAutoRefCount;
 +    Value Identity(OwnerRoots.size());
-+    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) {
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation); Message && !ARC) {
 +      const auto *Method = Message->getMethodDecl();
 +      if ((!Method || !Method->isClassMethod()) &&
 +          (Message->getMethodFamily() == OMF_release ||
@@ -38590,20 +38658,20 @@ index 000000000..0d200547f
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
 +    else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) Count = Message->getNumArgs();
 +    else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Invocation)) Count = Construction->getNumArgs();
-+    const FunctionProtoType *Prototype = nullptr;
-+    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) {
-+      QualType Type = Call->getCallee()->getType();
-+      if (Type->isPointerType() || Type->isBlockPointerType()) Type = Type->getPointeeType();
-+      Prototype = Type->getAs<FunctionProtoType>();
-+    }
++    const FunctionProtoType *Prototype = callPrototype(Invocation);
 +    for (unsigned I = 0; I != Count; ++I) {
 +      const unsigned Formal = formalIndex(Invocation, I);
-+      bool Consumed = Formal < Formals.size() &&
-+                      Formals[Formal]->hasAttr<NSConsumedAttr>() &&
-+                      Formals[Formal]->getType()->isObjCObjectPointerType();
-+      Consumed |= Prototype && Formal < Prototype->getNumParams() &&
-+                  Prototype->isParamConsumed(Formal) &&
-+                  Prototype->getParamType(Formal)->isObjCObjectPointerType();
++      bool Consumed = false;
++      if (Formal < Formals.size()) {
++        const auto *Parameter = Formals[Formal];
++        Consumed = Parameter->hasAttr<CFConsumedAttr>() ||
++            (!ARC && Parameter->hasAttr<NSConsumedAttr>() &&
++             Parameter->getType()->isObjCRetainableType());
++      }
++      if (Prototype && Formal < Prototype->getNumParams())
++        Consumed |= Prototype->getExtParameterInfo(Formal).isCFConsumed() ||
++            (!ARC && Prototype->isParamConsumed(Formal) &&
++             Prototype->getParamType(Formal)->isObjCRetainableType());
 +      if (Consumed) Identity |= evaluatedOwnerIdentity(argument(Invocation, I), State);
 +    }
 +    if (Identity.none()) return false;
@@ -38901,13 +38969,7 @@ index 000000000..0d200547f
 +    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(Callee))
 +      if (copyingBuiltin(Function))
 +        return true;
-+    const auto *Invocation = dyn_cast<CallExpr>(Call);
-+    if (!Invocation)
-+      return false;
-+    QualType Type = Invocation->getCallee()->getType();
-+    if (Type->isPointerType() || Type->isBlockPointerType())
-+      Type = Type->getPointeeType();
-+    if (const auto *Prototype = Type->getAs<FunctionProtoType>())
++    if (const auto *Prototype = callPrototype(Call))
 +      if (Index < Prototype->getNumParams())
 +        return Prototype->getExtParameterInfo(Index).isNoEscape() ||
 +               isObjC3BorrowedType(Context, Prototype->getParamType(Index).getNonReferenceType());
@@ -39612,7 +39674,7 @@ index 000000000..0d200547f
 +        Self(Self, Function(F->getReturnType()), true)) return true;
 +    if (const auto *P = dyn_cast<FunctionProtoType>(F))
 +      for (unsigned I = 0; I != P->getNumParams(); ++I)
-+        if (P->isParamConsumed(I) ||
++        if (P->isParamConsumed(I) || P->getExtParameterInfo(I).isCFConsumed() ||
 +            Self(Self, Function(P->getParamType(I)), true) ||
 +            (Permissions && (P->getExtParameterInfo(I).isNoEscape() ||
 +              isObjC3BorrowedType(S.Context, P->getParamType(I).getNonReferenceType()))))
@@ -39642,7 +39704,9 @@ index 000000000..0d200547f
 +          isObjC3BorrowedType(S.Context, PA->getParamType(I).getNonReferenceType()));
 +      const bool NoEscapeB = HasB && (PB->getExtParameterInfo(I).isNoEscape() ||
 +          isObjC3BorrowedType(S.Context, PB->getParamType(I).getNonReferenceType()));
-+      if (ConsumedA != ConsumedB ||
++      const bool ForeignA = HasA && PA->getExtParameterInfo(I).isCFConsumed();
++      const bool ForeignB = HasB && PB->getExtParameterInfo(I).isCFConsumed();
++      if (ConsumedA != ConsumedB || ForeignA != ForeignB ||
 +          (Nested ? NoEscapeA != NoEscapeB : NoEscapeB && !NoEscapeA) ||
 +          Self(Self, HasA ? Function(PA->getParamType(I)) : nullptr,
 +                     HasB ? Function(PB->getParamType(I)) : nullptr, true))
@@ -44196,3 +44260,159 @@ index 000000000..e2c26db2f
 +typedef id (__attribute__((ns_returns_retained)) *(*HigherFactory)(void))(void);
 +struct FactoryOwner {};
 +using RetainedMember = id (__attribute__((ns_returns_retained)) FactoryOwner::*)(void);
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-foreign-consumption.h b/clang/test/ObjC3/Sema/Inputs/borrowed-foreign-consumption.h
+new file mode 100644
+index 000000000..fcba7bbdd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-foreign-consumption.h
+@@ -0,0 +1,26 @@
++typedef struct ForeignOwner *ForeignRef;
++typedef borrowed const char *ForeignBytes;
++ForeignBytes foreign_bytes(ForeignRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void foreign_use(const char *pointer __attribute__((noescape)));
++void foreign_consume(ForeignRef owner __attribute__((cf_consumed)), int unused);
++void foreign_pair(ForeignRef owner __attribute__((cf_consumed)), const char *pointer __attribute__((noescape)));
++typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)), int unused);
++typedef void (^ForeignBlockCallback)(ForeignRef owner __attribute__((cf_consumed)), int unused);
++typedef void (*ForeignPlain)(ForeignRef owner, int unused);
++typedef void (*ForeignNested)(ForeignCallback callback);
++typedef void (*ForeignNestedPlain)(ForeignPlain callback);
++typedef void (^BorrowOwnerBlock)(void);
++ForeignBytes block_bytes(BorrowOwnerBlock owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void consume_block_owner(BorrowOwnerBlock owner __attribute__((ns_consumed)));
++#ifdef __cplusplus
++struct ForeignSink { ForeignSink(ForeignRef owner __attribute__((cf_consumed))); };
++struct ForeignCaller { void operator()(ForeignRef owner __attribute__((cf_consumed))); };
++typedef void (ForeignCaller::*ForeignMember)(ForeignRef owner __attribute__((cf_consumed)));
++typedef void (ForeignCaller::*ObjectMember)(id owner __attribute__((ns_consumed)));
++typedef void (ForeignCaller::*BorrowMember)(const char *pointer __attribute__((noescape)));
++ForeignBytes object_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++#endif
++
++__attribute__((objc_root_class)) @interface ForeignReceiver
++- (void)consumeForeign:(ForeignRef __attribute__((cf_consumed)))owner;
++@end
+diff --git a/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m b/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m
+new file mode 100644
+index 000000000..7d21864bb
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-foreign-consumption.m
+@@ -0,0 +1,118 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-foreign-consumption.h -o %t-c.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-c.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-foreign-consumption.h -o %t-c-arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-c-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-foreign-consumption.h -o %t-cxx.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-cxx.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-foreign-consumption.h -o %t-cxx-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-cxx-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-foreign-consumption.h"
++#endif
++void direct_foreign(ForeignRef owner) {
++  const char *pointer = foreign_bytes(owner);
++  foreign_consume(owner,0);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++  foreign_use(foreign_bytes(owner)); // expected-error {{after its owner lifetime ended}}
++}
++void alias_foreign(ForeignRef owner) {
++  ForeignRef alias=owner;
++  const char *pointer=foreign_bytes(alias);
++  foreign_consume(owner,0);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void indirect_foreign(ForeignRef owner, ForeignCallback callback) {
++  const char *pointer=foreign_bytes(owner);
++  callback(owner,0);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void block_foreign(ForeignRef owner, ForeignBlockCallback callback) {
++  const char *pointer=foreign_bytes(owner);
++  callback(owner,0);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void conditional_foreign(ForeignRef owner,int condition) {
++  const char *pointer=foreign_bytes(owner);
++  if(condition) foreign_consume(owner,0);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void overlap_foreign(ForeignRef owner) {
++  const char *pointer=foreign_bytes(owner);
++  foreign_pair(owner,pointer); // expected-error {{borrowed argument overlapping a consumed owner claim}}
++}
++void replaced_foreign(ForeignRef owner,ForeignRef replacement) {
++  foreign_consume(owner,0);
++  owner=replacement;
++  foreign_use(foreign_bytes(owner));
++}
++void rejected_contracts(ForeignCallback callback,ForeignPlain plain,
++                        ForeignNested nested,void *opaque) {
++  (void)(ForeignPlain)callback; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(ForeignCallback)plain; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(ForeignNestedPlain)nested; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(void *)callback; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(ForeignCallback)opaque; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++}
++ForeignPlain erased_foreign = foreign_consume; // c-error {{incompatible function pointer types}} cxx-error {{cannot initialize}}
++void consumed_block_owner(BorrowOwnerBlock owner) {
++  const char *pointer=block_bytes(owner);
++  consume_block_owner(owner);
++#if __has_feature(objc_arc)
++  foreign_use(pointer);
++#else
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++#endif
++}
++void pinned_block_owner(BorrowOwnerBlock owner) { // expected-error {{control flow whose borrowed owner lifetime cannot be proved}}
++  keepAlive(owner);
++  const char *pointer=block_bytes(owner);
++  consume_block_owner(owner);
++  foreign_use(pointer);
++}
++#ifdef __cplusplus
++void constructor_foreign(ForeignRef owner) {
++  const char *pointer=foreign_bytes(owner);
++  ForeignSink sink(owner);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void operator_foreign(ForeignRef owner) {
++  const char *pointer=foreign_bytes(owner);
++  ForeignCaller{}(owner);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++
++#ifdef __cplusplus
++void member_foreign(ForeignRef owner,ForeignCaller &receiver,ForeignMember member) {
++  const char *pointer=foreign_bytes(owner);
++  (receiver.*member)(owner);
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void member_object(id owner,ForeignCaller &receiver,ObjectMember member) {
++  const char *pointer=object_bytes(owner);
++  (receiver.*member)(owner);
++#if __has_feature(objc_arc)
++  foreign_use(pointer);
++#else
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++#endif
++}
++void member_noescape(ForeignRef owner,ForeignCaller &receiver,BorrowMember member) {
++  (receiver.*member)(foreign_bytes(owner));
++}
++#endif
++
++void message_foreign(ForeignReceiver *_Nonnull receiver,ForeignRef owner) {
++  const char *pointer=foreign_bytes(owner);
++  [receiver consumeForeign:owner];
++  foreign_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
++
++void foreign_lost_contract(ForeignRef owner __attribute__((cf_consumed))); // expected-note {{previous declaration is here}}
++void foreign_lost_contract(ForeignRef owner) {} // expected-error {{conflicting types}}

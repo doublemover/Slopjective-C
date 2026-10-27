@@ -161,6 +161,15 @@ def check_cpp_metadata(metadata):
     if ';sdk-runtime-declarations:v1;' not in names.get(
             'native_published_checkpoint', {}).get('canonical_type_identity', ''):
         raise ValueError('published runtime constant lost its contract')
+    for name, contract in (
+            ('NativeForeignConsumer', ':cf-consumed'),
+            ('native_foreign_consume', ':cf-consumed'),
+            ('native_foreign_forward', ':cf-consumed'),
+            ('NativeRetainedFactory', ':ns-returns-retained'),
+            ('native_foreign_borrow', 'returns-borrowed')):
+        declaration = names.get(name, {})
+        if contract not in declaration.get('effects', {}).get('ownership_identity', ''):
+            raise ValueError('source-free package lost callable ownership: ' + name)
     scope = names.get('native_module_scoped', {})
     scope_effects = scope.get('effects', {})
     if (not has_async(scope) or

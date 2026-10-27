@@ -28861,11 +28861,11 @@ index 000000000..6d9ab5d40
 +// CHECK-DAG: call i32 @objc3_task_hop
 diff --git a/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
 new file mode 100644
-index 000000000..40825b72b
+index 000000000..e7cd024fe
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
-@@ -0,0 +1,30 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
 +void consume_object(id object __attribute__((ns_consumed)));
 +typedef void (*ConsumedCallback)(id object __attribute__((ns_consumed)));
 +void forward_object(id object) {consume_object(object);}
@@ -28893,5 +28893,41 @@ index 000000000..40825b72b
 +// CHECK-NOT: @objc_release
 +// CHECK-LABEL: define{{.*}} ptr @forward_created(
 +// CHECK: call ptr @create_object()
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++
++typedef void (^ConsumedOwnerBlock)(void);
++void consume_owner_block(ConsumedOwnerBlock block __attribute__((ns_consumed)));
++void forward_owner_block(ConsumedOwnerBlock block) {consume_owner_block(block);}
++// CHECK-LABEL: define{{.*}} void @forward_owner_block(
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-NOT: @_Block_copy
++// CHECK: call void @consume_owner_block(
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-NOT: @_Block_copy
+diff --git a/clang/test/ObjC3/CodeGen/foreign-consumed-call-abi.m b/clang/test/ObjC3/CodeGen/foreign-consumed-call-abi.m
+new file mode 100644
+index 000000000..5f8aa6c1a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/foreign-consumed-call-abi.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++typedef struct ForeignOwner *ForeignRef;
++void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));
++typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));
++void forward_foreign(ForeignRef owner) {foreign_consume(owner);}
++void forward_foreign_callback(ForeignCallback callback,ForeignRef owner) {callback(owner);}
++// Foreign consumption metadata must never select ARC object transfer lowering.
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-LABEL: define{{.*}} void @forward_foreign(
++// CHECK: call void @foreign_consume(
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-LABEL: define{{.*}} void @forward_foreign_callback(
++// CHECK: call void %{{.*}}(ptr
 +// CHECK-NOT: @objc_retain
 +// CHECK-NOT: @objc_release
