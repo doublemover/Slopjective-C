@@ -194,6 +194,12 @@ def check_cpp_metadata(metadata):
             raise ValueError('C++ package lost nested type identity: '+name)
     if ';access=private' not in names.get('NativeFamily::Hidden',{}).get('canonical_type_identity',''):
         raise ValueError('C++ package lost private nested access')
+    if 'objc3.cxx-using.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its using capability')
+    if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
+        raise ValueError('C++ package lost its using-directive')
+    if ';cxx-using:v1;' not in names.get('NativeInherited',{}).get('canonical_type_identity',''):
+        raise ValueError('C++ package lost member using/inherited constructor identity')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
         declaration = names.get(name, {})
         if (not has_async(declaration) or

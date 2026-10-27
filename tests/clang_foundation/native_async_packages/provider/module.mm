@@ -441,3 +441,24 @@ NativeFamily::Result native_module_nested(NativeFamily::Result value)
     __objc3_async_frame {
   __objc3_await native_module_borrow_leaf(); return value;
 }
+
+namespace NativeUsingApi {
+  struct NativeUsingItem { int n; };
+  int using_calculate(NativeUsingItem);
+  int using_calculate(int);
+}
+namespace NativeUsing {
+  using NativeUsingApi::NativeUsingItem;
+  using NativeUsingApi::using_calculate;
+}
+using NativeUsing::using_calculate;
+using namespace NativeUsingApi;
+int NativeUsingApi::using_calculate(NativeUsingItem value) { return value.n+2; }
+int NativeUsingApi::using_calculate(int value) { return value+2; }
+struct NativeInherited : NativeClassValue {
+  using NativeClassValue::NativeClassValue;
+  using NativeClassValue::number;
+  using NativeClassValue::asyncNumber;
+};
+
+using enum NativeFamily::Kind;

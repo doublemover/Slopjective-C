@@ -97,6 +97,15 @@ inline bool HasCxxNestedTypeIdentity(const InterfaceDeclarationIdentity &d) {
          std::string::npos;
 }
 
+inline constexpr const char *kCxxUsingSemantic="objc3.cxx-using.v1";
+inline bool HasCxxUsingIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-using:v1;")!=std::string::npos;
+}
+inline bool IsCxxOverloadDeclaration(const InterfaceDeclarationIdentity &d) {
+  return d.kind=="Function" || IsCxxMemberDeclarationKind(d.kind) ||
+         (d.kind=="Using" && d.canonical_type_identity.find(";functions=1;")!=std::string::npos);
+}
+
 // Compare the complete declaration contract, including every modeled effect.
 [[nodiscard]] bool
 SameInterfaceDeclarationIdentity(const InterfaceDeclarationIdentity &left,

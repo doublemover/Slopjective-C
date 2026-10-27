@@ -841,6 +841,42 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxUsingDeclarations() {
+  const std::vector<llvm::StringRef> semantics={
+      "objc3.cxx-data-interfaces.v1","objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1","objc3.cxx-class-structure.v1",
+      "objc3.cxx-namespaces.v1","objc3.cxx-using.v1"};
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    const std::vector<std::string> args={"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"};
+    auto emit=[&](const std::string &source) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,"using.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.using","test");
+    };
+    const std::string source="namespace A { struct Item { int n; }; int call(Item); int call(int); } "
+        "namespace C { long call(long); } namespace B { using A::Item; using A::call; using C::call; } "
+        "using B::call; using namespace A; enum class Choice { Answer=42 }; using enum Choice; "
+        "struct Base { Base(int); protected: int get() const; }; "
+        "struct Derived:Base { using Base::Base; using Base::get; };";
+    auto emitted=emit(source);
+    for(const auto &d:emitted.diagnostics) std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+    assert(emitted.success);
+    auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,semantics);
+    assert(decoded);
+    assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &d) { return d.kind=="UsingDirective"; }));
+    auto round=emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes==emitted.source_bytes &&
+           round.identity.semantic_fingerprint==emitted.identity.semantic_fingerprint);
+    auto a=emit("namespace A { int f(); } namespace B { int f(); } using A::f;");
+    auto b=emit("namespace A { int f(); } namespace B { int f(); } using B::f;");
+    assert(a.success && b.success && a.identity.semantic_fingerprint!=b.identity.semantic_fingerprint);
+    std::erase(decoded->required_semantics,"objc3.cxx-using.v1");
+    decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
+    assert(!erased);llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxNestedTypes() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1268,6 +1304,7 @@ int main() {
   TestCxxClassDispatch();
   TestCxxNamedNamespaces();
   TestCxxNestedTypes();
+  TestCxxUsingDeclarations();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

@@ -60,6 +60,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxClassDispatchSemantic,
     kCxxNamespaceSemantic,
     kCxxNestedTypeSemantic,
+    kCxxUsingSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -144,7 +145,7 @@ private:
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
-  if (!decl->getIdentifier()) return false;
+  if (!decl->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(decl)) return false;
   const auto *context = decl->getDeclContext();
   while (context && context->isTransparentContext()) context = context->getParent();
   return context && context->isTranslationUnit();
@@ -168,7 +169,7 @@ bool CheckExportCollisions(
   for (const auto &decl : declarations) {
     if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
         decl.kind == "ObjCIvar" || decl.kind == "Field" ||
-        decl.kind == "ObjCCategory")
+        (decl.kind == "ObjCCategory" || decl.kind == "UsingDirective"))
       continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
@@ -184,9 +185,7 @@ bool CheckExportCollisions(
         continue; // The same canonical declaration can be re-exported.
       }
       if (allow_function_overloads && prior.stable_id != decl.stable_id &&
-          ((prior.kind == "Function" && decl.kind == "Function") ||
-           (IsCxxMemberDeclarationKind(prior.kind) &&
-            IsCxxMemberDeclarationKind(decl.kind))))
+          (IsCxxOverloadDeclaration(prior) && IsCxxOverloadDeclaration(decl)))
         continue;
       Add(diagnostics, "O3IFC132",
           "multiple imported modules provide incompatible declarations with "
@@ -707,7 +706,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   // lexical declarations for ABI/type references and control namespace lookup.
   // A later direct import or SPI grant can promote a previously hidden member.
   for (auto *named : all_declarations.Declarations) {
-    if (named->isImplicit() || !named->getIdentifier()) continue;
+    if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();
     if (!scope || !scope->isNamespace()) continue;

@@ -3,6 +3,7 @@
 #include "clang_foundation/interface_source_import_bridge.h"
 
 #include <algorithm>
+#include <functional>
 #include <utility>
 
 #include "clang/AST/ASTImporterSharedState.h"
@@ -205,7 +206,7 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         continue;
       if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
           decl.kind == "ObjCIvar" || decl.kind == "Field" ||
-          decl.kind == "ObjCCategory")
+          (decl.kind == "ObjCCategory" || decl.kind == "UsingDirective"))
         continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
@@ -220,9 +221,7 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
           continue;
         if (target_.allow_function_overloads &&
             old.stable_id != decl.stable_id &&
-            ((old.kind == "Function" && decl.kind == "Function") ||
-             (IsCxxMemberDeclarationKind(old.kind) &&
-              IsCxxMemberDeclarationKind(decl.kind))))
+            (IsCxxOverloadDeclaration(old) && IsCxxOverloadDeclaration(decl)))
           continue;
         reason = "source import '" + importing_module.str() +
             "' conflicts with visible declaration '" + decl.qualified_name +
@@ -301,18 +300,39 @@ void InterfaceSourceImportBridge::AppendModuleDeclarations(
     std::vector<clang::NamedDecl *> &out) const {
   auto found = declarations_.find(canonical_name.str());
   if (found == declarations_.end()) return;
-  for (auto *declaration : found->second) {
+  std::set<const clang::NamespaceDecl *> visited_namespaces;
+  std::function<void(clang::NamedDecl *)> append;
+  std::function<void(clang::NamespaceDecl *)> append_namespace;
+  append_namespace=[&](clang::NamespaceDecl *space) {
+    space=llvm::cast<clang::NamespaceDecl>(space->getPrimaryContext());
+    if(!visited_namespaces.insert(space).second) return;
+    auto &name=space->getASTContext().Idents.get(identifier);
+    for(auto *declaration:space->lookup(&name)) append(declaration);
+    for(auto *directive:space->using_directives())
+      append_namespace(directive->getNominatedNamespace());
+    for(auto *part:space->redecls())
+      for(auto *member:part->decls())
+        if(auto *child=llvm::dyn_cast<clang::NamespaceDecl>(member);child && child->isInline())
+          append_namespace(child);
+  };
+  append=[&](clang::NamedDecl *declaration) {
+    if(auto *using_decl=llvm::dyn_cast_or_null<clang::BaseUsingDecl>(declaration)) {
+      for(auto *shadow:using_decl->shadows()) append(shadow->getTargetDecl()->getUnderlyingDecl());
+      return;
+    }
+    if(auto *directive=llvm::dyn_cast_or_null<clang::UsingDirectiveDecl>(declaration)) {
+      append_namespace(directive->getNominatedNamespace()); return;
+    }
+    if(auto *shadow=llvm::dyn_cast_or_null<clang::UsingShadowDecl>(declaration))
+      declaration=shadow->getTargetDecl()->getUnderlyingDecl();
     if (!declaration || !declaration->getIdentifier() ||
-        declaration->getIdentifier()->getName() != identifier)
-      continue;
-    if (identifier_namespace &&
-        !(declaration->getIdentifierNamespace() & identifier_namespace))
-      continue;
-    if (std::none_of(out.begin(), out.end(), [&](clang::NamedDecl *prior) {
-          return prior->getCanonicalDecl() == declaration->getCanonicalDecl();
-        }))
-      out.push_back(declaration);
-  }
+        declaration->getIdentifier()->getName()!=identifier) return;
+    if(identifier_namespace && !(declaration->getIdentifierNamespace()&identifier_namespace)) return;
+    if(std::none_of(out.begin(),out.end(),[&](clang::NamedDecl *prior) {
+      return prior->getCanonicalDecl()==declaration->getCanonicalDecl();
+    })) out.push_back(declaration);
+  };
+  for(auto *declaration:found->second) append(declaration);
 }
 
 std::vector<clang::NamedDecl *> InterfaceSourceImportBridge::LookupUnqualified(

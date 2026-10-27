@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ using declarations and namespace lookup
+
+The [2.13.0 source milestone](linux_cxx_using.md) adds namespace/member using
+declarations, overload introductions, inherited constructors and namespace
+using-directive lookup. Explicit target identities preserve export/dependency and
+SPI boundaries. SDK/archive work and broad validation remain deferred.
+
 ## C++ nested types and namespace visibility
 
 The [2.12.0 source milestone](linux_cxx_nested_types.md) adds nested named

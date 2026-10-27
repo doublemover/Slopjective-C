@@ -368,6 +368,21 @@ int main() {
     }
     if(stats.live || !stats.destroyed) return 59;
   }
+  {
+    if(static_cast<unsigned>(Answer)!=42) return 64;
+    NativeUsingItem value{40};
+    NativeUsing::NativeUsingItem alias{40};
+    if(using_calculate(value)!=42 || using_calculate(40)!=42 ||
+       NativeUsing::using_calculate(alias)!=42) return 60;
+    NativeClassStats stats{};
+    {
+      NativeInherited inherited(&stats,42);
+      if(inherited.number()!=42) return 61;
+      auto frame=__objc3_async_from_frame<int>(inherited.asyncNumber()).start(executor);
+      if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || frame.result()!=42) return 62;
+    }
+    if(stats.live || !stats.destroyed) return 63;
+  }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

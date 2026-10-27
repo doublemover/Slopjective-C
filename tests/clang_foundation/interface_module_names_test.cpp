@@ -65,6 +65,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
       struct Point { int n; };
       int increment(Point);
     }
+    namespace NamedUsing { using NamedScope::Point; using NamedScope::increment; }
     class NamedFamily {
       struct Hidden { int n; };
     public:
@@ -172,7 +173,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     r.interface_exports.insert(
         r.interface_exports.end(),
         {"NamedValue", "NamedPrefix", "NamedDerived", "NamedDefaults",
-         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope", "NamedFamily"});
+         "NamedRoot", "NamedLeft", "NamedRight", "NamedDiamond", "NamedScope", "NamedFamily", "NamedUsing"});
   }
 
   if (r.objc3)
@@ -203,6 +204,7 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.cxx-class-dispatch.v1",
     "objc3.cxx-namespaces.v1",
     "objc3.cxx-nested-types.v1",
+    "objc3.cxx-using.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -342,7 +344,8 @@ void Check(const fs::path &root, BaseLanguage language,
         "NamedRight *right=dynamic_cast<NamedRight*>(r); "
         "return r->get()+right->right()+(r->self()==r); }"
         " int namespace_client() { return NamedScope::increment(NamedScope::Point{41}); }"
-        " int nested_client() { NamedFamily::Result value{42}; return value.get(); }";
+        " int nested_client() { NamedFamily::Result value{42}; return value.get(); }"
+        " int using_client() { NamedUsing::Point p{41}; return NamedUsing::increment(p); }";
   InterfaceImportInput imported;
   imported.source_path = request.interface_output_path;
   imported.locked_identity = original;

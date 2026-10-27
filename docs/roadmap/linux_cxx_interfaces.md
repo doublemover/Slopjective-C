@@ -51,6 +51,9 @@ The [2.12.0 source milestone](linux_cxx_nested_types.md) additionally admits
 nested named class, enum and alias declarations under `objc3.cxx-nested-types.v1`
 and preserves namespace SPI/private-dependency lookup boundaries.
 
+The [2.13.0 source milestone](linux_cxx_using.md) adds using declarations,
+inherited constructors and using-directives under `objc3.cxx-using.v1`.
+
 The [2.8.1 correction](linux_cxx_deleted_members.md) includes deleted ordinary
 aggregate methods in the lifecycle capability and canonical member identity.
 Changing an ordinary method to a deleted declaration invalidates the module

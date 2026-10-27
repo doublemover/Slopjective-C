@@ -59,7 +59,13 @@
     "NativeOther",
     "NativeAlias",
     "NativeFamily",
-    "native_module_nested"
+    "native_module_nested",
+    "NativeUsingApi",
+    "NativeUsing",
+    "using_calculate",
+    "@using:NativeUsingApi",
+    "NativeInherited",
+    "@using-enum:NativeFamily::Kind"
   ],
   "dependencies": []
 }

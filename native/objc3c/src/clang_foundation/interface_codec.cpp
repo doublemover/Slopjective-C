@@ -370,6 +370,10 @@ llvm::Error ValidateForEncoding(
                 kCxxNestedTypeSemantic) != sidecar.required_semantics.end();
   if (has_nested != nested_capability)
     return Invalid("C++ nested type identity and required capability must agree");
+  const bool has_using=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUsingIdentity);
+  const bool using_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+                                     kCxxUsingSemantic)!=sidecar.required_semantics.end();
+  if(has_using!=using_capability) return Invalid("C++ using identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

@@ -64,6 +64,18 @@ bool IsInMainFile(const clang::ASTContext &context,
 }
 
 std::string InterfaceQualifiedName(const clang::NamedDecl *declaration) {
+  if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration)) {
+    std::string owner;
+    if(const auto *parent=llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext()))
+      owner=InterfaceQualifiedName(parent)+"::";
+    return owner+"@using-enum:"+InterfaceQualifiedName(using_enum->getEnumDecl());
+  }
+  if (const auto *directive=llvm::dyn_cast<clang::UsingDirectiveDecl>(declaration)) {
+    std::string owner;
+    if (const auto *parent=llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext()))
+      owner=InterfaceQualifiedName(parent)+"::";
+    return owner+"@using:"+InterfaceQualifiedName(directive->getNominatedNamespaceAsWritten());
+  }
   clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());
   policy.SuppressInlineNamespace = static_cast<unsigned>(
       clang::PrintingPolicy::SuppressInlineNamespaceMode::None);
@@ -131,7 +143,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
   if (IsTopLevel(declaration)) {
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
       return !space->isAnonymousNamespace();
-    if (llvm::isa<clang::NamespaceAliasDecl>(declaration))
+    if (llvm::isa<clang::NamespaceAliasDecl,clang::BaseUsingDecl,clang::UsingDirectiveDecl>(declaration))
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
       return !llvm::isa<clang::CXXMethodDecl>(function) &&
@@ -153,6 +165,9 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
   }
 
+  if (llvm::isa<clang::BaseUsingDecl>(declaration))
+    if (const auto *owner=llvm::dyn_cast<clang::CXXRecordDecl>(declaration->getDeclContext()))
+      return IsPublishedType(owner);
   if (llvm::isa<clang::TypeDecl>(declaration) &&
       llvm::isa<clang::CXXRecordDecl>(declaration->getDeclContext()))
     return IsPublishedType(declaration);
@@ -349,6 +364,13 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
     // Unlike fields and virtual slots, nested type declaration order is not ABI.
     if (!nested.empty()) out << ";cxx-nested-types:v1;";
     for (const auto &type : nested) out << type;
+    std::set<std::string> using_members;
+    for (const auto *member:cxx->decls())
+      if(const auto *using_decl=llvm::dyn_cast<clang::BaseUsingDecl>(member))
+        using_members.insert(ReadInterfaceDeclarationStableId(using_decl)+
+                             ":access="+CxxAccessName(using_decl->getAccess()));
+    if(!using_members.empty()) out << ";cxx-using:v1;";
+    for(const auto &member:using_members) out << "using=" << member << ';';
   }
   out.flush();
   return text;
@@ -438,6 +460,28 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
            std::to_string(static_cast<unsigned>(property->getPropertyAttributes()));
+  if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration))
+    return "using-enum{target="+ReadInterfaceDeclarationStableId(using_enum->getEnumDecl())+
+           ";access="+CxxAccessName(using_enum->getAccess())+"};cxx-using:v1;";
+  if (const auto *using_decl=llvm::dyn_cast<clang::UsingDecl>(declaration)) {
+    std::set<std::string> targets;
+    bool functions=true;
+    for (const auto *shadow:using_decl->shadows()) {
+      const auto *target=shadow->getTargetDecl()->getUnderlyingDecl();
+      functions &= llvm::isa<clang::FunctionDecl>(target);
+      targets.insert(ReadInterfaceDeclarationStableId(target));
+    }
+    std::string value="using{typename="+std::to_string(using_decl->hasTypename())+
+        ";access="+CxxAccessName(using_decl->getAccess())+"};cxx-using:v1;functions="+
+        std::to_string(functions)+";";
+    for(const auto &target:targets) value+="target="+target+";";
+    return value;
+  }
+  if (const auto *directive=llvm::dyn_cast<clang::UsingDirectiveDecl>(declaration))
+    return "using-namespace{target="+
+        ReadInterfaceDeclarationStableId(directive->getNominatedNamespaceAsWritten())+
+        ";namespace="+ReadInterfaceDeclarationStableId(directive->getNominatedNamespace())+
+        "};cxx-using:v1;";
   if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(declaration))
     return "namespace-alias{target=" +
            ReadInterfaceDeclarationStableId(alias->getAliasedNamespace()) +
@@ -777,6 +821,18 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  auto check_reference=[&](const clang::NamedDecl *target) {
+    visitor.CheckVisibility(target);
+    if (!IsInMainFile(context,target->getLocation(),source_root) && !visitor.IsResolved(target))
+      AddDiagnostic(result,"O3IFC112","using target has no resolved interface identity",
+                    target->getQualifiedNameAsString());
+  };
+  if(const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration))
+    check_reference(using_enum->getEnumDecl());
+  if(const auto *using_decl=llvm::dyn_cast<clang::UsingDecl>(declaration))
+    for(const auto *shadow:using_decl->shadows()) check_reference(shadow->getTargetDecl());
+  if(const auto *directive=llvm::dyn_cast<clang::UsingDirectiveDecl>(declaration))
+    check_reference(directive->getNominatedNamespaceAsWritten());
   if (const auto *alias = llvm::dyn_cast<clang::NamespaceAliasDecl>(declaration)) {
     const auto *target = alias->getAliasedNamespace();
     visitor.CheckVisibility(target);
@@ -849,6 +905,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         supported &= !field->hasInClassInitializer();
         continue;
       }
+      if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
           supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl());
@@ -879,9 +936,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       supported &= IsInClassDefaultedSpecialMember(method);
   if (IsTopLevel(declaration)) {
     supported &=
-        !llvm::isa<clang::TemplateDecl, clang::UsingDecl,
-                   clang::UsingDirectiveDecl>(
-            declaration);
+        !llvm::isa<clang::TemplateDecl>(declaration);
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
       for (const auto *attribute : space->attrs())
         supported &= attribute->isImplicit();
@@ -1387,6 +1442,16 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
+  if(const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration)) {
+    const auto *owner=llvm::dyn_cast<clang::NamedDecl>(using_enum->getDeclContext());
+    return "c:@UsingEnum@"+(owner?ReadInterfaceDeclarationStableId(owner):std::string("TU"))+
+           "@"+ReadInterfaceDeclarationStableId(using_enum->getEnumDecl());
+  }
+  if(const auto *directive=llvm::dyn_cast<clang::UsingDirectiveDecl>(declaration)) {
+    const auto *owner=llvm::dyn_cast<clang::NamedDecl>(directive->getDeclContext());
+    return "c:@UDirective@"+(owner?ReadInterfaceDeclarationStableId(owner):std::string("TU"))+
+           "@"+ReadInterfaceDeclarationStableId(directive->getNominatedNamespaceAsWritten());
+  }
   llvm::SmallString<128> usr;
   if (clang::index::generateUSRForDecl(declaration, usr)) return {};
   // Native USRs encode filenames for C typedefs because those names have no
@@ -1395,6 +1460,14 @@ std::string ReadInterfaceDeclarationStableId(
   if (llvm::isa<clang::TypedefNameDecl>(declaration) &&
       declaration->getDeclContext()->getRedeclContext()->isTranslationUnit())
     return "c:@T@" + declaration->getNameAsString();
+  if(const auto *using_decl=llvm::dyn_cast<clang::UsingDecl>(declaration)) {
+    std::set<std::string> targets;
+    for(const auto *shadow:using_decl->shadows())
+      targets.insert(ReadInterfaceDeclarationStableId(shadow->getTargetDecl()->getUnderlyingDecl()));
+    std::string key;
+    for(const auto &target:targets) key+=std::to_string(target.size())+":"+target;
+    return usr.str().str()+"@targets@"+ComputeInterfaceSourceSha256(key);
+  }
   return usr.str().str();
 }
 
@@ -1637,6 +1710,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (HasCxxUsingIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxUsingSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -1697,6 +1772,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       kCxxClassDispatchSemantic,
       kCxxNamespaceSemantic,
     kCxxNestedTypeSemantic,
+    kCxxUsingSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1795,6 +1871,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClassDispatchSemantic,
     kCxxNamespaceSemantic,
     kCxxNestedTypeSemantic,
+    kCxxUsingSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
