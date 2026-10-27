@@ -36,3 +36,8 @@ indirect calls, Block callbacks, consumed receivers, C++ constructors/operators,
 independent pins, overlapping arguments, evaluated identities, contract erasure
 and source-free consumed callback imports. SDK 2.33 remains the accepted
 installation while development continues.
+
+The [focused receipt](../support/linux_borrowed_consumed_owners_progress.json)
+records 383 compiler regressions, 182 native unit tests, all 33 frontend suites
+and 14 tooling tests. Three platform compiler cases remain unsupported. The
+combined runtime/sanitizer batch and coordinated SDK delivery remain deferred.
