@@ -104,7 +104,7 @@ Remaining boundaries to keep explicit while development continues:
   facts, and union field reads conservatively preserve overlapping loans.
 - Owner-alias replacement can conservatively expire a loan even if another
   independent strong alias keeps the same object alive. General MRC release
-  effects, C++ lambdas, arbitrary constructor/operator effects, dynamic
+  effects, mutable/reference/generic lambda precision, arbitrary constructor/operator effects, dynamic
   allocation provenance, and callback invocation effects need more work.
 - Indirect borrowed-result calls preserve their type obligation but cannot
   reconstruct a declaration-only owner-index relationship. No whole-program
@@ -115,3 +115,8 @@ lifetime endpoints follow explicit actions and deferred cleanup for ordinary ARC
 strong/weak object slots; nonthrowing release endpoints no longer obscure owner
 expiry. The maintained facade regressions exercise both expired owners and
 independent lifetime pins. The conservative boundaries above remain deliberate.
+
+The [System 2.1.0 source span](linux_borrowed_cpp_captures.md) extends the
+mandatory pass to qualified C++ lambda value captures and their nested bodies.
+It rejects hidden alias escapes, future reference/address mutations and
+persistent capture storage, with independent ARC capture-owner snapshots.

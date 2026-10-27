@@ -35,6 +35,15 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Borrowed C++ lambda captures
+
+The [System 2.1.0 source span](linux_borrowed_cpp_captures.md) preserves borrowed
+provenance through qualified C++ lambda value captures and nested bodies.
+Local/copy/noescape calls retain frozen aliases and ARC owner snapshots; hidden
+escapes, expired calls, persistent capture stores and future reference/address
+mutations are rejected. Mutable/reference/generic precision remains bounded.
+SDK 2.33 remains the accepted archive.
+
 ## Published SDK runtime awaiters
 
 The [2.36.0 source span](linux_published_runtime_awaiters.md) admits pinned SDK

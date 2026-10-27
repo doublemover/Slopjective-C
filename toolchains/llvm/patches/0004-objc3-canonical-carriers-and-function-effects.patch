@@ -37208,10 +37208,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..444eecde6
+index 000000000..c49400a03
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,1980 @@
+@@ -0,0 +1,2162 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37389,7 +37389,7 @@ index 000000000..444eecde6
 +    const VarDecl *Identity = nullptr;
 +    const VarDecl *Pin = nullptr;
 +    bool Unstable = false;
-+    const BlockExpr *HeldByBlock = nullptr;
++    const Expr *HeldByClosure = nullptr;
 +  };
 +  using Value = llvm::BitVector;
 +  struct Storage {
@@ -37415,6 +37415,7 @@ index 000000000..444eecde6
 +    SmallVector<Storage, 16> LocalTargets;
 +    SmallVector<Value, 16> MayTargets;
 +    SmallVector<Value, 4> CapturedValues;
++    SmallVector<Value, 4> CapturedReferenceTargets;
 +    Value CaptureReady;
 +    SmallVector<Value, 16> EvaluatedValues;
 +    SmallVector<Storage, 16> EvaluatedTargets;
@@ -37434,9 +37435,12 @@ index 000000000..444eecde6
 +  mutable std::vector<PathNode> Paths{{}};
 +  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
-+  llvm::DenseMap<const BlockExpr *, unsigned> BlockSlots;
++  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
-+  llvm::DenseMap<std::pair<const BlockExpr *, unsigned>, unsigned> BlockLoans;
++  llvm::DenseMap<const VarDecl *, SmallVector<const LambdaExpr *, 2>> ReferenceCaptures;
++  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
++  llvm::SmallPtrSet<const VarDecl *, 16> InheritedLambdaStorage;
++  llvm::DenseMap<std::pair<const Expr *, unsigned>, unsigned> ClosureLoans;
 +  llvm::DenseMap<const VarDecl *, unsigned> OwnerRoots;
 +  llvm::DenseMap<Storage, Value, StorageInfo> InheritedValues;
 +  llvm::DenseMap<const VarDecl *, Value> InheritedOwners;
@@ -37773,8 +37777,13 @@ index 000000000..444eecde6
 +      Owners.push_back(Owner);
 +  }
 +  void collectBindings(const Stmt *Node) {
-+    if (!Node || isa<BlockExpr, LambdaExpr>(Node))
++    if (!Node || isa<BlockExpr>(Node))
 +      return;
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      for (const Expr *Initializer : Lambda->capture_inits())
++        collectBindings(Initializer);
++      return;
++    }
 +    if (const auto *Binding = dyn_cast<ObjC3BindingCondition>(Node))
 +      BindingSnapshots[Binding->getBindingDecl()] = Binding->getSnapshotDecl();
 +    if (const auto *Match = dyn_cast<ObjC3MatchStmt>(Node))
@@ -37801,6 +37810,14 @@ index 000000000..444eecde6
 +    for (const Stmt *Child : Node->children())
 +      collectBindings(Child);
 +  }
++  bool statementMayBorrow(const Stmt *Node) const {
++    if (!Node) return false;
++    if (const auto *Expression = dyn_cast<Expr>(Node))
++      if (carriesBorrowedValue(Expression->getType())) return true;
++    for (const Stmt *Child : Node->children())
++      if (statementMayBorrow(Child)) return true;
++    return false;
++  }
 +  void collect(const Stmt *Node, const Stmt *Scope) {
 +    if (!Node)
 +      return;
@@ -37816,7 +37833,7 @@ index 000000000..444eecde6
 +          addVariable(V);
 +    if (const auto *E = dyn_cast<Expr>(Node)) {
 +      MightBorrow |= carriesBorrowedValue(E->getType());
-+      if (!isa<BlockExpr>(E) && !ExpressionSlots.count(E))
++      if (!isa<BlockExpr, LambdaExpr>(E) && !ExpressionSlots.count(E))
 +        ExpressionSlots[E] = ExpressionSlots.size();
 +      if (isa<MemberExpr, ArraySubscriptExpr>(E))
 +        addStorage(storage(E), E->getType());
@@ -37849,32 +37866,43 @@ index 000000000..444eecde6
 +      }
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
-+      if (!BlockSlots.count(Block))
-+        BlockSlots[Block] = BlockSlots.size();
++      if (!ClosureSlots.count(Block))
++        ClosureSlots[Block] = ClosureSlots.size();
 +      return;
 +    }
-+    if (isa<LambdaExpr>(Node))
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
++      MightBorrow |= statementMayBorrow(Lambda->getBody());
++      if (!ClosureSlots.count(Lambda))
++        ClosureSlots[Lambda] = ClosureSlots.size();
++      for (const auto &Capture : Lambda->captures())
++        if (Capture.capturesVariable())
++          if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar())) {
++            addVariable(Variable);
++            if (Capture.getCaptureKind() == LCK_ByRef)
++              ReferenceCaptures[Variable].push_back(Lambda);
++          }
++      for (const Expr *Initializer : Lambda->capture_inits())
++        collect(Initializer, Scope);
 +      return;
++    }
 +    if (isa<CompoundStmt>(Node))
 +      Scope = Node;
 +    for (const Stmt *Child : Node->children())
 +      collect(Child, Scope);
 +  }
-+  void prepareBlockLoans() {
++  void prepareClosureLoans() {
 +    const unsigned Count = Origins.size();
-+    for (auto [Block, Slot] : BlockSlots) {
++    for (auto [Block, Slot] : ClosureSlots) {
 +      (void)Slot;
-+      bool OwnsObject = false;
-+      for (const auto &Capture : Block->getBlockDecl()->captures())
-+        OwnsObject |= owningCapture(Capture);
++      const bool OwnsObject = !owningClosureCaptures(Block).empty();
 +      if (!OwnsObject)
 +        continue;
 +      for (unsigned I = 0; I != Count; ++I) {
-+        if (Origins[I].HeldByBlock)
++        if (Origins[I].HeldByClosure)
 +          continue;
 +        Origin Held = Origins[I];
-+        Held.HeldByBlock = Block;
-+        BlockLoans[{Block, I}] = Origins.size();
++        Held.HeldByClosure = Block;
++        ClosureLoans[{Block, I}] = Origins.size();
 +        Origins.push_back(Held);
 +      }
 +    }
@@ -37890,26 +37918,52 @@ index 000000000..444eecde6
 +            Capture.getCaptureType().getObjCLifetime() != Qualifiers::OCL_Weak &&
 +            Capture.getCaptureType().getObjCLifetime() != Qualifiers::OCL_ExplicitNone);
 +  }
-+  void holdBlockOwners(const BlockExpr *Block, Value &V, const Facts &State) const {
++  struct ClosureOwner {
++    const VarDecl *Variable;
++    const Expr *Initializer;
++  };
++  SmallVector<ClosureOwner, 4> owningClosureCaptures(const Expr *Closure) const {
++    SmallVector<ClosureOwner, 4> Owners;
++    if (const auto *Block = dyn_cast<BlockExpr>(Closure)) {
++      for (const auto &Capture : Block->getBlockDecl()->captures())
++        if (owningCapture(Capture))
++          Owners.push_back({Capture.getVariable(), nullptr});
++    } else if (const auto *Lambda = dyn_cast<LambdaExpr>(Closure)) {
++      auto Initializer = Lambda->capture_init_begin();
++      for (const auto &Capture : Lambda->captures()) {
++        const Expr *Init = *Initializer++;
++        if (!Capture.capturesVariable() || Capture.getCaptureKind() != LCK_ByCopy ||
++            !Actions.getLangOpts().ObjCAutoRefCount)
++          continue;
++        const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar());
++        if (!Variable) continue;
++        QualType Type = Variable->getType();
++        if (Type->isObjCRetainableType() &&
++            Type.getObjCLifetime() != Qualifiers::OCL_Weak &&
++            Type.getObjCLifetime() != Qualifiers::OCL_ExplicitNone)
++          Owners.push_back({Variable, Lambda->isInitCapture(&Capture) ? Init : nullptr});
++      }
++    }
++    return Owners;
++  }
++  void holdClosureOwners(const Expr *Closure, Value &V, const Facts &State) const {
++    const auto Captures = owningClosureCaptures(Closure);
 +    for (int Bit = V.find_first(); Bit >= 0; Bit = V.find_next(Bit)) {
-+      if ((Bit & 1) || Origins[Bit / 2].HeldByBlock)
++      if ((Bit & 1) || Origins[Bit / 2].HeldByClosure)
 +        continue;
 +      const Origin &O = Origins[Bit / 2];
 +      if (!O.Owner)
 +        continue;
-+      for (const auto &Capture : Block->getBlockDecl()->captures()) {
-+        if (!owningCapture(Capture))
-+          continue;
-+        auto Slot = Slots.find({Capture.getVariable(), nullptr});
-+        if (Slot == Slots.end())
-+          continue;
-+        const Value &Identity = State.OwnerIdentities[Slot->second];
++      for (const auto &Capture : Captures) {
++        auto Slot = Slots.find({Capture.Variable, nullptr});
++        Value Identity = Capture.Initializer ? ownerIdentity(Capture.Initializer, State)
++            : Slot == Slots.end() ? Value(OwnerRoots.size())
++                                 : State.OwnerIdentities[Slot->second];
 +        if (!Identity.test(OwnerRoots.lookup(O.Identity)) ||
-+            (Capture.getVariable() != O.Owner &&
-+             (!O.Identity || Identity.count() != 1)))
++            (Capture.Variable != O.Owner && (!O.Identity || Identity.count() != 1)))
 +          continue;
-+        auto Held = BlockLoans.find({Block, unsigned(Bit / 2)});
-+        if (Held != BlockLoans.end()) {
++        auto Held = ClosureLoans.find({Closure, unsigned(Bit / 2)});
++        if (Held != ClosureLoans.end()) {
 +          V.reset(Bit);
 +          V.set(Held->second * 2);
 +        }
@@ -38085,6 +38139,35 @@ index 000000000..444eecde6
 +      return State.MayTargets[Found->second];
 +    return Targets;
 +  }
++  Value capturedTargets(const Expr *Initializer, const Facts &State) const {
++    Value Targets(Slots.size());
++    if (!Initializer) return Targets;
++    const Expr *Written = Initializer->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Written))
++      return capturedTargets(Cleanups->getSubExpr(), State);
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(Written))
++      if (trivialRecordCopy(Construction->getConstructor()) &&
++          Construction->getNumArgs() == 1)
++        return capturedTargets(Construction->getArg(0), State);
++    if (const auto *List = dyn_cast<InitListExpr>(Written))
++      for (const Expr *Element : List->inits())
++        Targets |= capturedTargets(Element, State);
++    Targets |= possibleTargets(Written, State);
++    Targets |= storageTargets(storage(Written, &State), Written->getType(), State);
++    Value Pending = Targets, Seen(Slots.size());
++    while (Pending.any()) {
++      int Index = Pending.find_first();
++      Pending.reset(Index);
++      if (Seen.test(Index)) continue;
++      Seen.set(Index);
++      Storage Target = location(Index);
++      Value Nested = storageTargets(Target, storageType(Target), State);
++      Targets |= Nested;
++      Pending |= Nested;
++      Pending.reset(Seen);
++    }
++    return Targets;
++  }
 +  bool hasUnknownIndex(Storage Location) const {
 +    unsigned Current = path(Location);
 +    while (Current) {
@@ -38224,8 +38307,8 @@ index 000000000..444eecde6
 +      return Result;
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(E)) {
-+      auto Snapshot = BlockSlots.find(Block);
-+      if (Snapshot != BlockSlots.end() && State.CaptureReady.test(Snapshot->second))
++      auto Snapshot = ClosureSlots.find(Block);
++      if (Snapshot != ClosureSlots.end() && State.CaptureReady.test(Snapshot->second))
 +        return State.CapturedValues[Snapshot->second];
 +      Value Result = empty();
 +      for (const auto &Capture : Block->getBlockDecl()->captures()) {
@@ -38238,6 +38321,15 @@ index 000000000..444eecde6
 +        if (!Found && isObjC3BorrowedType(Context, Capture.getVariable()->getType()))
 +          Result.set(0);
 +      }
++      return Result;
++    }
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(E)) {
++      auto Snapshot = ClosureSlots.find(Lambda);
++      if (Snapshot != ClosureSlots.end() && State.CaptureReady.test(Snapshot->second))
++        return State.CapturedValues[Snapshot->second];
++      Value Result = empty();
++      for (const Expr *Initializer : Lambda->capture_inits())
++        Result |= value(Initializer, State);
 +      return Result;
 +    }
 +    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
@@ -38291,7 +38383,7 @@ index 000000000..444eecde6
 +    auto ExpireValue = [&](Value &V) {
 +      for (unsigned I = 0; I != Origins.size(); ++I) {
 +        const Origin &O = Origins[I];
-+        if (O.HeldByBlock)
++        if (O.HeldByClosure)
 +          continue;
 +        if ((O.Pin ? O.Pin == Owner : O.Owner == Owner) && V.test(I * 2)) {
 +          unsigned Replacement = Origins.size();
@@ -38348,6 +38440,22 @@ index 000000000..444eecde6
 +  void store(const Stmt *Operation, Storage Destination, const Value &V,
 +             Facts &State, bool Emit, bool Replace = false) {
 +    if (V.any() && Emit) {
++      if (InheritedLambdaStorage.count(Destination.first))
++        diagnose(Operation, "persistent storage in a C++ lambda capture");
++      bool ReferenceCaptured = InheritedReferenceCaptures.count(Destination.first);
++      auto Captures = ReferenceCaptures.find(Destination.first);
++      if (Captures != ReferenceCaptures.end())
++        for (const auto *Lambda : Captures->second)
++          ReferenceCaptured |= State.CaptureReady.test(ClosureSlots.lookup(Lambda));
++      for (unsigned I = 0; I != State.CapturedReferenceTargets.size(); ++I)
++        if (State.CaptureReady.test(I)) {
++          const Value &Targets = State.CapturedReferenceTargets[I];
++          for (int Target = Targets.find_first(); Target >= 0;
++               Target = Targets.find_next(Target))
++            ReferenceCaptured |= location(Target).first == Destination.first;
++        }
++      if (ReferenceCaptured)
++        diagnose(Operation, "mutation of storage captured by reference by a C++ lambda");
 +      if (!Destination.first || !Destination.first->hasLocalStorage())
 +        diagnose(Operation, Destination.first ? "global/static/thread-local storage"
 +                                               : "heap, ivar, property, or indirect storage");
@@ -38583,6 +38691,11 @@ index 000000000..444eecde6
 +    return Method && Method->isTrivial() &&
 +           Method->isCopyOrMoveConstructorOrAssignment();
 +  }
++  bool lambdaInvocation(const Decl *Callee) const {
++    const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Callee);
++    return Method && Method->getParent()->isLambda() &&
++           Method->getOverloadedOperator() == OO_Call;
++  }
 +  bool safeParameter(const Expr *Call, unsigned Index) const {
 +    const Decl *Callee = callee(Call);
 +    if ((getObjC3TaskBoundaryKind(Callee) & 3) ||
@@ -38591,6 +38704,8 @@ index 000000000..444eecde6
 +    if (trivialRecordCopy(Callee))
 +      return true;
 +    Index = formalIndex(Call, Index);
++    if (Index == ~0U && lambdaInvocation(Callee))
++      return true; // The captured body is checked with its creation facts.
 +    auto Formals = formalParameters(Callee);
 +    if (Index < Formals.size()) {
 +      const ParmVarDecl *Formal = Formals[Index];
@@ -38647,13 +38762,16 @@ index 000000000..444eecde6
 +        Receiver = Message->getInstanceReceiver();
 +      if (const auto *MemberCall = dyn_cast<CXXMemberCallExpr>(Invocation))
 +        Receiver = MemberCall->getImplicitObjectArgument();
-+      if (Receiver && !trivialRecordCopy(callee(Invocation)) &&
-+          addressValue(Receiver, State).any())
++      const bool LambdaCall = lambdaInvocation(callee(Invocation));
++      if (Receiver && LambdaCall && hasExpired(addressValue(Receiver, State)))
++        diagnose(Receiver, "invocation of a C++ lambda after its captured owner lifetime ended");
++      else if (Receiver && !LambdaCall && !trivialRecordCopy(callee(Invocation)) &&
++               addressValue(Receiver, State).any())
 +        diagnose(Receiver, "a receiver without a non-escaping lifetime contract");
 +    }
 +    if (Emit)
 +      if (const auto *Call = dyn_cast<CallExpr>(Invocation))
-+        if (hasExpired(value(Call->getCallee(), State)))
++        if (!lambdaInvocation(callee(Invocation)) && hasExpired(value(Call->getCallee(), State)))
 +          diagnose(Invocation, "invocation of a block after its captured owner lifetime ended");
 +    if (Emit)
 +      for (unsigned I = 0; I != Count; ++I) {
@@ -38821,31 +38939,74 @@ index 000000000..444eecde6
 +        if (const auto *Throw = dyn_cast<CXXThrowExpr>(Invocation))
 +          if (Emit && value(Throw->getSubExpr(), State).any())
 +            diagnose(Node, "a C++ exception payload that may outlive its owner");
-+        if (const auto *BlockExpression = dyn_cast<BlockExpr>(Invocation)) {
-+          unsigned Slot = BlockSlots.lookup(BlockExpression);
++        if (isa<BlockExpr, LambdaExpr>(Invocation)) {
++          unsigned Slot = ClosureSlots.lookup(Invocation);
 +          State.CaptureReady.reset(Slot);
-+          State.CapturedValues[Slot] = value(BlockExpression, State);
-+          holdBlockOwners(BlockExpression, State.CapturedValues[Slot], State);
++          State.CapturedValues[Slot] = value(Invocation, State);
++          holdClosureOwners(Invocation, State.CapturedValues[Slot], State);
 +          State.CaptureReady.set(Slot);
-+        }
-+        if (Emit)
-+          if (const auto *BlockExpression = dyn_cast<BlockExpr>(Invocation)) {
-+            BlockDecl *BlockDeclaration =
-+                const_cast<BlockDecl *>(BlockExpression->getBlockDecl());
-+            if (!BlockDeclaration->isInvalidDecl()) {
-+              // An ordinary pointer alias can capture borrowing even after
-+              // its static type lost the qualifier. Recheck the nested body
-+              // with the converged capture facts from the creation point.
-+              BorrowedFlow Nested(Actions, BlockDeclaration,
-+                                   BlockDeclaration->getBody());
++          State.CapturedReferenceTargets[Slot].reset();
++          if (const auto *Lambda = dyn_cast<LambdaExpr>(Invocation)) {
++            auto Initializer = Lambda->capture_init_begin();
++            for (const auto &Capture : Lambda->captures()) {
++              const Expr *Init = *Initializer++;
++              State.CapturedReferenceTargets[Slot] |= capturedTargets(Init, State);
++              if (Capture.capturesVariable() && Capture.getCaptureKind() == LCK_ByRef)
++                if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
++                  if (auto Found = Slots.find({Variable, nullptr}); Found != Slots.end())
++                    State.CapturedReferenceTargets[Slot].set(Found->second);
++            }
++          }
++          if (Emit) {
++            Decl *NestedCallable = nullptr;
++            Stmt *NestedBody = nullptr;
++            const auto *Lambda = dyn_cast<LambdaExpr>(Invocation);
++            if (const auto *Block = dyn_cast<BlockExpr>(Invocation)) {
++              auto *Declaration = const_cast<BlockDecl *>(Block->getBlockDecl());
++              NestedCallable = Declaration;
++              NestedBody = Declaration->getBody();
++            } else {
++              NestedCallable = Lambda->getCallOperator();
++              NestedBody = Lambda->getBody();
++              if (State.CapturedValues[Slot].any() &&
++                  (Lambda->isMutable() || Lambda->isGenericLambda()))
++                diagnose(Lambda, "a mutable or generic C++ lambda capture requiring additional lifetime contracts");
++              auto Initializer = Lambda->capture_init_begin();
++              for (const auto &Capture : Lambda->captures()) {
++                const Expr *Init = *Initializer++;
++                if ((Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State).any()) &&
++                    value(Init, State).any())
++                  diagnose(Lambda, "a C++ lambda reference capture requiring an explicit lifetime contract");
++              }
++            }
++            if (NestedCallable && !NestedCallable->isInvalidDecl()) {
++              BorrowedFlow Nested(Actions, NestedCallable, NestedBody);
 +              Nested.Origins = Origins;
 +              Nested.OwnerRoots = OwnerRoots;
 +              Nested.Paths = Paths;
 +              Nested.FieldPaths = FieldPaths;
 +              Nested.ArrayPaths = ArrayPaths;
-+              // Address captures can reach another automatic variable which
-+              // is not itself a Blocks capture. Seed the enclosing storage
-+              // graph so the nested CFG can follow that transitive payload.
++              Nested.InheritedReferenceCaptures = InheritedReferenceCaptures;
++              Nested.InheritedLambdaStorage = InheritedLambdaStorage;
++              if (Lambda)
++                for (const auto &Capture : Lambda->captures())
++                  if (Capture.capturesVariable())
++                    if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
++                      Nested.InheritedLambdaStorage.insert(Variable);
++              for (unsigned I = 0; I != State.CapturedReferenceTargets.size(); ++I)
++                if (State.CaptureReady.test(I)) {
++                  const auto &Targets = State.CapturedReferenceTargets[I];
++                  for (int Target = Targets.find_first(); Target >= 0;
++                       Target = Targets.find_next(Target))
++                    if (const VarDecl *Variable = location(Target).first)
++                      Nested.InheritedReferenceCaptures.insert(Variable);
++                }
++              for (const auto &[Variable, Captures] : ReferenceCaptures)
++                for (const auto *CapturedBy : Captures)
++                  if (State.CaptureReady.test(ClosureSlots.lookup(CapturedBy)))
++                    Nested.InheritedReferenceCaptures.insert(Variable);
++              // Seed the enclosing storage graph for ordinary aliases and
++              // transitive address captures, before initializing init-captures.
 +              for (auto [Location, Index] : Slots) {
 +                Nested.InheritedValues[Location] = State.Values[Index];
 +                for (int Target = State.MayTargets[Index].find_first(); Target >= 0;
@@ -38853,12 +39014,28 @@ index 000000000..444eecde6
 +                  Nested.InheritedMayTargets[Location].push_back(location(Target));
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
 +                if (!Location.second && Location.Index == -1)
-+                  Nested.InheritedOwners[Location.first] =
-+                      State.OwnerIdentities[Index];
++                  Nested.InheritedOwners[Location.first] = State.OwnerIdentities[Index];
++              }
++              if (Lambda) {
++                auto Initializer = Lambda->capture_init_begin();
++                for (const auto &Capture : Lambda->captures()) {
++                  const Expr *Init = *Initializer++;
++                  if (Lambda->isInitCapture(&Capture)) {
++                    const auto *Variable = cast<VarDecl>(Capture.getCapturedVar());
++                    Nested.InheritedValues[{Variable, nullptr}] = value(Init, State);
++                    Nested.InheritedOwners[Variable] = ownerIdentity(Init, State);
++                    Nested.InheritedTargets[{Variable, nullptr}] = referent(Init, &State);
++                    auto Targets = possibleTargets(Init, State);
++                    for (int Target = Targets.find_first(); Target >= 0;
++                         Target = Targets.find_next(Target))
++                      Nested.InheritedMayTargets[{Variable, nullptr}].push_back(location(Target));
++                  }
++                }
 +              }
 +              Invalid |= Nested.check();
 +            }
 +          }
++        }
 +        if (const auto *BlockExpression = dyn_cast<BlockExpr>(Invocation))
 +          for (const auto &Capture : BlockExpression->getBlockDecl()->captures())
 +            if (Capture.getObjC3CaptureKind() == BlockDecl::ObjC3CaptureKind::Move) {
@@ -38974,6 +39151,10 @@ index 000000000..444eecde6
 +      Capture |= Source.CapturedValues[I];
 +      Changed |= Capture != Destination.CapturedValues[I];
 +      Destination.CapturedValues[I] = std::move(Capture);
++      Value Targets = Destination.CapturedReferenceTargets[I];
++      Targets |= Source.CapturedReferenceTargets[I];
++      Changed |= Targets != Destination.CapturedReferenceTargets[I];
++      Destination.CapturedReferenceTargets[I] = std::move(Targets);
 +    }
 +    for (unsigned I = 0; I != Destination.EvaluatedValues.size(); ++I) {
 +      Value Evaluated = Destination.EvaluatedValues[I];
@@ -39055,7 +39236,7 @@ index 000000000..444eecde6
 +    }
 +    if (!MightBorrow && Origins.size() == 1)
 +      return false;
-+    prepareBlockLoans();
++    prepareClosureLoans();
 +    CFG::BuildOptions Options;
 +    Options.setAllAlwaysAdd();
 +    Options.AddLifetime = true;
@@ -39080,8 +39261,9 @@ index 000000000..444eecde6
 +    Initial.OwnerIdentities.assign(Slots.size(), Value(OwnerRoots.size()));
 +    Initial.LocalTargets.resize(Slots.size());
 +    Initial.MayTargets.assign(Slots.size(), Value(Slots.size()));
-+    Initial.CapturedValues.assign(BlockSlots.size(), empty());
-+    Initial.CaptureReady.resize(BlockSlots.size());
++    Initial.CapturedValues.assign(ClosureSlots.size(), empty());
++    Initial.CapturedReferenceTargets.assign(ClosureSlots.size(), Value(Slots.size()));
++    Initial.CaptureReady.resize(ClosureSlots.size());
 +    Initial.EvaluatedValues.assign(ExpressionSlots.size(), empty());
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
@@ -43104,3 +43286,154 @@ index 000000000..83f21ae71
 +}
 +#endif
 +// CHECK: co_return __objc3_await original_task(value)
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-lambda-captures.h b/clang/test/ObjC3/Sema/Inputs/borrowed-lambda-captures.h
+new file mode 100644
+index 000000000..81b4197d7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-lambda-captures.h
+@@ -0,0 +1,8 @@
++typedef borrowed const char *BorrowedBytes;
++BorrowedBytes bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void use_noescape(const char *pointer __attribute__((noescape)));
++void escape(const char *pointer);
++template<class Work> void sink(Work) {}
++template<class Work> void sync(const Work &work __attribute__((noescape))) { work(); }
++struct BorrowedHolder { const char *pointer; };
++struct BorrowedAddress { const char **pointer; };
+diff --git a/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
+new file mode 100644
+index 000000000..d888e75d1
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
+@@ -0,0 +1,131 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-lambda-captures.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-lambda-captures.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-lambda-captures.h"
++#endif
++
++void local_values(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {use_noescape(pointer);};
++  pointer=nullptr;
++  auto copy=work;
++  work();
++  copy.operator()();
++  sync(copy);
++}
++void init_values(id owner) {
++  auto work=[pointer=bytes(owner)] {use_noescape(pointer);};
++  work();
++}
++void nested_values(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {
++    auto nested=[pointer] {use_noescape(pointer);};
++    nested();
++  };
++  work();
++}
++void record_values(id owner) {
++  BorrowedHolder holder{bytes(owner)};
++  auto work=[holder] {use_noescape(holder.pointer);};
++  holder.pointer=nullptr;
++  work();
++}
++void hidden_alias(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {escape(pointer);}; // expected-error {{borrowed pointer escapes}}
++  work();
++}
++void hidden_init_alias(id owner) {
++  auto work=[pointer=bytes(owner)] {escape(pointer);}; // expected-error {{borrowed pointer escapes}}
++  work();
++}
++void escaping_argument(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {};
++  sink(work); // expected-error {{borrowed pointer escapes}}
++}
++auto escaping_result(id owner) {
++  const char *pointer=bytes(owner);
++  return [pointer] {}; // expected-error {{borrowed pointer escapes}}
++}
++void reference_capture(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[&pointer] {use_noescape(pointer);}; // expected-error {{C++ lambda reference capture}}
++  work();
++}
++void future_reference(id owner) {
++  const char *pointer=nullptr;
++  auto work=[&pointer] {escape(pointer);};
++  pointer=bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  work();
++}
++void future_address(id owner) {
++  const char *pointer=nullptr;
++  const char **address=&pointer;
++  auto work=[address] {escape(*address);};
++  pointer=bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  work();
++}
++void future_record_address(id owner) {
++  const char *pointer=nullptr;
++  BorrowedAddress holder{&pointer};
++  auto work=[holder] {escape(*holder.pointer);};
++  pointer=bytes(owner); // expected-error {{mutation of storage captured by reference}}
++  work();
++}
++void mutable_capture(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer]() mutable {use_noescape(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void generic_capture(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer](auto) {use_noescape(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  work(0);
++}
++void persistent_capture(id owner) {
++  auto work=[owner,pointer=(const char *)nullptr]() mutable {
++    pointer=bytes(owner); // expected-error {{persistent storage in a C++ lambda capture}}
++  };
++  work();
++}
++void persistent_mutable_field(id owner) {
++  struct Value {mutable const char *pointer;};
++  auto work=[owner,value=Value{nullptr}] {
++    value.pointer=bytes(owner); // expected-error {{persistent storage in a C++ lambda capture}}
++  };
++  work();
++}
++#if __has_feature(objc_arc)
++void owning_snapshot(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[owner,pointer] {(void)owner;use_noescape(pointer);};
++  owner=nullptr;
++  work();
++}
++void owning_init_snapshot(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[copy=owner,pointer] {(void)copy;use_noescape(pointer);};
++  owner=nullptr;
++  work();
++}
++void expired_snapshot(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {use_noescape(pointer);};
++  owner=nullptr;
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void expired_explicit_call(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer] {use_noescape(pointer);};
++  owner=nullptr;
++  work.operator()(); // expected-error {{after its captured owner lifetime ended}}
++}
++#endif
