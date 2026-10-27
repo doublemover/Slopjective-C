@@ -76,6 +76,9 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       "void f(id source) { invoke(^[unowned source] { (void)source; }); }",
       "void f(id source) { invoke(^[move source] { (void)source; }); }",
       "int f(void) { int x=42; int (^b)(void)=^[move x]{return x;}; return b()+x; }",
+      "void f(void){Optional(int) v=Some(int,42);invoke(^[move v]{(void)v;});}",
+      "void f(void){Optional(Optional(int)) v=Some(Optional(int),None(int));invoke(^[move v]{(void)v;});}",
+      "void f(void){__objc3_result(int,int) v=__objc3_err(int,int,42);invoke(^[move v]{(void)v;});}",
       "int f(void) { __block int x=42; int (^b)(void)=^[x]{return x;}; x=9; return b(); }",
       "void f(void) { int strong=1,weak=2,unowned=3,move=4; invoke(^[strong,weak,unowned,move]{}); }",
       "void f(id o) { const char *p=capture_bytes(o); invoke(^[p]{capture_use_bytes(p);}); }",
@@ -110,6 +113,8 @@ void semantics(const fs::path &Root, BaseLanguage Language,
       {"void f(id x){invoke(^[x,strong x]{});}", "appear only once"},
       {"void f(void){invoke(^[missing]{});}", "must name a local variable"},
       {"void f(void){const int x=3;invoke(^[move x]{});}", "requires a mutable"},
+      {"void f(void){Optional(const int) x=None(const int);invoke(^[move x]{});}", "mutable, nonresource payloads"},
+      {"void f(void){Optional(volatile int) x=None(volatile int);invoke(^[move x]{});}", "mutable, nonresource payloads"},
       {"void f(void){__block int x=3;invoke(^[x]{invoke(^[move x]{});});}", "immutable enclosing capture"},
       {"void f(id o){const char *p=capture_bytes(o);launch(^[p]{capture_use_bytes(p);});}", "borrowed pointer escapes"},
       {"void f(id o){const char *p=capture_bytes(o);launch(^[move p]{capture_use_bytes(p);});}", "borrowed pointer escapes"},
@@ -132,6 +137,12 @@ void semantics(const fs::path &Root, BaseLanguage Language,
         Language, Standard, ARC), true);
     expect(request(Root,
         "struct R { R()=default; R(const R&)=delete; R(R&&) noexcept{} }; void f(void){R x{};invoke(^[move x]{});}",
+        Language, Standard, ARC), false, "deleted");
+    expect(request(Root,
+        "struct R{int value;R(int x):value(x){} R(const R&)=default;R(R&&x):value(x.value){x.value=-1;} ~R(){}};void f(){Optional(R) x=Some(R,R(3));invoke(^[move x]{});}",
+        Language, Standard, ARC), true);
+    expect(request(Root,
+        "struct R{R()=default;R(const R&)=delete;R(R&&)=default;};void f(){Optional(R) x=Some(R,R());invoke(^[move x]{});}",
         Language, Standard, ARC), false, "deleted");
     expect(request(Root,
         "template<class T> int f(T x){auto b=^[move x]{return x;};return b()+x;} int g(){return f(42);}",
@@ -197,6 +208,21 @@ void check_record_body(clang::FunctionDecl *Function) {
   assert(Capture.getObjC3InitExpr() && Capture.getCopyExpr());
   assert(Capture.getObjC3InitExpr() != Capture.getCopyExpr());
 }
+void check_carrier_body(clang::FunctionDecl *Function) {
+  check_record_body(Function);
+  Blocks Visitor;
+  Visitor.TraverseStmt(Function->getBody());
+  const auto &Capture = Visitor.Values[0]->getBlockDecl()->captures()[0];
+  const auto *Move = llvm::cast<clang::ObjC3CarrierTransferExpr>(
+      Capture.getObjC3InitExpr()->IgnoreImplicit());
+  const auto *Copy = llvm::cast<clang::ObjC3CarrierTransferExpr>(
+      Capture.getCopyExpr()->IgnoreImplicit());
+  assert(Move->isMove() && !Copy->isMove());
+  assert(!Move->getSource()->getType().isConstQualified());
+  assert(Copy->getSource()->getType().isConstQualified());
+  assert(llvm::isa<clang::OpaqueValueExpr>(Move->getSource()));
+  assert(llvm::isa<clang::OpaqueValueExpr>(Copy->getSource()));
+}
 void check_nested_resource_body(clang::FunctionDecl *Function) {
   Blocks Visitor;
   Visitor.TraverseStmt(Function->getBody());
@@ -231,6 +257,11 @@ int capture_record_provider(void) {
   auto block=^[move source]{return source.value;};
   return block()+source.value;
 }
+int capture_carrier_provider(void) {
+  Optional(CaptureRecord) source=Some(CaptureRecord,CaptureRecord(5));
+  auto block=^[move source]{return __objc3_has_value(source);};
+  return block();
+}
 void capture_nested_resource_provider(void) {
   int handle __attribute__((objc_resource(close=close_handle,invalid=-1)))=31;
   void (^outer)(void)=^[move handle]{
@@ -248,6 +279,7 @@ void capture_nested_resource_provider(void) {
   auto *Provider = function(*From, "capture_provider");
   check_body(Provider);
   check_record_body(function(*From, "capture_record_provider"));
+  check_carrier_body(function(*From, "capture_carrier_provider"));
   check_nested_resource_body(function(*From, "capture_nested_resource_provider"));
   clang::ASTImporter Importer(To->getASTContext(), To->getFileManager(),
       From->getASTContext(), From->getFileManager(), false);
@@ -258,6 +290,9 @@ void capture_nested_resource_provider(void) {
   auto ImportedRecord = Importer.Import(function(*From, "capture_record_provider"));
   assert(ImportedRecord);
   check_record_body(llvm::cast<clang::FunctionDecl>(*ImportedRecord));
+  auto ImportedCarrier = Importer.Import(function(*From, "capture_carrier_provider"));
+  assert(ImportedCarrier);
+  check_carrier_body(llvm::cast<clang::FunctionDecl>(*ImportedCarrier));
   auto ImportedNested = Importer.Import(function(*From, "capture_nested_resource_provider"));
   assert(ImportedNested);
   check_nested_resource_body(llvm::cast<clang::FunctionDecl>(*ImportedNested));
@@ -276,6 +311,7 @@ void capture_nested_resource_provider(void) {
       Root / "capture-pch-client.mm", {"-include-pch", PCH.string()});
   check_body(function(*Reloaded, "capture_provider"));
   check_record_body(function(*Reloaded, "capture_record_provider"));
+  check_carrier_body(function(*Reloaded, "capture_carrier_provider"));
   check_nested_resource_body(function(*Reloaded, "capture_nested_resource_provider"));
 }
 } // namespace

@@ -267,6 +267,76 @@ static void capture_defer_suite(void) {
   CAPTURE_CHECK(capture_destroyed == before + 3);
 }
 
+// Plain carriers need no managed copy/dispose hooks. Their tags survive move,
+// including inactive nested arms; only the selected scalar payload is cleared.
+static void capture_plain_carrier_move_suite(void) {
+  for (int present = 0; present != 2; ++present) {
+    Optional(int) source = present ? Some(int, 76) : None(int);
+    CaptureIntBlock __unsafe_unretained snapshot = ^[source] {
+      guard let value = source else { return -1; }
+      return value;
+    };
+    CaptureIntBlock __unsafe_unretained moved = ^[move source] {
+      guard let value = source else { return -1; }
+      return value;
+    };
+    CAPTURE_CHECK(__objc3_has_value(source) == present);
+    if (present) {
+      guard let zero = source else { ++capture_failures; return; }
+      CAPTURE_CHECK(zero == 0);
+    }
+    CaptureIntBlock first = capture_heap_copy(moved);
+    CaptureIntBlock second = capture_heap_copy(first);
+    CAPTURE_CHECK(snapshot() == (present ? 76 : -1));
+    CAPTURE_CHECK(first() == snapshot() && second() == snapshot());
+#if !__has_feature(objc_arc)
+    _Block_release(first);
+    _Block_release(second);
+#endif
+  }
+  for (int success = 0; success != 2; ++success) {
+    __objc3_result(int, int) source = success ? __objc3_ok(int, int, 77)
+                                            : __objc3_err(int, int, 78);
+    CaptureIntBlock __unsafe_unretained moved = ^[move source] {
+      return __objc3_match (source) {
+        case .Ok(let value) => value;
+        case .Err(let error) => -error;
+      };
+    };
+    CAPTURE_CHECK(__objc3_is_ok(source) == success);
+    int zero = __objc3_match (source) {
+      case .Ok(let value) => value;
+      case .Err(let error) => error;
+    };
+    CAPTURE_CHECK(zero == 0 && moved() == (success ? 77 : -78));
+    CaptureIntBlock heap = capture_heap_copy(moved);
+    CAPTURE_CHECK(heap() == moved());
+#if !__has_feature(objc_arc)
+    _Block_release(heap);
+#endif
+  }
+  for (int present = 0; present != 2; ++present) {
+    Optional(int) inner = present ? Some(int, 79) : None(int);
+    Optional(Optional(int)) source = Some(Optional(int), inner);
+    CaptureIntBlock __unsafe_unretained moved = ^[move source] {
+      guard let nested = source else { return -2; }
+      guard let value = nested else { return -1; }
+      return value;
+    };
+    guard let nested_zero = source else { ++capture_failures; return; }
+    CAPTURE_CHECK(__objc3_has_value(nested_zero) == present);
+    if (present) {
+      guard let zero = nested_zero else { ++capture_failures; return; }
+      CAPTURE_CHECK(zero == 0);
+    }
+    CaptureIntBlock heap = capture_heap_copy(moved);
+    CAPTURE_CHECK(heap() == (present ? 79 : -1));
+#if !__has_feature(objc_arc)
+    _Block_release(heap);
+#endif
+  }
+}
+
 #if __has_feature(objc_arc)
 static void capture_carrier_move_suite(void) {
   int before = capture_destroyed;
@@ -474,6 +544,135 @@ static void capture_record_move_suite(void) {
   }
   CAPTURE_CHECK(CaptureMoveRecord::live == 0);
 }
+static void capture_cpp_carrier_move_suite(void) {
+  CaptureMoveRecord::moves = CaptureMoveRecord::copies = 0;
+  {
+    Optional(CaptureMoveRecord) source = Some(CaptureMoveRecord, CaptureMoveRecord(81));
+    int moves = CaptureMoveRecord::moves, copies = CaptureMoveRecord::copies;
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      guard let value = source else { return -2; }
+      return value.value;
+    };
+    // Observe the actual source payload, without creating a guard-binding copy.
+    int source_value = __objc3_match (source) {
+      case .Some(let value) => value.value;
+      case .None => -2;
+    };
+    CAPTURE_CHECK(source_value == -1);
+    // The observation can copy the selected object, so snapshot its counters.
+    int before_heap_moves = CaptureMoveRecord::moves;
+    int before_heap_copies = CaptureMoveRecord::copies;
+    CAPTURE_CHECK(before_heap_moves == moves + 1);
+    CaptureIntBlock first = capture_heap_copy(stack);
+    CaptureIntBlock second = capture_heap_copy(stack);
+    CAPTURE_CHECK(CaptureMoveRecord::moves == before_heap_moves &&
+                  CaptureMoveRecord::copies == before_heap_copies + 2);
+    CAPTURE_CHECK(first() == 81 && second() == 81);
+#if __has_feature(objc_arc)
+    first = second = (id)0;
+#else
+    _Block_release(first);
+    _Block_release(second);
+#endif
+    (void)copies;
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    __objc3_result(CaptureMoveRecord, int) source = __objc3_ok(CaptureMoveRecord, int, CaptureMoveRecord(82));
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      return __objc3_match (source) {
+        case .Ok(let value) => value.value;
+        case .Err(let error) => -error;
+      };
+    };
+    CAPTURE_CHECK(__objc3_is_ok(source) == 1);
+    int after = __objc3_match (source) {
+      case .Ok(let value) => value.value;
+      case .Err(let error) => error;
+    };
+    CAPTURE_CHECK(after == (-1));
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    CAPTURE_CHECK(heap() == (82));
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    __objc3_result(CaptureMoveRecord, int) source = __objc3_err(CaptureMoveRecord, int, 83);
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      return __objc3_match (source) {
+        case .Ok(let value) => value.value;
+        case .Err(let error) => -error;
+      };
+    };
+    CAPTURE_CHECK(__objc3_is_ok(source) == 0);
+    int after = __objc3_match (source) {
+      case .Ok(let value) => value.value;
+      case .Err(let error) => error;
+    };
+    CAPTURE_CHECK(after == (0));
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    CAPTURE_CHECK(heap() == (-83));
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    Optional(CaptureMoveRecord) inner = Some(CaptureMoveRecord, CaptureMoveRecord(86));
+    Optional(Optional(CaptureMoveRecord)) source = Some(Optional(CaptureMoveRecord), moveValue(inner));
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      guard let nested = source else { return -2; }
+      guard let value = nested else { return -3; }
+      return value.value;
+    };
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    CAPTURE_CHECK(heap() == 86 && __objc3_has_value(source));
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    Optional(CaptureMoveRecord) source = Some(CaptureMoveRecord, CaptureMoveRecord(87));
+    CaptureIntBlock __unsafe_unretained stack = ^[source] {
+      guard let value = source else { return -2; }
+      return value.value;
+    };
+    CaptureIntBlock heap = capture_heap_copy(stack);
+    int original = __objc3_match (source) {
+      case .Some(let value) => value.value;
+      case .None => -2;
+    };
+    CAPTURE_CHECK(original == 87 && heap() == 87);
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+  {
+    Optional(CaptureMoveRecord) absent = None(CaptureMoveRecord);
+    CaptureIntBlock heap = capture_heap_copy(^[move absent] {
+      return (int)__objc3_has_value(absent);
+    });
+    CAPTURE_CHECK(heap() == 0 && !__objc3_has_value(absent));
+#if __has_feature(objc_arc)
+    heap = (id)0;
+#else
+    _Block_release(heap);
+#endif
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == 0);
+}
 struct CaptureOrder {
   int *source;
   int observed;
@@ -488,6 +687,7 @@ template<class T> static int capture_template(T value) {
 }
 static void capture_cpp_suite(void) {
   capture_record_move_suite();
+  capture_cpp_carrier_move_suite();
   int source = 23;
   CaptureOrder later(&source);
   auto ordered = ^[move source, later] {
@@ -499,6 +699,7 @@ static void capture_cpp_suite(void) {
 #endif
 static void capture_suite(void) {
   capture_scalar_suite();
+  capture_plain_carrier_move_suite();
   capture_object_suite();
   capture_defer_suite();
 #if __has_feature(objc_arc)

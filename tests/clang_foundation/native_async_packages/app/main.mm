@@ -329,6 +329,7 @@ int main() {
         value.value!=42 || native_statement_live()!=1 || defaults.get()!=42) return 92;
   }
   if (native_statement_live()!=0) return 94;
+  if (native_published_carrier_capture(2)!=44 || native_statement_live()!=0) return 95;
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||

@@ -888,6 +888,41 @@ void TestCxxLocalExpressions() {
   }
 }
 
+void TestCarrierExpressionRoundtrip() {
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-xobjective-c++", standard, "-fobjc-version=3", "-fblocks",
+           "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
+          "carrier-expressions.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),
+          ast->getASTContext().getTranslationUnitDecl(), "fixture.carrier", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.carrier", "test");
+    };
+    const std::string source =
+        "inline int fallback(Optional(int) value) { return value ?? 42; } "
+        "inline int precedence(int a,int b,int c){return (a+b)*c;}";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+    assert(emitted.success);
+    auto regenerated = emit(emitted.source_bytes);
+    assert(regenerated.success && regenerated.source_bytes == emitted.source_bytes &&
+           regenerated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto parens = emit(
+        "inline int fallback(Optional(int) value) { return (((value ?? 42))); } "
+        "inline int precedence(int a,int b,int c){return (((a+b)))*c;}");
+    assert(parens.success &&
+           parens.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto different = emit(
+        "inline int fallback(Optional(int) value) { return value ?? 43; } "
+        "inline int precedence(int a,int b,int c){return a+b*c;}");
+    assert(different.success &&
+           different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
+  }
+}
+
 void TestCxxFriends() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1787,6 +1822,7 @@ int main() {
   TestCxxThreadLocalData();
   TestCxxFriends();
   TestCxxLocalExpressions();
+  TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

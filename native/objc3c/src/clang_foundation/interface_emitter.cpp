@@ -417,6 +417,12 @@ public:
     Add(ReadInterfaceDeclarationStableId(declaration));
     Add(ReadNativeSymbolName(declaration));
   }
+  // Native printers insert protective parentheses for carrier operators. A
+  // reparse retains those ParenExpr nodes; they do not change typed semantics.
+  bool TraverseParenExpr(clang::ParenExpr *expression,
+                         DataRecursionQueue * = nullptr) {
+    return TraverseStmt(expression->getSubExpr());
+  }
   std::string Get(clang::Stmt *expression) {
     clang::PrintingPolicy policy(context_.getLangOpts());
     policy.PrintAsCanonical = true;
@@ -424,7 +430,18 @@ public:
         clang::PrintingPolicy::AnonymousTagMode::Plain);
     std::string printed;
     llvm::raw_string_ostream stream(printed);
-    expression->printPretty(stream, nullptr, policy);
+    struct CanonicalParens final : clang::PrinterHelper {
+      clang::PrintingPolicy policy;
+      explicit CanonicalParens(clang::PrintingPolicy policy) : policy(policy) {}
+      bool handledStmt(clang::Stmt *statement, llvm::raw_ostream &out) override {
+        if (const auto *paren = llvm::dyn_cast<clang::ParenExpr>(statement)) {
+          paren->getSubExpr()->printPretty(out, this, policy);
+          return true;
+        }
+        return false;
+      }
+    } helper(policy);
+    expression->printPretty(stream, &helper, policy);
     Add(printed);
     TraverseStmt(expression);
     llvm::SHA256 hash; hash.update(bytes_);

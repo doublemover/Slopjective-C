@@ -87,6 +87,97 @@ static void capture_failed_move_constructor(void) {
     CAPTURE_CHECK(handle == -1 && capture_closed == before + 1);
   }
 }
+static void capture_failed_carrier_creation(void) {
+  int before = CaptureMoveRecord::live;
+  {
+    Optional(CaptureMoveRecord) source = Some(CaptureMoveRecord, CaptureMoveRecord(84));
+    CaptureThrowLater later;
+    CaptureThrowLater::copies = 0;
+    CaptureThrowLater::fail_on = 1;
+    try {
+      auto failed = ^[move source, later] { (void)later; };
+      (void)failed;
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      int moved_from = __objc3_match (source) {
+        case .Some(let value) => value.value;
+        case .None => -2;
+      };
+      CAPTURE_CHECK(moved_from == -1 && CaptureMoveRecord::live == before + 1);
+    }
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == before);
+}
+static void capture_failed_carrier_heap_copy(void) {
+  int before = CaptureMoveRecord::live;
+  {
+    Optional(CaptureMoveRecord) source = Some(CaptureMoveRecord, CaptureMoveRecord(85));
+    CaptureThrowLater later;
+    CaptureThrowLater::copies = 0;
+    CaptureThrowLater::fail_on = 2;
+    CaptureIntBlock __unsafe_unretained stack = ^[move source, later] {
+      (void)later;
+      guard let value = source else { return -2; }
+      return value.value;
+    };
+    try {
+      CaptureIntBlock failed = capture_heap_copy(stack);
+#if !__has_feature(objc_arc)
+      _Block_release(failed);
+#endif
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      // The successful earlier carrier copy was destroyed on the failed copy
+      // edge. Source and original stack capture remain live and callable.
+      CAPTURE_CHECK(CaptureMoveRecord::live == before + 2);
+      CAPTURE_CHECK(stack() == 85);
+    }
+  }
+  CAPTURE_CHECK(CaptureMoveRecord::live == before);
+}
+struct CaptureCarrierThrow {
+  inline static int live = 0;
+  inline static bool fail_copy = false, fail_move = false;
+  CaptureCarrierThrow() { ++live; }
+  CaptureCarrierThrow(const CaptureCarrierThrow &) {
+    if (fail_copy) throw CaptureFailure{};
+    ++live;
+  }
+  CaptureCarrierThrow(CaptureCarrierThrow &&) {
+    if (fail_move) throw CaptureFailure{};
+    ++live;
+  }
+  ~CaptureCarrierThrow() { --live; }
+};
+static void capture_failed_carrier_constructor(void) {
+  {
+    Optional(CaptureCarrierThrow) source = Some(CaptureCarrierThrow, CaptureCarrierThrow());
+    CaptureCarrierThrow::fail_move = true;
+    try {
+      auto failed = ^[move source] {};
+      (void)failed;
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(CaptureCarrierThrow::live == 1 && __objc3_has_value(source));
+    }
+    CaptureCarrierThrow::fail_move = false;
+    CaptureIntBlock __unsafe_unretained stack = ^[move source] {
+      return (int)__objc3_has_value(source);
+    };
+    CaptureCarrierThrow::fail_copy = true;
+    try {
+      CaptureIntBlock failed = capture_heap_copy(stack);
+#if !__has_feature(objc_arc)
+      _Block_release(failed);
+#endif
+      CAPTURE_CHECK(0);
+    } catch (const CaptureFailure &) {
+      CAPTURE_CHECK(CaptureCarrierThrow::live == 2 && stack() == 1);
+    }
+    CaptureCarrierThrow::fail_copy = false;
+  }
+  CAPTURE_CHECK(CaptureCarrierThrow::live == 0);
+}
 static int capture_failed_replacement(void) { throw CaptureFailure{}; }
 static bool capture_replace_throws;
 static void capture_resource_operation_unwind(void) {
@@ -321,6 +412,9 @@ int main(void) {
   capture_failed_heap_copy();
   capture_failed_resource_creation();
   capture_failed_move_constructor();
+  capture_failed_carrier_creation();
+  capture_failed_carrier_heap_copy();
+  capture_failed_carrier_constructor();
   capture_resource_operation_unwind();
   capture_failed_full_expression();
   capture_failed_lifetime_receiver(false);

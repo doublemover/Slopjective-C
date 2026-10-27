@@ -70,12 +70,23 @@ separately owned +1: their destination acquires a reference before source
 nil-ing, and any independently held manual ownership remains the caller's
 responsibility. The runtime witness covers that +0-alias case.
 
-Qualified Linux ARC Optional/Result moves reuse the existing active-arm storage
-operations in C17 and C++20/C++23. They move strong/weak leaves, clear remaining
-selected scalar/unsafe leaves, and retain valid source discriminants. Nested
-const, volatile or resource-contracted payloads and unqualified/mixed carrier
-shapes remain rejected. Later Block copies use the existing owned-carrier copy
-contract.
+Qualified Linux Optional/Result moves use selected-arm storage operations in
+C17 and C++20/C++23. Plain scalar carrier trees work under ARC and MRC without
+managed copy/dispose hooks. Moves clear only selected scalar/unsafe leaves;
+absent Optional payloads and inactive Result arms remain unread. Source tags,
+including nested tags, stay valid. ARC moves transfer strong/weak leaves through
+the existing owned-carrier copy contract.
+
+Pure C++ carrier captures keep distinct semantic construction recipes. Creation
+uses a move recipe for explicit moves, while heap copies use a const copy recipe.
+C++ payloads keep the state defined by their move constructor; selected scalar
+leaves are zeroed. Stack exit, failed later captures and failed heap copies destroy
+only completed, active payloads. Move-only leaves remain rejected because ordinary
+Blocks must be copyable. Capture recipes persist through PCH and AST import.
+
+Nested const, volatile, atomic or resource-contracted move payloads remain
+rejected. Mixed ARC/C++ carriers, unqualified ownership-bearing leaves and
+unmodeled runtime leaf encodings remain separate boundaries.
 
 ## Resource ownership across Block copies
 
@@ -166,9 +177,8 @@ pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
 [current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 the scope. They remain absent from the earlier 32-gate archive.
 
-Remaining boundaries include unqualified/mixed/C++ carrier move captures,
-potentially
-throwing resource final disposal, unqualified foreign/raw return staging,
+Remaining boundaries include mixed ARC/C++ carrier move captures and unqualified
+ownership-bearing/runtime leaf types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
 broad exceptional CFG capture admission and
 remaining ownership/profile projections. Borrowed escape and concurrent-transfer
 admission are implemented by their owning slices and exercised with the capture

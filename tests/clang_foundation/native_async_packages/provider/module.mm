@@ -718,3 +718,20 @@ struct NativeBlockDefaults {
   int n=^int {return 40;}();
   int get(int delta=^int {return 2;}()) const {return n+delta;}
 };
+
+inline int native_published_carrier_capture(int value) {
+  Optional(NativeStatementLifetime) source = Some(NativeStatementLifetime, NativeStatementLifetime());
+  auto moved=^[move source] {
+    return __objc3_match (source) {
+      case .Some(let selected) => selected.value;
+      case .None => 0;
+    };
+  };
+  int moved_from=__objc3_match (source) {
+    case .Some(let selected) => selected.value;
+    case .None => -1;
+  };
+  Optional(int) plain=Some(int,value);
+  auto plain_move=^[move plain] {return plain ?? 0;};
+  return moved_from==0 ? moved()+plain_move() : -1;
+}
