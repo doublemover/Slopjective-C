@@ -18,6 +18,7 @@ namespace objc3::clang_foundation {
 bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
                                  const clang::ASTContext &context);
 llvm::StringRef RuntimeInterfaceSemantic();
+llvm::StringRef RuntimeInterfaceHeaderSource();
 
 // System modules from the canonical SDK library inventory need no facade
 // dependency artifact. Public signature types still undergo normal dependency

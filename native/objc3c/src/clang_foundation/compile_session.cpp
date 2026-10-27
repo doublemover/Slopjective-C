@@ -2,6 +2,7 @@
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/interface_artifact_io.h"
@@ -95,6 +96,15 @@ class Diagnostics final : public clang::DiagnosticConsumer {
 };
 
 
+// Parse the exact pinned runtime header before eager AST merging. Its guard
+// also protects a later explicit SDK include in the consumer. A separate marker
+// file lets the parser finish the header and its linkage scope before importing.
+constexpr const char *kEagerRuntimeHeader =
+    "/__objc3_import_runtime/objc3_runtime_services.h";
+constexpr const char *kEagerRuntimePrelude =
+    "/__objc3_import_runtime/prelude.h";
+constexpr const char *kEagerRuntimeReady = "__objc3_import_runtime_ready";
+
 class InterfaceImportConsumer final : public clang::ASTConsumer {
 public:
   InterfaceImportConsumer(InterfaceImportSession *session, clang::CompilerInstance &compiler,
@@ -107,6 +117,11 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
+    if (session_ && session_->RequiresRuntimeHeader()) {
+      deferred_context_ = &context;
+      waiting_for_runtime_ = true;
+      return;
+    }
     if (session_ && language.ObjC && language.CPlusPlus &&
         (language.ObjCAutoRefCount || language.ObjCWeak) &&
         predefines.UsePredefines &&
@@ -121,21 +136,27 @@ public:
 
   bool HandleTopLevelDecl(clang::DeclGroupRef declarations) override {
     // All multiplexed consumers have initialized before the first parse event.
-    // Eager imports made during Initialize must wait until this point.
     if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_)
-      for (const auto *declaration : declarations)
-        if (const auto *space =
-                llvm::dyn_cast<clang::NamespaceDecl>(declaration);
-            space && space->getName() == "std" &&
-            deferred_context_->getSourceManager().isWrittenInBuiltinFile(
-                space->getLocation())) {
+      for (const auto *declaration : declarations) {
+        bool ready = false;
+        if (waiting_for_runtime_) {
+          const auto *named = llvm::dyn_cast<clang::NamedDecl>(declaration);
+          ready = named && named->getIdentifier() && named->getName() == kEagerRuntimeReady &&
+              deferred_context_->getSourceManager().getFilename(named->getLocation()) == kEagerRuntimePrelude;
+        } else if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
+          ready = space->getName() == "std" &&
+              deferred_context_->getSourceManager().isWrittenInBuiltinFile(space->getLocation());
+        }
+        if (ready) {
           auto *context = deferred_context_;
           deferred_context_ = nullptr;
+          waiting_for_runtime_ = false;
           ImportDeclarations(*context);
           if (lookup_) lookup_->RegisterInlineDefinitions();
           break;
         }
+      }
     return true;
   }
 
@@ -160,18 +181,23 @@ public:
       context.getDiagnostics().Report(id) << result_.failure;
       return;
     }
-    result_.imported_declarations = imported.imported_declarations;
-    result_.resolved_interface_dependencies =
-        std::move(imported.direct_dependencies);
-    result_.interface_dependency_order = std::move(imported.dependency_order);
-    result_.resolved_module_identities = std::move(imported.resolved_modules);
     result_.resolved_interface_sources = session_->GetSourceArtifacts();
     if (lookup_ && !request_.module_imports.empty()) {
-      lookup_->ConfigureSourceRegistry(request_.module_imports, imported,
+      auto registry = request_.module_imports;
+      // Resolution already checked the invocation-completed lock identities.
+      // The source bridge must compare those same complete identities.
+      for (auto &entry : registry)
+        for (const auto &identity : imported.resolved_modules)
+          if (entry.canonical_name == identity.canonical_name)
+            entry.locked_identity = identity;
+      lookup_->ConfigureSourceRegistry(registry, imported,
                                        result_.resolved_interface_sources);
-      if (compiler_.hasSema())
-        lookup_->InitializeSema(compiler_.getSema());
+      if (compiler_.hasSema()) lookup_->InitializeSema(compiler_.getSema());
     }
+    result_.imported_declarations = imported.imported_declarations;
+    result_.resolved_interface_dependencies = std::move(imported.direct_dependencies);
+    result_.interface_dependency_order = std::move(imported.dependency_order);
+    result_.resolved_module_identities = std::move(imported.resolved_modules);
     if (lookup_) lookup_->QueueInlineDefinitions(imported.inline_definitions);
     if (request_.source_directed_imports) {
       source_scoped_ = true;
@@ -190,7 +216,7 @@ public:
     if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_) {
       result_.failure =
-          "The compiler ARC prelude did not complete before interface import";
+          "The required compiler/runtime prelude did not complete before interface import";
       auto id = context.getDiagnostics().getCustomDiagID(
           clang::DiagnosticsEngine::Error, "%0");
       context.getDiagnostics().Report(id) << result_.failure;
@@ -218,6 +244,7 @@ private:
   CompileResult &result_;
   bool source_scoped_ = false;
   clang::ASTContext *deferred_context_ = nullptr;
+  bool waiting_for_runtime_ = false;
 };
 template <typename NativeAction>
 class ContractAction final : public NativeAction {
@@ -446,6 +473,16 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
         }
         return false;
       }
+    }
+    if (import_session_ && import_session_->RequiresRuntimeHeader()) {
+      auto &preprocessor = invocation->getPreprocessorOpts();
+      preprocessor.addRemappedFile(kEagerRuntimeHeader,
+          llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(), kEagerRuntimeHeader).release());
+      preprocessor.addRemappedFile(kEagerRuntimePrelude,
+          llvm::MemoryBuffer::getMemBufferCopy(
+              std::string("#include \"") + kEagerRuntimeHeader + "\"\n" +
+              "typedef void " + kEagerRuntimeReady + ";\n", kEagerRuntimePrelude).release());
+      preprocessor.Includes.insert(preprocessor.Includes.begin(), kEagerRuntimePrelude);
     }
     return FrontendActionFactory::runInvocation(std::move(invocation), files,
                                                std::move(containers), diagnostics);

@@ -49,6 +49,14 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## Eager runtime-bearing semantic imports
+
+The [2.16.0 source milestone](linux_eager_semantic_imports.md) parses the pinned
+runtime header before eager declaration merging and configures source lookup
+with resolver-verified complete lock identities. It supports source-free eager
+runtime consumers alongside source-directed consumers. SDK/archive delivery and
+broad validation remain deferred.
+
 ## C++ inline and constant definitions
 
 The [2.15.0 source milestone](linux_cxx_definitions.md) preserves concrete inline,

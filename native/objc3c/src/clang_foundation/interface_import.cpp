@@ -751,6 +751,15 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   return report;
 }
 
+bool InterfaceImportSession::RequiresRuntimeHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return std::find(module.sidecar.required_semantics.begin(),
+        module.sidecar.required_semantics.end(), RuntimeInterfaceSemantic()) !=
+        module.sidecar.required_semantics.end();
+  });
+}
+
 std::vector<InterfaceSourceArtifact>
 InterfaceImportSession::GetSourceArtifacts() const {
   std::vector<InterfaceSourceArtifact> result;

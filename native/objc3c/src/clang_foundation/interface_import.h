@@ -101,6 +101,7 @@ public:
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetSourceArtifacts() const;
+  [[nodiscard]] bool RequiresRuntimeHeader() const;
 
 private:
   struct Impl;

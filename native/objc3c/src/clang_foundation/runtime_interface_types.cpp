@@ -140,6 +140,10 @@ llvm::StringRef RuntimeInterfaceSemantic() {
   return runtime_interface::kSemantic;
 }
 
+llvm::StringRef RuntimeInterfaceHeaderSource() {
+  return runtime_interface::kHeaderSource;
+}
+
 void AddRuntimeInterfaceFiles(
     std::vector<std::pair<std::string, std::string>> &files,
     std::vector<std::string> &arguments) {

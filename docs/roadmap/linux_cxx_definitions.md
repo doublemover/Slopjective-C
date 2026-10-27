@@ -29,8 +29,8 @@ checks consumer-only code/data emission without runtime-bearing declarations.
 Dependent templates, local classes and captured lambda/Block/statement-expression
 bodies remain separate work. Namespace-scope thread-local data,
 defaulted comparisons and out-of-line defaulting retain their current boundaries.
-Eager runtime-bearing imports before consumer runtime headers still need header
-coordination; the full runtime fixture currently uses source-directed imports.
+The [2.16.0 header coordination milestone](linux_eager_semantic_imports.md)
+subsequently enables the full runtime fixture through eager imports as well.
 This does not claim broader ownership or profile conformance. The accepted SDK
 remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad
 source/sanitizer matrices and installed/archive delivery remain deferred for the
