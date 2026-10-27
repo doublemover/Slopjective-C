@@ -37,3 +37,10 @@ with the preceding callable/foreign ownership spans. Regenerate dependent
 objects, PCH, interfaces and packages for the compiler identity cutover.
 Extension ABI 21, interface schema 2.2 and runtime layouts remain unchanged;
 SDK 2.33 remains the accepted archive.
+
+The [combined ownership receipt](../support/linux_callable_ownership_batch_progress.json)
+records 390 compiler regressions, 188 native unit tests, all 33 frontend suites,
+15 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution. Three platform compiler cases
+remain unsupported. Broader combined runtime/sanitizer and SDK delivery remain
+separate checkpoints.

@@ -57,3 +57,10 @@ The [System 2.6.0 source span](linux_borrowed_block_pins.md) supplies the CFG
 acquisition/unwind model for lifetime pins loaded from ordinary Block slots and
 for ARC consumed Block argument copies. Other implicit Block copy boundaries
 remain as documented there.
+
+The [combined ownership receipt](../support/linux_callable_ownership_batch_progress.json)
+records 390 compiler regressions, 188 native unit tests, all 33 frontend suites,
+15 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution. Three platform compiler cases
+remain unsupported. Broader combined runtime/sanitizer and SDK delivery remain
+separate checkpoints.

@@ -41,3 +41,10 @@ retained-result MRC IR and source-free callback imports.
 The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) extends
 these checks to foreign consumed parameters and makes callable parameter metadata
 significant to native structural equivalence and ODR identity.
+
+The [combined ownership receipt](../support/linux_callable_ownership_batch_progress.json)
+records 390 compiler regressions, 188 native unit tests, all 33 frontend suites,
+15 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution. Three platform compiler cases
+remain unsupported. Broader combined runtime/sanitizer and SDK delivery remain
+separate checkpoints.
