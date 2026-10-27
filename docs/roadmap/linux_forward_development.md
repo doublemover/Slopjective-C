@@ -42,6 +42,14 @@ suites**, **15 tooling tests** and **24 source-free package configurations /
 cases remain unsupported. These source checks include mutable and record-captured
 consuming closure publication; SDK 2.33 remains the accepted archive.
 
+## Isolation operand ownership
+
+The [concurrency 2.37.0 source span](linux_isolation_operand_snapshots.md) gives
+isolated function arguments and message operands source-ordered ARC/MRC object
+and Block snapshots. Shared precise snapshot cleanup protects later-argument
+replacement, native exceptions, cancellation and failed entry allocation.
+Broader validation follows the implementation batch; SDK 2.33 remains accepted.
+
 ## Captured callable paths
 
 The [System 2.12.0 source span](linux_borrowed_callable_paths.md) forwards known

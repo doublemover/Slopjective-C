@@ -487,6 +487,12 @@ int class_cross(int value) { return [Counter classValue:value]; }
 }
 @end
 )")));
+  Success(Compile(Make(
+      "int clear_snapshot(SafeMessage *__strong *slot){*slot=0;return 0;}\n"
+      "int snapshot_entry(SafeMessage *value,int later)"+NoThrow+
+      " __attribute__((objc_executor(main)));\n"
+      "int snapshot_cross(SafeMessage *value) __objc3_async {"
+      "return __objc3_await snapshot_entry(value,clear_snapshot(&value));}")));
   const std::string Consuming =
       "int consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
       " __attribute__((objc_executor(main)));\n"

@@ -40804,10 +40804,10 @@ index 000000000..b19de611d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..2a04fe7b1
+index 000000000..59a23f0f0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1154 @@
+@@ -0,0 +1,1131 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -41882,40 +41882,17 @@ index 000000000..2a04fe7b1
 +  if (!Thunk)
 +    return ExprError();
 +  ExprResult Callee = BuildDeclRefExpr(Thunk, Thunk->getType(), VK_LValue, Loc);
-+  if (!Message) {
-+    ExprResult Frame = BuildCallExpr(nullptr, Callee.get(), Loc, SourceArguments, Loc);
-+    if (Frame.isInvalid())
-+      return ExprError();
-+    // Keep the written call for source reconstruction. The private frame call
-+    // is executable semantics, not part of a published declaration's syntax.
-+    SmallVector<Expr *, 1> Semantics{Frame.get()};
-+    return PseudoObjectExpr::Create(Context, Call, Semantics, 0);
-+  }
-+
-+  // Semantic bindings guarantee receiver-first, exactly-once evaluation before
-+  // lazy frame creation. The original message is diagnostic/printing syntax;
-+  // it is never executed on the caller's executor.
++  // Bind source-order arguments (and a message receiver) before lazy frame
++  // creation. CodeGen acquires each retainable operand independently in both
++  // ownership modes; later arguments cannot invalidate an evaluated value.
 +  SmallVector<Expr *, 4> Semantics;
 +  SmallVector<Expr *, 4> Captures;
 +  auto Capture = [&](Expr *Value) {
-+    if (getLangOpts().ObjCAutoRefCount &&
-+        Value->getType()->isObjCRetainableType()) {
-+      ExprResult Loaded = DefaultLvalueConversion(Value);
-+      if (Loaded.isInvalid())
-+        return false;
-+      Value = Loaded.get();
-+      // Bind an owning value before evaluating the next operand. Loading a
-+      // receiver/argument only at thunk-call initialization is too late: a
-+      // later operand may clear its last strong owner. The balanced ARC
-+      // temporary also releases this snapshot if a later operand throws.
-+      Value = ImplicitCastExpr::Create(
-+          Context, Value->getType(), CK_ARCProduceObject, Value, nullptr,
-+          VK_PRValue, FPOptionsOverride());
-+      Value = ImplicitCastExpr::Create(
-+          Context, Value->getType(), CK_ARCConsumeObject, Value, nullptr,
-+          VK_PRValue, FPOptionsOverride());
++    ExprResult Loaded = DefaultFunctionArrayLvalueConversion(Value);
++    if (Loaded.isInvalid()) return false;
++    Value = Loaded.get();
++    if (Value->getType()->isObjCRetainableType())
 +      Cleanup.setExprNeedsCleanups(true);
-+    }
 +    auto *Opaque = new (Context)
 +        OpaqueValueExpr(Value->getExprLoc(), Value->getType(),
 +                        Value->getValueKind(), Value->getObjectKind(), Value);
@@ -41936,7 +41913,7 @@ index 000000000..2a04fe7b1
 +    return ExprError();
 +  unsigned ResultIndex = Semantics.size();
 +  Semantics.push_back(Frame.get());
-+  return PseudoObjectExpr::Create(Context, Message, Semantics, ResultIndex);
++  return PseudoObjectExpr::Create(Context, Source, Semantics, ResultIndex);
 +}
 +
 +bool Sema::isObjC3NonSuspendingAwait(Expr *Operand) {

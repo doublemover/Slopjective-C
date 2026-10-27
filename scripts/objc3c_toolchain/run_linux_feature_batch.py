@@ -203,13 +203,17 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     consuming = compile_source(case, work / "consuming.m", work,
                         language="objective-c", standard="c17", ownership="arc",
                         output_name="consuming.o")
+                    snapshots = compile_source(case, work / "snapshots.m", work,
+                        language="objective-c", standard="c17", ownership=case.provider_ownership,
+                        output_name="snapshots.o")
+                    (work / "snapshots.m").unlink()
                     (work / "provider.m").unlink()
                     (work / "owned-packet.m").unlink()
                     (work / "cxx-packet.mm").unlink()
                     (work / "consuming.m").unlink()
                     extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
                     client = compile_source(case, work / "client.m", work, extra=extra)
-                    execute(case, [provider, owned_packet, cxx_packet, consuming, client], work)
+                    execute(case, [provider, owned_packet, cxx_packet, consuming, snapshots, client], work)
                 elif case.feature == "spawn":
                     extra = []
                     if case.transport == "pch":

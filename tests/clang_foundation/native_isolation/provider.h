@@ -95,6 +95,10 @@ void hop_super_enter_main(void);
 objc3_async_frame hop_super_actor_frame(HopCounter *, objc3_executor_t *);
 objc3_async_frame hop_super_consumed_frame(objc3_executor_t *);
 void hop_fail_next_frame_allocation(void);
+int hop_snapshot_roundtrip(int,objc3_executor_t *) __objc3_async_frame;
+void hop_snapshot_reset(int);
+int hop_snapshot_entries(void);
+int hop_snapshot_arguments(void);
 #ifdef __cplusplus
 }
 #endif

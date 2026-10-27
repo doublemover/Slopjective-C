@@ -53,3 +53,10 @@ cases check success, cancellation and failed entry allocation, with exact
 argument/entry/destruction counts. C++ clients add ordinary task-method super
 entry. The original actor fixture now uses an actor subclass to cover inherited
 mailbox identity while preserving its existing actor/executor assertions.
+
+The 2.37 source additions compile `snapshots.m` in the provider's ARC/MRC mode.
+Object receivers, class/function object arguments and Block arguments are
+released or replaced by a later argument before frame creation. Sixteen runtime
+scenarios per configuration cover success, cancellation before entry, allocation
+failure and throwing later arguments, with exact destruction and entry counts.
+The witnesses detect premature destruction without dereferencing freed storage.

@@ -386,6 +386,31 @@ int main(void) {
       sched_yield();
     assert(hop_cxx_value_live() == 0 && hop_cxx_packet_live() == 0);
 
+    for (int kind=0;kind!=8;++kind) {
+      for(int mode=0;mode!=(kind<4 ? 3 : 1);++mode) {
+        int before=hop_destroyed();hop_snapshot_reset(mode==2);
+        frame=hop_snapshot_roundtrip(kind,caller);type=frame.result_type;task=start(&frame);
+        if(mode==1) {
+          assert(objc3_executor_pump(caller,1,&count)==OBJC3_SERVICE_OK && count==1);
+          assert(hop_snapshot_arguments()==1);objc3_task_request_cancel(task);
+        }
+        objc3_completion completion=finish(task);
+        if(kind>=4 || mode==1)assert(completion.kind==OBJC3_COMPLETION_CANCELLED);
+        else if(mode==2) {
+          objc3_service_status service=OBJC3_SERVICE_OK;
+          assert(completion.kind==OBJC3_COMPLETION_ERROR);
+          assert(objc3_async_error_get_service(completion.error,&service)==OBJC3_SERVICE_OK && service==OBJC3_SERVICE_OUT_OF_MEMORY);
+        } else {
+          assert(completion.kind==OBJC3_COMPLETION_SUCCESS);result=0;
+          assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK && result==42);
+        }
+        assert(hop_snapshot_arguments()==1 && hop_snapshot_entries()==(kind<4 && mode==0));
+        objc3_task_release(task);
+        for(unsigned step=0;step!=1000000 && hop_destroyed()!=before+1;++step)sched_yield();
+        assert(hop_destroyed()==before+1);
+      }
+    }
+
     for (int kind = 0; kind != 12; ++kind) {
       int expected_objects = (kind == 4 || kind == 8) ? 2 : 1;
       int destroyed_before = hop_destroyed();

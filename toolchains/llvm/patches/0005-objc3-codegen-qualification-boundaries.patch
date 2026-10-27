@@ -4875,7 +4875,7 @@ index e84e05e8e..8fd1f6dc1 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..e964973ea 100644
+index 6a0d127fb..d119699af 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -5014,7 +5014,7 @@ index 6a0d127fb..e964973ea 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,6 +7408,8 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7408,15 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -5023,14 +5023,21 @@ index 6a0d127fb..e964973ea 100644
  
    // Find the result expression, if any.
    const Expr *resultExpr = E->getResultExpr();
-@@ -7347,7 +7443,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
++  const auto *Entry = resultExpr
++      ? dyn_cast<CallExpr>(resultExpr->IgnoreParenImpCasts()) : nullptr;
++  const bool IsIsolation = Entry && Entry->getDirectCallee() &&
++      Entry->getDirectCallee()->hasAttr<ObjC3IsolationThunkAttr>();
+   LValueOrRValue result;
+ 
+   for (PseudoObjectExpr::const_semantics_iterator
+@@ -7347,7 +7447,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
 -        opaqueData = OVMA::bind(CGF, ov, ov->getSourceExpr());
-+        if (IsKeyPath && ov->getType()->isObjCRetainableType())
++        if ((IsKeyPath || IsIsolation) && ov->getType()->isObjCRetainableType())
 +          opaqueData = OVMA::bind(CGF, ov, RValue::get(
-+              emitObjC3KeyPathOperandSnapshot(CGF, ov->getSourceExpr())));
++              emitObjC3RetainableOperandSnapshot(CGF, ov->getSourceExpr())));
 +        else if (IsKeyPath && ov->getType()->isRecordType()) {
 +          // Aggregate OVEs normally alias their source storage. Key-path
 +          // operands are values and must survive mutation by later arguments.
@@ -28047,7 +28054,7 @@ index 99dfaa80b..6d07d652a 100644
      incrementProfileCounter(C);
 diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.cpp b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..aedd5dbde
+index 000000000..2d597d94f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
 @@ -0,0 +1,100 @@
@@ -28067,17 +28074,17 @@ index 000000000..aedd5dbde
 +using namespace clang::CodeGen;
 +
 +namespace {
-+struct ReleaseKeyPathOperand final : EHScopeStack::Cleanup {
++struct ReleaseOperandSnapshot final : EHScopeStack::Cleanup {
 +  llvm::Value *Owner;
-+  explicit ReleaseKeyPathOperand(llvm::Value *Owner) : Owner(Owner) {}
++  explicit ReleaseOperandSnapshot(llvm::Value *Owner) : Owner(Owner) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
 +    CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
 +  }
 +};
 +
-+struct ReleasePendingKeyPathOperand final : EHScopeStack::Cleanup {
++struct ReleasePendingOperandSnapshot final : EHScopeStack::Cleanup {
 +  Address Storage;
-+  explicit ReleasePendingKeyPathOperand(Address Storage) : Storage(Storage) {}
++  explicit ReleasePendingOperandSnapshot(Address Storage) : Storage(Storage) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
 +    CGF.EmitARCRelease(CGF.Builder.CreateLoad(Storage), ARCPreciseLifetime);
 +  }
@@ -28092,10 +28099,10 @@ index 000000000..aedd5dbde
 +    // destructor also releases a completed object/Block snapshot. The source
 +    // capture guard remains responsible for its own partial field rollback.
 +    Address Pending = CGF.CreateMemTemp(Source->getType(),
-+                                         "objc3.keypath.pending");
++                                         "objc3.operand.pending");
 +    auto *Start = CGF.Builder.CreateStore(llvm::Constant::getNullValue(
 +        CGF.ConvertType(Source->getType())), Pending);
-+    CGF.EHStack.pushCleanup<ReleasePendingKeyPathOperand>(EHCleanup, Pending);
++    CGF.EHStack.pushCleanup<ReleasePendingOperandSnapshot>(EHCleanup, Pending);
 +    auto Rollback = CGF.EHStack.stable_begin();
 +    llvm::Value *Owner;
 +    {
@@ -28117,11 +28124,11 @@ index 000000000..aedd5dbde
 +}
 +} // namespace
 +
-+llvm::Value *clang::CodeGen::emitObjC3KeyPathOperandSnapshot(
++llvm::Value *clang::CodeGen::emitObjC3RetainableOperandSnapshot(
 +    CodeGenFunction &CGF, const Expr *Source) {
 +  assert(Source->getType()->isObjCRetainableType());
 +  llvm::Value *Owner = acquireOperand(CGF, Source);
-+  CGF.pushFullExprCleanup<ReleaseKeyPathOperand>(NormalAndEHCleanup, Owner);
++  CGF.pushFullExprCleanup<ReleaseOperandSnapshot>(NormalAndEHCleanup, Owner);
 +  return Owner;
 +}
 +
@@ -28153,7 +28160,7 @@ index 000000000..aedd5dbde
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.h b/clang/lib/CodeGen/CGObjC3KeyPath.h
 new file mode 100644
-index 000000000..59e202bdd
+index 000000000..4cf95565e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3KeyPath.h
 @@ -0,0 +1,20 @@
@@ -28167,10 +28174,10 @@ index 000000000..59e202bdd
 +class Expr;
 +namespace CodeGen {
 +class CodeGenFunction;
-+/// Create a +1 snapshot before evaluating the next written operand. The
++/// Create a +1 key-path/isolation snapshot before the next written operand. The
 +/// snapshot survives result construction and has precise normal/EH cleanup at
 +/// the enclosing full-expression, under both ARC and manual reference counting.
-+llvm::Value *emitObjC3KeyPathOperandSnapshot(CodeGenFunction &, const Expr *);
++llvm::Value *emitObjC3RetainableOperandSnapshot(CodeGenFunction &, const Expr *);
 +/// Return a normalized +0 MRC getter result before precise receiver cleanup.
 +/// Null means the current return is outside a compiler-owned keypath getter.
 +llvm::Value *tryEmitObjC3KeyPathGetterReturn(CodeGenFunction &, const Expr *);
@@ -29056,6 +29063,79 @@ index 000000000..adc82ab4f
 +  IntegratedAlias copy=owner;
 +  return copy;
 +}
++#ifdef __cplusplus
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-snapshots.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-snapshots.h
+new file mode 100644
+index 000000000..b253cefc2
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-snapshots.h
+@@ -0,0 +1,12 @@
++#include "native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface SnapshotObject <Sendable>
++- (int)snapshotAfter:(int)value __attribute__((nothrow,objc_executor(main)));
++@end
++SnapshotObject *snapshot_source(void);
++int snapshot_drop(SnapshotObject *__strong *slot);
++int snapshot_entry(SnapshotObject *value,int later) __attribute__((nothrow,objc_executor(main)));
++typedef int (^SnapshotWork)(void) __attribute__((objc_unsafe_sendable));
++SnapshotWork snapshot_work_source(void);
++int snapshot_drop_work(SnapshotWork __strong *slot);
++int snapshot_work_entry(SnapshotWork value,int later) __attribute__((nothrow,objc_executor(main)));
+diff --git a/clang/test/ObjC3/CodeGen/native-isolation-snapshots.m b/clang/test/ObjC3/CodeGen/native-isolation-snapshots.m
+new file mode 100644
+index 000000000..908ad6573
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-isolation-snapshots.m
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-isolation-snapshots.h -o %t-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-isolation-snapshots.h -o %t-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-isolation-snapshots.h"
++#endif
++#ifdef __cplusplus
++extern "C" {
++#endif
++int snapshot_function_parent(void) __objc3_async_frame {
++  SnapshotObject *value=snapshot_source();
++  return __objc3_await snapshot_entry(value,snapshot_drop(&value));
++}
++// CHECK-LABEL: define{{.*}} @snapshot_function_parent(
++// CHECK: call{{.*}} @{{.*snapshot_source.*}}(
++// CHECK: call{{.*}} @{{llvm.objc.retain|objc_retain}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*snapshot_drop.*}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*__objc3_isolation_entry_.*}}(
++// CHECK: call{{.*}} @{{llvm.objc.release|objc_release}}(
++int snapshot_message_parent(void) __objc3_async_frame {
++  SnapshotObject *value=snapshot_source();
++  return __objc3_await [value snapshotAfter:snapshot_drop(&value)];
++}
++// CHECK-LABEL: define{{.*}} @snapshot_message_parent(
++// CHECK: call{{.*}} @{{.*snapshot_source.*}}(
++// CHECK: call{{.*}} @{{llvm.objc.retain|objc_retain}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*snapshot_drop.*}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*__objc3_isolation_entry_.*}}(
++// CHECK: call{{.*}} @{{llvm.objc.release|objc_release}}(
++int snapshot_block_parent(void) __objc3_async_frame {
++  SnapshotWork value=snapshot_work_source();
++  return __objc3_await snapshot_work_entry(value,snapshot_drop_work(&value));
++}
++// CHECK-LABEL: define{{.*}} @snapshot_block_parent(
++// CHECK: call{{.*}} @{{.*snapshot_work_source.*}}(
++// CHECK: {{call|invoke}}{{.*}} @{{llvm.objc.retainBlock|objc_retainBlock|_Block_copy}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*snapshot_drop_work.*}}(
++// CHECK: {{call|invoke}}{{.*}} @{{.*__objc3_isolation_entry_.*}}(
++// CHECK: call{{.*}} @{{llvm.objc.release|objc_release}}(
 +#ifdef __cplusplus
 +}
 +#endif
