@@ -64,6 +64,9 @@ struct InterfaceImportReport {
   // These identities are recorded only after ASTImporter has inserted the
   // corresponding declarations in the consumer ASTContext.
   std::vector<InterfaceDeclarationIdentity> imported_declarations;
+  // Verified inline definitions require backend registration as well as Sema
+  // insertion. Provider-only code cannot supply consumer-only ODR uses.
+  std::vector<clang::NamedDecl *> inline_definitions;
   std::vector<clang::NamedDecl *> visible_lookup_declarations;
   // Imported TU lookup declarations (including unscoped enum constants)
   // grouped by their originating module. Each vector

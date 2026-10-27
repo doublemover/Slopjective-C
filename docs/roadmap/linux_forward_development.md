@@ -49,6 +49,13 @@ Earlier source `49f322e67e0d` retains both complete five-family sanitizer matric
 overlapping batches are not summed. Public async/actor predicates and full
 Core/Strict/System conformance remain reserved.
 
+## C++ inline and constant definitions
+
+The [2.15.0 source milestone](linux_cxx_definitions.md) preserves concrete inline,
+constexpr and consteval bodies, constructor initializers and inline/constant
+data. Typed body contracts use lexical local identities and explicit dependency
+policy. SDK/archive work and broad validation remain deferred.
+
 ## C++ default arguments and member initializers
 
 The [2.14.0 source milestone](linux_cxx_declaration_expressions.md) binds concrete

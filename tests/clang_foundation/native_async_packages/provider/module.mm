@@ -485,3 +485,38 @@ int NativeDefaults::Object::get(int delta) const { return value+delta; }
 int NativeDefaults::frame(int n) __objc3_async_frame {
   __objc3_await native_module_borrow_leaf(); return n+2;
 }
+
+namespace NativeInline {
+  inline int total=40;
+  inline int client_total=40;
+  inline int dynamic=NativeDefaults::seed();
+  inline int ordered=dynamic+2;
+  inline int client_only(int n) { return n+2; }
+  inline constexpr int extra=2;
+  constexpr int compute(int n) {
+    int result=0;
+    for (int i=0;i<n;++i) result+=2;
+    return result;
+  }
+  consteval int immediate(int n) { return n+2; }
+  struct Value {
+    int n;
+    inline static int updates=0;
+    static constexpr int offset=2;
+    constexpr Value(int value):n(value) {}
+    constexpr int get() const { return n+offset; }
+    int update() { ++updates; return ++total; }
+  };
+  inline int step(int delta=0) {
+    static int calls=0;
+    ++calls;
+    total+=delta;
+    return calls;
+  }
+  int provider_step(int delta);
+  int provider_total();
+  int provider_updates();
+}
+int NativeInline::provider_step(int delta) { return step(delta); }
+int NativeInline::provider_total() { return total; }
+int NativeInline::provider_updates() { return Value::updates; }

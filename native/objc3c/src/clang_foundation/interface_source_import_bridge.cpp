@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "clang/AST/ASTImporterSharedState.h"
+#include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/Basic/IdentifierTable.h"
@@ -114,6 +115,8 @@ void InterfaceSourceImportBridge::ConfigureSourceRegistry(
 }
 
 void InterfaceSourceImportBridge::Reset() {
+  pending_inline_definitions_.clear();
+  registered_inline_definitions_.clear();
   registry_.clear();
   requests_.clear();
   declarations_.clear();
@@ -171,6 +174,21 @@ void InterfaceSourceImportBridge::InitializeSema(clang::Sema &sema) {
     importer_state_.reset();
   }
   sema_ = &sema;
+}
+
+void InterfaceSourceImportBridge::QueueInlineDefinitions(
+    llvm::ArrayRef<clang::NamedDecl *> definitions) {
+  pending_inline_definitions_.insert(pending_inline_definitions_.end(),
+                                      definitions.begin(), definitions.end());
+}
+
+void InterfaceSourceImportBridge::RegisterInlineDefinitions() {
+  if (!definition_consumer_) return;
+  auto pending = std::move(pending_inline_definitions_);
+  pending_inline_definitions_.clear();
+  for (auto *declaration : pending)
+    if (registered_inline_definitions_.insert(declaration->getCanonicalDecl()).second)
+      definition_consumer_->HandleTopLevelDecl(clang::DeclGroupRef(declaration));
 }
 
 bool InterfaceSourceImportBridge::IsRegistered(
@@ -545,6 +563,10 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       return reject_diagnostics("source declarations could not be imported for '" +
           canonical_name.str() + "'", imported.diagnostics);
     }
+
+    QueueInlineDefinitions(imported.inline_definitions);
+    // Explicit source imports run while parsing, after backend initialization.
+    RegisterInlineDefinitions();
 
     for (const auto &entry : imported.declarations_by_module) {
       auto &destination = declarations_[entry.first];

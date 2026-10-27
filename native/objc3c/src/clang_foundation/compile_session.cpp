@@ -120,6 +120,9 @@ public:
   }
 
   bool HandleTopLevelDecl(clang::DeclGroupRef declarations) override {
+    // All multiplexed consumers have initialized before the first parse event.
+    // Eager imports made during Initialize must wait until this point.
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_)
       for (const auto *declaration : declarations)
         if (const auto *space =
@@ -130,6 +133,7 @@ public:
           auto *context = deferred_context_;
           deferred_context_ = nullptr;
           ImportDeclarations(*context);
+          if (lookup_) lookup_->RegisterInlineDefinitions();
           break;
         }
     return true;
@@ -168,6 +172,7 @@ public:
       if (compiler_.hasSema())
         lookup_->InitializeSema(compiler_.getSema());
     }
+    if (lookup_) lookup_->QueueInlineDefinitions(imported.inline_definitions);
     if (request_.source_directed_imports) {
       source_scoped_ = true;
       return;
@@ -182,6 +187,7 @@ public:
   }
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    if (lookup_) lookup_->RegisterInlineDefinitions();
     if (deferred_context_) {
       result_.failure =
           "The compiler ARC prelude did not complete before interface import";
@@ -242,6 +248,7 @@ class ContractAction final : public NativeAction {
       clang::CompilerInstance &compiler, llvm::StringRef input) override {
     auto native = NativeAction::CreateASTConsumer(compiler, input);
     if (!native) return nullptr;
+    if (lookup_source_) lookup_source_->SetDefinitionConsumer(native.get());
     std::vector<std::unique_ptr<clang::ASTConsumer>> consumers;
     // BackendConsumer may clear the AST in HandleTranslationUnit before
     // emitting the native module. Observe that same AST while it is alive.

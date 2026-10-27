@@ -92,3 +92,7 @@ reserved until their public syntax and complete contracts are qualified.
 The [2.14.0 source milestone](linux_cxx_declaration_expressions.md) binds concrete
 default arguments and member initializers, resolved expression dependencies and
 native expression identity under `objc3.cxx-declaration-expressions.v1`.
+
+The [2.15.0 source milestone](linux_cxx_definitions.md) preserves concrete inline,
+constexpr/consteval function and constructor bodies and inline/constant data
+under required `objc3.cxx-definitions.v1` semantics.

@@ -62,6 +62,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
+    kCxxDefinitionSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -633,6 +634,16 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       }
       if (recorded_ids.insert(actual.stable_id).second)
         report.imported_declarations.push_back(std::move(actual));
+      if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
+          function && function->isInlined()) {
+        if (auto *definition = function->getDefinition();
+            definition && definition->doesThisDeclarationHaveABody())
+          report.inline_definitions.push_back(definition);
+      }
+      if (auto *variable = llvm::dyn_cast<clang::VarDecl>(named);
+          variable && variable->isInline())
+        if (auto *definition = variable->getDefinition())
+          report.inline_definitions.push_back(definition);
       if (IsTranslationUnitLookupDeclaration(named)) {
         report.declarations_by_module[module.sidecar.module.canonical_name]
             .push_back(named);
@@ -729,6 +740,13 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         found->second.remove(named);
     }
   }
+  const auto &manager = target_context.getSourceManager();
+  std::stable_sort(report.inline_definitions.begin(), report.inline_definitions.end(),
+      [&](const auto *left, const auto *right) {
+        return manager.isBeforeInTranslationUnit(left->getLocation(), right->getLocation());
+      });
+  report.inline_definitions.erase(std::unique(report.inline_definitions.begin(),
+      report.inline_definitions.end()), report.inline_definitions.end());
   report.success = true;
   return report;
 }

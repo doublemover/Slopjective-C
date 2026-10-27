@@ -405,7 +405,7 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(!Compile(conflict).success);
     conflict.source_text = "inline int module_global = 42;";
     conflict.interface_exports = {"module_global"};
-    assert(!Compile(conflict).success);
+    assert(Compile(conflict).success);
   }
   auto tampered = *sidecar;
   auto named =

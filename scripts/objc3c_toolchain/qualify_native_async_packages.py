@@ -198,10 +198,14 @@ def check_cpp_metadata(metadata):
         raise ValueError('C++ package lost its using capability')
     if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
         raise ValueError('C++ package lost its using-directive')
+    if 'objc3.cxx-definitions.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its inline/constexpr definition capability')
+    if ';cxx-definitions:v1;' not in names.get('NativeInline::Value', {}).get('canonical_type_identity', ''):
+        raise ValueError('C++ package lost its record-owned inline definition identity')
     if 'objc3.cxx-declaration-expressions.v1' not in metadata.get('required_semantics', []):
-        raise RuntimeError('missing C++ declaration-expression capability')
+        raise ValueError('missing C++ declaration-expression capability')
     if ';cxx-declaration-expressions:v1;' not in names.get('NativeDefaults::Object', {}).get('canonical_type_identity', ''):
-        raise RuntimeError('missing record-owned declaration-expression identity')
+        raise ValueError('missing record-owned declaration-expression identity')
     if ';cxx-using:v1;' not in names.get('NativeInherited',{}).get('canonical_type_identity',''):
         raise ValueError('C++ package lost member using/inherited constructor identity')
     for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):

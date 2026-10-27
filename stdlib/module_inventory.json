@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 14,
+        "minor": 15,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -137,14 +137,16 @@
         "source-free dynamic casts, virtual destruction and virtual native-frame calls (authored)",
         "named/nested/inline namespace and namespace-alias semantic exports with native scoped identities (source)",
         "nested named class/enum/type-alias package declarations with native access and source-free nested frame values (source)",
-        "namespace/member using declarations, inherited constructors and namespace using-directive package lookup (source)",
-        "typed C++ default arguments and member initializers with resolved expression dependencies and source-free evaluation (source)"
+        "namespace/member using and using-enum declarations, inherited constructors and namespace using-directive package lookup (source)",
+        "typed C++ default arguments and member initializers with resolved expression dependencies and source-free evaluation (source)",
+        "concrete inline/constexpr/consteval functions, constructors and inline/constant/class-static data definitions with source-free consumer bodies (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Concrete inline/constexpr/template class bodies, defaulted comparisons, out-of-line defaulting, unnamed nested types, namespace attributes and dependent lookup projections and broader profile contracts"
+        "Dependent/template class bodies and captured/local-type inline definitions, defaulted comparisons, out-of-line defaulting, unnamed nested types, namespace attributes and dependent lookup projections and broader profile contracts",
+        "Eager runtime-bearing semantic imports before consumer runtime headers need header coordination"
       ]
     },
     {

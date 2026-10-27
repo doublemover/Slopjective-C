@@ -2,6 +2,7 @@
 #include <objc/runtime.h>
 @import fixture.NativeAsync;
 template<class T> concept native_has_number = requires(const T &value) { value.number(); };
+static int imported_dynamic_order=NativeInline::ordered;
 static_assert(!native_has_number<NativeDeletedMember>);
 static_assert(sizeof(NativeDeletedMember) == sizeof(int));
 template<class T> concept native_public_first = requires(T *p) { static_cast<NativeFirstBase *>(p); };
@@ -194,6 +195,26 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  {
+    if (imported_dynamic_order!=42 || NativeInline::dynamic!=40 || NativeInline::ordered!=42) return 76;
+    volatile int forty=40;
+    if (NativeInline::client_only(forty)!=42) return 74;
+    int *client_total=&NativeInline::client_total;
+    ++*client_total;
+    if (*client_total!=41) return 75;
+    static_assert(NativeInline::compute(21)==42);
+    static_assert(NativeInline::immediate(40)==42);
+    constexpr NativeInline::Value constant(40);
+    static_assert(constant.get()==42);
+    NativeInline::total=40;
+    if (NativeInline::step()!=1 || NativeInline::provider_step(2)!=2 ||
+        NativeInline::provider_total()!=42 || NativeInline::total!=42) return 72;
+    NativeInline::Value::updates=0;
+    NativeInline::Value value(40);
+    if (value.get()!=42 || value.update()!=43 || NativeInline::provider_total()!=43 ||
+        NativeInline::provider_updates()!=1) return 73;
+  }
+
   {
     NativeDefaults::evaluations=0;
     if (NativeDefaults::accept()!=42 || NativeDefaults::evaluations!=1) return 65;

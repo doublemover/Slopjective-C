@@ -1,3 +1,4 @@
+#include "clang_foundation/module_names.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/runtime_interface_types.h"
@@ -841,6 +842,55 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxDefinitions() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-class-structure.v1",
+      "objc3.cxx-namespaces.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-declaration-expressions.v1", "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    const std::vector<std::string> args = {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"};
+    auto emit = [&](const std::string &source,
+                    const std::vector<std::string> &exports = std::vector<std::string>{}) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "definitions.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),
+          ast->getASTContext().getTranslationUnitDecl(), "fixture.definitions", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.definitions", "test", {}, {}, {}, exports);
+    };
+    const std::string source = "namespace Inline { inline int total=40; inline constexpr int extra=2; "
+        "extern const int fixed=42; "
+        "constexpr int compute(int n) { int result=0; for(int i=0;i<n;++i) result+=2; return result; } "
+        "consteval int immediate(int n) { return n+2; } "
+        "struct Value { int n; inline static int updates=0; static constexpr int offset=2; "
+        "constexpr Value(int value):n(value) {} "
+        "constexpr int get() const { return n+offset; } int update() { ++updates; return ++total; } }; "
+        "inline int step(int delta=0) { static int calls=0; ++calls; total+=delta; return calls; } }";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto first = emit("inline int api(int n) { return n+2; }");
+    auto second = emit("inline int api(int n) { return n+3; }");
+    assert(first.success && second.success && first.identity.semantic_fingerprint != second.identity.semantic_fingerprint);
+    first = emit("inline constexpr int answer=42;");
+    second = emit("inline constexpr int answer=43;");
+    assert(first.success && second.success && first.identity.semantic_fingerprint != second.identity.semantic_fingerprint);
+    auto excluded = emit("int hidden(); inline int api() { return hidden(); }", {"api"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(), excluded.diagnostics.end(),
+        [](const auto &d) { return d.code == "O3IFC156"; }));
+    std::erase(decoded->required_semantics, "objc3.cxx-definitions.v1");
+    decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxDeclarationExpressions() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1305,12 +1355,12 @@ void TestBoundedCxxSemanticInterfaces() {
     enum_identity = emitted.identity.semantic_fingerprint;
   }
   for (const char *source :
-       {"namespace nested { inline int api() { return 42; } }",
+       {"namespace nested { inline int api() { return [] { return 42; }(); } }",
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
-        "second=1; int get() const { return second; } };",
+        "second=1; int get() const { return [] { return 42; }(); } };",
 
-        "struct Method { int value; inline int get() const { return value; } "
+        "struct Method { int value; inline int get() const { return [] { return 42; }(); } "
         "};",
         "struct Default { int value=[] { return 42; }(); };",
         "struct Conditional { explicit(true) Conditional(int); };",
@@ -1319,9 +1369,9 @@ void TestBoundedCxxSemanticInterfaces() {
         "default; };",
         "struct Immediate { consteval Immediate() = default; };",
         "struct Nested { struct Inner { int value=[] { return 42; }(); }; Inner child; };",
-        "int api(int argument=[] { return 42; }());", "inline int api() { return 42; }",
-        "extern constexpr int exported=42;", "extern const int exported=42;",
-        "constexpr int evaluated() { return 42; }",
+        "int api(int argument=[] { return 42; }());", "inline int api() { return [] { return 42; }(); }",
+        "extern constexpr int exported=[] { return 42; }();", "extern const int exported=[] { return 42; }();",
+        "constexpr int evaluated() { return [] { return 42; }(); }",
         "union Overlap { int one; long two; };"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
@@ -1359,6 +1409,7 @@ int main() {
   TestCxxNestedTypes();
   TestCxxUsingDeclarations();
   TestCxxDeclarationExpressions();
+  TestCxxDefinitions();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

@@ -16,6 +16,7 @@
 #include "clang/Basic/SourceLocation.h"
 
 namespace clang {
+class ASTConsumer;
 class LookupResult;
 class FileManager;
 class IdentifierInfo;
@@ -56,6 +57,13 @@ public:
       const std::vector<std::string> &search_roots,
       const std::vector<InterfaceModuleRequest> &registry,
       const InterfaceImportTarget &target, clang::FileManager &file_manager);
+  void SetDefinitionConsumer(clang::ASTConsumer *consumer) {
+    definition_consumer_ = consumer;
+    pending_inline_definitions_.clear();
+    registered_inline_definitions_.clear();
+  }
+  void QueueInlineDefinitions(llvm::ArrayRef<clang::NamedDecl *> definitions);
+  void RegisterInlineDefinitions();
   void InitializeSema(clang::Sema &sema) override;
 
   [[nodiscard]] bool IsRegistered(llvm::StringRef canonical_name) const;
@@ -127,6 +135,9 @@ private:
                               const std::set<std::string> &visible,
                               std::string &reason) const;
 
+  clang::ASTConsumer *definition_consumer_ = nullptr;
+  std::vector<clang::NamedDecl *> pending_inline_definitions_;
+  std::set<const clang::Decl *> registered_inline_definitions_;
   std::set<std::string> registry_;
   std::map<std::string, InterfaceModuleRequest> requests_;
   std::map<std::string, std::vector<clang::NamedDecl *>> declarations_;

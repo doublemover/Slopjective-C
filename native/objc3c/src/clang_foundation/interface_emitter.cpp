@@ -173,6 +173,9 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return IsPublishedType(declaration);
   if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
     return IsPublishedType(method->getParent());
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+      variable && variable->isStaticDataMember())
+    return IsPublishedType(llvm::cast<clang::CXXRecordDecl>(variable->getDeclContext()));
 
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
     const auto *owner =
@@ -196,7 +199,7 @@ clang::NamedDecl *Representative(clang::NamedDecl *declaration) {
   if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     return function->getMostRecentDecl();
   if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
-    return variable->getMostRecentDecl();
+    return variable->getDefinition() ? variable->getDefinition() : variable->getMostRecentDecl();
   if (auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
     return tag->getDefinition() ? tag->getDefinition() : tag;
   if (auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
@@ -222,14 +225,41 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
   return true;
 }
 
+bool PublishesFunctionBody(const clang::FunctionDecl *function) {
+  return function && function->getASTContext().getLangOpts().CPlusPlus &&
+         function->isInlined() && !function->isDefaulted() && !function->isDeleted();
+}
+bool PublishesVariableInitializer(const clang::VarDecl *variable) {
+  return variable && variable->getASTContext().getLangOpts().CPlusPlus &&
+         (variable->isInline() || variable->isConstexpr() ||
+          (variable->hasInit() && variable->mightBeUsableInConstantExpressions(
+                                      variable->getASTContext())));
+}
+
 // Bind spelling, typed native nodes and every resolved reference. Text alone
 // cannot distinguish identically spelled defaults that select different overloads.
 // Length delimiters keep user strings from introducing synthetic identity fields.
 class DeclarationExpressionIdentity final
     : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
 public:
-  explicit DeclarationExpressionIdentity(const clang::ASTContext &context)
-      : context_(context) {}
+  explicit DeclarationExpressionIdentity(const clang::ASTContext &context,
+                                         const clang::FunctionDecl *function = nullptr)
+      : context_(context) {
+    if (function)
+      for (const auto *parameter : function->parameters()) Local(parameter);
+  }
+  void Local(const clang::NamedDecl *declaration) {
+    const auto *canonical = declaration->getCanonicalDecl();
+    if (!locals_.count(canonical)) locals_.emplace(canonical, locals_.size());
+  }
+  bool VisitStmt(clang::Stmt *statement) {
+    Add(statement->getStmtClassName()); return true;
+  }
+  bool VisitVarDecl(clang::VarDecl *declaration) {
+    if (declaration->isLocalVarDeclOrParm()) Local(declaration);
+    Add(CanonicalType(declaration->getType(), context_));
+    return true;
+  }
   void Add(llvm::StringRef value) {
     bytes_ += std::to_string(value.size()) + ":" + value.str();
   }
@@ -265,10 +295,13 @@ public:
   }
   void Reference(const clang::NamedDecl *declaration) {
     if (!declaration) { Add("<none>"); return; }
+    if (const auto found = locals_.find(declaration->getCanonicalDecl()); found != locals_.end()) {
+      Add("local:" + std::to_string(found->second)); return;
+    }
     Add(ReadInterfaceDeclarationStableId(declaration));
     Add(ReadNativeSymbolName(declaration));
   }
-  std::string Get(clang::Expr *expression) {
+  std::string Get(clang::Stmt *expression) {
     clang::PrintingPolicy policy(context_.getLangOpts());
     policy.PrintAsCanonical = true;
     policy.AnonymousTagNameStyle = static_cast<unsigned>(
@@ -284,11 +317,28 @@ public:
 private:
   const clang::ASTContext &context_;
   std::string bytes_;
+  std::map<const clang::Decl *, unsigned> locals_;
 };
 
 std::string DeclarationExpressionContract(const clang::Expr *expression,
                                            const clang::ASTContext &context) {
   return DeclarationExpressionIdentity(context).Get(const_cast<clang::Expr *>(expression));
+}
+
+std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
+                                        const clang::ASTContext &context) {
+  const auto *definition = function->getDefinition();
+  if (!definition) return "declaration";
+  DeclarationExpressionIdentity identity(context, definition);
+  if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
+    for (const auto *initializer : constructor->inits()) {
+      if (!initializer->isWritten()) continue;
+      if (initializer->isMemberInitializer()) identity.Reference(initializer->getMember());
+      else if (initializer->isBaseInitializer())
+        identity.Add(CanonicalType(clang::QualType(initializer->getBaseClass(), 0), context));
+      identity.Add(identity.Get(initializer->getInit()));
+    }
+  return identity.Get(definition->getBody());
 }
 
 bool HasClassLifecycle(const clang::CXXRecordDecl *record) {
@@ -461,6 +511,23 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
       }
     if (!expressions.empty()) out << ";cxx-declaration-expressions:v1;";
     for (const auto &expression : expressions) out << expression << ';';
+    std::set<std::string> definitions;
+    for (const auto *method : cxx->methods())
+      if (!method->isImplicit() && PublishesFunctionBody(method))
+        definitions.insert(ReadInterfaceDeclarationStableId(method) + ":" +
+                           FunctionDefinitionContract(method, context));
+    for (const auto *member : cxx->decls())
+      if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(member);
+          variable && variable->isStaticDataMember())
+        definitions.insert("static=" + ReadInterfaceDeclarationStableId(variable) +
+            ":type=" + CanonicalType(variable->getType(), context) +
+            ":inline=" + std::to_string(variable->isInline()) +
+            ":constexpr=" + std::to_string(variable->isConstexpr()) +
+            ":access=" + CxxAccessName(variable->getAccess()) +
+            ":init=" + (PublishesVariableInitializer(variable) && variable->hasInit()
+                ? DeclarationExpressionContract(variable->getInit(), context) : "none"));
+    if (!definitions.empty()) out << ";cxx-definitions:v1;";
+    for (const auto &definition : definitions) out << "definition=" << definition << ';';
   }
   out.flush();
   return text;
@@ -625,6 +692,11 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
             DeclarationExpressionContract(parameter->getDefaultArg(), context) + ";";
       ++index;
     }
+    if (PublishesFunctionBody(function))
+      identity += ";cxx-definitions:v1;inline=1;constexpr=" +
+          std::to_string(function->isConstexpr()) + ";consteval=" +
+          std::to_string(function->isConsteval()) + ";body=" +
+          FunctionDefinitionContract(function, context) + ";";
     return identity;
   }
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
@@ -638,6 +710,16 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       identity +=
           ";language-linkage=" +
           std::to_string(static_cast<unsigned>(variable->getLanguageLinkage()));
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(value);
+        variable && variable->isStaticDataMember())
+      identity += ";cxx-definitions:v1;static-data=1;access=" +
+          std::string(CxxAccessName(variable->getAccess())) + ";";
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(value);
+        PublishesVariableInitializer(variable)) {
+      identity += ";cxx-definitions:v1;inline=" + std::to_string(variable->isInline()) +
+          ";constexpr=" + std::to_string(variable->isConstexpr()) + ";initializer=" +
+          (variable->hasInit() ? DeclarationExpressionContract(variable->getInit(), context) : "none") + ";";
+    }
     const auto lifetime = value->getType().getObjCLifetime();
     if (lifetime != clang::Qualifiers::OCL_None)
       identity += ";objc-lifetime=" + std::to_string(static_cast<unsigned>(lifetime));
@@ -794,6 +876,9 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target->getDeclContext());
+        function && body_function_ && function->getCanonicalDecl() == body_function_->getCanonicalDecl())
+      return;
     CheckVisibility(target);
     if (target->getDeclContext()->isFunctionOrMethod() ||
         (!target->isExternallyVisible() && IsTopLevel(target)) ||
@@ -801,6 +886,27 @@ class TypeDependencyVisitor final
       AddDiagnostic(result_, "O3IFC112",
                     "declaration expression references a non-public or unresolved dependency",
                     target->getQualifiedNameAsString());
+  }
+  void CheckBody(const clang::FunctionDecl *function) {
+    const auto *definition = function->getDefinition();
+    if (!definition) return;
+    body_function_ = definition;
+    if (const auto *constructor = llvm::dyn_cast<clang::CXXConstructorDecl>(definition))
+      for (const auto *initializer : constructor->inits())
+        if (initializer->isWritten()) TraverseStmt(initializer->getInit());
+    TraverseStmt(definition->getBody());
+    body_function_ = nullptr;
+  }
+  bool VisitVarDecl(clang::VarDecl *variable) {
+    if (body_function_)
+      for (const auto *attribute : variable->attrs())
+        if (!attribute->isImplicit()) UnsupportedExpression();
+    return true;
+  }
+  bool VisitTagDecl(clang::TagDecl *declaration) {
+    if (body_function_ && declaration->getDeclContext()->isFunctionOrMethod())
+      return UnsupportedExpression();
+    return true;
   }
   bool VisitExpr(clang::Expr *expression) {
     TraverseType(expression->getType());
@@ -934,6 +1040,7 @@ class TypeDependencyVisitor final
   bool UsesRuntimeFrame = false;
 
 private:
+  const clang::FunctionDecl *body_function_ = nullptr;
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
@@ -975,6 +1082,11 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration);
       field && field->hasInClassInitializer())
     visitor.TraverseStmt(field->getInClassInitializer());
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      PublishesFunctionBody(function)) visitor.CheckBody(function);
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+      PublishesVariableInitializer(variable) && variable->hasInit())
+    visitor.TraverseStmt(const_cast<clang::Expr *>(variable->getInit()));
   auto check_reference=[&](const clang::NamedDecl *target) {
     visitor.CheckVisibility(target);
     if (!IsInMainFile(context,target->getLocation(),source_root) && !visitor.IsResolved(target))
@@ -1057,6 +1169,11 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
       if (field) continue;
       if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
+      if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(member)) {
+        supported &= variable->isStaticDataMember() && !variable->getDescribedVarTemplate() &&
+                     variable->getTLSKind() == clang::VarDecl::TLS_None;
+        continue;
+      }
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
           supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl());
@@ -1066,10 +1183,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
           method && !method->isTemplated() &&
-          (!method->isInlined() || method->isDeleted() ||
-           IsInClassDefaultedSpecialMember(method)) &&
           (!method->isDefaulted() || IsInClassDefaultedSpecialMember(method)) &&
-          (!method->isConstexpr() || IsInClassDefaultedSpecialMember(method)) &&
           !method->getTrailingRequiresClause();
       if (const auto *ctor =
               llvm::dyn_cast_or_null<clang::CXXConstructorDecl>(method))
@@ -1092,15 +1206,12 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         function && function->isExternallyVisible()) {
       supported &= !function->isTemplated() &&
                    !function->getTrailingRequiresClause() &&
-                   !function->isInlined() && !function->isDefaulted();
+                   !function->isDefaulted();
     }
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->isExternallyVisible())
       supported &=
-          !variable->isConstexpr() && !variable->isInline() &&
-          variable->getTLSKind() == clang::VarDecl::TLS_None &&
-          !(variable->hasInit() && variable->mightBeUsableInConstantExpressions(
-                                       declaration->getASTContext()));
+          variable->getTLSKind() == clang::VarDecl::TLS_None;
   }
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
@@ -1109,7 +1220,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                   "members, deleted "
                   "declarations or in-class defaulted special members, without "
                   "templates, "
-                  "concrete inline/constexpr members, "
                   "local declaration expressions or unnamed nested types",
                   declaration->getQualifiedNameAsString());
   return supported;
@@ -1212,21 +1322,11 @@ class InterfaceCollector final
         return true;
       }
     }
-    if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
-        variable && variable->isInline()) {
-      AddDiagnostic(result_, "O3IFC115",
-                    "inline variable definitions cannot be represented without "
-                    "their initializer",
-                    variable->getQualifiedNameAsString());
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+        function && !context_.getLangOpts().CPlusPlus && function->isInlineSpecified()) {
+      AddDiagnostic(result_, "O3IFC115", "C inline function linkage requires a dedicated definition contract",
+                    function->getQualifiedNameAsString());
       return true;
-    }
-    if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
-      if (function->isInlineSpecified()) {
-        AddDiagnostic(result_, "O3IFC115",
-                      "inline function body removal may change linkage and is unsupported",
-                      function->getQualifiedNameAsString());
-        return true;
-      }
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
@@ -1405,7 +1505,7 @@ private:
 
 void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
-                          llvm::raw_ostream &out) {
+                          llvm::raw_ostream &out, bool declaration_only = false) {
   const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
   const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
   const bool c_linkage =
@@ -1426,7 +1526,7 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
     policy.FullyQualifiedName = false;
 
   if (llvm::isa<clang::FunctionDecl>(declaration)) {
-    policy.TerseOutput = true;
+    policy.TerseOutput = declaration_only || !PublishesFunctionBody(function);
     // Print modeled ownership exactly once, independently of whether the
     // original declaration placed its GNU attribute before or after the type.
     // Declaration polishing retains modeled native availability while the
@@ -1434,9 +1534,8 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
     policy.SuppressDeclAttributes = false;
   }
   if (llvm::isa<clang::VarDecl>(declaration)) {
-    policy.SuppressInitializers = true;
-    const auto *variable = llvm::cast<clang::VarDecl>(declaration);
-    if (variable->getStorageClass() == clang::SC_None)
+    policy.SuppressInitializers = !PublishesVariableInitializer(variable);
+    if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None)
       out << "extern ";
   }
   // Clang's declaration-polishing policy omits non-keyword attributes.
@@ -1453,8 +1552,32 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
       runtime->printPretty(out, policy);
       out << '\n';
     }
+  auto *body_function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+  clang::AttrVec saved_attributes;
+  std::vector<std::pair<clang::ParmVarDecl *, bool>> saved_defaults;
+  const bool has_label_definition = !declaration_only && body_function && PublishesFunctionBody(body_function) &&
+      body_function->doesThisDeclarationHaveABody() &&
+      body_function->hasAttr<clang::AsmLabelAttr>();
+  auto restore_definition = llvm::scope_exit([&] {
+    if (has_label_definition) body_function->setAttrs(saved_attributes);
+    for (const auto &[parameter, inherited] : saved_defaults)
+      parameter->setHasInheritedDefaultArg(inherited);
+  });
+  if (has_label_definition) {
+    // Reparsed canonical source already has the label declaration. Do not
+    // accumulate another declaration on every serialization round trip.
+    const bool needs_label_declaration = !body_function->getPreviousDecl() ||
+        !body_function->getPreviousDecl()->hasAttr<clang::AsmLabelAttr>();
+    saved_attributes = body_function->getAttrs();
+    body_function->dropAttr<clang::AsmLabelAttr>();
+    for (auto *parameter : body_function->parameters())
+      if (needs_label_declaration && parameter->hasDefaultArg()) {
+        saved_defaults.emplace_back(parameter, parameter->hasInheritedDefaultArg());
+        parameter->setHasInheritedDefaultArg();
+      }
+  }
   declaration->print(out, policy);
-  if (llvm::isa<clang::FunctionDecl>(declaration)) {
+  if (llvm::isa<clang::FunctionDecl>(declaration) && !PublishesFunctionBody(function)) {
     // Use one suffix for the declaration attribute in MRC and the canonical
     // produces-result function type bit in ARC.
     const auto ownership = ReadNativeReturnOwnership(declaration);
@@ -1474,7 +1597,14 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
 
 void PrintRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
-                          llvm::raw_ostream &out) {
+                          llvm::raw_ostream &out, bool declaration_only = false) {
+  // A synthesized label declaration is its own canonical root, including its
+  // namespace wrappers. Reparsing otherwise splits one wrapper into two roots.
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      !declaration_only && PublishesFunctionBody(function) &&
+      function->doesThisDeclarationHaveABody() && function->hasAttr<clang::AsmLabelAttr>() &&
+      (!function->getPreviousDecl() || !function->getPreviousDecl()->hasAttr<clang::AsmLabelAttr>()))
+    PrintRootDeclaration(declaration, context, out, true);
   std::vector<const clang::NamespaceDecl *> scopes;
   for (const auto *dc = declaration->getDeclContext(); dc; dc = dc->getParent())
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(dc))
@@ -1496,7 +1626,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     // Out-of-line source definitions retain an explicit qualifier even with
     // FullyQualifiedName disabled. The enclosing wrappers already supply it.
     if (function && !scopes.empty()) function->setQualifierInfo({});
-    PrintUnscopedRootDeclaration(declaration, context, out);
+    PrintUnscopedRootDeclaration(declaration, context, out, declaration_only);
   }
   for (const auto *space : scopes) {
     (void)space;
@@ -1860,6 +1990,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxUsingSemantic);
     if (HasCxxDeclarationExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDeclarationExpressionSemantic);
+    if (HasCxxDefinitionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxDefinitionSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -1922,6 +2054,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
+    kCxxDefinitionSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -1978,8 +2111,17 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   std::sort(emitted_identities.begin(), emitted_identities.end(), by_id);
   std::sort(reparsed_identities.begin(), reparsed_identities.end(), by_id);
   if (emitted_identities.size() != reparsed_identities.size()) {
+    std::string difference;
+    for (const auto &identity : emitted_identities)
+      if (std::none_of(reparsed_identities.begin(), reparsed_identities.end(),
+          [&](const auto &other) { return identity.stable_id == other.stable_id; }))
+        difference += " missing=" + identity.stable_id;
+    for (const auto &identity : reparsed_identities)
+      if (std::none_of(emitted_identities.begin(), emitted_identities.end(),
+          [&](const auto &other) { return identity.stable_id == other.stable_id; }))
+        difference += " unexpected=" + identity.stable_id;
     AddDiagnostic(result, "O3IFC122",
-                  "reparsed interface declaration set differs from source AST",
+                  "reparsed interface declaration set differs from source AST:" + difference,
                   canonical_module_name);
     result.source_bytes.clear();
     return result;
@@ -2022,6 +2164,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxNestedTypeSemantic,
     kCxxUsingSemantic,
     kCxxDeclarationExpressionSemantic,
+    kCxxDefinitionSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
