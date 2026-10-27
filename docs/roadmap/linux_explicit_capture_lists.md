@@ -193,6 +193,10 @@ pass the 33-gate SDK and fresh Debian/Ubuntu qualification; the
 [current receipt](../support/linux_cxx_frame_value_acceptance.json) records
 the scope. They remain absent from the earlier 32-gate archive.
 
+The [2.29.0 SDK acceptance](../support/linux_source_batch_2_29_acceptance.json)
+delivers the later plain native, pure C++ and explicit/implicit mixed ARC
+carrier capture spans together with the current package contracts.
+
 Remaining boundaries include C++ lambda mixed captures, MRC mixed ownership and
 unqualified ownership-bearing and unmodeled leaf storage types, potentially throwing resource final disposal, unqualified foreign/raw return staging,
 broad exceptional CFG capture admission and

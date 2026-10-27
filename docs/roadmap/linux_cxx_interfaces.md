@@ -19,33 +19,27 @@ by [the C++ async callable contract](linux_async_cxx_callables.md). They require
 `objc3.cxx-member-interfaces.v1`, canonical static/instance and effect identity,
 and module-owned native symbols.
 
-The [2.8.0 delivery](linux_cxx_class_lifecycles.md) admits bounded nonvirtual
-classes with private fields and out-of-line lifecycle members under the required
-`objc3.cxx-class-lifecycles.v1` capability. The 2.9.0 delivery below extends this
-with nonvirtual bases and in-class defaulted special members. That accepted SDK still rejects virtual dispatch, concrete
-inline or template methods, member initializers and nested declarations. Public templates, named
-namespaces, default arguments, inline definitions and constant-expression
-exports require further modeling. Private implementation declarations inside an
-anonymous namespace do not become exports. Unsupported public declarations
-suppress both interface outputs. The required `objc3.cxx-data-interfaces.v1`
-semantic capability cannot be erased from C++ sidecars.
+The current **2.29.0 SDK** delivers the C++ class, namespace, lookup and executable
+expression contracts described below. The
+[current acceptance receipt](../support/linux_source_batch_2_29_acceptance.json)
+binds all 33 installed gates and the exact-archive Debian/Ubuntu class-package
+checks. Earlier [2.8.0](linux_cxx_class_lifecycles.md) and
+[2.9.0](linux_cxx_class_structure.md) deliveries established the initial lifecycle,
+base and defaulting contracts; their receipts retain those historical bounds.
 
-The [accepted 2.9.0 delivery](linux_cxx_class_structure.md) additionally models
-nonvirtual bases and in-class defaulted special members. Its base/defaulting
-capability is mandatory. All installed gates and the exact-archive focused
-Debian/Ubuntu class-package checks pass; the
-[acceptance receipt](../support/linux_cxx_class_structure_acceptance.json) binds
-the compiler, SDK and qualification evidence.
+Public dependent/template definitions, generic/public closure types, unnamed
+local/nested types and unmodeled namespace attributes remain separate work.
+Private declarations inside anonymous namespaces do not become exports.
+Unsupported public declarations suppress both interface outputs. Required
+semantic capabilities cannot be erased from C++ sidecars.
 
 The [2.10.0 source milestone](linux_cxx_class_dispatch.md) adds virtual bases,
 virtual dispatch, pure/final/covariant overrides and module-owned C++ type ABI
-names. It requires `objc3.cxx-class-dispatch.v1`; SDK 2.9.0 remains active until
-that source batch receives coordinated installed/archive qualification.
+names. It requires `objc3.cxx-class-dispatch.v1` and is delivered in SDK 2.29.0.
 
 The [2.11.0 source milestone](linux_cxx_namespaces.md) adds named/nested/inline
 namespace exports and namespace aliases under `objc3.cxx-namespaces.v1`, with
-namespace-wide or qualified leaf selection. Its source checks and deferred
-validation remain separate from the accepted SDK.
+namespace-wide or qualified leaf selection. Its source and installed validation are included in the current SDK.
 
 The [2.12.0 source milestone](linux_cxx_nested_types.md) additionally admits
 nested named class, enum and alias declarations under `objc3.cxx-nested-types.v1`
@@ -80,14 +74,15 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 ```
 
-The [current class lifecycle receipt](../support/linux_cxx_class_lifecycle_acceptance.json)
+The [current batch receipt](../support/linux_source_batch_2_29_acceptance.json)
 records the exact current archive and qualification. The earlier
 [interface acceptance receipt](../support/linux_cxx_interface_acceptance.json)
 retains the historical ABI 12 aggregate-interface, sanitizer and debugger scope.
 
 This declaration subset uses the existing native call and ownership bounds.
-Public Optional/Result, synchronous throws, async/await and actors remain
-reserved until their public syntax and complete contracts are qualified.
+Public feature-test predicates for Optional/Result, synchronous throws,
+async/await and actors remain reserved until their complete profile contracts
+are qualified.
 
 The [2.14.0 source milestone](linux_cxx_declaration_expressions.md) binds concrete
 default arguments and member initializers, resolved expression dependencies and

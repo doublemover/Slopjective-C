@@ -9,30 +9,30 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current SDK rebuilds and checks the LLVM foundation: **371 native Clang/index/query
-regressions** (368 ObjC3), three unsupported cases and 167 AST/matcher/source-tooling
-contracts. Compiler, editor and debugger targets build. The delivery passes all
-32 facade suites, **nine GNUstep client tests**, 37 installed consumer checks,
-13 selected native integration nodes and all **33 installed SDK qualification
-gates**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-e926e2771bde-00b75dc3`.
-The [current acceptance receipt](../support/linux_cxx_class_structure_acceptance.json)
-records exact source, runtime policy, archive and report hashes. Fresh Debian 13
-and Ubuntu 26.04 pass that exact archive in the affected C++ class/package scope,
-including installation, relocation, ordinary-user compiler/package consumers,
-embedding and debugger audits. Both owned containers are removed. The preceding
-[2.8.0 receipt](../support/linux_cxx_class_lifecycle_acceptance.json) retains its
-broader fresh 168-configuration / 966-command feature matrices.
+The current **2.29.0 SDK** delivers source milestones 2.10–2.29, including
+C++ executable package contracts, selected-arm carrier captures, native export
+roots and named local types. Semantic interface schema **2.2** is a hard cutover;
+regenerate dependent objects, PCH, interfaces and packages.
 
-The installed five-family matrix passes 168 configurations / 966 commands.
-The current class structure preflights pass eight C++20/23 ARC/MRC O0/O2 cases
-in each normal, ASan/UBSan and TSan mode (24 cases / 96 commands). Unchanged
-service archives and sanitizer GNU variants retain their qualified identities;
-the normal source preflight uses the accepted 2.8.1 GNU runtime. The installed
-SDK rebuilds GNU with the current compiler and binds the final source checkpoint.
-The current compiler/PCH regression and native importer/printer tests pass.
-All 29 native tooling/qualification checks pass. The final
-12 feature-authority/onboarding checks overlap the tooling scope.
+The verified LLVM foundation passes **373 compiler regressions** (three platform
+cases unsupported) and **179 native unit tests**. This delivery reuses that exact
+foundation and passes all **33 frontend suites**, nine GNUstep client tests,
+37 installed consumer commands, 13 native integration nodes and all **33 installed
+SDK gates**. The installed five-family matrix passes **168 configurations and
+966 commands**. Compiler source identity is
+`llvmorg-23.1.3-0d261d1ca552-da2a9f68497e-00b75dc3`.
+
+The [current acceptance receipt](../support/linux_source_batch_2_29_acceptance.json)
+binds the exact archive, compiler/runtime identities and qualification reports.
+That archive passes focused C++ package qualification on fresh **Debian 13** and
+**Ubuntu 26.04** as ordinary users, including installation, source-free consumers,
+relocation, embedding and debugger audits. Both owned containers are removed.
+The [combined source receipt](../support/linux_source_batch_2_24_progress.json)
+and later focused capture/local-type receipts retain source/PCH and sanitizer
+scope; the fresh-container scope is explicitly bounded to affected C++ packages.
+Full language/profile conformance and native Linux AArch64 remain open.
+
+Earlier bounded implementation and qualification checkpoints follow.
 
 The preceding [2.7.0 frame-binding receipt](../support/linux_cxx_frame_borrow_acceptance.json)
 retains its source/PCH reference/receiver, dynamic-storage, scope and frame-value

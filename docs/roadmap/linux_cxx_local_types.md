@@ -27,8 +27,9 @@ bridge with the consumer object linked first. Changed enum values and member
 bodies must change semantic fingerprints; erasing the capability is rejected.
 
 This source milestone does not establish complete C++ template, ownership,
-async or profile conformance. Installed SDK/archive delivery follows the
-coordinated implementation batch.
+async or profile conformance. The
+[2.29.0 SDK acceptance receipt](../support/linux_source_batch_2_29_acceptance.json)
+records all installed gates and focused exact-archive Debian/Ubuntu consumers.
 
 The [focused progress receipt](../support/linux_cxx_local_types_progress.json)
 records the frontend/tooling checks and normal/ASan source-free package matrices.
