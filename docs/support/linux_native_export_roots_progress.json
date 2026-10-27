@@ -1,0 +1,64 @@
+{
+  "schema": "objc3c.linux-native-export-roots-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "26e65800e8716b6d2f32d54782a1384892c2abfa",
+  "concurrency_module_version": "2.28.0",
+  "interface_schema": "2.2",
+  "scope": [
+    "Native export ownership for namespace descendants, class static members, friends, aliases and using declarations",
+    "Fingerprint-bound export_root checked by binary installation and native import",
+    "Anonymous C typedef-owned tag definition round trips",
+    "Hard cutover from interface schema 2.1; no compatibility decoder"
+  ],
+  "frontend": {
+    "suites_passed": ["interface_emitter", "interface_contract", "interface_codec"],
+    "logs": [
+      {
+        "path": "out/native-export-root-emitter-test.log",
+        "sha256": "e1cd615fd37c483c07dbc90da2f6b864c86dd24f1f86995edcf6842a6f3da441"
+      },
+      {
+        "path": "out/native-export-root-contract-test.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "out/native-export-root-codec-test.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "registered_frontend_suites": 33
+  },
+  "tooling": {
+    "tests_passed": 179,
+    "log": {
+      "path": "out/native-export-root-package-tooling-tests.log",
+      "sha256": "985e1f62b10fb6728587a8a85d7e8db0570381668a3d49caf2e5e85909e49627"
+    }
+  },
+  "source_free_cpp_packages": {
+    "configurations": 8,
+    "commands": 32,
+    "axes": [
+      "C++20/C++23",
+      "ARC/MRC",
+      "O0/O2",
+      "provider source removed",
+      "consumer object linked first",
+      "production binary inventory verifier and offline installation"
+    ],
+    "report": {
+      "path": "out/native-validation/native-export-root-packages-normal/qualification.json",
+      "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+    }
+  },
+  "delivery": {
+    "accepted_sdk": "2.9.0",
+    "new_archive_built": false,
+    "pending": "Coordinated installed SDK and exact-archive qualification after the implementation batch"
+  },
+  "remaining": [
+    "Dependent/template bodies, generic/public closure and ordinary local types",
+    "Unnamed nested types, unmodeled namespace attributes and dependent lookup projections",
+    "Broader language/profile implementation and native Linux AArch64 qualification"
+  ]
+}
