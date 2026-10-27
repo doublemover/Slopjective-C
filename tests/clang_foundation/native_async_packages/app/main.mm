@@ -314,6 +314,13 @@ int main() {
         native_thread_sum()!=242 || native_thread_lifetimes(0)!=4 ||
         native_thread_lifetimes(1)!=2) return 90;
   }
+  {
+    constexpr NativeFriendValue value(40);
+    static_assert(native_friend_reveal(value)==40);
+    if (!(value==NativeFriendValue(40)) || value==NativeFriendValue(41) ||
+        NativeFriendReader::read(value)!=40 || native_friend_external(value)!=42 ||
+        native_friend_delayed(value)!=42 || probe(NativeFriendScope::Value{40})!=42) return 91;
+  }
   auto pending = native_module_value(41).start(executor);
   uint32_t executed = 0;
   if (objc3_executor_pump(executor, 2, &executed) != OBJC3_SERVICE_OK ||

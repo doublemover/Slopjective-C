@@ -523,3 +523,7 @@ The [2.22.0 source milestone](linux_cxx_thread_local.md) preserves C++ thread-lo
 global/class-static/inline data and local static storage under
 `objc3.cxx-thread-local.v1`, including native per-thread lifetime and shared
 provider/consumer storage.
+
+The [2.23.0 source milestone](linux_cxx_friends.md) preserves concrete friend
+functions/types, native access and ADL, including hidden and out-of-line inline
+definitions, under `objc3.cxx-friends.v1`.

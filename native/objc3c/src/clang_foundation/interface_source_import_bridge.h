@@ -125,6 +125,7 @@ public:
 private:
   void Reset();
   void RecordDirectImport(llvm::StringRef canonical_name);
+  void RestoreVisibleFriendLookup();
   bool AddVisibleClosure(llvm::StringRef canonical_name);
   void AppendModuleDeclarations(llvm::StringRef canonical_name,
                                llvm::StringRef identifier,

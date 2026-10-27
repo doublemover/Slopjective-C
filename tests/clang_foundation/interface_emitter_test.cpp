@@ -842,6 +842,51 @@ void TestCxxClassStructure() {
   }
 }
 
+void TestCxxFriends() {
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+      "objc3.cxx-class-lifecycles.v1", "objc3.cxx-definitions.v1",
+      "objc3.cxx-friends.v1", "objc3.module-owned-names.v1"};
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x", "c++", standard, "--target=x86_64-unknown-linux-gnu"}, "friends.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.friends", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.friends", "test");
+    };
+    const std::string source =
+        "struct Reader; class Value { int n; public: constexpr Value(int n):n(n){} "
+        "friend struct Reader; friend constexpr int reveal(const Value &v) {return v.n;} "
+        "friend bool operator==(const Value &a,const Value &b) {return a.n==b.n;} "
+        "friend int external(Value); friend inline int delayed(const Value &); "
+        "friend int operator+(Value,int)=delete; }; "
+        "struct Reader { static int read(const Value &v) {return v.n;} }; "
+        "int external(Value v) {return v.n+2;} inline int delayed(const Value &v) {return v.n+2;}";
+    auto emitted = emit(source);
+    for (const auto &d : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(emitted.success);
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    auto round = emit(emitted.source_bytes);
+    assert(round.success && round.source_bytes == emitted.source_bytes &&
+           round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
+    auto changed=source;
+    changed.replace(changed.find("return v.n;}"),std::string("return v.n;}").size(),"return v.n+1;}");
+    auto different=emit(changed);
+    assert(different.success && different.identity.semantic_fingerprint!=emitted.identity.semantic_fingerprint);
+    assert(!emit("struct V { template<class T> friend int generic(T); };").success);
+    assert(!emit("struct __attribute__((annotate(\"objc3.spi:Testing\"))) A {friend int shared();}; "
+                 "struct B {friend int shared();};").success);
+    std::erase(decoded->required_semantics,"objc3.cxx-friends.v1");
+    decoded->module.semantic_fingerprint=ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
+    auto erased=EncodeSemanticInterfaceSidecar(*decoded,semantics);
+    assert(!erased); llvm::consumeError(erased.takeError());
+  }
+}
+
 void TestCxxThreadLocalData() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
@@ -1636,7 +1681,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "};",
         "struct Default { int value=[](auto value) { return value; }(42); };",
         "struct Conditional { explicit(true) Conditional(int); };",
-        "struct Comparison { int n; friend bool operator==(const Comparison &a, const Comparison &b) "
+        "struct Comparison { int n; template<class T> friend bool operator==(const Comparison &a, const T &b) "
         "{ return a.n==b.n; } };",
         "struct Nested { struct Inner { int value=[](auto value) { return value; }(42); }; Inner child; };",
         "int api(int argument=[](auto value) { return value; }(42));", "inline int api() { return [](auto value) { return value; }(42); }",
@@ -1686,6 +1731,7 @@ int main() {
   TestCxxNamespaceAttributes();
   TestCxxLambdaExpressions();
   TestCxxThreadLocalData();
+  TestCxxFriends();
   TestDeletedAggregateMemberIdentity();
   return 0;
 }

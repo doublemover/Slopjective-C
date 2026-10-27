@@ -47,7 +47,8 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1"};
+    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v1"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||
@@ -75,6 +76,7 @@ void Check(const fs::path &root, BaseLanguage language,
   )";
   const bool cpp = language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx;
   if (cpp) source += R"(
+    struct SPI(Testing) HiddenFriend { int n; friend int hidden_probe(HiddenFriend v) {return v.n;} };
     namespace SPI(Testing) GroupSPI {
       int secret() { return 22; }
       struct Secret { int n; };
@@ -99,7 +101,7 @@ void Check(const fs::path &root, BaseLanguage language,
       artifact.sidecar_json, artifact.source_bytes, semantics);
   assert(decoded);
   for (const auto &d : decoded->declarations) {
-    if (d.qualified_name == "Secret::field" ||
+    if (d.qualified_name == "hidden_probe" || d.qualified_name == "Secret::field" ||
         d.qualified_name == "secret_choice")
       assert(d.spi_group == "Testing");
   }
@@ -117,7 +119,7 @@ void Check(const fs::path &root, BaseLanguage language,
       "secret()",      "secret_global",  "sizeof(struct Secret)",
       "secret_choice", "(SecretAlias)0", "other()"};
   if (cpp)
-    expressions.insert(expressions.end(), {"ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)", "GroupSPI::secret()", "sizeof(GroupSPI::Secret)"});
+    expressions.insert(expressions.end(), {"sizeof(HiddenFriend)", "ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)", "GroupSPI::secret()", "sizeof(GroupSPI::Secret)"});
   if (objc)
     expressions.insert(expressions.end(),
                        {"sizeof(SecretRoot*)", "sizeof(id<SecretProtocol>)"});
@@ -134,6 +136,10 @@ void Check(const fs::path &root, BaseLanguage language,
       "int client(void) { return secret() + secret_global + sizeof(struct "
       "Secret) + secret_choice + (SecretAlias)0; }";
   CheckResult(Compile(client));
+  if (cpp) {
+    client.source_text="int client() {return hidden_probe(HiddenFriend{42});}";
+    CheckResult(Compile(client));
+  }
   if (objc) {
     client.source_text = "int client(SecretRoot *v, id<SecretProtocol> p) { "
                          "return [v onlySecret] + v.secretProperty + !!p; }";

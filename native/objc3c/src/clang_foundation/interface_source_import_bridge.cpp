@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_validation.h"
+#include "clang_foundation/interface_emitter.h"
 
 #include "clang_foundation/interface_source_import_bridge.h"
 
@@ -252,6 +253,31 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
   return true;
 }
 
+void InterfaceSourceImportBridge::RestoreVisibleFriendLookup() {
+  // Hidden friends are excluded from ordinary lookup by their native IDNS bits,
+  // but ADL still needs their namespace lookup entries after the import point.
+  // ImportInto initially hides TU entries for source-scoped imports. Restore
+  // only verified functions from modules and SPI groups that are now visible.
+  for (const auto &module : visible_) {
+    auto declarations = declarations_.find(module);
+    auto artifact = artifacts_.find(module);
+    if (declarations == declarations_.end() || artifact == artifacts_.end()) continue;
+    const auto request = requests_.find(module);
+    for (auto *declaration : declarations->second) {
+      auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (!function || function->getFriendObjectKind() == clang::Decl::FOK_None) continue;
+      const auto id = ReadInterfaceDeclarationStableId(function);
+      auto identity = std::find_if(artifact->second.declarations.begin(), artifact->second.declarations.end(),
+          [&](const auto &candidate) { return candidate.stable_id == id; });
+      if (identity == artifact->second.declarations.end()) continue;
+      if (!identity->spi_group.empty() &&
+          (!directly_imported_.count(module) || request == requests_.end() ||
+           !IsGrantedSPI(*identity, request->second.spi_groups))) continue;
+      function->getDeclContext()->getPrimaryContext()->makeDeclVisibleInContext(function);
+    }
+  }
+}
+
 void InterfaceSourceImportBridge::RecordDirectImport(
     llvm::StringRef canonical_name) {
   directly_imported_.insert(canonical_name.str());
@@ -270,6 +296,7 @@ void InterfaceSourceImportBridge::RecordDirectImport(
       [](const auto &left, const auto &right) {
         return left.module.canonical_name < right.module.canonical_name;
       });
+  RestoreVisibleFriendLookup();
 }
 
 SourceModuleImportStatus InterfaceSourceImportBridge::Activate(

@@ -69,6 +69,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxNamespaceAttributeSemantic,
     kCxxLambdaExpressionSemantic,
     kCxxThreadLocalSemantic,
+    kCxxFriendSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

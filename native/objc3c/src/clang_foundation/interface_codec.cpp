@@ -431,6 +431,13 @@ llvm::Error ValidateForEncoding(
       kCxxThreadLocalSemantic) != sidecar.required_semantics.end();
   if (has_thread_local != thread_local_capability)
     return Invalid("C++ thread-local identity and required capability must agree");
+  const bool has_friends = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxFriendIdentity);
+  const bool friend_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxFriendSemantic) != sidecar.required_semantics.end();
+  if (has_friends != friend_capability)
+    return Invalid("C++ friend identity and required capability must agree");
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

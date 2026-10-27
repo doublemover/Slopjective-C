@@ -648,3 +648,25 @@ int native_thread_sum() {
 int native_thread_lifetimes(int destroyed) {
   return __atomic_load_n(destroyed ? &native_thread_destroyed : &native_thread_constructed,__ATOMIC_SEQ_CST);
 }
+
+struct NativeFriendReader;
+class NativeFriendValue {
+  int value;
+public:
+  constexpr NativeFriendValue(int n):value(n) {}
+  friend struct NativeFriendReader;
+  friend constexpr int native_friend_reveal(const NativeFriendValue &v) {return v.value;}
+  friend bool operator==(const NativeFriendValue &a,const NativeFriendValue &b) {return a.value==b.value;}
+  friend int native_friend_external(NativeFriendValue);
+  friend inline int native_friend_delayed(const NativeFriendValue &);
+  friend int operator+(NativeFriendValue,int)=delete;
+};
+struct NativeFriendReader {
+  static int read(const NativeFriendValue &v) {return v.value;}
+};
+int native_friend_external(NativeFriendValue v) {return v.value+2;}
+inline int native_friend_delayed(const NativeFriendValue &v) {return v.value+2;}
+
+namespace NativeFriendScope {
+  struct Value { int n; friend int probe(Value v) {return v.n+2;} };
+}

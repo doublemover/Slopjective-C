@@ -437,9 +437,11 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
 }
 
 const clang::CXXRecordDecl *FriendOwner(const clang::NamedDecl *declaration) {
-  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
-      function && function->getFriendObjectKind() != clang::Decl::FOK_None)
-    return llvm::dyn_cast<clang::CXXRecordDecl>(function->getLexicalDeclContext());
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    for (const auto *redecl : function->redecls())
+      if (redecl->getFriendObjectKind() != clang::Decl::FOK_None)
+        if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext()))
+          return record;
   return nullptr;
 }
 
@@ -457,6 +459,16 @@ bool IsInClassDefaultedComparison(const clang::FunctionDecl *function) {
   case clang::OO_Spaceship: return true;
   default: return false;
   }
+}
+
+bool IsConcreteFriend(const clang::FriendDecl *declaration) {
+  if (declaration->isPackExpansion() || declaration->getFriendTypeNumTemplateParameterLists())
+    return false;
+  if (const auto *type = declaration->getFriendType())
+    return !type->getType()->isDependentType();
+  const auto *function = llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration->getFriendDecl());
+  return function && !function->isTemplated() && !function->getTrailingRequiresClause() &&
+      (!function->isDefaulted() || IsInClassDefaultedComparison(function));
 }
 
 class LambdaExpressionFinder final : public clang::RecursiveASTVisitor<LambdaExpressionFinder> {
@@ -718,6 +730,31 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
                 ? DeclarationExpressionContract(variable->getInit(), context) : "none"));
     if (!definitions.empty()) out << ";cxx-definitions:v1;";
     for (const auto &definition : definitions) out << "definition=" << definition << ';';
+  }
+  if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
+      cxx && cxx->isCompleteDefinition()) {
+    std::set<std::string> friends;
+    for (const auto *member : cxx->decls())
+      if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
+        if (const auto *type = friend_decl->getFriendType()) {
+          friends.insert("type=" + CanonicalType(type->getType(), context));
+        } else if (const auto *function =
+                       llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl());
+                   function && !IsInClassDefaultedComparison(function)) {
+          function = function->getMostRecentDecl();
+          friends.insert("function=" + ReadInterfaceDeclarationStableId(function) +
+              ":type=" + CanonicalType(function->getType(), context) +
+              ":inline=" + std::to_string(function->isInlined()) +
+              ":constexpr=" + std::to_string(function->isConstexpr()) +
+              ":consteval=" + std::to_string(function->isConsteval()) +
+              ":deleted=" + std::to_string(function->isDeleted()) +
+              ":lookup=" + std::to_string(function->getIdentifierNamespace()) +
+              ":body=" + (PublishesFunctionBody(function)
+                  ? FunctionDefinitionContract(function, context) : "declaration"));
+        }
+      }
+    if (!friends.empty()) out << ";cxx-friends:v1;";
+    for (const auto &friend_identity : friends) out << "friend=" << friend_identity << ';';
   }
   if (const auto *cxx = llvm::dyn_cast<clang::CXXRecordDecl>(record);
       cxx && cxx->isCompleteDefinition()) {
@@ -1414,7 +1451,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
 }
 
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
-                             InterfaceEmissionArtifact &result) {
+                             InterfaceEmissionArtifact &result,
+                             const std::vector<std::string> &exports = {}) {
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
   bool supported = true;
   if (record && record->isCompleteDefinition()) {
@@ -1430,8 +1468,18 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (field) continue;
       if (llvm::isa<clang::BaseUsingDecl>(member)) continue;
       if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member)) {
-        supported &= IsInClassDefaultedComparison(
-            llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()));
+        supported &= IsConcreteFriend(friend_decl);
+        if (const auto *function = llvm::dyn_cast_or_null<clang::FunctionDecl>(friend_decl->getFriendDecl()))
+          for (const auto *redecl : function->redecls())
+            if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(redecl->getLexicalDeclContext());
+                owner && redecl->getFriendObjectKind() != clang::Decl::FOK_None) {
+              if (!SelectedExport(owner, exports))
+                AddDiagnostic(result, "O3IFC156", "friend binding references an excluded owning record",
+                              owner->getQualifiedNameAsString());
+              if (ReadInterfaceSPIGroup(owner) != ReadInterfaceSPIGroup(record))
+                AddDiagnostic(result, "O3IFC157", "shared friend owners require the same SPI policy",
+                              function->getQualifiedNameAsString());
+            }
         continue;
       }
       if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(member)) {
@@ -1441,7 +1489,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(member)) {
         if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(type))
           supported &= (tag->getIdentifier() || tag->getTypedefNameForAnonDecl());
-        supported &= IsBoundedCxxDeclaration(type, result);
+        supported &= IsBoundedCxxDeclaration(type, result, exports);
         continue;
       }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
@@ -1543,7 +1591,7 @@ class InterfaceCollector final
     if (context_.getLangOpts().CPlusPlus && !declaration->isImplicit() &&
         IsInMainFile(context_, declaration->getLocation()) &&
         IsTopLevel(declaration) &&
-        !IsBoundedCxxDeclaration(declaration, result_))
+        !IsBoundedCxxDeclaration(declaration, result_, exports_))
       return true;
     if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
       if (category->IsClassExtension() &&
@@ -1692,7 +1740,9 @@ class InterfaceCollector final
     // declarations needed by signatures that precede the eventual definition.
     // The sidecar still records one semantic identity per USR below.
     if ((IsTopLevel(declaration) || IsOutOfLineDefaultedDefinition(declaration)) &&
-        !FriendOwner(declaration) &&
+        (!FriendOwner(declaration) ||
+         (llvm::isa<clang::FunctionDecl>(declaration) &&
+          !declaration->getLexicalDeclContext()->isRecord())) &&
         !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                    clang::ObjCIvarDecl, clang::FieldDecl,
                    clang::EnumConstantDecl>(declaration))
@@ -2105,6 +2155,12 @@ bool ReadInterfaceDeclarationIdentity(
     if (const auto *owner = FriendOwner(function))
       identity.canonical_type_identity += "friend-owner=" + ReadInterfaceDeclarationStableId(owner) + ";";
   }
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative))
+    if (const auto *owner = FriendOwner(function); owner && !IsInClassDefaultedComparison(function))
+      identity.canonical_type_identity += ";cxx-friends:v1;owner=" +
+          ReadInterfaceDeclarationStableId(owner) + ";deleted=" +
+          std::to_string(function->isDeleted()) + ";lookup=" +
+          std::to_string(function->getIdentifierNamespace()) + ";";
   if (IsOutOfLineDefaultedDefinition(representative))
     identity.canonical_type_identity += ";cxx-out-of-line-defaulting:v1;";
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative);
@@ -2334,6 +2390,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxThreadLocalSemantic);
+    if (HasCxxFriendIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxFriendSemantic);
     if (HasCxxNestedTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTypeSemantic);
     if (HasCxxNamespaceIdentity(declaration))
@@ -2403,6 +2461,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxNamespaceAttributeSemantic,
     kCxxLambdaExpressionSemantic,
     kCxxThreadLocalSemantic,
+    kCxxFriendSemantic,
       "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",
       "objc3.api-partitions.v1",
@@ -2519,6 +2578,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxNamespaceAttributeSemantic,
     kCxxLambdaExpressionSemantic,
     kCxxThreadLocalSemantic,
+    kCxxFriendSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",

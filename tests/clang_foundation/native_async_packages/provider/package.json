@@ -95,7 +95,10 @@
     "native_local_thread_value",
     "native_thread_local_bridge",
     "native_thread_sum",
-    "native_thread_lifetimes"
+    "native_thread_lifetimes",
+    "NativeFriendReader",
+    "NativeFriendValue",
+    "NativeFriendScope"
   ],
   "dependencies": []
 }
