@@ -2571,7 +2571,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..fabcafa34 100644
+index d743717ad..3e26f08f3 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2585,15 +2585,29 @@ index d743717ad..fabcafa34 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTImporterSharedState.h"
  #include "clang/AST/ASTLambda.h"
-@@ -531,6 +535,7 @@ namespace clang {
+@@ -530,7 +534,21 @@ namespace clang {
+     ExpectedDecl VisitEnumDecl(EnumDecl *D);
      ExpectedDecl VisitRecordDecl(RecordDecl *D);
      ExpectedDecl VisitEnumConstantDecl(EnumConstantDecl *D);
++    template <class TemplateDecl>
++    Error ImportMemberTemplateOrigin(TemplateDecl *From, TemplateDecl *To) {
++      if (auto *Origin = From->getInstantiatedFromMemberTemplate()) {
++        auto Imported = import(Origin);
++        if (!Imported) return Imported.takeError();
++        if (!To->getInstantiatedFromMemberTemplate())
++          To->setInstantiatedFromMemberTemplate(*Imported);
++        if (From->isMemberSpecialization() && !To->isMemberSpecialization())
++          To->setMemberSpecialization();
++      }
++      return Error::success();
++    }
++
      ExpectedDecl VisitFunctionDecl(FunctionDecl *D);
 +    ExpectedDecl VisitBlockDecl(BlockDecl *D);
      ExpectedDecl VisitCXXMethodDecl(CXXMethodDecl *D);
      ExpectedDecl VisitCXXConstructorDecl(CXXConstructorDecl *D);
      ExpectedDecl VisitCXXDestructorDecl(CXXDestructorDecl *D);
-@@ -592,6 +597,14 @@ namespace clang {
+@@ -592,6 +610,14 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -2608,7 +2622,17 @@ index d743717ad..fabcafa34 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -627,6 +640,18 @@ namespace clang {
+@@ -602,6 +628,9 @@ namespace clang {
+     ExpectedStmt VisitContinueStmt(ContinueStmt *S);
+     ExpectedStmt VisitBreakStmt(BreakStmt *S);
+     ExpectedStmt VisitReturnStmt(ReturnStmt *S);
++    ExpectedStmt VisitCoawaitExpr(CoawaitExpr *E);
++    ExpectedStmt VisitCoreturnStmt(CoreturnStmt *S);
++    ExpectedStmt VisitCoroutineBodyStmt(CoroutineBodyStmt *S);
+     // FIXME: MSAsmStmt
+     // FIXME: SEHExceptStmt
+     // FIXME: SEHFinallyStmt
+@@ -627,6 +656,18 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -2627,7 +2651,7 @@ index d743717ad..fabcafa34 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -644,6 +669,7 @@ namespace clang {
+@@ -644,6 +685,7 @@ namespace clang {
      ExpectedStmt VisitCharacterLiteral(CharacterLiteral *E);
      ExpectedStmt VisitStringLiteral(StringLiteral *E);
      ExpectedStmt VisitCompoundLiteralExpr(CompoundLiteralExpr *E);
@@ -2635,7 +2659,7 @@ index d743717ad..fabcafa34 100644
      ExpectedStmt VisitAtomicExpr(AtomicExpr *E);
      ExpectedStmt VisitAddrLabelExpr(AddrLabelExpr *E);
      ExpectedStmt VisitConstantExpr(ConstantExpr *E);
-@@ -677,6 +703,7 @@ namespace clang {
+@@ -677,6 +719,7 @@ namespace clang {
      ExpectedStmt VisitCXXDeleteExpr(CXXDeleteExpr *E);
      ExpectedStmt VisitCXXConstructExpr(CXXConstructExpr *E);
      ExpectedStmt VisitCXXMemberCallExpr(CXXMemberCallExpr *E);
@@ -2643,7 +2667,7 @@ index d743717ad..fabcafa34 100644
      ExpectedStmt VisitCXXDependentScopeMemberExpr(CXXDependentScopeMemberExpr *E);
      ExpectedStmt VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr *E);
      ExpectedStmt VisitCXXUnresolvedConstructExpr(CXXUnresolvedConstructExpr *E);
-@@ -1426,6 +1453,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1469,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2671,7 +2695,7 @@ index d743717ad..fabcafa34 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1613,6 +1661,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1613,6 +1677,11 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
    Error Err = Error::success();
    FunctionProtoType::ExtProtoInfo ToEPI;
    ToEPI.ExtInfo = FromEPI.ExtInfo;
@@ -2683,7 +2707,7 @@ index d743717ad..fabcafa34 100644
    ToEPI.Variadic = FromEPI.Variadic;
    ToEPI.HasTrailingReturn = FromEPI.HasTrailingReturn;
    ToEPI.TypeQuals = FromEPI.TypeQuals;
-@@ -1626,6 +1679,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1695,42 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2726,7 +2750,7 @@ index d743717ad..fabcafa34 100644
    if (Err)
      return std::move(Err);
  
-@@ -1821,6 +1910,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
+@@ -1821,6 +1926,13 @@ ExpectedType ASTNodeImporter::VisitAttributedType(const AttributedType *T) {
    if (!ToEquivalentTypeOrErr)
      return ToEquivalentTypeOrErr.takeError();
  
@@ -2740,7 +2764,7 @@ index d743717ad..fabcafa34 100644
    return Importer.getToContext().getAttributedType(
        T->getAttrKind(), *ToModifiedTypeOrErr, *ToEquivalentTypeOrErr,
        T->getAttr());
-@@ -2517,7 +2613,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
+@@ -2517,7 +2629,7 @@ static Error setTypedefNameForAnonDecl(TagDecl *From, TagDecl *To,
  
  Error ASTNodeImporter::ImportDefinition(
      RecordDecl *From, RecordDecl *To, ImportDefinitionKind Kind) {
@@ -2749,7 +2773,7 @@ index d743717ad..fabcafa34 100644
      // There are cases in LLDB when we first import a class without its
      // members. The class will have DefinitionData, but no members. Then,
      // importDefinition is called from LLDB, which tries to get the members, so
-@@ -2526,6 +2622,18 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2526,6 +2638,18 @@ Error ASTNodeImporter::ImportDefinition(
      // definition.
      To->setCompleteDefinition(false);
      To->completeDefinition();
@@ -2768,7 +2792,7 @@ index d743717ad..fabcafa34 100644
    };
  
    if (To->getDefinition() || To->isBeingDefined()) {
-@@ -2559,6 +2667,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2683,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2795,7 +2819,7 @@ index d743717ad..fabcafa34 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -2938,6 +3066,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2938,6 +3082,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
    if (ToD)
      return ToD;
  
@@ -2809,7 +2833,7 @@ index d743717ad..fabcafa34 100644
    NamespaceDecl *MergeWithNamespace = nullptr;
    if (!Name) {
      // This is an anonymous namespace. Adopt an existing anonymous
-@@ -2983,12 +3118,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2983,12 +3134,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      return RBraceLocOrErr.takeError();
  
    // Create the "to" namespace, if needed.
@@ -2825,7 +2849,7 @@ index d743717ad..fabcafa34 100644
        return ToNamespace;
      ToNamespace->setRBraceLoc(*RBraceLocOrErr);
      ToNamespace->setLexicalDeclContext(LexicalDC);
-@@ -2996,7 +3132,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -2996,7 +3148,7 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
  
      // If this is an anonymous namespace, register it as the anonymous
      // namespace within its context.
@@ -2834,7 +2858,7 @@ index d743717ad..fabcafa34 100644
        if (auto *TU = dyn_cast<TranslationUnitDecl>(DC))
          TU->setAnonymousNamespace(ToNamespace);
        else
-@@ -3004,6 +3140,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -3004,6 +3156,13 @@ ExpectedDecl ASTNodeImporter::VisitNamespaceDecl(NamespaceDecl *D) {
      }
    }
    Importer.MapImported(D, ToNamespace);
@@ -2848,7 +2872,7 @@ index d743717ad..fabcafa34 100644
  
    if (Error Err = ImportDeclContext(D))
      return std::move(Err);
-@@ -3085,7 +3228,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
+@@ -3085,7 +3244,14 @@ ASTNodeImporter::VisitTypedefNameDecl(TypedefNameDecl *D, bool IsAlias) {
  
          QualType FromUT = D->getUnderlyingType();
          QualType FoundUT = FoundTypedef->getUnderlyingType();
@@ -2864,7 +2888,16 @@ index d743717ad..fabcafa34 100644
            // If the underlying declarations are unnamed records these can be
            // imported as different types. We should create a distinct typedef
            // node in this case.
-@@ -3456,6 +3606,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3222,6 +3388,8 @@ ASTNodeImporter::VisitTypeAliasTemplateDecl(TypeAliasTemplateDecl *D) {
+     return ToAlias;
+ 
+   ToTemplatedDecl->setDescribedAliasTemplate(ToAlias);
++  if (Error Err = ImportMemberTemplateOrigin(D, ToAlias))
++    return std::move(Err);
+ 
+   ToAlias->setAccess(D->getAccess());
+   ToAlias->setLexicalDeclContext(LexicalDC);
+@@ -3456,6 +3624,14 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
            continue;
  
          if (IsStructuralMatch(D, FoundRecord)) {
@@ -2879,7 +2912,7 @@ index d743717ad..fabcafa34 100644
            RecordDecl *FoundDef = FoundRecord->getDefinition();
            if (D->isThisDeclarationADefinition() && FoundDef) {
              // FIXME: Structural equivalence check should check for same
-@@ -3463,9 +3621,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+@@ -3463,9 +3639,7 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
              Importer.MapImported(D, FoundDef);
              if (const auto *DCXX = dyn_cast<CXXRecordDecl>(D)) {
                auto *FoundCXX = dyn_cast<CXXRecordDecl>(FoundDef);
@@ -2890,7 +2923,7 @@ index d743717ad..fabcafa34 100644
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3996,6 +4152,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3996,6 +4170,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -2963,7 +2996,7 @@ index d743717ad..fabcafa34 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4052,6 +4274,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,6 +4292,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
@@ -2976,7 +3009,7 @@ index d743717ad..fabcafa34 100644
          if (IsStructuralMatch(D, FoundFunction)) {
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
-@@ -4120,6 +4348,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4366,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2984,7 +3017,7 @@ index d743717ad..fabcafa34 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4404,57 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4422,57 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -3042,7 +3075,7 @@ index d743717ad..fabcafa34 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -4286,10 +4566,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4286,10 +4584,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    ToFunction->setLexicalDeclContext(LexicalDC);
    ToFunction->setVirtualAsWritten(D->isVirtualAsWritten());
    ToFunction->setTrivial(D->isTrivial());
@@ -3057,7 +3090,26 @@ index d743717ad..fabcafa34 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4897,6 +5180,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4330,6 +4631,18 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+   }
+   ToFunction->setParams(Parameters);
+ 
++  // Required callable contracts must exist before importing the body or later
++  // redeclarations. Those imports can recursively merge against this mapping.
++  for (const Attr *A : D->attrs()) {
++    if (!isa<ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCTaskSpawnAttr,
++             ObjCTaskDetachedAttr, ObjCTaskGroupAttr, ObjCReturnsBorrowedAttr,
++             ObjC3IsolationThunkAttr>(A))
++      continue;
++    auto Imported = Importer.Import(A);
++    if (!Imported) return Imported.takeError();
++    ToFunction->addAttr(*Imported);
++  }
++
+   // We need to complete creation of FunctionProtoTypeLoc manually with setting
+   // params it refers to.
+   if (TInfo) {
+@@ -4897,6 +5210,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3069,7 +3121,7 @@ index d743717ad..fabcafa34 100644
    ToVar->setQualifierInfo(ToQualifierLoc);
    ToVar->setAccess(D->getAccess());
    ToVar->setLexicalDeclContext(LexicalDC);
-@@ -5062,6 +5350,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5380,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -3089,7 +3141,7 @@ index d743717ad..fabcafa34 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5425,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5455,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -3097,7 +3149,7 @@ index d743717ad..fabcafa34 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5440,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5470,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -3106,7 +3158,7 @@ index d743717ad..fabcafa34 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5479,6 +5783,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5479,6 +5813,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
                                D->hasTypename()))
      return ToUsing;
  
@@ -3114,7 +3166,7 @@ index d743717ad..fabcafa34 100644
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5517,6 +5822,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+@@ -5517,6 +5852,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -3122,7 +3174,7 @@ index d743717ad..fabcafa34 100644
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5723,6 +6029,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
+@@ -5723,6 +6059,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
                                ToQualifierLoc, Loc, Name, ToEllipsisLoc))
      return ToUsing;
  
@@ -3130,7 +3182,7 @@ index d743717ad..fabcafa34 100644
    ToUsing->setAccess(D->getAccess());
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
-@@ -5904,6 +6211,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6241,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -3146,7 +3198,7 @@ index d743717ad..fabcafa34 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6392,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6422,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -3156,7 +3208,34 @@ index d743717ad..fabcafa34 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -7328,6 +7647,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -6458,6 +6807,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+     return D2;
+ 
+   ToTemplated->setDescribedClassTemplate(D2);
++  if (Error Err = ImportMemberTemplateOrigin(D, D2))
++    return std::move(Err);
+ 
+   D2->setAccess(D->getAccess());
+   D2->setLexicalDeclContext(LexicalDC);
+@@ -6777,6 +7128,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+     return ToVarTD;
+ 
+   ToTemplated->setDescribedVarTemplate(ToVarTD);
++  if (Error Err = ImportMemberTemplateOrigin(D, ToVarTD))
++    return std::move(Err);
+ 
+   ToVarTD->setAccess(D->getAccess());
+   ToVarTD->setLexicalDeclContext(LexicalDC);
+@@ -7051,6 +7404,8 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+     return make_error<ASTImportError>(ASTImportError::NameConflict);
+ 
+   TemplatedFD->setDescribedFunctionTemplate(ToFunc);
++  if (Error Err = ImportMemberTemplateOrigin(D, ToFunc))
++    return std::move(Err);
+ 
+   ToFunc->setAccess(D->getAccess());
+   ToFunc->setLexicalDeclContext(LexicalDC);
+@@ -7328,6 +7683,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3254,7 +3333,68 @@ index d743717ad..fabcafa34 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8185,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7485,6 +7931,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+   return ImportLoopControlStmt(*this, Importer, S);
+ }
+ 
++ExpectedStmt ASTNodeImporter::VisitCoawaitExpr(CoawaitExpr *E) {
++  Error Err = Error::success();
++  auto Loc = importChecked(Err, E->getKeywordLoc());
++  auto Operand = importChecked(Err, E->getOperand());
++  auto Common = importChecked(Err, E->getCommonExpr());
++  if (Err) return std::move(Err);
++  if (!E->getReadyExpr()) {
++    auto Type = import(E->getType());
++    if (!Type) return Type.takeError();
++    return new (Importer.getToContext()) CoawaitExpr(
++        Loc, *Type, Operand, Common, E->isImplicit());
++  }
++  auto Opaque = importChecked(Err, E->getOpaqueValue());
++  auto Ready = importChecked(Err, E->getReadyExpr());
++  auto Suspend = importChecked(Err, E->getSuspendExpr());
++  auto Resume = importChecked(Err, E->getResumeExpr());
++  if (Err) return std::move(Err);
++  return new (Importer.getToContext()) CoawaitExpr(
++      Loc, Operand, Common, Ready, Suspend, Resume, Opaque, E->isImplicit());
++}
++
++ExpectedStmt ASTNodeImporter::VisitCoreturnStmt(CoreturnStmt *S) {
++  Error Err = Error::success();
++  auto Loc = importChecked(Err, S->getKeywordLoc());
++  auto Operand = importChecked(Err, S->getOperand());
++  auto PromiseCall = importChecked(Err, S->getPromiseCall());
++  if (Err) return std::move(Err);
++  return new (Importer.getToContext()) CoreturnStmt(
++      Loc, Operand, PromiseCall, S->isImplicit());
++}
++
++ExpectedStmt ASTNodeImporter::VisitCoroutineBodyStmt(CoroutineBodyStmt *S) {
++  Error Err = Error::success();
++  CoroutineBodyStmt::CtorArgs Args;
++  Args.Promise = importChecked(Err, S->getPromiseDeclStmt());
++  SmallVector<Stmt *, 4> Moves(S->getParamMoves().size());
++  if (Error MoveErr = ImportContainerChecked(S->getParamMoves(), Moves))
++    return std::move(MoveErr);
++  Args.ParamMoves = Moves;
++  Args.Body = importChecked(Err, S->getBody());
++  Args.InitialSuspend = importChecked(Err, cast<Expr>(S->getInitSuspendStmt()));
++  Args.FinalSuspend = importChecked(Err, cast<Expr>(S->getFinalSuspendStmt()));
++  Args.OnException = importChecked(Err, S->getExceptionHandler());
++  Args.OnFallthrough = importChecked(Err, S->getFallthroughHandler());
++  Args.Allocate = importChecked(Err, S->getAllocate());
++  Args.Deallocate = importChecked(Err, S->getDeallocate());
++  Args.ResultDecl = importChecked(Err, S->getResultDecl());
++  Args.ReturnValue = importChecked(Err, S->getReturnValueInit());
++  Args.ReturnStmt = importChecked(Err, S->getReturnStmt());
++  Args.ReturnStmtOnAllocFailure = importChecked(Err, S->getReturnStmtOnAllocFailure());
++  if (Err) return std::move(Err);
++  return CoroutineBodyStmt::Create(Importer.getToContext(), Args);
++}
++
+ ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
+ 
+   Error Err = Error::success();
+@@ -7775,6 +8275,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3433,7 +3573,7 @@ index d743717ad..fabcafa34 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8666,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8756,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3450,7 +3590,7 @@ index d743717ad..fabcafa34 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9427,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9517,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -3504,7 +3644,7 @@ index d743717ad..fabcafa34 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9664,8 +10303,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10393,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3519,7 +3659,7 @@ index d743717ad..fabcafa34 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10358,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10448,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3618,7 +3758,7 @@ index d743717ad..fabcafa34 100644
  }
  
  namespace {
-@@ -9857,6 +10590,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10680,39 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -3658,16 +3798,26 @@ index d743717ad..fabcafa34 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,7 +10889,7 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +10979,17 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
 -  if (FromD->hasAttrs())
 +  if (FromD->hasAttrs() && !isa<NamespaceDecl>(FromD))
      for (const Attr *FromAttr : FromD->getAttrs()) {
++      // Function import installs these before recursive declaration merging.
++      if (isa<FunctionDecl>(FromD) &&
++          isa<ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCTaskSpawnAttr,
++              ObjCTaskDetachedAttr, ObjCTaskGroupAttr, ObjCReturnsBorrowedAttr,
++              ObjC3IsolationThunkAttr>(FromAttr) &&
++          llvm::any_of(ToD->attrs(), [&](const Attr *A) {
++            return A->getKind() == FromAttr->getKind();
++          }))
++        continue;
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
-@@ -10571,6 +11337,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+         ToD->addAttr(*ToAttrOrErr);
+@@ -10571,6 +11436,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -3680,7 +3830,7 @@ index d743717ad..fabcafa34 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11353,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11452,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -3692,7 +3842,7 @@ index d743717ad..fabcafa34 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11365,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11464,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3704,7 +3854,7 @@ index d743717ad..fabcafa34 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11377,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11476,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3726,7 +3876,7 @@ index d743717ad..fabcafa34 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +11821,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +11920,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -17486,10 +17636,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..3d215aace
+index 000000000..8f994a1d9
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,261 @@
+@@ -0,0 +1,377 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -17499,8 +17649,13 @@ index 000000000..3d215aace
 +#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Type.h"
++#include "clang/AST/ObjC3Async.h"
++#include "clang/AST/ObjC3Isolation.h"
++#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "llvm/Support/Error.h"
@@ -17748,6 +17903,117 @@ index 000000000..3d215aace
 +  ASSERT_FALSE(Task.isNull());
 +  EXPECT_TRUE(Task->isRecordType());
 +  EXPECT_FALSE(TC.hasSameType(Task, FT->getReturnType()));
++}
++
++
++TEST(ObjC3FunctionEffectImport, IsolationContractSurvivesRecursiveRedeclarations) {
++  const std::string Code = R"(
++    int isolated(int) __attribute__((objc_executor(main)));
++    int isolated(int);
++    int isolated(int value) { return value; }
++  )";
++  const std::vector<std::string> Args = {"-x", "objective-c", "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "contract-from.m");
++  auto To = tooling::buildASTFromCodeWithArgs("", Args, "contract-to.m");
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(findFunction(From->getASTContext(), "isolated"));
++  ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  unsigned Count = 0;
++  for (const auto *Redecl : Function->redecls()) {
++    ASSERT_NE(getObjC3Executor(Redecl), nullptr);
++    EXPECT_EQ(getObjC3Executor(Redecl)->getExecutor(), "main");
++    EXPECT_EQ(std::distance(Redecl->specific_attr_begin<ObjCExecutorAttr>(),
++                            Redecl->specific_attr_end<ObjCExecutorAttr>()), 1);
++    ++Count;
++  }
++  EXPECT_EQ(Count, 3u);
++}
++
++TEST(ObjC3FunctionEffectImport, NativeFrameAwaitBodyAndIsolationSyntaxImport) {
++  const std::string Code = R"(
++    typedef struct objc3_task objc3_task_t;
++    typedef struct objc3_async_result_type objc3_async_result_type;
++    typedef struct objc3_async_frame {
++      unsigned struct_size, version;
++      void *context;
++      void (*resume)(objc3_task_t *, void *);
++      void (*destroy)(void *);
++      const objc3_async_result_type *result_type;
++    } objc3_async_frame;
++    int isolated(int) __attribute__((nothrow, objc_executor(main)));
++    int source(int value) __objc3_async_frame {
++      return __objc3_await isolated(value);
++    }
++  )";
++  const std::vector<std::string> Args = {"-x", "objective-c", "-fobjc-version=3",
++      "-target", "x86_64-unknown-linux-gnu", "-fobjc-runtime=gnustep-2.2"};
++  auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "await-from.m");
++  auto To = tooling::buildASTFromCodeWithArgs("", Args, "await-to.m");
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(findFunction(From->getASTContext(), "source"));
++  ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++  auto *Function = cast<FunctionDecl>(*Imported);
++  class Visitor : public RecursiveASTVisitor<Visitor> {
++  public:
++    unsigned Awaits = 0;
++    bool VisitCoawaitExpr(CoawaitExpr *Await) {
++      ++Awaits;
++      EXPECT_NE(getObjC3AwaitSourceExpression(Await), nullptr);
++      return true;
++    }
++  } Check;
++  Check.TraverseStmt(Function->getBody());
++  EXPECT_EQ(Check.Awaits, 1u);
++}
++
++
++TEST(ObjC3FunctionEffectImport, InstantiatedMemberTemplateOriginsRemainComplete) {
++  const std::string Code = R"(
++    template<class T> struct Outer {
++      template<class U> struct Inner { U value; };
++      template<class U> U method(U value) { return value; }
++      template<class U> using Alias = Inner<U>;
++      template<class U> static constexpr int size = sizeof(U);
++    };
++    Outer<int>::Inner<long> object;
++  )";
++  const std::vector<std::string> Args = {"-std=c++20"};
++  auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "member-from.cpp");
++  auto To = tooling::buildASTFromCodeWithArgs("", Args, "member-to.cpp");
++  ASSERT_TRUE(From && To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Declarations = From->getASTContext().getTranslationUnitDecl()->lookup(
++      &From->getASTContext().Idents.get("object"));
++  auto Imported = Importer.Import(Declarations.front());
++  ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++  auto *Object = cast<VarDecl>(*Imported);
++  auto *Record = Object->getType()->getAsCXXRecordDecl();
++  ASSERT_NE(Record, nullptr);
++  ASSERT_NE(Record->getTemplateInstantiationPattern(), nullptr);
++  EXPECT_NE(Record->getTemplateInstantiationPattern()->getDefinition(), nullptr);
++  auto *FromObject = cast<VarDecl>(Declarations.front());
++  auto *FromOuter = FromObject->getType()->getAsCXXRecordDecl()->getDeclContext();
++  for (const char *Name : {"Inner", "method", "Alias", "size"}) {
++    auto Found = FromOuter->lookup(&From->getASTContext().Idents.get(Name));
++    ASSERT_FALSE(Found.empty());
++    auto *Template = cast<RedeclarableTemplateDecl>(Found.front());
++    ASSERT_NE(Template->getInstantiatedFromMemberTemplate(), nullptr);
++    auto Result = Importer.Import(Template);
++    ASSERT_TRUE(bool(Result)) << llvm::toString(Result.takeError());
++    auto *Target = cast<RedeclarableTemplateDecl>(*Result);
++    ASSERT_NE(Target->getInstantiatedFromMemberTemplate(), nullptr) << Name;
++    EXPECT_EQ(&Target->getInstantiatedFromMemberTemplate()->getASTContext(),
++              &To->getASTContext());
++  }
 +}
 +
 +} // namespace
@@ -38913,10 +39179,10 @@ index 000000000..124e6a5aa
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..dffe8701c
+index 000000000..f19a6bc39
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1147 @@
+@@ -0,0 +1,1154 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -39991,8 +40257,15 @@ index 000000000..dffe8701c
 +  if (!Thunk)
 +    return ExprError();
 +  ExprResult Callee = BuildDeclRefExpr(Thunk, Thunk->getType(), VK_LValue, Loc);
-+  if (!Message)
-+    return BuildCallExpr(nullptr, Callee.get(), Loc, SourceArguments, Loc);
++  if (!Message) {
++    ExprResult Frame = BuildCallExpr(nullptr, Callee.get(), Loc, SourceArguments, Loc);
++    if (Frame.isInvalid())
++      return ExprError();
++    // Keep the written call for source reconstruction. The private frame call
++    // is executable semantics, not part of a published declaration's syntax.
++    SmallVector<Expr *, 1> Semantics{Frame.get()};
++    return PseudoObjectExpr::Create(Context, Call, Semantics, 0);
++  }
 +
 +  // Semantic bindings guarantee receiver-first, exactly-once evaluation before
 +  // lazy frame creation. The original message is diagnostic/printing syntax;
@@ -42736,3 +43009,58 @@ index 000000000..8d19adf77
 +Defaults used(Defaults value) { return value; }
 +// CHECK: Defaults(const Defaults &){{.*}} = default;
 +// CHECK-NEXT: {{ *}}~Defaults(){{.*}} = default;
+diff --git a/clang/test/ObjC3/AST/native-isolation-source.m b/clang/test/ObjC3/AST/native-isolation-source.m
+new file mode 100644
+index 000000000..d60cb8890
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-isolation-source.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %s > %t.m
++// RUN: FileCheck %s < %t.m
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o /dev/null %t.m
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -ast-print %s > %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o /dev/null %t.mm
++#include "../CodeGen/Inputs/native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface SourceRoot <Sendable>
++- (int)read __attribute__((nothrow, objc_executor(main)));
+++ (int)classRead __attribute__((nothrow, objc_executor(main)));
++@end
++int isolated_value(int) __attribute__((nothrow, objc_executor(main)));
++int native_value(int) __objc3_async_frame;
++inline int published_function(int value) __objc3_async_frame {
++  return __objc3_await isolated_value(value);
++}
++inline int published_frame(int value) __objc3_async_frame {
++  return __objc3_await native_value(value);
++}
++inline int published_message(SourceRoot *object) __objc3_async_frame {
++  return __objc3_await [object read];
++}
++inline int published_class(void) __objc3_async_frame {
++  return __objc3_await [SourceRoot classRead];
++}
++// CHECK-NOT: __objc3_isolation_entry_
++// CHECK: return __objc3_await isolated_value(value)
++// CHECK: return __objc3_await native_value(value)
++// CHECK: return __objc3_await [object read]
++// CHECK: return __objc3_await [SourceRoot classRead]
++// CHECK-NOT: __objc3_isolation_entry_
+diff --git a/clang/test/ObjC3/AST/native-task-source.mm b/clang/test/ObjC3/AST/native-task-source.mm
+new file mode 100644
+index 000000000..83f21ae71
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-task-source.mm
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -ast-print -ast-dump-filter published_task %s | sed '1d' > %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DREPARSE -include %s -fsyntax-only %t.mm
++#include "../CodeGen/Inputs/native-async-task.h"
++int original_task(int) __objc3_async;
++#ifndef REPARSE
++inline int published_task(int value) __objc3_async {
++  return __objc3_await original_task(value);
++}
++#endif
++// CHECK: co_return __objc3_await original_task(value)

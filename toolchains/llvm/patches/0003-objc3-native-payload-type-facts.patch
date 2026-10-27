@@ -1329,14 +1329,15 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..31069bc83
+index 000000000..ff075ca63
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,131 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
 +#define LLVM_CLANG_AST_OBJC3ASYNC_H
++#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
@@ -1425,5 +1426,41 @@ index 000000000..31069bc83
 +    Type = Block->getPointeeType();
 +  return Type->getAs<FunctionProtoType>();
 +}
++
++/// Source projection is separate from logical effect checking above: the
++/// latter must continue seeing the encapsulated async frame requirement.
++inline const Expr *getObjC3IsolationSourceSyntax(const Expr *E) {
++  const auto *Pseudo = dyn_cast_or_null<PseudoObjectExpr>(
++      E ? E->IgnoreImplicit()->IgnoreParenImpCasts() : nullptr);
++  const auto *Result = Pseudo ? Pseudo->getResultExpr() : nullptr;
++  const auto *Call = dyn_cast_or_null<CallExpr>(
++      Result ? Result->IgnoreImplicit()->IgnoreParenImpCasts() : nullptr);
++  const auto *Function = Call ? Call->getDirectCallee() : nullptr;
++  return Function && Function->hasAttr<ObjC3IsolationThunkAttr>()
++             ? Pseudo->getSyntacticForm() : nullptr;
++}
++
++/// Recover a native frame await's written operand, including its C++ frame
++/// adapter and checked-error adapter. Opaque protocol operations are compiler
++/// execution details and do not belong in source/interface identities.
++inline const Expr *getObjC3AwaitSourceExpression(const CoawaitExpr *Await) {
++  const Expr *Operand = Await->getOperand();
++  if (const auto *Checked = getObjC3CheckedAsyncAdapterCall(Operand))
++    Operand = Checked->getArg(0);
++  Operand = getObjC3FrameAdapterSource(Operand);
++  if (const Expr *Source = getObjC3IsolationSourceSyntax(Operand))
++    return Source;
++  const auto *Function = getObjC3AsyncCalleeFunctionType(Await);
++  if (Function && Function->getObjC3FunctionEffects().Async &&
++      !Function->getObjC3FunctionEffects().AsyncFrame)
++    return Operand;
++  if (Function && Function->getObjC3FunctionEffects().AsyncFrame &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getReadyExpr()) &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getSuspendExpr()) &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getResumeExpr()))
++    return Operand;
++  return nullptr;
++}
++
 +} // namespace clang
 +#endif
