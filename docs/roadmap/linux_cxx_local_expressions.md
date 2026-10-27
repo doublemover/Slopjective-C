@@ -35,3 +35,6 @@ fixture checks the class-specific deallocator independently of destructor counts
 The accepted SDK remains [2.9.0](../support/linux_cxx_class_structure_acceptance.json).
 Combined source/sanitizer matrices and installed/archive qualification remain
 scheduled for the coordinated source-batch cutover.
+
+The [expression progress receipt](../support/linux_cxx_local_expressions_progress.json)
+records the native/frontend batch and C++ language/ownership/optimization matrices.
