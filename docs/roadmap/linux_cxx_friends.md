@@ -26,3 +26,6 @@ The accepted SDK remains [2.9.0](../support/linux_cxx_class_structure_acceptance
 Combined source/sanitizer matrices and installed/archive qualification remain
 scheduled for the coordinated source-batch cutover; full profile conformance is
 not claimed.
+
+Focused checks, including inherited friend SPI and both source-free import paths,
+are recorded in the [friend progress receipt](../support/linux_cxx_friends_progress.json).
