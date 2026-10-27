@@ -2016,8 +2016,13 @@ class InterfaceCollector final
            llvm::isa<clang::ObjCRuntimeNameAttr>(attribute)))
         continue;
       if (llvm::isa<clang::ObjCRequiresCleanupAttr, clang::ObjCResourceFamilyAttr,
-                    clang::ObjCInvalidAttr>(attribute) &&
+                    clang::ObjCInvalidAttr, clang::ObjCRetainableFamilyAttr,
+                    clang::ObjCNSObjectAttr>(attribute) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
+        continue;
+      if (llvm::isa<clang::ObjCFamilyRetainAttr, clang::ObjCFamilyReleaseAttr,
+                    clang::ObjCFamilyAutoreleaseAttr>(attribute) &&
+          llvm::isa<clang::FunctionDecl>(declaration))
         continue;
       if (llvm::isa<clang::ObjCReturnsBorrowedAttr, clang::NoThrowAttr>(attribute) &&
           llvm::isa<clang::FunctionDecl, clang::ObjCMethodDecl>(declaration))

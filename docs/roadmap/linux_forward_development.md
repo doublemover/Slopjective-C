@@ -35,6 +35,22 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Canonical retainable C families
+
+The [System 2.9.0 source span](linux_retainable_families.md) implements canonical
+family and operation attributes, validates aliases and redeclarations, enforces
+integrated-type ARC restrictions, and records release effects and analyzer
+summaries. PCH/import, declarations and source-free interfaces retain contracts.
+SDK 2.33 remains the accepted archive.
+
+## Evaluated borrowed getter owners
+
+The [System 2.8.0 source span](linux_borrowed_getter_snapshots.md) snapshots loans
+when stable getter owner arguments are evaluated. Later argument replacement or
+consumption expires that original binding, while independent pins protect it.
+Conditional/comma selection and message/operator dispatch share the same flow.
+SDK 2.33 remains the accepted archive.
+
 ## Owners used inside later-invoked closures
 
 The [System 2.7.0 source span](linux_borrowed_future_captures.md) caches symbolic

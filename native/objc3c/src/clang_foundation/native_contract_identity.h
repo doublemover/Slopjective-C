@@ -84,6 +84,11 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                               depth + 1);
     return;
   }
+  if (const auto *family = clang::getObjC3RetainableFamily(context, type)) {
+    AppendNativeContractField(out, position + ":retainable-family");
+    AppendNativeContractField(out, family->getFamily()->getName());
+    AppendNativeContractField(out, type->isObjCRetainableType() ? "objc-integrated" : "manual");
+  }
   const auto resource = clang::getObjC3ResourceTypeContract(context, type);
   if (resource.Cleanup || resource.Family || resource.Invalid) {
     AppendNativeContractField(out, position + ":resource");
@@ -165,6 +170,14 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     AppendNativeContractField(ownership,
                               std::to_string(borrow->getOwnerIndex()));
   }
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (const auto *operation = clang::getObjC3FamilyOperation(function)) {
+      AppendNativeContractField(ownership,
+          llvm::isa<clang::ObjCFamilyRetainAttr>(operation) ? "family-retain" :
+          llvm::isa<clang::ObjCFamilyReleaseAttr>(operation) ? "family-release" : "family-autorelease");
+      AppendNativeContractField(ownership,
+          clang::getObjC3FamilyOperationName(operation)->getName());
+    }
   if (declaration->hasAttr<clang::NoThrowAttr>())
     AppendNativeContractField(ownership, "nothrow");
   if (declaration->hasAttr<clang::NSConsumesSelfAttr>())

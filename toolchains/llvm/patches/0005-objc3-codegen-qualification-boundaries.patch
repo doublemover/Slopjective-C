@@ -29021,3 +29021,41 @@ index 000000000..78a603261
 +// CHECK: call{{.*}} i32 @_Z8identifyPFvU11cf_consumedPvE(
 +// CHECK: call{{.*}} i32 @_Z8identifyM9CFMembersFvPvE(
 +// CHECK: call{{.*}} i32 @_Z8identifyM9CFMembersFvU11cf_consumedPvE(
+diff --git a/clang/test/ObjC3/CodeGen/retainable-family-abi.m b/clang/test/ObjC3/CodeGen/retainable-family-abi.m
+new file mode 100644
+index 000000000..adc82ab4f
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/retainable-family-abi.m
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MRC
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MRC
++#ifdef __cplusplus
++extern "C" {
++#endif
++#include "../Sema/Inputs/retainable-families.h"
++// CHECK-LABEL: define{{.*}} ptr @ordinary_operations(
++// CHECK-NOT: @llvm.objc.
++// CHECK: call ptr @FamilyHold(
++// CHECK-NOT: @llvm.objc.
++// CHECK: call void @FamilyDrop(
++// CHECK-NOT: @llvm.objc.
++// CHECK: ret ptr
++FamilyRef ordinary_operations(FamilyRef owner) {
++  FamilyRef copy=FamilyHold(owner);
++  FamilyDrop(owner);
++  return copy;
++}
++// CHECK-LABEL: define{{.*}} ptr @integrated_copy(
++// ARC: call void @llvm.objc.storeStrong(
++// ARC: call ptr @llvm.objc.retain(
++// MRC-NOT: @llvm.objc.
++// CHECK: ret ptr
++IntegratedAlias integrated_copy(IntegratedAlias owner) {
++  IntegratedAlias copy=owner;
++  return copy;
++}
++#ifdef __cplusplus
++}
++#endif

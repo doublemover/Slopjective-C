@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..d78092203
+index 000000000..a3919bf06
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,747 @@
+@@ -0,0 +1,795 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -786,6 +786,7 @@ index 000000000..d78092203
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Sema/MultiplexExternalSemaSource.h"
@@ -1515,6 +1516,53 @@ index 000000000..d78092203
 +    const auto *Receiver=cast<ObjCInterfaceDecl>(lookup(Reparsed->getASTContext(),"ForeignReceiver"));
 +    ASSERT_NE(Receiver->instmeth_begin(),Receiver->instmeth_end());
 +    EXPECT_TRUE((*Receiver->instmeth_begin())->getParamDecl(0)->hasAttr<CFConsumedAttr>()) << Printed;
++  }
++}
++
++TEST(ObjC3TypeContracts, RetainableFamiliesSurviveImportAndPolishedDeclarations) {
++  for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC) Args.push_back("-fobjc-arc");
++    auto From=parse(R"(
++      typedef struct Opaque *Family __attribute__((NSObject,objc_retainable_family(Example)));
++      using Alias=Family;
++      Family hold(Family value) __attribute__((objc_family_retain(Example)));
++      void drop(Alias value) __attribute__((objc_family_release(Example)));
++      void drop(Alias value);
++      Alias schedule(Alias value) __attribute__((objc_family_autorelease(Example)));
++    )",Args);
++    auto To=parse("",Args);
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++        From->getASTContext(),From->getFileManager(),false);
++    for(const char *Name:{"Family","Alias","hold","drop","schedule"}) {
++      auto Imported=Importer.Import(const_cast<NamedDecl *>(lookup(From->getASTContext(),Name)));
++      ASSERT_TRUE(bool(Imported));
++    }
++    const auto *Alias=cast<TypedefNameDecl>(lookup(To->getASTContext(),"Alias"));
++    const auto *Family=getObjC3RetainableFamily(To->getASTContext(),Alias->getUnderlyingType());
++    ASSERT_TRUE(Family);
++    EXPECT_EQ(Family->getFamily()->getName(),"Example");
++    EXPECT_TRUE(Alias->getUnderlyingType()->isObjCRetainableType());
++    EXPECT_TRUE(findFunction(To->getASTContext(),"drop")->hasAttr<ObjCFamilyReleaseAttr>());
++    PrintingPolicy Policy(From->getASTContext().getLangOpts());
++    Policy.PolishForDeclaration=true;
++    std::string Printed;llvm::raw_string_ostream Out(Printed);
++    for(const Decl *Declaration:From->getASTContext().getTranslationUnitDecl()->decls())
++      if(!Declaration->isImplicit() &&
++          From->getSourceManager().isWrittenInMainFile(Declaration->getLocation())) {
++        Declaration->print(Out,Policy);Out << ";\n";
++      }
++    auto Reparsed=parse(Printed,Args);
++    ASSERT_TRUE(Reparsed);
++    ASSERT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
++    const auto *PrintedAlias=cast<TypedefNameDecl>(lookup(Reparsed->getASTContext(),"Alias"));
++    EXPECT_TRUE(PrintedAlias->getUnderlyingType()->isObjCRetainableType()) << Printed;
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"hold")->hasAttr<ObjCFamilyRetainAttr>());
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"drop")->hasAttr<ObjCFamilyReleaseAttr>());
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"schedule")->hasAttr<ObjCFamilyAutoreleaseAttr>());
 +  }
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h

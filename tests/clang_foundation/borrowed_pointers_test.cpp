@@ -540,6 +540,48 @@ void PersistenceCases(const fs::path &Root) {
   Second.AddFunctionDecl(Function(OtherOwner->getASTContext(), "exported"));
   assert(First.CalculateHash() != Second.CalculateHash());
 }
+void RetainablePersistenceCases(const fs::path &Root) {
+  const std::string Provider =
+      "typedef struct FamilyObject{int marker;} *FamilyRef __attribute__((objc_retainable_family(Example)));\n"
+      "typedef FamilyRef FamilyAlias;\n"
+      "FamilyRef family_hold(FamilyRef) __attribute__((objc_family_retain(Example)));\n"
+      "void family_drop(FamilyAlias) __attribute__((objc_family_release(Example)));\n"
+      "void family_drop(FamilyAlias);\n"
+      "FamilyRef family_schedule(FamilyRef) __attribute__((objc_family_autorelease(Example)));\n"
+      "typedef borrowed const char *FamilyBytes;\n"
+      "FamilyBytes family_bytes(FamilyRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+      "void family_use(const char *pointer __attribute__((noescape)));\n"
+      "typedef struct IntegratedObject{int marker;} *IntegratedRef __attribute__((NSObject,objc_retainable_family(Integrated)));\n"
+      "void integrated_drop(IntegratedRef) __attribute__((objc_family_release(Integrated)));\n";
+  for(bool ARC:{false,true}) {
+    auto Emission=Request(Root,Provider,BaseLanguage::ObjectiveCxx,"c++23",ARC);
+    Emission.emit_semantic_interface=true;
+    Emission.module_name=ARC ? "Family.ARC" : "Family.MRC";
+    Emission.package_identity="canonical-retainable-family-v1";
+    Emission.interface_output_path=(Root/(ARC ? "FamilyARC.objc3i" : "FamilyMRC.objc3i")).string();
+    auto Emitted=Compile(Emission);
+    if(!Emitted.success) {
+      std::cerr << Emitted.failure << '\n';
+      for(const auto &D:Emitted.diagnostics) std::cerr << D.message << '\n';
+      if(Emitted.interface_artifact)
+        for(const auto &D:Emitted.interface_artifact->diagnostics) std::cerr << D.message << '\n';
+    }
+    assert(Emitted.success && Emitted.interface_artifact);
+    for(const char *Marker:{"retainable-family","family-retain","family-release","family-autorelease","objc-integrated"})
+      assert(Emitted.interface_artifact->sidecar_json.find(Marker)!=std::string::npos);
+    InterfaceImportInput Input;
+    Input.source_path=Emission.interface_output_path;
+    Input.locked_identity=Emitted.interface_artifact->identity;
+    auto Client=Request(Root,"void accepted(FamilyRef owner){FamilyRef held=family_hold(owner);family_drop(family_schedule(held));}",
+        BaseLanguage::ObjectiveCxx,"c++23",ARC);
+    Client.imported_interfaces={Input};
+    Expect(Client,true);
+    Client.source_text="void expired(FamilyRef owner){const char*p=family_bytes(owner);family_drop(owner);family_use(p);}";
+    Expect(Client,false,"after its owner lifetime ended");
+    Client.source_text="void integrated(IntegratedRef owner){integrated_drop(owner);}";
+    Expect(Client,!ARC,ARC ? "direct retainable family operation" : "");
+  }
+}
 void ForeignPersistenceCases(const fs::path &Root) {
   const std::string Provider =
       "typedef struct ForeignOwner{int marker;} *ForeignRef;\n"
@@ -600,5 +642,6 @@ int main() {
   }
   PersistenceCases(Root);
   ForeignPersistenceCases(Root);
+  RetainablePersistenceCases(Root);
   fs::remove_all(Root);
 }

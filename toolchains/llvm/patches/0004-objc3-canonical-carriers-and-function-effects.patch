@@ -4245,7 +4245,7 @@ index e0b62591a..a84968f39 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..1cfce43fc 100644
+index 4be3e977b..484974f71 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -4543,11 +4543,12 @@ index 4be3e977b..1cfce43fc 100644
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,11 +268,35 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,11 +268,41 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
 -  for (auto *A : D->getAttrs()) {
+-    if (A->isInherited() || A->isImplicit())
 +  SmallVector<const Attr *, 8> Attributes(D->attr_begin(), D->attr_end());
 +  if (Policy.PolishForDeclaration)
 +    llvm::stable_sort(Attributes, [](const Attr *L, const Attr *R) {
@@ -4556,7 +4557,11 @@ index 4be3e977b..1cfce43fc 100644
 +  for (const auto *A : Attributes) {
 +    if (isa<VarDecl>(D) && isa<BlocksAttr>(A))
 +      continue; // Printed as its native __block storage spelling.
-     if (A->isInherited() || A->isImplicit())
++    if (A->isImplicit() ||
++        (A->isInherited() &&
++         !(Policy.PolishForDeclaration &&
++           isa<ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
++               ObjCFamilyAutoreleaseAttr>(A))))
        continue;
      // Print out the keyword attributes, they aren't regular attributes.
 -    if (Policy.PolishForDeclaration && !A->isKeywordAttribute())
@@ -4568,6 +4573,8 @@ index 4be3e977b..1cfce43fc 100644
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
 +             ObjCRequiresCleanupAttr, ObjCResourceFamilyAttr, ObjCInvalidAttr,
++             ObjCRetainableFamilyAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
++             ObjCFamilyAutoreleaseAttr, ObjCNSObjectAttr,
 +             ObjCReturnsBorrowedAttr, NoEscapeAttr, NoThrowAttr, NSConsumedAttr, CFConsumedAttr,
 +             NSConsumesSelfAttr>(A) &&
 +        !(isa<NamespaceDecl>(D) && isa<VisibilityAttr, TypeVisibilityAttr>(A)) &&
@@ -4581,7 +4588,7 @@ index 4be3e977b..1cfce43fc 100644
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -282,7 +309,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -282,7 +315,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
               "Default not a valid for an attribute location");
        if (Pos == AttrPosAsWritten::Default || Pos == APos) {
          AOut << LS;
@@ -4654,7 +4661,7 @@ index 4be3e977b..1cfce43fc 100644
        }
        break;
      }
-@@ -348,12 +439,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +445,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -4668,7 +4675,7 @@ index 4be3e977b..1cfce43fc 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -451,7 +541,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +547,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -4677,7 +4684,7 @@ index 4be3e977b..1cfce43fc 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -554,9 +644,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +650,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -4692,7 +4699,7 @@ index 4be3e977b..1cfce43fc 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -690,20 +783,33 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -690,20 +789,33 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
    CXXDeductionGuideDecl *GuideDecl = dyn_cast<CXXDeductionGuideDecl>(D);
    if (!Policy.SuppressSpecifiers) {
      switch (D->getStorageClass()) {
@@ -4736,7 +4743,7 @@ index 4be3e977b..1cfce43fc 100644
      else if (D->isImmediateFunction())
        Out << "immediate ";
      ExplicitSpecifier ExplicitSpec = ExplicitSpecifier::getFromDecl(D);
-@@ -753,12 +859,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +865,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -4753,7 +4760,7 @@ index 4be3e977b..1cfce43fc 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +915,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +921,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -4765,7 +4772,7 @@ index 4be3e977b..1cfce43fc 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,10 +929,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,10 +935,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -4795,7 +4802,7 @@ index 4be3e977b..1cfce43fc 100644
        if (FT && FT->hasTrailingReturn()) {
          if (!GuideDecl)
            Out << "auto ";
-@@ -850,7 +976,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +982,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -4809,7 +4816,7 @@ index 4be3e977b..1cfce43fc 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1009,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1015,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -4820,7 +4827,7 @@ index 4be3e977b..1cfce43fc 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1025,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1031,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -4845,7 +4852,7 @@ index 4be3e977b..1cfce43fc 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1050,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1056,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -4858,7 +4865,7 @@ index 4be3e977b..1cfce43fc 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1073,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1079,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -4894,7 +4901,7 @@ index 4be3e977b..1cfce43fc 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1109,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1115,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -4908,7 +4915,7 @@ index 4be3e977b..1cfce43fc 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,6 +1136,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,6 +1142,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -4918,7 +4925,7 @@ index 4be3e977b..1cfce43fc 100644
      if (D->isConstexpr()) {
        Out << "constexpr ";
        T.removeLocalConst();
-@@ -1001,6 +1155,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1001,6 +1161,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      Out << ' ' << *Attrs;
  
    Expr *Init = D->getInit();
@@ -4930,7 +4937,7 @@ index 4be3e977b..1cfce43fc 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1181,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1187,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -4939,7 +4946,7 @@ index 4be3e977b..1cfce43fc 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1190,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1196,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -4950,7 +4957,7 @@ index 4be3e977b..1cfce43fc 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1205,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1211,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -4960,7 +4967,7 @@ index 4be3e977b..1cfce43fc 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1227,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1233,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -4969,7 +4976,7 @@ index 4be3e977b..1cfce43fc 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1131,7 +1291,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1297,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -4979,7 +4986,7 @@ index 4be3e977b..1cfce43fc 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1423,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1429,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -4988,7 +4995,7 @@ index 4be3e977b..1cfce43fc 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,7 +1443,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,7 +1449,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -4997,7 +5004,7 @@ index 4be3e977b..1cfce43fc 100644
      Concept->getConstraintExpr()->printPretty(Out, nullptr, Policy, Indentation,
                                                "\n", &Context);
    }
-@@ -1302,7 +1463,13 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1469,13 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -5012,7 +5019,7 @@ index 4be3e977b..1cfce43fc 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1377,13 +1544,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1550,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -5028,7 +5035,7 @@ index 4be3e977b..1cfce43fc 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1565,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1571,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -5049,7 +5056,7 @@ index 4be3e977b..1cfce43fc 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1648,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1654,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -5061,7 +5068,7 @@ index 4be3e977b..1cfce43fc 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1658,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1664,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -5086,7 +5093,7 @@ index 4be3e977b..1cfce43fc 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1681,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1687,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -5096,7 +5103,7 @@ index 4be3e977b..1cfce43fc 100644
      Out << ';';
  }
  
-@@ -1512,8 +1700,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1706,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5107,7 +5114,7 @@ index 4be3e977b..1cfce43fc 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1733,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1739,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -5116,7 +5123,7 @@ index 4be3e977b..1cfce43fc 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +1746,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1752,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5126,7 +5133,7 @@ index 4be3e977b..1cfce43fc 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +1757,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1763,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5138,7 +5145,7 @@ index 4be3e977b..1cfce43fc 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1775,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1781,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -5147,7 +5154,7 @@ index 4be3e977b..1cfce43fc 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +1786,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +1792,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5157,7 +5164,7 @@ index 4be3e977b..1cfce43fc 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +1810,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1816,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -5166,7 +5173,7 @@ index 4be3e977b..1cfce43fc 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1824,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1830,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -5180,7 +5187,7 @@ index 4be3e977b..1cfce43fc 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +1839,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +1845,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -5191,7 +5198,7 @@ index 4be3e977b..1cfce43fc 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +1947,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +1953,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -5213,7 +5220,7 @@ index 4be3e977b..1cfce43fc 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +1990,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +1996,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -5231,7 +5238,7 @@ index 4be3e977b..1cfce43fc 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2019,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2025,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -6115,7 +6122,7 @@ index 9799c8651..13c447afe 100644
 +                          : " withLifetime scope=body");
 +}
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
-index 42d148715..6c3f40544 100644
+index 42d148715..ab259dd8e 100644
 --- a/clang/lib/AST/Type.cpp
 +++ b/clang/lib/AST/Type.cpp
 @@ -13,6 +13,7 @@
@@ -6311,7 +6318,27 @@ index 42d148715..6c3f40544 100644
    case Type::Complex:
    case Type::LValueReference:
    case Type::RValueReference:
-@@ -5558,6 +5634,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
+@@ -5421,8 +5497,17 @@ bool Type::isObjCARCImplicitlyUnretainedType() const {
+ }
+ 
+ bool Type::isObjCNSObjectType() const {
+-  if (const auto *typedefType = getAs<TypedefType>())
+-    return typedefType->getDecl()->hasAttr<ObjCNSObjectAttr>();
++  const Type *Current = this;
++  bool Family = false, NSObject = false;
++  while (const auto *Alias = Current->getAs<TypedefType>()) {
++    const auto *Declaration = Alias->getDecl();
++    // Preserve the baseline behavior of an explicitly attributed outer alias.
++    if (Current == this && Declaration->hasAttr<ObjCNSObjectAttr>()) return true;
++    Family |= Declaration->hasAttr<ObjCRetainableFamilyAttr>();
++    NSObject |= Declaration->hasAttr<ObjCNSObjectAttr>();
++    if (Family && NSObject) return true;
++    Current = Declaration->getUnderlyingType().getTypePtr();
++  }
+   return false;
+ }
+ 
+@@ -5558,6 +5643,11 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
  }
  
  QualType::DestructionKind QualType::isDestructedTypeImpl(QualType type) {
@@ -8536,7 +8563,7 @@ index 000000000..f4be4eda0
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..96bfd8933 100644
+index 6a25a799a..fb09ef44b 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,10 @@
@@ -8550,17 +8577,18 @@ index 6a25a799a..96bfd8933 100644
  #include "TypeLocBuilder.h"
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
-@@ -26,6 +30,9 @@
+@@ -26,6 +30,10 @@
  #include "clang/AST/ExprObjC.h"
  #include "clang/AST/MangleNumberingContext.h"
  #include "clang/AST/NonTrivialTypeVisitor.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/ObjC3Borrowed.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
  #include "clang/AST/Randstruct.h"
  #include "clang/AST/StmtCXX.h"
  #include "clang/AST/Type.h"
-@@ -2046,7 +2053,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
+@@ -2046,7 +2054,8 @@ static bool ShouldDiagnoseUnusedDecl(const LangOptions &LangOpts,
      return false;
  
    if (D->hasAttr<UnusedAttr>() || D->hasAttr<ObjCPreciseLifetimeAttr>() ||
@@ -8570,7 +8598,7 @@ index 6a25a799a..96bfd8933 100644
      return false;
  
    if (isa<LabelDecl>(D))
-@@ -2208,7 +2216,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
+@@ -2208,7 +2217,9 @@ void Sema::DiagnoseUnusedButSetDecl(const VarDecl *VD,
                                      DiagReceiverTy DiagReceiver) {
    // If it's not referenced, it can't be set. If it has the Cleanup attribute,
    // it's not really unused.
@@ -8581,7 +8609,7 @@ index 6a25a799a..96bfd8933 100644
      return;
  
    //  In C++, `_` variables behave as if they were maybe_unused
-@@ -2648,6 +2658,17 @@ void Sema::MergeTypedefNameDecl(Scope *S, TypedefNameDecl *New,
+@@ -2648,6 +2659,17 @@ void Sema::MergeTypedefNameDecl(Scope *S, TypedefNameDecl *New,
      return New->setInvalidDecl();
    }
  
@@ -8599,7 +8627,50 @@ index 6a25a799a..96bfd8933 100644
    // If the old declaration is invalid, just give up here.
    if (Old->isInvalidDecl())
      return New->setInvalidDecl();
-@@ -3774,6 +3795,9 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -2919,6 +2941,42 @@ static bool mergeDeclAttribute(Sema &S, NamedDecl *D,
+   // "use explicit attribute on decl if present, else use attribute from
+   // previous decl", for example if the attribute needs to be consistent
+   // between redeclarations, you need to call a custom merge function here.
++  if (const auto *Family = dyn_cast<ObjCRetainableFamilyAttr>(Attr))
++    if (const auto *Alias = dyn_cast<TypedefNameDecl>(D))
++      if (const auto *Other = getObjC3RetainableFamily(S.Context,
++          S.Context.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, Alias));
++          Other && Other->getFamily() != Family->getFamily()) {
++        S.Diag(D->getLocation(), S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error, "retainable family typedef redeclaration changes its family"));
++        D->setInvalidDecl();
++        return false;
++      }
++  if (const IdentifierInfo *Family = getObjC3FamilyOperationName(Attr)) {
++    if (const auto *Function = dyn_cast<FunctionDecl>(D);
++        Function && Function->getNumParams() == 1) {
++      const auto *ParameterFamily = getObjC3RetainableFamily(
++          S.Context, Function->getParamDecl(0)->getType());
++      const auto *ReturnFamily = getObjC3RetainableFamily(S.Context, Function->getReturnType());
++      if (!ParameterFamily || ParameterFamily->getFamily() != Family ||
++          (!isa<ObjCFamilyReleaseAttr>(Attr) &&
++           (!ReturnFamily || ReturnFamily->getFamily() != Family))) {
++        S.Diag(D->getLocation(), S.getDiagnostics().getCustomDiagID(
++            DiagnosticsEngine::Error,
++            "retainable family redeclaration must preserve its parameter and result family"));
++        D->setInvalidDecl();
++        return false;
++      }
++    }
++    for (const auto *Existing : D->attrs())
++      if (const IdentifierInfo *Previous = getObjC3FamilyOperationName(Existing))
++        if (Family != Previous || Existing->getKind() != Attr->getKind()) {
++          S.Diag(D->getLocation(), S.getDiagnostics().getCustomDiagID(
++              DiagnosticsEngine::Error,
++              "retainable family redeclaration changes its family or operation"));
++          D->setInvalidDecl();
++          return false;
++        }
++  }
+   InheritableAttr *NewAttr = nullptr;
+   if (const auto *AA = dyn_cast<AvailabilityAttr>(Attr)) {
+     const IdentifierInfo *InferredPlatformII = nullptr;
+@@ -3774,6 +3832,9 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
    if (Old->isInvalidDecl())
      return true;
  
@@ -8609,10 +8680,17 @@ index 6a25a799a..96bfd8933 100644
    // Disallow redeclaration of some builtins.
    if (!getASTContext().canBuiltinBeRedeclared(Old)) {
      Diag(New->getLocation(), diag::err_builtin_redeclare) << Old->getDeclName();
-@@ -4025,6 +4049,30 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4025,6 +4086,37 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
      return true;
    }
  
++  if (getLangOpts().ObjC3 &&
++      !sameObjC3RetainableFamilyType(Context, New->getType(), Old->getType())) {
++    Diag(New->getLocation(), getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error, "conflicting retainable family function type contract"));
++    New->setInvalidDecl();
++    return true;
++  }
 +  if (checkObjC3BorrowedRedeclaration(*this, New, Old))
 +    return true;
 +
@@ -8640,7 +8718,7 @@ index 6a25a799a..96bfd8933 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -4545,7 +4593,7 @@ bool Sema::MergeCompatibleFunctionDecls(FunctionDecl *New, FunctionDecl *Old,
+@@ -4545,7 +4637,7 @@ bool Sema::MergeCompatibleFunctionDecls(FunctionDecl *New, FunctionDecl *Old,
    // was visible.
    QualType Merged = Context.mergeTypes(Old->getType(), New->getType());
    if (!Merged.isNull() && MergeTypeWithOld)
@@ -8649,7 +8727,7 @@ index 6a25a799a..96bfd8933 100644
  
    return false;
  }
-@@ -4596,6 +4644,15 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4596,6 +4688,15 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
    if (New->isInvalidDecl() || Old->isInvalidDecl() || New->getType()->containsErrors() || Old->getType()->containsErrors())
      return;
  
@@ -8665,7 +8743,7 @@ index 6a25a799a..96bfd8933 100644
    QualType MergedT;
    if (getLangOpts().CPlusPlus) {
      if (New->getType()->isUndeducedType()) {
-@@ -4675,7 +4732,7 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
+@@ -4675,7 +4776,7 @@ void Sema::MergeVarDeclTypes(VarDecl *New, VarDecl *Old,
    // Don't actually update the type on the new declaration if the old
    // declaration was an extern declaration in a different scope.
    if (MergeTypeWithOld)
@@ -8674,7 +8752,7 @@ index 6a25a799a..96bfd8933 100644
  }
  
  static bool mergeTypeWithPrevious(Sema &S, VarDecl *NewVD, VarDecl *OldVD,
-@@ -9118,6 +9175,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
+@@ -9118,6 +9219,8 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
  
    bool isVM = T->isVariablyModifiedType();
    if (isVM || NewVD->hasAttr<CleanupAttr>() ||
@@ -8683,7 +8761,7 @@ index 6a25a799a..96bfd8933 100644
        NewVD->hasAttr<BlocksAttr>())
      setFunctionHasBranchProtectedScope();
  
-@@ -10772,6 +10831,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
+@@ -10772,6 +10875,10 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
              Previous.getResultKind() != LookupResultKind::FoundOverloaded) &&
             "previous declaration set still overloaded");
  
@@ -8694,7 +8772,7 @@ index 6a25a799a..96bfd8933 100644
      // Diagnose no-prototype function declarations with calling conventions that
      // don't support variadic calls. Only do this in C and do it after merging
      // possibly prototyped redeclarations.
-@@ -12615,10 +12678,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12615,10 +12722,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
@@ -8746,7 +8824,7 @@ index 6a25a799a..96bfd8933 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13703,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13747,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -8758,7 +8836,7 @@ index 6a25a799a..96bfd8933 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13774,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13818,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -8770,7 +8848,7 @@ index 6a25a799a..96bfd8933 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13844,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13888,11 @@ struct DiagNonTrivalCUnionCopyVisitor
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -8782,7 +8860,7 @@ index 6a25a799a..96bfd8933 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15061,69 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15105,69 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -8852,7 +8930,7 @@ index 6a25a799a..96bfd8933 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16892,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16936,39 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -8892,7 +8970,7 @@ index 6a25a799a..96bfd8933 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16939,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16983,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -8907,7 +8985,7 @@ index 6a25a799a..96bfd8933 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20435,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20479,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -19263,7 +19341,7 @@ index 0573cdf95..e51931da4 100644
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..036d6da08 100644
+index 2a8395e26..70622f95f 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
 @@ -29,9 +29,12 @@
@@ -19425,7 +19503,22 @@ index 2a8395e26..036d6da08 100644
    case Builtin::BI__builtin___get_unsafe_stack_start:
    case Builtin::BI__builtin___get_unsafe_stack_bottom:
      Diag(TheCall->getBeginLoc(), diag::warn_deprecated_builtin)
-@@ -10821,6 +10963,9 @@ struct SearchNonTrivialToInitializeField
+@@ -4665,6 +4807,14 @@ void Sema::CheckConstructorCall(FunctionDecl *FDecl, QualType ThisType,
+ 
+ bool Sema::CheckFunctionCall(FunctionDecl *FDecl, CallExpr *TheCall,
+                              const FunctionProtoType *Proto) {
++  if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++      getObjC3FamilyOperation(FDecl) && FDecl->getNumParams() == 1 &&
++      FDecl->getParamDecl(0)->getType()->isObjCRetainableType()) {
++    Diag(TheCall->getExprLoc(), getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error,
++        "direct retainable family operation on an ObjC-integrated type is unavailable under ARC"));
++    return true;
++  }
+   bool IsMemberOperatorCall = isa<CXXOperatorCallExpr>(TheCall) &&
+                               isa<CXXMethodDecl>(FDecl);
+   bool IsMemberFunction = isa<CXXMemberCallExpr>(TheCall) ||
+@@ -10821,6 +10971,9 @@ struct SearchNonTrivialToInitializeField
      Super::visitWithKind(PDIK, FT, SL);
    }
  
@@ -19435,7 +19528,7 @@ index 2a8395e26..036d6da08 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
    }
-@@ -10863,6 +11008,9 @@ struct SearchNonTrivialToCopyField
+@@ -10863,6 +11016,9 @@ struct SearchNonTrivialToCopyField
      Super::visitWithKind(PCK, FT, SL);
    }
  
@@ -30509,7 +30602,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..c683cb66b 100644
+index 2c62f46d4..70c80b5c8 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -30522,7 +30615,7 @@ index 2c62f46d4..c683cb66b 100644
  class DeclArgument<DeclNode kind, string name, bit opt = 0, bit fake = 0>
      : Argument<name, opt, fake> {
    DeclNode Kind = kind;
-@@ -1450,6 +1453,72 @@ def OSConsumesThis : InheritableAttr {
+@@ -1450,6 +1453,100 @@ def OSConsumesThis : InheritableAttr {
    let SimpleHandler = 1;
  }
  
@@ -30547,6 +30640,34 @@ index 2c62f46d4..c683cb66b 100644
 +  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
 +  let Args = [ExprArgument<"Close">];
 +  let Documentation = [ObjCResourceTypeDocs];
++}
++
++def ObjCRetainableFamily : InheritableAttr {
++  let Spellings = [GNU<"objc_retainable_family">];
++  let Subjects = SubjectList<[TypedefName], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyRetain : InheritableAttr {
++  let Spellings = [GNU<"objc_family_retain">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyRelease : InheritableAttr {
++  let Spellings = [GNU<"objc_family_release">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
++}
++
++def ObjCFamilyAutorelease : InheritableAttr {
++  let Spellings = [GNU<"objc_family_autorelease">];
++  let Subjects = SubjectList<[Function], ErrorDiag>;
++  let Args = [IdentifierArgument<"Family">];
++  let Documentation = [ObjCRetainableFamilyDocs];
 +}
 +
 +def ObjCResourceFamily : InheritableAttr {
@@ -30595,7 +30716,7 @@ index 2c62f46d4..c683cb66b 100644
  def Cleanup : InheritableAttr {
    let Spellings = [GCC<"cleanup">];
    let Args = [DeclArgument<Function, "FunctionDecl">];
-@@ -1469,6 +1538,8 @@ public:
+@@ -1469,6 +1566,8 @@ public:
    }];
  }
  
@@ -30604,7 +30725,7 @@ index 2c62f46d4..c683cb66b 100644
  def CmseNSEntry : InheritableAttr, TargetSpecificAttr<TargetARM> {
    let Spellings = [GNU<"cmse_nonsecure_entry">];
    let Subjects = SubjectList<[Function]>;
-@@ -2812,9 +2883,14 @@ def StrictGuardStackCheck : InheritableAttr {
+@@ -2812,9 +2911,14 @@ def StrictGuardStackCheck : InheritableAttr {
    let SimpleHandler = 1;
  }
  
@@ -30620,7 +30741,7 @@ index 2c62f46d4..c683cb66b 100644
    let Documentation = [NoThrowDocs];
  }
  
-@@ -2922,6 +2998,14 @@ def ObjCIndependentClass : InheritableAttr {
+@@ -2922,6 +3026,14 @@ def ObjCIndependentClass : InheritableAttr {
    let Documentation = [Undocumented];
  }
  
@@ -30635,7 +30756,7 @@ index 2c62f46d4..c683cb66b 100644
  def ObjCPreciseLifetime : InheritableAttr {
    let Spellings = [Clang<"objc_precise_lifetime">];
    let Subjects = SubjectList<[Var], ErrorDiag>;
-@@ -5503,3 +5587,58 @@ def Personality : InheritableAttr {
+@@ -5503,3 +5615,58 @@ def Personality : InheritableAttr {
    let Subjects = SubjectList<[Function]>;
    let Documentation = [PersonalityDocs];
  }
@@ -30695,7 +30816,7 @@ index 2c62f46d4..c683cb66b 100644
 +  let Documentation = [ObjC3TaskBoundaryDocs];
 +}
 diff --git a/clang/include/clang/Basic/AttrDocs.td b/clang/include/clang/Basic/AttrDocs.td
-index 0fe41671c..5ba21e86a 100644
+index 0fe41671c..fc442b004 100644
 --- a/clang/include/clang/Basic/AttrDocs.td
 +++ b/clang/include/clang/Basic/AttrDocs.td
 @@ -9502,6 +9502,72 @@ this usage is debugger-dependent.
@@ -30771,7 +30892,7 @@ index 0fe41671c..5ba21e86a 100644
  def CleanupDocs : Documentation {
    let Category = DocCatVariable;
    let Content = [{
-@@ -10485,3 +10551,61 @@ The attribute is also supported with blocks and in Objective-C.
+@@ -10485,3 +10551,76 @@ The attribute is also supported with blocks and in Objective-C.
    }
    }];
  }
@@ -30831,6 +30952,21 @@ index 0fe41671c..5ba21e86a 100644
 +work-item captures and explicit values for Sendable transfer. These attributes
 +preserve classification in interfaces; they do not implement task creation or
 +change a library function's calling convention.
++  }];
++}
++
++def ObjCRetainableFamilyDocs : Documentation {
++  let Category = DocCatDecl;
++  let Content = [{
++Objective-C 3.0 identifies retainable pointer typedefs with
++``objc_retainable_family(Name)`` and their unary operations with
++``objc_family_retain(Name)``, ``objc_family_release(Name)`` and
++``objc_family_autorelease(Name)``. The parameter must name the declared family;
++retain/autorelease return the same family type and release returns void.
++Aliases cannot change their family and redeclarations cannot change operations.
++ObjC-integrated families additionally use ``NSObject``; ARC prohibits direct
++manual family operations on these types. These contracts preserve the native
++pointer ABI and are serialized in PCH and reusable declarations.
 +  }];
 +}
 diff --git a/clang/include/clang/Basic/OperatorPrecedence.h b/clang/include/clang/Basic/OperatorPrecedence.h
@@ -30952,7 +31088,7 @@ index d5085ca6d..d76f1ee46 100644
    case '[':
      Kind = tok::l_square;
 diff --git a/clang/lib/Sema/SemaDeclAttr.cpp b/clang/lib/Sema/SemaDeclAttr.cpp
-index 1b272b541..ea74c65e4 100644
+index 1b272b541..94d671c1b 100644
 --- a/clang/lib/Sema/SemaDeclAttr.cpp
 +++ b/clang/lib/Sema/SemaDeclAttr.cpp
 @@ -43,6 +43,9 @@
@@ -30992,12 +31128,18 @@ index 1b272b541..ea74c65e4 100644
    case ParsedAttr::AT_ObjCMethodFamily:
      S.ObjC().handleMethodFamilyAttr(D, AL);
      break;
-@@ -8114,6 +8130,20 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
+@@ -8114,6 +8130,26 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
    case ParsedAttr::AT_Sentinel:
      handleSentinelAttr(S, D, AL);
      break;
 +  case ParsedAttr::AT_ObjCReturnsBorrowed:
 +    handleObjC3ReturnsBorrowedAttr(S, D, AL);
++    break;
++  case ParsedAttr::AT_ObjCRetainableFamily:
++  case ParsedAttr::AT_ObjCFamilyRetain:
++  case ParsedAttr::AT_ObjCFamilyRelease:
++  case ParsedAttr::AT_ObjCFamilyAutorelease:
++    handleObjC3RetainableFamilyAttr(S, D, AL);
 +    break;
 +  case ParsedAttr::AT_ObjCRequiresCleanup:
 +  case ParsedAttr::AT_ObjCResourceFamily:
@@ -31194,10 +31336,10 @@ index 000000000..bd0292ed3
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.cpp b/clang/lib/Sema/SemaObjC3Resources.cpp
 new file mode 100644
-index 000000000..a0baa0ca2
+index 000000000..67a5fd3d2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.cpp
-@@ -0,0 +1,546 @@
+@@ -0,0 +1,632 @@
 +//===--- SemaObjC3Resources.cpp - Native scalar resource ownership
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -31207,6 +31349,7 @@ index 000000000..a0baa0ca2
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
++#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Sema/Initialization.h"
 +#include "clang/Sema/ParsedAttr.h"
@@ -31225,6 +31368,91 @@ index 000000000..a0baa0ca2
 +         !Type->isAtomicType() && Type.getAddressSpace() == LangAS::Default;
 +}
 +} // namespace
++
++void clang::handleObjC3RetainableFamilyAttr(Sema &S, Decl *D,
++                                          const ParsedAttr &Attribute) {
++  auto Reject = [&](StringRef Message) {
++    S.Diag(Attribute.getLoc(), S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                                  DiagnosticIDs::Error, Message));
++    D->setInvalidDecl();
++  };
++  if (!S.getLangOpts().ObjC3) {
++    Reject("retainable family contracts require Objective-C 3.0");
++    return;
++  }
++  IdentifierInfo *Family = Attribute.getArgAsIdent(0)->getIdentifierInfo();
++  if (Attribute.getKind() == ParsedAttr::AT_ObjCRetainableFamily) {
++    auto *Alias = cast<TypedefNameDecl>(D);
++    QualType Type = Alias->getUnderlyingType();
++    if (Type->isDependentType() || Type->isAtomicType() ||
++        !(Type->isPointerType() || Type->isObjCObjectPointerType()) ||
++        Type->isFunctionPointerType() ||
++        Type.getAddressSpace() != LangAS::Default ||
++        isObjC3BorrowedType(S.Context, Type)) {
++      Reject("retainable family requires a nondependent non-borrowed pointer typedef");
++      return;
++    }
++    const auto *Inherited = getObjC3RetainableFamily(S.Context,
++        S.Context.getTypedefType(ElaboratedTypeKeyword::None, std::nullopt, Alias));
++    if (Inherited && Inherited->getFamily() != Family) {
++      Reject("retainable alias cannot change its inherited family");
++      return;
++    }
++    if (!Alias->hasAttr<ObjCRetainableFamilyAttr>())
++      Alias->addAttr(ObjCRetainableFamilyAttr::Create(S.Context, Family, Attribute));
++    return;
++  }
++  auto *Function = cast<FunctionDecl>(D);
++  const auto *Prototype = Function->getType()->getAs<FunctionProtoType>();
++  if (!Prototype || Function->isDependentContext() ||
++      Function->getDescribedFunctionTemplate() || Function->getNumParams() != 1 ||
++      Prototype->isVariadic() ||
++      (isa<CXXMethodDecl>(Function) && !cast<CXXMethodDecl>(Function)->isStatic()) ||
++      Prototype->getObjC3FunctionEffects().Async ||
++      Prototype->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None) {
++    Reject("retainable family operation requires a synchronous nonthrowing nondependent unary function");
++    return;
++  }
++  QualType Parameter = Function->getParamDecl(0)->getType();
++  const auto *ParameterFamily = getObjC3RetainableFamily(S.Context, Parameter);
++  if (!ParameterFamily || ParameterFamily->getFamily() != Family) {
++    Reject("retainable family operation parameter must name the declared family");
++    return;
++  }
++  bool Release = Attribute.getKind() == ParsedAttr::AT_ObjCFamilyRelease;
++  QualType Return = Function->getReturnType();
++  const auto *ReturnFamily = getObjC3RetainableFamily(S.Context, Return);
++  if ((Release && !Return->isVoidType()) ||
++      (!Release && (!ReturnFamily || ReturnFamily->getFamily() != Family ||
++                    !S.Context.hasSameUnqualifiedType(Return, Parameter)))) {
++    Reject("retainable family release must return void; retain/autorelease must return the parameter family type");
++    return;
++  }
++  for (const Attr *Existing : Function->attrs())
++    if (const IdentifierInfo *Name = getObjC3FamilyOperationName(Existing))
++      if (Name != Family || unsigned(Existing->getKind()) !=
++          (Release ? unsigned(attr::ObjCFamilyRelease) :
++           Attribute.getKind() == ParsedAttr::AT_ObjCFamilyRetain ?
++           unsigned(attr::ObjCFamilyRetain) : unsigned(attr::ObjCFamilyAutorelease))) {
++        Reject("retainable family operation cannot change its family or operation");
++        return;
++      }
++  switch (Attribute.getKind()) {
++  case ParsedAttr::AT_ObjCFamilyRetain:
++    if (!Function->hasAttr<ObjCFamilyRetainAttr>())
++      Function->addAttr(ObjCFamilyRetainAttr::Create(S.Context, Family, Attribute));
++    break;
++  case ParsedAttr::AT_ObjCFamilyRelease:
++    if (!Function->hasAttr<ObjCFamilyReleaseAttr>())
++      Function->addAttr(ObjCFamilyReleaseAttr::Create(S.Context, Family, Attribute));
++    break;
++  case ParsedAttr::AT_ObjCFamilyAutorelease:
++    if (!Function->hasAttr<ObjCFamilyAutoreleaseAttr>())
++      Function->addAttr(ObjCFamilyAutoreleaseAttr::Create(S.Context, Family, Attribute));
++    break;
++  default: llvm_unreachable("unexpected retainable family attribute");
++  }
++}
 +
 +void clang::handleObjC3ResourceTypeAttr(Sema &S, Decl *D,
 +                                        const ParsedAttr &Attribute) {
@@ -31746,10 +31974,10 @@ index 000000000..a0baa0ca2
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Resources.h b/clang/lib/Sema/SemaObjC3Resources.h
 new file mode 100644
-index 000000000..35c7f1e4b
+index 000000000..252c4e649
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Resources.h
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +//===--- SemaObjC3Resources.h - Native scalar resource ownership ---*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3RESOURCES_H
@@ -31759,6 +31987,7 @@ index 000000000..35c7f1e4b
 +class ParsedAttr;
 +class Sema;
 +class Stmt;
++void handleObjC3RetainableFamilyAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceTypeAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3CleanupAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
 +void handleObjC3ResourceAttr(Sema &S, Decl *D, const ParsedAttr &Attribute);
@@ -35947,10 +36176,10 @@ index 000000000..654755f39
 +}
 diff --git a/clang/include/clang/AST/ObjC3ResourceTypes.h b/clang/include/clang/AST/ObjC3ResourceTypes.h
 new file mode 100644
-index 000000000..6ed4810f0
+index 000000000..2f6150a7f
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3ResourceTypes.h
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,172 @@
 +//===--- ObjC3ResourceTypes.h - Scalar resource typedef contracts -*- C++
 +//-*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -35960,8 +36189,73 @@ index 000000000..6ed4810f0
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
++#include "llvm/ADT/DenseSet.h"
 +
 +namespace clang {
++inline const ObjCRetainableFamilyAttr *
++getObjC3RetainableFamily(const ASTContext &Context, QualType Type) {
++  while (!Type.isNull()) {
++    if (const auto *Alias = dyn_cast<TypedefType>(Type.getTypePtr()))
++      if (const auto *Family = Alias->getDecl()->getAttr<ObjCRetainableFamilyAttr>())
++        return Family;
++    QualType Next = Type.getSingleStepDesugaredType(Context);
++    if (Next == Type) break;
++    Type = Next;
++  }
++  return nullptr;
++}
++inline bool sameObjC3RetainableFamilyType(const ASTContext &Context,
++                                         QualType Left, QualType Right) {
++  SmallVector<std::pair<QualType, QualType>, 16> Pending{{Left, Right}};
++  llvm::SmallDenseSet<std::pair<const Type *, const Type *>, 16> Seen;
++  while (!Pending.empty()) {
++    auto [L, R] = Pending.pop_back_val();
++    if (L.isNull() || R.isNull()) {
++      if (L.isNull() != R.isNull()) return false;
++      continue;
++    }
++    if (!Seen.insert({L.getTypePtr(), R.getTypePtr()}).second) continue;
++    const auto *A = getObjC3RetainableFamily(Context, L);
++    const auto *B = getObjC3RetainableFamily(Context, R);
++    if (bool(A) != bool(B) || (A &&
++        (A->getFamily() != B->getFamily() ||
++         L->isObjCRetainableType() != R->isObjCRetainableType()))) return false;
++    L = L.getDesugaredType(Context);
++    R = R.getDesugaredType(Context);
++    if ((L->isPointerType() && R->isPointerType()) ||
++        (L->isReferenceType() && R->isReferenceType()) ||
++        (L->isBlockPointerType() && R->isBlockPointerType()))
++      Pending.emplace_back(L->getPointeeType(), R->getPointeeType());
++    if (const auto *LF = L->getAs<FunctionType>()) {
++      if (const auto *RF = R->getAs<FunctionType>()) {
++        Pending.emplace_back(LF->getReturnType(), RF->getReturnType());
++        const auto *LP = dyn_cast<FunctionProtoType>(LF);
++        const auto *RP = dyn_cast<FunctionProtoType>(RF);
++        if (LP && RP && LP->getNumParams() == RP->getNumParams())
++          for (unsigned I = 0; I != LP->getNumParams(); ++I)
++            Pending.emplace_back(LP->getParamType(I), RP->getParamType(I));
++      }
++    }
++    if (const auto *LA = Context.getAsArrayType(L))
++      if (const auto *RA = Context.getAsArrayType(R))
++        Pending.emplace_back(LA->getElementType(), RA->getElementType());
++  }
++  return true;
++}
++inline const IdentifierInfo *getObjC3FamilyOperationName(const Attr *Attribute) {
++  if (const auto *A = dyn_cast<ObjCFamilyRetainAttr>(Attribute)) return A->getFamily();
++  if (const auto *A = dyn_cast<ObjCFamilyReleaseAttr>(Attribute)) return A->getFamily();
++  if (const auto *A = dyn_cast<ObjCFamilyAutoreleaseAttr>(Attribute)) return A->getFamily();
++  return nullptr;
++}
++inline const Attr *getObjC3FamilyOperation(const FunctionDecl *Function) {
++  if (Function)
++    for (const FunctionDecl *Redeclaration : Function->redecls())
++      for (const Attr *Attribute : Redeclaration->attrs())
++        if (getObjC3FamilyOperationName(Attribute)) return Attribute;
++  return nullptr;
++}
++
 +struct ObjC3ResourceTypeContract {
 +  const ObjCRequiresCleanupAttr *Cleanup = nullptr;
 +  const ObjCResourceFamilyAttr *Family = nullptr;
@@ -37422,10 +37716,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..980d7282d
+index 000000000..15b10863a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2543 @@
+@@ -0,0 +1,2554 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37435,6 +37729,7 @@ index 000000000..980d7282d
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3KeyPath.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/ObjC3SourceScopes.h"
 +#include "clang/Analysis/CFG.h"
 +#include "clang/Sema/ParsedAttr.h"
@@ -38852,6 +39147,10 @@ index 000000000..980d7282d
 +            }
 +      }
 +    }
++    if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
++      if (const auto *Operation = getObjC3FamilyOperation(Function);
++          Operation && isa<ObjCFamilyReleaseAttr>(Operation))
++        Identity |= evaluatedOwnerIdentity(argument(Invocation, 0), State);
 +    const auto Formals = formalParameters(callee(Invocation));
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
@@ -39252,6 +39551,12 @@ index 000000000..980d7282d
 +                                 ? "an escaping block argument"
 +                                 : "an argument without a non-escaping lifetime contract");
 +      }
++    if (Emit)
++      if (const auto *Function = dyn_cast_or_null<FunctionDecl>(callee(Invocation)))
++        if (const auto *Operation = getObjC3FamilyOperation(Function);
++            Operation && !isa<ObjCFamilyReleaseAttr>(Operation) &&
++            ownerIsUnowned(argument(Invocation, 0), State))
++          diagnose(Invocation, "a retainable family operation after owner release");
 +    if (Emit) {
 +      auto Found = Acquisitions.find(Invocation);
 +      if (Found != Acquisitions.end()) {
@@ -45037,4 +45342,171 @@ index 000000000..fb9902f38
 +  snapshot_use(pointer);
 +  snapshot_consume(owner);
 +  snapshot_use(pointer); // expected-error {{after its owner lifetime ended}}
++}
+diff --git a/clang/lib/Analysis/RetainSummaryManager.cpp b/clang/lib/Analysis/RetainSummaryManager.cpp
+index b622027ee..33498e677 100644
+--- a/clang/lib/Analysis/RetainSummaryManager.cpp
++++ b/clang/lib/Analysis/RetainSummaryManager.cpp
+@@ -14,6 +14,7 @@
+ 
+ #include "clang/Analysis/RetainSummaryManager.h"
+ #include "clang/AST/Attr.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/DeclObjC.h"
+ #include "clang/ASTMatchers/ASTMatchFinder.h"
+@@ -540,6 +541,20 @@ RetainSummaryManager::getFunctionSummary(const FunctionDecl *FD) {
+   if (I != FuncSummaries.end())
+     return I->second;
+ 
++  // Canonical ObjC3 families are semantic operations, independent of naming
++  // conventions. AnyObj matches the actual CF/ObjC tracked argument kind.
++  if (Ctx.getLangOpts().ObjC3)
++    if (const Attr *Operation = getObjC3FamilyOperation(FD)) {
++      ArgEffectKind Kind = isa<ObjCFamilyRetainAttr>(Operation) ? IncRef :
++                           isa<ObjCFamilyReleaseAttr>(Operation) ? DecRef : Autorelease;
++      ArgEffects Arguments = AF.add(AF.getEmptyMap(), 0,
++                                    ArgEffect(Kind, ObjKind::AnyObj));
++      const RetainSummary *Summary = getPersistentSummary(
++          RetEffect::MakeNoRet(), Arguments, ArgEffect(DoNothing), ArgEffect(DoNothing));
++      FuncSummaries[FD] = Summary;
++      return Summary;
++    }
++
+   // No summary?  Generate one.
+   bool AllowAnnotations = true;
+   const RetainSummary *S = generateSummary(FD, AllowAnnotations);
+@@ -716,6 +731,11 @@ std::optional<RetainSummaryManager::BehaviorSummary>
+ RetainSummaryManager::canEval(const CallExpr *CE, const FunctionDecl *FD,
+                               bool &hasTrustedImplementationAnnotation) {
+ 
++  if (Ctx.getLangOpts().ObjC3)
++    if (const Attr *Operation = getObjC3FamilyOperation(FD);
++        Operation && !isa<ObjCFamilyReleaseAttr>(Operation))
++      return BehaviorSummary::Identity;
++
+   IdentifierInfo *II = FD->getIdentifier();
+   if (!II)
+     return std::nullopt;
+diff --git a/clang/test/ObjC3/Sema/Inputs/retainable-families.h b/clang/test/ObjC3/Sema/Inputs/retainable-families.h
+new file mode 100644
+index 000000000..96034dd71
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/retainable-families.h
+@@ -0,0 +1,13 @@
++typedef struct FamilyObject *FamilyRef __attribute__((objc_retainable_family(Example)));
++typedef FamilyRef FamilyAlias;
++FamilyRef FamilyHold(FamilyRef value) __attribute__((objc_family_retain(Example)));
++void FamilyDrop(FamilyAlias value) __attribute__((objc_family_release(Example)));
++FamilyRef FamilySchedule(FamilyRef value) __attribute__((objc_family_autorelease(Example)));
++typedef struct IntegratedFamily *IntegratedRef __attribute__((NSObject,objc_retainable_family(Integrated)));
++typedef IntegratedRef IntegratedAlias;
++IntegratedRef IntegratedHold(IntegratedRef value) __attribute__((objc_family_retain(Integrated)));
++void IntegratedDrop(IntegratedAlias value) __attribute__((objc_family_release(Integrated)));
++IntegratedRef IntegratedSchedule(IntegratedRef value) __attribute__((objc_family_autorelease(Integrated)));
++typedef borrowed const char *FamilyBytes;
++FamilyBytes FamilyGetBytes(FamilyRef owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void FamilyUse(const char *pointer __attribute__((noescape)));
+diff --git a/clang/test/ObjC3/Sema/retainable-families.m b/clang/test/ObjC3/Sema/retainable-families.m
+new file mode 100644
+index 000000000..133192a7e
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/retainable-families.m
+@@ -0,0 +1,72 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/retainable-families.h -o %t-c17-mrc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -emit-pch %S/Inputs/retainable-families.h -o %t-c17-arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c17-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/retainable-families.h -o %t-c++23-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-mrc.pch -DFROM_PCH -fsyntax-only -verify=expected,mrc %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -emit-pch %S/Inputs/retainable-families.h -o %t-c++23-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -DARC -include-pch %t-c++23-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,arc %s
++#ifndef FROM_PCH
++#include "Inputs/retainable-families.h"
++#endif
++void ordinary_family(FamilyRef value) {
++  FamilyRef held=FamilyHold(value);
++  FamilyRef scheduled=FamilySchedule(held);
++  FamilyDrop(scheduled);
++}
++void integrated_family(IntegratedRef value) {
++  IntegratedRef held=IntegratedHold(value); // arc-error {{direct retainable family operation}}
++  IntegratedDrop(value); // arc-error {{direct retainable family operation}}
++  (void)IntegratedSchedule(value); // arc-error {{direct retainable family operation}}
++}
++void released_loan(FamilyRef owner) {
++  const char *pointer=FamilyGetBytes(owner);
++  FamilyDrop(owner);
++  FamilyUse(pointer); // expected-error {{after its owner lifetime ended}}
++}
++void released_alias(FamilyRef owner) {
++  FamilyAlias alias=owner;
++  const char *pointer=FamilyGetBytes(alias);
++  FamilyDrop(owner);
++  FamilyUse(pointer); // expected-error {{after its owner lifetime ended}}
++}
++typedef FamilyAlias WrongAlias __attribute__((objc_retainable_family(Other))); // expected-error {{cannot change its inherited family}}
++typedef int NotPointer __attribute__((objc_retainable_family(Other))); // expected-error {{requires a nondependent non-borrowed pointer typedef}}
++void WrongParameter(int value) __attribute__((objc_family_release(Example))); // expected-error {{parameter must name the declared family}}
++void WrongFamily(FamilyRef value) __attribute__((objc_family_release(Other))); // expected-error {{parameter must name the declared family}}
++int WrongRelease(FamilyRef value) __attribute__((objc_family_release(Example))); // expected-error {{release must return void}}
++void WrongRetain(FamilyRef value) __attribute__((objc_family_retain(Example))); // expected-error {{retain/autorelease must return}}
++void Variadic(FamilyRef value,...) __attribute__((objc_family_release(Example))); // expected-error {{requires a synchronous nonthrowing nondependent unary function}}
++void Multiple(FamilyRef left,FamilyRef right) __attribute__((objc_family_release(Example))); // expected-error {{requires a synchronous nonthrowing nondependent unary function}}
++void Missing(void) __attribute__((objc_family_release(Example))); // expected-error {{requires a synchronous nonthrowing nondependent unary function}}
++FamilyRef Contradictory(FamilyRef value) __attribute__((objc_family_retain(Example),objc_family_autorelease(Example))); // expected-error {{cannot change its family or operation}}
++FamilyRef Redeclared(FamilyRef value) __attribute__((objc_family_retain(Example)));
++FamilyRef Redeclared(FamilyRef value) __attribute__((objc_family_autorelease(Example))); // expected-error {{redeclaration changes its family or operation}}
++void FamilyDrop(FamilyRef value);
++void inherited_release(FamilyRef owner) {
++  const char *pointer=FamilyGetBytes(owner);
++  FamilyDrop(owner);
++  FamilyUse(pointer); // expected-error {{after its owner lifetime ended}}
++}
++typedef void (*FunctionHandle)(void) __attribute__((objc_retainable_family(Bad))); // expected-error {{requires a nondependent non-borrowed pointer typedef}}
++typedef struct FamilyObject *OtherFamily __attribute__((objc_retainable_family(Other)));
++void ChangedParameter(FamilyRef value) __attribute__((objc_family_release(Example)));
++void ChangedParameter(OtherFamily value); // expected-error {{conflicting retainable family function type contract}}
++void late_retain(FamilyRef owner) {
++  FamilyDrop(owner);
++  FamilyRef resurrected=FamilyHold(owner); // expected-error {{retainable family operation after owner release}}
++  FamilyUse(FamilyGetBytes(resurrected));
++}
++#ifdef __cplusplus
++using CxxFamily __attribute__((objc_retainable_family(Cxx))) = FamilyRef; // expected-error {{cannot change its inherited family}}
++#endif
++typedef struct FamilyObject *RepeatedFamily __attribute__((objc_retainable_family(Example)));
++typedef struct FamilyObject *RepeatedFamily __attribute__((objc_retainable_family(Other))); // expected-error {{typedef redeclaration changes its family}}
++void preserved_signature(FamilyRef value);
++void preserved_signature(void *value); // expected-error {{conflicting retainable family function type contract}}
+diff --git a/clang/test/ObjC3/Sema/retainable-family-analyzer.m b/clang/test/ObjC3/Sema/retainable-family-analyzer.m
+new file mode 100644
+index 000000000..a8f05a840
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/retainable-family-analyzer.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -analyze -analyzer-checker=core,osx.cocoa.RetainCount -analyzer-output=text -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -analyze -analyzer-checker=core,osx.cocoa.RetainCount -analyzer-output=text -verify %s
++typedef struct FamilyObject *FamilyRef __attribute__((objc_retainable_family(Example)));
++FamilyRef create(void) __attribute__((cf_returns_retained));
++FamilyRef hold(FamilyRef value) __attribute__((objc_family_retain(Example)));
++void drop(FamilyRef value) __attribute__((objc_family_release(Example)));
++void use(FamilyRef value);
++void balanced(void) {
++  FamilyRef owner=create();
++  FamilyRef alias=hold(owner);
++  drop(owner);
++  use(alias);
++  drop(alias);
++}
++void over_release(void) {
++  FamilyRef owner=create(); // expected-note {{Call to function 'create' returns a Core Foundation object of type 'FamilyRef' with a +1 retain count}}
++  drop(owner); // expected-note {{Object released}}
++  drop(owner); // expected-warning {{Reference-counted object is used after it is released}} expected-note {{Reference-counted object is used after it is released}}
 +}

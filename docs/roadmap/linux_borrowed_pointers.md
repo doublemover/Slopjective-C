@@ -147,3 +147,9 @@ The [System 2.7.0 source span](linux_borrowed_future_captures.md) preserves
 requirements for owners first borrowed inside later-invoked concrete closures.
 Cached symbolic CFG summaries retain local alias dependencies, independent
 capture owners and lifetime pins.
+
+The [System 2.8.0 getter snapshot span](linux_borrowed_getter_snapshots.md)
+preserves owner loans across subsequent argument effects.
+
+The [System 2.9.0 canonical family span](linux_retainable_families.md) adds
+annotated family-release effects and native/interface family contracts.

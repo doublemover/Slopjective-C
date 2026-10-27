@@ -162,6 +162,8 @@ def check_cpp_metadata(metadata):
             'native_published_checkpoint', {}).get('canonical_type_identity', ''):
         raise ValueError('published runtime constant lost its contract')
     for name, contract in (
+            ('NativeForeignRef', ':retainable-family'),
+            ('native_foreign_consume', 'family-release'),
             ('NativeForeignConsumer', ':cf-consumed'),
             ('native_foreign_consume', ':cf-consumed'),
             ('native_foreign_forward', ':cf-consumed'),

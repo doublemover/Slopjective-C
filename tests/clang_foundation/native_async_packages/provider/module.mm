@@ -904,12 +904,13 @@ struct NativePublishedRuntime {
 // Source-free ownership witnesses use ordinary synchronous native calls too.
 struct NativeForeignCounts {int consumed;int destroyed;};
 struct NativeForeignOwner {NativeForeignCounts *counts;int value;};
-using NativeForeignRef=NativeForeignOwner *;
+using NativeForeignRef __attribute__((objc_retainable_family(NativeForeign))) = NativeForeignOwner *;
 using NativeForeignConsumer=void (*)(NativeForeignRef __attribute__((cf_consumed)));
 NativeForeignRef native_foreign_create(NativeForeignCounts *counts,int value) {
   return new NativeForeignOwner{counts,value};
 }
-void native_foreign_consume(NativeForeignRef owner __attribute__((cf_consumed))) {
+void native_foreign_consume(NativeForeignRef owner __attribute__((cf_consumed)))
+    __attribute__((objc_family_release(NativeForeign))) {
   ++owner->counts->consumed;
   ++owner->counts->destroyed;
   delete owner;
