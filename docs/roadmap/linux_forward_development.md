@@ -539,3 +539,10 @@ structured-runtime instrumentation. Exception cleanup additionally repairs and
 rebuilds the pinned GNU runtime's DWARF decoder; full-width LEB values use defined
 unsigned operations. Installed/archive delivery and the implementation backlog
 remain separate obligations.
+
+The [2.25.0 source milestone](linux_explicit_capture_lists.md) adds ARC/MRC plain
+and pure C++ carrier captures, recursive nested C++ binding snapshots and stable
+coalescing expression contracts. Its [focused evidence](../support/linux_carrier_captures_progress.json)
+records 373 native lit and 179 unit checks, three facade suites, normal and
+ASan/UBSan source/PCH capture matrices, and eight source-free C++ package cases.
+Mixed ARC/C++ captures and the installed SDK/archive cutover remain pending.
