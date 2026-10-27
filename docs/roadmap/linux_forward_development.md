@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Callable ownership contracts
+
+The [System 2.4.0 source span](linux_callable_ownership_casts.md) preserves MRC
+retained callback results and checks explicit function/member-pointer casts,
+including nested callbacks. Consumed/retained obligations cannot be erased and
+noescape/borrowed permissions cannot be invented. PCH and source-free imports
+retain ownership identity. SDK 2.33 remains the accepted archive.
+
 ## Annotated consumed owners and borrowed loans
 
 The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) adds annotated

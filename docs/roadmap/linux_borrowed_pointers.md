@@ -128,3 +128,7 @@ Other MRC/foreign consumption and indirect/interprocedural effects remain open.
 The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) extends known
 claim tracking to annotated object consumption and typed callbacks. General
 MRC/foreign ownership and unknown/interprocedural effects remain open.
+
+The [System 2.4.0 source span](linux_callable_ownership_casts.md) preserves MRC
+retained callback results and checks explicit function/member-pointer ownership
+casts, including nested callback contracts and source-free replay.

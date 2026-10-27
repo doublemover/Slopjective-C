@@ -240,6 +240,7 @@ PACKETS = {
         "clang/lib/Sema/CoroutineStmtBuilder.h",
         "clang/lib/Sema/TypeLocBuilder.h",
         "clang/lib/Sema/SemaType.cpp",
+        "clang/lib/Sema/SemaCast.cpp",
         "clang/lib/Sema/SemaDecl.cpp",
         "clang/lib/Sema/SemaInit.cpp",
         "clang/lib/Sema/SemaDeclCXX.cpp",

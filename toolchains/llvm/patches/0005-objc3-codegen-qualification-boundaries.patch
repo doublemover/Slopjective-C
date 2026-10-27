@@ -28861,10 +28861,10 @@ index 000000000..6d9ab5d40
 +// CHECK-DAG: call i32 @objc3_task_hop
 diff --git a/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
 new file mode 100644
-index 000000000..02ecfe338
+index 000000000..40825b72b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/consumed-mrc-call-abi.m
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,30 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
 +void consume_object(id object __attribute__((ns_consumed)));
 +typedef void (*ConsumedCallback)(id object __attribute__((ns_consumed)));
@@ -28879,5 +28879,19 @@ index 000000000..02ecfe338
 +// CHECK-NOT: @objc_release
 +// CHECK-LABEL: define{{.*}} void @forward_callback(
 +// CHECK: call void %{{.*}}(ptr
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++
++// Retained-result type metadata must also keep ordinary MRC call lowering.
++typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));
++id create_object(void) __attribute__((ns_returns_retained));
++id forward_retained(RetainedFactory factory) {return factory();}
++id forward_created(void) {return create_object();}
++// CHECK-LABEL: define{{.*}} ptr @forward_retained(
++// CHECK: call ptr %{{.*}}()
++// CHECK-NOT: @objc_retain
++// CHECK-NOT: @objc_release
++// CHECK-LABEL: define{{.*}} ptr @forward_created(
++// CHECK: call ptr @create_object()
 +// CHECK-NOT: @objc_retain
 +// CHECK-NOT: @objc_release

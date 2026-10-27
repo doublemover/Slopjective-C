@@ -66,7 +66,8 @@ NativeResourceSentinelIdentity(const clang::Expr *expression,
 inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
                                       const clang::ASTContext &context,
                                       const std::string &position,
-                                      unsigned depth = 0) {
+                                      unsigned depth = 0,
+                                      bool skip_retained_result = false) {
   if (type.isNull())
     return;
   if (depth > 256) {
@@ -104,10 +105,15 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
       type->isReferenceType()) {
     AppendNativeTypeContracts(out, type->getPointeeType(), context,
                               position + ".pointee", depth + 1);
+  } else if (const auto *member = type->getAs<clang::MemberPointerType>()) {
+    AppendNativeTypeContracts(out, member->getPointeeType(), context,
+                              position + ".pointee", depth + 1);
   } else if (const auto *array = context.getAsArrayType(type)) {
     AppendNativeTypeContracts(out, array->getElementType(), context,
                               position + ".element", depth + 1);
   } else if (const auto *function = type->getAs<clang::FunctionType>()) {
+    if (!skip_retained_result && function->getExtInfo().getProducesResult())
+      AppendNativeContractField(out, position + ":ns-returns-retained");
     AppendNativeTypeContracts(out, function->getReturnType(), context,
                               position + ".return", depth + 1);
     if (const auto *prototype =
@@ -141,13 +147,14 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
     declaration_type = property->getType();
   effects.async_abi_identity = ReadAsyncABIIdentity(declaration_type, context);
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))
-    AppendNativeTypeContracts(ownership, value->getType(), context, "type");
+    AppendNativeTypeContracts(ownership, value->getType(), context, "type", 0,
+                              llvm::isa<clang::FunctionDecl>(value));
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     AppendNativeTypeContracts(ownership, context.getTypeDeclType(type), context,
                               "type");
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     AppendNativeTypeContracts(ownership, method->getObjC3FunctionType(),
-                              context, "type");
+                              context, "type", 0, true);
   if (const auto *property =
           llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     AppendNativeTypeContracts(ownership, property->getType(), context, "type");

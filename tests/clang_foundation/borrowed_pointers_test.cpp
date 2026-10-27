@@ -53,7 +53,10 @@ void Expect(const CompileRequest &R, bool Success,
             const std::string &Diagnostic = {}) {
   CompileResult Result = Compile(R);
   if (Result.success != Success) {
-    std::cerr << "unexpected borrowed-pointer result for:\n" << *R.source_text << '\n';
+    std::cerr << "unexpected borrowed-pointer result for:\n" << *R.source_text << '\n'
+              << Result.failure << '\n';
+    for (const auto &D : Result.interface_import_diagnostics)
+      std::cerr << D.code << ": " << D.message << '\n';
     for (const auto &D : Result.diagnostics)
       std::cerr << D.message << '\n';
   }
@@ -73,6 +76,24 @@ void Expect(const CompileRequest &R, bool Success,
 }
 void SemanticCases(const fs::path &Root, BaseLanguage Language,
                     const std::string &Standard, bool ARC) {
+  const std::string CallableHeader =
+      "typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));\n"
+      "typedef void (*ConsumedCallback)(id __attribute__((ns_consumed)));\n"
+      "typedef void (*PlainCallback)(id);\n"
+      "typedef void (*NoEscapeCallback)(id __attribute__((noescape)));\n"
+      "typedef void (*NestedConsumed)(ConsumedCallback);\n"
+      "typedef void (*NestedPlain)(PlainCallback);\n";
+  for (const std::string &Case : {
+           "void f(ConsumedCallback p){(void)(PlainCallback)p;}",
+           "void f(PlainCallback p){(void)(ConsumedCallback)p;}",
+           "void f(RetainedFactory p){(void)(id (*)(void))p;}",
+           "void f(PlainCallback p){(void)(NoEscapeCallback)p;}",
+           "void f(NestedConsumed p){(void)(NestedPlain)p;}"})
+    Expect(Request(Root,CallableHeader+Case,Language,Standard,ARC),false,
+           "callable cast changes an ownership");
+  Expect(Request(Root,CallableHeader+
+      "void f(ConsumedCallback p,NoEscapeCallback n){ConsumedCallback same=(ConsumedCallback)p;PlainCallback weaker=(PlainCallback)n;(void)same;(void)weaker;}",
+      Language,Standard,ARC),true);
   const std::vector<std::string> Accepted = {
       "void f(id o) { borrowed const char *p = bytes(o); use(p); }",
       "void f(id o) { const char *p = bytes(o); void *q = (void*)p; use_noescape((const char*)q); }",
@@ -358,7 +379,10 @@ void PersistenceCases(const fs::path &Root) {
       "typedef borrowed const char *BorrowedBytes;\n"
       "BorrowedBytes exported(id a,id b) __attribute__((objc_returns_borrowed(owner_index=1)));\n"
       "void noescape_api(const char* p __attribute__((noescape)));\n"
-      "typedef void (*ConsumedOwnerCallback)(id owner __attribute__((ns_consumed)));\n";
+      "typedef void (*ConsumedOwnerCallback)(id owner __attribute__((ns_consumed)));\n"
+      "typedef id (*RetainedOwnerFactory)(void) __attribute__((ns_returns_retained));\n"
+      "using RetainedOwnerAlias = id (__attribute__((ns_returns_retained)) *)(void);\n"
+      "typedef id (__attribute__((ns_returns_retained)) *(*HigherOwnerFactory)(void))(void);\n";
   const auto HeaderPath = Root / "provider.h";
   { std::ofstream Out(HeaderPath); Out << Provider; }
   auto From = Parse(Provider, HeaderPath.string());
@@ -400,6 +424,9 @@ void PersistenceCases(const fs::path &Root) {
       std::cerr << D.message << '\n';
   assert(Emitted.success && Emitted.interface_artifact);
   assert(Emitted.interface_artifact->source_bytes.find("owner_index=1") != std::string::npos);
+  assert(Emitted.interface_artifact->sidecar_json.find(
+             "type.pointee:ns-returns-retained") != std::string::npos &&
+         "retained callback results require ownership identity");
   auto InterfaceClient = Request(Root,
       "BorrowedBytes imported_forward(id a,id b) __attribute__((objc_returns_borrowed(owner_index=1))) { noescape_api(exported(a,b)); return exported(a,b); }",
       BaseLanguage::ObjectiveCxx, "c++20", false);
@@ -413,6 +440,15 @@ void PersistenceCases(const fs::path &Root) {
   InterfaceClient.source_text=
       "void imported_consume(id owner,ConsumedOwnerCallback callback){const char *p=exported(owner,owner);callback(owner);noescape_api(p);}";
   Expect(InterfaceClient,false,"borrowed pointer escapes");
+  InterfaceClient.source_text =
+      "void imported_erasure(ConsumedOwnerCallback callback){(void)(void (*)(id))callback;}";
+  Expect(InterfaceClient,false,"callable cast changes an ownership");
+  InterfaceClient.source_text =
+      "void imported_result(RetainedOwnerFactory factory){(void)(id (*)(void))factory;}";
+  Expect(InterfaceClient,false,"callable cast changes an ownership");
+  InterfaceClient.source_text =
+      "void imported_preserved(RetainedOwnerFactory factory,RetainedOwnerAlias alias,HigherOwnerFactory higher){RetainedOwnerFactory copy=(RetainedOwnerFactory)factory;copy=alias;copy=higher();(void)copy;}";
+  Expect(InterfaceClient,true);
   auto OtherOwner = Parse(
       "typedef borrowed const char *BorrowedBytes; BorrowedBytes exported(id a,id b) __attribute__((objc_returns_borrowed(owner_index=0)));",
       (Root / "other.mm").string());

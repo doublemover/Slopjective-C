@@ -27,7 +27,7 @@ runtime ABI layouts remain unchanged.
 Consuming lexical super calls currently require side-effect-free arguments;
 bind effectful arguments first. Ordinary receiver expressions use their
 computed identity. Raw runtime/CF release calls, unknown/interprocedural owner
-relationships, explicit function-pointer cast erasure, general MRC ownership
+relationships, general MRC ownership
 counts and consuming isolation entry remain separate work. This span does not
 claim full Strict System conformance.
 
@@ -41,3 +41,6 @@ The [focused receipt](../support/linux_borrowed_consumed_owners_progress.json)
 records 383 compiler regressions, 182 native unit tests, all 33 frontend suites
 and 14 tooling tests. Three platform compiler cases remain unsupported. The
 combined runtime/sanitizer batch and coordinated SDK delivery remain deferred.
+
+The [System 2.4.0 source span](linux_callable_ownership_casts.md) adds explicit
+function/member-pointer cast checks and MRC retained-result callable metadata.

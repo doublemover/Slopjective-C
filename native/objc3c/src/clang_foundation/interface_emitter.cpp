@@ -1149,9 +1149,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     return CanonicalType(constant->getType(), context) + "=" + value.str().str();
   }
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
-    // ARC represents retained returns in ExtInfo, MRC in a declaration
-    // attribute. Ownership has its own identity field, so normalize this one
-    // top-level bit while keeping nested callable return contracts intact.
+    // Retained results have a dedicated ownership identity. Normalize this
+    // top-level type bit while keeping nested callable contracts intact.
     clang::QualType type = function->getType();
     if (const auto *proto = type->getAs<clang::FunctionProtoType>()) {
       auto info = proto->getExtProtoInfo();
