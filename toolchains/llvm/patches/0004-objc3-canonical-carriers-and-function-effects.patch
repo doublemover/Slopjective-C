@@ -37791,10 +37791,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..be94d678c
+index 000000000..9b2f7cbd8
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2821 @@
+@@ -0,0 +1,2979 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -38030,9 +38030,17 @@ index 000000000..be94d678c
 +  mutable std::vector<PathNode> Paths{{}};
 +  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
++  struct CallableCapturePath {
++    const VarDecl *Variable = nullptr;
++    SmallVector<PathNode, 4> Components;
++  };
 +  struct OwnerSummary {
 +    SmallVector<const VarDecl *, 4> Borrowed, Consumed, Invoked, Mutated;
++    SmallVector<CallableCapturePath, 4> InvokedPaths;
 +  };
++  llvm::DenseMap<unsigned, CallableCapturePath> SymbolicCallablePaths;
++  mutable SmallVector<unsigned, 4> InvokedCallableTokens;
++  mutable llvm::SmallPtrSet<const Expr *, 8> UnqualifiedCallablePaths;
 +  using OwnerSummaryCache = llvm::DenseMap<const Expr *, OwnerSummary>;
 +  std::shared_ptr<OwnerSummaryCache> OwnerSummaries = std::make_shared<OwnerSummaryCache>();
 +  llvm::DenseMap<const Expr *, SmallVector<const VarDecl *, 4>> FutureBorrowCaptures;
@@ -38593,6 +38601,65 @@ index 000000000..be94d678c
 +    }
 +    return Captures;
 +  }
++  void prepareSymbolicCallableInputs() {
++    if (!IsOwnerSummary) return;
++    SmallVector<std::pair<unsigned, Storage>, 16> Candidates;
++    for (const auto &[Location, Index] : Slots) {
++      if (!SummaryCaptures.count(Location.first)) continue;
++      QualType Type = storageType(Location);
++      if (Type.isNull()) continue;
++      Type = Type.getNonReferenceType();
++      const auto *Record = Type->getAsCXXRecordDecl();
++      if (Type->isBlockPointerType() || Type->isFunctionPointerType() || (Record && Record->isLambda()))
++        Candidates.push_back({Index, Location});
++    }
++    llvm::sort(Candidates, [](const auto &L, const auto &R) {return L.first < R.first;});
++    SmallVector<Storage, 8> OpaqueCallables;
++    SmallVector<CallableCapturePath, 16> PathsToSeed;
++    SmallVector<Storage, 16> Locations;
++    for (const auto &[Index, Location] : Candidates) {
++      (void)Index;
++      bool Descendant = false;
++      for (Storage Opaque : OpaqueCallables) {
++        if (Opaque.first != Location.first) continue;
++        unsigned Prefix = path(Opaque), Current = path(Location);
++        while (Current && Current != Prefix) Current = Paths[Current].Parent;
++        Descendant |= Current == Prefix;
++      }
++      if (Descendant) continue;
++      OpaqueCallables.push_back(Location);
++      CallableCapturePath Descriptor; Descriptor.Variable = Location.first;
++      for (unsigned P = path(Location); P; P = Paths[P].Parent) Descriptor.Components.push_back(Paths[P]);
++      std::reverse(Descriptor.Components.begin(), Descriptor.Components.end());
++      Locations.push_back(Location);PathsToSeed.push_back(std::move(Descriptor));
++    }
++    for (unsigned I = 0; I != Locations.size(); ++I) {
++      auto &Descriptor = PathsToSeed[I];
++      bool HasUnknown = llvm::any_of(Descriptor.Components, [](const PathNode &P) {return !P.Field && P.Index == -2;});
++      bool Covered = false;
++      if (HasUnknown)
++        for (const auto &Other : PathsToSeed) {
++          if (Other.Variable != Descriptor.Variable || Other.Components.size() != Descriptor.Components.size()) continue;
++          bool Match = true;
++          for (unsigned J = 0; J != Other.Components.size(); ++J) {
++            const auto &A = Descriptor.Components[J];const auto &B = Other.Components[J];
++            Match &= A.Field == B.Field && (A.Field || (B.Index >= 0 && (A.Index == -2 || A.Index == B.Index)));
++          }
++          Covered |= Match;
++        }
++      if (Covered) continue;
++      const VarDecl *Variable = Descriptor.Variable;
++      if (!OwnerRoots.count(Variable)) OwnerRoots[Variable] = OwnerRoots.size();
++      Value Identity(OwnerRoots.size());Identity.set(OwnerRoots.lookup(Variable));
++      InheritedOwners[Variable] = std::move(Identity);
++      addOrigin(nullptr, Variable, false, nullptr, Variable, true);
++      Origins.back().SymbolicCallable = true;
++      unsigned Token = Origins.size() - 1;
++      SymbolicCallablePaths[Token] = Descriptor;
++      Value Effect(Origins.size() * 2);Effect.set(Token * 2);
++      InheritedEffects[Locations[I]] = std::move(Effect);
++    }
++  }
 +  OwnerSummary futureOwnerRequirements(const Expr *Closure) {
 +    if (auto Found = OwnerSummaries->find(Closure); Found != OwnerSummaries->end())
 +      return Found->second;
@@ -38618,18 +38685,6 @@ index 000000000..be94d678c
 +    for (const auto &Capture : Captures) {
 +      Summary.addVariable(Capture.Variable);
 +      Summary.SummaryCaptures.insert(Capture.Variable);
-+      QualType Type = Capture.Variable->getType();
-+      const auto *Record = Type->getAsCXXRecordDecl();
-+      if (Type->isBlockPointerType() || Type->isFunctionPointerType() ||
-+          (Record && Record->isLambda())) {
-+        if (!Summary.OwnerRoots.count(Capture.Variable))
-+          Summary.OwnerRoots[Capture.Variable] = Summary.OwnerRoots.size();
-+        Summary.addOrigin(nullptr, Capture.Variable, false, nullptr, Capture.Variable, true);
-+        Summary.Origins.back().SymbolicCallable = true;
-+        Value Effect(Summary.Origins.size() * 2);
-+        Effect.set((Summary.Origins.size() - 1) * 2);
-+        Summary.InheritedEffects[{Capture.Variable, nullptr}] = std::move(Effect);
-+      }
 +    }
 +    for (const auto &Capture : Captures)
 +      if (auto Root = Summary.OwnerRoots.find(Capture.Variable);
@@ -38645,6 +38700,9 @@ index 000000000..be94d678c
 +      if (Summary.InvokedCallableCaptures.count(Capture.Variable)) Result.Invoked.push_back(Capture.Variable);
 +      if (Summary.MutatedCaptures.count(Capture.Variable)) Result.Mutated.push_back(Capture.Variable);
 +    }
++    for (unsigned Token : Summary.InvokedCallableTokens)
++      if (auto Path = Summary.SymbolicCallablePaths.find(Token); Path != Summary.SymbolicCallablePaths.end())
++        Result.InvokedPaths.push_back(Path->second);
 +    (*OwnerSummaries)[Closure] = Result;
 +    return Result;
 +  }
@@ -38853,6 +38911,78 @@ index 000000000..be94d678c
 +    }
 +    return Result;
 +  }
++  bool readCallablePath(Storage Source, ArrayRef<PathNode> Components,
++                        const Facts &State, Value &Result) const {
++    QualType Type = storageType(Source);
++    if (Type.isNull() || Components.size() > 32) return false;
++    if (Type->isReferenceType())
++      if (auto Slot = Slots.find(Source); Slot != Slots.end() && State.MayTargets[Slot->second].any()) {
++        for (int Target = State.MayTargets[Slot->second].find_first(); Target >= 0;
++             Target = State.MayTargets[Slot->second].find_next(Target))
++          if (!readCallablePath(location(Target), Components, State, Result)) return false;
++        return true;
++      }
++    for (const PathNode &Component : Components) {
++      Type = Type.getNonReferenceType();
++      if (Component.Field) {
++        const auto *Field = dyn_cast<FieldDecl>(Component.Field);
++        const auto *Record = Type->getAs<RecordType>();
++        if (!Field || !Record || Field->getParent()->getCanonicalDecl() != Record->getDecl()->getCanonicalDecl()) return false;
++        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()); CXX && CXX->getNumBases()) return false;
++        Source = fieldStorage(Source, Component.Field);Type = Component.Field->getType();
++      } else {
++        const auto *Array = Context.getAsArrayType(Type);
++        if (!Array) return false;
++        Source = indexedStorage(Source, Component.Index);Type = Array->getElementType();
++      }
++    }
++    Result |= contents(Source, Type, State, true);
++    Result |= exposedEffects(storageTargets(Source, Type, State), State);
++    return true;
++  }
++  bool readCallableInitializer(const Expr *E, ArrayRef<PathNode> Components,
++                               const Facts &State, Value &Result) const {
++    if (!E) return false;
++    if (Components.empty()) {Result |= effects(E, State);return true;}
++    E = E->IgnoreParenCasts();
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return readCallableInitializer(Cleanups->getSubExpr(), Components, State, Result);
++    if (const auto *Temporary = dyn_cast<MaterializeTemporaryExpr>(E)) return readCallableInitializer(Temporary->getSubExpr(), Components, State, Result);
++    if (const auto *Binding = dyn_cast<CXXBindTemporaryExpr>(E)) return readCallableInitializer(Binding->getSubExpr(), Components, State, Result);
++    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
++      if (modeledRecordCopy(Construction->getConstructor()) && Construction->getNumArgs() == 1)
++        return readCallableInitializer(Construction->getArg(0), Components, State, Result);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) && Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return readCallableInitializer(Truth ? Conditional->getTrueExpr() : Conditional->getFalseExpr(), Components, State, Result);
++      return readCallableInitializer(Conditional->getTrueExpr(), Components, State, Result) &&
++             readCallableInitializer(Conditional->getFalseExpr(), Components, State, Result);
++    }
++    if (const auto *List = dyn_cast<InitListExpr>(E)) {
++      if (List->getSemanticForm()) List = List->getSemanticForm();
++      const PathNode &Component = Components.front();
++      int64_t Index = Component.Index;
++      if (Component.Field) {
++        const auto *Record = E->getType()->getAs<RecordType>();
++        if (!Record) return false;
++        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()); CXX && CXX->getNumBases()) return false;
++        Index = 0;bool Found = false;
++        for (const FieldDecl *Field : Record->getDecl()->fields()) {
++          if (Field == Component.Field) {Found = true;break;}
++          ++Index;
++        }
++        if (!Found) return false;
++      }
++      if (Index == -2) {
++        for (const Expr *Element : List->inits())
++          if (!readCallableInitializer(Element, Components.drop_front(), State, Result)) return false;
++        return true;
++      }
++      if (Index < 0 || uint64_t(Index) >= List->getNumInits()) return false;
++      return readCallableInitializer(List->getInit(Index), Components.drop_front(), State, Result);
++    }
++    return readCallablePath(storage(E, &State), Components, State, Result);
++  }
 +  Value effects(const Expr *E, const Facts &State) const {
 +    if (!E) return empty();
 +    if (auto Found = ExpressionSlots.find(E); Found != ExpressionSlots.end())
@@ -38886,17 +39016,22 @@ index 000000000..be94d678c
 +      for (int Bit = Result.find_first(); Bit >= 0; Bit = Result.find_next(Bit))
 +        if (!Origins[Bit / 2].ConsumedByClosure) Result.reset(Bit);
 +      if (auto Summary = OwnerSummaries->find(E); Summary != OwnerSummaries->end())
-+        for (const auto &Capture : closureCaptures(E))
-+          if (llvm::is_contained(Summary->second.Invoked, Capture.Variable))
-+            Result |= Capture.Initializer ? effects(Capture.Initializer, State)
-+                : contents({Capture.Variable, nullptr}, Capture.Variable->getType(), State, true);
++        for (const auto &Invocation : Summary->second.InvokedPaths)
++          for (const auto &Capture : closureCaptures(E))
++            if (Capture.Variable == Invocation.Variable) {
++              bool Known = Capture.Initializer
++                  ? readCallableInitializer(Capture.Initializer, Invocation.Components, State, Result)
++                  : readCallablePath({Capture.Variable, nullptr}, Invocation.Components, State, Result);
++              if (!Known) UnqualifiedCallablePaths.insert(E);
++              break;
++            }
 +      return Result;
 +    }
 +    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
-+      if (trivialRecordCopy(Construction->getConstructor()) && Construction->getNumArgs() == 1)
++      if (modeledRecordCopy(Construction->getConstructor()) && Construction->getNumArgs() == 1)
 +        return effects(Construction->getArg(0), State);
 +    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(E))
-+      if (trivialRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
++      if (modeledRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
 +        return effects(Operator->getArg(1), State);
 +    Value Result = contents(storage(E, &State), E->getType(), State, true);
 +    Result |= exposedEffects(possibleTargets(E, State), State);
@@ -39001,7 +39136,7 @@ index 000000000..be94d678c
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Written))
 +      return capturedTargets(Cleanups->getSubExpr(), State);
 +    if (const auto *Construction = dyn_cast<CXXConstructExpr>(Written))
-+      if (trivialRecordCopy(Construction->getConstructor()) &&
++      if (modeledRecordCopy(Construction->getConstructor()) &&
 +          Construction->getNumArgs() == 1)
 +        return capturedTargets(Construction->getArg(0), State);
 +    if (const auto *List = dyn_cast<InitListExpr>(Written))
@@ -39190,11 +39325,11 @@ index 000000000..be94d678c
 +      return Result;
 +    }
 +    if (const auto *Construction = dyn_cast<CXXConstructExpr>(E))
-+      if (trivialRecordCopy(Construction->getConstructor()) &&
++      if (modeledRecordCopy(Construction->getConstructor()) &&
 +          Construction->getNumArgs() == 1)
 +        return value(Construction->getArg(0), State);
 +    if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(E))
-+      if (trivialRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
++      if (modeledRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
 +        return value(Operator->getArg(1), State);
 +    if (const auto *Initializer = dyn_cast<InitListExpr>(E)) {
 +      Value Result = empty();
@@ -39360,6 +39495,8 @@ index 000000000..be94d678c
 +        const Origin &O = Origins[Bit / 2];
 +        if (O.SymbolicCallable) {
 +          if (O.Identity) InvokedCallableCaptures.insert(O.Identity);
++          if (!llvm::is_contained(InvokedCallableTokens, unsigned(Bit / 2)))
++            InvokedCallableTokens.push_back(Bit / 2);
 +        } else if (O.Identity && OwnerRoots.count(O.Identity)) {
 +          Identity.set(OwnerRoots.lookup(O.Identity));
 +        }
@@ -39370,7 +39507,7 @@ index 000000000..be94d678c
 +      if (const auto *Member = dyn_cast<CXXMemberCallExpr>(Call))
 +        AddEffects(effects(Member->getImplicitObjectArgument(), State));
 +    }
-+    if (!trivialRecordCopy(callee(Invocation)) &&
++    if (!modeledRecordCopy(callee(Invocation)) &&
 +        !copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))))
 +      for (unsigned I = 0; I != Count; ++I)
 +        if (safeParameter(Invocation, I)) AddEffects(effects(argument(Invocation, I), State));
@@ -39498,8 +39635,7 @@ index 000000000..be94d678c
 +    }
 +    const Expr *Written = Initializer ? Initializer->IgnoreParenCasts() : nullptr;
 +    if (const auto *Construction = dyn_cast_or_null<CXXConstructExpr>(Written))
-+      if (Construction->getConstructor()->isTrivial() &&
-+          Construction->getConstructor()->isCopyOrMoveConstructor() &&
++      if (modeledRecordCopy(Construction->getConstructor()) &&
 +          Construction->getNumArgs() == 1) {
 +        initializeAggregate(Operation, Destination, Type, Construction->getArg(0),
 +                            State, Emit, Depth + 1);
@@ -39658,10 +39794,29 @@ index 000000000..be94d678c
 +                               : addressValue(Member->getBase(), State);
 +    return value(E, State);
 +  }
-+  bool trivialRecordCopy(const Decl *Declaration) const {
++  bool modeledRecordCopy(const Decl *Declaration) const {
 +    const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Declaration);
-+    return Method && Method->isTrivial() &&
-+           Method->isCopyOrMoveConstructorOrAssignment();
++    if (!Method || !Method->isCopyOrMoveConstructorOrAssignment()) return false;
++    if (Method->isTrivial()) return true;
++    // ARC makes otherwise structural record copies nontrivial. Only compiler
++    // generated operations over scalar/array/structural fields qualify: an
++    // arbitrary user copy body must still supply a lifetime contract.
++    if (!Actions.getLangOpts().ObjCAutoRefCount || !Method->isImplicit()) return false;
++    SmallVector<const CXXRecordDecl *, 8> Pending{Method->getParent()};
++    llvm::SmallPtrSet<const CXXRecordDecl *, 8> Seen;
++    while (!Pending.empty()) {
++      const auto *Record = Pending.pop_back_val();
++      if (!Seen.insert(Record).second) continue;
++      if (Record->getNumBases() || Record->isPolymorphic() || Record->isUnion()) return false;
++      for (const auto *Member : Record->methods())
++        if (Member->isCopyOrMoveConstructorOrAssignment() &&
++            !Member->isTrivial() && !Member->isImplicit()) return false;
++      for (const FieldDecl *Field : Record->fields()) {
++        QualType Type = Context.getBaseElementType(Field->getType());
++        if (const auto *Nested = Type->getAsCXXRecordDecl()) Pending.push_back(Nested);
++      }
++    }
++    return true;
 +  }
 +  bool lambdaInvocation(const Decl *Callee) const {
 +    const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Callee);
@@ -39673,7 +39828,7 @@ index 000000000..be94d678c
 +    if ((getObjC3TaskBoundaryKind(Callee) & 3) ||
 +        isObjC3ActorIsolated(Callee) || getObjC3Executor(Callee))
 +      return false;
-+    if (trivialRecordCopy(Callee))
++    if (modeledRecordCopy(Callee))
 +      return true;
 +    Index = formalIndex(Call, Index);
 +    if (Index == ~0U && lambdaInvocation(Callee))
@@ -39756,7 +39911,7 @@ index 000000000..be94d678c
 +      const bool LambdaCall = lambdaInvocation(callee(Invocation));
 +      if (Receiver && LambdaCall && hasExpired(addressValue(Receiver, State)))
 +        diagnose(Receiver, "invocation of a C++ lambda after its captured owner lifetime ended");
-+      else if (Receiver && !LambdaCall && !trivialRecordCopy(callee(Invocation)) &&
++      else if (Receiver && !LambdaCall && !modeledRecordCopy(callee(Invocation)) &&
 +               addressValue(Receiver, State).any())
 +        diagnose(Receiver, "a receiver without a non-escaping lifetime contract");
 +    }
@@ -40061,6 +40216,8 @@ index 000000000..be94d678c
 +                  diagnose(Lambda, "a C++ lambda reference capture requiring an explicit lifetime contract");
 +              }
 +            }
++            if (UnqualifiedCallablePaths.count(Invocation))
++              diagnose(Invocation, "a captured callable path requiring an explicit invocation lifetime contract");
 +            if (UnstableFutureOwners.count(Invocation))
 +              diagnose(Invocation, "an owner init-capture requiring an explicit stable lifetime binding");
 +            if (NestedCallable && !NestedCallable->isInvalidDecl()) {
@@ -40172,7 +40329,7 @@ index 000000000..be94d678c
 +                }
 +            }
 +        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation))
-+          if (trivialRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
++          if (modeledRecordCopy(Operator->getDirectCallee()) && Operator->getNumArgs() == 2)
 +            initializeAggregate(Invocation, storage(Operator->getArg(0), &State),
 +                                Operator->getArg(0)->getType(), Operator->getArg(1),
 +                                State, Emit);
@@ -40384,6 +40541,7 @@ index 000000000..be94d678c
 +    }
 +    if (!MightBorrow && !IsOwnerSummary && Origins.size() == 1)
 +      return false;
++    prepareSymbolicCallableInputs();
 +    prepareFutureOwnerLoans();
 +    prepareClosureLoans();
 +    CFG::BuildOptions Options;
@@ -46233,3 +46391,119 @@ index 000000000..7ff398a98
 +  work();work();
 +}
 +#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-callable-paths.h b/clang/test/ObjC3/Sema/Inputs/borrowed-callable-paths.h
+new file mode 100644
+index 000000000..50e17f3f0
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-callable-paths.h
+@@ -0,0 +1,4 @@
++typedef borrowed const char *PathBytes;
++PathBytes path_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void path_use(const char *pointer __attribute__((noescape)));
++void path_consume(void *owner __attribute__((cf_consumed)));
+diff --git a/clang/test/ObjC3/Sema/borrowed-callable-paths.mm b/clang/test/ObjC3/Sema/borrowed-callable-paths.mm
+new file mode 100644
+index 000000000..d813086fc
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-callable-paths.mm
+@@ -0,0 +1,100 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-callable-paths.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-callable-paths.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-callable-paths.h"
++#endif
++void captured_field(void *owner) {
++  const char *p=path_bytes(owner);
++  auto inner=[owner]{path_consume(owner);};
++  struct Holder{decltype(inner) callback;}; Holder holder{inner};
++  auto outer=[holder]{holder.callback();};
++  outer();path_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void captured_nested_field(void *owner) {
++  const char *p=path_bytes(owner);
++  auto inner=[owner]{path_consume(owner);};
++  struct Leaf{decltype(inner) callback;};struct Holder{Leaf leaf;};Holder holder{{inner}};
++  auto outer=[holder]{holder.leaf.callback();};
++  auto copy=outer;copy();path_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void precise_fields(void *first,void *second) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  auto one=[first]{path_consume(first);};auto two=[second]{path_consume(second);};
++  struct Holder{decltype(one) first;decltype(two) second;};Holder holder{one,two};
++  auto outer=[holder]{holder.first();};
++  outer();path_use(b);
++  path_use(a); // expected-error {{after its owner lifetime ended}}
++}
++void aggregate_init_capture(void *first,void *second) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  auto one=[first]{path_consume(first);};auto two=[second]{path_consume(second);};
++  struct Holder{decltype(one) first;decltype(two) second;};
++  auto outer=[holder=Holder{one,two}]{holder.second();};
++  outer();path_use(a);
++  path_use(b); // expected-error {{after its owner lifetime ended}}
++}
++void precise_array(void *first,void *second) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  void (^callbacks[2])(void)={^{path_consume(first);},^{path_consume(second);}};
++  auto outer=[callbacks]{callbacks[1]();};
++  outer();path_use(a);
++  path_use(b); // expected-error {{after its owner lifetime ended}}
++}
++void dynamic_array(void *first,void *second,int index) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  void (^callbacks[2])(void)={^{path_consume(first);},^{path_consume(second);}};
++  auto outer=[callbacks,index]{callbacks[index]();};
++  outer();
++  path_use(a); // expected-error {{after its owner lifetime ended}}
++  path_use(b); // expected-error {{after its owner lifetime ended}}
++}
++void nested_array_field(void *first,void *second) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  struct Holder{void (^callbacks[2])(void);};
++  Holder holder{{^{path_consume(first);},^{path_consume(second);}}};
++  auto outer=[holder]{holder.callbacks[0]();};
++  outer();path_use(b);
++  path_use(a); // expected-error {{after its owner lifetime ended}}
++}
++void unused_field(void *owner) {
++  const char *p=path_bytes(owner);
++  auto inner=[owner]{path_consume(owner);};
++  struct Holder{decltype(inner) callback;};Holder holder{inner};
++  auto outer=[holder]{(void)holder;};outer();path_use(p);
++}
++void nested_forwarding(void *owner) {
++  const char *p=path_bytes(owner);
++  auto inner=[owner]{path_consume(owner);};
++  struct Holder{decltype(inner) callback;};Holder holder{inner};
++  auto middle=[holder]{holder.callback();};
++  auto outer=[middle]{middle();};
++  outer();path_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void block_record_capture(void *owner) {
++  const char *p=path_bytes(owner);
++  struct Holder{void (^callback)(void);};Holder holder{^{path_consume(owner);}};
++  void (^outer)(void)=^{holder.callback();};
++  outer();path_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void inherited_callable_boundary(void *owner) {
++  const char *p=path_bytes(owner);auto inner=[owner]{path_consume(owner);};
++  struct Base{decltype(inner) callback;};struct Holder:Base{};Holder holder{{inner}};
++  auto outer=[holder]{holder.callback();}; // expected-error {{captured callable path requiring an explicit invocation lifetime contract}}
++  outer();path_use(p);
++}
++void custom_copy_boundary(void *owner) {
++  const char *p=path_bytes(owner);auto inner=[owner]{path_consume(owner);};
++  struct Holder{
++    decltype(inner) callback;
++    Holder(decltype(inner) work):callback(work){}
++    Holder(const Holder &other):callback(other.callback){}
++  };
++  Holder holder{inner}; // expected-error {{argument without a non-escaping lifetime contract}}
++  auto outer=[holder]{holder.callback();};outer();path_use(p);
++}

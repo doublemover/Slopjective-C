@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Captured callable paths
+
+The [System 2.12.0 source span](linux_borrowed_callable_paths.md) forwards known
+invocation effects through callable fields and array elements of captured records.
+Only invoked paths contribute effects; nested captures, aggregate init-captures,
+constant/dynamic indices and structural ARC copies share the same storage facts.
+Broader validation follows the accumulated implementation batch.
+
 ## Mutable lambda capture precision
 
 The [System 2.11.0 source span](linux_borrowed_mutable_captures.md) admits mutable

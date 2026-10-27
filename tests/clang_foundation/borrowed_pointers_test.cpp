@@ -352,6 +352,18 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
     Expect(Request(Root,LambdaHeader+
         "void f(id o){const char*p=bytes(o);auto work=[p]()mutable{use_noescape(p);p=nullptr;};work();}",
         Language,Standard,ARC),false,"mutable or generic C++ lambda capture");
+    const std::string PathHeader=LambdaHeader+
+        "typedef borrowed const char *PathBytes;\n"
+        "PathBytes path_bytes(void*) __attribute__((objc_returns_borrowed(owner_index=0)));\n"
+        "void path_consume(void* __attribute__((cf_consumed)));\n";
+    for(const std::string &Code:{
+        "void f(void*o){const char*p=path_bytes(o);auto inner=[o]{path_consume(o);};struct H{decltype(inner) callback;};H h{inner};auto work=[h]{h.callback();};work();use_noescape(p);}",
+        "void f(void*a,void*b){const char*p=path_bytes(b);void(^callbacks[2])()={^{path_consume(a);},^{path_consume(b);}};auto work=[callbacks]{callbacks[1]();};work();use_noescape(p);}"})
+      Expect(Request(Root,PathHeader+Code,Language,Standard,ARC),false,"after its owner lifetime ended");
+    for(const std::string &Code:{
+        "void f(void*a,void*b){const char*p=path_bytes(b);auto one=[a]{path_consume(a);};auto two=[b]{path_consume(b);};struct H{decltype(one) a;decltype(two) b;};H h{one,two};auto work=[h]{h.a();};work();use_noescape(p);}",
+        "void f(void*a,void*b){const char*p=path_bytes(a);void(^callbacks[2])()={^{path_consume(a);},^{path_consume(b);}};auto work=[callbacks]{callbacks[1]();};work();use_noescape(p);}"})
+      Expect(Request(Root,PathHeader+Code,Language,Standard,ARC),true);
     if (ARC) {
       Expect(Request(Root,LambdaHeader+
           "void f(id o){const char*p=bytes(o);auto work=[o,p]()mutable{use_noescape(p);o=nullptr;};work();}",
@@ -616,7 +628,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
       "void dispatch_foreign(ForeignCallback);void dispatch_foreign(void (*)(ForeignRef));\n"
       "inline void foreign_scoped(ForeignRef owner){auto work=[owner,count=0]()mutable{++count;foreign_use(foreign_bytes(owner));};work();work();}\n"
-      "inline void foreign_release_locally(ForeignRef owner __attribute__((cf_consumed))){const char*p=foreign_bytes(owner);auto work=[owner]{foreign_consume(owner);};foreign_use(p);work();}\n"
+      "inline void foreign_release_locally(ForeignRef owner __attribute__((cf_consumed))){const char*p=foreign_bytes(owner);auto inner=[owner]{foreign_consume(owner);};struct H{decltype(inner) callback;};H holder{inner};auto work=[holder]{holder.callback();};foreign_use(p);work();}\n"
       "__attribute__((objc_root_class)) @interface ForeignContract\n"
       "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
       "@end\n";
