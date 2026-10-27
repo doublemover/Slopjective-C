@@ -26,3 +26,6 @@ ownership/profile contracts remain separate work. The accepted SDK remains
 [2.9.0](../support/linux_cxx_class_structure_acceptance.json); broad source,
 sanitizer and installed/archive qualification remain deferred for the combined
 source batch.
+
+Focused source evidence is recorded in the
+[comparison milestone receipt](../support/linux_cxx_defaulted_comparisons_progress.json).
