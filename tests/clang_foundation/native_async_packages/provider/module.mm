@@ -922,6 +922,17 @@ void native_foreign_forward(NativeForeignConsumer callback,
 }
 borrowed const int *native_foreign_borrow(NativeForeignRef owner)
     __attribute__((objc_returns_borrowed(owner_index=0))) {return &owner->value;}
+inline bool native_foreign_scrubbed(NativeForeignRef owner) {
+  struct Holder {const int *pointer;};Holder holder{native_foreign_borrow(owner)};
+  __builtin_memset(&holder,0,sizeof holder);
+  return holder.pointer==nullptr;
+}
+inline void native_foreign_captured_release(NativeForeignRef owner __attribute__((cf_consumed))) {
+  auto release=[owner]{native_foreign_consume(owner);};
+  struct Holder {decltype(release) callback;};Holder holder{release};
+  auto invoke=[holder]{holder.callback();};
+  auto counted=[invoke,count=0]()mutable{++count;invoke();};counted();
+}
 using NativeRetainedFactory=id (__attribute__((ns_returns_retained)) *)(int);
 id native_retained_create(int value) __attribute__((ns_returns_retained));
 id native_retained_create(int value) __attribute__((ns_returns_retained)) {

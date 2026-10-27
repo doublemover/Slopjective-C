@@ -1381,6 +1381,14 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    // Reserved compiler builtins are supplied by the pinned consumer compiler,
+    // not an exported declaration of the publishing package. Ordinary libc
+    // declarations retain the normal visibility and dependency checks.
+    if (const auto *builtin = llvm::dyn_cast<clang::FunctionDecl>(target);
+        builtin && builtin->getBuiltinID() &&
+        builtin->getName().starts_with("__builtin_") &&
+        builtin->getDeclContext()->getRedeclContext()->isTranslationUnit() && !builtin->hasBody())
+      return;
     if (const auto *owner = llvm::dyn_cast<clang::CXXRecordDecl>(target->getDeclContext());
         owner && owner->isLambda()) return;
     if (in_expression_ && IsLocalExpressionContext(target->getDeclContext())) return;

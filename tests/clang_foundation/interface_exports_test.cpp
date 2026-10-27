@@ -103,6 +103,29 @@ void Surface(const fs::path &root, BaseLanguage language,
   r.interface_exports = {"*"};
   assert(Compile(r).success);
 }
+void CompilerBuiltins(const fs::path &root, const std::string &standard, bool arc) {
+  auto r=Request(root/"builtins.mm",BaseLanguage::ObjectiveCxx,standard,arc,
+      "inline int public_zero(void *storage){__builtin_memset(storage,0,8);return __builtin_popcount(42);}");
+  r.emit_semantic_interface=true;r.module_name="Builtins";r.package_identity="builtins-v1";
+  r.interface_exports={"public_zero"};r.interface_output_path=(root/"Builtins.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"builtins.o").string();
+  auto built=Compile(r);assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"builtin-client.mm",BaseLanguage::ObjectiveCxx,standard,arc,
+      "int client(){unsigned long long value=~0ULL;return public_zero(&value);}");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"builtin-client.o").string();assert(Compile(client).success);
+  for(const std::string &name:{"__builtin_vendor_copy","memset"}) {
+    r.source_text="extern \"C\" void *"+name+"(void*,int,__SIZE_TYPE__);"
+        "inline int public_zero(void *storage){"+name+"(storage,0,8);return 0;}";
+    auto rejected=Compile(r);assert(!rejected.success && rejected.interface_artifact);
+    bool excluded=false;
+    for(const auto &diagnostic:rejected.interface_artifact->diagnostics)
+      excluded|=diagnostic.code=="O3IFC156";
+    assert(excluded);
+  }
+}
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -126,6 +149,7 @@ int main() {
   for (const auto &standard : {"c++20", "c++23"})
     Surface(root, BaseLanguage::Cxx, standard, false);
   for (bool arc : {false, true}) {
+    for(const auto &standard:{"c++20","c++23"})CompilerBuiltins(root,standard,arc);
     Surface(root, BaseLanguage::ObjectiveC, "c17", arc);
     for (const auto &standard : {"c++20", "c++23"})
       Surface(root, BaseLanguage::ObjectiveCxx, standard, arc);

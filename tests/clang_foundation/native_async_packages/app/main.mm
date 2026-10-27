@@ -221,6 +221,10 @@ int main() {
     owner=native_foreign_create(&counts,43);
     callback(owner);
     if(counts.consumed!=2 || counts.destroyed!=2) return 103;
+    owner=native_foreign_create(&counts,44);
+    if(!native_foreign_scrubbed(owner)) return 109;
+    native_foreign_captured_release(owner);
+    if(counts.consumed!=3 || counts.destroyed!=3) return 110;
   }
   {
     const int before=native_result_destructions();

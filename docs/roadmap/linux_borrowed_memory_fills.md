@@ -23,3 +23,11 @@ writes, nested fields, exact and unknown arrays, checked/bzero forms, returned
 aliases, owner expiry and callback non-invocation. Frontend cases add canonical
 source-free inline publication of a complete overwrite. Broader validation is
 batched with the isolation operand changes; SDK 2.33 remains accepted.
+
+Public inline definitions may reference reserved compiler-provided builtin
+functions without listing them as package exports. Native builtin identity and
+the pinned compiler supply that dependency, including implicit C linkage
+contexts. Ordinary libc declarations, unknown lookalike names and user-provided
+definitions retain the existing export/dependency checks. Object-emitting import
+witnesses cover both admitted and rejected dependencies; source-free packages
+execute complete fills and counted record-captured consumption.
