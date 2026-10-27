@@ -37422,10 +37422,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..78ccabc8c
+index 000000000..4421e468e
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,2384 @@
+@@ -0,0 +1,2493 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -37652,6 +37652,12 @@ index 000000000..78ccabc8c
 +  mutable std::vector<PathNode> Paths{{}};
 +  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
++  using OwnerSummaryCache = llvm::DenseMap<const Expr *, SmallVector<const VarDecl *, 4>>;
++  std::shared_ptr<OwnerSummaryCache> OwnerSummaries = std::make_shared<OwnerSummaryCache>();
++  llvm::DenseMap<const Expr *, SmallVector<const VarDecl *, 4>> FutureBorrowCaptures;
++  llvm::SmallPtrSet<const Expr *, 8> UnstableFutureOwners;
++  mutable llvm::SmallPtrSet<const VarDecl *, 16> AcquiredOwnerRoots;
++  bool IsOwnerSummary = false;
 +  llvm::DenseMap<const Expr *, unsigned> ClosureSlots;
 +  llvm::DenseMap<const Expr *, unsigned> ExpressionSlots;
 +  llvm::SmallPtrSet<const VarDecl *, 16> InheritedReferenceCaptures;
@@ -38162,8 +38168,101 @@ index 000000000..78ccabc8c
 +    }
 +    return Owners;
 +  }
++  SmallVector<ClosureOwner, 4> closureCaptures(const Expr *Closure) const {
++    SmallVector<ClosureOwner, 4> Captures;
++    if (const auto *Block = dyn_cast<BlockExpr>(Closure)) {
++      for (const auto &Capture : Block->getBlockDecl()->captures())
++        Captures.push_back({Capture.getVariable(), Capture.getObjC3InitExpr()});
++    } else if (const auto *Lambda = dyn_cast<LambdaExpr>(Closure)) {
++      auto Init = Lambda->capture_init_begin();
++      for (const auto &Capture : Lambda->captures()) {
++        const Expr *Value = *Init++;
++        if (Capture.capturesVariable())
++          if (const auto *Variable = dyn_cast<VarDecl>(Capture.getCapturedVar()))
++            Captures.push_back({Variable, Lambda->isInitCapture(&Capture) ? Value : nullptr});
++      }
++    }
++    return Captures;
++  }
++  SmallVector<const VarDecl *, 4> futureBorrowCaptures(const Expr *Closure) {
++    if (auto Found = OwnerSummaries->find(Closure); Found != OwnerSummaries->end())
++      return Found->second;
++    // Cache summaries by syntax, independently of the enclosing flow state.
++    // Each capture has a symbolic owner root, so local aliases/assignments and
++    // nested closures use the ordinary CFG solver without recursive inlining.
++    (*OwnerSummaries)[Closure] = {};
++    Decl *Declaration;
++    Stmt *NestedBody;
++    if (const auto *Block = dyn_cast<BlockExpr>(Closure)) {
++      Declaration = const_cast<BlockDecl *>(Block->getBlockDecl());
++      NestedBody = cast<BlockDecl>(Declaration)->getBody();
++    } else {
++      const auto *Lambda = cast<LambdaExpr>(Closure);
++      Declaration = Lambda->getCallOperator();
++      NestedBody = Lambda->getBody();
++    }
++    BorrowedFlow Summary(Actions, Declaration, NestedBody);
++    Summary.IsOwnerSummary = true;
++    Summary.OwnerSummaries = OwnerSummaries;
++    const auto Captures = closureCaptures(Closure);
++    for (const auto &Capture : Captures) Summary.addVariable(Capture.Variable);
++    for (const auto &Capture : Captures)
++      if (auto Root = Summary.OwnerRoots.find(Capture.Variable);
++          Root != Summary.OwnerRoots.end()) {
++        Value Identity(Summary.OwnerRoots.size()); Identity.set(Root->second);
++        Summary.InheritedOwners[Capture.Variable] = std::move(Identity);
++      }
++    Summary.check();
++    SmallVector<const VarDecl *, 4> Result;
++    for (const auto &Capture : Captures)
++      if (Summary.AcquiredOwnerRoots.count(Capture.Variable))
++        Result.push_back(Capture.Variable);
++    (*OwnerSummaries)[Closure] = Result;
++    return Result;
++  }
++  void prepareFutureOwnerLoans() {
++    for (const auto &[Closure, Slot] : ClosureSlots) {
++      (void)Slot;
++      auto Dependencies = futureBorrowCaptures(Closure);
++      FutureBorrowCaptures[Closure] = Dependencies;
++      const auto Owned = owningClosureCaptures(Closure);
++      for (const auto &Capture : closureCaptures(Closure)) {
++        if (!llvm::is_contained(Dependencies, Capture.Variable) ||
++            llvm::any_of(Owned, [&](const ClosureOwner &Owner) {
++              return Owner.Variable == Capture.Variable;
++            })) continue;
++        SmallVector<const VarDecl *, 2> Sources;
++        if (Capture.Initializer) ownerVariables(Capture.Initializer, Sources);
++        else Sources.push_back(Capture.Variable);
++        for (const VarDecl *Source : Sources) {
++          if (!Source) {UnstableFutureOwners.insert(Closure);continue;}
++          addVariable(Source);
++          for (const auto &[Root, Index] : OwnerRoots) {
++            (void)Index;
++            addOrigin(Closure, Source, false, nullptr, Root, true);
++            for (const auto &[Binding, PinSource] : PinSources)
++              if (PinSource) addOrigin(Closure, Source, false, Binding, Root, true);
++          }
++        }
++      }
++    }
++  }
++  Value futureOwnerLoans(const Expr *Closure, const Facts &State) const {
++    Value Result = acquired(Closure, State);
++    // An already invalid owner is diagnosed by the nested body. These facts
++    // specifically preserve a live capture's later consumption/expiry.
++    for (unsigned I = 1; I < Result.size(); I += 2) Result.reset(I);
++    return Result;
++  }
 +  void holdClosureOwners(const Expr *Closure, Value &V, const Facts &State) const {
 +    const auto Captures = owningClosureCaptures(Closure);
++    if (IsOwnerSummary)
++      for (const auto &Capture : Captures) {
++        Value Identity = Capture.Initializer ? ownerIdentity(Capture.Initializer, State)
++            : State.OwnerIdentities[Slots.lookup({Capture.Variable, nullptr})];
++        for (const auto &[Root, Index] : OwnerRoots)
++          if (Root && Identity.test(Index)) AcquiredOwnerRoots.insert(Root);
++      }
 +    for (int Bit = V.find_first(); Bit >= 0; Bit = V.find_next(Bit)) {
 +      if ((Bit & 1) || Origins[Bit / 2].HeldByClosure)
 +        continue;
@@ -38276,6 +38375,7 @@ index 000000000..78ccabc8c
 +      } else if (O.Identity) {
 +        continue;
 +      }
++      if (O.Identity) AcquiredOwnerRoots.insert(O.Identity);
 +      bool Pinned = false;
 +      for (unsigned PinnedIndex : Found->second) {
 +        const Origin &PinnedOrigin = Origins[PinnedIndex];
@@ -38558,7 +38658,7 @@ index 000000000..78ccabc8c
 +      auto Snapshot = ClosureSlots.find(Block);
 +      if (Snapshot != ClosureSlots.end() && State.CaptureReady.test(Snapshot->second))
 +        return State.CapturedValues[Snapshot->second];
-+      Value Result = empty();
++      Value Result = futureOwnerLoans(Block, State);
 +      for (const auto &Capture : Block->getBlockDecl()->captures()) {
 +        bool Found = false;
 +        for (auto [Location, Index] : Slots)
@@ -38575,7 +38675,7 @@ index 000000000..78ccabc8c
 +      auto Snapshot = ClosureSlots.find(Lambda);
 +      if (Snapshot != ClosureSlots.end() && State.CaptureReady.test(Snapshot->second))
 +        return State.CapturedValues[Snapshot->second];
-+      Value Result = empty();
++      Value Result = futureOwnerLoans(Lambda, State);
 +      for (const Expr *Initializer : Lambda->capture_inits())
 +        Result |= value(Initializer, State);
 +      return Result;
@@ -38618,6 +38718,7 @@ index 000000000..78ccabc8c
 +    return empty();
 +  }
 +  void diagnose(const Stmt *Operation, StringRef Description) {
++    if (IsOwnerSummary) {Invalid = true;return;}
 +    if (!Diagnosed.insert(Operation).second)
 +      return;
 +    Actions.Diag(Operation->getBeginLoc(),
@@ -39315,19 +39416,21 @@ index 000000000..78ccabc8c
 +            } else {
 +              NestedCallable = Lambda->getCallOperator();
 +              NestedBody = Lambda->getBody();
-+              if (State.CapturedValues[Slot].any() &&
-+                  (Lambda->isMutable() || Lambda->isGenericLambda()))
-+                diagnose(Lambda, "a mutable or generic C++ lambda capture requiring additional lifetime contracts");
 +              auto Initializer = Lambda->capture_init_begin();
 +              for (const auto &Capture : Lambda->captures()) {
 +                const Expr *Init = *Initializer++;
 +                if ((Capture.getCaptureKind() == LCK_ByRef || capturedTargets(Init, State).any()) &&
-+                    value(Init, State).any())
++                    (value(Init, State).any() ||
++                     (Capture.capturesVariable() &&
++                      llvm::is_contained(FutureBorrowCaptures.lookup(Lambda), Capture.getCapturedVar()))))
 +                  diagnose(Lambda, "a C++ lambda reference capture requiring an explicit lifetime contract");
 +              }
 +            }
++            if (UnstableFutureOwners.count(Invocation))
++              diagnose(Invocation, "an owner init-capture requiring an explicit stable lifetime binding");
 +            if (NestedCallable && !NestedCallable->isInvalidDecl()) {
 +              BorrowedFlow Nested(Actions, NestedCallable, NestedBody);
++              Nested.OwnerSummaries = OwnerSummaries;
 +              Nested.Origins = Origins;
 +              Nested.OwnerRoots = OwnerRoots;
 +              Nested.Paths = Paths;
@@ -39376,7 +39479,12 @@ index 000000000..78ccabc8c
 +                  }
 +                }
 +              }
-+              Invalid |= Nested.check();
++              const bool NestedInvalid = Nested.check();
++              Invalid |= NestedInvalid;
++              if (!NestedInvalid && Lambda &&
++                  (State.CapturedValues[Slot].any() || !FutureBorrowCaptures.lookup(Lambda).empty()) &&
++                  (Lambda->isMutable() || Lambda->isGenericLambda()))
++                diagnose(Lambda, "a mutable or generic C++ lambda capture requiring additional lifetime contracts");
 +            }
 +          }
 +        }
@@ -39588,6 +39696,7 @@ index 000000000..78ccabc8c
 +    }
 +    if (!MightBorrow && Origins.size() == 1)
 +      return false;
++    prepareFutureOwnerLoans();
 +    prepareClosureLoans();
 +    CFG::BuildOptions Options;
 +    Options.setAllAlwaysAdd();
@@ -39701,7 +39810,7 @@ index 000000000..78ccabc8c
 +    for (const CFGBlock *Block : *Graph)
 +      if (Inputs[Block->getBlockID()].Reachable) {
 +        Facts State = Inputs[Block->getBlockID()];
-+        transfer(*Block, State, true);
++        transfer(*Block, State, !IsOwnerSummary);
 +      }
 +    return Invalid;
 +  }
@@ -44595,4 +44704,197 @@ index 000000000..4029ef4b9
 +  (void)(Plain ********************)callbacks; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
 +  TwentyPointers same=(TwentyPointers)callbacks;
 +  (void)same;
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-future-captures.h b/clang/test/ObjC3/Sema/Inputs/borrowed-future-captures.h
+new file mode 100644
+index 000000000..be1320b34
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-future-captures.h
+@@ -0,0 +1,11 @@
++typedef borrowed const char *FutureBytes;
++FutureBytes future_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++FutureBytes future_object_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void future_use(const char *pointer __attribute__((noescape)));
++void future_consume(void *owner __attribute__((cf_consumed)));
++void *make_future_owner(void);
++template<class Work> void future_sync(const Work &work __attribute__((noescape))) {work();}
++template<class Work> void future_sink(const Work &work);
++__attribute__((objc_root_class)) @interface FutureObject
++- (void)release;
++@end
+diff --git a/clang/test/ObjC3/Sema/borrowed-future-captures.mm b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
+new file mode 100644
+index 000000000..5016b898a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
+@@ -0,0 +1,170 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-future-captures.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-future-captures.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-future-captures.h"
++#endif
++void before_consumption(void *owner) {
++  auto work=[owner]{future_use(future_bytes(owner));};
++  auto copy=work;
++  work();copy.operator()();future_sync(copy);
++  future_consume(owner);
++}
++void after_consumption(void *owner) {
++  auto work=[owner]{future_use(future_bytes(owner));};
++  future_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void copied_capture(void *owner) {
++  void *alias=owner;
++  auto work=[alias]{future_use(future_bytes(alias));};
++  auto copy=work;
++  future_consume(owner);
++  copy(); // expected-error {{after its owner lifetime ended}}
++}
++void init_capture(void *owner) {
++  auto work=[copy=owner]{future_use(future_bytes(copy));};
++  future_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void local_alias(void *owner) {
++  auto work=[owner]{void *alias=owner;future_use(future_bytes(alias));};
++  future_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void overwritten_alias(void *first,void *second) {
++  auto work=[first,second]{void *alias=first;alias=second;future_use(future_bytes(alias));};
++  future_consume(first);
++  work();
++}
++void conditional_alias(void *first,void *second) {
++  auto work=[first,second](bool choose){void *alias=first;if(choose)alias=second;future_use(future_bytes(alias));};
++  future_consume(second);
++  work(true); // expected-error {{after its owner lifetime ended}}
++}
++void nested_body(void *owner) {
++  auto work=[owner]{auto nested=[owner]{future_use(future_bytes(owner));};nested();};
++  future_consume(owner);
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void block_body(void *owner) {
++  void (^work)(void)=^{future_use(future_bytes(owner));};
++  future_consume(owner);
++  work(); // expected-error {{after its captured owner lifetime ended}}
++}
++void escape_future(void *owner) {
++  auto work=[owner]{future_use(future_bytes(owner));};
++  future_sink(work); // expected-error {{borrowed pointer escapes}}
++}
++auto return_future(void *owner) {
++  return [owner]{future_use(future_bytes(owner));}; // expected-error {{borrowed pointer escapes}}
++}
++void unqualified_reference(void *owner) {
++  auto work=[&owner]{future_use(future_bytes(owner));}; // expected-error {{C++ lambda reference capture}}
++  work();
++}
++void unqualified_mutable(void *owner) {
++  auto work=[owner]()mutable{future_use(future_bytes(owner));}; // expected-error {{mutable or generic C++ lambda capture}}
++  work();
++}
++void unqualified_generic(void *owner) {
++  auto work=[owner](auto){future_use(future_bytes(owner));}; // expected-error {{mutable or generic C++ lambda capture}}
++  work(0);
++}
++void materialize_owner(void) {
++  auto work=[owner=make_future_owner()]{future_use(future_bytes(owner));}; // expected-error {{owner init-capture requiring an explicit stable lifetime binding}}
++  work();
++}
++#if __has_feature(objc_arc)
++void independent_owner(FutureObject *_Nonnull owner) {
++  auto work=[owner]{future_use(future_object_bytes(owner));};
++  owner=nullptr;
++  work();
++}
++void independent_init_owner(FutureObject *_Nonnull owner) {
++  auto work=[copy=owner]{future_use(future_object_bytes(copy));};
++  owner=nullptr;
++  work();
++}
++#else
++void manual_object(FutureObject *_Nonnull owner) {
++  auto work=[owner]{future_use(future_object_bytes(owner));};
++  [owner release];
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++void independent_block_owner(FutureObject *_Nonnull owner) {
++  void (^work)(void)=^[strong owner]{future_use(future_object_bytes(owner));};
++  [owner release];
++  work();
++}
++#endif
++
++#if !__has_feature(objc_arc)
++void independent_pin(FutureObject *_Nonnull owner) {
++  keepAlive(owner);
++  auto work=[owner]{future_use(future_object_bytes(owner));};
++  [owner release];
++  work();
++}
++void future_pin_expires(FutureObject *_Nonnull owner) {
++  auto work=[owner]{future_use(future_object_bytes(owner));};
++  withLifetime(owner) {[owner release];work();}
++  work(); // expected-error {{after its owner lifetime ended}}
++}
++#endif
++void unrelated_capture(void *first,void *second) {
++  auto work=[first,second]{(void)first;future_use(future_bytes(second));};
++  future_consume(first);
++  work();
++}
++void reference_scalar(void *owner) {
++  int count=0;
++  auto work=[owner,&count]{++count;future_use(future_bytes(owner));};
++  work();
++  future_consume(owner);
++}
++void nested_summary_depth(void *owner) {
++  auto work0=[owner]{
++    auto work1=[owner]{
++      auto work2=[owner]{
++        auto work3=[owner]{
++          auto work4=[owner]{
++            auto work5=[owner]{
++              auto work6=[owner]{
++                auto work7=[owner]{
++                  auto work8=[owner]{
++                    auto work9=[owner]{
++                      auto work10=[owner]{
++                        auto work11=[owner]{
++                          future_use(future_bytes(owner));
++                        };
++                        work11();
++                      };
++                      work10();
++                    };
++                    work9();
++                  };
++                  work8();
++                };
++                work7();
++              };
++              work6();
++            };
++            work5();
++          };
++          work4();
++        };
++        work3();
++      };
++      work2();
++    };
++    work1();
++  };
++  future_consume(owner);
++  work0(); // expected-error {{after its owner lifetime ended}}
 +}

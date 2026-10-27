@@ -129,7 +129,24 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
   Expect(Request(Root,ForeignHeader+
       "void f(void){ForeignCallback callbacks[2]={0,0};(void)(ForeignPlain *)callbacks;}",
       Language,Standard,ARC),false,"callable cast changes an ownership");
+  Expect(Request(Root,ForeignHeader+
+      "void f(ForeignRef o){void(^work)(void)=^{foreign_use(foreign_bytes(o));};foreign_consume(o,0);work();}",
+      Language,Standard,ARC),false,"captured owner lifetime ended");
   if (Language == BaseLanguage::ObjectiveCxx) {
+    for(const std::string &Case:{
+        "void f(ForeignRef o){auto work=[o]{foreign_use(foreign_bytes(o));};foreign_consume(o,0);work();}",
+        "void f(ForeignRef o){auto work=[copy=o]{foreign_use(foreign_bytes(copy));};foreign_consume(o,0);work();}",
+        "void f(ForeignRef o){auto work=[o]{ForeignRef alias=o;foreign_use(foreign_bytes(alias));};foreign_consume(o,0);work();}",
+        "void f(ForeignRef o){auto work=[o]{auto nested=[o]{foreign_use(foreign_bytes(o));};nested();};foreign_consume(o,0);work();}"})
+      Expect(Request(Root,ForeignHeader+Case,Language,Standard,ARC),false,
+             "after its owner lifetime ended");
+    for(const std::string &Case:{
+        "void f(ForeignRef o){auto work=[o]{foreign_use(foreign_bytes(o));};auto copy=work;copy();foreign_consume(o,0);}",
+        "void f(ForeignRef a,ForeignRef b){auto work=[a,b]{ForeignRef alias=a;alias=b;foreign_use(foreign_bytes(alias));};foreign_consume(a,0);work();}"})
+      Expect(Request(Root,ForeignHeader+Case,Language,Standard,ARC),true);
+    Expect(Request(Root,Header+
+        "void f(id o){auto work=[o]{use_noescape(bytes(o));};o=0;work();}",
+        Language,Standard,ARC),ARC,ARC ? "" : "after its owner lifetime ended");
     const auto BlockExceptions = ForeignHeader+
         "void consume_block_noexcept(OwnerBlock __attribute__((ns_consumed))) noexcept;\n"
         "void consume_foreign_block_noexcept(ForeignRef __attribute__((cf_consumed)),OwnerBlock __attribute__((ns_consumed))) noexcept;\n";
@@ -521,6 +538,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
       "void foreign_consume(ForeignRef owner __attribute__((cf_consumed)));\n"
       "typedef void (*ForeignCallback)(ForeignRef owner __attribute__((cf_consumed)));\n"
       "void dispatch_foreign(ForeignCallback);void dispatch_foreign(void (*)(ForeignRef));\n"
+      "inline void foreign_scoped(ForeignRef owner){auto work=[owner]{foreign_use(foreign_bytes(owner));};work();}\n"
       "__attribute__((objc_root_class)) @interface ForeignContract\n"
       "- (void)dropForeign:(ForeignRef __attribute__((cf_consumed)))owner;\n"
       "@end\n";
@@ -547,7 +565,7 @@ void ForeignPersistenceCases(const fs::path &Root) {
         BaseLanguage::ObjectiveCxx,"c++23",ARC);
     Client.imported_interfaces={Input};
     Expect(Client,true);
-    Client.source_text="void overloads(ForeignCallback callback,void(*plain)(ForeignRef)){dispatch_foreign(callback);dispatch_foreign(plain);}";
+    Client.source_text="void overloads(ForeignRef owner,ForeignCallback callback,void(*plain)(ForeignRef)){foreign_scoped(owner);dispatch_foreign(callback);dispatch_foreign(plain);}";
     Expect(Client,true);
     Client.source_text="void expired(ForeignRef owner){const char*p=foreign_bytes(owner);foreign_consume(owner);foreign_use(p);}";
     Expect(Client,false,"after its owner lifetime ended");

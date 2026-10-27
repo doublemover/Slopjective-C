@@ -35,6 +35,14 @@ Earlier milestone sections retain their historical source-checkpoint status;
 the acceptance receipt above supersedes their deferred-delivery statements.
 Full language/profile conformance and native Linux AArch64 remain open.
 
+## Owners used inside later-invoked closures
+
+The [System 2.7.0 source span](linux_borrowed_future_captures.md) caches symbolic
+CFG summaries of concrete lambda/Block owner use. Local aliases and copied/init/
+nested captures retain future borrowing requirements; consumption invalidates
+later invocation while independent owners and pins preserve qualified calls.
+SDK 2.33 remains the accepted archive.
+
 ## Block lifetime copy and unwind
 
 The [System 2.6.0 source span](linux_borrowed_block_pins.md) models Block pin

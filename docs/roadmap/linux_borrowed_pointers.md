@@ -142,3 +142,8 @@ The [System 2.6.0 source span](linux_borrowed_block_pins.md) admits ordinary
 Block-slot lifetime pins with separate copy-failure cleanup and models ARC
 consumed-argument copies before callee entry. Callable contract checks also
 follow native arrays and deep pointer containers.
+
+The [System 2.7.0 source span](linux_borrowed_future_captures.md) preserves
+requirements for owners first borrowed inside later-invoked concrete closures.
+Cached symbolic CFG summaries retain local alias dependencies, independent
+capture owners and lifetime pins.
