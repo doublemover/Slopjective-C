@@ -9,13 +9,13 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current **2.29.0 SDK** delivers source milestones 2.10–2.29, including
-C++ executable package contracts, selected-arm carrier captures, native export
-roots and named local types. Semantic interface schema **2.2** is a hard cutover;
+The current **2.33.0 SDK** delivers source milestones 2.10–2.33, including
+C++ executable packages, selected-arm captures, export roots/local types,
+aggregate/consuming/class/super isolation and expanded record-field key paths. Semantic interface schema **2.2** is a hard cutover;
 regenerate dependent objects, PCH, interfaces and packages.
 
-The verified LLVM foundation passes **373 compiler regressions** (three platform
-cases unsupported) and **179 native unit tests**. This delivery reuses that exact
+The verified LLVM foundation passes **375 compiler regressions** (three platform
+cases unsupported) and **179 native unit tests**. This delivery qualifies that exact
 foundation and passes all **33 frontend suites**, nine GNUstep client tests,
 37 installed consumer commands, 13 native integration nodes and all **33 installed
 SDK gates**. The installed five-family matrix passes **168 configurations and
@@ -452,21 +452,22 @@ and native async sanitizer runs use that instrumented GNU runtime.
 
 ## Existing evidence
 
-The current [C++ class structure receipt](../support/linux_cxx_class_structure_acceptance.json)
-binds the compiler, runtime/header source, all 33 installed gates and focused
-fresh class/package consumers. The archive has seal
-`0fc4def2426bd3bfd62f7288d4fcb1a73bed8cd27392edf05cd80dcb0024bcc3`,
-435,540,872 bytes and SHA-256
-`7209b98fd7b906b32c1f46121d822668d2917b4d2544540391db4d116c07a402`.
+The current [2.33.0 acceptance receipt](../support/linux_source_batch_2_33_acceptance.json)
+binds all 33 installed gates, 33 frontend suites, 37 consumer commands and 13
+native integration nodes. Its archive has seal
+`98855cbe62e5ddbaa74bde0a24a16a8d7c8baeb11831f4e31408b48d07644cb7`,
+439,265,009 bytes and SHA-256
+`f73ea1b7d57862d199b8ada3eb7fef4256f7ce4981a482db0167643c56c15f21`.
 
-The host release passes the complete 168-configuration / 966-command feature
-matrix. The exact archive passes focused fresh Debian/Ubuntu installation,
-relocation/reinstall, embedding and debugging. Ordinary-user checks cover C++
-interfaces, native async packages and the common stdlib matrix. Broader fresh
-feature matrices retain their explicitly historical 2.8.0 receipt scope.
-Both owned containers are removed. Superseded SDK/runtime artifacts are
-reclaimed; one SDK installation and archive remain, with development facade and
-GNU client configurations bound to the current installation.
+The installed release passes all 168 configurations / 1,110 commands. The
+combined source batch also passes that complete matrix under ASan/UBSan and
+TSan, with 287 tooling tests. The exact archive passes native-feature
+qualification as ordinary users on fresh Debian 13 and Ubuntu 26.04, including
+the five-family matrix, expanded source-free key-path packages, compiler
+witnesses, relocation/reinstall, embedding and debugging. Both owned containers
+are removed. The superseded 2.29 SDK installation and archive are reclaimed;
+one installed SDK and one archive remain alongside the active development build.
+Earlier receipts retain their historical scopes.
 
 The preceding [C-frame scope receipt](../support/linux_native_group_scope_acceptance.json)
 records its 2.3.0 delivery. The earlier [integration receipt](../support/linux_native_feature_integration_acceptance.json)
@@ -580,15 +581,14 @@ executor/actor entry for qualified record values, ARC-managed aggregate fields
 and C++ copyable results/move-only parameters. Native frame storage hooks retain
 construction/destruction contracts; xvalue forwarding avoids hidden copies.
 Maintained witnesses add source-free record contracts, actor/caller restoration,
-cancellation and failure at successive C++ moves. The accepted SDK remains
-2.29.0 while this implementation batch is validated.
+cancellation and failure at successive C++ moves. The 2.33.0 SDK delivers this boundary.
 
 The [2.31.0 source milestone](linux_isolation_consuming_ownership.md) adds ARC
 consumed object/Block parameters and consuming instance receivers at supported
 awaited entries. Owning receiver/argument snapshots preserve message evaluation
 when later operands clear their original owners, with balanced exceptional
 cleanup. MRC/CF consumption, init-family entry and ordinary
-C++ task-ABI targets remain open; accepted SDK delivery remains 2.29.0.
+C++ task-ABI targets remain open; SDK 2.33.0 delivers the implemented boundary.
 
 The [2.32.0 source milestone](linux_isolation_class_entries.md) adds named class
 messages at qualified executor entries, preserving inherited class dispatch,
@@ -607,4 +607,4 @@ The [2.33.0 source milestone](linux_isolation_super_entries.md) adds awaited
 instance/class/category super messages, preserving lexical superclass lookup
 with independently owned self. Actor-super entry, ARC consuming receivers,
 record/retained results and ordinary C++ task callers are covered by maintained
-runtime and PCH witnesses. Combined validation follows this implementation batch.
+runtime and PCH witnesses. Combined validation and SDK 2.33.0 delivery pass.

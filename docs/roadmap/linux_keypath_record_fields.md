@@ -27,10 +27,10 @@ consumer-side metadata equality.
 
 The [focused receipt](../support/linux_keypath_record_fields_progress.json)
 records four native regressions, native AST import and two source/PCH runtime
-configurations (12 commands). Broader compiler/frontend, source/PCH,
-sanitizer and package validation follows the combined source batch. The accepted
-SDK remains [2.29.0](../support/linux_source_batch_2_29_acceptance.json), carrying
-keypath 2.1.0. Nullable writable traversal and nonnull/scalar/aggregate nullable
+configurations (12 commands). The
+[2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json) delivers
+keypath 2.2.0, including the expanded source-free package matrix on the host and
+both fresh distributions. Nullable writable traversal and nonnull/scalar/aggregate nullable
 results, dependent/effectful/isolated paths and full profile conformance remain
 open.
 

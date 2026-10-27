@@ -29,9 +29,8 @@ frame case checks success, pre-entry cancellation and failed entry allocation;
 C++ clients also exercise an ordinary task method. Native PCH replay covers both
 C17 MRC and C++23 ARC implementations.
 
-Initial compiler and runtime checks pass. Combined compiler/frontend,
-source/PCH and sanitizer validation follows this coherent source batch. The
-accepted SDK remains [2.29.0](../support/linux_source_batch_2_29_acceptance.json).
+The [2.33.0 SDK acceptance](../support/linux_source_batch_2_33_acceptance.json)
+records combined validation, installed delivery and fresh native-feature checks.
 MRC/CF consumption, init-family entry, unqualified dynamic Class receivers,
 ordinary C++ task-ABI isolated targets and full profile conformance remain open.
 

@@ -25,9 +25,8 @@ int update(Person * _Nonnull person) {
 ```
 
 The canonical module is the singular `objc3.keypath`, with capability
-`objc3.cap.keypath`. The accepted SDK uses semantic version 2.1.0; the current `keypath.h` source
-supplies 2.2.0 and the public
-immutable metadata ABI. `KeyPath<Root, Value>` and
+`objc3.cap.keypath`. SDK 2.33.0 supplies keypath semantic version 2.2.0 and
+the public immutable metadata ABI. `KeyPath<Root, Value>` and
 `WritableKeyPath<Root, Value>` are compiler-owned native record type
 constructors. Root class names and class pointer types normalize to a nonnull
 class pointer. A literal with an entirely settable property chain has writable
@@ -169,4 +168,4 @@ establish this package coverage.
 
 The later 33-gate SDK retains this complete package matrix and passes it on fresh
 Debian and Ubuntu with the newer compiler; see the
-[current acceptance receipt](../support/linux_cxx_frame_value_acceptance.json).
+[current acceptance receipt](../support/linux_source_batch_2_33_acceptance.json).

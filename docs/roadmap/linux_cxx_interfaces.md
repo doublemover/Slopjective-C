@@ -19,11 +19,12 @@ by [the C++ async callable contract](linux_async_cxx_callables.md). They require
 `objc3.cxx-member-interfaces.v1`, canonical static/instance and effect identity,
 and module-owned native symbols.
 
-The current **2.29.0 SDK** delivers the C++ class, namespace, lookup and executable
+The current **2.33.0 SDK** delivers the C++ class, namespace, lookup and executable
 expression contracts described below. The
-[current acceptance receipt](../support/linux_source_batch_2_29_acceptance.json)
-binds all 33 installed gates and the exact-archive Debian/Ubuntu class-package
-checks. Earlier [2.8.0](linux_cxx_class_lifecycles.md) and
+[current acceptance receipt](../support/linux_source_batch_2_33_acceptance.json)
+binds all 33 installed gates and exact-archive Debian/Ubuntu native-feature
+checks. The earlier [2.29.0 receipt](../support/linux_source_batch_2_29_acceptance.json)
+records focused fresh class-package qualification. Earlier [2.8.0](linux_cxx_class_lifecycles.md) and
 [2.9.0](linux_cxx_class_structure.md) deliveries established the initial lifecycle,
 base and defaulting contracts; their receipts retain those historical bounds.
 
@@ -35,7 +36,7 @@ semantic capabilities cannot be erased from C++ sidecars.
 
 The [2.10.0 source milestone](linux_cxx_class_dispatch.md) adds virtual bases,
 virtual dispatch, pure/final/covariant overrides and module-owned C++ type ABI
-names. It requires `objc3.cxx-class-dispatch.v1` and is delivered in SDK 2.29.0.
+names. It requires `objc3.cxx-class-dispatch.v1` and is delivered in SDK 2.33.0.
 
 The [2.11.0 source milestone](linux_cxx_namespaces.md) adds named/nested/inline
 namespace exports and namespace aliases under `objc3.cxx-namespaces.v1`, with
@@ -74,7 +75,7 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 ```
 
-The [current batch receipt](../support/linux_source_batch_2_29_acceptance.json)
+The [current batch receipt](../support/linux_source_batch_2_33_acceptance.json)
 records the exact current archive and qualification. The earlier
 [interface acceptance receipt](../support/linux_cxx_interface_acceptance.json)
 retains the historical ABI 12 aggregate-interface, sanitizer and debugger scope.
