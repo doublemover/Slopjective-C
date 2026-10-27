@@ -33,3 +33,8 @@ SDK remains [2.29.0](../support/linux_source_batch_2_29_acceptance.json), carryi
 keypath 2.1.0. Nullable writable traversal and nonnull/scalar/aggregate nullable
 results, dependent/effectful/isolated paths and full profile conformance remain
 open.
+
+The [combined source receipt](../support/linux_source_batch_2_33_progress.json)
+records 375 compiler regressions, 179 native unit tests, 33 frontend suites,
+287 tooling tests and all 168 configurations / 1,110 commands in each normal,
+ASan/UBSan and TSan matrix. SDK/package/archive delivery is recorded separately.
