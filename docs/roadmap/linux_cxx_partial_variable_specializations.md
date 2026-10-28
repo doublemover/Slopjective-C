@@ -24,3 +24,10 @@ Linux AArch64 qualification remain open. The [focused receipt](../support/linux_
 records eight native import tests in C++20/23, verified partial-table membership,
 the emitter suite, 19 tooling tests and 16 source-free configurations / 96 commands
 passing, including 16 primary ABI symbol inspections.
+
+The [combined 2.53–2.62 source receipt](../support/linux_template_publication_batch_progress.json)
+supersedes the deferred source checks above: 411 compiler regressions, 208 native
+unit tests, 33 optimized frontend suites and the maintained 335 tooling tests pass.
+Normal, ASan/UBSan and TSan each pass 168 source/PCH configurations / 1,158 commands.
+Source-free C++/key-path packages pass 80 configurations / 384 commands.
+Coordinated SDK delivery remains pending.

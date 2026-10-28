@@ -82,6 +82,18 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Combined template-publication source validation
+
+The [combined 2.53–2.62 source receipt](../support/linux_template_publication_batch_progress.json)
+passes **411 compiler regressions**, **208 native unit tests**, all **33 optimized
+frontend suites** and the maintained **335 tooling tests** plus 33 subtests.
+Normal, ASan/UBSan and TSan each pass all **168 source/PCH configurations / 1,158
+commands**. Source-free C++/key-path packages pass **80 configurations / 384
+commands** through normal, eager and sanitizer modes. This completes the deferred
+source checks for the ten milestones below. Coordinated SDK delivery follows.
+The unrestricted historical tooling directory still has five collection errors
+against removed or changed planning/workflow scripts; it is outside this selection.
+
 ## Explicit variable-specialization storage
 
 The [2.62 source span](linux_cxx_external_variable_specializations.md) adds

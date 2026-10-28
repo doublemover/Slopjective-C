@@ -22,3 +22,10 @@ records the optimized build, C++20/23 emitter suite and all eight source-free
 runtime configurations / 32 commands passing. Broader validation remains batched;
 SDK 2.52 remains the published archive and predates this source span. Full profile
 and native AArch64 qualification remain open.
+
+The [combined 2.53–2.62 source receipt](../support/linux_template_publication_batch_progress.json)
+supersedes the deferred source checks above: 411 compiler regressions, 208 native
+unit tests, 33 optimized frontend suites and the maintained 335 tooling tests pass.
+Normal, ASan/UBSan and TSan each pass 168 source/PCH configurations / 1,158 commands.
+Source-free C++/key-path packages pass 80 configurations / 384 commands.
+Coordinated SDK delivery remains pending.
