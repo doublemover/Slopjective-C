@@ -65,8 +65,11 @@ The [2.39 source span](linux_cxx_generic_local_lambdas.md) adds closed generic
 lambdas with stable type/integral/null/pack argument keys and resolved concrete
 body dependencies. Native printing preserves packs, defaults, immediate/static
 operators and parameter attributes. Native AST import retains the call-operator
-specializations needed by generic function-pointer invokers. Broader checks
-follow the implementation span; unsupported generic forms remain explicit.
+specializations needed by generic function-pointer invokers. The
+[source receipt](../support/linux_cxx_generic_local_lambdas_progress.json) records
+406 compiler tests, 192 native unit tests, all 33 frontend suites, 332 tooling
+tests and 24 source-free package configurations / 96 commands across normal,
+eager-import and ASan/UBSan execution. Unsupported generic forms remain explicit.
 
 ## Published unnamed C++ local types
 

@@ -31,3 +31,9 @@ and C++23 static operators. Source-free pure C++ object consumers and
 Objective-C++ ARC/MRC runtime packages exercise the imported bodies. Source
 validation and installed delivery are recorded separately; SDK 2.33 remains the
 accepted archive.
+
+The [source receipt](../support/linux_cxx_generic_local_lambdas_progress.json)
+records 406 compiler regressions, 192 native unit tests, all 33 frontend suites,
+332 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution. The compiler invoker-import
+regression fails before the native repair and passes afterward.
