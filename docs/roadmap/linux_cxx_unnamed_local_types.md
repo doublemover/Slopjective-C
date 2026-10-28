@@ -25,4 +25,7 @@ local aliases, enums and constexpr evaluation, plus rejected escapes/unions and
 missing capabilities. Source-free package witnesses add copied records and
 closures with exact native destruction counts, unnamed derived classes with
 virtual dispatch/RTTI, and provider/consumer calls into the same inline bodies.
-Validation and SDK delivery are tracked separately; SDK 2.33 remains accepted.
+The [source receipt](../support/linux_cxx_unnamed_local_types_progress.json)
+records all 33 frontend suites, 332 tooling tests and 24 source-free package
+configurations / 96 commands across normal, eager and ASan/UBSan execution.
+SDK delivery remains separate; SDK 2.33 remains accepted.
