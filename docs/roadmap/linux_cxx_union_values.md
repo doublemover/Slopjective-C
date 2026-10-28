@@ -29,3 +29,8 @@ Public unnamed nested types, escaping local types, stricter union ownership
 precision and the separate union frame/isolation/key-path boundaries remain
 explicit. This source span does not promote full profile conformance or rebuild
 the accepted SDK 2.33 archive.
+
+The [source receipt](../support/linux_cxx_union_values_progress.json) records
+408 compiler regressions, 194 native unit tests, two additional upstream ABI-tag
+checks, all 33 frontend suites, 332 tooling tests and 24 source-free package
+configurations / 96 commands across normal, eager-import and ASan/UBSan execution.

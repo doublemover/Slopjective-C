@@ -65,8 +65,11 @@ The [2.41 source span](linux_cxx_union_values.md) publishes named, nested,
 typedef-owned and local C++ unions with native layout and by-value ABI,
 source-written active-member lifetime operations and structural template member
 identity. A required union-value capability binds publication and consumer
-admission. Broader checks follow the implementation span; separate ownership,
-frame/isolation and key-path union boundaries remain explicit.
+admission. The [source receipt](../support/linux_cxx_union_values_progress.json)
+records 408 compiler tests, 194 native unit tests, two upstream ABI-tag checks,
+all 33 frontend suites, 332 tooling tests and 24 source-free package
+configurations / 96 commands across normal, eager-import and ASan/UBSan execution.
+Separate ownership, frame/isolation and key-path union boundaries remain explicit.
 
 ## Generic local callable contracts
 
