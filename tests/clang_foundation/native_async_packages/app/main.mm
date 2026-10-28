@@ -103,6 +103,29 @@ struct consumer_result_owner {
 };
 #endif
 
+int effect_template_checked_application() __objc3_async {
+  NativeModuleResult *error=[NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{error};
+#endif
+  [error setNumber:42];
+  __objc3_do {
+    long synchronous=__objc3_try(NativeEffectTemplates::checked(42L,(id<NativeModuleError>)nullptr));
+    int asynchronous=__objc3_try(__objc3_await NativeEffectTemplates::checked_task(42,(id<NativeModuleError>)nullptr));
+    if(synchronous!=42 || asynchronous!=42)return 0;
+    (void)__objc3_try(NativeEffectTemplates::checked(0,(id<NativeModuleError>)error));
+    return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    if([(NativeModuleResult *)caught number]!=42)return 0;
+  }
+  __objc3_do {
+    (void)__objc3_try(__objc3_await NativeEffectTemplates::checked_task(0,(id<NativeModuleError>)error));
+    return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    return [(NativeModuleResult *)caught number]==42?42:0;
+  }
+}
+
 int checked_application(objc3_actor_t *actor) __objc3_async {
   __objc3_await objc3::hop_to(actor);
   __objc3_do {
@@ -1109,6 +1132,18 @@ int main() {
        Partial::local<int*>!=43) return 224;
     Family::local<long> =42;Partial::local<int*> =42;
   }
+  {
+    auto task=NativeEffectTemplates::task(42).start(executor);
+    auto checked=effect_template_checked_application().start(executor);
+    auto frame=__objc3_async_from_frame<long>(NativeEffectTemplates::frame(42L)).start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       task.result()!=42 || frame.result()!=42 || checked.result()!=42) return 226;
+    task={};frame={};checked={};
+    NativeTemplateValue<int> value(42);
+    auto owned=NativeEffectTemplates::task(value).start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || owned.result().number()!=42) return 227;
+  }
+  if(NativeTemplateValue<int>::live) return 228;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

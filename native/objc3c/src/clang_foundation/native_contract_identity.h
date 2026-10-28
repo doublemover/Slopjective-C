@@ -9,6 +9,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ObjC3Borrowed.h"
 #include "clang/AST/ObjC3Isolation.h"
@@ -141,6 +142,10 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
 inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
                                            const clang::ASTContext &context,
                                            InterfaceEffectIdentity &effects) {
+  // A template publishes its underlying callable contract. Its native entry
+  // discriminator and nested callable positions are known before substitution.
+  if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
   std::string ownership;
   clang::QualType declaration_type;
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))

@@ -170,6 +170,12 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    effectful_templates=[row for row in metadata['declarations']
+                         if ';cxx-effectful-function-templates:v1;' in row.get('canonical_type_identity','')]
+    assert 'objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']
+    assert {row['qualified_name'] for row in effectful_templates}=={
+        'NativeEffectTemplates::task','NativeEffectTemplates::frame',
+        'NativeEffectTemplates::checked','NativeEffectTemplates::checked_task'}
     closed_patterns=[row for row in metadata['declarations']
                      if ';cxx-closed-parent-patterns:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-closed-parent-patterns.v1' in metadata['required_semantics']

@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 72,
+        "minor": 73,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -198,13 +198,14 @@
         "Explicit constructor, operator and conversion function-template specializations of concrete records, with exact argument/type/explicitness/native-symbol contracts, initializer/body replay and native syntax (source)",
         "Constrained nested class and member variable partial specializations of dependent record parents, with outer template heads, complete owner definition sets, native import and source-free consumer instantiation (source)",
         "Full member class, function and variable specializations under closed template parents, with exact outer argument keys, authored template heads, complete owner contracts and source-free native selection (source)",
-        "Explicit member class/function/variable template patterns and class/variable partials under closed template parents, with complete parent definition identities, exact outer arguments and native source-free substitution (source)"
+        "Explicit member class/function/variable template patterns and class/variable partials under closed template parents, with complete parent definition identities, exact outer arguments and native source-free substitution (source)",
+        "Namespace function templates with canonical native async/frame and checked-error effects, exact runtime/header contracts, published definitions and source-free consumer instantiation (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining effectful member/specialization and dependent-error projections, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

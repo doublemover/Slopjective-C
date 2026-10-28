@@ -885,6 +885,9 @@ private:
 
 bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
                                    const clang::ASTContext &context) {
+  // Namespace replay uses empty wrappers. Runtime dependencies belong to the
+  // checked member declarations, rather than whichever extension is visited.
+  if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
   RuntimeDeclarationFinder finder(context);
   finder.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
   if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
@@ -2571,10 +2574,12 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     for (const auto *parameter : function->parameters())
       if (const auto *expression = WrittenDefaultArgument(parameter))
         defaults += identity.Get(const_cast<clang::Expr *>(expression));
+    const auto effects=ReadCanonicalFunctionEffects(function->getType(),context);
     return "function-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";signature=" + DeclarationTypeIdentity(function, context) +
         (defaults.empty() ? "" : ";cxx-declaration-expressions:v1;template-defaults=" + defaults) +
         "};cxx-function-templates:v2;" +
+        ((effects.is_async || effects.is_throwing) ? ";cxx-effectful-function-templates:v1;" : "") +
         (function->isVariadic() ? ";cxx-variadic-templates:v1;" : "") +
         (function->getReturnType()->getContainedAutoType() ? ";cxx-template-deduction:v1;" : "");
   }
@@ -4130,11 +4135,9 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     }
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
       const auto *function = pattern->getTemplatedDecl();
-      const auto effects = ReadCanonicalFunctionEffects(function->getType(), function->getASTContext());
       supported &= function->getDefinition() != nullptr &&
           !llvm::isa<clang::CXXMethodDecl>(function) && !function->isDeleted() &&
-          !function->isDefaulted() &&
-          !effects.is_async && !effects.is_throwing;
+          !function->isDefaulted();
       for (const auto *attribute : function->attrs()) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
           supported &= tag->tags_size() == 1 &&
@@ -5561,6 +5564,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxEffectfulFunctionTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxEffectfulFunctionTemplateSemantic);
     if (HasCxxClosedParentPatternIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClosedParentPatternSemantic);
     if (HasCxxClosedParentMemberIdentity(declaration))
@@ -5732,6 +5737,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxDependentMemberPartialSemantic,
     kCxxClosedParentMemberSemantic,
     kCxxClosedParentPatternSemantic,
+    kCxxEffectfulFunctionTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5891,6 +5897,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxDependentMemberPartialSemantic,
     kCxxClosedParentMemberSemantic,
     kCxxClosedParentPatternSemantic,
+    kCxxEffectfulFunctionTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

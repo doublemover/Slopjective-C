@@ -477,6 +477,14 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_effectful_function_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulFunctionTemplateIdentity);
+  const bool effectful_function_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulFunctionTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_function_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulFunctionTemplateIdentity(d) || d.kind=="FunctionTemplate";});
+  if (has_effectful_function_templates!=effectful_function_template_capability || !effectful_function_template_owners)
+    return Invalid("effectful function-template identities and required capability must agree");
   const bool has_closed_parent_patterns=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxClosedParentPatternIdentity);
   const bool closed_parent_pattern_capability=std::find(sidecar.required_semantics.begin(),

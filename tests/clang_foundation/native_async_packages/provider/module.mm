@@ -1771,3 +1771,19 @@ NativeClosedPatterns::Outer<long>::Inner<int*> *native_closed_pattern_partial_fa
 
 int *native_closed_pattern_lives(){return &NativeClosedPatterns::Outer<int>::Inner<int>::live;}
 int *native_closed_pattern_partial_lives(){return &NativeClosedPatterns::Outer<long>::Inner<int*>::live;}
+
+namespace NativeEffectTemplates {
+  inline int pause(int n) __objc3_async {__objc3_await objc3::task_yield;return n;}
+  template<class T>T task(T value) __objc3_async {
+    __objc3_await objc3::task_yield;return value;
+  }
+  template<class T>T frame(T value) __objc3_async_frame {
+    (void)__objc3_await pause(0);return value;
+  }
+  template<class T>T checked(T value,id<NativeModuleError> error) __objc3_throws(id<NativeModuleError>) {
+    if(error)__objc3_throw(error);return value;
+  }
+  template<class T>T checked_task(T value,id<NativeModuleError> error) __objc3_async __objc3_throws(id<NativeModuleError>) {
+    __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
+  }
+}

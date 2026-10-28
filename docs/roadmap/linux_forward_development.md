@@ -78,6 +78,20 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Effectful namespace function templates
+
+The [2.73 source span](linux_cxx_effectful_function_templates.md) publishes canonical
+native async/frame and checked-error namespace function templates. Underlying
+function contracts preserve task/frame entry ABI and typed errors; runtime
+requirements stay on members rather than empty namespace replay wrappers. Native
+import supports dependent coroutine awaits, and frame-template substitution keeps
+the native continuation protocol. The emitter suite, twenty focused native
+importer tests, all thirty-four tests in that family, 72 tooling tests and all 16
+source-free configurations / 96 commands pass, including scalar/record results,
+suspension, exact lifetimes and synchronous/asynchronous typed errors. Effectful
+member/specialization and dependent-error forms remain open. Combined validation
+and SDK delivery stay batched.
+
 ## Closed-parent member template patterns
 
 The [2.72 source span](linux_cxx_closed_parent_patterns.md) adds whole member
