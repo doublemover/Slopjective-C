@@ -22,9 +22,11 @@ and class-template values crossing suspended C++ task/native-frame entries.
 Imported inline variable definitions, including class counters and SDK result
 operation descriptors, receive backend delivery alongside imported functions.
 
-Forward/opaque declarations, bases, virtual members, nested/member templates,
-explicit/partial specializations, deduced-return/effectful methods and remaining
-dependent projections stay gated. This source span does not rebuild the accepted
+Subsequent source spans add [forwards and hierarchies](linux_cxx_template_structure.md),
+[deduced returns](linux_cxx_template_deduction.md) and
+[member function templates](linux_cxx_member_templates.md). Opaque definitions,
+nested class/alias/variable templates, explicit/partial specializations, effectful
+methods and remaining dependent projections stay gated. This source span does not rebuild the accepted
 SDK 2.33 archive or claim full profile/AArch64 conformance.
 
 The [focused source receipt](../support/linux_cxx_class_templates_progress.json)

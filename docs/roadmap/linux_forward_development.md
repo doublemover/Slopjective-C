@@ -71,6 +71,13 @@ all **33 optimized frontend suites**, **335 tooling tests** and **32 source-free
 package configurations / 128 commands** across normal, eager-import, ASan/UBSan
 and TSan execution. SDK 2.33 remains the accepted archive.
 
+## Class-template member function templates
+
+The [2.50 source span](linux_cxx_member_templates.md) adds checked in-class
+member function templates, converting constructors, operators, packs, deduced
+results, closure factories and provider/consumer specialization state. Required
+member-template semantics bind publication to the enclosing class owner.
+
 ## Native template deduction and closure factories
 
 The [2.49 source span](linux_cxx_template_deduction.md) adds `auto`/`decltype(auto)`
@@ -92,7 +99,8 @@ The [2.47 source span](linux_cxx_class_templates.md) adds primary class template
 definitions, checked dependent member bodies and native consumer instantiation.
 Primary module owners preserve specialization/member mangling; one complete
 class contract binds private storage, constructors/destructors and static data.
-Inheritance, virtual/member-template and specialization projections remain open.
+Later source spans add hierarchies, virtual dispatch and member function
+templates; specialization and nested-template projections remain open.
 
 ## Published native C++ variable templates
 
@@ -100,7 +108,8 @@ The [2.46 source span](linux_cxx_variable_templates.md) adds public namespace
 variable templates with defaults, packs, constraints and native instantiation.
 Module-owned primary tags preserve specialization mangling and shared storage;
 required capability metadata binds complete heads, types and initializers.
-Public class templates and specialization projections remain open.
+Later source spans add public primary class templates; specialization
+projections remain open.
 
 ## Function template declarations and defaults
 

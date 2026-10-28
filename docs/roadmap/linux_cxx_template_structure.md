@@ -27,9 +27,10 @@ specializations. Runtime package witnesses allocate a virtual diamond in the
 provider, cast/delete it in the consumer and verify one shared virtual base and
 exact final destruction, alongside consumer-only hierarchy instantiation.
 
-Explicit/partial specializations, nested/member templates, deduced-return and
-effectful template methods and remaining dependent projections stay separate
-work. SDK 2.33 remains accepted; optimized/broader/instrumented qualification and
+Subsequent source spans add [deduced returns](linux_cxx_template_deduction.md) and
+[member function templates](linux_cxx_member_templates.md). Explicit/partial
+specializations, nested class/alias/variable templates, effectful methods and
+remaining dependent projections stay separate work. SDK 2.33 remains accepted; optimized/broader/instrumented qualification and
 coordinated archive delivery follow the combined implementation batch.
 
 The [focused source receipt](../support/linux_cxx_template_structure_progress.json)

@@ -477,6 +477,17 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_member_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberTemplateIdentity);
+  const bool member_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxMemberTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_template_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_template_data = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),"objc3.cxx-data-interfaces.v1")!=sidecar.required_semantics.end();
+  if (has_member_templates!=member_template_capability ||
+      (member_template_capability && (!member_template_class || !member_template_data)))
+    return Invalid("member template identity and required member/class/data capabilities must agree");
   const bool has_template_deduction = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxTemplateDeductionIdentity);
   const bool template_deduction_capability = std::find(sidecar.required_semantics.begin(),

@@ -1734,13 +1734,20 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     policy.PrintAsCanonical = true;
     policy.SuppressScope = true;
     pattern->getTemplatedDecl()->print(stream, policy);
-    bool deduced=false;
-    for (const auto *method : pattern->getTemplatedDecl()->methods())
-      deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
+    bool deduced=false, member_templates=false;
+    for (const auto *member : pattern->getTemplatedDecl()->decls()) {
+      const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
+      if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+        member_templates=true;
+        method=llvm::dyn_cast<clang::CXXMethodDecl>(function->getTemplatedDecl());
+      }
+      if (method) deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
+    }
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;" +
         ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
-        (deduced ? ";cxx-template-deduction:v1;" : "");
+        (deduced ? ";cxx-template-deduction:v1;" : "") +
+        (member_templates ? ";cxx-member-templates:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
     const auto *variable = pattern->getTemplatedDecl();
@@ -2109,6 +2116,10 @@ class TypeDependencyVisitor final
       if (const auto *owner = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(target->getDeclContext()))
         for (const auto &argument : owner->getTemplateArgs().asArray())
           if (!CheckGenericArgument(argument)) UnsupportedExpression();
+      if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
+        if (const auto *arguments = function->getTemplateSpecializationArgs())
+          for (const auto &argument : arguments->asArray())
+            if (!CheckGenericArgument(argument)) UnsupportedExpression();
       return;
     }
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
@@ -2227,7 +2238,9 @@ class TypeDependencyVisitor final
     for (const auto &base : record->bases()) TraverseType(base.getType());
     for (auto *member : record->decls()) {
       if (member->isImplicit()) continue;
-      if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(member)) {
+      if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+        CheckFunctionTemplate(function);
+      } else if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(member)) {
         TraverseType(function->getType());
         for (const auto *parameter : function->parameters())
           if (const auto *value = WrittenDefaultArgument(parameter))
@@ -2755,6 +2768,25 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   return visitor.UsesCanonicalFunctionEffects;
 }
 
+// Member patterns are owned and printed with the enclosing primary class.
+// Their native specialization mangling inherits that class's module ABI tag.
+// Restrict this contract to in-class bodies; detached definitions and member
+// specializations need their own publication and dependency ordering rules.
+bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
+  const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
+  if (!method || !method->doesThisDeclarationHaveABody() || method->isVariadic()) return false;
+  const auto effects=ReadCanonicalFunctionEffects(method->getType(),method->getASTContext());
+  if (effects.is_async || effects.is_throwing) return false;
+  for (const auto *parameter : *pattern->getTemplateParameters()) {
+    if (llvm::isa<clang::TemplateTemplateParmDecl>(parameter)) return false;
+    for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit()) return false;
+  }
+  for (const auto *attribute : method->attrs()) if (!attribute->isImplicit()) return false;
+  for (const auto *parameter : method->parameters())
+    for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit()) return false;
+  return true;
+}
+
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports = {}) {
@@ -2842,6 +2874,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           supported &= !method->isVariadic() &&
               !effects.is_async && !effects.is_throwing &&
               (method->doesThisDeclarationHaveABody() || method->isDefaulted() || method->isDeleted() || method->isPureVirtual());
+        } else if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+          supported &= IsBoundedClassMemberTemplate(function);
         } else if (const auto *value = llvm::dyn_cast<clang::VarDecl>(member)) {
           supported &= value->isStaticDataMember() && (value->isInline() || value->isConstexpr());
         } else supported &= llvm::isa<clang::FieldDecl, clang::TypedefNameDecl, clang::EnumDecl,
@@ -3950,6 +3984,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxTemplateStructureSemantic);
     if (HasCxxTemplateDeductionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxTemplateDeductionSemantic);
+    if (HasCxxMemberTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -4053,6 +4089,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxClassTemplateSemantic,
     kCxxTemplateStructureSemantic,
     kCxxTemplateDeductionSemantic,
+    kCxxMemberTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4188,6 +4225,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClassTemplateSemantic,
     kCxxTemplateStructureSemantic,
     kCxxTemplateDeductionSemantic,
+    kCxxMemberTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

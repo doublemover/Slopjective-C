@@ -235,7 +235,10 @@
     "NativeTemplateHolder",
     "native_template_deduced_answer",
     "native_template_deduced_reader",
-    "native_template_deduction_bridge"
+    "native_template_deduction_bridge",
+    "NativeMemberBox",
+    "native_member_probe",
+    "native_member_producer"
   ],
   "dependencies": []
 }

@@ -373,6 +373,57 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void ClassMemberTemplates(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"members-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+
+    template<class T> class MemberBox {
+      T value;
+    public:
+      constexpr MemberBox(T n):value(n){}
+      template<class U> requires requires(U n){static_cast<T>(n);}
+      constexpr explicit(sizeof(U)>0) MemberBox(U n):value(static_cast<T>(n)){}
+      template<class U=T,int Delta=2>
+      constexpr auto add(U n=U{2})const noexcept(noexcept(value+n)){return value+n+Delta;}
+      template<class U=T> constexpr decltype(auto) reference(){return (value);}
+      template<class U> constexpr auto reader(U offset)const {
+        return [n=value,offset](int extra){return n+offset+extra;};
+      }
+      template<class... U> constexpr auto sum(U... n)const{return (value+...+n);}
+      template<class U> constexpr auto operator()(U n)const{return value+n;}
+      template<class U> constexpr explicit operator U()const{return static_cast<U>(value);}
+      template<class U=int> static int next(){static int calls=0;return ++calls;}
+    };
+    constexpr int member_probe(){MemberBox<int> box(40L);return box.add(0);}
+    int provider(){return MemberBox<int>::next<>();}
+
+  )");
+  r.emit_semantic_interface=true;r.module_name="ClassMembers";r.package_identity="class-members-v1";
+  r.module_owned_names=true;r.interface_exports={"MemberBox","member_probe","provider"};
+  r.interface_output_path=(root/"ClassMembers.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"members-provider.o").string();
+  auto built=Compile(r);
+  for(const auto &d:built.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  fs::remove(r.input_path);
+  auto client=Request(root/"members-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    static_assert(member_probe()==42);
+    static_assert(MemberBox<long>{40}.add(0L)==42);
+    static_assert(MemberBox<long>{40}.sum(1,1L)==42);
+    static_assert(MemberBox<long>{40}.reader(1L)(1)==42);
+    static_assert(MemberBox<long>{42}(0)==42);
+    static_assert(static_cast<long>(MemberBox<int>{42})==42);
+    int client(){MemberBox<long> box(40);++box.reference<>();
+      return box.add(0)+MemberBox<int>::next<>()+MemberBox<long>::next<long>();}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"members-client.o").string();
+  auto imported=Compile(client);
+  for(const auto &d:imported.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:imported.interface_import_diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void TemplateDeduction(const fs::path &root,const std::string &standard) {
   auto r=Request(root/"deduction-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
     template<class T> constexpr auto add(T n){return n+2;}
@@ -595,6 +646,7 @@ int main() {
     ClassTemplateBodies(root,standard);
     TemplateStructure(root,standard);
     TemplateDeduction(root,standard);
+    ClassMemberTemplates(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

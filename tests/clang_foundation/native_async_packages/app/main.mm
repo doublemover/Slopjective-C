@@ -216,6 +216,27 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  static_assert(native_member_probe()==42);
+  static_assert(NativeMemberBox<long>{40}.add(0L)==42);
+  static_assert(NativeMemberBox<long>{40}.sum(1,1L)==42);
+  static_assert(NativeMemberBox<long>{40}.reader(1L)(1)==42);
+  static_assert(NativeMemberBox<long>{42}(0)==42);
+  static_assert(static_cast<long>(NativeMemberBox<int>{42})==42);
+  if(native_member_producer()!=1 || NativeMemberBox<int>::next<>()!=2 ||
+     NativeMemberBox<int>::next<long>()!=1 || NativeMemberBox<long>::next<>()!=1)return 147;
+  {
+    NativeMemberBox<long> box(40);++box.reference<>();
+    if(box.add(0)!=43 || box.add()!=45)return 148;
+  }
+  {
+    NativeTemplateValue<int> value(42);
+    NativeMemberBox<NativeTemplateValue<int>> box(value);
+    auto reader=box.map([](const NativeTemplateValue<int> &n){return n.number();});
+    auto copy=reader;
+    if(reader()!=42 || copy()!=42 || NativeTemplateValue<int>::live!=4)return 149;
+  }
+  if(NativeTemplateValue<int>::live!=0)return 150;
+
   {
     NativeForeignCounts counts{};
     NativeForeignRef owner=native_foreign_create(&counts,42);

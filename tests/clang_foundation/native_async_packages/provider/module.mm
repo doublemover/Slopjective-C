@@ -1246,3 +1246,26 @@ public:
 template<class T=int> inline constexpr auto native_template_deduced_answer=T{42};
 template<class T> inline auto native_template_deduced_reader=[n=T{40}](int d){return n+d;};
 int native_template_deduction_bridge(){return native_template_make_reader(40)(2)+native_template_deduced_reader<int>(2);}
+
+    template<class T> class NativeMemberBox {
+      T value;
+    public:
+      constexpr NativeMemberBox(T n):value(n){}
+      template<class U> requires requires(U n){static_cast<T>(n);}
+      constexpr explicit(sizeof(U)>0) NativeMemberBox(U n):value(static_cast<T>(n)){}
+      template<class U=T,int Delta=2>
+      constexpr auto add(U n=U{2})const noexcept(noexcept(value+n)){return value+n+Delta;}
+      template<class U=T> constexpr decltype(auto) reference(){return (value);}
+      template<class F> auto map(F body)const {
+        return [n=value,body](){return body(n);};
+      }
+      template<class U> constexpr auto reader(U offset)const {
+        return [n=value,offset](int extra){return n+offset+extra;};
+      }
+      template<class... U> constexpr auto sum(U... n)const{return (value+...+n);}
+      template<class U> constexpr auto operator()(U n)const{return value+n;}
+      template<class U> constexpr explicit operator U()const{return static_cast<U>(value);}
+      template<class U=int> static int next(){static int calls=0;return ++calls;}
+    };
+    constexpr int native_member_probe(){NativeMemberBox<int> box(40L);return box.add(0);}
+    int native_member_producer(){return NativeMemberBox<int>::next<>();}

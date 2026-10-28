@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 49,
+        "minor": 50,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -175,13 +175,14 @@
         "Public native C++ variable templates with checked heads, defaults, constraints, exact specialization arguments, module-owned mangling, constexpr substitution and shared mutable/thread-local storage (source)",
         "Public primary C++ class templates with checked dependent bodies, defaults, packs, constraints, native consumer instantiation and module-owned member/storage/lifetime ABI (source)",
         "Class/variable template forward definitions, inherited defaults and class-template inheritance/virtual dispatch/RTTI under a required template-structure contract (source)",
-        "Native auto/decltype(auto) function/class-member/variable template deduction and source-free closure factories with value/reference semantics and nontrivial captured lifetimes (source)"
+        "Native auto/decltype(auto) function/class-member/variable template deduction and source-free closure factories with value/reference semantics and nontrivial captured lifetimes (source)",
+        "In-class member function templates in public primary class templates, including constrained/defaulted heads, converting constructors, operators, packs, deduction, shared specialization state and closure factories (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining template specializations, nested/member-template and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining template specializations, nested class/alias/variable templates, concrete-class member templates and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

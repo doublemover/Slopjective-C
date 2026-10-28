@@ -1741,6 +1741,77 @@ void TestTemplateStructure() {
   }
 }
 
+void TestClassMemberTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="members.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.members","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.members","test");
+    };
+    const std::string source=R"(
+
+    template<class T> class MemberBox {
+      T value;
+    public:
+      constexpr MemberBox(T n):value(n){}
+      template<class U> requires requires(U n){static_cast<T>(n);}
+      constexpr explicit(sizeof(U)>0) MemberBox(U n):value(static_cast<T>(n)){}
+      template<class U=T,int Delta=2>
+      constexpr auto add(U n=U{2})const noexcept(noexcept(value+n)){return value+n+Delta;}
+      template<class U=T> constexpr decltype(auto) reference(){return (value);}
+      template<class U> constexpr auto reader(U offset)const {
+        return [n=value,offset](int extra){return n+offset+extra;};
+      }
+      template<class... U> constexpr auto sum(U... n)const{return (value+...+n);}
+      template<class U> constexpr auto operator()(U n)const{return value+n;}
+      template<class U> constexpr explicit operator U()const{return static_cast<U>(value);}
+      template<class U=int> static int next(){static int calls=0;return ++calls;}
+    };
+    constexpr int member_probe(){MemberBox<int> box(40L);return box.add(0);}
+    int provider(){return MemberBox<int>::next<>();}
+
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxMemberTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-members.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-members.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("value+n+Delta"),13,"value+n+Delta+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name=="MemberBox";})==1);
+    assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name.starts_with("MemberBox::");}));
+    for(const auto *capability:{kCxxMemberTemplateSemantic,kCxxClassTemplateSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxMemberTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    for(const auto *source:{
+        "static int hidden(){return 42;}template<class T>struct Box{template<class U>int f(U){return hidden();}};",
+        "static int hidden(){return 42;}template<class T>struct Box{template<class U>int f(U n=hidden()){return n;}};"}) {
+      auto hidden=emit(source);
+      assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC112";}));
+    }
+    for(const auto *gated:{
+        "template<class T>struct Box{template<class U>U f(U);};",
+        "template<class T>struct Box{template<template<class>class U>int f(){return 42;}};",
+        "template<class T>struct Box{template<class U>int f(U,...){return 42;}};"})
+      assert(!emit(gated).success);
+  }
+}
+
 void TestPublicClassTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="classes.cpp",
@@ -1812,7 +1883,7 @@ void TestPublicClassTemplates() {
                           "template<class T>struct Box{T api();};",
                           "template<class T>struct Box{};template<class T>struct Box<T*>{};",
                           "template<class T>struct Box{};template<>struct Box<int>{};",
-                          "template<class T>struct Box{template<class U> U api(U n){return n;}};"})
+                          "template<class T>struct Box{template<class U> U api(U n);};"})
       assert(!emit(gated).success);
   }
 }
@@ -2924,6 +2995,7 @@ int main() {
   TestFunctionTemplateDeclarations();
   TestPublicVariableTemplates();
   TestPublicClassTemplates();
+  TestClassMemberTemplates();
   TestTemplateStructure();
   TestTemplateDeduction();
   TestCarrierExpressionRoundtrip();
