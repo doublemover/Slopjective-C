@@ -1742,6 +1742,53 @@ void TestTemplateStructure() {
   }
 }
 
+void TestExternalVariableSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="external-variable-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.external_variables","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.external_variables","test");
+    };
+    const std::string source=R"(
+      struct Value{int n;explicit Value(int n):n(n){}~Value(){}};
+      template<class T>Value object{40};
+      template<>Value object<int>{42};
+      template<class T>int external=0;
+      static int secret_init(){return 40;}
+      template<>int external<int> =secret_init();
+      template<class T>thread_local int local=0;
+      template<>thread_local int local<int> =40;
+      template<class T>inline int zero=1;
+      template<>inline int zero<int>;
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxVariableSpecializationStorageSemantic)!=std::string::npos);
+    assert(first.source_bytes.find("secret_init")==std::string::npos);
+    assert(first.source_bytes.find("template <> extern")!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-external-variables.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-external-variables.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxVariableSpecializationStorageIdentity)==4);
+    for(const auto *capability:{kCxxVariableSpecializationStorageSemantic,kCxxVariableSpecializationSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxVariableSpecializationStorageSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("return 40"),9,"return 41");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  }
+}
+
 void TestPartialVariableSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="partial-variable-specializations.cpp") {
@@ -1959,7 +2006,7 @@ void TestVariableSpecializations() {
     auto hidden=emit("static int hidden(){return 42;}template<class T>inline int value=0;template<>inline int value<int> =hidden();");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<class T>inline int value=0;template<>int value<int> =42;").success);
+    assert(!emit("template<class T>inline int value=0;template<>int value<int> __attribute__((used)) =42;").success);
     assert(!emit("template<class T>inline int value=0;template<class T>extern int value<T*>;").success);
   }
 }
@@ -2700,7 +2747,7 @@ void TestPublicVariableTemplates() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     for (const auto *gated:{"template<class T> extern T value;",
-                           "template<class T> inline int value=40;template<> int value<long>=42;",
+                           "template<class T> inline int value=40;template<> int value<long> __attribute__((used))=42;",
                            "template<class T> inline int value=40;template<class T> extern int value<T*>;"}) {
       std::string fixed=gated;
       for (std::size_t pos=0;(pos=fixed.find(">=",pos))!=std::string::npos;pos+=3) fixed.replace(pos,2,"> =");
@@ -3753,6 +3800,7 @@ int main() {
   TestClassSpecializations();
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
+  TestExternalVariableSpecializations();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();

@@ -1500,3 +1500,22 @@ template<template<class>class C,class T>inline constexpr int native_partial_size
 template<class T>int native_partial_ordinary=0;
 template<class T>int native_partial_ordinary<T*> =40;
 int native_partial_variable_producer(){return ++native_partial_shared<int*> + ++native_partial_tls<int*> + ++native_partial_ordinary<int*>;}
+
+struct NativeExternalVariableValue{
+  inline static int alive=0;
+  int value;
+  explicit NativeExternalVariableValue(int n):value(n){++alive;}
+  ~NativeExternalVariableValue(){--alive;}
+};
+template<class T>NativeExternalVariableValue native_external_object{40};
+template<>NativeExternalVariableValue native_external_object<int>{42};
+template<class T>int native_external_special=0;
+static int native_external_secret_init(){return 40;}
+template<>int native_external_special<int> =native_external_secret_init();
+template<class T>thread_local int native_external_tls=0;
+template<>thread_local int native_external_tls<int> =native_external_secret_init();
+template<class T>inline int native_zero_special=1;
+template<>inline int native_zero_special<int>;
+int native_external_producer(){return ++native_external_special<int> + ++native_external_tls<int>;}
+int native_external_object_read(){return native_external_object<int>.value;}
+int native_external_zero(){return ++native_zero_special<int>;}

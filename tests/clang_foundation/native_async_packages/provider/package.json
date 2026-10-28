@@ -303,7 +303,15 @@
     "native_partial_auto",
     "native_partial_size",
     "native_partial_variable_producer",
-    "native_partial_ordinary"
+    "native_partial_ordinary",
+    "NativeExternalVariableValue",
+    "native_external_object",
+    "native_external_special",
+    "native_external_tls",
+    "native_zero_special",
+    "native_external_producer",
+    "native_external_object_read",
+    "native_external_zero"
   ],
   "dependencies": []
 }

@@ -82,6 +82,15 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Explicit variable-specialization storage
+
+The [2.62 source span](linux_cxx_external_variable_specializations.md) adds
+provider-owned non-inline explicit variable specializations and shared inline
+zero storage. Declaration-only replay supports records without default
+constructors and preserves private scalar/record/TLS initialization in the
+provider. Nested/member and detached/effectful forms remain open. Combined
+validation and SDK delivery remain batched.
+
 ## Partial namespace variable-template specializations
 
 The [2.61 source span](linux_cxx_partial_variable_specializations.md) adds checked

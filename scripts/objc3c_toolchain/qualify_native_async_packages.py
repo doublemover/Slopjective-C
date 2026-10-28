@@ -170,6 +170,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    external_variables=[row for row in metadata['declarations']
+                 if ';cxx-variable-specialization-storage:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-specialization-storage.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in external_variables}!={'native_external_object','native_external_special','native_external_tls','native_zero_special'}):
+        raise ValueError('C++ package lost explicit specialization storage delivery contracts')
     partial_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-partial-specializations.v1' not in metadata['required_semantics'] or
@@ -188,7 +193,7 @@ def check_cpp_metadata(metadata):
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=4 or len({row['native_symbol_name'] for row in variable_specializations})!=4):
+            len(variable_specializations)!=8 or len({row['native_symbol_name'] for row in variable_specializations})!=8):
         raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]

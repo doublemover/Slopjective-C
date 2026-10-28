@@ -3440,8 +3440,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
       supported &= IsBoundedNestedTemplateParameters(pattern->getTemplateParameters());
     if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
-      supported &= IsExplicitNamespaceVariableSpecialization(specialization) && specialization->isInline() &&
-          specialization->hasInit() && !specialization->getType()->isDependentType();
+      supported &= IsExplicitNamespaceVariableSpecialization(specialization) &&
+          specialization->isExternallyVisible() && !specialization->getType()->isDependentType();
       const auto effects=ReadCanonicalFunctionEffects(specialization->getType(),specialization->getASTContext());
       supported &= !effects.is_async && !effects.is_throwing;
       std::string key;
@@ -3916,6 +3916,11 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                           llvm::raw_ostream &out, bool declaration_only = false) {
   const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
   const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+  const auto original_storage=variable?variable->getStorageClass():clang::SC_None;
+  bool external_specialization=false;
+  auto restore_storage=llvm::scope_exit([&]{
+    if (external_specialization) const_cast<clang::VarDecl *>(variable)->setStorageClass(original_storage);
+  });
   const bool c_linkage =
       context.getLangOpts().CPlusPlus && ((function && function->isExternC()) ||
                                           (variable && variable->isExternC()));
@@ -3957,7 +3962,17 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   }
   if (llvm::isa<clang::VarDecl>(declaration)) {
     policy.SuppressInitializers = !PublishesVariableInitializer(variable);
-    if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None)
+    if (policy.SuppressInitializers &&
+        IsExplicitNamespaceVariableSpecialization(llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)) &&
+        !variable->isInline()) {
+      // Clang's existing declaration-only specialization extension carries no
+      // initializer and requires no default constructor. Scope its extension
+      // diagnostic to generated replay; ordinary source diagnostics stay intact.
+      external_specialization=true;
+      const_cast<clang::VarDecl *>(variable)->setStorageClass(clang::SC_Extern);
+      out << "#pragma clang diagnostic push\n"
+             "#pragma clang diagnostic ignored \"-Wexplicit-specialization-storage-class\"\n";
+    } else if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None)
       out << "extern ";
   }
   // Clang's declaration-polishing policy omits non-keyword attributes.
@@ -4017,6 +4032,7 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
     return;
   }
   out << ";\n";
+  if (external_specialization) out << "#pragma clang diagnostic pop\n";
   if (c_linkage)
     out << "}\n";
 }
@@ -4277,6 +4293,9 @@ bool ReadInterfaceDeclarationIdentity(
     std::string key;
     for (const auto &argument:specialization->getTemplateArgs().asArray())
       if (!GenericArgumentKey(argument,context,key)) return false;
+    if (!specialization->isInline() || !specialization->hasInit())
+      identity.canonical_type_identity+=";cxx-variable-specialization-storage:v1;delivery="+
+          std::string(specialization->isInline()?"inline-zero":"external")+";";
     identity.canonical_type_identity+=";cxx-variable-specializations:v1;;cxx-variable-templates:v1;primary="+
         ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+";arguments="+
         ComputeInterfaceSourceSha256(key)+";";
@@ -4649,6 +4668,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxVariableSpecializationStorageIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxVariableSpecializationStorageSemantic);
     if (HasCxxVariablePartialSpecializationIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxVariablePartialSpecializationSemantic);
     if (HasCxxClassPartialSpecializationIdentity(declaration))
@@ -4787,6 +4808,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxClassSpecializationSemantic,
     kCxxClassPartialSpecializationSemantic,
     kCxxVariablePartialSpecializationSemantic,
+    kCxxVariableSpecializationStorageSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4935,6 +4957,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClassSpecializationSemantic,
     kCxxClassPartialSpecializationSemantic,
     kCxxVariablePartialSpecializationSemantic,
+    kCxxVariableSpecializationStorageSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

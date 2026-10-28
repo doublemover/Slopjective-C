@@ -27,6 +27,9 @@ static void *native_variable_template_worker(void *context) {
   *passed &= native_partial_tls<int*> ==40 && native_partial_shared<int*> ==42;
   ++native_partial_tls<int*>;
   *passed &= native_partial_tls<int*> ==41;
+  *passed &= native_external_tls<int> ==40 && native_external_special<int> ==42;
+  ++native_external_tls<int>;
+  *passed &= native_external_tls<int> ==41;
   ++native_tt_local<NativeTTAlias>;
   *passed &= native_tt_local<NativeTTAlias> ==41;
   ++NativeConcreteTemplates::local<>;
@@ -282,6 +285,12 @@ int main() {
   }
   {
     static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    if(NativeExternalVariableValue::alive!=1 || native_external_object<int>.value!=42 ||
+       native_external_producer()!=82 || ++native_external_special<int> !=42 ||
+       ++native_external_tls<int> !=42 || native_zero_special<int> !=0 ||
+       native_external_zero()!=1 || ++native_zero_special<int> !=2)return 182;
+    ++native_external_object<int>.value;
+    if(native_external_object_read()!=43 || NativeExternalVariableValue::alive!=1)return 183;
     static_assert(native_partial_count<7> ==7 && native_partial_count<-1> ==0);
     static_assert(native_partial_width<int,long,double> ==3 && native_partial_width<> ==0);
     static_assert(native_partial_size<NativeTTBox<long>> ==sizeof(NativeTTBox<long>));
