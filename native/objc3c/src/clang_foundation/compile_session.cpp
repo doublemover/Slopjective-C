@@ -343,7 +343,7 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       target.runtime_abi += language.ObjCAutoRefCount ? ";arc" : ";manual-reference-counting";
       target.extension_abi = std::string("objc3-extension-abi-") +
           std::to_string(CLANG_OBJC3_EXTENSION_ABI_REVISION) + ":" +
-          CLANG_OBJC3_PATCH_DIGEST;
+          clang::getObjC3PatchDigest().str();
       target.language_revision = language.ObjC3
           ? std::to_string(language.ObjC3Revision) : "objc3-disabled";
       static constexpr const char *profiles[] = {

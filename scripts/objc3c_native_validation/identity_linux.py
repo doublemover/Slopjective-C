@@ -13,6 +13,14 @@ from .identity import (
 )
 
 
+
+def _add_compiler_identity_headers(inputs: _Inputs, sdk: Path, seal: dict) -> None:
+    inputs.add_file(sdk / "include/clang/Basic/ObjC3Foundation.h", "compiled SDK foundation header",
+                    (seal["upstream_commit"],))
+    inputs.add_file(sdk / "include/clang/Basic/ObjC3BuildIdentity.h", "compiled SDK identity stamp",
+                    (seal["patch_digest"],))
+
+
 def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict:
     seal = _verify_seal(repo)
     manifest_path = repo / "toolchains/llvm/manifest.json"
@@ -43,8 +51,7 @@ def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict
         inputs.add_file(path, "compiler source seal input")
     for patch in seal["patches"]:
         inputs.add_file((repo / manifest["patch_series"]).parent / patch["file"], "locked LLVM patch")
-    inputs.add_file(sdk / "include/clang/Basic/ObjC3Foundation.h", "compiled SDK identity header",
-                    (seal["patch_digest"], seal["upstream_commit"]))
+    _add_compiler_identity_headers(inputs, sdk, seal)
     major = manifest["upstream"]["tag"].removeprefix("llvmorg-").split(".")[0]
     resource_dir = sdk / "lib/clang" / major
     _required_file(resource_dir / "include/stddef.h", "matching Clang resource headers")

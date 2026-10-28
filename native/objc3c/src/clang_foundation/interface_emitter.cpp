@@ -3103,7 +3103,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   result.identity.extension_abi =
       std::string("objc3-extension-abi-") +
       std::to_string(CLANG_OBJC3_EXTENSION_ABI_REVISION) + ":" +
-      CLANG_OBJC3_PATCH_DIGEST;
+      clang::getObjC3PatchDigest().str();
   result.identity.language_revision = lang.ObjC3
       ? std::to_string(lang.ObjC3Revision)
       : "objc3-disabled";

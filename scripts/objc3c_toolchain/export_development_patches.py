@@ -19,6 +19,7 @@ PACKETS = {
         "clang/include/clang/Basic/CMakeLists.txt",
         "clang/include/clang/Basic/LangOptions.def",
         "clang/include/clang/Basic/ObjC3Foundation.h.in",
+        "clang/include/clang/Basic/ObjC3BuildIdentity.h.in",
         "clang/include/clang/Basic/ObjC3Features.h",
         "clang/include/clang/Basic/ObjC3Features.def",
         "clang/include/clang/Options/Options.td",

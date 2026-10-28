@@ -59,6 +59,14 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Compiler build-stamp isolation
+
+The [build-identity implementation](linux_compiler_identity_builds.md) moves the
+sealed compiler stamp into one clangBasic implementation while preserving
+version, PCH/PCM, interface and SDK admission checks. The measured incremental
+compiler target rebuilt one C++ object and linked in 3.343 seconds; serialization
+and frontend-emitter objects no longer depend on the generated stamp header.
+
 ## Native C++ union values
 
 The [2.41 source span](linux_cxx_union_values.md) publishes named, nested,

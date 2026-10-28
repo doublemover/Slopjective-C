@@ -13473,7 +13473,7 @@ index 000000000..9dedbba25
 +      Old->getPatternLoc(), Old->getGuardLoc(), Old->getDelimiterLoc());
 +}
 diff --git a/clang/lib/Serialization/ASTReader.cpp b/clang/lib/Serialization/ASTReader.cpp
-index 1a437f3eb..3cf1a4a1e 100644
+index 1a437f3eb..400ce2aa3 100644
 --- a/clang/lib/Serialization/ASTReader.cpp
 +++ b/clang/lib/Serialization/ASTReader.cpp
 @@ -55,6 +55,7 @@
@@ -13542,7 +13542,7 @@ index 1a437f3eb..3cf1a4a1e 100644
 +        return RejectObjC3Identity(1);
 +      if (Record[0] != CLANG_OBJC3_EXTENSION_ABI_REVISION ||
 +          Record[1] != CLANG_OBJC3_LANGUAGE_REVISION ||
-+          Digest != CLANG_OBJC3_PATCH_DIGEST)
++          Digest != getObjC3PatchDigest())
 +        return RejectObjC3Identity(2);
 +      ReadObjC3Identity = true;
 +      break;
@@ -13635,7 +13635,7 @@ index 4d5c8648f..156853caa 100644
    BD->setCaptures(Reader.getContext(), captures, capturesCXXThis);
  }
 diff --git a/clang/lib/Serialization/ASTWriter.cpp b/clang/lib/Serialization/ASTWriter.cpp
-index 1e3be005a..80f345977 100644
+index 1e3be005a..bd4809d7c 100644
 --- a/clang/lib/Serialization/ASTWriter.cpp
 +++ b/clang/lib/Serialization/ASTWriter.cpp
 @@ -48,6 +48,7 @@
@@ -13730,7 +13730,7 @@ index 1e3be005a..80f345977 100644
 +                           CLANG_OBJC3_LANGUAGE_REVISION};
 +    Stream.EmitRecordWithBlob(
 +        Code, Identity,
-+        (Twine(ObjC3CompilerIdentityPrefix) + CLANG_OBJC3_PATCH_DIGEST).str());
++        (Twine(ObjC3CompilerIdentityPrefix) + getObjC3PatchDigest()).str());
 +  }
 +
    if (WritingModule) {

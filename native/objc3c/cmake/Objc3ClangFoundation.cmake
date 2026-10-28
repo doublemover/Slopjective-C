@@ -32,8 +32,15 @@ find_file(_objc3_identity_header ObjC3Foundation.h
         "${_objc3_sdk}/tools/clang/include/clang/Basic"
   NO_DEFAULT_PATH REQUIRED)
 file(READ "${_objc3_identity_header}" _objc3_compiled_identity)
+unset(_objc3_build_identity_header)
+unset(_objc3_build_identity_header CACHE)
+find_file(_objc3_build_identity_header ObjC3BuildIdentity.h
+  PATHS "${_objc3_sdk}/include/clang/Basic"
+        "${_objc3_sdk}/tools/clang/include/clang/Basic"
+  NO_DEFAULT_PATH REQUIRED)
+file(READ "${_objc3_build_identity_header}" _objc3_compiled_stamp)
 if (NOT _objc3_compiled_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
-    NOT _objc3_compiled_identity MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}")
   message(FATAL_ERROR "Clang headers do not match the pinned source and patch stack")
 endif()
 unset(OBJC3C_FOUNDATION_DRIVER)

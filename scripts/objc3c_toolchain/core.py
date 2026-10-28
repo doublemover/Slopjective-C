@@ -424,6 +424,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             "build_generated": (build_dir / "include").as_posix(),
             "build_clang_generated": (build_dir / "tools" / "clang" / "include").as_posix(),
             "objc3_foundation_header": (build_dir / "tools" / "clang" / "include" / "clang" / "Basic" / "ObjC3Foundation.h").as_posix(),
+            "objc3_build_identity_header": (build_dir / "tools" / "clang" / "include" / "clang" / "Basic" / "ObjC3BuildIdentity.h").as_posix(),
         },
         "sdk_consumers": {
             "build_tree_LLVM_DIR": _artifact_identity(build_dir / "lib" / "cmake" / "llvm"),
