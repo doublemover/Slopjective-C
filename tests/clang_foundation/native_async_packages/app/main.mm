@@ -2,6 +2,12 @@
 #include <objc/runtime.h>
 #include <pthread.h>
 @import fixture.NativeAsync;
+static void *native_dependent_partial_worker(void *context) {
+  auto *observed=static_cast<int *>(context);
+  *observed=NativeDependentPartials::Outer<int>::local<long*>;
+  ++NativeDependentPartials::Outer<int>::local<long*>;
+  return nullptr;
+}
 struct native_thread_observation { bool passed; const void *ordinary; const void *shared; };
 static void *native_thread_worker(void *context) {
   auto *observation=static_cast<native_thread_observation *>(context);
@@ -1008,6 +1014,32 @@ int main() {
       if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || frame.result()!=42) return 62;
     }
     if(stats.live || !stats.destroyed) return 63;
+  }
+  {
+    using Family=NativeDependentPartials::Outer<int>;
+    int n=40;
+    auto *value=native_dependent_partial_factory(&n);
+    {
+      Family::Inner<int*> copy(*value);
+      if(value->get()!=42 || copy.get()!=42 || Family::Inner<int*>::live!=2) return 206;
+      delete value;
+      if(Family::Inner<int*>::live!=1) return 207;
+    }
+    if(Family::Inner<int*>::live || Family::Count<42>{}.get()!=42 ||
+       Family::Count<-1>{}.get()!=1 || Family::number<long>!=1 ||
+       NativeDependentPartials::Outer<long>::Inner<int>{40}.get()!=1) return 208;
+    if(native_dependent_partial_address()!=&Family::number<long*> ||
+       native_dependent_partial_tls()!=&Family::local<long*> || Family::number<long*>!=42) return 209;
+    ++*native_dependent_partial_address();
+    if(Family::number<long*>!=43 || NativeDependentPartials::Outer<long>::number<int*>!=42) return 210;
+    Family::number<long*> =42;
+    Family::local<long*> =43;
+    int worker_local=0;
+    pthread_t worker;
+    if(pthread_create(&worker,nullptr,native_dependent_partial_worker,&worker_local) ||
+       pthread_join(worker,nullptr)) return 212;
+    if(worker_local!=42 || Family::local<long*>!=43) return 211;
+    Family::local<long*> =42;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

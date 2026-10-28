@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 69,
+        "minor": 70,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -195,13 +195,14 @@
         "Full and constrained partial nested class-template specializations of concrete records, with checked heads/arguments/bodies, primary ABI ownership and complete source-free parent contracts (source)",
         "Explicit named/static member function-template specializations of concrete records, with complete exact-argument parent contracts, inline body replay and provider-owned non-inline definitions (source)",
         "Full and constrained partial member variable-template specializations of concrete records, with exact parent contracts, consumer inline/partial initialization, provider-owned non-inline storage and shared/TLS semantics (source)",
-        "Explicit constructor, operator and conversion function-template specializations of concrete records, with exact argument/type/explicitness/native-symbol contracts, initializer/body replay and native syntax (source)"
+        "Explicit constructor, operator and conversion function-template specializations of concrete records, with exact argument/type/explicitness/native-symbol contracts, initializer/body replay and native syntax (source)",
+        "Constrained nested class and member variable partial specializations of dependent record parents, with outer template heads, complete owner definition sets, native import and source-free consumer instantiation (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent-parent template specializations, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining full specializations under instantiated or explicitly specialized template parents, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

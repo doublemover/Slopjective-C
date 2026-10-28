@@ -329,7 +329,11 @@
     "native_member_specialized_tls",
     "native_member_specialized_object",
     "NativeConcreteOperators",
-    "native_concrete_operators_factory"
+    "native_concrete_operators_factory",
+    "NativeDependentPartials",
+    "native_dependent_partial_address",
+    "native_dependent_partial_tls",
+    "native_dependent_partial_factory"
   ],
   "dependencies": []
 }

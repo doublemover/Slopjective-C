@@ -22,6 +22,7 @@ namespace objc3::clang_foundation {
     const clang::NamedDecl *owner);
 [[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(
     const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDependentMemberPartials(const clang::NamedDecl *owner);
 [[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedNestedTemplateDefinitions(
     const clang::NamedDecl *owner);
 [[nodiscard]] std::vector<clang::ClassTemplateSpecializationDecl *> ReadConcreteMemberClassSpecializations(

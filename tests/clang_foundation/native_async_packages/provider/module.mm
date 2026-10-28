@@ -1682,3 +1682,31 @@ template<>inline int NativeConcreteOperators::operator()<int>(int n)const{return
 template<>inline NativeConcreteOperators::operator int()const{return value+2;}
 template<>inline NativeConcreteOperators &NativeConcreteOperators::operator=<int>(int n){value=n+1;return *this;}
 NativeConcreteOperators *native_concrete_operators_factory(){return new NativeConcreteOperators(41);}
+
+namespace NativeDependentPartials {
+  template<class T>concept Number=sizeof(T)>0;
+  template<class T>struct Outer {
+    template<class U>struct Inner {U value;int get()const{return 1;}};
+    template<class U>inline static int number=1;
+    template<class U>inline static thread_local int local=1;
+    template<int V,bool Positive=true>struct Count {int get()const{return 1;}};
+  };
+}
+template<class T>template<NativeDependentPartials::Number U>
+struct NativeDependentPartials::Outer<T>::Inner<U*> {
+  U *value;
+  inline static int live=0;
+  explicit Inner(U *n):value(n){++live;}
+  Inner(const Inner &n):value(n.value){++live;}
+  virtual ~Inner(){--live;}
+  int get()const{return *value+2;}
+};
+template<class T>template<NativeDependentPartials::Number U>
+inline int NativeDependentPartials::Outer<T>::number<U*> =42;
+template<class T>template<NativeDependentPartials::Number U>
+inline thread_local int NativeDependentPartials::Outer<T>::local<U*> =42;
+template<class T>template<int V>requires(V>0)
+struct NativeDependentPartials::Outer<T>::Count<V,true> {int get()const{return V;}};
+int *native_dependent_partial_address(){return &NativeDependentPartials::Outer<int>::number<long*>;}
+int *native_dependent_partial_tls(){return &NativeDependentPartials::Outer<int>::local<long*>;}
+NativeDependentPartials::Outer<int>::Inner<int*> *native_dependent_partial_factory(int *n){return new NativeDependentPartials::Outer<int>::Inner<int*>(n);}

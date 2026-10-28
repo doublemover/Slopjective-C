@@ -170,6 +170,10 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    dependent_partials=[row for row in metadata['declarations']
+                        if ';cxx-dependent-member-partials:v1;' in row.get('canonical_type_identity','')]
+    assert 'objc3.cxx-dependent-member-partials.v1' in metadata['required_semantics']
+    assert {row['qualified_name'] for row in dependent_partials}=={'NativeDependentPartials::Outer'}
     special_member_specs=[row for row in metadata['declarations']
                           if ';cxx-concrete-special-member-specializations:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-concrete-special-member-specializations.v1' in metadata['required_semantics']

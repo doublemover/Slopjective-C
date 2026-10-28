@@ -438,6 +438,15 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_dependent_member_partials=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDependentMemberPartialIdentity);
+  const bool dependent_member_partial_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDependentMemberPartialSemantic)!=sidecar.required_semantics.end();
+  const bool dependent_member_partial_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDependentMemberPartialIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_dependent_member_partials!=dependent_member_partial_capability || !dependent_member_partial_owners)
+    Add(result,"O3IFC079","dependent member partial identities and required capability must agree",expected.canonical_name);
   const bool has_concrete_special_members=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxConcreteSpecialMemberSpecializationIdentity);
   const bool concrete_special_member_capability=std::find(sidecar.required_semantics.begin(),

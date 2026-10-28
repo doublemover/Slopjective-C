@@ -1743,6 +1743,59 @@ void TestTemplateStructure() {
   }
 }
 
+void TestDependentMemberPartials() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="dependent-member-partials.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.dependent_partials","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.dependent_partials","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>concept Number=sizeof(T)>0;
+        template<class T>struct Outer {
+          template<class U>struct Inner {U value;int get()const{return 1;}};
+          template<class U>inline static int number=1;
+          template<class U>inline static thread_local int local=1;
+          template<int V,bool Positive=true>struct Count {int get()const{return 1;}};
+        };
+      }
+      template<class T>template<N::Number U>struct N::Outer<T>::Inner<U*> {
+        U *value;int get()const{return 42;}
+      };
+      template<class T>template<N::Number U>inline int N::Outer<T>::number<U*> =42;
+      template<class T>template<N::Number U>inline thread_local int N::Outer<T>::local<U*> =42;
+      template<class T>template<int V>requires(V>0)struct N::Outer<T>::Count<V,true> {
+        int get()const{return V;}
+      };
+      inline int probe(){N::Outer<long>::Inner<int*> x{nullptr};return x.get()+N::Outer<int>::number<long*>+N::Outer<long>::local<int*>+N::Outer<int>::Count<42>{}.get()+N::Outer<int>::number<long>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxDependentMemberPartialSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-dependent-member-partials.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-dependent-member-partials.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxDependentMemberPartialIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxDependentMemberPartialSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxDependentMemberPartialSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Outer{template<class U>inline static int value=1;};template<class T>template<class U>inline int Outer<T>::value<U*> =hidden();");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    auto changed=source;changed.replace(changed.find("return 42;"),10,"return 43;");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+}
+
 void TestConcreteSpecialMemberSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="concrete-special-member-specializations.cpp") {
@@ -2949,9 +3002,10 @@ void TestNestedTemplateTypes() {
     for(const auto *gated:{
       "template<class T>struct Outer{struct Inner;};",
       "template<class T>struct Outer{union Inner{T value;};};",
-      "template<class T>struct Outer{template<class U>static U value;};",
-      "template<class T>struct Outer{template<class U>struct Inner{};template<class U>struct Inner<U*>{};};"})
+      "template<class T>struct Outer{template<class U>static U value;};"})
       assert(!emit(gated).success);
+    auto partial=emit("template<class T>struct Outer{template<class U>struct Inner{};template<class U>struct Inner<U*>{};};");
+    assert(partial.success && partial.sidecar_json.find(kCxxDependentMemberPartialSemantic)!=std::string::npos);
   }
 }
 
@@ -4280,6 +4334,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestDependentMemberPartials();
   TestConcreteSpecialMemberSpecializations();
   TestConcreteMemberVariableSpecializations();
   TestConcreteMemberFunctionSpecializations();
