@@ -29182,15 +29182,16 @@ index 000000000..d89230641
 +// Tagged union declarations arrive from the PCH.
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h
 new file mode 100644
-index 000000000..2ee5edc36
+index 000000000..ea01c4c83
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
++extern int union_destroyed;
 +union __attribute__((abi_tag("owned"))) PublishedUnion {
 +  int value;double other;
 +  constexpr PublishedUnion(int n):value(n){}
 +  constexpr PublishedUnion(const PublishedUnion &source):value(source.value){}
-+  constexpr ~PublishedUnion() {}
++  constexpr ~PublishedUnion() {if (!__builtin_is_constant_evaluated()) ++union_destroyed;}
 +  constexpr int number() const {return value;}
 +};
 +inline constexpr int union_contract() {
