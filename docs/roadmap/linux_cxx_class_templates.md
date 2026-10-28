@@ -32,3 +32,10 @@ records both frontend suites, all 136 AST contract tests and eight normal
 source-free package configurations / 32 commands. These use the development
 facade build; optimized, broader and instrumented qualification is deferred to
 the next combined implementation batch.
+
+The [combined 2.47–2.49 source receipt](../support/linux_cxx_template_generics_progress.json)
+records 410 compiler regressions, 200 native unit tests, all 33 optimized frontend
+suites, 335 tooling tests and 32 source-free package configurations / 128 commands
+across normal, eager-import, ASan/UBSan and TSan execution. It supersedes the
+focused checks and deferred combined-source checks above. SDK delivery remains
+pending.

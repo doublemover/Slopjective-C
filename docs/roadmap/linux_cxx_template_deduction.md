@@ -21,3 +21,10 @@ require exact live counts and final complete destruction.
 Optimized, broader and instrumented checks follow the combined implementation
 batch. SDK 2.33 remains the accepted archive; this source work does not claim
 full profile conformance or native AArch64 qualification.
+
+The [combined 2.47–2.49 source receipt](../support/linux_cxx_template_generics_progress.json)
+records 410 compiler regressions, 200 native unit tests, all 33 optimized frontend
+suites, 335 tooling tests and 32 source-free package configurations / 128 commands
+across normal, eager-import, ASan/UBSan and TSan execution. It supersedes the
+focused checks and deferred combined-source checks above. SDK delivery remains
+pending.

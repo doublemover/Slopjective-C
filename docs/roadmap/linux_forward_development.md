@@ -65,6 +65,12 @@ all **33 optimized frontend suites**, **335 tooling tests** and **24 source-free
 package configurations / 96 commands** across normal, eager-import and
 ASan/UBSan execution. SDK 2.33 remains the accepted archive.
 
+The [combined template-generics receipt](../support/linux_cxx_template_generics_progress.json)
+qualifies 2.47–2.49 with **410 compiler regressions**, **200 native unit tests**,
+all **33 optimized frontend suites**, **335 tooling tests** and **32 source-free
+package configurations / 128 commands** across normal, eager-import, ASan/UBSan
+and TSan execution. SDK 2.33 remains the accepted archive.
+
 ## Native template deduction and closure factories
 
 The [2.49 source span](linux_cxx_template_deduction.md) adds `auto`/`decltype(auto)`

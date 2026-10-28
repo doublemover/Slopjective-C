@@ -1,0 +1,146 @@
+{
+  "schema": "objc3c.linux-cxx-template-generics-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "source_checkpoint": "6b7941e8caec4e7b5a5ef19655929ae947c96d73",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a2a522d4ddce-00b75dc3",
+  "compiler_patch_digest": "a2a522d4ddce75b6ef7f13b2fefba6459481682bdaec149275611948374624d0",
+  "frontend_input_sha256": "ec702d724f7d19eb5ee6bf690849ceed49855b3f444140499ea8fced751457c0",
+  "concurrency_module_version": "2.49.0",
+  "source_spans": [
+    "2.47",
+    "2.48",
+    "2.49"
+  ],
+  "scope": [
+    "Owned public primary class templates with checked private members, construction/destruction/defaulting, aliases/enums and inline static data",
+    "Class/variable forward definitions, inherited defaults, canonical lexical parameter bindings and one-owner native lookup",
+    "Native template single/multiple/virtual inheritance, virtual-base sharing, RTTI and provider/consumer casts/deletion",
+    "Required template-structure hard cutover for class/variable rows; bare in-class structor printing survives parameter renaming",
+    "Concrete imported inline variables receive backend delivery, including class counters and SDK result-operation descriptors",
+    "Native auto/decltype(auto) function/member/variable template deduction, value/reference semantics and closure factories",
+    "Canonical identity covers dependent init-capture syntax without inventing a type; source/reprint/relocation and changed-body/capability negatives pass",
+    "Source-free C++20/23 ARC/MRC O0/O2 consumers preserve nontrivial captured-object counts and class-template values across task/native-frame boundaries"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/template-structure-foundation-build.json",
+      "sha256": "c85aad84f84dc2f205e246137c799133f1797cf1d63725659bc1586a945026cf",
+      "bytes": 6548
+    },
+    "source_verification": {
+      "path": "out/template-generics-source-verification.json",
+      "sha256": "54a956294f63eb2a1a598b31670e3eb654c7c51489e26d7e655b5d945d87bfa5",
+      "bytes": 7444
+    },
+    "native_report": {
+      "path": "out/template-generics-native-batch.json",
+      "sha256": "779a61c86f5adcc327ae00f501c90c9d7b6e90c636f85cd0e5befae8e668790b",
+      "bytes": 2011
+    },
+    "compiler_regressions_passed": 410,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 200,
+    "native_logs": [
+      {
+        "path": "out/template-generics-native-0.log",
+        "sha256": "c8b707754b28747a76e032c612a82a0a5be4ef60450839e0501fe8a7b45f63bd",
+        "bytes": 6698
+      },
+      {
+        "path": "out/template-generics-native-1.log",
+        "sha256": "7773695258209e0955fdd9915e3dcd2609f97debbdc082472a0f32269f568ff9",
+        "bytes": 34512
+      },
+      {
+        "path": "out/template-generics-native-2.log",
+        "sha256": "288dd138bd10e9d58b2d4a68675c0c6d65b985f0add0a16d39f8a9ade4ff1834",
+        "bytes": 1114
+      },
+      {
+        "path": "out/template-generics-native-3.log",
+        "sha256": "101b8c5e2f345a322d77ea630047d8669a3594ca98a59e1ebd22c47d89bd8efc",
+        "bytes": 4602
+      },
+      {
+        "path": "out/template-generics-native-4.log",
+        "sha256": "b0da55a588910189b3c3d4f0ee09571fda315f55b67822c0ed9d20ad0b21713b",
+        "bytes": 5166
+      }
+    ],
+    "frontend_checkpoint": {
+      "path": "out/template-generics-frontend-checkpoint.json",
+      "sha256": "f12d4355379dd4bf99c622403d1c5aaa6a01876609070b3da739eb585da7abbc",
+      "bytes": 1127
+    },
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 335,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_optimization": "-O2 -g -DNDEBUG",
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "bytes": 210447176,
+        "sha256": "946e4e943a38723bf9609502c92e5abe8e0c7c7f35d1fbb877dbdc4a311ca86c"
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 32,
+      "commands_passed": 128,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/template-generics-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/template-generics-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/template-generics-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        },
+        {
+          "mode": "tsan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/template-generics-packages-tsan/qualification.json",
+            "sha256": "2d536231e52ddf414e06963d291e03e0451d2562356fea9d35b330152ea177e7",
+            "bytes": 4557
+          }
+        }
+      ]
+    }
+  },
+  "claims": {
+    "sdk_archive_rebuilt": false,
+    "accepted_sdk_version": "2.33.0",
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Remaining template specializations, nested/member-template and effectful forms, and dependent/closure projections",
+    "Remaining ownership, structured-concurrency, isolation, key-path, language/library and profile implementation",
+    "Coordinated installed SDK delivery of post-2.33 source spans",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}
