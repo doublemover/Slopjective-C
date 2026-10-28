@@ -16,6 +16,7 @@
 
 #include "clang_foundation/interface_codec.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/APValue.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
@@ -404,6 +405,63 @@ struct GenericLambdaBody {
   std::string key;
 };
 
+bool StructuralArgumentKey(const clang::APValue &value, std::string &key,
+                           unsigned &budget, unsigned depth = 0) {
+  if (!budget || depth > 64) return false;
+  --budget;
+  auto add = [&](llvm::StringRef text) {
+    key += std::to_string(text.size()) + ":" + text.str();
+  };
+  auto integer = [&](const llvm::APInt &bits) {
+    llvm::SmallString<64> text;
+    bits.toString(text, 16, false);
+    add(std::to_string(bits.getBitWidth()));
+    add(text);
+  };
+  auto element = [&](const clang::APValue &item) {
+    return StructuralArgumentKey(item, key, budget, depth + 1);
+  };
+  add(std::to_string(value.getKind()));
+  switch (value.getKind()) {
+  case clang::APValue::Int:
+    integer(value.getInt());
+    return true;
+  case clang::APValue::Float:
+    // Decimal printing can collapse signed zeros or distinct NaN payloads.
+    integer(value.getFloat().bitcastToAPInt());
+    return true;
+  case clang::APValue::Array:
+    add(std::to_string(value.getArraySize()));
+    if (value.getArraySize() > budget) return false;
+    for (unsigned index = 0; index < value.getArraySize(); ++index)
+      if (!element(index < value.getArrayInitializedElts()
+                       ? value.getArrayInitializedElt(index)
+                       : value.getArrayFiller())) return false;
+    return true;
+  case clang::APValue::Struct:
+    add(std::to_string(value.getStructNumBases()));
+    add(std::to_string(value.getStructNumFields()));
+    for (unsigned index = 0; index < value.getStructNumBases(); ++index)
+      if (!element(value.getStructBase(index))) return false;
+    for (unsigned index = 0; index < value.getStructNumFields(); ++index)
+      if (!element(value.getStructField(index))) return false;
+    return true;
+  case clang::APValue::Union:
+    if (const auto *field = value.getUnionField()) {
+      add(std::to_string(field->getFieldIndex()));
+      return element(value.getUnionValue());
+    }
+    add("no-active-member");
+    return true;
+  case clang::APValue::LValue:
+    return value.isNullPointer();
+  case clang::APValue::MemberPointer:
+    return !value.getMemberPointerDecl();
+  default:
+    return false;
+  }
+}
+
 bool GenericArgumentKey(const clang::TemplateArgument &argument,
                          const clang::ASTContext &context,std::string &key,
                          unsigned depth=0) {
@@ -424,6 +482,17 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
     llvm::SmallString<32> value;argument.getAsIntegral().toString(value,10);add(value);return true;
   }
   case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType());
+  case clang::TemplateArgument::Declaration: {
+    const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl());
+    if (!object || !type(object->getType())) return false;
+    unsigned budget = 4096;
+    return StructuralArgumentKey(object->getValue(), key, budget);
+  }
+  case clang::TemplateArgument::StructuralValue: {
+    if (!type(argument.getStructuralValueType())) return false;
+    unsigned budget = 4096;
+    return StructuralArgumentKey(argument.getAsStructuralValue(), key, budget);
+  }
   case clang::TemplateArgument::Pack:
     add(std::to_string(argument.pack_size()));
     for (const auto &element:argument.pack_elements())
@@ -438,10 +507,9 @@ bool GenericLambdaBodies(const clang::LambdaExpr *expression,
                           std::vector<GenericLambdaBody> &bodies) {
   if (!expression->isGenericLambda()) return true;
   const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate();
-  if (!pattern || pattern->hasAssociatedConstraints()) return false;
+  if (!pattern) return false;
   const auto *pattern_type=clang::getObjC3CallableFunctionType(pattern->getTemplatedDecl());
-  if (pattern_type && (pattern_type->hasDependentExceptionSpec() ||
-      pattern_type->getObjC3FunctionEffects().Async ||
+  if (pattern_type && (pattern_type->getObjC3FunctionEffects().Async ||
       pattern_type->getObjC3FunctionEffects().Throws!=clang::ObjC3ThrowsKind::None)) return false;
   std::map<std::string,const clang::FunctionDecl *> ordered;
   for (const auto *specialization:pattern->specializations()) {
@@ -512,6 +580,10 @@ public:
     }
     return true;
   }
+  bool VisitRequiresExpr(clang::RequiresExpr *expression) {
+    for (const auto *parameter : expression->getLocalParameters()) Local(parameter);
+    return true;
+  }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
     if (!clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseLambdaExpr(expression,nullptr))
       return false;
@@ -519,8 +591,8 @@ public:
     if (!GenericLambdaBodies(expression,context_,bodies)) {Add("unsupported-generic-lambda");return false;}
     for (const auto &body:bodies) {
       Add("generic-lambda-specialization");Add(body.key);
-      Add(ExpressionType(body.function->getType()));
       for (const auto *parameter:body.function->parameters()) Local(parameter);
+      Add(ExpressionType(body.function->getType()));
       if (!TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(body.function)))) return false;
     }
     return true;
@@ -607,6 +679,26 @@ public:
   bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
     Reference(expression->getDecl()); return true;
   }
+  bool UnresolvedReferences(clang::OverloadExpr *expression) {
+    std::map<std::string, const clang::NamedDecl *> candidates;
+    for (const auto *declaration : expression->decls()) {
+      const auto *target = declaration->getUnderlyingDecl();
+      candidates.emplace(ReadInterfaceDeclarationStableId(target) + ":" +
+                         ReadNativeSymbolName(target), target);
+    }
+    for (const auto &[key, target] : candidates) {
+      Add("unresolved-lookup-candidate");
+      Add(key);
+      Reference(target);
+    }
+    return true;
+  }
+  bool VisitUnresolvedLookupExpr(clang::UnresolvedLookupExpr *expression) {
+    return UnresolvedReferences(expression);
+  }
+  bool VisitUnresolvedMemberExpr(clang::UnresolvedMemberExpr *expression) {
+    return UnresolvedReferences(expression);
+  }
   bool VisitMemberExpr(clang::MemberExpr *expression) {
     Reference(expression->getMemberDecl()); return true;
   }
@@ -626,6 +718,22 @@ public:
   }
   void Reference(const clang::NamedDecl *declaration) {
     if (!declaration) { Add("<none>"); return; }
+    if (const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
+      Add("structural-template-object");
+      Add(ExpressionType(object->getType()));
+      unsigned budget = 4096;
+      std::string key;
+      if (!StructuralArgumentKey(object->getValue(), key, budget))
+        Add("unsupported-structural-value");
+      Add(key);
+      return;
+    }
+    // A callee type can expose a specialized noexcept expression before its
+    // lambda syntax is traversed. Such parameter references are lexical even
+    // when their declaration has not yet been visited in source order.
+    if (const auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(declaration))
+      if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(parameter->getDeclContext());
+          method && method->getParent()->isLambda()) Local(parameter);
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
         tag && IsExpressionLocalTag(tag)) Local(tag);
     if (const auto found = locals_.find(declaration->getCanonicalDecl()); found != locals_.end()) {
@@ -1557,6 +1665,17 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    if (const auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(target))
+      if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(parameter->getDeclContext());
+          method && method->getParent()->isLambda()) return;
+    if (const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(target)) {
+      TraverseType(object->getType());
+      unsigned budget = 4096;
+      std::string key;
+      if (!StructuralArgumentKey(object->getValue(), key, budget))
+        AddDiagnostic(result_, "O3IFC101", "unsupported structural template object value");
+      return;
+    }
     // Reserved compiler builtins are supplied by the pinned consumer compiler,
     // not an exported declaration of the publishing package. Ordinary libc
     // declarations retain the normal visibility and dependency checks.
@@ -1645,6 +1764,16 @@ class TypeDependencyVisitor final
   bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
     CheckExpressionReference(expression->getDecl()); return true;
   }
+  bool VisitUnresolvedLookupExpr(clang::UnresolvedLookupExpr *expression) {
+    for (const auto *declaration : expression->decls())
+      CheckExpressionReference(declaration);
+    return true;
+  }
+  bool VisitUnresolvedMemberExpr(clang::UnresolvedMemberExpr *expression) {
+    for (const auto *declaration : expression->decls())
+      CheckExpressionReference(declaration);
+    return true;
+  }
   bool VisitMemberExpr(clang::MemberExpr *expression) {
     CheckExpressionReference(expression->getMemberDecl()); return true;
   }
@@ -1661,6 +1790,34 @@ class TypeDependencyVisitor final
   }
   bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
     CheckExpressionReference(expression->getMethodDecl()); return true;
+  }
+  bool TraverseConceptReference(clang::ConceptReference *reference) {
+    if (!reference) return true;
+    AddDiagnostic(result_, "O3IFC101",
+                  "named concepts require a public template interface contract");
+    return false;
+  }
+  bool CheckGenericArgument(const clang::TemplateArgument &argument) {
+    switch (argument.getKind()) {
+    case clang::TemplateArgument::Type:
+      return TraverseType(argument.getAsType());
+    case clang::TemplateArgument::Integral:
+      return TraverseType(argument.getIntegralType());
+    case clang::TemplateArgument::NullPtr:
+      return TraverseType(argument.getNullPtrType());
+    case clang::TemplateArgument::StructuralValue:
+      return TraverseType(argument.getStructuralValueType());
+    case clang::TemplateArgument::Declaration:
+      if (const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+        return TraverseType(object->getType());
+      return false;
+    case clang::TemplateArgument::Pack:
+      for (const auto &element : argument.pack_elements())
+        if (!CheckGenericArgument(element)) return false;
+      return true;
+    default:
+      return false;
+    }
   }
   bool TraverseStmt(clang::Stmt *statement, DataRecursionQueue * = nullptr) {
     const bool previous = in_expression_; in_expression_ = true;
@@ -1731,7 +1888,7 @@ class TypeDependencyVisitor final
     std::vector<GenericLambdaBody> bodies;
     if (!GenericLambdaBodies(expression,context_,bodies)) {
       AddDiagnostic(result_,"O3IFC101",
-          "generic local lambdas require complete unconstrained instantiations with named type, integral, null or pack arguments");
+          "generic local lambdas require complete instantiations with stable named types and supported structural, integral, null or pack values");
       return false;
     }
     const auto contexts = lambda_contexts_;
@@ -1744,6 +1901,8 @@ class TypeDependencyVisitor final
     if (!clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression,nullptr)) return false;
     for (const auto &body:bodies) {
       lambda_contexts_.insert(body.function->getCanonicalDecl());
+      for (const auto &argument : body.function->getTemplateSpecializationArgs()->asArray())
+        if (!CheckGenericArgument(argument)) return false;
       for (const auto *parameter:body.function->parameters()) {
         lambda_locals_.insert(parameter->getCanonicalDecl());
         TraverseType(parameter->getType());
@@ -2793,7 +2952,7 @@ bool ReadInterfaceDeclarationIdentity(
       function && function->isExplicitlyDefaulted() && function->isConsteval())
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
   if (HasDeclarationGenericLambda(representative))
-    identity.canonical_type_identity += ";cxx-generic-local-lambdas:v1;";
+    identity.canonical_type_identity += ";cxx-generic-local-lambdas:v2;";
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, true))

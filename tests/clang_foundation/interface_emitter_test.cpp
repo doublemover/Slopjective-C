@@ -1269,7 +1269,7 @@ void TestCxxLocalTypes() {
 void TestGenericLocalLambdas() {
   const std::vector<llvm::StringRef> semantics={"objc3.cxx-data-interfaces.v1",
       "objc3.cxx-definitions.v1","objc3.cxx-lambda-expressions.v1",
-      "objc3.cxx-generic-local-lambdas.v1"};
+      "objc3.cxx-generic-local-lambdas.v2"};
   for (const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &code,const char *file="generic-local.cpp",
                   const std::vector<std::string> &exports=std::vector<std::string>{}) {
@@ -1321,9 +1321,85 @@ void TestGenericLocalLambdas() {
         "return [](auto x){return x.n;}(Local{42});}");
     assert(!local_argument.success);
     auto constrained=emit("inline int api(){return []<class T>(T value) requires(sizeof(T)>0) {return value;}(42);}");
-    assert(!constrained.success);
+    assert(constrained.success);
+    auto constrained_copy=emit(constrained.source_bytes,"constrained-copy.cpp");
+    assert(constrained_copy.success && constrained_copy.identity.semantic_fingerprint==constrained.identity.semantic_fingerprint);
     auto dependent_noexcept=emit("inline int api(){return [](auto value) noexcept(sizeof(value)>0) {return value;}(42);}");
-    assert(!dependent_noexcept.success);
+    assert(dependent_noexcept.success);
+    auto noexcept_copy=emit(dependent_noexcept.source_bytes,"noexcept-copy.cpp");
+    assert(noexcept_copy.success && noexcept_copy.identity.semantic_fingerprint==dependent_noexcept.identity.semantic_fingerprint);
+  }
+}
+
+void TestGenericLocalContracts() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="generic-contracts.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.genericcontracts","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      struct ConfigBase { int bias; };
+      struct Config : ConfigBase { int values[2]; double scale; };
+      struct Choice { int left; int right; };
+      struct NullableConfig { const int *pointer; int value; };
+      int public_probe(int); long public_probe(long);
+      inline int generic_captured_local(int n) {
+        struct Local {int pick(int) const {return 42;} int pick(long) const {return 42;}};
+        Local receiver;auto run=[receiver](auto value){return receiver.pick(value);};return run(n);
+      }
+      inline constexpr int generic_overload() {
+        return []<class T>(T n) requires requires {public_probe(n);} {return 42;}(1);
+      }
+      inline constexpr int noexcept_data=[](auto n) noexcept(sizeof(n)>0) {return n;}(42);
+      inline int noexcept_default(int n=[](auto value) noexcept(sizeof(value)>0) {return value;}(42)) {return n;}
+      struct NoexceptDefaults {int value=[](auto n) noexcept(sizeof(n)>0) {return n;}(42);};
+      inline constexpr int constrained() {
+        auto checked=[]<class T>(T value) noexcept(noexcept(value+2))
+            requires requires(T item) { item+2; } {return value+2;};
+        auto head=[]<class T> requires (sizeof(T)>0) (T value) {return value+2;};
+        static_assert(noexcept(checked(40)));
+        return checked(40)+head(40);
+      }
+      inline constexpr int structural() {
+        auto read=[]<Config C>() {return C.bias+C.values[0]+C.values[1]+int(C.scale);};
+        auto pick=[]<Choice C>() {return C.right;};
+        auto nullable=[]<NullableConfig C>() {return C.pointer ? 0 : C.value;};
+        return read.template operator()<Config{{2},{20,18},2.0}>()+
+               pick.template operator()<Choice{0,42}>()+
+               nullable.template operator()<NullableConfig{nullptr,42}>();
+      }
+      inline constexpr int floating() {
+        auto read=[]<double D>() {return D==0.0 ? (__builtin_signbit(D) ? 2 : 1) : int(D);};
+        return read.template operator()<42.0>()+read.template operator()<0.0>()+
+               read.template operator()<-0.0>();
+      }
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto roundtrip=emit(first.source_bytes,"reprinted.cpp");
+    assert(roundtrip.success && roundtrip.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto concepts=emit("template<class T> concept Number=sizeof(T)>0; "
+        "inline int api(){return []<Number T>(T n){return n;}(42);}");
+    assert(!concepts.success);
+    auto hidden_type=emit("struct Secret{int n;}; inline int api(){return "
+        "[]<Secret S>(){return 42;}.template operator()<Secret{1}>();}","private.cpp",{"api"});
+    assert(!hidden_type.success);
+    auto hidden_constraint=emit("static int probe(int); int probe(long); inline int api(){"
+        "auto f=[](auto x) requires requires {probe(x);} {return 42;};return f(1);}",
+        "private-constraint.cpp",{"probe","api"});
+    assert(!hidden_constraint.success && std::any_of(hidden_constraint.diagnostics.begin(),
+        hidden_constraint.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    auto address=emit("inline int value=42; struct Config{const int *p;}; inline int api(){return "
+        "[]<Config C>(){return *C.p;}.template operator()<Config{&value}>();}");
+    assert(!address.success);
+    auto excessive=emit("struct Large{int values[5000];}; inline int api(){return "
+        "[]<Large V>(){return 42;}.template operator()<Large{}>();}");
+    assert(!excessive.success);
   }
 }
 
@@ -1524,7 +1600,7 @@ void TestCxxLambdaExpressions() {
     auto different = emit(changed);
     assert(different.success && different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
     auto generic = emit("inline int generic(int n) { return [](auto value) {return value;}(n); }");
-    assert(generic.success && generic.sidecar_json.find("objc3.cxx-generic-local-lambdas.v1")!=std::string::npos);
+    assert(generic.success && generic.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
     std::erase(decoded->required_semantics, "objc3.cxx-lambda-expressions.v1");
     decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
@@ -2255,7 +2331,7 @@ void TestBoundedCxxSemanticInterfaces() {
                                          "fixture.unsupported", "test");
     if (llvm::StringRef(source).contains("[](auto value)")) {
       assert(emitted.success);
-      assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v1")!=std::string::npos);
+      assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
     } else {
       assert(!emitted.success && emitted.source_bytes.empty() && emitted.sidecar_json.empty());
     }
@@ -2301,6 +2377,7 @@ int main() {
   TestCxxLocalExpressions();
   TestCxxLocalTypes();
   TestGenericLocalLambdas();
+  TestGenericLocalContracts();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

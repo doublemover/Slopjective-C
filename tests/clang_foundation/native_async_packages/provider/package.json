@@ -162,7 +162,15 @@
     "native_generic_record",
     "native_generic_immediate",
     "native_generic_default",
-    "native_generic_static"
+    "native_generic_static",
+    "NativeGenericConfigBase",
+    "NativeGenericConfig",
+    "NativeGenericNullableConfig",
+    "native_generic_contracts",
+    "native_generic_contracts_bridge",
+    "native_generic_float_bits",
+    "native_generic_probe",
+    "native_generic_captured_local"
   ],
   "dependencies": []
 }

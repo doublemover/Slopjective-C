@@ -196,6 +196,44 @@ void GenericLocalBodies(const fs::path &root,const std::string &standard) {
   client.output_path=(root/"generic-client.o").string();assert(Compile(client).success);
 }
 
+void GenericLocalContracts(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"generic-contracts-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      struct GenericBase {int bias;};
+      struct GenericConfig : GenericBase {int values[2];double scale;};
+      int generic_probe(int); long generic_probe(long);
+      inline constexpr int generic_contracts() {
+        auto checked=[]<class T>(T value) noexcept(noexcept(value+2))
+            requires requires(T item) {generic_probe(item);item+2;} {return value+2;};
+        auto head=[]<class T> requires (sizeof(T)>0) (T value) {return value+2;};
+        auto structural=[]<GenericConfig C>() {
+          return C.bias+C.values[0]+C.values[1]+int(C.scale);
+        };
+        auto floating=[]<double D>() {return int(D);};
+        static_assert(noexcept(checked(40)));
+        return checked(40)+head(40)+
+            structural.template operator()<GenericConfig{{2},{20,18},2.0}>()+
+            floating.template operator()<42.0>();
+      }
+  )");
+  r.emit_semantic_interface=true;r.module_name="GenericContracts";r.package_identity="generic-contracts-v2";
+  r.interface_exports={"GenericBase","GenericConfig","generic_probe","generic_contracts"};
+  r.interface_output_path=(root/"GenericContracts.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"generic-contracts-provider.o").string();
+  auto built=Compile(r);assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"generic-contracts-client.cpp",BaseLanguage::Cxx,standard,false,
+      "static_assert(generic_contracts()==168);int client(){return generic_contracts();}");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"generic-contracts-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &diagnostic:imported.diagnostics)
+    std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+  for (const auto &diagnostic:imported.interface_import_diagnostics)
+    std::fprintf(stderr,"%s: %s (%s)\n",diagnostic.code.c_str(),diagnostic.message.c_str(),diagnostic.subject.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -219,6 +257,7 @@ int main() {
   for (const auto &standard : {"c++20", "c++23"}) {
     Surface(root, BaseLanguage::Cxx, standard, false);UnnamedLocalBodies(root,standard);
     GenericLocalBodies(root,standard);
+    GenericLocalContracts(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

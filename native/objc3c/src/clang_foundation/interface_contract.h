@@ -162,9 +162,9 @@ inline constexpr const char *kCxxAsyncDefinitionSemantic = "objc3.cxx-async-defi
 inline bool HasCxxAsyncDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-async-definitions:v1;") != std::string::npos;
 }
-inline constexpr const char *kCxxGenericLocalLambdaSemantic = "objc3.cxx-generic-local-lambdas.v1";
+inline constexpr const char *kCxxGenericLocalLambdaSemantic = "objc3.cxx-generic-local-lambdas.v2";
 inline bool HasCxxGenericLocalLambdaIdentity(const InterfaceDeclarationIdentity &d) {
-  return d.canonical_type_identity.find(";cxx-generic-local-lambdas:v1;") != std::string::npos;
+  return d.canonical_type_identity.find(";cxx-generic-local-lambdas:v2;") != std::string::npos;
 }
 
 inline constexpr const char *kCxxUnnamedLocalTypeSemantic = "objc3.cxx-unnamed-local-types.v1";

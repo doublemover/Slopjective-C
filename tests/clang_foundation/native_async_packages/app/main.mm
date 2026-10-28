@@ -405,6 +405,12 @@ int main() {
   if (native_published_plain_native_capture(40)!=42) return 97;
   static_assert(native_local_constant()==42);
   static_assert(native_unnamed_constant()==42);
+  if (native_generic_probe(42)!=42 || native_generic_probe(42L)!=42L) return 116;
+  if (native_generic_captured_local(1)!=42) return 117;
+  static_assert(native_generic_float_bits()==6);
+  if (native_generic_float_bits()!=6) return 115;
+  static_assert(native_generic_contracts()==210);
+  if (native_generic_contracts_bridge()!=210) return 114;
   static_assert(native_generic_constant()==42);
   static_assert(native_generic_immediate()==42 && native_generic_default()==42);
   if (native_generic_conversion(40)!=42 || native_generic_mutable(40)!=42 ||

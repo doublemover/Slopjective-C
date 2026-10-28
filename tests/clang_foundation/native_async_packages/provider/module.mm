@@ -1028,3 +1028,38 @@ inline int native_generic_static(int n) {
   return [](auto value){return value+2;}(n);
 #endif
 }
+
+struct NativeGenericConfigBase {int bias;};
+struct NativeGenericConfig : NativeGenericConfigBase {int values[2];double scale;};
+struct NativeGenericNullableConfig {const int *pointer;int value;};
+int native_generic_probe(int value) {return value;}
+long native_generic_probe(long value) {return value;}
+inline constexpr int native_generic_contracts() {
+  auto checked=[]<class T>(T value) noexcept(noexcept(value+2))
+      requires requires(T item) {native_generic_probe(item);item+2;} {return value+2;};
+  auto head=[]<class T> requires (sizeof(T)>0) (T value) {return value+2;};
+  auto structural=[]<NativeGenericConfig C>() {
+    return C.bias+C.values[0]+C.values[1]+int(C.scale);
+  };
+  auto floating=[]<double D>() {return int(D);};
+  auto nullable=[]<NativeGenericNullableConfig C>() {return C.pointer ? 0 : C.value;};
+  static_assert(noexcept(checked(40)));
+  return checked(40)+head(40)+
+      structural.template operator()<NativeGenericConfig{{2},{20,18},2.0}>()+
+      floating.template operator()<42.0>()+
+      nullable.template operator()<NativeGenericNullableConfig{nullptr,42}>();
+}
+int native_generic_contracts_bridge() {return native_generic_contracts();}
+
+inline constexpr int native_generic_float_bits() {
+  auto zero=[]<double D>() {return __builtin_signbit(D) ? 2 : 1;};
+  auto nan=[]<double D>() {return int(__builtin_bit_cast(unsigned long long,D)&3ull);};
+  return zero.template operator()<0.0>()+zero.template operator()<-0.0>()+
+      nan.template operator()<__builtin_nan("1")>()+
+      nan.template operator()<__builtin_nan("2")>();
+}
+
+inline int native_generic_captured_local(int n) {
+  struct Local {int pick(int) const {return 42;} int pick(long) const {return 42;}};
+  Local receiver;auto run=[receiver](auto value){return receiver.pick(value);};return run(n);
+}

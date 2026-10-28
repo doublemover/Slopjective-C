@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..3b413d522 100644
+index 9a97d52fd..1a298dca7 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -246,7 +246,17 @@ index 9a97d52fd..3b413d522 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1623,6 +1625,12 @@ void StmtPrinter::VisitStringLiteral(StringLiteral *Str) {
+@@ -1367,7 +1369,8 @@ void StmtPrinter::VisitDeclRefExpr(DeclRefExpr *Node) {
+   bool CleanUglifiedParameter = Policy.CleanUglifiedParameters &&
+                                 isa<ParmVarDecl, NonTypeTemplateParmDecl>(VD);
+ 
+-  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter) {
++  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter &&
++      !isa<ParmVarDecl>(VD)) {
+     VD->printQualifiedName(OS, Policy);
+   } else {
+     Node->getQualifier().print(OS, Policy);
+@@ -1623,6 +1626,12 @@ void StmtPrinter::VisitStringLiteral(StringLiteral *Str) {
  }
  
  void StmtPrinter::VisitParenExpr(ParenExpr *Node) {
@@ -259,7 +269,7 @@ index 9a97d52fd..3b413d522 100644
    OS << "(";
    PrintExpr(Node->getSubExpr());
    OS << ")";
-@@ -1819,6 +1827,20 @@ void StmtPrinter::PrintCallArgs(CallExpr *Call) {
+@@ -1819,6 +1828,20 @@ void StmtPrinter::PrintCallArgs(CallExpr *Call) {
  }
  
  void StmtPrinter::VisitCallExpr(CallExpr *Call) {
@@ -280,7 +290,7 @@ index 9a97d52fd..3b413d522 100644
    PrintExpr(Call->getCallee());
    OS << "(";
    PrintCallArgs(Call);
-@@ -1832,6 +1854,16 @@ static bool isImplicitThis(const Expr *E) {
+@@ -1832,6 +1855,16 @@ static bool isImplicitThis(const Expr *E) {
  }
  
  void StmtPrinter::VisitMemberExpr(MemberExpr *Node) {
@@ -297,7 +307,7 @@ index 9a97d52fd..3b413d522 100644
    if (!Policy.SuppressImplicitBase || !isImplicitThis(Node->getBase())) {
      PrintExpr(Node->getBase());
  
-@@ -1889,6 +1921,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
+@@ -1889,6 +1922,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
  }
  
  void StmtPrinter::VisitCompoundLiteralExpr(CompoundLiteralExpr *Node) {
@@ -312,7 +322,7 @@ index 9a97d52fd..3b413d522 100644
    OS << '(';
    Node->getType().print(OS, Policy);
    OS << ')';
-@@ -1939,6 +1979,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1980,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -566,7 +576,7 @@ index 9a97d52fd..3b413d522 100644
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
-@@ -2467,21 +2754,17 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2467,21 +2755,17 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
          /*OmitTemplateKW*/true);
    }
  
@@ -595,7 +605,7 @@ index 9a97d52fd..3b413d522 100644
      }
      if (Method->isVariadic()) {
        if (NeedComma)
-@@ -2490,8 +2773,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2490,8 +2774,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
      }
      OS << ')';
  
@@ -610,7 +620,19 @@ index 9a97d52fd..3b413d522 100644
  
      auto *Proto = Method->getType()->castAs<FunctionProtoType>();
      Proto->printExceptionSpecification(OS, Policy);
-@@ -2828,6 +3116,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
+@@ -2505,6 +2794,11 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+     }
+   }
+ 
++  if (const Expr *Requires = Node->getTrailingRequiresClause().ConstraintExpr) {
++    OS << " requires ";
++    PrintExpr(const_cast<Expr *>(Requires));
++  }
++
+   // Print the body.
+   OS << ' ';
+   if (Policy.TerseOutput || Policy.SuppressLambdaBody)
+@@ -2828,6 +3122,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
  }
  
  void StmtPrinter::VisitCoawaitExpr(CoawaitExpr *S) {
@@ -622,7 +644,7 @@ index 9a97d52fd..3b413d522 100644
    OS << "co_await ";
    PrintExpr(S->getOperand());
  }
-@@ -2955,8 +3248,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,8 +3254,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -647,7 +669,7 @@ index 9a97d52fd..3b413d522 100644
  
    if (isa<FunctionNoProtoType>(AFT)) {
      OS << "()";
-@@ -2976,7 +3285,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
+@@ -2976,7 +3291,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
      }
      OS << ')';
    }
@@ -675,7 +697,7 @@ index 9a97d52fd..3b413d522 100644
  }
  
  void StmtPrinter::VisitOpaqueValueExpr(OpaqueValueExpr *Node) {
-@@ -3045,3 +3373,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3379,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;

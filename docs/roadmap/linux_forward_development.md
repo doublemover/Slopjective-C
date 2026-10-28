@@ -59,6 +59,16 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Generic local callable contracts
+
+The [2.40 source span](linux_cxx_generic_local_contracts.md) adds expression and
+`requires` constraints, dependent `noexcept` and named structural template
+values. Exact floating-point bits preserve signed zero and distinct NaN
+payloads. Complete argument-type dependency checks include unused structural
+parameters. Native printing retains trailing constraints; interfaces make a
+hard cutover to generic-local capability v2. Broader checks follow the coherent
+implementation span; public template/closure and effectful contracts stay open.
+
 ## Published generic local C++ callables
 
 The [2.39 source span](linux_cxx_generic_local_lambdas.md) adds closed generic
