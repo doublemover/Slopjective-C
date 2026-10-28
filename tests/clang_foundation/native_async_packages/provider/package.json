@@ -278,7 +278,11 @@
     "native_spec_add",
     "native_spec_value",
     "native_spec_next",
-    "native_spec_producer"
+    "native_spec_producer",
+    "native_spec_shared",
+    "native_spec_tls",
+    "native_spec_number",
+    "native_variable_spec_producer"
   ],
   "dependencies": []
 }

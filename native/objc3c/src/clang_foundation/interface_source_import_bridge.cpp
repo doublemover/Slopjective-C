@@ -230,7 +230,9 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
         continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
-      const std::string key = (decl.kind == "ObjCProtocol" ? "protocol:"
+      const std::string key = HasCxxVariableSpecializationIdentity(decl)
+          ? "variable-specialization:" + decl.stable_id
+          : (decl.kind == "ObjCProtocol" ? "protocol:"
                                : tag                       ? "tag:"
                                                            : "ordinary:") +
                               decl.qualified_name;

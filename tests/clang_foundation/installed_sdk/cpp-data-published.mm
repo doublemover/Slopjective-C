@@ -18,6 +18,8 @@ int api(int value=[](auto value) { return value; }(42));
 inline int api() { return [](auto value) { return value; }(42); }
 #elif CASE == 10
 extern constexpr int exported=[](auto value) { return value; }(42);
+template<class T> inline int specialized=0;
+template<> inline int specialized<int> =42;
 #elif CASE == 11
 struct Nested { template<class T> struct Inner { T value; }; };
 #elif CASE == 12

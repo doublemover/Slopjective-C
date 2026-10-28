@@ -39,7 +39,7 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
   if (declaration.native_symbol_name.empty())
     return true;
   if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
-      declaration.kind != "VarTemplate" && declaration.kind != "ClassTemplate" &&
+      declaration.kind != "VarTemplate" && declaration.kind != "VarTemplateSpecialization" && declaration.kind != "ClassTemplate" &&
       declaration.kind != "TypeAliasTemplate" &&
       !IsCxxMemberDeclarationKind(declaration.kind) &&
       declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
@@ -122,8 +122,14 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
       if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
         if (auto owner=ReadNativeSymbolName(record);!owner.empty()) return owner;
   }
-  if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration))
+  if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
+    if (specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization &&
+        !specialization->isStaticDataMember()) {
+      if (const auto *label=specialization->getAttr<clang::AsmLabelAttr>()) return label->getLabel().str();
+      return {};
+    }
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
+  }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
     declaration = pattern->getTemplatedDecl();
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
@@ -329,7 +335,13 @@ public:
       if (function->isDeleted() || function->getType()->isDependentType()) return true;
     }
     if (auto *variable = llvm::dyn_cast<clang::VarDecl>(decl)) {
-      if (llvm::isa<clang::VarTemplateSpecializationDecl>(variable)) return true;
+      if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)) {
+        if (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(specialization) ||
+            specialization->getSpecializationKind()!=clang::TSK_ExplicitSpecialization ||
+            specialization->isStaticDataMember()) return true;
+        if (ReadInterfaceDeclarationStableId(specialization).empty())
+          return Error(decl,"explicit variable specialization exceeds the module ABI argument contract");
+      }
       if (const auto *pattern = variable->getDescribedVarTemplate()) {
         if (variable->getStorageClass()==clang::SC_Static) return true;
         const auto expected = BuildModuleOwnedName(module_, package_, ReadInterfaceDeclarationStableId(pattern));

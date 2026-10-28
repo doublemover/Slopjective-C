@@ -477,6 +477,19 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_variable_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxVariableSpecializationIdentity);
+  const bool variable_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariableTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool variable_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxVariableSpecializationIdentity(d) ||
+          (d.kind=="VarTemplateSpecialization" && HasCxxVariableTemplateIdentity(d) &&
+           d.stable_id.starts_with("c:@VariableTemplateSpecialization@"));});
+  if (has_variable_specializations!=variable_specialization_capability || !variable_specialization_owners ||
+      (variable_specialization_capability && !variable_specialization_primary))
+    return Invalid("variable specialization identity and required primary capability must agree");
   const bool has_function_specializations=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxFunctionSpecializationIdentity);
   const bool function_specialization_capability=std::find(sidecar.required_semantics.begin(),

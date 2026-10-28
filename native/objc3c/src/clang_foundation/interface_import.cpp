@@ -95,6 +95,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxTemplateTemplateSemantic,
     kCxxNominalAliasTemplateSemantic,
     kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -192,7 +193,7 @@ bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
       record && record->getDescribedClassTemplate()) return false;
   if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
-      variable && variable->getDescribedVarTemplate()) return false;
+      variable && (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplateSpecializationDecl>(variable))) return false;
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
       alias && alias->getDescribedAliasTemplate()) return false;
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
@@ -277,7 +278,9 @@ bool CheckExportCollisions(
       continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
-    const std::string lookup_key = (decl.kind == "ObjCProtocol" ? "protocol:"
+    const std::string lookup_key = HasCxxVariableSpecializationIdentity(decl)
+          ? "variable-specialization:" + decl.stable_id
+          : (decl.kind == "ObjCProtocol" ? "protocol:"
                                     : is_tag                    ? "tag:"
                                                                 : "ordinary:") +
                                    decl.qualified_name;
@@ -840,7 +843,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(named);
         alias && alias->getDescribedAliasTemplate()) continue;
     if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);
-        variable && variable->getDescribedVarTemplate()) continue;
+        variable && (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplateSpecializationDecl>(variable))) continue;
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(named);
         record && record->getDescribedClassTemplate()) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;

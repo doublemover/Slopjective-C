@@ -21,6 +21,9 @@ static void *native_variable_template_worker(void *context) {
   *passed &= NativeNestedFamily<int>::local<> ==40 && NativeNestedFamily<int>::shared<> ==42;
   *passed &= NativeConcreteTemplates::local<> ==40 && NativeConcreteTemplates::shared<> ==42;
   *passed &= native_tt_local<NativeTTAlias> ==40 && native_tt_shared<NativeTTAlias> ==42;
+  *passed &= native_spec_tls<int> ==40 && native_spec_shared<int> ==42;
+  ++native_spec_tls<int>;
+  *passed &= native_spec_tls<int> ==41;
   ++native_tt_local<NativeTTAlias>;
   *passed &= native_tt_local<NativeTTAlias> ==41;
   ++NativeConcreteTemplates::local<>;
@@ -275,6 +278,9 @@ int main() {
        native_tt_next<NativeTTFamily<long>::Member>()!=41)return 170;
   }
   {
+    static_assert(native_spec_number<0.0> ==1 && native_spec_number<-0.0> ==2);
+    if(native_variable_spec_producer()!=82 || ++native_spec_shared<int> !=42 ||
+       ++native_spec_tls<int> !=42 || native_spec_shared<long> !=1)return 172;
     static_assert(native_spec_value<0.0>()==1 && native_spec_value<-0.0>()==2);
     int (*specialized)(int)=&native_spec_add<int>;
     if(specialized(40)!=42 || native_spec_add(40)!=42 || native_spec_add(39L)!=42 ||

@@ -113,7 +113,9 @@ def qualify(sdk: Path, output: Path) -> dict:
                             stderr=subprocess.STDOUT, timeout=180)
                     diagnostic = log.read_text()
                     if (rejected.returncode != 1 or rejected_object.exists() or
-                            'overloaded' not in diagnostic):
+                            'overloaded' not in diagnostic or
+                            'variable template' not in diagnostic or
+                            'requires template arguments' not in diagnostic):
                         raise ValueError('explicit specialization escaped primary-template lookup')
                     specialization_rejected = True
                 cases.append({'language': language, 'standard': standard,
@@ -168,6 +170,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    variable_specializations=[row for row in metadata['declarations']
+                 if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
+            len(variable_specializations)!=4 or len({row['native_symbol_name'] for row in variable_specializations})!=4):
+        raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or

@@ -161,6 +161,11 @@ bool IsExplicitNamespaceFunctionSpecialization(const clang::FunctionDecl *functi
       function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;
 }
 
+bool IsExplicitNamespaceVariableSpecialization(const clang::VarTemplateSpecializationDecl *variable) {
+  return variable && !llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) &&
+      IsTopLevel(variable) && variable->getSpecializationKind()==clang::TSK_ExplicitSpecialization;
+}
+
 const clang::ClassTemplateDecl *ClassTemplateOwner(const clang::NamedDecl *declaration) {
   const clang::ClassTemplateDecl *owner=nullptr;
   for (const clang::NamedDecl *current=declaration; current;
@@ -1053,6 +1058,10 @@ public:
       }
     }
     if (const auto *variable = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
+      if (IsExplicitNamespaceVariableSpecialization(variable)) {
+        Add("explicit-variable-specialization");
+        Add(ReadInterfaceDeclarationStableId(variable));Add(ReadNativeSymbolName(variable));
+      }
       std::vector<std::string> keys;
       bool complete = true;
       for (const auto &argument : variable->getTemplateArgs().asArray()) {
@@ -2317,6 +2326,12 @@ class TypeDependencyVisitor final
     if (llvm::isa<clang::TemplateTypeParmDecl, clang::NonTypeTemplateParmDecl,
                   clang::TemplateTemplateParmDecl>(target)) return;
     if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(target)) {
+      if (IsExplicitNamespaceVariableSpecialization(specialization)) {
+        CheckVisibility(specialization);
+        if (!IsInMainFile(context_,specialization->getLocation()) && !IsResolved(specialization))
+          AddDiagnostic(result_,"O3IFC112","variable specialization requires its resolved public declaration",
+                        specialization->getQualifiedNameAsString());
+      }
       CheckExpressionReference(specialization->getSpecializedTemplate());
       for (const auto &argument : specialization->getTemplateArgs().asArray())
         if (!CheckGenericArgument(argument)) UnsupportedExpression();
@@ -2945,6 +2960,14 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     visitor.CheckConcept(concept_decl);
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     visitor.CheckFunctionTemplate(pattern);
+  if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+      IsExplicitNamespaceVariableSpecialization(specialization)) {
+    visitor.CheckExpressionReference(specialization->getSpecializedTemplate());
+    for (const auto &argument:specialization->getTemplateArgs().asArray())
+      if (!visitor.CheckGenericArgument(argument))
+        AddDiagnostic(result,"O3IFC101","variable specialization argument requires additional publication support",
+                      specialization->getQualifiedNameAsString());
+  }
   if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
       IsExplicitNamespaceFunctionSpecialization(function)) {
     visitor.CheckExpressionReference(function->getPrimaryTemplate());
@@ -3236,7 +3259,15 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                    clang::VarTemplateDecl, clang::ClassTemplateDecl>(declaration);
     if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
       supported &= IsBoundedNestedTemplateParameters(pattern->getTemplateParameters());
-    if (llvm::isa<clang::VarTemplateSpecializationDecl>(declaration)) supported=false;
+    if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
+      supported &= IsExplicitNamespaceVariableSpecialization(specialization) && specialization->isInline() &&
+          specialization->hasInit() && !specialization->getType()->isDependentType();
+      const auto effects=ReadCanonicalFunctionEffects(specialization->getType(),specialization->getASTContext());
+      supported &= !effects.is_async && !effects.is_throwing;
+      std::string key;
+      for (const auto &argument:specialization->getTemplateArgs().asArray())
+        supported &= GenericArgumentKey(argument,specialization->getASTContext(),key);
+    }
     if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
       supported &= IsBoundedTemplateRecord(pattern->getTemplatedDecl(),pattern);
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
@@ -3955,6 +3986,15 @@ std::string ReadInterfaceDeclarationStableId(
     return "c:@AliasTemplate@" + pattern->getQualifiedNameAsString();
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
     if (const auto *pattern=variable->getDescribedVarTemplate()) return ReadInterfaceDeclarationStableId(pattern);
+  if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+      IsExplicitNamespaceVariableSpecialization(specialization)) {
+    std::string key;
+    for (const auto &argument:specialization->getTemplateArgs().asArray())
+      if (!GenericArgumentKey(argument,specialization->getASTContext(),key)) return {};
+    return "c:@VariableTemplateSpecialization@"+
+        ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+"@arguments@"+
+        ComputeInterfaceSourceSha256(key);
+  }
   if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
     return "c:@VariableTemplate@" + pattern->getQualifiedNameAsString();
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
@@ -4028,6 +4068,15 @@ bool ReadInterfaceDeclarationIdentity(
       !identity.native_symbol_name.empty())
     identity.canonical_type_identity+=";cxx-nominal-alias-templates:v1;owner="+
         identity.native_symbol_name+";";
+  if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(representative);
+      IsExplicitNamespaceVariableSpecialization(specialization)) {
+    std::string key;
+    for (const auto &argument:specialization->getTemplateArgs().asArray())
+      if (!GenericArgumentKey(argument,context,key)) return false;
+    identity.canonical_type_identity+=";cxx-variable-specializations:v1;;cxx-variable-templates:v1;primary="+
+        ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+";arguments="+
+        ComputeInterfaceSourceSha256(key)+";";
+  }
   if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(representative);
       IsExplicitNamespaceFunctionSpecialization(function)) {
     std::string key;
@@ -4396,6 +4445,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxVariableSpecializationIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxVariableSpecializationSemantic);
     if (HasCxxFunctionSpecializationIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxFunctionSpecializationSemantic);
     if (HasCxxTemplateTemplateIdentity(declaration))
@@ -4522,6 +4573,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxTemplateTemplateSemantic,
     kCxxNominalAliasTemplateSemantic,
     kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4666,6 +4718,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxTemplateTemplateSemantic,
     kCxxNominalAliasTemplateSemantic,
     kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

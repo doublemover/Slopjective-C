@@ -1422,3 +1422,12 @@ template<> constexpr int native_spec_value<-0.0>(){return 2;}
 template<class T> int native_spec_next(){static int n=40;return ++n;}
 template<> inline int native_spec_next<int>(){static int n=100;return ++n;}
 int native_spec_producer(){return native_spec_next<int>();}
+
+template<class T> inline int native_spec_shared=1;
+template<> inline int native_spec_shared<int> =40;
+template<class T> inline thread_local int native_spec_tls=1;
+template<> inline thread_local int native_spec_tls<int> =40;
+template<auto Value> inline constexpr int native_spec_number=0;
+template<> inline constexpr int native_spec_number<0.0> =1;
+template<> inline constexpr int native_spec_number<-0.0> =2;
+int native_variable_spec_producer(){return ++native_spec_shared<int> + ++native_spec_tls<int>;}

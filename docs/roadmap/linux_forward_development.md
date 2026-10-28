@@ -82,6 +82,15 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Explicit inline variable-template specializations
+
+The [2.58 source span](linux_cxx_variable_specializations.md) adds explicit inline
+namespace variable-template specializations with exact argument identities,
+independent owned storage, constexpr selection, shared mutable values and TLS.
+Native printing preserves specialization syntax and import preserves inline/TLS
+flags. Non-inline, partial, class and member specializations remain open.
+Combined validation and SDK delivery remain batched.
+
 ## Explicit namespace function-template specializations
 
 The [2.57 source span](linux_cxx_function_specializations.md) publishes explicit
