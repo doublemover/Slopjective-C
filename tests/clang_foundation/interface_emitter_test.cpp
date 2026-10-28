@@ -1742,6 +1742,83 @@ void TestTemplateStructure() {
   }
 }
 
+void TestDetachedStaticDataTemplates() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="detached-static-data.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.detached_data","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.detached_data","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>struct Box {
+          static int value;static int zero;static thread_local int local;
+          template<class U=int>static int member;
+        };
+        template<int N>struct Count{static int value;int get()const;};
+        template<class T>concept Number=sizeof(T)>0;
+        template<class T>struct Partial{};
+        template<Number T>struct Partial<T*>{static int value;};
+        struct Concrete{template<class T=int>static int value;};
+      }
+      template<int N>int N::Count<N>::value=N;
+      template<int N>int N::Count<N>::get()const{return N;}
+      template<class T>int N::Box<T>::value=40;
+      template<class T>int N::Box<T>::zero;
+      template<class T>thread_local int N::Box<T>::local=41;
+      template<class T>template<class U>int N::Box<T>::member=sizeof(T)+sizeof(U);
+      template<N::Number T>int N::Partial<T*>::value=42;
+      template<class T>int N::Concrete::value=42;
+      inline int probe(){return N::Count<42>::value+N::Count<42>{}.get()+N::Box<int>::value+N::Box<int>::zero+N::Box<int>::local+N::Box<int>::member<>+N::Partial<int*>::value+N::Concrete::value<>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxDetachedStaticDataTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-detached-static-data.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-detached-static-data.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxDetachedStaticDataTemplateIdentity)==4);
+    auto from=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes,{"-xc++",standard},"detached-data-replay.cpp");
+    auto to=clang::tooling::buildASTFromCodeWithArgs("",{"-xc++",standard},"detached-data-consumer.cpp");
+    assert(from && to && !from->getDiagnostics().hasErrorOccurred());
+    clang::ASTImporter importer(to->getASTContext(),to->getFileManager(),
+                               from->getASTContext(),from->getFileManager(),false);
+    for(auto *root:from->getASTContext().getTranslationUnitDecl()->decls()) {
+      if(!llvm::isa<clang::NamespaceDecl,clang::VarTemplateDecl,clang::VarDecl,clang::CXXMethodDecl>(root))continue;
+      auto imported=importer.Import(root);
+      if(!imported)llvm::errs()<<llvm::toString(imported.takeError())<<"\n";
+      assert(imported);
+    }
+    for(auto *root:from->getASTContext().getTranslationUnitDecl()->decls())
+      if(auto *scope=llvm::dyn_cast<clang::NamespaceDecl>(root))
+        for(auto *member:scope->decls()) {
+          auto *owner=llvm::dyn_cast<clang::NamedDecl>(member);
+          if(!owner || ReadDetachedStaticDataTemplateDefinitions(owner).empty())continue;
+          auto imported=importer.Import(owner);assert(imported);
+          InterfaceDeclarationIdentity expected,actual;
+          assert(ReadInterfaceDeclarationIdentity(owner,from->getASTContext(),expected));
+          assert(ReadInterfaceDeclarationIdentity(llvm::cast<clang::NamedDecl>(*imported),to->getASTContext(),actual));
+          assert(SameInterfaceDeclarationIdentity(expected,actual));
+        }
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxDetachedStaticDataTemplateSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxDetachedStaticDataTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("value=40"),8,"value=41");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{static int value;};template<class T>int Box<T>::value=hidden();");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>struct Box{static int value;};").success);
+  }
+}
+
 void TestDetachedCallableTemplates() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="detached-callable-templates.cpp") {
@@ -3890,6 +3967,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestDetachedStaticDataTemplates();
   TestDetachedCallableTemplates();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();

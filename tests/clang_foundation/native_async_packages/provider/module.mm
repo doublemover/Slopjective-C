@@ -1466,7 +1466,7 @@ template<>struct NativeExplicitNumber<-0.0>{static constexpr int value=2;};
 template<class T>concept NativePartialValue=requires(T n){n+1;};
 template<class T>struct NativePartialFamily{T value;};
 template<NativePartialValue T>struct NativePartialFamily<T*>{
-  inline static int live=0;
+  static int live;
 private:
   T* value;
 public:
@@ -1476,6 +1476,7 @@ public:
   virtual int get()const;
   template<class U>int add(U n)const;
 };
+template<NativePartialValue T>int NativePartialFamily<T*>::live=0;
 template<NativePartialValue T>NativePartialFamily<T*>::NativePartialFamily(T* n):value(n){++live;}
 template<NativePartialValue T>NativePartialFamily<T*>::NativePartialFamily(const NativePartialFamily &other):value(other.value){++live;}
 template<NativePartialValue T>NativePartialFamily<T*>::~NativePartialFamily(){--live;}
@@ -1525,9 +1526,21 @@ int native_external_producer(){return ++native_external_special<int> + ++native_
 int native_external_object_read(){return native_external_object<int>.value;}
 int native_external_zero(){return ++native_zero_special<int>;}
 
+struct NativeDetachedStorage {
+  inline static int constructions=0;
+  int value;
+  explicit NativeDetachedStorage(int n):value(n){++constructions;}
+  ~NativeDetachedStorage(){}
+};
 namespace NativeDetached {
 template<class T>struct Family {
-  inline static int live=0;
+  static int live;
+  static int zero;
+  static NativeDetachedStorage object;
+  template<int N>static int count;
+  static thread_local int local;
+  template<class U=int>static int shared;
+  template<class U=int>static thread_local int member_local;
 private:
   T value;
 public:
@@ -1538,8 +1551,21 @@ public:
   template<class U=int>T add(U n=2)const;
   template<class U>auto closure(U n)const;
 };
-struct Concrete {template<class U=int>U twice(U n=21)const;};
+struct Concrete {
+  template<class U=int>U twice(U n=21)const;
+  template<class U=int>static int shared;
+  template<class U=int>static thread_local int local;
+};
 }
+template<class T>int NativeDetached::Family<T>::live=0;
+template<class T>int NativeDetached::Family<T>::zero;
+template<class T>NativeDetachedStorage NativeDetached::Family<T>::object{40};
+template<class T>template<int N>int NativeDetached::Family<T>::count=N;
+template<class T>thread_local int NativeDetached::Family<T>::local=40;
+template<class T>template<class U>int NativeDetached::Family<T>::shared=40;
+template<class T>template<class U>thread_local int NativeDetached::Family<T>::member_local=40;
+template<class U>int NativeDetached::Concrete::shared=40;
+template<class U>thread_local int NativeDetached::Concrete::local=40;
 template<class T>NativeDetached::Family<T>::Family(T n):value(n){++live;}
 template<class T>NativeDetached::Family<T>::Family(const Family &other):value(other.value){++live;}
 template<class T>NativeDetached::Family<T>::~Family(){--live;}
@@ -1549,3 +1575,9 @@ template<class T>template<class U>auto NativeDetached::Family<T>::closure(U n)co
 template<class U>U NativeDetached::Concrete::twice(U n)const{return n+n;}
 NativeDetached::Family<int> *native_detached_factory(){return new NativeDetached::Family<int>(40);}
 int native_detached_live(){return NativeDetached::Family<int>::live;}
+
+int *native_detached_shared(){return &NativeDetached::Family<int>::shared<>;}
+int *native_detached_concrete_shared(){return &NativeDetached::Concrete::shared<>;}
+int *native_detached_local(){return &NativeDetached::Family<int>::local;}
+
+NativeDetachedStorage *native_detached_object(){return &NativeDetached::Family<int>::object;}

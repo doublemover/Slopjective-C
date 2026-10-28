@@ -22,6 +22,10 @@ static void *native_variable_template_worker(void *context) {
   *passed &= NativeConcreteTemplates::local<> ==40 && NativeConcreteTemplates::shared<> ==42;
   *passed &= native_tt_local<NativeTTAlias> ==40 && native_tt_shared<NativeTTAlias> ==42;
   *passed &= native_spec_tls<int> ==40 && native_spec_shared<int> ==42;
+  *passed &= NativeDetached::Family<int>::local==40 && NativeDetached::Family<int>::member_local<> ==40 && NativeDetached::Concrete::local<> ==40;
+  *passed &= native_detached_local()==&NativeDetached::Family<int>::local;
+  ++NativeDetached::Family<int>::local;++NativeDetached::Family<int>::member_local<>;++NativeDetached::Concrete::local<>;
+  *passed &= NativeDetached::Family<int>::local==41 && NativeDetached::Family<int>::member_local<> ==41 && NativeDetached::Concrete::local<> ==41;
   ++native_spec_tls<int>;
   *passed &= native_spec_tls<int> ==41;
   *passed &= native_partial_tls<int*> ==40 && native_partial_shared<int*> ==42;
@@ -285,6 +289,20 @@ int main() {
   }
   {
     static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    if(NativeDetached::Family<int>::zero!=0 || NativeDetached::Family<long>::zero!=0 ||
+       NativeDetached::Family<int>::shared<> !=40 || NativeDetached::Concrete::shared<> !=40 ||
+       native_detached_shared()!=&NativeDetached::Family<int>::shared<> ||
+       native_detached_concrete_shared()!=&NativeDetached::Concrete::shared<>)return 187;
+    if(NativeDetached::Family<int>::count<42> !=42 || NativeDetached::Family<long>::count<2> !=2 ||
+       native_detached_object()!=&NativeDetached::Family<int>::object ||
+       NativeDetachedStorage::constructions!=1 || NativeDetached::Family<int>::object.value!=40)return 189;
+    native_detached_object()->value=42;
+    if(NativeDetached::Family<int>::object.value!=42 || NativeDetachedStorage::constructions!=1)return 190;
+    *native_detached_shared()=42;*native_detached_concrete_shared()=42;
+    if(NativeDetached::Family<int>::shared<> !=42 || NativeDetached::Concrete::shared<> !=42 ||
+       NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
+       NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
+       NativeDetached::Concrete::local<> !=40)return 188;
     auto *detached=native_detached_factory();
     auto *detached_copy=new NativeDetached::Family<int>(*detached);
     int(NativeDetached::Family<int>::*detached_get)()const=&NativeDetached::Family<int>::get;

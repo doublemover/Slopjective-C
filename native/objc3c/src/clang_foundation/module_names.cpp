@@ -362,19 +362,20 @@ public:
           return Error(decl,"explicit variable specialization exceeds the module ABI argument contract");
       }
       if (const auto *pattern = variable->getDescribedVarTemplate()) {
-        if (variable->getStorageClass()==clang::SC_Static) return true;
+        if (variable->getStorageClass()==clang::SC_Static && !variable->isStaticDataMember()) return true;
         const auto expected = BuildModuleOwnedName(module_, package_, ReadInterfaceDeclarationStableId(pattern));
-        for (const auto *prior : variable->redecls())
-          if (!prior->isImplicit() && !IsModuleOwnedSource(context_,prior->getLocation(),source_root_))
+        for (auto *redecl : variable->redecls()) {
+          if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
             return Error(decl,"module-owned variable template redeclares a foreign ABI");
-        if (variable->hasAttr<clang::AsmLabelAttr>())
-          return Error(decl,"variable template cannot carry a concrete asm label");
-        if (const auto *tag = variable->getAttr<clang::AbiTagAttr>()) {
-          if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
-            return Error(decl,"variable template ABI tag conflicts with its owning module");
-        } else {
-          llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
-          variable->addAttr(clang::AbiTagAttr::Create(context_, &owned_tag, 1, variable->getSourceRange()));
+          if (redecl->hasAttr<clang::AsmLabelAttr>())
+            return Error(decl,"variable template cannot carry a concrete asm label");
+          if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
+            if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
+              return Error(decl,"variable template ABI tag conflicts with its owning module");
+          } else {
+            llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
+            redecl->addAttr(clang::AbiTagAttr::Create(context_, &owned_tag, 1, redecl->getSourceRange()));
+          }
         }
         return true;
       }

@@ -17,6 +17,8 @@ namespace objc3::clang_foundation {
 // Authored out-of-line generic callables carried by a complete record owner.
 [[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedCallableTemplateDefinitions(
     const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(
+    const clang::NamedDecl *owner);
 
 // Exact parser dialect, standard and ownership mode used by providers and
 // importers.

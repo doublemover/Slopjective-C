@@ -261,7 +261,22 @@ bool IsDetachedCallableTemplateRoot(const clang::NamedDecl *declaration) {
   const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
   return IsDetachedCallableTemplateDefinition(function) && !function->getDescribedFunctionTemplate();
 }
-std::vector<clang::NamedDecl *> DetachedCallableTemplateDefinitions(const clang::NamedDecl *owner) {
+bool IsDetachedStaticDataTemplateDefinition(const clang::VarDecl *variable) {
+  return variable && variable->isStaticDataMember() && variable->isOutOfLine() &&
+      variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+      !variable->getLexicalDeclContext()->isRecord() &&
+      !llvm::isa<clang::VarTemplateSpecializationDecl>(variable) &&
+      !variable->getInstantiatedFromStaticDataMember() &&
+      (variable->getDeclContext()->isDependentContext() || variable->getDescribedVarTemplate()) &&
+      TemplatePublicationOwner(variable);
+}
+bool IsDetachedStaticDataTemplateRoot(const clang::NamedDecl *declaration) {
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    return IsDetachedStaticDataTemplateDefinition(pattern->getTemplatedDecl());
+  const auto *variable=llvm::dyn_cast<clang::VarDecl>(declaration);
+  return IsDetachedStaticDataTemplateDefinition(variable) && !variable->getDescribedVarTemplate();
+}
+std::vector<clang::NamedDecl *> DetachedTemplateDefinitions(const clang::NamedDecl *owner,bool data) {
   std::vector<clang::NamedDecl *> result;
   std::set<const clang::Decl *> seen;
   std::set<const clang::CXXRecordDecl *> records;
@@ -271,17 +286,28 @@ std::vector<clang::NamedDecl *> DetachedCallableTemplateDefinitions(const clang:
     if (!record->isCompleteDefinition() || !records.insert(record).second) return;
     for (const auto *member:record->decls()) {
       if (member->isImplicit()) continue;
-      const auto *function=llvm::dyn_cast<clang::CXXMethodDecl>(member);
-      if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member))
-        function=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
-      if (function) {
-        const auto *definition=function->getDefinition();
-        if (!IsDetachedCallableTemplateDefinition(definition)) continue;
+      const clang::NamedDecl *definition=nullptr;
+      const clang::NamedDecl *root=nullptr;
+      if (data) {
+        const auto *variable=llvm::dyn_cast<clang::VarDecl>(member);
+        if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) variable=pattern->getTemplatedDecl();
+        if (variable && IsDetachedStaticDataTemplateDefinition(variable->getDefinition())) {
+          variable=variable->getDefinition();definition=root=variable;
+          if (const auto *pattern=variable->getDescribedVarTemplate()) root=pattern;
+        }
+      } else {
+        const auto *function=llvm::dyn_cast<clang::CXXMethodDecl>(member);
+        if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member))
+          function=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
+        if (function && IsDetachedCallableTemplateDefinition(function->getDefinition())) {
+          function=llvm::cast<clang::CXXMethodDecl>(function->getDefinition());definition=root=function;
+          if (const auto *pattern=function->getDescribedFunctionTemplate()) root=pattern;
+        }
+      }
+      if (definition) {
         const auto *publication=TemplatePublicationOwner(definition);
         if (!publication || publication->getCanonicalDecl()!=owner->getCanonicalDecl() ||
             !seen.insert(definition->getCanonicalDecl()).second) continue;
-        const clang::NamedDecl *root=definition;
-        if (const auto *pattern=definition->getDescribedFunctionTemplate()) root=pattern;
         result.push_back(const_cast<clang::NamedDecl *>(root));
       } else if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
         self(self,pattern->getTemplatedDecl());
@@ -296,6 +322,13 @@ std::vector<clang::NamedDecl *> DetachedCallableTemplateDefinitions(const clang:
     for (const auto *specialization:PublishedClassSpecializations(pattern)) collect(collect,specialization);
   } else collect(collect,llvm::dyn_cast<clang::CXXRecordDecl>(owner));
   return result;
+}
+
+std::vector<clang::NamedDecl *> DetachedCallableTemplateDefinitions(const clang::NamedDecl *owner) {
+  return DetachedTemplateDefinitions(owner,false);
+}
+std::vector<clang::NamedDecl *> DetachedStaticDataTemplateDefinitions(const clang::NamedDecl *owner) {
+  return DetachedTemplateDefinitions(owner,true);
 }
 
 bool HasDirectMemberTemplates(const clang::CXXRecordDecl *record) {
@@ -459,7 +492,8 @@ bool PublishesFunctionBody(const clang::FunctionDecl *function) {
 }
 bool PublishesVariableInitializer(const clang::VarDecl *variable) {
   return variable && variable->getASTContext().getLangOpts().CPlusPlus &&
-         (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) ||
+         (IsDetachedStaticDataTemplateDefinition(variable->getDefinition()) ||
+          variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) ||
           variable->isInline() || variable->isConstexpr() ||
           (variable->hasInit() && variable->mightBeUsableInConstantExpressions(
                                       variable->getASTContext())));
@@ -564,6 +598,7 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
     for (const auto *partial:PublishedVariablePartials(pattern))
       finder.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
   for (auto *definition:DetachedCallableTemplateDefinitions(declaration)) finder.TraverseDecl(definition);
+  for (auto *definition:DetachedStaticDataTemplateDefinitions(declaration)) finder.TraverseDecl(definition);
   return finder.Found;
 }
 
@@ -850,6 +885,7 @@ public:
           for (unsigned i=0;i<function->getNumParams();++i)
             locals_.emplace(redecl->getParamDecl(i)->getCanonicalDecl(),
                 locals_.at(function->getParamDecl(i)->getCanonicalDecl()));
+      OuterTemplateParameters(function);
       if (const auto *pattern = function->getDescribedFunctionTemplate()) {
         for (const auto *parameter : *pattern->getTemplateParameters()) Local(parameter);
         for (const auto *redecl : pattern->redecls())
@@ -859,6 +895,16 @@ public:
                   locals_.at(pattern->getTemplateParameters()->getParam(i)->getCanonicalDecl()));
       }
     }
+  }
+  void OuterTemplateParameters(const clang::DeclaratorDecl *declaration) {
+    auto bind=[&](auto &&self,const clang::TemplateParameterList *head)->void {
+      for (const auto *parameter:*head) {
+        Local(parameter);
+        if (const auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(parameter))
+          self(self,nested->getTemplateParameters());
+      }
+    };
+    for (const auto *head:declaration->getTemplateParameterLists()) bind(bind,head);
   }
   void TemplateParameters(const clang::TemplateDecl *pattern) {
     auto bind=[&](auto &&self,const clang::TemplateParameterList *parameters)->void {
@@ -1497,7 +1543,10 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration);
       field && field->hasInClassInitializer()) return contains(field->getInClassInitializer());
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
-      PublishesVariableInitializer(variable) && variable->hasInit()) return contains(variable->getInit());
+      PublishesVariableInitializer(variable)) {
+    if (const auto *definition=variable->getDefinition()) variable=definition;
+    if (variable->hasInit()) return contains(variable->getInit());
+  }
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       record && record->isCompleteDefinition())
     for (const auto *member : record->decls()) {
@@ -1545,6 +1594,7 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
       for (const auto *partial:PublishedVariablePartials(pattern))
         visitor.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
     for (auto *definition:DetachedCallableTemplateDefinitions(declaration)) visitor.TraverseDecl(definition);
+    for (auto *definition:DetachedStaticDataTemplateDefinitions(declaration)) visitor.TraverseDecl(definition);
     return visitor.found;
   }
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
@@ -2713,8 +2763,25 @@ class TypeDependencyVisitor final
         for (const auto *parameter : function->parameters())
           if (const auto *value=WrittenDefaultArgument(parameter)) TraverseStmt(const_cast<clang::Expr *>(value));
         CheckBody(function);
-      } else TraverseDecl(member);
+      } else if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(member);
+                 variable && IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))
+        CheckDetachedStaticData(variable->getDefinition());
+      else TraverseDecl(member);
     }
+  }
+  void CheckDetachedStaticData(const clang::VarDecl *definition) {
+    if (!IsInMainFile(context_,definition->getLocation())) {
+      AddDiagnostic(result_,"O3IFC112","detached static template data requires a module-owned definition",
+                    definition->getQualifiedNameAsString());return;
+    }
+    const auto locals=lambda_locals_;
+    const bool previous=public_template_type_;
+    auto restore=llvm::scope_exit([&]{lambda_locals_=locals;public_template_type_=previous;});
+    public_template_type_=true;
+    for (const auto *head:definition->getTemplateParameterLists())
+      for (auto *parameter:*head) {lambda_locals_.insert(parameter->getCanonicalDecl());TraverseDecl(parameter);}
+    TraverseType(definition->getType());public_template_type_=previous;
+    if (definition->hasInit()) TraverseStmt(const_cast<clang::Expr *>(definition->getInit()));
   }
   void CheckVariableTemplate(const clang::VarTemplateDecl *pattern) {
     const auto locals=lambda_locals_;
@@ -2726,7 +2793,9 @@ class TypeDependencyVisitor final
     const auto *variable=pattern->getTemplatedDecl();
     TraverseType(variable->getType());
     public_template_type_=previous;
-    if(variable->hasInit()) TraverseStmt(const_cast<clang::Expr *>(variable->getInit()));
+    if (IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))
+      CheckDetachedStaticData(variable->getDefinition());
+    else if(variable->hasInit()) TraverseStmt(const_cast<clang::Expr *>(variable->getInit()));
     for (const auto *partial:PublishedVariablePartials(pattern)) CheckVariablePartial(partial);
   }
   void CheckVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
@@ -3295,8 +3364,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
 
 // Member patterns are owned and printed with the enclosing primary class.
 // Their native specialization mangling inherits that class's module ABI tag.
-// Restrict this contract to in-class bodies; detached definitions and member
-// specializations need their own publication and dependency ordering rules.
+// Authored detached callables and static data use explicit definition-set
+// contracts; member specializations require separate publication support.
 bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *parameters,
                                         unsigned depth=0);
 
@@ -3356,8 +3425,10 @@ bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
   const auto *variable=pattern->getTemplatedDecl();
   const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()) ||
-      !variable->isStaticDataMember() || (!variable->isInline() && !variable->isConstexpr()) ||
-      !variable->hasInit() || effects.is_async || effects.is_throwing) return false;
+      !variable->isStaticDataMember() ||
+      (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
+       !IsDetachedStaticDataTemplateDefinition(variable->getDefinition())) ||
+      effects.is_async || effects.is_throwing) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
@@ -3397,8 +3468,10 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       const auto *variable=value->getTemplatedDecl();
       const auto effects=ReadCanonicalFunctionEffects(variable->getType(),body->getASTContext());
       if (!IsBoundedNestedTemplateParameters(value->getTemplateParameters()) ||
-          !variable->isStaticDataMember() || (!variable->isInline() && !variable->isConstexpr()) ||
-          !variable->hasInit() || effects.is_async || effects.is_throwing) return false;
+          !variable->isStaticDataMember() ||
+          (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
+           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition())) ||
+          effects.is_async || effects.is_throwing) return false;
       for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit()) return false;
     } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
       const auto effects=ReadCanonicalFunctionEffects(method->getType(),body->getASTContext());
@@ -3408,7 +3481,9 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
            !IsDetachedCallableTemplateDefinition(method->getDefinition()) && !method->isDefaulted() &&
            !method->isDeleted() && !method->isPureVirtual())) return false;
     } else if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(member)) {
-      if (!variable->isStaticDataMember() || (!variable->isInline() && !variable->isConstexpr())) return false;
+      if (!variable->isStaticDataMember() ||
+          (!variable->isInline() && !variable->isConstexpr() &&
+           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
     } else if (!llvm::isa<clang::FieldDecl,clang::TypedefNameDecl,clang::EnumDecl,clang::BaseUsingDecl>(member)) return false;
     for (const auto *attribute : member->attrs())
       if (!attribute->isImplicit() && !llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute)) return false;
@@ -3645,7 +3720,7 @@ class InterfaceCollector final
       return true;
     if (llvm::isa<clang::TemplateTypeParmDecl,clang::NonTypeTemplateParmDecl,
                   clang::TemplateTemplateParmDecl>(declaration)) return true;
-    if (IsDetachedCallableTemplateRoot(declaration)) {
+    if (IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration)) {
       if (IsInMainFile(context_,declaration->getLocation()) && SelectedExport(declaration,exports_))
         root_declarations_.push_back(declaration);
       return true;
@@ -4013,7 +4088,7 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
   // Member names inside a record must be relative to that record. Fully
   // qualified function spelling would print invalid `Worker::get` inside it.
   if (llvm::isa<clang::CXXRecordDecl, clang::ClassTemplateDecl>(declaration) ||
-      IsDetachedCallableTemplateRoot(declaration) ||
+      IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration) ||
       declaration->getDeclContext()->getRedeclContext()->isNamespace())
     policy.FullyQualifiedName = false;
 
@@ -4242,6 +4317,9 @@ std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
 std::vector<clang::NamedDecl *> ReadDetachedCallableTemplateDefinitions(const clang::NamedDecl *owner) {
   return DetachedCallableTemplateDefinitions(owner);
 }
+std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(const clang::NamedDecl *owner) {
+  return DetachedStaticDataTemplateDefinitions(owner);
+}
 
 std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
   static constexpr const char *profiles[] = {
@@ -4378,6 +4456,26 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-function-specializations:v1;;cxx-function-templates:v2;primary="+
         ReadInterfaceDeclarationStableId(function->getPrimaryTemplate())+";arguments="+
         ComputeInterfaceSourceSha256(key)+";";
+  }
+  const auto detached_data=DetachedStaticDataTemplateDefinitions(representative);
+  if (!detached_data.empty()) {
+    std::set<std::string> definitions;
+    for (const auto *definition:detached_data) {
+      const auto *variable=llvm::dyn_cast<clang::VarDecl>(definition);
+      if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(definition)) variable=pattern->getTemplatedDecl();
+      if (!variable) return false;
+      DeclarationExpressionIdentity initializer(context);
+      initializer.OuterTemplateParameters(variable);
+      if (const auto *pattern=variable->getDescribedVarTemplate()) initializer.TemplateParameters(pattern);
+      definitions.insert(ReadInterfaceDeclarationStableId(definition)+":"+CanonicalType(variable->getType(),context)+
+          ":inline="+std::to_string(variable->isInline())+":constexpr="+std::to_string(variable->isConstexpr())+
+          ":tls="+std::to_string(variable->getTSCSpec())+":init="+
+          (variable->hasInit()?initializer.Get(const_cast<clang::Expr *>(variable->getInit())):"zero"));
+    }
+    std::string contract;
+    for (const auto &definition:definitions) contract+=std::to_string(definition.size())+":"+definition;
+    identity.canonical_type_identity+=";cxx-detached-static-data-templates:v1;definitions="+
+        ComputeInterfaceSourceSha256(contract)+";";
   }
   const auto detached=DetachedCallableTemplateDefinitions(representative);
   if (!detached.empty()) {
@@ -4756,6 +4854,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxDetachedStaticDataTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxDetachedStaticDataTemplateSemantic);
     if (HasCxxDetachedCallableTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxDetachedCallableTemplateSemantic);
     if (HasCxxVariableSpecializationStorageIdentity(declaration))
@@ -4900,6 +5000,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxVariablePartialSpecializationSemantic,
     kCxxVariableSpecializationStorageSemantic,
     kCxxDetachedCallableTemplateSemantic,
+    kCxxDetachedStaticDataTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5050,6 +5151,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxVariablePartialSpecializationSemantic,
     kCxxVariableSpecializationStorageSemantic,
     kCxxDetachedCallableTemplateSemantic,
+    kCxxDetachedStaticDataTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

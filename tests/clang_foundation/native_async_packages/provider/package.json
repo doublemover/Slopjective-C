@@ -315,7 +315,12 @@
     "NativeDetached::Family",
     "NativeDetached::Concrete",
     "native_detached_factory",
-    "native_detached_live"
+    "native_detached_live",
+    "native_detached_shared",
+    "native_detached_concrete_shared",
+    "native_detached_local",
+    "NativeDetachedStorage",
+    "native_detached_object"
   ],
   "dependencies": []
 }

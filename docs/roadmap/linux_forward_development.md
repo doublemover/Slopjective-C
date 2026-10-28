@@ -78,6 +78,20 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Detached static-data template definitions
+
+The [2.64 source span](linux_cxx_detached_static_data_templates.md) publishes
+out-of-line static data and member variable templates of generic/concrete
+records. Complete owners bind typed initialization, zero storage and TLS.
+Native import preserves outer heads, recursive specialization mappings and
+canonical pattern redeclarations; ABI tags remain consistent across all member
+variable-template declarations. Provider/consumer addresses, single record
+initialization and worker TLS pass all 16 source-free configurations / 96
+commands, plus the emitter suite, ten native importer tests and 72 tooling tests.
+Detached nested-class definitions, nested/member specializations and effectful
+forms remain open. SDK 2.62 remains accepted; broader validation for subsequent
+source milestones is batched after further implementation.
+
 ## Detached callable-template definitions
 
 The [2.63 source span](linux_cxx_detached_callable_templates.md) publishes authored

@@ -438,6 +438,19 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_detached_static_data_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDetachedStaticDataTemplateIdentity);
+  const bool detached_static_data_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDetachedStaticDataTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_static_data_template_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_static_data_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDetachedStaticDataTemplateIdentity(d) ||
+          (d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)));});
+  if (has_detached_static_data_templates!=detached_static_data_template_capability || !detached_static_data_template_owners ||
+      (detached_static_data_template_capability && !detached_static_data_template_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    Add(result,"O3IFC073","detached static data template identity and required primary capability must agree",expected.canonical_name);
   const bool has_detached_callable_templates=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxDetachedCallableTemplateIdentity);
   const bool detached_callable_template_capability=std::find(sidecar.required_semantics.begin(),
