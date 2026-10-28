@@ -78,6 +78,18 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Concrete member class-template specializations
+
+The [2.66 source span](linux_cxx_concrete_member_class_specializations.md) adds
+full and constrained partial nested class-template specializations of concrete
+records. Complete parents bind checked heads, arguments, constraints and bodies;
+replay preserves record qualification, native selection and primary ABI tags.
+The emitter suite, twelve native importer tests, 72 tooling tests and all 16
+source-free configurations / 96 commands pass, including provider allocation,
+consumer copies, virtual lifetime counts, constrained pointer/non-type selection
+and primary fallback. Dependent-parent and function/variable member specializations
+remain open. SDK 2.62 remains accepted; broader validation remains batched.
+
 ## Detached nested-template definitions
 
 The [2.65 source span](linux_cxx_detached_nested_templates.md) publishes out-of-line

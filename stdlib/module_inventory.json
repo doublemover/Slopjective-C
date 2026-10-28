@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 65,
+        "minor": 66,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -191,13 +191,14 @@
         "Non-inline explicit namespace variable-template specializations with declaration-only replay, provider-owned initialization, scalar/record/TLS storage, and inline zero-initialized specialization storage (source)",
         "Detached generic class constructors/destructors/methods and record-owned member function templates with complete owner contracts, source-order replay and definition import (source)",
         "Detached static data and member variable templates of generic/concrete records, with complete definition-set identities, source-order replay and consumer instantiation (source)",
-        "Detached named nested records and nested primary class templates of generic/concrete records, with complete owner definitions, outer heads, source-order replay and import (source)"
+        "Detached named nested records and nested primary class templates of generic/concrete records, with complete owner definitions, outer heads, source-order replay and import (source)",
+        "Full and constrained partial nested class-template specializations of concrete records, with checked heads/arguments/bodies, primary ABI ownership and complete source-free parent contracts (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining nested/member template specializations, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining dependent-parent and function/variable member-template specializations, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

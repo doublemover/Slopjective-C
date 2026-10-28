@@ -321,7 +321,8 @@
     "native_detached_local",
     "NativeDetachedStorage",
     "native_detached_object",
-    "native_detached_plain_factory"
+    "native_detached_plain_factory",
+    "native_concrete_specialized_factory"
   ],
   "dependencies": []
 }

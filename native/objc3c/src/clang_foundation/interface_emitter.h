@@ -7,6 +7,7 @@
 #include "llvm/ADT/StringRef.h"
 
 namespace clang {
+class ClassTemplateSpecializationDecl;
 class ASTContext;
 class NamedDecl;
 class LangOptions;
@@ -20,6 +21,8 @@ namespace objc3::clang_foundation {
 [[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(
     const clang::NamedDecl *owner);
 [[nodiscard]] std::vector<clang::NamedDecl *> ReadDetachedNestedTemplateDefinitions(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::ClassTemplateSpecializationDecl *> ReadConcreteMemberClassSpecializations(
     const clang::NamedDecl *owner);
 
 // Exact parser dialect, standard and ownership mode used by providers and

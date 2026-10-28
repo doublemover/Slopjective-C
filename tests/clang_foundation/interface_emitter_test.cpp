@@ -1743,6 +1743,59 @@ void TestTemplateStructure() {
   }
 }
 
+void TestConcreteMemberClassSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concrete-member-class-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.concrete_specs","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.concrete_specs","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>concept Number=sizeof(T)>0;
+        struct Concrete {
+          template<class T>struct Box{T value;};
+          template<int V,bool Positive=true>struct Count{static constexpr int value=0;};
+        };
+      }
+      template<>struct N::Concrete::Box<int>{
+        inline static int live=0;
+        int value;explicit Box(int n):value(n){++live;}
+        Box(const Box& other):value(other.value){++live;}
+        virtual ~Box(){--live;}
+        virtual int get()const{return value;}
+        template<class U=int>int add(U n=2)const{return get()+n;}
+      };
+      template<N::Number T>struct N::Concrete::Box<T*>{T* value;T get()const{return *value;}};
+      template<int V>requires(V>0)struct N::Concrete::Count<V,true>{static constexpr int value=V;};
+      inline int probe(){int n=42;return N::Concrete::Box<int>{40}.add()+N::Concrete::Box<int*>{&n}.get()+N::Concrete::Count<42>::value;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxConcreteMemberClassSpecializationSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-concrete-member-class-specializations.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-concrete-member-class-specializations.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxConcreteMemberClassSpecializationIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxConcreteMemberClassSpecializationSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxConcreteMemberClassSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("return get()+n"),14,"return get()+n+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden=emit("static int hidden(){return 42;}struct Concrete{template<class T>struct Box{};};template<>struct Concrete::Box<int>{int get(){return hidden();}};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("struct Concrete{template<class T>struct Box{};};template<>struct Concrete::Box<int>;").success);
+  }
+}
+
 void TestDetachedNestedTemplates() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="detached-nested-templates.cpp") {
@@ -2480,6 +2533,8 @@ void TestConcreteNestedTemplates() {
     auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
     assert(!rejected);llvm::consumeError(rejected.takeError());
     assert(emit("struct Outer{template<class T>struct Box{T value;};};").success);
+    auto specialized=emit("struct Outer{template<class T>struct Box{T value;};};template<class T>struct Outer::Box<T*>{T *value;};");
+    assert(specialized.success && specialized.sidecar_json.find(kCxxConcreteMemberClassSpecializationSemantic)!=std::string::npos);
     auto detached=emit("struct Outer{template<class T>struct Box;};template<class T>struct Outer::Box{T value;};");
     assert(detached.success && detached.sidecar_json.find(kCxxDetachedNestedTemplateSemantic)!=std::string::npos);
     auto hidden=emit("static int hidden(){return 42;}struct Outer{template<class T>struct Box{int f(){return hidden();}};};");
@@ -2487,8 +2542,7 @@ void TestConcreteNestedTemplates() {
         [](const auto &d){return d.code=="O3IFC112";}));
     for(const auto *source:{
         "struct Outer{template<class T>struct Box;};",
-        "struct Outer{template<class T>union Box{T value;};};",
-        "struct Outer{template<class T>struct Box{T value;};};template<class T>struct Outer::Box<T*>{T *value;};"})
+        "struct Outer{template<class T>union Box{T value;};};"})
       assert(!emit(source).success);
   }
 }
@@ -4046,6 +4100,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestConcreteMemberClassSpecializations();
   TestDetachedNestedTemplates();
   TestDetachedStaticDataTemplates();
   TestDetachedCallableTemplates();

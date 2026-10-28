@@ -170,6 +170,10 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    member_class_specs=[row for row in metadata['declarations']
+                        if ';cxx-concrete-member-class-specializations:v1;' in row.get('canonical_type_identity','')]
+    assert 'objc3.cxx-concrete-member-class-specializations.v1' in metadata['required_semantics']
+    assert {row['qualified_name'] for row in member_class_specs}=={'NativeDetached::Concrete'}
     detached_nested=[row for row in metadata['declarations']
                      if ';cxx-detached-nested-templates:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-detached-nested-templates.v1' in metadata['required_semantics']

@@ -306,6 +306,15 @@ int main() {
        NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
        NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
        NativeDetached::Concrete::local<> !=40)return 188;
+    auto *concrete_specialized=native_concrete_specialized_factory();
+    auto *concrete_specialized_copy=new NativeDetached::Concrete::Box<int>(*concrete_specialized);
+    if(NativeDetached::Concrete::Box<int>::live!=2 || concrete_specialized_copy->get()!=40 ||
+       concrete_specialized_copy->add()!=42)return 194;
+    delete concrete_specialized;delete concrete_specialized_copy;
+    long concrete_pointer_value=42;NativeDetached::Concrete::Box<long*> concrete_pointer{&concrete_pointer_value};
+    static_assert(NativeDetached::Concrete::Count<42>::value==42 && NativeDetached::Concrete::Count<-1>::value==0);
+    if(NativeDetached::Concrete::Box<int>::live!=0 || concrete_pointer.get()!=42 ||
+       NativeDetached::Concrete::Box<long>{42}.value!=42)return 195;
     auto *detached_plain=native_detached_plain_factory();
     auto *detached_plain_copy=new NativeDetached::Family<int>::Plain(*detached_plain);
     if(NativeDetached::Family<int>::Plain::live!=2 || detached_plain_copy->get()!=40 || detached_plain_copy->add()!=42)return 191;

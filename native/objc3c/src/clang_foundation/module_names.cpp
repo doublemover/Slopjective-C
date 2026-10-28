@@ -300,8 +300,7 @@ public:
     }
     if (auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(record);
         specialization && (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
-        specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization) &&
-        !specialization->getDeclContext()->isRecord()) {
+        specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)) {
       const auto expected=BuildModuleOwnedName(module_,package_,
           ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
       for (auto *redecl:specialization->redecls()) {

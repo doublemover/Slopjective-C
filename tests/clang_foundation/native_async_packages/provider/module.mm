@@ -1559,6 +1559,8 @@ public:
   template<class U>auto closure(U n)const;
 };
 struct Concrete {
+  template<class T>struct Box{T value;};
+  template<int V,bool Positive=true>struct Count{inline static constexpr int value=0;};
   template<class U=int>struct Inner;
   template<class U=int>U twice(U n=21)const;
   template<class U=int>static int shared;
@@ -1588,6 +1590,23 @@ template<class U>struct NativeDetached::Concrete::Inner {
   U value;
   U get()const{return value;}
 };
+template<>struct NativeDetached::Concrete::Box<int> {
+  inline static int live=0;
+private:int value;
+public:
+  explicit Box(int n):value(n){++live;}
+  Box(const Box &other):value(other.value){++live;}
+  virtual ~Box(){--live;}
+  virtual int get()const{return value;}
+  template<class U=int>int add(U n=2)const{return get()+n;}
+};
+template<NativePartialValue T>struct NativeDetached::Concrete::Box<T*> {
+  T* value;
+  T get()const{return *value;}
+};
+template<int V>requires(V>0)struct NativeDetached::Concrete::Count<V,true> {
+  inline static constexpr int value=V;
+};
 template<class T>int NativeDetached::Family<T>::live=0;
 template<class T>int NativeDetached::Family<T>::zero;
 template<class T>NativeDetachedStorage NativeDetached::Family<T>::object{40};
@@ -1614,3 +1633,5 @@ int *native_detached_local(){return &NativeDetached::Family<int>::local;}
 NativeDetachedStorage *native_detached_object(){return &NativeDetached::Family<int>::object;}
 
 NativeDetached::Family<int>::Plain *native_detached_plain_factory(){return new NativeDetached::Family<int>::Plain(40);}
+
+NativeDetached::Concrete::Box<int> *native_concrete_specialized_factory(){return new NativeDetached::Concrete::Box<int>(40);}
