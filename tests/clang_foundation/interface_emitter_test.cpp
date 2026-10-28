@@ -246,6 +246,8 @@ void TestKeyPathSubscriptBodies() {
       auto ast=parse(R"(
         __attribute__((objc_root_class)) @interface IndexedRoot
         @property(nonatomic) int count;
+        @property(nonatomic, strong) IndexedRoot * _Nullable next;
+        @property(nonatomic, strong) IndexedRoot * _Nullable value;
         @end
         inline int indexed_read(IndexedRoot *_Nonnull root,KeyPath<IndexedRoot*,int> path) {
           return root[path];
@@ -257,13 +259,16 @@ void TestKeyPathSubscriptBodies() {
         inline int indexed_literal(IndexedRoot *_Nonnull root) {
           return root[@keypath(IndexedRoot,count)];
         }
+        inline IndexedRoot * _Nullable indexed_nullable(IndexedRoot *_Nonnull root, IndexedRoot * _Nullable value) {
+          return (root[@keypath(IndexedRoot,next.value)] = value);
+        }
         inline int explicit_literal(IndexedRoot *_Nonnull root) {
           return KeyPathGet(@keypath(IndexedRoot,count),root);
         }
       )","indexed-provider.mm");
       assert(ast && !ast->getDiagnostics().hasErrorOccurred());
       const std::vector<std::string> exports={"IndexedRoot","indexed_read","indexed_write",
-                                             "indexed_literal","explicit_literal"};
+                                             "indexed_literal","explicit_literal","indexed_nullable"};
       const auto emitted=EmitSemanticInterface(ast->getASTContext(),"fixture.indexed","test",{},{},{},exports);
       for (const auto &d:emitted.diagnostics)
         std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
@@ -271,8 +276,9 @@ void TestKeyPathSubscriptBodies() {
       assert(emitted.source_bytes.find("root[path]")!=std::string::npos);
       assert(emitted.source_bytes.find("__objc3_keypath_")==std::string::npos);
       assert(emitted.sidecar_json.find("objc3.keypath-subscripts.v1")!=std::string::npos);
+      assert(emitted.sidecar_json.find("objc3.keypath-nullable-writes.v1")!=std::string::npos);
       const std::vector<llvm::StringRef> supported={"objc3.typed-keypaths.v1",
-          "objc3.keypath-subscripts.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
+          "objc3.keypath-subscripts.v1","objc3.keypath-nullable-writes.v1","objc3.canonical-function-effects.v1","objc3.cxx-data-interfaces.v1",
           "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};
       auto decoded=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,supported);
       if (!decoded) { llvm::errs()<<llvm::toString(decoded.takeError())<<"\n"; assert(false); }
@@ -284,6 +290,14 @@ void TestKeyPathSubscriptBodies() {
           "objc3.cxx-definitions.v1","objc3.native-ownership-contracts.v1"};
       auto rejected=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,old);
       assert(!rejected);llvm::consumeError(rejected.takeError());
+      auto unsupported_writes = supported;
+      std::erase(unsupported_writes, llvm::StringRef("objc3.keypath-nullable-writes.v1"));
+      auto old_writer=DecodeSemanticInterfaceSidecar(emitted.sidecar_json,emitted.source_bytes,unsupported_writes);
+      assert(!old_writer);llvm::consumeError(old_writer.takeError());
+      auto missing_write=*decoded;
+      std::erase(missing_write.required_semantics,"objc3.keypath-nullable-writes.v1");
+      auto missing_write_cap=EncodeSemanticInterfaceSidecar(missing_write,supported);
+      assert(!missing_write_cap);llvm::consumeError(missing_write_cap.takeError());
       auto damaged=*decoded;
       std::erase(damaged.required_semantics,"objc3.typed-keypaths.v1");
       auto missing=EncodeSemanticInterfaceSidecar(damaged,supported);

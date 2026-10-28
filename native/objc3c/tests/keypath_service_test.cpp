@@ -59,7 +59,8 @@ int main() {
        OBJC3_KEYPATH_COMPONENT_NULLABLE | OBJC3_KEYPATH_COMPONENT_RETAINABLE, 0}};
   objc3_keypath_descriptor_v2 nullable_path{
       OBJC3_KEYPATH_ABI_VERSION,
-      OBJC3_KEYPATH_NULLABLE_TRAVERSAL | OBJC3_KEYPATH_KVC_COMPATIBLE,
+      OBJC3_KEYPATH_NULLABLE_TRAVERSAL | OBJC3_KEYPATH_KVC_COMPATIBLE |
+          OBJC3_KEYPATH_WRITABLE | OBJC3_KEYPATH_NULLABLE_WRITES,
       2, "Root *", "Value *", "child.value", nullable_components};
   assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_OK);
   objc3_keypath_component_v2 owned_components[] = {
@@ -72,9 +73,24 @@ int main() {
   owned_components[1].flags &= ~OBJC3_KEYPATH_COMPONENT_RETAINABLE;
   assert(objc3_keypath_validate_v2(&owned_getter) ==
          OBJC3_KEYPATH_INVALID_METADATA);
-  nullable_path.flags |= OBJC3_KEYPATH_WRITABLE;
+  const auto nullable_flags = nullable_path.flags;
+  nullable_path.flags &= ~OBJC3_KEYPATH_NULLABLE_WRITES;
   assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  // Old forced-readonly metadata must be regenerated at this cutover.
   nullable_path.flags &= ~OBJC3_KEYPATH_WRITABLE;
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  nullable_path.flags = nullable_flags;
+  nullable_components[0].flags |= OBJC3_KEYPATH_COMPONENT_READONLY;
+  nullable_components[0].setter_selector = "";
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
+  nullable_path.flags &= ~(OBJC3_KEYPATH_WRITABLE | OBJC3_KEYPATH_NULLABLE_WRITES);
+  assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_OK);
+  nullable_components[0].flags &= ~OBJC3_KEYPATH_COMPONENT_READONLY;
+  nullable_components[0].setter_selector = "setChild:";
+  nullable_path.flags = nullable_flags;
+  auto stray_write = descriptor;
+  stray_write.flags |= OBJC3_KEYPATH_NULLABLE_WRITES;
+  assert(objc3_keypath_validate_v2(&stray_write) == OBJC3_KEYPATH_INVALID_METADATA);
   nullable_components[1].flags &= ~OBJC3_KEYPATH_COMPONENT_RETAINABLE;
   assert(objc3_keypath_validate_v2(&nullable_path) == OBJC3_KEYPATH_INVALID_METADATA);
   nullable_components[1].flags |= OBJC3_KEYPATH_COMPONENT_RETAINABLE;

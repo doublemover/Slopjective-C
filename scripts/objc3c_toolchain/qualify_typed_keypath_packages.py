@@ -34,6 +34,7 @@ def check_metadata(metadata: dict) -> None:
         if name not in declarations:
             raise ValueError('typed key-path interface lost public type: ' + name)
     for name, writable in (('package_count_path', True),
+                           ('package_nullable_path', True),
                            ('package_field_path', True),
                            ('package_bits_path', True),
                            ('package_identity_path', False),

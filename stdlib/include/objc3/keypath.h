@@ -25,10 +25,10 @@
  * Metadata is immutable and valid for the lifetime of its native image. No
  * literal construction uses no registry, reset generation, integer handle,
  * or captured root owner.
- * Nullable intermediates are supported only for readonly traversal to a
- * nullable Objective-C object or Block result. The first missing intermediate
- * returns nil without evaluating later components. Such paths never permit
- * KeyPathSet, even when individual component properties have setters.
+ * Nullable intermediates require a nullable Objective-C object or Block result.
+ * A missing intermediate returns nil on reads and skips updates on writes.
+ * Entirely settable chains remain writable; operands evaluate once before
+ * traversal, including the value operand when a missing receiver skips a set.
  * Nonnull/scalar/aggregate results through nullable intermediates diagnose.
  * Named bit-fields preserve native value truncation and sibling storage. C++
  * inherited record fields use native lookup and base adjustment, with normal

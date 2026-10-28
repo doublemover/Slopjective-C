@@ -205,6 +205,13 @@ The [keypath 2.3.0 source span](linux_keypath_subscripts.md) implements typed
 `root[path]` reads, writable assignments, compound updates and increments, with
 source-ordered operand snapshots and source-free published inline syntax.
 
+## Nullable-chain key-path writes
+
+The [keypath 2.4.0 source span](linux_keypath_nullable_writes.md) adds nil no-op
+writes for entirely settable nullable object/Block chains, preserving exact-once
+operands, native cleanup and record writeback. Metadata and published-body
+capabilities enforce regenerated artifacts with the rebuilt runtime.
+
 ## Captured arrays beyond eager storage tracking
 
 The [System 2.14.0 source span](linux_borrowed_large_arrays.md) preserves
@@ -695,7 +702,7 @@ ignored build root; exported patches are its version-controlled source inputs.
 | Explicit captures   | Strong/weak/unowned/move lists, independent object/resource owners, C++ creation move vs heap copy, ARC/MRC plain, pure C++ and ARC mixed selected-arm carrier moves, captured take/reset/discard, nested resource transfer and defer/exception rollback                                                                                                         | C++ lambda/MRC mixed and unqualified carrier moves, throwing resource disposal and general exceptional CFG ownership                           |
 | Async frames        | Native C functions/methods/Blocks; lazy frames, owned results/errors, task/group joins, typed iteration and compiler-owned C-frame scopes, allocation failure transport, suspension-safe pools, typed-effect deduction, heap-owned dynamic storage, borrowed C++ bindings, captured-parameter debug locations and class lifecycle/base/virtual dispatch packages | Concrete inline/constexpr/template class projections and broader profile admission                                                             |
 | Isolation/Sendable  | Persistent contracts, transitive Sendable checks, awaited main/global/named and actor-instance entry, retained actor binding, executor proof, scalar/void, retained object and qualified record results; ARC consuming entries and owning operand snapshots                                                                                                      | MRC/CF consumption, unqualified value forms, unqualified task call forms, automatic actor association and complete Strict Concurrency behavior |
-| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable readonly object traversal, immutable metadata, complete class/protocol identity and source tooling                                                                                                                                                                 | Nullable writes, scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values                      |
+| Typed key paths     | Property/record paths, precise operand snapshots/writeback, native getter ownership, nullable object/Block traversal and nil no-op writes, immutable metadata, complete class/protocol identity and source tooling                                                                                                                                               | Nonnull/scalar/aggregate nullable-chain results, dependent/effectful/isolated paths and ownership-bearing values                               |
 | Structured runtime  | Descendant cancellation, deep-tree reclamation, canonical/named executors, allocation-independent errors, shielded cleanup joins through resource destruction, retained actor binding, C/C++ scope guards, owned callback groups and recognized spawn APIs/macros                                                                                                | Complete abstract group library and broader profile admission                                                                                  |
 | Central integration | Resource capture CFG, precise lifetime owners, public parameter/return ownership contracts, schema 2.2 physical async ABI/export-root identities, clangd source relationships and development feature runner                                                                                                                                                     | Remaining package/profile projections and full profile conformance                                                                             |
 

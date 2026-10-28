@@ -18,7 +18,8 @@ evaluation, selected-path snapshots under mutation of later operands,
 metadata and declaration identity, implicit readonly argument/return/assignment
 conversion, aggregate payloads,
 record-field snapshot/writeback, sibling preservation and native unwinding,
-copy/strong/weak property semantics, readonly nullable object/Block traversal,
+copy/strong/weak property semantics, nullable object/Block reads and nil no-op writes, nested and record-routed
+chains, setter receiver pinning across owner removal and native unwinding,
 short-circuit accessor counts, root retention through later operands and native
 exception unwinding, +1 getter return normalization under MRC, and the absence
 of a captured self owner.

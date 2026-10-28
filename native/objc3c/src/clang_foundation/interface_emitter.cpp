@@ -1249,6 +1249,18 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
     }
   return false;
 }
+bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Literals : clang::RecursiveASTVisitor<Literals> {
+      bool found=false;
+      bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) {
+        found |= clang::hasObjC3NullableKeyPathWrite(literal);return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
 }
@@ -3585,6 +3597,8 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
+  if (HasDeclarationNullableKeyPathWrite(representative))
+    identity.canonical_type_identity += ";keypath-nullable-writes:v1;";
   if (HasDeclarationConcept(representative) && !llvm::isa<clang::ConceptDecl>(representative))
     identity.canonical_type_identity += ";cxx-concepts:v1;";
   if (const auto *method =
@@ -3897,6 +3911,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesKeyPathSubscripts())
     sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (HasNullableKeyPathWriteIdentity(declaration))
+      sidecar.required_semantics.push_back(kNullableKeyPathWriteSemantic);
     if (!declaration.spi_group.empty())
       sidecar.required_semantics.push_back("objc3.api-partitions.v1");
     if (declaration.canonical_type_identity.find(";api-availability=") !=
@@ -4004,6 +4020,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.isolation-contracts.v1",
       "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kNullableKeyPathWriteSemantic,
       "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",
@@ -4138,6 +4155,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.isolation-contracts.v1",
     "objc3.typed-keypaths.v1",
     "objc3.keypath-subscripts.v1",
+    kNullableKeyPathWriteSemantic,
     "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",

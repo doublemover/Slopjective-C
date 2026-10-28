@@ -38030,10 +38030,10 @@ index 000000000..1e0226ed1
 +#endif
 diff --git a/clang/include/clang/AST/ObjC3KeyPath.h b/clang/include/clang/AST/ObjC3KeyPath.h
 new file mode 100644
-index 000000000..9d51bf5c8
+index 000000000..4412c4f89
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3KeyPath.h
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,216 @@
 +//===--- ObjC3KeyPath.h - Native key-path record identity ---------*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -38202,8 +38202,8 @@ index 000000000..9d51bf5c8
 +/// Recover a literal's immutable descriptor path. This lets the native source
 +/// interface printer retain @keypath syntax instead of exposing internal
 +/// helper functions that are private to the producer image.
-+inline const StringLiteral *
-+getObjC3KeyPathLiteralPath(const CompoundLiteralExpr *Literal) {
++inline const InitListExpr *
++getObjC3KeyPathLiteralDescriptor(const CompoundLiteralExpr *Literal) {
 +  ObjC3KeyPathInfo Info;
 +  if (!getObjC3KeyPathInfo(Literal->getType(), Info))
 +    return nullptr;
@@ -38229,8 +38229,24 @@ index 000000000..9d51bf5c8
 +  if (!Variable || !Variable->isImplicit() || !Descriptor ||
 +      Descriptor->getNumInits() != 7)
 +    return nullptr;
-+  return dyn_cast<StringLiteral>(
-+      Descriptor->getInit(5)->IgnoreParenImpCasts());
++  return Descriptor;
++}
++
++inline const StringLiteral *
++getObjC3KeyPathLiteralPath(const CompoundLiteralExpr *Literal) {
++  const auto *Descriptor = getObjC3KeyPathLiteralDescriptor(Literal);
++  return Descriptor ? dyn_cast<StringLiteral>(
++                          Descriptor->getInit(5)->IgnoreParenImpCasts())
++                    : nullptr;
++}
++
++inline bool hasObjC3NullableKeyPathWrite(const CompoundLiteralExpr *Literal) {
++  const auto *Descriptor = getObjC3KeyPathLiteralDescriptor(Literal);
++  const auto *Flags = Descriptor
++                          ? dyn_cast<IntegerLiteral>(
++                                Descriptor->getInit(1)->IgnoreParenImpCasts())
++                          : nullptr;
++  return Flags && (Flags->getValue().getZExtValue() & 8u);
 +}
 +} // namespace clang
 +#endif
@@ -43035,10 +43051,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..5fcb057ff
+index 000000000..be39acfa7
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1322 @@
+@@ -0,0 +1,1410 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -43694,6 +43710,30 @@ index 000000000..5fcb057ff
 +  return S.BuildObjC3LifetimeStmt(OwnerBinding, Compound, Loc, Loc, Loc, Loc);
 +}
 +
++StmtResult setterBody(Sema &S, Expr *Receiver, Expr *Value,
++                      ArrayRef<Component> Components, SourceLocation Loc) {
++  if (Components.back().Field)
++    return recordFieldSetter(S, Receiver, Value, Components, Loc);
++  ExprResult Current = Receiver;
++  for (unsigned I = 0; I < Components.size(); ++I) {
++    const auto &Part = Components[I];
++    if (I + 1 == Components.size()) {
++      Current = S.DefaultFunctionArrayLvalueConversion(Current.get());
++      if (Current.isInvalid())
++        return StmtError();
++      Current = S.ObjC().BuildInstanceMessageImplicit(
++          Current.get(), Current.get()->getType(), Part.Loc,
++          Part.Property->getSetterName(), Part.Property->getSetterMethodDecl(),
++          Value);
++    } else
++      Current = readComponent(S, Current.get(), Part);
++    if (Current.isInvalid())
++      return StmtError();
++  }
++  ExprResult Finished = S.ActOnFinishFullExpr(Current.get(), Loc, true);
++  return Finished.isInvalid() ? StmtError() : StmtResult(Finished.get());
++}
++
 +bool nullable(QualType Type) {
 +  return Type->getNullability() == NullabilityKind::Nullable ||
 +         Type->getNullability() == NullabilityKind::NullableResult;
@@ -43759,6 +43799,61 @@ index 000000000..5fcb057ff
 +                               Part.Loc, Loc);
 +}
 +
++/// Read and pin the routing prefix through the last nullable receiver. No
++/// record in that prefix is itself modified: the write targets the object
++/// reached through the nullable edge. A missing receiver makes the write a
++/// no-op, after normal evaluation of the application's root/key/value operands.
++StmtResult nullableSetter(Sema &S, Expr *Receiver, Expr *Value,
++                          ArrayRef<Component> Components, unsigned Index,
++                          unsigned LastNullable, SourceLocation Loc) {
++  if (Index > LastNullable)
++    return setterBody(S, Receiver, Value, Components.drop_front(Index), Loc);
++  const auto &Part = Components[Index];
++  ExprResult Read = readComponent(S, Receiver, Part);
++  if (Read.isInvalid())
++    return StmtError();
++  if (Read.get()->getType()->isObjCRetainableType()) {
++    DeclStmt *Binding = S.BuildObjC3LifetimeBinding(Read.get(), Part.Loc);
++    if (!Binding)
++      return StmtError();
++    auto *Owner = cast<VarDecl>(Binding->getSingleDecl());
++    ExprResult Snapshot =
++        S.DefaultLvalueConversion(reference(S, Owner, Part.Loc));
++    if (Snapshot.isInvalid())
++      return StmtError();
++    SmallVector<Stmt *, 2> Body;
++    if (nullable(Part.Value)) {
++      ExprResult Missing =
++          S.BuildUnaryOp(nullptr, Part.Loc, UO_LNot, Snapshot.get());
++      StmtResult Stop = S.BuildReturnStmt(Part.Loc, nullptr);
++      if (Missing.isInvalid() || Stop.isInvalid())
++        return StmtError();
++      Body.push_back(IfStmt::Create(
++          S.Context, Part.Loc, IfStatementKind::Ordinary, nullptr, nullptr,
++          Missing.get(), Part.Loc, Part.Loc, Stop.get()));
++    }
++    StmtResult Tail = nullableSetter(S, Snapshot.get(), Value, Components,
++                                     Index + 1, LastNullable, Loc);
++    if (Tail.isInvalid())
++      return StmtError();
++    Body.push_back(Tail.get());
++    auto *Compound = CompoundStmt::Create(S.Context, Body, FPOptionsOverride(),
++                                          Part.Loc, Loc);
++    return S.BuildObjC3LifetimeStmt(Binding, Compound, Part.Loc, Part.Loc,
++                                    Part.Loc, Loc);
++  }
++  auto [Snapshot, Declaration] = recordSnapshot(S, Read.get(), Part.Loc);
++  if (!Snapshot)
++    return StmtError();
++  StmtResult Tail = nullableSetter(S, reference(S, Snapshot, Part.Loc), Value,
++                                   Components, Index + 1, LastNullable, Loc);
++  if (Tail.isInvalid())
++    return StmtError();
++  Stmt *Body[] = {Declaration, Tail.get()};
++  return CompoundStmt::Create(S.Context, Body, FPOptionsOverride(), Part.Loc,
++                              Loc);
++}
++
 +std::string declarationOwner(const ObjCPropertyDecl *Property) {
 +  const DeclContext *Owner = Property->getDeclContext();
 +  if (const auto *Category = dyn_cast<ObjCCategoryDecl>(Owner)) {
@@ -43773,11 +43868,11 @@ index 000000000..5fcb057ff
 +    return Name;
 +  }
 +  if (const auto *Interface = dyn_cast<ObjCInterfaceDecl>(Owner))
-+    return Interface->getQualifiedNameAsString() + ";objc-runtime=" +
-+           Interface->getObjCRuntimeNameAsString().str();
++    return Interface->getQualifiedNameAsString() +
++           ";objc-runtime=" + Interface->getObjCRuntimeNameAsString().str();
 +  if (const auto *Protocol = dyn_cast<ObjCProtocolDecl>(Owner))
-+    return Protocol->getQualifiedNameAsString() + ";objc-runtime=" +
-+           Protocol->getObjCRuntimeNameAsString().str();
++    return Protocol->getQualifiedNameAsString() +
++           ";objc-runtime=" + Protocol->getObjCRuntimeNameAsString().str();
 +  if (const auto *Named = dyn_cast<NamedDecl>(Decl::castFromDeclContext(Owner)))
 +    return Named->getQualifiedNameAsString();
 +  return "<unknown>";
@@ -43821,11 +43916,21 @@ index 000000000..5fcb057ff
 +      return nullptr;
 +    SmallVector<Stmt *, 1> Body;
 +    if (NullableTraversal) {
-+      assert(!Setter && nullable(Value) && Value->isObjCRetainableType());
-+      StmtResult Get = nullableGetter(S, Receiver.get(), Components, 0, Loc);
-+      if (Get.isInvalid())
++      assert(nullable(Value) && Value->isObjCRetainableType());
++      StmtResult Application;
++      if (Setter) {
++        unsigned LastNullable = 0;
++        for (unsigned I = 0; I + 1 < Components.size(); ++I)
++          if (nullable(Components[I].Value))
++            LastNullable = I;
++        Application =
++            nullableSetter(S, Receiver.get(), reference(S, Params[1], Loc),
++                           Components, 0, LastNullable, Loc);
++      } else
++        Application = nullableGetter(S, Receiver.get(), Components, 0, Loc);
++      if (Application.isInvalid())
 +        return nullptr;
-+      Body.push_back(Get.get());
++      Body.push_back(Application.get());
 +    } else if (Setter && Components.back().Field) {
 +      StmtResult Set = recordFieldSetter(S, Receiver.get(),
 +          reference(S, Params[1], Loc), Components, Loc);
@@ -44153,10 +44258,8 @@ index 000000000..5fcb057ff
 +             "nullable Objective-C object or Block value");
 +      return ExprError();
 +    }
-+    // There is no specified successful write to a missing intermediate. Keep
-+    // the entire chain readonly even if each property independently has a
-+    // setter, rather than silently dropping an update.
-+    Writable = false;
++    // Settable nullable chains retain writability. Their setter follows native
++    // Objective-C nil messaging: a missing receiver short-circuits the update.
 +  }
 +  QualType Type = keyPathType(*this, Root, Current, Writable, Descriptor, Loc);
 +  if (Type.isNull())
@@ -44164,7 +44267,7 @@ index 000000000..5fcb057ff
 +  FunctionDecl *Get = accessor(*this, Root, Current, Components, false, Loc,
 +                               NullableTraversal);
 +  FunctionDecl *Set = Writable
-+      ? accessor(*this, Root, Current, Components, true, Loc) : nullptr;
++      ? accessor(*this, Root, Current, Components, true, Loc, NullableTraversal) : nullptr;
 +  if (!Get || (Writable && !Set))
 +    return ExprError();
 +
@@ -44219,7 +44322,8 @@ index 000000000..5fcb057ff
 +  Expr *DescriptorFields[] = {
 +      integer(*this, 32, 2, Loc),
 +      integer(*this, 32, (Writable ? 1u : 0u) | (HasFields ? 0u : 2u) |
-+                            (NullableTraversal ? 4u : 0u), Loc),
++                            (NullableTraversal ? 4u : 0u) |
++                            (NullableTraversal && Writable ? 8u : 0u), Loc),
 +      integer(*this, 64, Components.size(), Loc),
 +      text(*this, typeIdentity(Context, Root), Loc),
 +      text(*this, typeIdentity(Context, Current), Loc), text(*this, Path, Loc),
@@ -45260,10 +45364,10 @@ index 000000000..0bba2f948
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
 new file mode 100644
-index 000000000..1a2cb18d6
+index 000000000..b358f00b4
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-nullable-traversal.m
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,43 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fsyntax-only -verify %s
@@ -45276,6 +45380,7 @@ index 000000000..1a2cb18d6
 +@property(nonatomic, strong) NullablePathNode * _Nullable value;
 +@property(nonatomic, strong) NullablePathNode * _Nonnull required;
 +@property(nonatomic, copy) NullablePathBlock callback;
++@property(nonatomic, readonly) NullablePathNode * _Nullable observed;
 +@property(nonatomic) long count;
 +@property(nonatomic) NullablePathPair pair;
 +@end
@@ -45288,8 +45393,19 @@ index 000000000..1a2cb18d6
 +NullablePathNode * _Nullable apply(NullablePathNode * _Nonnull root) {
 +  return KeyPathGet(nullable_path(), root);
 +}
++WritableKeyPath<NullablePathNode *, NullablePathNode * _Nullable> nullable_write_path(void) {
++  return @keypath(NullablePathNode, next.next.value);
++}
++void valid_nullable_writes(NullablePathNode * _Nonnull root) {
++  KeyPathSet(@keypath(NullablePathNode, next.value), root, root);
++  root[nullable_write_path()] = root;
++  KeyPathSet(@keypath(NullablePathNode, next.callback), root, (NullablePathBlock)0);
++}
 +void invalid_nullable_paths(NullablePathNode * _Nonnull root) {
-+  KeyPathSet(@keypath(NullablePathNode, next.value), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  KeyPath<NullablePathNode *, NullablePathNode * _Nullable> read = nullable_write_path();
++  KeyPathSet(read, root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  KeyPathSet(@keypath(NullablePathNode, next.observed), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
++  KeyPathSet(@keypath(NullablePathNode, observed.value), root, root); // expected-error {{KeyPathSet requires a WritableKeyPath value}}
 +  (void)@keypath(NullablePathNode, next.required); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
 +  (void)@keypath(NullablePathNode, next.count); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}
 +  (void)@keypath(NullablePathNode, next.pair); // expected-error {{nullable intermediate key-path traversal requires a final nullable Objective-C object or Block value}}

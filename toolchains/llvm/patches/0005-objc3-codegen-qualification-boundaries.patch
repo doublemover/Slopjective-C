@@ -28247,10 +28247,10 @@ index 000000000..5bcab04fe
 +}
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
 new file mode 100644
-index 000000000..21fdd1303
+index 000000000..6a4bf9ae2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-keypath-nullable-traversal.m
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,30 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -fobjc-arc-exceptions -fobjc-dispatch-method=non-legacy -emit-llvm -o - %s | FileCheck %s
 +#include "../Inputs/keypath-abi.h"
@@ -28270,6 +28270,16 @@ index 000000000..21fdd1303
 +// CHECK: icmp ne ptr {{.*}}, null
 +// CHECK: br i1
 +// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
++// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
++
++// Writable nullable chains generate a guarded setter with balanced receiver
++// cleanup even when the property setter unwinds.
++// CHECK: define internal {{.*}}@__objc3_keypath_set_
++// CHECK: {{call|invoke}} {{.*}}@objc_msgSend
++// CHECK: {{call|invoke}} {{.*}}@{{llvm.objc.retain|objc_retain}}
++// CHECK: icmp ne ptr {{.*}}, null
++// CHECK: br i1
++// CHECK: {{call|invoke}} void @objc_msgSend
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
 diff --git a/clang/test/ObjC3/CodeGen/typed-keypath-operand-snapshots.m b/clang/test/ObjC3/CodeGen/typed-keypath-operand-snapshots.m
 new file mode 100644

@@ -5,6 +5,8 @@
 #include <objc/objc-arc.h>
 #include <objc/blocks_runtime.h>
 
+@class RuntimePathNode;
+typedef struct PathRoute { __unsafe_unretained RuntimePathNode * _Nullable next; } PathRoute;
 typedef struct PathPair { long first, second; } PathPair;
 typedef struct PathBits { unsigned value:3; signed small:5; unsigned sibling:7; } PathBits;
 #ifdef __cplusplus
@@ -19,7 +21,9 @@ extern int path_pair_reads, path_pair_sets;
 extern int path_bits_reads, path_bits_sets, path_inherited_reads, path_inherited_sets;
 extern int path_throw_pair_getter, path_throw_pair_setter;
 extern int path_optional_reads, path_value_reads, path_callback_reads;
-extern int path_throw_optional_value;
+extern int path_throw_optional_value, path_throw_optional_setter;
+extern int path_value_sets, path_callback_sets, path_route_reads, path_route_sets;
+extern __unsafe_unretained RuntimePathNode *path_clear_optional_parent;
 
 __attribute__((objc_root_class))
 @interface RuntimePathNode {
@@ -34,6 +38,7 @@ __attribute__((objc_root_class))
   __weak RuntimePathNode *_observer;
 #endif
   PathPair _pair;
+  PathRoute _route;
   PathBits _bits;
 #ifdef __cplusplus
   PathInherited _inherited;
@@ -46,6 +51,7 @@ __attribute__((objc_root_class))
     RuntimePathNode * _Nonnull child;
 @property(nonatomic, copy) RuntimePathNode * _Nullable copied;
 @property(nonatomic) PathPair pair;
+@property(nonatomic) PathRoute route;
 @property(nonatomic) PathBits bits;
 #ifdef __cplusplus
 @property(nonatomic) PathInherited inherited;

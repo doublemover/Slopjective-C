@@ -21,6 +21,14 @@ static int once_value(void) {
   operand_sequence = operand_sequence * 10 + 3;
   return 42;
 }
+static WritableKeyPath<RuntimePathNode *, RuntimePathNode * _Nullable> once_optional_path(void) {
+  ++path_evaluations; operand_sequence = operand_sequence * 10 + 1;
+  return @keypath(RuntimePathNode, optionalNext.optionalValue);
+}
+static RuntimePathNode *once_optional_value(RuntimePathNode *value) {
+  ++value_evaluations; operand_sequence = operand_sequence * 10 + 3;
+  return value;
+}
 static KeyPath<RuntimePathNode *, int> once_readonly_return(void) {
   return once_path();
 }
@@ -179,12 +187,20 @@ int main(void) {
     assert(snapshot_witness == nil);
 #endif
 
-    // Nullable chains are readonly and preserve their final nullable type.
-    KeyPath<RuntimePathNode *, RuntimePathNode * _Nullable> optional_path =
+    // Nullable chains preserve their final nullable type and skip missing writes.
+    WritableKeyPath<RuntimePathNode *, RuntimePathNode * _Nullable> optional_path =
         @keypath(RuntimePathNode, optionalNext.optionalValue);
     path_optional_reads = path_value_reads = 0;
     assert(KeyPathGet(optional_path, root) == nil);
     assert(path_optional_reads == 1 && path_value_reads == 0);
+    path_evaluations = root_evaluations = value_evaluations = operand_sequence = 0;
+    path_value_sets = path_optional_reads = 0;
+    KeyPathSet(once_optional_path(), once_root(root), once_optional_value(root));
+    assert(operand_sequence == 123 && path_evaluations == 1 && root_evaluations == 1 && value_evaluations == 1);
+    assert(path_optional_reads == 1 && path_value_sets == 0);
+    operand_sequence = 0;
+    assert((once_root(root)[once_optional_path()] = once_optional_value(root)) == root);
+    assert(operand_sequence == 213 && path_value_sets == 0);
     root.optionalNext = child;
     path_optional_reads = path_value_reads = 0;
     assert(KeyPathGet(@keypath(RuntimePathNode,
@@ -199,7 +215,77 @@ int main(void) {
         KeyPathMetadata(optional_path);
     assert(objc3_keypath_validate_v2(optional_metadata) == 0);
     assert((optional_metadata->flags & OBJC3_KEYPATH_NULLABLE_TRAVERSAL) &&
-           !(optional_metadata->flags & OBJC3_KEYPATH_WRITABLE));
+           (optional_metadata->flags & OBJC3_KEYPATH_WRITABLE) &&
+           (optional_metadata->flags & OBJC3_KEYPATH_NULLABLE_WRITES));
+    path_value_sets = path_optional_reads = path_value_reads = 0;
+    KeyPathSet(optional_path, root, root);
+    assert(child.optionalValue == root);
+    assert(path_optional_reads == 1 && path_value_sets == 1 && path_value_reads == 1);
+    assert((root[optional_path] = leaf) == leaf);
+    assert(child.optionalValue == leaf && path_value_sets == 2);
+    path_optional_reads = path_value_sets = path_value_reads = 0;
+    KeyPathSet(@keypath(RuntimePathNode, optionalNext.optionalNext.optionalValue), root, root);
+    assert(path_optional_reads == 2 && path_value_sets == 0 && path_value_reads == 0);
+    child.optionalNext = leaf;
+    KeyPathSet(@keypath(RuntimePathNode, optionalNext.optionalNext.optionalValue), root, child);
+    assert(leaf.optionalValue == child && path_value_sets == 1);
+    leaf.optionalValue = nil;
+    child.optionalNext = nil;
+    path_throw_optional_setter = 1;
+    @try {
+      KeyPathSet(optional_path, root, root);
+      assert(0);
+    } @catch (RuntimePathNode *failure) {
+      assert(failure == child);
+    }
+    path_throw_optional_setter = 0;
+    assert(child.optionalValue == leaf);
+    // A record routing prefix is read once and is never written back when
+    // the mutation targets the object reached through its nullable field.
+    PathRoute route = {child}; root.route = route;
+    path_route_reads = path_route_sets = 0;
+    KeyPathSet(@keypath(RuntimePathNode, route.next.optionalValue), root, leaf);
+    assert(path_route_reads == 1 && path_route_sets == 0 && child.optionalValue == leaf);
+    child.route = route;
+    path_route_reads = path_route_sets = 0;
+    KeyPathSet(@keypath(RuntimePathNode, optionalNext.route.next), root, leaf);
+    assert(path_route_reads == 1 && path_route_sets == 1 && child.route.next == leaf);
+    route.next = nil; root.route = route;
+    path_route_reads = path_route_sets = path_value_sets = 0;
+    KeyPathSet(@keypath(RuntimePathNode, route.next.optionalValue), root, root);
+    assert(path_route_reads == 1 && path_route_sets == 0 && path_value_sets == 0);
+    // The setter may remove the last external owner of its own receiver.
+    int destroyed_before_nullable_set = path_destroyed;
+    RuntimePathNode *transient = [RuntimePathNode newWithCount:5];
+    root.optionalNext = transient;
+#if __has_feature(objc_arc)
+    __weak RuntimePathNode *transient_witness = transient;
+    transient = nil;
+#else
+    objc_release(transient);
+#endif
+    path_clear_optional_parent = root;
+    KeyPathSet(optional_path, root, leaf);
+    assert(path_destroyed == destroyed_before_nullable_set + 1);
+#if __has_feature(objc_arc)
+    assert(transient_witness == nil);
+#endif
+    // The same pin must unwind after a throwing setter releases the owner.
+    transient = [RuntimePathNode newWithCount:6];
+    root.optionalNext = transient;
+#if __has_feature(objc_arc)
+    transient_witness = transient; transient = nil;
+#else
+    objc_release(transient);
+#endif
+    path_clear_optional_parent = root;
+    path_throw_optional_setter = 1;
+    @try {
+      KeyPathSet(optional_path, root, leaf); assert(0);
+    } @catch (RuntimePathNode *failure) { assert(failure != nil); }
+    path_throw_optional_setter = 0;
+    // Exception storage can retain the thrown receiver to the pool boundary.
+    root.optionalNext = child;
     path_throw_optional_value = 1;
     @try {
       (void)KeyPathGet(optional_path, root);
@@ -214,7 +300,13 @@ int main(void) {
     PathCallback callback = KeyPathGet(
         @keypath(RuntimePathNode, optionalNext.callback), root);
     assert(callback && callback() == 73);
+    path_callback_sets = 0;
+    KeyPathSet(@keypath(RuntimePathNode, optionalNext.callback), root, ^{ return 91; });
+    callback = root[@keypath(RuntimePathNode, optionalNext.callback)];
+    assert(callback && callback() == 91 && path_callback_sets == 1);
     root.optionalNext = nil;
+    KeyPathSet(@keypath(RuntimePathNode, optionalNext.callback), root, ^{ return 17; });
+    assert(path_callback_sets == 1);
     path_callback_reads = 0;
     assert(KeyPathGet(@keypath(RuntimePathNode, optionalNext.callback), root) == nil);
     assert(path_callback_reads == 0);

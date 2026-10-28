@@ -61,12 +61,14 @@ unwinding use the existing compiler/runtime behavior. Application rejects an
 incompatible concrete root or nullable root. Setting a nonnull pointer property
 rejects a nullable or nil value. Readonly values cannot call `KeyPathSet`.
 
-Nullable intermediate traversal is admitted only as a readonly path with an
-explicitly nullable Objective-C object or Block final Value. Each selected
+Nullable intermediate traversal requires an explicitly nullable Objective-C
+object or Block final Value. Each selected
 receiver is bound once with precise ARC/MRC lifetime, tested once, and a missing
 receiver returns nil without evaluating later components. Native record
-components in such a chain use one value snapshot. Nullable chains never permit
-setting, even when each component property has a setter. Scalar, aggregate, and
+components in such a chain use one value snapshot. The
+[keypath 2.4 source span](linux_keypath_nullable_writes.md) additionally admits
+writes when the entire chain is settable: a missing receiver skips the update
+after evaluating the application operands once. Scalar, aggregate, and
 nonnull final results through nullable intermediates remain diagnosed.
 
 Native MRC getter results use an ordinary +0 convention: a declared +1 getter
@@ -119,8 +121,9 @@ path, component receiver/value types, declaration owner identity, actual getter
 and setter selectors, and readonly/nullable/nonnull/weak/copy/strong/atomic,
 retainable-value, and effective getter-returns-retained flags. Effective native
 getter ownership includes method families under MRC and explicit ownership
-attributes. Nullable traversal is an additive descriptor flag with a readonly,
-nullable-retainable final-value invariant; descriptor layout remains v2.
+attributes. Nullable traversal requires a nullable-retainable final Value;
+writable nullable descriptors also require the nullable-writes flag. Descriptor
+writability agrees with the complete component chain; layout remains v2.
 Metadata storage has native-image lifetime. The runtime validates its ABI/shape, performs checked component lookup, and compares full structural
 identity across separately emitted descriptors. A readonly view retains the
 underlying chain descriptor; its static type still prevents setting.
@@ -129,7 +132,7 @@ their declaring record identity. Paths containing native fields clear the KVC
 compatibility bit.
 
 Current fail-closed boundaries are nullable intermediate traversal to a
-nonnull/scalar/aggregate result, nullable-chain writes, incomplete class/protocol
+nonnull/scalar/aggregate result, incomplete class/protocol
 identity, open Objective-C generic arguments, dependent types,
 nontrivial/anonymous/union record traversal,
 reference fields, nontrivial value payloads, async/throwing accessors,

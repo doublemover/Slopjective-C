@@ -190,7 +190,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 3,
+        "minor": 4,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
@@ -202,12 +202,13 @@
         "cross-translation-unit type and descriptor identity",
         "record-field traversal and exact-once property writeback (authored)",
         "exact writable-to-readonly narrowing and source-only type signatures (authored)",
-        "bounded readonly nullable traversal and retained application operand snapshots (authored)",
+        "bounded nullable traversal and retained application operand snapshots (authored)",
+        "Writable nullable object/Block chains with exact-once operands, nil no-op updates, receiver pinning, native cleanup and semantic capability admission (source)",
         "Named native bit-fields and unambiguous inherited C++ record fields with native access, base adjustment, signed/truncated values and exact-once property writeback (source)",
         "Typed root[path] reads, assignments, compound updates and increments with source-ordered root/key/value snapshots, shared native lifetime/EH cleanup and source-free published inline syntax (source)"
       ],
       "remaining": [
-        "nullable chains with nonnull/scalar/aggregate results and writable traversal",
+        "nullable chains with nonnull/scalar/aggregate results",
         "dependent, effectful and isolated paths",
         "borrowed and owned-resource value semantics",
         "optional KVC conversion",

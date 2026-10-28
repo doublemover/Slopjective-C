@@ -8,7 +8,9 @@ int path_pair_reads, path_pair_sets;
 int path_bits_reads, path_bits_sets, path_inherited_reads, path_inherited_sets;
 int path_throw_pair_getter, path_throw_pair_setter;
 int path_optional_reads, path_value_reads, path_callback_reads;
-int path_throw_optional_value;
+int path_throw_optional_value, path_throw_optional_setter;
+int path_value_sets, path_callback_sets, path_route_reads, path_route_sets;
+__unsafe_unretained RuntimePathNode *path_clear_optional_parent;
 
 @implementation RuntimePathNode
 @synthesize copied = _copied;
@@ -22,6 +24,8 @@ int path_throw_optional_value;
 }
 - (int)readCount { ++path_count_reads; return _count; }
 - (void)writeCount:(int)value { ++path_count_sets; _count = value; }
+- (PathRoute)route { ++path_route_reads; return _route; }
+- (void)setRoute:(PathRoute)value { ++path_route_sets; _route = value; }
 - (PathPair)pair {
   ++path_pair_reads;
   if (path_throw_pair_getter) @throw self;
@@ -68,6 +72,12 @@ int path_throw_optional_value;
   return _optionalValue;
 }
 - (void)writeOptionalValue:(RuntimePathNode *)value {
+  ++path_value_sets;
+  if (path_clear_optional_parent) {
+    path_clear_optional_parent.optionalNext = nil;
+    path_clear_optional_parent = nil;
+  }
+  if (path_throw_optional_setter) @throw self;
 #if __has_feature(objc_arc)
   _optionalValue = value;
 #else
@@ -78,6 +88,7 @@ int path_throw_optional_value;
 }
 - (PathCallback)readCallback { ++path_callback_reads; return _callback; }
 - (void)writeCallback:(PathCallback)value {
+  ++path_callback_sets;
 #if __has_feature(objc_arc)
   _callback = value;
 #else

@@ -42,5 +42,7 @@ The [combined source receipt](../support/linux_keypath_subscripts_progress.json)
 records 405 compiler tests, 191 native unit tests, 33 frontend suites and 331
 tooling tests. Normal, ASan/UBSan and TSan each pass 168 configurations / 1,158
 commands. Source-free key-path and C++ packages pass 60 configurations / 240
-commands. Installed SDK delivery remains pending. Nullable writable traversal, dependent/effectful/isolated paths, owned or
+commands. Installed SDK delivery remains pending. The later
+[keypath 2.4 source span](linux_keypath_nullable_writes.md) admits bounded nullable
+writes. Dependent/effectful/isolated paths, owned or
 borrowed resource values and optional KVC boxing remain separate work.

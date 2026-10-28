@@ -18,7 +18,8 @@ extern "C" int objc3_keypath_validate_v2(
       !present(descriptor->path) ||
       (descriptor->flags & ~(OBJC3_KEYPATH_WRITABLE |
                              OBJC3_KEYPATH_KVC_COMPATIBLE |
-                             OBJC3_KEYPATH_NULLABLE_TRAVERSAL)))
+                             OBJC3_KEYPATH_NULLABLE_TRAVERSAL |
+                             OBJC3_KEYPATH_NULLABLE_WRITES)))
     return OBJC3_KEYPATH_INVALID_METADATA;
   std::string_view remaining(descriptor->path);
   bool writable = true;
@@ -68,7 +69,9 @@ extern "C" int objc3_keypath_validate_v2(
       (!!(descriptor->flags & OBJC3_KEYPATH_NULLABLE_TRAVERSAL) !=
        nullable_traversal) ||
       (!!(descriptor->flags & OBJC3_KEYPATH_WRITABLE) !=
-       (writable && !nullable_traversal)))
+       writable) ||
+      (!!(descriptor->flags & OBJC3_KEYPATH_NULLABLE_WRITES) !=
+       (writable && nullable_traversal)))
     return OBJC3_KEYPATH_INVALID_METADATA;
   if (nullable_traversal) {
     const auto flags =

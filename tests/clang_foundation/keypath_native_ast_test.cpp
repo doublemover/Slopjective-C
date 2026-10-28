@@ -92,12 +92,17 @@ struct ASTInherited : ASTLeft, ASTRight { unsigned bits:3; };
 __attribute__((objc_root_class))
 @interface ASTPathRoot
 @property(nonatomic) int count;
+@property(nonatomic, strong) ASTPathRoot * _Nullable next;
+@property(nonatomic, strong) ASTPathRoot * _Nullable value;
 @property(nonatomic, readonly) int identity;
 @property(nonatomic) ASTPathPair pair;
 @property(nonatomic) ASTInherited inherited;
 @end
 WritableKeyPath<ASTPathRoot *, int> writable_path(void) {
   return @keypath(ASTPathRoot, count);
+}
+WritableKeyPath<ASTPathRoot *, ASTPathRoot * _Nullable> nullable_path(void) {
+  return @keypath(ASTPathRoot, next.value);
 }
 KeyPath<ASTPathRoot *, int> readonly_path(void) {
   return @keypath(ASTPathRoot, identity);
@@ -164,6 +169,23 @@ template int template_application<1>(ASTPathRoot * _Nonnull);
   assert(printed.find("@keypath(ASTPathRoot * _Nonnull, count)") !=
          std::string::npos);
   assert(printed.find("__objc3_keypath_get_") == std::string::npos);
+  auto imported_nullable = importer.Import(function(*provider, "nullable_path"));
+  assert(imported_nullable);
+  auto *nullable_target = llvm::cast<clang::FunctionDecl>(*imported_nullable);
+  clang::ObjC3KeyPathInfo nullable_info;
+  assert(clang::getObjC3KeyPathInfo(nullable_target->getReturnType(), nullable_info));
+  assert(nullable_info.Set && nullable_info.Value->isObjCObjectPointerType());
+  struct NullableLiterals : clang::RecursiveASTVisitor<NullableLiterals> {
+    unsigned count = 0;
+    bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) {
+      if (clang::getObjC3KeyPathLiteralPath(literal)) {
+        assert(clang::hasObjC3NullableKeyPathWrite(literal)); ++count;
+      }
+      return true;
+    }
+  } nullable_literals;
+  nullable_literals.TraverseStmt(nullable_target->getBody());
+  assert(nullable_literals.count == 1);
   auto imported_field = importer.Import(function(*provider, "field_path"));
   assert(imported_field);
   auto *field_target = llvm::cast<clang::FunctionDecl>(*imported_field);

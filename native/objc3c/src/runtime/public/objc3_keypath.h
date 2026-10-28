@@ -15,8 +15,9 @@ extern "C" {
 enum objc3_keypath_flags_v2 {
   OBJC3_KEYPATH_WRITABLE = 1u << 0,
   OBJC3_KEYPATH_KVC_COMPATIBLE = 1u << 1,
-  /* Readonly chain; a missing intermediate returns a nullable object/Block. */
-  OBJC3_KEYPATH_NULLABLE_TRAVERSAL = 1u << 2
+  /* A missing intermediate returns nil; nullable writes make no update. */
+  OBJC3_KEYPATH_NULLABLE_TRAVERSAL = 1u << 2,
+  OBJC3_KEYPATH_NULLABLE_WRITES = 1u << 3
 };
 enum objc3_keypath_component_flags_v2 {
   OBJC3_KEYPATH_COMPONENT_READONLY = 1u << 0,

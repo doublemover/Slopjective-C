@@ -9,6 +9,25 @@ int main(void) {
   @autoreleasepool {
     PackagePathRoot *root = [PackagePathRoot new];
     assert(package_live_roots() == initial_roots + 1);
+    WritableKeyPath<PackagePathRoot *, PackagePathRoot * _Nullable> nullable_path = package_nullable_path();
+    KeyPathSet(nullable_path, root, root);
+    assert(root.value == nil);
+    assert((root[nullable_path] = root) == root);
+    PackagePathRoot *child = [PackagePathRoot new];
+    root.next = child;
+    KeyPathSet(nullable_path, root, root);
+    assert(child.value == root);
+    const objc3_keypath_descriptor_v2 *nullable_metadata = KeyPathMetadata(nullable_path);
+    assert(objc3_keypath_validate_v2(nullable_metadata) == 0);
+    assert(nullable_metadata->flags & OBJC3_KEYPATH_NULLABLE_WRITES);
+    int nullable_equal = 0;
+    assert(objc3_keypath_equal_v2(nullable_metadata,
+        KeyPathMetadata(@keypath(PackagePathRoot, next.value)), &nullable_equal) == 0 && nullable_equal);
+    root[nullable_path] = nil;
+    root.next = nil;
+#if !__has_feature(objc_arc)
+    objc_release(child);
+#endif
     WritableKeyPath<PackagePathRoot *, int> path = package_count_path();
     KeyPathSet(path, root, 42);
     assert(KeyPathGet(path, root) == 42);

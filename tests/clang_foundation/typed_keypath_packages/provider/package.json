@@ -17,7 +17,8 @@
     "package_live_roots",
     "PackagePathBits",
     "package_bits_path",
-    "package_indexed_update"
+    "package_indexed_update",
+    "package_nullable_path"
   ],
   "dependencies": []
 }
