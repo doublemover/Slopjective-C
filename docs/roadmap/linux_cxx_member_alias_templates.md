@@ -34,3 +34,11 @@ AArch64 qualification remain open.
 The [2.52 source span](linux_cxx_nested_template_types.md) additionally admits
 named nested records, primary class templates and inline member variable
 templates under the outermost class contract.
+
+The [combined source receipt](../support/linux_template_member_batch_progress.json)
+records 410 compiler regressions, 201 native unit tests, all 33 optimized frontend
+suites and 335 tooling tests. Normal, ASan/UBSan and TSan each pass all 168
+five-family source/PCH configurations / 1,158 commands. Source-free C++ and
+key-path packages pass 80 configurations / 320 commands across normal, eager,
+ASan/UBSan and TSan execution. These results supersede the deferred combined
+source checks above; coordinated SDK delivery remains pending.

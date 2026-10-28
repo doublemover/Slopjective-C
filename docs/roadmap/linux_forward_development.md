@@ -71,6 +71,14 @@ all **33 optimized frontend suites**, **335 tooling tests** and **32 source-free
 package configurations / 128 commands** across normal, eager-import, ASan/UBSan
 and TSan execution. SDK 2.33 remains the accepted archive.
 
+The [combined template-member/key-path source receipt](../support/linux_template_member_batch_progress.json)
+qualifies source 2.50–2.52 and keypath 2.4 with **410 compiler regressions**, **201
+native unit tests**, all **33 optimized frontend suites** and **335 tooling tests**.
+Normal, ASan/UBSan and TSan each pass all **168 five-family source/PCH
+configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
+configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
+Coordinated SDK delivery follows this batch.
+
 ## Nested class-template types and variables
 
 The [2.52 source span](linux_cxx_nested_template_types.md) adds named nested

@@ -26,7 +26,16 @@ Source/reprint/relocation and changed-body checks cover complete ownership and
 admission. Exact outer floating arguments distinguish signed zero. Source-free
 C++20/23 consumers create new nested specializations, copy/delete provider-created
 objects through native virtual entries and check complete destruction, shared
-member-variable state and independent specialization storage. Focused checks are
+member-variable state, independent specialization storage and per-thread
+initialization/isolation on a worker. Focused checks are
 recorded when complete; broader validation and coordinated SDK delivery remain
 batched. SDK 2.33 remains accepted. Full profile and native AArch64 qualification
 remain open.
+
+The [combined source receipt](../support/linux_template_member_batch_progress.json)
+records 410 compiler regressions, 201 native unit tests, all 33 optimized frontend
+suites and 335 tooling tests. Normal, ASan/UBSan and TSan each pass all 168
+five-family source/PCH configurations / 1,158 commands. Source-free C++ and
+key-path packages pass 80 configurations / 320 commands across normal, eager,
+ASan/UBSan and TSan execution. These results supersede the deferred combined
+source checks above; coordinated SDK delivery remains pending.
