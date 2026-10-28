@@ -1269,3 +1269,17 @@ int native_template_deduction_bridge(){return native_template_make_reader(40)(2)
     };
     constexpr int native_member_probe(){NativeMemberBox<int> box(40L);return box.add(0);}
     int native_member_producer(){return NativeMemberBox<int>::next<>();}
+
+
+template<class T> struct NativeMemberAliases {
+  template<class U=T> using Pointer=U*;
+  template<class... U> using Callback=T(*)(U...);
+  template<int N> using Array=T[N];
+  template<class U=T> using Rebind=NativeTemplateValue<U>;
+  template<class U> requires requires{typename U::element;}
+  using Element=typename U::element;
+};
+int native_member_alias_probe(){
+  NativeMemberAliases<int>::Rebind<> value(42);
+  return value.number();
+}

@@ -29,7 +29,7 @@ exact final destruction, alongside consumer-only hierarchy instantiation.
 
 Subsequent source spans add [deduced returns](linux_cxx_template_deduction.md) and
 [member function templates](linux_cxx_member_templates.md). Explicit/partial
-specializations, nested class/alias/variable templates, effectful methods and
+specializations, nested class/variable templates, effectful methods and
 remaining dependent projections stay separate work. SDK 2.33 remains accepted; optimized/broader/instrumented qualification and
 coordinated archive delivery follow the combined implementation batch.
 

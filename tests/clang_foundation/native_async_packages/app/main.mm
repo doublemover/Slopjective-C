@@ -216,6 +216,17 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  {
+    NativeMemberAliases<long>::Pointer<> pointer=nullptr;
+    NativeMemberAliases<long>::Array<2> values={40,2};
+    NativeMemberAliases<long>::Element<NativeTemplateBox<int>> result=42;
+    NativeMemberAliases<long>::Callback<short,int> callback=[](short a,int b)->long{return a+b;};
+    if(pointer || callback(values[0],values[1])!=42 || result!=42 || native_member_alias_probe()!=42)return 151;
+    NativeMemberAliases<int>::Rebind<long> value(42);auto copy=value;
+    if(copy.number()!=42 || NativeTemplateValue<long>::live!=2)return 152;
+  }
+  if(NativeTemplateValue<long>::live!=0 || NativeTemplateValue<int>::live!=0)return 153;
+
   static_assert(native_member_probe()==42);
   static_assert(NativeMemberBox<long>{40}.add(0L)==42);
   static_assert(NativeMemberBox<long>{40}.sum(1,1L)==42);

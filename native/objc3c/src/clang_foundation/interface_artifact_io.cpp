@@ -25,7 +25,7 @@ namespace objc3::clang_foundation {
 namespace {
 
 namespace fs = std::filesystem;
-const std::array<llvm::StringRef, 48> kSupportedSemantics = {
+const std::array<llvm::StringRef, 49> kSupportedSemantics = {
     "objc3.canonical-function-effects.v1",
     "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",
@@ -67,6 +67,7 @@ const std::array<llvm::StringRef, 48> kSupportedSemantics = {
     kCxxTemplateStructureSemantic,
     kCxxTemplateDeductionSemantic,
     kCxxMemberTemplateSemantic,
+    kCxxMemberAliasTemplateSemantic,
     "objc3.cxx-async-definitions.v1",
     "objc3.sdk-runtime-declarations.v1",
     "objc3.ownership-projection.v1",

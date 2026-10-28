@@ -25,7 +25,7 @@ operation descriptors, receive backend delivery alongside imported functions.
 Subsequent source spans add [forwards and hierarchies](linux_cxx_template_structure.md),
 [deduced returns](linux_cxx_template_deduction.md) and
 [member function templates](linux_cxx_member_templates.md). Opaque definitions,
-nested class/alias/variable templates, explicit/partial specializations, effectful
+nested class/variable templates, explicit/partial specializations, effectful
 methods and remaining dependent projections stay gated. This source span does not rebuild the accepted
 SDK 2.33 archive or claim full profile/AArch64 conformance.
 

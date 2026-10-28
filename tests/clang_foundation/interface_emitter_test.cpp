@@ -1741,6 +1741,68 @@ void TestTemplateStructure() {
   }
 }
 
+void TestClassMemberAliasTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="member-aliases.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.member_aliases","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.member_aliases","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+
+    template<class T> struct AliasValue {using element=T;T value;};
+    template<class T> struct MemberAliases {
+      template<class U=T> using Pointer=U*;
+      template<class... U> using Callback=T(*)(U...);
+      template<int N> using Array=T[N];
+      template<class U=T> using Rebind=AliasValue<U>;
+      template<class U> requires requires{typename U::element;}
+      using Element=typename U::element;
+      template<class U> static constexpr Element<Rebind<U>> number(U n){return n;}
+    };
+    inline constexpr int alias_member_probe(){
+      MemberAliases<int>::Array<2> values={40,2};
+      MemberAliases<int>::Rebind<long> value{values[0]};
+      return MemberAliases<int>::number(value.value)+values[1];
+    }
+
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxMemberAliasTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-member-aliases.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-member-aliases.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("using Pointer=U*"),16,"using Pointer=U const*");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name.starts_with("MemberAliases::");}));
+    for(const auto *capability:{kCxxMemberAliasTemplateSemantic,kCxxClassTemplateSemantic,kCxxAliasTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxMemberAliasTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    for(const auto *source:{
+        "struct Hidden{};template<class T>struct Types{template<class U>using Leak=Hidden;};",
+        "struct Hidden{};template<class T>struct Types{template<class U=Hidden>using Leak=U;};"}) {
+      auto hidden=emit(source,"hidden-member-alias.cpp",{"Types"});
+      assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC156";}));
+    }
+    assert(!emit("template<class T>struct Types{template<template<class>class U>using Rebind=U<T>;};").success);
+  }
+}
+
 void TestClassMemberTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="members.cpp") {
@@ -1807,7 +1869,8 @@ void TestClassMemberTemplates() {
     for(const auto *gated:{
         "template<class T>struct Box{template<class U>U f(U);};",
         "template<class T>struct Box{template<template<class>class U>int f(){return 42;}};",
-        "template<class T>struct Box{template<class U>int f(U,...){return 42;}};"})
+        "template<class T>struct Box{template<class U>int f(U,...){return 42;}};",
+        "template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}"})
       assert(!emit(gated).success);
   }
 }
@@ -2996,6 +3059,7 @@ int main() {
   TestPublicVariableTemplates();
   TestPublicClassTemplates();
   TestClassMemberTemplates();
+  TestClassMemberAliasTemplates();
   TestTemplateStructure();
   TestTemplateDeduction();
   TestCarrierExpressionRoundtrip();

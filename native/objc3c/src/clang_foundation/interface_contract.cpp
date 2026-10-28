@@ -438,6 +438,17 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_member_alias_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberAliasTemplateIdentity);
+  const bool member_alias_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxMemberAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_alias_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool member_alias_alias = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_member_alias_templates!=member_alias_capability ||
+      (member_alias_capability && (!member_alias_class || !member_alias_alias)))
+    Add(result,"O3IFC059","member alias template identity and required member/class/alias capabilities must agree",expected.canonical_name);
   const bool has_member_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberTemplateIdentity);
   const bool member_template_capability = std::find(sidecar.required_semantics.begin(),

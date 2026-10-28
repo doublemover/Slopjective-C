@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 50,
+        "minor": 51,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -176,13 +176,14 @@
         "Public primary C++ class templates with checked dependent bodies, defaults, packs, constraints, native consumer instantiation and module-owned member/storage/lifetime ABI (source)",
         "Class/variable template forward definitions, inherited defaults and class-template inheritance/virtual dispatch/RTTI under a required template-structure contract (source)",
         "Native auto/decltype(auto) function/class-member/variable template deduction and source-free closure factories with value/reference semantics and nontrivial captured lifetimes (source)",
-        "In-class member function templates in public primary class templates, including constrained/defaulted heads, converting constructors, operators, packs, deduction, shared specialization state and closure factories (source)"
+        "In-class member function templates in public primary class templates, including constrained/defaulted heads, converting constructors, operators, packs, deduction, shared specialization state and closure factories (source)",
+        "Nested alias templates in public primary class templates, with checked heads/defaults/constraints, dependent member/rebinding/array/callback-pack types and source-free consumer substitution (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining template specializations, nested class/alias/variable templates, concrete-class member templates and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining template specializations, nested class/variable templates, concrete-class member/alias templates and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

@@ -238,7 +238,9 @@
     "native_template_deduction_bridge",
     "NativeMemberBox",
     "native_member_probe",
-    "native_member_producer"
+    "native_member_producer",
+    "NativeMemberAliases",
+    "native_member_alias_probe"
   ],
   "dependencies": []
 }
