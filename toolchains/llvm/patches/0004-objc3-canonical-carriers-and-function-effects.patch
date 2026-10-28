@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..f606df6b5 100644
+index d743717ad..1fb1b8f21 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -3602,7 +3602,16 @@ index d743717ad..f606df6b5 100644
  
    if (D->getTemplateArgsAsWritten())
      D2->setTemplateArgsAsWritten(ToTAInfo);
-@@ -7051,17 +7539,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -6948,6 +7436,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateSpecializationDecl(
+     D2->setConstexpr(true);
+ 
+   D2->setAccess(D->getAccess());
++  D2->setLexicalDeclContext(LexicalDC);
++  if (Error Err = ImportTemplateParameterLists(D, D2)) return std::move(Err);
+ 
+   if (Error Err = ImportInitializer(D, D2))
+     return std::move(Err);
+@@ -7051,17 +7541,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -3624,7 +3633,7 @@ index d743717ad..f606df6b5 100644
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7560,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7076,6 +7562,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -3640,7 +3649,7 @@ index d743717ad..f606df6b5 100644
    return ToFunc;
  }
  
-@@ -7111,7 +7604,10 @@ ASTNodeImporter::VisitRequiresExprBodyDecl(RequiresExprBodyDecl *D) {
+@@ -7111,7 +7606,10 @@ ASTNodeImporter::VisitRequiresExprBodyDecl(RequiresExprBodyDecl *D) {
    if (GetImportedOrCreateDecl(To, D, Importer.getToContext(), DC, RequiresLoc))
      return To;
    To->setLexicalDeclContext(LexicalDC);
@@ -3652,7 +3661,7 @@ index d743717ad..f606df6b5 100644
    return To;
  }
  
-@@ -7328,6 +7824,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7826,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3750,7 +3759,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +8072,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +8074,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -3811,7 +3820,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8416,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8418,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3990,7 +3999,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8897,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8899,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -4007,7 +4016,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9658,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9660,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -4061,7 +4070,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9163,6 +10033,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +10035,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -4078,7 +4087,7 @@ index d743717ad..f606df6b5 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10332,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10334,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -4093,7 +4102,7 @@ index d743717ad..f606df6b5 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10385,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10387,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -4115,7 +4124,7 @@ index d743717ad..f606df6b5 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10567,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10569,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -4130,7 +4139,7 @@ index d743717ad..f606df6b5 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10622,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10624,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -4229,7 +4238,7 @@ index d743717ad..f606df6b5 100644
  }
  
  namespace {
-@@ -9857,6 +10854,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10856,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -4289,7 +4298,7 @@ index d743717ad..f606df6b5 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11173,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11175,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -4316,7 +4325,7 @@ index d743717ad..f606df6b5 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11638,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11640,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4329,7 +4338,7 @@ index d743717ad..f606df6b5 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11654,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11656,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4341,7 +4350,7 @@ index d743717ad..f606df6b5 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11666,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11668,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4353,7 +4362,7 @@ index d743717ad..f606df6b5 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11678,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11680,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4375,7 +4384,7 @@ index d743717ad..f606df6b5 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +12122,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12124,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -18708,10 +18717,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..808324672
+index 000000000..9259dcc92
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1370 @@
+@@ -0,0 +1,1416 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20080,6 +20089,52 @@ index 000000000..808324672
 +    Replayed+="int use(){return N::Concrete{}.add(1)+N::Concrete::twice(20)+N::Concrete{}.add(2L);}";
 +    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"concrete-member-function-specializations-replayed.cpp");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesConcreteMemberVariableSpecializations) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Head=R"(
++      namespace N {
++        struct Value{int n;explicit Value(int n):n(n){}~Value(){}};
++        template<class T>concept Number=sizeof(T)>0;
++        struct Concrete {
++          template<class T>inline static int value=0;
++          template<class T>inline static thread_local int local=0;
++          template<class T>static Value object;
++          template<int V,bool Positive=true>inline static int count=0;
++        };
++      }
++    )";
++    auto From=tooling::buildASTFromCodeWithArgs(Head+R"(
++      template<>inline int N::Concrete::value<int> =42;
++      template<N::Number T>inline int N::Concrete::value<T*> =40;
++      template<>inline thread_local int N::Concrete::local<int> =42;
++      template<N::Number T>inline thread_local int N::Concrete::local<T*> =40;
++      template<>N::Value N::Concrete::object<int>{42};
++      template<int V>requires(V>0)inline int N::Concrete::count<V,true> =V;
++    )",{"-xc++",Standard},"concrete-member-variable-specializations.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"concrete-member-variable-specializations-import.cpp");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto Shared=std::make_shared<ASTImporterSharedState>(*To->getASTContext().getTranslationUnitDecl());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false,Shared);
++    std::string Replayed;
++    auto Print=[&](const Decl *D){PrintingPolicy Policy(From->getLangOpts());Policy.PolishForDeclaration=true;
++      std::string Text;llvm::raw_string_ostream Stream(Text);D->print(Stream,Policy);return Text;};
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      if(!isa<NamespaceDecl,VarTemplateSpecializationDecl>(D))continue;
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++      if(!isa<NamespaceDecl>(D))EXPECT_EQ(Print(D),Print(*Imported));
++      Replayed+=Print(*Imported)+";\n";
++    }
++    Replayed+="int use(){return N::Concrete::value<int>+N::Concrete::value<int*>+N::Concrete::local<int>+N::Concrete::local<int*>+N::Concrete::object<int>.n+N::Concrete::count<42>;}";
++    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"concrete-member-variable-specializations-replayed.cpp");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
++    auto DeclarationOnly=tooling::buildASTFromCodeWithArgs(Head+"template<>N::Value N::Concrete::object<int>;",{"-xc++",Standard},"concrete-member-variable-specialization-declaration.cpp");
++    ASSERT_TRUE(DeclarationOnly);EXPECT_FALSE(DeclarationOnly->getDiagnostics().hasErrorOccurred());
++    for(auto *D:DeclarationOnly->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *Variable=dyn_cast<VarTemplateSpecializationDecl>(D))
++        EXPECT_EQ(Variable->isThisDeclarationADefinition(),VarDecl::DeclarationOnly);
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
