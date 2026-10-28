@@ -126,6 +126,28 @@ int effect_template_checked_application() __objc3_async {
   }
 }
 
+int effect_member_checked_application() __objc3_async {
+  NativeEffectMembers::Family<int> family{42};NativeEffectMembers::Concrete concrete;
+  NativeModuleResult *error=[NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{error};
+#endif
+  [error setNumber:42];
+  __objc3_do {
+    int synchronous=__objc3_try(concrete.checked(42,(id<NativeModuleError>)nullptr));
+    int asynchronous=__objc3_try(__objc3_await family.checked((id<NativeModuleError>)nullptr));
+    if(synchronous!=42 || asynchronous!=42)return 0;
+    (void)__objc3_try(__objc3_await family.checked((id<NativeModuleError>)error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    if([(NativeModuleResult *)caught number]!=42)return 0;
+  }
+  __objc3_do {
+    (void)__objc3_try(concrete.checked(0,(id<NativeModuleError>)error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    return [(NativeModuleResult *)caught number]==42?42:0;
+  }
+}
+
 int checked_application(objc3_actor_t *actor) __objc3_async {
   __objc3_await objc3::hop_to(actor);
   __objc3_do {
@@ -1144,6 +1166,27 @@ int main() {
     if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || owned.result().number()!=42) return 227;
   }
   if(NativeTemplateValue<int>::live) return 228;
+  {
+    NativeEffectMembers::Family<int> family{42};NativeEffectMembers::Concrete concrete;
+    auto task=family.task().start(executor);
+    auto frame=__objc3_async_from_frame<int>(family.frame()).start(executor);
+    auto echo=family.echo(42L).start(executor);
+    auto framed=__objc3_async_from_frame<long>(family.framed(42L)).start(executor);
+    auto concrete_task=concrete.task(42).start(executor);
+    auto concrete_frame=__objc3_async_from_frame<long>(concrete.frame(42L)).start(executor);
+    auto checked=effect_member_checked_application().start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       task.result()!=42 || frame.result()!=42 || echo.result()!=42 || framed.result()!=42 ||
+       concrete_task.result()!=42 || concrete_frame.result()!=42 || checked.result()!=42) return 229;
+  }
+  {
+    NativeEffectMembers::Family<NativeTemplateValue<int>> family{NativeTemplateValue<int>(42)};
+    auto task=family.task().start(executor);
+    auto frame=__objc3_async_from_frame<NativeTemplateValue<int>>(family.frame()).start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       task.result().number()!=42 || frame.result().number()!=42) return 230;
+  }
+  if(NativeTemplateValue<int>::live) return 231;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

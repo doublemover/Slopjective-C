@@ -438,6 +438,15 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_effectful_template_members=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulTemplateMemberIdentity);
+  const bool effectful_template_member_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulTemplateMemberSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_template_member_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulTemplateMemberIdentity(d) || d.kind=="ClassTemplate" ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_effectful_template_members!=effectful_template_member_capability || !effectful_template_member_owners)
+    Add(result,"O3IFC083","effectful template-member identities and required capability must agree",expected.canonical_name);
   const bool has_effectful_function_templates=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxEffectfulFunctionTemplateIdentity);
   const bool effectful_function_template_capability=std::find(sidecar.required_semantics.begin(),

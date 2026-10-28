@@ -2450,7 +2450,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
 
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
-  bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false;
+  bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false, effectful=false;
   void Read(const clang::CXXRecordDecl *record) {
     if (!record || !record->isCompleteDefinition()) return;
     for (const auto *member : record->decls()) {
@@ -2471,6 +2471,10 @@ struct ClassTemplatePublication {
         nested=true;Read(inner->getDefinition());
       }
       if (method) {
+        const auto effects=ReadCanonicalFunctionEffects(method->getType(),method->getASTContext());
+        effectful |= (effects.is_async || effects.is_throwing) &&
+            (llvm::isa<clang::FunctionTemplateDecl>(member) || record->isDependentContext() ||
+             llvm::isa<clang::ClassTemplateSpecializationDecl>(record));
         deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
         variadic |= method->isVariadic();
       }
@@ -2519,6 +2523,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                      [](const auto *specialization){return llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization);})
              ? ";cxx-class-partial-specializations:v1;" : "") +
         (members.deduced ? ";cxx-template-deduction:v1;" : "") +
+        (members.effectful ? ";cxx-effectful-template-members:v1;" : "") +
         (members.functions ? ";cxx-member-templates:v1;" : "") +
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
         (members.variables ? ";cxx-variable-templates:v1;" : "") +
@@ -2624,6 +2629,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     if (HasDirectMemberTemplates(cxx)) {
       ClassTemplatePublication members;members.Read(cxx);
       value+=";cxx-concrete-member-templates:v1;";
+      if (members.effectful) value+=";cxx-effectful-template-members:v1;";
       if (members.nested_classes)
         value+=";cxx-concrete-nested-templates:v1;;cxx-nested-templates:v1;";
       if (members.functions) value+=";cxx-member-templates:v1;";
@@ -3772,8 +3778,6 @@ bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
   if (!method || (!method->doesThisDeclarationHaveABody() &&
                   !IsDetachedCallableTemplateDefinition(method->getDefinition()))) return false;
-  const auto effects=ReadCanonicalFunctionEffects(method->getType(),method->getASTContext());
-  if (effects.is_async || effects.is_throwing) return false;
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   for (const auto *attribute : method->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
@@ -3886,10 +3890,8 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       for (const auto *partial:PublishedVariablePartials(value))
         if (!IsBoundedVariablePartial(partial)) return false;
     } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
-      const auto effects=ReadCanonicalFunctionEffects(method->getType(),body->getASTContext());
       if (IsClosedParentMemberSpecialization(method)) continue;
-      if (effects.is_async || effects.is_throwing ||
-          method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization ||
+      if (method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization ||
           (!method->doesThisDeclarationHaveABody() &&
            !IsDetachedCallableTemplateDefinition(method->getDefinition()) && !method->isDefaulted() &&
            !method->isDeleted() && !method->isPureVirtual())) return false;
@@ -5564,6 +5566,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxEffectfulTemplateMemberIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxEffectfulTemplateMemberSemantic);
     if (HasCxxEffectfulFunctionTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxEffectfulFunctionTemplateSemantic);
     if (HasCxxClosedParentPatternIdentity(declaration))
@@ -5738,6 +5742,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxClosedParentMemberSemantic,
     kCxxClosedParentPatternSemantic,
     kCxxEffectfulFunctionTemplateSemantic,
+    kCxxEffectfulTemplateMemberSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5898,6 +5903,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClosedParentMemberSemantic,
     kCxxClosedParentPatternSemantic,
     kCxxEffectfulFunctionTemplateSemantic,
+    kCxxEffectfulTemplateMemberSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

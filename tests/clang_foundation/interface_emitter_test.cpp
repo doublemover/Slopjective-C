@@ -1743,6 +1743,64 @@ void TestTemplateStructure() {
   }
 }
 
+void TestEffectfulTemplateMembers() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+    auto emit=[&](const std::string &source,const char *file="effectful-template-members.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+          std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.effectful_members","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.effectful_members","test",{},{},{},{"Members","MemberError","Error"});
+    };
+    const std::string source=R"(
+      #include <objc3c/runtime/objc3_task.hpp>
+      @protocol Error @end
+      @protocol MemberError<Error> @end
+      namespace Members {
+        inline int pause(int n) __objc3_async {__objc3_await objc3::task_yield;return n;}
+        template<class T>struct Family {
+          T value;
+          T task()const __objc3_async {__objc3_await objc3::task_yield;return value;}
+          T frame()const __objc3_async_frame {(void)__objc3_await pause(0);return value;}
+          template<class U>U echo(U n)const __objc3_async {__objc3_await objc3::task_yield;return n;}
+          template<class U>U framed(U n)const __objc3_async_frame {(void)__objc3_await pause(0);return n;}
+          T checked(id<MemberError> error)const __objc3_async __objc3_throws(id<MemberError>) {
+            __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
+          }
+        };
+        struct Concrete {
+          template<class U>U task(U n)const __objc3_async {__objc3_await objc3::task_yield;return n;}
+          template<class U>U frame(U n)const __objc3_async_frame {(void)__objc3_await pause(0);return n;}
+          template<class U>U checked(U n,id<MemberError> error)const __objc3_throws(id<MemberError>) {
+            if(error)__objc3_throw(error);return n;
+          }
+        };
+      }
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxEffectfulTemplateMemberSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-effectful-template-members.mm");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-effectful-template-members.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxEffectfulTemplateMemberIdentity)==2);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxEffectfulTemplateMemberSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxEffectfulTemplateMemberSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+  }
+}
+
 void TestEffectfulFunctionTemplates() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
@@ -4502,6 +4560,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestEffectfulTemplateMembers();
   TestEffectfulFunctionTemplates();
   TestClosedParentPatterns();
   TestClosedParentMemberSpecializations();

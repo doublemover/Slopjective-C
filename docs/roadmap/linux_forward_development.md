@@ -90,6 +90,19 @@ deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
 The recorded historical five tooling collection errors stay outside the maintained
 Linux selection. Full profile conformance and native Linux AArch64 remain open.
 
+## Effectful template members
+
+The [2.74 source span](linux_cxx_effectful_template_members.md) publishes canonical
+async/frame and checked-error member templates in concrete/generic records and
+ordinary generic class methods. Complete owners bind callable effects and bodies;
+native import merges dependent inherited-constructor using patterns before their
+instantiations, preserving libstdc++ task-result storage. All 35 native import-family
+tests, 21 focused native checks, alias ABI code generation, the emitter suite,
+72 tooling tests and 16 source-free configurations / 96 commands pass. Witnesses
+cover scalar/record results, suspension, lifetimes and typed sync/async errors.
+Effectful specializations, aliases/callbacks and dependent errors remain open.
+Combined source validation and SDK delivery remain batched.
+
 ## Effectful namespace function templates
 
 The [2.73 source span](linux_cxx_effectful_function_templates.md) publishes canonical

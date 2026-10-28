@@ -1787,3 +1787,23 @@ namespace NativeEffectTemplates {
     __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
   }
 }
+
+namespace NativeEffectMembers {
+  template<class T>struct Family {
+    T value;
+    T task()const __objc3_async {__objc3_await objc3::task_yield;return value;}
+    T frame()const __objc3_async_frame {(void)__objc3_await NativeEffectTemplates::pause(0);return value;}
+    template<class U>U echo(U n)const __objc3_async {__objc3_await objc3::task_yield;return n;}
+    template<class U>U framed(U n)const __objc3_async_frame {(void)__objc3_await NativeEffectTemplates::pause(0);return n;}
+    T checked(id<NativeModuleError> error)const __objc3_async __objc3_throws(id<NativeModuleError>) {
+      __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
+    }
+  };
+  struct Concrete {
+    template<class U>U task(U n)const __objc3_async {__objc3_await objc3::task_yield;return n;}
+    template<class U>U frame(U n)const __objc3_async_frame {(void)__objc3_await NativeEffectTemplates::pause(0);return n;}
+    template<class U>U checked(U n,id<NativeModuleError> error)const __objc3_throws(id<NativeModuleError>) {
+      if(error)__objc3_throw(error);return n;
+    }
+  };
+}

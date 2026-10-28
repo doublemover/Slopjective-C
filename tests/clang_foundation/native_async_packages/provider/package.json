@@ -346,7 +346,8 @@
     "native_closed_pattern_partial_factory",
     "native_closed_pattern_lives",
     "native_closed_pattern_partial_lives",
-    "NativeEffectTemplates"
+    "NativeEffectTemplates",
+    "NativeEffectMembers"
   ],
   "dependencies": []
 }
