@@ -32,3 +32,10 @@ remains accepted and predates this source milestone.
 Nested/member template specializations, remaining effectful boundaries, generic
 argument/closure projections, full profile conformance and native Linux AArch64
 qualification remain open.
+
+The [combined 2.63–2.73 source receipt](../support/linux_member_effects_batch_progress.json)
+supersedes deferred source checks above: 411 compiler regressions, 220 native unit
+tests, all 33 optimized frontend suites and 335 maintained tooling tests pass.
+Normal, ASan/UBSan and TSan each pass 168 source/PCH configurations / 1,158 commands.
+Source-free C++/key-path packages pass 80 configurations / 384 commands.
+Coordinated SDK delivery remains pending; SDK 2.62 stays accepted.

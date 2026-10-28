@@ -78,6 +78,18 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Combined member/effectful-template source validation
+
+The [combined 2.63–2.73 receipt](../support/linux_member_effects_batch_progress.json)
+passes **411 compiler regressions**, **220 native unit tests**, all **33 optimized
+frontend suites** and **335 maintained tooling tests** plus 33 subtests. Normal,
+ASan/UBSan and TSan each pass all **168 source/PCH configurations / 1,158 commands**.
+Source-free C++/key-path packages pass **80 configurations / 384 commands** across
+normal, eager and sanitizer modes. The eleven source spans below now complete their
+deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
+The recorded historical five tooling collection errors stay outside the maintained
+Linux selection. Full profile conformance and native Linux AArch64 remain open.
+
 ## Effectful namespace function templates
 
 The [2.73 source span](linux_cxx_effectful_function_templates.md) publishes canonical
