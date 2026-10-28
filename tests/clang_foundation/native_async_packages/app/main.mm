@@ -219,6 +219,14 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  {
+    char small=2;float promoted=2.0f;
+    if(native_variadic_provider()!=42 || native_variadic_sum<long>(2,40,small)!=42 ||
+       native_variadic_sum<>(0)!=0 || NativeVariadic<long>{}.sum(2,40,small)!=42 ||
+       NativeVariadic<int>{}.add<long>(2,40.0,promoted)!=42)return 160;
+    int (*indirect)(unsigned,...)=&native_variadic_sum<int>;
+    if(indirect(2,40,2)!=42)return 161;
+  }
   static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
   if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||
      ++NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<long>::shared<> !=40)return 154;

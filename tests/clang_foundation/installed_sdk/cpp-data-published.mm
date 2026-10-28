@@ -23,7 +23,7 @@ struct Nested { struct Inner { int value=[](auto value) { return value; }(42); }
 #elif CASE == 12
 union Overlap { int one; long two; };
 #elif CASE == 13
-extern const int exported=[](auto value) { return value; }(42);
+template<class T> T api(T value, ...) { return value; }
 #elif CASE == 14
 constexpr int evaluated() { return [](auto value) { return value; }(42); }
 #endif

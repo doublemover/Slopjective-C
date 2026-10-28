@@ -1741,6 +1741,70 @@ void TestTemplateStructure() {
   }
 }
 
+void TestVariadicTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="variadic-templates.cpp",
+                  const std::vector<std::string> &exports={}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.variadic_templates","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.variadic_templates","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      template<class T=int> T sum(unsigned count, ...) {
+        __builtin_va_list args, copy;
+        __builtin_va_start(args,count);__builtin_va_copy(copy,args);
+        int result=0;
+        for(unsigned i=0;i<count;++i) result+=__builtin_va_arg(copy,int);
+        __builtin_va_end(copy);__builtin_va_end(args);return T(result);
+      }
+      template<class T> struct Variadic {
+        T sum(unsigned count, ...) const {
+          __builtin_va_list args;__builtin_va_start(args,count);
+          int result=0;for(unsigned i=0;i<count;++i)result+=__builtin_va_arg(args,int);
+          __builtin_va_end(args);return T(result);
+        }
+        template<class U=T> U add(unsigned count, ...) const {
+          __builtin_va_list args;__builtin_va_start(args,count);
+          double result=0;for(unsigned i=0;i<count;++i)result+=__builtin_va_arg(args,double);
+          __builtin_va_end(args);return U(result);
+        }
+      };
+      inline int probe(){return sum<>(2,40,2)+Variadic<long>{}.add<int>(2,40.0,2.0);}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxVariadicTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-variadic.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-variadic.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("return T(result)"),16,"return T(result+1)");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxVariadicTemplateIdentity)==2);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxVariadicTemplateSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxVariadicTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>T sum(unsigned n,...){return T(hidden());}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    for(const auto *fake_source:{
+        "namespace User{struct __va_list_tag{int value;};}template<class T>int fake(unsigned,...){return sizeof(User::__va_list_tag);}",
+        "namespace User{using __builtin_va_list=int;}template<class T>int fake(unsigned,...){User::__builtin_va_list value=42;return value;}"}) {
+      auto fake=emit(fake_source,"user-va-list.cpp",{"fake"});
+      assert(!fake.success && std::any_of(fake.diagnostics.begin(),fake.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC156";}));
+    }
+  }
+}
+
 void TestNestedTemplateTypes() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="nested-templates.cpp") {
@@ -1956,7 +2020,7 @@ void TestClassMemberTemplates() {
     for(const auto *gated:{
         "template<class T>struct Box{template<class U>U f(U);};",
         "template<class T>struct Box{template<template<class>class U>int f(){return 42;}};",
-        "template<class T>struct Box{template<class U>int f(U,...){return 42;}};",
+        "template<class T>struct Box{template<class U>int f(U,...)=delete;};",
         "template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}"})
       assert(!emit(gated).success);
   }
@@ -3147,6 +3211,7 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestVariadicTemplates();
   TestNestedTemplateTypes();
   TestTemplateStructure();
   TestTemplateDeduction();

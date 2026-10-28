@@ -148,6 +148,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    if 'objc3.cxx-variadic-templates.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost variadic template publication capability')
+    for name in ('native_variadic_sum', 'NativeVariadic'):
+        if ';cxx-variadic-templates:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost variadic template identity: ' + name)
     for name in ('native_published_runtime', 'native_published_group',
                  'native_published_raw_task', 'native_published_actor',
                  'NativePublishedRuntime::run'):

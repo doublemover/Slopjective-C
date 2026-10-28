@@ -1727,7 +1727,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
 
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
-  bool nested=false, thread_local_storage=false;
+  bool nested=false, thread_local_storage=false, variadic=false;
   void Read(const clang::CXXRecordDecl *record) {
     if (!record || !record->isCompleteDefinition()) return;
     for (const auto *member : record->decls()) {
@@ -1746,7 +1746,10 @@ struct ClassTemplatePublication {
       } else if (const auto *inner=llvm::dyn_cast<clang::CXXRecordDecl>(member)) {
         nested=true;Read(inner->getDefinition());
       }
-      if (method) deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
+      if (method) {
+        deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
+        variadic |= method->isVariadic();
+      }
       if (variable) {
         deduced |= variable->getType()->getContainedAutoType()!=nullptr;
         thread_local_storage |= variable->getTLSKind()!=clang::VarDecl::TLS_None;
@@ -1776,6 +1779,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
         (members.variables ? ";cxx-variable-templates:v1;" : "") +
         (members.nested ? ";cxx-nested-templates:v1;" : "") +
+        (members.variadic ? ";cxx-variadic-templates:v1;" : "") +
         (members.thread_local_storage ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
@@ -1817,6 +1821,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";signature=" + DeclarationTypeIdentity(function, context) +
         (defaults.empty() ? "" : ";cxx-declaration-expressions:v1;template-defaults=" + defaults) +
         "};cxx-function-templates:v2;" +
+        (function->isVariadic() ? ";cxx-variadic-templates:v1;" : "") +
         (function->getReturnType()->getContainedAutoType() ? ";cxx-template-deduction:v1;" : "");
   }
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
@@ -2102,6 +2107,12 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    // C++ default-initialization of the ABI's va_list array can reference its
+    // implicit record constructor. It belongs to the same compiler-owned type.
+    if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(target);
+        method && method->isImplicit())
+      if (const auto *builtin=context_.getVaListTagDecl();
+          builtin && method->getParent()->getCanonicalDecl()==builtin->getCanonicalDecl()) return;
     // Inherited defaults can retain the prototype's parameter declarations.
     // Template parameters are lexical bindings even when their DeclContext
     // is a namespace rather than the definition currently being checked.
@@ -2555,6 +2566,10 @@ class TypeDependencyVisitor final
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
+    // The target ABI owns this implicit record; it is supplied by the consumer
+    // compiler rather than a package. Never recognize a user type by spelling.
+    if (const auto *builtin=context_.getVaListTagDecl();
+        builtin && declaration->getCanonicalDecl()==builtin->getCanonicalDecl()) return true;
     if (const auto *pattern = ClassTemplateOwner(declaration);
         pattern && (IsInMainFile(context_,pattern->getLocation()) ||
                     resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
@@ -2583,6 +2598,7 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
+    if (declaration->getCanonicalDecl()==context_.getBuiltinVaListDecl()->getCanonicalDecl()) return true;
     // Runtime headers redeclare these compiler-provided language types. Accept
     // only the same native name and type, without additional typedef contracts.
     if (context_.getLangOpts().ObjC && declaration) {
@@ -2827,7 +2843,7 @@ bool IsBoundedClassMemberAlias(const clang::TypeAliasTemplateDecl *pattern) {
 
 bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
-  if (!method || !method->doesThisDeclarationHaveABody() || method->isVariadic()) return false;
+  if (!method || !method->doesThisDeclarationHaveABody()) return false;
   const auto effects=ReadCanonicalFunctionEffects(method->getType(),method->getASTContext());
   if (effects.is_async || effects.is_throwing) return false;
   for (const auto *parameter : *pattern->getTemplateParameters()) {
@@ -2883,7 +2899,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit()) return false;
     } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
       const auto effects=ReadCanonicalFunctionEffects(method->getType(),body->getASTContext());
-      if (method->isVariadic() || effects.is_async || effects.is_throwing ||
+      if (effects.is_async || effects.is_throwing ||
           method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization ||
           (!method->doesThisDeclarationHaveABody() && !method->isDefaulted() &&
            !method->isDeleted() && !method->isPureVirtual())) return false;
@@ -2991,7 +3007,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto effects = ReadCanonicalFunctionEffects(function->getType(), function->getASTContext());
       supported &= function->getDefinition() != nullptr &&
           !llvm::isa<clang::CXXMethodDecl>(function) && !function->isDeleted() &&
-          !function->isDefaulted() && !function->isVariadic() &&
+          !function->isDefaulted() &&
           !effects.is_async && !effects.is_throwing;
       for (const auto *attribute : function->attrs()) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
@@ -4081,6 +4097,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxVariadicTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxVariadicTemplateSemantic);
     if (HasCxxNestedTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedTemplateSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
@@ -4189,6 +4207,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxMemberTemplateSemantic,
     kCxxMemberAliasTemplateSemantic,
     kCxxNestedTemplateSemantic,
+    kCxxVariadicTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4327,6 +4346,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxMemberTemplateSemantic,
     kCxxMemberAliasTemplateSemantic,
     kCxxNestedTemplateSemantic,
+    kCxxVariadicTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

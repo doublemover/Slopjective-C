@@ -79,6 +79,14 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK delivery follows this batch.
 
+## C-style variadic templates
+
+The [2.53 source span](linux_cxx_variadic_templates.md) adds C-style variadic
+namespace function templates and ordinary/member-template methods under primary
+class owners. Native promotions, copied `va_list` state, checked dependencies
+and consumer instantiation retain explicit variadic capability contracts.
+This source extension follows the published 2.52 archive.
+
 ## Nested class-template types and variables
 
 The [2.52 source span](linux_cxx_nested_template_types.md) adds named nested

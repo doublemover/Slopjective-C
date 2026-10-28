@@ -1311,3 +1311,24 @@ int native_member_alias_probe(){
     };
     inline constexpr double native_nested_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
     inline constexpr int native_nested_argument_probe(){return NativeFloatingFamily<native_nested_argument>::Inner<int>::answer();}
+
+// C-style ellipses retain native promotions and va_list lifetimes in consumers.
+template<class T=int> T native_variadic_sum(unsigned count, ...) {
+  __builtin_va_list args, copy;
+  __builtin_va_start(args,count);__builtin_va_copy(copy,args);
+  int result=0;for(unsigned i=0;i<count;++i)result+=__builtin_va_arg(copy,int);
+  __builtin_va_end(copy);__builtin_va_end(args);return T(result);
+}
+template<class T> struct NativeVariadic {
+  T sum(unsigned count, ...) const {
+    __builtin_va_list args;__builtin_va_start(args,count);
+    int result=0;for(unsigned i=0;i<count;++i)result+=__builtin_va_arg(args,int);
+    __builtin_va_end(args);return T(result);
+  }
+  template<class U=T> U add(unsigned count, ...) const {
+    __builtin_va_list args;__builtin_va_start(args,count);
+    double result=0;for(unsigned i=0;i<count;++i)result+=__builtin_va_arg(args,double);
+    __builtin_va_end(args);return U(result);
+  }
+};
+int native_variadic_provider(){return native_variadic_sum<>(2,40,2);}

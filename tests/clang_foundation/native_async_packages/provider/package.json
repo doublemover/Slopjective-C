@@ -246,7 +246,10 @@
     "native_nested_state",
     "NativeFloatingFamily",
     "native_nested_argument",
-    "native_nested_argument_probe"
+    "native_nested_argument_probe",
+    "native_variadic_sum",
+    "NativeVariadic",
+    "native_variadic_provider"
   ],
   "dependencies": []
 }

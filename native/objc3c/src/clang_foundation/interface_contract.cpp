@@ -438,6 +438,16 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_variadic_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVariadicTemplateIdentity);
+  const bool variadic_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxVariadicTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool variadic_template_owner = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) { return !HasCxxVariadicTemplateIdentity(d) ||
+          (d.kind=="FunctionTemplate" || d.kind=="ClassTemplate"); });
+  if (has_variadic_templates!=variadic_template_capability ||
+      (variadic_template_capability && !variadic_template_owner))
+    Add(result,"O3IFC061","variadic template identity and required capability must agree",expected.canonical_name);
   const bool has_nested_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxNestedTemplateIdentity);
   const bool nested_template_capability = std::find(sidecar.required_semantics.begin(),
