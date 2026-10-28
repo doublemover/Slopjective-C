@@ -26,3 +26,9 @@ Forward/opaque declarations, bases, virtual members, nested/member templates,
 explicit/partial specializations, deduced-return/effectful methods and remaining
 dependent projections stay gated. This source span does not rebuild the accepted
 SDK 2.33 archive or claim full profile/AArch64 conformance.
+
+The [focused source receipt](../support/linux_cxx_class_templates_progress.json)
+records both frontend suites, all 136 AST contract tests and eight normal
+source-free package configurations / 32 commands. These use the development
+facade build; optimized, broader and instrumented qualification is deferred to
+the next combined implementation batch.
