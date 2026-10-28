@@ -18963,10 +18963,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..ec6df7c68
+index 000000000..211057ec0
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1848 @@
+@@ -0,0 +1,1889 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20814,6 +20814,47 @@ index 000000000..ec6df7c68
 +    APValue Null(APValue::LValueBase{},CharUnits::Zero(),APValue::NoLValuePath{},true);
 +    auto ImportedNull=Importer.Import(Null);ASSERT_TRUE(bool(ImportedNull));EXPECT_TRUE(ImportedNull->isNullPointer());
 +  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesTypedErrorLambdaEffects) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"})
++    for(const char *Ownership:{"-fobjc-arc","-fno-objc-arc"}) {
++      const std::string Source=R"(
++        @protocol Error @end
++        @protocol LambdaError<Error> @end
++        int use(id<LambdaError> error) __objc3_throws(id<LambdaError>) {
++          auto concrete=[](int n,id<LambdaError> e)->int __objc3_throws(id<LambdaError>) {
++            if(e)__objc3_throw(e);return n;
++          };
++          auto generic=[]<class E>(int n,E e)->int __objc3_throws(E) {
++            if(e)__objc3_throw(e);return n;
++          };
++          return __objc3_try(concrete(40,error))+__objc3_try(generic(2,error));
++        }
++      )";
++      std::vector<std::string> Args={"-x","objective-c++",Standard,Ownership,
++          "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++      auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"lambda-effects.mm");
++      ASSERT_TRUE(From);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++      std::string Printed;llvm::raw_string_ostream Out(Printed);
++      PrintingPolicy Policy(From->getASTContext().getLangOpts());
++      for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())
++        if(From->getSourceManager().isWrittenInMainFile(D->getLocation())) {
++          D->print(Out,Policy);Out<<";\n";
++        }
++      EXPECT_NE(Printed.find("__objc3_throws"),std::string::npos);
++      auto Reparsed=tooling::buildASTFromCodeWithArgs(Printed,Args,"lambda-effects-replay.mm");
++      ASSERT_TRUE(Reparsed);EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred());
++      struct Lambdas:RecursiveASTVisitor<Lambdas> {
++        unsigned Count=0;
++        bool VisitLambdaExpr(LambdaExpr *E) {
++          const auto Effects=E->getCallOperator()->getType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects();
++          EXPECT_EQ(Effects.Throws,ObjC3ThrowsKind::Typed);++Count;return true;
++        }
++      } Visitor;
++      Visitor.TraverseDecl(Reparsed->getASTContext().getTranslationUnitDecl());
++      EXPECT_EQ(Visitor.Count,2u);
++    }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
@@ -50041,3 +50082,73 @@ index 000000000..d96c20185
 +// CHECK: template <class T> __attribute__((abi_tag("owner"))) constexpr T add(T n)
 +// CHECK: template <int N> __attribute__((abi_tag("owner"))) int count()
 +// CHECK: template <class ...T> __attribute__((abi_tag("owner"))) constexpr int sum(T ...n)
+diff --git a/clang/lib/Parse/ParseExprCXX.cpp b/clang/lib/Parse/ParseExprCXX.cpp
+index 6b8ab6ce8..ad8a16a72 100644
+--- a/clang/lib/Parse/ParseExprCXX.cpp
++++ b/clang/lib/Parse/ParseExprCXX.cpp
+@@ -1345,7 +1345,12 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+                   tok::kw___constant, tok::kw___generic, tok::kw_groupshared,
+                   tok::kw_requires, tok::kw_noexcept) ||
+       Tok.isRegularKeywordAttribute() ||
+-      (Tok.is(tok::l_square) && NextToken().is(tok::l_square));
++      (Tok.is(tok::l_square) && NextToken().is(tok::l_square)) ||
++      (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++       (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++        Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++        Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++        Tok.getIdentifierInfo()->isStr("throws")));
+ 
+   if (HasSpecifiers && !HasParentheses && !getLangOpts().CPlusPlus23) {
+     // It's common to forget that one needs '()' before 'mutable', an
+@@ -1426,6 +1431,17 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+         DeclEndLoc = Range.getEnd();
+     }
+ 
++    bool ObjC3Async=false, ObjC3AsyncFrame=false;
++    unsigned ObjC3ThrowsKind=0;
++    ParsedType ObjC3ErrorType;
++    TypeSourceInfo *ObjC3ErrorTypeInfo=nullptr;
++    SourceLocation ObjC3EffectsLoc,ObjC3AsyncLoc,ObjC3ThrowsLoc;
++    SourceRange ObjC3ThrowsPayloadRange;
++    ParseObjC3FunctionEffects(ObjC3Async,ObjC3AsyncFrame,ObjC3ThrowsKind,
++        ObjC3ErrorType,ObjC3ErrorTypeInfo,ObjC3EffectsLoc,ObjC3AsyncLoc,
++        ObjC3ThrowsLoc,ObjC3ThrowsPayloadRange);
++    if (ObjC3EffectsLoc.isValid())DeclEndLoc=PrevTokLocation;
++
+     SourceLocation NoLoc;
+     D.AddTypeInfo(DeclaratorChunk::getFunction(
+                       /*HasProto=*/true,
+@@ -1438,7 +1454,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+                       NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
+                       /*ExceptionSpecTokens*/ nullptr,
+                       /*DeclsInPrototype=*/{}, LParenLoc, FunLocalRangeEnd, D,
+-                      TrailingReturnType, TrailingReturnTypeLoc, &DS),
++                      TrailingReturnType, TrailingReturnTypeLoc, &DS,
++                      ObjC3Async,ObjC3ThrowsKind,ObjC3ErrorType,ObjC3ErrorTypeInfo,
++                      ObjC3EffectsLoc,ObjC3AsyncLoc,ObjC3ThrowsLoc,
++                      ObjC3ThrowsPayloadRange,ObjC3AsyncFrame),
+                   std::move(Attributes), DeclEndLoc);
+ 
+     if (HasParentheses && Tok.is(tok::kw_requires))
+diff --git a/clang/test/ObjC3/Parser/native-lambda-effects.mm b/clang/test/ObjC3/Parser/native-lambda-effects.mm
+new file mode 100644
+index 000000000..040059ae3
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-lambda-effects.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify=common,cxx20 %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++23 -fsyntax-only -verify=common %s
++struct Error {};
++int use(Error error) __objc3_throws(Error) {
++  auto generic=[]<class E>(E value)->int __objc3_throws(E) {
++    __objc3_throw(value);
++  };
++  auto constant=[] __objc3_throws(Error) {return 42;}; // cxx20-warning {{lambda without a parameter clause is a C++23 extension}}
++  return __objc3_try(generic(error))+__objc3_try(constant());
++}
++int rejected(Error error) {
++  auto plain=[](Error value)->int {
++    __objc3_throw(value); // common-error {{an ObjC3 throw requires a throwing function}}
++  };
++  return plain(error);
++}

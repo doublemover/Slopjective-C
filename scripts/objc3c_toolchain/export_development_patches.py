@@ -211,6 +211,8 @@ PACKETS = {
         "clang/lib/AST/MicrosoftMangle.cpp",
         "clang/lib/Parse/CMakeLists.txt",
         "clang/lib/Parse/ParseDecl.cpp",
+        "clang/lib/Parse/ParseExprCXX.cpp",
+        "clang/test/ObjC3/Parser/native-lambda-effects.mm",
         "clang/lib/Parse/Parser.cpp",
         "clang/lib/Sema/SemaModule.cpp",
         "clang/lib/Parse/ParseTentative.cpp",
