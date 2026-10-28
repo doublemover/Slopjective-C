@@ -18708,10 +18708,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..6d289e071
+index 000000000..30174f855
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1298 @@
+@@ -0,0 +1,1338 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20007,6 +20007,46 @@ index 000000000..6d289e071
 +    }
 +    Replayed+="int use(){int n=42;N::Outer<int>::Plain plain{42};N::Outer<int>::Inner<>::Deep deep{40,2};N::Concrete::Inner<> concrete{42};N::Partial<int*>::Plain partial{&n};return plain.get()+deep.sum()+concrete.get()+partial.get();}";
 +    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"detached-nested-template-definitions-replayed.cpp");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesConcreteNestedClassSpecializations) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    auto From=tooling::buildASTFromCodeWithArgs(R"(
++      namespace N {
++        template<class T>concept Number=sizeof(T)>0;
++        struct Concrete {
++          template<class T>struct Box{T value;};
++          template<int N,bool Positive=true>struct Count{static constexpr int value=0;};
++        };
++      }
++      template<>struct N::Concrete::Box<int>{
++        inline static int live=0;
++        int value;explicit Box(int n):value(n){++live;}
++        Box(const Box& other):value(other.value){++live;}
++        virtual ~Box(){--live;}
++        virtual int get()const{return value;}
++        template<class U=int>int add(U n=2)const{return get()+n;}
++      };
++      template<N::Number T>struct N::Concrete::Box<T*>{T* value;T get()const{return *value;}};
++      template<int V>requires(V>0)struct N::Concrete::Count<V,true>{static constexpr int value=V;};
++    )",{"-xc++",Standard},"concrete-nested-class-specializations.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"concrete-nested-class-specializations-import.cpp");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto Shared=std::make_shared<ASTImporterSharedState>(*To->getASTContext().getTranslationUnitDecl());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false,Shared);
++    std::string Replayed;
++    auto Print=[&](const Decl *D){PrintingPolicy Policy(From->getLangOpts());Policy.PolishForDeclaration=true;
++      std::string Text;llvm::raw_string_ostream Stream(Text);D->print(Stream,Policy);return Text;};
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      if(!isa<NamespaceDecl,ClassTemplateSpecializationDecl>(D))continue;
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++      if(!isa<NamespaceDecl>(D))EXPECT_EQ(Print(D),Print(*Imported));
++      Replayed+=Print(*Imported)+";\n";
++    }
++    Replayed+="int use(){int n=42;N::Concrete::Box<int> box{40};N::Concrete::Box<int*> pointer{&n};static_assert(N::Concrete::Count<42>::value==42);return box.add()+pointer.get();}";
++    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"concrete-nested-class-specializations-replayed.cpp");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
 +  }
 +}
