@@ -1266,6 +1266,67 @@ void TestCxxLocalTypes() {
   }
 }
 
+void TestGenericLocalLambdas() {
+  const std::vector<llvm::StringRef> semantics={"objc3.cxx-data-interfaces.v1",
+      "objc3.cxx-definitions.v1","objc3.cxx-lambda-expressions.v1",
+      "objc3.cxx-generic-local-lambdas.v1"};
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &code,const char *file="generic-local.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(code,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.genericlocal","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      inline int generic_local(int n) {
+        auto add=[offset=2](auto value){return value+offset;};
+        auto pack=[]<class... T>(T... values){return (0+...+values);};
+        auto fixed=[]<int N>(int value){return value+N;};
+        return add(n)+add(2L)+pack(n,2)+fixed.template operator()<2>(n);
+      }
+      inline int generic_conversion(int n) {
+        int (*callback)(int)=[](auto x){return x+2;};return callback(n);
+      }
+      inline int generic_mutable(int n) {
+        auto add=[n](auto delta) mutable {n+=delta;return n;};return add(1)+add(1L);
+      }
+      inline constexpr int generic_immediate() {return [](auto n) consteval {return n+2;}(40);}
+      inline constexpr int generic_default() {
+        auto value=[]<class T=int>(T n=42){return n;};return value.template operator()<>();
+      }
+      inline constexpr int generic_constant() {return [](auto n){return n+2;}(40);}
+      inline int generic_nested(int n) {
+        return [](auto outer){return [](auto inner){return inner+2;}(outer);}(n);
+      }
+    )";
+    auto result=emit(source);
+    for (const auto &d:result.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(result.success);
+    auto decoded=DecodeSemanticInterfaceSidecar(result.sidecar_json,result.source_bytes,semantics);
+    assert(decoded);
+    auto repeated=emit(result.source_bytes,"regenerated.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==result.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"another-provider.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==result.identity.semantic_fingerprint);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxGenericLocalLambdaSemantic);
+    auto erased=EncodeSemanticInterfaceSidecar(damaged,semantics);
+    assert(!erased);llvm::consumeError(erased.takeError());
+    auto hidden=emit("static int pick(int){return 42;} int pick(long){return 0;} "
+        "inline int api(){auto f=[](auto x){return pick(x);};return f(1);}","private.cpp",{"pick","api"});
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    auto escapes=emit("inline auto api(){return [](auto x){return x;};}");
+    assert(!escapes.success);
+    auto local_argument=emit("inline int api(){struct Local{int n;}; "
+        "return [](auto x){return x.n;}(Local{42});}");
+    assert(!local_argument.success);
+    auto constrained=emit("inline int api(){return []<class T>(T value) requires(sizeof(T)>0) {return value;}(42);}");
+    assert(!constrained.success);
+    auto dependent_noexcept=emit("inline int api(){return [](auto value) noexcept(sizeof(value)>0) {return value;}(42);}");
+    assert(!dependent_noexcept.success);
+  }
+}
+
 void TestCarrierExpressionRoundtrip() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
@@ -1463,7 +1524,7 @@ void TestCxxLambdaExpressions() {
     auto different = emit(changed);
     assert(different.success && different.identity.semantic_fingerprint != emitted.identity.semantic_fingerprint);
     auto generic = emit("inline int generic(int n) { return [](auto value) {return value;}(n); }");
-    assert(!generic.success);
+    assert(generic.success && generic.sidecar_json.find("objc3.cxx-generic-local-lambdas.v1")!=std::string::npos);
     std::erase(decoded->required_semantics, "objc3.cxx-lambda-expressions.v1");
     decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(*decoded));
     auto erased = EncodeSemanticInterfaceSidecar(*decoded, semantics);
@@ -2192,8 +2253,12 @@ void TestBoundedCxxSemanticInterfaces() {
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(),
                                          "fixture.unsupported", "test");
-    assert(!emitted.success && emitted.source_bytes.empty() &&
-           emitted.sidecar_json.empty());
+    if (llvm::StringRef(source).contains("[](auto value)")) {
+      assert(emitted.success);
+      assert(emitted.sidecar_json.find("objc3.cxx-generic-local-lambdas.v1")!=std::string::npos);
+    } else {
+      assert(!emitted.success && emitted.source_bytes.empty() && emitted.sidecar_json.empty());
+    }
   }
 }
 
@@ -2235,6 +2300,7 @@ int main() {
   TestNativeExportRoots();
   TestCxxLocalExpressions();
   TestCxxLocalTypes();
+  TestGenericLocalLambdas();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..66d587cbd 100644
+index d743717ad..37f9d3917 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -3681,7 +3681,24 @@ index d743717ad..66d587cbd 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9497,6 +10232,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9163,6 +9898,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+   if (!ToCallOpOrErr)
+     return ToCallOpOrErr.takeError();
+ 
++  if (auto *CallTemplate = E->getCallOperator()->getDescribedFunctionTemplate()) {
++    // Conversion to a function pointer references the static invoker, whose
++    // constexpr evaluator and backend select the matching call specialization
++    // through the template rather than an explicit DeclRefExpr. Keep those
++    // instantiated bodies with the imported closure.
++    for (auto *Specialization : CallTemplate->specializations())
++      if (auto Imported = import(Specialization); !Imported)
++        return Imported.takeError();
++  }
++
+   SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
+   if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
+     return std::move(Err);
+@@ -9497,6 +10242,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -3703,7 +3720,7 @@ index d743717ad..66d587cbd 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10414,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10424,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3718,7 +3735,7 @@ index d743717ad..66d587cbd 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10469,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10479,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3817,7 +3834,7 @@ index d743717ad..66d587cbd 100644
  }
  
  namespace {
-@@ -9857,6 +10701,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10711,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -3877,7 +3894,7 @@ index d743717ad..66d587cbd 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11020,18 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11030,18 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -3897,7 +3914,7 @@ index d743717ad..66d587cbd 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11478,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11488,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -3910,7 +3927,7 @@ index d743717ad..66d587cbd 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11494,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11504,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -3922,7 +3939,7 @@ index d743717ad..66d587cbd 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11506,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11516,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3934,7 +3951,7 @@ index d743717ad..66d587cbd 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11518,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11528,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -3956,7 +3973,7 @@ index d743717ad..66d587cbd 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +11962,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +11972,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -17982,10 +17999,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..8f994a1d9
+index 000000000..58dde5165
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,377 @@
+@@ -0,0 +1,417 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18359,6 +18376,46 @@ index 000000000..8f994a1d9
 +    ASSERT_NE(Target->getInstantiatedFromMemberTemplate(), nullptr) << Name;
 +    EXPECT_EQ(&Target->getInstantiatedFromMemberTemplate()->getASTContext(),
 +              &To->getASTContext());
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, GenericLambdaInvokerRetainsCallSpecialization) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    std::vector<std::string> Args={"-xobjective-c++", Standard,
++        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
++    auto From=tooling::buildASTFromCodeWithArgs(R"(
++      constexpr int converted() {
++        int (*callback)(int)=[](auto value){return value+2;};
++        return callback(40);
++      }
++      static_assert(converted()==42);
++    )",Args,"generic-invoker.mm");
++    auto To=tooling::buildASTFromCodeWithArgs("",Args,"consumer.mm");
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++        From->getASTContext(),From->getFileManager(),false);
++    auto Imported=Importer.Import(findFunction(From->getASTContext(),"converted"));
++    ASSERT_TRUE(bool(Imported));
++    struct Lambdas : RecursiveASTVisitor<Lambdas> {
++      CXXRecordDecl *Closure=nullptr;
++      bool VisitLambdaExpr(LambdaExpr *Expression) {Closure=Expression->getLambdaClass();return true;}
++    } Visitor;
++    Visitor.TraverseDecl(*Imported);
++    ASSERT_NE(Visitor.Closure,nullptr);
++    auto *Call=Visitor.Closure->getLambdaCallOperator()->getDescribedFunctionTemplate();
++    auto *Invoker=Visitor.Closure->getLambdaStaticInvoker()->getDescribedFunctionTemplate();
++    ASSERT_TRUE(Call && Invoker);
++    unsigned Count=0;
++    for (auto *Specialization:Invoker->specializations()) {
++      void *Insert=nullptr;
++      auto *Matched=Call->findSpecialization(
++          Specialization->getTemplateSpecializationArgs()->asArray(),Insert);
++      EXPECT_NE(Matched,nullptr);
++      if (Matched) EXPECT_TRUE(Matched->hasBody());
++      ++Count;
++    }
++    EXPECT_EQ(Count,1u);
 +  }
 +}
 +
@@ -47272,3 +47329,49 @@ index 000000000..914ca6d06
 +  root[path]=i++ + i; // expected-warning {{unsequenced modification and access to 'i'}}
 +  (void)(root[(i++,read)]+i); // expected-warning {{unsequenced modification and access to 'i'}}
 +}
+diff --git a/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm b/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm
+new file mode 100644
+index 000000000..f8a4c3d5c
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/generic-lambda-empty.mm
+@@ -0,0 +1 @@
++// Empty consumer of the generic lambda declaration PCH.
+diff --git a/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h b/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h
+new file mode 100644
+index 000000000..369f464cf
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/generic-lambda-print.h
+@@ -0,0 +1,11 @@
++inline int generic_print(int n) {
++  auto sum=[]<class... T>(T... values){return (0+...+values);};
++  auto defaults=[]<class T=int>(T value=42){return value;};
++  auto immediate=[](auto value) consteval {return value+2;};
++  int (*callback)(int)=[](auto value){return value+2;};
++#if __cplusplus>202002L
++  auto stateless=[](auto value) static {return value+2;};
++  n=stateless(n);
++#endif
++  return sum(n,2)+sum()+defaults.template operator()<>()+immediate(40)+callback(n);
++}
+diff --git a/clang/test/ObjC3/AST/generic-lambda-print.mm b/clang/test/ObjC3/AST/generic-lambda-print.mm
+new file mode 100644
+index 000000000..2dfd16c82
+--- /dev/null
++++ b/clang/test/ObjC3/AST/generic-lambda-print.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-print.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-print.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/generic-lambda-print.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK,STATIC < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/generic-lambda-print.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: []<class ...T>(T ...values)
++// CHECK: []<class T = int>(T value = 42)
++// CHECK: consteval
++// STATIC: static

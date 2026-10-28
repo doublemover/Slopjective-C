@@ -152,7 +152,17 @@
     "native_unnamed_nested",
     "native_unnamed_copies",
     "native_unnamed_virtual",
-    "native_unnamed_bridge"
+    "native_unnamed_bridge",
+    "native_generic_local",
+    "native_generic_constant",
+    "native_generic_nested",
+    "native_generic_bridge",
+    "native_generic_conversion",
+    "native_generic_mutable",
+    "native_generic_record",
+    "native_generic_immediate",
+    "native_generic_default",
+    "native_generic_static"
   ],
   "dependencies": []
 }

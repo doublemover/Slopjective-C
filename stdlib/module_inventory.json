@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 38,
+        "minor": 39,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -164,7 +164,8 @@
         "Objective-C 3 ns_consumed Block parameters preserve native ownership metadata and copying/adoption instead of ignoring the attribute (source)",
         "Pinned public SDK runtime declarations and source-projected runtime await requests in published C++ task bodies (source)",
         "Source-ordered awaited isolation operands with independent ARC/MRC object/Block snapshots, shared precise full-expression/EH cleanup, and later-argument replacement/throw/failure protection for functions and messages (source)",
-        "Unnamed local C++ records and enums in published concrete definitions, including nested records, aliases, implicit copies/closures, native destruction and virtual dispatch/RTTI, with owned definition printing and lexical-slot type/structor identity (source)"
+        "Unnamed local C++ records and enums in published concrete definitions, including nested records, aliases, implicit copies/closures, native destruction and virtual dispatch/RTTI, with owned definition printing and lexical-slot type/structor identity (source)",
+        "Closed generic local lambdas in published concrete bodies/defaults/member initializers/constant data, with sorted typed instantiation and dependency contracts, pack/default/immediate/static printing and imported generic invoker call-operator bodies (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

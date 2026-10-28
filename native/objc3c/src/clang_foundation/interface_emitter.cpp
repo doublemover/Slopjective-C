@@ -399,6 +399,66 @@ clang::Expr *KeyPathSubscriptSyntax(clang::PseudoObjectExpr *expression) {
       ? syntax : nullptr;
 }
 
+struct GenericLambdaBody {
+  const clang::FunctionDecl *function;
+  std::string key;
+};
+
+bool GenericArgumentKey(const clang::TemplateArgument &argument,
+                         const clang::ASTContext &context,std::string &key,
+                         unsigned depth=0) {
+  if (depth>64 || argument.isDependent()) return false;
+  auto add=[&](llvm::StringRef value) {key+=std::to_string(value.size())+":"+value.str();};
+  auto type=[&](clang::QualType value) {
+    if (value.isNull() || value->isDependentType() || value->hasUnnamedOrLocalType()) return false;
+    clang::PrintingPolicy policy(context.getLangOpts());
+    policy.PrintAsCanonical=true;policy.FullyQualifiedName=true;
+    policy.AnonymousTagNameStyle=static_cast<unsigned>(clang::PrintingPolicy::AnonymousTagMode::Plain);
+    add(value.getCanonicalType().getAsString(policy));return true;
+  };
+  add(std::to_string(argument.getKind()));
+  switch(argument.getKind()) {
+  case clang::TemplateArgument::Type:return type(argument.getAsType());
+  case clang::TemplateArgument::Integral: {
+    if (!type(argument.getIntegralType())) return false;
+    llvm::SmallString<32> value;argument.getAsIntegral().toString(value,10);add(value);return true;
+  }
+  case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType());
+  case clang::TemplateArgument::Pack:
+    add(std::to_string(argument.pack_size()));
+    for (const auto &element:argument.pack_elements())
+      if (!GenericArgumentKey(element,context,key,depth+1)) return false;
+    return true;
+  default:return false;
+  }
+}
+
+bool GenericLambdaBodies(const clang::LambdaExpr *expression,
+                          const clang::ASTContext &context,
+                          std::vector<GenericLambdaBody> &bodies) {
+  if (!expression->isGenericLambda()) return true;
+  const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate();
+  if (!pattern || pattern->hasAssociatedConstraints()) return false;
+  const auto *pattern_type=clang::getObjC3CallableFunctionType(pattern->getTemplatedDecl());
+  if (pattern_type && (pattern_type->hasDependentExceptionSpec() ||
+      pattern_type->getObjC3FunctionEffects().Async ||
+      pattern_type->getObjC3FunctionEffects().Throws!=clang::ObjC3ThrowsKind::None)) return false;
+  std::map<std::string,const clang::FunctionDecl *> ordered;
+  for (const auto *specialization:pattern->specializations()) {
+    const auto *definition=specialization->getDefinition();
+    const auto *arguments=specialization->getTemplateSpecializationArgs();
+    if (!definition || !arguments || definition->getType()->isDependentType() || ordered.size()>=256)
+      return false;
+    std::string key;
+    for (const auto &argument:arguments->asArray())
+      if (!GenericArgumentKey(argument,context,key)) return false;
+    const auto [found,inserted]=ordered.emplace(key,definition);
+    if (!inserted && found->second->getCanonicalDecl()!=definition->getCanonicalDecl()) return false;
+  }
+  for (const auto &[key,function]:ordered) bodies.push_back({function,key});
+  return true;
+}
+
 bool ContainsUnnamedLocalType(const clang::Stmt *statement);
 
 class DeclarationExpressionIdentity final
@@ -443,10 +503,25 @@ public:
   }
   bool VisitLambdaExpr(clang::LambdaExpr *expression) {
     Local(expression->getLambdaClass());
+    if (const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate())
+      for (const auto *parameter:*pattern->getTemplateParameters()) Local(parameter);
     Add("lambda-capture-default:" + std::to_string(expression->getCaptureDefault()));
     for (const auto &capture : expression->captures()) {
       Add("capture:" + std::to_string(capture.getCaptureKind()));
       if (capture.capturesVariable()) Local(capture.getCapturedVar());
+    }
+    return true;
+  }
+  bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
+    if (!clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseLambdaExpr(expression,nullptr))
+      return false;
+    std::vector<GenericLambdaBody> bodies;
+    if (!GenericLambdaBodies(expression,context_,bodies)) {Add("unsupported-generic-lambda");return false;}
+    for (const auto &body:bodies) {
+      Add("generic-lambda-specialization");Add(body.key);
+      Add(ExpressionType(body.function->getType()));
+      for (const auto *parameter:body.function->parameters()) Local(parameter);
+      if (!TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(body.function)))) return false;
     }
     return true;
   }
@@ -480,6 +555,30 @@ public:
   }
   bool VisitStmt(clang::Stmt *statement) {
     Add(statement->getStmtClassName()); return true;
+  }
+  bool TraverseFunctionProtoTypeLoc(clang::FunctionProtoTypeLoc location,
+                                     bool = true) {
+    // A function-pointer type can carry source-only parameter declarations.
+    // ASTImporter reconstructs that TypeLoc without them. Bind only parameters
+    // belonging to an actual function; type-only parameters contribute their
+    // semantic type. Block and lambda parameter lists are traversed separately.
+    if (!WalkUpFromFunctionProtoTypeLoc(location) ||
+        !TraverseTypeLoc(location.getReturnLoc())) return false;
+    const auto *type=location.getTypePtr();
+    if (const auto *error=location.getObjC3ThrowsPayloadInfo())
+      if (!TraverseTypeLoc(error->getTypeLoc())) return false;
+    for (unsigned index=0;index<type->getNumParams();++index) {
+      auto *parameter=location.getParam(index);
+      const auto *owner=parameter ?
+          llvm::dyn_cast<clang::FunctionDecl>(parameter->getDeclContext()) : nullptr;
+      const bool actual=owner &&
+          std::find(owner->param_begin(),owner->param_end(),parameter)!=owner->param_end();
+      if (actual ? !TraverseDecl(parameter) : !TraverseType(type->getParamType(index)))
+        return false;
+    }
+    for (auto exception:type->exceptions())
+      if (!TraverseType(exception)) return false;
+    return !type->getNoexceptExpr() || TraverseStmt(type->getNoexceptExpr());
   }
   bool VisitVarDecl(clang::VarDecl *declaration) {
     if (declaration->isLocalVarDeclOrParm()) Local(declaration);
@@ -646,7 +745,7 @@ public:
     Add(printed);
     TraverseStmt(expression);
     llvm::SHA256 hash; hash.update(bytes_);
-    return llvm::toHex(hash.final(), true);
+    return llvm::toHex(hash.final(),true);
   }
 private:
   const clang::ASTContext &context_;
@@ -713,8 +812,9 @@ bool IsConcreteFriend(const clang::FriendDecl *declaration) {
 
 class LambdaExpressionFinder final : public clang::RecursiveASTVisitor<LambdaExpressionFinder> {
 public:
-  bool VisitLambdaExpr(clang::LambdaExpr *) { found = true; return true; }
+  bool VisitLambdaExpr(clang::LambdaExpr *expression) { found = true;generic |= expression->isGenericLambda();return true; }
   bool found = false;
+  bool generic = false;
 };
 bool ContainsLambda(const clang::Stmt *statement) {
   if (!statement) return false;
@@ -753,6 +853,13 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
 }
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
+}
+bool HasDeclarationGenericLambda(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    LambdaExpressionFinder finder;
+    finder.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return finder.generic;
+  });
 }
 
 class LocalExpressionFinder final : public clang::RecursiveASTVisitor<LocalExpressionFinder> {
@@ -1621,7 +1728,12 @@ class TypeDependencyVisitor final
         TraverseCompoundLiteralExpr(expression,nullptr);
   }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression, DataRecursionQueue * = nullptr) {
-    if (expression->isGenericLambda()) return UnsupportedExpression();
+    std::vector<GenericLambdaBody> bodies;
+    if (!GenericLambdaBodies(expression,context_,bodies)) {
+      AddDiagnostic(result_,"O3IFC101",
+          "generic local lambdas require complete unconstrained instantiations with named type, integral, null or pack arguments");
+      return false;
+    }
     const auto contexts = lambda_contexts_;
     const auto locals = lambda_locals_;
     lambda_contexts_.insert(expression->getCallOperator()->getCanonicalDecl());
@@ -1629,7 +1741,17 @@ class TypeDependencyVisitor final
       if (capture.capturesVariable() && expression->isInitCapture(&capture))
         lambda_locals_.insert(capture.getCapturedVar()->getCanonicalDecl());
     auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; lambda_locals_ = locals; });
-    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression, nullptr);
+    if (!clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression,nullptr)) return false;
+    for (const auto &body:bodies) {
+      lambda_contexts_.insert(body.function->getCanonicalDecl());
+      for (const auto *parameter:body.function->parameters()) {
+        lambda_locals_.insert(parameter->getCanonicalDecl());
+        TraverseType(parameter->getType());
+      }
+      TraverseType(body.function->getReturnType());
+      if (!TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(body.function)))) return false;
+    }
+    return true;
   }
   bool TraverseBlockExpr(clang::BlockExpr *expression, DataRecursionQueue * = nullptr) {
     const auto contexts = lambda_contexts_;
@@ -2670,6 +2792,8 @@ bool ReadInterfaceDeclarationIdentity(
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(representative);
       function && function->isExplicitlyDefaulted() && function->isConsteval())
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
+  if (HasDeclarationGenericLambda(representative))
+    identity.canonical_type_identity += ";cxx-generic-local-lambdas:v1;";
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, true))
@@ -2914,6 +3038,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxImmediateDefaultingSemantic);
     if (HasCxxNamespaceAttributeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNamespaceAttributeSemantic);
+    if (HasCxxGenericLocalLambdaIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxGenericLocalLambdaSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -3007,6 +3133,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
     kCxxUnnamedLocalTypeSemantic,
+    kCxxGenericLocalLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -3132,6 +3259,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxStatementExpressionSemantic,
     kCxxLocalTypeSemantic,
     kCxxUnnamedLocalTypeSemantic,
+    kCxxGenericLocalLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

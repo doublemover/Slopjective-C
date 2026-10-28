@@ -250,6 +250,7 @@ def check_cpp_metadata(metadata):
         ('objc3.cxx-statement-expressions.v1', 'native_published_statement', ';cxx-statement-expressions:v1;'),
         ('objc3.cxx-local-types.v1', 'native_published_local_type', ';cxx-local-types:v1;'),
         ('objc3.cxx-unnamed-local-types.v1', 'native_unnamed_nested', ';cxx-unnamed-local-types:v1;'),
+        ('objc3.cxx-generic-local-lambdas.v1', 'native_generic_local', ';cxx-generic-local-lambdas:v1;'),
     ):
         if semantic not in metadata.get('required_semantics', []):
             raise AssertionError('missing local expression capability: ' + semantic)

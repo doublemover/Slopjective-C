@@ -59,6 +59,15 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published generic local C++ callables
+
+The [2.39 source span](linux_cxx_generic_local_lambdas.md) adds closed generic
+lambdas with stable type/integral/null/pack argument keys and resolved concrete
+body dependencies. Native printing preserves packs, defaults, immediate/static
+operators and parameter attributes. Native AST import retains the call-operator
+specializations needed by generic function-pointer invokers. Broader checks
+follow the implementation span; unsupported generic forms remain explicit.
+
 ## Published unnamed C++ local types
 
 The [2.38 source span](linux_cxx_unnamed_local_types.md) admits unnamed local

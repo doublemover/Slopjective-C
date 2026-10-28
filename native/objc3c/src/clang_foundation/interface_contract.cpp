@@ -433,6 +433,17 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_generic_local_lambdas = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxGenericLocalLambdaIdentity);
+  const bool generic_local_capability = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxGenericLocalLambdaSemantic) != sidecar.required_semantics.end();
+  const bool generic_lambda_base = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxLambdaExpressionSemantic) != sidecar.required_semantics.end();
+  if (has_generic_local_lambdas != generic_local_capability ||
+      (generic_local_capability && !generic_lambda_base))
+    Add(result,"O3IFC048","generic local lambda identity and required lambda capabilities must agree",expected.canonical_name);
   const bool has_unnamed_local_types = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUnnamedLocalTypeIdentity);
   const bool unnamed_local_capability = std::find(

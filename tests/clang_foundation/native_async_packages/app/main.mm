@@ -405,6 +405,12 @@ int main() {
   if (native_published_plain_native_capture(40)!=42) return 97;
   static_assert(native_local_constant()==42);
   static_assert(native_unnamed_constant()==42);
+  static_assert(native_generic_constant()==42);
+  static_assert(native_generic_immediate()==42 && native_generic_default()==42);
+  if (native_generic_conversion(40)!=42 || native_generic_mutable(40)!=42 ||
+      native_generic_record(40)!=42 || native_generic_static(40)!=42) return 113;
+  if (native_generic_local(40)!=42 || native_generic_nested(40)!=42 ||
+      native_generic_bridge(40)!=84) return 112;
   if (native_unnamed_nested(40)!=42 || native_unnamed_copies(40)!=42 ||
       native_unnamed_virtual(40)!=42 || native_unnamed_bridge(40)!=126) return 111;
   if (native_published_local_type(40)!=42 || native_local_type_bridge(40)!=42 ||

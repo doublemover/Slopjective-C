@@ -988,3 +988,43 @@ inline int native_unnamed_virtual(int n) {
 int native_unnamed_bridge(int n) {
   return native_unnamed_nested(n)+native_unnamed_copies(n)+native_unnamed_virtual(n);
 }
+
+inline int native_generic_local(int n) {
+  auto add=[offset=2](auto value){return value+offset;};
+  auto pack=[]<class... T>(T... values){return (0+...+values);};
+  auto fixed=[]<int N>(int value){return value+N;};
+  if (add(2L)!=4 || pack(n,2)!=n+2 || pack()!=0 || fixed.template operator()<2>(n)!=n+2) return 0;
+  return add(n);
+}
+inline constexpr int native_generic_constant() {return [](auto n){return n+2;}(40);}
+inline int native_generic_nested(int n) {
+  return [](auto outer){return [](auto inner){return inner+2;}(outer);}(n);
+}
+int native_generic_bridge(int n) {return native_generic_local(n)+native_generic_nested(n);}
+
+inline int native_generic_conversion(int n) {
+  int (*callback)(int)=[](auto value){return value+2;};return callback(n);
+}
+inline int native_generic_mutable(int n) {
+  auto update=[n](auto delta) mutable {n+=delta;return n;};
+  if (update(1)!=n+1) return 0;return update(1L);
+}
+inline int native_generic_record(int n) {
+  NativeClassStats stats={0,0,0,0};int answer=0;
+  {
+    NativeClassValue value(&stats,n);
+    auto read=[](const auto &object){return object.number()+2;};answer=read(value);
+  }
+  return stats.live==0 && stats.destroyed==1 ? answer : 0;
+}
+inline constexpr int native_generic_immediate() {return [](auto n) consteval {return n+2;}(40);}
+inline constexpr int native_generic_default() {
+  auto value=[]<class T=int>(T n=42){return n;};return value.template operator()<>();
+}
+inline int native_generic_static(int n) {
+#if __cplusplus>202002L
+  return [](auto value) static {return value+2;}(n);
+#else
+  return [](auto value){return value+2;}(n);
+#endif
+}

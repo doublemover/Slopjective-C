@@ -175,6 +175,27 @@ void UnnamedLocalBodies(const fs::path &root,const std::string &standard) {
   client.output_path=(root/"unnamed-client.o").string();assert(Compile(client).success);
 }
 
+void GenericLocalBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"generic-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      inline constexpr int generic_value(int n) {
+        auto sum=[]<class... T>(T... values){return (0+...+values);};
+        auto defaults=[]<class T=int>(T value=42){return value;};
+        int (*callback)(int)=[](auto value){return value+2;};
+        return sum(n,2)+sum()+defaults.template operator()<>()+callback(n);
+      }
+  )");
+  r.emit_semantic_interface=true;r.module_name="GenericBodies";r.package_identity="generic-bodies-v1";
+  r.interface_exports={"generic_value"};r.interface_output_path=(root/"GenericBodies.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"generic-provider.o").string();
+  auto built=Compile(r);assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"generic-client.cpp",BaseLanguage::Cxx,standard,false,
+      "static_assert(generic_value(40)==126);int client(){return generic_value(40);}");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"generic-client.o").string();assert(Compile(client).success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -197,6 +218,7 @@ int main() {
   Surface(root, BaseLanguage::C, "c17", false);
   for (const auto &standard : {"c++20", "c++23"}) {
     Surface(root, BaseLanguage::Cxx, standard, false);UnnamedLocalBodies(root,standard);
+    GenericLocalBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {
