@@ -362,7 +362,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         ('installed_array_carriers', 'array-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6, 'rejections': 6}),
         ('installed_record_carriers', 'record-carriers', {'executions': 17, 'commands': 109, 'rejections': 10}),
         ('installed_heap_carriers', 'heap-carriers', {'executions': 17, 'commands': 111, 'rejections': 12}),
-        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 12, 'commands': 98, 'rejections': 18}),
+        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 12, 'commands': 112, 'rejections': 18}),
     )
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),

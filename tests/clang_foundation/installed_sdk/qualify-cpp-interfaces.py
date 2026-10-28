@@ -20,6 +20,7 @@ def qualify(sdk: Path, output: Path) -> dict:
     sources.mkdir(exist_ok=True)
     names = ('carrier-record-call.h', 'carrier-record-native.m', 'cpp-data-module.mm',
              'cpp-data-provider.mm', 'cpp-data-import.mm', 'cpp-data-rejected.mm',
+             'cpp-data-published.mm',
              'cpp-data-import-rejected.mm', 'cpp-plain-module.cpp',
              'cpp-plain-provider.cpp', 'cpp-plain-import.cpp')
     for name in names:
@@ -129,6 +130,15 @@ def qualify(sdk: Path, output: Path) -> dict:
                                              hashlib.sha256(executable.read_bytes()).hexdigest()})
                 report['interfaces'].append({'standard': standard, 'optimization': optimization,
                                              'language': 'c++', 'identity': identity})
+        # Former rejection cases now belong to the supported publication surface.
+        for case in range(1, 15):
+            interface = output / ('published-' + str(case) + '.objc3i')
+            run('published-interface-' + str(case), [compiler, 'cpp-data-published.mm', '--objc3',
+                '--objcxx', '--arc', '--emit-interface', interface, '--module', 'Published',
+                '--package', 'cpp-data-v1', '--', '-std=c++20', '-DCASE=' + str(case)])
+            sidecar = json.loads(interface.with_suffix('.objc3i.json').read_text())
+            if not interface.is_file() or not sidecar['module']['semantic_fingerprint']:
+                raise ValueError('supported publication did not emit a complete interface')
         for case in range(1, 15):
             interface = output / ('rejected-' + str(case) + '.objc3i')
             run('rejected-interface-' + str(case), [compiler, 'cpp-data-rejected.mm', '--objc3',
@@ -150,7 +160,7 @@ def qualify(sdk: Path, output: Path) -> dict:
             run('rejected-visibility-' + str(case), [*import_command('c++20', directory, identity,
                 'cpp-data-import-rejected.mm', obj), '-DCASE=' + str(case)], expected=1)
         assert len(report['executions']) == 12 and len(report['rejections']) == 18
-        assert len(report['commands']) == 97
+        assert len(report['commands']) == 111
         for language in ('c++', 'objective-c++'):
             for standard in ('c++20', 'c++23'):
                 assert len({row['identity']['semantic_fingerprint'] for row in report['interfaces']

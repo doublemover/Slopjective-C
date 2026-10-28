@@ -1,29 +1,32 @@
 #if CASE == 1
-namespace Nested { inline int api() { return [](auto value) { return value; }(42); } }
+namespace Nested { inline auto open = [](auto value) { return value; }; }
 #elif CASE == 2
-template<class T> struct Generic { T value; };
+template<class T> struct Generic;
 #elif CASE == 3
 struct Defaulted { template<class T> Defaulted(T); };
 #elif CASE == 4
-struct Base { int value; }; struct Derived : virtual Base { int second=1; int get() const { return [](auto value) { return value; }(42); } };
+template<class T> struct Generic { T value; };
+template<class T> struct Generic<T *> { T *value; };
 #elif CASE == 5
-struct Methods { int value; int get() const { return [](auto value) { return value; }(42); } };
+struct Methods { template<class T> int get(T value) { return int(value); } };
 #elif CASE == 6
-class Virtual { public: virtual int get() const { return [](auto value) { return value; }(42); } };
+template<class T> struct Methods { template<class U> int get(U value) { return int(value); } };
+template<> template<> int Methods<int>::get<int>(int value) { return value; }
 #elif CASE == 7
-struct Default { int value=[](auto value) { return value; }(42); };
+static int hidden() { return 42; }
+struct Default { int value = hidden(); };
 #elif CASE == 8
-int api(int value=[](auto value) { return value; }(42));
+template<class T> struct Storage { template<class U> static U value; };
 #elif CASE == 9
-inline int api() { return [](auto value) { return value; }(42); }
+inline auto api() { return [](auto value) { return value; }; }
 #elif CASE == 10
-extern constexpr int exported=[](auto value) { return value; }(42);
+template<class T> extern T exported;
 #elif CASE == 11
-struct Nested { struct Inner { int value=[](auto value) { return value; }(42); }; Inner child; };
+struct Nested { struct { int value; } child; };
 #elif CASE == 12
-union Overlap { int one; long two; };
+template<class T> struct Overlap { union Inner { T one; long two; }; };
 #elif CASE == 13
-extern const int exported=[](auto value) { return value; }(42);
+template<class T> T api(T value, ...) { return value; }
 #elif CASE == 14
-constexpr int evaluated() { return [](auto value) { return value; }(42); }
+template<template<class> class C, class T> int api(C<T> value) { return 42; }
 #endif
