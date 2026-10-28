@@ -4898,7 +4898,7 @@ index e0b62591a..478d853e0 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..aeac5440e 100644
+index 4be3e977b..3bf9c6f80 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,138 @@
@@ -5437,7 +5437,7 @@ index 4be3e977b..aeac5440e 100644
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,7 +850,16 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,12 +850,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -5455,7 +5455,16 @@ index 4be3e977b..aeac5440e 100644
    }
  
    if (GuideDecl)
-@@ -753,12 +891,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+     Proto = GuideDecl->getDeducedTemplate()->getDeclName().getAsString();
+-  if (D->isFunctionTemplateSpecialization()) {
++  // Constructor and conversion specializations use deduced template
++  // arguments in their names; an explicit argument list is ill-formed.
++  if (D->isFunctionTemplateSpecialization() &&
++      !isa<CXXConstructorDecl,CXXConversionDecl>(D)) {
+     llvm::raw_string_ostream POut(Proto);
+     DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
+     const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
+@@ -753,12 +894,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -5472,7 +5481,7 @@ index 4be3e977b..aeac5440e 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +947,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +950,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -5484,7 +5493,7 @@ index 4be3e977b..aeac5440e 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,10 +961,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,10 +964,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -5514,7 +5523,7 @@ index 4be3e977b..aeac5440e 100644
        if (FT && FT->hasTrailingReturn()) {
          if (!GuideDecl)
            Out << "auto ";
-@@ -850,7 +1008,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +1011,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -5528,7 +5537,7 @@ index 4be3e977b..aeac5440e 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1041,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1044,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -5539,7 +5548,7 @@ index 4be3e977b..aeac5440e 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1057,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1060,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -5564,7 +5573,7 @@ index 4be3e977b..aeac5440e 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1082,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1085,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -5577,7 +5586,7 @@ index 4be3e977b..aeac5440e 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1105,44 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1108,44 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -5624,7 +5633,7 @@ index 4be3e977b..aeac5440e 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1152,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1155,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -5638,7 +5647,7 @@ index 4be3e977b..aeac5440e 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1179,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,22 +1182,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -5686,7 +5695,7 @@ index 4be3e977b..aeac5440e 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1237,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1240,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -5695,7 +5704,7 @@ index 4be3e977b..aeac5440e 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1246,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1249,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -5706,7 +5715,7 @@ index 4be3e977b..aeac5440e 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1261,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1264,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -5716,7 +5725,7 @@ index 4be3e977b..aeac5440e 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1283,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1286,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -5725,7 +5734,7 @@ index 4be3e977b..aeac5440e 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1311,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
+@@ -1095,6 +1314,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -5735,7 +5744,7 @@ index 4be3e977b..aeac5440e 100644
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1350,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1353,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -5745,7 +5754,7 @@ index 4be3e977b..aeac5440e 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1482,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1485,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -5754,7 +5763,7 @@ index 4be3e977b..aeac5440e 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1502,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,12 +1505,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -5777,7 +5786,7 @@ index 4be3e977b..aeac5440e 100644
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1531,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1534,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -5790,7 +5799,7 @@ index 4be3e977b..aeac5440e 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1553,8 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1320,6 +1556,8 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -5799,7 +5808,7 @@ index 4be3e977b..aeac5440e 100644
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +1612,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1615,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -5815,7 +5824,7 @@ index 4be3e977b..aeac5440e 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1633,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1636,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -5836,7 +5845,7 @@ index 4be3e977b..aeac5440e 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1716,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1719,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -5848,7 +5857,7 @@ index 4be3e977b..aeac5440e 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1726,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1729,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -5873,7 +5882,7 @@ index 4be3e977b..aeac5440e 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1749,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1752,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -5883,7 +5892,7 @@ index 4be3e977b..aeac5440e 100644
      Out << ';';
  }
  
-@@ -1512,8 +1768,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1771,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5894,7 +5903,7 @@ index 4be3e977b..aeac5440e 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1801,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1804,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -5903,7 +5912,7 @@ index 4be3e977b..aeac5440e 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +1814,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1817,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5913,7 +5922,7 @@ index 4be3e977b..aeac5440e 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +1825,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1828,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5925,7 +5934,7 @@ index 4be3e977b..aeac5440e 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1843,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1846,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -5934,7 +5943,7 @@ index 4be3e977b..aeac5440e 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +1854,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +1857,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5944,7 +5953,7 @@ index 4be3e977b..aeac5440e 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +1878,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1881,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -5953,7 +5962,7 @@ index 4be3e977b..aeac5440e 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1892,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1895,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -5967,7 +5976,7 @@ index 4be3e977b..aeac5440e 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +1907,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +1910,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -5978,7 +5987,7 @@ index 4be3e977b..aeac5440e 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2015,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2018,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -6000,7 +6009,7 @@ index 4be3e977b..aeac5440e 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2058,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2061,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -6018,7 +6027,7 @@ index 4be3e977b..aeac5440e 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2087,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2090,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -18725,10 +18734,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..947d1a046
+index 000000000..5641cac88
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1427 @@
+@@ -0,0 +1,1462 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20154,6 +20163,41 @@ index 000000000..947d1a046
 +    for(auto *D:DeclarationOnly->getASTContext().getTranslationUnitDecl()->decls())
 +      if(auto *Variable=dyn_cast<VarTemplateSpecializationDecl>(D))
 +        EXPECT_EQ(Variable->isThisDeclarationADefinition(),VarDecl::DeclarationOnly);
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesConcreteSpecialMemberTemplateSpecializations) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    auto From=tooling::buildASTFromCodeWithArgs(R"(
++      namespace N {
++        struct Concrete {
++          int value;
++          Concrete():value(40){}
++          template<class T>explicit Concrete(T n):value(n){}
++          template<class T>T operator()(T n)const{return value+n;}
++          template<class T>explicit operator T()const{return value;}
++        };
++      }
++      template<>inline N::Concrete::Concrete(int n):value(n+1){}
++      template<>inline int N::Concrete::operator()<int>(int n)const{return value+n+1;}
++      template<>inline N::Concrete::operator int()const{return value+1;}
++    )",{"-xc++",Standard},"concrete-special-member-template-specializations.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"concrete-special-member-template-specializations-import.cpp");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto Shared=std::make_shared<ASTImporterSharedState>(*To->getASTContext().getTranslationUnitDecl());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false,Shared);
++    std::string Replayed;
++    auto Print=[&](const Decl *D){PrintingPolicy Policy(From->getLangOpts());Policy.PolishForDeclaration=true;
++      std::string Text;llvm::raw_string_ostream Stream(Text);D->print(Stream,Policy);return Text;};
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      if(!isa<NamespaceDecl,CXXMethodDecl>(D))continue;
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++      if(!isa<NamespaceDecl>(D))EXPECT_EQ(Print(D),Print(*Imported));
++      Replayed+=Print(*Imported)+";\n";
++    }
++    Replayed+="int use(){N::Concrete value{41};return value(1)+static_cast<int>(value)+N::Concrete{40L}(2L)+static_cast<long>(value);}";
++    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"concrete-special-member-template-specializations-replayed.cpp");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
