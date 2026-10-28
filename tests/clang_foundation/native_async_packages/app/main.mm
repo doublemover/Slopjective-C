@@ -24,6 +24,9 @@ static void *native_variable_template_worker(void *context) {
   *passed &= native_spec_tls<int> ==40 && native_spec_shared<int> ==42;
   *passed &= NativeDetached::Family<int>::local==40 && NativeDetached::Family<int>::member_local<> ==40 && NativeDetached::Concrete::local<> ==40;
   *passed &= native_detached_local()==&NativeDetached::Family<int>::local;
+  *passed &= NativeDetached::Family<int>::Plain::local==40;
+  ++NativeDetached::Family<int>::Plain::local;
+  *passed &= NativeDetached::Family<int>::Plain::local==41;
   ++NativeDetached::Family<int>::local;++NativeDetached::Family<int>::member_local<>;++NativeDetached::Concrete::local<>;
   *passed &= NativeDetached::Family<int>::local==41 && NativeDetached::Family<int>::member_local<> ==41 && NativeDetached::Concrete::local<> ==41;
   ++native_spec_tls<int>;
@@ -303,6 +306,16 @@ int main() {
        NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
        NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
        NativeDetached::Concrete::local<> !=40)return 188;
+    auto *detached_plain=native_detached_plain_factory();
+    auto *detached_plain_copy=new NativeDetached::Family<int>::Plain(*detached_plain);
+    if(NativeDetached::Family<int>::Plain::live!=2 || detached_plain_copy->get()!=40 || detached_plain_copy->add()!=42)return 191;
+    delete detached_plain;delete detached_plain_copy;
+    if(NativeDetached::Family<int>::Plain::local!=40 || NativeDetached::Family<int>::Plain::live!=0 || NativeDetached::Family<long>::Plain{40}.add(2L)!=42)return 192;
+    NativeDetached::Family<int>::Inner<>::Deep deep{40,2};
+    NativeDetached::Family<long>::Inner<short> inner{40,2};
+    int nested_value=42;NativePartialFamily<int*>::Plain partial_nested{&nested_value};
+    if(deep.sum()!=42 || inner.sum()!=42 || NativeDetached::Concrete::Inner<>{42}.get()!=42 ||
+       NativeDetached::Concrete::Inner<long>{42}.get()!=42 || partial_nested.get()!=42)return 193;
     auto *detached=native_detached_factory();
     auto *detached_copy=new NativeDetached::Family<int>(*detached);
     int(NativeDetached::Family<int>::*detached_get)()const=&NativeDetached::Family<int>::get;

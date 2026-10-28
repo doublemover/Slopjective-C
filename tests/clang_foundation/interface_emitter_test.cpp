@@ -17,6 +17,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
+#include "clang/AST/ASTImporterSharedState.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
@@ -1742,6 +1743,83 @@ void TestTemplateStructure() {
   }
 }
 
+void TestDetachedNestedTemplates() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="detached-nested-templates.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.detached_nested","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.detached_nested","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>struct Wrap{T value;};
+        template<class T>struct Outer{struct Plain;template<class U=int>struct Inner;};
+        template<class T>concept Number=sizeof(T)>0;
+        template<class T>struct Partial{};
+        template<Number T>struct Partial<T*>{struct Plain;};
+        struct Concrete{template<class T=int>struct Inner;};
+      }
+      template<class T>struct N::Outer<T>::Plain{
+        inline static thread_local int local=40;
+        template<template<class>class C>using Alias=C<T>;
+        T value;explicit Plain(T n):value(n){}Plain(const Plain&)=default;
+        virtual ~Plain(){}virtual T get()const{return value;}
+        template<class U=int>T add(U n=2)const{return get()+n;}
+      };
+      template<class T>template<class U>struct N::Outer<T>::Inner{T left;U right;struct Deep;int sum()const{return left+right;}};
+      template<class T>template<class U>struct N::Outer<T>::Inner<U>::Deep{T left;U right;int sum()const{return left+right;}};
+      template<class T>struct N::Concrete::Inner{T value;T get()const{return value;}};
+      template<N::Number T>struct N::Partial<T*>::Plain{T *value;T get()const{return *value;}};
+      inline int probe(){int n=42;return N::Outer<int>::Plain::Alias<N::Wrap>{42}.value+N::Outer<int>::Plain{40}.add()+N::Outer<int>::Inner<>::Deep{40,2}.sum()+N::Concrete::Inner<>{42}.get()+N::Partial<int*>::Plain{&n}.get();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxDetachedNestedTemplateSemantic)!=std::string::npos);
+    assert(first.sidecar_json.find(kCxxTemplateTemplateSemantic)!=std::string::npos &&
+           first.sidecar_json.find("objc3.cxx-thread-local.v1")!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-detached-nested-templates.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-detached-nested-templates.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxDetachedNestedTemplateIdentity)==3);
+    auto from=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes,{"-xc++",standard},"detached-nested-replay.cpp");
+    auto to=clang::tooling::buildASTFromCodeWithArgs("",{"-xc++",standard},"detached-nested-consumer.cpp");
+    assert(from && to && !from->getDiagnostics().hasErrorOccurred());
+    auto shared=std::make_shared<clang::ASTImporterSharedState>(*to->getASTContext().getTranslationUnitDecl());
+    clang::ASTImporter importer(to->getASTContext(),to->getFileManager(),
+                               from->getASTContext(),from->getFileManager(),false,shared);
+    for(auto *root:from->getASTContext().getTranslationUnitDecl()->decls())
+      if(auto *scope=llvm::dyn_cast<clang::NamespaceDecl>(root))
+        for(auto *member:scope->decls()) {
+          auto *owner=llvm::dyn_cast<clang::NamedDecl>(member);
+          if(!owner || ReadDetachedNestedTemplateDefinitions(owner).empty())continue;
+          auto imported=importer.Import(owner);assert(imported);
+          for(auto *definition:ReadDetachedNestedTemplateDefinitions(owner)) {
+            auto nested=importer.Import(definition);assert(nested);
+          }
+          InterfaceDeclarationIdentity expected,actual;
+          assert(ReadInterfaceDeclarationIdentity(owner,from->getASTContext(),expected));
+          assert(ReadInterfaceDeclarationIdentity(llvm::cast<clang::NamedDecl>(*imported),to->getASTContext(),actual));
+          assert(SameInterfaceDeclarationIdentity(expected,actual));
+        }
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxDetachedNestedTemplateSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxDetachedNestedTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("return left+right"),17,"return left+right+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Outer{struct Inner;};template<class T>struct Outer<T>::Inner{int get(){return hidden();}};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>struct Outer{struct Inner;};").success);
+  }
+}
+
 void TestDetachedStaticDataTemplates() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="detached-static-data.cpp") {
@@ -2402,14 +2480,15 @@ void TestConcreteNestedTemplates() {
     auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
     assert(!rejected);llvm::consumeError(rejected.takeError());
     assert(emit("struct Outer{template<class T>struct Box{T value;};};").success);
+    auto detached=emit("struct Outer{template<class T>struct Box;};template<class T>struct Outer::Box{T value;};");
+    assert(detached.success && detached.sidecar_json.find(kCxxDetachedNestedTemplateSemantic)!=std::string::npos);
     auto hidden=emit("static int hidden(){return 42;}struct Outer{template<class T>struct Box{int f(){return hidden();}};};");
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     for(const auto *source:{
         "struct Outer{template<class T>struct Box;};",
         "struct Outer{template<class T>union Box{T value;};};",
-        "struct Outer{template<class T>struct Box{T value;};};template<class T>struct Outer::Box<T*>{T *value;};",
-        "struct Outer{template<class T>struct Box;};template<class T>struct Outer::Box{T value;};"})
+        "struct Outer{template<class T>struct Box{T value;};};template<class T>struct Outer::Box<T*>{T *value;};"})
       assert(!emit(source).success);
   }
 }
@@ -3967,6 +4046,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestDetachedNestedTemplates();
   TestDetachedStaticDataTemplates();
   TestDetachedCallableTemplates();
   TestLargeExportPolicy();

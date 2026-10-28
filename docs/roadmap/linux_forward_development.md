@@ -78,6 +78,19 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Detached nested-template definitions
+
+The [2.65 source span](linux_cxx_detached_nested_templates.md) publishes out-of-line
+named nested records and nested primary class templates of generic/concrete
+parents, including constrained partial parents and deeper dependent nesting.
+Native import reconnects deep definitions through their exact in-class source
+forward declarations. Complete parent identities bind every nested definition;
+capability discovery follows forwards into complete bodies, including TLS and
+recursive template-template heads. The emitter suite, eleven native importer
+tests, 72 tooling tests and all 16 source-free configurations / 96 commands pass.
+Nested/member specializations and remaining effectful boundaries stay open.
+SDK 2.62 remains accepted; combined validation for later milestones is batched.
+
 ## Detached static-data template definitions
 
 The [2.64 source span](linux_cxx_detached_static_data_templates.md) publishes
