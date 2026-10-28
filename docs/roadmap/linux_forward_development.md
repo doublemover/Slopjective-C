@@ -78,6 +78,20 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Closed-parent member template patterns
+
+The [2.72 source span](linux_cxx_closed_parent_patterns.md) adds whole member
+class/function/variable template patterns and class/variable partials under closed
+parents. Complete owners bind exact outer arguments and published heads/bodies;
+consumer import installs the complete pattern set before parent comparison.
+Materialized forward primaries do not require layout until defined, and capability
+discovery includes closed definitions. The emitter suite, eighteen focused native
+importer tests, all thirty-two tests in that family, 72 tooling tests and all 16
+source-free configurations / 96 commands pass. Witnesses cover provider factories,
+new consumer instantiations, virtual copies/destruction, member pointers, shared
+mutation/addresses, primary fallback and independent worker TLS. Remaining
+effectful/generic projections stay open; broader validation stays batched.
+
 ## Closed-parent member specializations
 
 The [2.71 source span](linux_cxx_closed_parent_members.md) publishes full member
