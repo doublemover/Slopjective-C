@@ -147,7 +147,12 @@
     "NativeIntegratedAlias",
     "native_integrated_value",
     "native_foreign_scrubbed",
-    "native_foreign_captured_release"
+    "native_foreign_captured_release",
+    "native_unnamed_constant",
+    "native_unnamed_nested",
+    "native_unnamed_copies",
+    "native_unnamed_virtual",
+    "native_unnamed_bridge"
   ],
   "dependencies": []
 }

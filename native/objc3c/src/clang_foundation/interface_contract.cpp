@@ -433,6 +433,11 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_unnamed_local_types = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUnnamedLocalTypeIdentity);
+  const bool unnamed_local_capability = std::find(
+      sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxUnnamedLocalTypeSemantic) != sidecar.required_semantics.end();
   const bool has_local_types = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxLocalTypeIdentity);
   const bool local_types_capability = std::find(
@@ -440,6 +445,9 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxLocalTypeSemantic) != sidecar.required_semantics.end();
   if (has_local_types != local_types_capability)
     Add(result, "O3IFC043", "C++ local type identity and required capability must agree", expected.canonical_name);
+  if (has_unnamed_local_types != unnamed_local_capability ||
+      (unnamed_local_capability && !local_types_capability))
+    Add(result,"O3IFC047","C++ unnamed local type identity and required local-type capabilities must agree",expected.canonical_name);
   const bool has_cxx_members = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(),
       [](const auto &d) { return IsCxxMemberDeclarationKind(d.kind); });

@@ -59,6 +59,15 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published unnamed C++ local types
+
+The [2.38 source span](linux_cxx_unnamed_local_types.md) admits unnamed local
+records and enums, including nested local records and aliases. Owned tag
+printing and lexical type/structor slots preserve complete definitions without
+producer source locations. Source-free copy/destruction and virtual/RTTI
+witnesses pass normal, eager-import and ASan/UBSan package runs. All 33 frontend
+suites and 332 tooling tests pass, including pure C++ object consumers.
+
 ## Typed key-path subscripts
 
 The [keypath 2.3.0 source span](linux_keypath_subscripts.md) implements typed

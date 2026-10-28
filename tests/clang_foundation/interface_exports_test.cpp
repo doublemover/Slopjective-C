@@ -154,6 +154,27 @@ void KeyPathSubscriptBodies(const fs::path &root,const std::string &standard,boo
   assert(Compile(client).success);
 }
 
+void UnnamedLocalBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"unnamed-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      inline int unnamed_inline(int n) {
+        enum {delta=2};
+        struct {struct {int n;} nested;int get() const {return nested.n+delta;}} value{{n}};
+        using Copy=decltype(value);Copy copied=value;return copied.get();
+      }
+  )");
+  r.emit_semantic_interface=true;r.module_name="UnnamedBodies";r.package_identity="unnamed-bodies-v1";
+  r.interface_exports={"unnamed_inline"};r.interface_output_path=(root/"UnnamedBodies.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"unnamed-provider.o").string();
+  auto built=Compile(r);assert(built.success && built.interface_artifact);
+  assert(built.interface_artifact->sidecar_json.find("objc3.cxx-unnamed-local-types.v1")!=std::string::npos);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"unnamed-client.cpp",BaseLanguage::Cxx,standard,false,
+      "int client(){return unnamed_inline(40);}");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"unnamed-client.o").string();assert(Compile(client).success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -174,8 +195,9 @@ int main() {
   fs::remove_all(root);
   fs::create_directories(root);
   Surface(root, BaseLanguage::C, "c17", false);
-  for (const auto &standard : {"c++20", "c++23"})
-    Surface(root, BaseLanguage::Cxx, standard, false);
+  for (const auto &standard : {"c++20", "c++23"}) {
+    Surface(root, BaseLanguage::Cxx, standard, false);UnnamedLocalBodies(root,standard);
+  }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {
       CompilerBuiltins(root,standard,arc);KeyPathSubscriptBodies(root,standard,arc);

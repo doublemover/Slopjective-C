@@ -17,8 +17,9 @@ and ownership projection recognize the same capability.
 Dependency checks distinguish local members and parameters from referenced
 public declarations. Local field and function types still validate external
 dependencies, exports and SPI policy. Local types cannot escape through a public
-deduced return or another exported signature. Generic/dependent bodies, unnamed
-local tags and unions retain their existing admission boundaries.
+deduced return or another exported signature. The [2.38 source extension](linux_cxx_unnamed_local_types.md) adds unnamed local
+records and enums. Generic/dependent bodies, public unnamed nested types and
+unions retain their existing admission boundaries.
 
 Maintained fixtures cover local enums, nested records, nontrivial copying and
 destruction, virtual methods, RTTI, constexpr evaluation and classes inside

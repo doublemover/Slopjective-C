@@ -956,3 +956,35 @@ int native_integrated_value(NativeIntegratedAlias _Nonnull owner) {
   return [(NativeModuleResult *_Nonnull)owner number];
 #endif
 }
+
+inline constexpr int native_unnamed_constant() {
+  enum {delta=2};
+  struct {int n; constexpr int get() const {return n+delta;}} value{40};
+  return value.get();
+}
+inline int native_unnamed_nested(int n) {
+  struct {struct {int n; int get() const {return n+2;}} part;
+          int get() const {return part.get();}} value{{n}};
+  using Alias=decltype(value);Alias copy=value;
+  return copy.get();
+}
+inline int native_unnamed_copies(int n) {
+  NativeClassStats stats={0,0,0,0};int answer=0;
+  {
+    struct {NativeClassValue member;} first{NativeClassValue(&stats,n)};
+    auto second=first;
+    auto closure=[second] {return second.member.number()+2;};
+    answer=closure();
+  }
+  return stats.live==0 && stats.copied==2 && stats.destroyed==3 ? answer : 0;
+}
+inline int native_unnamed_virtual(int n) {
+  struct Base {virtual ~Base() {} virtual int get() const=0;};
+  struct : Base {int n;int get() const override {return n+2;}} value;
+  value.n=n;Base *base=&value;
+  if (dynamic_cast<void *>(base)!=static_cast<void *>(&value)) return 0;
+  return base->get();
+}
+int native_unnamed_bridge(int n) {
+  return native_unnamed_nested(n)+native_unnamed_copies(n)+native_unnamed_virtual(n);
+}

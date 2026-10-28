@@ -404,6 +404,9 @@ int main() {
   if (native_published_mixed_capture(42)!=42 || native_statement_live()!=0) return 96;
   if (native_published_plain_native_capture(40)!=42) return 97;
   static_assert(native_local_constant()==42);
+  static_assert(native_unnamed_constant()==42);
+  if (native_unnamed_nested(40)!=42 || native_unnamed_copies(40)!=42 ||
+      native_unnamed_virtual(40)!=42 || native_unnamed_bridge(40)!=126) return 111;
   if (native_published_local_type(40)!=42 || native_local_type_bridge(40)!=42 ||
       native_local_lambda(40)!=42) return 98;
   auto pending = native_module_value(41).start(executor);

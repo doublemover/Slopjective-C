@@ -1178,6 +1178,7 @@ void TestCxxLocalTypes() {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-definitions.v1",
       "objc3.cxx-member-interfaces.v1", "objc3.cxx-declaration-expressions.v1",
       "objc3.cxx-lambda-expressions.v1", "objc3.cxx-local-types.v1",
+      "objc3.cxx-unnamed-local-types.v1",
       "objc3.module-owned-names.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source, const char *filename = "local-types.cpp") {
@@ -1199,7 +1200,14 @@ void TestCxxLocalTypes() {
         "return nested.n; } "
         "inline int local_lambda(int n) { return [n] { "
         "struct Value {int n; int get() const {return n+2;}}; "
-        "return Value{n}.get(); }(); }";
+        "return Value{n}.get(); }(); }"
+        "inline constexpr int unnamed_constant(int n) {enum {delta=2}; "
+        "struct {int n; constexpr int get() const {return n+delta;}} value{n}; return value.get();} "
+        "inline int unnamed_nested(int n) {struct {struct {int n; int get() const {return n+2;}} part; "
+        "int get() const {return part.get();}} value{{n}}; return value.get();} "
+        "inline int unnamed_lambda(int n) {return [n] {struct {int n;} value{n};return value.n+2;}();} "
+        "inline int unnamed_types(int n) {struct {int n;} one{n}; struct {int n;} two{2}; "
+        "using First=decltype(one);First copy=one;return copy.n+two.n;} ";
     auto emitted = emit(source);
     for (const auto &d : emitted.diagnostics)
       std::fprintf(stderr, "%s: %s %s\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
@@ -1231,6 +1239,14 @@ void TestCxxLocalTypes() {
     auto defaults_round = emit(defaults.source_bytes);
     assert(defaults_round.success && defaults_round.source_bytes == defaults.source_bytes &&
            defaults_round.identity.semantic_fingerprint == defaults.identity.semantic_fingerprint);
+    auto layout=emit("inline int layout() {struct {int value;char unused;} object{42,0};return object.value;}");
+    auto changed_layout=emit("inline int layout() {struct {int value;long unused;} object{42,0};return object.value;}");
+    assert(layout.success && changed_layout.success &&
+           layout.identity.semantic_fingerprint!=changed_layout.identity.semantic_fingerprint);
+    auto unnamed_erased=*decoded;
+    std::erase(unnamed_erased.required_semantics,kCxxUnnamedLocalTypeSemantic);
+    auto unnamed_invalid=EncodeSemanticInterfaceSidecar(unnamed_erased,semantics);
+    assert(!unnamed_invalid);llvm::consumeError(unnamed_invalid.takeError());
     auto erased = *decoded;
     std::erase(erased.required_semantics, kCxxLocalTypeSemantic);
     erased.module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(erased));
@@ -1241,7 +1257,9 @@ void TestCxxLocalTypes() {
     for (const auto *boundary : {
              "static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}",
              "inline int call() {union Local {int n;}; return Local{42}.n;}",
-             "inline int call() {struct {int n;} value{42}; return value.n;}"}) {
+             "inline int call() {union {int n;} value{42}; return value.n;}",
+             "inline auto escape() {struct {int n;} value{42};return value;}",
+             "struct Public {struct {int n;} value;};"}) {
       auto rejected = emit(boundary);
       assert(!rejected.success);
     }

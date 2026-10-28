@@ -162,6 +162,11 @@ inline constexpr const char *kCxxAsyncDefinitionSemantic = "objc3.cxx-async-defi
 inline bool HasCxxAsyncDefinitionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-async-definitions:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxUnnamedLocalTypeSemantic = "objc3.cxx-unnamed-local-types.v1";
+inline bool HasCxxUnnamedLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-unnamed-local-types:v1;") != std::string::npos;
+}
+
 inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v1";
 inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-local-types:v1;") != std::string::npos;
