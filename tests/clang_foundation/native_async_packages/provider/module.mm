@@ -1126,3 +1126,10 @@ inline int native_union_throwing(int n) {
   }
   return stats.live==0 && stats.copied==1 && stats.destroyed==2 ? answer : 0;
 }
+
+template<class T> concept NativeNumber=requires(T n){n+2;};
+template<class T> concept NativeWide=NativeNumber<T> && (sizeof(T)>=sizeof(int));
+template<int N> concept NativePositive=N>0;
+template<class... T> concept NativeNumbers=(NativeNumber<T> && ...);
+inline constexpr int native_concept_value() {return []<NativeWide T>(T n){return n+2;}(40);}
+int native_concept_bridge() {return native_concept_value();}

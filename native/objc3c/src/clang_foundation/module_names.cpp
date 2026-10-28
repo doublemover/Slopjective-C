@@ -5,7 +5,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
-#include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/Diagnostic.h"
@@ -27,6 +27,15 @@ std::string BuildModuleOwnedName(const std::string &module,
 }
 bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration) {
+  if (declaration.kind == "Concept") {
+    std::string owner = module.canonical_name;
+    if (owner.ends_with(".__ownership_producer"))
+      owner.resize(owner.size() - std::string(".__ownership_producer").size());
+    return declaration.native_symbol_name.empty() &&
+        declaration.canonical_type_identity.starts_with(
+            "concept{owner=" + BuildModuleOwnedName(owner, module.package_identity,
+                                                    declaration.stable_id) + ";");
+  }
   if (declaration.native_symbol_name.empty())
     return true;
   if (declaration.kind != "Function" &&
@@ -108,6 +117,47 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
       if (a->getAnnotation().starts_with("objc3.module-name:"))
         return a->getAnnotation().drop_front(18).str();
   return {};
+}
+std::string ReadCxxConceptOwner(const clang::NamedDecl *declaration) {
+  for (const auto *attribute : declaration->specific_attrs<clang::AnnotateAttr>())
+    if (attribute->getAnnotation().starts_with("objc3.concept-owner:"))
+      return attribute->getAnnotation().drop_front(sizeof("objc3.concept-owner:") - 1).str();
+  return {};
+}
+bool ApplyCxxConceptOwners(clang::ASTContext &context,
+                          const std::string &module,
+                          const std::string &package,
+                          const std::string &source_root) {
+  struct Concepts : clang::RecursiveASTVisitor<Concepts> {
+    clang::ASTContext &context;
+    const std::string &module, &package, &source_root;
+    Concepts(clang::ASTContext &context, const std::string &module,
+             const std::string &package, const std::string &source_root)
+        : context(context), module(module), package(package), source_root(source_root) {}
+    bool VisitConceptDecl(clang::ConceptDecl *declaration) {
+      if (!IsModuleOwnedSource(context, declaration->getLocation(), source_root)) return true;
+      const auto expected = BuildModuleOwnedName(module, package,
+                                                ReadInterfaceDeclarationStableId(declaration));
+      unsigned count = 0;
+      for (const auto *attribute : declaration->specific_attrs<clang::AnnotateAttr>())
+        if (attribute->getAnnotation().starts_with("objc3.concept-owner:")) {
+          if (++count > 1 || attribute->args_size() ||
+              attribute->getAnnotation().drop_front(sizeof("objc3.concept-owner:") - 1) != expected) {
+            return false;
+          }
+        }
+      if (!count)
+        declaration->addAttr(clang::AnnotateAttr::Create(
+            context, "objc3.concept-owner:" + expected, nullptr, 0,
+            declaration->getLocation()));
+      return true;
+    }
+  };
+  std::string nominal_module = module;
+  if (nominal_module.ends_with(".__ownership_producer"))
+    nominal_module.resize(nominal_module.size() - std::string(".__ownership_producer").size());
+  Concepts visitor(context, nominal_module, package, source_root);
+  return visitor.TraverseDecl(context.getTranslationUnitDecl());
 }
 namespace {
 class NamingVisitor : public clang::RecursiveASTVisitor<NamingVisitor> {

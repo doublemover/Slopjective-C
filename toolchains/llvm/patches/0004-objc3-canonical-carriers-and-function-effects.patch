@@ -4045,7 +4045,7 @@ index d743717ad..576b21e14 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..1c2506c60 100644
+index e0b62591a..5ee8264c7 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -4273,7 +4273,22 @@ index e0b62591a..1c2506c60 100644
        if (!IsStructurallyEquivalent(Context, Proto1->getParamType(I),
                                      Proto2->getParamType(I)))
          return false;
-@@ -2446,12 +2626,55 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2416,6 +2596,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+                                      ConceptDecl *D1,
+                                      ConceptDecl *D2) {
++  auto Owner = [](const ConceptDecl *D) -> llvm::StringRef {
++    for (const auto *Attribute : D->specific_attrs<AnnotateAttr>()) {
++      auto Text = Attribute->getAnnotation();
++      if (Text.consume_front("objc3.concept-owner:")) return Text;
++    }
++    return {};
++  };
++  if (Owner(D1) != Owner(D2)) return false;
+   // Check template parameters.
+   if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
+     return false;
+@@ -2446,12 +2634,55 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
@@ -4329,7 +4344,7 @@ index e0b62591a..1c2506c60 100644
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2712,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2489,6 +2720,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -4340,7 +4355,7 @@ index e0b62591a..1c2506c60 100644
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2827,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2600,6 +2835,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -4358,7 +4373,7 @@ index e0b62591a..1c2506c60 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3022,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+@@ -2784,8 +3030,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -4386,7 +4401,7 @@ index e0b62591a..1c2506c60 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..484974f71 100644
+index 4be3e977b..2cc3b3d7e 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -4684,7 +4699,7 @@ index 4be3e977b..484974f71 100644
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,11 +268,41 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,11 +268,42 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -4724,12 +4739,13 @@ index 4be3e977b..484974f71 100644
 +              NSReturnsAutoreleasedAttr>(A)) &&
 +        !(SPI &&
 +          (SPI->getAnnotation().starts_with("objc3.spi:") ||
-+           SPI->getAnnotation().starts_with("objc3.module-name:")) &&
++           SPI->getAnnotation().starts_with("objc3.module-name:") ||
++           (isa<ConceptDecl>(D) && SPI->getAnnotation().starts_with("objc3.concept-owner:"))) &&
 +          SPI->args_size() == 0))
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -282,7 +315,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -282,7 +316,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
               "Default not a valid for an attribute location");
        if (Pos == AttrPosAsWritten::Default || Pos == APos) {
          AOut << LS;
@@ -4802,7 +4818,7 @@ index 4be3e977b..484974f71 100644
        }
        break;
      }
-@@ -348,12 +445,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +446,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -4816,7 +4832,7 @@ index 4be3e977b..484974f71 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -451,7 +547,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +548,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -4825,7 +4841,7 @@ index 4be3e977b..484974f71 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -554,9 +650,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +651,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -4840,7 +4856,7 @@ index 4be3e977b..484974f71 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -690,20 +789,33 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -690,20 +790,33 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
    CXXDeductionGuideDecl *GuideDecl = dyn_cast<CXXDeductionGuideDecl>(D);
    if (!Policy.SuppressSpecifiers) {
      switch (D->getStorageClass()) {
@@ -4884,7 +4900,7 @@ index 4be3e977b..484974f71 100644
      else if (D->isImmediateFunction())
        Out << "immediate ";
      ExplicitSpecifier ExplicitSpec = ExplicitSpecifier::getFromDecl(D);
-@@ -753,12 +865,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +866,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -4901,7 +4917,7 @@ index 4be3e977b..484974f71 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +921,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +922,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -4913,7 +4929,7 @@ index 4be3e977b..484974f71 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,10 +935,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,10 +936,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -4943,7 +4959,7 @@ index 4be3e977b..484974f71 100644
        if (FT && FT->hasTrailingReturn()) {
          if (!GuideDecl)
            Out << "auto ";
-@@ -850,7 +982,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +983,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -4957,7 +4973,7 @@ index 4be3e977b..484974f71 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1015,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1016,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -4968,7 +4984,7 @@ index 4be3e977b..484974f71 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1031,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1032,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -4993,7 +5009,7 @@ index 4be3e977b..484974f71 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1056,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1057,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -5006,7 +5022,7 @@ index 4be3e977b..484974f71 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1079,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1080,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -5042,7 +5058,7 @@ index 4be3e977b..484974f71 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1115,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1116,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -5056,7 +5072,7 @@ index 4be3e977b..484974f71 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,6 +1142,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,6 +1143,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -5066,7 +5082,7 @@ index 4be3e977b..484974f71 100644
      if (D->isConstexpr()) {
        Out << "constexpr ";
        T.removeLocalConst();
-@@ -1001,6 +1161,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1001,6 +1162,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      Out << ' ' << *Attrs;
  
    Expr *Init = D->getInit();
@@ -5078,7 +5094,7 @@ index 4be3e977b..484974f71 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1187,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1188,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -5087,7 +5103,7 @@ index 4be3e977b..484974f71 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1196,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1197,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -5098,7 +5114,7 @@ index 4be3e977b..484974f71 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1211,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1212,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -5108,7 +5124,7 @@ index 4be3e977b..484974f71 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1233,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1234,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -5117,7 +5133,7 @@ index 4be3e977b..484974f71 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1131,7 +1297,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1298,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -5127,7 +5143,7 @@ index 4be3e977b..484974f71 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1429,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1430,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -5136,16 +5152,19 @@ index 4be3e977b..484974f71 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,7 +1449,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,7 +1450,10 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
 -    Out << "concept " << Concept->getName() << " = " ;
-+    Out << "concept " << Concept->getName() << " = ";
++    Out << "concept " << Concept->getName();
++    if (auto Attributes = prettyPrintAttributes(Concept))
++      Out << ' ' << *Attributes;
++    Out << " = ";
      Concept->getConstraintExpr()->printPretty(Out, nullptr, Policy, Indentation,
                                                "\n", &Context);
    }
-@@ -1302,7 +1469,13 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1473,13 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -5160,7 +5179,7 @@ index 4be3e977b..484974f71 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1377,13 +1550,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1554,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -5176,7 +5195,7 @@ index 4be3e977b..484974f71 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1571,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1575,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -5197,7 +5216,7 @@ index 4be3e977b..484974f71 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1654,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1658,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -5209,7 +5228,7 @@ index 4be3e977b..484974f71 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1664,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1668,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -5234,7 +5253,7 @@ index 4be3e977b..484974f71 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1687,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1691,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -5244,7 +5263,7 @@ index 4be3e977b..484974f71 100644
      Out << ';';
  }
  
-@@ -1512,8 +1706,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1710,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5255,7 +5274,7 @@ index 4be3e977b..484974f71 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1739,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1743,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -5264,7 +5283,7 @@ index 4be3e977b..484974f71 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +1752,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1756,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5274,7 +5293,7 @@ index 4be3e977b..484974f71 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +1763,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1767,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5286,7 +5305,7 @@ index 4be3e977b..484974f71 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1781,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1785,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -5295,7 +5314,7 @@ index 4be3e977b..484974f71 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +1792,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +1796,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5305,7 +5324,7 @@ index 4be3e977b..484974f71 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +1816,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1820,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -5314,7 +5333,7 @@ index 4be3e977b..484974f71 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1830,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1834,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -5328,7 +5347,7 @@ index 4be3e977b..484974f71 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +1845,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +1849,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -5339,7 +5358,7 @@ index 4be3e977b..484974f71 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +1953,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +1957,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -5361,7 +5380,7 @@ index 4be3e977b..484974f71 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +1996,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2000,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -5379,7 +5398,7 @@ index 4be3e977b..484974f71 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2025,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2029,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -18053,10 +18072,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..e97c35327
+index 000000000..91f99c3b3
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,503 @@
+@@ -0,0 +1,530 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18558,6 +18577,33 @@ index 000000000..e97c35327
 +          EXPECT_EQ(Proto.getParam(Index), Function->getParamDecl(Index));
 +      }
 +    }
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, ConceptOwnerSeparatesAtomicIdentity) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    auto Build = [&](const char *Owner) {
++      std::string Code = "template<class T> concept Number [[clang::annotate(\"objc3.concept-owner:";
++      Code += Owner;
++      Code += "\")]]=sizeof(T)>0;";
++      return tooling::buildASTFromCodeWithArgs(Code, {"-xc++", Standard});
++    };
++    auto From = Build("first");auto Different = Build("second");auto Same = Build("first");
++    ASSERT_TRUE(From && Different && Same);
++    auto Find = [](ASTUnit &AST) {
++      auto &Context = AST.getASTContext();
++      return cast<ConceptDecl>(*Context.getTranslationUnitDecl()->lookup(&Context.Idents.get("Number")).begin());
++    };
++    auto Equivalent = [&](ASTUnit &To) {
++      StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalent;
++      StructuralEquivalenceContext Context(
++          From->getLangOpts(), From->getASTContext(), To.getASTContext(),
++          NonEquivalent, StructuralEquivalenceKind::Default,
++          /*StrictTypeSpelling=*/false, /*Complain=*/false);
++      return Context.IsEquivalent(Find(*From), Find(To));
++    };
++    EXPECT_FALSE(Equivalent(*Different));
++    EXPECT_TRUE(Equivalent(*Same));
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
@@ -47569,3 +47615,72 @@ index 000000000..c6b90daed
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
 +// CHECK: noexcept(noexcept(value + 2)) requires requires (T item)
 +// CHECK: []<class T> requires (sizeof(T) > 0)(T value)
+diff --git a/clang/lib/AST/ASTConcept.cpp b/clang/lib/AST/ASTConcept.cpp
+index fd12bc4e8..672d41849 100644
+--- a/clang/lib/AST/ASTConcept.cpp
++++ b/clang/lib/AST/ASTConcept.cpp
+@@ -13,6 +13,7 @@
+ 
+ #include "clang/AST/ASTConcept.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/Attr.h"
+ #include "clang/AST/ExprConcepts.h"
+ #include "clang/AST/NestedNameSpecifier.h"
+ #include "clang/AST/PrettyPrinter.h"
+@@ -108,8 +109,16 @@ SourceLocation ConceptReference::getBeginLoc() const {
+ 
+ void ConceptReference::print(llvm::raw_ostream &OS,
+                              const PrintingPolicy &Policy) const {
+-  NestedNameSpec.getNestedNameSpecifier().print(OS, Policy);
+-  ConceptName.printName(OS, Policy);
++  bool Owned = false;
++  for (const auto *Attribute : getNamedConcept()->specific_attrs<AnnotateAttr>())
++    Owned |= Attribute->getAnnotation().starts_with("objc3.concept-owner:");
++  if (Owned || Policy.FullyQualifiedName) {
++    OS << "::";
++    getNamedConcept()->printQualifiedName(OS, Policy);
++  } else {
++    NestedNameSpec.getNestedNameSpecifier().print(OS, Policy);
++    ConceptName.printName(OS, Policy);
++  }
+   if (hasExplicitTemplateArgs()) {
+     OS << "<";
+     llvm::ListSeparator Sep(", ");
+diff --git a/clang/test/ObjC3/AST/Inputs/public-concepts.h b/clang/test/ObjC3/AST/Inputs/public-concepts.h
+new file mode 100644
+index 000000000..056bb6e48
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/public-concepts.h
+@@ -0,0 +1,9 @@
++namespace Predicates {
++template<class T> concept Addable [[clang::annotate("objc3.concept-owner:addable")]] = requires(T n){n+2;};
++template<class T> concept Wide [[clang::annotate("objc3.concept-owner:wide")]] = Addable<T> && (sizeof(T)>=sizeof(int));
++template<int N> concept Positive [[clang::annotate("objc3.concept-owner:positive")]] = N>0;
++}
++inline constexpr int concept_print() {
++  auto apply=[]<Predicates::Wide T>(T n){return n+2;};return apply(40);
++}
++static_assert(Predicates::Positive<2> && !Predicates::Positive<-1> && concept_print()==42);
+diff --git a/clang/test/ObjC3/AST/public-concepts.mm b/clang/test/ObjC3/AST/public-concepts.mm
+new file mode 100644
+index 000000000..d08f329cd
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-concepts.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-concepts.h > %t-c++20.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20.ll %t-c++20.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-concepts.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++20-pch.ll %t-c++20-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -ast-print %S/Inputs/public-concepts.h > %t-c++23.mm
++// RUN: FileCheck %s --check-prefixes=CHECK < %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23.ll %t-c++23.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -x objective-c++-header -emit-pch %S/Inputs/public-concepts.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23.pch -ast-print %S/Inputs/generic-lambda-empty.mm > %t-c++23-pch.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o %t-c++23-pch.ll %t-c++23-pch.mm
++// CHECK: concept Addable {{.*}}objc3.concept-owner:addable
++// CHECK: concept Wide {{.*}}objc3.concept-owner:wide
++// CHECK: ::Predicates::Addable<T>
++// CHECK: concept Positive {{.*}} = N > 0;
++// CHECK: []<::Predicates::Wide T>(T n)

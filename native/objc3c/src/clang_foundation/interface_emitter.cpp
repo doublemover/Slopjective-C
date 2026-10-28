@@ -193,6 +193,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
 
   if (IsTopLevel(declaration)) {
+    if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
       return !space->isAnonymousNamespace();
     if (llvm::isa<clang::NamespaceAliasDecl,clang::BaseUsingDecl,clang::UsingDirectiveDecl>(declaration))
@@ -716,8 +717,18 @@ public:
   bool VisitObjCMessageExpr(clang::ObjCMessageExpr *expression) {
     Reference(expression->getMethodDecl()); return true;
   }
+  bool TraverseConceptReference(clang::ConceptReference *reference) {
+    if (reference) Reference(reference->getNamedConcept());
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseConceptReference(reference);
+  }
   void Reference(const clang::NamedDecl *declaration) {
     if (!declaration) { Add("<none>"); return; }
+    if (llvm::isa<clang::ConceptDecl>(declaration)) {
+      Add("concept-reference");
+      Add(ReadInterfaceDeclarationStableId(declaration));
+      Add(ReadCxxConceptOwner(declaration));
+      return;
+    }
     if (const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
       Add("structural-template-object");
       Add(ExpressionType(object->getType()));
@@ -867,6 +878,22 @@ std::string DeclarationExpressionContract(const clang::Expr *expression,
   return DeclarationExpressionIdentity(context).Get(const_cast<clang::Expr *>(expression));
 }
 
+std::string ConceptIdentity(const clang::ConceptDecl *declaration,
+                            const clang::ASTContext &context) {
+  clang::PrintingPolicy policy(context.getLangOpts());
+  policy.AnonymousTagNameStyle = static_cast<unsigned>(
+      clang::PrintingPolicy::AnonymousTagMode::Plain);
+  std::string head;
+  llvm::raw_string_ostream stream(head);
+  declaration->getTemplateParameters()->print(stream, context, policy);
+  DeclarationExpressionIdentity identity(context);
+  for (const auto *parameter : *declaration->getTemplateParameters()) identity.Local(parameter);
+  return "concept{owner=" + ReadCxxConceptOwner(declaration) +
+      ";parameters=" + ComputeInterfaceSourceSha256(head) + ";constraint=" +
+      identity.Get(const_cast<clang::Expr *>(declaration->getConstraintExpr())) +
+      "};cxx-concepts:v1;";
+}
+
 std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
                                         const clang::ASTContext &context) {
   const auto *definition = function->getDefinition();
@@ -961,6 +988,20 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
 }
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
+}
+bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
+  if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct References : clang::RecursiveASTVisitor<References> {
+      bool found = false;
+      bool TraverseConceptReference(clang::ConceptReference *reference) {
+        found |= reference != nullptr;
+        return clang::RecursiveASTVisitor<References>::TraverseConceptReference(reference);
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
 }
 bool HasDeclarationGenericLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
@@ -1398,6 +1439,8 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
 
 std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                                     const clang::ASTContext &context) {
+  if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
+    return ConceptIdentity(concept_decl, context);
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     return ObjCMethodIdentity(method, context);
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
@@ -1678,6 +1721,14 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    if (llvm::isa<clang::ConceptDecl>(target)) {
+      CheckVisibility(target);
+      if (!IsTopLevel(target) ||
+          (!IsInMainFile(context_, target->getLocation()) && !IsResolved(target)))
+        AddDiagnostic(result_, "O3IFC112", "concept reference requires a public resolved definition",
+                      target->getQualifiedNameAsString());
+      return;
+    }
     if (const auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(target))
       if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(parameter->getDeclContext());
           method && method->getParent()->isLambda()) return;
@@ -1732,6 +1783,16 @@ class TypeDependencyVisitor final
         if (initializer->isWritten()) TraverseStmt(initializer->getInit());
     TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(definition)));
     body_function_ = nullptr;
+  }
+  void CheckConcept(const clang::ConceptDecl *declaration) {
+    const auto locals = lambda_locals_;
+    auto restore = llvm::scope_exit([&] { lambda_locals_ = locals; });
+    for (const auto *parameter : *declaration->getTemplateParameters())
+      lambda_locals_.insert(parameter->getCanonicalDecl());
+    for (auto *parameter : *declaration->getTemplateParameters())
+      TraverseDecl(parameter);
+    TraverseStmt(declaration->getTemplateParameters()->getRequiresClause());
+    TraverseStmt(const_cast<clang::Expr *>(declaration->getConstraintExpr()));
   }
   bool VisitVarDecl(clang::VarDecl *variable) {
     if (in_expression_) TraverseType(variable->getType());
@@ -1805,10 +1866,15 @@ class TypeDependencyVisitor final
     CheckExpressionReference(expression->getMethodDecl()); return true;
   }
   bool TraverseConceptReference(clang::ConceptReference *reference) {
-    if (!reference) return true;
-    AddDiagnostic(result_, "O3IFC101",
-                  "named concepts require a public template interface contract");
-    return false;
+    if (reference) CheckExpressionReference(reference->getNamedConcept());
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseConceptReference(reference);
+  }
+  bool TraverseRequiresExpr(clang::RequiresExpr *expression, DataRecursionQueue * = nullptr) {
+    const auto locals = lambda_locals_;
+    auto restore = llvm::scope_exit([&] { lambda_locals_ = locals; });
+    for (const auto *parameter : expression->getLocalParameters())
+      lambda_locals_.insert(parameter->getCanonicalDecl());
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRequiresExpr(expression, nullptr);
   }
   bool CheckGenericArgument(const clang::TemplateArgument &argument) {
     switch (argument.getKind()) {
@@ -2090,6 +2156,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     check(value->getType());
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
+  if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
+    visitor.CheckConcept(concept_decl);
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     for (const auto *parameter : function->parameters())
       if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
@@ -2235,7 +2303,10 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       supported &= IsSupportedDefaultedSpecialMember(method) || IsInClassDefaultedComparison(method);
   if (IsTopLevel(declaration)) {
     supported &=
-        !llvm::isa<clang::TemplateDecl>(declaration);
+        !llvm::isa<clang::TemplateDecl>(declaration) || llvm::isa<clang::ConceptDecl>(declaration);
+    if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
+      for (const auto *parameter : *concept_decl->getTemplateParameters())
+        supported &= !llvm::isa<clang::TemplateTemplateParmDecl>(parameter);
     if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
       const auto original = NamespaceAttributes(space);
       for (const auto *attribute : space->attrs())
@@ -2256,12 +2327,9 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   }
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
-                  "C++ semantic interfaces require global or named namespace declarations and "
-                  "records with native bases and virtual dispatch, out-of-line "
-                  "members, deleted "
-                  "declarations or native defaulted special members, without "
-                  "templates, "
-                  "local declaration expressions or unnamed nested types",
+                  "C++ declaration exceeds the implemented semantic interface contract; "
+                  "public dependent templates and unnamed nested types require "
+                  "dedicated publication support",
                   declaration->getQualifiedNameAsString());
   return supported;
 }
@@ -2372,6 +2440,10 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (const auto *annotation = llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+          annotation && llvm::isa<clang::ConceptDecl>(declaration) &&
+          annotation->getAnnotation().starts_with("objc3.concept-owner:") &&
+          annotation->args_size() == 0) continue;
       if (const auto *annotation =
               llvm::dyn_cast<clang::AnnotateAttr>(attribute);
           annotation &&
@@ -2902,6 +2974,8 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
+  if (HasDeclarationConcept(representative) && !llvm::isa<clang::ConceptDecl>(representative))
+    identity.canonical_type_identity += ";cxx-concepts:v1;";
   if (const auto *method =
           llvm::dyn_cast<clang::CXXMethodDecl>(representative)) {
     identity.canonical_type_identity += method->isStatic()
@@ -3069,6 +3143,11 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
   const auto &lang = context.getLangOpts();
+  if (lang.CPlusPlus && !ApplyCxxConceptOwners(context, canonical_module_name.str(),
+                                             package_identity.str(), source_root)) {
+    AddDiagnostic(result, "O3IFC160", "concept owner conflicts with its semantic module");
+    return result;
+  }
   std::map<std::string, const InterfaceSourceArtifact *> sources_by_name;
   std::set<std::string> resolved_declaration_ids;
   for (const auto &source : dependency_sources) {
@@ -3215,6 +3294,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxGenericLocalLambdaSemantic);
     if (HasCxxUnionValueIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxUnionValueSemantic);
+    if (HasCxxConceptIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxConceptSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -3310,6 +3391,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxUnnamedLocalTypeSemantic,
     kCxxGenericLocalLambdaSemantic,
     kCxxUnionValueSemantic,
+    kCxxConceptSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -3437,6 +3519,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxUnnamedLocalTypeSemantic,
     kCxxGenericLocalLambdaSemantic,
     kCxxUnionValueSemantic,
+    kCxxConceptSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

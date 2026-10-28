@@ -269,6 +269,36 @@ void UnionBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void ConceptBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"concept-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      template<class T> concept Number=requires(T n){n+2;};
+      template<class T> concept Wide=Number<T> && (sizeof(T)>=sizeof(int));
+      template<int N> concept Positive=N>0;
+      template<class T> concept Compound=Number<T> && requires(T n){requires sizeof(T)>0;n+2;};
+      inline constexpr int concept_value() {return []<Wide T>(T n){return n+2;}(40);}
+  )");
+  r.emit_semantic_interface=true;r.module_name="ConceptBodies";r.package_identity="concept-bodies-v1";
+  r.interface_exports={"Number","Wide","Positive","Compound","concept_value"};
+  r.interface_output_path=(root/"ConceptBodies.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"concept-provider.o").string();
+  auto built=Compile(r);
+  for (const auto &diagnostic:built.diagnostics) std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"concept-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+      template<class T> requires Number<T> constexpr int score(T) {return 40;}
+      template<class T> requires Wide<T> constexpr int score(T) {return 42;}
+      static_assert(score(1)==42 && concept_value()==42 && Positive<2> && !Positive<-1> && Compound<int>);
+      int client(){return score(1);}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"concept-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &diagnostic:imported.diagnostics) std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -294,6 +324,7 @@ int main() {
     GenericLocalBodies(root,standard);
     GenericLocalContracts(root,standard);
     UnionBodies(root,standard);
+    ConceptBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

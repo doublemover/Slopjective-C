@@ -1383,7 +1383,7 @@ void TestGenericLocalContracts() {
     assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
     auto concepts=emit("template<class T> concept Number=sizeof(T)>0; "
         "inline int api(){return []<Number T>(T n){return n;}(42);}");
-    assert(!concepts.success);
+    assert(concepts.success);
     auto hidden_type=emit("struct Secret{int n;}; inline int api(){return "
         "[]<Secret S>(){return 42;}.template operator()<Secret{1}>();}","private.cpp",{"api"});
     assert(!hidden_type.success);
@@ -1455,6 +1455,60 @@ void TestCxxUnionValues() {
     assert(!escaping.success);
     auto anonymous_public=emit("struct Public{union{int n;double d;} value;};");
     assert(!anonymous_public.success);
+  }
+}
+
+void TestPublicConcepts() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concepts.cpp",
+                  const char *module="fixture.concepts",const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),module,"test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace Predicates {
+        template<class T> concept Addable=requires(T value) {value+2;};
+        template<class T> concept Wide=Addable<T> && (sizeof(T)>=sizeof(int));
+        template<int N> concept Positive=N>0;
+        template<class... T> concept All=(Addable<T> && ...);
+        template<class T> concept Compound=Addable<T> && requires(T n){requires sizeof(T)>0;n+2;};
+      }
+      using Predicates::Wide;
+      inline constexpr int concept_value() {return []<Wide T>(T n){return n+2;}(40);}
+      inline constexpr bool concept_constant=Predicates::Positive<2> && Predicates::All<int,long> && Predicates::Compound<int>;
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find("objc3.cxx-concepts.v1")!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto other=emit(source,"other.cpp","fixture.otherconcepts");
+    assert(other.success && other.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("sizeof(T)>=sizeof(int)"),std::string("sizeof(T)>=sizeof(int)").size(),"sizeof(T)>=1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto simple=emit("template<class T> concept Sized=sizeof(T)>0;");
+    assert(simple.success);
+    const std::vector<llvm::StringRef> semantics={
+        "objc3.cxx-data-interfaces.v1",kCxxConceptSemantic};
+    auto decoded=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,semantics);
+    assert(decoded);
+    for (const auto *capability:{kCxxConceptSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;
+      std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);
+      assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto private_dependency=emit("static int probe(int); int probe(long); "
+        "template<class T> concept C=requires(T value){probe(value);};", "private.cpp");
+    assert(!private_dependency.success);
+    auto excluded=emit("template<class T> concept C=sizeof(T)>0; "
+        "inline int api(){return []<C T>(T value){return value;}(42);}","excluded.cpp", "fixture.concepts", {"api"});
+    assert(!excluded.success);
+    auto forged=emit("template<class T> concept C [[clang::annotate(\"objc3.concept-owner:forged\")]]=true;", "forged.cpp");
+    assert(!forged.success);
   }
 }
 
@@ -2434,6 +2488,7 @@ int main() {
   TestGenericLocalLambdas();
   TestGenericLocalContracts();
   TestCxxUnionValues();
+  TestPublicConcepts();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

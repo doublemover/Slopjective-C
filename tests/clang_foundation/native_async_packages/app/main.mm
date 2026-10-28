@@ -408,6 +408,10 @@ int main() {
   if (native_generic_probe(42)!=42 || native_generic_probe(42L)!=42L) return 116;
   if (native_generic_captured_local(1)!=42) return 117;
   if (native_union_throwing(40)!=42) return 119;
+  static_assert(NativeNumber<int> && NativeWide<int> && !NativeWide<char> &&
+                NativePositive<2> && !NativePositive<-1> && NativeNumbers<int,long>);
+  static_assert(native_concept_value()==42);
+  if (native_concept_bridge()!=42) return 120;
   static_assert(native_union_choices()==84);
   static_assert(__builtin_offsetof(NativePlainUnion,integer)==0 &&
                 __builtin_offsetof(NativePlainUnion,floating)==0);

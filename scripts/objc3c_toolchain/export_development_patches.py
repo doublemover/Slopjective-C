@@ -196,6 +196,7 @@ PACKETS = {
         "clang/lib/AST/ASTContext.cpp",
         "clang/lib/AST/ASTImporter.cpp",
         "clang/lib/AST/ASTStructuralEquivalence.cpp",
+        "clang/lib/AST/ASTConcept.cpp",
         "clang/lib/AST/ODRHash.cpp",
         "clang/lib/AST/ObjC3MatchNodes.cpp",
         "clang/lib/AST/DeclPrinter.cpp",

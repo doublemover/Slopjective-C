@@ -21,6 +21,11 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
                          clang::SourceLocation location,
                          const std::string &root = {});
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration);
+std::string ReadCxxConceptOwner(const clang::NamedDecl *declaration);
+bool ApplyCxxConceptOwners(clang::ASTContext &context,
+                          const std::string &module,
+                          const std::string &package,
+                          const std::string &source_root = {});
 bool ApplyModuleOwnedNames(clang::ASTContext &context, clang::Decl *declaration,
                            const std::string &module,
                            const std::string &package,

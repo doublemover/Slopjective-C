@@ -183,7 +183,13 @@
     "NativeUnionThrowStats",
     "NativeUnionThrowMember",
     "NativeUnionThrowValue",
-    "native_union_throwing"
+    "native_union_throwing",
+    "NativeNumber",
+    "NativeWide",
+    "NativePositive",
+    "NativeNumbers",
+    "native_concept_value",
+    "native_concept_bridge"
   ],
   "dependencies": []
 }

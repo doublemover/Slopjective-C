@@ -59,6 +59,16 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published native C++ concepts
+
+The [2.42 source span](linux_cxx_public_concepts.md) publishes named C++20/23
+concepts, requires-expressions, composed constraints and constrained local
+callables. Module/package owners preserve nominal constraint identity through
+printed source, PCH and native import. Export and dependency checks include
+constraint-only references; a required concept capability binds publication and
+consumer admission. Public dependent function/class/variable templates remain
+separate work.
+
 ## Compiler build-stamp isolation
 
 The [build-identity implementation](linux_compiler_identity_builds.md) moves the

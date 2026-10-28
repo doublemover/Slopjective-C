@@ -8,6 +8,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
@@ -68,6 +69,12 @@ class ContractConsumer final : public clang::ASTConsumer,
     if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
         !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
+    if (llvm::isa<clang::ConceptDecl>(decl)) {
+      InterfaceDeclarationIdentity identity;
+      if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
+        result_.declarations.push_back(std::move(identity));
+      return true;
+    }
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
       if (!function->isExternallyVisible()) return true;
       InterfaceDeclarationIdentity identity;
@@ -109,6 +116,13 @@ class ContractConsumer final : public clang::ASTConsumer,
   void HandleTranslationUnit(clang::ASTContext &context) override {
     if (context.getDiagnostics().hasErrorOccurred()) return;
     context_ = &context;
+    if (request_.emit_semantic_interface && context.getLangOpts().CPlusPlus &&
+        !ApplyCxxConceptOwners(context, request_.module_name, request_.package_identity, source_root_)) {
+      const auto id = context.getDiagnostics().getCustomDiagID(
+          clang::DiagnosticsEngine::Error, "concept owner conflicts with its semantic module");
+      context.getDiagnostics().Report(id);
+      return;
+    }
     TraverseDecl(context.getTranslationUnitDecl());
     auto &declarations = result_.declarations;
     std::sort(declarations.begin(), declarations.end(), [](const auto &a, const auto &b) {

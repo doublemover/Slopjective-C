@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 41,
+        "minor": 42,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -167,7 +167,8 @@
         "Unnamed local C++ records and enums in published concrete definitions, including nested records, aliases, implicit copies/closures, native destruction and virtual dispatch/RTTI, with owned definition printing and lexical-slot type/structor identity (source)",
         "Closed generic local lambdas in published concrete bodies/defaults/member initializers/constant data, with sorted typed instantiation and dependency contracts, pack/default/immediate/static printing and imported generic invoker call-operator bodies (source)",
         "Generic local callable contracts v2 with named structural template values, exact floating-point bits, complete specialization type dependencies, expression/requires constraints and dependent noexcept; named concepts and address-bearing values remain separate contracts (source)",
-        "Native named/nested/typedef/local C++ union values, explicit active-member construction/copy/destruction, native by-value ABI and structural template active-member identity under required union-value semantics (source)"
+        "Native named/nested/typedef/local C++ union values, explicit active-member construction/copy/destruction, native by-value ABI and structural template active-member identity under required union-value semantics (source)",
+        "Public native C++ concept definitions with type/scalar non-type/pack parameter contracts, checked constraint dependencies, source-free evaluation/subsumption and module/package nominal ownership (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
