@@ -65,6 +65,13 @@ all **33 optimized frontend suites**, **335 tooling tests** and **24 source-free
 package configurations / 96 commands** across normal, eager-import and
 ASan/UBSan execution. SDK 2.33 remains the accepted archive.
 
+## Native template deduction and closure factories
+
+The [2.49 source span](linux_cxx_template_deduction.md) adds `auto`/`decltype(auto)`
+function, variable and ordinary class-member template deduction with native
+consumer instantiation. Checked definitions retain value/reference semantics
+and closure factories, including nontrivial captured object lifetimes.
+
 ## Native class and variable template structure
 
 The [2.48 source span](linux_cxx_template_structure.md) adds class/variable

@@ -373,6 +373,45 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void TemplateDeduction(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"deduction-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+    template<class T> constexpr auto add(T n){return n+2;}
+    template<class T> constexpr decltype(auto) borrow(T &n){return (n);}
+    template<class T> constexpr auto make_reader(T n){return [n](int d){return n+d;};}
+    template<class T> class Holder {
+      T value;
+    public:
+      constexpr Holder(T n):value(n){}
+      constexpr auto number()const{return value+2;}
+      constexpr auto reader()const{return [n=value](int d){return n+d;};}
+      constexpr decltype(auto) reference(){return (value);}
+    };
+    template<class T=int> inline constexpr auto answer=T{42};
+    template<class T> inline auto reader=[n=T{40}](int d){return n+d;};
+    int provider(){return make_reader(40)(2)+reader<int>(2);}
+  )");
+  r.emit_semantic_interface=true;r.module_name="TemplateDeduction";r.package_identity="template-deduction-v1";
+  r.module_owned_names=true;r.interface_exports={"add","borrow","make_reader","Holder","answer","reader","provider"};
+  r.interface_output_path=(root/"TemplateDeduction.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"deduction-provider.o").string();
+  auto built=Compile(r);
+  for(const auto &d:built.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"deduction-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    static_assert(add(40L)==42 && make_reader(40L)(2)==42 && answer<long> ==42);
+    static_assert(Holder<long>{40}.number()==42 && Holder<long>{40}.reader()(2)==42);
+    int client(){int value=40;++borrow(value);Holder<int> holder{40};++holder.reference();
+      return value+holder.number()+reader<long>(2);}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"deduction-client.o").string();
+  auto imported=Compile(client);
+  for(const auto &d:imported.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:imported.interface_import_diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void TemplateStructure(const fs::path &root,const std::string &standard) {
   auto r=Request(root/"structure-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
     template<class T=int,int N=sizeof(T)> extern T count;
@@ -555,6 +594,7 @@ int main() {
     VariableTemplateBodies(root,standard);
     ClassTemplateBodies(root,standard);
     TemplateStructure(root,standard);
+    TemplateDeduction(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

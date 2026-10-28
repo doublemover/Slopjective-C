@@ -663,6 +663,9 @@ public:
     if (!locals_.count(canonical)) locals_.emplace(canonical, next_local_slot_++);
   }
   std::string ExpressionType(clang::QualType type) {
+    // Dependent init-captures retain an untyped ParenListExpr until native
+    // instantiation. Bind that syntax and its children without inventing a type.
+    if (type.isNull()) return "<untyped-dependent-expression>";
     TraverseType(type);
     clang::PrintingPolicy policy(context_.getLangOpts());
     policy.PrintAsCanonical = true;
@@ -1719,9 +1722,13 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     policy.PrintAsCanonical = true;
     policy.SuppressScope = true;
     pattern->getTemplatedDecl()->print(stream, policy);
+    bool deduced=false;
+    for (const auto *method : pattern->getTemplatedDecl()->methods())
+      deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;" +
-        ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";";
+        ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
+        (deduced ? ";cxx-template-deduction:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
     const auto *variable = pattern->getTemplatedDecl();
@@ -1735,6 +1742,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) : "default") +
         "};cxx-variable-templates:v1;" +
         ";cxx-template-structure:v1;" +
+        (variable->getType()->getContainedAutoType() ? ";cxx-template-deduction:v1;" : "") +
         (variable->getTSCSpec()!=clang::TSCS_unspecified ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
@@ -1760,7 +1768,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     return "function-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";signature=" + DeclarationTypeIdentity(function, context) +
         (defaults.empty() ? "" : ";cxx-declaration-expressions:v1;template-defaults=" + defaults) +
-        "};cxx-function-templates:v2;";
+        "};cxx-function-templates:v2;" +
+        (function->getReturnType()->getContainedAutoType() ? ";cxx-template-deduction:v1;" : "");
   }
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     return ObjCMethodIdentity(method, context);
@@ -2819,7 +2828,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
           const auto effects = ReadCanonicalFunctionEffects(method->getType(), body->getASTContext());
           supported &= !method->isVariadic() &&
-              !method->getReturnType()->getContainedAutoType() && !effects.is_async && !effects.is_throwing &&
+              !effects.is_async && !effects.is_throwing &&
               (method->doesThisDeclarationHaveABody() || method->isDefaulted() || method->isDeleted() || method->isPureVirtual());
         } else if (const auto *value = llvm::dyn_cast<clang::VarDecl>(member)) {
           supported &= value->isStaticDataMember() && (value->isInline() || value->isConstexpr());
@@ -2835,7 +2844,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       const auto effects = ReadCanonicalFunctionEffects(variable->getType(), variable->getASTContext());
       supported &= !effects.is_async && !effects.is_throwing;
       supported &= variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
-          !variable->isStaticDataMember() && !variable->getType()->getContainedAutoType();
+          !variable->isStaticDataMember();
       for (const auto *attribute:variable->attrs())
         if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute))
           supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
@@ -2854,7 +2863,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       supported &= function->getDefinition() != nullptr &&
           !llvm::isa<clang::CXXMethodDecl>(function) && !function->isDeleted() &&
           !function->isDefaulted() && !function->isVariadic() &&
-          !function->getReturnType()->getContainedAutoType() &&
           !effects.is_async && !effects.is_throwing;
       for (const auto *attribute : function->attrs()) {
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
@@ -3924,6 +3932,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxClassTemplateSemantic);
     if (HasCxxTemplateStructureIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxTemplateStructureSemantic);
+    if (HasCxxTemplateDeductionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxTemplateDeductionSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -4025,6 +4035,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxVariableTemplateSemantic,
     kCxxClassTemplateSemantic,
     kCxxTemplateStructureSemantic,
+    kCxxTemplateDeductionSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4158,6 +4169,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxVariableTemplateSemantic,
     kCxxClassTemplateSemantic,
     kCxxTemplateStructureSemantic,
+    kCxxTemplateDeductionSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

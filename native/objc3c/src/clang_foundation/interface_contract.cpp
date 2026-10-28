@@ -433,6 +433,14 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_template_deduction = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxTemplateDeductionIdentity);
+  const bool template_deduction_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateDeductionSemantic)!=sidecar.required_semantics.end();
+  const bool template_deduction_data = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),"objc3.cxx-data-interfaces.v1")!=sidecar.required_semantics.end();
+  if (has_template_deduction!=template_deduction_capability || (template_deduction_capability && !template_deduction_data))
+    Add(result,"O3IFC056","template deduction identity and required deduction/data capabilities must agree",expected.canonical_name);
   const bool has_template_structure = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxTemplateStructureIdentity);
   const bool template_structure_capability = std::find(sidecar.required_semantics.begin(),

@@ -1227,3 +1227,22 @@ template<class T=int> struct NativeTemplateDiamond:NativeTemplateLeft<T>,NativeT
   int number()const override{return NativeTemplateRoot<T>::number();}
 };
 NativeTemplateRoot<int> *native_template_hierarchy_new(){return new NativeTemplateDiamond<>;}
+
+
+template<class T> constexpr auto native_template_deduced_add(T n){return n+2;}
+template<class T> constexpr decltype(auto) native_template_deduced_borrow(T &n){return (n);}
+template<class T> constexpr auto native_template_make_reader(T n){return [n](int d){return n+d;};}
+template<class T> auto native_template_object_reader(T object){
+  return [object=static_cast<T&&>(object)](){return object.number();};
+}
+template<class T> class NativeTemplateHolder {
+  T value;
+public:
+  constexpr NativeTemplateHolder(T n):value(n){}
+  constexpr auto number()const{return value+2;}
+  constexpr auto reader()const{return [n=value](int d){return n+d;};}
+  constexpr decltype(auto) reference(){return (value);}
+};
+template<class T=int> inline constexpr auto native_template_deduced_answer=T{42};
+template<class T> inline auto native_template_deduced_reader=[n=T{40}](int d){return n+d;};
+int native_template_deduction_bridge(){return native_template_make_reader(40)(2)+native_template_deduced_reader<int>(2);}

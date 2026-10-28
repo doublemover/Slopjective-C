@@ -227,7 +227,15 @@
     "NativeTemplateLeft",
     "NativeTemplateRight",
     "NativeTemplateDiamond",
-    "native_template_hierarchy_new"
+    "native_template_hierarchy_new",
+    "native_template_deduced_add",
+    "native_template_deduced_borrow",
+    "native_template_make_reader",
+    "native_template_object_reader",
+    "NativeTemplateHolder",
+    "native_template_deduced_answer",
+    "native_template_deduced_reader",
+    "native_template_deduction_bridge"
   ],
   "dependencies": []
 }

@@ -1563,7 +1563,6 @@ void TestPublicFunctionTemplates() {
     assert(!emit("static int hidden;template<class T> int api(T n){return hidden+n;}").success);
     assert(!emit("template<class T> T helper(T n){return n;}inline int api(){return helper(42);}","excluded-template.cpp",{"api"}).success);
     assert(!emit("template<class T> T declared(T n);").success);
-    assert(!emit("template<class T> auto closure(T n){return [n]{return n;};}").success);
   }
 }
 
@@ -1615,6 +1614,54 @@ void TestPublicAliasTemplates() {
     assert(!private_type.success && std::any_of(private_type.diagnostics.begin(),private_type.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     assert(!emit("template<template<class>class C> using Alias=C<int>;").success);
+  }
+}
+
+void TestTemplateDeduction() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="deduction.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.deduction","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.deduction","test");
+    };
+    const std::string source=R"(
+      template<class T> constexpr auto add(T n){return n+2;}
+      template<class T> constexpr decltype(auto) borrow(T &n){return (n);}
+      template<class T> constexpr auto make_reader(T n){return [n](int d){return n+d;};}
+      template<class T> class Holder {
+        T value;
+      public:
+        constexpr Holder(T n):value(n){}
+        constexpr auto number()const{return value+2;}
+        constexpr auto reader()const{return [n=value](int d){return n+d;};}
+        constexpr decltype(auto) reference(){return (value);}
+      };
+      template<class T=int> inline constexpr auto answer=T{42};
+      template<class T> inline auto reader=[n=T{40}](int d){return n+d;};
+      inline int storage=40;
+      inline constexpr int probe(){return add(40)+make_reader(40)(2)+Holder<long>{40}.number()+answer<>;}
+      inline int mutable_probe(){++borrow(storage);return reader<int>(2);}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxTemplateDeductionSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-deduction.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-deduction.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("return n+2"),10,"return n+3");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxTemplateDeductionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>auto bad(T){return hidden();}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
   }
 }
 
@@ -1817,7 +1864,6 @@ void TestPublicVariableTemplates() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     for (const auto *gated:{"template<class T> extern T value;",
-                           "template<class T> inline auto value=T{40};",
                            "template<class T> inline int value=40;template<> inline int value<long>=42;",
                            "template<class T> inline int value=40;template<class T> inline int value<T*>=42;"}) {
       std::string fixed=gated;
@@ -2865,6 +2911,7 @@ int main() {
   TestPublicVariableTemplates();
   TestPublicClassTemplates();
   TestTemplateStructure();
+  TestTemplateDeduction();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

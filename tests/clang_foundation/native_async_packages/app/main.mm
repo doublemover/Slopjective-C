@@ -423,6 +423,21 @@ int main() {
   static_assert(native_late_default(40)==42 && native_tail_decl()==42);
   static_assert(native_constrained_default()==42 && native_template_argument_default()==42);
   if(native_template_defaults_bridge()!=210) return 128;
+  static_assert(native_template_deduced_add(40L)==42 && native_template_make_reader(40L)(2)==42);
+  static_assert(native_template_deduced_answer<long> ==42 && NativeTemplateHolder<long>{40}.number()==42);
+  static_assert(NativeTemplateHolder<long>{40}.reader()(2)==42);
+  {
+    int value=40;++native_template_deduced_borrow(value);
+    NativeTemplateHolder<int> holder{40};++holder.reference();
+    if(value!=41 || holder.number()!=43 || native_template_deduced_reader<long>(2)!=42 ||
+       native_template_deduction_bridge()!=84)return 144;
+  }
+  {
+    NativeTemplateValue<int> value(42);
+    auto reader=native_template_object_reader(value);auto copy=reader;
+    if(reader()!=42 || copy()!=42 || NativeTemplateValue<int>::live!=3)return 145;
+  }
+  if(NativeTemplateValue<int>::live!=0)return 146;
   if(native_template_forward_value<> !=sizeof(int) || native_template_forward_value<long> !=sizeof(long))return 139;
   {
     auto *root=native_template_hierarchy_new();
