@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..1fb1b8f21 100644
+index d743717ad..fcfae5cdc 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -4298,7 +4298,7 @@ index d743717ad..1fb1b8f21 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11175,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11175,33 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -4308,6 +4308,14 @@ index d743717ad..1fb1b8f21 100644
 +      if (isa<CXXRecordDecl>(FromD) && isa<AbiTagAttr>(FromAttr) &&
 +          ToD->hasAttr<AbiTagAttr>())
 +        continue;
++      if (isa<VarTemplateSpecializationDecl>(FromD))
++        if (const auto *Tag = dyn_cast<AbiTagAttr>(FromAttr);
++            Tag && llvm::any_of(ToD->specific_attrs<AbiTagAttr>(),
++                [&](const AbiTagAttr *Existing) {
++                  return Existing->tags_size()==Tag->tags_size() &&
++                      std::equal(Existing->tags_begin(),Existing->tags_end(),Tag->tags_begin());
++                }))
++          continue;
 +      if (const auto *Variable = dyn_cast<VarDecl>(FromD);
 +          Variable && Variable->getDescribedVarTemplate() &&
 +          isa<AbiTagAttr>(FromAttr) && ToD->hasAttr<AbiTagAttr>())
@@ -4325,7 +4333,7 @@ index d743717ad..1fb1b8f21 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11640,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11648,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4338,7 +4346,7 @@ index d743717ad..1fb1b8f21 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11656,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11664,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4350,7 +4358,7 @@ index d743717ad..1fb1b8f21 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11668,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11676,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4362,7 +4370,7 @@ index d743717ad..1fb1b8f21 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11680,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11688,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4384,7 +4392,7 @@ index d743717ad..1fb1b8f21 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +12124,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12132,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -18717,10 +18725,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..9259dcc92
+index 000000000..947d1a046
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1416 @@
+@@ -0,0 +1,1427 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20116,6 +20124,17 @@ index 000000000..9259dcc92
 +    )",{"-xc++",Standard},"concrete-member-variable-specializations.cpp");
 +    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"concrete-member-variable-specializations-import.cpp");
 +    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    struct Owners : RecursiveASTVisitor<Owners> {
++      ASTContext &Context;
++      explicit Owners(ASTContext &C):Context(C){}
++      void Tag(VarDecl *D) {
++        llvm::StringRef Owner="member_variable_owner";
++        D->addAttr(AbiTagAttr::Create(Context,&Owner,1,D->getSourceRange()));
++      }
++      bool VisitVarTemplateDecl(VarTemplateDecl *D){Tag(D->getTemplatedDecl());return true;}
++      bool VisitVarTemplateSpecializationDecl(VarTemplateSpecializationDecl *D){Tag(D);return true;}
++    } OwnersVisitor(From->getASTContext());
++    OwnersVisitor.TraverseDecl(From->getASTContext().getTranslationUnitDecl());
 +    auto Shared=std::make_shared<ASTImporterSharedState>(*To->getASTContext().getTranslationUnitDecl());
 +    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false,Shared);
 +    std::string Replayed;
