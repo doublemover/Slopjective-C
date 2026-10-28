@@ -1853,3 +1853,34 @@ namespace NativeCallableProjections {
   template<class E>using Checked=int(*)(int,E) __objc3_throws(E);
   template<class E>inline Checked<E> checked=&dependent<E>;
 }
+
+namespace NativeAddressArguments {
+  inline int storage=40, other=40;
+  int add(int n){return n+2;}
+  struct Base {int value;};
+  struct Record:Base {int get(int n)const{return value+n;}};
+  template<auto Address>struct AddressBox {static constexpr auto address=Address;};
+  template<int &Value>struct Reference {static int get(){return Value;}};
+  template<auto Address>inline int counter=0;
+  template<auto Address>int invoke(int n){return Address(n);}
+  template<>inline int invoke<&add>(int n){return add(n);}
+  template<auto Address>inline int selected=0;
+  template<>inline int selected<&storage> =42;
+  template<auto Address>struct Selection {static constexpr int value=0;};
+  template<>struct Selection<&storage> {static constexpr int value=42;};
+  struct Bundle {int *address;int(*function)(int);int Record::*member;};
+  template<Bundle Value>struct Structural {
+    static int run(Record &record){return Value.function(*Value.address)+(record.*Value.member);}
+  };
+  using Bound=Structural<Bundle{&storage,&add,&Base::value}>;
+  using Object=AddressBox<&storage>;
+  using Function=AddressBox<&add>;
+  using Member=AddressBox<&Record::get>;
+  using Ref=Reference<storage>;
+  struct Array {int values[2];};inline Array array{{40,42}};
+  struct Pointer {const int *value;};
+  template<Pointer Value>struct Subobject {static int get(){return *Value.value;}};
+  using Element=Subobject<Pointer{&array.values[1]}>;
+  using End=Subobject<Pointer{&array.values[2]}>;
+  int *counter_slot(){++counter<&storage>;return &counter<&storage>;}
+}

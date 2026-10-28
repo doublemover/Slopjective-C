@@ -348,7 +348,8 @@
     "native_closed_pattern_partial_lives",
     "NativeEffectTemplates",
     "NativeEffectMembers",
-    "NativeCallableProjections"
+    "NativeCallableProjections",
+    "NativeAddressArguments"
   ],
   "dependencies": []
 }

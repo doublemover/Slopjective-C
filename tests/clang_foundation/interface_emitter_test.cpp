@@ -1414,7 +1414,9 @@ void TestGenericLocalContracts() {
         hidden_constraint.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
     auto address=emit("inline int value=42; struct Config{const int *p;}; inline int api(){return "
         "[]<Config C>(){return *C.p;}.template operator()<Config{&value}>();}");
-    assert(!address.success);
+    assert(address.success && address.sidecar_json.find(kCxxAddressTemplateArgumentSemantic)!=std::string::npos);
+    auto address_replay=emit(address.source_bytes,"address-lambda-replay.cpp");
+    assert(address_replay.success && address_replay.identity.semantic_fingerprint==address.identity.semantic_fingerprint);
     auto excessive=emit("struct Large{int values[5000];}; inline int api(){return "
         "[]<Large V>(){return 42;}.template operator()<Large{}>();}");
     assert(!excessive.success);
@@ -1740,6 +1742,77 @@ void TestTemplateStructure() {
     for(const auto *name:{"Root","count"})
       assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
           [&](const auto &d){return d.qualified_name==name;})==1);
+  }
+}
+
+void TestAddressTemplateArguments() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="address-template-arguments.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.address_arguments","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.address_arguments","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+
+namespace NativeAddressArguments {
+  inline int storage=40, other=40;
+  int add(int n){return n+2;}
+  struct Base {int value;};
+  struct Record:Base {int get(int n)const{return value+n;}};
+  template<auto Address>struct AddressBox {static constexpr auto address=Address;};
+  template<int &Value>struct Reference {static int get(){return Value;}};
+  template<auto Address>inline int counter=0;
+  template<auto Address>int invoke(int n){return Address(n);}
+  template<>inline int invoke<&add>(int n){return add(n);}
+  template<auto Address>inline int selected=0;
+  template<>inline int selected<&storage> =42;
+  template<auto Address>struct Selection {static constexpr int value=0;};
+  template<>struct Selection<&storage> {static constexpr int value=42;};
+  struct Bundle {int *address;int(*function)(int);int Record::*member;};
+  template<Bundle Value>struct Structural {
+    static int run(Record &record){return Value.function(*Value.address)+(record.*Value.member);}
+  };
+  using Bound=Structural<Bundle{&storage,&add,&Base::value}>;
+  using Object=AddressBox<&storage>;
+  using Function=AddressBox<&add>;
+  using Member=AddressBox<&Record::get>;
+  using Ref=Reference<storage>;
+  struct Array {int values[2];};inline Array array{{40,42}};
+  struct Pointer {const int *value;};
+  template<Pointer Value>struct Subobject {static int get(){return *Value.value;}};
+  using Element=Subobject<Pointer{&array.values[1]}>;
+  using End=Subobject<Pointer{&array.values[2]}>;
+  int *counter_slot(){++counter<&storage>;return &counter<&storage>;}
+}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxAddressTemplateArgumentSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-address-template-arguments.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-address-template-arguments.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxAddressTemplateArgumentIdentity)>=6);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxAddressTemplateArgumentSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxAddressTemplateArgumentSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;auto position=changed.find("using Object=AddressBox<&storage>");assert(position!=std::string::npos);
+    changed.replace(position,33,"using Object=AddressBox<&other>");auto altered=emit(changed);
+    assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto excluded=emit("inline int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;",
+        "excluded-address.cpp",{"Box","Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC156";}));
+    auto private_object=emit("static int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;");
+    assert(!private_object.success);
   }
 }
 
@@ -4665,6 +4738,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestAddressTemplateArguments();
   TestTemplateCallableProjections();
   TestEffectfulTemplateMembers();
   TestEffectfulFunctionTemplates();

@@ -173,6 +173,13 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
+    address_arguments={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-address-template-arguments:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-address-template-arguments.v1' in metadata['required_semantics']
+    assert {'NativeAddressArguments::Bound','NativeAddressArguments::Object',
+            'NativeAddressArguments::Function','NativeAddressArguments::Member',
+            'NativeAddressArguments::Ref','NativeAddressArguments::Element',
+            'NativeAddressArguments::End'}<=address_arguments
     projections=[row for row in metadata['declarations']
                  if ';cxx-template-callable-projections:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-template-callable-projections.v1' in metadata['required_semantics']
@@ -262,17 +269,17 @@ def check_cpp_metadata(metadata):
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate'}):
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection'}):
         raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=10 or len({row['native_symbol_name'] for row in variable_specializations})!=10):
+            len(variable_specializations)!=11 or len({row['native_symbol_name'] for row in variable_specializations})!=11):
         raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
-            len(specialized)!=8 or len({row['native_symbol_name'] for row in specialized})!=8):
+            len(specialized)!=9 or len({row['native_symbol_name'] for row in specialized})!=9):
         raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):

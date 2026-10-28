@@ -826,18 +826,39 @@ const clang::Expr *PublishedAwaitSource(const clang::CoawaitExpr *await,
   return nullptr;
 }
 
+bool HasAddressTemplateArgument(const clang::TemplateArgument &,const clang::ASTContext &);
+
 class RuntimeDeclarationFinder final
     : public clang::RecursiveASTVisitor<RuntimeDeclarationFinder> {
 public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
-  bool Found=false, HasCallableEffects=false;
+  bool Found=false, HasCallableEffects=false, HasAddressArguments=false;
+  void InspectArguments(llvm::ArrayRef<clang::TemplateArgument> arguments) {
+    for (const auto &argument:arguments)
+      HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
+  }
+  void InspectType(clang::QualType type) {
+    if (!type.isNull())
+      if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl()))
+        InspectArguments(record->getTemplateArgs().asArray());
+  }
+  bool VisitTypeLoc(clang::TypeLoc location) {InspectType(location.getType());return true;}
+  bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgument(argument);
+  }
+  bool TraverseTemplateArgumentLoc(const clang::TemplateArgumentLoc &argument) {
+    HasAddressArguments |= HasAddressTemplateArgument(argument.getArgument(),context_);
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgumentLoc(argument);
+  }
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
     const auto effects=type->getObjC3FunctionEffects();
     HasCallableEffects |= effects.Async || effects.Throws!=clang::ObjC3ThrowsKind::None;
     return true;
   }
   bool TraverseType(clang::QualType type, bool TraverseQualifier=true) {
+    InspectType(type);
     // Alias-template specializations can hide their FunctionProtoType from
     // ordinary traversal. Read the desugared callable contract as well.
     const auto effects=ReadCanonicalFunctionEffects(type,context_);
@@ -855,7 +876,14 @@ public:
   bool VisitMemberExpr(clang::MemberExpr *expr) { Reference(expr->getMemberDecl()); return true; }
   bool VisitCXXConstructExpr(clang::CXXConstructExpr *expr) { Reference(expr->getConstructor()); return true; }
   bool TraverseDecl(clang::Decl *declaration) {
+    if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(declaration))
+      InspectArguments(record->getTemplateArgs().asArray());
+    if (const auto *variable=llvm::dyn_cast_or_null<clang::VarTemplateSpecializationDecl>(declaration))
+      InspectArguments(variable->getTemplateArgs().asArray());
+
     if (auto *function=llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration)) {
+      if (const auto *arguments=function->getTemplateSpecializationArgs())
+        InspectArguments(arguments->asArray());
       const auto *previous=function_;
       function_=function;
       auto restore=llvm::scope_exit([&] { function_=previous; });
@@ -957,8 +985,30 @@ struct GenericLambdaBody {
   std::string key;
 };
 
-bool StructuralArgumentKey(const clang::APValue &value, std::string &key,
-                           unsigned &budget, unsigned depth = 0) {
+// Address template values bind declaration and module ownership, never a host
+// process address. Fields inherit their enclosing record's ABI owner.
+bool AddressDeclarationKey(const clang::ValueDecl *declaration,
+                             const clang::ASTContext &context,std::string &key) {
+  if (!declaration) return false;
+  if (const auto *field=llvm::dyn_cast<clang::FieldDecl>(declaration)) {
+    if (!field->getParent()->hasExternalFormalLinkage()) return false;
+  } else if (!llvm::isa<clang::FunctionDecl,clang::VarDecl>(declaration) ||
+             !declaration->hasExternalFormalLinkage()) return false;
+  const auto id=ReadInterfaceDeclarationStableId(declaration);
+  if (id.empty()) return false;
+  auto add=[&](llvm::StringRef value){key+=std::to_string(value.size())+":"+value.str();};
+  add(declaration->getDeclKindName());add(id);add(ReadNativeSymbolName(declaration));
+  add(CanonicalType(declaration->getType(),context));
+  for (const auto *scope=declaration->getDeclContext();scope;scope=scope->getParent())
+    if (const auto *record=llvm::dyn_cast<clang::RecordDecl>(scope)) {
+      add(ReadInterfaceDeclarationStableId(record));add(ReadNativeSymbolName(record));
+    }
+  return true;
+}
+
+bool StructuralArgumentKey(const clang::APValue &value,const clang::ASTContext &context,
+                           std::string &key,unsigned &budget,unsigned depth=0,
+                           std::vector<const clang::NamedDecl *> *references=nullptr) {
   if (!budget || depth > 64) return false;
   --budget;
   auto add = [&](llvm::StringRef text) {
@@ -971,7 +1021,7 @@ bool StructuralArgumentKey(const clang::APValue &value, std::string &key,
     add(text);
   };
   auto element = [&](const clang::APValue &item) {
-    return StructuralArgumentKey(item, key, budget, depth + 1);
+    return StructuralArgumentKey(item,context,key,budget,depth+1,references);
   };
   add(std::to_string(value.getKind()));
   switch (value.getKind()) {
@@ -1005,13 +1055,73 @@ bool StructuralArgumentKey(const clang::APValue &value, std::string &key,
     }
     add("no-active-member");
     return true;
-  case clang::APValue::LValue:
-    return value.isNullPointer();
-  case clang::APValue::MemberPointer:
-    return !value.getMemberPointerDecl();
+  case clang::APValue::LValue: {
+    if (value.isNullPointer()) {add("null");return true;}
+    const auto *base=value.getLValueBase().dyn_cast<const clang::ValueDecl *>();
+    if (!AddressDeclarationKey(base,context,key)) return false;
+    if (references) references->push_back(base);
+    add(std::to_string(value.getLValueOffset().getQuantity()));
+    add(value.isLValueOnePastTheEnd()?"one-past":"within");
+    add(value.hasLValuePath()?"path":"no-path");
+    if (!value.hasLValuePath()) return true;
+    clang::QualType type=base->getType();
+    add(std::to_string(value.getLValuePath().size()));
+    for (const auto &entry:value.getLValuePath()) {
+      if (!budget) return false;
+      --budget;
+      if (const auto *array=context.getAsArrayType(type)) {
+        add("index");add(std::to_string(entry.getAsArrayIndex()));type=array->getElementType();
+      } else if (type->isRecordType()) {
+        const auto member=entry.getAsBaseOrMember();
+        if (const auto *field=llvm::dyn_cast<clang::FieldDecl>(member.getPointer())) {
+          add("field");add(ReadInterfaceDeclarationStableId(field));
+          type=field->getType();if(references)references->push_back(field);
+        } else if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(member.getPointer())) {
+          add(member.getInt()?"virtual-base":"base");add(ReadInterfaceDeclarationStableId(record));
+          add(ReadNativeSymbolName(record));type=context.getCanonicalTagType(record);
+          if(references)references->push_back(record);
+        } else return false;
+      } else return false;
+    }
+    return true;
+  }
+  case clang::APValue::MemberPointer: {
+    const auto *member=value.getMemberPointerDecl();
+    if (!member) {add("null");return true;}
+    if (!AddressDeclarationKey(member,context,key)) return false;
+    if(references)references->push_back(member);
+    add(value.isMemberPointerToDerivedMember()?"derived":"base");
+    add(std::to_string(value.getMemberPointerPath().size()));
+    for (const auto *record:value.getMemberPointerPath()) {
+      if (!budget) return false;
+      --budget;
+      add(ReadInterfaceDeclarationStableId(record));add(ReadNativeSymbolName(record));
+      if(references)references->push_back(record);
+    }
+    return true;
+  }
   default:
     return false;
   }
+}
+
+bool HasAddressTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context) {
+  if (argument.getKind()==clang::TemplateArgument::Declaration &&
+      !llvm::isa<clang::TemplateParamObjectDecl>(argument.getAsDecl())) return true;
+  const clang::APValue *value=nullptr;
+  clang::Expr::EvalResult evaluated;
+  if (argument.getKind()==clang::TemplateArgument::Expression) {
+    const auto *expression=argument.getAsExpr();
+    if (!expression->isValueDependent() && expression->EvaluateAsRValue(evaluated,context) &&
+        !evaluated.HasSideEffects) value=&evaluated.Val;
+  }
+  if (argument.getKind()==clang::TemplateArgument::StructuralValue)value=&argument.getAsStructuralValue();
+  if (argument.getKind()==clang::TemplateArgument::Declaration)
+    if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))value=&object->getValue();
+  if (!value)return false;
+  unsigned budget=4096;std::string key;std::vector<const clang::NamedDecl *> references;
+  StructuralArgumentKey(*value,context,key,budget,0,&references);
+  return !references.empty();
 }
 
 bool GenericArgumentKey(const clang::TemplateArgument &argument,
@@ -1035,15 +1145,17 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
   }
   case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType());
   case clang::TemplateArgument::Declaration: {
-    const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl());
-    if (!object || !type(object->getType())) return false;
-    unsigned budget = 4096;
-    return StructuralArgumentKey(object->getValue(), key, budget);
+    const auto *declaration=argument.getAsDecl();
+    if (!type(argument.getParamTypeForDecl())) return false;
+    if (const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
+      unsigned budget=4096;return StructuralArgumentKey(object->getValue(),context,key,budget);
+    }
+    return AddressDeclarationKey(declaration,context,key);
   }
   case clang::TemplateArgument::StructuralValue: {
     if (!type(argument.getStructuralValueType())) return false;
     unsigned budget = 4096;
-    return StructuralArgumentKey(argument.getAsStructuralValue(), key, budget);
+    return StructuralArgumentKey(argument.getAsStructuralValue(),context,key,budget);
   }
   case clang::TemplateArgument::Template: {
     const auto *pattern=argument.getAsTemplate().getAsTemplateDecl();
@@ -1495,7 +1607,7 @@ public:
       Add(ExpressionType(object->getType()));
       unsigned budget = 4096;
       std::string key;
-      if (!StructuralArgumentKey(object->getValue(), key, budget))
+      if (!StructuralArgumentKey(object->getValue(),context_,key,budget))
         Add("unsupported-structural-value");
       Add(key);
       return;
@@ -3025,8 +3137,10 @@ class TypeDependencyVisitor final
       TraverseType(object->getType());
       unsigned budget = 4096;
       std::string key;
-      if (!StructuralArgumentKey(object->getValue(), key, budget))
+      std::vector<const clang::NamedDecl *> references;
+      if (!StructuralArgumentKey(object->getValue(),context_,key,budget,0,&references))
         AddDiagnostic(result_, "O3IFC101", "unsupported structural template object value");
+      for(const auto *reference:references)CheckExpressionReference(reference);
       return;
     }
     // Reserved compiler builtins are supplied by the pinned consumer compiler,
@@ -3364,12 +3478,23 @@ class TypeDependencyVisitor final
       return TraverseType(argument.getIntegralType());
     case clang::TemplateArgument::NullPtr:
       return TraverseType(argument.getNullPtrType());
-    case clang::TemplateArgument::StructuralValue:
+    case clang::TemplateArgument::StructuralValue: {
+      unsigned budget=4096;std::string key;std::vector<const clang::NamedDecl *> references;
+      if(!StructuralArgumentKey(argument.getAsStructuralValue(),context_,key,budget,0,&references))return false;
+      for(const auto *reference:references)CheckExpressionReference(reference);
       return TraverseType(argument.getStructuralValueType());
-    case clang::TemplateArgument::Declaration:
-      if (const auto *object = llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+    }
+    case clang::TemplateArgument::Declaration: {
+      const auto *declaration=argument.getAsDecl();std::string key;
+      if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
+        unsigned budget=4096;std::vector<const clang::NamedDecl *> references;
+        if(!StructuralArgumentKey(object->getValue(),context_,key,budget,0,&references))return false;
+        for(const auto *reference:references)CheckExpressionReference(reference);
         return TraverseType(object->getType());
-      return false;
+      }
+      if(!AddressDeclarationKey(declaration,context_,key))return false;
+      CheckExpressionReference(declaration);return TraverseType(argument.getParamTypeForDecl());
+    }
     case clang::TemplateArgument::Template: {
       const auto *pattern=argument.getAsTemplate().getAsTemplateDecl();
       if (!pattern) return false;
@@ -5046,6 +5171,11 @@ bool ReadInterfaceDeclarationIdentity(
   if (identity.canonical_type_identity.empty()) return false;
   if (HasEffectfulTemplateProjection(representative,context))
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
+  if (!llvm::isa<clang::NamespaceDecl>(representative)) {
+    RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
+    if (arguments.HasAddressArguments)
+      identity.canonical_type_identity+=";cxx-address-template-arguments:v1;";
+  }
   if (llvm::isa<clang::TypeAliasTemplateDecl>(representative) &&
       !identity.native_symbol_name.empty())
     identity.canonical_type_identity+=";cxx-nominal-alias-templates:v1;owner="+
@@ -5588,6 +5718,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxAddressTemplateArgumentIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxAddressTemplateArgumentSemantic);
     if (HasCxxTemplateCallableProjectionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxTemplateCallableProjectionSemantic);
     if (HasCxxEffectfulTemplateMemberIdentity(declaration))
@@ -5768,6 +5900,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulFunctionTemplateSemantic,
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
+    kCxxAddressTemplateArgumentSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5930,6 +6063,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulFunctionTemplateSemantic,
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
+    kCxxAddressTemplateArgumentSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

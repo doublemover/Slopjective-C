@@ -1225,6 +1225,16 @@ int main() {
        f.result()!=42 || g.result()!=42 || fallback.result()!=42 || checked.result()!=42 ||
        indirect_member.result()!=42 || stored_task.result()!=42 || partial_task.result()!=&pointed)return 232;
   }
+  {
+    using namespace NativeAddressArguments;
+    Record record{{0}};auto function=Function::address;auto method=Member::address;
+    if(Object::address!=&storage || function!=&add || function(40)!=42 ||
+       (record.*method)(42)!=42 || Bound::run(record)!=42 || Ref::get()!=40 ||
+       invoke<&add>(40)!=42 || selected<&storage> !=42 || selected<&other> !=0 ||
+       Selection<&storage>::value!=42 || Selection<&other>::value!=0 || Element::get()!=42)return 233;
+    int *slot=counter_slot();if(slot!=&counter<&storage> || *slot!=1 || counter<&other> !=0)return 234;
+    *slot=42;if(counter<&storage> !=42)return 235;
+  }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

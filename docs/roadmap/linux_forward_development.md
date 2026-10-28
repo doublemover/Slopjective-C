@@ -90,6 +90,21 @@ deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
 The recorded historical five tooling collection errors stay outside the maintained
 Linux selection. Full profile conformance and native Linux AArch64 remain open.
 
+## Address template arguments
+
+The [2.76 source span](linux_cxx_address_template_arguments.md) publishes non-null
+function, object, reference and member template addresses, including structural
+values with callable/member leaves. Exact module-owned declarations, canonical
+types, subobject/base/array paths, byte offsets, one-past state and converted member
+paths bind the identity. Address dependencies inside structural values receive the
+same export and resolution checks as direct references. The emitter suite,
+83 tooling tests and 16 source-free configurations / 96 commands pass, including
+full function/class/variable selection, provider/consumer shared template storage,
+indirect calls, reference arguments and structural array/member values. Native APValue import preserves converted member paths, array fillers and null
+member/union/lvalue states; 411 compiler regressions, 23 focused native checks and
+all 37 native import-family tests pass. Broader validation and SDK delivery remain
+batched.
+
 ## Template callable projections
 
 The [2.75 source span](linux_cxx_template_callable_projections.md) publishes effectful
