@@ -7652,7 +7652,7 @@ index 8dd120f52..01c123394 100644
    ParsePragma.cpp
    ParseStmt.cpp
 diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
-index 6262e8b20..9c40c0f09 100644
+index 6262e8b20..279f7f8e1 100644
 --- a/clang/lib/Parse/ParseDecl.cpp
 +++ b/clang/lib/Parse/ParseDecl.cpp
 @@ -10,6 +10,7 @@
@@ -7971,7 +7971,21 @@ index 6262e8b20..9c40c0f09 100644
    switch (Tok.getKind()) {
    default: return false;
  
-@@ -7305,6 +7557,15 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -6827,7 +7079,12 @@ void Parser::ParseDirectDeclarator(Declarator &D) {
+       DiagnoseIdentifier = NextToken().isOneOf(tok::comma, tok::semi);
+     else if ((D.getContext() == DeclaratorContext::TrailingReturn ||
+               D.getContext() == DeclaratorContext::TrailingReturnVar) &&
+-             !isCXX11VirtSpecifier(Tok))
++             !isCXX11VirtSpecifier(Tok) &&
++             !(getLangOpts().ObjC3 &&
++               (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++                Tok.getIdentifierInfo()->isStr("__objc3_async_frame") ||
++                Tok.getIdentifierInfo()->isStr("__objc3_throws") ||
++                Tok.getIdentifierInfo()->isStr("throws"))))
+       DiagnoseIdentifier = NextToken().isOneOf(
+           tok::comma, tok::semi, tok::equal, tok::l_brace, tok::kw_try);
+     if (DiagnoseIdentifier) {
+@@ -7305,6 +7562,15 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
    SmallVector<SourceRange, 2> DynamicExceptionRanges;
    ExprResult NoexceptExpr;
    CachedTokens *ExceptionSpecTokens = nullptr;
@@ -7987,7 +8001,7 @@ index 6262e8b20..9c40c0f09 100644
    ParsedAttributes FnAttrs(AttrFactory);
    TypeResult TrailingReturnType;
    SourceLocation TrailingReturnTypeLoc;
-@@ -7431,11 +7692,29 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7431,11 +7697,29 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
          TrailingReturnTypeLoc = Range.getBegin();
          EndLoc = Range.getEnd();
        }
@@ -8017,7 +8031,7 @@ index 6262e8b20..9c40c0f09 100644
    // Collect non-parameter declarations from the prototype if this is a function
    // declaration. They will be moved into the scope of the function. Only do
    // this in C and not C++, where the decls will continue to live in the
-@@ -7470,10 +7749,99 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7470,10 +7754,99 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
                      NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                      ExceptionSpecTokens, DeclsInPrototype, StartLoc,
                      LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
@@ -13307,7 +13321,7 @@ index eafda3219..12258c158 100644
    ResultTy = ResultTy.getNonLValueExprType(Context);
  
 diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
-index 4d12b6c72..dd7d1fcce 100644
+index 4d12b6c72..d661ba450 100644
 --- a/clang/lib/Sema/SemaStmt.cpp
 +++ b/clang/lib/Sema/SemaStmt.cpp
 @@ -1,3 +1,5 @@
@@ -13364,17 +13378,22 @@ index 4d12b6c72..dd7d1fcce 100644
    DiagnoseEmptyStmtBody(DeferLoc, Body, diag::warn_empty_defer_body);
    setFunctionHasBranchProtectedScope();
    return DeferStmt::Create(Context, DeferLoc, Body);
-@@ -4076,9 +4088,18 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4076,9 +4088,23 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
        RetValExp, SupressSimplerImplicitMoves ? SimplerImplicitMoveMode::ForceOff
                                               : SimplerImplicitMoveMode::Normal);
  
 -  if (isa<CapturingScopeInfo>(getCurFunction()))
 +  if (isa<CapturingScopeInfo>(getCurFunction())) {
-+    auto *BSI = dyn_cast<BlockScopeInfo>(getCurFunction());
-+    const auto *FT = BSI ? getObjC3CallableFunctionType(BSI->TheDecl) : nullptr;
-+    if (FT && FT->getObjC3FunctionEffects().Async && BSI->isCoroutine()) {
++    auto *Capture=cast<CapturingScopeInfo>(getCurFunction());
++    const auto *BSI=dyn_cast<BlockScopeInfo>(Capture);
++    const auto *LSI=dyn_cast<LambdaScopeInfo>(Capture);
++    const Decl *Callable=BSI?cast<Decl>(BSI->TheDecl):LSI?LSI->CallOperator:nullptr;
++    const auto *FT=getObjC3CallableFunctionType(Callable);
++    if (FT && FT->getObjC3FunctionEffects().Async && Capture->isCoroutine()) {
++      // The coroutine's synthesized return object uses the physical carrier,
++      // while authored lambda/Block returns keep their logical value type.
 +      llvm::SaveAndRestore<QualType> ReturnType(
-+          BSI->ReturnType, Context.getObjC3AsyncReturnType(FT));
++          Capture->ReturnType, Context.getObjC3AsyncReturnType(FT));
 +      return ActOnCapScopeReturnStmt(ReturnLoc, RetValExp, NRInfo,
 +                                     SupressSimplerImplicitMoves);
 +    }
@@ -13384,7 +13403,7 @@ index 4d12b6c72..dd7d1fcce 100644
  
    QualType FnRetType;
    QualType RelatedRetType;
-@@ -4088,6 +4109,9 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4088,6 +4114,9 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
    FunctionDecl *FD = getCurFunctionDecl();
    if (FD) {
      FnRetType = FD->getReturnType();
@@ -13394,7 +13413,7 @@ index 4d12b6c72..dd7d1fcce 100644
      if (FD->hasAttrs())
        Attrs = &FD->getAttrs();
      if (FD->isNoReturn() && !getCurFunction()->isCoroutine())
-@@ -4104,7 +4128,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4104,7 +4133,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
      }
    } else if (ObjCMethodDecl *MD = getCurMethodDecl()) {
      FnRetType = MD->getReturnType();
@@ -13407,7 +13426,7 @@ index 4d12b6c72..dd7d1fcce 100644
      if (MD->hasAttrs())
        Attrs = &MD->getAttrs();
      if (MD->hasRelatedResultType() && MD->getClassInterface()) {
-@@ -4293,8 +4321,16 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4293,8 +4326,16 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
      // the C version of which boils down to CheckSingleAssignmentConstraints.
      if (!HasDependentReturnType && !RetValExp->isTypeDependent()) {
        // we have a non-void function with an expression, continue checking
@@ -13426,7 +13445,7 @@ index 4d12b6c72..dd7d1fcce 100644
        ExprResult Res = PerformMoveOrCopyInitialization(
            Entity, NRInfo, RetValExp, SupressSimplerImplicitMoves);
        if (Res.isInvalid() && AllowRecovery)
-@@ -4326,8 +4362,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+@@ -4326,8 +4367,11 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
          RetValExp = Res.getAs<Expr>();
        }
  
@@ -18963,10 +18982,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..211057ec0
+index 000000000..456854010
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1889 @@
+@@ -0,0 +1,1936 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20855,6 +20874,53 @@ index 000000000..211057ec0
 +      Visitor.TraverseDecl(Reparsed->getASTContext().getTranslationUnitDecl());
 +      EXPECT_EQ(Visitor.Count,2u);
 +    }
++}
++
++TEST(ObjC3FunctionEffectImport, InstantiatesNativeAsyncLambdaReturns) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      namespace std {
++        template<class P=void>struct coroutine_handle {
++          static coroutine_handle from_address(void*)noexcept;
++          void *address()const noexcept;
++        };
++        template<class R,class...A>struct coroutine_traits{using promise_type=typename R::promise_type;};
++      }
++      struct Suspend {
++        bool await_ready()const noexcept;
++        template<class P>void await_suspend(std::coroutine_handle<P>)const noexcept;
++        void await_resume()const noexcept;
++      };
++      template<class T>struct Task {
++        struct promise_type {
++          Task get_return_object();Suspend initial_suspend();Suspend final_suspend()noexcept;
++          void return_value(T);void unhandled_exception();
++        };
++        bool await_ready()const noexcept;
++        template<class P>void await_suspend(std::coroutine_handle<P>)const noexcept;
++        T await_resume()const;
++      };
++      template<class T>using __objc3_async_task=Task<T>;
++      typedef struct objc3_task objc3_task_t;
++      typedef struct objc3_async_result_type objc3_async_result_type;
++      typedef struct objc3_async_frame {
++        unsigned struct_size,version;void *context;
++        void (*resume)(objc3_task_t*,void*);void (*destroy)(void*);
++        const objc3_async_result_type *result_type;
++      } objc3_async_frame;
++      int relay(int n) __objc3_async {
++        auto generic=[]<class T>(T value)->T __objc3_async {return value;};
++        auto concrete=[](int value)->int __objc3_async {return value;};
++        auto framed=[]<class T>(T value)->T __objc3_async_frame {return value;};
++        auto frame=framed(n);(void)frame;
++        return __objc3_await generic(n)+__objc3_await concrete(n);
++      }
++    )";
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,
++        {"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},
++        "native-async-lambda-returns.mm");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
