@@ -472,6 +472,14 @@ llvm::Error ValidateForEncoding(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     return Invalid("C++ async definition identity and required capability must agree");
+  const bool has_class_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxClassTemplateIdentity);
+  const bool class_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxClassTemplateSemantic) != sidecar.required_semantics.end();
+  const bool class_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_class_templates != class_capability || (class_capability && !class_data_capability))
+    return Invalid("class template identity and required class/data capabilities must agree");
   const bool has_variable_templates = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxVariableTemplateIdentity);
   const bool variable_capability = std::find(sidecar.required_semantics.begin(),

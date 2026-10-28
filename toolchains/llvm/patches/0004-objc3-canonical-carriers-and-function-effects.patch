@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..67e55d1b9 100644
+index d743717ad..af2e08c82 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2984,7 +2984,21 @@ index d743717ad..67e55d1b9 100644
                  // FoundDef may not have every implicit method that D has
                  // because implicit methods are created only if they are used.
                  if (Error Err = ImportImplicitMethods(DCXX, FoundCXX))
-@@ -3996,6 +4184,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
+@@ -3525,6 +3713,13 @@ ExpectedDecl ASTNodeImporter::VisitRecordDecl(RecordDecl *D) {
+     }
+ 
+     D2 = D2CXX;
++    // Record ABI ownership must precede recursive template/member import.
++    // A partially imported record can already participate in structural lookup.
++    if (const auto *Attribute = D->getAttr<AbiTagAttr>()) {
++      auto Imported = Importer.Import(Attribute);
++      if (!Imported) return Imported.takeError();
++      D2->addAttr(*Imported);
++    }
+     D2->setAccess(D->getAccess());
+     D2->setLexicalDeclContext(LexicalDC);
+     addDeclToContexts(D, D2);
+@@ -3996,6 +4191,72 @@ ASTNodeImporter::importExplicitSpecifier(Error &Err, ExplicitSpecifier ESpec) {
    return ExplicitSpecifier(ExplicitExpr, ESpec.getKind());
  }
  
@@ -3057,7 +3071,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    SmallVector<Decl *, 2> Redecls = getCanonicalForwardRedeclChain(D);
-@@ -4052,6 +4306,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,6 +4313,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
@@ -3070,7 +3084,7 @@ index d743717ad..67e55d1b9 100644
          if (IsStructuralMatch(D, FoundFunction)) {
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
-@@ -4120,6 +4380,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4387,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -3078,7 +3092,7 @@ index d743717ad..67e55d1b9 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4169,11 +4430,63 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4169,11 +4437,63 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToDefaultLoc = importChecked(Err, D->getDefaultLoc());
    auto ToQualifierLoc = importChecked(Err, D->getQualifierLoc());
@@ -3147,7 +3161,7 @@ index d743717ad..67e55d1b9 100644
  
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
-@@ -4286,10 +4599,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4286,10 +4606,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    ToFunction->setLexicalDeclContext(LexicalDC);
    ToFunction->setVirtualAsWritten(D->isVirtualAsWritten());
    ToFunction->setTrivial(D->isTrivial());
@@ -3162,7 +3176,7 @@ index d743717ad..67e55d1b9 100644
    ToFunction->setFriendConstraintRefersToEnclosingTemplate(
        D->FriendConstraintRefersToEnclosingTemplate());
    ToFunction->setIsDestroyingOperatorDelete(D->isDestroyingOperatorDelete());
-@@ -4330,6 +4646,28 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4330,6 +4653,28 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    }
    ToFunction->setParams(Parameters);
  
@@ -3191,7 +3205,7 @@ index d743717ad..67e55d1b9 100644
    // We need to complete creation of FunctionProtoTypeLoc manually with setting
    // params it refers to.
    if (TInfo) {
-@@ -4386,9 +4724,16 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4386,9 +4731,16 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
        ToFunction->setType(*TyOrErr);
      else
        return TyOrErr.takeError();
@@ -3210,7 +3224,7 @@ index d743717ad..67e55d1b9 100644
        return TSIOrErr.takeError();
    }
  
-@@ -4802,6 +5147,10 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4802,6 +5154,10 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
          continue;
  
        if (auto *FoundVar = dyn_cast<VarDecl>(FoundDecl)) {
@@ -3221,7 +3235,7 @@ index d743717ad..67e55d1b9 100644
          if (!hasSameVisibilityContextAndLinkage(FoundVar, D))
            continue;
          if (Importer.IsStructurallyEquivalent(D->getType(),
-@@ -4897,6 +5246,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4897,6 +5253,11 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
    }
  
    ToVar->setTSCSpec(D->getTSCSpec());
@@ -3233,7 +3247,7 @@ index d743717ad..67e55d1b9 100644
    ToVar->setQualifierInfo(ToQualifierLoc);
    ToVar->setAccess(D->getAccess());
    ToVar->setLexicalDeclContext(LexicalDC);
-@@ -4910,6 +5264,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
+@@ -4910,6 +5271,15 @@ ExpectedDecl ASTNodeImporter::VisitVarDecl(VarDecl *D) {
      ToVar->setPreviousDecl(Recent);
    }
  
@@ -3249,7 +3263,7 @@ index d743717ad..67e55d1b9 100644
    // Import the described template, if any.
    if (D->getDescribedVarTemplate()) {
      auto ToVTOrErr = import(D->getDescribedVarTemplate());
-@@ -5062,6 +5425,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5432,19 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -3269,7 +3283,7 @@ index d743717ad..67e55d1b9 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5500,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5507,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -3277,7 +3291,7 @@ index d743717ad..67e55d1b9 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5515,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5522,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -3286,7 +3300,7 @@ index d743717ad..67e55d1b9 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -5479,6 +5858,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
+@@ -5479,6 +5865,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingDecl(UsingDecl *D) {
                                D->hasTypename()))
      return ToUsing;
  
@@ -3294,7 +3308,7 @@ index d743717ad..67e55d1b9 100644
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
  
-@@ -5517,6 +5897,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
+@@ -5517,6 +5904,7 @@ ExpectedDecl ASTNodeImporter::VisitUsingEnumDecl(UsingEnumDecl *D) {
                                ToUsingLoc, ToEnumLoc, ToNameLoc, ToEnumType))
      return ToUsingEnum;
  
@@ -3302,7 +3316,7 @@ index d743717ad..67e55d1b9 100644
    ToUsingEnum->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsingEnum);
  
-@@ -5723,6 +6104,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
+@@ -5723,6 +6111,7 @@ ExpectedDecl ASTNodeImporter::VisitUnresolvedUsingTypenameDecl(
                                ToQualifierLoc, Loc, Name, ToEllipsisLoc))
      return ToUsing;
  
@@ -3310,7 +3324,7 @@ index d743717ad..67e55d1b9 100644
    ToUsing->setAccess(D->getAccess());
    ToUsing->setLexicalDeclContext(LexicalDC);
    LexicalDC->addDeclInternal(ToUsing);
-@@ -5904,6 +6286,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
+@@ -5904,6 +6293,15 @@ ExpectedDecl ASTNodeImporter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *D) {
        break;
    }
  
@@ -3326,7 +3340,7 @@ index d743717ad..67e55d1b9 100644
    // Create an interface declaration, if one does not already exist.
    ObjCInterfaceDecl *ToIface = MergeWithIface;
    if (!ToIface) {
-@@ -6076,6 +6467,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
+@@ -6076,6 +6474,9 @@ ExpectedDecl ASTNodeImporter::VisitObjCPropertyDecl(ObjCPropertyDecl *D) {
        if (FoundProp->isInstanceProperty() != D->isInstanceProperty())
          continue;
  
@@ -3336,7 +3350,7 @@ index d743717ad..67e55d1b9 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,6 +6852,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6458,6 +6859,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -3345,7 +3359,7 @@ index d743717ad..67e55d1b9 100644
  
    D2->setAccess(D->getAccess());
    D2->setLexicalDeclContext(LexicalDC);
-@@ -6740,6 +7136,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6740,6 +7143,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
@@ -3357,7 +3371,7 @@ index d743717ad..67e55d1b9 100644
      }
    }
  
-@@ -6777,6 +7178,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6777,6 +7185,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -3366,7 +3380,7 @@ index d743717ad..67e55d1b9 100644
  
    ToVarTD->setAccess(D->getAccess());
    ToVarTD->setLexicalDeclContext(LexicalDC);
-@@ -7051,17 +7454,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7051,17 +7461,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -3388,7 +3402,7 @@ index d743717ad..67e55d1b9 100644
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7475,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7076,6 +7482,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -3404,7 +3418,7 @@ index d743717ad..67e55d1b9 100644
    return ToFunc;
  }
  
-@@ -7328,6 +7736,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7743,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3502,7 +3516,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +7984,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +7991,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -3563,7 +3577,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8328,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8335,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3742,7 +3756,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8809,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8816,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3759,7 +3773,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9570,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9577,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -3813,7 +3827,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9163,6 +9945,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +9952,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -3830,7 +3844,7 @@ index d743717ad..67e55d1b9 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10244,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10251,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -3845,7 +3859,7 @@ index d743717ad..67e55d1b9 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10297,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10304,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -3867,7 +3881,7 @@ index d743717ad..67e55d1b9 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10479,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10486,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3882,7 +3896,7 @@ index d743717ad..67e55d1b9 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10534,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10541,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3981,7 +3995,7 @@ index d743717ad..67e55d1b9 100644
  }
  
  namespace {
-@@ -9857,6 +10766,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10773,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -4041,13 +4055,16 @@ index d743717ad..67e55d1b9 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11085,22 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11092,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
 -  if (FromD->hasAttrs())
 +  if (FromD->hasAttrs() && !isa<NamespaceDecl>(FromD))
      for (const Attr *FromAttr : FromD->getAttrs()) {
++      if (isa<CXXRecordDecl>(FromD) && isa<AbiTagAttr>(FromAttr) &&
++          ToD->hasAttr<AbiTagAttr>())
++        continue;
 +      if (const auto *Variable = dyn_cast<VarDecl>(FromD);
 +          Variable && Variable->getDescribedVarTemplate() &&
 +          isa<AbiTagAttr>(FromAttr) && ToD->hasAttr<AbiTagAttr>())
@@ -4065,7 +4082,7 @@ index d743717ad..67e55d1b9 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11547,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11557,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4078,7 +4095,7 @@ index d743717ad..67e55d1b9 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11563,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11573,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4090,7 +4107,7 @@ index d743717ad..67e55d1b9 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11575,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11585,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4102,7 +4119,7 @@ index d743717ad..67e55d1b9 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11587,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11597,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4124,7 +4141,7 @@ index d743717ad..67e55d1b9 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +12031,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12041,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -4142,7 +4159,7 @@ index d743717ad..67e55d1b9 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..b690053e8 100644
+index e0b62591a..079706ef8 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -4388,7 +4405,20 @@ index e0b62591a..b690053e8 100644
        if (!IsStructurallyEquivalent(Context, Proto1->getParamType(I),
                                      Proto2->getParamType(I)))
          return false;
-@@ -2290,7 +2481,8 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -1819,8 +2010,12 @@ static bool NameIsStructurallyEquivalent(const TagDecl &D1, const TagDecl &D2) {
+ }
+ 
+ /// Determine structural equivalence of two records.
++static bool haveSameAbiTags(const NamedDecl *First, const NamedDecl *Second);
++
+ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+                                      RecordDecl *D1, RecordDecl *D2) {
++  if (!haveSameAbiTags(D1, D2))
++    return false;
+   // C23 6.2.7p1:
+   // ... Moreover, two complete structure, union, or enumerated types declared
+   // with the same tag are compatible if members satisfy the following
+@@ -2290,7 +2485,8 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
        return false;
    }
  
@@ -4398,7 +4428,7 @@ index e0b62591a..b690053e8 100644
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2308,7 +2500,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2308,7 +2504,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
      return false;
    }
  
@@ -4410,7 +4440,16 @@ index e0b62591a..b690053e8 100644
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2389,9 +2584,27 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2380,6 +2579,8 @@ static bool IsTemplateDeclCommonStructurallyEquivalent(
+ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+                                      ClassTemplateDecl *D1,
+                                      ClassTemplateDecl *D2) {
++  if (!haveSameAbiTags(D1->getTemplatedDecl(), D2->getTemplatedDecl()))
++    return false;
+   // Check template parameters.
+   if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
+     return false;
+@@ -2389,9 +2590,27 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                    D2->getTemplatedDecl());
  }
  
@@ -4438,7 +4477,7 @@ index e0b62591a..b690053e8 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2401,6 +2614,24 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2401,6 +2620,24 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                    D2->getTemplatedDecl()->getType());
  }
  
@@ -4463,7 +4502,7 @@ index e0b62591a..b690053e8 100644
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       TypeAliasTemplateDecl *D1,
                                       TypeAliasTemplateDecl *D2) {
-@@ -2416,6 +2647,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2416,6 +2653,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ConceptDecl *D1,
                                       ConceptDecl *D2) {
@@ -4478,7 +4517,7 @@ index e0b62591a..b690053e8 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2446,12 +2685,59 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2446,12 +2691,59 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
@@ -4538,7 +4577,7 @@ index e0b62591a..b690053e8 100644
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2775,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2489,6 +2781,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -4549,7 +4588,7 @@ index e0b62591a..b690053e8 100644
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2890,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2600,6 +2896,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -4567,7 +4606,7 @@ index e0b62591a..b690053e8 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3085,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+@@ -2784,8 +3091,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -18280,10 +18319,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..6f0b0cf16
+index 000000000..0dcb34a01
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,678 @@
+@@ -0,0 +1,738 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18960,6 +18999,66 @@ index 000000000..6f0b0cf16
 +    auto Template=PatternFirst.Import(Find(ConcreteFrom->getASTContext()));
 +    ASSERT_TRUE(bool(Template)) << llvm::toString(Template.takeError());
 +    EXPECT_EQ(cast<VarTemplateDecl>(*Template)->getTemplatedDecl(),*Variable);
++  }
++}
++
++
++TEST(ObjC3FunctionEffectImport, PreservesClassTemplateOwnersAndBodies) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    const std::string Original=R"(
++      template<class T=int,int Bias=2> requires(sizeof(T)>0)
++      class __attribute__((abi_tag("owner"))) Box {
++        T value;
++      public:
++        inline static int visits=0;
++        constexpr Box(T n=T{40}):value(n){}
++        constexpr T number()const noexcept{return value+Bias;}
++        static int next(){return ++visits;}
++      };
++    )";
++    auto Find=[](ASTContext &Context) {
++      for(auto *D:Context.getTranslationUnitDecl()->decls())
++        if(auto *Pattern=dyn_cast<ClassTemplateDecl>(D))return Pattern;
++      return static_cast<ClassTemplateDecl *>(nullptr);
++    };
++    for(bool Foreign:{false,true}) {
++      auto Changed=Original;
++      if(Foreign) Changed.replace(Changed.find("\"owner\""),7,"\"foreign\"");
++      auto From=tooling::buildASTFromCodeWithArgs(Original,{"-xc++",Standard});
++      auto To=tooling::buildASTFromCodeWithArgs(Changed,{"-xc++",Standard});
++      ASSERT_TRUE(From && To);
++      ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++      ASSERT_FALSE(To->getDiagnostics().hasErrorOccurred());
++      StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalent;
++      StructuralEquivalenceContext Equivalence(From->getLangOpts(),From->getASTContext(),
++          To->getASTContext(),NonEquivalent,StructuralEquivalenceKind::Default,false,false);
++      EXPECT_EQ(Equivalence.IsEquivalent(Find(From->getASTContext()),Find(To->getASTContext())),!Foreign);
++      ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++                           From->getASTContext(),From->getFileManager(),false);
++      auto Imported=Importer.Import(Find(From->getASTContext()));
++      EXPECT_EQ(bool(Imported),!Foreign);
++      if(!Imported)llvm::consumeError(Imported.takeError());
++      else EXPECT_EQ(*Imported,Find(To->getASTContext()));
++    }
++    auto From=tooling::buildASTFromCodeWithArgs(Original,{"-xc++",Standard});
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard});
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++                         From->getASTContext(),From->getFileManager(),false);
++    auto Imported=Importer.Import(Find(From->getASTContext()));
++    ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++    auto *Record=cast<ClassTemplateDecl>(*Imported)->getTemplatedDecl();
++    auto Attributes=Record->specific_attrs<AbiTagAttr>();
++    EXPECT_EQ(std::distance(Attributes.begin(),Attributes.end()),1);
++    EXPECT_TRUE(Record->isCompleteDefinition());
++    unsigned Bodies=0;
++    for(auto *Method:Record->methods()) {
++      if(Method->doesThisDeclarationHaveABody())++Bodies;
++      if(auto *Constructor=dyn_cast<CXXConstructorDecl>(Method);Constructor && Constructor->doesThisDeclarationHaveABody()) {
++        EXPECT_TRUE(Constructor->getParamDecl(0)->hasDefaultArg());
++        EXPECT_EQ(Constructor->getNumCtorInitializers(),1u);
++      }
++    }
++    EXPECT_EQ(Bodies,3u);
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp

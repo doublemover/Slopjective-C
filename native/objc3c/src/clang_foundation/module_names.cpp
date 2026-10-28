@@ -39,7 +39,7 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
   if (declaration.native_symbol_name.empty())
     return true;
   if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
-      declaration.kind != "VarTemplate" &&
+      declaration.kind != "VarTemplate" && declaration.kind != "ClassTemplate" &&
       !IsCxxMemberDeclarationKind(declaration.kind) &&
       declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
       declaration.kind != "ObjCInterface" &&
@@ -104,6 +104,10 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
          *relative.begin() != "..";
 }
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
+  if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
+    return ReadNativeSymbolName(specialization->getSpecializedTemplate());
+  if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
   if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration))
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
@@ -225,6 +229,29 @@ public:
     auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
     if (!value && !runtime && !record)
       return true;
+    // Members and specializations retain native template mangling. A concrete
+    // asm label on a pattern member would alias every specialization.
+    for (const auto *scope = decl->getDeclContext(); scope; scope = scope->getParent())
+      if (const auto *parent = llvm::dyn_cast<clang::CXXRecordDecl>(scope);
+          parent && (parent->getDescribedClassTemplate() ||
+                     llvm::isa<clang::ClassTemplateSpecializationDecl>(parent)))
+        return true;
+    if (record && record->getDescribedClassTemplate()) {
+      const auto expected = BuildModuleOwnedName(module_, package_,
+          ReadInterfaceDeclarationStableId(record->getDescribedClassTemplate()));
+      for (auto *redecl : record->redecls()) {
+        if (!redecl->isImplicit() && !IsModuleOwnedSource(context_, redecl->getLocation(), source_root_))
+          return Error(decl, "module-owned class template redeclares a foreign ABI");
+        if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
+          if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
+            return Error(decl, "class template ABI tag conflicts with its owning module");
+        } else {
+          llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
+          redecl->addAttr(clang::AbiTagAttr::Create(context_, &owned_tag, 1, redecl->getSourceRange()));
+        }
+      }
+      return true;
+    }
     if (record && (record->isDependentContext() ||
                    record->getDescribedClassTemplate() ||
                    record->getTemplateSpecializationKind() !=

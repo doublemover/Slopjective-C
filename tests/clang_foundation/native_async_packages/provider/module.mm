@@ -1170,3 +1170,36 @@ template<class... T> inline constexpr unsigned native_template_arity=sizeof...(T
 template<NativeNumber T> inline constexpr unsigned native_template_width=sizeof(T);
 template<class T> T native_template_zero;
 int native_variable_template_producer(){return ++native_template_shared<> + ++native_template_tls<>;}
+
+
+template<NativeNumber T=int,int Bias=2> class NativeTemplateBox {
+  T value;
+public:
+  using element=T;
+  inline static int visits=0;
+  constexpr NativeTemplateBox(T n=T{40}):value(n){}
+  constexpr NativeTemplateBox(const NativeTemplateBox&)=default;
+  constexpr T number()const noexcept{return value+Bias;}
+  static int next(){return ++visits;}
+};
+template<class... T> struct NativeTemplateArity {static constexpr unsigned count=sizeof...(T);};
+template<class T=int> class NativeTemplateValue {
+  T value;
+public:
+  inline static int live=0;
+  explicit NativeTemplateValue(T n=T{40}):value(n){++live;}
+  NativeTemplateValue(const NativeTemplateValue &other):value(other.value){++live;}
+  NativeTemplateValue(NativeTemplateValue &&other)noexcept:value(other.value){++live;}
+  ~NativeTemplateValue(){--live;}
+  T number()const{return value;}
+};
+int native_class_template_producer(){return NativeTemplateBox<>::next();}
+inline NativeTemplateValue<int> native_class_template_task(NativeTemplateValue<int> value) __objc3_async {
+  __objc3_await objc3::task_yield;
+  return value;
+}
+
+NativeTemplateValue<int> native_class_template_frame(NativeTemplateValue<int> value) __objc3_async_frame {
+  __objc3_await native_module_borrow_leaf();
+  return value;
+}

@@ -82,6 +82,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxFunctionTemplateSemantic,
     kCxxAliasTemplateSemantic,
     kCxxVariableTemplateSemantic,
+    kCxxClassTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -157,6 +158,8 @@ public:
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
         function && function->getDescribedFunctionTemplate()) return true;
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+        record && record->getDescribedClassTemplate()) return true;
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
         alias && alias->getDescribedAliasTemplate()) return true;
     if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
@@ -174,6 +177,8 @@ private:
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+      record && record->getDescribedClassTemplate()) return false;
   if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
       variable && variable->getDescribedVarTemplate()) return false;
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
@@ -208,15 +213,32 @@ public:
       Definitions.insert(function->getCanonicalDecl());
     return true;
   }
+  bool VisitVarDecl(clang::VarDecl *variable) {
+    if (variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly)
+      Variables.insert(variable->getCanonicalDecl());
+    return true;
+  }
   std::set<const clang::FunctionDecl *> Definitions;
+  std::set<const clang::VarDecl *> Variables;
 };
 
 class DefinitionTrackingImporter final : public clang::ASTImporter {
 public:
   using clang::ASTImporter::ASTImporter;
   const std::set<const clang::FunctionDecl *> *Existing = nullptr;
+  const std::set<const clang::VarDecl *> *ExistingVariables = nullptr;
   std::vector<clang::NamedDecl *> Definitions;
   void Imported(clang::Decl *from, clang::Decl *to) override {
+    auto *variable=llvm::dyn_cast<clang::VarDecl>(to);
+    const auto *source_variable=llvm::dyn_cast<clang::VarDecl>(from);
+    if (variable && source_variable && !source_variable->getDescribedVarTemplate() &&
+        variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+        source_variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+        variable->hasGlobalStorage() && variable->isInline() &&
+        !variable->getDeclContext()->isDependentContext() &&
+        !variable->getType()->isDependentType() &&
+        !ExistingVariables->count(variable->getCanonicalDecl()))
+      Definitions.push_back(variable);
     auto *function=llvm::dyn_cast<clang::FunctionDecl>(to);
     const auto *source=llvm::dyn_cast<clang::FunctionDecl>(from);
     if (function && source && !source->getDescribedFunctionTemplate() &&
@@ -669,6 +691,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
     importer->Existing=&existing_definitions.Definitions;
+    importer->ExistingVariables=&existing_definitions.Variables;
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.
@@ -806,6 +829,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         alias && alias->getDescribedAliasTemplate()) continue;
     if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);
         variable && variable->getDescribedVarTemplate()) continue;
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(named);
+        record && record->getDescribedClassTemplate()) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();

@@ -423,6 +423,34 @@ int main() {
   static_assert(native_late_default(40)==42 && native_tail_decl()==42);
   static_assert(native_constrained_default()==42 && native_template_argument_default()==42);
   if(native_template_defaults_bridge()!=210) return 128;
+  static_assert(NativeTemplateBox<>{}.number()==42 && NativeTemplateBox<long,3>(39).number()==42);
+  static_assert(__is_same(NativeTemplateBox<long>::element,long));
+  static_assert(NativeTemplateArity<int,long,double>::count==3);
+  if(native_class_template_producer()!=1 || NativeTemplateBox<>::next()!=2 ||
+     NativeTemplateBox<long>::next()!=1) return 131;
+  {
+    NativeTemplateValue<long> first(42);auto second=first;
+    if(second.number()!=42 || NativeTemplateValue<long>::live!=2) return 132;
+  }
+  if(NativeTemplateValue<long>::live!=0 || NativeTemplateValue<int>::live!=0) return 133;
+  {
+    NativeTemplateValue<int> value(42);
+    auto pending=native_class_template_task(value);
+    if(NativeTemplateValue<int>::live!=2) return 134;
+    auto started=std::move(pending).start(executor);
+    uint32_t completed=0;
+    if(objc3_executor_pump(executor,100,&completed)!=OBJC3_SERVICE_OK ||
+       started.result().number()!=42) return 135;
+  }
+  if(NativeTemplateValue<int>::live!=0) return 136;
+  {
+    NativeTemplateValue<int> value(42);
+    auto returned=__objc3_async_from_frame<NativeTemplateValue<int>>(native_class_template_frame(value)).start(executor);
+    uint32_t completed=0;
+    if(objc3_executor_pump(executor,100,&completed)!=OBJC3_SERVICE_OK ||
+       returned.result().number()!=42) return 137;
+  }
+  if(NativeTemplateValue<int>::live!=0) return 138;
   static_assert(native_template_answer<> ==42 && native_template_answer<long,39> ==41);
   static_assert(native_template_arity<int,long,double> ==3 && native_template_width<char> ==1);
   if(native_variable_template_producer()!=82 || ++native_template_shared<> !=42 ||

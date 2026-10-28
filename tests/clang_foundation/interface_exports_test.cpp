@@ -373,6 +373,47 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void ClassTemplateBodies(const fs::path &root, const std::string &standard) {
+  auto r=Request(root/"class-template-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+    namespace Types {
+      template<class T> concept Number=requires(T n){n+2;};
+      template<Number T=int,int Bias=2> class Box {
+        T value;
+      public:
+        using element=T;
+        inline static int visits=0;
+        constexpr Box(T n=T{40}):value(n){}
+        constexpr Box(const Box&)=default;
+        constexpr T number()const noexcept{return value+Bias;}
+        static int next(){return ++visits;}
+      };
+      template<class... T> struct Arity {static constexpr unsigned count=sizeof...(T);};
+    }
+    int provider(){return Types::Box<>::next();}
+  )");
+  r.emit_semantic_interface=true;r.module_name="ClassTemplates";r.package_identity="class-templates-v1";
+  r.module_owned_names=true;r.interface_exports={"Types","provider"};
+  r.interface_output_path=(root/"ClassTemplates.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"class-template-provider.o").string();
+  auto built=Compile(r);
+  for(const auto &d:built.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:built.interface_import_diagnostics) std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"class-template-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    static_assert(Types::Box<>{}.number()==42 && Types::Box<long,3>(39).number()==42);
+    static_assert(__is_same(Types::Box<long>::element,long));
+    static_assert(Types::Arity<int,long,double>::count==3);
+    int client(){Types::Box<long> n(40);auto copy=n;return copy.number()+Types::Box<>::next();}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"class-template-client.o").string();
+  auto imported=Compile(client);
+  for(const auto &d:imported.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:imported.interface_import_diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void VariableTemplateBodies(const fs::path &root, const std::string &standard) {
   auto r=Request(root/"variable-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
     namespace Values {
@@ -471,6 +512,7 @@ int main() {
     AliasTemplateBodies(root,standard);
     FunctionTemplateDeclarations(root,standard);
     VariableTemplateBodies(root,standard);
+    ClassTemplateBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

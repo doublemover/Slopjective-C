@@ -1618,6 +1618,83 @@ void TestPublicAliasTemplates() {
   }
 }
 
+void TestPublicClassTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="classes.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.classes","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.classes","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace Types {
+        template<class T> concept Number=requires(T n){n+2;};
+        template<Number T=int,int Bias=2> class Box {
+          T value;
+        public:
+          using element=T;
+          enum class Kind{answer=42};
+          inline static int visits=0;
+          constexpr Box(T n=T{40}):value(n){}
+          constexpr Box(const Box&)=default;
+          constexpr T number()const noexcept{return value+Bias;}
+          static int next(){return ++visits;}
+        };
+        template<class... T> struct Arity {static constexpr unsigned count=sizeof...(T);};
+        template<class T> requires(sizeof(T)>0) struct Width {T value{};};
+      }
+      template<double D> struct Floating {static constexpr int answer(){return 42;}};
+      inline constexpr double class_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+      inline constexpr int class_argument_probe(){return Floating<class_argument>::answer();}
+      inline constexpr int named_class_argument=2;
+      inline constexpr int class_construct_probe(){return Types::Box<int,named_class_argument>{40}.number();}
+      inline constexpr int probe(){return Types::Box<int>(40).number();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxClassTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-classes.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-classes.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("value+Bias"),10,"value+Bias+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics")) semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    changed=source;changed.replace(changed.find("0x0000000000000000ULL"),std::string("0x0000000000000000ULL").size(),"0x8000000000000000ULL");
+    auto negative_zero=emit(changed);assert(negative_zero.success);
+    auto negative=DecodeSemanticInterfaceSidecar(negative_zero.sidecar_json,negative_zero.source_bytes,semantics);assert(negative);
+    auto row=[](const auto &sidecar)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(sidecar.declarations.begin(),sidecar.declarations.end(),
+          [](const auto &d){return d.qualified_name=="class_argument_probe";});
+    };
+    assert(row(*decoded).canonical_type_identity!=row(*negative).canonical_type_identity);
+
+    for(const auto *capability:{kCxxClassTemplateSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name=="Types::Box";})==1);
+    assert(!emit("template<class T>struct Hidden{T n;};inline int api(){return Hidden<int>{42}.n;}",
+                 "excluded-class.cpp",{"api"}).success);
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{int api(){return hidden();}};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    for(const auto *gated:{"template<class T>struct Box;",
+                          "template<class T>struct Box{T api();};",
+                          "template<class T>struct Box{virtual int api(){return 42;}};",
+                          "template<class T>struct Box{};template<class T>struct Box<T*>{};",
+                          "template<class T>struct Box{};template<>struct Box<int>{};",
+                          "template<class T>struct Box{template<class U> U api(U n){return n;}};"})
+      assert(!emit(gated).success);
+  }
+}
+
 void TestPublicVariableTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source, const char *file = "variables.cpp",
@@ -2649,7 +2726,6 @@ void TestBoundedCxxSemanticInterfaces() {
   }
   for (const char *source :
        {"namespace nested { inline int api() { return [](auto value) { return value; }(42); } }",
-        "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : virtual Base { int "
         "second=1; int get() const { return [](auto value) { return value; }(42); } };",
 
@@ -2726,6 +2802,7 @@ int main() {
   TestPublicAliasTemplates();
   TestFunctionTemplateDeclarations();
   TestPublicVariableTemplates();
+  TestPublicClassTemplates();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

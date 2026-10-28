@@ -65,6 +65,14 @@ all **33 optimized frontend suites**, **335 tooling tests** and **24 source-free
 package configurations / 96 commands** across normal, eager-import and
 ASan/UBSan execution. SDK 2.33 remains the accepted archive.
 
+## Published primary C++ class templates
+
+The [2.47 source span](linux_cxx_class_templates.md) adds primary class template
+definitions, checked dependent member bodies and native consumer instantiation.
+Primary module owners preserve specialization/member mangling; one complete
+class contract binds private storage, constructors/destructors and static data.
+Inheritance, virtual/member-template and specialization projections remain open.
+
 ## Published native C++ variable templates
 
 The [2.46 source span](linux_cxx_variable_templates.md) adds public namespace

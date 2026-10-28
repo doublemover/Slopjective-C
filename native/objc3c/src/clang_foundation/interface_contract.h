@@ -176,6 +176,10 @@ inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1
 inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxClassTemplateSemantic = "objc3.cxx-class-templates.v1";
+inline bool HasCxxClassTemplateIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-class-templates:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxVariableTemplateSemantic = "objc3.cxx-variable-templates.v1";
 inline bool HasCxxVariableTemplateIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-variable-templates:v1;") != std::string::npos;
