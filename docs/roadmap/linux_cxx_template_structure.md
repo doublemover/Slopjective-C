@@ -31,3 +31,9 @@ Explicit/partial specializations, nested/member templates, deduced-return and
 effectful template methods and remaining dependent projections stay separate
 work. SDK 2.33 remains accepted; optimized/broader/instrumented qualification and
 coordinated archive delivery follow the combined implementation batch.
+
+The [focused source receipt](../support/linux_cxx_template_structure_progress.json)
+records both frontend suites, all 137 AST contract tests and one source-free
+package configuration / four commands with the development facade. Remaining
+configurations and optimized/broader/instrumented checks are deferred to the
+combined implementation batch.
