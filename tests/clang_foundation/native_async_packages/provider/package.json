@@ -322,7 +322,12 @@
     "NativeDetachedStorage",
     "native_detached_object",
     "native_detached_plain_factory",
-    "native_concrete_specialized_factory"
+    "native_concrete_specialized_factory",
+    "NativeMemberSpecializedValue",
+    "native_member_specialized_address",
+    "native_member_partial_address",
+    "native_member_specialized_tls",
+    "native_member_specialized_object"
   ],
   "dependencies": []
 }

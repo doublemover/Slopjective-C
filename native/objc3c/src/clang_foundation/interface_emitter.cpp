@@ -193,12 +193,20 @@ std::vector<const clang::ClassTemplateSpecializationDecl *> PublishedClassSpecia
   return result;
 }
 
+bool IsConcreteMemberVariableSpecialization(const clang::VarTemplateSpecializationDecl *variable) {
+  if (!variable || !variable->isStaticDataMember()) return false;
+  const auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(variable->getDeclContext());
+  return parent && !parent->isDependentContext() && !parent->getDescribedClassTemplate() &&
+      !llvm::isa<clang::ClassTemplateSpecializationDecl>(parent) &&
+      (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) ||
+       variable->getSpecializationKind()==clang::TSK_ExplicitSpecialization);
+}
 std::vector<const clang::VarTemplatePartialSpecializationDecl *> PublishedVariablePartials(
     const clang::VarTemplateDecl *pattern) {
   llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
   pattern->getPartialSpecializations(partials);
   std::vector<const clang::VarTemplatePartialSpecializationDecl *> result;
-  for (const auto *partial:partials) if (IsTopLevel(partial)) {
+  for (const auto *partial:partials) if (IsTopLevel(partial) || IsConcreteMemberVariableSpecialization(partial)) {
     if (const auto *definition=partial->getDefinition())
       partial=llvm::cast<clang::VarTemplatePartialSpecializationDecl>(definition);
     result.push_back(partial);
@@ -418,6 +426,26 @@ std::vector<clang::FunctionDecl *> ConcreteMemberFunctionSpecializations(const c
             if (const auto *definition=function->getDefinition()) selected=definition;
           result.push_back(const_cast<clang::FunctionDecl *>(selected));
         }
+  return result;
+}
+
+std::vector<clang::VarTemplateSpecializationDecl *> ConcreteMemberVariableSpecializations(const clang::NamedDecl *owner) {
+  std::vector<clang::VarTemplateSpecializationDecl *> result;
+  const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(owner);
+  if (!record || !record->getDefinition()) return result;
+  for (const auto *member:record->getDefinition()->decls())
+    if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
+      for (const auto *partial:PublishedVariablePartials(pattern))
+        if (IsConcreteMemberVariableSpecialization(partial))
+          result.push_back(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
+      for (const auto *specialization:pattern->specializations())
+        if (IsConcreteMemberVariableSpecialization(specialization)) {
+          const auto *selected=static_cast<const clang::VarDecl *>(specialization)->getMostRecentDecl();
+          if (const auto *definition=specialization->getDefinition()) selected=definition;
+          result.push_back(const_cast<clang::VarTemplateSpecializationDecl *>(
+              llvm::cast<clang::VarTemplateSpecializationDecl>(selected)));
+        }
+    }
   return result;
 }
 
@@ -693,6 +721,8 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
   for (auto *specialization:ConcreteMemberClassSpecializations(declaration)) finder.TraverseDecl(specialization);
   for (auto *specialization:ConcreteMemberFunctionSpecializations(declaration))
     if (specialization->isInlined()) finder.TraverseDecl(specialization);
+  for (auto *specialization:ConcreteMemberVariableSpecializations(declaration))
+    if (PublishesVariableInitializer(specialization)) finder.TraverseDecl(specialization);
   return finder.Found;
 }
 
@@ -1645,6 +1675,8 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
   }
   for (const auto *specialization:ConcreteMemberFunctionSpecializations(declaration))
     if (specialization->isInlined() && HasPublishedExpression(specialization,contains)) return true;
+  for (const auto *specialization:ConcreteMemberVariableSpecializations(declaration))
+    if (HasPublishedExpression(specialization,contains)) return true;
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       record && record->getDefinition())
     for (const auto *member : record->getDefinition()->decls()) {
@@ -1697,6 +1729,8 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
     for (auto *specialization:ConcreteMemberClassSpecializations(declaration)) visitor.TraverseDecl(specialization);
     for (auto *specialization:ConcreteMemberFunctionSpecializations(declaration))
       if (specialization->isInlined()) visitor.TraverseDecl(specialization);
+    for (auto *specialization:ConcreteMemberVariableSpecializations(declaration))
+      if (PublishesVariableInitializer(specialization)) visitor.TraverseDecl(specialization);
     return visitor.found;
   }
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
@@ -2315,7 +2349,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) : "default") +
         (partials.empty()?"":";partials="+ComputeInterfaceSourceSha256(partial_contract)) +
         "};cxx-variable-templates:v1;" +
-        (partials.empty()?"":";cxx-variable-partial-specializations:v1;") +
+        (partials.empty() || pattern->getDeclContext()->isRecord()?"":";cxx-variable-partial-specializations:v1;") +
         ";cxx-template-structure:v1;" +
         (deduced ? ";cxx-template-deduction:v1;" : "") +
         (HasDeclarationThreadLocal(pattern) ? ";cxx-thread-local:v1;" : "");
@@ -2877,6 +2911,16 @@ class TypeDependencyVisitor final
     }
     for (const auto *specialization:ConcreteMemberFunctionSpecializations(record))
       CheckConcreteMemberFunctionSpecialization(specialization);
+    for (const auto *specialization:ConcreteMemberVariableSpecializations(record))
+      if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(specialization))
+        CheckVariablePartial(partial);
+      else {
+        for (const auto &argument:specialization->getTemplateArgs().asArray())
+          if (!CheckGenericArgument(argument)) UnsupportedExpression();
+        TraverseType(specialization->getType());
+        if (PublishesVariableInitializer(specialization) && specialization->hasInit())
+          TraverseStmt(const_cast<clang::Expr *>(specialization->getInit()));
+      }
   }
   void CheckConcreteMemberFunctionSpecialization(const clang::FunctionDecl *function) {
     CheckExpressionReference(function->getPrimaryTemplate());
@@ -3526,8 +3570,10 @@ bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *param
 
 bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
   const auto effects=ReadCanonicalFunctionEffects(partial->getType(),partial->getASTContext());
-  if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) || partial->isStaticDataMember() ||
-      partial->getStorageClass()==clang::SC_Static || partial->getStorageClass()==clang::SC_PrivateExtern ||
+  if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) ||
+      (partial->isStaticDataMember() && !IsConcreteMemberVariableSpecialization(partial)) ||
+      (partial->getStorageClass()==clang::SC_Static && !IsConcreteMemberVariableSpecialization(partial)) ||
+      partial->getStorageClass()==clang::SC_PrivateExtern ||
       partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ||
       effects.is_async || effects.is_throwing) return false;
   for (const auto *attribute:partial->attrs())
@@ -3640,6 +3686,22 @@ bool IsBoundedConcreteMemberFunctionSpecialization(const clang::FunctionDecl *fu
   return true;
 }
 
+bool IsBoundedConcreteMemberVariableSpecialization(const clang::VarTemplateSpecializationDecl *variable) {
+  if (!IsConcreteMemberVariableSpecialization(variable)) return false;
+  if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(variable))
+    return IsBoundedVariablePartial(partial);
+  const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
+  if (variable->getType()->isDependentType() || effects.is_async || effects.is_throwing) return false;
+  for (const auto *attribute:variable->attrs())
+    if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
+      if (tag->tags_size()!=1 || ReadNativeSymbolName(variable->getSpecializedTemplate())!=*tag->tags_begin()) return false;
+    } else if (!attribute->isImplicit()) return false;
+  std::string key;
+  for (const auto &argument:variable->getTemplateArgs().asArray())
+    if (!GenericArgumentKey(argument,variable->getASTContext(),key)) return false;
+  return true;
+}
+
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports = {}) {
@@ -3667,7 +3729,13 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         supported &= IsBoundedClassMemberAlias(pattern);continue;
       }
       if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
-        supported &= IsBoundedClassMemberVariable(pattern);continue;
+        supported &= IsBoundedClassMemberVariable(pattern);
+        for (const auto *partial:PublishedVariablePartials(pattern))
+          supported &= IsBoundedConcreteMemberVariableSpecialization(partial);
+        for (const auto *specialization:pattern->specializations())
+          if (specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)
+            supported &= IsBoundedConcreteMemberVariableSpecialization(specialization);
+        continue;
       }
       if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member);
           method && TemplatePublicationOwner(method)) continue;
@@ -3891,6 +3959,13 @@ class InterfaceCollector final
     }
     if (auto *specialization=llvm::dyn_cast<clang::FunctionDecl>(declaration);
         IsConcreteMemberFunctionSpecialization(specialization)) {
+      if (!specialization->getLexicalDeclContext()->isRecord() &&
+          IsInMainFile(context_,specialization->getLocation()) && SelectedExport(specialization,exports_))
+        root_declarations_.push_back(specialization);
+      return true;
+    }
+    if (auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+        IsConcreteMemberVariableSpecialization(specialization)) {
       if (!specialization->getLexicalDeclContext()->isRecord() &&
           IsInMainFile(context_,specialization->getLocation()) && SelectedExport(specialization,exports_))
         root_declarations_.push_back(specialization);
@@ -4284,7 +4359,8 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
       const_cast<clang::VarDecl *>(variable)->setStorageClass(clang::SC_Extern);
       out << "#pragma clang diagnostic push\n"
              "#pragma clang diagnostic ignored \"-Wexplicit-specialization-storage-class\"\n";
-    } else if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None)
+    } else if (policy.SuppressInitializers && variable->getStorageClass() == clang::SC_None &&
+               !IsConcreteMemberVariableSpecialization(llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)))
       out << "extern ";
   }
   // Clang's declaration-polishing policy omits non-keyword attributes.
@@ -4505,6 +4581,9 @@ std::vector<clang::ClassTemplateSpecializationDecl *> ReadConcreteMemberClassSpe
 std::vector<clang::FunctionDecl *> ReadConcreteMemberFunctionSpecializations(const clang::NamedDecl *owner) {
   return ConcreteMemberFunctionSpecializations(owner);
 }
+std::vector<clang::VarTemplateSpecializationDecl *> ReadConcreteMemberVariableSpecializations(const clang::NamedDecl *owner) {
+  return ConcreteMemberVariableSpecializations(owner);
+}
 
 std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
   static constexpr const char *profiles[] = {
@@ -4641,6 +4720,31 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-function-specializations:v1;;cxx-function-templates:v2;primary="+
         ReadInterfaceDeclarationStableId(function->getPrimaryTemplate())+";arguments="+
         ComputeInterfaceSourceSha256(key)+";";
+  }
+  const auto member_variables=ConcreteMemberVariableSpecializations(representative);
+  if (!member_variables.empty()) {
+    std::set<std::string> specializations;
+    for (const auto *variable:member_variables) {
+      std::string arguments;
+      const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(variable);
+      if (partial) arguments=VariablePartialArgumentKey(partial,context);
+      else for (const auto &argument:variable->getTemplateArgs().asArray())
+        if (!GenericArgumentKey(argument,context,arguments)) return false;
+      DeclarationExpressionIdentity initializer(context);
+      if (partial) for (const auto *parameter:*partial->getTemplateParameters()) initializer.Local(parameter);
+      specializations.insert(ReadInterfaceDeclarationStableId(variable->getSpecializedTemplate())+
+          ":arguments="+ComputeInterfaceSourceSha256(arguments)+":type="+CanonicalType(variable->getType(),context)+
+          ":symbol="+(partial?ReadNativeSymbolName(variable->getSpecializedTemplate()):ReadNativeSymbolName(variable))+
+          ":inline="+std::to_string(variable->isInline())+":constexpr="+std::to_string(variable->isConstexpr())+
+          ":tls="+std::to_string(variable->getTSCSpec())+":delivery="+
+          ((partial || PublishesVariableInitializer(variable))?"consumer":"provider")+":init="+
+          ((partial || PublishesVariableInitializer(variable)) && variable->hasInit()
+              ?initializer.Get(const_cast<clang::Expr *>(variable->getInit())):"none"));
+    }
+    std::string contract;
+    for (const auto &specialization:specializations) contract+=std::to_string(specialization.size())+":"+specialization;
+    identity.canonical_type_identity+=";cxx-concrete-member-variable-specializations:v1;definitions="+
+        ComputeInterfaceSourceSha256(contract)+";";
   }
   const auto member_functions=ConcreteMemberFunctionSpecializations(representative);
   if (!member_functions.empty()) {
@@ -5075,6 +5179,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxConcreteMemberVariableSpecializationIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxConcreteMemberVariableSpecializationSemantic);
     if (HasCxxConcreteMemberFunctionSpecializationIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxConcreteMemberFunctionSpecializationSemantic);
     if (HasCxxConcreteMemberClassSpecializationIdentity(declaration))
@@ -5231,6 +5337,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxDetachedNestedTemplateSemantic,
     kCxxConcreteMemberClassSpecializationSemantic,
     kCxxConcreteMemberFunctionSpecializationSemantic,
+    kCxxConcreteMemberVariableSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5385,6 +5492,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxDetachedNestedTemplateSemantic,
     kCxxConcreteMemberClassSpecializationSemantic,
     kCxxConcreteMemberFunctionSpecializationSemantic,
+    kCxxConcreteMemberVariableSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

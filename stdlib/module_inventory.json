@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 67,
+        "minor": 68,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -193,13 +193,14 @@
         "Detached static data and member variable templates of generic/concrete records, with complete definition-set identities, source-order replay and consumer instantiation (source)",
         "Detached named nested records and nested primary class templates of generic/concrete records, with complete owner definitions, outer heads, source-order replay and import (source)",
         "Full and constrained partial nested class-template specializations of concrete records, with checked heads/arguments/bodies, primary ABI ownership and complete source-free parent contracts (source)",
-        "Explicit named/static member function-template specializations of concrete records, with complete exact-argument parent contracts, inline body replay and provider-owned non-inline definitions (source)"
+        "Explicit named/static member function-template specializations of concrete records, with complete exact-argument parent contracts, inline body replay and provider-owned non-inline definitions (source)",
+        "Full and constrained partial member variable-template specializations of concrete records, with exact parent contracts, consumer inline/partial initialization, provider-owned non-inline storage and shared/TLS semantics (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent-parent, operator/conversion and variable member-template specializations, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining dependent-parent and constructor/operator/conversion member-template specializations, effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

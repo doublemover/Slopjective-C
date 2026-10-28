@@ -1,0 +1,167 @@
+{
+  "schema": "objc3c.linux-cxx-concrete-member-variable-specializations-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a45e045ca39a-00b75dc3",
+  "compiler_patch_digest": "a45e045ca39a6e8827a4142f3cc109a4b9dd995c48ecca294a913f1190390705",
+  "native_fix_checkpoint": "12f1dca14e4d39b79b836e44ab92ad6682997fbb",
+  "frontend_input_sha256": "2206d708c6e5d5b8169467ba5900714d47503d40981796917f22068961a4c150",
+  "concurrency_module_version": "2.68.0",
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "semantic_interface_schema": "2.2",
+  "extension_abi_revision": 21,
+  "runtime_service_abi": 4,
+  "required_semantics": [
+    "objc3.cxx-concrete-member-variable-specializations.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "focused_native_import_tests_passed": 14,
+    "nominal_alias_abi_codegen": "PASS",
+    "tooling_tests_passed": 72,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 96,
+    "dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "ownership": [
+      "ARC",
+      "MRC"
+    ],
+    "optimization": [
+      "O0",
+      "O2"
+    ],
+    "transports": [
+      "source-directed",
+      "eager"
+    ],
+    "provider_source_removed": true,
+    "exact_full_and_constrained_partial_member_variables_bound": true,
+    "primary_member_template_abi_tags_preserved": true,
+    "complete_owner_definition_identity_preserved": true,
+    "inline_partial_replay_and_provider_owned_noninline_storage": true,
+    "private_initialization_does_not_change_public_fingerprint": true,
+    "shared_provider_consumer_addresses_and_mutation": true,
+    "independent_worker_tls": true,
+    "single_record_initialization_without_default_constructor": true,
+    "inclass_and_out_of_line_partials": true,
+    "lexical_scope_and_deduplicated_abi_tags_preserved": true,
+    "primary_fallback_and_new_consumer_specializations": true,
+    "capability_mismatch_and_private_helpers_rejected": true,
+    "reports": [
+      {
+        "path": "out/concrete-member-variables-build.log",
+        "sha256": "7914f4f0f0af4a6e50c52c081ed8b377452d2bee89ecb9f8106f79f8122df787"
+      },
+      {
+        "path": "out/concrete-member-variables-native-build.json",
+        "sha256": "0dbf62788606e8a051af40de230db0499ae8bb7ad467967f7b6e222e2c71a821"
+      },
+      {
+        "path": "out/concrete-member-variables-native-focused-import.log",
+        "sha256": "d28b16f21d34b1a6f3ddf8ece110ecb9033f9c30a6df130c545bd8b4ff6a43c1"
+      },
+      {
+        "path": "out/concrete-member-variables-native-focused-codegen.log",
+        "sha256": "51730237a0e5a002a4c413272eeb263f907d5d09663e1f71e087df2749d09440"
+      },
+      {
+        "path": "out/concrete-member-variables-emitter-ctest.log",
+        "sha256": "0bd910c778eabf81a791757c49bc45281efc99ae7c41c8507d4cfc4c828268e5"
+      },
+      {
+        "path": "out/concrete-member-variables-emitter.xml",
+        "sha256": "3eb66692d4a473f447b766d3d2b45c7023b3832561bba9948bf5327701ad6422"
+      },
+      {
+        "path": "out/concrete-member-variables-tooling.log",
+        "sha256": "d6b849d2842689bc8ce0d6e5a3f2baa9e7cd85971c058ee8db2fd76462455e0b"
+      },
+      {
+        "path": "out/native-validation/concrete-member-variables-packages-normal/qualification.json",
+        "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+      },
+      {
+        "path": "out/native-validation/concrete-member-variables-packages-normal-eager/qualification.json",
+        "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+      }
+    ]
+  },
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "46a6150a4f8df4f45a7f88ba86917436368382d45ff624402c7e730f26d99300"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "1505a366d167c01c95a9850296d351693861bcb34e275f4d2b82b08c810d3ece"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "7005552fb25515ac35e0c9ea065f9c8a35d92f376f0cd6c31cb26bbe669e75c6"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "c29cbfce943a795655dde6fd07c4fb31cf73a2529030355edcc1a1e8c51d40f7"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "65b797a10ea339ad2391f63108daa32b5473adb3e00fbac390684563e9f54403"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.h",
+      "sha256": "9dcb235de48621716d3b078753c0003694b46424e9b740f1d538e37f5bfc3a7f"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "ce87ec7699e41dea11ad223a6310b03d158e1ec781f8b92e2b6354c82bdb871f"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "cd5584b396ee1e5c07a64aee460ad1266d02a9e24351aa6d0da642bcca42485d"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/module_names.cpp",
+      "sha256": "a2fa3738af470e832b34f68b905cd8d2861cbb74b9efebe2ee845e508dd82043"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "bc76d668ae5ecd8b2ec338fd3a4a617fac09128ef689e08420e6bc47e55346e6"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "1498ed449e76eda66fed0e0f160ce5ea390faa873be46db3ea63ff3ffd14c812"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "b9e1f587cff2d14d965d330e0350790c447b62f27e824539721a4c064a5f9241"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "6a6013f5c645274399bc7bb935bbb3b117e949999efb02e8f9a39e222880a08f"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "1fffebeef475741b3a81b2dc9c37edbafba9c0365d09e40479f51c1c85700811"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "b794b81b44d484dabee4030f2d2a4c898faa6513c4acec595e1ccbd14a95627f"
+    }
+  ],
+  "deferred": [
+    "Combined compiler, frontend, maintained-tooling and sanitizer validation after further implementation",
+    "Coordinated SDK delivery of post-2.62 source milestones"
+  ],
+  "remaining": [
+    "Dependent-parent and constructor/operator/conversion member-template specializations, plus effectful callable boundaries",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

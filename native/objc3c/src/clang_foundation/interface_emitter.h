@@ -9,6 +9,7 @@
 namespace clang {
 class ClassTemplateSpecializationDecl;
 class FunctionDecl;
+class VarTemplateSpecializationDecl;
 class ASTContext;
 class NamedDecl;
 class LangOptions;
@@ -26,6 +27,8 @@ namespace objc3::clang_foundation {
 [[nodiscard]] std::vector<clang::ClassTemplateSpecializationDecl *> ReadConcreteMemberClassSpecializations(
     const clang::NamedDecl *owner);
 [[nodiscard]] std::vector<clang::FunctionDecl *> ReadConcreteMemberFunctionSpecializations(
+    const clang::NamedDecl *owner);
+[[nodiscard]] std::vector<clang::VarTemplateSpecializationDecl *> ReadConcreteMemberVariableSpecializations(
     const clang::NamedDecl *owner);
 
 // Exact parser dialect, standard and ownership mode used by providers and

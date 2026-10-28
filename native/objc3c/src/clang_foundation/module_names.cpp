@@ -373,6 +373,25 @@ public:
     }
     if (auto *variable = llvm::dyn_cast<clang::VarDecl>(decl)) {
       if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(variable)) {
+        if (specialization->isStaticDataMember() &&
+            (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(specialization) ||
+             specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)) {
+          const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
+          for (auto *redecl:variable->redecls()) {
+            if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+              return Error(decl,"member variable specialization redeclares a foreign ABI");
+            if (redecl->hasAttr<clang::AsmLabelAttr>())
+              return Error(decl,"member variable specialization cannot replace its primary native ABI");
+            if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
+              if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
+                return Error(decl,"member variable specialization conflicts with its primary ABI owner");
+            } else {
+              llvm::StringRef owned=context_.Idents.get(expected).getName();
+              redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
+            }
+          }
+          return true;
+        }
         if (llvm::isa<clang::VarTemplatePartialSpecializationDecl>(specialization) ||
             specialization->getSpecializationKind()!=clang::TSK_ExplicitSpecialization ||
             specialization->isStaticDataMember()) return true;

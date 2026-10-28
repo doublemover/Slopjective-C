@@ -29,6 +29,10 @@ static void *native_variable_template_worker(void *context) {
   *passed &= NativeDetached::Family<int>::Plain::local==41;
   ++NativeDetached::Family<int>::local;++NativeDetached::Family<int>::member_local<>;++NativeDetached::Concrete::local<>;
   *passed &= NativeDetached::Family<int>::local==41 && NativeDetached::Family<int>::member_local<> ==41 && NativeDetached::Concrete::local<> ==41;
+  *passed &= NativeDetached::Concrete::specialized_local<int> ==42 && NativeDetached::Concrete::specialized_local<int*> ==40;
+  *passed &= native_member_specialized_tls()==&NativeDetached::Concrete::specialized_local<int>;
+  ++NativeDetached::Concrete::specialized_local<int>;++NativeDetached::Concrete::specialized_local<int*>;
+  *passed &= NativeDetached::Concrete::specialized_local<int> ==43 && NativeDetached::Concrete::specialized_local<int*> ==41;
   ++native_spec_tls<int>;
   *passed &= native_spec_tls<int> ==41;
   *passed &= native_partial_tls<int*> ==40 && native_partial_shared<int*> ==42;
@@ -306,6 +310,18 @@ int main() {
        NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
        NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
        NativeDetached::Concrete::local<> !=40)return 188;
+    if(native_member_specialized_address()!=&NativeDetached::Concrete::specialized<int> ||
+       native_member_partial_address()!=&NativeDetached::Concrete::specialized<int*> ||
+       NativeDetached::Concrete::specialized<int> !=42 || NativeDetached::Concrete::specialized<int*> !=40 ||
+       NativeDetached::Concrete::specialized<long> !=0 || NativeDetached::Concrete::specialized<long*> !=40)return 197;
+    *native_member_specialized_address()=43;*native_member_partial_address()=42;
+    if(NativeDetached::Concrete::specialized<int> !=43 || NativeDetached::Concrete::specialized<int*> !=42 ||
+       NativeDetached::Concrete::specialized_local<int> !=42 || NativeDetached::Concrete::specialized_local<int*> !=40)return 198;
+    if(native_member_specialized_object()!=&NativeDetached::Concrete::specialized_object<int> ||
+       NativeMemberSpecializedValue::constructions!=1 || NativeDetached::Concrete::specialized_object<int>.value!=42)return 199;
+    native_member_specialized_object()->value=43;
+    if(NativeDetached::Concrete::specialized_object<int>.value!=43 || NativeMemberSpecializedValue::constructions!=1 ||
+       NativeDetached::Concrete::specialized_count<42> !=42 || NativeDetached::Concrete::specialized_count<-1> !=0)return 200;
     int(NativeDetached::Concrete::*specialized_method)(int)const=&NativeDetached::Concrete::twice<int>;
     auto *specialized_static=&NativeDetached::Concrete::scaled<int>;
     if((NativeDetached::Concrete{}.*specialized_method)(20)!=42 || specialized_static(20)!=42 ||

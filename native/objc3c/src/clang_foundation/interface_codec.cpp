@@ -477,6 +477,19 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_concrete_member_variable_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberVariableSpecializationIdentity);
+  const bool concrete_member_variable_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberVariableSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_variable_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_variable_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxConcreteMemberVariableSpecializationIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_concrete_member_variable_specializations!=concrete_member_variable_specialization_capability || !concrete_member_variable_specialization_owners ||
+      (concrete_member_variable_specialization_capability && !concrete_member_variable_specialization_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("concrete member variable specialization identity and required primary capability must agree");
   const bool has_concrete_member_function_specializations=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxConcreteMemberFunctionSpecializationIdentity);
   const bool concrete_member_function_specialization_capability=std::find(sidecar.required_semantics.begin(),

@@ -1531,6 +1531,12 @@ int native_external_producer(){return ++native_external_special<int> + ++native_
 int native_external_object_read(){return native_external_object<int>.value;}
 int native_external_zero(){return ++native_zero_special<int>;}
 
+struct NativeMemberSpecializedValue {
+  inline static int constructions=0;
+  int value;
+  explicit NativeMemberSpecializedValue(int n):value(n){++constructions;}
+  ~NativeMemberSpecializedValue(){}
+};
 struct NativeDetachedStorage {
   inline static int constructions=0;
   int value;
@@ -1559,6 +1565,10 @@ public:
   template<class U>auto closure(U n)const;
 };
 struct Concrete {
+  template<class T>inline static int specialized=0;
+  template<class T>inline static thread_local int specialized_local=0;
+  template<class T>inline static NativeMemberSpecializedValue specialized_object{40};
+  template<int V,bool Positive=true>inline static int specialized_count=0;
   template<class T>struct Box{T value;};
   template<int V,bool Positive=true>struct Count{inline static constexpr int value=0;};
   template<class U=int>struct Inner;
@@ -1609,6 +1619,13 @@ template<NativePartialValue T>struct NativeDetached::Concrete::Box<T*> {
 template<int V>requires(V>0)struct NativeDetached::Concrete::Count<V,true> {
   inline static constexpr int value=V;
 };
+static int native_member_private_value(){return 42;}
+template<>int NativeDetached::Concrete::specialized<int> =native_member_private_value();
+template<NativePartialValue T>inline int NativeDetached::Concrete::specialized<T*> =40;
+template<>inline thread_local int NativeDetached::Concrete::specialized_local<int> =42;
+template<NativePartialValue T>inline thread_local int NativeDetached::Concrete::specialized_local<T*> =40;
+template<>NativeMemberSpecializedValue NativeDetached::Concrete::specialized_object<int>{42};
+template<int V>requires(V>0)inline int NativeDetached::Concrete::specialized_count<V,true> =V;
 template<class T>int NativeDetached::Family<T>::live=0;
 template<class T>int NativeDetached::Family<T>::zero;
 template<class T>NativeDetachedStorage NativeDetached::Family<T>::object{40};
@@ -1642,3 +1659,8 @@ NativeDetachedStorage *native_detached_object(){return &NativeDetached::Family<i
 NativeDetached::Family<int>::Plain *native_detached_plain_factory(){return new NativeDetached::Family<int>::Plain(40);}
 
 NativeDetached::Concrete::Box<int> *native_concrete_specialized_factory(){return new NativeDetached::Concrete::Box<int>(40);}
+
+int *native_member_specialized_address(){return &NativeDetached::Concrete::specialized<int>;}
+int *native_member_partial_address(){return &NativeDetached::Concrete::specialized<int*>;}
+int *native_member_specialized_tls(){return &NativeDetached::Concrete::specialized_local<int>;}
+NativeMemberSpecializedValue *native_member_specialized_object(){return &NativeDetached::Concrete::specialized_object<int>;}
