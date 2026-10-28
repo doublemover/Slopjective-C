@@ -13703,7 +13703,7 @@ index 3f0a7304d..bb459283d 100644
          = unwrapped.get()->getExtInfo().withProducesResult(true);
        type = unwrapped.wrap(S, S.Context.adjustFunctionType(unwrapped.get(), EI));
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..717956ffd 100644
+index 11cd159c0..f729128f2 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -13766,7 +13766,7 @@ index 11cd159c0..717956ffd 100644
  template <typename Derived>
  QualType TreeTransform<Derived>::TransformAdjustedType(TypeLocBuilder &TLB,
                                                         AdjustedTypeLoc TL) {
-@@ -6744,6 +6783,29 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6744,6 +6783,34 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
      EPIChanged = true;
    }
  
@@ -13787,6 +13787,11 @@ index 11cd159c0..717956ffd 100644
 +    }
 +    if (NewErrorType.isNull())
 +      return QualType();
++    // Error payloads are values: ASTContext canonicalizes their top-level
++    // qualifiers away. Template deduction can inject ARC ownership into T;
++    // keep the substituted callable effect consistent with that canonical
++    // value contract, rather than comparing a loaded id with __strong id.
++    NewErrorType = NewErrorType.getUnqualifiedType();
 +    if (NewErrorType != EPI.ObjC3Effects.ErrorType) {
 +      EPI.ObjC3Effects.ErrorType = NewErrorType;
 +      EPIChanged = true;
@@ -13796,7 +13801,7 @@ index 11cd159c0..717956ffd 100644
    QualType Result = TL.getType();
    if (getDerived().AlwaysRebuild() || ResultType != T->getReturnType() ||
        T->getParamTypes() != llvm::ArrayRef(ParamTypes) || EPIChanged) {
-@@ -6757,6 +6819,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6757,6 +6824,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
    NewTL.setLParenLoc(TL.getLParenLoc());
    NewTL.setRParenLoc(TL.getRParenLoc());
    NewTL.setExceptionSpecRange(TL.getExceptionSpecRange());
@@ -13807,7 +13812,7 @@ index 11cd159c0..717956ffd 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8642,12 +8708,100 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8642,12 +8713,100 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -13909,7 +13914,7 @@ index 11cd159c0..717956ffd 100644
  }
  
  template<typename Derived>
-@@ -8976,6 +9130,18 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
+@@ -8976,6 +9135,18 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
  
  template <typename Derived>
  ExprResult TreeTransform<Derived>::TransformCoawaitExpr(CoawaitExpr *E) {
@@ -13928,7 +13933,7 @@ index 11cd159c0..717956ffd 100644
    ExprResult Operand = getDerived().TransformInitializer(E->getOperand(),
                                                           /*NotCopyInit*/ false);
    if (Operand.isInvalid())
-@@ -13699,6 +13865,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
+@@ -13699,6 +13870,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformPseudoObjectExpr(PseudoObjectExpr *E) {
@@ -13948,7 +13953,7 @@ index 11cd159c0..717956ffd 100644
    // Rebuild the syntactic form.  The original syntactic form has
    // opaque-value expressions in it, so strip those away and rebuild
    // the result.  This is a really awful way of doing this, but the
-@@ -14566,6 +14745,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14750,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -14105,7 +14110,7 @@ index 11cd159c0..717956ffd 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18015,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17686,6 +18020,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -18918,10 +18923,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..bb1c55ce3
+index 000000000..cc15f178e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1746 @@
+@@ -0,0 +1,1779 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20667,6 +20672,39 @@ index 000000000..bb1c55ce3
 +      EXPECT_EQ(Count,1u);
 +    }
 +  }
++}
++
++TEST(ObjC3FunctionEffectImport, SubstitutesUnqualifiedTypedErrorPayloads) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"})
++    for (const char *Ownership : {"-fobjc-arc", "-fno-objc-arc"}) {
++      const std::string Source=R"(
++        @protocol Error @end
++        @protocol TypedError<Error> @end
++        template<class E>int checked(E error) __objc3_throws(E) {
++          if(error)__objc3_throw(error);return 42;
++        }
++        int use(id<TypedError> error) __objc3_throws(id<TypedError>) {
++          return __objc3_try(checked(error));
++        }
++      )";
++      auto AST=tooling::buildASTFromCodeWithArgs(Source,
++          {"-x","objective-c++",Standard,Ownership,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},
++          "dependent-typed-error.mm");
++      ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      struct Effects : RecursiveASTVisitor<Effects> {
++        unsigned Count=0;
++        bool shouldVisitTemplateInstantiations()const{return true;}
++        bool VisitFunctionDecl(FunctionDecl *D) {
++          if(D->getTemplateSpecializationKind()!=TSK_ImplicitInstantiation)return true;
++          const auto *Type=D->getType()->castAs<FunctionProtoType>();
++          const auto Effect=Type->getObjC3FunctionEffects();
++          EXPECT_EQ(Effect.Throws,ObjC3ThrowsKind::Typed);
++          EXPECT_FALSE(Effect.ErrorType.hasQualifiers());++Count;return true;
++        }
++      } Visitor;
++      Visitor.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++      EXPECT_EQ(Visitor.Count,1u);
++    }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
