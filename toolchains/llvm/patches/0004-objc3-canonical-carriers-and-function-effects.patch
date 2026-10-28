@@ -18790,10 +18790,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..465d7cb0e
+index 000000000..02c218b28
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1605 @@
+@@ -0,0 +1,1628 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18813,6 +18813,8 @@ index 000000000..465d7cb0e
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
++#include "clang/Sema/Sema.h"
++#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "llvm/Support/Error.h"
 +#include "gtest/gtest.h"
@@ -20370,8 +20372,8 @@ index 000000000..465d7cb0e
 +        int get()const{return *value+2;}
 +      };
 +      template<>template<class U>inline int N::Outer<long>::value<U*> =42;
-+      N::Outer<int>::Inner<int> *factory(){return new N::Outer<int>::Inner<int>(40);}
-+      N::Outer<long>::Inner<int*> *partial_factory(int *n){return new N::Outer<long>::Inner<int*>(n);}
++      N::Outer<int>::Inner<int> *factory();
++      N::Outer<long>::Inner<int*> *partial_factory(int *n);
 +    )",{"-xc++",Standard},"closed-parent-member-patterns.cpp");
 +    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"closed-parent-member-patterns-import.cpp");
 +    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
@@ -20394,6 +20396,27 @@ index 000000000..465d7cb0e
 +      if(!isa<NamespaceDecl>(D))EXPECT_EQ(Print(D),Print(*Imported));
 +      Replayed+=Print(*Imported)+";\n";
 +    }
++    auto *Factory=findFunction(To->getASTContext(),"factory");ASSERT_TRUE(Factory);
++    auto ValueType=Factory->getReturnType()->getPointeeType();
++    ASSERT_FALSE(To->getSema().RequireCompleteType(Factory->getLocation(),ValueType,diag::err_incomplete_type));
++    auto *Value=ValueType->getAsCXXRecordDecl();ASSERT_TRUE(Value && Value->isCompleteDefinition());
++    EXPECT_TRUE(Value->hasUserDeclaredCopyConstructor());
++    bool HasUserCopy=false;
++    for(auto *Constructor:Value->ctors()) {
++      if(Constructor->isCopyConstructor() && !Constructor->isImplicit()) {
++        HasUserCopy=true;
++        To->getSema().InstantiateFunctionDefinition(Factory->getLocation(),Constructor,true,true);
++        ASSERT_TRUE(Constructor->hasBody());
++        EXPECT_FALSE(Constructor->isDefaulted());
++        struct Increments : RecursiveASTVisitor<Increments> {
++          unsigned Count=0;
++          bool VisitUnaryOperator(UnaryOperator *Expression){Count+=Expression->isIncrementOp();return true;}
++        } Visitor;
++        Visitor.TraverseStmt(Constructor->getBody());
++        EXPECT_EQ(Visitor.Count,1u);
++      }
++    }
++    EXPECT_TRUE(HasUserCopy);
 +    Replayed+="int use(){int n=40;return N::Outer<int>::Inner<long>{40}.get()+N::Outer<int>::value<long>+N::Outer<int>{}.call(40L)+N::Outer<long>::Inner<int*>{&n}.get()+N::Outer<long>::value<int*>+N::Outer<long>::value<int>;}";
 +    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"closed-parent-member-patterns-replayed.cpp");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
