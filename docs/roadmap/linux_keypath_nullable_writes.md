@@ -31,7 +31,10 @@ Compiler diagnostics/codegen, native runtime metadata, interface re-emission,
 source-free packages and runtime witnesses cover nil and present chains,
 subscripts, operand order, nested nullable edges, object and Block setters,
 record routing/writeback and receiver destruction during throwing setters.
-Focused validation results are recorded when complete. Broader source and
-sanitizer validation remain batched. SDK 2.33 is the accepted archive and predates
+The [focused source receipt](../support/linux_keypath_nullable_writes_progress.json)
+records 410 compiler regressions, 137 AST contract tests, three optimized frontend
+suites, 24 source/PCH runtime configurations / 156 commands, and 24 source-free
+package configurations / 96 commands across source-directed and eager imports.
+Broader frontend/tooling and sanitizer validation remain batched. SDK 2.33 is the accepted archive and predates
 this change; installed delivery requires the rebuilt compiler and runtime plus
 regenerated artifacts. Full profile and native AArch64 qualification remain open.
