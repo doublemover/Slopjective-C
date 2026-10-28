@@ -336,6 +336,43 @@ void FunctionTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"alias-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      namespace Types {
+        template<class T> concept Number=requires(T n){n+2;};
+        template<class T=int> using Pointer=T*;
+        template<class... T> using Callback=int(*)(T...);
+        template<class T> using Element=typename T::element;
+        template<Number T> using NumericPointer=T*;
+        template<class T> requires(sizeof(T)>0) using SizedPointer=T*;
+        struct Box{using element=int;};
+      }
+  )");
+  r.emit_semantic_interface=true;r.module_name="AliasTemplates";r.package_identity="alias-templates-v1";
+  r.module_owned_names=true;r.interface_exports={"Types"};
+  r.interface_output_path=(root/"AliasTemplates.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"alias-provider.o").string();
+  auto built=Compile(r);
+  for (const auto &d:built.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"alias-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+      static_assert(__is_same(Types::Pointer<>,int*));
+      static_assert(__is_same(Types::Element<Types::Box>,int));
+      static_assert(__is_same(Types::NumericPointer<long>,long*));
+      static_assert(__is_same(Types::SizedPointer<double>,double*));
+      int sum(int a,int b){return a+b;}
+      Types::Callback<int,int> callback=sum;
+      int client(){Types::Pointer<> n=nullptr;return n ? 0 : callback(20,22);}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"alias-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &d:imported.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:imported.interface_import_diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -363,6 +400,7 @@ int main() {
     UnionBodies(root,standard);
     ConceptBodies(root,standard);
     FunctionTemplateBodies(root,standard);
+    AliasTemplateBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

@@ -1143,3 +1143,9 @@ int native_template_producer(){return native_template_count<40>();}
 int native_template_bridge(){return native_template_add(40)+native_template_sum(20,22)+native_template_rank(1);}
 template<class T> T native_template_copy(T n){return n;}
 template<class T> T native_template_fail_copy(T n){if(n.number()==40)throw 7;return n;}
+
+struct NativeAliasBox{using element=int;};
+template<class T=int> using NativeTemplatePointer=T*;
+template<class... T> using NativeTemplateCallback=int(*)(T...);
+template<class T> using NativeTemplateElement=typename T::element;
+template<NativeNumber T> using NativeNumericPointer=T*;

@@ -412,6 +412,11 @@ int main() {
                 NativePositive<2> && !NativePositive<-1> && NativeNumbers<int,long>);
   static_assert(native_concept_value()==42);
   if (native_concept_bridge()!=42) return 120;
+  static_assert(__is_same(NativeTemplatePointer<>,int*));
+  static_assert(__is_same(NativeTemplateElement<NativeAliasBox>,int));
+  static_assert(__is_same(NativeNumericPointer<long>,long*));
+  NativeTemplateCallback<int,int> alias_callback=+[](int a,int b){return a+b;};
+  if(alias_callback(20,22)!=42) return 127;
   static_assert(native_template_add(40)==42 && native_template_add<long,3>(39)==42);
   static_assert(native_template_sum(20,22)==42 && native_template_rank(1)==42);
   if (native_template_producer()!=40 || native_template_count<40>()!=41 ||

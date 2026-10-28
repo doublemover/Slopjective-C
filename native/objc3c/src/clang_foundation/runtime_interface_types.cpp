@@ -239,10 +239,13 @@ bool IsQualifiedRuntimeTaskDeclaration(const clang::NamedDecl *declaration,
     return false;
   const std::string qualified_name=declaration->getQualifiedNameAsString();
   llvm::StringRef name=qualified_name;
-  if (!name.consume_front("objc3::") || name.contains("::promise_type"))
-    return false;
+  const bool compiler_task_alias = qualified_name=="__objc3_async_task" &&
+      llvm::isa<clang::TypeAliasTemplateDecl>(declaration);
+  if ((!compiler_task_alias && !name.consume_front("objc3::")) ||
+      name.contains("::promise_type")) return false;
   if (!DeclarationHeaderMatches(declaration,context,runtime_interface::kTaskHeaderSha256) ||
       !IsQualifiedRuntimeTaskHeader(context)) return false;
+  if (compiler_task_alias) return true;
   for (const clang::DeclContext *scope=declaration->getDeclContext();scope;
        scope=scope->getParent())
     if (const auto *tag=llvm::dyn_cast<clang::TagDecl>(scope))

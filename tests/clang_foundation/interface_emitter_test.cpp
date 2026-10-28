@@ -535,6 +535,9 @@ inline int task_from_frame(int value) __objc3_async {
     assert(task_ast && !task_ast->getDiagnostics().hasErrorOccurred());
     auto task_interface=EmitSemanticInterface(task_ast->getASTContext(),
         "fixture.task.body","test");
+    if (task_interface.success==changed_runtime)
+      for (const auto &d:task_interface.diagnostics)
+        std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
     assert(task_interface.success!=changed_runtime);
     if (changed_runtime)
       assert(std::any_of(task_interface.diagnostics.begin(),task_interface.diagnostics.end(),
@@ -1564,6 +1567,55 @@ void TestPublicFunctionTemplates() {
   }
 }
 
+void TestPublicAliasTemplates() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="aliases.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.aliases","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.aliases","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace Types {
+        template<class T> concept Number=requires(T n){n+2;};
+        template<class T=int> using Pointer=T*;
+        template<class... T> using Callback=int(*)(T...);
+        template<class T> using Element=typename T::element;
+        template<Number T> using NumericPointer=T*;
+        template<class T> requires(sizeof(T)>0) using SizedPointer=T*;
+        struct Box{using element=int;};
+      }
+      inline Types::Pointer<> pointer=nullptr;
+      int sum(int,int);
+      inline Types::Callback<int,int> callback=sum;
+      inline Types::Element<Types::Box> element=42;
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find("objc3.cxx-alias-templates.v1")!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-aliases.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-aliases.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("using Pointer=T*"),std::string("using Pointer=T*").size(),"using Pointer=const T*");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for (const auto &value:*metadata->getAsObject()->getArray("required_semantics")) semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    for (const auto *capability:{kCxxAliasTemplateSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);
+      assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    assert(!emit("template<class T> using Hidden=T*;int api(Hidden<int>);","excluded-alias.cpp",{"api"}).success);
+    assert(!emit("namespace {struct Hidden{};}template<class T> using Alias=Hidden*;").success);
+    assert(!emit("template<template<class>class C> using Alias=C<int>;").success);
+  }
+}
+
 void TestCarrierExpressionRoundtrip() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
@@ -2542,6 +2594,7 @@ int main() {
   TestCxxUnionValues();
   TestPublicConcepts();
   TestPublicFunctionTemplates();
+  TestPublicAliasTemplates();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

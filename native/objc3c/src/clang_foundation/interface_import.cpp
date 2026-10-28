@@ -80,6 +80,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxUnionValueSemantic,
     kCxxConceptSemantic,
     kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -155,6 +156,8 @@ public:
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
         function && function->getDescribedFunctionTemplate()) return true;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+        alias && alias->getDescribedAliasTemplate()) return true;
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty()) return true;
     if (expected_ids_.count(stable_id)) Declarations[stable_id] = decl;
@@ -168,6 +171,8 @@ private:
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
+  if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+      alias && alias->getDescribedAliasTemplate()) return false;
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
       function && function->getDescribedFunctionTemplate()) return false;
   if (!decl->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(decl)) return false;
@@ -792,6 +797,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     // underlying function shares its USR but is not a second overload.
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
         function && function->getDescribedFunctionTemplate()) continue;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(named);
+        alias && alias->getDescribedAliasTemplate()) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();

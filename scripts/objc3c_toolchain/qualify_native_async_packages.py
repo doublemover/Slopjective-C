@@ -254,6 +254,7 @@ def check_cpp_metadata(metadata):
         ('objc3.cxx-union-values.v1', 'NativePlainUnion', ';cxx-union-values:v1;'),
         ('objc3.cxx-concepts.v1', 'NativeNumber', ';cxx-concepts:v1;'),
         ('objc3.cxx-function-templates.v1', 'native_template_add', ';cxx-function-templates:v1;'),
+        ('objc3.cxx-alias-templates.v1', 'NativeTemplatePointer', ';cxx-alias-templates:v1;'),
     ):
         if semantic not in metadata.get('required_semantics', []):
             raise AssertionError('missing local expression capability: ' + semantic)

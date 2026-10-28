@@ -193,7 +193,9 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
 
   if (IsTopLevel(declaration)) {
-    if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
+    if (llvm::isa<clang::ConceptDecl, clang::TypeAliasTemplateDecl>(declaration)) return true;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration);
+        alias && alias->getDescribedAliasTemplate()) return false;
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
       return pattern->getTemplatedDecl()->isExternallyVisible();
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
@@ -1007,7 +1009,7 @@ bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
 }
 bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
-  if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
+  if (const auto *pattern = llvm::dyn_cast<clang::TemplateDecl>(declaration)) {
     struct References : clang::RecursiveASTVisitor<References> {
       bool found = false;
       bool TraverseConceptReference(clang::ConceptReference *reference) {
@@ -1015,7 +1017,7 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
         return clang::RecursiveASTVisitor<References>::TraverseConceptReference(reference);
       }
     } visitor;
-    visitor.TraverseDecl(const_cast<clang::FunctionTemplateDecl *>(pattern));
+    visitor.TraverseDecl(const_cast<clang::TemplateDecl *>(pattern));
     return visitor.found;
   }
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
@@ -1468,6 +1470,19 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                                     const clang::ASTContext &context) {
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
     return ConceptIdentity(concept_decl, context);
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
+    std::string head;
+    llvm::raw_string_ostream stream(head);
+    clang::PrintingPolicy policy(context.getLangOpts());
+    pattern->getTemplateParameters()->print(stream, context, policy);
+    DeclarationExpressionIdentity identity(context);
+    for (const auto *parameter : *pattern->getTemplateParameters()) identity.Local(parameter);
+    const auto *constraint = pattern->getTemplateParameters()->getRequiresClause();
+    return "alias-template{parameters=" + ComputeInterfaceSourceSha256(head) +
+        ";constraint=" + (constraint ? identity.Get(const_cast<clang::Expr *>(constraint)) : "none") +
+        ";type=" + CanonicalType(pattern->getTemplatedDecl()->getUnderlyingType(), context) +
+        "};cxx-alias-templates:v1;";
+  }
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
     const auto *function = pattern->getTemplatedDecl();
     std::string head;
@@ -1764,6 +1779,14 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    if (llvm::isa<clang::TypeAliasTemplateDecl>(target)) {
+      CheckVisibility(target);
+      if (!IsTopLevel(target) ||
+          (!IsInMainFile(context_, target->getLocation()) && !IsResolved(target)))
+        AddDiagnostic(result_, "O3IFC112", "alias template requires a public resolved definition",
+                      target->getQualifiedNameAsString());
+      return;
+    }
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
       if (const auto *pattern = function->getPrimaryTemplate()) {
         CheckExpressionReference(pattern);
@@ -1838,6 +1861,21 @@ class TypeDependencyVisitor final
         if (initializer->isWritten()) TraverseStmt(initializer->getInit());
     TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(definition)));
     body_function_ = nullptr;
+  }
+  bool TraverseTemplateName(clang::TemplateName name) {
+    if (auto *declaration = name.getAsTemplateDecl();
+        llvm::isa_and_nonnull<clang::TypeAliasTemplateDecl>(declaration))
+      CheckExpressionReference(declaration);
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseTemplateName(name);
+  }
+  void CheckAliasTemplate(const clang::TypeAliasTemplateDecl *pattern) {
+    const auto locals = lambda_locals_;
+    auto restore = llvm::scope_exit([&] { lambda_locals_ = locals; });
+    for (const auto *parameter : *pattern->getTemplateParameters())
+      lambda_locals_.insert(parameter->getCanonicalDecl());
+    for (auto *parameter : *pattern->getTemplateParameters()) TraverseDecl(parameter);
+    TraverseStmt(pattern->getTemplateParameters()->getRequiresClause());
+    TraverseType(pattern->getTemplatedDecl()->getUnderlyingType());
   }
   void CheckFunctionTemplate(const clang::FunctionTemplateDecl *pattern) {
     const auto locals = lambda_locals_;
@@ -2232,6 +2270,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     visitor.CheckConcept(concept_decl);
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     visitor.CheckFunctionTemplate(pattern);
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+    visitor.CheckAliasTemplate(pattern);
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     for (const auto *parameter : function->parameters())
       if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
@@ -2378,12 +2418,18 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   if (IsTopLevel(declaration)) {
     supported &=
         !llvm::isa<clang::TemplateDecl>(declaration) ||
-        llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl>(declaration);
+        llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl, clang::TypeAliasTemplateDecl>(declaration);
     if (const auto *pattern = llvm::dyn_cast<clang::TemplateDecl>(declaration))
       for (const auto *parameter : *pattern->getTemplateParameters()) {
         supported &= !llvm::isa<clang::TemplateTemplateParmDecl>(parameter);
         for (const auto *attribute : parameter->attrs()) supported &= attribute->isImplicit();
       }
+    if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
+      const auto *alias = pattern->getTemplatedDecl();
+      for (const auto *attribute : alias->attrs()) supported &= attribute->isImplicit();
+      const auto effects = ReadCanonicalFunctionEffects(alias->getUnderlyingType(), alias->getASTContext());
+      supported &= !effects.is_async && !effects.is_throwing;
+    }
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
       const auto *function = pattern->getTemplatedDecl();
       const auto effects = ReadCanonicalFunctionEffects(function->getType(), function->getASTContext());
@@ -2478,6 +2524,8 @@ class InterfaceCollector final
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
         function && function->getDescribedFunctionTemplate()) return true;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration);
+        alias && alias->getDescribedAliasTemplate()) return true;
     if (!SelectedExport(declaration, exports_))
       return true;
     if (context_.getLangOpts().CPlusPlus && !declaration->isImplicit() &&
@@ -3026,6 +3074,11 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
+  if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration))
+    if (const auto *pattern = alias->getDescribedAliasTemplate())
+      return ReadInterfaceDeclarationStableId(pattern);
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+    return "c:@AliasTemplate@" + pattern->getQualifiedNameAsString();
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     if (const auto *pattern = function->getDescribedFunctionTemplate())
       return ReadInterfaceDeclarationStableId(pattern);
@@ -3239,6 +3292,8 @@ bool ReadInterfaceDeclarationIdentity(
     if (!availability.empty())
       identity.canonical_type_identity += ";api-availability=" + HashInterfaceFacts(availability);
   }
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(representative))
+    identity.effects = ReadCanonicalFunctionEffects(pattern->getTemplatedDecl()->getUnderlyingType(), context);
   const auto return_ownership = ReadNativeReturnOwnership(representative);
   if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
   ReadNativeDeclarationContracts(representative, context, identity.effects);
@@ -3420,6 +3475,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxConceptSemantic);
     if (HasCxxFunctionTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxFunctionTemplateSemantic);
+    if (HasCxxAliasTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxAliasTemplateSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -3517,6 +3574,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxUnionValueSemantic,
     kCxxConceptSemantic,
     kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -3646,6 +3704,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxUnionValueSemantic,
     kCxxConceptSemantic,
     kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

@@ -472,6 +472,14 @@ llvm::Error ValidateForEncoding(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     return Invalid("C++ async definition identity and required capability must agree");
+  const bool has_alias_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAliasTemplateIdentity);
+  const bool alias_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxAliasTemplateSemantic) != sidecar.required_semantics.end();
+  const bool alias_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_alias_templates != alias_capability || (alias_capability && !alias_data_capability))
+    return Invalid("alias template identity and required alias/data capabilities must agree");
   const bool has_function_templates = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxFunctionTemplateIdentity);
   const bool template_capability = std::find(sidecar.required_semantics.begin(),

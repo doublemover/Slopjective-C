@@ -59,6 +59,14 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published native C++ alias templates
+
+The [2.44 source span](linux_cxx_alias_templates.md) publishes transparent native
+alias templates with defaults, packs, constraints and dependent member types.
+Semantic identity binds their heads and underlying types; checked dependencies
+and template-only lookup preserve source-free substitution. Public class and
+variable templates remain separate work.
+
 ## Published native C++ function templates
 
 The [2.43 source span](linux_cxx_function_templates.md) adds ordinary public

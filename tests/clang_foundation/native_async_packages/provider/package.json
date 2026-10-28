@@ -197,7 +197,12 @@
     "native_template_producer",
     "native_template_bridge",
     "native_template_copy",
-    "native_template_fail_copy"
+    "native_template_fail_copy",
+    "NativeAliasBox",
+    "NativeTemplatePointer",
+    "NativeTemplateCallback",
+    "NativeTemplateElement",
+    "NativeNumericPointer"
   ],
   "dependencies": []
 }
