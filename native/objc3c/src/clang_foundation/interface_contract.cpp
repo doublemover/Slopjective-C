@@ -433,6 +433,14 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_variable_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxVariableTemplateIdentity);
+  const bool variable_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxVariableTemplateSemantic) != sidecar.required_semantics.end();
+  const bool variable_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_variable_templates != variable_capability || (variable_capability && !variable_data_capability))
+    Add(result,"O3IFC053","variable template identity and required variable/data capabilities must agree",expected.canonical_name);
   const bool has_alias_templates = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxAliasTemplateIdentity);
   const bool alias_capability = std::find(sidecar.required_semantics.begin(),

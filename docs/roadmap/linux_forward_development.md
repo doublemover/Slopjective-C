@@ -59,6 +59,24 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published native C++ variable templates
+
+The [2.46 source span](linux_cxx_variable_templates.md) adds public namespace
+variable templates with defaults, packs, constraints and native instantiation.
+Module-owned primary tags preserve specialization mangling and shared storage;
+required capability metadata binds complete heads, types and initializers.
+Public class templates and specialization projections remain open.
+
+## Function template declarations and defaults
+
+The [2.45 source span](linux_cxx_template_declarations.md) separates stable ABI
+ownership from complete semantic default contracts. Forward/redeclarations with
+available definitions retain inherited template/function defaults; canonical
+constraint ownership ignores parameter renaming. Uninstantiated defaults receive
+normal dependency checks. Exact supported argument keys bind named floating
+constants as well as directly written values. Function template interfaces make
+a hard cutover to required capability v2.
+
 ## Published native C++ alias templates
 
 The [2.44 source span](linux_cxx_alias_templates.md) publishes transparent native

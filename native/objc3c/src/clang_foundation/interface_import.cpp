@@ -81,6 +81,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxConceptSemantic,
     kCxxFunctionTemplateSemantic,
     kCxxAliasTemplateSemantic,
+    kCxxVariableTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -158,6 +159,8 @@ public:
         function && function->getDescribedFunctionTemplate()) return true;
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
         alias && alias->getDescribedAliasTemplate()) return true;
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+        variable && variable->getDescribedVarTemplate()) return true;
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty()) return true;
     if (expected_ids_.count(stable_id)) Declarations[stable_id] = decl;
@@ -171,6 +174,8 @@ private:
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
+  if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+      variable && variable->getDescribedVarTemplate()) return false;
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
       alias && alias->getDescribedAliasTemplate()) return false;
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
@@ -799,6 +804,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         function && function->getDescribedFunctionTemplate()) continue;
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(named);
         alias && alias->getDescribedAliasTemplate()) continue;
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);
+        variable && variable->getDescribedVarTemplate()) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();

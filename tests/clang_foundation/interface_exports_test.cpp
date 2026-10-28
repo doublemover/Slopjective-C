@@ -373,6 +373,74 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void VariableTemplateBodies(const fs::path &root, const std::string &standard) {
+  auto r=Request(root/"variable-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+    namespace Values {
+      template<class T=int,int N=40> inline constexpr T answer=T{N+2};
+      template<class T=int> inline T shared=40;
+      template<class T=int> inline thread_local T local=40;
+      template<class... T> inline constexpr unsigned count=sizeof...(T);
+      template<class T> requires(sizeof(T)>0) inline constexpr unsigned width=sizeof(T);
+      template<class T> T zero;
+    }
+    int provider(){return ++Values::shared<> + ++Values::local<>;}
+  )");
+  r.emit_semantic_interface=true;r.module_name="VariableTemplates";r.package_identity="variable-templates-v1";
+  r.module_owned_names=true;r.interface_exports={"Values","provider"};
+  r.interface_output_path=(root/"VariableTemplates.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"variable-provider.o").string();
+  auto built=Compile(r);
+  for (const auto &d:built.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:built.interface_import_diagnostics) std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"variable-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    static_assert(Values::answer<> ==42 && Values::answer<long,39> ==41);
+    static_assert(Values::count<int,long,double> ==3 && Values::width<char> ==1);
+    int client(){return ++Values::shared<> + ++Values::local<> + Values::zero<long>;}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"variable-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &d:imported.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:imported.interface_import_diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
+void FunctionTemplateDeclarations(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"declaration-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      template<class T=int,int Bias=2> constexpr T forwarded(T n=T{40});
+      template<class U,int Delta> constexpr U forwarded(U value){return value+Delta;}
+      template<class T,int N> constexpr T late_default(T n);
+      template<class U,int M=2> constexpr U late_default(U value){return value+M;}
+      template<class T=int,int N=2> constexpr T tail_decl(T n=T{40}){return n+N;}
+      template<class U,int M> constexpr U tail_decl(U value);
+      template<int N=40> requires(N>0) constexpr int constrained_default(int n=N);
+      template<int M> requires(M>0) constexpr int constrained_default(int value){return value+2;}
+      template<class T=int> constexpr T generic_default(T n=T{40}){return n+2;}
+  )");
+  r.emit_semantic_interface=true;r.module_name="TemplateDeclarations";r.package_identity="template-declarations-v2";
+  r.module_owned_names=true;r.interface_exports={"forwarded","late_default","tail_decl","constrained_default","generic_default"};
+  r.interface_output_path=(root/"TemplateDeclarations.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"declaration-provider.o").string();
+  auto built=Compile(r);
+  for (const auto &d:built.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"declaration-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+      static_assert(forwarded()==42 && forwarded<long,3>(39)==42);
+      static_assert(late_default(40)==42 && tail_decl()==42);
+      static_assert(constrained_default()==42 && generic_default()==42);
+      int client(){return forwarded()+late_default(40)+tail_decl()+constrained_default()+generic_default();}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"declaration-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &d:imported.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:imported.interface_import_diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -401,6 +469,8 @@ int main() {
     ConceptBodies(root,standard);
     FunctionTemplateBodies(root,standard);
     AliasTemplateBodies(root,standard);
+    FunctionTemplateDeclarations(root,standard);
+    VariableTemplateBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

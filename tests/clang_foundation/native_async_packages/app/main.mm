@@ -15,6 +15,13 @@ static void *native_thread_worker(void *context) {
   observation->passed &= native_thread_sum()==246;
   return nullptr;
 }
+static void *native_variable_template_worker(void *context) {
+  auto *passed=static_cast<bool *>(context);
+  *passed=native_template_tls<> ==40 && native_template_shared<> ==42;
+  ++native_template_tls<>;
+  *passed &= native_variable_template_producer()==85 && native_template_tls<> ==42;
+  return nullptr;
+}
 template<class T> concept native_has_number = requires(const T &value) { value.number(); };
 static int imported_dynamic_order=NativeInline::ordered;
 static_assert(!native_has_number<NativeDeletedMember>);
@@ -412,6 +419,19 @@ int main() {
                 NativePositive<2> && !NativePositive<-1> && NativeNumbers<int,long>);
   static_assert(native_concept_value()==42);
   if (native_concept_bridge()!=42) return 120;
+  static_assert(native_forwarded()==42 && native_forwarded<long,3>(39)==42);
+  static_assert(native_late_default(40)==42 && native_tail_decl()==42);
+  static_assert(native_constrained_default()==42 && native_template_argument_default()==42);
+  if(native_template_defaults_bridge()!=210) return 128;
+  static_assert(native_template_answer<> ==42 && native_template_answer<long,39> ==41);
+  static_assert(native_template_arity<int,long,double> ==3 && native_template_width<char> ==1);
+  if(native_variable_template_producer()!=82 || ++native_template_shared<> !=42 ||
+     ++native_template_tls<> !=42 || native_template_zero<long> !=0) return 129;
+  bool variable_thread_passed=false;pthread_t variable_thread;
+  if(pthread_create(&variable_thread,nullptr,native_variable_template_worker,&variable_thread_passed) ||
+     pthread_join(variable_thread,nullptr) || !variable_thread_passed ||
+     native_template_tls<> !=42 || native_template_shared<> !=43) return 130;
+
   static_assert(__is_same(NativeTemplatePointer<>,int*));
   static_assert(__is_same(NativeTemplateElement<NativeAliasBox>,int));
   static_assert(__is_same(NativeNumericPointer<long>,long*));

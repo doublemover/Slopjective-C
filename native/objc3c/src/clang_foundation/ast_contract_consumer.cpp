@@ -71,7 +71,10 @@ class ContractConsumer final : public clang::ASTConsumer,
       return true;
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
         alias && alias->getDescribedAliasTemplate()) return true;
-    if (llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl, clang::TypeAliasTemplateDecl>(decl)) {
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+        variable && variable->getDescribedVarTemplate()) return true;
+    if (llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl, clang::TypeAliasTemplateDecl,
+                  clang::VarTemplateDecl>(decl)) {
       InterfaceDeclarationIdentity identity;
       if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
         result_.declarations.push_back(std::move(identity));

@@ -285,7 +285,8 @@ void Check(const fs::path &root, BaseLanguage language,
     assert(ir.find("private_templateB139__objc3_m_") != std::string::npos);
     assert(ir.find("_Z16private_templateIi") == std::string::npos);
     assert(ir.find("_Z16private_templateIl") == std::string::npos);
-    assert(ir.find("private_variable") == std::string::npos);
+    assert(ir.find("private_variableB139__objc3_m_") != std::string::npos);
+    assert(ir.find("_Z16private_variableILi") == std::string::npos);
     assert(ir.find("private_initializer") == std::string::npos);
     assert(ir.find("private_tls") == std::string::npos);
     assert(ir.find("private_reference") == std::string::npos);

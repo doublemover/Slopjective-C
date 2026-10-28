@@ -1149,3 +1149,24 @@ template<class T=int> using NativeTemplatePointer=T*;
 template<class... T> using NativeTemplateCallback=int(*)(T...);
 template<class T> using NativeTemplateElement=typename T::element;
 template<NativeNumber T> using NativeNumericPointer=T*;
+
+template<class T=int,int Bias=2> constexpr T native_forwarded(T n=T{40});
+template<class U,int Delta> constexpr U native_forwarded(U value){return value+Delta;}
+template<class T,int N> constexpr T native_late_default(T n);
+template<class U,int M=2> constexpr U native_late_default(U value){return value+M;}
+template<class T=int,int N=2> constexpr T native_tail_decl(T n=T{40}){return n+N;}
+template<class U,int M> constexpr U native_tail_decl(U value);
+template<int N=40> requires(N>0) constexpr int native_constrained_default(int n=N);
+template<int M> requires(M>0) constexpr int native_constrained_default(int value){return value+2;}
+template<class T=int> constexpr T native_template_argument_default(T n=T{40}){return n+2;}
+int native_template_defaults_bridge(){return native_forwarded()+native_late_default(40)+
+    native_tail_decl()+native_constrained_default()+native_template_argument_default();}
+
+
+template<class T=int,int N=40> inline constexpr T native_template_answer=T{N+2};
+template<class T=int> inline T native_template_shared=40;
+template<class T=int> inline thread_local T native_template_tls=40;
+template<class... T> inline constexpr unsigned native_template_arity=sizeof...(T);
+template<NativeNumber T> inline constexpr unsigned native_template_width=sizeof(T);
+template<class T> T native_template_zero;
+int native_variable_template_producer(){return ++native_template_shared<> + ++native_template_tls<>;}

@@ -1541,7 +1541,7 @@ void TestPublicFunctionTemplates() {
     )";
     auto first=emit(source);
     for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
-    assert(first.success && first.sidecar_json.find("objc3.cxx-function-templates.v1")!=std::string::npos);
+    assert(first.success && first.sidecar_json.find("objc3.cxx-function-templates.v2")!=std::string::npos);
     auto metadata=llvm::json::parse(first.sidecar_json);
     assert(metadata && metadata->getAsObject());
     std::vector<llvm::StringRef> semantics;
@@ -1611,8 +1611,137 @@ void TestPublicAliasTemplates() {
       assert(!invalid);llvm::consumeError(invalid.takeError());
     }
     assert(!emit("template<class T> using Hidden=T*;int api(Hidden<int>);","excluded-alias.cpp",{"api"}).success);
-    assert(!emit("namespace {struct Hidden{};}template<class T> using Alias=Hidden*;").success);
+    auto private_type=emit("namespace {struct Hidden{};}template<class T> using Alias=Hidden*;");
+    assert(!private_type.success && std::any_of(private_type.diagnostics.begin(),private_type.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
     assert(!emit("template<template<class>class C> using Alias=C<int>;").success);
+  }
+}
+
+void TestPublicVariableTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit = [&](const std::string &source, const char *file = "variables.cpp",
+                    const std::vector<std::string> &exports = std::vector<std::string>{}) {
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, {"-xc++", standard}, file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(), ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.variables", "test", {}));
+      return EmitSemanticInterface(ast->getASTContext(), "fixture.variables", "test", {}, {}, {}, exports);
+    };
+    const std::string source = R"(
+      namespace Values {
+        template<class T=int, int N=40> inline constexpr T answer=T{N+2};
+        template<class T=int> inline T shared=40;
+        template<class T=int> inline thread_local T local=40;
+        template<class... T> inline constexpr unsigned count=sizeof...(T);
+        template<class T> requires(sizeof(T)>0) inline constexpr unsigned width=sizeof(T);
+        template<class T> T zero;
+      }
+      template<double D> inline constexpr int floating=42;
+      inline constexpr double argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+      inline constexpr int argument_probe(){return floating<argument>;}
+      inline int probe(){return Values::shared<>+Values::local<long>;}
+    )";
+    auto first = emit(source);
+    for (const auto &d : first.diagnostics)
+      std::fprintf(stderr, "%s: %s (%s)\n", d.code.c_str(), d.message.c_str(), d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxVariableTemplateSemantic)!=std::string::npos);
+    auto repeated = emit(first.source_bytes, "reprinted-variables.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated = emit("\n\n"+source, "relocated-variables.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("N=40"),4,"N=41");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for (const auto &value:*metadata->getAsObject()->getArray("required_semantics")) semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto row=[](const auto &sidecar,const char *name)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(sidecar.declarations.begin(),sidecar.declarations.end(),
+          [&](const auto &d){return d.qualified_name==name;});
+    };
+    auto altered_sidecar=DecodeSemanticInterfaceSidecar(altered.sidecar_json,altered.source_bytes,semantics);assert(altered_sidecar);
+    assert(row(*decoded,"Values::answer").native_symbol_name==row(*altered_sidecar,"Values::answer").native_symbol_name);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name=="Values::shared";})==1);
+    changed=source;changed.replace(changed.find("0x0000000000000000ULL"),std::string("0x0000000000000000ULL").size(),"0x8000000000000000ULL");
+    auto signed_zero=emit(changed);assert(signed_zero.success);
+    auto zero_sidecar=DecodeSemanticInterfaceSidecar(signed_zero.sidecar_json,signed_zero.source_bytes,semantics);assert(zero_sidecar);
+    assert(row(*decoded,"argument_probe").canonical_type_identity!=row(*zero_sidecar,"argument_probe").canonical_type_identity);
+
+    for (const auto *capability:{kCxxVariableTemplateSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    assert(!emit("template<class T> inline T hidden=40;inline int api(){return hidden<int>;}",
+                 "private-variable.cpp",{"api"}).success);
+    auto hidden=emit("namespace {struct Hidden{};} template<class T> inline Hidden value{};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    for (const auto *gated:{"template<class T> extern T value;",
+                           "template<class T> inline auto value=T{40};",
+                           "template<class T> inline int value=40;template<> inline int value<long>=42;",
+                           "template<class T> inline int value=40;template<class T> inline int value<T*>=42;"}) {
+      std::string fixed=gated;
+      for (std::size_t pos=0;(pos=fixed.find(">=",pos))!=std::string::npos;pos+=3) fixed.replace(pos,2,"> =");
+      assert(!emit(fixed).success);
+    }
+  }
+}
+
+void TestFunctionTemplateDeclarations() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="template-declarations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.declarations","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.declarations","test");
+    };
+    const std::string source=R"(
+      template<class T=int,int Bias=2> constexpr T forwarded(T n=T{40});
+      template<class U,int Delta> constexpr U forwarded(U value){return value+Delta;}
+      template<class T,int N> constexpr T late_default(T n);
+      template<class U,int M=2> constexpr U late_default(U value){return value+M;}
+      template<class T=int,int N=2> constexpr T tail_decl(T n=T{40}){return n+N;}
+      template<class U,int M> constexpr U tail_decl(U value);
+      template<int N=40> requires(N>0) constexpr int constrained_default(int n=N);
+      template<int M> requires(M>0) constexpr int constrained_default(int value){return value+2;}
+      template<class T=int> constexpr T generic_default(T n=T{40}){return n+2;}
+      template<double D> constexpr int floating_value(){return 42;}
+      inline constexpr double argument_value=__builtin_bit_cast(double,0x0000000000000000ULL);
+      inline constexpr int argument_probe(){return floating_value<argument_value>();}
+      inline constexpr int defaults_probe(){return forwarded()+late_default(40)+tail_decl()+
+          constrained_default()+generic_default();}
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto repeated=emit(first.source_bytes,"reprinted-declarations.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-declarations.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for (const auto &value:*metadata->getAsObject()->getArray("required_semantics")) semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto changed=source;changed.replace(changed.find("Bias=2"),std::string("Bias=2").size(),"Bias=3");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto altered_sidecar=DecodeSemanticInterfaceSidecar(altered.sidecar_json,altered.source_bytes,semantics);assert(altered_sidecar);
+    auto row=[](const auto &sidecar,const char *name)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(sidecar.declarations.begin(),sidecar.declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+    };
+    assert(row(*decoded,"forwarded").native_symbol_name==row(*altered_sidecar,"forwarded").native_symbol_name);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &d){return d.qualified_name=="forwarded";})==1);
+    changed=source;changed.replace(changed.find("0x0000000000000000ULL"),std::string("0x0000000000000000ULL").size(),"0x8000000000000000ULL");
+    auto signed_zero=emit(changed);assert(signed_zero.success);
+    auto zero_sidecar=DecodeSemanticInterfaceSidecar(signed_zero.sidecar_json,signed_zero.source_bytes,semantics);assert(zero_sidecar);
+    assert(row(*decoded,"argument_probe").canonical_type_identity!=row(*zero_sidecar,"argument_probe").canonical_type_identity);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxFunctionTemplateSemantic);
+    damaged.required_semantics.push_back("objc3.cxx-function-templates.v1");
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto hidden=emit("static int hidden(){return 40;}template<class T=int>T api(T n=hidden()){return n+2;}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
   }
 }
 
@@ -2595,6 +2724,8 @@ int main() {
   TestPublicConcepts();
   TestPublicFunctionTemplates();
   TestPublicAliasTemplates();
+  TestFunctionTemplateDeclarations();
+  TestPublicVariableTemplates();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

@@ -161,7 +161,6 @@
     "native_generic_mutable",
     "native_generic_record",
     "native_generic_immediate",
-    "native_generic_default",
     "native_generic_static",
     "NativeGenericConfigBase",
     "NativeGenericConfig",
@@ -202,7 +201,21 @@
     "NativeTemplatePointer",
     "NativeTemplateCallback",
     "NativeTemplateElement",
-    "NativeNumericPointer"
+    "NativeNumericPointer",
+    "native_forwarded",
+    "native_late_default",
+    "native_tail_decl",
+    "native_constrained_default",
+    "native_template_argument_default",
+    "native_template_defaults_bridge",
+    "native_template_answer",
+    "native_template_shared",
+    "native_template_tls",
+    "native_template_arity",
+    "native_template_width",
+    "native_template_zero",
+    "native_variable_template_producer",
+    "native_generic_default"
   ],
   "dependencies": []
 }
