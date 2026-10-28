@@ -201,7 +201,7 @@ const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declara
 bool HasDirectMemberTemplates(const clang::CXXRecordDecl *record) {
   return record && record->isCompleteDefinition() && llvm::any_of(record->decls(),[](const auto *member) {
     return !member->isImplicit() && llvm::isa<clang::FunctionTemplateDecl,
-        clang::TypeAliasTemplateDecl,clang::VarTemplateDecl>(member);
+        clang::TypeAliasTemplateDecl,clang::VarTemplateDecl,clang::ClassTemplateDecl>(member);
   });
 }
 
@@ -1774,7 +1774,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
 
 struct ClassTemplatePublication {
   bool deduced=false, functions=false, aliases=false, variables=false;
-  bool nested=false, thread_local_storage=false, variadic=false;
+  bool nested=false, thread_local_storage=false, variadic=false, nested_classes=false;
   void Read(const clang::CXXRecordDecl *record) {
     if (!record || !record->isCompleteDefinition()) return;
     for (const auto *member : record->decls()) {
@@ -1789,7 +1789,7 @@ struct ClassTemplatePublication {
       else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
         variables=nested=true;variable=pattern->getTemplatedDecl();
       } else if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
-        nested=true;Read(pattern->getTemplatedDecl()->getDefinition());
+        nested_classes=nested=true;Read(pattern->getTemplatedDecl()->getDefinition());
       } else if (const auto *inner=llvm::dyn_cast<clang::CXXRecordDecl>(member)) {
         nested=true;Read(inner->getDefinition());
       }
@@ -1912,6 +1912,8 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     if (HasDirectMemberTemplates(cxx)) {
       ClassTemplatePublication members;members.Read(cxx);
       value+=";cxx-concrete-member-templates:v1;";
+      if (members.nested_classes)
+        value+=";cxx-concrete-nested-templates:v1;;cxx-nested-templates:v1;";
       if (members.functions) value+=";cxx-member-templates:v1;";
       if (members.aliases) value+=";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;";
       if (members.variables) value+=";cxx-variable-templates:v1;";
@@ -3011,6 +3013,10 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl, clang::BlockDecl>(member))
         continue;
+      if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
+        supported &= IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()) &&
+            IsBoundedTemplateRecord(pattern->getTemplatedDecl(),pattern);continue;
+      }
       if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
         supported &= IsBoundedClassMemberTemplate(pattern);continue;
       }
@@ -4196,6 +4202,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxConcreteNestedTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxConcreteNestedTemplateSemantic);
     if (HasCxxConcreteMemberTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxConcreteMemberTemplateSemantic);
     if (HasCxxVariadicTemplateIdentity(declaration))
@@ -4310,6 +4318,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxNestedTemplateSemantic,
     kCxxVariadicTemplateSemantic,
     kCxxConcreteMemberTemplateSemantic,
+    kCxxConcreteNestedTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4450,6 +4459,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxNestedTemplateSemantic,
     kCxxVariadicTemplateSemantic,
     kCxxConcreteMemberTemplateSemantic,
+    kCxxConcreteNestedTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

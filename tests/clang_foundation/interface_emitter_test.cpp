@@ -1741,6 +1741,83 @@ void TestTemplateStructure() {
   }
 }
 
+void TestConcreteNestedTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concrete-nested-templates.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.concrete_nested_templates","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.concrete_nested_templates","test");
+    };
+    const std::string source=R"(
+      struct Outer {
+        template<class U=int,int Bias=2> class Box {
+          template<class V=U> using Storage=V;
+          Storage<U> value;
+        public:
+          using element=U;
+          template<class V=U> using Pointer=V*;
+          inline static int live=0;
+          explicit Box(U n=U{40}):value(n){++live;}
+          Box(const Box &other):value(other.value){++live;}
+          virtual ~Box(){--live;}
+          virtual U number()const{return value+Bias;}
+          template<class V> auto add(V n)const{return number()+n;}
+        };
+        template<double D> struct Floating {
+          template<class U> struct Inner {static constexpr int answer(){return 42;}};
+        };
+      };
+      Outer::Box<int> *make(){return new Outer::Box<int>;}
+      inline int probe(){Outer::Box<long,3> value(39);return value.add(0);}
+      inline constexpr double argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+      inline constexpr int exact_probe(){return Outer::Floating<argument>::Inner<int>::answer();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxConcreteNestedTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-concrete-nested.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-concrete-nested.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name.starts_with("Outer::");}));
+    auto changed=source;changed.replace(changed.find("return value+Bias"),17,"return value+Bias+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;changed.replace(changed.find("0x0000000000000000ULL"),21,"0x8000000000000000ULL");
+    auto zero=emit(changed);assert(zero.success);
+    auto negative=DecodeSemanticInterfaceSidecar(zero.sidecar_json,zero.source_bytes,semantics);assert(negative);
+    auto row=[](const auto &s)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(s.declarations.begin(),s.declarations.end(),
+          [](const auto &d){return d.qualified_name=="exact_probe";});
+    };
+    assert(row(*decoded).canonical_type_identity!=row(*negative).canonical_type_identity);
+    for(const auto *capability:{kCxxConcreteNestedTemplateSemantic,kCxxConcreteMemberTemplateSemantic,
+        kCxxClassTemplateSemantic,kCxxNestedTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxConcreteNestedTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    assert(emit("struct Outer{template<class T>struct Box{T value;};};").success);
+    auto hidden=emit("static int hidden(){return 42;}struct Outer{template<class T>struct Box{int f(){return hidden();}};};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    for(const auto *source:{
+        "struct Outer{template<class T>struct Box;};",
+        "struct Outer{template<class T>union Box{T value;};};",
+        "struct Outer{template<class T>struct Box{T value;};};template<class T>struct Outer::Box<T*>{T *value;};",
+        "struct Outer{template<class T>struct Box;};template<class T>struct Outer::Box{T value;};"})
+      assert(!emit(source).success);
+  }
+}
+
 void TestConcreteMemberTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="concrete-member-templates.cpp",
@@ -3288,6 +3365,7 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestConcreteNestedTemplates();
   TestConcreteMemberTemplates();
   TestVariadicTemplates();
   TestNestedTemplateTypes();

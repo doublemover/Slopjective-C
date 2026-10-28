@@ -82,6 +82,14 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Nested class templates in concrete records
+
+The [2.55 source span](linux_cxx_concrete_nested_templates.md) completes primary
+class-template nesting under concrete records. Recursive ownership, exact
+arguments and source-free instantiation preserve virtual lifetimes, private
+aliases and nested members. C++20/23 emitter and all eight source-free package
+configurations pass; broader validation and SDK delivery remain batched.
+
 ## Concrete-class member templates
 
 The [2.54 source span](linux_cxx_concrete_member_templates.md) adds in-class

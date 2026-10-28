@@ -148,6 +148,10 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    if ('objc3.cxx-concrete-nested-templates.v1' not in metadata['required_semantics'] or
+            ';cxx-concrete-nested-templates:v1;' not in names.get(
+                'NativeConcreteTemplates', {}).get('canonical_type_identity', '')):
+        raise ValueError('C++ package lost concrete nested class-template ownership')
     if ('objc3.cxx-concrete-member-templates.v1' not in metadata['required_semantics'] or
             ';cxx-concrete-member-templates:v1;' not in names.get(
                 'NativeConcreteTemplates', {}).get('canonical_type_identity', '')):

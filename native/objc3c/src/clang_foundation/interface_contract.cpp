@@ -445,9 +445,24 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool concrete_member_owners = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
       [](const auto &d) {return !HasCxxConcreteMemberTemplateIdentity(d) ||
           (d.kind=="CXXRecord" && (HasCxxMemberTemplateIdentity(d) ||
-           HasCxxMemberAliasTemplateIdentity(d) || HasCxxVariableTemplateIdentity(d)));});
+           HasCxxMemberAliasTemplateIdentity(d) || HasCxxVariableTemplateIdentity(d) ||
+           HasCxxClassTemplateIdentity(d)));});
   if (has_concrete_member_templates!=concrete_member_capability || !concrete_member_owners)
     Add(result,"O3IFC062","concrete member template identity and required record capability must agree",expected.canonical_name);
+  const bool has_concrete_nested_templates = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteNestedTemplateIdentity);
+  const bool concrete_nested_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_patterns = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_nested_owners = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxConcreteNestedTemplateIdentity(d) ||
+          (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_concrete_nested_templates!=concrete_nested_capability || !concrete_nested_owners ||
+      (concrete_nested_capability && (!concrete_member_capability || !concrete_nested_class || !concrete_nested_patterns)))
+    Add(result,"O3IFC063","concrete nested template identity and required record/class/nested capabilities must agree",expected.canonical_name);
   const bool has_variadic_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVariadicTemplateIdentity);
   const bool variadic_template_capability = std::find(sidecar.required_semantics.begin(),

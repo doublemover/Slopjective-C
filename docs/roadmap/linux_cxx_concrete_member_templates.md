@@ -15,8 +15,8 @@ record owner during dependency checking and native import.
 `objc3.cxx-concrete-member-templates.v1` is required with applicable member,
 alias, variable, deduction and thread-local capabilities. Old consumers and
 inconsistent contracts reject. Detached definitions, explicit/partial
-specializations, template-template parameters, nested primary templates in
-concrete classes and effectful template bodies remain separate work.
+specializations, template-template parameters, effectful template bodies remain separate work. Nested primary templates in
+concrete records follow in the [2.55 source span](linux_cxx_concrete_nested_templates.md).
 
 Maintained witnesses cover converting constructors, constrained call operators,
 conditional noexcept, deduced results, closures, private storage aliases, public

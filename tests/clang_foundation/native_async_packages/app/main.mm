@@ -241,6 +241,17 @@ int main() {
        NativeConcreteTemplates::reader(parts[0]+parts[1])()!=42)return 163;
     auto copy=*value;delete value;
     if(copy.add(2.0)!=42.0)return 164;
+    static_assert(native_concrete_nested_probe()==42);
+    auto *nested=native_concrete_nested_make();
+    if(nested->number()!=42 || NativeConcreteTemplates::Box<int>::live!=1)return 165;
+    {
+      auto other=*nested;delete nested;
+      if(other.add(0L)!=42 || NativeConcreteTemplates::Box<int>::live!=1)return 166;
+    }
+    if(NativeConcreteTemplates::Box<int>::live!=0)return 167;
+    NativeConcreteTemplates::Box<long,3> different(39);
+    NativeConcreteTemplates::Box<long,3>::Pointer<> pointer=nullptr;
+    if(different.add(0)!=42 || pointer)return 168;
   }
   static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
   if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||

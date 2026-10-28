@@ -252,7 +252,10 @@
     "native_variadic_provider",
     "NativeConcreteTemplates",
     "native_concrete_make",
-    "native_concrete_state"
+    "native_concrete_state",
+    "native_concrete_nested_make",
+    "native_concrete_nested_argument",
+    "native_concrete_nested_probe"
   ],
   "dependencies": []
 }

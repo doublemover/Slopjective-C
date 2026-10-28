@@ -19,7 +19,7 @@ inline int api() { return [](auto value) { return value; }(42); }
 #elif CASE == 10
 extern constexpr int exported=[](auto value) { return value; }(42);
 #elif CASE == 11
-struct Nested { struct Inner { int value=[](auto value) { return value; }(42); }; Inner child; };
+struct Nested { template<class T> struct Inner { T value; }; };
 #elif CASE == 12
 union Overlap { int one; long two; };
 #elif CASE == 13
