@@ -477,6 +477,20 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_class_partial_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClassPartialSpecializationIdentity);
+  const bool class_partial_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassPartialSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool class_partial_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool class_partial_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClassPartialSpecializationIdentity(d) ||
+          (d.kind=="ClassTemplate" && HasCxxClassTemplateIdentity(d) && HasCxxClassSpecializationIdentity(d));});
+  const bool class_partial_base=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),
+      kCxxClassSpecializationSemantic)!=sidecar.required_semantics.end();
+  if (has_class_partial_specializations!=class_partial_specialization_capability || !class_partial_specialization_owners ||
+      (class_partial_specialization_capability && (!class_partial_specialization_primary || !class_partial_base)))
+    return Invalid("partial class specialization identity and required primary capability must agree");
   const bool has_class_specializations=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxClassSpecializationIdentity);
   const bool class_specialization_capability=std::find(sidecar.required_semantics.begin(),

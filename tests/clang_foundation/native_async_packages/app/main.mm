@@ -279,6 +279,16 @@ int main() {
   }
   {
     static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    static_assert(NativePartialCount<7>::value==7 && NativePartialCount<-1>::value==0);
+    static_assert(NativePartialPack<int,long,double>::value==3 && NativePartialPack<>::value==0);
+    static_assert(NativePartialTemplate<NativeTTBox<long>>::size==sizeof(NativeTTBox<long>));
+    int partial_number=40;
+    auto *partial_value=native_partial_factory(&partial_number);
+    auto *partial_copy=new NativePartialFamily<int*>(*partial_value);
+    if(native_partial_live()!=2 || partial_copy->add(2)!=42)return 178;
+    delete partial_value;delete partial_copy;
+    if(native_partial_live()!=0)return 179;
+    {long n=42;NativePartialFamily<long*> value{&n};if(value.get()!=42)return 180;}
     auto *plain_value=native_explicit_plain_factory();
     auto *plain_copy=new NativeExplicitFamily<short>(*plain_value);
     if(native_explicit_plain_live()!=2 || plain_copy->get()!=42)return 176;

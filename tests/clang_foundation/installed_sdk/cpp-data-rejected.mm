@@ -6,7 +6,7 @@ template<class T> struct Generic;
 struct Defaulted { template<class T> Defaulted(T); };
 #elif CASE == 4
 template<class T> struct Generic { T value; };
-template<class T> struct Generic<T *> { T *value; };
+template<class T> struct Generic<T *> { T *value; Generic(); };
 #elif CASE == 5
 struct Methods { template<class T> int get(T value); };
 #elif CASE == 6

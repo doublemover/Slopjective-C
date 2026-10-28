@@ -97,6 +97,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxFunctionSpecializationSemantic,
     kCxxVariableSpecializationSemantic,
     kCxxClassSpecializationSemantic,
+    kCxxClassPartialSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -734,9 +735,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       if (HasCxxClassSpecializationIdentity(expected)) {
         const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(exported.Declarations.at(expected.stable_id));
         if (!pattern) return report;
-        for (auto *specialization:pattern->specializations()) {
-          if (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
-              specialization->getSpecializationKind()!=clang::TSK_ExplicitSpecialization) continue;
+        llvm::SmallVector<clang::ClassTemplateSpecializationDecl *,4> specializations;
+        for (auto *specialization:pattern->specializations())
+          if (specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)
+            specializations.push_back(specialization);
+        llvm::SmallVector<clang::ClassTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        specializations.append(partials.begin(),partials.end());
+        for (auto *specialization:specializations) {
           if (auto *definition=specialization->getDefinition())
             specialization=llvm::cast<clang::ClassTemplateSpecializationDecl>(definition);
           auto imported_specialization=importer->Import(specialization);

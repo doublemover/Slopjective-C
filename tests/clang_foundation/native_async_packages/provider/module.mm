@@ -1462,3 +1462,25 @@ int native_explicit_class_live(){return NativeExplicitFamily<int>::live;}
 template<auto Value>struct NativeExplicitNumber{static constexpr int value=0;};
 template<>struct NativeExplicitNumber<0.0>{static constexpr int value=1;};
 template<>struct NativeExplicitNumber<-0.0>{static constexpr int value=2;};
+
+template<class T>concept NativePartialValue=requires(T n){n+1;};
+template<class T>struct NativePartialFamily{T value;};
+template<NativePartialValue T>struct NativePartialFamily<T*>{
+  inline static int live=0;
+private:
+  T* value;
+public:
+  explicit NativePartialFamily(T* n):value(n){++live;}
+  NativePartialFamily(const NativePartialFamily &other):value(other.value){++live;}
+  virtual ~NativePartialFamily(){--live;}
+  virtual int get()const{return *value;}
+  template<class U>int add(U n)const{return get()+n;}
+};
+NativePartialFamily<int*> *native_partial_factory(int* n){return new NativePartialFamily<int*>(n);}
+int native_partial_live(){return NativePartialFamily<int*>::live;}
+template<int N,bool Positive=true>struct NativePartialCount{static constexpr int value=0;};
+template<int N>requires(N>0)struct NativePartialCount<N,true>{static constexpr int value=N;};
+template<class...Ts>struct NativePartialPack{static constexpr int value=0;};
+template<class T,class...Ts>struct NativePartialPack<T,Ts...>{static constexpr int value=1+sizeof...(Ts);};
+template<class T>struct NativePartialTemplate{static constexpr int size=0;};
+template<template<class>class C,class T>struct NativePartialTemplate<C<T>>{static constexpr int size=sizeof(C<T>);};
