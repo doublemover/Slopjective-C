@@ -311,7 +311,11 @@
     "native_zero_special",
     "native_external_producer",
     "native_external_object_read",
-    "native_external_zero"
+    "native_external_zero",
+    "NativeDetached::Family",
+    "NativeDetached::Concrete",
+    "native_detached_factory",
+    "native_detached_live"
   ],
   "dependencies": []
 }

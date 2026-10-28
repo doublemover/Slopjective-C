@@ -170,6 +170,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    detached_callables=[row for row in metadata['declarations']
+                 if ';cxx-detached-callable-templates:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-detached-callable-templates.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in detached_callables}!={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}):
+        raise ValueError('C++ package lost detached callable owner definitions')
     external_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-specialization-storage:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specialization-storage.v1' not in metadata['required_semantics'] or

@@ -1470,12 +1470,17 @@ template<NativePartialValue T>struct NativePartialFamily<T*>{
 private:
   T* value;
 public:
-  explicit NativePartialFamily(T* n):value(n){++live;}
-  NativePartialFamily(const NativePartialFamily &other):value(other.value){++live;}
-  virtual ~NativePartialFamily(){--live;}
-  virtual int get()const{return *value;}
-  template<class U>int add(U n)const{return get()+n;}
+  explicit NativePartialFamily(T* n);
+  NativePartialFamily(const NativePartialFamily &other);
+  virtual ~NativePartialFamily();
+  virtual int get()const;
+  template<class U>int add(U n)const;
 };
+template<NativePartialValue T>NativePartialFamily<T*>::NativePartialFamily(T* n):value(n){++live;}
+template<NativePartialValue T>NativePartialFamily<T*>::NativePartialFamily(const NativePartialFamily &other):value(other.value){++live;}
+template<NativePartialValue T>NativePartialFamily<T*>::~NativePartialFamily(){--live;}
+template<NativePartialValue T>int NativePartialFamily<T*>::get()const{return *value;}
+template<NativePartialValue T>template<class U>int NativePartialFamily<T*>::add(U n)const{return get()+n;}
 NativePartialFamily<int*> *native_partial_factory(int* n){return new NativePartialFamily<int*>(n);}
 int native_partial_live(){return NativePartialFamily<int*>::live;}
 template<int N,bool Positive=true>struct NativePartialCount{static constexpr int value=0;};
@@ -1519,3 +1524,28 @@ template<>inline int native_zero_special<int>;
 int native_external_producer(){return ++native_external_special<int> + ++native_external_tls<int>;}
 int native_external_object_read(){return native_external_object<int>.value;}
 int native_external_zero(){return ++native_zero_special<int>;}
+
+namespace NativeDetached {
+template<class T>struct Family {
+  inline static int live=0;
+private:
+  T value;
+public:
+  explicit Family(T n);
+  Family(const Family &other);
+  virtual ~Family();
+  virtual T get()const;
+  template<class U=int>T add(U n=2)const;
+  template<class U>auto closure(U n)const;
+};
+struct Concrete {template<class U=int>U twice(U n=21)const;};
+}
+template<class T>NativeDetached::Family<T>::Family(T n):value(n){++live;}
+template<class T>NativeDetached::Family<T>::Family(const Family &other):value(other.value){++live;}
+template<class T>NativeDetached::Family<T>::~Family(){--live;}
+template<class T>T NativeDetached::Family<T>::get()const{return value;}
+template<class T>template<class U>T NativeDetached::Family<T>::add(U n)const{return get()+n;}
+template<class T>template<class U>auto NativeDetached::Family<T>::closure(U n)const{return [saved=value,n]{return saved+n;};}
+template<class U>U NativeDetached::Concrete::twice(U n)const{return n+n;}
+NativeDetached::Family<int> *native_detached_factory(){return new NativeDetached::Family<int>(40);}
+int native_detached_live(){return NativeDetached::Family<int>::live;}

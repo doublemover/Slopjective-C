@@ -285,6 +285,15 @@ int main() {
   }
   {
     static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    auto *detached=native_detached_factory();
+    auto *detached_copy=new NativeDetached::Family<int>(*detached);
+    int(NativeDetached::Family<int>::*detached_get)()const=&NativeDetached::Family<int>::get;
+    if(native_detached_live()!=2 || (detached_copy->*detached_get)()!=40 ||
+       detached_copy->add()!=42 || detached_copy->closure(2)()!=42 ||
+       NativeDetached::Concrete{}.twice()!=42)return 184;
+    delete detached;delete detached_copy;
+    if(native_detached_live()!=0)return 185;
+    {NativeDetached::Family<long> value{40};if(value.add(2L)!=42)return 186;}
     if(NativeExternalVariableValue::alive!=1 || native_external_object<int>.value!=42 ||
        native_external_producer()!=82 || ++native_external_special<int> !=42 ||
        ++native_external_tls<int> !=42 || native_zero_special<int> !=0 ||

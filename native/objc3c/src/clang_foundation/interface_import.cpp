@@ -100,6 +100,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxClassPartialSpecializationSemantic,
     kCxxVariablePartialSpecializationSemantic,
     kCxxVariableSpecializationStorageSemantic,
+    kCxxDetachedCallableTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -770,6 +771,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           }
         }
       }
+      if (HasCxxDetachedCallableTemplateIdentity(expected))
+        for (auto *definition:ReadDetachedCallableTemplateDefinitions(exported.Declarations.at(expected.stable_id))) {
+          auto imported_definition=importer->Import(definition);
+          if (!imported_definition) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_definition.takeError()),expected.stable_id);
+            return report;
+          }
+        }
       auto *named = llvm::dyn_cast_or_null<clang::NamedDecl>(*imported);
       if (!named || &named->getASTContext() != &target_context) {
         Add(report.diagnostics, "O3IFC143",

@@ -1742,6 +1742,95 @@ void TestTemplateStructure() {
   }
 }
 
+void TestDetachedCallableTemplates() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="detached-callable-templates.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.detached_callables","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.detached_callables","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>struct Box {
+          T value;
+          explicit Box(T);
+          Box(const Box &);
+          virtual ~Box();
+          virtual T get()const;
+          template<class U=int>T add(U n=2)const;
+          template<class U>auto closure(U n)const;
+        };
+        template<class T>concept Number=requires(T n){n+1;};
+        template<class T>struct Partial{T value;};
+        template<Number T>struct Partial<T*>{
+          T *value;explicit Partial(T*);Partial(const Partial&);
+          virtual ~Partial();virtual T get()const;
+        };
+        struct Concrete{template<Number U=int>U twice(U n=21)const;};
+      }
+      template<class T>N::Box<T>::Box(T n):value(n){}
+      template<class T>N::Box<T>::Box(const Box &other):value(other.value){}
+      template<class T>N::Box<T>::~Box(){}
+      template<class T>T N::Box<T>::get()const{return value;}
+      template<class T>template<class U>T N::Box<T>::add(U n)const{return get()+n;}
+      template<class T>template<class U>auto N::Box<T>::closure(U n)const{return [saved=value,n]{return saved+n;};}
+      template<N::Number T>N::Partial<T*>::Partial(T* n):value(n){}
+      template<N::Number T>N::Partial<T*>::Partial(const Partial &other):value(other.value){}
+      template<N::Number T>N::Partial<T*>::~Partial(){}
+      template<N::Number T>T N::Partial<T*>::get()const{return *value;}
+      template<N::Number U>U N::Concrete::twice(U n)const{return n+n;}
+      inline int probe(){N::Box<int> value{40};return value.add()+value.closure(2)()+N::Concrete{}.twice();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxDetachedCallableTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-detached-callables.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-detached-callables.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxDetachedCallableTemplateIdentity)==3);
+    auto from=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes,{"-xc++",standard},"detached-replay.cpp");
+    auto to=clang::tooling::buildASTFromCodeWithArgs("",{"-xc++",standard},"detached-consumer.cpp");
+    assert(from && to && !from->getDiagnostics().hasErrorOccurred());
+    clang::ASTImporter importer(to->getASTContext(),to->getFileManager(),
+                               from->getASTContext(),from->getFileManager(),false);
+    for(auto *root:from->getASTContext().getTranslationUnitDecl()->decls()) {
+      if(!llvm::isa<clang::NamespaceDecl,clang::FunctionTemplateDecl,clang::CXXMethodDecl>(root))continue;
+      auto imported=importer.Import(root);assert(imported);
+    }
+    for(auto *root:from->getASTContext().getTranslationUnitDecl()->decls())
+      if(auto *scope=llvm::dyn_cast<clang::NamespaceDecl>(root))
+        for(auto *member:scope->decls()) {
+          auto *owner=llvm::dyn_cast<clang::NamedDecl>(member);
+          if(!owner || ReadDetachedCallableTemplateDefinitions(owner).empty())continue;
+          auto imported=importer.Import(owner);assert(imported);
+          InterfaceDeclarationIdentity expected,actual;
+          assert(ReadInterfaceDeclarationIdentity(owner,from->getASTContext(),expected));
+          assert(ReadInterfaceDeclarationIdentity(llvm::cast<clang::NamedDecl>(*imported),to->getASTContext(),actual));
+          assert(SameInterfaceDeclarationIdentity(expected,actual));
+        }
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxDetachedCallableTemplateSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxDetachedCallableTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("return get()+n"),14,"return get()+n+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto initializer=source;initializer.replace(initializer.find("value(n)"),8,"value(n+1)");
+    auto reinitialized=emit(initializer);
+    assert(reinitialized.success && reinitialized.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{int get();};template<class T>int Box<T>::get(){return hidden();}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>struct Box{int get();};").success);
+  }
+}
+
 void TestExternalVariableSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="external-variable-specializations.cpp") {
@@ -3801,6 +3890,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestDetachedCallableTemplates();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();

@@ -477,6 +477,19 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_detached_callable_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxDetachedCallableTemplateIdentity);
+  const bool detached_callable_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxDetachedCallableTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_callable_template_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool detached_callable_template_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxDetachedCallableTemplateIdentity(d) ||
+          (d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)));});
+  if (has_detached_callable_templates!=detached_callable_template_capability || !detached_callable_template_owners ||
+      (detached_callable_template_capability && !detached_callable_template_primary &&
+       std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)==sidecar.required_semantics.end()))
+    return Invalid("detached callable template identity and required primary capability must agree");
   const bool has_variable_specialization_storages=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxVariableSpecializationStorageIdentity);
   const bool variable_specialization_storage_capability=std::find(sidecar.required_semantics.begin(),

@@ -78,6 +78,19 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Detached callable-template definitions
+
+The [2.63 source span](linux_cxx_detached_callable_templates.md) publishes authored
+out-of-line generic constructors, destructors and methods, plus generic/concrete
+record member function templates. Complete owners bind typed bodies and written
+constructor initializers; native import reconnects source redeclarations and
+retains enclosing heads before owner comparison. Detached static-data/nested-class
+definitions, nested/member specializations and effectful forms remain open.
+Focused source checks pass: the emitter suite, nine native importer tests,
+72 tooling tests and 16 source-free configurations / 96 commands across both
+import modes. SDK 2.62 remains the accepted archive; combined validation for this
+source milestone will follow further implementation.
+
 ## Combined template-publication source validation
 
 The [combined 2.53–2.62 source receipt](../support/linux_template_publication_batch_progress.json)

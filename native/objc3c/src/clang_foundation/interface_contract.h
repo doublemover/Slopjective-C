@@ -181,6 +181,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxDetachedCallableTemplateSemantic = "objc3.cxx-detached-callable-templates.v1";
+inline bool HasCxxDetachedCallableTemplateIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-detached-callable-templates:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxVariableSpecializationStorageSemantic = "objc3.cxx-variable-specialization-storage.v1";
 inline bool HasCxxVariableSpecializationStorageIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-variable-specialization-storage:v1;") != std::string::npos;
