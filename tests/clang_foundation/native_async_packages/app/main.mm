@@ -18,6 +18,9 @@ static void *native_thread_worker(void *context) {
 static void *native_variable_template_worker(void *context) {
   auto *passed=static_cast<bool *>(context);
   *passed=native_template_tls<> ==40 && native_template_shared<> ==42;
+  *passed &= NativeNestedFamily<int>::local<> ==40 && NativeNestedFamily<int>::shared<> ==42;
+  ++NativeNestedFamily<int>::local<>;
+  *passed &= NativeNestedFamily<int>::local<> ==41;
   ++native_template_tls<>;
   *passed &= native_variable_template_producer()==85 && native_template_tls<> ==42;
   return nullptr;
@@ -539,6 +542,7 @@ int main() {
   bool variable_thread_passed=false;pthread_t variable_thread;
   if(pthread_create(&variable_thread,nullptr,native_variable_template_worker,&variable_thread_passed) ||
      pthread_join(variable_thread,nullptr) || !variable_thread_passed ||
+     NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<int>::shared<> !=42 ||
      native_template_tls<> !=42 || native_template_shared<> !=43) return 130;
 
   static_assert(__is_same(NativeTemplatePointer<>,int*));
