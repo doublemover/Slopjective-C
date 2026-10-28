@@ -82,6 +82,15 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Partial namespace variable-template specializations
+
+The [2.61 source span](linux_cxx_partial_variable_specializations.md) adds checked
+namespace partial variable-template patterns, constraints and initializers under
+the primary owner. Consumer instantiation preserves mutable, constexpr, deduced,
+non-inline generic and thread-local storage. Dependent partial patterns never
+become concrete backend definitions. Nested/member and non-inline explicit
+specializations remain open. Combined validation and SDK delivery remain batched.
+
 ## Partial namespace class-template specializations
 
 The [2.60 source span](linux_cxx_partial_class_specializations.md) adds namespace

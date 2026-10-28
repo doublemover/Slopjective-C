@@ -181,6 +181,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxVariablePartialSpecializationSemantic = "objc3.cxx-variable-partial-specializations.v1";
+inline bool HasCxxVariablePartialSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-variable-partial-specializations:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxClassPartialSpecializationSemantic = "objc3.cxx-class-partial-specializations.v1";
 inline bool HasCxxClassPartialSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-class-partial-specializations:v1;") != std::string::npos;

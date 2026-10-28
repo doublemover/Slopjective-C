@@ -185,6 +185,19 @@ std::vector<const clang::ClassTemplateSpecializationDecl *> PublishedClassSpecia
   return result;
 }
 
+std::vector<const clang::VarTemplatePartialSpecializationDecl *> PublishedVariablePartials(
+    const clang::VarTemplateDecl *pattern) {
+  llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
+  pattern->getPartialSpecializations(partials);
+  std::vector<const clang::VarTemplatePartialSpecializationDecl *> result;
+  for (const auto *partial:partials) if (IsTopLevel(partial)) {
+    if (const auto *definition=partial->getDefinition())
+      partial=llvm::cast<clang::VarTemplatePartialSpecializationDecl>(definition);
+    result.push_back(partial);
+  }
+  return result;
+}
+
 bool IsExplicitNamespaceVariableSpecialization(const clang::VarTemplateSpecializationDecl *variable) {
   return variable && !llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) &&
       IsTopLevel(variable) && variable->getSpecializationKind()==clang::TSK_ExplicitSpecialization;
@@ -393,7 +406,8 @@ bool PublishesFunctionBody(const clang::FunctionDecl *function) {
 }
 bool PublishesVariableInitializer(const clang::VarDecl *variable) {
   return variable && variable->getASTContext().getLangOpts().CPlusPlus &&
-         (variable->getDescribedVarTemplate() || variable->isInline() || variable->isConstexpr() ||
+         (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplatePartialSpecializationDecl>(variable) ||
+          variable->isInline() || variable->isConstexpr() ||
           (variable->hasInit() && variable->mightBeUsableInConstantExpressions(
                                       variable->getASTContext())));
 }
@@ -493,6 +507,9 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
   if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
     for (const auto *specialization:PublishedClassSpecializations(pattern))
       finder.TraverseDecl(const_cast<clang::ClassTemplateSpecializationDecl *>(specialization));
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    for (const auto *partial:PublishedVariablePartials(pattern))
+      finder.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
   return finder.Found;
 }
 
@@ -627,6 +644,17 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
     return true;
   default:return false;
   }
+}
+
+std::string VariablePartialArgumentKey(const clang::VarTemplatePartialSpecializationDecl *partial,
+                                       const clang::ASTContext &context) {
+  std::string head;llvm::raw_string_ostream stream(head);
+  clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;
+  partial->getTemplateParameters()->print(stream,context,policy);
+  for (const auto &argument:partial->getTemplateArgs().asArray()) {
+    stream << ";argument=";argument.print(policy,stream,true);
+  }
+  return ComputeInterfaceSourceSha256(head);
 }
 
 bool ClassSpecializationArgumentKey(const clang::ClassTemplateSpecializationDecl *specialization,
@@ -1395,8 +1423,11 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
   }
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     return HasPublishedExpression(pattern->getTemplatedDecl(), contains);
-  if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+  if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
+    for (const auto *partial:PublishedVariablePartials(pattern))
+      if (HasPublishedExpression(partial,contains)) return true;
     return HasPublishedExpression(pattern->getTemplatedDecl(), contains);
+  }
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
     for (const auto *parameter : function->getMostRecentDecl()->parameters())
       if (const auto *expression = WrittenDefaultArgument(parameter);
@@ -1454,6 +1485,9 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
     if (const auto *class_pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern))
       for (const auto *specialization:PublishedClassSpecializations(class_pattern))
         visitor.TraverseDecl(const_cast<clang::ClassTemplateSpecializationDecl *>(specialization));
+    if (const auto *variable_pattern=llvm::dyn_cast<clang::VarTemplateDecl>(pattern))
+      for (const auto *partial:PublishedVariablePartials(variable_pattern))
+        visitor.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
     return visitor.found;
   }
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
@@ -1540,8 +1574,11 @@ public:
 bool HasDeclarationThreadLocal(const clang::NamedDecl *declaration) {
   if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     return HasDeclarationThreadLocal(pattern->getTemplatedDecl());
-  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
+    for (const auto *partial:PublishedVariablePartials(pattern))
+      if (HasDeclarationThreadLocal(partial)) return true;
     return HasDeclarationThreadLocal(pattern->getTemplatedDecl());
+  }
   if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
     for (const auto *specialization:PublishedClassSpecializations(pattern))
       if (HasDeclarationThreadLocal(specialization)) return true;
@@ -1579,6 +1616,11 @@ bool HasTemplateTemplateParameters(const clang::TemplateParameterList *parameter
 }
 bool HasDeclarationTemplateTemplateParameters(const clang::NamedDecl *declaration) {
   if (!declaration) return false;
+  if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration))
+    if (HasTemplateTemplateParameters(partial->getTemplateParameters())) return true;
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    for (const auto *partial:PublishedVariablePartials(pattern))
+      if (HasDeclarationTemplateTemplateParameters(partial)) return true;
   if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(declaration))
     if (HasTemplateTemplateParameters(partial->getTemplateParameters())) return true;
   if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
@@ -2049,16 +2091,29 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     const auto *variable = pattern->getTemplatedDecl();
     DeclarationExpressionIdentity identity(context);
     identity.TemplateParameters(pattern);
+    std::map<std::string,std::string> partials;
+    bool deduced=variable->getType()->getContainedAutoType()!=nullptr;
+    for (const auto *partial:PublishedVariablePartials(pattern)) {
+      std::string text;llvm::raw_string_ostream stream(text);
+      clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;
+      partial->print(stream,policy);
+      partials.emplace(VariablePartialArgumentKey(partial,context),ComputeInterfaceSourceSha256(text));
+      deduced |= partial->getType()->getContainedAutoType()!=nullptr;
+    }
+    std::string partial_contract;
+    for (const auto &[key,digest]:partials) partial_contract+=key+":"+digest+";";
     return "variable-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";type=" + CanonicalType(variable->getType(),context) +
         ";inline=" + std::to_string(variable->isInline()) +
         ";constexpr=" + std::to_string(variable->isConstexpr()) +
         ";thread-storage=" + std::to_string(variable->getTSCSpec()) +
         ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) : "default") +
+        (partials.empty()?"":";partials="+ComputeInterfaceSourceSha256(partial_contract)) +
         "};cxx-variable-templates:v1;" +
+        (partials.empty()?"":";cxx-variable-partial-specializations:v1;") +
         ";cxx-template-structure:v1;" +
-        (variable->getType()->getContainedAutoType() ? ";cxx-template-deduction:v1;" : "") +
-        (variable->getTSCSpec()!=clang::TSCS_unspecified ? ";cxx-thread-local:v1;" : "");
+        (deduced ? ";cxx-template-deduction:v1;" : "") +
+        (HasDeclarationThreadLocal(pattern) ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
     std::string head;
@@ -2578,11 +2633,7 @@ class TypeDependencyVisitor final
         TraverseStmt(partial->getTemplateParameters()->getRequiresClause());
       }
       for (const auto &argument:specialization->getTemplateArgs().asArray()) {
-        if (partial && argument.getKind()==clang::TemplateArgument::Expression)
-          TraverseStmt(argument.getAsExpr());
-        else if (partial && argument.getKind()==clang::TemplateArgument::TemplateExpansion)
-          TraverseTemplateName(argument.getAsTemplateOrTemplatePattern());
-        else if (!CheckGenericArgument(argument)) UnsupportedExpression();
+        if (!(partial?CheckPatternArgument(argument):CheckGenericArgument(argument))) UnsupportedExpression();
       }
       CheckTemplateRecord(specialization);
     }
@@ -2619,6 +2670,19 @@ class TypeDependencyVisitor final
     TraverseType(variable->getType());
     public_template_type_=previous;
     if(variable->hasInit()) TraverseStmt(const_cast<clang::Expr *>(variable->getInit()));
+    for (const auto *partial:PublishedVariablePartials(pattern)) CheckVariablePartial(partial);
+  }
+  void CheckVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
+    const auto locals=lambda_locals_;const bool previous=public_template_type_;
+    auto restore=llvm::scope_exit([&]{lambda_locals_=locals;public_template_type_=previous;});
+    public_template_type_=true;
+    for (const auto *parameter:*partial->getTemplateParameters()) lambda_locals_.insert(parameter->getCanonicalDecl());
+    for (auto *parameter:*partial->getTemplateParameters()) TraverseDecl(parameter);
+    TraverseStmt(partial->getTemplateParameters()->getRequiresClause());
+    for (const auto &argument:partial->getTemplateArgs().asArray())
+      if (!CheckPatternArgument(argument)) UnsupportedExpression();
+    TraverseType(partial->getType());public_template_type_=previous;
+    if(partial->hasInit()) TraverseStmt(const_cast<clang::Expr *>(partial->getInit()));
   }
   void CheckFunctionTemplate(const clang::FunctionTemplateDecl *pattern) {
     const auto locals = lambda_locals_;
@@ -2744,6 +2808,16 @@ class TypeDependencyVisitor final
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner))
         for (const auto &argument : specialization->getTemplateArgs().asArray())
           if (!CheckGenericArgument(argument)) UnsupportedExpression();
+  }
+  bool CheckPatternArgument(const clang::TemplateArgument &argument) {
+    if (argument.getKind()==clang::TemplateArgument::Expression) return TraverseStmt(argument.getAsExpr());
+    if (argument.getKind()==clang::TemplateArgument::TemplateExpansion)
+      return TraverseTemplateName(argument.getAsTemplateOrTemplatePattern());
+    if (argument.getKind()==clang::TemplateArgument::Pack) {
+      for (const auto &element:argument.pack_elements()) if (!CheckPatternArgument(element)) return false;
+      return true;
+    }
+    return CheckGenericArgument(argument);
   }
   bool CheckGenericArgument(const clang::TemplateArgument &argument) {
     switch (argument.getKind()) {
@@ -3207,6 +3281,19 @@ bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *param
   return true;
 }
 
+bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
+  const auto effects=ReadCanonicalFunctionEffects(partial->getType(),partial->getASTContext());
+  if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) || partial->isStaticDataMember() ||
+      partial->getStorageClass()==clang::SC_Static || partial->getStorageClass()==clang::SC_PrivateExtern ||
+      partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ||
+      effects.is_async || effects.is_throwing) return false;
+  for (const auto *attribute:partial->attrs())
+    if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
+      if(tag->tags_size()!=1 || ReadNativeSymbolName(partial)!=*tag->tags_begin()) return false;
+    } else if (!attribute->isImplicit()) return false;
+  return true;
+}
+
 bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
   const auto *variable=pattern->getTemplatedDecl();
   const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
@@ -3378,6 +3465,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       supported &= !effects.is_async && !effects.is_throwing;
       supported &= variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
           !variable->isStaticDataMember();
+      for (const auto *partial:PublishedVariablePartials(pattern)) supported &= IsBoundedVariablePartial(partial);
       for (const auto *attribute:variable->attrs())
         if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute))
           supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
@@ -3530,6 +3618,11 @@ class InterfaceCollector final
         alias && alias->getDescribedAliasTemplate()) return true;
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->getDescribedVarTemplate()) return true;
+    if (auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration)) {
+      if (IsTopLevel(partial) && IsInMainFile(context_,partial->getLocation()) && SelectedExport(partial,exports_))
+        root_declarations_.push_back(partial);
+      return true;
+    }
     if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
         specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation)
       return true;
@@ -4556,6 +4649,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxVariablePartialSpecializationIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxVariablePartialSpecializationSemantic);
     if (HasCxxClassPartialSpecializationIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClassPartialSpecializationSemantic);
     if (HasCxxClassSpecializationIdentity(declaration))
@@ -4691,6 +4786,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxVariableSpecializationSemantic,
     kCxxClassSpecializationSemantic,
     kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4838,6 +4934,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxVariableSpecializationSemantic,
     kCxxClassSpecializationSemantic,
     kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

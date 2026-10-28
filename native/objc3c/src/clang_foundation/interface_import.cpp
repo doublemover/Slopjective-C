@@ -98,6 +98,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxVariableSpecializationSemantic,
     kCxxClassSpecializationSemantic,
     kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -247,6 +248,7 @@ public:
     auto *variable=llvm::dyn_cast<clang::VarDecl>(to);
     const auto *source_variable=llvm::dyn_cast<clang::VarDecl>(from);
     if (variable && source_variable && !source_variable->getDescribedVarTemplate() &&
+        !llvm::isa<clang::VarTemplatePartialSpecializationDecl>(source_variable) &&
         variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
         source_variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
         variable->hasGlobalStorage() && variable->isInline() &&
@@ -748,6 +750,21 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           auto imported_specialization=importer->Import(specialization);
           if (!imported_specialization) {
             Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      }
+      if (HasCxxVariablePartialSpecializationIdentity(expected)) {
+        const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(exported.Declarations.at(expected.stable_id));
+        if (!pattern) return report;
+        llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        for (auto *partial:partials) {
+          if (auto *definition=partial->getDefinition())
+            partial=llvm::cast<clang::VarTemplatePartialSpecializationDecl>(definition);
+          auto imported_partial=importer->Import(partial);
+          if (!imported_partial) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_partial.takeError()),expected.stable_id);
             return report;
           }
         }

@@ -1742,6 +1742,60 @@ void TestTemplateStructure() {
   }
 }
 
+void TestPartialVariableSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="partial-variable-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.partial_variables","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.partial_variables","test");
+    };
+    const std::string source=R"(
+      template<class T>concept Sized=sizeof(T)>0;
+      namespace Values{template<class T>inline int shared=0;}
+      template<Sized T>inline int Values::shared<T*> =40;
+      template<class T>inline thread_local int local=0;
+      template<Sized T>inline thread_local int local<T*> =41;
+      template<int N,bool Positive=true>inline constexpr int count=0;
+      template<int N>requires(N>0)inline constexpr int count<N,true> =N;
+      template<class...Ts>inline constexpr unsigned width=0;
+      template<class T,class...Ts>inline constexpr unsigned width<T,Ts...> =1+sizeof...(Ts);
+      template<class T>inline auto deduced=0;
+      template<class T>inline auto deduced<T*> =T{40};
+      template<class T>struct Cell{T value;};
+      template<class T>inline constexpr int size=0;
+      template<template<class>class C,class T>inline constexpr int size<C<T>> =sizeof(C<T>);
+      inline int probe(){return ++Values::shared<int*> + ++local<int*> + count<4> + width<int,long> + deduced<long*>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxVariablePartialSpecializationSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-partial-variables.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-partial-variables.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxVariablePartialSpecializationIdentity)==6);
+    assert(first.sidecar_json.find(kCxxTemplateTemplateSemantic)!=std::string::npos);
+    auto changed=source;changed.replace(changed.find("=40"),3,"=42");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    for(const auto *capability:{kCxxVariablePartialSpecializationSemantic,kCxxVariableTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxVariablePartialSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>inline int value=0;template<class T>inline int value<T*> =hidden();");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>inline int value=0;template<class T>extern int value<T*>;").success);
+  }
+}
+
 void TestPartialClassSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="partial-class-specializations.cpp") {
@@ -1906,7 +1960,7 @@ void TestVariableSpecializations() {
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
     assert(!emit("template<class T>inline int value=0;template<>int value<int> =42;").success);
-    assert(!emit("template<class T>inline int value=0;template<class T>inline int value<T*> =42;").success);
+    assert(!emit("template<class T>inline int value=0;template<class T>extern int value<T*>;").success);
   }
 }
 
@@ -2647,7 +2701,7 @@ void TestPublicVariableTemplates() {
         [](const auto &d){return d.code=="O3IFC112";}));
     for (const auto *gated:{"template<class T> extern T value;",
                            "template<class T> inline int value=40;template<> int value<long>=42;",
-                           "template<class T> inline int value=40;template<class T> inline int value<T*>=42;"}) {
+                           "template<class T> inline int value=40;template<class T> extern int value<T*>;"}) {
       std::string fixed=gated;
       for (std::size_t pos=0;(pos=fixed.find(">=",pos))!=std::string::npos;pos+=3) fixed.replace(pos,2,"> =");
       assert(!emit(fixed).success);
@@ -3698,6 +3752,7 @@ int main() {
   TestVariableSpecializations();
   TestClassSpecializations();
   TestPartialClassSpecializations();
+  TestPartialVariableSpecializations();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();

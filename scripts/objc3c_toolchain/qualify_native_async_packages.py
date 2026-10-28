@@ -170,6 +170,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    partial_variables=[row for row in metadata['declarations']
+                 if ';cxx-variable-partial-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-partial-specializations.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in partial_variables}!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary'}):
+        raise ValueError('C++ package lost partial variable specialization owner contracts')
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or

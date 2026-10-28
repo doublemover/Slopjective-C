@@ -24,6 +24,9 @@ static void *native_variable_template_worker(void *context) {
   *passed &= native_spec_tls<int> ==40 && native_spec_shared<int> ==42;
   ++native_spec_tls<int>;
   *passed &= native_spec_tls<int> ==41;
+  *passed &= native_partial_tls<int*> ==40 && native_partial_shared<int*> ==42;
+  ++native_partial_tls<int*>;
+  *passed &= native_partial_tls<int*> ==41;
   ++native_tt_local<NativeTTAlias>;
   *passed &= native_tt_local<NativeTTAlias> ==41;
   ++NativeConcreteTemplates::local<>;
@@ -279,6 +282,12 @@ int main() {
   }
   {
     static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    static_assert(native_partial_count<7> ==7 && native_partial_count<-1> ==0);
+    static_assert(native_partial_width<int,long,double> ==3 && native_partial_width<> ==0);
+    static_assert(native_partial_size<NativeTTBox<long>> ==sizeof(NativeTTBox<long>));
+    static_assert(std::is_same_v<decltype(native_partial_auto<long*>),long>);
+    if(native_partial_variable_producer()!=123 || ++native_partial_shared<int*> !=42 ||
+       ++native_partial_tls<int*> !=42 || ++native_partial_ordinary<int*> !=42 || native_partial_auto<long*> !=40)return 181;
     static_assert(NativePartialCount<7>::value==7 && NativePartialCount<-1>::value==0);
     static_assert(NativePartialPack<int,long,double>::value==3 && NativePartialPack<>::value==0);
     static_assert(NativePartialTemplate<NativeTTBox<long>>::size==sizeof(NativeTTBox<long>));

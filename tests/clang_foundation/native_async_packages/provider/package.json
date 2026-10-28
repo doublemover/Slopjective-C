@@ -295,7 +295,15 @@
     "native_partial_live",
     "NativePartialCount",
     "NativePartialPack",
-    "NativePartialTemplate"
+    "NativePartialTemplate",
+    "native_partial_shared",
+    "native_partial_tls",
+    "native_partial_count",
+    "native_partial_width",
+    "native_partial_auto",
+    "native_partial_size",
+    "native_partial_variable_producer",
+    "native_partial_ordinary"
   ],
   "dependencies": []
 }

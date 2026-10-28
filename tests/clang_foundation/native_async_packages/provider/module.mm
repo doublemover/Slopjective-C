@@ -1484,3 +1484,19 @@ template<class...Ts>struct NativePartialPack{static constexpr int value=0;};
 template<class T,class...Ts>struct NativePartialPack<T,Ts...>{static constexpr int value=1+sizeof...(Ts);};
 template<class T>struct NativePartialTemplate{static constexpr int size=0;};
 template<template<class>class C,class T>struct NativePartialTemplate<C<T>>{static constexpr int size=sizeof(C<T>);};
+
+template<class T>inline int native_partial_shared=0;
+template<NativePartialValue T>inline int native_partial_shared<T*> =40;
+template<class T>inline thread_local int native_partial_tls=0;
+template<NativePartialValue T>inline thread_local int native_partial_tls<T*> =40;
+template<int N,bool Positive=true>inline constexpr int native_partial_count=0;
+template<int N>requires(N>0)inline constexpr int native_partial_count<N,true> =N;
+template<class...Ts>inline constexpr unsigned native_partial_width=0;
+template<class T,class...Ts>inline constexpr unsigned native_partial_width<T,Ts...> =1+sizeof...(Ts);
+template<class T>inline auto native_partial_auto=0;
+template<class T>inline auto native_partial_auto<T*> =T{40};
+template<class T>inline constexpr int native_partial_size=0;
+template<template<class>class C,class T>inline constexpr int native_partial_size<C<T>> =sizeof(C<T>);
+template<class T>int native_partial_ordinary=0;
+template<class T>int native_partial_ordinary<T*> =40;
+int native_partial_variable_producer(){return ++native_partial_shared<int*> + ++native_partial_tls<int*> + ++native_partial_ordinary<int*>;}
