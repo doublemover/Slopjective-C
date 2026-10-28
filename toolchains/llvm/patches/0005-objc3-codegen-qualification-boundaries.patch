@@ -29227,3 +29227,28 @@ index 000000000..07c297771
 +// CHECK-DAG: define {{.*}}@_Z4read14PublishedUnionB5owned(
 +// CHECK-DAG: @_ZN14PublishedUnionB5ownedC{{[12]}}Ei(
 +// CHECK-DAG: @_ZN14PublishedUnionB5ownedD{{[12]}}Ev(
+diff --git a/clang/test/ObjC3/CodeGen/nominal-alias-template-abi.cpp b/clang/test/ObjC3/CodeGen/nominal-alias-template-abi.cpp
+new file mode 100644
+index 000000000..b58c47ac3
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/nominal-alias-template-abi.cpp
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -std=c++20 -triple x86_64-unknown-linux-gnu -include %s -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -std=c++23 -triple x86_64-unknown-linux-gnu -include %s -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -std=c++20 -triple x86_64-unknown-linux-gnu -emit-pch -o %t %s
++// RUN: %clang_cc1 -std=c++20 -triple x86_64-unknown-linux-gnu -include-pch %t -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -std=c++23 -triple x86_64-unknown-linux-gnu -emit-pch -o %t.23 %s
++// RUN: %clang_cc1 -std=c++23 -triple x86_64-unknown-linux-gnu -include-pch %t.23 -emit-llvm -o - %s | FileCheck %s
++#ifndef NOMINAL_ALIAS_HEADER
++#define NOMINAL_ALIAS_HEADER
++template<class T> struct Base {};
++template<class T> struct __attribute__((abi_tag("__objc3_m_class_owner"))) Owned {};
++template<class T> using Alias __attribute__((annotate("objc3.alias-owner:__objc3_m_alias_owner"))) = Base<T>;
++template<template<class> class C> int next() {static int n=40;return ++n;}
++#else
++int use(){return next<Alias>()+next<Base>()+next<Owned>();}
++// CHECK-DAG: define {{.*}} @_Z4nextI5AliasB21__objc3_m_alias_ownerEiv
++// CHECK-DAG: define {{.*}} @_Z4nextI4BaseEiv
++// CHECK-DAG: @_ZZ4nextI5AliasB21__objc3_m_alias_ownerEivE1n = {{.*}}global i32 40
++#endif
++// CHECK-DAG: define {{.*}} @_Z4nextI5OwnedB21__objc3_m_class_ownerEiv
