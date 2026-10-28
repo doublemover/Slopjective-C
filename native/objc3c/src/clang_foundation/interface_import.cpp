@@ -79,6 +79,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxGenericLocalLambdaSemantic,
     kCxxUnionValueSemantic,
     kCxxConceptSemantic,
+    kCxxFunctionTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -152,6 +153,8 @@ public:
     if (decl->isImplicit() || !decl->getLocation().isValid() ||
         !context_.getSourceManager().isWrittenInMainFile(decl->getLocation()))
       return true;
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
+        function && function->getDescribedFunctionTemplate()) return true;
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty()) return true;
     if (expected_ids_.count(stable_id)) Declarations[stable_id] = decl;
@@ -165,6 +168,8 @@ private:
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
+      function && function->getDescribedFunctionTemplate()) return false;
   if (!decl->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(decl)) return false;
   const auto *context = decl->getDeclContext();
   while (context && context->isTransparentContext()) context = context->getParent();
@@ -204,7 +209,8 @@ public:
   void Imported(clang::Decl *from, clang::Decl *to) override {
     auto *function=llvm::dyn_cast<clang::FunctionDecl>(to);
     const auto *source=llvm::dyn_cast<clang::FunctionDecl>(from);
-    if (function && source && source->doesThisDeclarationHaveABody() &&
+    if (function && source && !source->getDescribedFunctionTemplate() &&
+        source->doesThisDeclarationHaveABody() &&
         function->doesThisDeclarationHaveABody() &&
         !function->isDependentContext() &&
         (function->isInlined() ||
@@ -782,6 +788,10 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   // lexical declarations for ABI/type references and control namespace lookup.
   // A later direct import or SPI grant can promote a previously hidden member.
   for (auto *named : all_declarations.Declarations) {
+    // Only the FunctionTemplateDecl participates in ordinary lookup. Its
+    // underlying function shares its USR but is not a second overload.
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
+        function && function->getDescribedFunctionTemplate()) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();

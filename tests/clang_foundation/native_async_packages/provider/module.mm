@@ -1133,3 +1133,13 @@ template<int N> concept NativePositive=N>0;
 template<class... T> concept NativeNumbers=(NativeNumber<T> && ...);
 inline constexpr int native_concept_value() {return []<NativeWide T>(T n){return n+2;}(40);}
 int native_concept_bridge() {return native_concept_value();}
+
+template<class T,int Bias=2> constexpr T native_template_add(T n){return n+Bias;}
+template<class... T> constexpr int native_template_sum(T... n){return (0+...+n);}
+template<class T> requires NativeNumber<T> constexpr int native_template_rank(T){return 40;}
+template<class T> requires NativeWide<T> constexpr int native_template_rank(T){return 42;}
+template<int N> int native_template_count(){static int visits=0;return N+visits++;}
+int native_template_producer(){return native_template_count<40>();}
+int native_template_bridge(){return native_template_add(40)+native_template_sum(20,22)+native_template_rank(1);}
+template<class T> T native_template_copy(T n){return n;}
+template<class T> T native_template_fail_copy(T n){if(n.number()==40)throw 7;return n;}

@@ -69,14 +69,14 @@ class ContractConsumer final : public clang::ASTConsumer,
     if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
         !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
-    if (llvm::isa<clang::ConceptDecl>(decl)) {
+    if (llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl>(decl)) {
       InterfaceDeclarationIdentity identity;
       if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
         result_.declarations.push_back(std::move(identity));
       return true;
     }
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
-      if (!function->isExternallyVisible()) return true;
+      if (function->getDescribedFunctionTemplate() || !function->isExternallyVisible()) return true;
       InterfaceDeclarationIdentity identity;
       if (ReadInterfaceDeclarationIdentity(function, *context_, identity))
         result_.declarations.push_back(std::move(identity));

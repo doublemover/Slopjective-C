@@ -11,6 +11,7 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
@@ -442,7 +443,7 @@ QualifiedModuleLookup InterfaceSourceImportBridge::LookupQualified(
   else if (target_.allow_function_overloads &&
            std::all_of(result.declarations.begin(), result.declarations.end(),
                [](clang::NamedDecl *declaration) {
-                 return llvm::isa<clang::FunctionDecl>(declaration);
+                 return llvm::isa<clang::FunctionDecl, clang::FunctionTemplateDecl>(declaration);
                }))
     result.status = QualifiedModuleLookupStatus::Found;
   else

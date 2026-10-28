@@ -299,6 +299,43 @@ void ConceptBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void FunctionTemplateBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"template-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      namespace Generic {
+        template<class T> concept Number=requires(T n){n+2;};
+        template<class T,int Bias=2> constexpr T add(T n){return n+Bias;}
+        template<class... T> constexpr int sum(T... n){return (0+...+n);}
+        template<class T> requires Number<T> constexpr int rank(T){return 40;}
+        template<class T> requires (Number<T> && sizeof(T)>=sizeof(int)) constexpr int rank(T){return 42;}
+        template<Number T> constexpr T identity(T n) noexcept(noexcept(n+2)){return n;}
+        template<int N> int count(){return N;}
+      }
+      int producer(){return Generic::add(40)+Generic::count<7>();}
+  )");
+  r.emit_semantic_interface=true;r.module_name="FunctionTemplates";r.package_identity="function-templates-v1";
+  r.module_owned_names=true;
+  r.interface_exports={"Generic","producer"};
+  r.interface_output_path=(root/"FunctionTemplates.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"template-provider.o").string();
+  auto built=Compile(r);
+  for (const auto &d:built.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:built.interface_import_diagnostics) std::fprintf(stderr,"%s: %s\n",d.code.c_str(),d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"template-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+      static_assert(Generic::add(40)==42 && Generic::add<long,3>(39)==42);
+      static_assert(Generic::sum(20,22)==42 && Generic::rank(1)==42);
+      static_assert(Generic::identity(42)==42 && noexcept(Generic::identity(42)));
+      int client(){return Generic::count<42>()+Generic::count<7>()+Generic::add(40);}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"template-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &d:imported.diagnostics) std::fprintf(stderr,"%s\n",d.message.c_str());
+  for (const auto &d:imported.interface_import_diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -325,6 +362,7 @@ int main() {
     GenericLocalContracts(root,standard);
     UnionBodies(root,standard);
     ConceptBodies(root,standard);
+    FunctionTemplateBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

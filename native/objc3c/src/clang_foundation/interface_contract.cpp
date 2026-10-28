@@ -433,6 +433,14 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_function_templates = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxFunctionTemplateIdentity);
+  const bool template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), kCxxFunctionTemplateSemantic) != sidecar.required_semantics.end();
+  const bool template_data_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(), "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_function_templates != template_capability || (template_capability && !template_data_capability))
+    Add(result,"O3IFC051","function template identity and required template/data capabilities must agree",expected.canonical_name);
   const bool has_concepts = std::any_of(
       sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxConceptIdentity);
   const bool concept_capability = std::find(

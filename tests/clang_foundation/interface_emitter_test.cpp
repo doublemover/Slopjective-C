@@ -19,6 +19,7 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/JSON.h"
 #include "llvm/ADT/SmallString.h"
 
 using namespace objc3::clang_foundation;
@@ -1512,6 +1513,57 @@ void TestPublicConcepts() {
   }
 }
 
+void TestPublicFunctionTemplates() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="templates.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.templates","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.templates","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace Generic {
+        template<class T> concept Number=requires(T n){n+2;};
+        template<class T,int Bias=2> constexpr T add(T n){return n+Bias;}
+        template<class... T> constexpr int sum(T... n){return (0+...+n);}
+        template<class T> requires Number<T> constexpr int rank(T){return 40;}
+        template<class T> requires (Number<T> && sizeof(T)>=sizeof(int)) constexpr int rank(T){return 42;}
+        template<Number T> constexpr T identity(T n) noexcept(noexcept(n+2)){return n;}
+        template<int N> constexpr int count(){return N;}
+      }
+      inline constexpr int value(){return Generic::add(40)+Generic::sum(20,22)+Generic::rank(1)+
+          Generic::identity(42)+Generic::count<42>();}
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find("objc3.cxx-function-templates.v1")!=std::string::npos);
+    auto metadata=llvm::json::parse(first.sidecar_json);
+    assert(metadata && metadata->getAsObject());
+    std::vector<llvm::StringRef> semantics;
+    for (const auto &value:*metadata->getAsObject()->getArray("required_semantics"))
+      semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);
+    assert(decoded);
+    for (const auto *capability:{kCxxFunctionTemplateSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);
+      assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto repeated=emit(first.source_bytes,"reprinted-templates.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-templates.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("return n+Bias"),13,"return n+Bias+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    assert(!emit("static int hidden;template<class T> int api(T n){return hidden+n;}").success);
+    assert(!emit("template<class T> T helper(T n){return n;}inline int api(){return helper(42);}","excluded-template.cpp",{"api"}).success);
+    assert(!emit("template<class T> T declared(T n);").success);
+    assert(!emit("template<class T> auto closure(T n){return [n]{return n;};}").success);
+  }
+}
+
 void TestCarrierExpressionRoundtrip() {
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
@@ -2489,6 +2541,7 @@ int main() {
   TestGenericLocalContracts();
   TestCxxUnionValues();
   TestPublicConcepts();
+  TestPublicFunctionTemplates();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

@@ -282,7 +282,9 @@ void Check(const fs::path &root, BaseLanguage language,
         assert(ir.find("_ZTT") != std::string::npos);
         assert(ir.find(d.native_symbol_name) != std::string::npos);
       }
-    assert(ir.find("private_template") == std::string::npos);
+    assert(ir.find("private_templateB139__objc3_m_") != std::string::npos);
+    assert(ir.find("_Z16private_templateIi") == std::string::npos);
+    assert(ir.find("_Z16private_templateIl") == std::string::npos);
     assert(ir.find("private_variable") == std::string::npos);
     assert(ir.find("private_initializer") == std::string::npos);
     assert(ir.find("private_tls") == std::string::npos);
@@ -399,6 +401,16 @@ void Check(const fs::path &root, BaseLanguage language,
         "struct __attribute__((abi_tag(\"foreign_tag\"))) Tagged { int n; };";
     conflict.interface_exports = {"Tagged"};
     assert(!Compile(conflict).success);
+    std::ofstream(root / "foreign-template.h") << "template<class T> T foreign_template(T n);\n";
+    auto foreign_template=foreign;
+    foreign_template.interface_exports={"foreign_template"};
+    foreign_template.source_text="#include \"../foreign-template.h\"\n"
+        "template<class T> T foreign_template(T n){return n;}";
+    auto foreign_result=Compile(foreign_template);
+    assert(!foreign_result.success && std::any_of(foreign_result.diagnostics.begin(),
+        foreign_result.diagnostics.end(),[](const auto &diagnostic) {
+          return diagnostic.message.find("foreign ABI") != std::string::npos;
+        }));
     conflict.source_text = "namespace Q { extern \"C\" int api(); } "
                            "namespace R { extern \"C\" int api(); }";
     conflict.interface_exports = {"Q", "R"};

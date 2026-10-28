@@ -38,7 +38,7 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
   }
   if (declaration.native_symbol_name.empty())
     return true;
-  if (declaration.kind != "Function" &&
+  if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
       !IsCxxMemberDeclarationKind(declaration.kind) &&
       declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
       declaration.kind != "ObjCInterface" &&
@@ -103,6 +103,16 @@ bool IsModuleOwnedSource(const clang::ASTContext &context,
          *relative.begin() != "..";
 }
 std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
+  if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (const auto *pattern = function->getPrimaryTemplate())
+      return ReadNativeSymbolName(pattern);
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    if (function->getDescribedFunctionTemplate())
+      if (const auto *tag = function->getAttr<clang::AbiTagAttr>();
+          tag && tag->tags_size() == 1 && tag->tags_begin()->starts_with("__objc3_m_"))
+        return tag->tags_begin()->str();
   if (const auto *label = declaration->getAttr<clang::AsmLabelAttr>())
     return label->getLabel().str();
   if (const auto *name = declaration->getAttr<clang::ObjCRuntimeNameAttr>())
@@ -206,10 +216,31 @@ public:
                    record->getTemplateSpecializationKind() !=
                        clang::TSK_Undeclared))
       return true;
-    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl))
-      if (function->isDeleted() || function->getDescribedFunctionTemplate() ||
-          function->getType()->isDependentType())
+    if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
+      if (function->getPrimaryTemplate()) return true;
+      if (const auto *pattern = function->getDescribedFunctionTemplate()) {
+        for (const auto *prior : function->redecls())
+          if (!prior->isImplicit() &&
+              !IsModuleOwnedSource(context_, prior->getLocation(), source_root_))
+            return Error(decl, "module-owned function template redeclares a foreign ABI");
+        const auto expected = BuildModuleOwnedName(module_, package_,
+            ReadInterfaceDeclarationStableId(pattern));
+        for (auto *redecl : function->redecls()) {
+          if (redecl->hasAttr<clang::AsmLabelAttr>())
+            return Error(decl, "function template cannot carry a concrete asm label");
+          if (const auto *tag = redecl->getAttr<clang::AbiTagAttr>()) {
+            if (tag->tags_size() != 1 || *tag->tags_begin() != expected)
+              return Error(decl, "function template ABI tag conflicts with its owning module");
+          } else {
+            llvm::StringRef owned_tag = context_.Idents.get(expected).getName();
+            redecl->addAttr(clang::AbiTagAttr::Create(
+                context_, &owned_tag, 1, redecl->getSourceRange()));
+          }
+        }
         return true;
+      }
+      if (function->isDeleted() || function->getType()->isDependentType()) return true;
+    }
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(decl))
       if (variable->getDescribedVarTemplate() ||
           variable->getType()->isDependentType())

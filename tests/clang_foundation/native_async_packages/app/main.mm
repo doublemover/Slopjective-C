@@ -412,6 +412,28 @@ int main() {
                 NativePositive<2> && !NativePositive<-1> && NativeNumbers<int,long>);
   static_assert(native_concept_value()==42);
   if (native_concept_bridge()!=42) return 120;
+  static_assert(native_template_add(40)==42 && native_template_add<long,3>(39)==42);
+  static_assert(native_template_sum(20,22)==42 && native_template_rank(1)==42);
+  if (native_template_producer()!=40 || native_template_count<40>()!=41 ||
+      native_template_count<1>()!=1 || native_template_bridge()!=126) return 121;
+  {
+    NativeClassStats stats{};
+    {
+      NativeClassValue source(&stats,40);
+      auto result=native_template_copy(source);
+      if(result.number()!=40 || stats.live!=2 || stats.copied!=1 || stats.moved!=1) return 122;
+    }
+    if(stats.live || stats.destroyed!=3) return 123;
+  }
+  {
+    NativeClassStats stats{};
+    {
+      NativeClassValue source(&stats,40);
+      try {auto result=native_template_fail_copy(source);(void)result;return 124;}
+      catch(int code) {if(code!=7 || stats.live!=1 || stats.copied!=1 || stats.destroyed!=1) return 125;}
+    }
+    if(stats.live || stats.destroyed!=2) return 126;
+  }
   static_assert(native_union_choices()==84);
   static_assert(__builtin_offsetof(NativePlainUnion,integer)==0 &&
                 __builtin_offsetof(NativePlainUnion,floating)==0);

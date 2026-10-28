@@ -59,6 +59,16 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Published native C++ function templates
+
+The [2.43 source span](linux_cxx_function_templates.md) adds ordinary public
+function template definitions, native consumer instantiation, defaults, packs and
+constraints. Native ABI tags preserve specialization mangling and module-owned
+storage. Declaration identity distinguishes constraint-bearing overloads;
+publication checks include template heads, defaults and concrete call arguments.
+Public class/variable templates and the remaining effectful/dependent projections
+stay open.
+
 ## Published native C++ concepts
 
 The [2.42 source span](linux_cxx_public_concepts.md) publishes named C++20/23

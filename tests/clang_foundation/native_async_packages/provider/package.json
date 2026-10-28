@@ -189,7 +189,15 @@
     "NativePositive",
     "NativeNumbers",
     "native_concept_value",
-    "native_concept_bridge"
+    "native_concept_bridge",
+    "native_template_add",
+    "native_template_sum",
+    "native_template_rank",
+    "native_template_count",
+    "native_template_producer",
+    "native_template_bridge",
+    "native_template_copy",
+    "native_template_fail_copy"
   ],
   "dependencies": []
 }
