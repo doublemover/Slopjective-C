@@ -66,8 +66,12 @@ The [2.40 source span](linux_cxx_generic_local_contracts.md) adds expression and
 values. Exact floating-point bits preserve signed zero and distinct NaN
 payloads. Complete argument-type dependency checks include unused structural
 parameters. Native printing retains trailing constraints; interfaces make a
-hard cutover to generic-local capability v2. Broader checks follow the coherent
-implementation span; public template/closure and effectful contracts stay open.
+hard cutover to generic-local capability v2. The
+[source receipt](../support/linux_cxx_generic_local_contracts_progress.json) records
+407 compiler tests, 194 native unit tests, all 33 frontend suites, 332 tooling
+tests and 24 source-free package configurations / 96 commands across normal,
+eager-import and ASan/UBSan execution. Public template/closure and effectful
+contracts stay open.
 
 ## Published generic local C++ callables
 

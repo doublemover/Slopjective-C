@@ -38,3 +38,9 @@ Structural bases, arrays, nullable fields, floating-point bit identity,
 constraint-local parameters and native `noexcept` evaluation exercise the new
 contract together. Validation and installed SDK delivery are recorded
 separately; SDK 2.33 remains the accepted archive.
+
+The [source receipt](../support/linux_cxx_generic_local_contracts_progress.json)
+records 407 compiler regressions, 194 native unit tests, all 33 frontend suites,
+332 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution. The native parameter-shape
+regression fails before the repair and passes afterward.
