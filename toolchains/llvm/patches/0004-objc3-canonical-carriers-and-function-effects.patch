@@ -13613,7 +13613,7 @@ index 3f0a7304d..bb459283d 100644
          = unwrapped.get()->getExtInfo().withProducesResult(true);
        type = unwrapped.wrap(S, S.Context.adjustFunctionType(unwrapped.get(), EI));
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 11cd159c0..abd14e451 100644
+index 11cd159c0..717956ffd 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -20,6 +20,8 @@
@@ -13819,7 +13819,26 @@ index 11cd159c0..abd14e451 100644
  }
  
  template<typename Derived>
-@@ -13699,6 +13853,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
+@@ -8976,6 +9130,18 @@ TreeTransform<Derived>::TransformCoreturnStmt(CoreturnStmt *S) {
+ 
+ template <typename Derived>
+ ExprResult TreeTransform<Derived>::TransformCoawaitExpr(CoawaitExpr *E) {
++  const auto *Callable = getObjC3CallableFunctionType(
++      Decl::castFromDeclContext(getSema().CurContext));
++  if (Callable && Callable->getObjC3FunctionEffects().AsyncFrame)
++    if (const Expr *Source = getObjC3AwaitSourceExpression(E)) {
++      // Native frame awaits use an opaque continuation protocol, rather than
++      // a C++ promise. Rebuild the written call after substitution so a frame
++      // template does not become a coroutine and change its logical result.
++      ExprResult Operand = getDerived().TransformInitializer(
++          const_cast<Expr *>(Source), /*NotCopyInit=*/false);
++      if (Operand.isInvalid()) return ExprError();
++      return getSema().ActOnObjC3CAwaitExpr(E->getKeywordLoc(), Operand.get());
++    }
+   ExprResult Operand = getDerived().TransformInitializer(E->getOperand(),
+                                                          /*NotCopyInit*/ false);
+   if (Operand.isInvalid())
+@@ -13699,6 +13865,19 @@ ExprResult TreeTransform<Derived>::TransformRecoveryExpr(RecoveryExpr *E) {
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformPseudoObjectExpr(PseudoObjectExpr *E) {
@@ -13839,7 +13858,7 @@ index 11cd159c0..abd14e451 100644
    // Rebuild the syntactic form.  The original syntactic form has
    // opaque-value expressions in it, so strip those away and rebuild
    // the result.  This is a really awful way of doing this, but the
-@@ -14566,6 +14733,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14566,6 +14745,156 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -13996,7 +14015,7 @@ index 11cd159c0..abd14e451 100644
  template<typename Derived>
  ExprResult
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
-@@ -17686,6 +18003,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
+@@ -17686,6 +18015,26 @@ TreeTransform<Derived>::TransformBlockExpr(BlockExpr *E) {
      blockScope->ReturnType = exprResultType;
    }
  
@@ -18809,10 +18828,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..885c4aa7c
+index 000000000..34dcb871a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1685 @@
+@@ -0,0 +1,1715 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20496,6 +20515,36 @@ index 000000000..885c4aa7c
 +    cast<FunctionTemplateDecl>(*Imported)->print(Stream,Policy);
 +    auto AST=tooling::buildASTFromCodeWithArgs(Support+Replayed,{"-xc++",Standard},"dependent-coroutine-await-replayed.cpp");
 +    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, InstantiatesNativeFrameTemplateAwaits) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      typedef struct objc3_task objc3_task_t;
++      typedef struct objc3_async_result_type objc3_async_result_type;
++      typedef struct objc3_async_frame {
++        unsigned struct_size,version;void *context;
++        void (*resume)(objc3_task_t*,void*);void (*destroy)(void*);
++        const objc3_async_result_type *result_type;
++      } objc3_async_frame;
++      int leaf(int) __objc3_async_frame;
++      template<class T>T frame(T value) __objc3_async_frame {
++        (void)__objc3_await leaf(0);return value;
++      }
++      objc3_async_frame probe(){return frame(42L);}
++    )";
++    auto AST=tooling::buildASTFromCodeWithArgs(Source,{"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},"native-frame-template-await.mm");
++    ASSERT_TRUE(AST);ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    struct Awaits : RecursiveASTVisitor<Awaits> {
++      unsigned Count=0;
++      bool shouldVisitTemplateInstantiations()const{return true;}
++      bool VisitCoawaitExpr(CoawaitExpr *Await) {
++        if(getObjC3AwaitSourceExpression(Await))++Count;return true;
++      }
++    } Visitor;
++    Visitor.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
++    EXPECT_GE(Visitor.Count,2u);
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
