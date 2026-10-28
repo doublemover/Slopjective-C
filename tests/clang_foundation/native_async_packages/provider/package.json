@@ -333,7 +333,11 @@
     "NativeDependentPartials",
     "native_dependent_partial_address",
     "native_dependent_partial_tls",
-    "native_dependent_partial_factory"
+    "native_dependent_partial_factory",
+    "NativeClosedParents",
+    "native_closed_parent_address",
+    "native_closed_parent_tls",
+    "native_closed_parent_factory"
   ],
   "dependencies": []
 }

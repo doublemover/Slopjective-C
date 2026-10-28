@@ -8,6 +8,12 @@ static void *native_dependent_partial_worker(void *context) {
   ++NativeDependentPartials::Outer<int>::local<long*>;
   return nullptr;
 }
+static void *native_closed_parent_worker(void *context) {
+  auto *observed=static_cast<int *>(context);
+  *observed=NativeClosedParents::Outer<int>::local<long>;
+  ++NativeClosedParents::Outer<int>::local<long>;
+  return nullptr;
+}
 struct native_thread_observation { bool passed; const void *ordinary; const void *shared; };
 static void *native_thread_worker(void *context) {
   auto *observation=static_cast<native_thread_observation *>(context);
@@ -1040,6 +1046,30 @@ int main() {
        pthread_join(worker,nullptr)) return 212;
     if(worker_local!=42 || Family::local<long*>!=43) return 211;
     Family::local<long*> =42;
+  }
+  {
+    using Family=NativeClosedParents::Outer<int>;
+    auto *value=native_closed_parent_factory();
+    {
+      Family::Inner<long> copy(*value);
+      if(value->get()!=42 || copy.get()!=42 || Family::Inner<long>::live!=2) return 213;
+      delete value;
+      if(Family::Inner<long>::live!=1) return 214;
+    }
+    Family owner;
+    int(Family::*call)(long)const=&Family::call<long>;
+    if(Family::Inner<long>::live || (owner.*call)(40)!=42 ||
+       owner.call(42)!=42 || NativeClosedParents::Outer<long>{}.call(42L)!=42 ||
+       Family::Inner<int>{}.get()!=1) return 215;
+    if(native_closed_parent_address()!=&Family::value<long> ||
+       native_closed_parent_tls()!=&Family::local<long> || Family::value<long>!=42) return 216;
+    ++*native_closed_parent_address();
+    if(Family::value<long>!=43 || NativeClosedParents::Outer<long>::value<long>!=1) return 217;
+    Family::value<long> =42;Family::local<long> =43;
+    int worker_local=0;pthread_t worker;
+    if(pthread_create(&worker,nullptr,native_closed_parent_worker,&worker_local) ||
+       pthread_join(worker,nullptr) || worker_local!=42 || Family::local<long>!=43) return 218;
+    Family::local<long> =42;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

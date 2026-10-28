@@ -477,6 +477,15 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_closed_parent_members=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosedParentMemberIdentity);
+  const bool closed_parent_member_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosedParentMemberSemantic)!=sidecar.required_semantics.end();
+  const bool closed_parent_member_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosedParentMemberIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_closed_parent_members!=closed_parent_member_capability || !closed_parent_member_owners)
+    return Invalid("closed-parent member identities and required capability must agree");
   const bool has_dependent_member_partials=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxDependentMemberPartialIdentity);
   const bool dependent_member_partial_capability=std::find(sidecar.required_semantics.begin(),

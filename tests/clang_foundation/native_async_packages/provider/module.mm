@@ -1710,3 +1710,26 @@ struct NativeDependentPartials::Outer<T>::Count<V,true> {int get()const{return V
 int *native_dependent_partial_address(){return &NativeDependentPartials::Outer<int>::number<long*>;}
 int *native_dependent_partial_tls(){return &NativeDependentPartials::Outer<int>::local<long*>;}
 NativeDependentPartials::Outer<int>::Inner<int*> *native_dependent_partial_factory(int *n){return new NativeDependentPartials::Outer<int>::Inner<int*>(n);}
+
+namespace NativeClosedParents {
+  template<class T>struct Outer {
+    template<class U>struct Inner {int get()const{return 1;}};
+    template<class U>inline static int value=1;
+    template<class U>inline static thread_local int local=1;
+    template<class U>int call(U n)const{return n;}
+  };
+}
+template<>template<>struct NativeClosedParents::Outer<int>::Inner<long> {
+  inline static int live=0;
+  int value;
+  explicit Inner(int n):value(n){++live;}
+  Inner(const Inner &n):value(n.value){++live;}
+  virtual ~Inner(){--live;}
+  int get()const{return value+2;}
+};
+template<>template<>inline int NativeClosedParents::Outer<int>::value<long> =42;
+template<>template<>inline thread_local int NativeClosedParents::Outer<int>::local<long> =42;
+template<>template<>inline int NativeClosedParents::Outer<int>::call<long>(long n)const{return n+2;}
+int *native_closed_parent_address(){return &NativeClosedParents::Outer<int>::value<long>;}
+int *native_closed_parent_tls(){return &NativeClosedParents::Outer<int>::local<long>;}
+NativeClosedParents::Outer<int>::Inner<long> *native_closed_parent_factory(){return new NativeClosedParents::Outer<int>::Inner<long>(40);}

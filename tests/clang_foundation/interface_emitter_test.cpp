@@ -1743,6 +1743,59 @@ void TestTemplateStructure() {
   }
 }
 
+void TestClosedParentMemberSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="closed-parent-members.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.closed_parents","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.closed_parents","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>struct Outer {
+          template<class U>struct Inner {int get()const{return 1;}};
+          template<class U>inline static int value=1;
+          template<class U>inline static thread_local int local=1;
+          template<class U>int call(U n)const{return n;}
+        };
+      }
+      template<>struct N::Outer<double> {
+        template<class U>struct Inner {int get()const{return 1;}};
+        template<class U>inline static int value=1;
+        template<class U>int call(U n)const{return n;}
+      };
+      template<>struct N::Outer<double>::Inner<long> {int get()const{return 42;}};
+      template<>inline int N::Outer<double>::value<long> =42;
+      template<>inline int N::Outer<double>::call<long>(long n)const{return n+2;}
+      template<>template<>struct N::Outer<int>::Inner<long> {int get()const{return 42;}};
+      template<>template<>inline int N::Outer<int>::value<long> =42;
+      template<>template<>inline thread_local int N::Outer<int>::local<long> =42;
+      template<>template<>inline int N::Outer<int>::call<long>(long n)const{return n+2;}
+      inline int probe(){return N::Outer<double>::Inner<long>{}.get()+N::Outer<double>::value<long>+N::Outer<double>{}.call(40L)+N::Outer<int>::Inner<long>{}.get()+N::Outer<int>::value<long>+N::Outer<int>{}.call(40L)+N::Outer<long>{}.call(42L);}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxClosedParentMemberSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-closed-parent-members.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closed-parent-members.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxClosedParentMemberIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxClosedParentMemberSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxClosedParentMemberSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("n+2"),3,"n+3");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+}
+
 void TestDependentMemberPartials() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="dependent-member-partials.cpp") {
@@ -3137,9 +3190,15 @@ void TestClassMemberTemplates() {
     for(const auto *gated:{
         "template<class T>struct Box{template<class U>U f(U);};",
         "template<class T>struct Box{template<template<class>class U>int f();};",
-        "template<class T>struct Box{template<class U>int f(U,...)=delete;};",
-        "template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}"})
+        "template<class T>struct Box{template<class U>int f(U,...)=delete;};"})
       assert(!emit(gated).success);
+    const std::string specialized="template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}";
+    auto member=emit(specialized);
+    assert(member.success && member.sidecar_json.find(kCxxClosedParentMemberSemantic)!=std::string::npos);
+    auto implementation=specialized;
+    implementation.replace(implementation.find("n+1"),3,"n+2");
+    auto private_change=emit(implementation);
+    assert(private_change.success && private_change.identity.semantic_fingerprint==member.identity.semantic_fingerprint);
   }
 }
 
@@ -4334,6 +4393,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestClosedParentMemberSpecializations();
   TestDependentMemberPartials();
   TestConcreteSpecialMemberSpecializations();
   TestConcreteMemberVariableSpecializations();
