@@ -477,6 +477,14 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_effectful_lambdas=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxEffectfulLambdaIdentity);
+  const bool effectful_lambda_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxEffectfulLambdaSemantic)!=sidecar.required_semantics.end();
+  const bool effectful_lambda_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxEffectfulLambdaIdentity(d) || d.kind!="Namespace";});
+  if (has_effectful_lambdas!=effectful_lambda_capability || !effectful_lambda_owners)
+    return Invalid("effectful lambda identities and required capability must agree");
   const bool has_address_template_arguments=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxAddressTemplateArgumentIdentity);
   const bool address_template_argument_capability=std::find(sidecar.required_semantics.begin(),

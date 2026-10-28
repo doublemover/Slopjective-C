@@ -173,6 +173,12 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
+    effectful_lambdas={row['qualified_name'] for row in metadata['declarations']
+                      if ';cxx-effectful-lambdas:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-effectful-lambdas.v1' in metadata['required_semantics']
+    assert {'NativeEffectLambdas::task','NativeEffectLambdas::frame',
+            'NativeEffectLambdas::checked','NativeEffectLambdas::checked_task',
+            'NativeEffectLambdas::factory','NativeEffectLambdas::owned_factory'}<=effectful_lambdas
     address_arguments={row['qualified_name'] for row in metadata['declarations']
                        if ';cxx-address-template-arguments:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-address-template-arguments.v1' in metadata['required_semantics']

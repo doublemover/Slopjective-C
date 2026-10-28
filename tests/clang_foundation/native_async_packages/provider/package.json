@@ -349,7 +349,8 @@
     "NativeEffectTemplates",
     "NativeEffectMembers",
     "NativeCallableProjections",
-    "NativeAddressArguments"
+    "NativeAddressArguments",
+    "NativeEffectLambdas"
   ],
   "dependencies": []
 }

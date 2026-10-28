@@ -90,6 +90,20 @@ deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
 The recorded historical five tooling collection errors stay outside the maintained
 Linux selection. Full profile conformance and native Linux AArch64 remain open.
 
+## Effectful C++ lambdas
+
+The [2.77 source span](linux_cxx_effectful_lambdas.md) adds native async/frame and
+typed-error suffixes to concrete and closed generic local lambdas. Native parsing,
+function types and printing retain effects through substitution and replay.
+Published bodies use the lambda call operator's native await/return context;
+capture initializers retain their enclosing context. Runtime witnesses cover
+captured scalar state, returned closures, suspended task/frame lambdas and typed
+sync/async errors. All 412 compiler regressions, 26 focused native checks, 40 tests
+in the import family, the emitter suite, 84 tooling tests and 16 source-free
+configurations / 96 commands pass. Broader validation and SDK delivery remain
+batched; public/dependent closures and remaining language/profile contracts stay
+open.
+
 ## Address template arguments
 
 The [2.76 source span](linux_cxx_address_template_arguments.md) publishes non-null

@@ -1,0 +1,182 @@
+{
+  "schema": "objc3c.linux-cxx-effectful-lambdas-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-386c2a6d9284-00b75dc3",
+  "compiler_patch_digest": "386c2a6d9284524e7e96b0c1d3618d3ef72255276875e3c6552966e5fb4908fe",
+  "native_fix_checkpoint": "d6683b11c4259da4bcad4a956e5bb2b474cd3c30",
+  "frontend_input_sha256": "c9ad416f4771b0691b7643b6c7ae2ba00821b65bf3781b803b191d6dc92fb587",
+  "concurrency_module_version": "2.77.0",
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "semantic_interface_schema": "2.2",
+  "extension_abi_revision": 21,
+  "runtime_service_abi": 4,
+  "required_semantics": [
+    "objc3.cxx-effectful-lambdas.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 84,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 96,
+    "dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "ownership": [
+      "ARC",
+      "MRC"
+    ],
+    "optimization": [
+      "O0",
+      "O2"
+    ],
+    "transports": [
+      "source-directed",
+      "eager"
+    ],
+    "provider_source_removed": true,
+    "concrete_and_closed_generic_local_effectful_lambdas": true,
+    "canonical_native_task_frame_and_typed_error_suffixes": true,
+    "captured_scalar_state_and_returned_closures": true,
+    "nontrivial_record_captures_have_balanced_lifetimes": true,
+    "native_lambda_physical_coroutine_returns_preserved": true,
+    "trailing_async_suffixes_do_not_become_type_names": true,
+    "deduced_concrete_effectful_closure_results_bound_to_published_factories": true,
+    "authored_auto_factory_return_syntax_preserved": true,
+    "closure_result_identity_excludes_physical_locations": true,
+    "closed_template_capture_type_sugar_normalized": true,
+    "deduced_factory_forward_definitions_share_one_native_redeclaration_chain": true,
+    "lambda_bodies_use_own_callable_context": true,
+    "capture_initializers_use_enclosing_callable_context": true,
+    "published_bodies_exclude_implicit_coroutine_machinery": true,
+    "dependent_typed_error_lambdas": true,
+    "suspension_and_sync_async_error_runtime_paths": true,
+    "relocation_and_replay_fingerprints_stable": true,
+    "changed_public_body_changes_fingerprint": true,
+    "capability_and_owner_kind_mismatches_rejected": true,
+    "native_compiler_evidence": {
+      "status": "PASS",
+      "checkpoint": "d6683b11c4259da4bcad4a956e5bb2b474cd3c30",
+      "compiler_regressions_passed": 412,
+      "platform_cases_unsupported": 3,
+      "native_import_family_tests_passed": 40,
+      "focused_native_import_tests_passed": 26,
+      "reports": [
+        {
+          "path": "out/effectful-lambdas-native-build.json",
+          "sha256": "0b14ea3805ceaf5d0e989166e0590baa9e8652a45bb5f8f0ebdca7f4c83c71a8"
+        },
+        {
+          "path": "out/effectful-lambdas-native-probe.log",
+          "sha256": "927cd611e16b387ed6cb59aa69ab3c4036c462dbb27d2d27b0eec108a7013af9"
+        },
+        {
+          "path": "out/effectful-lambdas-native-parser.log",
+          "sha256": "adb8a0f7ecd6ad69bc2d2c8c8e7f363a1d31d8dd92adea48d4b7f2602df5a05b"
+        },
+        {
+          "path": "out/effectful-lambdas-compiler-regressions.log",
+          "sha256": "76c46cd48b72914f59bc01e873dfe6de2d54f7a15b772f12abdb911c48cd14be"
+        }
+      ]
+    },
+    "reports": [
+      {
+        "path": "out/effectful-lambdas-build-followup.log",
+        "sha256": "57bef0d4800c663aab0aac102bb6c7ba1182007f5841d9df9ea973b1bfd62cc7"
+      },
+      {
+        "path": "out/effectful-lambdas-build.log",
+        "sha256": "085c49e578d38f08089353845ac96fe290f8e6fcec4bc7b7d4f8eb127e08b469"
+      },
+      {
+        "path": "out/effectful-lambdas-emitter-ctest.log",
+        "sha256": "7dfb86405e1390dad1ea9cbb021cfb6c8b69e42caeb50ab19017a58d95dcaa40"
+      },
+      {
+        "path": "out/effectful-lambdas-emitter.xml",
+        "sha256": "cb65f6d23c4886c0e68c3eef7b33e043e5cde878ec33fd8b8f9e400dc604d6c6"
+      },
+      {
+        "path": "out/effectful-lambdas-tooling.log",
+        "sha256": "eeee72b662d2f93ab1b368f62da8f3d6f9172a8acecc09fb7adf2df06cc5f703"
+      },
+      {
+        "path": "out/native-validation/effectful-lambdas-packages-normal/qualification.json",
+        "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+      },
+      {
+        "path": "out/native-validation/effectful-lambdas-packages-normal-eager/qualification.json",
+        "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+      }
+    ]
+  },
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "72951dbee9e66f66c2615889da6ee39bd2cffdaa988088556fdb2f8fa7ed6a28"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "4d50e757064fa340cae64b67968a2fd21efcf1c7f2a4700934d70cceabe6cd21"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "675b0a80e707b5e8b733f647d89a322610ae24c2a4b9fd3ff907a43488797768"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "cda686b1554f8b8e716e5805a2401fdb672d7be3fdbc1ada1dcb214f7ee02c53"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "dc3ca4ef0bf86657d01ff6401ff644b446fa8e84d16d341efb80300acd5bd672"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "e7158a12cad7ad85f4e1037b79de7a11de43697417f1bafb703541b74018156c"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "0f1d6e254738a68c657d8f106998ee3a6293c58959161f9f482b193a871e7018"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "d3be049cd13bcfada1317bfcb539f94b7b74df5a11309a202d43afeff60e8a72"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "7c75a6ac73f26947559f1d4312b27874700666a1ce71a9c9b6cc2ea648273ad6"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "d0512156946ef49b3b70582534584a21703644542a44573bf7d4e68dc2584d28"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "4aa659c349debf384a21cfbda0f833a0e3ca01e4d9abff62ca36928c4c34dcfc"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "53f128b17f44b72596ff6785180997f832e0f7fa2608e6eb90ca5c9089452779"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "5669bec9b6bdb0c934ea2caa7957bae71ae6e6f27003e8535f8c47c815dac206"
+    }
+  ],
+  "deferred": [
+    "Combined compiler, frontend, maintained-tooling and sanitizer validation after further implementation",
+    "Coordinated SDK delivery of post-2.62 source milestones"
+  ],
+  "remaining": [
+    "Remaining public/dependent closure and unnamed-type projections, custom coroutine promises and dependent lookup/attribute contracts",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

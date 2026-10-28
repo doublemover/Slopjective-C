@@ -57,6 +57,12 @@ std::string CanonicalType(clang::QualType type,
   policy.FullyQualifiedName = true;
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
+  clang::QualType result=type;
+  if(const auto *function=type->getAs<clang::FunctionType>())result=function->getReturnType();
+  if(const auto *record=result->getAsCXXRecordDecl();record && record->isLambda())
+    // Complete published factories bind closure bodies and captures. Physical
+    // source file/line spelling is not part of their deduced result identity.
+    policy.AnonymousTagNameStyle=static_cast<unsigned>(clang::PrintingPolicy::AnonymousTagMode::Plain);
   return type.getCanonicalType().getAsString(policy);
 }
 
@@ -875,6 +881,20 @@ public:
   bool VisitDeclRefExpr(clang::DeclRefExpr *expr) { Reference(expr->getDecl()); return true; }
   bool VisitMemberExpr(clang::MemberExpr *expr) { Reference(expr->getMemberDecl()); return true; }
   bool VisitCXXConstructExpr(clang::CXXConstructExpr *expr) { Reference(expr->getConstructor()); return true; }
+  bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
+    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
+    TraverseType(expression->getCallOperator()->getType());
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseLambdaExpr(expression,nullptr);
+  }
+  bool TraverseStmt(clang::Stmt *statement,DataRecursionQueue *queue=nullptr) {
+    const auto *previous=function_;
+    auto restore=llvm::scope_exit([&]{function_=previous;});
+    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+      function_=found->second;
+      statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
+    }
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseStmt(statement,queue);
+  }
   bool TraverseDecl(clang::Decl *declaration) {
     if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(declaration))
       InspectArguments(record->getTemplateArgs().asArray());
@@ -921,6 +941,7 @@ public:
 private:
   const clang::ASTContext &context_;
   const clang::FunctionDecl *function_=nullptr;
+  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
 };
 
 void VisitPublishedRuntimeContracts(const clang::NamedDecl *declaration,
@@ -1216,9 +1237,6 @@ bool GenericLambdaBodies(const clang::LambdaExpr *expression,
   if (!expression->isGenericLambda()) return true;
   const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate();
   if (!pattern) return false;
-  const auto *pattern_type=clang::getObjC3CallableFunctionType(pattern->getTemplatedDecl());
-  if (pattern_type && (pattern_type->getObjC3FunctionEffects().Async ||
-      pattern_type->getObjC3FunctionEffects().Throws!=clang::ObjC3ThrowsKind::None)) return false;
   std::map<std::string,const clang::FunctionDecl *> ordered;
   for (const auto *specialization:pattern->specializations()) {
     const auto *definition=specialization->getDefinition();
@@ -1385,7 +1403,13 @@ public:
     // Dependent init-captures retain an untyped ParenListExpr until native
     // instantiation. Bind that syntax and its children without inventing a type.
     if (type.isNull()) return "<untyped-dependent-expression>";
-    TraverseType(type);
+    const auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl());
+    if(ClosedClassArguments(specialization))
+      // Template spelling sugar may differ for a copied capture after replay.
+      // Bind both forms to the same primary owner and converted arguments;
+      // the canonical spelling below still preserves value qualifiers.
+      TraverseType(context_.getCanonicalTagType(specialization));
+    else TraverseType(type);
     clang::PrintingPolicy policy(context_.getLangOpts());
     policy.PrintAsCanonical = true;
     policy.FullyQualifiedName = true;
@@ -1459,6 +1483,7 @@ public:
     return true;
   }
   bool TraverseLambdaExpr(clang::LambdaExpr *expression,DataRecursionQueue * = nullptr) {
+    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
     if (!clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseLambdaExpr(expression,nullptr))
       return false;
     std::vector<GenericLambdaBody> bodies;
@@ -1467,9 +1492,20 @@ public:
       Add("generic-lambda-specialization");Add(body.key);
       for (const auto *parameter:body.function->parameters()) Local(parameter);
       Add(ExpressionType(body.function->getType()));
-      if (!TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(body.function)))) return false;
+      auto *statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body.function));
+      lambda_bodies_[statement]=body.function;
+      if (!TraverseStmt(statement)) return false;
     }
     return true;
+  }
+  bool TraverseStmt(clang::Stmt *statement,DataRecursionQueue *queue=nullptr) {
+    const auto *previous=function_;
+    auto restore=llvm::scope_exit([&]{function_=previous;});
+    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+      function_=found->second;
+      statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
+    }
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseStmt(statement,queue);
   }
   bool VisitTagDecl(clang::TagDecl *declaration) {
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
@@ -1830,6 +1866,7 @@ public:
 private:
   const clang::ASTContext &context_;
   const clang::FunctionDecl *function_;
+  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
   std::string bytes_;
   std::map<const clang::Decl *, unsigned> locals_;
   unsigned next_local_slot_ = 0;
@@ -2053,6 +2090,19 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
 }
+bool HasDeclarationEffectfulLambda(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Finder:clang::RecursiveASTVisitor<Finder> {
+      bool found=false;
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+        const auto effects=ReadCanonicalFunctionEffects(expression->getCallOperator()->getType(),expression->getLambdaClass()->getASTContext());
+        found |= effects.is_async || effects.is_throwing;return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
   struct References : clang::RecursiveASTVisitor<References> {
@@ -2997,6 +3047,21 @@ class TypeDependencyVisitor final
          exports_(exports), spi_group_(std::move(spi_group)),
          source_root_(source_root) {}
 
+   void AllowPublishedEffectfulClosureResult(const clang::FunctionDecl *function) {
+     if (!function || !PublishesFunctionBody(function) || !function->getDefinition() ||
+         !function->getDeclaredReturnType()->getContainedAutoType()) return;
+     const auto *record=function->getReturnType()->getAsCXXRecordDecl();
+     if (!record || !record->isLambda() || record->isGenericLambda()) return;
+     const auto effects=ReadCanonicalFunctionEffects(record->getLambdaCallOperator()->getType(),context_);
+     if (!effects.is_async && !effects.is_throwing) return;
+     for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
+       if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
+         if(owner->getCanonicalDecl()==function->getCanonicalDecl())
+           closure_results_.insert(record->getCanonicalDecl());
+         return;
+       }
+   }
+
    void CheckVisibility(const clang::NamedDecl *declaration) {
      if (declaration) {
        const auto group = ReadInterfaceSPIGroup(declaration);
@@ -3375,7 +3440,8 @@ class TypeDependencyVisitor final
     if (in_expression_) TraverseType(variable->getType());
     if (body_function_)
       for (const auto *attribute : variable->attrs())
-        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr>(attribute)) UnsupportedExpression();
+        if (!attribute->isImplicit() && !llvm::isa<clang::BlocksAttr>(attribute))
+          UnsupportedExpression("local variable attribute has no publication contract");
     return true;
   }
   bool VisitTagDecl(clang::TagDecl *declaration) {
@@ -3511,6 +3577,21 @@ class TypeDependencyVisitor final
     }
   }
   bool TraverseStmt(clang::Stmt *statement, DataRecursionQueue * = nullptr) {
+    const auto *previous_function=body_function_;
+    const clang::Decl *enclosing_context=nullptr;
+    bool inserted_context=false;
+    auto restore_function=llvm::scope_exit([&]{
+      body_function_=previous_function;
+      if(inserted_context)lambda_contexts_.erase(enclosing_context);
+    });
+    if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
+      if(previous_function) {
+        enclosing_context=previous_function->getCanonicalDecl();
+        inserted_context=lambda_contexts_.insert(enclosing_context).second;
+      }
+      body_function_=found->second;
+      statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body_function_));
+    }
     const bool previous = in_expression_; in_expression_ = true;
     auto restore = llvm::scope_exit([&] { in_expression_ = previous; });
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseStmt(statement, nullptr);
@@ -3527,7 +3608,7 @@ class TypeDependencyVisitor final
                                  DataRecursionQueue * = nullptr) {
     // The enclosing published function has already been projected to its
     // written body. Nested coroutine callables need their own body contract.
-    return UnsupportedExpression();
+    return UnsupportedExpression("nested coroutine body has no published callable context");
   }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
@@ -3582,6 +3663,7 @@ class TypeDependencyVisitor final
           "generic local lambdas require complete instantiations with stable named types and supported structural, integral, null or pack values");
       return false;
     }
+    lambda_bodies_[expression->getBody()]=expression->getCallOperator();
     const auto contexts = lambda_contexts_;
     const auto locals = lambda_locals_;
     lambda_contexts_.insert(expression->getCallOperator()->getCanonicalDecl());
@@ -3589,6 +3671,7 @@ class TypeDependencyVisitor final
       if (capture.capturesVariable() && expression->isInitCapture(&capture))
         lambda_locals_.insert(capture.getCapturedVar()->getCanonicalDecl());
     auto restore = llvm::scope_exit([&] { lambda_contexts_ = contexts; lambda_locals_ = locals; });
+    TraverseType(expression->getCallOperator()->getType());
     if (!clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseLambdaExpr(expression,nullptr)) return false;
     for (const auto &body:bodies) {
       lambda_contexts_.insert(body.function->getCanonicalDecl());
@@ -3598,8 +3681,10 @@ class TypeDependencyVisitor final
         lambda_locals_.insert(parameter->getCanonicalDecl());
         TraverseType(parameter->getType());
       }
-      TraverseType(body.function->getReturnType());
-      if (!TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(body.function)))) return false;
+      TraverseType(body.function->getType());
+      auto *statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body.function));
+      lambda_bodies_[statement]=body.function;
+      if (!TraverseStmt(statement)) return false;
     }
     return true;
   }
@@ -3613,9 +3698,11 @@ class TypeDependencyVisitor final
     }
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseBlockExpr(expression, nullptr);
   }
-  bool UnsupportedExpression() {
-    AddDiagnostic(result_, "O3IFC101",
-                  "declaration expressions with local declarations or captures require additional contracts");
+  bool UnsupportedExpression(llvm::StringRef reason={}) {
+    std::string message="declaration expressions with local declarations or captures require additional contracts";
+    if(!reason.empty())message+="; "+reason.str();
+    AddDiagnostic(result_, "O3IFC101",message,
+                  body_function_?body_function_->getQualifiedNameAsString():std::string());
     return false;
   }
 
@@ -3638,10 +3725,11 @@ class TypeDependencyVisitor final
                     declaration->getQualifiedNameAsString());
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
         record && record->isLambda())
-      return in_expression_ ? true : UnsupportedExpression();
+      return in_expression_ || closure_results_.count(record->getCanonicalDecl())
+          ? true : UnsupportedExpression("closure type escapes its expression context");
     if (IsExpressionLocalTag(declaration))
       return in_expression_ && IsLocalExpressionContext(declaration->getDeclContext())
-                 ? true : UnsupportedExpression();
+                 ? true : UnsupportedExpression("local type escapes its callable context");
     CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
@@ -3745,9 +3833,11 @@ class TypeDependencyVisitor final
 private:
   bool public_template_type_ = false;
   bool in_expression_ = false;
+  std::set<const clang::Decl *> closure_results_;
   std::set<const clang::Decl *> lambda_contexts_;
   std::set<const clang::Decl *> lambda_locals_;
   const clang::FunctionDecl *body_function_ = nullptr;
+  std::map<const clang::Stmt *,const clang::FunctionDecl *> lambda_bodies_;
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
@@ -3773,6 +3863,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
                                 ReadInterfaceSPIGroup(declaration),
                                 source_root);
+  visitor.AllowPublishedEffectfulClosureResult(llvm::dyn_cast<clang::FunctionDecl>(declaration));
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -5359,6 +5450,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-detached-callable-templates:v1;definitions="+
         ComputeInterfaceSourceSha256(contract)+";";
   }
+  if (HasDeclarationEffectfulLambda(representative))
+    identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
   if (HasDeclarationNullableKeyPathWrite(representative))
@@ -5718,6 +5811,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxEffectfulLambdaIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxEffectfulLambdaSemantic);
     if (HasCxxAddressTemplateArgumentIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxAddressTemplateArgumentSemantic);
     if (HasCxxTemplateCallableProjectionIdentity(declaration))
@@ -5901,6 +5996,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -6064,6 +6160,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

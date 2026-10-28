@@ -126,6 +126,25 @@ int effect_template_checked_application() __objc3_async {
   }
 }
 
+int effect_lambda_checked_application() __objc3_async {
+  NativeModuleResult *error=[NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{error};
+#endif
+  [error setNumber:42];
+  __objc3_do {
+    int sync=__objc3_try(NativeEffectLambdas::checked(42,nullptr));
+    int async=__objc3_try(__objc3_await NativeEffectLambdas::checked_task(42,nullptr));
+    if(sync!=42 || async!=42)return 0;
+    (void)__objc3_try(__objc3_await NativeEffectLambdas::checked_task(0,error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    if([(NativeModuleResult*)caught number]!=42)return 0;
+  }
+  __objc3_do {
+    (void)__objc3_try(NativeEffectLambdas::checked(0,error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {return [(NativeModuleResult*)caught number]==42?42:0;}
+}
+
 int callable_projection_checked_application() __objc3_async {
   NativeModuleResult *error=[NativeModuleResult new];
 #if !__has_feature(objc_arc)
@@ -1235,6 +1254,21 @@ int main() {
     int *slot=counter_slot();if(slot!=&counter<&storage> || *slot!=1 || counter<&other> !=0)return 234;
     *slot=42;if(counter<&storage> !=42)return 235;
   }
+  {
+    auto closure=NativeEffectLambdas::factory(40);
+    auto task=NativeEffectLambdas::task(40).start(executor);
+    auto frame=__objc3_async_from_frame<int>(NativeEffectLambdas::frame(40)).start(executor);
+    auto concrete=closure(2).start(executor);
+    auto checked=effect_lambda_checked_application().start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       task.result()!=42 || frame.result()!=42 || concrete.result()!=42 || checked.result()!=42)return 236;
+  }
+  {
+    auto closure=NativeEffectLambdas::owned_factory(NativeTemplateValue<int>(40));
+    auto task=closure(2).start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || task.result()!=42)return 237;
+  }
+  if(NativeTemplateValue<int>::live)return 238;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

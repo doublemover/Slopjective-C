@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 76,
+        "minor": 77,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -202,7 +202,8 @@
         "Namespace function templates with canonical native async/frame and checked-error effects, exact runtime/header contracts, published definitions and source-free consumer instantiation (source)",
         "Canonical async/frame and checked-error member function templates in concrete/generic records and ordinary generic class methods, with complete owner effects/bodies and native source-free instantiation (source)",
         "Canonical effectful function specializations, alias/callback variable templates and dependent typed-error template projections under complete checked published owners (source)",
-        "Non-null declaration and structural template address values with exact module-owned function/object/member identities, subobject paths, offsets and checked dependency references (source)"
+        "Non-null declaration and structural template address values with exact module-owned function/object/member identities, subobject paths, offsets and checked dependency references (source)",
+        "Concrete and closed generic local C++ lambdas with canonical async/frame and typed-error suffixes, preserved source printing and callable-scoped published body contracts (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

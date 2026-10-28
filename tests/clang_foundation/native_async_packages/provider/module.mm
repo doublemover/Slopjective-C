@@ -1884,3 +1884,36 @@ namespace NativeAddressArguments {
   using End=Subobject<Pointer{&array.values[2]}>;
   int *counter_slot(){++counter<&storage>;return &counter<&storage>;}
 }
+
+namespace NativeEffectLambdas {
+  inline int task(int n) __objc3_async {
+    auto next=[bias=2]<class T>(T value)->T __objc3_async {
+      __objc3_await objc3::task_yield;return value+bias;
+    };
+    return __objc3_await next(n);
+  }
+  inline int frame(int n) __objc3_async_frame {
+    auto next=[bias=2]<class T>(T value)->T __objc3_async_frame {
+      (void)__objc3_await NativeEffectTemplates::pause(0);return value+bias;
+    };
+    return __objc3_await next(n);
+  }
+  inline int checked(int n,id<NativeModuleError> error) __objc3_throws(id<NativeModuleError>) {
+    auto next=[]<class E>(int value,E error)->int __objc3_throws(E) {
+      if(error)__objc3_throw(error);return value;
+    };
+    return __objc3_try(next(n,error));
+  }
+  inline int checked_task(int n,id<NativeModuleError> error) __objc3_async __objc3_throws(id<NativeModuleError>) {
+    auto next=[]<class E>(int value,E error)->int __objc3_async __objc3_throws(E) {
+      __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
+    };
+    return __objc3_try(__objc3_await next(n,error));
+  }
+  inline auto factory(int bias) {
+    return [bias](int n)->int __objc3_async {__objc3_await objc3::task_yield;return bias+n;};
+  }
+  inline auto owned_factory(NativeTemplateValue<int> value) {
+    return [value](int n)->int __objc3_async {__objc3_await objc3::task_yield;return value.number()+n;};
+  }
+}

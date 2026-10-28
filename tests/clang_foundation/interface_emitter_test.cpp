@@ -1816,6 +1816,90 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestEffectfulLambdas() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+    auto emit=[&](const std::string &source,const char *file="effectful-lambdas.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+          std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.effectful_lambdas","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.effectful_lambdas","test",{},{},{},{"Members","MemberError","Error"});
+    };
+    const std::string source=R"(
+      #include <objc3c/runtime/objc3_task.hpp>
+      @protocol Error @end
+      @protocol MemberError<Error> @end
+
+namespace Members {
+  inline int pause(int n) __objc3_async {return n;}
+  inline int task(int n) __objc3_async {
+    auto next=[bias=2]<class T>(T value)->T __objc3_async {
+      __objc3_await objc3::task_yield;return value+bias;
+    };
+    return __objc3_await next(n);
+  }
+  inline int frame(int n) __objc3_async_frame {
+    auto next=[bias=2]<class T>(T value)->T __objc3_async_frame {
+      (void)__objc3_await pause(0);return value+bias;
+    };
+    return __objc3_await next(n);
+  }
+  inline int checked(int n,id<MemberError> error) __objc3_throws(id<MemberError>) {
+    auto next=[]<class E>(int value,E error)->int __objc3_throws(E) {
+      if(error)__objc3_throw(error);return value;
+    };
+    return __objc3_try(next(n,error));
+  }
+  inline int checked_task(int n,id<MemberError> error) __objc3_async __objc3_throws(id<MemberError>) {
+    auto next=[]<class E>(int value,E error)->int __objc3_async __objc3_throws(E) {
+      __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return value;
+    };
+    return __objc3_try(__objc3_await next(n,error));
+  }
+  inline auto factory(int bias) {
+    return [bias](int n)->int __objc3_async {__objc3_await objc3::task_yield;return bias+n;};
+  }
+  struct Owned {
+    int value;Owned(int n):value(n){}Owned(const Owned &other):value(other.value){}~Owned(){}
+  };
+  inline auto owned_factory(Owned value) {
+    return [value](int n)->int __objc3_async {__objc3_await objc3::task_yield;return value.value+n;};
+  }
+}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxEffectfulLambdaSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-effectful-lambdas.mm");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-effectful-lambdas.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxEffectfulLambdaIdentity)==6);
+    auto wrong_owner=*decoded;
+    auto owner=std::find_if(wrong_owner.declarations.begin(),wrong_owner.declarations.end(),HasCxxEffectfulLambdaIdentity);
+    assert(owner!=wrong_owner.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong_owner,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxEffectfulLambdaSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto changed=source;auto position=changed.find("value+bias");assert(position!=std::string::npos);
+    changed.replace(position,10,"value+bias+1");auto altered=emit(changed);
+    assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxEffectfulLambdaSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+  }
+}
+
+
+
 void TestTemplateCallableProjections() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
@@ -4738,6 +4822,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestEffectfulLambdas();
   TestAddressTemplateArguments();
   TestTemplateCallableProjections();
   TestEffectfulTemplateMembers();
