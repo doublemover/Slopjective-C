@@ -109,6 +109,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxConcreteSpecialMemberSpecializationSemantic,
     kCxxDependentMemberPartialSemantic,
     kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -779,6 +780,16 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           }
         }
       }
+      if (HasCxxClosedParentPatternIdentity(expected))
+        for (auto *pattern:ReadClosedParentPatterns(exported.Declarations.at(expected.stable_id))) {
+          auto imported_pattern=importer->Import(pattern);
+          if (!imported_pattern) {
+            Add(report.diagnostics,"O3IFC142",
+                "could not import closed-parent pattern '"+pattern->getQualifiedNameAsString()+
+                    "': "+llvm::toString(imported_pattern.takeError()),expected.stable_id);
+            return report;
+          }
+        }
       if (HasCxxClosedParentMemberIdentity(expected))
         for (auto *member:ReadClosedParentMemberSpecializations(exported.Declarations.at(expected.stable_id))) {
           auto imported_member=importer->Import(member);

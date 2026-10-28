@@ -14,6 +14,12 @@ static void *native_closed_parent_worker(void *context) {
   ++NativeClosedParents::Outer<int>::local<long>;
   return nullptr;
 }
+static void *native_closed_pattern_worker(void *context) {
+  auto *observed=static_cast<int *>(context);
+  *observed=NativeClosedPatterns::Outer<int>::local<long>+NativeClosedPatterns::Outer<long>::local<int*>;
+  ++NativeClosedPatterns::Outer<int>::local<long>;++NativeClosedPatterns::Outer<long>::local<int*>;
+  return nullptr;
+}
 struct native_thread_observation { bool passed; const void *ordinary; const void *shared; };
 static void *native_thread_worker(void *context) {
   auto *observation=static_cast<native_thread_observation *>(context);
@@ -1070,6 +1076,38 @@ int main() {
     if(pthread_create(&worker,nullptr,native_closed_parent_worker,&worker_local) ||
        pthread_join(worker,nullptr) || worker_local!=42 || Family::local<long>!=43) return 218;
     Family::local<long> =42;
+  }
+  {
+    using Family=NativeClosedPatterns::Outer<int>;
+    using Partial=NativeClosedPatterns::Outer<long>;
+    int n=40;
+    auto *value=native_closed_pattern_factory();
+    auto *pointer=native_closed_pattern_partial_factory(&n);
+    {
+      Family::Inner<int> copy(*value);Partial::Inner<int*> cloned(*pointer);
+      if(native_closed_pattern_lives()!=&Family::Inner<int>::live ||
+         native_closed_pattern_partial_lives()!=&Partial::Inner<int*>::live) return 225;
+      if(value->get()!=42 || copy.get()!=42 || pointer->get()!=42 || cloned.get()!=42 ||
+         Family::Inner<int>::live!=2 || Partial::Inner<int*>::live!=2) return 219;
+      delete value;delete pointer;
+      if(Family::Inner<int>::live!=1 || Partial::Inner<int*>::live!=1) return 220;
+    }
+    Family owner;
+    int(Family::*call)(long)const=&Family::call<long>;
+    if(Family::Inner<int>::live || Partial::Inner<int*>::live || (owner.*call)(40)!=42 ||
+       owner.call(40)!=42 || Partial{}.call(42L)!=42 || Partial::Inner<int>{}.get()!=1) return 221;
+    if(native_closed_pattern_address()!=&Family::value<long> ||
+       native_closed_pattern_partial_address()!=&Partial::value<int*> ||
+       native_closed_pattern_tls()!=&Family::local<long>) return 222;
+    ++*native_closed_pattern_address();++*native_closed_pattern_partial_address();
+    if(Family::value<long>!=43 || Partial::value<int*>!=43 || Partial::value<int>!=1 || Family::value<int>!=42) return 223;
+    Family::value<long> =42;Partial::value<int*> =42;
+    Family::local<long> =43;Partial::local<int*> =43;
+    int worker_local=0;pthread_t worker;
+    if(pthread_create(&worker,nullptr,native_closed_pattern_worker,&worker_local) ||
+       pthread_join(worker,nullptr) || worker_local!=84 || Family::local<long>!=43 ||
+       Partial::local<int*>!=43) return 224;
+    Family::local<long> =42;Partial::local<int*> =42;
   }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

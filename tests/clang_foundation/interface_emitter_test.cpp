@@ -1743,6 +1743,54 @@ void TestTemplateStructure() {
   }
 }
 
+void TestClosedParentPatterns() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="closed-parent-patterns.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.closed_patterns","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.closed_patterns","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        template<class T>struct Outer {
+          template<class U>struct Inner {int get()const{return 1;}};
+          template<class U>inline static int value=1;
+          template<class U>inline static thread_local int local=1;
+          template<class U>int call(U n)const{return n;}
+        };
+      }
+      template<>template<class U>struct N::Outer<int>::Inner {U value;int get()const{return value+2;}};
+      template<>template<class U>inline int N::Outer<int>::value=42;
+      template<>template<class U>inline thread_local int N::Outer<int>::local=42;
+      template<>template<class U>int N::Outer<int>::call(U n)const{return n+2;}
+      template<>template<class U>struct N::Outer<long>::Inner<U*> {U *value;int get()const{return *value+2;}};
+      template<>template<class U>inline int N::Outer<long>::value<U*> =42;
+      template<>template<class U>inline thread_local int N::Outer<long>::local<U*> =42;
+      inline int probe(){int n=40;return N::Outer<int>::Inner<long>{40}.get()+N::Outer<int>::value<long>+N::Outer<int>{}.call(40L)+N::Outer<long>::Inner<int*>{&n}.get()+N::Outer<long>::value<int*>+N::Outer<long>::value<int>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxClosedParentPatternSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-closed-parent-patterns.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closed-parent-patterns.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxClosedParentPatternIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxClosedParentPatternSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxClosedParentPatternSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("n+2"),3,"n+3");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+}
+
 void TestClosedParentMemberSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="closed-parent-members.cpp") {
@@ -4393,6 +4441,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestClosedParentPatterns();
   TestClosedParentMemberSpecializations();
   TestDependentMemberPartials();
   TestConcreteSpecialMemberSpecializations();

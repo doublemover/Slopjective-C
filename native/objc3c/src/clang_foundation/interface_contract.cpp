@@ -438,6 +438,15 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_closed_parent_patterns=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosedParentPatternIdentity);
+  const bool closed_parent_pattern_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosedParentPatternSemantic)!=sidecar.required_semantics.end();
+  const bool closed_parent_pattern_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosedParentPatternIdentity(d) ||
+          d.kind=="ClassTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d));});
+  if (has_closed_parent_patterns!=closed_parent_pattern_capability || !closed_parent_pattern_owners)
+    Add(result,"O3IFC081","closed-parent pattern identities and required capability must agree",expected.canonical_name);
   const bool has_closed_parent_members=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxClosedParentMemberIdentity);
   const bool closed_parent_member_capability=std::find(sidecar.required_semantics.begin(),

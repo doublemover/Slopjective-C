@@ -166,6 +166,19 @@ bool IsExplicitNamespaceClassSpecialization(const clang::ClassTemplateSpecializa
       (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(record) ||
        record->getSpecializationKind()==clang::TSK_ExplicitSpecialization);
 }
+bool IsClosedParentPattern(const clang::NamedDecl *declaration) {
+  if (!declaration) return false;
+  const auto *parent=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration->getDeclContext());
+  if (!parent || parent->isDependentContext()) return false;
+  if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) return pattern->isMemberSpecialization();
+  if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) return pattern->isMemberSpecialization();
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) return pattern->isMemberSpecialization();
+  if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(declaration))
+    return !partial->getInstantiatedFromMember() || partial->isMemberSpecialization();
+  if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration))
+    return !partial->getInstantiatedFromMember() || partial->isMemberSpecialization();
+  return false;
+}
 bool IsClosedParentMemberSpecialization(const clang::NamedDecl *declaration) {
   if (!declaration) return false;
   const auto *parent=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration->getDeclContext());
@@ -201,7 +214,7 @@ std::vector<const clang::ClassTemplateSpecializationDecl *> PublishedClassSpecia
   llvm::SmallVector<clang::ClassTemplatePartialSpecializationDecl *,4> partials;
   pattern->getPartialSpecializations(partials);
   for (const auto *partial:partials)
-    if (IsExplicitNamespaceClassSpecialization(partial) || IsConcreteMemberClassSpecialization(partial) || IsDependentMemberPartial(partial)) {
+    if (IsExplicitNamespaceClassSpecialization(partial) || IsConcreteMemberClassSpecialization(partial) || IsDependentMemberPartial(partial) || IsClosedParentPattern(partial)) {
       const auto *definition=partial->getDefinition();
       result.push_back(definition?llvm::cast<clang::ClassTemplateSpecializationDecl>(definition):partial);
     }
@@ -227,7 +240,7 @@ std::vector<const clang::VarTemplatePartialSpecializationDecl *> PublishedVariab
   llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
   pattern->getPartialSpecializations(partials);
   std::vector<const clang::VarTemplatePartialSpecializationDecl *> result;
-  for (const auto *partial:partials) if (IsTopLevel(partial) || IsConcreteMemberVariableSpecialization(partial) || IsDependentMemberPartial(partial)) {
+  for (const auto *partial:partials) if (IsTopLevel(partial) || IsConcreteMemberVariableSpecialization(partial) || IsDependentMemberPartial(partial) || IsClosedParentPattern(partial)) {
     if (const auto *definition=partial->getDefinition())
       partial=llvm::cast<clang::VarTemplatePartialSpecializationDecl>(definition);
     result.push_back(partial);
@@ -443,6 +456,68 @@ std::vector<clang::NamedDecl *> ClosedParentMemberSpecializations(const clang::N
           add(selected);
         }
       } else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
+        for (const auto *specialization:pattern->specializations()) {
+          const auto *selected=static_cast<const clang::VarDecl *>(specialization)->getMostRecentDecl();
+          if (const auto *definition=specialization->getDefinition()) selected=definition;
+          add(selected);
+        }
+      } else if (const auto *nested=llvm::dyn_cast<clang::CXXRecordDecl>(member)) {
+        add(nested);self(self,nested);
+      }
+    }
+  };
+  if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(owner)) {
+    collect(collect,pattern->getTemplatedDecl());
+    for (const auto *specialization:pattern->specializations()) collect(collect,specialization);
+  } else collect(collect,llvm::dyn_cast<clang::CXXRecordDecl>(owner));
+  return result;
+}
+
+std::vector<clang::NamedDecl *> ClosedParentPatterns(const clang::NamedDecl *owner) {
+  std::vector<clang::NamedDecl *> result;
+  std::set<const clang::CXXRecordDecl *> seen;
+  std::set<const clang::Decl *> published;
+  auto add=[&](const clang::NamedDecl *declaration) {
+    if (IsClosedParentPattern(declaration) && published.insert(declaration->getCanonicalDecl()).second)
+      result.push_back(const_cast<clang::NamedDecl *>(declaration));
+  };
+  auto collect=[&](auto &&self,const clang::CXXRecordDecl *record)->void {
+    if (!record) return;
+    if (const auto *definition=record->getDefinition()) record=definition;
+    if (!record->isCompleteDefinition() || !seen.insert(record).second) return;
+    for (const auto *member:record->decls()) {
+      if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
+        const auto *selected=pattern->getMostRecentDecl();
+        if (const auto *definition=pattern->getTemplatedDecl()->getDefinition())
+          if (const auto *defined=definition->getDescribedClassTemplate()) selected=defined;
+        add(selected);
+        self(self,pattern->getTemplatedDecl());
+        for (const auto *specialization:pattern->specializations()) {
+          const auto *definition=specialization->getDefinition();
+          auto *selected=definition?llvm::cast<clang::ClassTemplateSpecializationDecl>(definition):specialization;
+          add(selected);self(self,selected);
+        }
+        llvm::SmallVector<clang::ClassTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        for (const auto *partial:partials) {add(partial);self(self,partial);}
+      } else if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+        const auto *selected=pattern->getMostRecentDecl();
+        if (const auto *definition=pattern->getTemplatedDecl()->getDefinition())
+          if (const auto *defined=definition->getDescribedFunctionTemplate()) selected=defined;
+        add(selected);
+        for (const auto *function:pattern->specializations()) {
+          const auto *selected=function->getMostRecentDecl();
+          if (function->isInlined()) if (const auto *definition=function->getDefinition()) selected=definition;
+          add(selected);
+        }
+      } else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
+        const auto *selected=pattern->getMostRecentDecl();
+        if (const auto *definition=pattern->getTemplatedDecl()->getDefinition())
+          if (const auto *defined=definition->getDescribedVarTemplate()) selected=defined;
+        add(selected);
+        llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        for (const auto *partial:partials) add(partial);
         for (const auto *specialization:pattern->specializations()) {
           const auto *selected=static_cast<const clang::VarDecl *>(specialization)->getMostRecentDecl();
           if (const auto *definition=specialization->getDefinition()) selected=definition;
@@ -818,6 +893,8 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
   if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
     for (const auto *partial:PublishedVariablePartials(pattern))
       finder.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
+  for (auto *member:ClosedParentMemberSpecializations(declaration)) finder.TraverseDecl(member);
+  for (auto *pattern:ClosedParentPatterns(declaration)) finder.TraverseDecl(pattern);
   for (auto *definition:DetachedCallableTemplateDefinitions(declaration)) finder.TraverseDecl(definition);
   for (auto *definition:DetachedStaticDataTemplateDefinitions(declaration)) finder.TraverseDecl(definition);
   for (auto *definition:DetachedNestedTemplateDefinitions(declaration)) finder.TraverseDecl(definition);
@@ -1751,6 +1828,10 @@ bool ContainsLambda(const clang::Stmt *statement) {
 }
 template <class Predicate>
 bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate &contains) {
+  for (const auto *member:ClosedParentMemberSpecializations(declaration))
+    if (HasPublishedExpression(member,contains)) return true;
+  for (const auto *pattern:ClosedParentPatterns(declaration))
+    if (HasPublishedExpression(pattern,contains)) return true;
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
     const auto *record=pattern->getTemplatedDecl();
     if (const auto *definition=record->getDefinition()) record=definition;
@@ -1837,6 +1918,8 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
     if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
       for (const auto *partial:PublishedVariablePartials(pattern))
         visitor.TraverseDecl(const_cast<clang::VarTemplatePartialSpecializationDecl *>(partial));
+    for (auto *member:ClosedParentMemberSpecializations(declaration)) visitor.TraverseDecl(member);
+    for (auto *pattern:ClosedParentPatterns(declaration)) visitor.TraverseDecl(pattern);
     for (auto *definition:DetachedCallableTemplateDefinitions(declaration)) visitor.TraverseDecl(definition);
     for (auto *definition:DetachedStaticDataTemplateDefinitions(declaration)) visitor.TraverseDecl(definition);
     for (auto *definition:DetachedNestedTemplateDefinitions(declaration)) visitor.TraverseDecl(definition);
@@ -2998,6 +3081,10 @@ class TypeDependencyVisitor final
   }
   void CheckTemplateRecord(const clang::CXXRecordDecl *record) {
     if (const auto *definition=record->getDefinition()) record=definition;
+    // A materialized member primary may still be a forward declaration when
+    // only one of its partials has been defined. Its origin and each published
+    // partial are checked separately; base/layout access requires a definition.
+    if (!record->isCompleteDefinition()) return;
     if (IsDetachedNestedTemplateDefinition(record) && !IsInMainFile(context_,record->getLocation())) {
       AddDiagnostic(result_,"O3IFC112","detached nested template requires a module-owned definition",
                     record->getQualifiedNameAsString());return;
@@ -3551,6 +3638,13 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     visitor.CheckClassTemplate(pattern);
   if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       HasDirectMemberTemplates(record)) visitor.CheckTemplateRecord(record);
+  for (const auto *pattern:ClosedParentPatterns(declaration)) {
+    if (const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern)) visitor.CheckClassTemplate(record);
+    else if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(pattern)) visitor.CheckFunctionTemplate(function);
+    else if (const auto *variable=llvm::dyn_cast<clang::VarTemplateDecl>(pattern)) visitor.CheckVariableTemplate(variable);
+    else if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(pattern)) visitor.CheckVariablePartial(partial);
+    else if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(pattern)) visitor.CheckClassTemplate(partial->getSpecializedTemplate());
+  }
   for (const auto *specialization:ClosedParentMemberSpecializations(declaration)) {
     const auto *parent=llvm::cast<clang::ClassTemplateSpecializationDecl>(specialization->getDeclContext());
     for (const auto &argument:parent->getTemplateArgs().asArray())
@@ -3702,8 +3796,8 @@ bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *param
 bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
   const auto effects=ReadCanonicalFunctionEffects(partial->getType(),partial->getASTContext());
   if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) ||
-      (partial->isStaticDataMember() && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial)) ||
-      (partial->getStorageClass()==clang::SC_Static && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial)) ||
+      (partial->isStaticDataMember() && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
+      (partial->getStorageClass()==clang::SC_Static && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
       partial->getStorageClass()==clang::SC_PrivateExtern ||
       partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ||
       effects.is_async || effects.is_throwing) return false;
@@ -3741,7 +3835,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
   if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord() &&
       !IsDetachedNestedTemplateDefinition(body) &&
       !IsConcreteMemberClassSpecialization(llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(body)) &&
-      !IsDependentMemberPartial(body) && !IsClosedParentMemberSpecialization(body)) return false;
+      !IsDependentMemberPartial(body) && !IsClosedParentMemberSpecialization(body) && !IsClosedParentPattern(body)) return false;
   if ((body->getNumBases() || body->isPolymorphic()) && !body->getASTContext().getLangOpts().RTTI) return false;
   for (const auto *attribute : body->attrs()) {
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
@@ -3754,7 +3848,7 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
           specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
     if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(member);
-        IsDependentMemberPartial(partial)) {
+        (IsDependentMemberPartial(partial) || IsClosedParentPattern(partial))) {
       if (!IsBoundedTemplateRecord(partial,partial->getSpecializedTemplate()) ||
           !IsBoundedNestedTemplateParameters(partial->getTemplateParameters())) return false;
       continue;
@@ -3875,11 +3969,31 @@ bool IsBoundedClosedParentMembers(const clang::NamedDecl *owner) {
   return true;
 }
 
+bool IsBoundedClosedParentPatterns(const clang::NamedDecl *owner) {
+  for (const auto *pattern:ClosedParentPatterns(owner)) {
+    if (const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern)) {
+      if (!IsBoundedPublishedClassTemplate(record)) return false;
+    } else if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(pattern)) {
+      if (!IsBoundedClassMemberTemplate(function)) return false;
+    } else if (const auto *variable=llvm::dyn_cast<clang::VarTemplateDecl>(pattern)) {
+      if (!IsBoundedClassMemberVariable(variable)) return false;
+    } else if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(pattern)) {
+      if (!IsBoundedVariablePartial(partial)) return false;
+    } else if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(pattern)) {
+      std::string key;
+      if (!IsBoundedTemplateRecord(partial,partial->getSpecializedTemplate()) ||
+          !IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) ||
+          !ClassSpecializationArgumentKey(partial,partial->getASTContext(),key)) return false;
+    }
+  }
+  return true;
+}
+
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports = {}) {
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
-  bool supported = IsBoundedClosedParentMembers(declaration);
+  bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {
     supported &=
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
@@ -4120,6 +4234,12 @@ class InterfaceCollector final
     if (IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration) ||
         IsDetachedNestedTemplateRoot(declaration)) {
       if (IsInMainFile(context_,declaration->getLocation()) && SelectedExport(declaration,exports_))
+        root_declarations_.push_back(declaration);
+      return true;
+    }
+    if (IsClosedParentPattern(declaration)) {
+      if (!declaration->getLexicalDeclContext()->isRecord() &&
+          IsInMainFile(context_,declaration->getLocation()) && SelectedExport(declaration,exports_))
         root_declarations_.push_back(declaration);
       return true;
     }
@@ -4647,7 +4767,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     auto restore_record=llvm::scope_exit([&]{if(record)record->setQualifierInfo(record_qualifier);});
     if(record && !scopes.empty() && !IsDetachedNestedTemplateDefinition(record) &&
        !IsConcreteMemberClassSpecialization(llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record)) &&
-       !IsDependentMemberPartial(record) && !IsClosedParentMemberSpecialization(record))
+       !IsDependentMemberPartial(record) && !IsClosedParentMemberSpecialization(record) && !IsClosedParentPattern(record))
       record->setQualifierInfo({});
     auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
     const auto qualifier = function ? function->getQualifierLoc()
@@ -4764,6 +4884,9 @@ std::vector<clang::NamedDecl *> ReadDetachedCallableTemplateDefinitions(const cl
 }
 std::vector<clang::NamedDecl *> ReadDetachedStaticDataTemplateDefinitions(const clang::NamedDecl *owner) {
   return DetachedStaticDataTemplateDefinitions(owner);
+}
+std::vector<clang::NamedDecl *> ReadClosedParentPatterns(const clang::NamedDecl *owner) {
+  return ClosedParentPatterns(owner);
 }
 std::vector<clang::NamedDecl *> ReadClosedParentMemberSpecializations(const clang::NamedDecl *owner) {
   return ClosedParentMemberSpecializations(owner);
@@ -4920,6 +5043,23 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-function-specializations:v1;;cxx-function-templates:v2;primary="+
         ReadInterfaceDeclarationStableId(function->getPrimaryTemplate())+";arguments="+
         ComputeInterfaceSourceSha256(key)+";";
+  }
+  const auto closed_patterns=ClosedParentPatterns(representative);
+  if (!closed_patterns.empty()) {
+    std::set<std::string> definitions;
+    for (const auto *pattern:closed_patterns) {
+      std::string parent_arguments,text;
+      const auto *parent=llvm::cast<clang::ClassTemplateSpecializationDecl>(pattern->getDeclContext());
+      if (!ClassSpecializationArgumentKey(parent,context,parent_arguments)) return false;
+      llvm::raw_string_ostream stream(text);
+      PrintRootDeclaration(const_cast<clang::NamedDecl *>(pattern),const_cast<clang::ASTContext &>(context),stream);
+      definitions.insert(ReadInterfaceDeclarationStableId(pattern)+":parent="+parent_arguments+
+          ":definition="+ComputeInterfaceSourceSha256(text));
+    }
+    std::string contract;
+    for (const auto &definition:definitions) contract+=std::to_string(definition.size())+":"+definition;
+    identity.canonical_type_identity+=";cxx-closed-parent-patterns:v1;definitions="+
+        ComputeInterfaceSourceSha256(contract)+";";
   }
   const auto closed_members=ClosedParentMemberSpecializations(representative);
   if (!closed_members.empty()) {
@@ -5421,6 +5561,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxClosedParentPatternIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxClosedParentPatternSemantic);
     if (HasCxxClosedParentMemberIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClosedParentMemberSemantic);
     if (HasCxxDependentMemberPartialIdentity(declaration))
@@ -5589,6 +5731,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxConcreteSpecialMemberSpecializationSemantic,
     kCxxDependentMemberPartialSemantic,
     kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5747,6 +5890,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxConcreteSpecialMemberSpecializationSemantic,
     kCxxDependentMemberPartialSemantic,
     kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

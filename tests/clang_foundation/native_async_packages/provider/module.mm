@@ -1733,3 +1733,41 @@ template<>template<>inline int NativeClosedParents::Outer<int>::call<long>(long 
 int *native_closed_parent_address(){return &NativeClosedParents::Outer<int>::value<long>;}
 int *native_closed_parent_tls(){return &NativeClosedParents::Outer<int>::local<long>;}
 NativeClosedParents::Outer<int>::Inner<long> *native_closed_parent_factory(){return new NativeClosedParents::Outer<int>::Inner<long>(40);}
+
+namespace NativeClosedPatterns {
+  template<class T>struct Outer {
+    template<class U>struct Inner {int get()const{return 1;}};
+    template<class U>inline static int value=1;
+    template<class U>inline static thread_local int local=1;
+    template<class U>int call(U n)const{return n;}
+  };
+}
+template<>template<class U>struct NativeClosedPatterns::Outer<int>::Inner {
+  U value;
+  inline static int live=0;
+  explicit Inner(U n):value(n){++live;}
+  Inner(const Inner &n):value(n.value){++live;}
+  virtual ~Inner(){--live;}
+  int get()const{return value+2;}
+};
+template<>template<class U>inline int NativeClosedPatterns::Outer<int>::value=42;
+template<>template<class U>inline thread_local int NativeClosedPatterns::Outer<int>::local=42;
+template<>template<class U>int NativeClosedPatterns::Outer<int>::call(U n)const{return n+2;}
+template<>template<class U>struct NativeClosedPatterns::Outer<long>::Inner<U*> {
+  U *value;
+  inline static int live=0;
+  explicit Inner(U *n):value(n){++live;}
+  Inner(const Inner &n):value(n.value){++live;}
+  virtual ~Inner(){--live;}
+  int get()const{return *value+2;}
+};
+template<>template<class U>inline int NativeClosedPatterns::Outer<long>::value<U*> =42;
+template<>template<class U>inline thread_local int NativeClosedPatterns::Outer<long>::local<U*> =42;
+int *native_closed_pattern_address(){return &NativeClosedPatterns::Outer<int>::value<long>;}
+int *native_closed_pattern_partial_address(){return &NativeClosedPatterns::Outer<long>::value<int*>;}
+int *native_closed_pattern_tls(){return &NativeClosedPatterns::Outer<int>::local<long>;}
+NativeClosedPatterns::Outer<int>::Inner<int> *native_closed_pattern_factory(){return new NativeClosedPatterns::Outer<int>::Inner<int>(40);}
+NativeClosedPatterns::Outer<long>::Inner<int*> *native_closed_pattern_partial_factory(int *n){return new NativeClosedPatterns::Outer<long>::Inner<int*>(n);}
+
+int *native_closed_pattern_lives(){return &NativeClosedPatterns::Outer<int>::Inner<int>::live;}
+int *native_closed_pattern_partial_lives(){return &NativeClosedPatterns::Outer<long>::Inner<int*>::live;}

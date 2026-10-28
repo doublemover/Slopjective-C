@@ -337,7 +337,15 @@
     "NativeClosedParents",
     "native_closed_parent_address",
     "native_closed_parent_tls",
-    "native_closed_parent_factory"
+    "native_closed_parent_factory",
+    "NativeClosedPatterns",
+    "native_closed_pattern_address",
+    "native_closed_pattern_partial_address",
+    "native_closed_pattern_tls",
+    "native_closed_pattern_factory",
+    "native_closed_pattern_partial_factory",
+    "native_closed_pattern_lives",
+    "native_closed_pattern_partial_lives"
   ],
   "dependencies": []
 }
