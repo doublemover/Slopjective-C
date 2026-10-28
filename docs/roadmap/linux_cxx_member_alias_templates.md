@@ -41,4 +41,6 @@ suites and 335 tooling tests. Normal, ASan/UBSan and TSan each pass all 168
 five-family source/PCH configurations / 1,158 commands. Source-free C++ and
 key-path packages pass 80 configurations / 320 commands across normal, eager,
 ASan/UBSan and TSan execution. These results supersede the deferred combined
-source checks above; coordinated SDK delivery remains pending.
+source checks above. The [SDK 2.52 acceptance receipt](../support/linux_source_batch_2_52_acceptance.json)
+records completed installed delivery and exact-archive qualification on fresh
+Debian 13 and Ubuntu 26.04. Full profile and native AArch64 work remain open.

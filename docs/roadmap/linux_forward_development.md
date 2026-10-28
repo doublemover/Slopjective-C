@@ -9,38 +9,42 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current **2.33.0 SDK** delivers source milestones 2.10–2.33, including
-C++ executable packages, selected-arm captures, export roots/local types,
-aggregate/consuming/class/super isolation and expanded record-field key paths. Semantic interface schema **2.2** is a hard cutover;
-regenerate dependent objects, PCH, interfaces and packages.
+The current **2.52.0 SDK** delivers source milestones 2.10–2.52, System 2.14
+and keypath 2.4. This includes published async/isolation bodies, expanded captured
+ownership, exact native template identity, complete primary class-template member
+owners and writable nullable key-path chains. Semantic interface schema **2.2**
+is a hard cutover; regenerate dependent objects, PCH, interfaces and packages.
 
-The verified LLVM foundation passes **375 compiler regressions** (three platform
-cases unsupported) and **179 native unit tests**. This delivery qualifies that exact
-foundation and passes all **33 frontend suites**, nine GNUstep client tests,
-37 installed consumer commands, 13 native integration nodes and all **33 installed
-SDK gates**. The installed five-family matrix passes **168 configurations and
-1,110 commands**. Compiler source identity is
-`llvmorg-23.1.3-0d261d1ca552-e3f042ad7bc3-00b75dc3`.
+The verified LLVM foundation passes **410 compiler regressions** (three platform
+cases unsupported) and **201 native unit tests**. Delivery passes all **33
+frontend suites**, nine GNUstep client tests, 37 installed consumer commands,
+13 native integration nodes and all **33 installed SDK gates**. The installed
+five-family matrix passes **168 configurations / 1,158 commands**. Compiler
+source identity is `llvmorg-23.1.3-0d261d1ca552-fea4e2217ffd-00b75dc3`.
 
-The [current acceptance receipt](../support/linux_source_batch_2_33_acceptance.json)
-binds the exact archive, compiler/runtime identities and qualification reports.
-That archive passes the native-feature suite on fresh **Debian 13** and
-**Ubuntu 26.04** as ordinary users, including the complete five-family matrix,
-expanded key-path packages, relocation/reinstall, embedding and debugger audits.
-Both owned containers are removed. The
-[combined source receipt](../support/linux_source_batch_2_33_progress.json)
-records the complete normal, ASan/UBSan and TSan matrices, each with
-168 configurations / 1,110 commands, plus 287 tooling tests.
-Earlier milestone sections retain their historical source-checkpoint status;
-the acceptance receipt above supersedes their deferred-delivery statements.
-Full language/profile conformance and native Linux AArch64 remain open.
+The [current acceptance receipt](../support/linux_source_batch_2_52_acceptance.json)
+binds the exact archive and qualification reports. That archive passes the
+native-feature suite as ordinary users on fresh **Debian 13** and **Ubuntu
+26.04**, including the complete five-family matrix, source-free packages,
+relocation/reinstall, embedding and debugger audits. Both containers are removed.
+The [combined source receipt](../support/linux_template_member_batch_progress.json)
+records normal, ASan/UBSan and TSan matrices, each **168 configurations / 1,158
+commands**, plus **80 source-free package configurations / 320 commands** and
+**335 tooling tests**. Installed qualification additionally checks 14 supported
+C++ publication cases, 12 runtime configurations and 18 intended rejections;
+module-owned template symbols must carry their exact module/package ABI owner.
+
+Earlier milestone sections retain historical source-checkpoint results. The
+acceptance receipt above supersedes deferred-delivery statements through source
+2.52, System 2.14 and keypath 2.4. Full language/profile conformance and native
+Linux AArch64 remain open.
 
 The [System 2.10–2.12 source receipt](../support/linux_captured_callable_ownership_progress.json)
 records **398 compiler regressions**, **190 native unit tests**, all **33 frontend
 suites**, **15 tooling tests** and **24 source-free package configurations /
 96 commands** across normal, eager-import and ASan/UBSan execution. Three platform
 cases remain unsupported. These source checks include mutable and record-captured
-consuming closure publication; SDK 2.33 remains the accepted archive.
+consuming closure publication; These source checks are included in SDK 2.52.
 
 The [current operand/fill source receipt](../support/linux_operand_fill_ownership_progress.json)
 records **400 compiler regressions**, **190 native unit tests**, all **33 frontend
@@ -49,27 +53,26 @@ Normal, ASan/UBSan and TSan each pass the complete five-family source/PCH matrix
 **168 configurations / 1,158 commands per mode**. Source-free packages pass
 **24 configurations / 96 commands** across normal, eager-import and ASan/UBSan
 execution, including builtin bodies, complete fills and counted captured releases.
-SDK 2.33 remains the accepted archive; installed delivery follows this batch.
+These source checks are included in SDK 2.52.
 
 The [key-path/subscript source receipt](../support/linux_keypath_subscripts_progress.json)
 qualifies System **2.14** and keypath **2.3** with **405 compiler tests**, **191
 native unit tests**, all **33 frontend suites** and **331 tooling tests**. Normal,
 ASan/UBSan and TSan each pass **168 configurations / 1,158 commands**. Source-free
 key-path and C++ packages pass **60 configurations / 240 commands**, including
-eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
-candidate was stopped for the array fix and its unused prefix reclaimed.
+eager metadata operations. These checks are included in SDK 2.52.
 
 The [combined template source receipt](../support/linux_cxx_template_contracts_progress.json)
 qualifies 2.45–2.46 with **410 compiler regressions**, **198 native unit tests**,
 all **33 optimized frontend suites**, **335 tooling tests** and **24 source-free
 package configurations / 96 commands** across normal, eager-import and
-ASan/UBSan execution. SDK 2.33 remains the accepted archive.
+ASan/UBSan execution. These source checks are included in SDK 2.52.
 
 The [combined template-generics receipt](../support/linux_cxx_template_generics_progress.json)
 qualifies 2.47–2.49 with **410 compiler regressions**, **200 native unit tests**,
 all **33 optimized frontend suites**, **335 tooling tests** and **32 source-free
 package configurations / 128 commands** across normal, eager-import, ASan/UBSan
-and TSan execution. SDK 2.33 remains the accepted archive.
+and TSan execution. These source checks are included in SDK 2.52.
 
 The [combined template-member/key-path source receipt](../support/linux_template_member_batch_progress.json)
 qualifies source 2.50–2.52 and keypath 2.4 with **410 compiler regressions**, **201
@@ -77,7 +80,7 @@ native unit tests**, all **33 optimized frontend suites** and **335 tooling test
 Normal, ASan/UBSan and TSan each pass all **168 five-family source/PCH
 configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
-Coordinated SDK delivery follows this batch.
+Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
 ## C-style variadic templates
 
@@ -306,7 +309,7 @@ The [System 2.9.0 source span](linux_retainable_families.md) implements canonica
 family and operation attributes, validates aliases and redeclarations, enforces
 integrated-type ARC restrictions, and records release effects and analyzer
 summaries. PCH/import, declarations and source-free interfaces retain contracts.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 The [combined System 2.7–2.9 source receipt](../support/linux_closure_family_ownership_progress.json)
 records **395 compiler regressions**, **190 native unit tests**, all **33 frontend
@@ -321,7 +324,7 @@ The [System 2.8.0 source span](linux_borrowed_getter_snapshots.md) snapshots loa
 when stable getter owner arguments are evaluated. Later argument replacement or
 consumption expires that original binding, while independent pins protect it.
 Conditional/comma selection and message/operator dispatch share the same flow.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 ## Owners used inside later-invoked closures
 
@@ -329,7 +332,7 @@ The [System 2.7.0 source span](linux_borrowed_future_captures.md) caches symboli
 CFG summaries of concrete lambda/Block owner use. Local aliases and copied/init/
 nested captures retain future borrowing requirements; consumption invalidates
 later invocation while independent owners and pins preserve qualified calls.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 ## Block lifetime copy and unwind
 
@@ -337,7 +340,7 @@ The [System 2.6.0 source span](linux_borrowed_block_pins.md) models Block pin
 acquisition and ARC consumed-argument copies as separate throwing CFG operations.
 Failed copies unwind only completed bindings and preserve pre-entry owner claims.
 Callable ownership checks also follow arrays and deep pointer containers.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 ## Foreign consumption and Block owners
 
@@ -345,7 +348,7 @@ The [System 2.5.0 source span](linux_borrowed_foreign_consumption.md) preserves
 foreign consumed-parameter types under ARC/MRC, expires known CF owner claims
 and tracks consumed Block owners. Bound C++ member calls retain consumed and
 noescape contracts. Native structural equivalence, ODR identity and source-free
-imports preserve callable metadata. SDK 2.33 remains the accepted archive.
+imports preserve callable metadata. These source checks are included in SDK 2.52.
 
 ## Callable ownership contracts
 
@@ -353,7 +356,7 @@ The [System 2.4.0 source span](linux_callable_ownership_casts.md) preserves MRC
 retained callback results and checks explicit function/member-pointer casts,
 including nested callbacks. Consumed/retained obligations cannot be erased and
 noescape/borrowed permissions cannot be invented. PCH and source-free imports
-retain ownership identity. SDK 2.33 remains the accepted archive.
+retain ownership identity. These source checks are included in SDK 2.52.
 
 ## Annotated consumed owners and borrowed loans
 
@@ -361,7 +364,7 @@ The [System 2.3.0 source span](linux_borrowed_consumed_owners.md) adds annotated
 MRC object-parameter/receiver consumption, typed function/Block callbacks and
 C++ calls. Evaluated owner identities survive later argument effects; independent
 pins protect loans and overlapping consumption is rejected. MRC consumed types
-retain their canonical ownership contract. SDK 2.33 remains the accepted archive.
+retain their canonical ownership contract. These source checks are included in SDK 2.52.
 
 ## Manual owner release and borrowed loans
 
@@ -369,7 +372,7 @@ The [System 2.2.0 source span](linux_borrowed_manual_release.md) tracks manual
 instance-release messages, known aliases and conditional owner-claim state.
 Earlier lifetime pins remain independent; late pins and expired new acquisitions
 are rejected. Nested Block/lambda bodies inherit that state. Other manual and
-foreign consumption effects remain open. SDK 2.33 remains the accepted archive.
+foreign consumption effects remain open. These source checks are included in SDK 2.52.
 
 ## Borrowed C++ lambda captures
 
@@ -378,7 +381,7 @@ provenance through qualified C++ lambda value captures and nested bodies.
 Local/copy/noescape calls retain frozen aliases and ARC owner snapshots; hidden
 escapes, expired calls, persistent capture stores and future reference/address
 mutations are rejected. Mutable/reference/generic precision remains bounded.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 ## Published SDK runtime awaiters
 
@@ -387,7 +390,7 @@ runtime declarations in public signatures and concrete inline async bodies.
 Checkpoint/yield, executor/actor hops, task handles and completion-order groups
 retain written dependencies under required runtime-declaration semantics.
 Application-defined opaque types and changed runtime headers remain rejected.
-SDK 2.33 remains the accepted archive.
+These source checks are included in SDK 2.52.
 
 ## Task and frame interoperability
 
