@@ -325,7 +325,26 @@ public:
       if (function->getPrimaryTemplate()) {
         const bool explicit_namespace=!llvm::isa<clang::CXXMethodDecl>(function) &&
             function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;
-        if (!explicit_namespace) return true;
+        if (!explicit_namespace) {
+          const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
+          if (!method || !method->getIdentifier() ||
+              method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization) return true;
+          const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(function->getPrimaryTemplate()));
+          for (auto *redecl:function->redecls()) {
+            if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+              return Error(decl,"member function specialization redeclares a foreign ABI");
+            if (redecl->hasAttr<clang::AsmLabelAttr>())
+              return Error(decl,"member function specialization cannot replace its primary native ABI");
+            if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
+              if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
+                return Error(decl,"member function specialization conflicts with its primary ABI owner");
+            } else {
+              llvm::StringRef owned=context_.Idents.get(expected).getName();
+              redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
+            }
+          }
+          return true;
+        }
         if (ReadInterfaceDeclarationStableId(function).empty())
           return Error(decl,"explicit function specialization exceeds the module ABI argument contract");
       }

@@ -78,6 +78,19 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Concrete member function-template specializations
+
+The [2.67 source span](linux_cxx_concrete_member_function_specializations.md) adds
+explicit specializations of named instance/static member function templates in
+concrete records. Exact argument/type/native-symbol contracts and inline bodies
+remain under the complete parent. Non-inline bodies/private helpers stay in the
+provider and do not affect the public fingerprint. Primary ABI tags, pointer
+calls, primary fallback and positive/negative floating zero selection pass the
+emitter suite, thirteen native importer tests, 72 tooling tests and all 16
+source-free configurations / 96 commands. Dependent-parent, constructor/operator/
+conversion and member-variable forms remain open. SDK 2.62 remains accepted;
+combined validation for later milestones stays batched.
+
 ## Concrete member class-template specializations
 
 The [2.66 source span](linux_cxx_concrete_member_class_specializations.md) adds

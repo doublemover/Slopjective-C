@@ -1562,7 +1562,9 @@ struct Concrete {
   template<class T>struct Box{T value;};
   template<int V,bool Positive=true>struct Count{inline static constexpr int value=0;};
   template<class U=int>struct Inner;
-  template<class U=int>U twice(U n=21)const;
+  template<class U=int>U twice(U n=20)const;
+  template<class T>static T scaled(T n){return n+n;}
+  template<auto V>static int constant(){return int(V);}
   template<class U=int>static int shared;
   template<class U=int>static thread_local int local;
 };
@@ -1623,6 +1625,11 @@ template<class T>T NativeDetached::Family<T>::get()const{return value;}
 template<class T>template<class U>T NativeDetached::Family<T>::add(U n)const{return get()+n;}
 template<class T>template<class U>auto NativeDetached::Family<T>::closure(U n)const{return [saved=value,n]{return saved+n;};}
 template<class U>U NativeDetached::Concrete::twice(U n)const{return n+n;}
+static int native_member_private_scale(int n){return n+n+2;}
+template<>inline int NativeDetached::Concrete::twice<int>(int n)const{return n+n+2;}
+template<>int NativeDetached::Concrete::scaled<int>(int n){return native_member_private_scale(n);}
+template<>inline int NativeDetached::Concrete::constant<0.0>(){return 1;}
+template<>inline int NativeDetached::Concrete::constant<-0.0>(){return 2;}
 NativeDetached::Family<int> *native_detached_factory(){return new NativeDetached::Family<int>(40);}
 int native_detached_live(){return NativeDetached::Family<int>::live;}
 

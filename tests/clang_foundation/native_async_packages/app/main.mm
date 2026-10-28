@@ -306,6 +306,11 @@ int main() {
        NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
        NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
        NativeDetached::Concrete::local<> !=40)return 188;
+    int(NativeDetached::Concrete::*specialized_method)(int)const=&NativeDetached::Concrete::twice<int>;
+    auto *specialized_static=&NativeDetached::Concrete::scaled<int>;
+    if((NativeDetached::Concrete{}.*specialized_method)(20)!=42 || specialized_static(20)!=42 ||
+       NativeDetached::Concrete::scaled(21L)!=42 || NativeDetached::Concrete{}.twice(21L)!=42 ||
+       NativeDetached::Concrete::constant<0.0>()!=1 || NativeDetached::Concrete::constant<-0.0>()!=2)return 196;
     auto *concrete_specialized=native_concrete_specialized_factory();
     auto *concrete_specialized_copy=new NativeDetached::Concrete::Box<int>(*concrete_specialized);
     if(NativeDetached::Concrete::Box<int>::live!=2 || concrete_specialized_copy->get()!=40 ||

@@ -1743,6 +1743,57 @@ void TestTemplateStructure() {
   }
 }
 
+void TestConcreteMemberFunctionSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concrete-member-function-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.concrete_functions","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.concrete_functions","test");
+    };
+    const std::string source=R"(
+      static int private_twice(int n){return n+n+2;}
+      namespace N {
+        struct Concrete {
+          int base=40;
+          template<class T=int>T add(T n=1)const{return base+n;}
+          template<class T>static T twice(T n){return n+n;}
+          template<auto V>static int constant(){return int(V);}
+        };
+      }
+      template<>inline int N::Concrete::add<int>(int n)const{return base+n+1;}
+      template<>int N::Concrete::twice<int>(int n){return private_twice(n);}
+      template<>inline int N::Concrete::constant<0.0>(){return 1;}
+      template<>inline int N::Concrete::constant<-0.0>(){return 2;}
+      inline int probe(){return N::Concrete{}.add()+N::Concrete::twice(20)+N::Concrete{}.add(2L)+N::Concrete::constant<0.0>()+N::Concrete::constant<-0.0>();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxConcreteMemberFunctionSpecializationSemantic)!=std::string::npos);
+    assert(first.source_bytes.find("private_twice")==std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-concrete-member-functions.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-concrete-member-functions.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxConcreteMemberFunctionSpecializationIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxConcreteMemberFunctionSpecializationSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxConcreteMemberFunctionSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("return base+n+1"),15,"return base+n+2");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto private_changed=source;private_changed.replace(private_changed.find("return n+n+2"),12,"return n+n+3");
+    auto private_altered=emit(private_changed);assert(private_altered.success && private_altered.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto hidden=emit("static int hidden(){return 42;}struct Concrete{template<class T>T get(T n){return n;}};template<>inline int Concrete::get<int>(int n){return hidden();}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+  }
+}
+
 void TestConcreteMemberClassSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="concrete-member-class-specializations.cpp") {
@@ -2614,11 +2665,12 @@ void TestConcreteMemberTemplates() {
       assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
           [](const auto &d){return d.code=="O3IFC112";}));
     }
+    auto specialized=emit("struct Concrete{template<class U>int f(U n){return n;}};template<>int Concrete::f<int>(int n){return n+1;}");
+    assert(specialized.success && specialized.sidecar_json.find(kCxxConcreteMemberFunctionSpecializationSemantic)!=std::string::npos);
     for(const auto *source:{
         "struct Concrete{template<class U>int f(U);};",
         "struct Concrete{template<class U>static U value;};",
         "struct Concrete{template<template<class>class U>int f();};",
-        "struct Concrete{template<class U>int f(U n){return n;}};template<>int Concrete::f<int>(int n){return n+1;}",
         "struct Concrete{template<class U>inline static U value=U{40};};template<>inline int Concrete::value<int> =42;"})
       assert(!emit(source).success);
   }
@@ -4100,6 +4152,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestConcreteMemberFunctionSpecializations();
   TestConcreteMemberClassSpecializations();
   TestDetachedNestedTemplates();
   TestDetachedStaticDataTemplates();

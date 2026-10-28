@@ -104,6 +104,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxDetachedStaticDataTemplateSemantic,
     kCxxDetachedNestedTemplateSemantic,
     kCxxConcreteMemberClassSpecializationSemantic,
+    kCxxConcreteMemberFunctionSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -774,6 +775,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           }
         }
       }
+      if (HasCxxConcreteMemberFunctionSpecializationIdentity(expected))
+        for (auto *specialization:ReadConcreteMemberFunctionSpecializations(exported.Declarations.at(expected.stable_id))) {
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
       if (HasCxxConcreteMemberClassSpecializationIdentity(expected))
         for (auto *specialization:ReadConcreteMemberClassSpecializations(exported.Declarations.at(expected.stable_id))) {
           auto imported_specialization=importer->Import(specialization);
