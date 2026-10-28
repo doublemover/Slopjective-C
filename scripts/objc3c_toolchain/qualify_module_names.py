@@ -30,6 +30,28 @@ CAPABILITY = 'objc3.module-owned-names.v1'
 NATIVE_NAME = re.compile(r'__objc3_m_[0-9a-f]{64}_[0-9a-f]{64}')
 
 
+def validate_private_cpp_symbols(symbols: str, module: dict) -> None:
+    """Require native template ABI tags and concrete symbol renaming per owner."""
+    def field(value: str) -> bytes:
+        encoded = value.encode('utf-8')
+        return str(len(encoded)).encode('ascii') + b':' + encoded
+
+    owner = '__objc3_m_' + hashlib.sha256(
+        field(module['canonical_name']) + field(module['package_identity'])).hexdigest() + '_'
+    templates = ('private_template', 'private_variable')
+    concrete = ('private_namespace_helper', 'private_namespace_global',
+                'private_initializer', 'private_tls', 'private_reference')
+    for name in re.findall(r'^\s*Name: (\S+)', symbols, re.MULTILINE):
+        if any(old in name for old in concrete):
+            raise ValueError('private namespace declaration retained its shared C++ symbol')
+        if any(old in name for old in templates):
+            # Native specializations, local statics and their guards retain the
+            # template spelling. Their primary's exact module/package ABI tag
+            # supplies isolation; an unrelated owned symbol is insufficient.
+            if not any(tag.startswith(owner) for tag in NATIVE_NAME.findall(name)):
+                raise ValueError('private template symbol lacks its module/package ABI owner: ' + name)
+
+
 def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                  ownership: str, optimization: str) -> dict:
     label = '-'.join((language, standard, ownership, optimization))
@@ -77,8 +99,8 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                 raise ValueError('private function/global names escaped module ownership')
             if language != 'c++' and '._OBJC_CLASS_RuntimeTwin' in symbols:
                 raise ValueError('private Objective-C class retained its shared runtime name')
-            if '++' in language and any(old in symbols for old in ('private_template', 'private_variable', 'private_namespace_helper', 'private_namespace_global', 'private_initializer', 'private_tls', 'private_reference')):
-                raise ValueError('private template or namespace declaration retained its shared C++ symbol')
+            if '++' in language:
+                validate_private_cpp_symbols(symbols, metadata['module'])
             symbol_sets.append(names)
             symbol_evidence[name] = {'sha256': hashlib.sha256(symbols.encode()).hexdigest(), 'owned_names': len(names)}
         if symbol_sets[0] & symbol_sets[1]:
