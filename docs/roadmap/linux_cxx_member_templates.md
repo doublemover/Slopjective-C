@@ -25,6 +25,9 @@ specialization state with the provider.
 Detached member definitions, explicit/partial member specializations, nested
 class/alias/variable templates, member templates in concrete classes,
 template-template parameters and effectful/C-variadic members remain gated.
-Focused checks are recorded when complete; broader frontend, sanitizer and SDK
-qualification follow the implementation batch. SDK 2.33 remains the accepted
+The [focused source receipt](../support/linux_cxx_member_templates_progress.json)
+records all 138 AST contract tests, both optimized frontend suites and 16
+source-free package configurations / 64 commands across normal and eager
+imports. Broader native/frontend/tooling, sanitizer and SDK qualification follow
+the implementation batch. SDK 2.33 remains the accepted
 archive. Full profile and native AArch64 qualification remain open.
