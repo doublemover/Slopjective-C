@@ -24,3 +24,8 @@ Public function, class and variable templates, template-template parameter
 heads and the broader language generics roadmap remain separate implementation
 work. This source span does not claim full profile conformance or rebuild the
 accepted SDK 2.33 archive.
+
+The [source receipt](../support/linux_cxx_public_concepts_progress.json) records
+409 compiler regressions, 195 native unit tests, all 33 frontend suites,
+335 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution.
