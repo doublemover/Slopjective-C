@@ -146,6 +146,10 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   // discriminator and nested callable positions are known before substitution.
   if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     declaration=pattern->getTemplatedDecl();
+  if (const auto *pattern=llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
+  if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    declaration=pattern->getTemplatedDecl();
   std::string ownership;
   clang::QualType declaration_type;
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))

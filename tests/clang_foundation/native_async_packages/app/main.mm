@@ -126,6 +126,25 @@ int effect_template_checked_application() __objc3_async {
   }
 }
 
+int callable_projection_checked_application() __objc3_async {
+  NativeModuleResult *error=[NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{error};
+#endif
+  [error setNumber:42];
+  __objc3_do {
+    int sync=__objc3_try(NativeCallableProjections::checked<id<NativeModuleError>>(42,nullptr));
+    int async=__objc3_try(__objc3_await NativeCallableProjections::dependent_task(42,(id<NativeModuleError>)nullptr));
+    if(sync!=42 || async!=42)return 0;
+    (void)__objc3_try(__objc3_await NativeCallableProjections::dependent_task(0,(id<NativeModuleError>)error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {
+    if([(NativeModuleResult*)caught number]!=42)return 0;
+  }
+  __objc3_do {
+    (void)__objc3_try(NativeCallableProjections::checked<id<NativeModuleError>>(0,error));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {return [(NativeModuleResult*)caught number]==42?42:0;}
+}
+
 int effect_member_checked_application() __objc3_async {
   NativeEffectMembers::Family<int> family{42};NativeEffectMembers::Concrete concrete;
   NativeModuleResult *error=[NativeModuleResult new];
@@ -1187,6 +1206,25 @@ int main() {
        task.result().number()!=42 || frame.result().number()!=42) return 230;
   }
   if(NativeTemplateValue<int>::live) return 231;
+  {
+    using namespace NativeCallableProjections;
+    Family<int> family;Concrete concrete;
+    Callback<int> pointer=callback<int>;FrameCallback<int> framed=frame_callback<int>;
+    auto a=pointer(40).start(executor),b=provider(40).start(executor);
+    auto c=Family<int>::callback<int>(40).start(executor);
+    auto d=family.call(40).start(executor),e=concrete.call(40).start(executor);
+    auto f=__objc3_async_from_frame<int>(framed(40)).start(executor);
+    auto g=__objc3_async_from_frame<int>(concrete.framed(40)).start(executor);
+    Member<int> method=member<int>;auto indirect_member=(concrete.*method)(40).start(executor);
+    auto stored_task=stored<int>(40).start(executor);
+    int pointed=42;auto partial_task=partial<int*>(&pointed).start(executor);
+    auto fallback=task(42L).start(executor);
+    auto checked=callable_projection_checked_application().start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       a.result()!=42 || b.result()!=42 || c.result()!=42 || d.result()!=42 || e.result()!=42 ||
+       f.result()!=42 || g.result()!=42 || fallback.result()!=42 || checked.result()!=42 ||
+       indirect_member.result()!=42 || stored_task.result()!=42 || partial_task.result()!=&pointed)return 232;
+  }
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

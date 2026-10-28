@@ -38,6 +38,8 @@ inline std::string ReadAsyncABIIdentity(clang::QualType type,
     } else if (current->isPointerType() || current->isBlockPointerType() ||
                current->isReferenceType()) {
       self(self, current->getPointeeType(), position + ".pointee", depth + 1);
+    } else if (const auto *member=current->getAs<clang::MemberPointerType>()) {
+      self(self, member->getPointeeType(), position + ".member", depth + 1);
     } else if (const auto *array = context.getAsArrayType(current)) {
       self(self, array->getElementType(), position + ".element", depth + 1);
     } else if (const auto *optional =

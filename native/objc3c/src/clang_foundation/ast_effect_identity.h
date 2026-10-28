@@ -38,9 +38,13 @@ ReadCanonicalFunctionEffects(clang::QualType type,
     return result;
   // A callable variable or typedef can carry its function through a native
   // pointer, block pointer, or reference. Preserve that callable's effects.
-  while (type->isPointerType() || type->isBlockPointerType() ||
-         type->isReferenceType())
-    type = type->getPointeeType();
+  for (;;) {
+    if (type->isPointerType() || type->isBlockPointerType() || type->isReferenceType())
+      type=type->getPointeeType();
+    else if (const auto *member=type->getAs<clang::MemberPointerType>())
+      type=member->getPointeeType();
+    else break;
+  }
   const auto *function = type->getAs<clang::FunctionProtoType>();
   if (!function)
     return result;

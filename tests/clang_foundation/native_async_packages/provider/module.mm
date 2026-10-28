@@ -1807,3 +1807,49 @@ namespace NativeEffectMembers {
     }
   };
 }
+
+namespace NativeCallableProjections {
+  template<class T>T task(T n) __objc3_async {__objc3_await objc3::task_yield;return n;}
+  template<>inline int task<int>(int n) __objc3_async {__objc3_await objc3::task_yield;return n+2;}
+  template<class T>T frame(T n) __objc3_async_frame {(void)__objc3_await NativeEffectTemplates::pause(0);return n;}
+  template<>inline int frame<int>(int n) __objc3_async_frame {(void)__objc3_await NativeEffectTemplates::pause(0);return n+2;}
+  template<class T>T provider(T n) __objc3_async {return n;}
+  template<>int provider<int>(int n) __objc3_async {__objc3_await objc3::task_yield;return n+2;}
+  template<class T>using Callback=T(*)(T) __objc3_async;
+  template<class T>using FrameCallback=T(*)(T) __objc3_async_frame;
+  template<class T>inline Callback<T> callback=&task<T>;
+  template<>inline Callback<int> callback<int> = &task<int>;
+  template<class T>inline FrameCallback<T> frame_callback=&frame<T>;
+  template<class T>struct Family {
+    template<class U>using Callback=U(*)(U) __objc3_async;
+    template<class U>inline static Callback<U> callback=&task<U>;
+    template<class U>U call(U n)const __objc3_async {return n;}
+  };
+  template<>template<>inline int Family<int>::call<int>(int n)const __objc3_async {
+    __objc3_await objc3::task_yield;return n+2;
+  }
+  struct Concrete {
+    template<class U>U call(U n)const __objc3_async {return n;}
+    template<class U>U framed(U n)const __objc3_async_frame {return n;}
+  };
+  template<>inline int Concrete::call<int>(int n)const __objc3_async {
+    __objc3_await objc3::task_yield;return n+2;
+  }
+  template<>inline int Concrete::framed<int>(int n)const __objc3_async_frame {
+    (void)__objc3_await NativeEffectTemplates::pause(0);return n+2;
+  }
+  template<class T>using Member=T(Concrete::*)(T) const __objc3_async;
+  template<class T>inline Member<T> member=&Concrete::call<T>;
+  template<class T>inline Callback<T> partial=&task<T>;
+  template<class T>inline Callback<T*> partial<T*> = &task<T*>;
+  template<class T>inline Callback<T> stored=&task<T>;
+  template<>Callback<int> stored<int> = &task<int>;
+  template<class E>int dependent(int n,E error) __objc3_throws(E) {
+    if(error)__objc3_throw(error);return n;
+  }
+  template<class E>int dependent_task(int n,E error) __objc3_async __objc3_throws(E) {
+    __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return n;
+  }
+  template<class E>using Checked=int(*)(int,E) __objc3_throws(E);
+  template<class E>inline Checked<E> checked=&dependent<E>;
+}

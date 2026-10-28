@@ -112,6 +112,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxClosedParentPatternSemantic,
     kCxxEffectfulFunctionTemplateSemantic,
     kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

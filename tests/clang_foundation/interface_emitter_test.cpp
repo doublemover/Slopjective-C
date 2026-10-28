@@ -1743,6 +1743,111 @@ void TestTemplateStructure() {
   }
 }
 
+void TestTemplateCallableProjections() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2","--target=x86_64-unknown-linux-gnu",
+        "-fcoro-aligned-allocation","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    clang::tooling::FileContentMappings files;AddRuntimeInterfaceFiles(files,args,true);
+    auto emit=[&](const std::string &source,const char *file="template-callable-projections.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,args,file,"clang-tool",
+          std::make_shared<clang::PCHContainerOperations>(),clang::tooling::getClangStripDependencyFileAdjuster(),files);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.callable_projections","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.callable_projections","test",{},{},{},{"Members","MemberError","Error"});
+    };
+    const std::string source=R"(
+      #include <objc3c/runtime/objc3_task.hpp>
+      @protocol Error @end
+      @protocol MemberError<Error> @end
+
+namespace Members {
+  inline int pause(int n) __objc3_async {return n;}
+  template<class T>T task(T n) __objc3_async {__objc3_await objc3::task_yield;return n;}
+  template<>inline int task<int>(int n) __objc3_async {__objc3_await objc3::task_yield;return n+2;}
+  template<class T>T frame(T n) __objc3_async_frame {(void)__objc3_await pause(0);return n;}
+  template<>inline int frame<int>(int n) __objc3_async_frame {(void)__objc3_await pause(0);return n+2;}
+  template<class T>T provider(T n) __objc3_async {return n;}
+  template<>int provider<int>(int n) __objc3_async {__objc3_await objc3::task_yield;return n+2;}
+  template<class T>using Callback=T(*)(T) __objc3_async;
+  template<class T>using FrameCallback=T(*)(T) __objc3_async_frame;
+  template<class T>inline Callback<T> callback=&task<T>;
+  template<>inline Callback<int> callback<int> = &task<int>;
+  template<class T>inline FrameCallback<T> frame_callback=&frame<T>;
+  template<class T>struct Family {
+    template<class U>using Callback=U(*)(U) __objc3_async;
+    template<class U>inline static Callback<U> callback=&task<U>;
+    template<class U>U call(U n)const __objc3_async {return n;}
+  };
+  template<>template<>inline int Family<int>::call<int>(int n)const __objc3_async {
+    __objc3_await objc3::task_yield;return n+2;
+  }
+  struct Concrete {
+    template<class U>U call(U n)const __objc3_async {return n;}
+    template<class U>U framed(U n)const __objc3_async_frame {return n;}
+  };
+  template<>inline int Concrete::call<int>(int n)const __objc3_async {
+    __objc3_await objc3::task_yield;return n+2;
+  }
+  template<>inline int Concrete::framed<int>(int n)const __objc3_async_frame {
+    (void)__objc3_await pause(0);return n+2;
+  }
+  template<class T>using Member=T(Concrete::*)(T) const __objc3_async;
+  template<class T>inline Member<T> member=&Concrete::call<T>;
+  template<class T>inline Callback<T> partial=&task<T>;
+  template<class T>inline Callback<T*> partial<T*> = &task<T*>;
+  template<class T>inline Callback<T> stored=&task<T>;
+  template<>Callback<int> stored<int> = &task<int>;
+  template<class E>int dependent(int n,E error) __objc3_throws(E) {
+    if(error)__objc3_throw(error);return n;
+  }
+  template<class E>int dependent_task(int n,E error) __objc3_async __objc3_throws(E) {
+    __objc3_await objc3::task_yield;if(error)__objc3_throw(error);return n;
+  }
+  template<class E>using Checked=int(*)(int,E) __objc3_throws(E);
+  template<class E>inline Checked<E> checked=&dependent<E>;
+}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxTemplateCallableProjectionSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-template-callable-projections.mm");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-template-callable-projections.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxTemplateCallableProjectionIdentity)>=10);
+    for (const auto &declaration:decoded->declarations) {
+      const auto &name=declaration.qualified_name;
+      if (name=="Members::Callback" || name=="Members::Member" || name=="Members::member")
+        assert(declaration.effects.is_async && declaration.effects.async_abi_identity.find("cxx-task-v1")!=std::string::npos);
+      if (name=="Members::FrameCallback")
+        assert(declaration.effects.is_async && declaration.effects.async_abi_identity.find("c-frame-v1")!=std::string::npos);
+      if (name=="Members::dependent" || name=="Members::dependent_task" || name=="Members::Checked")
+        assert(declaration.effects.is_throwing && declaration.effects.throws_kind=="typed");
+    }
+    auto wrong_owner=*decoded;
+    auto owner=std::find_if(wrong_owner.declarations.begin(),wrong_owner.declarations.end(),HasCxxTemplateCallableProjectionIdentity);
+    assert(owner!=wrong_owner.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong_owner,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxTemplateCallableProjectionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto changed=source;auto position=changed.find("return n+2;");assert(position!=std::string::npos);
+    changed.replace(position,11,"return n+3;");auto altered=emit(changed);
+    assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto private_change=source;position=private_change.find("return n+2;",private_change.find("template<>int provider<int>"));
+    assert(position!=std::string::npos);private_change.replace(position,11,"return n+3;");auto private_altered=emit(private_change);
+    assert(private_altered.success && private_altered.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxTemplateCallableProjectionSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+  }
+}
+
+
 void TestEffectfulTemplateMembers() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     std::vector<std::string> args={"-x","objective-c++",standard,"-fobjc-version=3",
@@ -4560,6 +4665,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestTemplateCallableProjections();
   TestEffectfulTemplateMembers();
   TestEffectfulFunctionTemplates();
   TestClosedParentPatterns();

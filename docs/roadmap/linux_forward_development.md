@@ -90,6 +90,22 @@ deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
 The recorded historical five tooling collection errors stay outside the maintained
 Linux selection. Full profile conformance and native Linux AArch64 remain open.
 
+## Template callable projections
+
+The [2.75 source span](linux_cxx_template_callable_projections.md) publishes effectful
+namespace and concrete/closed-parent member function specializations, callback alias
+and variable templates (including member pointers and full/partial storage), and
+dependent typed errors. Complete published owners bind exact arguments, definitions,
+physical task/frame ABI and runtime dependencies. Native substitution normalizes
+error value qualifiers after ARC deduction, and typed body identity normalizes
+namespace-call replay spelling while preserving overload selection. The emitter
+suite, 22 focused native checks, all 36 tests in that import family, 83 tooling
+tests and 16 source-free configurations / 96 commands pass. Runtime checks cover
+provider-owned non-inline entries/storage, indirect task/frame and member-pointer
+calls, specialized/primary selection and dependent sync/async error handling.
+Broader source validation and SDK delivery remain batched; remaining language,
+ownership, concurrency, isolation, key-path and profile contracts stay open.
+
 ## Effectful template members
 
 The [2.74 source span](linux_cxx_effectful_template_members.md) publishes canonical

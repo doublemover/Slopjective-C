@@ -831,7 +831,19 @@ class RuntimeDeclarationFinder final
 public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
-  bool Found=false;
+  bool Found=false, HasCallableEffects=false;
+  bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
+    const auto effects=type->getObjC3FunctionEffects();
+    HasCallableEffects |= effects.Async || effects.Throws!=clang::ObjC3ThrowsKind::None;
+    return true;
+  }
+  bool TraverseType(clang::QualType type, bool TraverseQualifier=true) {
+    // Alias-template specializations can hide their FunctionProtoType from
+    // ordinary traversal. Read the desugared callable contract as well.
+    const auto effects=ReadCanonicalFunctionEffects(type,context_);
+    HasCallableEffects |= effects.is_async || effects.is_throwing;
+    return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseType(type,TraverseQualifier);
+  }
   void Reference(const clang::NamedDecl *declaration) {
     Found |= IsQualifiedRuntimeServiceDeclaration(declaration,context_) ||
              IsQualifiedRuntimeTaskDeclaration(declaration,context_);
@@ -883,12 +895,8 @@ private:
   const clang::FunctionDecl *function_=nullptr;
 };
 
-bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
-                                   const clang::ASTContext &context) {
-  // Namespace replay uses empty wrappers. Runtime dependencies belong to the
-  // checked member declarations, rather than whichever extension is visited.
-  if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
-  RuntimeDeclarationFinder finder(context);
+void VisitPublishedRuntimeContracts(const clang::NamedDecl *declaration,
+                                     RuntimeDeclarationFinder &finder) {
   finder.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));
   if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
     for (const auto *specialization:PublishedClassSpecializations(pattern))
@@ -906,7 +914,27 @@ bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
     if (specialization->isInlined()) finder.TraverseDecl(specialization);
   for (auto *specialization:ConcreteMemberVariableSpecializations(declaration))
     if (PublishesVariableInitializer(specialization)) finder.TraverseDecl(specialization);
+}
+
+bool HasRuntimeDeclarationContract(const clang::NamedDecl *declaration,
+                                   const clang::ASTContext &context) {
+  // Empty namespace wrappers do not own member runtime contracts.
+  if (llvm::isa<clang::NamespaceDecl>(declaration)) return false;
+  RuntimeDeclarationFinder finder(context);
+  VisitPublishedRuntimeContracts(declaration,finder);
   return finder.Found;
+}
+
+bool HasEffectfulTemplateProjection(const clang::NamedDecl *declaration,
+                                     const clang::ASTContext &context) {
+  const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+  if (!llvm::isa<clang::TemplateDecl>(declaration) && !HasDirectMemberTemplates(record) &&
+      !IsExplicitNamespaceFunctionSpecialization(llvm::dyn_cast<clang::FunctionDecl>(declaration)) &&
+      !IsExplicitNamespaceVariableSpecialization(llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)))
+    return false;
+  RuntimeDeclarationFinder finder(context);
+  VisitPublishedRuntimeContracts(declaration,finder);
+  return finder.HasCallableEffects;
 }
 
 clang::Expr *KeyPathSubscriptSyntax(clang::PseudoObjectExpr *expression) {
@@ -1659,7 +1687,17 @@ public:
         // Native declaration replay may qualify an unqualified static member
         // reference. Bind both spellings to the same declaration spelling;
         // the typed traversal below still binds its owner and exact arguments.
-        if (const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(statement))
+        if (const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(statement)) {
+          // Detached specialization replay qualifies ordinary namespace calls.
+          // Keep the spelling independent of that lexical replay context; the
+          // typed traversal binds the selected overload and its native symbol.
+          if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(reference->getDecl());
+              function && function->getIdentifier() && function->getDeclContext()->isFileContext() &&
+              !function->getPrimaryTemplate() && !function->getDescribedFunctionTemplate() &&
+              !reference->hasExplicitTemplateArgs()) {
+            function->printQualifiedName(out,policy);
+            return true;
+          }
           if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(reference->getDecl());
               variable && variable->isStaticDataMember() && variable->getIdentifier() &&
               !variable->getDescribedVarTemplate() &&
@@ -1667,6 +1705,7 @@ public:
             variable->printQualifiedName(out,policy);
             return true;
           }
+        }
         return false;
       }
     } helper(policy);
@@ -3769,9 +3808,7 @@ bool IsBoundedClassMemberAlias(const clang::TypeAliasTemplateDecl *pattern) {
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   for (const auto *attribute : pattern->getTemplatedDecl()->attrs())
     if (!attribute->isImplicit()) return false;
-  const auto effects=ReadCanonicalFunctionEffects(pattern->getTemplatedDecl()->getUnderlyingType(),
-                                                  pattern->getASTContext());
-  return !effects.is_async && !effects.is_throwing;
+  return true;
 }
 
 bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
@@ -3803,13 +3840,11 @@ bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *param
 }
 
 bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl *partial) {
-  const auto effects=ReadCanonicalFunctionEffects(partial->getType(),partial->getASTContext());
   if (!IsBoundedNestedTemplateParameters(partial->getTemplateParameters()) ||
       (partial->isStaticDataMember() && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
       (partial->getStorageClass()==clang::SC_Static && !IsConcreteMemberVariableSpecialization(partial) && !IsDependentMemberPartial(partial) && !IsClosedParentPattern(partial)) ||
       partial->getStorageClass()==clang::SC_PrivateExtern ||
-      partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly ||
-      effects.is_async || effects.is_throwing) return false;
+      partial->isThisDeclarationADefinition()==clang::VarDecl::DeclarationOnly) return false;
   for (const auto *attribute:partial->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if(tag->tags_size()!=1 || ReadNativeSymbolName(partial)!=*tag->tags_begin()) return false;
@@ -3819,12 +3854,10 @@ bool IsBoundedVariablePartial(const clang::VarTemplatePartialSpecializationDecl 
 
 bool IsBoundedClassMemberVariable(const clang::VarTemplateDecl *pattern) {
   const auto *variable=pattern->getTemplatedDecl();
-  const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
   if (!IsBoundedNestedTemplateParameters(pattern->getTemplateParameters()) ||
       !variable->isStaticDataMember() ||
       (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
-       !IsDetachedStaticDataTemplateDefinition(variable->getDefinition())) ||
-      effects.is_async || effects.is_throwing) return false;
+       !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
@@ -3880,12 +3913,10 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
       if (!IsBoundedTemplateRecord(inner)) return false;
     } else if (const auto *value=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
       const auto *variable=value->getTemplatedDecl();
-      const auto effects=ReadCanonicalFunctionEffects(variable->getType(),body->getASTContext());
       if (!IsBoundedNestedTemplateParameters(value->getTemplateParameters()) ||
           !variable->isStaticDataMember() ||
           (((!variable->isInline() && !variable->isConstexpr()) || !variable->hasInit()) &&
-           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition())) ||
-          effects.is_async || effects.is_throwing) return false;
+           !IsDetachedStaticDataTemplateDefinition(variable->getDefinition()))) return false;
       for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit()) return false;
       for (const auto *partial:PublishedVariablePartials(value))
         if (!IsBoundedVariablePartial(partial)) return false;
@@ -3920,8 +3951,7 @@ bool IsBoundedPublishedClassTemplate(const clang::ClassTemplateDecl *pattern) {
 }
 
 bool IsBoundedConcreteMemberFunctionSpecialization(const clang::FunctionDecl *function) {
-  const auto effects=ReadCanonicalFunctionEffects(function->getType(),function->getASTContext());
-  if (!IsConcreteMemberFunctionSpecialization(function) || effects.is_async || effects.is_throwing ||
+  if (!IsConcreteMemberFunctionSpecialization(function) ||
       (function->isInlined() && !function->getDefinition())) return false;
   for (const auto *attribute:function->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
@@ -3939,8 +3969,7 @@ bool IsBoundedConcreteMemberVariableSpecialization(const clang::VarTemplateSpeci
   if (!IsConcreteMemberVariableSpecialization(variable)) return false;
   if (const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(variable))
     return IsBoundedVariablePartial(partial);
-  const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
-  if (variable->getType()->isDependentType() || effects.is_async || effects.is_throwing) return false;
+  if (variable->getType()->isDependentType()) return false;
   for (const auto *attribute:variable->attrs())
     if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
       if (tag->tags_size()!=1 || ReadNativeSymbolName(variable->getSpecializedTemplate())!=*tag->tags_begin()) return false;
@@ -3960,14 +3989,12 @@ bool IsBoundedClosedParentMembers(const clang::NamedDecl *owner) {
       if (!IsBoundedTemplateRecord(record,record->getSpecializedTemplate()) ||
           !ClassSpecializationArgumentKey(record,record->getASTContext(),arguments)) return false;
     } else if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(specialization)) {
-      const auto effects=ReadCanonicalFunctionEffects(function->getType(),function->getASTContext());
-      if (effects.is_async || effects.is_throwing || (function->isInlined() && !function->getDefinition())) return false;
+      if (function->isInlined() && !function->getDefinition()) return false;
       for (const auto *attribute:function->attrs()) if (!attribute->isImplicit()) return false;
       for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
         if (!GenericArgumentKey(argument,function->getASTContext(),arguments)) return false;
     } else if (const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(specialization)) {
-      const auto effects=ReadCanonicalFunctionEffects(variable->getType(),variable->getASTContext());
-      if (variable->getType()->isDependentType() || effects.is_async || effects.is_throwing) return false;
+      if (variable->getType()->isDependentType()) return false;
       for (const auto *attribute:variable->attrs()) if (!attribute->isImplicit()) return false;
       for (const auto &argument:variable->getTemplateArgs().asArray())
         if (!GenericArgumentKey(argument,variable->getASTContext(),arguments)) return false;
@@ -4094,8 +4121,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration)) {
       supported &= IsExplicitNamespaceVariableSpecialization(specialization) &&
           specialization->isExternallyVisible() && !specialization->getType()->isDependentType();
-      const auto effects=ReadCanonicalFunctionEffects(specialization->getType(),specialization->getASTContext());
-      supported &= !effects.is_async && !effects.is_throwing;
       std::string key;
       for (const auto &argument:specialization->getTemplateArgs().asArray())
         supported &= GenericArgumentKey(argument,specialization->getASTContext(),key);
@@ -4113,8 +4138,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
       const auto *definition=pattern->getTemplatedDecl()->getDefinition();
       const auto *variable=definition ? definition : pattern->getTemplatedDecl();
-      const auto effects = ReadCanonicalFunctionEffects(variable->getType(), variable->getASTContext());
-      supported &= !effects.is_async && !effects.is_throwing;
       supported &= variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
           !variable->isStaticDataMember();
       for (const auto *partial:PublishedVariablePartials(pattern)) supported &= IsBoundedVariablePartial(partial);
@@ -4132,8 +4155,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
           supported &= annotation->args_size()==0 &&
               annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1)==ReadNativeSymbolName(pattern);
         else supported &= attribute->isImplicit();
-      const auto effects = ReadCanonicalFunctionEffects(alias->getUnderlyingType(), alias->getASTContext());
-      supported &= !effects.is_async && !effects.is_throwing;
     }
     if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
       const auto *function = pattern->getTemplatedDecl();
@@ -4169,9 +4190,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       bool specialization=IsExplicitNamespaceFunctionSpecialization(function);
       if (specialization) {
         std::string key;
-        const auto effects=ReadCanonicalFunctionEffects(function->getType(),function->getASTContext());
         specialization &= !function->isDeleted() && !function->isDefaulted() &&
-            !effects.is_async && !effects.is_throwing && function->getTemplateSpecializationArgs();
+            function->getTemplateSpecializationArgs();
         if (specialization)
           for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
             specialization &= GenericArgumentKey(argument,function->getASTContext(),key);
@@ -5024,6 +5044,8 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
+  if (HasEffectfulTemplateProjection(representative,context))
+    identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
   if (llvm::isa<clang::TypeAliasTemplateDecl>(representative) &&
       !identity.native_symbol_name.empty())
     identity.canonical_type_identity+=";cxx-nominal-alias-templates:v1;owner="+
@@ -5566,6 +5588,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxTemplateCallableProjectionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxTemplateCallableProjectionSemantic);
     if (HasCxxEffectfulTemplateMemberIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxEffectfulTemplateMemberSemantic);
     if (HasCxxEffectfulFunctionTemplateIdentity(declaration))
@@ -5743,6 +5767,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxClosedParentPatternSemantic,
     kCxxEffectfulFunctionTemplateSemantic,
     kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5904,6 +5929,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxClosedParentPatternSemantic,
     kCxxEffectfulFunctionTemplateSemantic,
     kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

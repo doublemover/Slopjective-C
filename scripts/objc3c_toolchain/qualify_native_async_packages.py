@@ -173,14 +173,34 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
-    assert {row['qualified_name'] for row in effectful_members}=={'NativeEffectMembers::Family','NativeEffectMembers::Concrete'}
+    projections=[row for row in metadata['declarations']
+                 if ';cxx-template-callable-projections:v1;' in row.get('canonical_type_identity','')]
+    assert 'objc3.cxx-template-callable-projections.v1' in metadata['required_semantics']
+    projection_names={row['qualified_name'] for row in projections}
+    assert {'NativeCallableProjections::Callback','NativeCallableProjections::FrameCallback',
+            'NativeCallableProjections::callback','NativeCallableProjections::dependent',
+            'NativeCallableProjections::dependent_task','NativeCallableProjections::Family',
+            'NativeCallableProjections::Concrete','NativeCallableProjections::Checked',
+            'NativeCallableProjections::Member','NativeCallableProjections::member',
+            'NativeCallableProjections::partial','NativeCallableProjections::stored'}<=projection_names
+
+    assert {row['qualified_name'] for row in effectful_members}=={
+        'NativeEffectMembers::Family','NativeEffectMembers::Concrete',
+        'NativeCallableProjections::Family','NativeCallableProjections::Concrete'}
+    for name,abi in [('Callback','cxx-task-v1'),('FrameCallback','c-frame-v1'),
+                     ('Member','cxx-task-v1'),('callback','cxx-task-v1'),('member','cxx-task-v1')]:
+        row=next(row for row in projections if row['qualified_name']=='NativeCallableProjections::'+name)
+        assert row['effects']['async'] and abi in row['effects']['async_abi_identity']
     effectful_templates=[row for row in metadata['declarations']
                          if row['kind']=='FunctionTemplate' and
                          ';cxx-effectful-function-templates:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']
     assert {row['qualified_name'] for row in effectful_templates}=={
         'NativeEffectTemplates::task','NativeEffectTemplates::frame',
-        'NativeEffectTemplates::checked','NativeEffectTemplates::checked_task'}
+        'NativeEffectTemplates::checked','NativeEffectTemplates::checked_task',
+        'NativeCallableProjections::task','NativeCallableProjections::frame',
+        'NativeCallableProjections::provider','NativeCallableProjections::dependent',
+        'NativeCallableProjections::dependent_task'}
     closed_patterns=[row for row in metadata['declarations']
                      if ';cxx-closed-parent-patterns:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-closed-parent-patterns.v1' in metadata['required_semantics']
@@ -188,7 +208,8 @@ def check_cpp_metadata(metadata):
     closed_members=[row for row in metadata['declarations']
                     if ';cxx-closed-parent-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-closed-parent-members.v1' in metadata['required_semantics']
-    assert {row['qualified_name'] for row in closed_members}=={'NativeClosedParents::Outer'}
+    assert {row['qualified_name'] for row in closed_members}=={
+        'NativeClosedParents::Outer','NativeCallableProjections::Family'}
     dependent_partials=[row for row in metadata['declarations']
                         if ';cxx-dependent-member-partials:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-dependent-member-partials.v1' in metadata['required_semantics']
@@ -204,7 +225,8 @@ def check_cpp_metadata(metadata):
     member_function_specs=[row for row in metadata['declarations']
                            if ';cxx-concrete-member-function-specializations:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-concrete-member-function-specializations.v1' in metadata['required_semantics']
-    assert {row['qualified_name'] for row in member_function_specs}=={'NativeDetached::Concrete','NativeConcreteOperators'}
+    assert {row['qualified_name'] for row in member_function_specs}=={
+        'NativeDetached::Concrete','NativeConcreteOperators','NativeCallableProjections::Concrete'}
     member_class_specs=[row for row in metadata['declarations']
                         if ';cxx-concrete-member-class-specializations:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-concrete-member-class-specializations.v1' in metadata['required_semantics']
@@ -225,12 +247,12 @@ def check_cpp_metadata(metadata):
     external_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-specialization-storage:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specialization-storage.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in external_variables}!={'native_external_object','native_external_special','native_external_tls','native_zero_special'}):
+            {row['qualified_name'] for row in external_variables}!={'native_external_object','native_external_special','native_external_tls','native_zero_special','NativeCallableProjections::stored'}):
         raise ValueError('C++ package lost explicit specialization storage delivery contracts')
     partial_variables=[row for row in metadata['declarations']
                  if ';cxx-variable-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_variables}!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary'}):
+            {row['qualified_name'] for row in partial_variables}!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary','NativeCallableProjections::partial'}):
         raise ValueError('C++ package lost partial variable specialization owner contracts')
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
@@ -245,12 +267,12 @@ def check_cpp_metadata(metadata):
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=8 or len({row['native_symbol_name'] for row in variable_specializations})!=8):
+            len(variable_specializations)!=10 or len({row['native_symbol_name'] for row in variable_specializations})!=10):
         raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
-            len(specialized)!=5 or len({row['native_symbol_name'] for row in specialized})!=5):
+            len(specialized)!=8 or len({row['native_symbol_name'] for row in specialized})!=8):
         raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):

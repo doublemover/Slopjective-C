@@ -477,6 +477,18 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_template_callable_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxTemplateCallableProjectionIdentity);
+  const bool template_callable_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateCallableProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool template_callable_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxTemplateCallableProjectionIdentity(d) ||
+          d.kind=="ClassTemplate" || d.kind=="FunctionTemplate" || d.kind=="TypeAliasTemplate" ||
+          d.kind=="VarTemplate" || (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d)) ||
+          (d.kind=="Function" && HasCxxFunctionSpecializationIdentity(d)) ||
+          (d.kind=="VarTemplateSpecialization" && HasCxxVariableSpecializationIdentity(d));});
+  if (has_template_callable_projections!=template_callable_projection_capability || !template_callable_projection_owners)
+    return Invalid("template callable projection identities and required capability must agree");
   const bool has_effectful_template_members=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxEffectfulTemplateMemberIdentity);
   const bool effectful_template_member_capability=std::find(sidecar.required_semantics.begin(),
