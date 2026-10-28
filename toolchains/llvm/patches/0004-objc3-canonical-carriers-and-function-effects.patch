@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..53ecfe2e0 100644
+index d743717ad..b367c1bdd 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -4528,7 +4528,47 @@ index d743717ad..53ecfe2e0 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +12210,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -10823,6 +11984,8 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+     ImportLoop(((const APValue::Arr *)(const char *)&FromValue.Data)->Elts,
+                ((const APValue::Arr *)(const char *)&Result.Data)->Elts,
+                FromValue.getArrayInitializedElts());
++    if (FromValue.hasArrayFiller())
++      Result.getArrayFiller()=importChecked(Err,FromValue.getArrayFiller());
+     break;
+   case APValue::Struct:
+     Result.MakeStruct(FromValue.getStructNumBases(),
+@@ -10838,7 +12001,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+     APValue ImpValue = importChecked(Err, FromValue.getUnionValue());
+     if (Err)
+       return std::move(Err);
+-    Result.setUnion(cast<FieldDecl>(ImpFDecl), ImpValue);
++    Result.setUnion(cast_or_null<FieldDecl>(ImpFDecl), ImpValue);
+     break;
+   }
+   case APValue::AddrLabelDiff: {
+@@ -10858,10 +12021,10 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+       return std::move(Err);
+     MutableArrayRef<const CXXRecordDecl *> ToPath =
+         Result.setMemberPointerUninit(
+-            cast<const ValueDecl>(ImpMemPtrDecl),
++            cast_or_null<const ValueDecl>(ImpMemPtrDecl),
+             FromValue.isMemberPointerToDerivedMember(),
+             FromValue.getMemberPointerPath().size());
+-    ArrayRef<const CXXRecordDecl *> FromPath = Result.getMemberPointerPath();
++    ArrayRef<const CXXRecordDecl *> FromPath = FromValue.getMemberPointerPath();
+     for (unsigned Idx = 0; Idx < FromValue.getMemberPointerPath().size();
+          Idx++) {
+       const Decl *ImpDecl = importChecked(Err, FromPath[Idx]);
+@@ -10912,7 +12075,7 @@ ASTNodeImporter::ImportAPValue(const APValue &FromValue) {
+       }
+     }
+     CharUnits Offset = FromValue.getLValueOffset();
+-    unsigned PathLength = FromValue.getLValuePath().size();
++    unsigned PathLength = FromValue.hasLValuePath()?FromValue.getLValuePath().size():0;
+     Result.MakeLValue();
+     if (FromValue.hasLValuePath()) {
+       MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
+@@ -11049,3 +12212,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -18923,10 +18963,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..cc15f178e
+index 000000000..ec6df7c68
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1779 @@
+@@ -0,0 +1,1848 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -20705,6 +20745,75 @@ index 000000000..cc15f178e
 +      Visitor.TraverseDecl(AST->getASTContext().getTranslationUnitDecl());
 +      EXPECT_EQ(Visitor.Count,1u);
 +    }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesStructuralAddressValues) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      inline int values[3]={40,42};
++      constexpr int function(int n){return n+2;}
++      struct Base{int value;};struct Record:Base{};
++      struct Bundle{int(*function)(int);const int *address;int Record::*member;};
++      template<Bundle B>struct Box{};
++      using Bound=Box<Bundle{&function,&values[1],&Base::value}>;
++      using End=Box<Bundle{&function,&values[3],nullptr}>;
++    )";
++    auto From=tooling::buildASTFromCodeWithArgs(Source,{"-xc++",Standard},"structural-address-from.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"structural-address-to.cpp");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    unsigned Count=0;
++    for(auto *Declaration:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto *Alias=dyn_cast<TypeAliasDecl>(Declaration);if(!Alias)continue;
++      auto Imported=Importer.Import(Alias);ASSERT_TRUE(bool(Imported))<<llvm::toString(Imported.takeError());
++      auto *Target=cast<TypeAliasDecl>(*Imported);
++      auto *Record=cast<ClassTemplateSpecializationDecl>(Target->getUnderlyingType()->getAsCXXRecordDecl());
++      const auto &Argument=Record->getTemplateArgs()[0];
++      const auto &Value=Argument.getKind()==TemplateArgument::StructuralValue?Argument.getAsStructuralValue():
++          cast<TemplateParamObjectDecl>(Argument.getAsDecl())->getValue();
++      ASSERT_TRUE(Value.isStruct());
++      const auto *Function=Value.getStructField(0).getLValueBase().get<const ValueDecl*>();
++      EXPECT_EQ(&Function->getASTContext(),&To->getASTContext());
++      const auto &Address=Value.getStructField(1);
++      EXPECT_EQ(&Address.getLValueBase().get<const ValueDecl*>()->getASTContext(),&To->getASTContext());
++      ASSERT_EQ(Address.getLValuePath().size(),1u);
++      const bool End=Alias->getName()=="End";
++      EXPECT_EQ(Address.getLValuePath()[0].getAsArrayIndex(),End?3u:1u);
++      auto *SourceRecord=cast<ClassTemplateSpecializationDecl>(Alias->getUnderlyingType()->getAsCXXRecordDecl());
++      const auto &SourceArgument=SourceRecord->getTemplateArgs()[0];
++      const auto &SourceValue=SourceArgument.getKind()==TemplateArgument::StructuralValue?SourceArgument.getAsStructuralValue():
++          cast<TemplateParamObjectDecl>(SourceArgument.getAsDecl())->getValue();
++      EXPECT_EQ(Address.isLValueOnePastTheEnd(),SourceValue.getStructField(1).isLValueOnePastTheEnd());
++      const auto &Member=Value.getStructField(2);
++      EXPECT_EQ(Member.getMemberPointerDecl()==nullptr,End);
++      if(!End) {
++        EXPECT_EQ(&Member.getMemberPointerDecl()->getASTContext(),&To->getASTContext());
++        ASSERT_EQ(Member.getMemberPointerPath().size(),1u);
++        EXPECT_EQ(&Member.getMemberPointerPath()[0]->getASTContext(),&To->getASTContext());
++      }
++      ++Count;
++    }
++    EXPECT_EQ(Count,2u);
++    VarDecl *ArrayDeclaration=nullptr;
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *V=dyn_cast<VarDecl>(D);V && V->getName()=="values")ArrayDeclaration=V;
++    ASSERT_TRUE(ArrayDeclaration);
++    APValue::LValuePathEntry Path[]={APValue::LValuePathEntry::ArrayIndex(3)};
++    APValue OnePast(APValue::LValueBase(ArrayDeclaration),CharUnits::fromQuantity(12),Path,true);
++    auto ImportedOnePast=Importer.Import(OnePast);ASSERT_TRUE(bool(ImportedOnePast));
++    EXPECT_TRUE(ImportedOnePast->isLValueOnePastTheEnd());
++    EXPECT_EQ(ImportedOnePast->getLValueOffset().getQuantity(),12);
++    APValue Array(APValue::UninitArray{},1,4);
++    Array.getArrayInitializedElt(0)=APValue(llvm::APSInt(llvm::APInt(32,1),false));
++    Array.getArrayFiller()=APValue(llvm::APSInt(llvm::APInt(32,0),false));
++    auto ImportedArray=Importer.Import(Array);ASSERT_TRUE(bool(ImportedArray));
++    ASSERT_TRUE(ImportedArray->hasArrayFiller());EXPECT_EQ(ImportedArray->getArrayFiller().getInt(),0);
++    APValue EmptyUnion(static_cast<const FieldDecl*>(nullptr));
++    auto ImportedUnion=Importer.Import(EmptyUnion);ASSERT_TRUE(bool(ImportedUnion));
++    EXPECT_EQ(ImportedUnion->getUnionField(),nullptr);
++    APValue Null(APValue::LValueBase{},CharUnits::Zero(),APValue::NoLValuePath{},true);
++    auto ImportedNull=Importer.Import(Null);ASSERT_TRUE(bool(ImportedNull));EXPECT_TRUE(ImportedNull->isNullPointer());
++  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
