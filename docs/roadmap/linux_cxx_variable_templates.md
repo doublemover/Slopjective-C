@@ -20,3 +20,8 @@ Explicit/partial specializations, opaque extern declarations, deduced types,
 member templates and effectful variable types remain gated. Public class
 templates remain separate implementation work. This source span does not rebuild
 the accepted SDK 2.33 archive or claim full profile/AArch64 support.
+
+The [combined source receipt](../support/linux_cxx_template_contracts_progress.json)
+records 410 compiler regressions, 198 native unit tests, all 33 frontend suites,
+335 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution.

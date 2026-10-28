@@ -24,3 +24,8 @@ Function templates make a hard cutover to
 deduced-return, member, variadic and effectful template boundaries remain
 separate work. This source span does not claim full profile conformance or
 rebuild the accepted SDK 2.33 archive.
+
+The [combined source receipt](../support/linux_cxx_template_contracts_progress.json)
+records 410 compiler regressions, 198 native unit tests, all 33 frontend suites,
+335 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution.
