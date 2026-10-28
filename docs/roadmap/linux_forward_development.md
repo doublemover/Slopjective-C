@@ -78,6 +78,20 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Closed-parent member specializations
+
+The [2.71 source span](linux_cxx_closed_parent_members.md) publishes full member
+class/function/variable specializations under instantiated and explicitly
+specialized template parents. Complete owners bind exact outer arguments and
+published definitions; replay retains each authored head exactly once. Native
+import installs the explicit member set before comparing its owner. The emitter
+suite, seventeen focused native importer tests, all thirty-one tests in that
+family, 72 tooling tests and all 16 source-free configurations / 96 commands pass.
+Provider factories, virtual copies/destruction, member pointers, exact parent
+selection, shared storage/mutation and worker TLS pass. Non-inline private body
+changes preserve public fingerprints. Closed-parent partial/member-template
+boundaries remain open; combined validation and SDK delivery stay batched.
+
 ## Dependent member partial specializations
 
 The [2.70 source span](linux_cxx_dependent_member_partials.md) adds constrained

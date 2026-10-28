@@ -12,7 +12,10 @@ is rejected with `O3IFC080`. Source-free witnesses exercise specialized class
 lifetimes, member-pointer dispatch, exact parent selection, primary fallback,
 shared storage/mutation and independent worker TLS.
 
-Focused verification is recorded when implementation checks complete. Combined
+The [focused source receipt](../support/linux_cxx_closed_parent_members_progress.json)
+records the emitter suite, seventeen focused native importer tests, all thirty-one
+tests in the native import family, alias ABI code generation, 72 tooling tests and
+16 source-free configurations / 96 commands passing. Combined
 compiler/frontend/sanitizer validation and SDK delivery remain batched;
 [SDK 2.62](../support/linux_source_batch_2_62_acceptance.json) remains accepted.
 Closed-parent partial/member-template boundaries, effectful projections, full
