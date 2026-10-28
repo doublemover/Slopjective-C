@@ -34,3 +34,8 @@ rebuild the accepted SDK 2.33 archive.
 Authored witnesses cover source relocation/reprinting, constrained overloads,
 consumer-only scalar/type/pack instantiations, shared specialization-local
 storage, by-value native class copy/move/destruction and exception unwinding.
+
+The [source receipt](../support/linux_cxx_function_templates_progress.json) records
+410 compiler regressions, 196 native unit tests, all 33 frontend suites,
+335 tooling tests and 24 source-free package configurations / 96 commands across
+normal, eager-import and ASan/UBSan execution.
