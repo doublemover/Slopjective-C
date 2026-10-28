@@ -1283,3 +1283,31 @@ int native_member_alias_probe(){
   NativeMemberAliases<int>::Rebind<> value(42);
   return value.number();
 }
+
+    template<class T> class NativeNestedFamily {
+    public:
+      using element=T;
+      struct Detail {using element=T;T value;explicit Detail(T n):value(n){} T number()const{return value;}};
+      template<class U=T,int Bias=2> class Box {
+        U value;
+      public:
+        using element=U;
+        template<class V=U> using Pointer=V*;
+        inline static int live=0;
+        explicit Box(U n=U{40}):value(n){++live;}
+        Box(const Box &other):value(other.value){++live;}
+        virtual ~Box(){--live;}
+        virtual U number()const{return value+Bias;}
+        template<class V> auto add(V n)const{return number()+n;}
+      };
+      template<class U=int> inline static U shared=U{40};
+      template<class U=int> inline static thread_local U local=U{40};
+      template<int N> inline static constexpr int answer=N+2;
+    };
+    NativeNestedFamily<int>::Box<int> *native_make_nested(){return new NativeNestedFamily<int>::Box<int>;}
+    int native_nested_state(){return ++NativeNestedFamily<int>::shared<> + ++NativeNestedFamily<int>::local<>;}
+    template<double D> struct NativeFloatingFamily {
+      template<class T> struct Inner {static constexpr int answer(){return 42;}};
+    };
+    inline constexpr double native_nested_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+    inline constexpr int native_nested_argument_probe(){return NativeFloatingFamily<native_nested_argument>::Inner<int>::answer();}

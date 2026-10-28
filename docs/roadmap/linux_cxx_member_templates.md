@@ -22,9 +22,9 @@ cover admission. Source-free C++20/23 consumers instantiate new argument types,
 copy returned closures containing nontrivial class values and share member
 specialization state with the provider.
 
-Detached member definitions, explicit/partial member specializations, nested
-class/variable templates, member templates in concrete classes,
-template-template parameters and effectful/C-variadic members remain gated.
+Detached member definitions, explicit/partial member specializations, member
+templates in concrete classes, template-template parameters and effectful/
+C-variadic members remain gated.
 The [focused source receipt](../support/linux_cxx_member_templates_progress.json)
 records all 138 AST contract tests, both optimized frontend suites and 16
 source-free package configurations / 64 commands across normal and eager
@@ -34,3 +34,7 @@ archive. Full profile and native AArch64 qualification remain open.
 
 The [2.51 source span](linux_cxx_member_alias_templates.md) additionally admits
 nested alias templates under the enclosing primary class contract.
+
+The [2.52 source span](linux_cxx_nested_template_types.md) additionally admits
+named nested records, primary class templates and inline member variable
+templates under the outermost class contract.

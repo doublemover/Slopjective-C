@@ -216,6 +216,23 @@ int block_application(objc3_actor_t *actor) __objc3_async {
 }
 
 int main() {
+  static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
+  if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||
+     ++NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<long>::shared<> !=40)return 154;
+  {
+    auto *value=native_make_nested();
+    if(value->number()!=42 || NativeNestedFamily<int>::Box<int>::live!=1)return 155;
+    auto copy=*value;
+    if(copy.add(0L)!=42 || NativeNestedFamily<int>::Box<int>::live!=2)return 156;
+    delete value;
+    if(NativeNestedFamily<int>::Box<int>::live!=1)return 157;
+    NativeNestedFamily<long>::Box<long,3> local(39);
+    NativeNestedFamily<long>::Detail detail(42);
+    NativeNestedFamily<long>::Box<long>::Pointer<> pointer=nullptr;
+    if(local.add(0)!=42 || detail.number()!=42 || pointer)return 158;
+  }
+  if(NativeNestedFamily<int>::Box<int>::live!=0 || NativeNestedFamily<long>::Box<long,3>::live!=0)return 159;
+
   {
     NativeMemberAliases<long>::Pointer<> pointer=nullptr;
     NativeMemberAliases<long>::Array<2> values={40,2};

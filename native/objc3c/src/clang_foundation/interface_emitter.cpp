@@ -156,19 +156,17 @@ bool IsTopLevel(const clang::NamedDecl *declaration) {
 }
 
 const clang::ClassTemplateDecl *ClassTemplateOwner(const clang::NamedDecl *declaration) {
-  if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) return pattern;
-  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration)) {
-    if (const auto *pattern = record->getDescribedClassTemplate()) return pattern;
-    if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
-      return specialization->getSpecializedTemplate();
-  }
-  for (const auto *scope = declaration->getDeclContext(); scope; scope = scope->getParent())
-    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(scope)) {
-      if (const auto *pattern = record->getDescribedClassTemplate()) return pattern;
-      if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
-        return specialization->getSpecializedTemplate();
+  const clang::ClassTemplateDecl *owner=nullptr;
+  for (const clang::NamedDecl *current=declaration; current;
+       current=llvm::dyn_cast<clang::NamedDecl>(current->getDeclContext())) {
+    if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(current)) owner=pattern;
+    if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(current)) {
+      if (const auto *pattern=record->getDescribedClassTemplate()) owner=pattern;
+      if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record))
+        owner=specialization->getSpecializedTemplate();
     }
-  return nullptr;
+  }
+  return owner;
 }
 
 bool IsPublishedType(const clang::NamedDecl *declaration) {
@@ -678,8 +676,12 @@ public:
   bool ClosedClassArguments(const clang::ClassTemplateSpecializationDecl *specialization) const {
     if (!specialization) return false;
     const auto *pattern = specialization->getSpecializedTemplate();
-    if (ReadNativeSymbolName(pattern).empty() &&
-        !context_.getSourceManager().isWrittenInMainFile(pattern->getLocation())) return false;
+    const auto *owner = ClassTemplateOwner(pattern);
+    if (!owner) owner=pattern;
+    // Nested patterns inherit the outer primary's ABI owner. Imported nested
+    // declarations have no independent tag and are outside the consumer file.
+    if (ReadNativeSymbolName(owner).empty() &&
+        !context_.getSourceManager().isWrittenInMainFile(owner->getLocation())) return false;
     for (const auto &argument : specialization->getTemplateArgs().asArray()) {
       std::string key;
       if (!GenericArgumentKey(argument,context_,key)) return false;
@@ -935,10 +937,10 @@ public:
       }
       return;
     }
-    const auto *class_specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
-    if (!class_specialization)
-      class_specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration->getDeclContext());
-    if (class_specialization) {
+    for (const clang::NamedDecl *owner=declaration; owner;
+         owner=llvm::dyn_cast<clang::NamedDecl>(owner->getDeclContext())) {
+      const auto *class_specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner);
+      if (!class_specialization) continue;
       std::vector<std::string> keys;
       bool complete = true;
       for (const auto &argument : class_specialization->getTemplateArgs().asArray()) {
@@ -1244,7 +1246,7 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
       const clang::NamedDecl *named = llvm::dyn_cast<clang::NamedDecl>(member);
       if (const auto *friend_decl = llvm::dyn_cast<clang::FriendDecl>(member))
         named = friend_decl->getFriendDecl();
-      if (named && llvm::isa<clang::FieldDecl, clang::FunctionDecl, clang::VarDecl>(named) &&
+      if (named && llvm::isa<clang::FieldDecl, clang::FunctionDecl, clang::VarDecl, clang::CXXRecordDecl, clang::TemplateDecl>(named) &&
           HasPublishedExpression(named, contains)) return true;
     }
   return false;
@@ -1723,6 +1725,36 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
   return {};
 }
 
+struct ClassTemplatePublication {
+  bool deduced=false, functions=false, aliases=false, variables=false;
+  bool nested=false, thread_local_storage=false;
+  void Read(const clang::CXXRecordDecl *record) {
+    if (!record || !record->isCompleteDefinition()) return;
+    for (const auto *member : record->decls()) {
+      if (member->isImplicit()) continue;
+      if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
+          specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
+      const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member);
+      const auto *variable=llvm::dyn_cast<clang::VarDecl>(member);
+      if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+        functions=true;method=llvm::dyn_cast<clang::CXXMethodDecl>(pattern->getTemplatedDecl());
+      } else if (llvm::isa<clang::TypeAliasTemplateDecl>(member)) aliases=true;
+      else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
+        variables=nested=true;variable=pattern->getTemplatedDecl();
+      } else if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
+        nested=true;Read(pattern->getTemplatedDecl()->getDefinition());
+      } else if (const auto *inner=llvm::dyn_cast<clang::CXXRecordDecl>(member)) {
+        nested=true;Read(inner->getDefinition());
+      }
+      if (method) deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
+      if (variable) {
+        deduced |= variable->getType()->getContainedAutoType()!=nullptr;
+        thread_local_storage |= variable->getTLSKind()!=clang::VarDecl::TLS_None;
+      }
+    }
+  }
+};
+
 std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                                     const clang::ASTContext &context) {
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
@@ -1734,22 +1766,17 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     policy.PrintAsCanonical = true;
     policy.SuppressScope = true;
     pattern->getTemplatedDecl()->print(stream, policy);
-    bool deduced=false, member_templates=false, member_aliases=false;
-    for (const auto *member : pattern->getTemplatedDecl()->decls()) {
-      member_aliases |= llvm::isa<clang::TypeAliasTemplateDecl>(member);
-      const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
-      if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
-        member_templates=true;
-        method=llvm::dyn_cast<clang::CXXMethodDecl>(function->getTemplatedDecl());
-      }
-      if (method) deduced |= method->getReturnType()->getContainedAutoType()!=nullptr;
-    }
+    ClassTemplatePublication members;
+    members.Read(pattern->getTemplatedDecl());
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;" +
         ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";" +
-        (deduced ? ";cxx-template-deduction:v1;" : "") +
-        (member_templates ? ";cxx-member-templates:v1;" : "") +
-        (member_aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "");
+        (members.deduced ? ";cxx-template-deduction:v1;" : "") +
+        (members.functions ? ";cxx-member-templates:v1;" : "") +
+        (members.aliases ? ";cxx-member-alias-templates:v1;;cxx-alias-templates:v1;" : "") +
+        (members.variables ? ";cxx-variable-templates:v1;" : "") +
+        (members.nested ? ";cxx-nested-templates:v1;" : "") +
+        (members.thread_local_storage ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
     const auto *variable = pattern->getTemplatedDecl();
@@ -2086,26 +2113,24 @@ class TypeDependencyVisitor final
         if (!CheckGenericArgument(argument)) UnsupportedExpression();
       return;
     }
+    if (const auto *pattern = ClassTemplateOwner(target);
+        pattern && pattern!=target &&
+        (IsInMainFile(context_,pattern->getLocation()) ||
+         resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
+      CheckExpressionReference(pattern);
+      CheckEnclosingClassArguments(target);
+      if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
+        if (const auto *arguments = function->getTemplateSpecializationArgs())
+          for (const auto &argument : arguments->asArray())
+            if (!CheckGenericArgument(argument)) UnsupportedExpression();
+      return;
+    }
     if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(target)) {
       CheckVisibility(pattern);
       if (!IsTopLevel(pattern) ||
           (!IsInMainFile(context_,pattern->getLocation()) && !IsResolved(pattern)))
         AddDiagnostic(result_, "O3IFC112", "class template requires a public resolved definition",
                       pattern->getQualifiedNameAsString());
-      return;
-    }
-    if (const auto *pattern = ClassTemplateOwner(target);
-        pattern && !llvm::isa<clang::ClassTemplateDecl>(target) &&
-        (IsInMainFile(context_,pattern->getLocation()) ||
-         resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
-      CheckExpressionReference(pattern);
-      if (const auto *owner = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(target->getDeclContext()))
-        for (const auto &argument : owner->getTemplateArgs().asArray())
-          if (!CheckGenericArgument(argument)) UnsupportedExpression();
-      if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(target))
-        if (const auto *arguments = function->getTemplateSpecializationArgs())
-          for (const auto &argument : arguments->asArray())
-            if (!CheckGenericArgument(argument)) UnsupportedExpression();
       return;
     }
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(target)) {
@@ -2237,19 +2262,25 @@ class TypeDependencyVisitor final
     bindings.TraverseDecl(const_cast<clang::ClassTemplateDecl *>(pattern));
     for (auto *parameter : *pattern->getTemplateParameters()) TraverseDecl(parameter);
     TraverseStmt(pattern->getTemplateParameters()->getRequiresClause());
-    const auto *record = pattern->getTemplatedDecl();
+    CheckTemplateRecord(pattern->getTemplatedDecl());
+  }
+  void CheckTemplateRecord(const clang::CXXRecordDecl *record) {
+    if (const auto *definition=record->getDefinition()) record=definition;
     for (const auto &base : record->bases()) TraverseType(base.getType());
     for (auto *member : record->decls()) {
       if (member->isImplicit()) continue;
-      if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
-        CheckFunctionTemplate(function);
-      } else if (const auto *alias = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(member)) {
-        CheckAliasTemplate(alias);
-      } else if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(member)) {
+      if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
+          specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
+      if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) CheckFunctionTemplate(function);
+      else if (const auto *alias=llvm::dyn_cast<clang::TypeAliasTemplateDecl>(member)) CheckAliasTemplate(alias);
+      else if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) CheckClassTemplate(pattern);
+      else if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(member)) CheckVariableTemplate(pattern);
+      else if (const auto *inner=llvm::dyn_cast<clang::CXXRecordDecl>(member)) CheckTemplateRecord(inner);
+      else if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(member)) {
         TraverseType(function->getType());
+        TraverseStmt(const_cast<clang::Expr *>(function->getTrailingRequiresClause().ConstraintExpr));
         for (const auto *parameter : function->parameters())
-          if (const auto *value = WrittenDefaultArgument(parameter))
-            TraverseStmt(const_cast<clang::Expr *>(value));
+          if (const auto *value=WrittenDefaultArgument(parameter)) TraverseStmt(const_cast<clang::Expr *>(value));
         CheckBody(function);
       } else TraverseDecl(member);
     }
@@ -2383,6 +2414,13 @@ class TypeDependencyVisitor final
     for (const auto *parameter : expression->getLocalParameters())
       lambda_locals_.insert(parameter->getCanonicalDecl());
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseRequiresExpr(expression, nullptr);
+  }
+  void CheckEnclosingClassArguments(const clang::NamedDecl *declaration) {
+    for (const clang::NamedDecl *owner=declaration; owner;
+         owner=llvm::dyn_cast<clang::NamedDecl>(owner->getDeclContext()))
+      if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(owner))
+        for (const auto &argument : specialization->getTemplateArgs().asArray())
+          if (!CheckGenericArgument(argument)) UnsupportedExpression();
   }
   bool CheckGenericArgument(const clang::TemplateArgument &argument) {
     switch (argument.getKind()) {
@@ -2521,9 +2559,7 @@ class TypeDependencyVisitor final
         pattern && (IsInMainFile(context_,pattern->getLocation()) ||
                     resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
       CheckExpressionReference(pattern);
-      if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
-        for (const auto &argument : specialization->getTemplateArgs().asArray())
-          if (!CheckGenericArgument(argument)) UnsupportedExpression();
+      CheckEnclosingClassArguments(declaration);
       return true;
     }
     if (public_template_type_ && !in_expression_ && !IsPublishedType(declaration) &&
@@ -2804,6 +2840,62 @@ bool IsBoundedClassMemberTemplate(const clang::FunctionTemplateDecl *pattern) {
   return true;
 }
 
+bool IsBoundedNestedTemplateParameters(const clang::TemplateParameterList *parameters) {
+  for (const auto *parameter : *parameters) {
+    if (llvm::isa<clang::TemplateTemplateParmDecl>(parameter)) return false;
+    for (const auto *attribute : parameter->attrs()) if (!attribute->isImplicit()) return false;
+  }
+  return true;
+}
+
+bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
+                            const clang::ClassTemplateDecl *pattern=nullptr) {
+  const auto *body=record->getDefinition();
+  if (!body || !body->isCompleteDefinition() || body->isUnion() || !body->getIdentifier()) return false;
+  if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord()) return false;
+  if ((body->getNumBases() || body->isPolymorphic()) && !body->getASTContext().getLangOpts().RTTI) return false;
+  for (const auto *attribute : body->attrs()) {
+    if (const auto *tag=llvm::dyn_cast<clang::AbiTagAttr>(attribute)) {
+      if (!pattern || tag->tags_size()!=1 || !tag->tags_begin()->starts_with("__objc3_m_") ||
+          ReadNativeSymbolName(pattern)!=*tag->tags_begin()) return false;
+    } else if (!attribute->isImplicit() && !llvm::isa<clang::FinalAttr>(attribute)) return false;
+  }
+  for (const auto *member : body->decls()) {
+    if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
+      if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(member);
+          specialization && specialization->getSpecializationKind()==clang::TSK_ImplicitInstantiation) continue;
+    if (llvm::isa<clang::ClassTemplateSpecializationDecl>(member)) return false;
+    if (const auto *function=llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
+      if (!IsBoundedClassMemberTemplate(function)) return false;
+    } else if (const auto *alias=llvm::dyn_cast<clang::TypeAliasTemplateDecl>(member)) {
+      if (!IsBoundedClassMemberAlias(alias)) return false;
+    } else if (const auto *inner=llvm::dyn_cast<clang::ClassTemplateDecl>(member)) {
+      if (!IsBoundedNestedTemplateParameters(inner->getTemplateParameters()) ||
+          !IsBoundedTemplateRecord(inner->getTemplatedDecl(),inner)) return false;
+    } else if (const auto *inner=llvm::dyn_cast<clang::CXXRecordDecl>(member)) {
+      if (!IsBoundedTemplateRecord(inner)) return false;
+    } else if (const auto *value=llvm::dyn_cast<clang::VarTemplateDecl>(member)) {
+      const auto *variable=value->getTemplatedDecl();
+      const auto effects=ReadCanonicalFunctionEffects(variable->getType(),body->getASTContext());
+      if (!IsBoundedNestedTemplateParameters(value->getTemplateParameters()) ||
+          !variable->isStaticDataMember() || (!variable->isInline() && !variable->isConstexpr()) ||
+          !variable->hasInit() || effects.is_async || effects.is_throwing) return false;
+      for (const auto *attribute : variable->attrs()) if (!attribute->isImplicit()) return false;
+    } else if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
+      const auto effects=ReadCanonicalFunctionEffects(method->getType(),body->getASTContext());
+      if (method->isVariadic() || effects.is_async || effects.is_throwing ||
+          method->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization ||
+          (!method->doesThisDeclarationHaveABody() && !method->isDefaulted() &&
+           !method->isDeleted() && !method->isPureVirtual())) return false;
+    } else if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(member)) {
+      if (!variable->isStaticDataMember() || (!variable->isInline() && !variable->isConstexpr())) return false;
+    } else if (!llvm::isa<clang::FieldDecl,clang::TypedefNameDecl,clang::EnumDecl,clang::BaseUsingDecl>(member)) return false;
+    for (const auto *attribute : member->attrs())
+      if (!attribute->isImplicit() && !llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute)) return false;
+  }
+  return true;
+}
+
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports = {}) {
@@ -2873,37 +2965,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         for (const auto *attribute : parameter->attrs()) supported &= attribute->isImplicit();
       }
     if (llvm::isa<clang::VarTemplateSpecializationDecl>(declaration)) supported=false;
-    if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
-      const auto *definition = pattern->getTemplatedDecl()->getDefinition();
-      const auto *body = definition ? llvm::cast<clang::CXXRecordDecl>(definition) : pattern->getTemplatedDecl();
-      supported &= body->isCompleteDefinition() && !body->isUnion();
-      if (body->isCompleteDefinition() && (body->getNumBases() || body->isPolymorphic()))
-        supported &= body->getASTContext().getLangOpts().RTTI;
-      for (const auto *attribute : body->attrs())
-        if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
-          supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
-              ReadNativeSymbolName(pattern)==*tag->tags_begin();
-        else supported &= attribute->isImplicit() || llvm::isa<clang::FinalAttr>(attribute);
-      for (const auto *member : body->decls()) {
-        if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
-        if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
-          const auto effects = ReadCanonicalFunctionEffects(method->getType(), body->getASTContext());
-          supported &= !method->isVariadic() &&
-              method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization &&
-              !effects.is_async && !effects.is_throwing &&
-              (method->doesThisDeclarationHaveABody() || method->isDefaulted() || method->isDeleted() || method->isPureVirtual());
-        } else if (const auto *function = llvm::dyn_cast<clang::FunctionTemplateDecl>(member)) {
-          supported &= IsBoundedClassMemberTemplate(function);
-        } else if (const auto *alias = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(member)) {
-          supported &= IsBoundedClassMemberAlias(alias);
-        } else if (const auto *value = llvm::dyn_cast<clang::VarDecl>(member)) {
-          supported &= value->isStaticDataMember() && (value->isInline() || value->isConstexpr());
-        } else supported &= llvm::isa<clang::FieldDecl, clang::TypedefNameDecl, clang::EnumDecl,
-                                      clang::BaseUsingDecl>(member);
-        for (const auto *attribute : member->attrs())
-          supported &= attribute->isImplicit() || llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute);
-      }
-    }
+    if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
+      supported &= IsBoundedTemplateRecord(pattern->getTemplatedDecl(),pattern);
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
       const auto *definition=pattern->getTemplatedDecl()->getDefinition();
       const auto *variable=definition ? definition : pattern->getTemplatedDecl();
@@ -3014,12 +3077,17 @@ class InterfaceCollector final
   bool VisitNamedDecl(clang::NamedDecl *declaration) {
     if (!result_.diagnostics.empty())
       return true;
-    if (!llvm::isa<clang::ClassTemplateDecl>(declaration) && ClassTemplateOwner(declaration)) {
+    if (const auto *owner=ClassTemplateOwner(declaration); owner && owner!=declaration) {
       if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
           function && function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization &&
           IsInMainFile(context_,function->getLocation()) && SelectedExport(function,exports_))
         AddDiagnostic(result_, "O3IFC101", "explicit member template specializations require dedicated publication support",
                       function->getQualifiedNameAsString());
+      if (const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+          variable && variable->getSpecializationKind()!=clang::TSK_ImplicitInstantiation &&
+          IsInMainFile(context_,variable->getLocation()) && SelectedExport(variable,exports_))
+        AddDiagnostic(result_, "O3IFC101", "explicit member variable template specializations require dedicated publication support",
+                      variable->getQualifiedNameAsString());
       if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
           specialization && IsInMainFile(context_,specialization->getLocation()) &&
           SelectedExport(specialization,exports_) &&
@@ -4013,6 +4081,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxNestedTemplateIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxNestedTemplateSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -4118,6 +4188,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxTemplateDeductionSemantic,
     kCxxMemberTemplateSemantic,
     kCxxMemberAliasTemplateSemantic,
+    kCxxNestedTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4255,6 +4326,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxTemplateDeductionSemantic,
     kCxxMemberTemplateSemantic,
     kCxxMemberAliasTemplateSemantic,
+    kCxxNestedTemplateSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

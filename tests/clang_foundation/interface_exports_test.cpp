@@ -373,6 +373,66 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void NestedTemplateTypes(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"nested-types-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+
+    template<class T> class NestedFamily {
+    public:
+      using element=T;
+      struct Detail {using element=T;T value;explicit Detail(T n):value(n){} T number()const{return value;}};
+      template<class U=T,int Bias=2> class Box {
+        U value;
+      public:
+        using element=U;
+        template<class V=U> using Pointer=V*;
+        inline static int live=0;
+        explicit Box(U n=U{40}):value(n){++live;}
+        Box(const Box &other):value(other.value){++live;}
+        virtual ~Box(){--live;}
+        virtual U number()const{return value+Bias;}
+        template<class V> auto add(V n)const{return number()+n;}
+      };
+      template<class U=int> inline static U shared=U{40};
+      template<class U=int> inline static thread_local U local=U{40};
+      template<int N> inline static constexpr int answer=N+2;
+    };
+    NestedFamily<int>::Box<int> *make_nested(){return new NestedFamily<int>::Box<int>;}
+    int nested_state(){return ++NestedFamily<int>::shared<> + ++NestedFamily<int>::local<>;}
+    template<double D> struct FloatingFamily {
+      template<class T> struct Inner {static constexpr int answer(){return 42;}};
+    };
+    inline constexpr double nested_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+    inline constexpr int nested_argument_probe(){return FloatingFamily<nested_argument>::Inner<int>::answer();}
+
+  )");
+  r.emit_semantic_interface=true;r.module_name="NestedTypes";r.package_identity="nested-types-v1";
+  r.module_owned_names=true;r.interface_exports={"NestedFamily","make_nested","nested_state","FloatingFamily","nested_argument","nested_argument_probe"};
+  r.interface_output_path=(root/"NestedTypes.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"nested-types-provider.o").string();
+  auto built=Compile(r);
+  for(const auto &d:built.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  fs::remove(r.input_path);
+  auto client=Request(root/"nested-types-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    static_assert(NestedFamily<long>::answer<40> ==42 && nested_argument_probe()==42);
+    int client(){
+      auto *value=make_nested();auto result=value->number();delete value;
+      NestedFamily<long>::Box<long,3> local(39);
+      NestedFamily<long>::Detail detail(42);
+      NestedFamily<long>::Box<long>::Pointer<> pointer=nullptr;
+      return result+local.add(0)+detail.number()+NestedFamily<int>::shared<> +
+        NestedFamily<int>::local<> + (pointer==nullptr);
+    }
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"nested-types-client.o").string();
+  auto imported=Compile(client);
+  for(const auto &d:imported.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:imported.interface_import_diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void ClassMemberAliasTemplates(const fs::path &root,const std::string &standard) {
   auto r=Request(root/"member-aliases-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
 
@@ -696,6 +756,7 @@ int main() {
     TemplateDeduction(root,standard);
     ClassMemberTemplates(root,standard);
     ClassMemberAliasTemplates(root,standard);
+    NestedTemplateTypes(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

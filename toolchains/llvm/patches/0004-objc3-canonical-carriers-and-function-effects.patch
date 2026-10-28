@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..e400b80cf 100644
+index d743717ad..749aea67b 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2825,13 +2825,13 @@ index d743717ad..e400b80cf 100644
                                                  ImportedOrErr.takeError());
    }
  
-+  // A primary template publishes its complete written definition, including
++  // A dependent record publishes its complete written definition, including
 +  // aliases and member templates between storage declarations. The field-first
 +  // pass above establishes layout safely, but must not change that final
 +  // lexical order. Only move successfully mapped members actually owned by this
 +  // lexical context; dependency imports and folded redeclarations stay intact.
 +  if (const auto *FromRecord = dyn_cast<CXXRecordDecl>(FromDC);
-+      FromRecord && FromRecord->getDescribedClassTemplate()) {
++      FromRecord && FromRecord->isDependentContext()) {
 +    DeclContext *ToDC = *ToDCOrErr;
 +    SmallVector<Decl *, 16> Members;
 +    llvm::SmallPtrSet<Decl *, 16> Seen;
@@ -18409,10 +18409,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..44df9f367
+index 000000000..d8dd51616
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,859 @@
+@@ -0,0 +1,861 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19226,6 +19226,8 @@ index 000000000..44df9f367
 +  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
 +    auto From = tooling::buildASTFromCodeWithArgs(R"(
 +      template<class T> class __attribute__((abi_tag("owner"))) Box {
++        struct Detail {using element=T; T value;};
++        template<class U=T> struct Inner {using element=U; U value;};
 +        template<class U=T> using pointer=U*;
 +        using element=T;
 +        T value;

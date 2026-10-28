@@ -71,6 +71,13 @@ all **33 optimized frontend suites**, **335 tooling tests** and **32 source-free
 package configurations / 128 commands** across normal, eager-import, ASan/UBSan
 and TSan execution. SDK 2.33 remains the accepted archive.
 
+## Nested class-template types and variables
+
+The [2.52 source span](linux_cxx_nested_template_types.md) adds named nested
+records, primary class templates and inline member variable templates under the
+outermost export/ABI owner. Recursive contracts preserve nested instantiation,
+virtual lifetimes, exact enclosing arguments and shared/thread-local storage.
+
 ## Nested class-template aliases
 
 The [2.51 source span](linux_cxx_member_alias_templates.md) adds checked member

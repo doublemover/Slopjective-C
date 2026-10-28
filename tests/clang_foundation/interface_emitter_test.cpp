@@ -1741,6 +1741,93 @@ void TestTemplateStructure() {
   }
 }
 
+void TestNestedTemplateTypes() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="nested-templates.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.nested_templates","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.nested_templates","test");
+    };
+    const std::string source=R"(
+
+    template<class T> class NestedFamily {
+    public:
+      using element=T;
+      struct Detail {using element=T;T value;explicit Detail(T n):value(n){} T number()const{return value;}};
+      template<class U=T,int Bias=2> class Box {
+        U value;
+      public:
+        using element=U;
+        template<class V=U> using Pointer=V*;
+        inline static int live=0;
+        explicit Box(U n=U{40}):value(n){++live;}
+        Box(const Box &other):value(other.value){++live;}
+        virtual ~Box(){--live;}
+        virtual U number()const{return value+Bias;}
+        template<class V> auto add(V n)const{return number()+n;}
+      };
+      template<class U=int> inline static U shared=U{40};
+      template<class U=int> inline static thread_local U local=U{40};
+      template<int N> inline static constexpr int answer=N+2;
+    };
+    NestedFamily<int>::Box<int> *make_nested(){return new NestedFamily<int>::Box<int>;}
+    int nested_state(){return ++NestedFamily<int>::shared<> + ++NestedFamily<int>::local<>;}
+    template<double D> struct FloatingFamily {
+      template<class T> struct Inner {static constexpr int answer(){return 42;}};
+    };
+    inline constexpr double nested_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
+    inline constexpr int nested_argument_probe(){return FloatingFamily<nested_argument>::Inner<int>::answer();}
+
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxNestedTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-nested-templates.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-nested-templates.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name.starts_with("NestedFamily::") || d.qualified_name.starts_with("FloatingFamily::");}));
+    auto changed=source;changed.replace(changed.find("value+Bias"),10,"value+Bias+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;changed.replace(changed.find("0x0000000000000000ULL"),21,"0x8000000000000000ULL");
+    auto signed_zero=emit(changed);assert(signed_zero.success);
+    auto negative=DecodeSemanticInterfaceSidecar(signed_zero.sidecar_json,signed_zero.source_bytes,semantics);assert(negative);
+    auto row=[](const auto &sidecar)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(sidecar.declarations.begin(),sidecar.declarations.end(),
+          [](const auto &d){return d.qualified_name=="nested_argument_probe";});
+    };
+    assert(row(*decoded).canonical_type_identity!=row(*negative).canonical_type_identity);
+    for(const auto *capability:{kCxxNestedTemplateSemantic,kCxxVariableTemplateSemantic,kCxxClassTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxNestedTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    for(const auto *source:{
+      "static int hidden(){return 42;}template<class T>struct Outer{struct Inner{int f(){return hidden();}};};",
+      "static int hidden(){return 42;}template<class T>struct Outer{template<class U>inline static int value=hidden();};",
+      "static constexpr bool hidden(){return true;}template<class T>struct Outer{int f()requires(hidden()){return 42;}};"}) {
+      auto hidden=emit(source);
+      assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC112";}));
+    }
+    for(const auto *gated:{
+      "template<class T>struct Outer{struct Inner;};",
+      "template<class T>struct Outer{union Inner{T value;};};",
+      "template<class T>struct Outer{template<class U>static U value;};",
+      "template<class T>struct Outer{template<class U>struct Inner{};template<class U>struct Inner<U*>{};};"})
+      assert(!emit(gated).success);
+  }
+}
+
 void TestClassMemberAliasTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="member-aliases.cpp",
@@ -3060,6 +3147,7 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestNestedTemplateTypes();
   TestTemplateStructure();
   TestTemplateDeduction();
   TestCarrierExpressionRoundtrip();

@@ -17,8 +17,8 @@ inconsistent capability/identity combinations.
 
 The same span rejects explicit member function specializations whose bodies
 would otherwise be omitted from the primary class contract. Detached definitions,
-member class/variable templates, concrete-class member templates, template-
-template parameters and effectful aliases remain separate work.
+concrete-class member templates, template-template parameters and effectful
+aliases remain separate work.
 
 Source/reprint/relocation, changed-underlying-type and excluded dependency checks
 cover publication. Source-free C++20/23 consumers use new alias arguments,
@@ -28,5 +28,9 @@ with complete copy/destruction accounting. The
 records 138 AST contract tests, both optimized frontend suites and four
 source-free package configurations / 16 commands: C++20 ARC O0 and C++23 MRC O2
 through normal and eager imports. Remaining configurations and broader
-native/frontend/tooling, sanitizer and SDK delivery checks remain batched. SDK 2.33 remains accepted. Full profile and native AArch64
-qualification remain open.
+native/frontend/tooling, sanitizer and SDK delivery checks remain batched. SDK 2.33 remains accepted. Full profile and native
+AArch64 qualification remain open.
+
+The [2.52 source span](linux_cxx_nested_template_types.md) additionally admits
+named nested records, primary class templates and inline member variable
+templates under the outermost class contract.

@@ -438,6 +438,15 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_nested_templates = std::any_of(
+      sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxNestedTemplateIdentity);
+  const bool nested_template_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNestedTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nested_template_class = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_nested_templates!=nested_template_capability ||
+      (nested_template_capability && !nested_template_class))
+    Add(result,"O3IFC060","nested template identity and required nested/class capabilities must agree",expected.canonical_name);
   const bool has_member_alias_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberAliasTemplateIdentity);
   const bool member_alias_capability = std::find(sidecar.required_semantics.begin(),

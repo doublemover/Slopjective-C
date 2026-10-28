@@ -240,7 +240,13 @@
     "native_member_probe",
     "native_member_producer",
     "NativeMemberAliases",
-    "native_member_alias_probe"
+    "native_member_alias_probe",
+    "NativeNestedFamily",
+    "native_make_nested",
+    "native_nested_state",
+    "NativeFloatingFamily",
+    "native_nested_argument",
+    "native_nested_argument_probe"
   ],
   "dependencies": []
 }
