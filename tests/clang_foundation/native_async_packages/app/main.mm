@@ -20,6 +20,9 @@ static void *native_variable_template_worker(void *context) {
   *passed=native_template_tls<> ==40 && native_template_shared<> ==42;
   *passed &= NativeNestedFamily<int>::local<> ==40 && NativeNestedFamily<int>::shared<> ==42;
   *passed &= NativeConcreteTemplates::local<> ==40 && NativeConcreteTemplates::shared<> ==42;
+  *passed &= native_tt_local<NativeTTAlias> ==40 && native_tt_shared<NativeTTAlias> ==42;
+  ++native_tt_local<NativeTTAlias>;
+  *passed &= native_tt_local<NativeTTAlias> ==41;
   ++NativeConcreteTemplates::local<>;
   *passed &= NativeConcreteTemplates::local<> ==41;
   ++NativeNestedFamily<int>::local<>;
@@ -252,6 +255,24 @@ int main() {
     NativeConcreteTemplates::Box<long,3> different(39);
     NativeConcreteTemplates::Box<long,3>::Pointer<> pointer=nullptr;
     if(different.add(0)!=42 || pointer)return 168;
+  }
+  {
+    static_assert(native_tt_arity<NativeTTBox,NativeTTAlias>()==2);
+    static_assert(native_tt_width<> ==sizeof(int) && __is_same(NativeTTFirst<>,int));
+    static_assert(!__is_same(NativeTTWrapper<NativeTTBox>,NativeTTWrapper<NativeTTAlias>));
+    NativeTTRebind<NativeTTAlias,long> rebound{42};NativeTTHigher<> higher{{42}};
+    NativeTTConcrete::Type<> concrete{42};NativeTTFamily<long>::Type<> family{42};
+    NativeTTConcrete::Nested<NativeTTAlias> nested{{42}};
+    if(native_tt_read<NativeTTAlias>(NativeTTBox<int>{42})!=42 || higher.value.value!=42 ||
+       rebound.value!=42 || NativeTTConcrete::read<>(concrete)!=42 ||
+       NativeTTFamily<long>::read<>(family)!=42 || nested.value.value!=42 ||
+       native_tt_constrained<>(NativeTTBox<int>{42})!=42 ||
+       native_tt_forwarded<>(42)!=42 || native_tt_lambda()!=42)return 169;
+    if(native_tt_state()!=123 || native_tt_next<NativeTTAlias>()!=42 ||
+       ++native_tt_shared<NativeTTAlias> !=42 || ++native_tt_local<NativeTTAlias> !=42 ||
+       native_tt_next<NativeTTBox>()!=41 || native_tt_member_state()!=41 ||
+       native_tt_next<NativeTTFamily<int>::Member>()!=42 ||
+       native_tt_next<NativeTTFamily<long>::Member>()!=41)return 170;
   }
   static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
   if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||
@@ -578,6 +599,7 @@ int main() {
      pthread_join(variable_thread,nullptr) || !variable_thread_passed ||
      NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<int>::shared<> !=42 ||
      NativeConcreteTemplates::local<> !=42 || NativeConcreteTemplates::shared<> !=42 ||
+     native_tt_local<NativeTTAlias> !=42 || native_tt_shared<NativeTTAlias> !=42 ||
      native_template_tls<> !=42 || native_template_shared<> !=43) return 130;
 
   static_assert(__is_same(NativeTemplatePointer<>,int*));

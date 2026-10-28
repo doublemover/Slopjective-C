@@ -20,6 +20,13 @@ def test_export_selection_is_canonical():
     assert validate_exports(['answer', 'API']) == ['API', 'answer']
     assert validate_exports(['*']) == ['*']
 
+
+def test_export_policy_supports_large_library_boundaries():
+    names = ['export_' + str(index) for index in range(4096)]
+    assert validate_exports(names) == sorted(names)
+    with pytest.raises(ValueError, match='exports'):
+        validate_exports([*names, 'one_too_many'])
+
 FIXTURE = Path(__file__).resolve().parents[1] / 'clang_foundation/source_graph'
 
 

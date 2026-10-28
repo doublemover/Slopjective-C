@@ -1376,3 +1376,39 @@ int native_concrete_state(){return NativeConcreteTemplates::next<>()+
 NativeConcreteTemplates::Box<int> *native_concrete_nested_make(){return new NativeConcreteTemplates::Box<int>;}
 inline constexpr double native_concrete_nested_argument=__builtin_bit_cast(double,0x0000000000000000ULL);
 inline constexpr int native_concrete_nested_probe(){return NativeConcreteTemplates::Floating<native_concrete_nested_argument>::Inner<int>::answer();}
+
+template<class T> struct NativeTTBox{T value;};
+template<class T> using NativeTTAlias=NativeTTBox<T>;
+template<template<class>class C=NativeTTAlias,class T=int> constexpr T native_tt_read(C<T> value){return value.value;}
+template<template<class>class C=NativeTTBox> struct NativeTTWrapper{C<int> value;};
+template<template<template<class>class>class W=NativeTTWrapper,template<class>class C=NativeTTAlias>
+using NativeTTHigher=W<C>;
+template<template<class>class C=NativeTTAlias,class T=int> using NativeTTRebind=C<T>;
+template<template<class>class C=NativeTTAlias> inline constexpr unsigned native_tt_width=sizeof(C<int>);
+template<template<class>class... C> constexpr unsigned native_tt_arity(){return sizeof...(C);}
+template<template<class>class C=NativeTTAlias> requires(sizeof(C<int>)>0)
+constexpr int native_tt_constrained(C<int> value){return value.value;}
+template<template<class>class C> int native_tt_next(){static int n=40;return ++n;}
+template<template<class>class C=NativeTTAlias> inline int native_tt_shared=40;
+template<template<class>class C=NativeTTAlias> inline thread_local int native_tt_local=40;
+template<class T> struct NativeTTFamily {
+  template<class U> using Member=NativeTTBox<U>;
+  template<template<class>class C=NativeTTAlias> using Type=C<T>;
+  template<template<class>class C=NativeTTAlias> static constexpr int read(C<T> n){return n.value;}
+  template<template<class>class C=NativeTTAlias> inline static C<T> saved{40};
+};
+struct NativeTTConcrete {
+  template<template<class>class C=NativeTTAlias> using Type=C<int>;
+  template<template<class>class C=NativeTTAlias> static constexpr int read(C<int> n){return n.value;}
+  template<template<class>class C=NativeTTAlias> inline static C<int> saved{40};
+  template<template<class>class C=NativeTTAlias> struct Nested{C<int> value;};
+};
+template<template<__SIZE_TYPE__,class...>class C=__type_pack_element>
+using NativeTTFirst=C<0,int,long>;
+int native_tt_state(){return native_tt_next<NativeTTAlias>()+
+    ++native_tt_shared<NativeTTAlias> + ++native_tt_local<NativeTTAlias>;}
+int native_tt_member_state(){return native_tt_next<NativeTTFamily<int>::Member>();}
+
+template<template<class>class C=NativeTTAlias> int native_tt_forwarded(int n);
+template<template<class>class C> int native_tt_forwarded(int n){return C<int>{n}.value;}
+inline int native_tt_lambda(){auto call=[]<template<class>class C>(C<int> n){return n.value;};return call.template operator()<NativeTTAlias>({42});}

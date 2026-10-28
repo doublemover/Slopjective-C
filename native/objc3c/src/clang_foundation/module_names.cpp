@@ -40,6 +40,7 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
     return true;
   if (declaration.kind != "Function" && declaration.kind != "FunctionTemplate" &&
       declaration.kind != "VarTemplate" && declaration.kind != "ClassTemplate" &&
+      declaration.kind != "TypeAliasTemplate" &&
       !IsCxxMemberDeclarationKind(declaration.kind) &&
       declaration.kind != "Var" && declaration.kind != "CXXRecord" &&
       declaration.kind != "ObjCInterface" &&
@@ -108,6 +109,19 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
     declaration = pattern->getTemplatedDecl();
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+    declaration = pattern->getTemplatedDecl();
+  if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration);
+      alias && alias->getDescribedAliasTemplate()) {
+    for (const auto *annotation:alias->specific_attrs<clang::AnnotateAttr>())
+      if (annotation->args_size()==0 && annotation->getAnnotation().starts_with("objc3.alias-owner:"))
+        return annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1).str();
+    // Member alias templates inherit the nominal owner and enclosing template
+    // arguments from their record context; they have no independent tag.
+    for (const auto *scope=alias->getDeclContext();scope;scope=scope->getParent())
+      if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if (auto owner=ReadNativeSymbolName(record);!owner.empty()) return owner;
+  }
   if (const auto *specialization = llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration))
     return ReadNativeSymbolName(specialization->getSpecializedTemplate());
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
@@ -220,8 +234,28 @@ public:
     const bool variable_template = variable_pattern &&
         (variable_pattern->getDescribedVarTemplate() ||
          llvm::isa<clang::VarTemplateSpecializationDecl>(decl));
-    if (!category && !decl->isExternallyVisible() && !variable_template)
+    auto *alias=llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+    const auto *alias_pattern=alias?alias->getDescribedAliasTemplate():nullptr;
+    if (!category && !decl->isExternallyVisible() && !variable_template && !alias_pattern)
       return true;
+    if (alias_pattern) {
+      if (llvm::isa<clang::CXXRecordDecl>(alias->getDeclContext())) return true;
+      const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(alias_pattern));
+      for (const auto *redecl:alias_pattern->redecls()) {
+        auto *definition=redecl->getTemplatedDecl();
+        if (!IsModuleOwnedSource(context_,definition->getLocation(),source_root_))
+          return Error(decl,"module-owned alias template redeclares a foreign ABI");
+        unsigned count=0;
+        for (const auto *annotation:definition->specific_attrs<clang::AnnotateAttr>())
+          if (annotation->getAnnotation().starts_with("objc3.alias-owner:"))
+            if (++count!=1 || annotation->args_size()!=0 ||
+                annotation->getAnnotation().drop_front(sizeof("objc3.alias-owner:")-1)!=expected)
+              return Error(decl,"alias template ABI owner conflicts with its module/package");
+        if (!count) definition->addAttr(clang::AnnotateAttr::Create(
+            context_,"objc3.alias-owner:"+expected,nullptr,0,definition->getLocation()));
+      }
+      return true;
+    }
     const bool value = llvm::isa<clang::FunctionDecl, clang::VarDecl>(decl);
     const bool runtime =
         llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,

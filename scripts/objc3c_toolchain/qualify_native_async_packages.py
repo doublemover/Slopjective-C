@@ -148,6 +148,12 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    for capability in ('objc3.cxx-template-template-parameters.v1',
+                       'objc3.cxx-nominal-alias-templates.v1'):
+        if capability not in metadata['required_semantics']:
+            raise ValueError('C++ package lost template argument contract: '+capability)
+    if not names.get('NativeTTAlias', {}).get('native_symbol_name', '').startswith('__objc3_m_'):
+        raise ValueError('C++ package lost nominal alias ABI owner')
     if ('objc3.cxx-concrete-nested-templates.v1' not in metadata['required_semantics'] or
             ';cxx-concrete-nested-templates:v1;' not in names.get(
                 'NativeConcreteTemplates', {}).get('canonical_type_identity', '')):

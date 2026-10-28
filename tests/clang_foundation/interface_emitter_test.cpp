@@ -1627,7 +1627,7 @@ void TestPublicAliasTemplates() {
     auto private_type=emit("namespace {struct Hidden{};}template<class T> using Alias=Hidden*;");
     assert(!private_type.success && std::any_of(private_type.diagnostics.begin(),private_type.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    assert(!emit("template<template<class>class C> using Alias=C<int>;").success);
+    assert(emit("template<template<class>class C> using Alias=C<int>;").success);
   }
 }
 
@@ -1738,6 +1738,113 @@ void TestTemplateStructure() {
     for(const auto *name:{"Root","count"})
       assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
           [&](const auto &d){return d.qualified_name==name;})==1);
+  }
+}
+
+void TestLargeExportPolicy() {
+  std::string source;
+  std::vector<std::string> exports;
+  for (unsigned i=0;i<kMaxInterfaceExportNames;++i) {
+    exports.push_back("export_"+std::to_string(i));
+    source+="int "+exports.back()+"();\n";
+  }
+  auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++","-std=c++20"},"large-library.cpp");
+  assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+  auto accepted=EmitSemanticInterface(ast->getASTContext(),"fixture.large_library","test",{},{},{},exports);
+  assert(accepted.success);
+  exports.push_back("one_too_many");
+  auto rejected=EmitSemanticInterface(ast->getASTContext(),"fixture.large_library","test",{},{},{},exports);
+  assert(!rejected.success && std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),
+      [](const auto &d){return d.code=="O3IFC155";}));
+}
+
+void TestTemplateTemplateParameters() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="template-template-parameters.cpp",
+                  const std::string &module="fixture.template_templates",const std::string &package="test") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),module,package,{}));
+      return EmitSemanticInterface(ast->getASTContext(),module,package);
+    };
+    const std::string source=R"(
+      template<class T> struct Box{T value;};
+      template<class T> using Alias=Box<T>;
+      template<template<class>class C=Alias,class T=int> constexpr T read(C<T> value){return value.value;}
+      template<template<class>class C=Box> struct Wrapper{C<int> value;};
+      template<template<template<class>class>class W=Wrapper,template<class>class C=Alias>
+      using Higher=W<C>;
+      template<template<class>class C=Alias,class T=int> using Rebind=C<T>;
+      template<template<class>class C=Alias> inline constexpr unsigned width=sizeof(C<int>);
+      template<template<class>class... C> constexpr unsigned arity(){return sizeof...(C);}
+      template<template<class>class C=Alias> requires(sizeof(C<int>)>0)
+      constexpr int constrained(C<int> value){return value.value;}
+      template<template<class>class C> int next(){static int n=40;return ++n;}
+      template<class T> struct Family {
+        template<class U> using Member=Box<U>;
+        template<template<class>class C=Alias> using Type=C<T>;
+        template<template<class>class C=Alias> static constexpr int read(C<T> n){return n.value;}
+        template<template<class>class C=Alias> inline static C<T> saved{40};
+      };
+      struct Concrete {
+        template<template<class>class C=Alias> using Type=C<int>;
+        template<template<class>class C=Alias> static constexpr int read(C<int> n){return n.value;}
+        template<template<class>class C=Alias> inline static C<int> saved{40};
+        template<template<class>class C=Alias> struct Nested{C<int> value;};
+      };
+      template<template<__SIZE_TYPE__,class...>class C=__type_pack_element>
+      using First=C<0,int,long>;
+      inline constexpr int probe(){
+        Rebind<Alias,long> n{42};Higher<> higher{{42}};
+        return read<Alias>(Box<int>{int(n.value)})+higher.value.value;
+      }
+      inline int state(){return next<Alias>()+next<Family<int>::Member>()+Family<int>::saved<Alias>.value;}
+      template<template<class>class C=Alias> int forwarded(int n);
+      template<template<class>class C> int forwarded(int n){return C<int>{n}.value;}
+      inline int lambda_probe(){auto call=[]<template<class>class C>(C<int> n){return n.value;};return call.template operator()<Alias>({42});}
+      static_assert(arity<Box,Alias>()==2 && width<> ==sizeof(int));
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxTemplateTemplateSemantic)!=std::string::npos);
+    assert(first.sidecar_json.find(kCxxNominalAliasTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-template-templates.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-template-templates.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto row=[](const auto &s,const char *name)->const InterfaceDeclarationIdentity & {
+      return *std::find_if(s.declarations.begin(),s.declarations.end(),
+          [&](const auto &d){return d.qualified_name==name;});
+    };
+    assert(HasCxxNominalAliasTemplateIdentity(row(*decoded,"Alias")) && !row(*decoded,"Alias").native_symbol_name.empty());
+    auto moved=emit(source,"other-package.cpp","fixture.template_templates","other");assert(moved.success);
+    auto other=DecodeSemanticInterfaceSidecar(moved.sidecar_json,moved.source_bytes,semantics);assert(other);
+    assert(row(*decoded,"Alias").native_symbol_name!=row(*other,"Alias").native_symbol_name);
+    auto changed=source;changed.replace(changed.find("return value.value"),18,"return value.value+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    for(const auto *capability:{kCxxTemplateTemplateSemantic,kCxxNominalAliasTemplateSemantic,kCxxAliasTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxTemplateTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto renamed=source;
+    const auto at=renamed.find("template<template<class>class C=Alias> requires(sizeof(C<int>)>0)");
+    assert(at!=std::string::npos);
+    const std::string before="template<template<class>class C=Alias> requires(sizeof(C<int>)>0)\n      constexpr int constrained(C<int> value)";
+    const std::string after="template<template<class>class Container=Alias> requires(sizeof(Container<int>)>0)\n      constexpr int constrained(Container<int> value)";
+    renamed.replace(at,before.size(),after);
+    auto alpha=emit(renamed,"renamed-template-templates.cpp");assert(alpha.success);
+    auto alpha_sidecar=DecodeSemanticInterfaceSidecar(alpha.sidecar_json,alpha.source_bytes,semantics);assert(alpha_sidecar);
+    assert(row(*decoded,"constrained").native_symbol_name==row(*alpha_sidecar,"constrained").native_symbol_name);
+    auto hidden=emit("namespace{template<class T>struct Hidden{T value;};}template<template<class>class C=Hidden>struct Public{C<int> value;};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
   }
 }
 
@@ -1888,7 +1995,7 @@ void TestConcreteMemberTemplates() {
     for(const auto *source:{
         "struct Concrete{template<class U>int f(U);};",
         "struct Concrete{template<class U>static U value;};",
-        "struct Concrete{template<template<class>class U>int f(){return 42;}};",
+        "struct Concrete{template<template<class>class U>int f();};",
         "struct Concrete{template<class U>int f(U n){return n;}};template<>int Concrete::f<int>(int n){return n+1;}",
         "struct Concrete{template<class U>inline static U value=U{40};};template<>inline int Concrete::value<int> =42;"})
       assert(!emit(source).success);
@@ -2104,7 +2211,7 @@ void TestClassMemberAliasTemplates() {
       assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
           [](const auto &d){return d.code=="O3IFC156";}));
     }
-    assert(!emit("template<class T>struct Types{template<template<class>class U>using Rebind=U<T>;};").success);
+    assert(emit("template<class T>struct Types{template<template<class>class U>using Rebind=U<T>;};").success);
   }
 }
 
@@ -2173,7 +2280,7 @@ void TestClassMemberTemplates() {
     }
     for(const auto *gated:{
         "template<class T>struct Box{template<class U>U f(U);};",
-        "template<class T>struct Box{template<template<class>class U>int f(){return 42;}};",
+        "template<class T>struct Box{template<template<class>class U>int f();};",
         "template<class T>struct Box{template<class U>int f(U,...)=delete;};",
         "template<class T>struct Box{template<class U>int f(U n){return n;}};template<>template<>int Box<int>::f<int>(int n){return n+1;}"})
       assert(!emit(gated).success);
@@ -3365,6 +3472,8 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestLargeExportPolicy();
+  TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();
   TestConcreteMemberTemplates();
   TestVariadicTemplates();

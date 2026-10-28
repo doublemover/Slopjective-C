@@ -29,5 +29,5 @@ template<class T> struct Overlap { union Inner { T one; long two; }; };
 template<class T> T api(T value) { return value; }
 template<> int api<int>(int value) { return value; }
 #elif CASE == 14
-template<template<class> class C, class T> int api(C<T> value) { return 42; }
+template<template<class> class C, class T> int api(C<T> value);
 #endif

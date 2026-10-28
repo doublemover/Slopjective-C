@@ -5,6 +5,7 @@
 
 namespace objc3::clang_foundation {
 
+inline constexpr unsigned kMaxInterfaceExportNames = 4096;
 inline constexpr unsigned kInterfaceSchemaMajor = 2;
 inline constexpr unsigned kInterfaceSchemaMinor = 2;
 inline constexpr const char *kInterfaceSchemaId =
@@ -179,6 +180,14 @@ inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
 inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-nullable-writes.v1";
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
+}
+inline constexpr const char *kCxxTemplateTemplateSemantic = "objc3.cxx-template-template-parameters.v1";
+inline bool HasCxxTemplateTemplateIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-template-template-parameters:v1;") != std::string::npos;
+}
+inline constexpr const char *kCxxNominalAliasTemplateSemantic = "objc3.cxx-nominal-alias-templates.v1";
+inline bool HasCxxNominalAliasTemplateIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-nominal-alias-templates:v1;") != std::string::npos;
 }
 inline constexpr const char *kCxxConcreteNestedTemplateSemantic = "objc3.cxx-concrete-nested-templates.v1";
 inline bool HasCxxConcreteNestedTemplateIdentity(const InterfaceDeclarationIdentity &d) {

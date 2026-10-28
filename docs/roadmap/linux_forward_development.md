@@ -82,6 +82,17 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Template-template parameters and nominal alias ownership
+
+The [2.56 source span](linux_cxx_template_template_parameters.md) adds recursive
+type-template parameters, defaults, constraints and packs across supported
+namespace/member templates. Exact class, alias and builtin arguments retain
+nominal and enclosing-specialization identity. Native alias ownership survives
+source/PCH, import and structural comparison. Focused native/emitter checks,
+147 tooling tests and all eight source-free package configurations pass. Compiler
+and package export policies now admit 4,096 names with matching boundary checks.
+Combined validation and SDK delivery remain batched after SDK 2.52.
+
 ## Nested class templates in concrete records
 
 The [2.55 source span](linux_cxx_concrete_nested_templates.md) completes primary

@@ -25,5 +25,5 @@ union Overlap { int one; long two; };
 #elif CASE == 13
 template<class T> T api(T value, ...) { return value; }
 #elif CASE == 14
-constexpr int evaluated() { return [](auto value) { return value; }(42); }
+template<template<class> class C, class T> int api(C<T> value) { return 42; }
 #endif

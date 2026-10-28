@@ -438,6 +438,25 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_template_template_parameters=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxTemplateTemplateIdentity);
+  const bool template_template_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxTemplateTemplateSemantic)!=sidecar.required_semantics.end();
+  if (has_template_template_parameters!=template_template_capability)
+    Add(result,"O3IFC064","template-template parameter identity and required capability must agree",expected.canonical_name);
+  const bool has_nominal_alias_templates=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxNominalAliasTemplateIdentity);
+  const bool nominal_alias_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxNominalAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nominal_alias_dependency=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxAliasTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool nominal_alias_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxNominalAliasTemplateIdentity(d) ||
+          (d.kind=="TypeAliasTemplate" && !d.native_symbol_name.empty() &&
+           d.canonical_type_identity.find(";owner="+d.native_symbol_name+";")!=std::string::npos);});
+  if (has_nominal_alias_templates!=nominal_alias_capability || !nominal_alias_owners ||
+      (nominal_alias_capability && !nominal_alias_dependency))
+    Add(result,"O3IFC065","nominal alias identity and required alias/owner capability must agree",expected.canonical_name);
   const bool has_concrete_member_templates = std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxConcreteMemberTemplateIdentity);
   const bool concrete_member_capability = std::find(sidecar.required_semantics.begin(),

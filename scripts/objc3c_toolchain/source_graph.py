@@ -20,6 +20,7 @@ else:
     sys.dont_write_bytecode = True
     from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 
+MAX_EXPORT_NAMES = 4096
 WORKSPACE = 'objc3c.source-workspace.v4'
 PACKAGE = 'objc3c.source-package.v4'
 REPORT = 'objc3c.source-graph-build.v4'
@@ -89,7 +90,7 @@ def validate_provider(config: dict) -> None:
 
 
 def validate_exports(values) -> list[str]:
-    if (not isinstance(values, list) or not values or len(values) > 256 or
+    if (not isinstance(values, list) or not values or len(values) > MAX_EXPORT_NAMES or
             any(not isinstance(name, str) or not name or len(name.encode('utf-8')) > 256 or
                 any(ord(char) < 33 or ord(char) == 127 for char in name) for name in values) or
             len(set(values)) != len(values) or ('*' in values and len(values) != 1)):

@@ -255,7 +255,26 @@
     "native_concrete_state",
     "native_concrete_nested_make",
     "native_concrete_nested_argument",
-    "native_concrete_nested_probe"
+    "native_concrete_nested_probe",
+    "NativeTTBox",
+    "NativeTTAlias",
+    "native_tt_read",
+    "NativeTTWrapper",
+    "NativeTTHigher",
+    "NativeTTRebind",
+    "native_tt_width",
+    "native_tt_arity",
+    "native_tt_constrained",
+    "native_tt_next",
+    "native_tt_shared",
+    "native_tt_local",
+    "NativeTTFamily",
+    "NativeTTConcrete",
+    "NativeTTFirst",
+    "native_tt_state",
+    "native_tt_member_state",
+    "native_tt_forwarded",
+    "native_tt_lambda"
   ],
   "dependencies": []
 }
