@@ -249,7 +249,10 @@
     "native_nested_argument_probe",
     "native_variadic_sum",
     "NativeVariadic",
-    "native_variadic_provider"
+    "native_variadic_provider",
+    "NativeConcreteTemplates",
+    "native_concrete_make",
+    "native_concrete_state"
   ],
   "dependencies": []
 }

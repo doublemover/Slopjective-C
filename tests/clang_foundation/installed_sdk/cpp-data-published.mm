@@ -7,7 +7,7 @@ struct Defaulted { Defaulted() = default; int value = 42; };
 #elif CASE == 4
 struct Base { int value; }; struct Derived : virtual Base { int second=1; int get() const { return [](auto value) { return value; }(42); } };
 #elif CASE == 5
-struct Methods { int value; int get() const { return [](auto value) { return value; }(42); } };
+struct Methods { template<class T> int get(T value) { return int(value); } };
 #elif CASE == 6
 class Virtual { public: virtual int get() const { return [](auto value) { return value; }(42); } };
 #elif CASE == 7

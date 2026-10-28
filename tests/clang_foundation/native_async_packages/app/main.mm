@@ -19,6 +19,9 @@ static void *native_variable_template_worker(void *context) {
   auto *passed=static_cast<bool *>(context);
   *passed=native_template_tls<> ==40 && native_template_shared<> ==42;
   *passed &= NativeNestedFamily<int>::local<> ==40 && NativeNestedFamily<int>::shared<> ==42;
+  *passed &= NativeConcreteTemplates::local<> ==40 && NativeConcreteTemplates::shared<> ==42;
+  ++NativeConcreteTemplates::local<>;
+  *passed &= NativeConcreteTemplates::local<> ==41;
   ++NativeNestedFamily<int>::local<>;
   *passed &= NativeNestedFamily<int>::local<> ==41;
   ++native_template_tls<>;
@@ -226,6 +229,18 @@ int main() {
        NativeVariadic<int>{}.add<long>(2,40.0,promoted)!=42)return 160;
     int (*indirect)(unsigned,...)=&native_variadic_sum<int>;
     if(indirect(2,40,2)!=42)return 161;
+  }
+  {
+    static_assert(NativeConcreteTemplates::answer<40> ==42);
+    if(native_concrete_state()!=123 || NativeConcreteTemplates::next<>()!=42 ||
+       ++NativeConcreteTemplates::shared<> !=42 || ++NativeConcreteTemplates::local<> !=42)return 162;
+    NativeConcreteTemplates::Array<2> parts={40,2};
+    auto *value=native_concrete_make();
+    NativeConcreteTemplates::Pointer<> empty=nullptr;
+    if(empty || value->number()!=40 || value->add<long>()!=42 || (*value)(2L)!=42 ||
+       NativeConcreteTemplates::reader(parts[0]+parts[1])()!=42)return 163;
+    auto copy=*value;delete value;
+    if(copy.add(2.0)!=42.0)return 164;
   }
   static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
   if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||
@@ -551,6 +566,7 @@ int main() {
   if(pthread_create(&variable_thread,nullptr,native_variable_template_worker,&variable_thread_passed) ||
      pthread_join(variable_thread,nullptr) || !variable_thread_passed ||
      NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<int>::shared<> !=42 ||
+     NativeConcreteTemplates::local<> !=42 || NativeConcreteTemplates::shared<> !=42 ||
      native_template_tls<> !=42 || native_template_shared<> !=43) return 130;
 
   static_assert(__is_same(NativeTemplatePointer<>,int*));

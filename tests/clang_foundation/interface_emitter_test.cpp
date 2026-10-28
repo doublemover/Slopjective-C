@@ -1741,6 +1741,83 @@ void TestTemplateStructure() {
   }
 }
 
+void TestConcreteMemberTemplates() {
+  for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concrete-member-templates.cpp",
+                  const std::vector<std::string> &exports={}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.concrete_member_templates","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.concrete_member_templates","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      class Concrete {
+        template<class U> using Storage=U;
+        Storage<int> value;
+      public:
+        Concrete():value(40){}
+        template<class U> explicit(sizeof(U)>1) Concrete(U n):value(int(n)){}
+        virtual ~Concrete()=default;
+        virtual int number()const{return value;}
+        template<class U=int> auto add(U n=U{2})const noexcept(noexcept(value+n)){return value+n;}
+        template<class U> requires requires(U n){n+1;}
+        U operator()(U n)const{return U(value)+n;}
+        template<class U> static auto reader(U n){return [n]{return n;};}
+        template<class U=int> static int next(){static int n=40;return ++n;}
+        template<class U=int> using Pointer=U*;
+        template<int N> using Array=int[N];
+        template<class U=int> inline static U shared=U{40};
+        template<class U=int> inline static thread_local U local=U{40};
+        template<int N> inline static constexpr int answer=N+2;
+      };
+      inline int probe(){Concrete value(40L);return value.add()+Concrete::reader(0)()+Concrete::shared<>+Concrete::local<>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxConcreteMemberTemplateSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-concrete-members.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-concrete-members.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("return value+n"),14,"return value+n+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    for(const auto &d:decoded->declarations) {
+      assert(d.kind!="FunctionTemplate" && d.kind!="AliasTemplate" && d.kind!="VarTemplate");
+      if (d.qualified_name=="Concrete") assert(HasCxxConcreteMemberTemplateIdentity(d));
+    }
+    assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),
+        [](const auto &d){return d.qualified_name=="Concrete::number" && d.kind=="CXXMethod";}));
+    for(const auto *capability:{kCxxConcreteMemberTemplateSemantic,kCxxMemberTemplateSemantic,
+        kCxxMemberAliasTemplateSemantic,kCxxVariableTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxConcreteMemberTemplateSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    for(const auto *source:{
+        "static int hidden(){return 42;}struct Concrete{template<class U>int f(U){return hidden();}};",
+        "static int hidden(){return 42;}struct Concrete{template<class U>int f(U n=hidden()){return n;}};",
+        "static int hidden(){return 42;}struct Concrete{template<class U>inline static int value=hidden();};"}) {
+      auto hidden=emit(source);
+      assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+          [](const auto &d){return d.code=="O3IFC112";}));
+    }
+    for(const auto *source:{
+        "struct Concrete{template<class U>int f(U);};",
+        "struct Concrete{template<class U>static U value;};",
+        "struct Concrete{template<template<class>class U>int f(){return 42;}};",
+        "struct Concrete{template<class U>int f(U n){return n;}};template<>int Concrete::f<int>(int n){return n+1;}",
+        "struct Concrete{template<class U>inline static U value=U{40};};template<>inline int Concrete::value<int> =42;"})
+      assert(!emit(source).success);
+  }
+}
+
 void TestVariadicTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="variadic-templates.cpp",
@@ -3211,6 +3288,7 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestConcreteMemberTemplates();
   TestVariadicTemplates();
   TestNestedTemplateTypes();
   TestTemplateStructure();

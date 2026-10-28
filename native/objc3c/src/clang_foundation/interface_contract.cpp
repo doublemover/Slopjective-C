@@ -438,13 +438,24 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_concrete_member_templates = std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxConcreteMemberTemplateIdentity);
+  const bool concrete_member_capability = std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxConcreteMemberTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool concrete_member_owners = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d) {return !HasCxxConcreteMemberTemplateIdentity(d) ||
+          (d.kind=="CXXRecord" && (HasCxxMemberTemplateIdentity(d) ||
+           HasCxxMemberAliasTemplateIdentity(d) || HasCxxVariableTemplateIdentity(d)));});
+  if (has_concrete_member_templates!=concrete_member_capability || !concrete_member_owners)
+    Add(result,"O3IFC062","concrete member template identity and required record capability must agree",expected.canonical_name);
   const bool has_variadic_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxVariadicTemplateIdentity);
   const bool variadic_template_capability = std::find(sidecar.required_semantics.begin(),
       sidecar.required_semantics.end(),kCxxVariadicTemplateSemantic)!=sidecar.required_semantics.end();
   const bool variadic_template_owner = std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
       [](const auto &d) { return !HasCxxVariadicTemplateIdentity(d) ||
-          (d.kind=="FunctionTemplate" || d.kind=="ClassTemplate"); });
+          (d.kind=="FunctionTemplate" || d.kind=="ClassTemplate" ||
+           (d.kind=="CXXRecord" && HasCxxConcreteMemberTemplateIdentity(d))); });
   if (has_variadic_templates!=variadic_template_capability ||
       (variadic_template_capability && !variadic_template_owner))
     Add(result,"O3IFC061","variadic template identity and required capability must agree",expected.canonical_name);
@@ -466,7 +477,7 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool member_alias_alias = std::find(sidecar.required_semantics.begin(),
       sidecar.required_semantics.end(),kCxxAliasTemplateSemantic)!=sidecar.required_semantics.end();
   if (has_member_alias_templates!=member_alias_capability ||
-      (member_alias_capability && (!member_alias_class || !member_alias_alias)))
+      (member_alias_capability && ((!member_alias_class && !concrete_member_capability) || !member_alias_alias)))
     Add(result,"O3IFC059","member alias template identity and required member/class/alias capabilities must agree",expected.canonical_name);
   const bool has_member_templates = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxMemberTemplateIdentity);
@@ -477,7 +488,7 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool member_template_data = std::find(sidecar.required_semantics.begin(),
       sidecar.required_semantics.end(),"objc3.cxx-data-interfaces.v1")!=sidecar.required_semantics.end();
   if (has_member_templates!=member_template_capability ||
-      (member_template_capability && (!member_template_class || !member_template_data)))
+      (member_template_capability && ((!member_template_class && !concrete_member_capability) || !member_template_data)))
     Add(result,"O3IFC058","member template identity and required member/class/data capabilities must agree",expected.canonical_name);
   const bool has_template_deduction = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxTemplateDeductionIdentity);

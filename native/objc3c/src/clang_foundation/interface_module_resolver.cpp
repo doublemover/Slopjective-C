@@ -68,6 +68,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxMemberAliasTemplateSemantic,
     kCxxNestedTemplateSemantic,
     kCxxVariadicTemplateSemantic,
+    kCxxConcreteMemberTemplateSemantic,
     "objc3.cxx-async-definitions.v1",
     "objc3.sdk-runtime-declarations.v1",
     "objc3.ownership-projection.v1",

@@ -82,6 +82,15 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Concrete-class member templates
+
+The [2.54 source span](linux_cxx_concrete_member_templates.md) adds in-class
+function/alias templates and inline variable templates to concrete classes.
+Record owners preserve complete heads/bodies, access and native ABI while
+ordinary methods retain their rows. Native replay/import and source-free
+construction, virtual copying/deletion, shared state and worker TLS checks pass.
+Combined validation and SDK delivery remain batched after accepted SDK 2.52.
+
 ## C-style variadic templates
 
 The [2.53 source span](linux_cxx_variadic_templates.md) adds C-style variadic

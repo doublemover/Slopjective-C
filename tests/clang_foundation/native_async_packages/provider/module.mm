@@ -1332,3 +1332,26 @@ template<class T> struct NativeVariadic {
   }
 };
 int native_variadic_provider(){return native_variadic_sum<>(2,40,2);}
+
+class NativeConcreteTemplates {
+  template<class U> using Storage=U;
+  Storage<int> value;
+public:
+  NativeConcreteTemplates():value(40){}
+  template<class U> explicit(sizeof(U)>1) NativeConcreteTemplates(U n):value(int(n)){}
+  virtual ~NativeConcreteTemplates()=default;
+  virtual int number()const{return value;}
+  template<class U=int> auto add(U n=U{2})const noexcept(noexcept(value+n)){return value+n;}
+  template<class U> requires requires(U n){n+1;}
+  U operator()(U n)const{return U(value)+n;}
+  template<class U> static auto reader(U n){return [n]{return n;};}
+  template<class U=int> static int next(){static int n=40;return ++n;}
+  template<class U=int> using Pointer=U*;
+  template<int N> using Array=int[N];
+  template<class U=int> inline static U shared=U{40};
+  template<class U=int> inline static thread_local U local=U{40};
+  template<int N> inline static constexpr int answer=N+2;
+};
+NativeConcreteTemplates *native_concrete_make(){return new NativeConcreteTemplates(40L);}
+int native_concrete_state(){return NativeConcreteTemplates::next<>()+
+    ++NativeConcreteTemplates::shared<> + ++NativeConcreteTemplates::local<>;}

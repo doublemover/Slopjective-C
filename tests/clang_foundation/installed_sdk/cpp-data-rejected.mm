@@ -8,7 +8,7 @@ struct Defaulted { template<class T> Defaulted(T); };
 template<class T> struct Generic { T value; };
 template<class T> struct Generic<T *> { T *value; };
 #elif CASE == 5
-struct Methods { template<class T> int get(T value) { return int(value); } };
+struct Methods { template<class T> int get(T value); };
 #elif CASE == 6
 template<class T> struct Methods { template<class U> int get(U value) { return int(value); } };
 template<> template<> int Methods<int>::get<int>(int value) { return value; }

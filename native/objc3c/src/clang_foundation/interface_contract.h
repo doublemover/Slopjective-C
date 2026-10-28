@@ -180,6 +180,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxConcreteMemberTemplateSemantic = "objc3.cxx-concrete-member-templates.v1";
+inline bool HasCxxConcreteMemberTemplateIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-concrete-member-templates:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxVariadicTemplateSemantic = "objc3.cxx-variadic-templates.v1";
 inline bool HasCxxVariadicTemplateIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-variadic-templates:v1;") != std::string::npos;
