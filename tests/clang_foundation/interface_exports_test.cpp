@@ -234,6 +234,41 @@ void GenericLocalContracts(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void UnionBodies(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"union-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+      union Choice {int left;int right;};
+      struct Member {int n;constexpr Member(int value):n(value){} constexpr ~Member() {}};
+      union Managed {
+        Member member;long other;
+        constexpr Managed(int n):member(n){}
+        constexpr Managed(const Managed &source):member(source.member.n){}
+        constexpr ~Managed() {member.~Member();}
+        constexpr int number() const {return member.n;}
+      };
+      inline constexpr int union_value() {
+        Managed first(40);Managed copy=first;
+        auto use=[]<Choice C>() {return 42;};
+        return copy.number()+2+use.template operator()<Choice{.left=42}>()+
+               use.template operator()<Choice{.right=42}>();
+      }
+  )");
+  r.emit_semantic_interface=true;r.module_name="UnionBodies";r.package_identity="union-bodies-v1";
+  r.interface_exports={"Choice","Member","Managed","union_value"};
+  r.interface_output_path=(root/"UnionBodies.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"union-provider.o").string();
+  auto built=Compile(r);assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;
+  input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"union-client.cpp",BaseLanguage::Cxx,standard,false,
+      "static_assert(union_value()==126);int client(){return union_value();}");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"union-client.o").string();
+  auto imported=Compile(client);
+  for (const auto &diagnostic:imported.diagnostics)
+    std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+  assert(imported.success);
+}
+
 void Projection(const fs::path &root, bool producer_arc) {
   auto r = Request(
       root / "projected.m", BaseLanguage::ObjectiveC, "c17", producer_arc,
@@ -258,6 +293,7 @@ int main() {
     Surface(root, BaseLanguage::Cxx, standard, false);UnnamedLocalBodies(root,standard);
     GenericLocalBodies(root,standard);
     GenericLocalContracts(root,standard);
+    UnionBodies(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

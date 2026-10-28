@@ -433,6 +433,16 @@ InterfaceContractValidation ValidateSemanticInterface(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     Add(result, "O3IFC044", "C++ async definition identity and required capability must agree", expected.canonical_name);
+  const bool has_union_values = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(), HasCxxUnionValueIdentity);
+  const bool union_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      kCxxUnionValueSemantic) != sidecar.required_semantics.end();
+  const bool union_data_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      "objc3.cxx-data-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_union_values != union_capability || (union_capability && !union_data_capability))
+    Add(result,"O3IFC049","C++ union identity and required data/union capabilities must agree",expected.canonical_name);
   const bool has_generic_local_lambdas = std::any_of(
       sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxGenericLocalLambdaIdentity);
   const bool generic_local_capability = std::find(

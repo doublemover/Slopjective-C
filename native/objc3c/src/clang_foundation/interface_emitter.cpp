@@ -982,12 +982,14 @@ public:
     const bool local=IsExpressionLocalTag(declaration) && !(record && record->isLambda());
     types |= local;
     unnamed_types |= local && !declaration->getIdentifier();
+    union_types |= local && record && record->isUnion();
     return true;
   }
   bool blocks = false;
   bool statements = false;
   bool types = false;
   bool unnamed_types = false;
+  bool union_types = false;
 };
 bool HasDeclarationLocalType(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
@@ -1003,6 +1005,15 @@ bool ContainsUnnamedLocalType(const clang::Stmt *statement) {
 }
 bool HasDeclarationUnnamedLocalType(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,ContainsUnnamedLocalType);
+}
+bool HasDeclarationUnionValue(const clang::NamedDecl *declaration) {
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+      record && record->isUnion()) return true;
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    LocalExpressionFinder finder;
+    finder.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return finder.union_types;
+  });
 }
 bool HasDeclarationLocalExpression(const clang::NamedDecl *declaration, bool block) {
   return HasPublishedExpression(declaration, [=](const clang::Stmt *statement) {
@@ -1102,6 +1113,8 @@ std::string RecordLayoutIdentity(const clang::RecordDecl *record,
   std::string text;
   llvm::raw_string_ostream out(text);
   out << "record{";
+  if (llvm::isa<clang::CXXRecordDecl>(record) && record->isUnion())
+    out << "union=1;";
   if (record->isCompleteDefinition()) {
     const auto &layout = context.getASTRecordLayout(record);
     out << "size=" << layout.getSize().getQuantity() << ";align="
@@ -2171,7 +2184,6 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
     supported =
         !record->isDependentContext() && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
-        !record->isUnion() &&
         (!record->isDynamicClass() || record->getASTContext().getLangOpts().RTTI);
     for (const auto *member : record->decls()) {
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl, clang::BlockDecl>(member))
@@ -2953,6 +2965,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity += ";cxx-immediate-defaulting:v1;consteval=1;";
   if (HasDeclarationGenericLambda(representative))
     identity.canonical_type_identity += ";cxx-generic-local-lambdas:v2;";
+  if (HasDeclarationUnionValue(representative))
+    identity.canonical_type_identity += ";cxx-union-values:v1;";
   if (HasDeclarationLambda(representative))
     identity.canonical_type_identity += ";cxx-lambda-expressions:v1;";
   if (HasDeclarationLocalExpression(representative, true))
@@ -3199,6 +3213,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxNamespaceAttributeSemantic);
     if (HasCxxGenericLocalLambdaIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxGenericLocalLambdaSemantic);
+    if (HasCxxUnionValueIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxUnionValueSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -3293,6 +3309,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxLocalTypeSemantic,
     kCxxUnnamedLocalTypeSemantic,
     kCxxGenericLocalLambdaSemantic,
+    kCxxUnionValueSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -3419,6 +3436,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxLocalTypeSemantic,
     kCxxUnnamedLocalTypeSemantic,
     kCxxGenericLocalLambdaSemantic,
+    kCxxUnionValueSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

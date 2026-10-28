@@ -55,6 +55,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-local-types.v1",
     "objc3.cxx-unnamed-local-types.v1",
     "objc3.cxx-generic-local-lambdas.v2",
+    "objc3.cxx-union-values.v1",
     "objc3.cxx-async-definitions.v1",
     "objc3.sdk-runtime-declarations.v1",
     "objc3.ownership-projection.v1",

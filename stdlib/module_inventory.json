@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 40,
+        "minor": 41,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -166,7 +166,8 @@
         "Source-ordered awaited isolation operands with independent ARC/MRC object/Block snapshots, shared precise full-expression/EH cleanup, and later-argument replacement/throw/failure protection for functions and messages (source)",
         "Unnamed local C++ records and enums in published concrete definitions, including nested records, aliases, implicit copies/closures, native destruction and virtual dispatch/RTTI, with owned definition printing and lexical-slot type/structor identity (source)",
         "Closed generic local lambdas in published concrete bodies/defaults/member initializers/constant data, with sorted typed instantiation and dependency contracts, pack/default/immediate/static printing and imported generic invoker call-operator bodies (source)",
-        "Generic local callable contracts v2 with named structural template values, exact floating-point bits, complete specialization type dependencies, expression/requires constraints and dependent noexcept; named concepts and address-bearing values remain separate contracts (source)"
+        "Generic local callable contracts v2 with named structural template values, exact floating-point bits, complete specialization type dependencies, expression/requires constraints and dependent noexcept; named concepts and address-bearing values remain separate contracts (source)",
+        "Native named/nested/typedef/local C++ union values, explicit active-member construction/copy/destruction, native by-value ABI and structural template active-member identity under required union-value semantics (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

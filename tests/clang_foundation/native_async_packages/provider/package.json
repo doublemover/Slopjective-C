@@ -170,7 +170,20 @@
     "native_generic_contracts_bridge",
     "native_generic_float_bits",
     "native_generic_probe",
-    "native_generic_captured_local"
+    "native_generic_captured_local",
+    "NativePlainUnion",
+    "native_union_make",
+    "native_union_read",
+    "NativeUnionChoice",
+    "native_union_choices",
+    "NativeUnionValue",
+    "native_union_lifecycle",
+    "native_union_local",
+    "native_union_bridge",
+    "NativeUnionThrowStats",
+    "NativeUnionThrowMember",
+    "NativeUnionThrowValue",
+    "native_union_throwing"
   ],
   "dependencies": []
 }

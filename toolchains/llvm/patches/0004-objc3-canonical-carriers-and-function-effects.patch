@@ -30936,7 +30936,7 @@ index 000000000..b9bf3494d
 +  }
 +};
 diff --git a/clang/include/clang/Basic/Attr.td b/clang/include/clang/Basic/Attr.td
-index 2c62f46d4..70c80b5c8 100644
+index 2c62f46d4..34f72ede3 100644
 --- a/clang/include/clang/Basic/Attr.td
 +++ b/clang/include/clang/Basic/Attr.td
 @@ -241,6 +241,9 @@ class IdentifierArgument<string name, bit opt = 0> : Argument<name, opt>;
@@ -30949,6 +30949,15 @@ index 2c62f46d4..70c80b5c8 100644
  class DeclArgument<DeclNode kind, string name, bit opt = 0, bit fake = 0>
      : Argument<name, opt, fake> {
    DeclNode Kind = kind;
+@@ -856,7 +859,7 @@ class IgnoredAttr : Attr {
+ def AbiTag : Attr {
+   let Spellings = [GCC<"abi_tag", /*AllowInC*/0>];
+   let Args = [VariadicStringArgument<"Tags">];
+-  let Subjects = SubjectList<[Struct, Var, Function, Namespace], ErrorDiag>;
++  let Subjects = SubjectList<[Record, Var, Function, Namespace], ErrorDiag>;
+   let MeaningfulToClassTemplateDefinition = 1;
+   let Documentation = [AbiTagsDocs];
+ }
 @@ -1450,6 +1453,100 @@ def OSConsumesThis : InheritableAttr {
    let SimpleHandler = 1;
  }

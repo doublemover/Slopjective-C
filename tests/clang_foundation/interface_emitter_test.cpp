@@ -1256,8 +1256,6 @@ void TestCxxLocalTypes() {
     assert(!escapes.success);
     for (const auto *boundary : {
              "static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}",
-             "inline int call() {union Local {int n;}; return Local{42}.n;}",
-             "inline int call() {union {int n;} value{42}; return value.n;}",
              "inline auto escape() {struct {int n;} value{42};return value;}",
              "struct Public {struct {int n;} value;};"}) {
       auto rejected = emit(boundary);
@@ -1400,6 +1398,63 @@ void TestGenericLocalContracts() {
     auto excessive=emit("struct Large{int values[5000];}; inline int api(){return "
         "[]<Large V>(){return 42;}.template operator()<Large{}>();}");
     assert(!excessive.success);
+  }
+}
+
+void TestCxxUnionValues() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="unions.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.unions","test");
+    };
+    const std::string source=R"(
+      union Forward; Forward *forward(Forward *);
+      union Plain {int integer;double floating;};
+      union Choice {int left;int right;};
+      typedef union {int integer;long wide;} Aliased;
+      struct Nested {union Value {int n;double d;}; Value value;};
+      struct Member {int n;constexpr Member(int value):n(value){} constexpr ~Member() {}};
+      union Managed {
+        Member member;long other;
+        constexpr Managed(int n):member(n){}
+        constexpr Managed(const Managed &other):member(other.member.n){}
+        constexpr ~Managed() {member.~Member();}
+        constexpr int number() const {return member.n;}
+      };
+      inline constexpr int lifecycle() {Managed first(40);Managed copy=first;return copy.number()+2;}
+      inline constexpr int choices() {
+        auto use=[]<Choice C>() {return 42;};
+        return use.template operator()<Choice{.left=42}>()+
+               use.template operator()<Choice{.right=42}>();
+      }
+      inline int local(int n) {union Local {int n;double d;};Local value{.n=n};return value.n+2;}
+      inline int unnamed(int n) {union {int n;double d;} value{.n=n};
+        auto read=[value]{return value.n+2;};return read();}
+      inline Plain plain(int n) {return Plain{.integer=n};}
+    )";
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics) std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    assert(first.sidecar_json.find("objc3.cxx-union-values.v1")!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("double floating"),15,"long double floating");
+    auto layout=emit(changed);assert(layout.success && layout.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    std::vector<llvm::StringRef> semantics={"objc3.cxx-data-interfaces.v1","objc3.cxx-union-values.v1"};
+    auto simple=emit("union Value{int n;double d;};");
+    assert(simple.success);
+    auto decoded=DecodeSemanticInterfaceSidecar(simple.sidecar_json,simple.source_bytes,semantics);
+    assert(decoded);
+    std::erase(decoded->required_semantics,kCxxUnionValueSemantic);
+    auto damaged=EncodeSemanticInterfaceSidecar(*decoded,semantics);
+    assert(!damaged);llvm::consumeError(damaged.takeError());
+    auto escaping=emit("inline auto escape(){union Local{int n;};return Local{42};}");
+    assert(!escaping.success);
+    auto anonymous_public=emit("struct Public{union{int n;double d;} value;};");
+    assert(!anonymous_public.success);
   }
 }
 
@@ -2321,7 +2376,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "int api(int argument=[](auto value) { return value; }(42));", "inline int api() { return [](auto value) { return value; }(42); }",
         "extern constexpr int exported=[](auto value) { return value; }(42);", "extern const int exported=[](auto value) { return value; }(42);",
         "constexpr int evaluated() { return [](auto value) { return value; }(42); }",
-        "union Overlap { int one; long two; };"}) {
+        "struct Public {struct {int n;} value;};"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "c++", "-std=c++20", "--target=x86_64-unknown-linux-gnu"},
@@ -2378,6 +2433,7 @@ int main() {
   TestCxxLocalTypes();
   TestGenericLocalLambdas();
   TestGenericLocalContracts();
+  TestCxxUnionValues();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

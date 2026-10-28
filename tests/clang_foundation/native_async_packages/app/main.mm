@@ -407,6 +407,13 @@ int main() {
   static_assert(native_unnamed_constant()==42);
   if (native_generic_probe(42)!=42 || native_generic_probe(42L)!=42L) return 116;
   if (native_generic_captured_local(1)!=42) return 117;
+  if (native_union_throwing(40)!=42) return 119;
+  static_assert(native_union_choices()==84);
+  static_assert(__builtin_offsetof(NativePlainUnion,integer)==0 &&
+                __builtin_offsetof(NativePlainUnion,floating)==0);
+  auto union_value=native_union_make(42);
+  if (native_union_read(union_value)!=42 || native_union_lifecycle(40)!=42 ||
+      native_union_local(40)!=42 || native_union_bridge(40)!=84) return 118;
   static_assert(native_generic_float_bits()==6);
   if (native_generic_float_bits()!=6) return 115;
   static_assert(native_generic_contracts()==210);

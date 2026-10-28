@@ -59,6 +59,15 @@ key-path and C++ packages pass **60 configurations / 240 commands**, including
 eager metadata operations. SDK 2.33 remains accepted; its unpublished successor
 candidate was stopped for the array fix and its unused prefix reclaimed.
 
+## Native C++ union values
+
+The [2.41 source span](linux_cxx_union_values.md) publishes named, nested,
+typedef-owned and local C++ unions with native layout and by-value ABI,
+source-written active-member lifetime operations and structural template member
+identity. A required union-value capability binds publication and consumer
+admission. Broader checks follow the implementation span; separate ownership,
+frame/isolation and key-path union boundaries remain explicit.
+
 ## Generic local callable contracts
 
 The [2.40 source span](linux_cxx_generic_local_contracts.md) adds expression and

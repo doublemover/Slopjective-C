@@ -29173,3 +29173,46 @@ index 000000000..e2b62dffb
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
 +// CHECK: landingpad
 +// CHECK: {{call|invoke}} void @{{llvm.objc.release|objc_release}}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag-empty.mm b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag-empty.mm
+new file mode 100644
+index 000000000..d89230641
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag-empty.mm
+@@ -0,0 +1 @@
++// Tagged union declarations arrive from the PCH.
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h
+new file mode 100644
+index 000000000..2ee5edc36
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/union-abi-tag.h
+@@ -0,0 +1,14 @@
++union __attribute__((abi_tag("owned"))) PublishedUnion {
++  int value;double other;
++  constexpr PublishedUnion(int n):value(n){}
++  constexpr PublishedUnion(const PublishedUnion &source):value(source.value){}
++  constexpr ~PublishedUnion() {}
++  constexpr int number() const {return value;}
++};
++inline constexpr int union_contract() {
++  PublishedUnion value(42);PublishedUnion copy=value;return copy.number();
++}
++static_assert(union_contract()==42);
++PublishedUnion make(int n) {return PublishedUnion(n);}
++int read(PublishedUnion value) {return value.number();}
++int use(int n) {PublishedUnion value(n);return value.number();}
+diff --git a/clang/test/ObjC3/CodeGen/union-abi-tag.mm b/clang/test/ObjC3/CodeGen/union-abi-tag.mm
+new file mode 100644
+index 000000000..07c297771
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/union-abi-tag.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %S/Inputs/union-abi-tag.h | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -x objective-c++-header -emit-pch %S/Inputs/union-abi-tag.h -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -include-pch %t-c++20.pch -emit-llvm -o - %S/Inputs/union-abi-tag-empty.mm | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %S/Inputs/union-abi-tag.h | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -x objective-c++-header -emit-pch %S/Inputs/union-abi-tag.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -include-pch %t-c++23.pch -emit-llvm -o - %S/Inputs/union-abi-tag-empty.mm | FileCheck %s
++// CHECK-DAG: define {{.*}}@_Z4makeB5ownedi(
++// CHECK-DAG: define {{.*}}@_Z4read14PublishedUnionB5owned(
++// CHECK-DAG: @_ZN14PublishedUnionB5ownedC{{[12]}}Ei(
++// CHECK-DAG: @_ZN14PublishedUnionB5ownedD{{[12]}}Ev(

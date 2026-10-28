@@ -172,6 +172,11 @@ inline bool HasCxxUnnamedLocalTypeIdentity(const InterfaceDeclarationIdentity &d
   return d.canonical_type_identity.find(";cxx-unnamed-local-types:v1;") != std::string::npos;
 }
 
+inline constexpr const char *kCxxUnionValueSemantic = "objc3.cxx-union-values.v1";
+inline bool HasCxxUnionValueIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-union-values:v1;") != std::string::npos;
+}
+
 inline constexpr const char *kCxxLocalTypeSemantic = "objc3.cxx-local-types.v1";
 inline bool HasCxxLocalTypeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-local-types:v1;") != std::string::npos;

@@ -1063,3 +1063,66 @@ inline int native_generic_captured_local(int n) {
   struct Local {int pick(int) const {return 42;} int pick(long) const {return 42;}};
   Local receiver;auto run=[receiver](auto value){return receiver.pick(value);};return run(n);
 }
+
+union NativePlainUnion {long integer;double floating;};
+NativePlainUnion native_union_make(long value) {return NativePlainUnion{.integer=value};}
+long native_union_read(NativePlainUnion value) {return value.integer;}
+union NativeUnionChoice {int left;int right;};
+inline constexpr int native_union_choices() {
+  auto use=[]<NativeUnionChoice C>() {return 42;};
+  return use.template operator()<NativeUnionChoice{.left=42}>()+
+         use.template operator()<NativeUnionChoice{.right=42}>();
+}
+union NativeUnionValue {
+  NativeClassValue value;long other;
+  NativeUnionValue(NativeClassStats *stats,int n):value(stats,n){}
+  NativeUnionValue(const NativeUnionValue &source):value(source.value){}
+  ~NativeUnionValue() {value.~NativeClassValue();}
+  int number() const {return value.number();}
+};
+inline int native_union_lifecycle(int n) {
+  NativeClassStats stats={0,0,0,0};int answer=0;
+  {
+    NativeUnionValue first(&stats,n);NativeUnionValue second=first;
+    auto reader=[second]{return second.number()+2;};answer=reader();
+  }
+  return stats.live==0 && stats.copied==2 && stats.destroyed==3 ? answer : 0;
+}
+inline int native_union_local(int n) {
+  union Local {int n;double d;};Local first{.n=n};
+  union {int n;double d;} second{.n=first.n};
+  auto reader=[second]{return second.n+2;};return reader();
+}
+int native_union_bridge(int n) {return native_union_lifecycle(n)+native_union_local(n);}
+
+struct NativeUnionThrowStats {int live;int copied;int destroyed;bool fail;};
+struct NativeUnionThrowMember {
+  NativeUnionThrowStats *stats;int n;
+  NativeUnionThrowMember(NativeUnionThrowStats *s,int value):stats(s),n(value) {++stats->live;}
+  NativeUnionThrowMember(const NativeUnionThrowMember &source):stats(source.stats),n(source.n) {
+    if (stats->fail) throw 7;
+    ++stats->live;++stats->copied;
+  }
+  ~NativeUnionThrowMember() {--stats->live;++stats->destroyed;}
+};
+union NativeUnionThrowValue {
+  NativeUnionThrowMember member;long other;
+  NativeUnionThrowValue(NativeUnionThrowStats *stats,int n):member(stats,n){}
+  NativeUnionThrowValue(const NativeUnionThrowValue &source):member(source.member){}
+  ~NativeUnionThrowValue() {member.~NativeUnionThrowMember();}
+};
+inline int native_union_throwing(int n) {
+  NativeUnionThrowStats stats={0,0,0,false};NativeClassStats pins={0,0,0,0};int answer=0;
+  {
+    NativeUnionThrowValue first(&stats,n);stats.fail=true;
+    try {
+      auto reader=[pin=NativeClassValue(&pins,1),first]{return first.member.n+pin.number();};
+      (void)reader;return 0;
+    } catch (int code) {
+      if (code!=7 || stats.live!=1 || stats.copied!=0 || stats.destroyed!=0 ||
+          pins.live!=0 || pins.destroyed!=1) return 0;
+    }
+    stats.fail=false;NativeUnionThrowValue second=first;answer=second.member.n+2;
+  }
+  return stats.live==0 && stats.copied==1 && stats.destroyed==2 ? answer : 0;
+}
