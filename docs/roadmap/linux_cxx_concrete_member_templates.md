@@ -36,4 +36,6 @@ supersedes the deferred source checks above: 411 compiler regressions, 208 nativ
 unit tests, 33 optimized frontend suites and the maintained 335 tooling tests pass.
 Normal, ASan/UBSan and TSan each pass 168 source/PCH configurations / 1,158 commands.
 Source-free C++/key-path packages pass 80 configurations / 384 commands.
-Coordinated SDK delivery remains pending.
+The [SDK 2.62 acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
+completes coordinated delivery: all 33 installed gates and exact-archive native
+feature qualification pass on fresh Debian 13 and Ubuntu 26.04 as ordinary users.

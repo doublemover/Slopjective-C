@@ -1,0 +1,78 @@
+{
+  "schema": "objc3c.linux-source-batch-2.62-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-28",
+  "scope": "Linux x86-64 / GNUstep 2.2 SDK through source 2.62, System 2.14 and keypath 2.4; ten template-publication milestones and exact-archive fresh-host native-feature qualification",
+  "qualified_source_checkpoint": "80629c42f9989e2c6cb76ee20ad895095f69eee5",
+  "implementation_checkpoint": "a0a61ac297075fd087d4a063af4505794b1b3995",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8e38f2a3ca6c-00b75dc3",
+  "compiler_patch_digest": "8e38f2a3ca6c478730f966c47046561d181692f06d5b585265f11a9d7b3d7b3f",
+  "concurrency_module_version": "2.62.0",
+  "keypath_module_version": "2.4.0",
+  "system_module_version": "2.14.0",
+  "semantic_interface_schema": "2.2",
+  "extension_abi_revision": 21,
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "keypath_metadata_layout": 2,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "archive": {
+    "path": "/workspace/Slopjective-C/out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-8e38f2a3ca6c-00b75dc3-linux-x86_64-9974de87a27d036d.tar.zst",
+    "sha256": "4f818ebe77ae8883c9c2b56ccc38378a868e4f98a314b18e2fc7a69a1eff54c4",
+    "bytes": 446166161,
+    "sdk_seal": "9974de87a27d036dff6dad8ea470456827aea5a6d0666ef2995788dcda3f2570"
+  },
+  "verification": {
+    "release": {
+      "path": "out/toolchains/linux-sdk-builds/b73f1cc6081d7ab9db771e9e0eb76efa70be35387f0af87e11040b6dfd7c7733/release.json",
+      "sha256": "9658110ce3f0d0e196f08ea07db0a5afe92bf754f278bda93a8f70348eafdcd9"
+    },
+    "source_batch": {
+      "path": "docs/support/linux_template_publication_batch_progress.json",
+      "sha256": "e4e611a7ea6679798b2007ba8c0b030c412d8083d8f9babb5f40f25bf450b868"
+    },
+    "compiler_regressions_passed": 411,
+    "native_unit_tests_passed": 208,
+    "platform_cases_unsupported": 3,
+    "frontend_suites_passed": 33,
+    "maintained_tooling_tests_passed": 335,
+    "tooling_subtests_passed": 33,
+    "runtime_client_tests_passed": 9,
+    "installed_consumer_commands_passed": 37,
+    "native_integration_nodes_passed": 13,
+    "installed_gates_passed": 33,
+    "installed_native_features": {
+      "configurations": 168,
+      "commands": 1158
+    },
+    "native_async_package_configurations": 12,
+    "typed_keypath_package_configurations": 12,
+    "cxx_interface_qualification": {
+      "runtime_configurations": 12,
+      "publication_cases": 14,
+      "rejections": 18,
+      "commands": 112
+    },
+    "fresh_distributions": {
+      "scope": "native-features",
+      "ordinary_users": true,
+      "containers_removed": true,
+      "distributions": [
+        "debian13",
+        "ubuntu2604"
+      ],
+      "report": {
+        "path": "out/native-validation/template-publication-batch-sdk-fresh-linux/qualification.json",
+        "sha256": "75b56041c7f549f922e35b3422e81318d6aeed545b58732fa1981984d123dad0"
+      }
+    }
+  },
+  "remaining": [
+    "Nested/member template specializations, detached definitions and remaining generic/effectful package projections",
+    "Remaining ownership, captures, isolation, structured concurrency and key-path implementation",
+    "Specified language/library/foreign interop and full Core/Strict/Strict Concurrency/Strict System conformance",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "tooling_scope_note": "The maintained Linux selection passes. Unrestricted historical planning/workflow test collection has five separately recorded errors."
+}

@@ -9,35 +9,31 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) owns
 public compiler claims; the [library inventory](../../stdlib/module_inventory.json)
 records implemented and remaining module contracts. Source implementation,
 validated compiler behavior and installed SDK delivery are separate checkpoints.
-The current **2.52.0 SDK** delivers source milestones 2.10–2.52, System 2.14
-and keypath 2.4. This includes published async/isolation bodies, expanded captured
-ownership, exact native template identity, complete primary class-template member
-owners and writable nullable key-path chains. Semantic interface schema **2.2**
-is a hard cutover; regenerate dependent objects, PCH, interfaces and packages.
+The current **2.62.0 SDK** delivers source milestones through 2.62, System 2.14
+and keypath 2.4, including the ten template-publication milestones below.
+Semantic interface schema **2.2** is a hard cutover; regenerate dependent
+objects, PCH, interfaces and packages.
 
-The verified LLVM foundation passes **410 compiler regressions** (three platform
-cases unsupported) and **201 native unit tests**. Delivery passes all **33
-frontend suites**, nine GNUstep client tests, 37 installed consumer commands,
-13 native integration nodes and all **33 installed SDK gates**. The installed
-five-family matrix passes **168 configurations / 1,158 commands**. Compiler
-source identity is `llvmorg-23.1.3-0d261d1ca552-fea4e2217ffd-00b75dc3`.
+The [current acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
+binds the exact archive and qualification reports: **411 compiler regressions**
+(three platform cases unsupported), **208 native unit tests**, all **33 optimized
+frontend suites**, **335 maintained tooling tests** plus 33 subtests, nine GNUstep
+clients, 37 installed consumer commands, 13 native integration nodes and all
+**33 installed SDK gates** pass. Native source identity is
+`llvmorg-23.1.3-0d261d1ca552-8e38f2a3ca6c-00b75dc3`.
 
-The [current acceptance receipt](../support/linux_source_batch_2_52_acceptance.json)
-binds the exact archive and qualification reports. That archive passes the
-native-feature suite as ordinary users on fresh **Debian 13** and **Ubuntu
-26.04**, including the complete five-family matrix, source-free packages,
-relocation/reinstall, embedding and debugger audits. Both containers are removed.
-The [combined source receipt](../support/linux_template_member_batch_progress.json)
-records normal, ASan/UBSan and TSan matrices, each **168 configurations / 1,158
-commands**, plus **80 source-free package configurations / 320 commands** and
-**335 tooling tests**. Installed qualification additionally checks 14 supported
-C++ publication cases, 12 runtime configurations and 18 intended rejections;
-module-owned template symbols must carry their exact module/package ABI owner.
+The exact archive passes the native-feature suite as ordinary users on fresh
+**Debian 13** and **Ubuntu 26.04**, including **168 configurations / 1,158 commands
+per host**, source-free packages, relocation/reinstall, embedding and debugger
+audits. Both containers are removed. Installed C++ publication qualification
+passes 112 commands. Combined source validation passes the complete matrix in
+normal, ASan/UBSan and TSan modes and **80 source-free package configurations /
+384 commands**.
 
-Earlier milestone sections retain historical source-checkpoint results. The
-acceptance receipt above supersedes deferred-delivery statements through source
-2.52, System 2.14 and keypath 2.4. Full language/profile conformance and native
-Linux AArch64 remain open.
+Earlier milestone sections retain historical source-checkpoint results. This
+acceptance supersedes deferred-delivery statements through source 2.62, System
+2.14 and keypath 2.4. Full language/profile conformance and native Linux AArch64
+remain open.
 
 The [System 2.10–2.12 source receipt](../support/linux_captured_callable_ownership_progress.json)
 records **398 compiler regressions**, **190 native unit tests**, all **33 frontend
@@ -90,7 +86,7 @@ frontend suites** and the maintained **335 tooling tests** plus 33 subtests.
 Normal, ASan/UBSan and TSan each pass all **168 source/PCH configurations / 1,158
 commands**. Source-free C++/key-path packages pass **80 configurations / 384
 commands** through normal, eager and sanitizer modes. This completes the deferred
-source checks for the ten milestones below. Coordinated SDK delivery follows.
+source checks for the ten milestones below. SDK 2.62 and fresh-host delivery pass.
 The unrestricted historical tooling directory still has five collection errors
 against removed or changed planning/workflow scripts; it is outside this selection.
 
