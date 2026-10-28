@@ -4733,7 +4733,7 @@ index e0b62591a..478d853e0 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..3c46de2c8 100644
+index 4be3e977b..54bc45d33 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -5272,7 +5272,7 @@ index 4be3e977b..3c46de2c8 100644
 -    D->getNameInfo().printName(OS, Policy);
 +    const auto *Method = dyn_cast<CXXMethodDecl>(D);
 +    const auto *Parent = Method ? Method->getParent() : nullptr;
-+    if (Parent && Parent->getDescribedClassTemplate() &&
++    if (Parent && (Parent->getDescribedClassTemplate() || isa<ClassTemplateSpecializationDecl>(Parent)) &&
 +        D->getLexicalDeclContext()==Parent &&
 +        isa<CXXConstructorDecl,CXXDestructorDecl>(D)) {
 +      // An injected constructor/destructor name can retain the first
@@ -18511,10 +18511,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..005b2cd4e
+index 000000000..9e7c86f6f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,1050 @@
+@@ -0,0 +1,1082 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19563,6 +19563,38 @@ index 000000000..005b2cd4e
 +        "template<class T>struct Box{T value;};"+Print(*Imported)+";",
 +        {"-xc++",Standard},"class-specialization-order-replayed.cpp");
 +    ASSERT_TRUE(Replayed);EXPECT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesPartialClassSpecializations) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    auto From=tooling::buildASTFromCodeWithArgs(R"(
++      template<class T>concept Sized=sizeof(T)>0;
++      template<class T>struct Box{T value;};
++      template<Sized T>struct Box<T*>{
++        inline static int live=0;
++        T* value;
++        explicit Box(T* n):value(n){++live;}
++        Box(const Box &other):value(other.value){++live;}
++        virtual ~Box(){--live;}
++        virtual int get()const{return *value;}
++        template<class U>int add(U n)const{return get()+n;}
++      };
++    )",{"-xc++",Standard},"partial-class-specializations.cpp");
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard},"partial-class-specializations-import.cpp");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    std::string Replayed;
++    auto Print=[&](const Decl *D){PrintingPolicy Policy(From->getLangOpts());Policy.PolishForDeclaration=true;
++      std::string Text;llvm::raw_string_ostream Stream(Text);D->print(Stream,Policy);return Text;};
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      if(!isa<ConceptDecl,ClassTemplateDecl,ClassTemplatePartialSpecializationDecl>(D))continue;
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++      EXPECT_EQ(Print(D),Print(*Imported));Replayed+=Print(*Imported)+";\n";
++    }
++    Replayed+="int use(){int n=40;Box<int*> value{&n};return value.add(2);}";
++    auto AST=tooling::buildASTFromCodeWithArgs(Replayed,{"-xc++",Standard},"partial-class-specializations-replayed.cpp");
++    ASSERT_TRUE(AST);EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred()) << Replayed;
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
