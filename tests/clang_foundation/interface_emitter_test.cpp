@@ -1742,6 +1742,63 @@ void TestTemplateStructure() {
   }
 }
 
+void TestClassSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="class-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.class_specializations","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.class_specializations","test");
+    };
+    const std::string source=R"(
+      namespace Values {template<class T>struct Box{T value;};template<>struct Box<int>;}
+      struct Later{int value;};
+      template<>struct Values::Box<int>{
+        Later value;
+        explicit Box(int n):value{n}{}
+        Box(const Box &other):value(other.value){}
+        virtual ~Box(){}
+        virtual int get()const{return value.value;}
+        template<class U>int add(U n)const{return [](auto value){return value;}(get()+n);}
+        template<template<class>class C>int size()const{return sizeof(C<int>);}
+      };
+      template<auto Value>struct Number{static constexpr int value=0;};
+      template<>struct Number<0.0>{static constexpr int value=1;};
+      template<>struct Number<-0.0>{static constexpr int value=2;};
+      inline int probe(){return Values::Box<int>{40}.add(2)+Number<0.0>::value+Number<-0.0>::value;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxClassSpecializationSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-class-specializations.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-class-specializations.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxClassSpecializationIdentity)==2);
+    assert(first.sidecar_json.find(kCxxTemplateTemplateSemantic)!=std::string::npos);
+    assert(first.sidecar_json.find("objc3.cxx-generic-local-lambdas.v2")!=std::string::npos);
+    assert(std::none_of(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &d){return d.kind=="ClassTemplateSpecialization";}));
+    auto changed=source;changed.replace(changed.find("return value.value"),18,"return value.value+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    for(const auto *capability:{kCxxClassSpecializationSemantic,kCxxClassTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxClassSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>struct Box{};template<>struct Box<int>{int get(){return hidden();}};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),[](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>struct Box{};template<>struct Box<int>;").success);
+    assert(!emit("template<class T>struct Box{};template<class T>struct Box<T*>{};").success);
+  }
+}
+
 void TestVariableSpecializations() {
   for (const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="variable-specializations.cpp") {
@@ -2464,7 +2521,7 @@ void TestPublicClassTemplates() {
     for(const auto *gated:{"template<class T>struct Box;",
                           "template<class T>struct Box{T api();};",
                           "template<class T>struct Box{};template<class T>struct Box<T*>{};",
-                          "template<class T>struct Box{};template<>struct Box<int>{};",
+                          "template<class T>struct Box{};template<>struct Box<int>{Box();};",
                           "template<class T>struct Box{template<class U> U api(U n);};"})
       assert(!emit(gated).success);
   }
@@ -3581,6 +3638,7 @@ int main() {
   TestClassMemberAliasTemplates();
   TestFunctionSpecializations();
   TestVariableSpecializations();
+  TestClassSpecializations();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();

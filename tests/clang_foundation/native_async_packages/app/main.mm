@@ -278,6 +278,21 @@ int main() {
        native_tt_next<NativeTTFamily<long>::Member>()!=41)return 170;
   }
   {
+    static_assert(NativeExplicitNumber<0.0>::value==1 && NativeExplicitNumber<-0.0>::value==2);
+    auto *plain_value=native_explicit_plain_factory();
+    auto *plain_copy=new NativeExplicitFamily<short>(*plain_value);
+    if(native_explicit_plain_live()!=2 || plain_copy->get()!=42)return 176;
+    delete plain_value;delete plain_copy;
+    if(native_explicit_plain_live()!=0)return 177;
+    auto *explicit_value=native_explicit_class_factory();
+    auto *explicit_copy=new NativeExplicitFamily<int>(*explicit_value);
+    if(native_explicit_class_live()!=2 || explicit_copy->add(2)!=42 ||
+       explicit_copy->size<NativeTTAlias>()!=sizeof(NativeTTAlias<int>) ||
+       dynamic_cast<void *>(explicit_copy)!=explicit_copy)return 173;
+    delete explicit_value;
+    if(native_explicit_class_live()!=1)return 174;
+    delete explicit_copy;
+    if(native_explicit_class_live()!=0 || NativeExplicitFamily<long>{42}.value!=42)return 175;
     static_assert(native_spec_number<0.0> ==1 && native_spec_number<-0.0> ==2);
     if(native_variable_spec_producer()!=82 || ++native_spec_shared<int> !=42 ||
        ++native_spec_tls<int> !=42 || native_spec_shared<long> !=1)return 172;

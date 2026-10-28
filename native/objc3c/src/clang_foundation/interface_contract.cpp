@@ -438,6 +438,18 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_class_specializations=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClassSpecializationIdentity);
+  const bool class_specialization_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassSpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool class_specialization_primary=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClassTemplateSemantic)!=sidecar.required_semantics.end();
+  const bool class_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClassSpecializationIdentity(d) ||
+          (d.kind=="ClassTemplate" && HasCxxClassTemplateIdentity(d));});
+  if (has_class_specializations!=class_specialization_capability || !class_specialization_owners ||
+      (class_specialization_capability && !class_specialization_primary))
+    Add(result,"O3IFC068","class specialization identity and required primary capability must agree",expected.canonical_name);
   const bool has_variable_specializations=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxVariableSpecializationIdentity);
   const bool variable_specialization_capability=std::find(sidecar.required_semantics.begin(),

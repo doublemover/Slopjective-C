@@ -282,7 +282,13 @@
     "native_spec_shared",
     "native_spec_tls",
     "native_spec_number",
-    "native_variable_spec_producer"
+    "native_variable_spec_producer",
+    "NativeExplicitFamily",
+    "native_explicit_class_factory",
+    "native_explicit_class_live",
+    "NativeExplicitNumber",
+    "native_explicit_plain_factory",
+    "native_explicit_plain_live"
   ],
   "dependencies": []
 }

@@ -1431,3 +1431,34 @@ template<auto Value> inline constexpr int native_spec_number=0;
 template<> inline constexpr int native_spec_number<0.0> =1;
 template<> inline constexpr int native_spec_number<-0.0> =2;
 int native_variable_spec_producer(){return ++native_spec_shared<int> + ++native_spec_tls<int>;}
+
+template<class T> struct NativeExplicitFamily{T value;};
+template<> struct NativeExplicitFamily<int>{
+  inline static int live=0;
+private:
+  int value;
+public:
+  explicit NativeExplicitFamily(int n):value(n){++live;}
+  NativeExplicitFamily(const NativeExplicitFamily &other):value(other.value){++live;}
+  virtual ~NativeExplicitFamily(){--live;}
+  virtual int get()const{return value;}
+  template<class U>int add(U n)const{return [](auto value){return value;}(get()+n);}
+  template<template<class>class C>int size()const{return sizeof(C<int>);}
+};
+template<> struct NativeExplicitFamily<short>{
+  inline static int live=0;
+private:
+  short value;
+public:
+  explicit NativeExplicitFamily(short n):value(n){++live;}
+  NativeExplicitFamily(const NativeExplicitFamily &other):value(other.value){++live;}
+  virtual ~NativeExplicitFamily(){--live;}
+  virtual int get()const{return value;}
+};
+NativeExplicitFamily<short> *native_explicit_plain_factory(){return new NativeExplicitFamily<short>(42);}
+int native_explicit_plain_live(){return NativeExplicitFamily<short>::live;}
+NativeExplicitFamily<int> *native_explicit_class_factory(){return new NativeExplicitFamily<int>(40);}
+int native_explicit_class_live(){return NativeExplicitFamily<int>::live;}
+template<auto Value>struct NativeExplicitNumber{static constexpr int value=0;};
+template<>struct NativeExplicitNumber<0.0>{static constexpr int value=1;};
+template<>struct NativeExplicitNumber<-0.0>{static constexpr int value=2;};

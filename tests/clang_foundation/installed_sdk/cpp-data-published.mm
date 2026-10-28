@@ -2,6 +2,7 @@
 namespace Nested { inline int api() { return [](auto value) { return value; }(42); } }
 #elif CASE == 2
 template<class T> struct Generic { T value; };
+template<> struct Generic<int> { int value=42; };
 #elif CASE == 3
 struct Defaulted { Defaulted() = default; int value = 42; };
 #elif CASE == 4

@@ -96,6 +96,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxNominalAliasTemplateSemantic,
     kCxxFunctionSpecializationSemantic,
     kCxxVariableSpecializationSemantic,
+    kCxxClassSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -729,6 +730,21 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
                     expected.qualified_name + "': " +
                     llvm::toString(imported.takeError())), expected.stable_id);
         return report;
+      }
+      if (HasCxxClassSpecializationIdentity(expected)) {
+        const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(exported.Declarations.at(expected.stable_id));
+        if (!pattern) return report;
+        for (auto *specialization:pattern->specializations()) {
+          if (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
+              specialization->getSpecializationKind()!=clang::TSK_ExplicitSpecialization) continue;
+          if (auto *definition=specialization->getDefinition())
+            specialization=llvm::cast<clang::ClassTemplateSpecializationDecl>(definition);
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
       }
       auto *named = llvm::dyn_cast_or_null<clang::NamedDecl>(*imported);
       if (!named || &named->getASTContext() != &target_context) {

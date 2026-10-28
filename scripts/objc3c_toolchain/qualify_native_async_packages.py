@@ -170,6 +170,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    class_specializations=[row for row in metadata['declarations']
+                 if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber'}):
+        raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or

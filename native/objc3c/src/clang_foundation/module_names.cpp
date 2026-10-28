@@ -298,6 +298,25 @@ public:
       }
       return true;
     }
+    if (auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(record);
+        specialization && !llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) &&
+        specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization &&
+        !specialization->getDeclContext()->isRecord()) {
+      const auto expected=BuildModuleOwnedName(module_,package_,
+          ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
+      for (auto *redecl:specialization->redecls()) {
+        if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))
+          return Error(decl,"explicit class specialization redeclares a foreign ABI");
+        if (const auto *tag=redecl->getAttr<clang::AbiTagAttr>()) {
+          if (tag->tags_size()!=1 || *tag->tags_begin()!=expected)
+            return Error(decl,"explicit class specialization conflicts with its primary owner");
+        } else {
+          llvm::StringRef owned=context_.Idents.get(expected).getName();
+          redecl->addAttr(clang::AbiTagAttr::Create(context_,&owned,1,redecl->getSourceRange()));
+        }
+      }
+      return true;
+    }
     if (record && (record->isDependentContext() ||
                    record->getDescribedClassTemplate() ||
                    record->getTemplateSpecializationKind() !=
