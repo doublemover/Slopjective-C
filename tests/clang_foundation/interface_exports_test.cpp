@@ -373,6 +373,47 @@ void AliasTemplateBodies(const fs::path &root,const std::string &standard) {
   assert(imported.success);
 }
 
+void TemplateStructure(const fs::path &root,const std::string &standard) {
+  auto r=Request(root/"structure-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
+    template<class T=int,int N=sizeof(T)> extern T count;
+    template<class U,int M> U count=M;
+    template<class T=int,int Bias=2> class Root;
+    template<class U,int Delta> class Root {
+      U value;
+    public:
+      explicit Root(U n=U{40}):value(n){}
+      virtual ~Root()=default;
+      virtual int number()const{return int(value)+Delta;}
+    };
+    template<class T=int> struct Left:virtual Root<T>{Left():Root<T>(T{40}){}};
+    template<class T=int> struct Right:virtual Root<T>{Right():Root<T>(T{40}){}};
+    template<class T=int> struct Diamond:Left<T>,Right<T>{
+      Diamond():Root<T>(T{40}){}
+      int number()const override{return Root<T>::number();}
+    };
+    Root<int> *provider(){return new Diamond<>;}
+  )");
+  r.emit_semantic_interface=true;r.module_name="TemplateStructure";r.package_identity="template-structure-v1";
+  r.module_owned_names=true;r.interface_exports={"Root","Left","Right","Diamond","count","provider"};
+  r.interface_output_path=(root/"TemplateStructure.objc3i").string();
+  r.emit=EmitKind::Object;r.output_path=(root/"structure-provider.o").string();
+  auto built=Compile(r);
+  for(const auto &d:built.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  assert(built.success && built.interface_artifact);
+  InterfaceImportInput input;input.source_path=r.interface_output_path;input.locked_identity=built.interface_artifact->identity;
+  auto client=Request(root/"structure-client.cpp",BaseLanguage::Cxx,standard,false,R"(
+    int client(){Diamond<long> value;Root<long> *root=&value;
+      auto *left=dynamic_cast<Left<long> *>(root);auto *right=dynamic_cast<Right<long> *>(root);
+      return left && right ? root->number()+int(count<long>) : 0;}
+  )");
+  client.imported_interfaces={input};client.emit=EmitKind::Object;
+  client.output_path=(root/"structure-client.o").string();
+  auto imported=Compile(client);
+  for(const auto &d:imported.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+  for(const auto &d:imported.interface_import_diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(imported.success);
+}
+
 void ClassTemplateBodies(const fs::path &root, const std::string &standard) {
   auto r=Request(root/"class-template-provider.cpp",BaseLanguage::Cxx,standard,false,R"(
     namespace Types {
@@ -513,6 +554,7 @@ int main() {
     FunctionTemplateDeclarations(root,standard);
     VariableTemplateBodies(root,standard);
     ClassTemplateBodies(root,standard);
+    TemplateStructure(root,standard);
   }
   for (bool arc : {false, true}) {
     for(const auto &standard:{"c++20","c++23"}) {

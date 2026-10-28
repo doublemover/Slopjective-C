@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..af2e08c82 100644
+index d743717ad..123a2b1de 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -2613,11 +2613,11 @@ index d743717ad..af2e08c82 100644
        DeclContext *ToDC = ToD->getDeclContext();
        DeclContext *ToLexicalDC = ToD->getLexicalDeclContext();
  
-+      // Function templates imported here are local declarations, with their
++      // Redeclarable templates imported here are local declarations, with their
 +      // redeclaration chain already linked. Merge their lookup entries instead
 +      // of preserving each redeclaration as external AST-file alternatives.
 +      auto Add = [&](DeclContext *Context) {
-+        if (isa<FunctionTemplateDecl>(ToD))
++        if (isa<FunctionTemplateDecl,ClassTemplateDecl,VarTemplateDecl>(ToD))
 +          Context->addDecl(ToD);
 +        else
 +          Context->addDeclInternal(ToD);
@@ -3350,7 +3350,7 @@ index d743717ad..af2e08c82 100644
        // Check property types.
        if (!Importer.IsStructurallyEquivalent(D->getType(),
                                               FoundProp->getType())) {
-@@ -6458,6 +6859,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+@@ -6458,11 +6859,12 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
      return D2;
  
    ToTemplated->setDescribedClassTemplate(D2);
@@ -3359,19 +3359,38 @@ index d743717ad..af2e08c82 100644
  
    D2->setAccess(D->getAccess());
    D2->setLexicalDeclContext(LexicalDC);
-@@ -6740,6 +7143,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+ 
+-  addDeclToContexts(D, D2);
+   updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
+ 
+   if (FoundByLookup) {
+@@ -6489,6 +6891,8 @@ ExpectedDecl ASTNodeImporter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
+     D2->setPreviousDecl(Recent);
+   }
+ 
++  // Publish only after linking the previous template and record declarations.
++  addDeclToContexts(D, D2);
+   return D2;
+ }
+ 
+@@ -6740,6 +7144,16 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
          break;
        }
        ConflictingDecls.push_back(FoundDecl);
-+    } else if (FoundDecl != Importer.GetAlreadyImportedOrNull(D->getTemplatedDecl())) {
-+      // Recursive import may have published this template's own pattern
-+      // variable before the template is created. Other ordinary declarations
-+      // with the same name are conflicts.
-+      ConflictingDecls.push_back(FoundDecl);
++    } else {
++      auto *Mapped = dyn_cast_or_null<VarDecl>(
++          Importer.GetAlreadyImportedOrNull(D->getTemplatedDecl()));
++      auto *FoundVariable = dyn_cast<VarDecl>(FoundDecl);
++      // The shared lookup table can expose earlier pattern redeclarations
++      // while their owning template is recursively imported. Preserve that
++      // canonical chain; unrelated ordinary declarations remain conflicts.
++      if (!Mapped || !FoundVariable ||
++          Mapped->getCanonicalDecl()!=FoundVariable->getCanonicalDecl())
++        ConflictingDecls.push_back(FoundDecl);
      }
    }
  
-@@ -6777,6 +7185,8 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+@@ -6777,10 +7191,11 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
      return ToVarTD;
  
    ToTemplated->setDescribedVarTemplate(ToVarTD);
@@ -3380,7 +3399,19 @@ index d743717ad..af2e08c82 100644
  
    ToVarTD->setAccess(D->getAccess());
    ToVarTD->setLexicalDeclContext(LexicalDC);
-@@ -7051,17 +7461,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+-  LexicalDC->addDeclInternal(ToVarTD);
+   if (DC != Importer.getToContext().getTranslationUnitDecl())
+     updateLookupTableForTemplateParameters(**TemplateParamsOrErr);
+ 
+@@ -6796,6 +7211,7 @@ ExpectedDecl ASTNodeImporter::VisitVarTemplateDecl(VarTemplateDecl *D) {
+     ToVarTD->setPreviousDecl(Recent);
+   }
+ 
++  addDeclToContexts(D, ToVarTD);
+   return ToVarTD;
+ }
+ 
+@@ -7051,17 +7467,13 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      return make_error<ASTImportError>(ASTImportError::NameConflict);
  
    TemplatedFD->setDescribedFunctionTemplate(ToFunc);
@@ -3402,7 +3433,7 @@ index d743717ad..af2e08c82 100644
    if (FoundByLookup) {
      auto *Recent =
          const_cast<FunctionTemplateDecl *>(FoundByLookup->getMostRecentDecl());
-@@ -7076,6 +7482,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -7076,6 +7488,15 @@ ASTNodeImporter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
      ToFunc->setPreviousDecl(Recent);
    }
  
@@ -3418,7 +3449,7 @@ index d743717ad..af2e08c82 100644
    return ToFunc;
  }
  
-@@ -7328,6 +7743,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7749,97 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -3516,7 +3547,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7485,6 +7991,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
+@@ -7485,6 +7997,60 @@ ExpectedStmt ASTNodeImporter::VisitBreakStmt(BreakStmt *S) {
    return ImportLoopControlStmt(*this, Importer, S);
  }
  
@@ -3577,7 +3608,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitReturnStmt(ReturnStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +8335,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +8341,178 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -3756,7 +3787,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -8084,6 +8816,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
+@@ -8084,6 +8822,16 @@ ExpectedStmt ASTNodeImporter::VisitStringLiteral(StringLiteral *E) {
                                 ToLocations);
  }
  
@@ -3773,7 +3804,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitCompoundLiteralExpr(CompoundLiteralExpr *E) {
  
    Error Err = Error::success();
-@@ -8835,6 +9577,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
+@@ -8835,6 +9583,53 @@ ExpectedStmt ASTNodeImporter::VisitCXXMemberCallExpr(CXXMemberCallExpr *E) {
                                     E->getFPFeatures());
  }
  
@@ -3827,7 +3858,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitCXXThisExpr(CXXThisExpr *E) {
    ExpectedType ToTypeOrErr = import(E->getType());
    if (!ToTypeOrErr)
-@@ -9163,6 +9952,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
+@@ -9163,6 +9958,16 @@ ExpectedStmt ASTNodeImporter::VisitLambdaExpr(LambdaExpr *E) {
    if (!ToCallOpOrErr)
      return ToCallOpOrErr.takeError();
  
@@ -3844,7 +3875,7 @@ index d743717ad..af2e08c82 100644
    SmallVector<Expr *, 8> ToCaptureInits(E->capture_size());
    if (Error Err = ImportContainerChecked(E->capture_inits(), ToCaptureInits))
      return std::move(Err);
-@@ -9452,6 +10251,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
+@@ -9452,6 +10257,14 @@ ExpectedStmt ASTNodeImporter::VisitRequiresExpr(RequiresExpr *E) {
    if (Error Err =
            ImportArrayChecked(E->getLocalParameters(), LocalParameters.begin()))
      return std::move(Err);
@@ -3859,7 +3890,7 @@ index d743717ad..af2e08c82 100644
    SmallVector<concepts::Requirement *, 4> Requirements(
        E->getRequirements().size());
    if (Error Err =
-@@ -9497,6 +10304,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
+@@ -9497,6 +10310,21 @@ ExpectedStmt ASTNodeImporter::VisitSubstNonTypeTemplateParmPackExpr(
        E->getIndex(), E->getFinal());
  }
  
@@ -3881,7 +3912,7 @@ index d743717ad..af2e08c82 100644
  ExpectedStmt ASTNodeImporter::VisitPseudoObjectExpr(PseudoObjectExpr *E) {
    SmallVector<Expr *, 4> ToSemantics(E->getNumSemanticExprs());
    if (Error Err = ImportContainerChecked(E->semantics(), ToSemantics))
-@@ -9664,8 +10486,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
+@@ -9664,8 +10492,12 @@ ASTImporter::Import(ExprWithCleanups::CleanupObject From) {
        return ExprWithCleanups::CleanupObject(cast<CompoundLiteralExpr>(*R));
    }
  
@@ -3896,7 +3927,7 @@ index d743717ad..af2e08c82 100644
    return make_error<ASTImportError>(ASTImportError::UnsupportedConstruct);
  }
  
-@@ -9715,7 +10541,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10547,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -3995,7 +4026,7 @@ index d743717ad..af2e08c82 100644
  }
  
  namespace {
-@@ -9857,6 +10773,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
+@@ -9857,6 +10779,59 @@ Expected<Attr *> ASTImporter::Import(const Attr *FromAttr) {
  
    // FIXME: Is there some kind of AttrVisitor to use here?
    switch (FromAttr->getKind()) {
@@ -4055,7 +4086,7 @@ index d743717ad..af2e08c82 100644
    case attr::Aligned: {
      auto *From = cast<AlignedAttr>(FromAttr);
      if (From->isAlignmentExpr())
-@@ -10123,8 +11092,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
+@@ -10123,8 +11098,25 @@ Expected<Decl *> ASTImporter::Import(Decl *FromD) {
    // Make sure that ImportImpl registered the imported decl.
    assert(ImportedDecls.count(FromD) != 0 && "Missing call to MapImported?");
  
@@ -4082,7 +4113,7 @@ index d743717ad..af2e08c82 100644
        auto ToAttrOrErr = Import(FromAttr);
        if (ToAttrOrErr)
          ToD->addAttr(*ToAttrOrErr);
-@@ -10571,6 +11557,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10571,6 +11563,12 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
    if (!RParenLocOrErr)
      return RParenLocOrErr.takeError();
  
@@ -4095,7 +4126,7 @@ index d743717ad..af2e08c82 100644
    if (From->isBaseInitializer()) {
      auto ToTInfoOrErr = Import(From->getTypeSourceInfo());
      if (!ToTInfoOrErr)
-@@ -10581,9 +11573,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10581,9 +11579,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
        if (Error Err = importInto(EllipsisLoc, From->getEllipsisLoc()))
          return std::move(Err);
  
@@ -4107,7 +4138,7 @@ index d743717ad..af2e08c82 100644
    } else if (From->isMemberInitializer()) {
      ExpectedDecl ToFieldOrErr = Import(From->getMember());
      if (!ToFieldOrErr)
-@@ -10593,9 +11585,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10593,9 +11591,9 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4119,7 +4150,7 @@ index d743717ad..af2e08c82 100644
    } else if (From->isIndirectMemberInitializer()) {
      ExpectedDecl ToIFieldOrErr = Import(From->getIndirectMember());
      if (!ToIFieldOrErr)
-@@ -10605,17 +11597,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
+@@ -10605,17 +11603,17 @@ Expected<CXXCtorInitializer *> ASTImporter::Import(CXXCtorInitializer *From) {
      if (!MemberLocOrErr)
        return MemberLocOrErr.takeError();
  
@@ -4141,7 +4172,7 @@ index d743717ad..af2e08c82 100644
    } else {
      // FIXME: assert?
      return make_error<ASTImportError>();
-@@ -11049,3 +12041,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11049,3 +12047,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -4634,7 +4665,7 @@ index e0b62591a..079706ef8 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..efba51b0b 100644
+index 4be3e977b..2e7766fd8 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,137 @@
@@ -5149,7 +5180,26 @@ index 4be3e977b..efba51b0b 100644
      else if (D->isImmediateFunction())
        Out << "immediate ";
      ExplicitSpecifier ExplicitSpec = ExplicitSpecifier::getFromDecl(D);
-@@ -753,12 +870,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,7 +838,17 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+     llvm::raw_string_ostream OS(Proto);
+     if (!Policy.SuppressScope)
+       D->getQualifier().print(OS, Policy);
+-    D->getNameInfo().printName(OS, Policy);
++    const auto *Method = dyn_cast<CXXMethodDecl>(D);
++    const auto *Parent = Method ? Method->getParent() : nullptr;
++    if (Parent && Parent->getDescribedClassTemplate() &&
++        D->getLexicalDeclContext()==Parent &&
++        isa<CXXConstructorDecl,CXXDestructorDecl>(D)) {
++      // An injected constructor/destructor name can retain the first
++      // declaration's template parameter spelling. Inside the class only
++      // the bare class name is required, including after parameter renaming.
++      if (isa<CXXDestructorDecl>(D)) OS << '~';
++      OS << Parent->getName();
++    } else D->getNameInfo().printName(OS, Policy);
+   }
+ 
+   if (GuideDecl)
+@@ -753,12 +880,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -5166,7 +5216,7 @@ index 4be3e977b..efba51b0b 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +926,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +936,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -5178,7 +5228,7 @@ index 4be3e977b..efba51b0b 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,10 +940,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,10 +950,25 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -5208,7 +5258,7 @@ index 4be3e977b..efba51b0b 100644
        if (FT && FT->hasTrailingReturn()) {
          if (!GuideDecl)
            Out << "auto ";
-@@ -850,7 +987,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +997,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -5222,7 +5272,7 @@ index 4be3e977b..efba51b0b 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1020,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1030,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -5233,7 +5283,7 @@ index 4be3e977b..efba51b0b 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1036,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1046,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -5258,7 +5308,7 @@ index 4be3e977b..efba51b0b 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1061,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1071,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -5271,7 +5321,7 @@ index 4be3e977b..efba51b0b 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1084,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1094,33 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -5307,7 +5357,7 @@ index 4be3e977b..efba51b0b 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1120,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1130,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -5321,7 +5371,7 @@ index 4be3e977b..efba51b0b 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,6 +1147,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,6 +1157,9 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -5331,7 +5381,7 @@ index 4be3e977b..efba51b0b 100644
      if (D->isConstexpr()) {
        Out << "constexpr ";
        T.removeLocalConst();
-@@ -1001,6 +1166,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1001,6 +1176,11 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      Out << ' ' << *Attrs;
  
    Expr *Init = D->getInit();
@@ -5343,7 +5393,7 @@ index 4be3e977b..efba51b0b 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1192,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1202,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -5352,7 +5402,7 @@ index 4be3e977b..efba51b0b 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1201,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1211,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -5363,7 +5413,7 @@ index 4be3e977b..efba51b0b 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1216,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1226,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -5373,7 +5423,7 @@ index 4be3e977b..efba51b0b 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1238,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1248,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -5382,7 +5432,7 @@ index 4be3e977b..efba51b0b 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1131,7 +1302,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1312,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -5392,7 +5442,7 @@ index 4be3e977b..efba51b0b 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1434,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1444,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -5401,7 +5451,7 @@ index 4be3e977b..efba51b0b 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,7 +1454,10 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,7 +1464,10 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -5413,7 +5463,7 @@ index 4be3e977b..efba51b0b 100644
      Concept->getConstraintExpr()->printPretty(Out, nullptr, Policy, Indentation,
                                                "\n", &Context);
    }
-@@ -1302,7 +1477,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1487,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -5426,7 +5476,7 @@ index 4be3e977b..efba51b0b 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1377,13 +1556,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1566,13 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -5442,7 +5492,7 @@ index 4be3e977b..efba51b0b 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1577,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1587,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -5463,7 +5513,7 @@ index 4be3e977b..efba51b0b 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1660,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1670,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -5475,7 +5525,7 @@ index 4be3e977b..efba51b0b 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1670,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1680,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -5500,7 +5550,7 @@ index 4be3e977b..efba51b0b 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1693,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1703,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -5510,7 +5560,7 @@ index 4be3e977b..efba51b0b 100644
      Out << ';';
  }
  
-@@ -1512,8 +1712,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1722,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5521,7 +5571,7 @@ index 4be3e977b..efba51b0b 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1745,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1755,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -5530,7 +5580,7 @@ index 4be3e977b..efba51b0b 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +1758,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1768,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5540,7 +5590,7 @@ index 4be3e977b..efba51b0b 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +1769,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1779,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -5552,7 +5602,7 @@ index 4be3e977b..efba51b0b 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1787,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1797,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -5561,7 +5611,7 @@ index 4be3e977b..efba51b0b 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +1798,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +1808,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -5571,7 +5621,7 @@ index 4be3e977b..efba51b0b 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +1822,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1832,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -5580,7 +5630,7 @@ index 4be3e977b..efba51b0b 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1836,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1846,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -5594,7 +5644,7 @@ index 4be3e977b..efba51b0b 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +1851,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +1861,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -5605,7 +5655,7 @@ index 4be3e977b..efba51b0b 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +1959,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +1969,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -5627,7 +5677,7 @@ index 4be3e977b..efba51b0b 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2002,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2012,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -5645,7 +5695,7 @@ index 4be3e977b..efba51b0b 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2031,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2041,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -18319,10 +18369,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..0dcb34a01
+index 000000000..6ea4a5f50
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,738 @@
+@@ -0,0 +1,808 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -18331,6 +18381,7 @@ index 000000000..0dcb34a01
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTImporterSharedState.h"
 +#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclCXX.h"
@@ -19059,6 +19110,75 @@ index 000000000..0dcb34a01
 +      }
 +    }
 +    EXPECT_EQ(Bodies,3u);
++  }
++}
++
++
++TEST(ObjC3FunctionEffectImport, PreservesClassAndVariableTemplateRedeclarations) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    auto From=tooling::buildASTFromCodeWithArgs(R"(
++      template<class T=int,int Bias=2> class __attribute__((abi_tag("owner"))) Base;
++      template<class U,int Delta> class __attribute__((abi_tag("owner"))) Base {
++        U value;
++      public:
++        explicit Base(U n=U{40}):value(n){}
++        virtual ~Base()=default;
++        virtual int number()const{return int(value)+Delta;}
++      };
++      template<class T=int> struct __attribute__((abi_tag("derived"))) Derived:virtual Base<T> {
++        Derived():Base<T>(T{40}){}
++        int number()const override{return Base<T>::number();}
++      };
++      template<class T=int,int N=sizeof(T)> __attribute__((abi_tag("variable"))) extern T count;
++      template<class U,int M> __attribute__((abi_tag("variable"))) U count=M;
++    )",{"-xc++",Standard});
++    auto To=tooling::buildASTFromCodeWithArgs("",{"-xc++",Standard});
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    std::string Printed;
++    llvm::raw_string_ostream PrintedStream(Printed);
++    PrintingPolicy Policy(From->getLangOpts());
++    From->getASTContext().getTranslationUnitDecl()->print(PrintedStream,Policy);
++    auto Replayed=tooling::buildASTFromCodeWithArgs(Printed,{"-xc++",Standard});
++    ASSERT_TRUE(Replayed);
++    ASSERT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
++    auto Shared=std::make_shared<ASTImporterSharedState>(*To->getASTContext().getTranslationUnitDecl());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++                         From->getASTContext(),From->getFileManager(),false,Shared);
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto *Pattern=dyn_cast<RedeclarableTemplateDecl>(D);
++      if(!Pattern)continue;
++      if(auto *Class=dyn_cast<ClassTemplateDecl>(Pattern)) {
++        if(!Class->getTemplatedDecl()->isCompleteDefinition())continue;
++      } else if(auto *Variable=dyn_cast<VarTemplateDecl>(Pattern)) {
++        if(Variable->getTemplatedDecl()->isThisDeclarationADefinition()==VarDecl::DeclarationOnly)continue;
++      } else continue;
++      SCOPED_TRACE(Pattern->getNameAsString());
++      auto Imported=Importer.Import(Pattern);
++      ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++      auto *Result=cast<RedeclarableTemplateDecl>(*Imported);
++      if(Result->getName()!="Derived") {
++        // Class import can fold a forward declaration into its definition.
++        // Default arguments and one canonical lookup owner must still survive.
++        if(isa<VarTemplateDecl>(Result)) EXPECT_NE(Result->getPreviousDecl(),nullptr);
++        EXPECT_TRUE(cast<TemplateTypeParmDecl>(Result->getTemplateParameters()->getParam(0))->hasDefaultArgument());
++        EXPECT_TRUE(cast<NonTypeTemplateParmDecl>(Result->getTemplateParameters()->getParam(1))->hasDefaultArgument());
++      }
++      auto Lookup=To->getASTContext().getTranslationUnitDecl()->lookup(Result->getDeclName());
++      EXPECT_EQ(std::distance(Lookup.begin(),Lookup.end()),1);
++      if(auto *Class=dyn_cast<ClassTemplateDecl>(Result)) {
++        auto *Record=Class->getTemplatedDecl();
++        EXPECT_TRUE(Record->isCompleteDefinition());
++        if(Result->getName()=="Derived") {
++          EXPECT_EQ(Record->getNumBases(),1u);
++          EXPECT_TRUE(Record->bases_begin()->isVirtual());
++        } else EXPECT_TRUE(Record->isPolymorphic());
++      } else {
++        auto *Variable=cast<VarTemplateDecl>(Result)->getTemplatedDecl();
++        EXPECT_NE(Variable->getPreviousDecl(),nullptr);
++        EXPECT_TRUE(Variable->hasInit());
++      }
++    }
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp

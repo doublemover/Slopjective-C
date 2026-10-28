@@ -1203,3 +1203,27 @@ NativeTemplateValue<int> native_class_template_frame(NativeTemplateValue<int> va
   __objc3_await native_module_borrow_leaf();
   return value;
 }
+
+
+template<class T=int,int N=sizeof(T)> extern T native_template_forward_value;
+template<class U,int M> U native_template_forward_value=M;
+template<class T=int,int Bias=2> class NativeTemplateRoot;
+template<class U,int Delta> class NativeTemplateRoot {
+  U value;
+public:
+  inline static int live=0;
+  explicit NativeTemplateRoot(U n=U{40}):value(n){++live;}
+  virtual ~NativeTemplateRoot(){--live;}
+  virtual int number()const{return int(value)+Delta;}
+};
+template<class T=int> struct NativeTemplateLeft:virtual NativeTemplateRoot<T>{
+  NativeTemplateLeft():NativeTemplateRoot<T>(T{40}){}
+};
+template<class T=int> struct NativeTemplateRight:virtual NativeTemplateRoot<T>{
+  NativeTemplateRight():NativeTemplateRoot<T>(T{40}){}
+};
+template<class T=int> struct NativeTemplateDiamond:NativeTemplateLeft<T>,NativeTemplateRight<T>{
+  NativeTemplateDiamond():NativeTemplateRoot<T>(T{40}){}
+  int number()const override{return NativeTemplateRoot<T>::number();}
+};
+NativeTemplateRoot<int> *native_template_hierarchy_new(){return new NativeTemplateDiamond<>;}

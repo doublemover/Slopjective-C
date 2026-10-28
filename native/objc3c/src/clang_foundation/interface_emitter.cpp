@@ -282,6 +282,8 @@ clang::NamedDecl *Representative(clang::NamedDecl *declaration) {
       return llvm::cast<clang::CXXRecordDecl>(definition)->getDescribedClassTemplate();
     return pattern->getMostRecentDecl();
   }
+  if (auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
+    return pattern->getDefinition() ? pattern->getDefinition() : pattern->getMostRecentDecl();
   if (auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     return pattern->getMostRecentDecl();
   if (auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
@@ -646,6 +648,15 @@ public:
                   locals_.at(pattern->getTemplateParameters()->getParam(i)->getCanonicalDecl()));
       }
     }
+  }
+  void TemplateParameters(const clang::TemplateDecl *pattern) {
+    for (const auto *parameter : *pattern->getTemplateParameters()) Local(parameter);
+    if (const auto *redeclarable = llvm::dyn_cast<clang::RedeclarableTemplateDecl>(pattern))
+      for (const auto *redecl : redeclarable->redecls())
+        if (redecl->getTemplateParameters()->size()==pattern->getTemplateParameters()->size())
+          for (unsigned i=0;i<pattern->getTemplateParameters()->size();++i)
+            locals_.emplace(redecl->getTemplateParameters()->getParam(i)->getCanonicalDecl(),
+                locals_.at(pattern->getTemplateParameters()->getParam(i)->getCanonicalDecl()));
   }
   void Local(const clang::NamedDecl *declaration) {
     const auto *canonical = declaration->getCanonicalDecl();
@@ -1078,7 +1089,7 @@ std::string FunctionTemplateHeadContract(const clang::TemplateDecl *pattern,
   const auto *function_pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(pattern);
   const auto *function = function_pattern ? function_pattern->getTemplatedDecl() : nullptr;
   DeclarationExpressionIdentity identity(context, function);
-  for (const auto *parameter : *pattern->getTemplateParameters()) identity.Local(parameter);
+  identity.TemplateParameters(pattern);
   auto expression = [&](const clang::Expr *value) {
     return value ? identity.Get(const_cast<clang::Expr *>(value)) : std::string("none");
   };
@@ -1709,12 +1720,13 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     policy.SuppressScope = true;
     pattern->getTemplatedDecl()->print(stream, policy);
     return "class-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
-        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;";
+        ";definition=" + ComputeInterfaceSourceSha256(body) + "};cxx-class-templates:v1;" +
+        ";cxx-template-structure:v1;rtti=" + std::to_string(context.getLangOpts().RTTI) + ";";
   }
   if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
     const auto *variable = pattern->getTemplatedDecl();
     DeclarationExpressionIdentity identity(context);
-    for (const auto *parameter : *pattern->getTemplateParameters()) identity.Local(parameter);
+    identity.TemplateParameters(pattern);
     return "variable-template{parameters=" + FunctionTemplateHeadContract(pattern, context) +
         ";type=" + CanonicalType(variable->getType(),context) +
         ";inline=" + std::to_string(variable->isInline()) +
@@ -1722,6 +1734,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
         ";thread-storage=" + std::to_string(variable->getTSCSpec()) +
         ";initializer=" + (variable->hasInit() ? identity.Get(const_cast<clang::Expr *>(variable->getInit())) : "default") +
         "};cxx-variable-templates:v1;" +
+        ";cxx-template-structure:v1;" +
         (variable->getTSCSpec()!=clang::TSCS_unspecified ? ";cxx-thread-local:v1;" : "");
   }
   if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
@@ -1730,7 +1743,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     clang::PrintingPolicy policy(context.getLangOpts());
     pattern->getTemplateParameters()->print(stream, context, policy);
     DeclarationExpressionIdentity identity(context);
-    for (const auto *parameter : *pattern->getTemplateParameters()) identity.Local(parameter);
+    identity.TemplateParameters(pattern);
     const auto *constraint = pattern->getTemplateParameters()->getRequiresClause();
     return "alias-template{parameters=" + ComputeInterfaceSourceSha256(head) +
         ";constraint=" + (constraint ? identity.Get(const_cast<clang::Expr *>(constraint)) : "none") +
@@ -2190,6 +2203,7 @@ class TypeDependencyVisitor final
     for (auto *parameter : *pattern->getTemplateParameters()) TraverseDecl(parameter);
     TraverseStmt(pattern->getTemplateParameters()->getRequiresClause());
     const auto *record = pattern->getTemplatedDecl();
+    for (const auto &base : record->bases()) TraverseType(base.getType());
     for (auto *member : record->decls()) {
       if (member->isImplicit()) continue;
       if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(member)) {
@@ -2790,8 +2804,11 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
     if (llvm::isa<clang::VarTemplateSpecializationDecl>(declaration)) supported=false;
     if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
-      const auto *body = pattern->getTemplatedDecl();
-      supported &= body->isCompleteDefinition() && !body->isUnion() && body->getNumBases()==0;
+      const auto *definition = pattern->getTemplatedDecl()->getDefinition();
+      const auto *body = definition ? llvm::cast<clang::CXXRecordDecl>(definition) : pattern->getTemplatedDecl();
+      supported &= body->isCompleteDefinition() && !body->isUnion();
+      if (body->isCompleteDefinition() && (body->getNumBases() || body->isPolymorphic()))
+        supported &= body->getASTContext().getLangOpts().RTTI;
       for (const auto *attribute : body->attrs())
         if (const auto *tag = llvm::dyn_cast<clang::AbiTagAttr>(attribute))
           supported &= tag->tags_size()==1 && tag->tags_begin()->starts_with("__objc3_m_") &&
@@ -2801,17 +2818,20 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
         if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member)) continue;
         if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member)) {
           const auto effects = ReadCanonicalFunctionEffects(method->getType(), body->getASTContext());
-          supported &= !method->isVirtual() && !method->isVariadic() &&
+          supported &= !method->isVariadic() &&
               !method->getReturnType()->getContainedAutoType() && !effects.is_async && !effects.is_throwing &&
-              (method->doesThisDeclarationHaveABody() || method->isDefaulted() || method->isDeleted());
+              (method->doesThisDeclarationHaveABody() || method->isDefaulted() || method->isDeleted() || method->isPureVirtual());
         } else if (const auto *value = llvm::dyn_cast<clang::VarDecl>(member)) {
           supported &= value->isStaticDataMember() && (value->isInline() || value->isConstexpr());
-        } else supported &= llvm::isa<clang::FieldDecl, clang::TypedefNameDecl, clang::EnumDecl>(member);
-        for (const auto *attribute : member->attrs()) supported &= attribute->isImplicit();
+        } else supported &= llvm::isa<clang::FieldDecl, clang::TypedefNameDecl, clang::EnumDecl,
+                                      clang::BaseUsingDecl>(member);
+        for (const auto *attribute : member->attrs())
+          supported &= attribute->isImplicit() || llvm::isa<clang::OverrideAttr,clang::FinalAttr>(attribute);
       }
     }
     if (const auto *pattern = llvm::dyn_cast<clang::VarTemplateDecl>(declaration)) {
-      const auto *variable=pattern->getTemplatedDecl();
+      const auto *definition=pattern->getTemplatedDecl()->getDefinition();
+      const auto *variable=definition ? definition : pattern->getTemplatedDecl();
       const auto effects = ReadCanonicalFunctionEffects(variable->getType(), variable->getASTContext());
       supported &= !effects.is_async && !effects.is_throwing;
       supported &= variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
@@ -3902,6 +3922,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxVariableTemplateSemantic);
     if (HasCxxClassTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClassTemplateSemantic);
+    if (HasCxxTemplateStructureIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxTemplateStructureSemantic);
     if (HasCxxLambdaExpressionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxLambdaExpressionSemantic);
     if (HasCxxThreadLocalIdentity(declaration))
@@ -4002,6 +4024,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxAliasTemplateSemantic,
     kCxxVariableTemplateSemantic,
     kCxxClassTemplateSemantic,
+    kCxxTemplateStructureSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -4134,6 +4157,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxAliasTemplateSemantic,
     kCxxVariableTemplateSemantic,
     kCxxClassTemplateSemantic,
+    kCxxTemplateStructureSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",

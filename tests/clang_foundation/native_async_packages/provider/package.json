@@ -221,7 +221,13 @@
     "NativeTemplateValue",
     "native_class_template_producer",
     "native_class_template_task",
-    "native_class_template_frame"
+    "native_class_template_frame",
+    "native_template_forward_value",
+    "NativeTemplateRoot",
+    "NativeTemplateLeft",
+    "NativeTemplateRight",
+    "NativeTemplateDiamond",
+    "native_template_hierarchy_new"
   ],
   "dependencies": []
 }

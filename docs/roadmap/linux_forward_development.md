@@ -65,6 +65,14 @@ all **33 optimized frontend suites**, **335 tooling tests** and **24 source-free
 package configurations / 96 commands** across normal, eager-import and
 ASan/UBSan execution. SDK 2.33 remains the accepted archive.
 
+## Native class and variable template structure
+
+The [2.48 source span](linux_cxx_template_structure.md) adds class/variable
+forward declarations with inherited defaults, native template inheritance,
+virtual dispatch, RTTI and virtual-base sharing. A required structure capability
+makes a hard cutover for all class/variable template rows. Canonical merged heads
+survive native declaration folding and one-owner template lookup.
+
 ## Published primary C++ class templates
 
 The [2.47 source span](linux_cxx_class_templates.md) adds primary class template

@@ -1618,6 +1618,68 @@ void TestPublicAliasTemplates() {
   }
 }
 
+void TestTemplateStructure() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="template-structure.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.structure","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.structure","test");
+    };
+    const std::string source=R"(
+      template<class T=int,int N=sizeof(T)> extern T count;
+      template<class U,int M> U count=M;
+      template<class T=int,int Bias=2> class Root;
+      template<class U,int Delta> class Root {
+        U value;
+      public:
+        explicit Root(U n=U{40}):value(n){}
+        virtual ~Root()=default;
+        virtual int number()const{return int(value)+Delta;}
+      };
+      template<class T=int> struct Left:virtual Root<T>{Left():Root<T>(T{40}){}};
+      template<class T=int> struct Right:virtual Root<T>{Right():Root<T>(T{40}){}};
+      template<class T=int> struct Diamond:Left<T>,Right<T>{
+        Diamond():Root<T>(T{40}){}
+        int number()const override{return Root<T>::number();}
+      };
+      inline int probe(){Diamond<> value;Root<int> *root=&value;return root->number()+count<>;}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxTemplateStructureSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-structure.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-structure.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto changed=source;changed.replace(changed.find("value)+Delta"),std::string("value)+Delta").size(),"value)+Delta+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    for(const auto *capability:{kCxxTemplateStructureSemantic,"objc3.cxx-data-interfaces.v1"}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=*decoded;std::erase(old.required_semantics,kCxxTemplateStructureSemantic);
+    for(auto &declaration:old.declarations) {
+      const std::string marker=";cxx-template-structure:v1;";
+      if(auto at=declaration.canonical_type_identity.find(marker);at!=std::string::npos)
+        declaration.canonical_type_identity.erase(at,marker.size());
+    }
+    auto old_contract=EncodeSemanticInterfaceSidecar(old,semantics);
+    assert(!old_contract);llvm::consumeError(old_contract.takeError());
+    auto hidden=emit("namespace {template<class T>struct Hidden{};}template<class T>struct Public:Hidden<T>{};");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    for(const auto *name:{"Root","count"})
+      assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
+          [&](const auto &d){return d.qualified_name==name;})==1);
+  }
+}
+
 void TestPublicClassTemplates() {
   for (const auto *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="classes.cpp",
@@ -1687,7 +1749,6 @@ void TestPublicClassTemplates() {
         [](const auto &d){return d.code=="O3IFC112";}));
     for(const auto *gated:{"template<class T>struct Box;",
                           "template<class T>struct Box{T api();};",
-                          "template<class T>struct Box{virtual int api(){return 42;}};",
                           "template<class T>struct Box{};template<class T>struct Box<T*>{};",
                           "template<class T>struct Box{};template<>struct Box<int>{};",
                           "template<class T>struct Box{template<class U> U api(U n){return n;}};"})
@@ -2803,6 +2864,7 @@ int main() {
   TestFunctionTemplateDeclarations();
   TestPublicVariableTemplates();
   TestPublicClassTemplates();
+  TestTemplateStructure();
   TestCarrierExpressionRoundtrip();
   TestDeletedAggregateMemberIdentity();
   return 0;

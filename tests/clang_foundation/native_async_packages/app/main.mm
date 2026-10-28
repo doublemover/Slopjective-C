@@ -423,6 +423,23 @@ int main() {
   static_assert(native_late_default(40)==42 && native_tail_decl()==42);
   static_assert(native_constrained_default()==42 && native_template_argument_default()==42);
   if(native_template_defaults_bridge()!=210) return 128;
+  if(native_template_forward_value<> !=sizeof(int) || native_template_forward_value<long> !=sizeof(long))return 139;
+  {
+    auto *root=native_template_hierarchy_new();
+    auto *left=dynamic_cast<NativeTemplateLeft<int> *>(root);
+    auto *right=dynamic_cast<NativeTemplateRight<int> *>(root);
+    if(!left || !right || static_cast<NativeTemplateRoot<int> *>(left)!=static_cast<NativeTemplateRoot<int> *>(right) ||
+       root->number()!=42 || NativeTemplateRoot<int>::live!=1)return 140;
+    delete root;
+  }
+  if(NativeTemplateRoot<int>::live!=0)return 141;
+  {
+    NativeTemplateDiamond<long> value;
+    NativeTemplateRoot<long> *root=&value;
+    if(!dynamic_cast<NativeTemplateLeft<long> *>(root) || !dynamic_cast<NativeTemplateRight<long> *>(root) ||
+       root->number()!=42 || NativeTemplateRoot<long>::live!=1)return 142;
+  }
+  if(NativeTemplateRoot<long>::live!=0)return 143;
   static_assert(NativeTemplateBox<>{}.number()==42 && NativeTemplateBox<long,3>(39).number()==42);
   static_assert(__is_same(NativeTemplateBox<long>::element,long));
   static_assert(NativeTemplateArity<int,long,double>::count==3);
