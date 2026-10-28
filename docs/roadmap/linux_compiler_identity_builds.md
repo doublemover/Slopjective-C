@@ -21,3 +21,9 @@ times stayed unchanged. Ninja dependency checks also confirm that the frontend
 emitter uses the stable API without a stamp-header dependency. This measurement
 covers the incremental compiler target; source validation and installed SDK
 delivery retain their own records.
+
+The [source receipt](../support/linux_compiler_identity_build_progress.json) records
+408 compiler regressions, 194 native unit tests, all 33 frontend suites, 335 tooling
+tests and 24 source-free package configurations / 96 commands across normal,
+eager-import and ASan/UBSan execution. Existing malformed, missing and mismatched
+PCH/PCM identity rejections remain enforced. SDK 2.33 remains the accepted archive.

@@ -66,6 +66,10 @@ sealed compiler stamp into one clangBasic implementation while preserving
 version, PCH/PCM, interface and SDK admission checks. The measured incremental
 compiler target rebuilt one C++ object and linked in 3.343 seconds; serialization
 and frontend-emitter objects no longer depend on the generated stamp header.
+The [source receipt](../support/linux_compiler_identity_build_progress.json) records
+408 compiler tests, 194 native unit tests, all 33 frontend suites, 335 tooling
+tests and 24 source-free package configurations / 96 commands across normal,
+eager-import and ASan/UBSan execution.
 
 ## Native C++ union values
 
