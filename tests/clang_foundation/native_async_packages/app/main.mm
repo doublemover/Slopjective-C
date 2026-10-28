@@ -310,6 +310,22 @@ int main() {
        NativeDetached::Family<long>::shared<> !=40 || NativeDetached::Concrete::shared<long> !=40 ||
        NativeDetached::Family<int>::local!=40 || NativeDetached::Family<int>::member_local<> !=40 ||
        NativeDetached::Concrete::local<> !=40)return 188;
+    {
+      auto *special_operators=native_concrete_operators_factory();
+      NativeConcreteOperators default_operators;
+      NativeConcreteOperators generic_operators{40L};
+      int(NativeConcreteOperators::*special_call)(int)const=&NativeConcreteOperators::operator()<int>;
+      if(NativeConcreteOperators::live!=3 || special_operators->get()!=42 ||
+         (default_operators.*special_call)(1)!=42 || static_cast<int>(default_operators)!=42 ||
+         generic_operators(2L)!=42 || static_cast<long>(generic_operators)!=40)return 201;
+      default_operators=41;
+      if(default_operators.get()!=42)return 202;
+      default_operators=40L;
+      if(default_operators.get()!=40)return 203;
+      delete special_operators;
+      if(NativeConcreteOperators::live!=2)return 204;
+    }
+    if(NativeConcreteOperators::live!=0)return 205;
     if(native_member_specialized_address()!=&NativeDetached::Concrete::specialized<int> ||
        native_member_partial_address()!=&NativeDetached::Concrete::specialized<int*> ||
        NativeDetached::Concrete::specialized<int> !=42 || NativeDetached::Concrete::specialized<int*> !=40 ||

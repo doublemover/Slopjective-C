@@ -1743,6 +1743,55 @@ void TestTemplateStructure() {
   }
 }
 
+void TestConcreteSpecialMemberSpecializations() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="concrete-special-member-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.special_members","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.special_members","test");
+    };
+    const std::string source=R"(
+      namespace N {
+        struct Concrete {
+          int value;
+          inline static int live=0;
+          Concrete():value(40){++live;}
+          virtual ~Concrete(){--live;}
+          template<class T>explicit Concrete(T n):value(n){++live;}
+          template<class T>T operator()(T n)const{return value+n;}
+          template<class T>explicit operator T()const{return value;}
+          template<class T>Concrete &operator=(T n){value=n;return *this;}
+        };
+      }
+      template<>inline N::Concrete::Concrete(int n):value(n+1){++live;}
+      template<>inline int N::Concrete::operator()<int>(int n)const{return value+n+1;}
+      template<>inline N::Concrete::operator int()const{return value+2;}
+      template<>inline N::Concrete &N::Concrete::operator=<int>(int n){value=n+1;return *this;}
+      inline int probe(){N::Concrete value{41};N::Concrete ordinary;ordinary=41;return value(1)+static_cast<int>(ordinary)+N::Concrete{40L}(2L)+static_cast<long>(value);}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxConcreteSpecialMemberSpecializationSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-concrete-special-members.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-concrete-special-members.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxConcreteSpecialMemberSpecializationIdentity)==1);
+    auto damaged=*decoded;std::erase(damaged.required_semantics,kCxxConcreteSpecialMemberSpecializationSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxConcreteSpecialMemberSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto changed=source;changed.replace(changed.find("value(n+1)"),10,"value(n+2)");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+}
+
 void TestConcreteMemberVariableSpecializations() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="concrete-member-variable-specializations.cpp") {
@@ -4231,6 +4280,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestConcreteSpecialMemberSpecializations();
   TestConcreteMemberVariableSpecializations();
   TestConcreteMemberFunctionSpecializations();
   TestConcreteMemberClassSpecializations();

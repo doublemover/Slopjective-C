@@ -327,8 +327,7 @@ public:
             function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;
         if (!explicit_namespace) {
           const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(function);
-          if (!method || !method->getIdentifier() ||
-              method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization) return true;
+          if (!method || method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization) return true;
           const auto expected=BuildModuleOwnedName(module_,package_,ReadInterfaceDeclarationStableId(function->getPrimaryTemplate()));
           for (auto *redecl:function->redecls()) {
             if (!redecl->isImplicit() && !IsModuleOwnedSource(context_,redecl->getLocation(),source_root_))

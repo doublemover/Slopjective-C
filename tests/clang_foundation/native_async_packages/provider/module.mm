@@ -1664,3 +1664,21 @@ int *native_member_specialized_address(){return &NativeDetached::Concrete::speci
 int *native_member_partial_address(){return &NativeDetached::Concrete::specialized<int*>;}
 int *native_member_specialized_tls(){return &NativeDetached::Concrete::specialized_local<int>;}
 NativeMemberSpecializedValue *native_member_specialized_object(){return &NativeDetached::Concrete::specialized_object<int>;}
+
+class NativeConcreteOperators {
+  int value;
+public:
+  inline static int live=0;
+  NativeConcreteOperators():value(40){++live;}
+  template<class T>explicit NativeConcreteOperators(T n):value(n){++live;}
+  virtual ~NativeConcreteOperators(){--live;}
+  int get()const{return value;}
+  template<class T>T operator()(T n)const{return value+n;}
+  template<class T>explicit operator T()const{return value;}
+  template<class T>NativeConcreteOperators &operator=(T n){value=n;return *this;}
+};
+template<>inline NativeConcreteOperators::NativeConcreteOperators(int n):value(n+1){++live;}
+template<>inline int NativeConcreteOperators::operator()<int>(int n)const{return value+n+1;}
+template<>inline NativeConcreteOperators::operator int()const{return value+2;}
+template<>inline NativeConcreteOperators &NativeConcreteOperators::operator=<int>(int n){value=n+1;return *this;}
+NativeConcreteOperators *native_concrete_operators_factory(){return new NativeConcreteOperators(41);}

@@ -407,11 +407,15 @@ std::vector<clang::ClassTemplateSpecializationDecl *> ConcreteMemberClassSpecial
 
 bool IsConcreteMemberFunctionSpecialization(const clang::FunctionDecl *function) {
   const auto *method=llvm::dyn_cast_or_null<clang::CXXMethodDecl>(function);
-  if (!method || !method->getIdentifier() || !method->getPrimaryTemplate() ||
+  if (!method || !method->getPrimaryTemplate() ||
       method->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization) return false;
   const auto *parent=method->getParent();
   return !parent->isDependentContext() && !parent->getDescribedClassTemplate() &&
       !llvm::isa<clang::ClassTemplateSpecializationDecl>(parent);
+}
+bool IsConcreteSpecialMemberSpecialization(const clang::FunctionDecl *function) {
+  return IsConcreteMemberFunctionSpecialization(function) &&
+      (llvm::isa<clang::CXXConstructorDecl,clang::CXXConversionDecl>(function) || function->isOverloadedOperator());
 }
 std::vector<clang::FunctionDecl *> ConcreteMemberFunctionSpecializations(const clang::NamedDecl *owner) {
   std::vector<clang::FunctionDecl *> result;
@@ -1473,6 +1477,17 @@ public:
           paren->getSubExpr()->printPretty(out, this, policy);
           return true;
         }
+        // Native declaration replay may qualify an unqualified static member
+        // reference. Bind both spellings to the same declaration spelling;
+        // the typed traversal below still binds its owner and exact arguments.
+        if (const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(statement))
+          if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(reference->getDecl());
+              variable && variable->isStaticDataMember() && variable->getIdentifier() &&
+              !variable->getDescribedVarTemplate() &&
+              !llvm::isa<clang::VarTemplateSpecializationDecl>(variable)) {
+            variable->printQualifiedName(out,policy);
+            return true;
+          }
         return false;
       }
     } helper(policy);
@@ -4753,7 +4768,12 @@ bool ReadInterfaceDeclarationIdentity(
       std::string arguments;
       for (const auto &argument:function->getTemplateSpecializationArgs()->asArray())
         if (!GenericArgumentKey(argument,context,arguments)) return false;
-      specializations.insert(ReadInterfaceDeclarationStableId(function->getPrimaryTemplate())+
+      std::string method_properties=":method-kind="+std::string(function->clang::Decl::getDeclKindName());
+      if (const auto *constructor=llvm::dyn_cast<clang::CXXConstructorDecl>(function))
+        method_properties+=":explicit="+std::to_string(constructor->getExplicitSpecifier().isExplicit());
+      if (const auto *conversion=llvm::dyn_cast<clang::CXXConversionDecl>(function))
+        method_properties+=":explicit="+std::to_string(conversion->getExplicitSpecifier().isExplicit());
+      specializations.insert(ReadInterfaceDeclarationStableId(function->getPrimaryTemplate())+method_properties+
           ":arguments="+ComputeInterfaceSourceSha256(arguments)+":type="+CanonicalType(function->getType(),context)+
           ":symbol="+ReadNativeSymbolName(function)+":inline="+std::to_string(function->isInlined())+
           ":constexpr="+std::to_string(function->isConstexpr())+":consteval="+std::to_string(function->isConsteval())+
@@ -4764,6 +4784,8 @@ bool ReadInterfaceDeclarationIdentity(
     for (const auto &specialization:specializations) contract+=std::to_string(specialization.size())+":"+specialization;
     identity.canonical_type_identity+=";cxx-concrete-member-function-specializations:v1;definitions="+
         ComputeInterfaceSourceSha256(contract)+";";
+    if (std::any_of(member_functions.begin(),member_functions.end(),IsConcreteSpecialMemberSpecialization))
+      identity.canonical_type_identity+=";cxx-concrete-special-member-specializations:v1;";
   }
   if (!ConcreteMemberClassSpecializations(representative).empty())
     identity.canonical_type_identity+=";cxx-concrete-member-class-specializations:v1;";
@@ -5179,6 +5201,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxConcreteSpecialMemberSpecializationIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxConcreteSpecialMemberSpecializationSemantic);
     if (HasCxxConcreteMemberVariableSpecializationIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxConcreteMemberVariableSpecializationSemantic);
     if (HasCxxConcreteMemberFunctionSpecializationIdentity(declaration))
@@ -5338,6 +5362,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxConcreteMemberClassSpecializationSemantic,
     kCxxConcreteMemberFunctionSpecializationSemantic,
     kCxxConcreteMemberVariableSpecializationSemantic,
+    kCxxConcreteSpecialMemberSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
       "objc3.ownership-projection.v1",
@@ -5493,6 +5518,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxConcreteMemberClassSpecializationSemantic,
     kCxxConcreteMemberFunctionSpecializationSemantic,
     kCxxConcreteMemberVariableSpecializationSemantic,
+    kCxxConcreteSpecialMemberSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
