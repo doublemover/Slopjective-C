@@ -82,6 +82,15 @@ configurations / 1,158 commands**. Source-free C++/key-path packages pass **80
 configurations / 320 commands** through normal, eager, ASan/UBSan and TSan modes.
 Coordinated SDK 2.52 delivery and fresh-host qualification pass.
 
+## Explicit namespace function-template specializations
+
+The [2.57 source span](linux_cxx_function_specializations.md) publishes explicit
+namespace function-template specializations with exact argument identities and
+independent owned symbols. Inline/constexpr specialization definitions travel in
+interfaces; ordinary definitions link to the provider. Specializations retain
+primary-template lookup and checked dependencies. Class, variable and member
+specializations remain open. Combined validation and SDK delivery remain batched.
+
 ## Template-template parameters and nominal alias ownership
 
 The [2.56 source span](linux_cxx_template_template_parameters.md) adds recursive

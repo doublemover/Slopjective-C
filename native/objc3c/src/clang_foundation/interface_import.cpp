@@ -94,6 +94,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxConcreteNestedTemplateSemantic,
     kCxxTemplateTemplateSemantic,
     kCxxNominalAliasTemplateSemantic,
+    kCxxFunctionSpecializationSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
@@ -195,7 +196,7 @@ bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
       alias && alias->getDescribedAliasTemplate()) return false;
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
-      function && function->getDescribedFunctionTemplate()) return false;
+      function && (function->getDescribedFunctionTemplate() || function->getPrimaryTemplate())) return false;
   if (!decl->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(decl)) return false;
   const auto *context = decl->getDeclContext();
   while (context && context->isTransparentContext()) context = context->getParent();
@@ -835,7 +836,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     // Only the FunctionTemplateDecl participates in ordinary lookup. Its
     // underlying function shares its USR but is not a second overload.
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
-        function && function->getDescribedFunctionTemplate()) continue;
+        function && (function->getDescribedFunctionTemplate() || function->getPrimaryTemplate())) continue;
     if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(named);
         alias && alias->getDescribedAliasTemplate()) continue;
     if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);

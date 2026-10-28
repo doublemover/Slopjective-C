@@ -23,7 +23,8 @@ struct Nested { template<class T> struct Inner { T value; }; };
 #elif CASE == 12
 union Overlap { int one; long two; };
 #elif CASE == 13
-template<class T> T api(T value, ...) { return value; }
+template<class T> T api(T value) { return value; }
+template<> inline int api<int>(int value) { return value+1; }
 #elif CASE == 14
 template<template<class> class C, class T> int api(C<T> value) { return 42; }
 #endif

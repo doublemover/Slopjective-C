@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 if __package__:
@@ -97,9 +98,28 @@ def qualify(sdk: Path, output: Path) -> dict:
                                              application, root / 'consumer')
                 if consumed['provider_compilations'] or len(consumed['modules']) != 1:
                     raise ValueError('native async consumer rebuilt or lost its provider')
+                specialization_rejected = False
+                if language == 'objective-c++':
+                    command = list(consumed['commands'][0])
+                    command[1] = str(client / 'function-specialization-rejected.mm')
+                    rejected_object = root / 'rejected-specialization.o'
+                    command[command.index('--emit-object') + 1] = str(rejected_object)
+                    if '-MF' in command:
+                        command[command.index('-MF') + 1] = str(root / 'rejected-specialization.d')
+                    log = root / 'rejected-specialization.log'
+                    with log.open('w') as stream:
+                        rejected = subprocess.run(command, cwd=root / 'consumer',
+                            env=packages.environment(sdk), stdout=stream,
+                            stderr=subprocess.STDOUT, timeout=180)
+                    diagnostic = log.read_text()
+                    if (rejected.returncode != 1 or rejected_object.exists() or
+                            'overloaded' not in diagnostic):
+                        raise ValueError('explicit specialization escaped primary-template lookup')
+                    specialization_rejected = True
                 cases.append({'language': language, 'standard': standard,
                     'ownership': ownership, 'optimization': optimization,
                     'provider_source_removed': True, 'provider_compilations': 0,
+                    'specialization_lookup_rejected': specialization_rejected,
                     'runtime_semantic': runtime_semantic,
                     'interface_sha256': interface_sha, 'package_sha256': publication['content_sha256'],
                     'source_graph': first, 'reused_graph': repeated, 'consumer': consumed})
@@ -148,6 +168,11 @@ def check_cpp_metadata(metadata):
             raise ValueError('published async body lost its contract: ' + name)
     if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
         raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    specialized=[row for row in metadata['declarations']
+                 if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
+            len(specialized)!=5 or len({row['native_symbol_name'] for row in specialized})!=5):
+        raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):
         if capability not in metadata['required_semantics']:

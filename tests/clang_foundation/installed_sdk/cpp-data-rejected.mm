@@ -27,7 +27,7 @@ struct Nested { struct { int value; } child; };
 template<class T> struct Overlap { union Inner { T one; long two; }; };
 #elif CASE == 13
 template<class T> T api(T value) { return value; }
-template<> int api<int>(int value) { return value; }
+template<> int api<int>(int value) = delete;
 #elif CASE == 14
 template<template<class> class C, class T> int api(C<T> value);
 #endif

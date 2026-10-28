@@ -134,8 +134,14 @@ std::string ReadNativeSymbolName(const clang::NamedDecl *declaration) {
   if (const auto *pattern = llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration))
     declaration = pattern->getTemplatedDecl();
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
-    if (const auto *pattern = function->getPrimaryTemplate())
+    if (const auto *pattern = function->getPrimaryTemplate()) {
+      if (function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization &&
+          !llvm::isa<clang::CXXMethodDecl>(function)) {
+        if (const auto *label=function->getAttr<clang::AsmLabelAttr>()) return label->getLabel().str();
+        return {};
+      }
       return ReadNativeSymbolName(pattern);
+    }
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
     if (function->getDescribedFunctionTemplate())
       if (const auto *tag = function->getAttr<clang::AbiTagAttr>();
@@ -292,7 +298,13 @@ public:
                        clang::TSK_Undeclared))
       return true;
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
-      if (function->getPrimaryTemplate()) return true;
+      if (function->getPrimaryTemplate()) {
+        const bool explicit_namespace=!llvm::isa<clang::CXXMethodDecl>(function) &&
+            function->getTemplateSpecializationKind()==clang::TSK_ExplicitSpecialization;
+        if (!explicit_namespace) return true;
+        if (ReadInterfaceDeclarationStableId(function).empty())
+          return Error(decl,"explicit function specialization exceeds the module ABI argument contract");
+      }
       if (const auto *pattern = function->getDescribedFunctionTemplate()) {
         for (const auto *prior : function->redecls())
           if (!prior->isImplicit() &&

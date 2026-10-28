@@ -274,6 +274,13 @@ int main() {
        native_tt_next<NativeTTFamily<int>::Member>()!=42 ||
        native_tt_next<NativeTTFamily<long>::Member>()!=41)return 170;
   }
+  {
+    static_assert(native_spec_value<0.0>()==1 && native_spec_value<-0.0>()==2);
+    int (*specialized)(int)=&native_spec_add<int>;
+    if(specialized(40)!=42 || native_spec_add(40)!=42 || native_spec_add(39L)!=42 ||
+       native_spec_add(40.0)!=41.0 || native_spec_producer()!=101 ||
+       native_spec_next<int>()!=102 || native_spec_next<long>()!=41)return 171;
+  }
   static_assert(NativeNestedFamily<long>::answer<40> ==42 && native_nested_argument_probe()==42);
   if(native_nested_state()!=82 || ++NativeNestedFamily<int>::shared<> !=42 ||
      ++NativeNestedFamily<int>::local<> !=42 || NativeNestedFamily<long>::shared<> !=40)return 154;

@@ -274,7 +274,11 @@
     "native_tt_state",
     "native_tt_member_state",
     "native_tt_forwarded",
-    "native_tt_lambda"
+    "native_tt_lambda",
+    "native_spec_add",
+    "native_spec_value",
+    "native_spec_next",
+    "native_spec_producer"
   ],
   "dependencies": []
 }

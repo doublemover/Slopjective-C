@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 56,
+        "minor": 57,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -182,13 +182,14 @@
         "C-style variadic namespace function templates and primary class-template ordinary/member-template methods, with native argument promotions, copied va_list state and source-free indirect calls (source)",
         "Concrete-class in-class member function, alias and inline mutable/constexpr/thread-local variable templates, with complete record ownership, checked heads/bodies and source-free consumer instantiation (source)",
         "Nested primary class templates in concrete records, including recursive heads/bodies, exact enclosing floating arguments, checked private aliases, source-free instantiation and provider/consumer virtual lifetime identity (source)",
-        "Recursive template-template type parameter heads, defaults, constraints and packs across function/class/alias/variable and member templates, with exact nominal class/alias arguments, module-owned alias ABI and shared/TLS specialization state (source)"
+        "Recursive template-template type parameter heads, defaults, constraints and packs across function/class/alias/variable and member templates, with exact nominal class/alias arguments, module-owned alias ABI and shared/TLS specialization state (source)",
+        "Explicit namespace function-template specializations with exact closed argument keys, independent module-owned symbols, primary/specialization dependency contracts, inline/non-inline delivery and shared specialization-local state (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining template specializations, detached template definitions and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining class/variable/member template specializations, detached template definitions and effectful callable forms, unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
       ]
     },
     {

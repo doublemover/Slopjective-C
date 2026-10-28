@@ -1412,3 +1412,13 @@ int native_tt_member_state(){return native_tt_next<NativeTTFamily<int>::Member>(
 template<template<class>class C=NativeTTAlias> int native_tt_forwarded(int n);
 template<template<class>class C> int native_tt_forwarded(int n){return C<int>{n}.value;}
 inline int native_tt_lambda(){auto call=[]<template<class>class C>(C<int> n){return n.value;};return call.template operator()<NativeTTAlias>({42});}
+
+template<class T> T native_spec_add(T n){return n+1;}
+template<> inline int native_spec_add<int>(int n){return n+2;}
+template<> long native_spec_add<long>(long n){return n+3;}
+template<auto Value> constexpr int native_spec_value(){return 0;}
+template<> constexpr int native_spec_value<0.0>(){return 1;}
+template<> constexpr int native_spec_value<-0.0>(){return 2;}
+template<class T> int native_spec_next(){static int n=40;return ++n;}
+template<> inline int native_spec_next<int>(){static int n=100;return ++n;}
+int native_spec_producer(){return native_spec_next<int>();}

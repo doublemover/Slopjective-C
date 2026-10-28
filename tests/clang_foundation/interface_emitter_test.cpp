@@ -11,6 +11,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -1738,6 +1739,59 @@ void TestTemplateStructure() {
     for(const auto *name:{"Root","count"})
       assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),
           [&](const auto &d){return d.qualified_name==name;})==1);
+  }
+}
+
+void TestFunctionSpecializations() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="function-specializations.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,{"-xc++",standard},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                  "fixture.function_specializations","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.function_specializations","test");
+    };
+    const std::string source=R"(
+      template<class T> T add(T n){return n+1;}
+      template<> inline int add<int>(int n){return n+2;}
+      template<> long add<long>(long n){return n+3;}
+      template<auto Value> constexpr int number(){return 0;}
+      template<> constexpr int number<0.0>(){return 1;}
+      template<> constexpr int number<-0.0>(){return 2;}
+      template<class T> int next(){static int n=40;return ++n;}
+      template<> inline int next<int>(){static int n=100;return ++n;}
+      inline int probe(){return add(40)+number<0.0>()+number<-0.0>()+next<int>();}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s (%s)\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success && first.sidecar_json.find(kCxxFunctionSpecializationSemantic)!=std::string::npos);
+    auto repeated=emit(first.source_bytes,"reprinted-specializations.cpp");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-specializations.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    std::set<std::string> ids,symbols;
+    for(const auto &d:decoded->declarations) if(HasCxxFunctionSpecializationIdentity(d)) {
+      assert(d.kind=="Function" && ids.insert(d.stable_id).second && symbols.insert(d.native_symbol_name).second);
+      assert(HasValidModuleOwnedName(decoded->module,d));
+    }
+    assert(ids.size()==5);
+    auto changed=source;changed.replace(changed.find("return n+2"),10,"return n+4");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    for(const auto *capability:{kCxxFunctionSpecializationSemantic,kCxxFunctionTemplateSemantic}) {
+      auto damaged=*decoded;std::erase(damaged.required_semantics,capability);
+      auto invalid=EncodeSemanticInterfaceSidecar(damaged,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    }
+    auto old=semantics;std::erase(old,llvm::StringRef(kCxxFunctionSpecializationSemantic));
+    auto rejected=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
+    assert(!rejected);llvm::consumeError(rejected.takeError());
+    auto hidden=emit("static int hidden(){return 42;}template<class T>int f(T){return 0;}template<>inline int f<int>(int){return hidden();}");
+    assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    assert(!emit("template<class T>int f(T){return 0;}template<>int f<int>(int)=delete;").success);
   }
 }
 
@@ -3472,6 +3526,7 @@ int main() {
   TestPublicClassTemplates();
   TestClassMemberTemplates();
   TestClassMemberAliasTemplates();
+  TestFunctionSpecializations();
   TestLargeExportPolicy();
   TestTemplateTemplateParameters();
   TestConcreteNestedTemplates();
