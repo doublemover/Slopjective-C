@@ -90,6 +90,17 @@ deferred source checks. SDK 2.62 remains accepted; coordinated delivery follows.
 The recorded historical five tooling collection errors stay outside the maintained
 Linux selection. Full profile conformance and native Linux AArch64 remain open.
 
+## Published C++ closure factories
+
+The [2.78 source span](linux_cxx_closure_factories.md) publishes concrete and generic
+returned closures under their complete deduced factory definitions. Mutable copies,
+reference identity, nested returned closures, member factories and owned record
+captures retain their native behavior. Consumer-created generic task/frame and
+checked-error operators preserve their effects. The emitter suite, 84 tooling tests
+and four representative source-free configurations / 24 commands pass; exhaustive
+source-free and sanitizer checks remain batched. Other public unnamed/dependent
+projections, broader language/profile implementation and native AArch64 stay open.
+
 ## Effectful C++ lambdas
 
 The [2.77 source span](linux_cxx_effectful_lambdas.md) adds native async/frame and

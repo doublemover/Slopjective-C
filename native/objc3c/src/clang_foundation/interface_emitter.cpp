@@ -2090,6 +2090,35 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
 }
+// Only a complete published definition may expose its own deduced closure.
+// Its checked body binds the lambda head, captures, operators and dependencies.
+const clang::CXXRecordDecl *PublishedClosureResult(const clang::FunctionDecl *function) {
+  if (!function || !PublishesFunctionBody(function) || !function->getDefinition() ||
+      !function->getDeclaredReturnType()->getContainedAutoType()) return nullptr;
+  const auto *record=function->getReturnType()->getAsCXXRecordDecl();
+  if (!record || !record->isLambda()) return nullptr;
+  for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
+    if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope))
+      return owner->getCanonicalDecl()==function->getCanonicalDecl() ? record : nullptr;
+  return nullptr;
+}
+
+bool HasDeclarationClosureFactory(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Finder:clang::RecursiveASTVisitor<Finder> {
+      bool found=false;
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+        for (const auto *scope=expression->getLambdaClass()->getDeclContext();scope;scope=scope->getParent())
+          if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
+            found |= PublishedClosureResult(owner)==expression->getLambdaClass();break;
+          }
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
+}
+
 bool HasDeclarationEffectfulLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
     struct Finder:clang::RecursiveASTVisitor<Finder> {
@@ -3047,19 +3076,9 @@ class TypeDependencyVisitor final
          exports_(exports), spi_group_(std::move(spi_group)),
          source_root_(source_root) {}
 
-   void AllowPublishedEffectfulClosureResult(const clang::FunctionDecl *function) {
-     if (!function || !PublishesFunctionBody(function) || !function->getDefinition() ||
-         !function->getDeclaredReturnType()->getContainedAutoType()) return;
-     const auto *record=function->getReturnType()->getAsCXXRecordDecl();
-     if (!record || !record->isLambda() || record->isGenericLambda()) return;
-     const auto effects=ReadCanonicalFunctionEffects(record->getLambdaCallOperator()->getType(),context_);
-     if (!effects.is_async && !effects.is_throwing) return;
-     for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
-       if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
-         if(owner->getCanonicalDecl()==function->getCanonicalDecl())
-           closure_results_.insert(record->getCanonicalDecl());
-         return;
-       }
+   void AllowPublishedClosureResult(const clang::FunctionDecl *function) {
+     if (const auto *record=PublishedClosureResult(function))
+       closure_results_.insert(record->getCanonicalDecl());
    }
 
    void CheckVisibility(const clang::NamedDecl *declaration) {
@@ -3863,7 +3882,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
                                 ReadInterfaceSPIGroup(declaration),
                                 source_root);
-  visitor.AllowPublishedEffectfulClosureResult(llvm::dyn_cast<clang::FunctionDecl>(declaration));
+  visitor.AllowPublishedClosureResult(llvm::dyn_cast<clang::FunctionDecl>(declaration));
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -5450,6 +5469,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-detached-callable-templates:v1;definitions="+
         ComputeInterfaceSourceSha256(contract)+";";
   }
+  if (HasDeclarationClosureFactory(representative))
+    identity.canonical_type_identity+=";cxx-closure-factories:v1;";
   if (HasDeclarationEffectfulLambda(representative))
     identity.canonical_type_identity+=";cxx-effectful-lambdas:v1;";
   if (HasDeclarationTemplateTemplateParameters(representative))
@@ -5811,6 +5832,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxClosureFactoryIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxClosureFactorySemantic);
     if (HasCxxEffectfulLambdaIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxEffectfulLambdaSemantic);
     if (HasCxxAddressTemplateArgumentIdentity(declaration))
@@ -5996,6 +6019,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxClosureFactorySemantic,
     kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,
@@ -6160,6 +6184,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxClosureFactorySemantic,
     kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
     kSdkRuntimeDeclarationSemantic,

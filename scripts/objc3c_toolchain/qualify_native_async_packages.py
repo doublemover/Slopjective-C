@@ -173,6 +173,14 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
+    closure_factories={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-closure-factories:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-closure-factories.v1' in metadata['required_semantics']
+    assert {'NativeClosureFactories::State','NativeClosureFactories::concrete',
+            'NativeClosureFactories::generic','NativeClosureFactories::mutable_factory',
+            'NativeClosureFactories::reference_factory','NativeClosureFactories::nested_factory',
+            'NativeClosureFactories::owned_factory','NativeClosureFactories::task_factory',
+            'NativeClosureFactories::frame_factory','NativeClosureFactories::checked_factory'}<=closure_factories
     effectful_lambdas={row['qualified_name'] for row in metadata['declarations']
                       if ';cxx-effectful-lambdas:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-effectful-lambdas.v1' in metadata['required_semantics']

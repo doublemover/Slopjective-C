@@ -438,6 +438,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_closure_factories=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxClosureFactoryIdentity);
+  const bool closure_factory_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxClosureFactorySemantic)!=sidecar.required_semantics.end();
+  const bool closure_factory_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxClosureFactoryIdentity(d) || d.kind!="Namespace";});
+  if (has_closure_factories!=closure_factory_capability || !closure_factory_owners)
+    Add(result,"O3IFC087","closure factory identities and required capability must agree",expected.canonical_name);
   const bool has_effectful_lambdas=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxEffectfulLambdaIdentity);
   const bool effectful_lambda_capability=std::find(sidecar.required_semantics.begin(),

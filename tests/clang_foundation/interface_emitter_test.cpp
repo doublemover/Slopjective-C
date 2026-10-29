@@ -1333,8 +1333,8 @@ void TestGenericLocalLambdas() {
         "inline int api(){auto f=[](auto x){return pick(x);};return f(1);}","private.cpp",{"pick","api"});
     assert(!hidden.success && std::any_of(hidden.diagnostics.begin(),hidden.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    auto escapes=emit("inline auto api(){return [](auto x){return x;};}");
-    assert(!escapes.success);
+    auto factory=emit("inline auto api(){return [](auto x){return x;};}");
+    assert(factory.success && factory.sidecar_json.find(kCxxClosureFactorySemantic)!=std::string::npos);
     auto local_argument=emit("inline int api(){struct Local{int n;}; "
         "return [](auto x){return x.n;}(Local{42});}");
     assert(!local_argument.success);
@@ -1813,6 +1813,55 @@ namespace NativeAddressArguments {
         [](const auto &d){return d.code=="O3IFC156";}));
     auto private_object=emit("static int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;");
     assert(!private_object.success);
+  }
+}
+
+void TestClosureFactories() {
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="closure-factories.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.closure_factories","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.closure_factories","test");
+    };
+    const std::string source=R"(
+      struct Owned {
+        int value;
+        explicit Owned(int n):value(n) {}
+        Owned(const Owned &other):value(other.value) {}
+        ~Owned() {}
+        auto factory() const {return [copy=*this](int n) {return copy.value+n;};}
+        auto generic() const {return [copy=*this]<class T>(T n) {return copy.value+n;};}
+      };
+      inline auto concrete(int base) {return [base](int n) {return base+n;};}
+      inline auto generic(int base) {return [base]<class T>(T n) {return base+n;};}
+      inline decltype(auto) mutable_factory(int base) {return [base](int n) mutable {base+=n;return base;};}
+      inline auto reference_factory(int &base) {return [&base]<class T>(T n) {base+=n;return base;};}
+      inline auto nested_factory(int base) {return [base](int n) {return [value=base+n](int delta) {return value+delta;};};}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closure-factories.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxClosureFactoryIdentity)>=7);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxClosureFactorySemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxClosureFactoryIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto changed=source;changed.replace(changed.find("base+n"),6,"base+n+1");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto secret=emit("static int hidden(int n){return n;} inline auto api(){return [](int n){return hidden(n);};}");
+    assert(!secret.success && std::any_of(secret.diagnostics.begin(),secret.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
   }
 }
 
@@ -4822,6 +4871,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestClosureFactories();
   TestEffectfulLambdas();
   TestAddressTemplateArguments();
   TestTemplateCallableProjections();

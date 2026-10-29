@@ -1917,3 +1917,5 @@ namespace NativeEffectLambdas {
     return [value](int n)->int __objc3_async {__objc3_await objc3::task_yield;return value.number()+n;};
   }
 }
+
+#include "closure_factories.h"

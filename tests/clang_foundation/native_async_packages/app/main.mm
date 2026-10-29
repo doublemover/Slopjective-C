@@ -126,6 +126,21 @@ int effect_template_checked_application() __objc3_async {
   }
 }
 
+int closure_factory_checked_application() __objc3_async {
+  auto checked=NativeClosureFactories::checked_factory(2);
+  NativeModuleResult *error=[NativeModuleResult new];
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{error};
+#endif
+  [error setNumber:42];
+  id<NativeModuleError> empty=nullptr;
+  __objc3_do {
+    if(__objc3_try(checked(40,empty))!=42)return 0;
+    id<NativeModuleError> payload=error;
+    (void)__objc3_try(checked(0,payload));return 0;
+  } __objc3_catch(id<NativeModuleError> caught) {return [(NativeModuleResult*)caught number]==42?42:0;}
+}
+
 int effect_lambda_checked_application() __objc3_async {
   NativeModuleResult *error=[NativeModuleResult new];
 #if !__has_feature(objc_arc)
@@ -1269,6 +1284,25 @@ int main() {
     if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK || task.result()!=42)return 237;
   }
   if(NativeTemplateValue<int>::live)return 238;
+  {
+    using namespace NativeClosureFactories;
+    auto plain=concrete(40);auto polymorphic=generic(40);
+    auto mutate=mutable_factory(39);if(mutate(1)!=40)return 239;
+    auto copy=mutate;if(mutate(2)!=42 || copy(2)!=42 || mutate(1)!=43 || copy(0)!=42)return 240;
+    int value=39;auto reference=reference_factory(value);
+    if(plain(2)!=42 || polymorphic(short(2))!=42 || polymorphic(2L)!=42 ||
+       reference(1)!=40 || reference(2L)!=42 || value!=42 || nested_factory(39)(1)(2)!=42)return 241;
+    State state(40);auto member=state.factory();auto member_generic=state.generic();
+    auto owned=owned_factory(State(40));auto duplicate=owned;
+    if(member(2)!=42 || member_generic(2L)!=42 || owned(short(2))!=42 || duplicate(2)!=42 || State::live!=5)return 242;
+    auto task_closure=task_factory(40);auto frame_closure=frame_factory(40);
+    auto task=task_closure(2).start(executor);auto wide_task=task_closure(2L).start(executor);
+    auto frame=__objc3_async_from_frame<int>(frame_closure(2)).start(executor);
+    auto checked=closure_factory_checked_application().start(executor);
+    if(objc3_executor_pump(executor,UINT32_MAX,&executed)!=OBJC3_SERVICE_OK ||
+       task.result()!=42 || wide_task.result()!=42 || frame.result()!=42 || checked.result()!=42)return 243;
+  }
+  if(NativeClosureFactories::State::live)return 244;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

@@ -350,7 +350,8 @@
     "NativeEffectMembers",
     "NativeCallableProjections",
     "NativeAddressArguments",
-    "NativeEffectLambdas"
+    "NativeEffectLambdas",
+    "NativeClosureFactories"
   ],
   "dependencies": []
 }
