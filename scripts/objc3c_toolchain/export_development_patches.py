@@ -64,6 +64,7 @@ PACKETS = {
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
+        "clang/include/clang/AST/StableExpressionProfile.h",
         "clang/include/clang/AST/Decl.h",
         "clang/include/clang/AST/EvaluatedExprVisitor.h",
         "clang/include/clang/AST/ObjC3Borrowed.h",

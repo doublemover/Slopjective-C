@@ -694,10 +694,93 @@ index 120af89a9..52edceb63 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..e32759c03 100644
+index fdefb6d6b..5e554dbcb 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1653,6 +1653,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -21,6 +21,7 @@
+ #include "clang/AST/ODRHash.h"
+ #include "clang/AST/OpenMPClause.h"
+ #include "clang/AST/StmtVisitor.h"
++#include "clang/AST/StableExpressionProfile.h"
+ #include "llvm/ADT/FoldingSet.h"
+ using namespace clang;
+ 
+@@ -80,7 +81,7 @@ namespace {
+                                 unsigned NumArgs);
+ 
+     /// Visit a single template argument.
+-    void VisitTemplateArgument(const TemplateArgument &Arg);
++    virtual void VisitTemplateArgument(const TemplateArgument &Arg);
+   };
+ 
+   class StmtProfilerWithPointers : public StmtProfiler {
+@@ -92,7 +93,7 @@ namespace {
+                              bool ProfileLambdaExpr)
+         : StmtProfiler(ID, Canonical, ProfileLambdaExpr), Context(Context) {}
+ 
+-  private:
++  protected:
+     void HandleStmtClass(Stmt::StmtClass SC) override {
+       ID.AddInteger(SC);
+     }
+@@ -184,6 +185,56 @@ namespace {
+     }
+   };
+ 
++  class StableExpressionProfiler final:public StmtProfilerWithPointers {
++    const ASTContext &Context;
++    llvm::function_ref<void(const Decl *,llvm::FoldingSetNodeID &)> Declaration;
++    llvm::function_ref<void(QualType,llvm::FoldingSetNodeID &)> Type;
++    llvm::function_ref<void(TemplateName,llvm::FoldingSetNodeID &)> Template;
++    llvm::function_ref<void(const TemplateArgument &,llvm::FoldingSetNodeID &)> Argument;
++  public:
++    StableExpressionProfiler(llvm::FoldingSetNodeID &ID,const ASTContext &Context,
++        decltype(Declaration) Declaration,decltype(Type) Type,decltype(Template) Template,
++        decltype(Argument) Argument)
++        :StmtProfilerWithPointers(ID,Context,true,true),Context(Context),
++         Declaration(Declaration),Type(Type),Template(Template),Argument(Argument) {}
++    void VisitDecl(const Decl *D) override {
++      if(D && isa<ParmVarDecl,NonTypeTemplateParmDecl,TemplateTypeParmDecl,TemplateTemplateParmDecl>(D))
++        return StmtProfilerWithPointers::VisitDecl(D);
++      ID.AddBoolean(D);if(D)Declaration(D->getCanonicalDecl(),ID);
++    }
++    void VisitType(QualType T) override {
++      ID.AddBoolean(!T.isNull());if(!T.isNull())Type(Context.getCanonicalType(T),ID);
++    }
++    void VisitIdentifierInfo(const IdentifierInfo *II) override {
++      ID.AddBoolean(II);if(II)ID.AddString(II->getName());
++    }
++    void VisitName(DeclarationName Name,bool=false) override {
++      ID.AddInteger(Name.getNameKind());
++      switch(Name.getNameKind()) {
++      case DeclarationName::CXXConstructorName:case DeclarationName::CXXDestructorName:
++      case DeclarationName::CXXConversionFunctionName:VisitType(Name.getCXXNameType());break;
++      case DeclarationName::CXXDeductionGuideName:VisitDecl(Name.getCXXDeductionGuideTemplate());break;
++      default:ID.AddString(Name.getAsString());break;
++      }
++    }
++    void VisitNestedNameSpecifier(NestedNameSpecifier NNS) override {
++      NNS=NNS.getCanonical();ID.AddInteger(unsigned(NNS.getKind()));
++      switch(NNS.getKind()) {
++      case NestedNameSpecifier::Kind::Namespace: {
++        auto [Namespace,Prefix]=NNS.getAsNamespaceAndPrefix();VisitNestedNameSpecifier(Prefix);VisitDecl(Namespace);break;
++      }
++      case NestedNameSpecifier::Kind::Type:VisitType(QualType(NNS.getAsType(),0));break;
++      case NestedNameSpecifier::Kind::Null:case NestedNameSpecifier::Kind::Global:break;
++      case NestedNameSpecifier::Kind::MicrosoftSuper:llvm_unreachable("unsupported stable expression context");
++      }
++    }
++    void VisitTemplateName(TemplateName Name) override {Template(Context.getCanonicalTemplateName(Name),ID);}
++    void VisitTemplateArgument(const TemplateArgument &Arg) override {
++      if(Arg.getKind()==TemplateArgument::StructuralValue) {ID.AddInteger(Arg.getKind());Argument(Arg,ID);}
++      else StmtProfiler::VisitTemplateArgument(Arg);
++    }
++  };
++
+   class StmtProfilerWithoutPointers : public StmtProfiler {
+     ODRHash &Hash;
+   public:
+@@ -1653,6 +1704,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -806,7 +889,7 @@ index fdefb6d6b..e32759c03 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
-@@ -1730,7 +1832,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
+@@ -1730,7 +1883,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
  
  void StmtProfiler::VisitBlockExpr(const BlockExpr *S) {
    VisitExpr(S);
@@ -837,7 +920,7 @@ index fdefb6d6b..e32759c03 100644
  }
  
  void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
-@@ -3013,3 +3137,9 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+@@ -3013,3 +3188,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
    StmtProfilerWithoutPointers Profiler(ID, Hash);
    Profiler.Visit(this);
  }
@@ -846,6 +929,16 @@ index fdefb6d6b..e32759c03 100644
 +  VisitStmtNoChildren(S);
 +  ID.AddBoolean(S->isKeepAlive());
 +  VisitStmt(S->getStorage());
++}
++
++void clang::profileStableExpression(const Expr *Expression,const ASTContext &Context,
++    llvm::FoldingSetNodeID &ID,
++    llvm::function_ref<void(const Decl *,llvm::FoldingSetNodeID &)> Declaration,
++    llvm::function_ref<void(QualType,llvm::FoldingSetNodeID &)> Type,
++    llvm::function_ref<void(TemplateName,llvm::FoldingSetNodeID &)> Template,
++    llvm::function_ref<void(const TemplateArgument &,llvm::FoldingSetNodeID &)> Argument) {
++  StableExpressionProfiler Profiler(ID,Context,Declaration,Type,Template,Argument);
++  Profiler.Visit(Expression);
 +}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
 index 74209f579..239c51941 100644
