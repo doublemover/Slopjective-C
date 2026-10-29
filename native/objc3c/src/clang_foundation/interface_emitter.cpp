@@ -51,9 +51,9 @@ void AddDiagnostic(InterfaceEmissionArtifact &result, llvm::StringRef code,
 }
 
 bool IsExpressionLocalTag(const clang::TagDecl *declaration);
-std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context);
+std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context,bool *generic=nullptr);
 bool HasOnlyFactoryLocalTypes(clang::QualType type);
-bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context);
+bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context,bool *generic=nullptr);
 
 std::string CanonicalType(clang::QualType type,
                           const clang::ASTContext &context) {
@@ -842,14 +842,15 @@ class RuntimeDeclarationFinder final
 public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
-  bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false;
+  bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false, HasGenericFactoryArguments=false;
   void InspectArguments(llvm::ArrayRef<clang::TemplateArgument> arguments) {
     for (const auto &argument:arguments) {
       HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
-      HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_);
+      HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_,&HasGenericFactoryArguments);
     }
   }
   void InspectType(clang::QualType type) {
+    if(!type.isNull())FactoryTypeKey(type,context_,&HasGenericFactoryArguments);
     if (!type.isNull())
       if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl()))
         InspectArguments(record->getTemplateArgs().asArray());
@@ -857,12 +858,12 @@ public:
   bool VisitTypeLoc(clang::TypeLoc location) {InspectType(location.getType());return true;}
   bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
     HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
-    HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_);
+    HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_,&HasGenericFactoryArguments);
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgument(argument);
   }
   bool TraverseTemplateArgumentLoc(const clang::TemplateArgumentLoc &argument) {
     HasAddressArguments |= HasAddressTemplateArgument(argument.getArgument(),context_);
-    HasFactoryArguments |= HasFactoryTemplateArgument(argument.getArgument(),context_);
+    HasFactoryArguments |= HasFactoryTemplateArgument(argument.getArgument(),context_,&HasGenericFactoryArguments);
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgumentLoc(argument);
   }
   bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
@@ -2108,8 +2109,11 @@ bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
 // A direct deduced result belongs to its complete published factory body.
 // References/pointers and types originating in other factories remain separate.
 bool IsPublishedDeducedFactory(const clang::FunctionDecl *function) {
-  return function && PublishesFunctionBody(function) && function->getDefinition() &&
-         function->getDeclaredReturnType()->getContainedAutoType();
+  if(!function || !function->getDefinition() || !function->getDeclaredReturnType()->getContainedAutoType())return false;
+  if(PublishesFunctionBody(function))return true;
+  const auto *primary=function->getPrimaryTemplate();
+  return primary && function->getTemplateSpecializationKind()!=clang::TSK_ExplicitSpecialization &&
+         PublishesFunctionBody(primary->getTemplatedDecl());
 }
 
 const clang::TagDecl *PublishedFactoryResult(const clang::FunctionDecl *function) {
@@ -2149,6 +2153,24 @@ bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration) {
 
 // Public projections must retain the complete nominal factory origin, not only
 // an anonymous spelling or a layout shared by unrelated local declarations.
+bool GenericFactoryBindings(const clang::FunctionDecl *function,std::string &key) {
+  const auto &context=function->getASTContext();
+  auto add=[&](llvm::StringRef value){key+=std::to_string(value.size())+":"+value.str();};
+  if(const auto *arguments=function->getTemplateSpecializationArgs()) {
+    add("function");
+    for(const auto &argument:arguments->asArray())
+      if(!GenericArgumentKey(argument,context,key))return false;
+  }
+  for(const auto *scope=function->getDeclContext();scope;scope=scope->getParent())
+    if(const auto *parent=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(scope)) {
+      if(parent->isDependentContext())return false;
+      add(ReadInterfaceDeclarationStableId(parent->getSpecializedTemplate()));
+      for(const auto &argument:parent->getTemplateArgs().asArray())
+        if(!GenericArgumentKey(argument,context,key))return false;
+    }
+  return true;
+}
+
 const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
   if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag);record && record->isLambda())return nullptr;
   for(const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
@@ -2157,17 +2179,23 @@ const clang::FunctionDecl *FactoryResultOrigin(const clang::TagDecl *tag) {
         if(method->getParent()->isLambda() || IsExpressionLocalTag(method->getParent()))return nullptr;
       } else if(!IsTopLevel(function))return nullptr;
       const auto *result=PublishedFactoryResult(function);
-      return result && result->getCanonicalDecl()==tag->getCanonicalDecl() &&
-          !function->isTemplated() && function->isExternallyVisible() &&
-          !ReadNativeSymbolName(function).empty() ? function : nullptr;
+      if(!result || result->getCanonicalDecl()!=tag->getCanonicalDecl() ||
+          function->getType()->isDependentType() || !function->isExternallyVisible())return nullptr;
+      bool bound=!ReadNativeSymbolName(function).empty();
+      if(const auto *primary=function->getPrimaryTemplate())
+        bound |= !ReadNativeSymbolName(primary).empty() || !ReadNativeSymbolName(primary->getTemplatedDecl()).empty();
+      if(const auto *owner=TemplatePublicationOwner(function))bound |= !ReadNativeSymbolName(owner).empty();
+      std::string bindings;
+      return bound && GenericFactoryBindings(function,bindings) ? function : nullptr;
     }
   return nullptr;
 }
 
-std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context) {
+std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context,bool *generic) {
   struct Origins:clang::RecursiveASTVisitor<Origins> {
     const clang::ASTContext &context;
     std::string key;
+    bool generic=false;
     explicit Origins(const clang::ASTContext &context):context(context) {}
     bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
       return type.isNull() || clang::RecursiveASTVisitor<Origins>::TraverseType(type.getCanonicalType(),traverse_qualifier);
@@ -2176,8 +2204,11 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
       const auto *tag=type->getDecl();
       if(const auto *factory=FactoryResultOrigin(tag)) {
         const auto owner=ReadInterfaceDeclarationStableId(factory);
-        const auto identity=owner+":kind="+std::to_string(static_cast<unsigned>(tag->getTagKind()))+
+        auto identity=owner+":kind="+std::to_string(static_cast<unsigned>(tag->getTagKind()))+
             ":name="+tag->getNameAsString()+":discriminator="+std::to_string(context.getManglingNumber(tag));
+        std::string bindings;
+        if(!GenericFactoryBindings(factory,bindings))return false;
+        if(!bindings.empty()){generic=true;identity+=":bindings="+bindings;}
         key+=std::to_string(identity.size())+":"+identity;
       }
       if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag))
@@ -2186,6 +2217,7 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
     }
   } visitor(context);
   if(!type.isNull())visitor.TraverseType(type.getCanonicalType());
+  if(generic)*generic |= visitor.generic;
   return visitor.key;
 }
 
@@ -2207,13 +2239,13 @@ bool HasOnlyFactoryLocalTypes(clang::QualType type) {
   visitor.TraverseType(type);return visitor.valid;
 }
 
-bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context) {
+bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context,bool *generic) {
   if(argument.getKind()==clang::TemplateArgument::Type)
-    return !FactoryTypeKey(argument.getAsType(),context).empty();
+    return !FactoryTypeKey(argument.getAsType(),context,generic).empty();
+  bool found=false;
   if(argument.getKind()==clang::TemplateArgument::Pack)
-    return std::any_of(argument.pack_elements().begin(),argument.pack_elements().end(),
-        [&](const auto &element){return HasFactoryTemplateArgument(element,context);});
-  return false;
+    for(const auto &element:argument.pack_elements())found |= HasFactoryTemplateArgument(element,context,generic);
+  return found;
 }
 
 std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration) {
@@ -3584,6 +3616,9 @@ class TypeDependencyVisitor final
     if(partial->hasInit()) TraverseStmt(const_cast<clang::Expr *>(partial->getInit()));
   }
   void CheckFunctionTemplate(const clang::FunctionTemplateDecl *pattern) {
+    const auto previous_results=factory_results_;
+    auto restore_results=llvm::scope_exit([&]{factory_results_=previous_results;});
+    AllowPublishedFactoryResult(pattern->getTemplatedDecl());
     const auto locals = lambda_locals_;
     const bool previous = public_template_type_;
     public_template_type_=true;
@@ -3913,7 +3948,8 @@ class TypeDependencyVisitor final
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
         record && record->isLambda())
       return in_expression_ || factory_results_.count(record->getCanonicalDecl())
-          ? true : UnsupportedExpression("closure type escapes its expression context");
+          ? true : UnsupportedExpression("closure type escapes its expression context: "+
+              ReadInterfaceDeclarationStableId(llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext())));
     if (IsExpressionLocalTag(declaration))
       return (in_expression_ && IsLocalExpressionContext(declaration->getDeclContext())) ||
              factory_results_.count(declaration->getCanonicalDecl())
@@ -4048,6 +4084,12 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const std::string &source_root = {},
                            bool *uses_typed_keypaths = nullptr,
                            bool *uses_keypath_subscripts = nullptr) {
+  const auto first_diagnostic=result.diagnostics.size();
+  auto qualify_diagnostics=llvm::scope_exit([&] {
+    for(auto index=first_diagnostic;index<result.diagnostics.size();++index)
+      if(result.diagnostics[index].subject.empty())
+        result.diagnostics[index].subject=declaration->getQualifiedNameAsString();
+  });
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
                                 ReadInterfaceSPIGroup(declaration),
                                 source_root);
@@ -5459,6 +5501,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
   if (!llvm::isa<clang::NamespaceDecl>(representative)) {
     RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
+    if (arguments.HasGenericFactoryArguments)
+      identity.canonical_type_identity+=";cxx-generic-factory-projections:v1;";
     if (arguments.HasAddressArguments)
       identity.canonical_type_identity+=";cxx-address-template-arguments:v1;";
     if (arguments.HasFactoryArguments ||
@@ -6015,6 +6059,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxGenericFactoryProjectionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxGenericFactoryProjectionSemantic);
     if (HasCxxFactoryTemplateArgumentIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxFactoryTemplateArgumentSemantic);
     if (HasCxxFactoryTypeProjectionIdentity(declaration))
@@ -6208,6 +6254,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxGenericFactoryProjectionSemantic,
     kCxxFactoryTemplateArgumentSemantic,
     kCxxFactoryTypeProjectionSemantic,
     kCxxLocalFactoryResultSemantic,
@@ -6376,6 +6423,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxGenericFactoryProjectionSemantic,
     kCxxFactoryTemplateArgumentSemantic,
     kCxxFactoryTypeProjectionSemantic,
     kCxxLocalFactoryResultSemantic,

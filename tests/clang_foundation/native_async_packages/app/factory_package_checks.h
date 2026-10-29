@@ -35,6 +35,19 @@ int factory_package_checks() {
     if(owned.value.get()!=40 || copy.value.get()!=40 || NativeClosureFactories::State::live!=2)return 253;
   }
   if(NativeClosureFactories::State::live)return 254;
+  {
+    namespace Generic=NativeGenericFactoryProjections;
+    auto a=Generic::make(40);auto wide=Generic::make(42L);
+    auto member=Generic::Family<int>{}.make(2);auto method=Generic::Concrete{}.make(0);
+    Generic::Holder holder{a,member,method};Generic::Wrapped wrapped{a};
+    if(Generic::read(a)!=40 || Generic::read(wide)!=42 || holder.first.value+holder.second.value!=42 ||
+       wrapped.value.value!=40 || Generic::local()!=42 || Generic::provider_read(a)!=40 ||
+       Generic::provider_shared()!=&Generic::shared)return 255;
+    Generic::shared.value=42;if(Generic::provider_shared()->value!=42)return 225;
+    auto owned=Generic::provider_owned(40);auto copy=owned;auto moved=static_cast<Generic::Owned &&>(owned);
+    if(owned.get().value!=0 || copy.get().value!=40 || moved.get().value!=40 || NativeClosureFactories::State::live!=3)return 226;
+  }
+  if(NativeClosureFactories::State::live)return 227;
   return 0;
 }
 

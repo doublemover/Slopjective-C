@@ -1815,6 +1815,60 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestGenericFactoryProjections() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="generic-factory-projections.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.generic_factory_projections","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.generic_factory_projections","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      template<class T> auto make(T n){struct Local {T value;};return Local{n};}
+      template<class T> struct Family {auto make(T n) const {struct Local {T value;};return Local{n};}};
+      struct Concrete {template<class T> auto make(T n) const {struct Local {T value;};return Local{n};}};
+      using Integer=decltype(make(0));using Wide=decltype(make(0L));
+      using Member=decltype(Family<int>{}.make(0));using MemberWide=decltype(Family<long>{}.make(0L));
+      using Method=decltype(Concrete{}.make(0));
+      template<class T> struct Box {T value;};using Wrapped=Box<Integer>;
+      struct Holder {Integer first;Member second;Method third;};
+      inline int read(Integer value){return value.value;}
+      inline int read(Wide value){return value.value;}
+      inline Integer shared=make(40);
+      inline int local(){return []<class T>(T value){return value.value;}(make(42));}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-generic-factory-projections.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxGenericFactoryProjectionIdentity(find("Integer")) && HasCxxGenericFactoryProjectionIdentity(find("Member")));
+    assert(HasCxxGenericFactoryProjectionIdentity(find("local")));
+    assert(find("Integer").canonical_type_identity!=find("Wide").canonical_type_identity);
+    assert(find("Member").canonical_type_identity!=find("MemberWide").canonical_type_identity);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxGenericFactoryProjectionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxGenericFactoryProjectionIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("template<class T> auto hidden(T n){struct Local{T value;};return Local{n};} using Public=decltype(hidden(0));", "excluded-generic-factory.cpp",{"Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestFactoryTemplateArguments() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="factory-template-arguments.cpp",
@@ -1937,7 +1991,7 @@ void TestFactoryTypeProjections() {
     const std::string generic_owner="template<class T> struct Family {auto make(T n) {struct Local {T value;};return Local{n};}};";
     assert(emit(generic_owner).success);
     auto generic_origin=emit(generic_owner+"using Public=decltype(Family<int>{}.make(42));");
-    assert(!generic_origin.success);
+    assert(generic_origin.success && generic_origin.sidecar_json.find(kCxxGenericFactoryProjectionSemantic)!=std::string::npos);
     auto closure_origin=emit("inline auto outer(){return [](int n){struct Local{int value;};return Local{n};};} using Public=decltype(outer()(42));");
     assert(!closure_origin.success);
     auto excluded=emit("inline auto secret(){struct Local{int value;};return Local{42};} using Public=decltype(secret());", "excluded-factory.cpp",{"Public"});
@@ -5046,6 +5100,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestGenericFactoryProjections();
   TestFactoryTemplateArguments();
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
