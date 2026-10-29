@@ -1975,3 +1975,7 @@ void *NativeStandardCoroutines::provider_address(std::coroutine_handle<> handle)
 int NativeStandardCoroutines::provider_frames(){return Counts::frames;}
 
 __attribute__((preserve_most,noinline)) int NativeDeclarationAttributes::provider_preserved(int value){return value+2;}
+
+void NativeDeclarationAttributes::deallocate(void *value){delete static_cast<int *>(value);}
+void NativeDeclarationAttributes::deallocate_other(void *value){delete static_cast<int *>(value);}
+int *NativeDeclarationAttributes::allocated_value(unsigned long value){return new int(static_cast<int>(value));}

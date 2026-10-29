@@ -27,10 +27,12 @@ keypath **2.6** together:
 - Native interface attributes retain allocator size/alignment, nonnull, format
   and format-argument payloads and supported Linux calling conventions. The
   declaration printer reconstructs convention bits stored only in callable
-  types. Allocator/deallocator reference forms still require dependency support.
+  types. Allocator/deallocator references bind the deallocator declaration and
+  pointer parameter index, enforce export visibility and replay source-free.
 
 Authored witnesses cover conditional writes and expiry, forward/reverse strong
-aliases, nontrivial key-path values and throwing copy/setter cleanup, raw-frame
+aliases, nontrivial key-path values, lvalue/temporary subscript assignment and
+throwing copy/setter cleanup, raw-frame
 and task group callbacks, allocator/format fingerprint mutations and a provider
 calling-convention boundary. Validation is in progress.
 

@@ -4875,7 +4875,7 @@ index e84e05e8e..8fd1f6dc1 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..aaf57cf7b 100644
+index 6a0d127fb..a4782e6d0 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -5039,7 +5039,7 @@ index 6a0d127fb..aaf57cf7b 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7456,19 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7456,23 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -5047,9 +5047,13 @@ index 6a0d127fb..aaf57cf7b 100644
 +        if ((IsKeyPath || IsIsolation) && ov->getType()->isObjCRetainableType())
 +          opaqueData = OVMA::bind(CGF, ov, RValue::get(
 +              emitObjC3RetainableOperandSnapshot(CGF, ov->getSourceExpr())));
-+        else if (IsKeyPath && ov->getType()->isRecordType()) {
++        else if (IsKeyPath && ov->getType()->isRecordType() &&
++                 (!ov->getType()->getAsCXXRecordDecl() ||
++                  ov->getType()->getAsCXXRecordDecl()->isTriviallyCopyable())) {
 +          // Aggregate OVEs normally alias their source storage. Key-path
 +          // operands are values and must survive mutation by later arguments.
++          // Nontrivial C++ snapshots are already materialized xvalues; bind
++          // their existing storage and native cleanup instead of copying again.
 +          Address Snapshot = CGF.CreateMemTemp(ov->getType(), "objc3.keypath.value");
 +          CGF.EmitAnyExprToMem(ov->getSourceExpr(), Snapshot,
 +                              ov->getType().getQualifiers(), true);

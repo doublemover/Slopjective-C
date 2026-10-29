@@ -1862,6 +1862,13 @@ void TestNativeDeclarationAttributes() {
     auto allocation=emit(changed);assert(allocation.success && allocation.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     changed=source;at=changed.find("format(printf,1,2)");assert(at!=std::string::npos);changed.replace(at,18,"format(printf,1,0)");
     auto format=emit(changed);assert(format.success && format.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("malloc(deallocate,1)");assert(at!=std::string::npos);
+    changed.replace(at,std::string("malloc(deallocate,1)").size(),"malloc(deallocate_other,1)");
+    auto deallocator=emit(changed);assert(deallocator.success && deallocator.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden_deallocator=emit("namespace Private {void release(void *);}"
+        "namespace NativeDeclarationAttributes {__attribute__((malloc(Private::release,1))) void *allocate(unsigned long);}");
+    assert(!hidden_deallocator.success && std::any_of(hidden_deallocator.diagnostics.begin(),hidden_deallocator.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC156";}));
     // Dependent attribute expressions must retain their real API dependencies.
     auto denied=emit("namespace Private {inline constexpr int alignment=32;}\n"
         "namespace NativeDeclarationAttributes {template<class T>struct alignas(sizeof(T)+Private::alignment) Bad {T value;};}\n");

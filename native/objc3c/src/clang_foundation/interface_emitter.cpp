@@ -72,10 +72,6 @@ bool IsForeignImportAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  // An explicit allocator deallocator is a declaration dependency, not just
-  // an allocator hint. Keep that form gated until its owner can be published.
-  if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute))
-    return !allocator->getDeallocator();
   return llvm::isa<clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
@@ -2196,7 +2192,12 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
   else if(const auto *visibility=llvm::dyn_cast<clang::TypeVisibilityAttr>(attribute))
     add(std::to_string(visibility->getVisibility()));
   auto parameter=[&](clang::ParamIdx index){add(index.isValid()?std::to_string(index.getASTIndex()):"none");};
-  if (const auto *size=llvm::dyn_cast<clang::AllocSizeAttr>(attribute)) {
+  if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute)) {
+    if (auto *deallocator=allocator->getDeallocator()) {
+      DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+      add(identity.Get(deallocator));parameter(allocator->getDeallocatorPtrArgIndex());
+    }
+  } else if (const auto *size=llvm::dyn_cast<clang::AllocSizeAttr>(attribute)) {
     parameter(size->getElemSizeParam());parameter(size->getNumElemsParam());
   } else if (const auto *alignment=llvm::dyn_cast<clang::AllocAlignAttr>(attribute)) parameter(alignment->getParamIndex());
   else if (const auto *nonnull=llvm::dyn_cast<clang::NonNullAttr>(attribute)) {
@@ -3659,7 +3660,7 @@ class TypeDependencyVisitor final
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
      for (const auto *attribute:declaration->attrs())
-       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr>(attribute))
+       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
      if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
        CheckDeclarationAttributes(pattern->getTemplatedDecl());

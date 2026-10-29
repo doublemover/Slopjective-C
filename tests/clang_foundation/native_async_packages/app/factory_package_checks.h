@@ -32,6 +32,9 @@ int factory_package_checks() {
   {
     namespace Attr=NativeDeclarationAttributes;
     int contract_value=40;
+    int *allocated=Attr::allocated_value(42);
+    const int allocated_value=*allocated;Attr::deallocate(allocated);
+    if(allocated_value!=42)return 181;
     if(Attr::provider_preserved(contract_value)!=42 || Attr::required_template(&contract_value)!=40)return 180;
     static_assert(sizeof(Attr::Packet)==5 && alignof(Attr::Packet)==1);
     static_assert(alignof(Attr::FieldAligned)==32 && sizeof(Attr::FieldAligned)==64);

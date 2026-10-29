@@ -36,6 +36,14 @@ static void keypath_cxx_value_contract() {
       PathOwnedValue value(43);KeyPathSet(@keypath(RuntimeCppPathNode,owned),node,value);
       assert(PathOwnedValue::live==baseline+1 && KeyPathGet(path,node)==43);
     }
+    {
+      auto whole=@keypath(RuntimeCppPathNode,owned);
+      PathOwnedValue value(47);node[whole]=value;
+      assert(node[whole].value==47);
+      assert(PathOwnedValue::live==baseline+1);
+      node[whole]=PathOwnedValue(43);
+      assert(KeyPathGet(path,node)==43 && PathOwnedValue::live==baseline+1);
+    }
     PathOwnedValue::fail_set=true;bool failed=false;
     try {KeyPathSet(path,node,44);}catch(int value){assert(value==29);failed=true;}
     PathOwnedValue::fail_set=false;assert(failed && PathOwnedValue::live==baseline && KeyPathGet(path,node)==43);

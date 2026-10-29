@@ -551,13 +551,14 @@ void owned_callable_spawn_contract(objc3_executor_t *source) {
   assert(mismatch && live.load()==0);
 }
 
+OBJC_TASK_JOIN_DECLARE(raw_group_join_int,int);
 struct RawGroupWork {
   static inline int entered=0;
   std::shared_ptr<int> owner;
   int operator()(objc3::task_group_handle group) __objc3_async_frame {
     ++entered;
     auto child=objc3_task_spawn_in_group<int>(group,[value=*owner]() -> int __objc3_async_frame {return value;});
-    return co_await child;
+    return __objc3_await raw_group_join_int(child.native_handle());
   }
 };
 void raw_group_adapter_contract(objc3_executor_t *source) {

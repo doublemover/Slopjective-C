@@ -45,6 +45,9 @@ inline int parameter([[maybe_unused]] int value){return value+2;}
 [[noreturn]] inline void stop(){__builtin_trap();}
 __attribute__((noreturn)) inline void terminate(){__builtin_trap();}
 __attribute__((malloc,alloc_size(1),alloc_align(2),returns_nonnull)) void *allocate(unsigned long size,unsigned long alignment);
+void deallocate(void *value);
+void deallocate_other(void *value);
+__attribute__((malloc(deallocate,1),returns_nonnull)) int *allocated_value(unsigned long value);
 __attribute__((assume_aligned(32,8))) void *aligned_offset(void *value);
 __attribute__((nonnull(1))) int required(const int *value);
 __attribute__((format(printf,1,2))) int formatted(const char *format,...);

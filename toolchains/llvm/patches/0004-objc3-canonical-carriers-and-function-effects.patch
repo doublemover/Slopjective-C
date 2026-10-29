@@ -45686,10 +45686,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..f8d648774
+index 000000000..08c710fae
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1458 @@
+@@ -0,0 +1,1473 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -46667,6 +46667,21 @@ index 000000000..f8d648774
 +  }
 +  if (Value.isInvalid())
 +    return ExprError();
++  if (const auto *Record = Value.get()->getType()->getAsCXXRecordDecl();
++      Record && !Record->isTriviallyCopyable()) {
++    // An opaque prvalue would incorrectly elide the setter parameter's copy
++    // from this already-materialized snapshot. Keep an xvalue designating the
++    // temporary so ordinary overload resolution selects its copy/move and
++    // native cleanup owns the snapshot through the full expression.
++    if (!isa<CXXBindTemporaryExpr>(Value.get()))
++      Value = S.MaybeBindToTemporary(Value.get());
++    if (Value.isInvalid())
++      return ExprError();
++    Value = S.TemporaryMaterializationConversion(Value.get());
++    if (Value.isInvalid())
++      return ExprError();
++    S.Cleanup.setExprNeedsCleanups(true);
++  }
 +  auto *Capture = new (S.Context) OpaqueValueExpr(
 +      Source->getExprLoc(), Value.get()->getType(), Value.get()->getValueKind(),
 +      Value.get()->getObjectKind(), Value.get());
@@ -50636,7 +50651,7 @@ index 000000000..43084cdf3
 +}
 +#endif
 diff --git a/clang/lib/Sema/SemaPseudoObject.cpp b/clang/lib/Sema/SemaPseudoObject.cpp
-index 667366709..097b80f2c 100644
+index 667366709..7162be258 100644
 --- a/clang/lib/Sema/SemaPseudoObject.cpp
 +++ b/clang/lib/Sema/SemaPseudoObject.cpp
 @@ -29,7 +29,9 @@
@@ -50684,7 +50699,7 @@ index 667366709..097b80f2c 100644
  
    // Load the value.
    ExprResult result = buildGet();
-@@ -1008,6 +1017,12 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
+@@ -1008,6 +1017,25 @@ ObjCSubscriptOpBuilder::buildAssignmentOperation(Scope *Sc,
    if (opcode != BO_Assign && !findAtIndexGetter())
      return ExprError();
  
@@ -50694,10 +50709,23 @@ index 667366709..097b80f2c 100644
 +    if (Loaded.isInvalid()) return ExprError();
 +    RHS = Loaded.get();
 +  }
++  if (isKeyPath() && RHS->isPRValue()) {
++    if (const auto *Record = RHS->getType()->getAsCXXRecordDecl();
++        Record && !Record->isTriviallyCopyable()) {
++      ExprResult Materialized = RHS;
++      if (!isa<CXXBindTemporaryExpr>(RHS))
++        Materialized = S.MaybeBindToTemporary(RHS);
++      if (Materialized.isInvalid()) return ExprError();
++      Materialized = S.TemporaryMaterializationConversion(Materialized.get());
++      if (Materialized.isInvalid()) return ExprError();
++      RHS = Materialized.get();
++      S.Cleanup.setExprNeedsCleanups(true);
++    }
++  }
    ExprResult result =
    PseudoOpBuilder::buildAssignmentOperation(Sc, opcLoc, opcode, LHS, RHS);
    if (result.isInvalid()) return ExprError();
-@@ -1027,8 +1042,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
+@@ -1027,8 +1055,17 @@ Expr *ObjCSubscriptOpBuilder::rebuildAndCaptureObject(Expr *syntacticBase) {
  
    // Capture base expression in an OVE and rebuild the syntactic
    // form to use the OVE as its base expression.
@@ -50717,7 +50745,7 @@ index 667366709..097b80f2c 100644
  
    syntacticBase =
        Rebuilder(S, [=](Expr *, unsigned Idx) -> Expr * {
-@@ -1066,6 +1090,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
+@@ -1066,6 +1103,7 @@ static void CheckKeyForObjCARCConversion(Sema &S, QualType ContainerT,
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
@@ -50725,7 +50753,7 @@ index 667366709..097b80f2c 100644
    if (AtIndexGetter)
      return true;
  
-@@ -1165,6 +1190,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
+@@ -1165,6 +1203,13 @@ bool ObjCSubscriptOpBuilder::findAtIndexGetter() {
  }
  
  bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
@@ -50739,7 +50767,7 @@ index 667366709..097b80f2c 100644
    if (AtIndexSetter)
      return true;
  
-@@ -1296,6 +1328,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
+@@ -1296,6 +1341,10 @@ bool ObjCSubscriptOpBuilder::findAtIndexSetter() {
  // Get the object at "Index" position in the container.
  // [BaseExpr objectAtIndexedSubscript : IndexExpr];
  ExprResult ObjCSubscriptOpBuilder::buildGet() {
@@ -50750,7 +50778,7 @@ index 667366709..097b80f2c 100644
    if (!findAtIndexGetter())
      return ExprError();
  
-@@ -1325,6 +1361,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
+@@ -1325,6 +1374,18 @@ ExprResult ObjCSubscriptOpBuilder::buildSet(Expr *op, SourceLocation opcLoc,
                                             bool captureSetValueAsResult) {
    if (!findAtIndexSetter())
      return ExprError();
@@ -50769,7 +50797,7 @@ index 667366709..097b80f2c 100644
    if (AtIndexSetter)
      S.DiagnoseUseOfDecl(AtIndexSetter, GenericLoc);
    QualType receiverType = InstanceBase->getType();
-@@ -1484,7 +1532,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
+@@ -1484,7 +1545,9 @@ ExprResult SemaPseudoObject::checkIncDec(Scope *Sc, SourceLocation opcLoc,
          = dyn_cast<ObjCPropertyRefExpr>(opaqueRef)) {
      ObjCPropertyOpBuilder builder(SemaRef, refExpr, false);
      return builder.buildIncDecOperation(Sc, opcLoc, opcode, op);

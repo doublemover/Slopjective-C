@@ -245,8 +245,8 @@ static inline objc3_task_t *objc3_task_detached(objc3_task_throwing_work work)
 }
 #endif
 
-#ifndef __cplusplus
-/* Declare a typed native await entry for an existing C task handle. The result
+/* Declare a typed native await entry for an existing C task handle in either
+ * source language. Native-frame C++ bodies use this same logical call ABI. The result
  * is validated against the task's canonical descriptor before copy-out; a
  * mismatched declaration reports TYPE_MISMATCH. Typedefs support records,
  * objects and Blocks without erasing their native ownership/result kind.
@@ -259,6 +259,7 @@ static inline objc3_task_t *objc3_task_detached(objc3_task_throwing_work work)
   extern result_type name(objc3_task_t *) __objc3_async_frame \
       __objc3_throws(error_type) __asm__("__objc3_task_join_frame")
 
+#ifndef __cplusplus
 /* Declare completion-order native iteration returning Optional(T). Typedefs
  * support record, object and Block element types. The compiler supplies exact
  * Optional layout and ownership operations. Construction retains the group
