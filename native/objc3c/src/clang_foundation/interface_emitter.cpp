@@ -859,11 +859,55 @@ bool IsExpressionLocalTag(const clang::TagDecl *declaration) {
 // Bind spelling, typed native nodes and every resolved reference. Text alone
 // cannot distinguish identically spelled defaults that select different overloads.
 // Length delimiters keep user strings from introducing synthetic identity fields.
-const clang::Stmt *PublishedFunctionBody(const clang::FunctionDecl *function) {
+const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::FunctionDecl *function) {
+  if (!function) return nullptr;
   const auto *type=clang::getObjC3CallableFunctionType(function);
-  if (type && type->getObjC3FunctionEffects().Async)
-    if (const auto *coroutine=clang::getObjC3CoroutineBody(function))
-      return coroutine->getBody();
+  if (type && type->getObjC3FunctionEffects().Async) return nullptr;
+  return llvm::dyn_cast_or_null<clang::CoroutineBodyStmt>(function->getBody());
+}
+
+// Keep the written body independent of compiler-generated frame temporaries.
+// Resolved promise/awaiter customization points get a separate dependency key.
+std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::FunctionDecl *function) {
+  struct References final : clang::RecursiveASTVisitor<References> {
+    std::map<std::string,const clang::NamedDecl *> declarations;
+    void Add(const clang::NamedDecl *declaration) {
+      if (!declaration || declaration->isImplicit()) return;
+      if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+        if (function->getBuiltinID()) return;
+      for (auto *scope=declaration->getDeclContext();scope;scope=scope->getParent()) {
+        if (scope->isFunctionOrMethod()) return;
+        if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(scope))
+          if (space->isStdNamespace()) return;
+      }
+      declarations.emplace(ReadInterfaceDeclarationStableId(declaration),declaration);
+    }
+    bool VisitCallExpr(clang::CallExpr *expression) {Add(expression->getDirectCallee());return true;}
+    bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {Add(expression->getConstructor());return true;}
+  } references;
+  if (const auto *body=PublishedCxxCoroutine(function))
+    references.TraverseStmt(const_cast<clang::CoroutineBodyStmt *>(body));
+  std::vector<const clang::NamedDecl *> result;
+  for (const auto &[key,declaration]:references.declarations) result.push_back(declaration);
+  return result;
+}
+
+std::string CxxCoroutineContract(const clang::FunctionDecl *function,
+                                  const clang::ASTContext &context) {
+  const auto *body=PublishedCxxCoroutine(function);
+  if (!body) return {};
+  std::string key=body->hasDependentPromiseType() ? "dependent-promise" :
+      CanonicalType(body->getPromiseDecl()->getType(),context);
+  for (const auto *declaration:CxxCoroutineReferences(function)) {
+    const auto id=ReadInterfaceDeclarationStableId(declaration);
+    key+=std::to_string(id.size())+":"+id;
+  }
+  return ComputeInterfaceSourceSha256(key);
+}
+
+const clang::Stmt *PublishedFunctionBody(const clang::FunctionDecl *function) {
+  if (const auto *body=llvm::dyn_cast_or_null<clang::CoroutineBodyStmt>(function->getBody()))
+    return body->getBody();
   return function->getBody();
 }
 
@@ -887,6 +931,7 @@ class RuntimeDeclarationFinder final
 public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
+  bool HasCxxCoroutines=false;
   bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false, HasFactoryValueArguments=false;
   FactoryTypeFeatures FactoryTypes;
   void InspectArguments(llvm::ArrayRef<clang::TemplateArgument> arguments) {
@@ -959,6 +1004,7 @@ public:
     auto restore=llvm::scope_exit([&]{function_=previous;});
     if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
       function_=found->second;
+      HasCxxCoroutines |= PublishedCxxCoroutine(function_)!=nullptr;
       statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
     }
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseStmt(statement,queue);
@@ -980,6 +1026,7 @@ public:
         if (parameter->hasDefaultArg() && !parameter->hasUninstantiatedDefaultArg())
           TraverseStmt(const_cast<clang::Expr *>(parameter->getDefaultArg()));
       if (PublishesFunctionBody(function)) {
+        HasCxxCoroutines |= PublishedCxxCoroutine(function)!=nullptr;
         if (const auto *constructor=llvm::dyn_cast<clang::CXXConstructorDecl>(function))
           for (const auto *initializer:constructor->inits())
             if (initializer->isWritten()) TraverseStmt(initializer->getInit());
@@ -1572,6 +1619,7 @@ public:
     auto restore=llvm::scope_exit([&]{function_=previous;});
     if(auto found=lambda_bodies_.find(statement);found!=lambda_bodies_.end()) {
       function_=found->second;
+      if (auto contract=CxxCoroutineContract(function_,context_); !contract.empty()) Add(contract);
       statement=const_cast<clang::Stmt *>(PublishedFunctionBody(function_));
     }
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseStmt(statement,queue);
@@ -1831,13 +1879,21 @@ public:
   bool TraverseCoreturnStmt(clang::CoreturnStmt *statement,
                             DataRecursionQueue * = nullptr) {
     const auto *type=clang::getObjC3CallableFunctionType(function_);
-    if (type && type->getObjC3FunctionEffects().Async)
+    if ((type && type->getObjC3FunctionEffects().Async) || PublishedCxxCoroutine(function_))
       return WalkUpFromCoreturnStmt(statement) && TraverseStmt(statement->getOperand());
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::
         TraverseCoreturnStmt(statement,nullptr);
   }
+  bool TraverseCoyieldExpr(clang::CoyieldExpr *expression,
+                           DataRecursionQueue * = nullptr) {
+    if (PublishedCxxCoroutine(function_))
+      return expression->getWrittenOperand() && WalkUpFromCoyieldExpr(expression) && TraverseStmt(expression->getWrittenOperand());
+    return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseCoyieldExpr(expression,nullptr);
+  }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
+    if (PublishedCxxCoroutine(function_))
+      return WalkUpFromCoawaitExpr(expression) && TraverseStmt(expression->getOperand());
     if (const auto *source=PublishedAwaitSource(expression,function_,context_))
       return WalkUpFromCoawaitExpr(expression) &&
              TraverseStmt(const_cast<clang::Expr *>(source));
@@ -2037,6 +2093,7 @@ std::string FunctionDefinitionContract(const clang::FunctionDecl *function,
         identity.Add(CanonicalType(clang::QualType(initializer->getBaseClass(), 0), context));
       identity.Add(identity.Get(initializer->getInit()));
     }
+  if (auto contract=CxxCoroutineContract(definition,context); !contract.empty()) identity.Add(contract);
   return identity.Get(const_cast<clang::Stmt *>(PublishedFunctionBody(definition)));
 }
 
@@ -3646,6 +3703,12 @@ class TypeDependencyVisitor final
                     "declaration expression references a non-public or unresolved dependency",
                     target->getQualifiedNameAsString());
   }
+  void CheckCxxCoroutine(const clang::FunctionDecl *function) {
+    if (const auto *body=PublishedCxxCoroutine(function)) {
+      if (!body->hasDependentPromiseType()) TraverseType(context_.getCanonicalType(body->getPromiseDecl()->getType()));
+      for (const auto *reference:CxxCoroutineReferences(function)) CheckExpressionReference(reference);
+    }
+  }
   void CheckBody(const clang::FunctionDecl *function) {
     const auto *definition = function->getDefinition();
     if (!definition) return;
@@ -3655,6 +3718,7 @@ class TypeDependencyVisitor final
       return;
     }
     body_function_ = definition;
+    CheckCxxCoroutine(definition);
     const auto *type=clang::getObjC3CallableFunctionType(definition);
     UsesCxxTaskRuntime |= type && type->getObjC3FunctionEffects().Async &&
                          !type->getObjC3FunctionEffects().AsyncFrame;
@@ -4006,6 +4070,7 @@ class TypeDependencyVisitor final
         inserted_context=lambda_contexts_.insert(enclosing_context).second;
       }
       body_function_=found->second;
+      CheckCxxCoroutine(body_function_);
       statement=const_cast<clang::Stmt *>(PublishedFunctionBody(body_function_));
     }
     const bool previous = in_expression_; in_expression_ = true;
@@ -4015,7 +4080,7 @@ class TypeDependencyVisitor final
   bool TraverseCoreturnStmt(clang::CoreturnStmt *statement,
                             DataRecursionQueue * = nullptr) {
     const auto *type=clang::getObjC3CallableFunctionType(body_function_);
-    if (type && type->getObjC3FunctionEffects().Async)
+    if ((type && type->getObjC3FunctionEffects().Async) || PublishedCxxCoroutine(body_function_))
       return WalkUpFromCoreturnStmt(statement) && TraverseStmt(statement->getOperand());
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::
         TraverseCoreturnStmt(statement,nullptr);
@@ -4026,8 +4091,19 @@ class TypeDependencyVisitor final
     // written body. Nested coroutine callables need their own body contract.
     return UnsupportedExpression("nested coroutine body has no published callable context");
   }
+  bool TraverseCoyieldExpr(clang::CoyieldExpr *expression,
+                           DataRecursionQueue * = nullptr) {
+    if (PublishedCxxCoroutine(body_function_)) {
+      const auto *operand=expression->getWrittenOperand();
+      if (!operand) return UnsupportedExpression("coroutine yield has no recoverable written operand");
+      return WalkUpFromCoyieldExpr(expression) && TraverseStmt(const_cast<clang::Expr *>(operand));
+    }
+    return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseCoyieldExpr(expression,nullptr);
+  }
   bool TraverseCoawaitExpr(clang::CoawaitExpr *expression,
                            DataRecursionQueue * = nullptr) {
+    if (PublishedCxxCoroutine(body_function_))
+      return WalkUpFromCoawaitExpr(expression) && TraverseStmt(expression->getOperand());
     if (const auto *source=PublishedAwaitSource(expression,body_function_,context_)) {
       const auto *type=clang::getObjC3AsyncCalleeFunctionType(source);
       UsesCxxTaskRuntime |= !clang::getObjC3AwaitSourceExpression(expression) ||
@@ -5719,6 +5795,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
   if (!llvm::isa<clang::NamespaceDecl>(representative)) {
     RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
+    if (arguments.HasCxxCoroutines)
+      identity.canonical_type_identity+=";cxx-coroutine-bodies:v1;";
     if (arguments.FactoryTypes.nested)
       identity.canonical_type_identity+=";cxx-nested-factory-types:v1;";
     if (arguments.FactoryTypes.lambda_result)
@@ -6175,6 +6253,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
   llvm::raw_string_ostream source(result.source_bytes);
+  for (auto *root:collector.RootDeclarations()) {
+    RuntimeDeclarationFinder finder(context);VisitPublishedRuntimeContracts(root,finder);
+    if (finder.HasCxxCoroutines) {source << "#include <coroutine>\n";break;}
+  }
   if (collector.UsesCxxAsyncBodies())
     source << "#include <objc3c/runtime/objc3_task.hpp>\n";
   else if (collector.UsesRuntimeFrame())
@@ -6290,6 +6372,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxCoroutineBodyIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxCoroutineBodySemantic);
     if (HasForeignImportAttributeIdentity(declaration))
       sidecar.required_semantics.push_back(kForeignImportAttributeSemantic);
     if (HasCxxNestedFactoryTypeIdentity(declaration))
@@ -6495,6 +6579,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxCoroutineBodySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -6669,6 +6754,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxCoroutineBodySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,

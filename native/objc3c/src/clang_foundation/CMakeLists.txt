@@ -252,6 +252,7 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation clangTooling)
   target_compile_definitions(objc3_interface_emitter_test PRIVATE
+    OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages"
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
     OBJC3_INTERFACE_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
   add_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)

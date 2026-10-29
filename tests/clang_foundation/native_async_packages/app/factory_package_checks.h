@@ -3,6 +3,28 @@
 
 int factory_package_checks() {
   {
+    namespace Custom=NativeCustomCoroutines;
+    if(Custom::Counts::frames || Custom::Counts::values)return 201;
+    {
+      auto transformed=Custom::provider_task(40);
+      if(Custom::provider_frames()!=1 || transformed.run()!=42 || transformed.error())return 202;
+      auto yielded=Custom::generic(40L);
+      if(!yielded.resume() || yielded.value()!=40 || Custom::Counts::values!=1)return 203;
+      if(yielded.run()!=42 || Custom::Counts::values)return 204;
+      Custom::Worker worker{40};auto member=worker.run(2);
+      auto closure=Custom::closure(40);auto called=closure(2);
+      if(member.run()!=42 || called.run()!=42)return 205;
+      auto throwing=Custom::throwing();throwing.run();
+      if(throwing.error()!=73 || Custom::Counts::values)return 206;
+      {auto cancelled=Custom::transformed(40);cancelled.resume();if(Custom::Counts::values!=1)return 207;}
+      if(Custom::Counts::values)return 208;
+      Custom::Counts::fail_allocation=true;
+      auto failed=Custom::provider_task(40);Custom::Counts::fail_allocation=false;
+      if(failed.frame)return 209;
+    }
+    if(Custom::provider_frames() || Custom::Counts::values || Custom::Counts::destroyed!=6)return 210;
+  }
+  {
     namespace Projection=NativeFactoryTypeProjections;
     auto a=Projection::first(40);auto b=Projection::second(2);auto c=Projection::chosen(0);
     Projection::Reader reader=static_cast<Projection::Reader>(&Projection::read);

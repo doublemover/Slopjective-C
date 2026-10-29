@@ -360,7 +360,8 @@
     "NativeClosureResultProjections",
     "NativeLambdaFactoryResults",
     "NativeNestedFactoryTypes",
-    "NativeForeignAttributes"
+    "NativeForeignAttributes",
+    "NativeCustomCoroutines"
   ],
   "dependencies": []
 }

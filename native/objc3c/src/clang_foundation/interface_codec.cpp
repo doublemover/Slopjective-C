@@ -477,6 +477,14 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_cxx_coroutine_bodies=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxCoroutineBodyIdentity);
+  const bool cxx_coroutine_body_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxCoroutineBodySemantic)!=sidecar.required_semantics.end();
+  const bool cxx_coroutine_body_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxCoroutineBodyIdentity(d) || d.kind!="Namespace";});
+  if (has_cxx_coroutine_bodies!=cxx_coroutine_body_capability || !cxx_coroutine_body_owners)
+    return Invalid("C++ coroutine body identities and required capability must agree");
   const bool has_foreign_import_attributes=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasForeignImportAttributeIdentity);
   const bool foreign_import_attribute_capability=std::find(sidecar.required_semantics.begin(),

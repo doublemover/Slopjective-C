@@ -1,3 +1,4 @@
+#include "custom_coroutines.h"
 #if defined(OBJC3_FACTORY_PACKAGE_FOCUSED)
 #include "factory_state.h"
 #include "factory_type_projections.h"
@@ -1945,3 +1946,6 @@ namespace NativeEffectLambdas {
 #include "foreign_import_attributes.h"
 
 #endif
+
+NativeCustomCoroutines::Task<int> NativeCustomCoroutines::provider_task(int value){return transformed(value);}
+int NativeCustomCoroutines::provider_frames(){return Counts::frames;}

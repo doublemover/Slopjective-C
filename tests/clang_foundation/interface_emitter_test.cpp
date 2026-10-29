@@ -1815,6 +1815,66 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestCustomCoroutineBodies() {
+  const auto header=std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/custom_coroutines.h";
+  std::ifstream input(header);assert(input);
+  const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text,const char *filename="custom-coroutines.mm",
+                  const std::vector<std::string> &exports=std::vector<std::string>{"NativeCustomCoroutines"}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.custom_coroutines","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.custom_coroutines","test",{},{},{},exports);
+    };
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    assert(first.source_bytes.find("#include <coroutine>")!=std::string::npos);
+    assert(first.source_bytes.find("co_yield")!=std::string::npos);
+    assert(first.source_bytes.find("co_await")!=std::string::npos);
+    assert(first.source_bytes.find("__coro_frame")==std::string::npos);
+    auto replay=emit(first.source_bytes);
+    for(const auto &d:replay.diagnostics)std::fprintf(stderr,"REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    assert(replay.source_bytes==first.source_bytes);
+    auto relocated=emit("\n\n"+source,"relocated-custom-coroutines.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasCxxCoroutineBodyIdentity));
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxCoroutineBodySemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxCoroutineBodyIdentity);
+    owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto changed=source;auto at=changed.find("error=73");assert(at!=std::string::npos);changed.replace(at,8,"error=74");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    // Ordinary lookup can select a global await operator absent from the
+    // written body. Export policy applies to that resolved customization too.
+    auto private_awaiter=source;
+    const std::string declaration="inline NumberAwaiter operator co_await(Token token) {return {token.value};}";
+    at=private_awaiter.find(declaration);assert(at!=std::string::npos);
+    private_awaiter.replace(at,declaration.size(),
+        "} NativeCustomCoroutines::NumberAwaiter operator co_await(NativeCustomCoroutines::Token); namespace NativeCustomCoroutines {");
+    auto excluded_awaiter=emit(private_awaiter);assert(!excluded_awaiter.success);
+    assert(std::any_of(excluded_awaiter.diagnostics.begin(),excluded_awaiter.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    // Promise lookup must not launder a private customization point merely
+    // because its invocation was synthesized by coroutine lowering.
+    auto private_source=source;
+    at=private_source.find("void unhandled_exception(){error=73;}");assert(at!=std::string::npos);
+    private_source.replace(at,std::string("void unhandled_exception(){error=73;}").size(),
+        "void unhandled_exception(){error=NativePrivate::failure();}");
+    private_source="namespace NativePrivate {int failure();}\n"+private_source;
+    auto denied=emit(private_source);assert(!denied.success);
+    assert(std::any_of(denied.diagnostics.begin(),denied.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestForeignImportAttributes() {
   auto emit=[](const std::string &source,const char *file="foreign-attributes.mm") {
     auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
@@ -5533,6 +5593,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestCustomCoroutineBodies();
   TestForeignImportAttributes();
   TestNestedFactoryTypes();
   TestLambdaFactoryResults();

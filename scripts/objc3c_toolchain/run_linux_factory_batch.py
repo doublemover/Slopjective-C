@@ -102,7 +102,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                     'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
                     'NativeFactoryValueArguments', 'NativeClosureResultProjections',
                     'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
-                    'NativeForeignAttributes']
+                    'NativeForeignAttributes', 'NativeCustomCoroutines']
                 built = work / 'built'
                 module = built / 'modules' / MODULE
                 module.mkdir(parents=True)

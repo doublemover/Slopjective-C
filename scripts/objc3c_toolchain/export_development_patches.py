@@ -194,6 +194,8 @@ PACKETS = {
         "clang/include/clang/Serialization/ASTBitCodes.h",
         "clang/include/clang/Serialization/TypeBitCodes.def",
         "clang/lib/AST/ASTContext.cpp",
+        "clang/include/clang/AST/ExprCXX.h",
+        "clang/lib/AST/ExprCXX.cpp",
         "clang/lib/AST/ASTImporter.cpp",
         "clang/lib/AST/ASTStructuralEquivalence.cpp",
         "clang/lib/AST/ASTConcept.cpp",

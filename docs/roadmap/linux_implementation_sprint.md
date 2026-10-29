@@ -63,3 +63,8 @@ Native Linux AArch64 qualification requires a native host. Resource union cleanu
 is outside the current normative capability in Part 8 §8.3.6.2; nullable chains
 with scalar/aggregate/nonnull key-path results need a defined result policy before
 admission. None of these boundaries is counted as completed by this sprint.
+
+The next [custom-promise C++ coroutine span](linux_cxx_custom_coroutines.md)
+implements canonical promise/awaiter dependency checks, written await/yield/return
+publication and native yield import. Its combined replay/runtime checks are in
+progress and are separate from the completed 2.87 receipt above.
