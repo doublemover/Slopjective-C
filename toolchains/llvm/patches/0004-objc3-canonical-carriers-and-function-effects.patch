@@ -19058,7 +19058,7 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..48810d918
+index 000000000..b9984acea
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 @@ -0,0 +1,2124 @@
@@ -21171,7 +21171,7 @@ index 000000000..48810d918
 +    };
 +    auto *Integer=alias("Integer");auto *Wide=alias("Wide");
 +    ASSERT_TRUE(Integer && Wide);
-+    llvm::DenseSet<std::pair<Decl *,Decl *>> NonEquivalent;
++    StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalent;
 +    StructuralEquivalenceContext Equivalence(From->getASTContext().getLangOpts(),
 +        From->getASTContext(),From->getASTContext(),NonEquivalent,
 +        StructuralEquivalenceKind::Default,false,false);
