@@ -1863,6 +1863,12 @@ void TestCustomCoroutineBodies() {
         "} NativeCustomCoroutines::NumberAwaiter operator co_await(NativeCustomCoroutines::Token); namespace NativeCustomCoroutines {");
     auto excluded_awaiter=emit(private_awaiter);assert(!excluded_awaiter.success);
     assert(std::any_of(excluded_awaiter.diagnostics.begin(),excluded_awaiter.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    auto spoofed_std=source;
+    at=spoofed_std.find(declaration);assert(at!=std::string::npos);
+    spoofed_std.replace(at,declaration.size(),
+        "} namespace std {NativeCustomCoroutines::NumberAwaiter operator co_await(NativeCustomCoroutines::Token);} using std::operator co_await; namespace NativeCustomCoroutines {");
+    auto excluded_std=emit(spoofed_std);assert(!excluded_std.success);
+    assert(std::any_of(excluded_std.diagnostics.begin(),excluded_std.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
     // Promise lookup must not launder a private customization point merely
     // because its invocation was synthesized by coroutine lowering.
     auto private_source=source;

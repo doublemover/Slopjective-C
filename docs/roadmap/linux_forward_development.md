@@ -14,6 +14,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [combined implementation sprint](linux_implementation_sprint.md) is
+source-validated through **2.87**, System **2.15** and keypath **2.5**. Its
+[receipt](../support/linux_implementation_sprint_progress.json) records the
+compiler/frontend/tooling, runtime, source/PCH, sanitizer and source-free checks
+with their input boundaries. This source progress is newer than SDK 2.62.
+[Custom C++ coroutine publication](linux_cxx_custom_coroutines.md), source 2.88,
+is implemented and undergoing its combined replay/runtime checks.
+
 The [current acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
 binds the exact archive and qualification reports: **411 compiler regressions**
 (three platform cases unsupported), **208 native unit tests**, all **33 optimized

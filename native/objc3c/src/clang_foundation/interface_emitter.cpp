@@ -870,21 +870,28 @@ const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::FunctionDecl 
 // Resolved promise/awaiter customization points get a separate dependency key.
 std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::FunctionDecl *function) {
   struct References final : clang::RecursiveASTVisitor<References> {
+    const clang::ASTContext &context;
+    explicit References(const clang::ASTContext &context):context(context){}
     std::map<std::string,const clang::NamedDecl *> declarations;
     void Add(const clang::NamedDecl *declaration) {
       if (!declaration || declaration->isImplicit()) return;
       if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
         if (function->getBuiltinID()) return;
+      const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration->getDeclContext());
+      const bool protocol_member=record && record->getIdentifier() &&
+          (record->getName()=="coroutine_handle" || record->getName()=="suspend_always" ||
+           record->getName()=="suspend_never");
       for (auto *scope=declaration->getDeclContext();scope;scope=scope->getParent()) {
         if (scope->isFunctionOrMethod()) return;
         if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(scope))
-          if (space->isStdNamespace()) return;
+          if (space->isStdNamespace() && protocol_member &&
+              context.getSourceManager().isInSystemHeader(declaration->getLocation())) return;
       }
       declarations.emplace(ReadInterfaceDeclarationStableId(declaration),declaration);
     }
     bool VisitCallExpr(clang::CallExpr *expression) {Add(expression->getDirectCallee());return true;}
     bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {Add(expression->getConstructor());return true;}
-  } references;
+  } references(function->getASTContext());
   if (const auto *body=PublishedCxxCoroutine(function))
     references.TraverseStmt(const_cast<clang::CoroutineBodyStmt *>(body));
   std::vector<const clang::NamedDecl *> result;
