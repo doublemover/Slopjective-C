@@ -19119,7 +19119,7 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..117ba760f
+index 000000000..15b565eb5
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 @@ -0,0 +1,2181 @@
@@ -21283,12 +21283,12 @@ index 000000000..117ba760f
 +
 +TEST(ObjC3FunctionEffectImport, PrintsForeignImporterIdentifierArguments) {
 +  const std::vector<std::string> Args={"-x","objective-c++","-std=c++20","-fblocks","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
-+  const std::string Source=R"(
++  const std::string Source=R"SWIFT(
 +    typedef int Handle __attribute__((swift_newtype(struct)));
 +    int read(int) __attribute__((swift_error(none),swift_name("read(_:)")));
 +    int read(int value){return value;}
 +    void complete(int,void (^callback)(int)) __attribute__((swift_async(not_swift_private,2),swift_async_error(zero_argument,1)));
-+  )";
++  )SWIFT";
 +  auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"foreign-attributes.mm");
 +  ASSERT_TRUE(From);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
 +  PrintingPolicy Policy(From->getASTContext().getLangOpts());
