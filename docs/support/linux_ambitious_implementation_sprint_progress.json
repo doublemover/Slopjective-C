@@ -1,0 +1,269 @@
+{
+  "schema": "objc3c.linux-ambitious-implementation-sprint-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "8c0a8f46450405a92be7d79e43573c1e9d9f7939",
+  "implementation_commits": [
+    "5b54a49c3",
+    "89bff10df",
+    "8c0a8f464"
+  ],
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-672a5e218132-00b75dc3",
+  "compiler_patch_digest": "672a5e218132aa87b51b42c7852bfda878344888b10edf08fa65b5fca14778c0",
+  "compiler_binary_sha256": "592a118e2aed695c1d9891962d2e885e1a91362c06c1ac18374eea7d37fa71d5",
+  "frontend_binary_sha256": "330300925276fdb21a06adb64e25b743303abbe85b8c49dcbd8dece209d9af57",
+  "frontend_source_identity_sha256": "3d06ea8141715ed1d9277d7dd1a4fd7371ede06cdb8cc91f6e251ef5727f4369",
+  "concurrency_module_version": "2.91.0",
+  "system_module_version": "2.16.0",
+  "keypath_module_version": "2.6.0",
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "a0b2cc5e9811003c8cb1cc1886aeb689f5e7c656ab0a8dbe1ee987b215920622"
+    },
+    {
+      "path": "native/objc3c/src/runtime/public/objc3_task.hpp",
+      "sha256": "84733cbc3b0e785ff74f0fb1b28205ec264e5780021add7861b6c3e6cbd68c9a"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "fc6464d60c2bde946325c3eade894ec24de8c2e486a859d5ab065b8bfafcb15a"
+    },
+    {
+      "path": "stdlib/include/objc3/concurrency.h",
+      "sha256": "4c2b8dcdc615dd11d2b6c2ae212103aa334da6846ecc8c537cb312572a9404e9"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "d499e800142f40ce8a3b039c05baaafb58fb4ea280fb4a18efd69cbe80597bfe"
+    },
+    {
+      "path": "tests/clang_foundation/borrowed_pointers_test.cpp",
+      "sha256": "a66d032cfc018f8c4d3a74350979b8c413a52c0112fcfe94c71f4778ce3b591b"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "8d1f7b373cf4d7499b5c38fcdbfa542280055a651ec6b581fa5a506e772428fd"
+    },
+    {
+      "path": "tests/clang_foundation/keypath_native_ast_test.cpp",
+      "sha256": "e4b8ec6a79aed7ab02f61b4069b84d9dc17a79b76471d964fc9cffc9f9bfbd57"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "f415e3a3c446939dfbfe88634f03f0e71a89a13507236a4885c4c1f72f308203"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/declaration_attributes.h",
+      "sha256": "ec623e797c95daf88b0fe1f4fee43c2c69d221b71661ea61cb2302b003399145"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "cdfa58cedfbdc21e4a4682e64de80c9258a8caacfe1137237be46a36497124b5"
+    },
+    {
+      "path": "tests/clang_foundation/task_spawning/contract.mm",
+      "sha256": "721ea02103b03c0d1a0c84e0e225183b2fecf6923083a176aed13623876c19c1"
+    },
+    {
+      "path": "tests/clang_foundation/typed_keypaths/cxx_values.h",
+      "sha256": "be5892bc6c6a3fe90aa1df09d3218325b616b358cf5a37e74fbef3116f29ddef"
+    },
+    {
+      "path": "tests/clang_foundation/typed_keypaths/operand_failures.mm",
+      "sha256": "aa729aa4edcc1093c183eed5d47fb379332e02ff50a56e07e5fa032c59af91c5"
+    },
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "595bfd3d2a3d0173c230c2c3f019bb4821159c7380cfd3544e8ea33d3055bbdb"
+    },
+    {
+      "path": "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "a5c115c04199ada3a344482f9ea8b27923f7133070b3ad9ad43e20ec22325d1d"
+    },
+    {
+      "path": "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch",
+      "sha256": "96cadb6fdd253c778c7831c0d1ebcd86d4dfceaf43de0dd12cf125e481a12007"
+    }
+  ],
+  "verification": {
+    "frontend_suites": 33,
+    "native_unit_tests": 236,
+    "native_compiler_regressions_passed": 412,
+    "native_compiler_regressions_unsupported": 3,
+    "focused_tooling_tests": 27,
+    "feature_matrices": [
+      {
+        "mode": "normal",
+        "configurations": 168,
+        "commands": 1206,
+        "report": "out/native-validation/ambitious-sprint-combined-features-normal/batch.json"
+      },
+      {
+        "mode": "asan",
+        "configurations": 168,
+        "commands": 1206,
+        "report": "out/native-validation/ambitious-sprint-combined-features-asan/batch.json"
+      },
+      {
+        "mode": "tsan",
+        "configurations": 168,
+        "commands": 1206,
+        "report": "out/native-validation/ambitious-sprint-combined-features-tsan/batch.json"
+      }
+    ],
+    "source_free_package_configurations": 32,
+    "source_free_package_commands": 224,
+    "full_fixture_smoke_configurations": 3,
+    "full_fixture_smoke_commands": 21,
+    "package_checks": [
+      {
+        "mode": "normal",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "1ea00b298407301cfaa86f2870a0a66c907b3ec3339ddf4913e502bb90f42c64",
+        "report": "out/native-validation/ambitious-sprint-accepted-packages-normal/qualification.json"
+      },
+      {
+        "mode": "eager",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "1ea00b298407301cfaa86f2870a0a66c907b3ec3339ddf4913e502bb90f42c64",
+        "report": "out/native-validation/ambitious-sprint-accepted-packages-eager/qualification.json"
+      },
+      {
+        "mode": "asan",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "baa7cc31f059c44d63129b43c962de04322505bc008beb78c167290db022e2c9",
+        "report": "out/native-validation/ambitious-sprint-accepted-packages-asan/qualification.json"
+      },
+      {
+        "mode": "tsan",
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "635fa215b39b023aff81e095296d71ab8daa8981b9cc5790d1a646f66986bf02",
+        "report": "out/native-validation/ambitious-sprint-accepted-packages-tsan/qualification.json"
+      },
+      {
+        "mode": "full-normal",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "1ea00b298407301cfaa86f2870a0a66c907b3ec3339ddf4913e502bb90f42c64",
+        "report": "out/native-validation/ambitious-sprint-complete-full-packages-normal/qualification.json"
+      },
+      {
+        "mode": "full-asan",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "baa7cc31f059c44d63129b43c962de04322505bc008beb78c167290db022e2c9",
+        "report": "out/native-validation/ambitious-sprint-complete-full-packages-asan/qualification.json"
+      },
+      {
+        "mode": "full-tsan",
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "635fa215b39b023aff81e095296d71ab8daa8981b9cc5790d1a646f66986bf02",
+        "report": "out/native-validation/ambitious-sprint-complete-full-packages-tsan/qualification.json"
+      }
+    ],
+    "reports": [
+      {
+        "path": "out/ambitious-sprint-value-lifetime-native-check-0.log",
+        "sha256": "3c937bdab444e1d2d6671226ba9b2a588133cc8823a38e367e9dad1b7e8e302a"
+      },
+      {
+        "path": "out/ambitious-sprint-value-lifetime-native-check-1.log",
+        "sha256": "0204896b33730eab8219d43cc30598822347156c59bac6e0f33885f2ca7d5f8a"
+      },
+      {
+        "path": "out/ambitious-sprint-value-lifetime-native-check-2.log",
+        "sha256": "bd26c1debb95027898dab2e293828e85a31803436a935d3395d487053192b803"
+      },
+      {
+        "path": "out/ambitious-sprint-value-lifetime-native-check-3.log",
+        "sha256": "4fcf3fd86dbd95f56093897b3746d04e725cfabb1ebb209664de2e01653ef441"
+      },
+      {
+        "path": "out/ambitious-sprint-value-lifetime-native-check-4.log",
+        "sha256": "ac575cc4d6aaa723da98c61aeaac2492402b883b2b5fd3813e8c710a3abce0eb"
+      },
+      {
+        "path": "out/ambitious-sprint-accepted-frontends.log",
+        "sha256": "0f7e79ba0425c62032083954b5877fe98f0e7958d1948314a5d54efeafe82133"
+      },
+      {
+        "path": "out/ambitious-sprint-accepted-tooling.log",
+        "sha256": "5474eee21ce70d5eab5a34246d8d53af772ba91f09663b38e97f31b5015fcf7b"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-combined-features-normal/batch.json",
+        "sha256": "184639754e43a645b534e2cfb02e32cce5bbbdd04f7cc9449986bb9a4c2aacc5"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-combined-features-asan/batch.json",
+        "sha256": "397f5e12efcfbc575ca6141bf5b999b7174b291c543295f350c5abacdcab3c2e"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-combined-features-tsan/batch.json",
+        "sha256": "afaf031993fdeababb2631c554047c62ed64072267b147e1e711ac020616b9af"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-accepted-packages-normal/qualification.json",
+        "sha256": "b759dd9188f448750e6e59557eb9f20fb7dad8eb9a1154da7e1edbb813fb8a19"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-accepted-packages-eager/qualification.json",
+        "sha256": "4bc179ced1615cb788651da004ad1457fc46da5c03c63067bfbebc39dbcc2723"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-accepted-packages-asan/qualification.json",
+        "sha256": "66f8e2eb70f22e693ddcc56d23404b84ee82808f394b312c56b75d49baf25d8d"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-accepted-packages-tsan/qualification.json",
+        "sha256": "3954a7b8b9a902ebac892891ddecb836b683676ee50614849b347fe0a88d7be2"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-complete-full-packages-normal/qualification.json",
+        "sha256": "45c9b91b878732056b699c62ea6733a0ca36132915fe73e2a75b5c26d40d6c0f"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-complete-full-packages-asan/qualification.json",
+        "sha256": "c6a87b8efae9c4ce4ff2145dbecc702cc7aabab15d9656ea1de49eb9ce99891c"
+      },
+      {
+        "path": "out/native-validation/ambitious-sprint-complete-full-packages-tsan/qualification.json",
+        "sha256": "fd489b3f3752ba2ecc234beddd3ccd1421533b898394ed7debb99d1b08db5e20"
+      }
+    ]
+  },
+  "implemented": [
+    "Finite written conditional local destinations split and join complete borrowed facts; exact signed constant array offsets retain tracked targets.",
+    "Independent definite ARC strong aliases keep loans alive through source rebinding. Forward/reverse/transitive aliases, conditional expiry and lexical lifetime boundaries are checked; last-owner loss still expires.",
+    "Raw native-frame task-group callbacks use typed adoption and failure disposal; explicit group callable spawning owns closures through frame teardown. Typed native task-join declarations work in both source languages.",
+    "Named nontrivial C++ keypath values use native copy/move initialization, materialized operand snapshots and destruction. Record-field writeback, lvalue/temporary subscript assignment and throwing copy/setter cleanup pass source/PCH and sanitizers.",
+    "Native allocator/deallocator, size/alignment, nonnull, format/format-argument and Linux calling-convention contracts retain typed payloads, export dependencies, replay identity and provider calling ABI.",
+    "Unnamed C++ member records under complete template owners preserve lexical nominal origins, exact closed/partial arguments and member-template overload/argument identities. Partial owners, nested templates, identical sibling layouts, relocation, AST import and source-free ABI are exercised."
+  ],
+  "scope": [
+    "The native backend and runtime/header inputs remain unchanged across the full normal/ASan/TSan feature matrices. Later unnamed-record publication changes affect the frontend facade and package fixtures, checked by the final frontend/package reports.",
+    "Instrumented runtime service archives and GNUstep runtimes are reused unchanged. No SDK archive was rebuilt.",
+    "Focused package reports bind the checker source before the full-fixture expected owner sets gained NativeDeclarationAttributes::Projected. Only check_cpp_metadata changed; check_factory_metadata and compiler/runtime/fixture inputs are unchanged. Final full-fixture reports bind the corrected checker.",
+    "Clang retains the allocator/deallocator annotation with its existing ignored-form warning. Publication binds that AST contract; no additional deallocation-mismatch analyzer is claimed.",
+    "Public signatures exposing unnamed template member types are rejected pending a broader projection/ABI contract. Managed-union, borrowed/resource and undefined nullable keypath result-policy boundaries remain explicit.",
+    "Full-fixture executions are three smoke configurations, not its complete cross-product or final-binary SDK qualification. Earlier failed and intermediate reports are retained."
+  ],
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "remaining": [
+    "Remaining public dependent/unnamed-type and lookup projections; unmodeled attributes and general standard-library publication/implementations.",
+    "General indirect/union/alias and borrowed-result precision, mutable/reference/generic/lazy callable analysis, global/foreign/MRC and exceptional ownership effects.",
+    "Remaining abstract spawn/group forms, isolation/Sendable crossings and complete Strict Concurrency enforcement.",
+    "Dependent/effectful/isolated and borrowed/resource keypaths; undefined nullable nonnull/scalar/aggregate result policy and Part 8 resource-union boundary.",
+    "Remaining specified language/library/metaprogramming/foreign interop, required diagnostics and complete Core/Strict/Strict Concurrency/Strict System profiles.",
+    "Native Linux AArch64 implementation/qualification and coordinated post-2.62 SDK delivery."
+  ]
+}

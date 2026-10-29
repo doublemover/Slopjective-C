@@ -37,6 +37,17 @@ preserve return-type ownership, checked header identities and exact native frame
 lifetimes. Type-only modules and two-provider imports prepare the standard header;
 traits specializations stay out of ordinary/module-qualified name lookup.
 
+The [ambitious implementation sprint](linux_ambitious_implementation_sprint.md),
+source **2.91**, System **2.16** and keypath **2.6**, passes its
+[source checks](../support/linux_ambitious_implementation_sprint_progress.json).
+It advances conditional borrowed stores and independent strong-alias lifetimes,
+raw-frame group callbacks and typed joins, nontrivial C++ keypath values, native
+allocator/format/calling-convention contracts and unnamed template member records.
+All three normal/ASan/TSan feature matrices pass 168 configurations / 1,206 commands;
+final source-free packages and frontend checks cover the expanded C++ publication
+work. Public unnamed-member signature projections, full profiles and native
+AArch64 remain open; SDK 2.62 remains the accepted archive.
+
 The [current acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
 binds the exact archive and qualification reports: **411 compiler regressions**
 (three platform cases unsupported), **208 native unit tests**, all **33 optimized

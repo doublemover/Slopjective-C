@@ -1,5 +1,12 @@
 # Linux implementation sprint
 
+The newer [ambitious implementation sprint](linux_ambitious_implementation_sprint.md)
+is source-validated through **2.91**, System **2.16** and keypath **2.6**. Its
+[receipt](../support/linux_ambitious_implementation_sprint_progress.json) records
+all 33 frontend suites, 236 native unit tests, 412 compiler regressions, 27 tooling
+tests, three full 168-case feature matrices and final source-free packages passing.
+The sections below retain the original 2.87 sprint and following source spans.
+
 This combined sprint is source-validated through **2.87**, with System **2.15**
 and keypath **2.5**. The [source receipt](../support/linux_implementation_sprint_progress.json)
 binds the reports and records their exact limits. SDK **2.62** remains the accepted

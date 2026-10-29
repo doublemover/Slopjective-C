@@ -4,7 +4,7 @@ This sprint works across the PR's remaining implementation backlog before a
 combined validation batch. Source changes target Linux Objective-C 3.0 as defined
 by the specification. SDK 2.62 remains the accepted archive during development.
 
-The first implementation wave advances concurrency **2.91**, System **2.16** and
+This implementation wave advances concurrency **2.91**, System **2.16** and
 keypath **2.6** together:
 
 - Borrowed flow splits finite written local destinations and joins complete
@@ -36,11 +36,14 @@ keypath **2.6** together:
   types. Allocator/deallocator references bind the deallocator declaration and
   pointer parameter index, enforce export visibility and replay source-free.
 
-Authored witnesses cover conditional writes and expiry, forward/reverse strong
-aliases, nontrivial key-path values, lvalue/temporary subscript assignment and
-throwing copy/setter cleanup, raw-frame
-and task group callbacks, allocator/format fingerprint mutations and a provider
-calling-convention boundary. Validation is in progress.
+The [source receipt](../support/linux_ambitious_implementation_sprint_progress.json)
+records all 33 frontend suites, 236 native unit tests, 412 compiler regressions and
+27 focused tooling tests passing; three platform compiler cases are unsupported.
+Normal, ASan/UBSan and TSan each pass all 168 source/PCH configurations / 1,206
+commands. Source-free packages pass 32 configurations / 224 commands across normal,
+eager and sanitizer modes; the full fixture additionally passes three smoke
+configurations / 21 commands. Reports bind their exact compiler, checker and
+runtime inputs and retain earlier failures.
 
 The remaining PR categories remain implementation obligations: dependent unnamed
 C++ types/lookup and general standard-library publication; broader indirect,
