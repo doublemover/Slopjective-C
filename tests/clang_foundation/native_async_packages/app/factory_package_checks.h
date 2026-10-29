@@ -103,6 +103,8 @@ int factory_package_checks() {
     if(owned.value.value!=0 || copy.value.value!=42 || moved.value.value!=42 || NativeClosureFactories::State::live!=3)return 237;
   }
   if(NativeClosureFactories::State::live)return 238;
+  if(NativeForeignAttributes::read({40})+NativeForeignAttributes::increment(1)!=42 ||
+     NativeForeignAttributes::hidden(42)!=42)return 240;
   return 0;
 }
 

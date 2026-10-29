@@ -181,6 +181,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
+inline constexpr const char *kForeignImportAttributeSemantic = "objc3.foreign-import-attributes.v1";
+inline bool HasForeignImportAttributeIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";foreign-import-attributes:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxNestedFactoryTypeSemantic = "objc3.cxx-nested-factory-types.v1";
 inline bool HasCxxNestedFactoryTypeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-nested-factory-types:v1;") != std::string::npos;

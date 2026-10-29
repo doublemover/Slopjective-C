@@ -43987,10 +43987,10 @@ index 000000000..b19de611d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..c96c959f4
+index 000000000..08db66ed4
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1138 @@
+@@ -0,0 +1,1174 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -44002,6 +44002,8 @@ index 000000000..c96c959f4
 +#include "clang/AST/EvaluatedExprVisitor.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/StmtCXX.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Isolation.h"
@@ -44225,6 +44227,46 @@ index 000000000..c96c959f4
 +      return FT->getObjC3FunctionEffects().Async;
 +  return false;
 +}
++bool asyncWorkType(Sema &S,QualType Type) {
++  Type=Type.getNonReferenceType();
++  if(Type->isDependentType())return S.getLangOpts().CPlusPlus;
++  if(Type->isBlockPointerType() || Type->isFunctionPointerType())
++    if(const auto *Prototype=Type->getPointeeType()->getAs<FunctionProtoType>())
++      return Prototype->getObjC3FunctionEffects().Async;
++  const auto *Root=Type->getAsCXXRecordDecl();
++  if(!Root)return false;
++  llvm::SmallPtrSet<const CXXRecordDecl *,8> Seen;
++  SmallVector<const CXXRecordDecl *,8> Pending{Root};
++  while(!Pending.empty()) {
++    const auto *Record=Pending.pop_back_val();
++    if(!Seen.insert(Record).second || !Record->hasDefinition())continue;
++    Record=Record->getDefinition();
++    for(const auto *Declaration:Record->lookup(S.Context.DeclarationNames.getCXXOperatorName(OO_Call))) {
++      const auto *Function=dyn_cast<FunctionDecl>(Declaration);
++      if(const auto *Template=dyn_cast<FunctionTemplateDecl>(Declaration))Function=Template->getTemplatedDecl();
++      if(!Function)continue;
++      const auto *Prototype=Function->getType()->getAs<FunctionProtoType>();
++      if(!Prototype)continue;
++      if(Prototype->getObjC3FunctionEffects().Async ||
++          (Function->hasBody() && isa<CoroutineBodyStmt>(Function->getBody())))return true;
++      if(const auto *Result=Prototype->getReturnType()->getAsCXXRecordDecl())
++        if(Result->hasDefinition() && !Result->getDefinition()->lookup(&S.Context.Idents.get("promise_type")).empty())return true;
++    }
++    for(const auto &Base:Record->bases())
++      if(const auto *Parent=Base.getType()->getAsCXXRecordDecl())Pending.push_back(Parent);
++  }
++  return false;
++}
++bool hasAsyncWork(Sema &S,const Decl *Declaration) {
++  if(const auto *Function=dyn_cast<FunctionDecl>(Declaration))
++    for(const auto *Parameter:Function->parameters())
++      if(asyncWorkType(S,Parameter->getType()))return true;
++  if(const auto *Method=dyn_cast<ObjCMethodDecl>(Declaration))
++    for(const auto *Parameter:Method->parameters())
++      if(asyncWorkType(S,Parameter->getType()))return true;
++  return false;
++}
++
 +bool isAsyncWorkParameter(const Decl *D, unsigned Index) {
 +  if (const auto *F = dyn_cast<FunctionDecl>(D))
 +    return Index < F->getNumParams() &&
@@ -44370,6 +44412,11 @@ index 000000000..c96c959f4
 +    unsigned TaskKind = getObjC3TaskBoundaryKind(Target);
 +    if (!(TaskKind & 3))
 +      return;
++    // A dependent declaration is checked again after substitution; a generic
++    // attribute cannot turn an arbitrary scalar argument into asynchronous work.
++    if(!hasAsyncWork(S,Target)) {
++      S.Diag(Site->getExprLoc(),diag::err_objc3_task_async_work);Invalid=true;return;
++    }
 +    unsigned Index = 0;
 +    for (const Expr *Argument : Arguments) {
 +      QualType TransferType = transferSource(Argument)->getType();
@@ -44612,18 +44659,7 @@ index 000000000..c96c959f4
 +      D->setInvalidDecl();
 +      return;
 +    }
-+    bool HasAsyncWork = false;
-+    auto CheckParameter = [&](const ParmVarDecl *P) {
-+      if (const auto *B = P->getType()->getAs<BlockPointerType>())
-+        if (const auto *FT = B->getPointeeType()->getAs<FunctionProtoType>())
-+          HasAsyncWork |= FT->getObjC3FunctionEffects().Async;
-+    };
-+    if (const auto *F = dyn_cast<FunctionDecl>(D))
-+      for (const auto *P : F->parameters())
-+        CheckParameter(P);
-+    if (const auto *M = dyn_cast<ObjCMethodDecl>(D))
-+      for (const auto *P : M->parameters())
-+        CheckParameter(P);
++    const bool HasAsyncWork=hasAsyncWork(S,D);
 +    if (!HasAsyncWork) {
 +      S.Diag(AL.getLoc(), diag::err_objc3_task_async_work);
 +      D->setInvalidDecl();

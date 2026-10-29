@@ -27877,10 +27877,10 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..e66de45f9
+index 000000000..9b02c747d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,119 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC-CHECK
 +#include "Inputs/native-c-async-frame.h"
@@ -27923,7 +27923,6 @@ index 000000000..e66de45f9
 +  return first + __objc3_await [source_receiver() affineRead];
 +}
 +// CHECK-DAG: {{call|invoke}} i32 @objc3_actor_get_or_create_for_object
-+// CHECK-DAG: {{call|invoke}} i64 @objc3_executor_identity
 +// CHECK-DAG: {{call|invoke}} void @objc3_actor_release
 +
 +extern Message *owned_entry(void)

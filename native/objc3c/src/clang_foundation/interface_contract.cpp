@@ -438,6 +438,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_foreign_import_attributes=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasForeignImportAttributeIdentity);
+  const bool foreign_import_attribute_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kForeignImportAttributeSemantic)!=sidecar.required_semantics.end();
+  const bool foreign_import_attribute_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasForeignImportAttributeIdentity(d) || d.kind!="Namespace";});
+  if (has_foreign_import_attributes!=foreign_import_attribute_capability || !foreign_import_attribute_owners)
+    Add(result,"O3IFC096","foreign import attribute identities and required capability must agree",expected.canonical_name);
   const bool has_nested_factory_types=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxNestedFactoryTypeIdentity);
   const bool nested_factory_type_capability=std::find(sidecar.required_semantics.begin(),

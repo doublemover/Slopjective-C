@@ -7,6 +7,7 @@
 #include "closure_result_projections.h"
 #include "lambda_factory_results.h"
 #include "nested_factory_types.h"
+#include "foreign_import_attributes.h"
 #else
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
@@ -1941,5 +1942,6 @@ namespace NativeEffectLambdas {
 #include "closure_result_projections.h"
 #include "lambda_factory_results.h"
 #include "nested_factory_types.h"
+#include "foreign_import_attributes.h"
 
 #endif

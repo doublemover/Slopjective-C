@@ -20,6 +20,10 @@ or delivery in the accepted 2.62 SDK.
 - Borrowed ownership: instantiated synchronous generic capture CFGs, merged
   owner/effect summaries, open/async capture diagnostics and trivial union copy
   provenance.
+- Foreign interfaces: native Swift importer names, async/error conventions,
+  newtypes, bridges, private-import markers and Swift attribute payloads retain
+  canonical declaration/parameter contracts and capability admission. This
+  preserves metadata; it does not qualify a Swift compiler/runtime.
 - Key paths: plain union field traversal/writeback and explicit KVC string boxing
   through validated property-only metadata. Strict profiles diagnose the loss of
   typed root/value checking; incompatible metadata returns nil.

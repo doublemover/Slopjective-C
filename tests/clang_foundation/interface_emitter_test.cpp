@@ -1815,6 +1815,51 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestForeignImportAttributes() {
+  auto emit=[](const std::string &source,const char *file="foreign-attributes.mm") {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+        {"-x","objective-c++","-std=c++20","-fblocks","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},file);
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.foreign","test",{}));
+    return EmitSemanticInterface(ast->getASTContext(),"fixture.foreign","test");
+  };
+  const std::string source=R"O3SWIFT(
+#ifndef NATIVE_FOREIGN_IMPORT_ATTRIBUTES_H
+#define NATIVE_FOREIGN_IMPORT_ATTRIBUTES_H
+namespace NativeForeignAttributes {
+struct __attribute__((swift_bridge("Interop.Value"))) Value {int value;};
+typedef int Handle __attribute__((swift_newtype(struct)));
+int read(Value value) __attribute__((swift_name("Interop.read(_:)")));
+int read(Value value){return value.value;}
+inline int increment(int value) __attribute__((swift_name("Interop.increment(_:)"),swift_attr("@Sendable"))){return value+1;}
+inline int hidden(int value) __attribute__((swift_private)){return value;}
+}
+#endif
+
+    void complete(int value,void (^callback)(int))
+        __attribute__((swift_async(not_swift_private,2),swift_async_name("Interop.complete(_:)")));
+  )O3SWIFT";
+  auto first=emit(source);
+  for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+  assert(first.success && first.source_bytes.find("swift_name")!=std::string::npos);
+  auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  auto relocated=emit("\n\n"+source,"relocated-foreign.mm");
+  assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+  std::vector<llvm::StringRef> semantics;
+  for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+  auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+  assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasForeignImportAttributeIdentity)>=5);
+  auto missing=*decoded;std::erase(missing.required_semantics,kForeignImportAttributeSemantic);
+  auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+  auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasForeignImportAttributeIdentity);
+  assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+  auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+  auto changed=source;const auto at=changed.find("Interop.increment");assert(at!=std::string::npos);
+  changed.replace(at,std::string("Interop.increment").size(),"Interop.advance");
+  auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+}
+
 void TestNestedFactoryTypes() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="nested-factory-types.cpp",
@@ -5432,6 +5477,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestForeignImportAttributes();
   TestNestedFactoryTypes();
   TestLambdaFactoryResults();
   TestClosureResultProjections();

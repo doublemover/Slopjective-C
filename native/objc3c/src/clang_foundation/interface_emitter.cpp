@@ -60,6 +60,45 @@ void ReadFactoryArgumentFeatures(const clang::TemplateArgument &,const clang::AS
 bool HasFactoryValueArgument(const clang::TemplateArgument &,const clang::ASTContext &);
 bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context,FactoryTypeFeatures *features=nullptr);
 
+bool IsForeignImportAttribute(const clang::Attr *attribute) {
+  return llvm::isa<clang::SwiftNameAttr,clang::SwiftAsyncNameAttr,
+      clang::SwiftAsyncAttr,clang::SwiftErrorAttr,clang::SwiftAsyncErrorAttr,
+      clang::SwiftPrivateAttr,clang::SwiftAttrAttr,clang::SwiftNewTypeAttr,
+      clang::SwiftBridgeAttr,clang::SwiftBridgedTypedefAttr,
+      clang::SwiftImportAsNonGenericAttr,clang::SwiftImportPropertyAsAccessorsAttr,
+      clang::SwiftObjCMembersAttr,clang::ObjCBridgeAttr,clang::ObjCBridgeMutableAttr,
+      clang::ObjCBridgeRelatedAttr>(attribute);
+}
+
+std::string ForeignImportAttributeKey(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return {};
+  struct Attributes:clang::RecursiveASTVisitor<Attributes> {
+    std::string key;
+    unsigned ordinal=0;
+    bool TraverseStmt(clang::Stmt *) {return true;}
+    bool TraverseDecl(clang::Decl *declaration) {
+      return !declaration || declaration->isImplicit() ||
+          clang::RecursiveASTVisitor<Attributes>::TraverseDecl(declaration);
+    }
+    bool VisitNamedDecl(clang::NamedDecl *declaration) {
+      const auto slot=ordinal++;
+      std::vector<std::string> values;
+      for(const auto *attribute:declaration->attrs())
+        if(IsForeignImportAttribute(attribute) && !attribute->isImplicit()) {
+          std::string value;llvm::raw_string_ostream out(value);
+          clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());
+          attribute->printPretty(out,policy);values.push_back(value);
+        }
+      if(values.empty())return true;
+      std::sort(values.begin(),values.end());
+      key+=std::to_string(slot)+":";
+      for(const auto &value:values)key+=std::to_string(value.size())+":"+value;
+      return true;
+    }
+  } visitor;
+  visitor.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return visitor.key;
+}
+
 std::string CanonicalType(clang::QualType type,
                           const clang::ASTContext &context) {
   clang::PrintingPolicy policy(context.getLangOpts());
@@ -4998,6 +5037,7 @@ class InterfaceCollector final
         if (owner && IsIdentityCandidate(owner, context_, source_root_))
           for (const auto *attribute : parameter->attrs()) {
             if (attribute->isImplicit() ||
+                IsForeignImportAttribute(attribute) ||
                 llvm::isa<clang::NoEscapeAttr, clang::NSConsumedAttr, clang::CFConsumedAttr>(attribute))
               continue;
             AddDiagnostic(result_, "O3IFC116",
@@ -5036,7 +5076,7 @@ class InterfaceCollector final
       return true;
     }
     for (const auto *attribute : declaration->attrs()) {
-      if (attribute->isImplicit()) continue;
+      if (attribute->isImplicit() || IsForeignImportAttribute(attribute)) continue;
       if (const auto *annotation = llvm::dyn_cast<clang::AnnotateAttr>(attribute);
           annotation && llvm::isa<clang::ConceptDecl>(declaration) &&
           annotation->getAnnotation().starts_with("objc3.concept-owner:") &&
@@ -6046,6 +6086,11 @@ bool ReadInterfaceDeclarationIdentity(
   const auto return_ownership = ReadNativeReturnOwnership(representative);
   if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
   ReadNativeDeclarationContracts(representative, context, identity.effects);
+  const auto foreign_attributes=ForeignImportAttributeKey(representative);
+  if(!foreign_attributes.empty())
+    identity.canonical_type_identity+=";foreign-import-attributes:v1;contracts="+
+        ComputeInterfaceSourceSha256(foreign_attributes)+";";
+
   return true;
 }
 
@@ -6240,6 +6285,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasForeignImportAttributeIdentity(declaration))
+      sidecar.required_semantics.push_back(kForeignImportAttributeSemantic);
     if (HasCxxNestedFactoryTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxNestedFactoryTypeSemantic);
     if (HasCxxLambdaFactoryResultIdentity(declaration))
@@ -6443,6 +6490,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
     kCxxClosureResultProjectionSemantic,
@@ -6616,6 +6664,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
     kCxxClosureResultProjectionSemantic,
