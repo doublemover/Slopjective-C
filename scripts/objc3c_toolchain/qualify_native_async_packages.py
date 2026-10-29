@@ -158,7 +158,10 @@ def check_factory_metadata(metadata):
             'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
             'NativeDeclarationAttributes::checked','NativeDeclarationAttributes::checked_template',
             'NativeDeclarationAttributes::returns_twice','NativeDeclarationAttributes::provider_controlled',
-            'NativeDeclarationAttributes::unoptimized'}<=native_contracts
+            'NativeDeclarationAttributes::unoptimized','NativeDeclarationAttributes::enabled',
+            'NativeDeclarationAttributes::inline_enabled','NativeDeclarationAttributes::enabled_template',
+            'NativeDeclarationAttributes::EnabledMember::choose','NativeDeclarationAttributes::ordered',
+            'NativeDeclarationAttributes::bounded','NativeDeclarationAttributes::renamed_enabled'}<=native_contracts
     standard_coroutines=[row for row in metadata['declarations']
                          if ';cxx-standard-coroutines:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']

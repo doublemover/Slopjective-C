@@ -13,3 +13,9 @@ void reject_native_contracts() {
   NativeDeclarationAttributes::provider_sentinel("missing sentinel",42);
   auto forbidden_address=&NativeDeclarationAttributes::provider_object_size;
 }
+
+void reject_enable_if() {
+  NativeDeclarationAttributes::inline_enabled(-1);
+  NativeDeclarationAttributes::nonnegative_template(-1);
+  auto disabled_address=&NativeDeclarationAttributes::enabled;
+}

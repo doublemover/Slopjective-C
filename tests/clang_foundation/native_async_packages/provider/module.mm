@@ -2004,3 +2004,6 @@ __attribute__((nothrow)) int NativeDeclarationAttributes::provider_controlled(in
 unsigned long NativeDeclarationAttributes::provider_extent(const void *value){return 99;}
 unsigned long NativeDeclarationAttributes::provider_extent(const void *const value __attribute__((pass_object_size(0)))) {return __builtin_object_size(value,0);}
 __attribute__((returns_twice)) int NativeDeclarationAttributes::returns_twice(){return 42;}
+
+int NativeDeclarationAttributes::enabled(int value) __attribute__((enable_if(value>=0,"nonnegative"))) {return value+2;}
+int NativeDeclarationAttributes::enabled(int value) __attribute__((enable_if(value<0,"negative"))) {return 2-value;}

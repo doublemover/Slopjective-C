@@ -382,7 +382,8 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
   }
   // Hidden arguments are now a modeled native parameter contract in C as well.
   auto sized=clang::tooling::buildASTFromCodeWithArgs(
-      "int size(const char *const p __attribute__((pass_object_size(0))));",
+      "int size(const char *const p __attribute__((pass_object_size(0))));"
+      "int nonnegative(int value) __attribute__((enable_if(value>=0,\"nonnegative C entry\")));",
       {"-x","c","-std=c17"},"sized-param.c");
   assert(sized && !sized->getDiagnostics().hasErrorOccurred());
   auto accepted=EmitSemanticInterface(sized->getASTContext(),"fixture.size","test");
@@ -1832,6 +1833,7 @@ void TestNativeDeclarationAttributes() {
     for(const auto *spelling:{"pass_object_size","pass_dynamic_object_size","lifetimebound","noescape","callback","sentinel","diagnose_if","returns_twice","disable_tail_calls","not_tail_called","nomerge","noduplicate","optnone","leaf"})
       assert(first.source_bytes.find(spelling)!=std::string::npos);
     assert(first.source_bytes.find("nothrow")!=std::string::npos || first.source_bytes.find("noexcept")!=std::string::npos);
+    assert(first.source_bytes.find("enable_if")!=std::string::npos);
     const auto second=first.source_bytes.find("swift_attr(\"@Second\")");
     const auto middle=first.source_bytes.find("swift_attr(\"@First\")",second+1);
     const auto repeated=first.source_bytes.find("swift_attr(\"@Second\")",middle+1);
@@ -1873,6 +1875,12 @@ void TestNativeDeclarationAttributes() {
     auto predicate_message=emit(changed);assert(predicate_message.success && predicate_message.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     changed=source;at=changed.find("value<minimum");assert(at!=std::string::npos);changed.replace(at,13,"value<=minimum");
     auto predicate_condition=emit(changed);assert(predicate_condition.success && predicate_condition.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("nonnegative inline");assert(at!=std::string::npos);
+    changed.replace(at,std::string("nonnegative inline").size(),"enabled inline");
+    auto enabled_message=emit(changed);assert(enabled_message.success && enabled_message.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden_enabled=emit("namespace Private {inline constexpr int bound=0;}"
+        "namespace NativeDeclarationAttributes {int enabled(int value) __attribute__((enable_if(value>=Private::bound,\"hidden bound\")));}");
+    assert(!hidden_enabled.success && std::any_of(hidden_enabled.diagnostics.begin(),hidden_enabled.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
     auto hidden_predicate=emit("namespace Private {inline constexpr int minimum=0;}"
         "namespace NativeDeclarationAttributes {int checked(int value) __attribute__((diagnose_if(value<Private::minimum,\"private bound\",\"error\")));}");
     assert(!hidden_predicate.success && std::any_of(hidden_predicate.diagnostics.begin(),hidden_predicate.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));

@@ -4,6 +4,12 @@
 int factory_package_checks() {
   {
     namespace Contract=NativeDeclarationAttributes;
+    if(Contract::enabled(40)!=42 || Contract::enabled(-40)!=42)return 221;
+    if(Contract::inline_enabled(40)!=42 || Contract::enabled_template(40)!=42 || Contract::enabled_template(-40)!=42)return 222;
+    Contract::EnabledMember choice{40};
+    if(choice.choose(2)!=42 || choice.choose(-2)!=42)return 223;
+    if(Contract::ordered(40)!=42 || Contract::ordered(101)!=10 || Contract::bounded(42)!=42)return 224;
+    if(Contract::renamed_enabled(40)!=42 || Contract::unnamed_predicate(0)!=42)return 225;
     int values[5]={42};
     auto plain_extent=static_cast<unsigned long (*)(const void *)>(&Contract::provider_extent);
     if(Contract::provider_extent(values)!=sizeof(values) || plain_extent(values)!=99 || Contract::returns_twice()!=42)return 235;

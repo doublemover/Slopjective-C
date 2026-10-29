@@ -400,7 +400,10 @@ void TestNativeAttributeTemplateImports() {
           "static_assert(sizeof(NativeDeclarationAttributes::Packet)==5);"
           "static_assert(alignof(NativeDeclarationAttributes::Slot<int,32>)==32);"
           "int use(){NativeDeclarationAttributes::ForeignBox<int> value{42};"
-          "return value.value+NativeDeclarationAttributes::Family<int>{40}.call(2);}");
+          "NativeDeclarationAttributes::EnabledMember conditional{40};"
+          "return value.value+NativeDeclarationAttributes::Family<int>{40}.call(2)+"
+          "NativeDeclarationAttributes::enabled(40)+NativeDeclarationAttributes::enabled(-40)+"
+          "NativeDeclarationAttributes::enabled_template(40)+conditional.choose(-2);}");
       consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
       consumer.arguments={standard};consumer.emit_semantic_interface=false;
       consumer.source_directed_imports=directed;
@@ -417,6 +420,7 @@ void TestNativeAttributeTemplateImports() {
       invalid.source_text=std::string(directed?"@import test.native_attributes;\n":"")+
           "void invalid(){NativeDeclarationAttributes::checked(-1);"
           "NativeDeclarationAttributes::checked_template(-1);"
+          "NativeDeclarationAttributes::inline_enabled(-1);NativeDeclarationAttributes::nonnegative_template(-1);"
           "auto pointer=&NativeDeclarationAttributes::provider_object_size;}";
       auto rejected=Compile(invalid);assert(!rejected.success);
       for(const char *message:{"negative value","negative template value","pass_object_size"})

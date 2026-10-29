@@ -99,5 +99,25 @@ template<class T>inline T checked_template(T value) __attribute__((diagnose_if(v
 __attribute__((returns_twice)) int returns_twice();
 __attribute__((nothrow,leaf,noinline,disable_tail_calls,not_tail_called,nomerge,noduplicate)) int provider_controlled(int value);
 __attribute__((optnone,noinline)) inline int unoptimized(int value) {return value+2;}
+
+int enabled(int value) __attribute__((enable_if(value>=0,"nonnegative")));
+int enabled(int value) __attribute__((enable_if(value<0,"negative")));
+inline int inline_enabled(int value) __attribute__((enable_if(value>=0,"nonnegative inline"))) {return value+2;}
+template<class T>inline T enabled_template(T value) __attribute__((enable_if(value>=0,"nonnegative template"))) {return value+2;}
+template<class T>inline T enabled_template(T value) __attribute__((enable_if(value<0,"negative template"))) {return 2-value;}
+template<class T>inline T nonnegative_template(T value) __attribute__((enable_if(value>=0,"nonnegative template"))) {return value;}
+struct EnabledMember {
+  int base;
+  int choose(int value) const __attribute__((enable_if(value>=0,"nonnegative member"))) {return base+value;}
+  int choose(int value) const __attribute__((enable_if(value<0,"negative member"))) {return base-value;}
+};
+inline int ordered(int value) __attribute__((enable_if(value>0,"positive"))) {return 10;}
+inline int ordered(int value) __attribute__((enable_if(value>0,"positive"),enable_if(value<100,"small"))) {return value+2;}
+inline int bounded(int value) __attribute__((enable_if(value>=minimum,"exported bound"))) {return value;}
+int renamed_enabled(int before) __attribute__((enable_if(before>=0,"renamed bound")));
+inline int renamed_enabled(int after) __attribute__((enable_if(after>=0,"renamed bound"))) {return after+2;}
+
+int unnamed_predicate(int value) __attribute__((diagnose_if(value<0,"negative unnamed value","error")));
+inline int unnamed_predicate(int) {int value=42;return value;}
 }
 #endif

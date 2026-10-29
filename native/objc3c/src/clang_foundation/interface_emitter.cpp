@@ -74,7 +74,7 @@ bool IsForeignImportAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  return llvm::isa<clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
+  return llvm::isa<clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::EnableIfAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
@@ -885,13 +885,20 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
       // ASTImporter can merge the same inherited contract from several
       // redeclarations. Identical metadata is one semantic contract.
       std::set<std::string> values;
+      std::string ordered_conditions;
+      if(native)
+        for(const auto *attribute:declaration->specific_attrs<clang::EnableIfAttr>()) {
+          const auto value=NativeAttributeValue(attribute,declaration);
+          ordered_conditions+=std::to_string(value.size())+":"+value;
+        }
+      if(!ordered_conditions.empty())values.insert("ordered-enable-if:"+ordered_conditions);
       if (native)
         if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
           if (function->getType()->castAs<clang::FunctionType>()->getNoReturnAttr())
             values.insert("native-noreturn-function-type");
       for(const auto *attribute:declaration->attrs())
         if((native ? IsPublishedNativeAttribute(attribute) : IsForeignImportAttribute(attribute)) && !attribute->isImplicit()) {
-          if(native) {values.insert(NativeAttributeValue(attribute,declaration));continue;}
+          if(native) {if(!llvm::isa<clang::EnableIfAttr>(attribute))values.insert(NativeAttributeValue(attribute,declaration));continue;}
           std::string value;llvm::raw_string_ostream out(value);
           clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());
           attribute->printPretty(out,policy);values.insert(value);
@@ -2134,7 +2141,7 @@ public:
                          DataRecursionQueue * = nullptr) {
     return TraverseStmt(expression->getSubExpr());
   }
-  std::string Get(clang::Stmt *expression) {
+  std::string Get(clang::Stmt *expression,bool parameter_bindings=false) {
     clang::PrintingPolicy policy(context_.getLangOpts());
     const bool unnamed=ContainsUnnamedLocalType(expression);
     // Canonical types erase owned-tag spelling. Keep complete unnamed local
@@ -2147,7 +2154,9 @@ public:
     llvm::raw_string_ostream stream(printed);
     struct CanonicalParens final : clang::PrinterHelper {
       clang::PrintingPolicy policy;
-      explicit CanonicalParens(clang::PrintingPolicy policy) : policy(policy) {}
+      const std::map<const clang::Decl *,unsigned> *parameters;
+      CanonicalParens(clang::PrintingPolicy policy,const std::map<const clang::Decl *,unsigned> *parameters)
+          :policy(policy),parameters(parameters) {}
       bool handledStmt(clang::Stmt *statement, llvm::raw_ostream &out) override {
         if (const auto *paren = llvm::dyn_cast<clang::ParenExpr>(statement)) {
           paren->getSubExpr()->printPretty(out, this, policy);
@@ -2157,6 +2166,10 @@ public:
         // reference. Bind both spellings to the same declaration spelling;
         // the typed traversal below still binds its owner and exact arguments.
         if (const auto *reference=llvm::dyn_cast<clang::DeclRefExpr>(statement)) {
+          if(parameters && llvm::isa<clang::ParmVarDecl>(reference->getDecl()))
+            if(const auto slot=parameters->find(reference->getDecl()->getCanonicalDecl());slot!=parameters->end()) {
+              out << "__objc3_parameter_" << slot->second;return true;
+            }
           // Detached specialization replay qualifies ordinary namespace calls.
           // Keep the spelling independent of that lexical replay context; the
           // typed traversal binds the selected overload and its native symbol.
@@ -2177,7 +2190,7 @@ public:
         }
         return false;
       }
-    } helper(policy);
+    } helper(policy,parameter_bindings?&locals_:nullptr);
     expression->printPretty(stream, &helper, policy);
     Add(printed);
     TraverseStmt(expression);
@@ -2330,7 +2343,9 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     add(std::to_string(sentinel->getSentinel()));add(std::to_string(sentinel->getNullPos()));
   } else if(const auto *callback=llvm::dyn_cast<clang::CallbackAttr>(attribute)) {
     for(int position:callback->encoding())add(std::to_string(position));
-  } else if(const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute)) {
+  } else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
+    const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);
+    const auto *enabled=llvm::dyn_cast<clang::EnableIfAttr>(attribute);
     DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
     auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
       if(!scope)return;self(self,scope->getParent());
@@ -2342,8 +2357,9 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     bind(bind,declaration->getDeclContext());
     if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
       for(const auto *parameter:method->parameters())identity.Local(parameter);
-    add(identity.Get(diagnostic->getCond()));add(diagnostic->getMessage());
-    add(std::to_string(diagnostic->getDefaultSeverity()));add(diagnostic->getWarningGroup());
+    add(identity.Get(diagnostic?diagnostic->getCond():enabled->getCond(),true));
+    add(diagnostic?diagnostic->getMessage():enabled->getMessage());
+    if(diagnostic) {add(std::to_string(diagnostic->getDefaultSeverity()));add(diagnostic->getWarningGroup());}
   }
   if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute)) {
     if (auto *deallocator=allocator->getDeallocator()) {
@@ -3895,7 +3911,9 @@ class TypeDependencyVisitor final
      for (const auto *attribute:declaration->attrs())
        if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
-       else if(const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute)) {
+       else if(llvm::isa<clang::DiagnoseIfAttr,clang::EnableIfAttr>(attribute)) {
+         const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute);
+         const auto *enabled=llvm::dyn_cast<clang::EnableIfAttr>(attribute);
          const auto locals=lambda_locals_;
          auto restore=llvm::scope_exit([&]{lambda_locals_=locals;});
          if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
@@ -3903,7 +3921,7 @@ class TypeDependencyVisitor final
              for(const auto *parameter:redecl->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
          if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
            for(const auto *parameter:method->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
-         TraverseStmt(diagnostic->getCond());
+         TraverseStmt(diagnostic?diagnostic->getCond():enabled->getCond());
        }
      if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
        CheckDeclarationAttributes(pattern->getTemplatedDecl());
