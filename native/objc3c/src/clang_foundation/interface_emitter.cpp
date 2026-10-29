@@ -82,15 +82,16 @@ std::string ForeignImportAttributeKey(const clang::NamedDecl *declaration) {
     }
     bool VisitNamedDecl(clang::NamedDecl *declaration) {
       const auto slot=ordinal++;
-      std::vector<std::string> values;
+      // ASTImporter can merge the same inherited contract from several
+      // redeclarations. Identical metadata is one semantic contract.
+      std::set<std::string> values;
       for(const auto *attribute:declaration->attrs())
         if(IsForeignImportAttribute(attribute) && !attribute->isImplicit()) {
           std::string value;llvm::raw_string_ostream out(value);
           clang::PrintingPolicy policy(declaration->getASTContext().getLangOpts());
-          attribute->printPretty(out,policy);values.push_back(value);
+          attribute->printPretty(out,policy);values.insert(value);
         }
       if(values.empty())return true;
-      std::sort(values.begin(),values.end());
       key+=std::to_string(slot)+":";
       for(const auto &value:values)key+=std::to_string(value.size())+":"+value;
       return true;

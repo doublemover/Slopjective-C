@@ -1844,6 +1844,27 @@ inline int hidden(int value) __attribute__((swift_private)){return value;}
   assert(first.success && first.source_bytes.find("swift_name")!=std::string::npos);
   auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
   assert(replay.source_bytes==first.source_bytes);
+  {
+    const std::vector<std::string> args={"-x","objective-c++","-std=c++20","-fblocks","-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
+    auto from=clang::tooling::buildASTFromCodeWithArgs(first.source_bytes,args,"foreign-import-from.mm");
+    auto to=clang::tooling::buildASTFromCodeWithArgs("",args,"foreign-import-to.mm");
+    assert(from && to);
+    struct Functions:clang::RecursiveASTVisitor<Functions> {
+      std::vector<clang::FunctionDecl *> declarations;
+      bool VisitFunctionDecl(clang::FunctionDecl *function) {
+        if(!function->isImplicit())declarations.push_back(function);return true;
+      }
+    } functions;
+    functions.TraverseDecl(from->getASTContext().getTranslationUnitDecl());
+    clang::ASTImporter importer(to->getASTContext(),to->getFileManager(),from->getASTContext(),from->getFileManager(),false);
+    for(auto *function:functions.declarations) {
+      auto imported=importer.Import(function);assert(imported);
+      InterfaceDeclarationIdentity original,merged;
+      assert(ReadInterfaceDeclarationIdentity(function,from->getASTContext(),original));
+      assert(ReadInterfaceDeclarationIdentity(llvm::cast<clang::NamedDecl>(*imported),to->getASTContext(),merged));
+      assert(original.canonical_type_identity==merged.canonical_type_identity);
+    }
+  }
   auto relocated=emit("\n\n"+source,"relocated-foreign.mm");
   assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
   auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
