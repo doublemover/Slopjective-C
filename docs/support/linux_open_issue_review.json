@@ -1,0 +1,552 @@
+{
+  "schema": "objc3c.open-issue-review.v1",
+  "review_date": "2026-10-29",
+  "repository": "doublemover/Slopjective-C",
+  "reviewed_head": "45e37d7d1decc9e1cc7940c7171a710e17fbf1d0",
+  "open_issue_count": 51,
+  "issues": [
+    {
+      "number": 8206,
+      "title": "[EPIC] Platform And Toolchain Expansion",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8206",
+      "category": "platform",
+      "body_sha256": "361382ce29ac4ca55a8215f4d950fc9497a30b3a97c747f568538d98d4ced944",
+      "status": "open"
+    },
+    {
+      "number": 8228,
+      "title": "Linux x64 Support",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8228",
+      "category": "platform",
+      "body_sha256": "e27965e03d308196e672f7f6ee9fc5365f17697285fe12e367470aaacb63a26d",
+      "status": "open"
+    },
+    {
+      "number": 8229,
+      "title": "macOS arm64 Support",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8229",
+      "category": "platform",
+      "body_sha256": "1aa553c94f42fd9d1b172ca67fcc5ada6c8dc564e9431209e555f2f0cebcb7a8",
+      "status": "native-host-required"
+    },
+    {
+      "number": 8279,
+      "title": "[P2] Current contributor instructions require retired CLI actions and promote the historical command inventory",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8279",
+      "category": "onboarding",
+      "body_sha256": "53d336db6c820e4bf6ab6a381775206506f5e421c60e5f69c643d3415988dd69",
+      "status": "fixed-on-branch-before-this-review"
+    },
+    {
+      "number": 8280,
+      "title": "[P1] Keep the concurrent map-count regression executable under the default RelWithDebInfo build",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8280",
+      "category": "build-qualification",
+      "body_sha256": "e269e07b9984e51fdbebd9bc37b4f03ca14eb942cb39269c0397420fa17a2a98",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8281,
+      "title": "[P1] Bind LLVM initial CMake cache contents into foundation and SDK reuse identities",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8281",
+      "category": "build-qualification",
+      "body_sha256": "fa80a3c7cf7c3ef045a0cdf383f33d4d73981a9dd3a920286c28ef746b948407",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8282,
+      "title": "[P1] Make native sanitizer qualification fail closed against ambient options and verify detection with paired controls",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8282",
+      "category": "assurance",
+      "body_sha256": "748ff0dde5fbe079c91357b9592784e7a273f6cbcbde31ff69891f0bae7c3d37",
+      "status": "open"
+    },
+    {
+      "number": 8283,
+      "title": "[P1] Integrate native Clang/Linux execution into truthful PR and periodic assurance gates",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8283",
+      "category": "assurance",
+      "body_sha256": "0c2d0d11f12c7c585ff2413259ce85cc4615e1eb3476f4c5a6ba93b2d3d65af5",
+      "status": "open"
+    },
+    {
+      "number": 8284,
+      "title": "[P1] Add isolated compiler and complete runtime instrumentation profiles",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8284",
+      "category": "assurance",
+      "body_sha256": "d67127ddd14056c554e84536fc39e380432f70ec5de7c69e0e2f71e55e35096b",
+      "status": "open"
+    },
+    {
+      "number": 8285,
+      "title": "[P2] Add fork-matched static analysis and checked lock contracts for the native compiler/runtime implementation",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8285",
+      "category": "assurance",
+      "body_sha256": "c428ea1b7068ffecdd2d2c73c7d09a01afd4ead1693ea44b50b6c532538d6423",
+      "status": "open"
+    },
+    {
+      "number": 8286,
+      "title": "[P2] Verify real Objective-C 3 IR across optimizer/backend stages and retain reducible miscompile evidence",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8286",
+      "category": "assurance",
+      "body_sha256": "96ebaf648e1a51dc22a243cbe664f00833421e129fb778288889578251fe82d4",
+      "status": "open"
+    },
+    {
+      "number": 8287,
+      "title": "[P2] Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8287",
+      "category": "assurance",
+      "body_sha256": "767dc3b22adb5c4e21d0e9b438af16faff80b556c7c48c62890b50b556affec5",
+      "status": "open"
+    },
+    {
+      "number": 8288,
+      "title": "[P2] Add independent generated semantic oracles for carrier ownership, cleanup and separate compilation",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8288",
+      "category": "assurance",
+      "body_sha256": "365414cb3d07c9a4a7bfe66c2e17c3d801da5058f1a137728d1aedf7df59a055",
+      "status": "open"
+    },
+    {
+      "number": 8289,
+      "title": "[P2] Generate replayable task/group/actor schedules with independent lifetime and quiescence oracles",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8289",
+      "category": "assurance",
+      "body_sha256": "fe6f1c9387d14802d520d82b2ef3755e9d8fb9965fbe870fc75e87a96538f6d7",
+      "status": "open"
+    },
+    {
+      "number": 8290,
+      "title": "[P2] Measure current compiler and runtime source/branch coverage with complete provenance",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8290",
+      "category": "assurance",
+      "body_sha256": "b23f778bdc2475c3886c29d0a1f93f14478568fce40de92f69cba5fde51d2e29",
+      "status": "open"
+    },
+    {
+      "number": 8291,
+      "title": "[P2] Benchmark real ObjC3 semantic workloads beyond warm trivial-C command latency",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8291",
+      "category": "assurance",
+      "body_sha256": "e0f44d8de2c63e3cc383ac6b989485c6a3b79f52fba7632957f662cdeb46d374",
+      "status": "open"
+    },
+    {
+      "number": 8292,
+      "title": "[P2] Validate preserved Swift-facing metadata with a real, version-pinned Swift consumer",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8292",
+      "category": "assurance",
+      "body_sha256": "193d35623a21c8ab52502e6576a0ac3b7032c885b953bbd5b42cf3fb72ffe78a",
+      "status": "open"
+    },
+    {
+      "number": 8293,
+      "title": "[P1] Do not join another runtime worker synchronously from last executor release",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8293",
+      "category": "runtime",
+      "body_sha256": "0f7aeae03684782d94ed192b5f7e1891f0493bbf2dc6fb105a311c63494db848",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8294,
+      "title": "[P2] Validate map replacement values independently of the \u201cno replacement\u201d sentinel",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8294",
+      "category": "runtime",
+      "body_sha256": "599dcadaf303b985d98a6ebfa16a4103074226abf9b74dc5dd3b12630fd2240b",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8295,
+      "title": "[P2] Scope retired actor-object bindings to object lifetime, not a reusable address",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8295",
+      "category": "runtime",
+      "body_sha256": "1c37daf221ab32f9479837f55b2cd1f43972aa23f785759b39d5608d7eb1a75b",
+      "status": "open"
+    },
+    {
+      "number": 8296,
+      "title": "[P2] Bound task-group depth or traverse and reclaim group trees without recursive native stack",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8296",
+      "category": "runtime",
+      "body_sha256": "67e89e1a0e36fe68c4d7abbd2f0938f97ec77dcf7fd13b0bf3b6e645b33796be",
+      "status": "open"
+    },
+    {
+      "number": 8297,
+      "title": "[P2] Validate callable-produced native frames before wrapping them in an admitted outer frame",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8297",
+      "category": "runtime",
+      "body_sha256": "f733a5ce0794e0e80674281dbb741561cd97d492840885e86bad2c5aabb20900",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8298,
+      "title": "[P1] Retain the task while C++ result() invokes a reentrant result copy constructor",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8298",
+      "category": "runtime",
+      "body_sha256": "f1a8a9b6037c8095b42b1585c77224a9fe1f9e1d4f0e21ed1064cc5045dcb192",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8299,
+      "title": "[P2] Trampoline failed task wakes instead of recursively cancelling dependency chains",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8299",
+      "category": "runtime",
+      "body_sha256": "64f61d5e1e8acb82056ee8666d1e600f585643d72955ad7e3dbe85cb9fb701b0",
+      "status": "open"
+    },
+    {
+      "number": 8300,
+      "title": "[P2] Build generic maps and sets privately before publication without cloning every partial result",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8300",
+      "category": "runtime",
+      "body_sha256": "34424740368a286186bdc964c0f7b21de114da46976683ec695a7a952d47ca84",
+      "status": "open"
+    },
+    {
+      "number": 8301,
+      "title": "[P2] Avoid whole-array payload reconstruction for every generic append/set",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8301",
+      "category": "runtime",
+      "body_sha256": "b0487e6eb2cf9b68fb597a6ed3fa496a97c9e0fc007a09ceb4f3eff96bc1281c",
+      "status": "open"
+    },
+    {
+      "number": 8302,
+      "title": "[P2] Centralize validated text construction before publication and eliminate redundant UTF-8 copies",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8302",
+      "category": "runtime",
+      "body_sha256": "75b65199c2e58f29880469be4f3eeb913252b5e7e069bacf990af8dbc5527a3b",
+      "status": "open"
+    },
+    {
+      "number": 8303,
+      "title": "[P2] Make generic-collection rollback tests actually account for destroyed candidate payloads",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8303",
+      "category": "runtime",
+      "body_sha256": "c73f7ac0d39e36be47a29c9d588bb671f0936c2de3a6333c6655da3778976b17",
+      "status": "open"
+    },
+    {
+      "number": 8304,
+      "title": "[P2] Index concrete i32 map/set membership instead of scanning every prior element",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8304",
+      "category": "runtime",
+      "body_sha256": "070f7bd523cb5414c6c06473aaf32a9b458eca086bc8da1de55b01f6261f9c4f",
+      "status": "open"
+    },
+    {
+      "number": 8305,
+      "title": "[P2] Roll back unexposed opaque-service tokens when entry publication throws",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8305",
+      "category": "runtime",
+      "body_sha256": "073c9f8bc5b4c28b690cecccaaa50806df368734ff900ff0f4f64824376d44b5",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8306,
+      "title": "[P1] Reject Block casts that erase or fabricate callable ownership contracts",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8306",
+      "category": "compiler-interface",
+      "body_sha256": "16ee4f35db607fb7f5f40ae9c1513a20006079a08af42b1f3533ff3fd1a4375f",
+      "status": "open"
+    },
+    {
+      "number": 8307,
+      "title": "[P1] Preserve borrowed obligations carried by C++ base subobjects",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8307",
+      "category": "compiler-interface",
+      "body_sha256": "1922a6f6cae846c3a03bc445252bd0ebccc6c181e76da9487fc302e845e2ce61",
+      "status": "open"
+    },
+    {
+      "number": 8308,
+      "title": "[P1] Preserve guard continuations and source cleanup ownership inside autorelease pools",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8308",
+      "category": "compiler-interface",
+      "body_sha256": "e81a6934047d06177aeede6ff01947b8474d0d5dbdb93172202f0e7beb3bbef7",
+      "status": "open"
+    },
+    {
+      "number": 8309,
+      "title": "[P1] Skip zero-width bit-fields before requesting storage in managed C record helpers",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8309",
+      "category": "compiler-interface",
+      "body_sha256": "8fdc6e8a495c7c936f3a12ec73ebbb51b8f94c217520b4d1e5fb1e328c259835",
+      "status": "open"
+    },
+    {
+      "number": 8310,
+      "title": "[P1] Bind effective primitive/target ABI settings into semantic-interface identity and replay",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8310",
+      "category": "compiler-interface",
+      "body_sha256": "429a949b26f0ce02441c75749e4af5b8502e3a2d7f76a8b56764fa5d490eca9b",
+      "status": "open"
+    },
+    {
+      "number": 8311,
+      "title": "[P2] Include C and Objective-C thread-storage class in semantic-interface fingerprints",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8311",
+      "category": "compiler-interface",
+      "body_sha256": "e39bbae96edc5afcdb79cfd4e937a6d52a83c9eb119ddbe932290caa2d0051e5",
+      "status": "open"
+    },
+    {
+      "number": 8312,
+      "title": "[P2] Preserve pointer nullability in semantic identity before canonical type erasure",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8312",
+      "category": "compiler-interface",
+      "body_sha256": "114153a8181ebc0bf61ac2930d1c90beb1a8e1f8f1927f2516744fcf86c42a91",
+      "status": "open"
+    },
+    {
+      "number": 8313,
+      "title": "[P2] Bound aggregate interface-resolution memory and avoid retaining every unselected artifact",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8313",
+      "category": "compiler-interface",
+      "body_sha256": "9d1e1f5112acedb33faaad7d5d58de0c383be51dad72342fb5357af877b72081",
+      "status": "open"
+    },
+    {
+      "number": 8314,
+      "title": "[P1] Reject implicit callable conversions that fabricate borrowed permissions or erase borrowed results",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8314",
+      "category": "compiler-interface",
+      "body_sha256": "12e4878dd2c581f0f695b1971c7144e708ac4d0a7d82b11c7352db14d44f2fb6",
+      "status": "open"
+    },
+    {
+      "number": 8315,
+      "title": "[P2] Revalidate dependent Boolean conditions when instantiating if-let/if-var",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8315",
+      "category": "compiler-interface",
+      "body_sha256": "dc66c8f3629d88beaab91cfd8d286c1a6de51c39444e2ead1a29f1cca763c0a5",
+      "status": "open"
+    },
+    {
+      "number": 8316,
+      "title": "[P1] Preserve borrowed facts through GNU statement-expression results",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8316",
+      "category": "compiler-interface",
+      "body_sha256": "34c5d538a140a79f3552104b820c45ac62ce89b06224f2b0f2043bbe446f157a",
+      "status": "open"
+    },
+    {
+      "number": 8317,
+      "title": "[P1] Preserve actual subobject alignment in managed C-record helpers, or reject underaligned storage",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8317",
+      "category": "compiler-interface",
+      "body_sha256": "e0e95c2cb2692c1ad82b539e8e92d37a24246f0266017f3889aa6376d4e98121",
+      "status": "open"
+    },
+    {
+      "number": 8318,
+      "title": "[P2] Preserve category-adopted protocols in canonical source, identity and dependency checks",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8318",
+      "category": "compiler-interface",
+      "body_sha256": "9f0bb182d5d030f1d8277297953b82fb2df45eed0432dd199cf35c568bb77698",
+      "status": "open"
+    },
+    {
+      "number": 8319,
+      "title": "[P2] Bind Objective-C ivar bitfield shape into semantic-interface identity",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8319",
+      "category": "compiler-interface",
+      "body_sha256": "17596fe1fa3f1d447f48871334aa6622a6df03ff056946597da788b6b18bd1df",
+      "status": "open"
+    },
+    {
+      "number": 8320,
+      "title": "[P2] Include property accessor selectors and required/optional state in semantic identity",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8320",
+      "category": "compiler-interface",
+      "body_sha256": "b1b0742fb6240c9866fa59d1bdeccfa4adbdfb299c3b27eae42b0786621e355d",
+      "status": "open"
+    },
+    {
+      "number": 8321,
+      "title": "[P2] Bind lightweight Objective-C generic signatures and specialized superclasses into class interface identity",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8321",
+      "category": "compiler-interface",
+      "body_sha256": "64dd2e6c34f614915aa40b8c8c37e10b99d294981f7e1f02f870f66bed95c281",
+      "status": "open"
+    },
+    {
+      "number": 8322,
+      "title": "[P1] Include native frontend/runtime test sources in release qualification reuse identity",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8322",
+      "category": "build-qualification",
+      "body_sha256": "7323737fb00d7b443b6985f9afc3399aaf1baebc35eac327e1903fbf2d12a224",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8323,
+      "title": "[P1] Keep semantic qualification checks active under Python optimization",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8323",
+      "category": "build-qualification",
+      "body_sha256": "11a8175a3c79ac521c2612eb2a42d2e2f28ba61757bb389312cf9ae6e6aefde6",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8324,
+      "title": "[P2] Reject compiler crashes in expected-diagnostic qualification cases",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8324",
+      "category": "build-qualification",
+      "body_sha256": "37f5681cede16b80b43dc0110a80228acc4e0eac3bc55b353a78ed45904491e8",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8325,
+      "title": "[P2] Rediscover header lookup before reusing installed source-package objects",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8325",
+      "category": "build-qualification",
+      "body_sha256": "19a1115f84a2fd325c40c71addd70090730001cdc6b327c613563e959cc9a4d2",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    },
+    {
+      "number": 8326,
+      "title": "[P2] Commit SDK activation through one generation pointer",
+      "url": "https://github.com/doublemover/Slopjective-C/issues/8326",
+      "category": "build-qualification",
+      "body_sha256": "ef845e1836a7d788cd3bb3e681bcdd4091433c07067e58a15a902bc2b8de8e67",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb"
+    }
+  ],
+  "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb",
+  "fixed_in_this_batch": [
+    8280,
+    8281,
+    8293,
+    8294,
+    8297,
+    8298,
+    8305,
+    8322,
+    8323,
+    8324,
+    8325,
+    8326
+  ],
+  "remaining_implementation_or_host_items": 38,
+  "source_inputs": {
+    "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
+    "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
+    "native/objc3c/src/runtime/concurrency/service_executor.cpp": "94c93c4fe1278f8b705673b597ad76615d84d633805e0e586af9043ae163dca2",
+    "native/objc3c/src/runtime/public/objc3_runtime_services.h": "aa647ad5d98b0304f82f027a15e78028e708293d4d8e822816dac9f81fac0d2b",
+    "native/objc3c/src/runtime/public/objc3_task.hpp": "eafa336cd6b89fc5e31b001c7a4c3ce8fcb2fc092f38631db008b89a05404eae",
+    "native/objc3c/src/runtime/stdlib/generic_associative_service.cpp": "f7dee351d3457cd9a613fef9a3804ce1c81ced6d63c64583e7311f42838f8a52",
+    "native/objc3c/src/runtime/stdlib/opaque_service_storage.h": "6dcc53c97f58f158d8878c9dc29a01ade18a87e6a56c63b1efb415a230631958",
+    "native/objc3c/tests/assertion_control_test.cpp": "de625b7b7e568dc8d1c19ae9ab32d0c5d489da806f64d541f6a06181357b7578",
+    "native/objc3c/tests/generic_associative_service_test.cpp": "590f8fdcf7da2442ded344f5ecf88362c026c4598be5daca3719ec1a32e1d737",
+    "native/objc3c/tests/opaque_storage_transaction_test.cpp": "9828f9a646f6b0aaeab0be870fc1502c9d47e86c7f7b3db07fdbd281c094046b",
+    "native/objc3c/tests/runtime_lifetime_test.cpp": "06b1907f51bbbf33e43ec98ede2e0360dc0aaf9aaa37f1a9abb7eaa520e6b315",
+    "native/objc3c/tests/stdlib_map_count_test.cpp": "f69bfe7d1623aad2cc810adb378ba0942c07af7a6dd902f26a0247e4b71fa2df",
+    "native/objc3c/tests/test_assertion_policy.h": "7efff6559ddf30abcff86b4892f2d19d135f7b762188b047a7711d6f0efc64b1",
+    "scripts/objc3c_toolchain/build.py": "0dc64f7978677da790b848b68bc081e57ac12857fec97afe6194765451a08d30",
+    "scripts/objc3c_toolchain/core.py": "8913c411a0db961bdda1e5a2be1f594c25c7bdba4e3e097879332b0dd64c3f83",
+    "scripts/objc3c_toolchain/export_development_patches.py": "bd074d1da00fca98ba07737225791a4114feace4824e601f17d2be2a5327a1e2",
+    "scripts/objc3c_toolchain/install_sdk.py": "75d87b2c7fbad17d58303ef9ec863dd4fb767a4872bc605dc5e58496b1db5348",
+    "scripts/objc3c_toolchain/linux_sdk.py": "f702b25602e52a18c0936f4cce37547f61bc2fcd8f03b4d3bfcde2e5af9b2997",
+    "scripts/objc3c_toolchain/qualify_async_c_abi_sanitizers.py": "85be4e208100aa2ce244a1060d4a7ee48b5400f7dc0528351aefa4a70376cc59",
+    "scripts/objc3c_toolchain/qualify_native_async_packages.py": "d1016f23f27e28ede3e02e903a24bec5dcc4d44d233851fb1bbc7c8a2dc62281",
+    "scripts/objc3c_toolchain/qualify_source_graph.py": "24a8843d45f58b2da575797adc365234a9c2e202c80bb45cce57cadb9906cfe8",
+    "scripts/objc3c_toolchain/qualify_source_modules.py": "49b369799e9f67b8251c1e38b036fae532417c6f9a286b98c4efab9d862afe74",
+    "scripts/objc3c_toolchain/qualify_stdlib.py": "04ed74b927e667d453d67516e9aa75c80dd6219950c1ded1ce6c333ca5a78852",
+    "scripts/objc3c_toolchain/run_linux_compiler_witnesses.py": "1e8b8c541c6633999cb030e57206cbfa3afc78c6d708bbc679b6a6fd5ebb709d",
+    "scripts/objc3c_toolchain/source_graph.py": "37b1f9166bd316f69bdbb0328d1ad5698a8727bec67d5f71b2b888d04f1b5536",
+    "tests/tooling/test_linux_sdk_reuse.py": "f02094e79ad05f0ca32bc28e93c07cc7f07f58dc4864cedee1c417037e54b4b3",
+    "tests/tooling/test_native_assertion_policy.py": "96c4b583c4c1e90a63c9494a7435679bb3d3a2e2615fb4294463702a69fae034",
+    "tests/tooling/test_native_failure_controls.py": "dd07c03dbecc711afe0e2a9fe6235b2733b04479adde149860ceab95563bafcb",
+    "tests/tooling/test_objc3c_toolchain_prepare.py": "64eec59109b9141be7f012e1c394a09c672276f5fc6d6d2c875364856beaa4ba",
+    "tests/tooling/test_qualification_integrity.py": "d5b2cf32070782a869ad34aa52aea763442f9068a205d862cc21dac54868a43b",
+    "tests/tooling/test_source_graph.py": "8e02bb7258e572dfb633ac950fb0b5817efa5e932112e339982423d6fa03e603",
+    "tests/tooling/test_toolchain_build.py": "6767702992fbfa143eb4e2d68d49764593a30b390437c7203d3f2c0f3a624637",
+    "tests/tooling/test_toolchain_install.py": "1f5a82bc53dd2c4c9f625ead56e91d0ff39b0b79d09db04a3c5cbad91d60907d",
+    "toolchains/llvm/manifest.json": "c54b99b02bae39837b464d2de07c7a1c23dca9ef25ad6bbd1a3d2410f21aa35b",
+    "toolchains/llvm/patches/0001-objc3-language-mode-and-build-identity.patch": "3322dd99aa1be54a1a70f706e4d81e66062e615629cb1e756699d523024f913c"
+  },
+  "validation": {
+    "native_foundation": {
+      "path": "out/issue-source-lookup-native-build.json",
+      "sha256": "f8728a1f8e56f47f7635bb5d122b6e1886b69b2ead4a3ebd01e2b6fd9ae00e3e",
+      "status": "passed"
+    },
+    "effective_configuration": {
+      "path": "out/issue-configured-inventory-integration.json",
+      "sha256": "f285786c278d333e615a70290d189eba60a1c8c137c64cf9761a3c8ab95c484b",
+      "status": "PASS"
+    },
+    "frontends": {
+      "path": "out/issue-transaction-frontends/qualification.json",
+      "sha256": "3f01696ce3cb13d545e2a615dba6ca14b674b5389cbf613edf6e5163b62df69b",
+      "status": "PASS"
+    },
+    "runtime_sanitizers": {
+      "path": "out/issue-runtime-transaction-sanitizers/qualification.json",
+      "sha256": "efe7520f7cf5f644c2984c66547a9da0ed1002ec5f6b53070c595552fb7e3df3",
+      "status": "PASS"
+    },
+    "source_graph": {
+      "path": "out/issue-source-graph-current/qualification.json",
+      "sha256": "97a3754083949bcc05d6b2bec194d0d4a0932e3719f9fd550c1da7f9c120c5f7",
+      "status": "PASS"
+    },
+    "focused_tooling": {
+      "path": "out/issue-review-complete-tooling.log",
+      "sha256": "048d23eafaf9ad72296cfd4e06afd683f312d3555c2f8dbea7a7e4e60114d060",
+      "status": "PASS",
+      "tests": 180
+    },
+    "frontend_suites": 36,
+    "native_unit_tests": 239,
+    "compiler_regressions": 413,
+    "compiler_unsupported": 3,
+    "sanitizer_cases": 12,
+    "sanitizer_commands": 24,
+    "configuration_modes": [
+      "Debug",
+      "Release",
+      "RelWithDebInfo"
+    ],
+    "semantic_mutant_controls": [
+      "wrong-map-count",
+      "missing-unpublished-token-rollback"
+    ],
+    "source_graph_cases": 5
+  },
+  "boundaries": [
+    "No SDK/archive was rebuilt or promoted; accepted SDK 2.62 remains unchanged.",
+    "Sanitizer evidence covers the changed runtime owners and their declared dependencies; host compiler and complete runtime graph instrumentation remain tracked by #8284.",
+    "The prior 2.94 factory package matrix and 2.91 complete runtime matrix were not rerun for this correction batch.",
+    "Native macOS arm64 support still requires a suitable host; all unresolved issues remain in the inventory."
+  ],
+  "retained_failure_artifacts": [
+    "out/issue-gates-initial-tests.log",
+    "out/issue-gates-fourth-tests.log",
+    "out/issue-gates-facade-configure.log",
+    "out/issue-header-lookup-native-build.json",
+    "out/issue-gates-assertion-configurations.log",
+    "out/issue-gates-native-header-discovery.log",
+    "out/issue-source-graph-integration/qualification.json",
+    "out/issue-runtime-sanitizers/qualification.json",
+    "out/issue-runtime-qualified-sanitizers/qualification.json",
+    "out/issue-runtime-admission-sanitizers/qualification.json",
+    "out/issue-runtime-lifetime-sanitizers/qualification.json",
+    "out/issue-runtime-frontends/qualification.json",
+    "out/issue-admission-frontends/qualification.json"
+  ]
+}
