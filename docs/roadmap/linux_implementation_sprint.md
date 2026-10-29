@@ -83,3 +83,14 @@ tooling tests passing, plus 32 focused package configurations / 224 commands and
 three full-fixture smoke configurations / 21 commands. Three platform compiler
 cases remain unsupported. Optional-argument comparison and recursive attribute
 copying are covered by the final compiler; accepted SDK 2.62 remains unchanged.
+
+The [standard C++ coroutine span](linux_cxx_standard_coroutines.md), source **2.90**,
+adds typed standard handles, suspend/no-op types and full/partial external traits
+specializations, including public aliases, header-only modules and two-provider
+imports. Its [receipt](../support/linux_cxx_standard_coroutines_progress.json)
+records all 33 frontend suites, 236 native unit tests, 412 compiler regressions and
+27 focused tooling tests passing, plus 32 focused package configurations / 224
+commands and three full-fixture smoke configurations / 21 commands. Three platform
+compiler cases remain unsupported. The final compiler excludes specialization
+rows from ordinary module lookup and matches its current source/catalog identity.
+SDK 2.62 remains unchanged.

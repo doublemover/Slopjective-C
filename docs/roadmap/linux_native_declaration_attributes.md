@@ -31,6 +31,7 @@ ASan/UBSan and TSan. Three full async-fixture smoke configurations / 21 commands
 also pass, one per normal/ASan/TSan mode. The
 [source receipt](../support/linux_native_declaration_attributes_progress.json)
 binds the final compiler and reports. These are source checks; SDK 2.62 remains
-the accepted archive. Other unmodeled declaration attributes, public standard
-coroutine types, dependent lookup projections and full language/profile
-conformance remain open.
+the accepted archive. Public standard coroutine types and traits are added in the
+[2.90 source span](linux_cxx_standard_coroutines.md). Other unmodeled declaration
+attributes, dependent lookup projections and full language/profile conformance
+remain open.

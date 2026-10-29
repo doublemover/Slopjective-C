@@ -23,6 +23,7 @@ The [source receipt](../support/linux_cxx_custom_coroutines_progress.json) recor
 inputs, reports and limits. Eager and source-directed imports support including
 `<coroutine>` before or after the module directive. Exact source mappings join
 instantiated nested promise forwards; template friend redeclarations retain
-their independent native chains. Public signatures exposing standard-library coroutine types and
-external `coroutine_traits` specialization publication remain separate contracts.
+their independent native chains. Public standard coroutine signatures and external
+`coroutine_traits` specializations are added in the separately validated
+[2.90 source span](linux_cxx_standard_coroutines.md).
 This does not establish Objective-C async/profile conformance or SDK delivery.

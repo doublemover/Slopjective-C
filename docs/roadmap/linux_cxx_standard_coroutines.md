@@ -26,6 +26,13 @@ returned closure coroutines, provider-created frames, cancellation, exception
 cleanup and exact lifetime counts. Compiler witnesses exercise header placement,
 eager/source-directed imports, type-only modules, two independent providers,
 canonical replay, relocation, specialization changes and private-dependency
-rejections. Combined validation is pending. SDK 2.62 remains the accepted archive;
-full language/profile conformance and general standard-library publication remain
-separate work.
+rejections. All 33 frontend suites, 236 native unit tests, 412 compiler
+regressions and 27 focused tooling tests pass; three platform compiler cases are
+unsupported. Final source-free checks pass 32 focused configurations / 224 commands
+across normal, eager, ASan/UBSan and TSan, plus three full async-fixture smoke
+configurations / 21 commands. The
+[source receipt](../support/linux_cxx_standard_coroutines_progress.json) binds
+source, final binaries, header contracts and reports. The checked standard library
+is GNU libstdc++; other standard-library implementations and general standard-library
+publication remain separate work. SDK 2.62 remains the accepted archive; full
+language/profile conformance remains open.
