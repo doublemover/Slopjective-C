@@ -139,6 +139,15 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    closure_projections={row['qualified_name'] for row in metadata['declarations']
+                         if ';cxx-closure-result-projections:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-closure-result-projections.v1' in metadata['required_semantics']
+    assert {'NativeClosureResultProjections::First','NativeClosureResultProjections::Second',
+            'NativeClosureResultProjections::Generic','NativeClosureResultProjections::Integer',
+            'NativeClosureResultProjections::Wide','NativeClosureResultProjections::Owned',
+            'NativeClosureResultProjections::Wrapped','NativeClosureResultProjections::Holder',
+            'NativeClosureResultProjections::shared','NativeClosureResultProjections::local',
+            'NativeClosureResultProjections::structural','NativeClosureResultProjections::provider_owned'}<=closure_projections
     value_arguments={row['qualified_name'] for row in metadata['declarations']
                      if ';cxx-factory-value-arguments:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-factory-value-arguments.v1' in metadata['required_semantics']

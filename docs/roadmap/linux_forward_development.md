@@ -101,6 +101,16 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## Public closure factory result types
+
+The [2.84 source span](linux_cxx_closure_result_projections.md) publishes ordinary,
+generic and closed-template closure result types through aliases, records,
+wrappers, storage and provider entries. Exact factory origins distinguish equal
+layouts. Captured values retain native copy/move/destruction; captureless
+constexpr results form structural template values. Focused source-free and
+full-fixture smoke checks pass. Broad validation and SDK delivery remain batched.
+Other dependent/lambda-owned result and remaining profile work stays open.
+
 ## Structural C++ factory values
 
 The [2.83 source span](linux_cxx_factory_value_arguments.md) publishes structural

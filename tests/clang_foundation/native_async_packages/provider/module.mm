@@ -4,6 +4,7 @@
 #include "factory_template_arguments.h"
 #include "generic_factory_projections.h"
 #include "factory_value_arguments.h"
+#include "closure_result_projections.h"
 #else
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
@@ -1935,5 +1936,6 @@ namespace NativeEffectLambdas {
 
 #include "generic_factory_projections.h"
 #include "factory_value_arguments.h"
+#include "closure_result_projections.h"
 
 #endif

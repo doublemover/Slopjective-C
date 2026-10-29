@@ -1815,6 +1815,79 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestClosureResultProjections() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="closure-result-projections.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.closure_result_projections","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.closure_result_projections","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace NativeClosureFactories {
+        struct State {int value;State(int n):value(n){};State(const State &)=default;State(State &&other):value(other.value){other.value=0;}~State(){}};
+      }
+#ifndef NATIVE_CLOSURE_RESULT_PROJECTIONS_H
+#define NATIVE_CLOSURE_RESULT_PROJECTIONS_H
+namespace NativeClosureResultProjections {
+inline auto first(int n){return [n](int delta){return n+delta;};}
+inline auto second(int n){return [n](int delta){return n+delta;};}
+inline auto generic(int n){return [n]<class T>(T delta){return n+delta;};}
+template<class T> auto factory(T n){return [n](T delta){return n+delta;};}
+inline auto owned_factory(NativeClosureFactories::State value){return [copy=static_cast<NativeClosureFactories::State &&>(value)](int delta){return copy.value+delta;};}
+using First=decltype(first(0));using Second=decltype(second(0));
+using Generic=decltype(generic(0));using Integer=decltype(factory(0));using Wide=decltype(factory(0L));
+using Owned=decltype(NativeClosureResultProjections::owned_factory(NativeClosureFactories::State(0)));
+template<class T> struct Box {T value;int get(){return value(2);}};
+using Wrapped=Box<First>;
+struct Holder {First first;Second second;int get(){return first(0)+second(0);}};
+inline int read(First value){return value(2);}
+inline int read(Second value){return value(2);}
+inline First shared=first(40);
+inline int local(){return []<class T>(T call){return call(2);}(first(40));}
+constexpr auto stateless(){return [](int n){return n+2;};}
+template<auto Call> int invoke(){return Call(40);}
+inline int structural(){return invoke<stateless()>();}
+int provider_read(First value){return value(2);}
+First provider_factory(int n){return first(n);}
+First *provider_shared(){return &shared;}
+Owned provider_owned(int n){return NativeClosureResultProjections::owned_factory(NativeClosureFactories::State(n));}
+}
+#endif
+
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closure-result.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxClosureResultProjectionIdentity(find("NativeClosureResultProjections::First")));
+    assert(HasCxxClosureResultProjectionIdentity(find("NativeClosureResultProjections::local")));
+    assert(find("NativeClosureResultProjections::First").canonical_type_identity!=find("NativeClosureResultProjections::Second").canonical_type_identity);
+    assert(find("NativeClosureResultProjections::Integer").canonical_type_identity!=find("NativeClosureResultProjections::Wide").canonical_type_identity);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxClosureResultProjectionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxClosureResultProjectionIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("inline auto hidden(){return [](int n){return n;};} using Public=decltype(hidden());", "excluded-closure-result.cpp",{"Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestFactoryValueArguments() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="factory-value-arguments.cpp",
@@ -5175,6 +5248,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestClosureResultProjections();
   TestFactoryValueArguments();
   TestGenericFactoryProjections();
   TestFactoryTemplateArguments();

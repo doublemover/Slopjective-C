@@ -356,7 +356,8 @@
     "NativeFactoryTypeProjections",
     "NativeFactoryTemplateArguments",
     "NativeGenericFactoryProjections",
-    "NativeFactoryValueArguments"
+    "NativeFactoryValueArguments",
+    "NativeClosureResultProjections"
   ],
   "dependencies": []
 }

@@ -57,6 +57,20 @@ int factory_package_checks() {
        Value::provider_slot()!=&Value::slot<Value::first(42)>)return 228;
     Value::slot<Value::first(42)> = 40;if(*Value::provider_slot()!=40)return 229;
   }
+  {
+    namespace Closure=NativeClosureResultProjections;
+    auto first=Closure::provider_factory(40);auto second=Closure::second(2);
+    Closure::Holder holder{first,second};Closure::Wrapped wrapped{first};
+    Closure::Generic generic=Closure::generic(40);
+    Closure::Integer integer=Closure::factory(40);Closure::Wide wide=Closure::factory(40L);
+    if(Closure::read(first)!=42 || Closure::read(second)!=4 || holder.get()!=42 || wrapped.get()!=42 ||
+       generic(2)!=42 || generic(2L)!=42 || integer(2)!=42 || wide(2L)!=42 ||
+       Closure::local()!=42 || Closure::structural()!=42 || Closure::provider_read(first)!=42 ||
+       Closure::provider_shared()!=&Closure::shared || Closure::shared(2)!=42)return 230;
+    auto owned=Closure::provider_owned(40);auto copy=owned;auto moved=static_cast<Closure::Owned &&>(owned);
+    if(owned(0)!=0 || copy(2)!=42 || moved(2)!=42 || NativeClosureFactories::State::live!=3)return 231;
+  }
+  if(NativeClosureFactories::State::live)return 232;
   return 0;
 }
 
