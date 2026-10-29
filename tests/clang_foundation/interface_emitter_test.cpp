@@ -1815,6 +1815,79 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestLambdaFactoryResults() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="lambda-factory-results.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.lambda_factory_results","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.lambda_factory_results","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace NativeClosureFactories {
+        struct State {int value;State(int n):value(n){};State(const State &)=default;State(State &&other):value(other.value){other.value=0;}~State(){}};
+      }
+#ifndef NATIVE_LAMBDA_FACTORY_RESULTS_H
+#define NATIVE_LAMBDA_FACTORY_RESULTS_H
+namespace NativeLambdaFactoryResults {
+inline auto first(int base){return [base](int n){struct Local{int value;};return Local{base+n};};}
+inline auto second(int base){return [base](int n){struct Local{int value;};return Local{base+n};};}
+inline auto generic(int base){return [base]<class T>(T n){struct Local{T value;};return Local{base+n};};}
+template<class T> auto outer(T base){return [base](T n){struct Local{T value;};return Local{base+n};};}
+inline auto nested(int base){return [base](int n){return [value=base+n](int delta){struct Local{int value;};return Local{value+delta};};};}
+inline auto owned(int n){return [state=NativeClosureFactories::State(n)](int delta){struct Local{NativeClosureFactories::State value;};return Local{NativeClosureFactories::State(state.value+delta)};};}
+using First=decltype(first(0)(0));using Second=decltype(second(0)(0));
+using Integer=decltype(generic(0)(0));using Wide=decltype(generic(0)(0L));
+using Outer=decltype(outer(0)(0));using OuterWide=decltype(outer(0L)(0L));
+using Nested=decltype(nested(0)(0)(0));using Owned=decltype(owned(0)(0));
+template<class T> struct Box{T value;};using Wrapped=Box<First>;
+struct Holder{First first;Second second;};
+inline int read(First value){return value.value;}
+inline int read(Second value){return value.value;}
+inline First shared=first(40)(2);
+inline int local(){return []<class T>(T value){return value.value;}(first(40)(2));}
+constexpr auto constant(){return [](int n){struct Local{int value;};return Local{n};};}
+template<auto V> struct Value{static constexpr int get(){return V.value;}};
+using Structural=Value<constant()(42)>;
+int provider_read(First value){return value.value;}
+First provider_factory(int n){return first(n)(2);}
+First *provider_shared(){return &shared;}
+Owned provider_owned(int n){return owned(n)(2);}
+}
+#endif
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closure-result.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxLambdaFactoryResultIdentity(find("NativeLambdaFactoryResults::First")));
+    assert(HasCxxLambdaFactoryResultIdentity(find("NativeLambdaFactoryResults::local")));
+    assert(find("NativeLambdaFactoryResults::First").canonical_type_identity!=find("NativeLambdaFactoryResults::Second").canonical_type_identity);
+    assert(find("NativeLambdaFactoryResults::Integer").canonical_type_identity!=find("NativeLambdaFactoryResults::Wide").canonical_type_identity);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxLambdaFactoryResultSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxLambdaFactoryResultIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("inline auto hidden(){return [](int n){struct Local{int value;};return Local{n};};} using Public=decltype(hidden()(42));", "excluded-closure-result.cpp",{"Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestClosureResultProjections() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="closure-result-projections.cpp",
@@ -2141,7 +2214,7 @@ void TestFactoryTypeProjections() {
     auto generic_origin=emit(generic_owner+"using Public=decltype(Family<int>{}.make(42));");
     assert(generic_origin.success && generic_origin.sidecar_json.find(kCxxGenericFactoryProjectionSemantic)!=std::string::npos);
     auto closure_origin=emit("inline auto outer(){return [](int n){struct Local{int value;};return Local{n};};} using Public=decltype(outer()(42));");
-    assert(!closure_origin.success);
+    assert(closure_origin.success && closure_origin.sidecar_json.find(kCxxLambdaFactoryResultSemantic)!=std::string::npos);
     auto excluded=emit("inline auto secret(){struct Local{int value;};return Local{42};} using Public=decltype(secret());", "excluded-factory.cpp",{"Public"});
     assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
   }
@@ -5248,6 +5321,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestLambdaFactoryResults();
   TestClosureResultProjections();
   TestFactoryValueArguments();
   TestGenericFactoryProjections();

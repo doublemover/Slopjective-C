@@ -477,6 +477,14 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_lambda_factory_results=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxLambdaFactoryResultIdentity);
+  const bool lambda_factory_result_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxLambdaFactoryResultSemantic)!=sidecar.required_semantics.end();
+  const bool lambda_factory_result_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxLambdaFactoryResultIdentity(d) || d.kind!="Namespace";});
+  if (has_lambda_factory_results!=lambda_factory_result_capability || !lambda_factory_result_owners)
+    return Invalid("lambda factory result identities and required capability must agree");
   const bool has_closure_result_projections=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxClosureResultProjectionIdentity);
   const bool closure_result_projection_capability=std::find(sidecar.required_semantics.begin(),

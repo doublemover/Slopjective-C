@@ -101,6 +101,15 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## Local result types from public closures
+
+The [2.85 source span](linux_cxx_lambda_factory_results.md) projects local result
+types from ordinary/generic closures and nested closure chains. Recursive public
+factory roots and exact closed arguments retain nominal origins, dependency
+checks, shared storage, structural values and cross-provider native lifetimes.
+Focused source-free and full-fixture smoke checks pass. Broad validation and SDK
+delivery remain batched; other dependent-type and profile work stays open.
+
 ## Public closure factory result types
 
 The [2.84 source span](linux_cxx_closure_result_projections.md) publishes ordinary,

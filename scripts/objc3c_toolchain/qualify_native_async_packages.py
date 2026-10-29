@@ -139,6 +139,16 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    lambda_results={row['qualified_name'] for row in metadata['declarations']
+                    if ';cxx-lambda-factory-results:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-lambda-factory-results.v1' in metadata['required_semantics']
+    assert {'NativeLambdaFactoryResults::First','NativeLambdaFactoryResults::Second',
+            'NativeLambdaFactoryResults::Integer','NativeLambdaFactoryResults::Wide',
+            'NativeLambdaFactoryResults::Outer','NativeLambdaFactoryResults::OuterWide',
+            'NativeLambdaFactoryResults::Nested','NativeLambdaFactoryResults::Owned',
+            'NativeLambdaFactoryResults::Wrapped','NativeLambdaFactoryResults::Holder',
+            'NativeLambdaFactoryResults::shared','NativeLambdaFactoryResults::local',
+            'NativeLambdaFactoryResults::Structural','NativeLambdaFactoryResults::provider_owned'}<=lambda_results
     closure_projections={row['qualified_name'] for row in metadata['declarations']
                          if ';cxx-closure-result-projections:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-closure-result-projections.v1' in metadata['required_semantics']

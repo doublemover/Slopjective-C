@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 84,
+        "minor": 85,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -210,13 +210,14 @@
         "Concrete factory result types as checked template type arguments, including nested/packed/pointer/array/member-pointer uses, full/partial selection, closed generic lambdas and provider-owned specializations/storage (source)",
         "Public projections of closed namespace/member generic factory result types, with exact function and enclosing class arguments, checked primary-owner dependencies and nontrivial cross-provider values (source)",
         "Structural non-type template arguments from public constexpr factory results, preserving exact nominal origins, value bits, recursive packs and checked provider ownership (source)",
-        "Public closure factory result projections through aliases, records, template arguments and provider/consumer entries, retaining exact factory origins, captures and native value lifetimes (source)"
+        "Public closure factory result projections through aliases, records, template arguments and provider/consumer entries, retaining exact factory origins, captures and native value lifetimes (source)",
+        "Public local result projections from ordinary/generic closures returned by complete factories, preserving recursive factory roots, closed arguments and captured record lifetimes (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Unsupported closure/unnamed-type projections, namespace attributes and dependent lookup/profile contracts"
+        "Remaining dependent/unnamed-type, custom coroutine-promise, namespace attribute and lookup/profile publication contracts"
       ]
     },
     {

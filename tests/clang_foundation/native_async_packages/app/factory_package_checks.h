@@ -71,6 +71,19 @@ int factory_package_checks() {
     if(owned(0)!=0 || copy(2)!=42 || moved(2)!=42 || NativeClosureFactories::State::live!=3)return 231;
   }
   if(NativeClosureFactories::State::live)return 232;
+  {
+    namespace Lambda=NativeLambdaFactoryResults;
+    auto first=Lambda::provider_factory(40);auto second=Lambda::second(0)(2);
+    Lambda::Holder holder{first,second};Lambda::Wrapped wrapped{first};
+    if(Lambda::read(first)!=42 || Lambda::read(second)!=2 || holder.first.value!=42 || wrapped.value.value!=42 ||
+       Lambda::generic(40)(2).value!=42 || Lambda::generic(40)(2L).value!=42 ||
+       Lambda::outer(40)(2).value!=42 || Lambda::outer(40L)(2L).value!=42 ||
+       Lambda::nested(38)(2)(2).value!=42 || Lambda::local()!=42 || Lambda::Structural::get()!=42 ||
+       Lambda::provider_read(first)!=42 || Lambda::provider_shared()!=&Lambda::shared)return 233;
+    auto owned=Lambda::provider_owned(40);auto copy=owned;auto moved=static_cast<Lambda::Owned &&>(owned);
+    if(owned.value.value!=0 || copy.value.value!=42 || moved.value.value!=42 || NativeClosureFactories::State::live!=3)return 234;
+  }
+  if(NativeClosureFactories::State::live)return 235;
   return 0;
 }
 
