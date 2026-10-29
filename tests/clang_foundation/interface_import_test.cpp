@@ -413,6 +413,14 @@ void TestNativeAttributeTemplateImports() {
       if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
       for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
       assert(result.success);
+      auto invalid=consumer;
+      invalid.source_text=std::string(directed?"@import test.native_attributes;\n":"")+
+          "void invalid(){NativeDeclarationAttributes::checked(-1);"
+          "NativeDeclarationAttributes::checked_template(-1);"
+          "auto pointer=&NativeDeclarationAttributes::provider_object_size;}";
+      auto rejected=Compile(invalid);assert(!rejected.success);
+      for(const char *message:{"negative value","negative template value","pass_object_size"})
+        assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[&](const auto &d){return d.message.find(message)!=std::string::npos;}));
     }
   }
   fs::remove_all(root);

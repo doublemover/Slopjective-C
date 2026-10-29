@@ -3,6 +3,19 @@
 
 int factory_package_checks() {
   {
+    namespace Contract=NativeDeclarationAttributes;
+    int values[5]={42};
+    auto plain_extent=static_cast<unsigned long (*)(const void *)>(&Contract::provider_extent);
+    if(Contract::provider_extent(values)!=sizeof(values) || plain_extent(values)!=99 || Contract::returns_twice()!=42)return 235;
+    if(Contract::object_size(values)!=sizeof(values) || Contract::provider_object_size(values)!=sizeof(values))return 254;
+    if(Contract::dynamic_size(values)!=sizeof(values) || Contract::provider_dynamic_size(values)!=sizeof(values))return 255;
+    if(&Contract::lifetime(values[0])!=&values[0] || Contract::noescape(values)!=42)return 230;
+    if(Contract::provider_callback(+[](int value){return value+2;},40)!=42)return 231;
+    if(Contract::provider_sentinel("answer",static_cast<void *>(nullptr))!=42)return 232;
+    if(Contract::checked(42)!=42 || Contract::checked_template(42)!=42)return 233;
+    if(Contract::provider_controlled(40)!=42 || Contract::unoptimized(40)!=42)return 234;
+  }
+  {
     namespace Project=NativeUnnamedTemplateProjections;
     static_assert(!__is_same(Project::First,Project::Second));
     static_assert(!__is_same(Project::Kind,Project::OtherKind));

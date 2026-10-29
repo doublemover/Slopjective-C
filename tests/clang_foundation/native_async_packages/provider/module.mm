@@ -1994,3 +1994,13 @@ Owned provider_owned(int value){return {Tracked(value)};}
 int provider_owned_value(Owned value){return value.value.value;}
 Wrapped provider_wrapped(Wrapped value){return value;}
 }
+
+unsigned long NativeDeclarationAttributes::provider_object_size(const void *const value __attribute__((pass_object_size(0)))) {return __builtin_object_size(value,0);}
+unsigned long NativeDeclarationAttributes::provider_dynamic_size(const void *const value __attribute__((pass_dynamic_object_size(0)))) {return __builtin_dynamic_object_size(value,0);}
+int NativeDeclarationAttributes::provider_callback(int (*callback)(int),int value){return callback(value);}
+int NativeDeclarationAttributes::provider_sentinel(const char *first,...){return first?42:0;}
+__attribute__((nothrow)) int NativeDeclarationAttributes::provider_controlled(int value){return value+2;}
+
+unsigned long NativeDeclarationAttributes::provider_extent(const void *value){return 99;}
+unsigned long NativeDeclarationAttributes::provider_extent(const void *const value __attribute__((pass_object_size(0)))) {return __builtin_object_size(value,0);}
+__attribute__((returns_twice)) int NativeDeclarationAttributes::returns_twice(){return 42;}

@@ -82,5 +82,22 @@ int *provider_partial();
 int provider_nested(Family<int> value);
 Special<int> provider_special(Special<int> value);
 FieldAligned provider_field(FieldAligned value);
+// Native parameter contracts retain hidden size arguments and caller diagnostics.
+unsigned long provider_extent(const void *value);
+unsigned long provider_extent(const void *const value __attribute__((pass_object_size(0))));
+unsigned long provider_object_size(const void *const value __attribute__((pass_object_size(0))));
+unsigned long provider_dynamic_size(const void *const value __attribute__((pass_dynamic_object_size(0))));
+inline unsigned long object_size(const void *const value __attribute__((pass_object_size(0)))) {return __builtin_object_size(value,0);}
+inline unsigned long dynamic_size(const void *const value __attribute__((pass_dynamic_object_size(0)))) {return __builtin_dynamic_object_size(value,0);}
+inline const int &lifetime(const int &value [[clang::lifetimebound]]) {return value;}
+inline int noescape(int *value __attribute__((noescape))) {return *value;}
+__attribute__((callback(1,2))) int provider_callback(int (*callback)(int),int value);
+__attribute__((sentinel(0,0))) int provider_sentinel(const char *first,...);
+inline constexpr int minimum=0;
+inline int checked(int value) __attribute__((diagnose_if(value<minimum,"negative value","error"))) {return value;}
+template<class T>inline T checked_template(T value) __attribute__((diagnose_if(value<0,"negative template value","error"))) {return value;}
+__attribute__((returns_twice)) int returns_twice();
+__attribute__((nothrow,leaf,noinline,disable_tail_calls,not_tail_called,nomerge,noduplicate)) int provider_controlled(int value);
+__attribute__((optnone,noinline)) inline int unoptimized(int value) {return value+2;}
 }
 #endif

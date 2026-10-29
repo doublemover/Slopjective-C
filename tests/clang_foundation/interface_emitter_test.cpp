@@ -153,7 +153,7 @@ void TestNativeOwnershipContractsRoundTrip() {
         EmitSemanticInterface(ast->getASTContext(), "fixture.owners", "test");
     assert(emitted.success && emitted.diagnostics.empty());
     const std::vector<llvm::StringRef> semantics = {
-        "objc3.canonical-function-effects.v1",
+        "objc3.canonical-function-effects.v1", kNativeDeclarationAttributeSemantic,
         "objc3.native-ownership-contracts.v1", "objc3.cxx-data-interfaces.v1"};
     auto decoded = DecodeSemanticInterfaceSidecar(
         emitted.sidecar_json, emitted.source_bytes, semantics);
@@ -355,7 +355,7 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
       const std::vector<llvm::StringRef> supported = {
           "objc3.canonical-function-effects.v1",
           "objc3.native-return-ownership.v1",
-          "objc3.native-ownership-contracts.v1",
+          "objc3.native-ownership-contracts.v1", kNativeDeclarationAttributeSemantic,
           "objc3.cxx-data-interfaces.v1"};
       auto decoded = DecodeSemanticInterfaceSidecar(
           emitted.sidecar_json, emitted.source_bytes, supported);
@@ -380,19 +380,17 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
                                      emitted.identity.semantic_fingerprint);
     }
   }
-  // A dropped parameter attribute can change hidden arguments even when the
-  // ordinary function pointer ABI appears to have the same source type.
-  auto unmodeled = clang::tooling::buildASTFromCodeWithArgs(
+  // Hidden arguments are now a modeled native parameter contract in C as well.
+  auto sized=clang::tooling::buildASTFromCodeWithArgs(
       "int size(const char *const p __attribute__((pass_object_size(0))));",
-      {"-x", "c", "-std=c17"}, "unmodeled-param.c");
-  assert(unmodeled && !unmodeled->getDiagnostics().hasErrorOccurred());
-  auto rejected =
-      EmitSemanticInterface(unmodeled->getASTContext(), "fixture.size", "test");
-  assert(!rejected.success);
-  bool diagnosed = false;
-  for (const auto &diagnostic : rejected.diagnostics)
-    diagnosed |= diagnostic.code == "O3IFC116";
-  assert(diagnosed);
+      {"-x","c","-std=c17"},"sized-param.c");
+  assert(sized && !sized->getDiagnostics().hasErrorOccurred());
+  auto accepted=EmitSemanticInterface(sized->getASTContext(),"fixture.size","test");
+  assert(accepted.success && accepted.source_bytes.find("pass_object_size")!=std::string::npos);
+  auto replayed=clang::tooling::buildASTFromCodeWithArgs(accepted.source_bytes,{"-x","c","-std=c17"},"replayed-sized-param.c");
+  assert(replayed && !replayed->getDiagnostics().hasErrorOccurred());
+  auto repeated=EmitSemanticInterface(replayed->getASTContext(),"fixture.size","test");
+  assert(repeated.success && repeated.identity.semantic_fingerprint==accepted.identity.semantic_fingerprint);
 }
 
 void TestUnmodeledAttributesFailClosed() {
@@ -1831,6 +1829,9 @@ void TestNativeDeclarationAttributes() {
     assert(first.success);
     for(const auto *spelling:{"packed","alignas","no_unique_address","nodiscard","noinline","always_inline","visibility","pure"})
       assert(first.source_bytes.find(spelling)!=std::string::npos);
+    for(const auto *spelling:{"pass_object_size","pass_dynamic_object_size","lifetimebound","noescape","callback","sentinel","diagnose_if","returns_twice","disable_tail_calls","not_tail_called","nomerge","noduplicate","optnone","leaf"})
+      assert(first.source_bytes.find(spelling)!=std::string::npos);
+    assert(first.source_bytes.find("nothrow")!=std::string::npos || first.source_bytes.find("noexcept")!=std::string::npos);
     const auto second=first.source_bytes.find("swift_attr(\"@Second\")");
     const auto middle=first.source_bytes.find("swift_attr(\"@First\")",second+1);
     const auto repeated=first.source_bytes.find("swift_attr(\"@Second\")",middle+1);
@@ -1865,6 +1866,16 @@ void TestNativeDeclarationAttributes() {
     changed=source;at=changed.find("malloc(deallocate,1)");assert(at!=std::string::npos);
     changed.replace(at,std::string("malloc(deallocate,1)").size(),"malloc(deallocate_other,1)");
     auto deallocator=emit(changed);assert(deallocator.success && deallocator.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("pass_object_size(0)");assert(at!=std::string::npos);
+    changed.replace(at,std::string("pass_object_size(0)").size(),"pass_object_size(1)");
+    auto size_contract=emit(changed);assert(size_contract.success && size_contract.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("negative value");assert(at!=std::string::npos);changed.replace(at,14,"invalid value");
+    auto predicate_message=emit(changed);assert(predicate_message.success && predicate_message.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("value<minimum");assert(at!=std::string::npos);changed.replace(at,13,"value<=minimum");
+    auto predicate_condition=emit(changed);assert(predicate_condition.success && predicate_condition.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto hidden_predicate=emit("namespace Private {inline constexpr int minimum=0;}"
+        "namespace NativeDeclarationAttributes {int checked(int value) __attribute__((diagnose_if(value<Private::minimum,\"private bound\",\"error\")));}");
+    assert(!hidden_predicate.success && std::any_of(hidden_predicate.diagnostics.begin(),hidden_predicate.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
     auto hidden_deallocator=emit("namespace Private {void release(void *);}"
         "namespace NativeDeclarationAttributes {__attribute__((malloc(Private::release,1))) void *allocate(unsigned long);}");
     assert(!hidden_deallocator.success && std::any_of(hidden_deallocator.diagnostics.begin(),hidden_deallocator.diagnostics.end(),

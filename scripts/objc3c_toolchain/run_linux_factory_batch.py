@@ -185,13 +185,15 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                 run(label + '-execute', [executable])
                 rejected = run(label + '-rejected', [compiler,
                     client / 'factory-template-rejected.mm', *mode, '--emit-object',
-                    work / 'rejected.o', *imports, '--', *flags], expected=1)
+                    work / 'rejected.o', *imports, '--', *flags, '-Werror=sentinel'], expected=1)
                 if (work / 'rejected.o').exists() or not all(
                         word in rejected for word in ('overloaded', 'variable template',
-                                                       'requires template arguments')):
+                                                       'requires template arguments', 'negative value', 'negative template value',
+                                                       'sentinel', 'pass_object_size')):
                     raise ValueError('unapplied factory template escaped native lookup checking')
                 report['cases'].append({'name': label, 'provider_source_removed': True,
-                    'package_sha256': identity, 'specialization_lookup_rejected': True})
+                    'package_sha256': identity, 'specialization_lookup_rejected': True,
+                    'native_parameter_contracts_checked': True})
         if inputs != {path: packages.digest(Path(path)) for path in inputs}:
             raise ValueError('compiler/runtime inputs changed during qualification')
         if source_inputs != {path: packages.digest(Path(path)) for path in source_inputs}:

@@ -658,6 +658,7 @@ int module_consume(__attribute__((ns_consumed)) SafeMessage *)
       "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",
       "objc3.native-ownership-contracts.v1",
+      "objc3.native-declaration-attributes.v1",
       "objc3.isolation-contracts.v1",
       "objc3.typed-keypaths.v1",
       "objc3.direct-dispatch.v1",

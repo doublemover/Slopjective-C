@@ -74,7 +74,7 @@ bool IsForeignImportAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  return llvm::isa<clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
+  return llvm::isa<clang::PassObjectSizeAttr,clang::LifetimeBoundAttr,clang::NoEscapeAttr,clang::SentinelAttr,clang::CallbackAttr,clang::DiagnoseIfAttr,clang::ReturnsTwiceAttr,clang::NoThrowAttr,clang::DisableTailCallsAttr,clang::NotTailCalledAttr,clang::NoMergeAttr,clang::NoDuplicateAttr,clang::OptimizeNoneAttr,clang::LeafAttr,clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
@@ -2324,6 +2324,27 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
   else if(const auto *visibility=llvm::dyn_cast<clang::TypeVisibilityAttr>(attribute))
     add(std::to_string(visibility->getVisibility()));
   auto parameter=[&](clang::ParamIdx index){add(index.isValid()?std::to_string(index.getASTIndex()):"none");};
+  if(const auto *size=llvm::dyn_cast<clang::PassObjectSizeAttr>(attribute)) {
+    add(std::to_string(size->getType()));add(size->isDynamic()?"dynamic":"static");
+  } else if(const auto *sentinel=llvm::dyn_cast<clang::SentinelAttr>(attribute)) {
+    add(std::to_string(sentinel->getSentinel()));add(std::to_string(sentinel->getNullPos()));
+  } else if(const auto *callback=llvm::dyn_cast<clang::CallbackAttr>(attribute)) {
+    for(int position:callback->encoding())add(std::to_string(position));
+  } else if(const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute)) {
+    DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+    auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+      if(!scope)return;self(self,scope->getParent());
+      if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+      if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(scope))
+        for(auto *parameter:*partial->getTemplateParameters())identity.Local(parameter);
+    };
+    bind(bind,declaration->getDeclContext());
+    if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+      for(const auto *parameter:method->parameters())identity.Local(parameter);
+    add(identity.Get(diagnostic->getCond()));add(diagnostic->getMessage());
+    add(std::to_string(diagnostic->getDefaultSeverity()));add(diagnostic->getWarningGroup());
+  }
   if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute)) {
     if (auto *deallocator=allocator->getDeallocator()) {
       DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
@@ -3874,6 +3895,16 @@ class TypeDependencyVisitor final
      for (const auto *attribute:declaration->attrs())
        if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr,clang::RestrictAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
+       else if(const auto *diagnostic=llvm::dyn_cast<clang::DiagnoseIfAttr>(attribute)) {
+         const auto locals=lambda_locals_;
+         auto restore=llvm::scope_exit([&]{lambda_locals_=locals;});
+         if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
+           for(const auto *redecl:function->redecls())
+             for(const auto *parameter:redecl->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
+         if(const auto *method=llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+           for(const auto *parameter:method->parameters())lambda_locals_.insert(parameter->getCanonicalDecl());
+         TraverseStmt(diagnostic->getCond());
+       }
      if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
        CheckDeclarationAttributes(pattern->getTemplatedDecl());
    }

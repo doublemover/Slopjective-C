@@ -151,6 +151,14 @@ def check_factory_metadata(metadata):
             'NativeUnnamedTemplateProjections::Defaulted','NativeUnnamedTemplateProjections::TemplateDefault',
             'NativeUnnamedTemplateProjections::Answer','NativeUnnamedTemplateProjections::Different',
             'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections
+    native_contracts={row['qualified_name'] for row in metadata['declarations']
+                      if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
+    assert {'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',
+            'NativeDeclarationAttributes::lifetime','NativeDeclarationAttributes::noescape',
+            'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
+            'NativeDeclarationAttributes::checked','NativeDeclarationAttributes::checked_template',
+            'NativeDeclarationAttributes::returns_twice','NativeDeclarationAttributes::provider_controlled',
+            'NativeDeclarationAttributes::unoptimized'}<=native_contracts
     standard_coroutines=[row for row in metadata['declarations']
                          if ';cxx-standard-coroutines:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']

@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 92,
+        "minor": 93,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -222,7 +222,8 @@
         "Owned raw-frame task-group callbacks, explicit group callable spawning, typed native joins in both source languages and independently retained Sendable group leases (source)",
         "Allocator/deallocator, size/alignment, nonnull, format and Linux callable convention contracts with typed payloads and export dependency checks (source)",
         "Unnamed member records under complete class-template owners and partial specializations, with lexical identities, nested template projections and native source-free ABI (source)",
-        "Public unnamed template member aliases, signatures, callbacks, arrays/member pointers, storage and generic/template-template argument graphs with ordered nominal origins and native value lifetimes (source)"
+        "Public unnamed template member aliases, signatures, callbacks, arrays/member pointers, storage and generic/template-template argument graphs with ordered nominal origins and native value lifetimes (source)",
+        "Native hidden static/dynamic object-size parameters, lifetimebound/noescape metadata, callback/sentinel contracts, typed diagnostic predicates and Linux callable optimizer/control attributes (source)."
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
