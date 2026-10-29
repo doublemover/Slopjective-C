@@ -18,9 +18,27 @@ template<class T> __attribute__((always_inline,pure)) inline T project(T value){
 template<class T> struct Family {
   alignas(T) inline static T shared{};
   T value;
+  struct {
+    template<class U> struct Inner {struct {U value{};U get() const {return value;}} leaf;};
+    T value{};T get() const {return value;}
+    template<int Offset> T shifted() const {return value+Offset;}
+    template<int Offset> T shifted(int extra) const {return value+Offset+extra;}
+  } first;
+  struct {T value{};T get() const {return value;}} second;
+  struct {T value{};T get() const {return value;}} third;
+  T nested() const {return first.template shifted<0>()+second.get()+third.get();}
   [[nodiscard]] T get() const {return value;}
   template<class U> __attribute__((always_inline)) U call(U added) const {return U(value)+added;}
 };
+template<class T> struct Projected {struct {T value;T get() const {return value;}} storage;T get() const {return storage.get();}};
+template<class T> struct Projected<T *> {struct {T *value;T get() const {return *value;}} storage;T get() const {return storage.get();}};
+inline int nested_projection(int first,int second) {
+  Family<int> value{0,{first},{second},{0}};
+  using First=decltype(value.first);
+  First::Inner<long> inner{{42}};
+  Projected<int> direct{{first}};Projected<int *> indirect{{&second}};
+  return inner.leaf.get()==42 && direct.get()==first && indirect.get()==second ? value.first.get()+value.second.get()+value.third.get() : -1;
+}
 struct Counts {static inline int live=0;static inline int destroyed=0;};
 struct Empty {
   Empty(){++Counts::live;}
@@ -61,6 +79,7 @@ Compact provider_compact(int value);
 int *provider_shared();
 int *provider_storage();
 int *provider_partial();
+int provider_nested(Family<int> value);
 Special<int> provider_special(Special<int> value);
 FieldAligned provider_field(FieldAligned value);
 }

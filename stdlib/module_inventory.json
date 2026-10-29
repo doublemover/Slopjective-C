@@ -219,7 +219,9 @@
         "Published custom-promise C++ coroutine bodies, written await/yield/return syntax, resolved promise/awaiter dependencies and native yield import, with source-free lifecycle witnesses (source)",
         "Native declaration attribute contracts for record/field/storage layout, visibility, optimizer effects and diagnostics, including dependent alignment and source-free ABI witnesses (source)",
         "Public standard coroutine handles, suspend/no-op types and provider-authored full/partial coroutine_traits specializations, with checked header identities and source-free native frames (source)",
-        "Owned raw-frame task-group callbacks, explicit group callable spawning and independently retained Sendable group leases (source)"
+        "Owned raw-frame task-group callbacks, explicit group callable spawning, typed native joins in both source languages and independently retained Sendable group leases (source)",
+        "Allocator/deallocator, size/alignment, nonnull, format and Linux callable convention contracts with typed payloads and export dependency checks (source)",
+        "Unnamed member records under complete class-template owners and partial specializations, with lexical identities, nested template projections and native source-free ABI (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

@@ -1517,6 +1517,45 @@ std::string FunctionTemplateConstraintKey(const clang::FunctionTemplateDecl *pat
 
 bool ContainsUnnamedLocalType(const clang::Stmt *statement);
 
+// Unnamed member records inherit their template owner's ABI and lexical
+// declaration order. Physical source coordinates are never public identity.
+std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *record,
+                                     const clang::ASTContext &context) {
+  const auto *owner=ClassTemplateOwner(record);
+  if (!owner) return {};
+  std::vector<std::string> path;
+  bool unnamed=false;
+  for (unsigned depth=0;record && depth<64;++depth) {
+    if (record->isLambda() || record->isLocalClass()) return {};
+    const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(record);
+    const auto *pattern=specialization?specialization->getSpecializedTemplate():record->getDescribedClassTemplate();
+    std::string arguments;
+    if (specialization && !ClassSpecializationArgumentKey(specialization,context,arguments)) return {};
+    if (pattern && pattern->getCanonicalDecl()==owner->getCanonicalDecl()) {
+      if (!unnamed) return {};
+      std::string key=ReadInterfaceDeclarationStableId(owner)+":"+ReadNativeSymbolName(owner)+":"+arguments;
+      for (auto i=path.rbegin();i!=path.rend();++i)key+=";"+*i;
+      return key;
+    }
+    if (!record->getIdentifier() && !record->getTypedefNameForAnonDecl()) {
+      const auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(record->getDeclContext());
+      if (!parent) return {};
+      unsigned index=0;bool found=false;
+      for (const auto *member:parent->decls()) {
+        const auto *sibling=llvm::dyn_cast<clang::CXXRecordDecl>(member);
+        if (!sibling || sibling->isImplicit() || sibling->getIdentifier() ||
+            sibling->getTypedefNameForAnonDecl()) continue;
+        if (sibling->getCanonicalDecl()==record->getCanonicalDecl()) {found=true;break;}
+        ++index;
+      }
+      if (!found) return {};
+      unnamed=true;path.push_back("unnamed:"+std::to_string(index)+":"+std::to_string(static_cast<unsigned>(record->getTagKind())));
+    } else path.push_back("named:"+record->getNameAsString()+":"+arguments);
+    record=llvm::dyn_cast<clang::CXXRecordDecl>(record->getDeclContext());
+  }
+  return {};
+}
+
 class DeclarationExpressionIdentity final
     : public clang::RecursiveASTVisitor<DeclarationExpressionIdentity> {
 public:
@@ -1603,6 +1642,10 @@ public:
     const auto *pattern = specialization->getSpecializedTemplate();
     const auto *owner = TemplatePublicationOwner(pattern);
     if (!owner) owner=pattern;
+    // An unnamed concrete intermediate record has no independent ABI tag.
+    // Its named outer template remains the owner after header replay/import.
+    if (ReadNativeSymbolName(owner).empty())
+      if (const auto *outer=ClassTemplateOwner(pattern);outer && !ReadNativeSymbolName(outer).empty())owner=outer;
     // Nested patterns inherit the outer primary's ABI owner. Imported nested
     // declarations have no independent tag and are outside the consumer file.
     if (ReadNativeSymbolName(owner).empty() &&
@@ -1633,6 +1676,9 @@ public:
     if (const auto *specialization = llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag);
         ClosedClassArguments(specialization)) Reference(specialization);
     const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag);
+    if (auto origin=UnnamedTemplateRecordKey(record,context_);!origin.empty()) {
+      Add("unnamed-template-record");Add(origin);
+    }
     if (!tag->getIdentifier() && IsExpressionLocalTag(tag) && !(record && record->isLambda())) {
       Local(tag);
       Add("unnamed-local-type:"+std::to_string(locals_.at(tag->getCanonicalDecl())));
@@ -1872,6 +1918,26 @@ public:
         llvm::SmallString<32> value;
         constant->getInitVal().toString(value, 10);
         Add(value);
+      }
+      return;
+    }
+    const auto *record_reference=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+    if (const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))record_reference=pattern->getTemplatedDecl();
+    if (!record_reference)record_reference=llvm::dyn_cast<clang::CXXRecordDecl>(declaration->getDeclContext());
+    if (auto origin=UnnamedTemplateRecordKey(record_reference,context_);!origin.empty()) {
+      Add("unnamed-template-record-member");Add(origin);Add(declaration->getDeclKindName());
+      if (!llvm::isa<clang::CXXConstructorDecl,clang::CXXDestructorDecl>(declaration))Add(declaration->getNameAsString());
+      const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (const auto *pattern=llvm::dyn_cast<clang::FunctionTemplateDecl>(declaration)) {
+        function=pattern->getTemplatedDecl();Add(FunctionTemplateConstraintKey(pattern));
+      }
+      if (function) {
+        Add(ExpressionType(function->getType()));
+        if (const auto *arguments=function->getTemplateSpecializationArgs())
+          for (const auto &argument:arguments->asArray()) {
+            std::string key;
+            if (GenericArgumentKey(argument,context_,key))Add(key);
+          }
       }
       return;
     }
@@ -4401,6 +4467,9 @@ class TypeDependencyVisitor final
     // compiler rather than a package. Never recognize a user type by spelling.
     if (const auto *builtin=context_.getVaListTagDecl();
         builtin && declaration->getCanonicalDecl()==builtin->getCanonicalDecl()) return true;
+    if (!in_expression_ && !public_template_type_ &&
+        !UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(declaration),context_).empty())
+      return UnsupportedExpression("public signatures projecting unnamed template member types require an explicit projection contract");
     if (const auto *pattern = TemplatePublicationOwner(declaration);
         !IsExpressionLocalTag(declaration) && pattern && (IsInMainFile(context_,pattern->getLocation()) ||
                     resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
@@ -4798,7 +4867,8 @@ bool IsBoundedTemplateRecord(const clang::CXXRecordDecl *record,
                             const clang::ClassTemplateDecl *pattern) {
   if (pattern && !IsBoundedNestedTemplateParameters(pattern->getTemplateParameters())) return false;
   const auto *body=record->getDefinition();
-  if (!body || !body->isCompleteDefinition() || body->isUnion() || !body->getIdentifier()) return false;
+  if (!body || !body->isCompleteDefinition() || body->isUnion() ||
+      (!body->getIdentifier() && UnnamedTemplateRecordKey(body,body->getASTContext()).empty())) return false;
   if (record->getDeclContext()->isRecord() && !body->getLexicalDeclContext()->isRecord() &&
       !IsDetachedNestedTemplateDefinition(body) &&
       !IsConcreteMemberClassSpecialization(llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(body)) &&

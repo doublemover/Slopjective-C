@@ -397,12 +397,12 @@ def check_cpp_metadata(metadata):
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box'}):
+            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected'}):
         raise ValueError('C++ package lost partial class specialization owner contracts')
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special'}):
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected'}):
         raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]

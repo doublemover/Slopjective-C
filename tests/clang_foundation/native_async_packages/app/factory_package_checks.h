@@ -31,6 +31,11 @@ int factory_package_checks() {
   }
   {
     namespace Attr=NativeDeclarationAttributes;
+    Attr::Family<int> nested{0,{17},{25}};
+    if(nested.nested()!=42 || Attr::provider_nested(nested)!=42 || Attr::nested_projection(17,25)!=42)return 193;
+    if(nested.first.shifted<2>()!=19 || nested.first.shifted<1>(1)!=19)return 195;
+    nested.first.value=40;nested.second.value=2;
+    if(nested.nested()!=42 || Attr::provider_nested(nested)!=42)return 194;
     int contract_value=40;
     int *allocated=Attr::allocated_value(42);
     const int allocated_value=*allocated;Attr::deallocate(allocated);

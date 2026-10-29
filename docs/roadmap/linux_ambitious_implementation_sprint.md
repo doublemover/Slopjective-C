@@ -19,11 +19,17 @@ keypath **2.6** together:
   adoption and failure disposal. Explicit group callable spawning retains the
   closure through inner-frame destruction. Group-handle copies own independent
   leases to synchronized shared runtime state and carry an explicit Sendable
-  review marker.
+  review marker. Typed native task-join declarations work in both source languages.
 - Typed key paths admit named native C++ record values and record-field writeback
   through ordinary copying and destruction. Generated snapshots retain native
   exception cleanup and accessor rules. Borrowed/resource erasure and managed
   union traversal stay gated; nullable result-policy limits remain explicit.
+- Unnamed C++ member records publish under complete class-template owners,
+  including partial specializations and nested template projections. Identities
+  bind the outer owner, exact closed/partial arguments and lexical member order,
+  rather than producer source locations. Member references retain those origins,
+  including exact member-template arguments. Public signatures projecting these
+  unnamed types still require a broader projection contract and are rejected.
 - Native interface attributes retain allocator size/alignment, nonnull, format
   and format-argument payloads and supported Linux calling conventions. The
   declaration printer reconstructs convention bits stored only in callable

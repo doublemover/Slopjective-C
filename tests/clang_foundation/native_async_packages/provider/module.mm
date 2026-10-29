@@ -1979,3 +1979,5 @@ __attribute__((preserve_most,noinline)) int NativeDeclarationAttributes::provide
 void NativeDeclarationAttributes::deallocate(void *value){delete static_cast<int *>(value);}
 void NativeDeclarationAttributes::deallocate_other(void *value){delete static_cast<int *>(value);}
 int *NativeDeclarationAttributes::allocated_value(unsigned long value){return new int(static_cast<int>(value));}
+
+int NativeDeclarationAttributes::provider_nested(Family<int> value){return value.nested();}

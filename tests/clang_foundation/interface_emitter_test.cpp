@@ -1869,6 +1869,9 @@ void TestNativeDeclarationAttributes() {
         "namespace NativeDeclarationAttributes {__attribute__((malloc(Private::release,1))) void *allocate(unsigned long);}");
     assert(!hidden_deallocator.success && std::any_of(hidden_deallocator.diagnostics.begin(),hidden_deallocator.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC156";}));
+    auto projected=emit(source+"\nnamespace NativeDeclarationAttributes {using PublicProjection=decltype(Family<int>{}.first);}");
+    assert(!projected.success && std::any_of(projected.diagnostics.begin(),projected.diagnostics.end(),
+        [](const auto &d){return d.message.find("unnamed template member types")!=std::string::npos;}));
     // Dependent attribute expressions must retain their real API dependencies.
     auto denied=emit("namespace Private {inline constexpr int alignment=32;}\n"
         "namespace NativeDeclarationAttributes {template<class T>struct alignas(sizeof(T)+Private::alignment) Bad {T value;};}\n");
