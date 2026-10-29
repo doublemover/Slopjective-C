@@ -1,0 +1,262 @@
+{
+  "schema": "objc3c.linux-cxx-conditional-overloads-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "implementation_commit": "4773b8ddf4379a1196f89bb980acfa8de09ee783",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-21e50b1aca8a-00b75dc3",
+  "compiler_patch_digest": "21e50b1aca8a148d7bef423c553fd9f72cbfdf9894e09718b442635fa6c9ad69",
+  "compiler_binary_sha256": "32ed196c1804b7b4f69e2bc0801073e680a3b57669e0ba042721470a74a74985",
+  "frontend_binary_sha256": "ab8ecdf81e60d8a2725efc1e6b031d7e87d726bd506395f905b7c1d81cc5fe61",
+  "frontend_source_identity_sha256": "5c727879fa3332e1a89aa91cd28783c8b88a4f8ba197af3bc3568334f88809f4",
+  "concurrency_module_version": "2.94.0",
+  "system_module_version": "2.16.0",
+  "keypath_module_version": "2.6.0",
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "9c230e1fc6e69d9afa4eb5e2977dbd9e4d9da428b75638dc874acc72fbec36ff"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/export_development_patches.py",
+      "sha256": "584c8b80dea20377107a3cdc1c76281799d522166075cb2e3e49ac93c89b7fed"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "06e52ec6d160766b0104e5af920db3e7bfae8c8b259ae4ded425d40631a4d668"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/run_linux_factory_batch.py",
+      "sha256": "c758bb802f5c7302bad4792c82f3321c025fa8bbb3c96d4bacf4ad0db7fc446f"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "19e406405f2f2b156b137e973aac29c27abc1e56b1c6f8340a3137cb0cd0ed9e"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "bbca3782b5bc76166b667d20c7c65aa04f35e8943872f7e07af21fb45607e26c"
+    },
+    {
+      "path": "tests/clang_foundation/interface_import_test.cpp",
+      "sha256": "6689aa9a90a179096f2951a7ee94b8c05ec273dbfc75a106a936d9a468f16314"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory-template-rejected.mm",
+      "sha256": "428fd1e9bd4734c87bcb4aed61930fbd3c3a6d2e54893c95cdb099ce28790001"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "f39dbe145b1b3b589f6fac93fd889a79bfd87377ea69696dd921ec3f4a0d54e9"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/declaration_attributes.h",
+      "sha256": "34af4876d99feb98bab9301be164aa1ea39e8b47ae488bc9c49a41d309ec0696"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "e49b949a2c0d67cb1f7eec50181c5bab0f1ae9cb2ddc3fc5502008584ef0698c"
+    },
+    {
+      "path": "toolchains/llvm/manifest.json",
+      "sha256": "32d323b0ba1f9be266644a16ec84c590303aec910a44eb5adc132c78e1ba7db7"
+    },
+    {
+      "path": "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "322ae3e2540b1a8adede089259e40eaae2266d0be8326a68b5c26cc5d6ba4b32"
+    },
+    {
+      "path": "toolchains/llvm/patches/0006-objc3-native-carrier-expressions.patch",
+      "sha256": "cc6c78a83dbc80db44a66bf2e29b19cbb1cc502c2ba0fcc13ae887d5d6461567"
+    }
+  ],
+  "validation": {
+    "frontend_suites": 33,
+    "native_unit_tests": 239,
+    "compiler_regressions": 412,
+    "unsupported_compiler_cases": 3,
+    "focused_tooling_tests": 27,
+    "frontend_report": {
+      "path": "out/enable-if-import-contracts-frontends.log",
+      "sha256": "a9e72b61dbef8b4c1b3d092ed9364be0bf331622bee1bb55c3c80614a51cfaf6"
+    },
+    "tooling_report": {
+      "path": "out/enable-if-import-contracts-tooling.log",
+      "sha256": "a899023e727d11944a3f018365b195bded50509c2c73b4973a1fd64c48661fb5"
+    },
+    "native_reports": [
+      {
+        "path": "out/enable-if-import-contracts-native-check-0.log",
+        "sha256": "919a86cd5ede0495f6b8834c878a1a640a063470cbad1297440d4d33c139f8ce"
+      },
+      {
+        "path": "out/enable-if-import-contracts-native-check-1.log",
+        "sha256": "6c388daa2efc4c17993a9c645423efc5633bfa260bc45497695a08e9121a6218"
+      },
+      {
+        "path": "out/enable-if-import-contracts-native-check-2.log",
+        "sha256": "8583deecde8a5a1b8eb6997ec0ae12842927c7c143ba2c4d5c3c6c5a9520e92e"
+      },
+      {
+        "path": "out/enable-if-import-contracts-native-check-3.log",
+        "sha256": "f61e9f72700653b0e2b6839678af64df82b6b139299acb0baba471fd53e3d6ed"
+      },
+      {
+        "path": "out/enable-if-import-contracts-native-check-4.log",
+        "sha256": "587667fcfa2356055181611a8a8a51c68521f1de7a800a5ecf0487ce9313b55e"
+      }
+    ],
+    "package_reports": [
+      {
+        "path": "out/native-validation/enable-if-import-contracts-packages-normal/qualification.json",
+        "sha256": "657f235e5d64a8db5ed4a5ec2d47517f69261a56b6e724900f8e0004d8c41240",
+        "mode": "normal",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "cb303af8a156d9f5a623675b9e27754ac3e6f752301d759d46044e33d61f4f2f"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-packages-eager/qualification.json",
+        "sha256": "030af10b810d7f7cd9f185762ffeb877eec0372763aa1b13a65031deea2d9420",
+        "mode": "eager",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "cb303af8a156d9f5a623675b9e27754ac3e6f752301d759d46044e33d61f4f2f"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-packages-asan/qualification.json",
+        "sha256": "3b0eccce14641eba5c2ef252a197e0538e476addad0ac561c5049f7886515898",
+        "mode": "asan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "a9fd90c06b40f829d2b0bb318faec995ccc4d49f9eb458e5f0f7197191ff3ab7"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-packages-tsan/qualification.json",
+        "sha256": "75910f4da631cc11fea59e154cd4cedacdb69dec849e4951d8703713d232b7c5",
+        "mode": "tsan",
+        "full_fixture": false,
+        "configurations": 8,
+        "commands": 56,
+        "development_input_lock": "a976a5cb7d72bef27e813212e7996c603ed894041887f565d6d654b689dea20e"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-full-packages-normal/qualification.json",
+        "sha256": "d0febe1f1ee15a6729ae2f657aa3b44d81f5bf0876e0ce0700bac7f6a83fb140",
+        "mode": "normal",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "cb303af8a156d9f5a623675b9e27754ac3e6f752301d759d46044e33d61f4f2f"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-full-packages-asan/qualification.json",
+        "sha256": "9a0c2a13bb2c39b49f13ef62fe3c847bbb353870650e5db586f4f953c5e2ac43",
+        "mode": "asan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "a9fd90c06b40f829d2b0bb318faec995ccc4d49f9eb458e5f0f7197191ff3ab7"
+      },
+      {
+        "path": "out/native-validation/enable-if-import-contracts-full-packages-tsan/qualification.json",
+        "sha256": "4c43ba43231e6a9b4d4986ef08f54d30179b5e8c0367477cdf98b735f0292214",
+        "mode": "tsan",
+        "full_fixture": true,
+        "configurations": 1,
+        "commands": 7,
+        "development_input_lock": "a976a5cb7d72bef27e813212e7996c603ed894041887f565d6d654b689dea20e"
+      }
+    ],
+    "focused_package_configurations": 32,
+    "focused_package_commands": 224,
+    "full_fixture_smoke_configurations": 3,
+    "full_fixture_smoke_commands": 21,
+    "retained_failure_reports": [
+      {
+        "path": "out/enable-if-bindings-native-check-1.log",
+        "sha256": "d263f08704a511483322828c9fab20df895433262a65dbec1925cc3bbceaca85"
+      },
+      {
+        "path": "out/enable-if-predicate-bindings-frontends.log",
+        "sha256": "ad44464fbb5c213a088911ea23586c6ee0824f24832539811d5100d512772b15"
+      },
+      {
+        "path": "out/native-validation/enable-if-predicate-bindings-packages-normal/qualification.json",
+        "sha256": "2039a2f8527545a76943bdf7426a047d001b69bbe87abcbee6d54a8ceb6adfc2"
+      },
+      {
+        "path": "out/native-validation/enable-if-predicate-bindings-packages-eager/qualification.json",
+        "sha256": "f21068b436524c380b96b747e76110f3cf85f3941ec6b23100d8d6ec68dd643c"
+      },
+      {
+        "path": "out/native-validation/enable-if-predicate-bindings-packages-asan/qualification.json",
+        "sha256": "a1847f5bae9e8cc66de5d1f755bf3c1fc59399ade14fabcafe99e6852c5b09ee"
+      },
+      {
+        "path": "out/native-validation/enable-if-predicate-bindings-packages-tsan/qualification.json",
+        "sha256": "47cfd138df4d91ef83f8fc4f700b8c6dd5b9373ce826c2b9d2e129bb709ae042"
+      },
+      {
+        "path": "out/enable-if-member-grammar-frontends.log",
+        "sha256": "2dbbe7ec0c3fdb406e4e1e921208d140284bb0a7006ebe9ff1ec0411ee0c71b5"
+      },
+      {
+        "path": "out/native-validation/enable-if-member-grammar-packages-normal/qualification.json",
+        "sha256": "d784c0cec0a3b27faba901e5ba961c6a2153e21948ad835645e87dc4ac79a0a7"
+      },
+      {
+        "path": "out/native-validation/enable-if-member-grammar-packages-eager/qualification.json",
+        "sha256": "4f89dd18811cfeb67d7e814555a0580c88533b0ad53bf85935a538ee29f0df70"
+      },
+      {
+        "path": "out/native-validation/enable-if-member-grammar-packages-asan/qualification.json",
+        "sha256": "d4e9b7d4cef8467590d374307e5fcd95edc1ebad1c3219d784bb9c3525ce49c0"
+      },
+      {
+        "path": "out/native-validation/enable-if-member-grammar-packages-tsan/qualification.json",
+        "sha256": "283e408d0698aecfdf301ae1ebb3da24342e08ae43c7a75815868a42f8e1eeb5"
+      },
+      {
+        "path": "out/enable-if-lexical-parameters-frontends.log",
+        "sha256": "cbd617c49b4167fbcad00bfc75ce0cc503ce325177bf8c86754f7e26ae7585fb"
+      },
+      {
+        "path": "out/native-validation/enable-if-lexical-parameters-packages-normal/qualification.json",
+        "sha256": "914fd8948e2a1f4f906a13ef258566f2177381281762e89a773e5bb275056283"
+      },
+      {
+        "path": "out/native-validation/enable-if-lexical-parameters-packages-eager/qualification.json",
+        "sha256": "4b4bee5b1f68f92b01cc372228f7f831e0bebf6969ece9c17db151595d2a832d"
+      },
+      {
+        "path": "out/native-validation/enable-if-lexical-parameters-packages-asan/qualification.json",
+        "sha256": "61fee018bb282b2b28e38c9e6d4ef28dc6c7ad03ef18a2f4730e62149e7973de"
+      },
+      {
+        "path": "out/native-validation/enable-if-lexical-parameters-packages-tsan/qualification.json",
+        "sha256": "5f4efdb54da549f3669166ab289435a0378ee5019069837840a9ada0c5bcbd25"
+      }
+    ]
+  },
+  "implemented": [
+    "Public ordinary, template and member enable-if overloads bind canonical Sema expression profiles with lexical parameter slots, types and resolved declaration identities instead of AST pointers.",
+    "Ordered condition sequences and multiplicity preserve native prefix priority; predicates with different owners/operators/parentheses remain distinct. Moving sources and renaming parameters preserve native USRs.",
+    "AST import compares canonical predicate shapes and their corresponding typed bindings, including reference declaration scopes. Template and ordinary overloads remain separate.",
+    "Publication binds ordered conditions and diagnostic messages through the existing native declaration-attribute capability; private predicate dependencies are rejected.",
+    "Polished printing preserves free/member declaration grammar, parameter scope around assembly labels, and inherited diagnostic predicates in definitions with unnamed parameters and authored body locals.",
+    "Source-free provider calls exercise ordinary/template/member selection, ordered priority, named/unnamed predicate bindings and rejection of disabled calls/address-taking. C17 single-entry predicates replay."
+  ],
+  "scope": [
+    "Runtime sources, service binaries and GNUstep binaries are unchanged. No SDK archive or complete five-family runtime source/PCH matrix was rebuilt/rerun; that matrix remains recorded at source 2.91.",
+    "Final native/frontend/package reports bind their compiler, checker and fixture inputs. Focused source-free packages cover C++20/C++23, ARC/MRC, O0/O2 and normal/eager/ASan+UBSan/TSan after provider source removal and package relocation. The full fixture has three smoke configurations.",
+    "Parentheses distinguish native enable-if overloads; an initial test incorrectly assumed otherwise. The corrected native witness checks that distinction. Earlier failed reports remain separate.",
+    "C overloadable package publication, further predicate/declaration forms, general standard-library publication, remaining ownership/concurrency/isolation/key-path/language/profile work and native Linux AArch64 remain open."
+  ],
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

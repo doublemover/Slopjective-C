@@ -38,5 +38,6 @@ metadata is preserved without claiming broader Objective-C borrowed-flow precisi
 
 Further unmodeled attributes, general standard-library publication, remaining
 ownership/concurrency/isolation/key-path/language/profile work and native Linux
-AArch64 qualification remain open. Enable-if overload identity is outside this
-batch.
+AArch64 qualification remain open. The subsequent
+[2.94 conditional-overload batch](linux_cxx_conditional_overloads.md) implements
+enable-if identities and public ordinary/template/member dispatch.

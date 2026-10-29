@@ -1467,3 +1467,20 @@ tooling tests passing, plus all 32 source-free configurations / 224 commands and
 three full-fixture smoke configurations / 21 commands. Further attribute forms,
 including enable-if overload identity, and the broader remaining implementation
 categories above remain open. Runtime binaries and SDK 2.62 are unchanged.
+
+
+## Native conditional overloads, source 2.94
+
+[Conditional overload publication](linux_cxx_conditional_overloads.md) now binds
+ordinary, template and member `enable_if` conditions to canonical lexical, type
+and declaration identities. Ordered conditions retain native priority and
+multiplicity. Import preserves distinct candidate sets and installs predicates
+before recursive body/template matching. Free/member assembly-label grammar and
+named/unnamed predicate bindings survive canonical replay.
+
+The [receipt](../support/linux_cxx_conditional_overloads_progress.json) records
+33 frontend suites, 239 native unit tests, 412 compiler regressions and 27 focused
+tooling tests passing, plus 32 source-free configurations / 224 commands and three
+full-fixture smoke configurations / 21 commands. SDK 2.62 and runtime binaries are
+unchanged. C overloadable package publication, further predicate/declaration
+forms and the broader implementation categories above remain open.
