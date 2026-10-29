@@ -139,6 +139,15 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    native_attributes={row['qualified_name'] for row in metadata['declarations']
+                       if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.native-declaration-attributes.v1' in metadata['required_semantics']
+    assert {'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',
+            'NativeDeclarationAttributes::Slot','NativeDeclarationAttributes::TypeAligned',
+            'NativeDeclarationAttributes::Special','NativeDeclarationAttributes::partial',
+            'NativeDeclarationAttributes::Compact','NativeDeclarationAttributes::Result',
+            'NativeDeclarationAttributes::shared','NativeDeclarationAttributes::slow',
+            'NativeDeclarationAttributes::fast','NativeDeclarationAttributes::answer'}<=native_attributes
     coroutine_bodies={row['qualified_name'] for row in metadata['declarations']
                       if ';cxx-coroutine-bodies:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-coroutine-bodies.v1' in metadata['required_semantics']

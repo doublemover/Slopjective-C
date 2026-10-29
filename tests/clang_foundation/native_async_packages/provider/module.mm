@@ -1,3 +1,4 @@
+#include "declaration_attributes.h"
 #include "custom_coroutines.h"
 #if defined(OBJC3_FACTORY_PACKAGE_FOCUSED)
 #include "factory_state.h"
@@ -1949,3 +1950,20 @@ namespace NativeEffectLambdas {
 
 NativeCustomCoroutines::Task<int> NativeCustomCoroutines::provider_task(int value){return transformed(value);}
 int NativeCustomCoroutines::provider_frames(){return Counts::frames;}
+
+int NativeDeclarationAttributes::provider_packet(Packet value){return value.code+value.value;}
+NativeDeclarationAttributes::Aligned NativeDeclarationAttributes::provider_aligned(Aligned value){return value;}
+NativeDeclarationAttributes::Slot<int,32> NativeDeclarationAttributes::provider_slot(Slot<int,32> value){return value;}
+NativeDeclarationAttributes::Compact NativeDeclarationAttributes::provider_compact(int value){return {{},value};}
+int *NativeDeclarationAttributes::provider_shared(){return &shared;}
+int *NativeDeclarationAttributes::provider_storage(){return &storage<int>;}
+NativeDeclarationAttributes::FieldAligned NativeDeclarationAttributes::provider_field(FieldAligned value){return value;}
+int *NativeDeclarationAttributes::provider_partial(){return &partial<int *>;}
+NativeDeclarationAttributes::Special<int> NativeDeclarationAttributes::provider_special(Special<int> value){return value;}
+
+namespace NativeCustomCoroutines {
+Task<NativeDeclarationAttributes::Packet> attribute_packet(int value) {
+  co_await Suspend{};
+  co_return NativeDeclarationAttributes::Packet{2,value};
+}
+}

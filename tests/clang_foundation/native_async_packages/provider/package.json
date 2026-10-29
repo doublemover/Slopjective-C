@@ -361,7 +361,8 @@
     "NativeLambdaFactoryResults",
     "NativeNestedFactoryTypes",
     "NativeForeignAttributes",
-    "NativeCustomCoroutines"
+    "NativeCustomCoroutines",
+    "NativeDeclarationAttributes"
   ],
   "dependencies": []
 }

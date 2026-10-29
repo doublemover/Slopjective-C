@@ -3,6 +3,36 @@
 
 int factory_package_checks() {
   {
+    namespace Attr=NativeDeclarationAttributes;
+    static_assert(sizeof(Attr::Packet)==5 && alignof(Attr::Packet)==1);
+    static_assert(alignof(Attr::FieldAligned)==32 && sizeof(Attr::FieldAligned)==64);
+    static_assert(alignof(Attr::Special<int>)==32);
+    static_assert(alignof(Attr::Aligned)==32 && alignof(Attr::Slot<int,32>)==32);
+    static_assert(alignof(Attr::TypeAligned<long>)==alignof(long));
+    static_assert(sizeof(Attr::Compact)==sizeof(int));
+    if(Attr::provider_packet({2,40})!=42 || Attr::provider_aligned({42}).value!=42 ||
+       Attr::provider_slot({42}).value!=42 || Attr::provider_shared()!=&Attr::shared ||
+       reinterpret_cast<__UINTPTR_TYPE__>(&Attr::shared)%64 ||
+       Attr::provider_field({2,40}).value!=40 || Attr::provider_storage()!=&Attr::storage<int> ||
+       reinterpret_cast<__UINTPTR_TYPE__>(&Attr::storage<int>)%64 ||
+       Attr::provider_special({42}).value!=42 || Attr::provider_partial()!=&Attr::partial<int *> ||
+       reinterpret_cast<__UINTPTR_TYPE__>(&Attr::partial<int *>)%64 || Attr::partial<int *> != 42 ||
+       Attr::selected(42)!=42)return 211;
+    if(Attr::slow(40)!=42 || Attr::fast(40)!=42 || Attr::calculate(40)!=42 ||
+       Attr::read(&Attr::shared)!=40 || Attr::cold(42)!=42 || Attr::hot(42)!=42 || Attr::answer(40)!=42 || Attr::parameter(40)!=42 ||
+       Attr::project(42)!=42 || Attr::foreign(42)!=42 || Attr::ForeignBox<int>{42}.value!=42 ||
+       Attr::Family<int>{40}.get()!=40 || Attr::Family<int>{40}.call(2L)!=42)return 212;
+    {
+      auto compact=Attr::provider_compact(40);auto copy=compact;
+      if(compact.value!=40 || copy.value!=40 || Attr::Counts::live!=2)return 213;
+    }
+    if(Attr::Counts::live || Attr::Counts::destroyed!=2)return 214;
+    auto packet_frame=NativeCustomCoroutines::attribute_packet(40);
+    auto packet=packet_frame.run();if(packet.code+packet.value!=42)return 216;
+    Attr::shared=42;Attr::storage<int> = 42;
+    if(*Attr::provider_shared()!=42 || *Attr::provider_storage()!=42)return 215;
+  }
+  {
     namespace Custom=NativeCustomCoroutines;
     if(Custom::Counts::frames || Custom::Counts::values)return 201;
     {

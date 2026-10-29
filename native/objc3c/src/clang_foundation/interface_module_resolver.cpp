@@ -92,6 +92,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,

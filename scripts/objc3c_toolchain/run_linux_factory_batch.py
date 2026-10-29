@@ -102,7 +102,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                     'NativeFactoryTemplateArguments', 'NativeGenericFactoryProjections',
                     'NativeFactoryValueArguments', 'NativeClosureResultProjections',
                     'NativeLambdaFactoryResults', 'NativeNestedFactoryTypes',
-                    'NativeForeignAttributes', 'NativeCustomCoroutines']
+                    'NativeForeignAttributes', 'NativeCustomCoroutines', 'NativeDeclarationAttributes']
                 built = work / 'built'
                 module = built / 'modules' / MODULE
                 module.mkdir(parents=True)
@@ -140,6 +140,13 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                            if row['qualified_name'] == 'NativeNestedFactoryTypes::provider_owned'
                            and row.get('native_symbol_name')):
                     raise ValueError('factory provider ABI symbol missing')
+                visibility = run(label + '-visibility', ['readelf', '-W', '-s', provider])
+                packet_symbol = next(row.get('native_symbol_name', '')
+                    for row in metadata['declarations']
+                    if row['qualified_name'] == 'NativeDeclarationAttributes::provider_packet')
+                if not packet_symbol or not any(packet_symbol in line and ' HIDDEN ' in line
+                                                for line in visibility.splitlines()):
+                    raise ValueError('native declaration attribute lost provider symbol visibility')
                 manifest = {'schema': packages.SCHEMA, 'sdk_seal': development_lock,
                     'target': 'x86_64-unknown-linux-gnu', 'optimization': optimization,
                     'packages': [{'language': 'objective-c++', 'standard': standard,

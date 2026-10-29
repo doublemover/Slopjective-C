@@ -397,7 +397,7 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
 
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((noinline)) int old_api(void);\n",
+      "__attribute__((returns_nonnull)) void *old_api(void);\n",
       {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -1813,6 +1813,63 @@ namespace NativeAddressArguments {
     auto private_object=emit("static int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;");
     assert(!private_object.success);
   }
+}
+
+void TestNativeDeclarationAttributes() {
+  std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/declaration_attributes.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text,const char *file="native-attributes.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.attributes","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.attributes","test",{},{},{},{"NativeDeclarationAttributes"});
+    };
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"ATTR %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    for(const auto *spelling:{"packed","alignas","no_unique_address","nodiscard","noinline","always_inline","visibility","pure"})
+      assert(first.source_bytes.find(spelling)!=std::string::npos);
+    auto replay=emit(first.source_bytes);
+    for(const auto &d:replay.diagnostics)std::fprintf(stderr,"ATTR REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    assert(replay.source_bytes==first.source_bytes);
+    auto bad_alignment=clang::tooling::buildASTFromCodeWithArgs(
+        first.source_bytes+"\nNativeDeclarationAttributes::Slot<int,3> invalid;\n",
+        {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},"bad-dependent-alignment.mm");
+    assert(bad_alignment && bad_alignment->getDiagnostics().hasErrorOccurred());
+    auto moved=emit("\n\n"+source,"relocated-native-attributes.mm");
+    assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasNativeDeclarationAttributeIdentity)>15);
+    auto missing=*decoded;std::erase(missing.required_semantics,kNativeDeclarationAttributeSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto row=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasNativeDeclarationAttributeIdentity);
+    row->kind="Namespace";auto bad_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!bad_owner);llvm::consumeError(bad_owner.takeError());
+    auto changed=source;auto at=changed.find("alignas(32)");assert(at!=std::string::npos);changed.replace(at,11,"alignas(64)");
+    auto aligned=emit(changed);assert(aligned.success && aligned.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("keep ");assert(at!=std::string::npos);changed.replace(at,4,"save");
+    auto message=emit(changed);assert(message.success && message.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    // Dependent attribute expressions must retain their real API dependencies.
+    auto denied=emit("namespace Private {inline constexpr int alignment=32;}\n"
+        "namespace NativeDeclarationAttributes {template<class T>struct alignas(sizeof(T)+Private::alignment) Bad {T value;};}\n");
+    assert(!denied.success);
+    assert(std::any_of(denied.diagnostics.begin(),denied.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+  // C records/functions retain the same native ABI and optimizer contracts.
+  const std::string c_source="struct __attribute__((packed,aligned(2))) Packet {char code;int value;};\n"
+      "__attribute__((noinline,pure,warn_unused_result)) int read(const struct Packet *value);\n";
+  auto emit_c=[&](const std::string &text) {
+    auto ast=clang::tooling::buildASTFromCodeWithArgs(text,{"-xc","-std=c17"},"native-attributes.c");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    return EmitSemanticInterface(ast->getASTContext(),"fixture.c_attributes","test");
+  };
+  auto c=emit_c(c_source);assert(c.success);
+  auto replay=emit_c(c.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==c.identity.semantic_fingerprint);
 }
 
 void TestCustomCoroutineBodies() {
@@ -5599,6 +5656,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestNativeDeclarationAttributes();
   TestCustomCoroutineBodies();
   TestForeignImportAttributes();
   TestNestedFactoryTypes();
