@@ -19009,10 +19009,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..7e4401f0f
+index 000000000..8e8cb2dff
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,2017 @@
+@@ -0,0 +1,2019 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21005,7 +21005,9 @@ index 000000000..7e4401f0f
 +    auto To=tooling::buildASTFromCodeWithArgs("",Args,"local-factory-to.cpp");
 +    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
 +    std::string Printed;llvm::raw_string_ostream Stream(Printed);
-+    From->getASTContext().getTranslationUnitDecl()->print(Stream);
++    PrintingPolicy Policy(From->getASTContext().getLangOpts());
++    Policy.IncludeTagDefinition=true;
++    From->getASTContext().getTranslationUnitDecl()->print(Stream,Policy);
 +    EXPECT_NE(Printed.find("auto named("),std::string::npos);
 +    EXPECT_NE(Printed.find("decltype(auto) unnamed("),std::string::npos);
 +    auto Reparsed=tooling::buildASTFromCodeWithArgs(Printed,Args,"local-factory-replay.cpp");
