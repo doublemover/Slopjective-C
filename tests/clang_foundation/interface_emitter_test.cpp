@@ -1870,8 +1870,8 @@ void TestNativeDeclarationAttributes() {
     assert(!hidden_deallocator.success && std::any_of(hidden_deallocator.diagnostics.begin(),hidden_deallocator.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC156";}));
     auto projected=emit(source+"\nnamespace NativeDeclarationAttributes {using PublicProjection=decltype(Family<int>{}.first);}");
-    assert(!projected.success && std::any_of(projected.diagnostics.begin(),projected.diagnostics.end(),
-        [](const auto &d){return d.message.find("unnamed template member types")!=std::string::npos;}));
+    assert(projected.success);
+    assert(projected.sidecar_json.find(kCxxUnnamedTemplateProjectionSemantic)!=std::string::npos);
     // Dependent attribute expressions must retain their real API dependencies.
     auto denied=emit("namespace Private {inline constexpr int alignment=32;}\n"
         "namespace NativeDeclarationAttributes {template<class T>struct alignas(sizeof(T)+Private::alignment) Bad {T value;};}\n");
@@ -1888,6 +1888,55 @@ void TestNativeDeclarationAttributes() {
   };
   auto c=emit_c(c_source);assert(c.success);
   auto replay=emit_c(c.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==c.identity.semantic_fingerprint);
+}
+
+void TestUnnamedTemplateProjections() {
+  std::ifstream input(std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/unnamed_template_projections.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text,const char *file="unnamed-projections.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.projections","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.projections","test",{},{},{},{"NativeUnnamedTemplateProjections"});
+    };
+    auto first=emit(source);
+    for (const auto &d:first.diagnostics)std::fprintf(stderr,"PROJECT %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);
+    for (const auto &d:replay.diagnostics)std::fprintf(stderr,"PROJECT REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    assert(replay.source_bytes==first.source_bytes);
+    auto moved=emit("\n\n"+source,"moved-projections.mm");
+    assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto type=[&](const char *name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(type("NativeUnnamedTemplateProjections::First").canonical_type_identity!=type("NativeUnnamedTemplateProjections::Second").canonical_type_identity);
+    assert(type("NativeUnnamedTemplateProjections::Reader").canonical_type_identity!=type("NativeUnnamedTemplateProjections::ReverseReader").canonical_type_identity);
+    assert(type("NativeUnnamedTemplateProjections::Kind").canonical_type_identity!=type("NativeUnnamedTemplateProjections::OtherKind").canonical_type_identity);
+    assert(type("NativeUnnamedTemplateProjections::EnumAnswer").canonical_type_identity!=type("NativeUnnamedTemplateProjections::OtherEnumAnswer").canonical_type_identity);
+    std::set<std::string> overloads;
+    for(const auto &row:decoded->declarations)if(row.qualified_name=="NativeUnnamedTemplateProjections::provider_read")overloads.insert(row.native_symbol_name);
+    assert(overloads.size()==2 && !overloads.count(""));
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxUnnamedTemplateProjectionSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxUnnamedTemplateProjectionIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto bad_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!bad_owner);llvm::consumeError(bad_owner.takeError());
+    auto changed=source;const auto at=changed.find("using Nominal=First;");assert(at!=std::string::npos);
+    changed.replace(at,std::string("using Nominal=First;").size(),"using Nominal=Second;");
+    auto different=emit(changed);assert(different.success && different.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto denied=emit("namespace Private {template<class T>struct Family {struct {T value;} first;};}"
+        "namespace NativeUnnamedTemplateProjections {using Hidden=decltype(Private::Family<int>{}.first);}");
+    assert(!denied.success && std::any_of(denied.diagnostics.begin(),denied.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
 }
 
 void TestStandardCoroutineTypesAndTraits() {
@@ -5728,6 +5777,7 @@ int main() {
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
   TestNativeDeclarationAttributes();
+  TestUnnamedTemplateProjections();
   TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();
   TestForeignImportAttributes();

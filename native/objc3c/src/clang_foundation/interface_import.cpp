@@ -117,6 +117,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
@@ -195,12 +196,13 @@ class ExportedDeclarationCollector final
     : public clang::RecursiveASTVisitor<ExportedDeclarationCollector> {
 public:
   ExportedDeclarationCollector(clang::ASTContext &context,
-                                const std::set<std::string> &expected_ids)
-      : context_(context), expected_ids_(expected_ids) {}
+                                const std::set<std::string> &expected_ids,
+                                bool main_file_only=true)
+      : context_(context), expected_ids_(expected_ids), main_file_only_(main_file_only) {}
 
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() || !decl->getLocation().isValid() ||
-        !context_.getSourceManager().isWrittenInMainFile(decl->getLocation()))
+        (main_file_only_ && !context_.getSourceManager().isWrittenInMainFile(decl->getLocation())))
       return true;
     if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
         function && function->getDescribedFunctionTemplate()) return true;
@@ -220,6 +222,7 @@ public:
 private:
   clang::ASTContext &context_;
   const std::set<std::string> &expected_ids_;
+  bool main_file_only_;
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
@@ -289,6 +292,33 @@ void SeedCompilerBuiltinDeclarations(clang::ASTImporter &importer,
       const auto found=members.find({unsigned(named->getKind()),ReadInterfaceDeclarationStableId(named)});
       if(found!=members.end())importer.MapImported(named,found->second);
     }
+}
+
+// A dependency is parsed again as an include of each importing interface.
+// Reuse its admitted exports by exact sidecar identity, rather than asking
+// structural lookup to reconstruct dependent alias expression equivalence.
+// This mapping is session-local and only covers successfully imported locks.
+void MapAdmittedDependencyDeclaration(clang::ASTImporter &importer,
+    clang::NamedDecl *from,clang::NamedDecl *to) {
+  importer.MapImported(from,to);
+  auto *source=llvm::dyn_cast<clang::TemplateDecl>(from);
+  auto *target=llvm::dyn_cast<clang::TemplateDecl>(to);
+  if(!source || !target)return;
+  if(source->getTemplatedDecl() && target->getTemplatedDecl())
+    importer.MapImported(source->getTemplatedDecl(),target->getTemplatedDecl());
+  auto parameters=[&](auto &&self,clang::TemplateParameterList *left,
+                       clang::TemplateParameterList *right)->void {
+    if(left->size()!=right->size())return;
+    for(unsigned i=0;i<left->size();++i) {
+      auto *a=left->getParam(i);auto *b=right->getParam(i);
+      if(a->getKind()!=b->getKind())continue;
+      importer.MapImported(a,b);
+      if(auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(a))
+        self(self,nested->getTemplateParameters(),
+            llvm::cast<clang::TemplateTemplateParmDecl>(b)->getTemplateParameters());
+    }
+  };
+  parameters(parameters,source->getTemplateParameters(),target->getTemplateParameters());
 }
 
 class DefinitionTrackingImporter final : public clang::ASTImporter {
@@ -733,6 +763,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   FunctionDefinitionSnapshot existing_definitions;
   existing_definitions.TraverseDecl(target_context.getTranslationUnitDecl());
   std::set<std::string> recorded_ids;
+  std::map<std::string,std::map<std::string,clang::NamedDecl *>> admitted_dependencies;
   std::vector<clang::NamedDecl *> auxiliary_definitions;
   std::vector<std::unique_ptr<clang::ASTImporter>> importers;
   for (auto index : impl_->import_order) {
@@ -782,6 +813,38 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           "the canonical source has no declaration for every sidecar export identity",
           module.sidecar.module.canonical_name);
       return report;
+    }
+    std::set<std::string> dependency_names;
+    std::vector<std::string> dependency_work;
+    for(const auto &dependency:module.sidecar.dependencies)
+      dependency_work.push_back(dependency.module.canonical_name);
+    for(std::size_t cursor=0;cursor<dependency_work.size();++cursor) {
+      const auto name=dependency_work[cursor];
+      if(!dependency_names.insert(name).second)continue;
+      const auto provider=std::find_if(impl_->modules.begin(),impl_->modules.end(),
+          [&](const auto &candidate){return candidate.sidecar.module.canonical_name==name;});
+      if(provider==impl_->modules.end())continue; // Prepare already validates the lock graph.
+      for(const auto &nested:provider->sidecar.dependencies)
+        dependency_work.push_back(nested.module.canonical_name);
+      const auto admitted=admitted_dependencies.find(name);
+      if(admitted==admitted_dependencies.end())continue;
+      std::set<std::string> ids;
+      for(const auto &[id,target]:admitted->second)ids.insert(id);
+      ExportedDeclarationCollector included(module.ast->getASTContext(),ids,/*main_file_only=*/false);
+      included.TraverseDecl(from_tu);
+      for(const auto &expected:provider->sidecar.declarations) {
+        const auto target=admitted->second.find(expected.stable_id);
+        const auto source=included.Declarations.find(expected.stable_id);
+        if(target==admitted->second.end() || source==included.Declarations.end())continue;
+        InterfaceDeclarationIdentity actual;
+        if(!ReadInterfaceDeclarationIdentity(source->second,module.ast->getASTContext(),actual) ||
+            !SameInterfaceDeclarationIdentity(expected,actual)) {
+          Add(report.diagnostics,"O3IFC144",
+              "included dependency differs from its admitted declaration identity",expected.stable_id);
+          return report;
+        }
+        MapAdmittedDependencyDeclaration(*importer,source->second,target->second);
+      }
     }
     for (const auto &expected : module.sidecar.declarations) {
       if (!IsGrantedSPI(expected, module.input.spi_groups))
@@ -934,6 +997,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
             expected.stable_id);
         return report;
       }
+      admitted_dependencies[module.sidecar.module.canonical_name].emplace(actual.stable_id,named);
       if (recorded_ids.insert(actual.stable_id).second)
         report.imported_declarations.push_back(std::move(actual));
       if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);

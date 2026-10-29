@@ -363,7 +363,8 @@
     "NativeForeignAttributes",
     "NativeCustomCoroutines",
     "NativeDeclarationAttributes",
-    "NativeStandardCoroutines"
+    "NativeStandardCoroutines",
+    "NativeUnnamedTemplateProjections"
   ],
   "dependencies": []
 }

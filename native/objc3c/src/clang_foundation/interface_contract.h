@@ -188,6 +188,10 @@ inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIden
 inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxUnnamedTemplateProjectionSemantic = "objc3.cxx-unnamed-template-projections.v1";
+inline bool HasCxxUnnamedTemplateProjectionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-unnamed-template-projections:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxStandardCoroutineSemantic = "objc3.cxx-standard-coroutines.v1";
 inline bool HasCxxStandardCoroutineIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-standard-coroutines:v1;") != std::string::npos;

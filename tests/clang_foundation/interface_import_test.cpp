@@ -418,6 +418,70 @@ void TestNativeAttributeTemplateImports() {
   fs::remove_all(root);
 }
 
+void TestUnnamedTemplateProjectionImports() {
+  const auto root=fs::temp_directory_path()/"objc3-unnamed-template-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/unnamed_template_projections.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.unnamed_projections",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;provider.arguments={standard};
+    provider.module_owned_names=true;provider.interface_exports={"NativeUnnamedTemplateProjections"};
+    auto path=root/"test.unnamed_projections.objc3i";provider.interface_output_path=path.string();
+    auto emitted=Compile(provider);
+    if(!emitted.success)std::fprintf(stderr,"UNNAMED PROVIDER %s\n",emitted.failure.c_str());
+    assert(emitted.success && emitted.interface_artifact);
+    for(bool directed:{false,true}) {
+      auto consumer=ModuleRequest(root/"consumer.mm","",std::string(directed?"@import test.unnamed_projections;\n":"")+R"(
+        namespace P=NativeUnnamedTemplateProjections;
+        static_assert(!__is_same(P::First,P::Second));
+        static_assert(!__is_same(P::Ordered,P::Reversed));
+        int use(){P::First a{17};P::Second b{25};P::Wrapped box{{42}};
+          return P::provider_read(a,b)+P::provider_wrapped(box).value.value;}
+      )");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};
+      consumer.emit_semantic_interface=false;consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.unnamed_projections";locked.locked_identity=emitted.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"UNNAMED IMPORT %s\n",result.failure.c_str());
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+      assert(result.success);
+    }
+    auto bridge=ModuleRequest(root/"bridge.mm","test.unnamed_bridge",R"(
+      namespace Bridge {
+        using First=NativeUnnamedTemplateProjections::First;
+        using Wrapped=NativeUnnamedTemplateProjections::Wrapped;
+        using Kind=NativeUnnamedTemplateProjections::Kind;
+        inline Kind pass_kind(Kind value){return value;}
+        inline First pass(First value){return value;}
+        inline Wrapped pass_box(Wrapped value){return value;}
+      }
+    )");
+    bridge.language=BaseLanguage::ObjectiveCxx;bridge.arc=true;bridge.arguments={standard};bridge.module_owned_names=true;
+    bridge.interface_exports={"Bridge"};bridge.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity)};
+    auto bridge_path=root/"test.unnamed_bridge.objc3i";bridge.interface_output_path=bridge_path.string();
+    auto projected=Compile(bridge);
+    if(!projected.success)std::fprintf(stderr,"UNNAMED BRIDGE %s\n",projected.failure.c_str());
+    assert(projected.success && projected.interface_artifact);
+    auto consumer=ModuleRequest(root/"second-consumer.mm","",R"(
+      int use(){Bridge::First value{42};Bridge::Wrapped box{{42}};
+        return Bridge::pass(value).value+Bridge::pass_box(box).value.value+static_cast<int>(Bridge::pass_kind(Bridge::Kind::answer));}
+    )");
+    consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};consumer.emit_semantic_interface=false;
+    consumer.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity),ImportOf(bridge_path,projected.interface_artifact->identity)};
+    auto result=Compile(consumer);
+    if(!result.success) {
+      std::fprintf(stderr,"UNNAMED SECOND IMPORT %s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+    }
+    assert(result.success);
+  }
+  fs::remove_all(root);
+}
+
 void TestStandardCoroutineTypesAndTraitsImports() {
   const auto root=fs::temp_directory_path()/"objc3-standard-coroutine-import";
   fs::remove_all(root);fs::create_directories(root);
@@ -589,6 +653,7 @@ int main() {
   TestStandardCoroutineTypesAndTraitsImports();
   TestCustomCoroutinePromiseRedeclarations();
   TestNativeAttributeTemplateImports();
+  TestUnnamedTemplateProjectionImports();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();

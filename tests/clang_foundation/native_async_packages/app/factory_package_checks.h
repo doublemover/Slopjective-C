@@ -3,6 +3,46 @@
 
 int factory_package_checks() {
   {
+    namespace Project=NativeUnnamedTemplateProjections;
+    static_assert(!__is_same(Project::First,Project::Second));
+    static_assert(!__is_same(Project::Kind,Project::OtherKind));
+    static_assert(!__is_same(Project::EnumAnswer,Project::OtherEnumAnswer));
+    static_assert(Project::EnumAnswer::number==42 && Project::OtherEnumAnswer::number==42);
+    static_assert(Project::EmptyMember::empty);
+    if(Project::provider_kind(Project::Kind::answer)!=Project::Kind::answer || Project::MemberExplicit::read(Project::First{42})!=42)return 253;
+    static_assert(!__is_same(Project::First,Project::Wide));
+    static_assert(!__is_same(Project::Reader,Project::ReverseReader));
+    static_assert(!__is_same(Project::Ordered,Project::Reversed));
+    static_assert(Project::Ordered::size==2 && Project::Reversed::size==2);
+    static_assert(__is_same(Project::Nested,Project::Rebound));
+    Project::TemplateWrapped nested{{{42}}};Project::AliasTemplateWrapped rebound{{{42}}};Project::NestedLeaf leaf{42};
+    if(nested.value.leaf.value!=42 || rebound.value.leaf.value!=42 || leaf.value!=42)return 251;
+    static_assert(Project::Answer::number==42 && Project::Different::number==43);
+    static_assert(!__is_same(Project::Answer,Project::Different));
+    Project::Defaulted<> defaults{{42}};Project::TemplateDefault<> template_defaults{{{42}}};
+    if(defaults.value.value!=42 || template_defaults.value.leaf.value!=42 || Project::MemberDefault<>::read({42})!=42)return 252;
+    Project::First first{17};Project::Second second{25};
+    if(Project::provider_first(first).value!=17 || Project::provider_second(second).value!=25)return 240;
+    if(Project::provider_read(first,second)!=42 || Project::provider_read(second,first)!=8)return 241;
+    if(Project::invoke(&Project::read,first,second)!=42 || first.*Project::member!=17)return 242;
+    Project::FirstArray array{{17},{25}};Project::Holder holder{first,second};Project::Derived derived{{42}};
+    if(array[0].value+array[1].value!=42 || holder.read()!=42 || derived.read()!=42)return 243;
+    Project::Wrapped wrapped{{42}};Project::Box<Project::Second> selected{{42}};Project::Box<Project::First *> pointer{&first};
+    if(Project::provider_wrapped(wrapped).value.value!=42 || selected.tag()!=42 || pointer.value!=&first)return 244;
+    if(Project::provider_shared()!=&Project::shared || &Project::reference()!=&Project::shared)return 245;
+    if(Project::generic(first)!=17 || Project::generic(second)!=25)return 246;
+    if(Project::Tracked::live)return 247;
+    {
+      auto owned=Project::provider_owned(42);
+      if(Project::Tracked::live!=1)return 248;
+      const int observed=Project::provider_owned_value(owned);
+      if(observed!=42 || Project::Tracked::live!=1)return 248;
+      Project::OwnedBox boxed{owned};
+      if(boxed.value.value.value!=42 || Project::Tracked::live!=2)return 249;
+    }
+    if(Project::Tracked::live)return 250;
+  }
+  {
     namespace Standard=NativeStandardCoroutines;
     static_assert(sizeof(Standard::Handle<int>)==sizeof(void *));
     static_assert(__is_same(Standard::IntPromise,Standard::Promise<int>));

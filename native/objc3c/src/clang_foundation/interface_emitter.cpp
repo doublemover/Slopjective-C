@@ -56,7 +56,9 @@ struct FactoryTypeFeatures {
   bool generic=false, closure=false, lambda_result=false, nested=false;
 };
 std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context,FactoryTypeFeatures *features=nullptr);
-bool HasOnlyFactoryLocalTypes(clang::QualType type);
+bool HasOnlyProjectedLocalTypes(clang::QualType type);
+std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *,const clang::ASTContext &);
+std::string UnnamedTemplateTypeKey(clang::QualType,const clang::ASTContext &);
 void ReadFactoryArgumentFeatures(const clang::TemplateArgument &,const clang::ASTContext &,FactoryTypeFeatures &);
 bool HasFactoryValueArgument(const clang::TemplateArgument &,const clang::ASTContext &);
 bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context,FactoryTypeFeatures *features=nullptr);
@@ -93,6 +95,8 @@ std::string CanonicalType(clang::QualType type,
   auto spelling=type.getCanonicalType().getAsString(policy);
   const auto origins=FactoryTypeKey(type,context);
   if(!origins.empty())spelling+=";factory-type-origins="+ComputeInterfaceSourceSha256(origins)+";";
+  const auto members=UnnamedTemplateTypeKey(type,context);
+  if(!members.empty())spelling+=";unnamed-template-record-origins="+ComputeInterfaceSourceSha256(members)+";";
   return spelling;
 }
 
@@ -1332,25 +1336,26 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
   auto type=[&](clang::QualType value,bool allow_factory=false) {
     if (value.isNull() || value->isDependentType())return false;
     const auto origins=FactoryTypeKey(value,context);
-    if(value->hasUnnamedOrLocalType() || !origins.empty())
-      if(!allow_factory || origins.empty() || !HasOnlyFactoryLocalTypes(value))return false;
+    const auto members=UnnamedTemplateTypeKey(value,context);
+    if(value->hasUnnamedOrLocalType() || !origins.empty() || !members.empty())
+      if(!allow_factory || (origins.empty() && members.empty()) || !HasOnlyProjectedLocalTypes(value))return false;
     add(CanonicalType(value,context));return true;
   };
   add(std::to_string(argument.getKind()));
   switch(argument.getKind()) {
   case clang::TemplateArgument::Type:return type(argument.getAsType(),true);
   case clang::TemplateArgument::Integral: {
-    if (!type(argument.getIntegralType())) return false;
+    if (!type(argument.getIntegralType(),true)) return false;
     llvm::SmallString<32> value;argument.getAsIntegral().toString(value,10);add(value);return true;
   }
-  case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType());
+  case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType(),true);
   case clang::TemplateArgument::Declaration: {
     const auto *declaration=argument.getAsDecl();
     if (const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
       if (!type(object->getType(),true)) return false;
       unsigned budget=4096;return StructuralArgumentKey(object->getValue(),context,key,budget);
     }
-    if (!type(argument.getParamTypeForDecl())) return false;
+    if (!type(argument.getParamTypeForDecl(),true)) return false;
     return AddressDeclarationKey(declaration,context,key);
   }
   case clang::TemplateArgument::StructuralValue: {
@@ -1365,7 +1370,10 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
     add(pattern->getDeclKindName());
     add(ReadInterfaceDeclarationStableId(pattern));
     add(ReadNativeSymbolName(pattern));
-    add(pattern->getQualifiedNameAsString());
+    const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern);
+    const auto *member=record?record->getTemplatedDecl():llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext());
+    const auto origin=UnnamedTemplateRecordKey(member,context);
+    add(origin.empty()?pattern->getQualifiedNameAsString():origin);
     for (const auto *scope=pattern->getDeclContext();scope;scope=scope->getParent())
       if (const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(scope)) {
         add(ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate()));
@@ -1554,6 +1562,64 @@ std::string UnnamedTemplateRecordKey(const clang::CXXRecordDecl *record,
     record=llvm::dyn_cast<clang::CXXRecordDecl>(record->getDeclContext());
   }
   return {};
+}
+
+std::string UnnamedTemplateTagKey(const clang::TagDecl *tag,const clang::ASTContext &context) {
+  if(const auto *record=llvm::dyn_cast_or_null<clang::CXXRecordDecl>(tag))
+    return UnnamedTemplateRecordKey(record,context);
+  const auto *enumeration=llvm::dyn_cast_or_null<clang::EnumDecl>(tag);
+  if(!enumeration)return {};
+  const auto *parent=llvm::dyn_cast<clang::CXXRecordDecl>(enumeration->getDeclContext());
+  auto origin=UnnamedTemplateRecordKey(parent,context);
+  if(origin.empty())return {};
+  unsigned ordinal=0;
+  for(const auto *member:parent->decls())
+    if(const auto *sibling=llvm::dyn_cast<clang::EnumDecl>(member)) {
+      if(sibling->isImplicit())continue;
+      if(sibling->getCanonicalDecl()==enumeration->getCanonicalDecl())
+        return origin+";enum:"+std::to_string(ordinal)+":"+enumeration->getNameAsString();
+      ++ordinal;
+    }
+  return {};
+}
+
+std::string UnnamedTemplateTypeKey(clang::QualType type,const clang::ASTContext &context) {
+  struct Origins:clang::RecursiveASTVisitor<Origins> {
+    const clang::ASTContext &context;std::string key;
+    explicit Origins(const clang::ASTContext &context):context(context) {}
+    bool TraverseType(clang::QualType type,bool qualifier=true) {
+      return type.isNull() || clang::RecursiveASTVisitor<Origins>::TraverseType(type.getCanonicalType(),qualifier);
+    }
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+      if(argument.getKind()==clang::TemplateArgument::Integral)return TraverseType(argument.getIntegralType());
+      if(argument.getKind()==clang::TemplateArgument::NullPtr)return TraverseType(argument.getNullPtrType());
+      if(argument.getKind()==clang::TemplateArgument::StructuralValue)return TraverseType(argument.getStructuralValueType());
+      if(argument.getKind()==clang::TemplateArgument::Declaration) {
+        if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))return TraverseType(object->getType());
+        return TraverseType(argument.getParamTypeForDecl());
+      }
+      if(argument.getKind()==clang::TemplateArgument::Template || argument.getKind()==clang::TemplateArgument::TemplateExpansion) {
+        if(const auto *pattern=argument.getAsTemplateOrTemplatePattern().getAsTemplateDecl()) {
+          const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern);
+          const auto *member=record?record->getTemplatedDecl():llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext());
+          const auto origin=UnnamedTemplateRecordKey(member,context);
+          if(!origin.empty())key+=std::to_string(origin.size())+":"+origin;
+        }
+        return true;
+      }
+      return clang::RecursiveASTVisitor<Origins>::TraverseTemplateArgument(argument);
+    }
+    bool VisitTagType(clang::TagType *type) {
+      const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(type->getDecl());
+      const auto origin=UnnamedTemplateTagKey(type->getDecl(),context);
+      if(!origin.empty())key+=std::to_string(origin.size())+":"+origin;
+      if(const auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(record))
+        for(const auto &argument:specialization->getTemplateArgs().asArray())TraverseTemplateArgument(argument);
+      return true;
+    }
+  } visitor(context);
+  if(!type.isNull())visitor.TraverseType(type);
+  return visitor.key;
 }
 
 class DeclarationExpressionIdentity final
@@ -2427,9 +2493,13 @@ std::vector<const clang::TagDecl *> PublishedFactoryResults(const clang::Functio
       return type.isNull() || clang::RecursiveASTVisitor<Results>::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
     bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+      if(argument.getKind()==clang::TemplateArgument::Integral)return TraverseType(argument.getIntegralType());
+      if(argument.getKind()==clang::TemplateArgument::NullPtr)return TraverseType(argument.getNullPtrType());
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)return TraverseType(argument.getStructuralValueType());
-      if(argument.getKind()==clang::TemplateArgument::Declaration)
+      if(argument.getKind()==clang::TemplateArgument::Declaration) {
         if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))return TraverseType(object->getType());
+        return TraverseType(argument.getParamTypeForDecl());
+      }
       return clang::RecursiveASTVisitor<Results>::TraverseTemplateArgument(argument);
     }
     bool VisitTagType(clang::TagType *type) {
@@ -2590,9 +2660,11 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
     bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)
         return TraverseType(argument.getStructuralValueType());
-      if(argument.getKind()==clang::TemplateArgument::Declaration)
+      if(argument.getKind()==clang::TemplateArgument::Declaration) {
         if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
           return TraverseType(object->getType());
+        return TraverseType(argument.getParamTypeForDecl());
+      }
       return clang::RecursiveASTVisitor<Origins>::TraverseTemplateArgument(argument);
     }
     bool VisitTagType(clang::TagType *type) {
@@ -2631,7 +2703,7 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
   return visitor.key;
 }
 
-bool HasOnlyFactoryLocalTypes(clang::QualType type) {
+bool HasOnlyProjectedLocalTypes(clang::QualType type) {
   struct Qualified:clang::RecursiveASTVisitor<Qualified> {
     bool valid=true;
     bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
@@ -2640,15 +2712,18 @@ bool HasOnlyFactoryLocalTypes(clang::QualType type) {
     bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)
         return TraverseType(argument.getStructuralValueType());
-      if(argument.getKind()==clang::TemplateArgument::Declaration)
+      if(argument.getKind()==clang::TemplateArgument::Declaration) {
         if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
           return TraverseType(object->getType());
+        return TraverseType(argument.getParamTypeForDecl());
+      }
       return clang::RecursiveASTVisitor<Qualified>::TraverseTemplateArgument(argument);
     }
     bool VisitTagType(clang::TagType *type) {
       const auto *tag=type->getDecl();
       if(IsExpressionLocalTag(tag) || (!tag->getIdentifier() && !tag->getTypedefNameForAnonDecl()))
-        valid &= FactoryResultOrigin(tag)!=nullptr;
+        valid &= FactoryResultOrigin(tag)!=nullptr ||
+            !UnnamedTemplateTagKey(tag,tag->getASTContext()).empty();
       if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(tag))
         for(const auto &argument:specialization->getTemplateArgs().asArray())TraverseTemplateArgument(argument);
       return true;
@@ -2708,6 +2783,77 @@ std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration) {
       if(!origins.empty())key+=std::to_string(origins.size())+":"+origins;
     }
     bool VisitValueDecl(clang::ValueDecl *declaration) {
+      Add(declaration->getType(),declaration->getASTContext());return true;
+    }
+    bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) {
+      Add(declaration->getUnderlyingType(),declaration->getASTContext());return true;
+    }
+    bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
+      if(declaration->isCompleteDefinition())
+        for(const auto &base:declaration->bases())
+          Add(base.getType(),declaration->getASTContext());
+      return true;
+    }
+  } visitor;
+  visitor.TraverseDecl(const_cast<clang::NamedDecl *>(declaration));return visitor.key;
+}
+
+std::string UnnamedTemplateDeclarationTypeKey(const clang::NamedDecl *declaration) {
+  if(llvm::isa<clang::NamespaceDecl>(declaration))return {};
+  struct References:clang::RecursiveASTVisitor<References> {
+    std::string key;
+    bool TraverseStmt(clang::Stmt *) {return true;}
+    bool TraverseDecl(clang::Decl *declaration) {
+      return !declaration || declaration->isImplicit() ||
+          clang::RecursiveASTVisitor<References>::TraverseDecl(declaration);
+    }
+    void Add(clang::QualType type,const clang::ASTContext &context) {
+      const auto origins=UnnamedTemplateTypeKey(type,context);
+      if(!origins.empty())key+=std::to_string(origins.size())+":"+origins;
+    }
+    bool VisitValueDecl(clang::ValueDecl *declaration) {
+      // The enclosing function type already binds each parameter. TypeLoc-only
+      // parameter declarations are source sugar omitted by ASTImporter.
+      if(!llvm::isa<clang::ParmVarDecl>(declaration))Add(declaration->getType(),declaration->getASTContext());
+      return true;
+    }
+    void AddArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context) {
+      switch(argument.getKind()) {
+      case clang::TemplateArgument::Type:Add(argument.getAsType(),context);break;
+      case clang::TemplateArgument::Integral:Add(argument.getIntegralType(),context);break;
+      case clang::TemplateArgument::NullPtr:Add(argument.getNullPtrType(),context);break;
+      case clang::TemplateArgument::Expression:Add(argument.getAsExpr()->getType(),context);break;
+      case clang::TemplateArgument::StructuralValue:Add(argument.getStructuralValueType(),context);break;
+      case clang::TemplateArgument::Declaration:Add(argument.getParamTypeForDecl(),context);break;
+      case clang::TemplateArgument::Template:case clang::TemplateArgument::TemplateExpansion:
+        if(const auto *pattern=argument.getAsTemplateOrTemplatePattern().getAsTemplateDecl()) {
+          const auto *record=llvm::dyn_cast<clang::ClassTemplateDecl>(pattern);
+          const auto *owner=record?record->getTemplatedDecl():llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext());
+          const auto origin=UnnamedTemplateRecordKey(owner,context);
+          if(!origin.empty())key+=std::to_string(origin.size())+":"+origin;
+        }
+        break;
+      default:break;
+      }
+    }
+    bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl *declaration) {
+      if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
+      return true;
+    }
+    bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl *declaration) {
+      if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
+      return true;
+    }
+    bool VisitTemplateTemplateParmDecl(clang::TemplateTemplateParmDecl *declaration) {
+      if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
+      return true;
+    }
+    bool VisitObjCMethodDecl(clang::ObjCMethodDecl *declaration) {
+      Add(declaration->getReturnType(),declaration->getASTContext());
+      for(const auto *parameter:declaration->parameters())Add(parameter->getType(),declaration->getASTContext());
+      return true;
+    }
+    bool VisitObjCPropertyDecl(clang::ObjCPropertyDecl *declaration) {
       Add(declaration->getType(),declaration->getASTContext());return true;
     }
     bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) {
@@ -4467,9 +4613,6 @@ class TypeDependencyVisitor final
     // compiler rather than a package. Never recognize a user type by spelling.
     if (const auto *builtin=context_.getVaListTagDecl();
         builtin && declaration->getCanonicalDecl()==builtin->getCanonicalDecl()) return true;
-    if (!in_expression_ && !public_template_type_ &&
-        !UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(declaration),context_).empty())
-      return UnsupportedExpression("public signatures projecting unnamed template member types require an explicit projection contract");
     if (const auto *pattern = TemplatePublicationOwner(declaration);
         !IsExpressionLocalTag(declaration) && pattern && (IsInMainFile(context_,pattern->getLocation()) ||
                     resolved_ids_.count(ReadInterfaceDeclarationStableId(pattern)))) {
@@ -5981,13 +6124,25 @@ std::string ReadInterfaceDeclarationStableId(
   if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(declaration))
     if (const auto *pattern = alias->getDescribedAliasTemplate())
       return ReadInterfaceDeclarationStableId(pattern);
-  if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
+  if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
+    if (!UnnamedTemplateRecordKey(pattern->getTemplatedDecl(),pattern->getASTContext()).empty()) {
+      llvm::SmallString<128> usr;
+      if (clang::index::generateUSRForDecl(pattern,usr))return {};
+      return usr.str().str();
+    }
     return "c:@ClassTemplate@" + pattern->getQualifiedNameAsString();
+  }
   if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration))
     if (const auto *pattern = record->getDescribedClassTemplate())
       return ReadInterfaceDeclarationStableId(pattern);
-  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration))
+  if (const auto *pattern = llvm::dyn_cast<clang::TypeAliasTemplateDecl>(declaration)) {
+    if (!UnnamedTemplateRecordKey(llvm::dyn_cast<clang::CXXRecordDecl>(pattern->getDeclContext()),pattern->getASTContext()).empty()) {
+      llvm::SmallString<128> usr;
+      if (clang::index::generateUSRForDecl(pattern,usr))return {};
+      return usr.str().str();
+    }
     return "c:@AliasTemplate@" + pattern->getQualifiedNameAsString();
+  }
   if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
     if (const auto *pattern=variable->getDescribedVarTemplate()) return ReadInterfaceDeclarationStableId(pattern);
   if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
@@ -6281,6 +6436,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-detached-callable-templates:v1;definitions="+
         ComputeInterfaceSourceSha256(contract)+";";
   }
+  if (const auto origins=UnnamedTemplateDeclarationTypeKey(representative);!origins.empty())
+    identity.canonical_type_identity+=";cxx-unnamed-template-projections:v1;origins="+ComputeInterfaceSourceSha256(origins)+";";
   if (HasDeclarationFactoryTypeProjection(representative))
     identity.canonical_type_identity+=";cxx-factory-type-projections:v1;";
   if (HasDeclarationLocalFactoryResult(representative))
@@ -6663,6 +6820,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
     if (HasNativeDeclarationAttributeIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeDeclarationAttributeSemantic);
+    if (HasCxxUnnamedTemplateProjectionIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxUnnamedTemplateProjectionSemantic);
     if (HasCxxStandardCoroutineIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxStandardCoroutineSemantic);
     if (HasCxxCoroutineBodyIdentity(declaration))
@@ -6874,6 +7033,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
@@ -7051,6 +7211,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,

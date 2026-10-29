@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 91,
+        "minor": 92,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -221,7 +221,8 @@
         "Public standard coroutine handles, suspend/no-op types and provider-authored full/partial coroutine_traits specializations, with checked header identities and source-free native frames (source)",
         "Owned raw-frame task-group callbacks, explicit group callable spawning, typed native joins in both source languages and independently retained Sendable group leases (source)",
         "Allocator/deallocator, size/alignment, nonnull, format and Linux callable convention contracts with typed payloads and export dependency checks (source)",
-        "Unnamed member records under complete class-template owners and partial specializations, with lexical identities, nested template projections and native source-free ABI (source)"
+        "Unnamed member records under complete class-template owners and partial specializations, with lexical identities, nested template projections and native source-free ABI (source)",
+        "Public unnamed template member aliases, signatures, callbacks, arrays/member pointers, storage and generic/template-template argument graphs with ordered nominal origins and native value lifetimes (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

@@ -139,6 +139,18 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    projections={row['qualified_name'] for row in metadata['declarations']
+                 if ';cxx-unnamed-template-projections:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-unnamed-template-projections.v1' in metadata['required_semantics']
+    assert {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',
+            'NativeUnnamedTemplateProjections::Owned','NativeUnnamedTemplateProjections::Reader',
+            'NativeUnnamedTemplateProjections::Wrapped','NativeUnnamedTemplateProjections::Ordered',
+            'NativeUnnamedTemplateProjections::Kind','NativeUnnamedTemplateProjections::OtherKind',
+            'NativeUnnamedTemplateProjections::EnumAnswer','NativeUnnamedTemplateProjections::OtherEnumAnswer',
+            'NativeUnnamedTemplateProjections::MemberExplicit','NativeUnnamedTemplateProjections::EmptyMember',
+            'NativeUnnamedTemplateProjections::Defaulted','NativeUnnamedTemplateProjections::TemplateDefault',
+            'NativeUnnamedTemplateProjections::Answer','NativeUnnamedTemplateProjections::Different',
+            'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections
     standard_coroutines=[row for row in metadata['declarations']
                          if ';cxx-standard-coroutines:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']
@@ -397,12 +409,12 @@ def check_cpp_metadata(metadata):
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected'}):
+            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
         raise ValueError('C++ package lost partial class specialization owner contracts')
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected'}):
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
         raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]

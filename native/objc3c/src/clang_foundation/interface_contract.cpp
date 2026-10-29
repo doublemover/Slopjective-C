@@ -446,6 +446,12 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeDeclarationAttributeIdentity(d) || d.kind!="Namespace";});
   if (has_native_attributes!=native_attribute_capability || !native_attribute_owners)
     Add(result,"O3IFC098","native declaration attribute identities and required capability must agree",expected.canonical_name);
+  const bool unnamed_projections=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxUnnamedTemplateProjectionIdentity);
+  const bool unnamed_projection_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxUnnamedTemplateProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool unnamed_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxUnnamedTemplateProjectionIdentity(d) || d.kind!="Namespace";});
+  if (unnamed_projections!=unnamed_projection_capability || !unnamed_projection_owners)
+    Add(result,"O3IFC181","unnamed template projection identities and required capability must agree",expected.canonical_name);
   const bool standard_coroutines=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardCoroutineIdentity);
   const bool standard_coroutine_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardCoroutineSemantic)!=sidecar.required_semantics.end();
   const bool standard_coroutine_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
