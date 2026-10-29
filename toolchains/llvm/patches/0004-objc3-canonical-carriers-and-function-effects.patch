@@ -14780,10 +14780,39 @@ index 6b598d26c..2a59bc5d7 100644
    }
  
 diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-index 5f689ad32..a6d4061f2 100644
+index 5f689ad32..1cd0b4742 100644
 --- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 +++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-@@ -613,7 +613,13 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
+@@ -122,6 +122,7 @@ public:
+   void VisitTypedefDecl(const TypedefDecl *D);
+   void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *D);
+   void VisitVarDecl(const VarDecl *D);
++  void VisitTemplateParamObjectDecl(const TemplateParamObjectDecl *D);
+   void VisitBindingDecl(const BindingDecl *D);
+   void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *D);
+   void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *D);
+@@ -348,6 +349,20 @@ void USRGenerator::VisitNamedDecl(const NamedDecl *D) {
+   }
+ }
+ 
++void USRGenerator::VisitTemplateParamObjectDecl(const TemplateParamObjectDecl *D) {
++  if (!LangOpts.ObjC3) {
++    VisitNamedDecl(D);
++    return;
++  }
++  // A structural parameter object has no authored name. Its converted type
++  // and value identify the argument, including callable-owned local types.
++  Out << "S";
++  VisitType(D->getType());
++  ODRHash Hash;
++  Hash.AddStructuralValue(D->getValue());
++  Out << Hash.CalculateHash();
++}
++
+ void USRGenerator::VisitVarDecl(const VarDecl *D) {
+   // VarDecls can be declared 'extern' within a function or method body,
+   // but their enclosing DeclContext is the function, not the TU.  We need
+@@ -613,7 +628,13 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
        Buf[off] = 'A';
        Out << '@' << *TD;
      } else {
@@ -14798,7 +14827,7 @@ index 5f689ad32..a6d4061f2 100644
          printLoc(Out, D->getLocation(), Context->getSourceManager(), true);
        } else {
          Buf[off] = 'a';
-@@ -725,6 +731,23 @@ void USRGenerator::VisitType(QualType T) {
+@@ -725,6 +746,23 @@ void USRGenerator::VisitType(QualType T) {
        T = Expansion->getPattern();
      }
  
@@ -14822,7 +14851,7 @@ index 5f689ad32..a6d4061f2 100644
      if (const BuiltinType *BT = T->getAs<BuiltinType>()) {
        switch (BT->getKind()) {
        case BuiltinType::Void:
-@@ -989,13 +1012,28 @@ void USRGenerator::VisitType(QualType T) {
+@@ -989,13 +1027,28 @@ void USRGenerator::VisitType(QualType T) {
        Out << 'F';
        VisitType(FT->getReturnType());
        Out << '(';
@@ -19058,10 +19087,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..b9984acea
+index 000000000..f52f271d1
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,2124 @@
+@@ -0,0 +1,2157 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21184,6 +21213,39 @@ index 000000000..b9984acea
 +    for(auto *D:To->getASTContext().getTranslationUnitDecl()->decls())
 +      if(auto *Function=dyn_cast<FunctionDecl>(D);Function && Function->getName()=="read")++Count;
 +    EXPECT_EQ(Count,2u);
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, IdentifiesFactoryStructuralParameterObjects) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      constexpr auto first(int n){struct Local{int value;};return Local{n};}
++      constexpr auto second(int n){struct Local{int value;};return Local{n};}
++      template<auto V> struct Box {};
++      using First=Box<first(42)>;using Other=Box<second(42)>;using Different=Box<first(43)>;
++      int use(First);int use(Other);int use(Different);
++    )";
++    std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"factory-value-from.mm");
++    auto Relocated=tooling::buildASTFromCodeWithArgs("\n\n"+Source,Args,"relocated-factory-value.mm");
++    auto To=tooling::buildASTFromCodeWithArgs("",Args,"factory-value-to.mm");
++    ASSERT_TRUE(From && Relocated && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto identities=[](ASTContext &Context) {
++      std::set<std::string> Result;
++      for(auto *D:Context.getTranslationUnitDecl()->decls())
++        if(auto *Function=dyn_cast<FunctionDecl>(D);Function && Function->getName()=="use") {
++          llvm::SmallString<128> USR;
++          EXPECT_FALSE(index::generateUSRForDecl(Function,USR));Result.insert(USR.str().str());
++        }
++      return Result;
++    };
++    const auto Expected=identities(From->getASTContext());EXPECT_EQ(Expected.size(),3u);
++    EXPECT_EQ(Expected,identities(Relocated->getASTContext()));
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported))<<llvm::toString(Imported.takeError());
++    }
++    EXPECT_EQ(Expected,identities(To->getASTContext()));
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
