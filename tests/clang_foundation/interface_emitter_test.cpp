@@ -2417,8 +2417,10 @@ void TestLocalFactoryResults() {
     auto secret=emit("static int hidden(); inline auto api(){struct Local {int get() const{return hidden();}};return Local{};}");
     assert(!secret.success && std::any_of(secret.diagnostics.begin(),secret.diagnostics.end(),
         [](const auto &d){return d.code=="O3IFC112";}));
-    auto borrowed=emit("inline auto pointer(){static struct Local {int value;} storage;return &storage;}");
-    assert(!borrowed.success);
+    auto indirect=emit("inline auto pointer(){static struct Local {int value;} storage;return &storage;}");
+    assert(indirect.success);
+    auto indirect_replay=emit(indirect.source_bytes);
+    assert(indirect_replay.success && indirect_replay.identity.semantic_fingerprint==indirect.identity.semantic_fingerprint);
   }
 }
 

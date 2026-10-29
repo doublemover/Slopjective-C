@@ -275,6 +275,21 @@ index fbba14c03..f96a1521c 100644
  	}
  	return objc_retain(obj);
  }
+diff --git a/associate.m b/associate.m
+index 2b987f99d..724f2bbc0 100644
+--- a/associate.m
++++ b/associate.m
+@@ -238,6 +238,10 @@ static inline Class initHiddenClassForObject(id obj)
+ 	const char *types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
+ 	class_addMethod(hiddenClass, cxx_destruct,
+ 		(IMP)deallocHiddenClass, types);
++	// Publish an association class with its inherited ARC policy already set.
++	// The first retain/release consults this bit before installing its dtable;
++	// otherwise a native ARC root is incorrectly sent an MRC retain message.
++	checkARCAccessorsSlow(hiddenClass);
+ 	obj->isa = hiddenClass;
+ 	return hiddenClass;
+ }
 diff --git a/blocks_runtime.m b/blocks_runtime.m
 index 91ab85d94..39b18d208 100644
 --- a/blocks_runtime.m

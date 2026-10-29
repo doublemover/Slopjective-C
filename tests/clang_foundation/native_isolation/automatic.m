@@ -1,7 +1,7 @@
 #include "provider.h"
 #include <assert.h>
 #include <pthread.h>
-extern Class objc_getClass(const char *);
+extern Class objc_getClass(const char *) __asm__("objc_getClass");
 extern void release_object(void *) __asm__("objc_release");
 struct Lookup {void *object;objc3_actor_t *actor;};
 static void *lookup_thread(void *opaque) {
@@ -35,7 +35,7 @@ void hop_automatic_association_checks(void) {
     }
     objc3_executor_t *destination=0,*other_destination=0;
     assert(objc3_executor_get_global(&destination)==OBJC3_SERVICE_OK);
-    assert(objc3_executor_get_named("automatic.other",&other_destination)==OBJC3_SERVICE_OK);
+    assert(objc3_executor_create(1,&other_destination)==OBJC3_SERVICE_OK);
     objc3_actor_t *same=0;
     assert(objc3_actor_get_or_create_for_object(object,destination,&same)==OBJC3_SERVICE_OK && same==actor);
     objc3_actor_release(same);

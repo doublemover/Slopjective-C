@@ -908,9 +908,9 @@ template<class Task,class Work> Task own_callable_as(Work work) {
     objc3_async_frame inner{};
     explicit Context(Work &&value):work(std::move(value)) {}
     ~Context(){(void)objc3_async_frame_dispose(&inner);}
-    static void resume(void *opaque,objc3_task_t *owner) {
+    static void resume(objc3_task_t *owner,void *opaque) {
       auto *context=static_cast<Context *>(opaque);
-      context->inner.resume(context->inner.context,owner);
+      context->inner.resume(owner,context->inner.context);
     }
     static void destroy(void *opaque) noexcept {delete static_cast<Context *>(opaque);}
   };

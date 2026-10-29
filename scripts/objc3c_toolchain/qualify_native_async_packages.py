@@ -139,6 +139,12 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    foreign_attributes={row['qualified_name'] for row in metadata['declarations']
+                        if ';foreign-import-attributes:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.foreign-import-attributes.v1' in metadata['required_semantics']
+    assert {'NativeForeignAttributes::Value','NativeForeignAttributes::Handle',
+            'NativeForeignAttributes::read','NativeForeignAttributes::increment',
+            'NativeForeignAttributes::hidden'}<=foreign_attributes
     nested_types={row['qualified_name'] for row in metadata['declarations']
                   if ';cxx-nested-factory-types:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-nested-factory-types.v1' in metadata['required_semantics']

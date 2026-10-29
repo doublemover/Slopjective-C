@@ -2,7 +2,7 @@
 
 This working span fronts development across the current PR backlog. Source
 2.85 is the last completed checkpoint. The following implementation is pending
-combined compilation and validation; it does not establish profile conformance
+combined validation (native compiler and facade compilation pass); it does not establish profile conformance
 or delivery in the accepted 2.62 SDK.
 
 - Factory type graphs: nested records/enums/unions, exact lexical and overload
@@ -10,7 +10,9 @@ or delivery in the accepted 2.62 SDK.
   references, static storage and closed generic/closure roots.
 - Actor lifecycle: object-owned lazy mailboxes, concurrent first-entry identity,
   automatic cancellation on association teardown, explicit-binding conflict
-  checks, immutable executor affinity and cycle-free object lifetime.
+  checks, immutable executor affinity and cycle-free object lifetime. The pinned
+  GNUstep runtime initializes association-class ARC policy before publication;
+  all ten direct runtime clients, including first-retain/teardown coverage, pass.
 - Isolation: transferable Class metadata and plain union frame values. Managed
   union arms retain their separate active-member ownership boundary.
 - Structured work: owned C++ callable child/detached/group spawning. A stable

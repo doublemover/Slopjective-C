@@ -8,7 +8,8 @@ objc3c_add_native_object_adapter(TARGET objc3_native_adapter)
 set(_fixtures "${OBJC3_REPO}/tests/tooling/fixtures/clang_foundation/runtime")
 foreach(_case IN ITEMS root_class_arc_weak_blocks root_class_arc_consumed root_class_mrc root_class_allocation
     root_class_native_arc_pools
-    root_class_objcxx_aggregate_cleanup native_weak_slot_adapter)
+    root_class_objcxx_aggregate_cleanup root_class_objcxx_actor_associations
+    native_weak_slot_adapter)
   if(_case MATCHES "^(root_class_objcxx|native_weak)")
     set(_extension mm)
   else()
