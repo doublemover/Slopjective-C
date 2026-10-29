@@ -19,8 +19,10 @@ source-validated through **2.87**, System **2.15** and keypath **2.5**. Its
 [receipt](../support/linux_implementation_sprint_progress.json) records the
 compiler/frontend/tooling, runtime, source/PCH, sanitizer and source-free checks
 with their input boundaries. This source progress is newer than SDK 2.62.
-[Custom C++ coroutine publication](linux_cxx_custom_coroutines.md), source 2.88,
-is implemented and undergoing its combined replay/runtime checks.
+[Custom C++ coroutine publication](linux_cxx_custom_coroutines.md), source **2.88**,
+also passes its [combined source checks](../support/linux_cxx_custom_coroutines_progress.json),
+including normal, eager and sanitizer source-free packages and full-fixture smoke
+execution. SDK 2.62 remains the accepted archive.
 
 The [current acceptance receipt](../support/linux_source_batch_2_62_acceptance.json)
 binds the exact archive and qualification reports: **411 compiler regressions**

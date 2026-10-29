@@ -64,7 +64,11 @@ is outside the current normative capability in Part 8 §8.3.6.2; nullable chains
 with scalar/aggregate/nonnull key-path results need a defined result policy before
 admission. None of these boundaries is counted as completed by this sprint.
 
-The next [custom-promise C++ coroutine span](linux_cxx_custom_coroutines.md)
-implements canonical promise/awaiter dependency checks, written await/yield/return
-publication and native yield import. Its combined replay/runtime checks are in
-progress and are separate from the completed 2.87 receipt above.
+The [custom-promise C++ coroutine span](linux_cxx_custom_coroutines.md), source
+**2.88**, also passes its combined native/frontend and source-free checks. Its
+[receipt](../support/linux_cxx_custom_coroutines_progress.json) records 32 focused
+package configurations / 192 commands and three full async-fixture smoke
+configurations / 18 commands, including sanitizer modes. Standard coroutine
+headers are prepared before eager or source-directed AST merging; exact nested
+promise forward mappings preserve template friend redeclaration chains. This is
+a separate checkpoint from the 2.87 feature/runtime matrices above.

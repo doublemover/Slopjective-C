@@ -216,13 +216,13 @@
         "Object-owned automatic actor mailboxes with concurrent first-entry identity, native association teardown and checked explicit affinity (source)",
         "Dynamic Class metadata transfers, plain union executor frames and owned C++ callable child/detached/group spawning through actual frame teardown (source)",
         "Canonical Swift importer names, async/error conventions, newtypes, bridges, private-import markers and declaration/parameter attribute payloads with exact replay and semantic capability checks (source)",
-        "Published custom-promise C++ coroutine bodies, written await/yield/return syntax, resolved promise/awaiter dependencies and native yield import, with source-free lifecycle witnesses (implementation)"
+        "Published custom-promise C++ coroutine bodies, written await/yield/return syntax, resolved promise/awaiter dependencies and native yield import, with source-free lifecycle witnesses (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent/unnamed-type, custom coroutine-promise and dependent lookup/attribute/profile publication contracts"
+        "Remaining dependent/unnamed-type, public standard coroutine types, external coroutine_traits specializations and dependent lookup/attribute/profile publication contracts"
       ]
     },
     {
