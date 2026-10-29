@@ -1,3 +1,8 @@
+#if defined(OBJC3_FACTORY_PACKAGE_FOCUSED)
+#include "factory_state.h"
+#include "factory_type_projections.h"
+#include "factory_template_arguments.h"
+#else
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
 #include <objc/objc-arc.h>
@@ -1923,3 +1928,7 @@ namespace NativeEffectLambdas {
 #include "local_factory_results.h"
 
 #include "factory_type_projections.h"
+
+#include "factory_template_arguments.h"
+
+#endif

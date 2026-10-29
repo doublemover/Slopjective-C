@@ -1815,6 +1815,73 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestFactoryTemplateArguments() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="factory-template-arguments.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.factory_template_arguments","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.factory_template_arguments","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      inline auto first(int n){struct {int value;} result{n};return result;}
+      inline auto second(int n){struct {int value;} result{n};return result;}
+      using First=decltype(first(0));using Second=decltype(second(0));
+      template<class T> struct Box {T value;};
+      template<> struct Box<First> {First value;int get() const{return value.value;}};
+      template<class T> struct Box<T *> {T *value;};
+      template<class T> struct Direct {First value;};using DirectBox=Direct<int>;
+      template<class... T> struct Pack {static constexpr int count=sizeof...(T);};
+      template<class T> using Alias=Box<T>;
+      using Closed=Box<First>;using Other=Box<Second>;using Nested=Box<Box<First>>;
+      using Packed=Pack<First,Second,First *>;using Aliased=Alias<First>;
+      using Pointer=First *;using PointerBox=Box<Pointer>;
+      using Array=First[2];using ArrayBox=Box<Array>;
+      using Member=decltype(&First::value);using MemberBox=Box<Member>;
+      template<class T> inline int slot=0;
+      template<> inline int slot<First> = 42;
+      template<class T> int read(T value){return value.value;}
+      template<> int read<First>(First value){return value.value;}
+      inline int deduced(First value){return read(value);}
+      inline int closed_lambda(int n){auto call=[]<class T>(T value){return value.value;};return call(first(n))+call(second(0));}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-factory-template-arguments.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto scoped=emit("namespace Public {"+source+"}");assert(scoped.success);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxFactoryTemplateArgumentIdentity(find("Closed")) && HasCxxFactoryTemplateArgumentIdentity(find("Nested")));
+    assert(HasCxxFactoryTemplateArgumentIdentity(find("closed_lambda")) && HasCxxFactoryTemplateArgumentIdentity(find("deduced")));
+    assert(find("Closed").canonical_type_identity!=find("Other").canonical_type_identity);
+    auto changed=source;auto field=changed.find("First value;int get()");assert(field!=std::string::npos);
+    changed.replace(field,std::string("First value").size(),"Second value");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxFactoryTemplateArgumentSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxFactoryTemplateArgumentIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("inline auto secret(){struct Local{int value;};return Local{42};} using Value=decltype(secret());template<class T>struct Box{T value;};using Public=Box<Value>;", "excluded-factory-template.cpp",{"Box","Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    auto mixed=emit("inline auto first(){struct Local{int value;};return Local{42};} inline int bad(){struct Private{int value;};auto call=[]<class... T>(T...){return sizeof...(T);};return call(first(),Private{42});}");
+    assert(!mixed.success);
+  }
+}
+
 void TestFactoryTypeProjections() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="factory-type-projections.cpp",
@@ -4979,6 +5046,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestFactoryTemplateArguments();
   TestFactoryTypeProjections();
   TestLocalFactoryResults();
   TestClosureFactories();

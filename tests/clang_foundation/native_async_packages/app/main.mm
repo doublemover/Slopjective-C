@@ -1,7 +1,13 @@
+#if defined(OBJC3_FACTORY_PACKAGE_FOCUSED)
+@import fixture.NativeAsync;
+#include "factory_package_checks.h"
+int main() {return factory_package_checks();}
+#else
 #include <objc3c/runtime/objc3_task.hpp>
 #include <objc/runtime.h>
 #include <pthread.h>
 @import fixture.NativeAsync;
+#include "factory_package_checks.h"
 static void *native_dependent_partial_worker(void *context) {
   auto *observed=static_cast<int *>(context);
   *observed=NativeDependentPartials::Outer<int>::local<long*>;
@@ -1314,25 +1320,13 @@ int main() {
        NativeLocalFactoryResults::union_value(42).value!=42 || NativeClosureFactories::State::live!=2)return 245;
   }
   if(NativeLocalFactoryResults::live || NativeClosureFactories::State::live)return 246;
-  {
-    namespace Projection=NativeFactoryTypeProjections;
-    auto a=Projection::first(40);auto b=Projection::second(2);auto c=Projection::chosen(0);
-    Projection::Reader reader=static_cast<Projection::Reader>(&Projection::read);
-    Projection::ReverseReader reverse=static_cast<Projection::ReverseReader>(&Projection::read);
-    Projection::Holder holder{a,b,c};Projection::Derived derived{a};auto member=Projection::Owner{}.make(42);
-    if(reader(a,b)!=42 || reverse(b,a)!=-38 || holder.get()!=42 || derived.get()!=40 || Projection::member(member)!=42 ||
-       Projection::pointer(&a)!=40 || Projection::provider_read(a,b)!=42 || Projection::provider_chosen(42).value!=42 ||
-       &Projection::reference()!=Projection::provider_shared() || Projection::shared.value!=40)return 247;
-    Projection::reference().value=42;if(Projection::provider_shared()->value!=42)return 248;
-    auto owned=Projection::provider_owned(40);auto copy=owned;auto moved=static_cast<Projection::Owned &&>(owned);
-    int provider_number=Projection::provider_owned_value(copy);
-    if(owned.get()!=0 || copy.get()!=40 || moved.get()!=40 || provider_number!=40 ||
-       NativeClosureFactories::State::live!=3)return 249;
-  }
-  if(NativeClosureFactories::State::live)return 250;
+  int factory_status=factory_package_checks();
+  if(factory_status)return factory_status;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;
   objc3_actor_release(actor);
   objc3_executor_release(executor);
 }
+
+#endif

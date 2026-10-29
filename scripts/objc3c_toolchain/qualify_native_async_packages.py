@@ -137,6 +137,39 @@ def qualify(sdk: Path, output: Path) -> dict:
     return report
 
 
+def check_factory_metadata(metadata):
+    """Validate the focused factory projection and template package surface."""
+    factory_template_arguments={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-factory-template-arguments:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-factory-template-arguments.v1' in metadata['required_semantics']
+    assert {'NativeFactoryTemplateArguments::Closed','NativeFactoryTemplateArguments::Nested',
+            'NativeFactoryTemplateArguments::Other','NativeFactoryTemplateArguments::Packed',
+            'NativeFactoryTemplateArguments::Aliased','NativeFactoryTemplateArguments::ArrayBox',
+            'NativeFactoryTemplateArguments::MemberBox','NativeFactoryTemplateArguments::OwnedBox',
+            'NativeFactoryTemplateArguments::deduced','NativeFactoryTemplateArguments::closed_lambda',
+            'NativeFactoryTemplateArguments::provider_value','NativeFactoryTemplateArguments::provider_owned'}<=factory_template_arguments
+    factory_type_projections={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-factory-type-projections:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-factory-type-projections.v1' in metadata['required_semantics']
+    assert {'NativeFactoryTypeProjections::First','NativeFactoryTypeProjections::Second',
+            'NativeFactoryTypeProjections::Chosen','NativeFactoryTypeProjections::Reader',
+            'NativeFactoryTypeProjections::ReverseReader','NativeFactoryTypeProjections::Holder',
+            'NativeFactoryTypeProjections::Derived',
+            'NativeFactoryTypeProjections::read','NativeFactoryTypeProjections::shared',
+            'NativeFactoryTypeProjections::pointer','NativeFactoryTypeProjections::reference',
+            'NativeFactoryTypeProjections::Member','NativeFactoryTypeProjections::member',
+            'NativeFactoryTypeProjections::provider_read','NativeFactoryTypeProjections::provider_shared',
+            'NativeFactoryTypeProjections::provider_chosen','NativeFactoryTypeProjections::Owned',
+            'NativeFactoryTypeProjections::provider_owned','NativeFactoryTypeProjections::provider_owned_value'}<=factory_type_projections
+    for name,marker in [('NativeFactoryTemplateArguments::slot','cxx-variable-specializations'),
+                        ('NativeFactoryTemplateArguments::read','cxx-function-specializations'),
+                        ('NativeFactoryTemplateArguments::Box','cxx-class-partial-specializations')]:
+        rows=[row for row in metadata['declarations'] if row['qualified_name']==name and
+              ';'+marker+':v1;' in row.get('canonical_type_identity','')]
+        assert len(rows)==1 and rows[0].get('native_symbol_name'),name+' lost its exact specialization owner'
+
+
+
 def check_cpp_metadata(metadata):
     if not has_async(metadata['declarations']):
         raise ValueError('native async interface erased the callable effect')
@@ -173,19 +206,7 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
-    factory_type_projections={row['qualified_name'] for row in metadata['declarations']
-                       if ';cxx-factory-type-projections:v1;' in row.get('canonical_type_identity','')}
-    assert 'objc3.cxx-factory-type-projections.v1' in metadata['required_semantics']
-    assert {'NativeFactoryTypeProjections::First','NativeFactoryTypeProjections::Second',
-            'NativeFactoryTypeProjections::Chosen','NativeFactoryTypeProjections::Reader',
-            'NativeFactoryTypeProjections::ReverseReader','NativeFactoryTypeProjections::Holder',
-            'NativeFactoryTypeProjections::Derived',
-            'NativeFactoryTypeProjections::read','NativeFactoryTypeProjections::shared',
-            'NativeFactoryTypeProjections::pointer','NativeFactoryTypeProjections::reference',
-            'NativeFactoryTypeProjections::Member','NativeFactoryTypeProjections::member',
-            'NativeFactoryTypeProjections::provider_read','NativeFactoryTypeProjections::provider_shared',
-            'NativeFactoryTypeProjections::provider_chosen','NativeFactoryTypeProjections::Owned',
-            'NativeFactoryTypeProjections::provider_owned','NativeFactoryTypeProjections::provider_owned_value'}<=factory_type_projections
+    check_factory_metadata(metadata)
     local_factory_results={row['qualified_name'] for row in metadata['declarations']
                        if ';cxx-local-factory-results:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-local-factory-results.v1' in metadata['required_semantics']
@@ -299,22 +320,22 @@ def check_cpp_metadata(metadata):
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate'}):
+            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box'}):
         raise ValueError('C++ package lost partial class specialization owner contracts')
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection'}):
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box'}):
         raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=11 or len({row['native_symbol_name'] for row in variable_specializations})!=11):
+            len(variable_specializations)!=12 or len({row['native_symbol_name'] for row in variable_specializations})!=12):
         raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
-            len(specialized)!=9 or len({row['native_symbol_name'] for row in specialized})!=9):
+            len(specialized)!=10 or len({row['native_symbol_name'] for row in specialized})!=10):
         raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):

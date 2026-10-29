@@ -438,6 +438,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_factory_template_arguments=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFactoryTemplateArgumentIdentity);
+  const bool factory_template_argument_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFactoryTemplateArgumentSemantic)!=sidecar.required_semantics.end();
+  const bool factory_template_argument_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFactoryTemplateArgumentIdentity(d) || d.kind!="Namespace";});
+  if (has_factory_template_arguments!=factory_template_argument_capability || !factory_template_argument_owners)
+    Add(result,"O3IFC090","factory template argument identities and required capability must agree",expected.canonical_name);
   const bool has_factory_type_projections=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxFactoryTypeProjectionIdentity);
   const bool factory_type_projection_capability=std::find(sidecar.required_semantics.begin(),

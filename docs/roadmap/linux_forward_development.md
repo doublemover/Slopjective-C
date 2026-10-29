@@ -101,6 +101,20 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## C++ factory template arguments
+
+The [2.81 source span](linux_cxx_factory_template_arguments.md) admits concrete
+factory types in nested/packed/pointer/array/member-pointer template arguments.
+Primary/full/partial class selection, aliases, provider-owned specializations and
+storage, deduced calls and closed generic lambdas retain ordered nominal origins.
+Native printing preserves written local member qualifiers. Template identities
+exclude physical locations and bind factory field origins. All 43 native
+import-family tests, the emitter suite, 84 tooling tests and all 16 focused
+source-free factory configurations / 96 commands pass. The focused package branch
+shares checks with the full async fixture; broader/sanitizer validation and SDK
+delivery stay batched. Factory-valued non-type arguments, generic/closure origins
+and remaining language/profile contracts stay open.
+
 ## Public C++ factory type projections
 
 The [2.80 source span](linux_cxx_factory_type_projections.md) publishes aliases,
