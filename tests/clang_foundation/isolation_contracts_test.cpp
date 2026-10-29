@@ -445,12 +445,11 @@ struct __attribute__((objc_unsafe_sendable)) ResourcePacket { Handle value; };
               "struct ResourcePacket cross(struct ResourcePacket value) __objc3_async {"
               "return __objc3_await resource_entry(value);}"),
          "awaited isolated entry requires");
-  Reject(Make("union PacketUnion { int value; double other; };\n"
+  Success(Compile(Make("union PacketUnion { int value; double other; };\n"
               "union PacketUnion union_entry(union PacketUnion)" + NoThrow +
               " __attribute__((objc_executor(main)));\n"
               "union PacketUnion cross(union PacketUnion value) __objc3_async {"
-              "return __objc3_await union_entry(value);}"),
-         "awaited isolated entry requires");
+              "return __objc3_await union_entry(value);}")));
   Success(Compile(Make(R"(
 @interface Root (ClassEntries)
 + (int)classValue:(int)value __attribute__((nothrow, objc_executor(main)));
