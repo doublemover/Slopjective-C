@@ -35,6 +35,14 @@ runtime feature matrices. Broad compiler/frontend/tooling, sanitizer, source-fre
 package and SDK checks follow the implementation batch. Earlier reports remain
 historical and must not be overwritten.
 
+The maintained [factory batch driver](../../scripts/objc3c_toolchain/run_linux_factory_batch.py)
+checks development compiler/runtime inputs directly. It validates interface
+metadata, native provider symbols, immutable package installation/relocation,
+provider-source removal, consumer execution and rejected template lookups across
+C++20/23, ARC/MRC and O0/O2. Eager imports, the complete async package fixture and
+sanitizer instrumentation are selectable. Package identities bind the supplied
+compiler/runtime digests; SDK archive delivery remains a separate checkpoint.
+
 Remaining categories include the rest of the PR's ownership, async/capture,
 isolation, dependent key-path, language/metaprogramming/interop and profile work.
 Native Linux AArch64 qualification requires a native host. Resource union cleanup

@@ -45,6 +45,13 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
     output.mkdir(parents=True, exist_ok=True)
     inputs = {str(path): packages.digest(path) for path in
               (compiler, foundation / 'bin/clang', runtime, objc_runtime)}
+    if sanitizer:
+        names = ('tsan',) if sanitizer == 'thread' else ('asan', 'ubsan')
+        sanitizer_libraries = [path for path in resource_root.rglob('libclang_rt.*')
+                               if path.is_file() and any(name in path.name for name in names)]
+        if not sanitizer_libraries:
+            raise ValueError('compiler resource root has no requested sanitizer libraries')
+        inputs.update({str(path): packages.digest(path) for path in sanitizer_libraries})
     sources = [Path(__file__), *sorted(fixture.rglob('*')),
                *sorted(headers.rglob('*')), *sorted((ROOT / 'stdlib/include').rglob('*'))]
     source_inputs = {str(path): packages.digest(path) for path in sources if path.is_file()}
