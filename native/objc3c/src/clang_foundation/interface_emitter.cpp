@@ -1,3 +1,4 @@
+#include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/native_contract_identity.h"
@@ -308,6 +309,10 @@ const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declara
   bool pattern=false;
   for (const clang::NamedDecl *current=declaration; current;
        current=llvm::dyn_cast<clang::NamedDecl>(current->getDeclContext())) {
+    if (IsStandardCoroutineTraitsSpecialization(current)) return current;
+    if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(current))
+      if (const auto *partial=record->getSpecializedTemplateOrPartial().dyn_cast<clang::ClassTemplatePartialSpecializationDecl *>();
+          partial && IsStandardCoroutineTraitsSpecialization(partial)) return partial;
     // Expression-local closures keep their lexical body contract. A generic
     // lambda's call template must never turn its implicit class into an owner.
     if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(current);
@@ -707,6 +712,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
 
   if (llvm::isa<clang::ClassTemplateDecl>(declaration)) return IsTopLevel(declaration);
+  if (IsStandardCoroutineTraitsSpecialization(declaration)) return IsTopLevel(declaration);
   if (TemplatePublicationOwner(declaration)) return false;
   if (IsTopLevel(declaration)) {
     if (llvm::isa<clang::ConceptDecl, clang::TypeAliasTemplateDecl>(declaration)) return true;
@@ -975,6 +981,14 @@ public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
   bool HasCxxCoroutines=false;
+  std::set<std::string> StandardCoroutineHeaders;
+  void StandardCoroutineReference(const clang::NamedDecl *declaration) {
+    if (const auto *owner=StandardCoroutineHeaderOwner(declaration,context_)) {
+      const auto &source=context_.getSourceManager();bool invalid=false;
+      const auto bytes=source.getBufferData(source.getFileID(source.getSpellingLoc(owner->getLocation())),&invalid);
+      if (!invalid) StandardCoroutineHeaders.insert(ComputeInterfaceSourceSha256(bytes));
+    }
+  }
   bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false, HasFactoryValueArguments=false;
   FactoryTypeFeatures FactoryTypes;
   void InspectArguments(llvm::ArrayRef<clang::TemplateArgument> arguments) {
@@ -986,6 +1000,11 @@ public:
     }
   }
   void InspectType(clang::QualType type) {
+    if (!type.isNull()) {
+      if (const auto *record=type->getAsCXXRecordDecl()) StandardCoroutineReference(record);
+      if (const auto *specialization=type->getAs<clang::TemplateSpecializationType>())
+        StandardCoroutineReference(specialization->getTemplateName().getAsTemplateDecl());
+    }
     if(!type.isNull())FactoryTypeKey(type,context_,&FactoryTypes);
     if (!type.isNull())
       if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl()))
@@ -1021,6 +1040,7 @@ public:
   }
   void Reference(const clang::NamedDecl *declaration) {
     if(!declaration)return;
+    StandardCoroutineReference(declaration);
     if(const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration))
       if(const auto *arguments=function->getTemplateSpecializationArgs())InspectArguments(arguments->asArray());
     if(const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration))
@@ -1053,6 +1073,7 @@ public:
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseStmt(statement,queue);
   }
   bool TraverseDecl(clang::Decl *declaration) {
+    if (const auto *named=llvm::dyn_cast_or_null<clang::NamedDecl>(declaration)) StandardCoroutineReference(named);
     if (const auto *record=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(declaration))
       InspectArguments(record->getTemplateArgs().asArray());
     if (const auto *variable=llvm::dyn_cast_or_null<clang::VarTemplateSpecializationDecl>(declaration))
@@ -3227,6 +3248,20 @@ struct ClassTemplatePublication {
 
 std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                                     const clang::ASTContext &context) {
+  if (IsStandardCoroutineTraitsSpecialization(declaration)) {
+    const auto *record=llvm::cast<clang::ClassTemplateSpecializationDecl>(declaration);
+    std::string arguments;
+    if (!ClassSpecializationArgumentKey(record,context,arguments)) return {};
+    std::string text;llvm::raw_string_ostream stream(text);
+    clang::PrintingPolicy policy(context.getLangOpts());
+    policy.PrintAsCanonical=true;policy.PolishForDeclaration=true;policy.SuppressScope=true;
+    auto *printed=const_cast<clang::ClassTemplateSpecializationDecl *>(record);
+    const auto qualifier=printed->getQualifierLoc();
+    auto restore=llvm::scope_exit([&]{printed->setQualifierInfo(qualifier);});printed->setQualifierInfo({});
+    printed->print(stream,policy);
+    return "coroutine-traits{arguments="+arguments+";definition="+ComputeInterfaceSourceSha256(text)+
+        "};cxx-coroutine-traits-specializations:v1;";
+  }
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
     return ConceptIdentity(concept_decl, context);
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration)) {
@@ -3478,6 +3513,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 }
 
 std::string ExportRootName(const clang::NamedDecl *declaration) {
+  if (const auto *owner=CoroutineTraitsReturnOwner(declaration)) return ExportRootName(owner);
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration) {
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
@@ -3631,6 +3667,7 @@ class TypeDependencyVisitor final
    }
 
    bool IsResolved(const clang::NamedDecl *declaration) {
+     if (IsStandardCoroutineDeclaration(declaration,context_)) return true;
      if (IsQualifiedRuntimeFrameType(declaration, context_)) {
        UsesRuntimeFrame = true;
        return true;
@@ -3658,6 +3695,13 @@ class TypeDependencyVisitor final
   void CheckExpressionReference(const clang::NamedDecl *target) {
     if (!target) return;
     target = target->getUnderlyingDecl();
+    if (IsStandardCoroutineDeclaration(target,context_)) return;
+    if (IsStandardCoroutineTraitsSpecialization(target)) {
+      CheckVisibility(target);
+      if (!IsInMainFile(context_,target->getLocation()) && !IsResolved(target))
+        AddDiagnostic(result_,"O3IFC112","coroutine traits requires its resolved public specialization",target->getQualifiedNameAsString());
+      return;
+    }
     // C++ default-initialization of the ABI's va_list array can reference its
     // implicit record constructor. It belongs to the same compiler-owned type.
     if (const auto *method=llvm::dyn_cast<clang::CXXMethodDecl>(target);
@@ -3864,6 +3908,24 @@ class TypeDependencyVisitor final
       }
       CheckTemplateRecord(specialization);
     }
+  }
+  void CheckCoroutineTraits(const clang::ClassTemplateSpecializationDecl *record) {
+    const auto locals=lambda_locals_;const bool previous=public_template_type_;
+    auto restore=llvm::scope_exit([&]{lambda_locals_=locals;public_template_type_=previous;});
+    public_template_type_=true;
+    const auto *owner=CoroutineTraitsReturnOwner(record);
+    if (!owner || (!IsInMainFile(context_,owner->getLocation()) && !IsResolved(owner))) {
+      AddDiagnostic(result_,"O3IFC112","coroutine traits return type requires a public module owner",record->getQualifiedNameAsString());return;
+    }
+    CheckExpressionReference(owner);
+    if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record)) {
+      for (auto *parameter:*partial->getTemplateParameters()) lambda_locals_.insert(parameter->getCanonicalDecl());
+      for (auto *parameter:*partial->getTemplateParameters()) TraverseDecl(parameter);
+      TraverseStmt(partial->getTemplateParameters()->getRequiresClause());
+    }
+    for (const auto &argument:record->getTemplateArgs().asArray())
+      if (!CheckPatternArgument(argument)) UnsupportedExpression();
+    CheckTemplateRecord(record);
   }
   void CheckTemplateRecord(const clang::CXXRecordDecl *record) {
     if (const auto *definition=record->getDefinition()) record=definition;
@@ -4301,6 +4363,12 @@ class TypeDependencyVisitor final
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
+    if (IsStandardCoroutineDeclaration(declaration,context_)) {
+      if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
+        for (const auto &argument:record->getTemplateArgs().asArray())
+          if (!CheckPatternArgument(argument)) UnsupportedExpression();
+      return true;
+    }
     // The target ABI owns this implicit record; it is supplied by the consumer
     // compiler rather than a package. Never recognize a user type by spelling.
     if (const auto *builtin=context_.getVaListTagDecl();
@@ -4340,6 +4408,11 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
+    if (IsStandardCoroutineDeclaration(declaration,context_)) return true;
+    if (const auto *owner=TemplatePublicationOwner(declaration);IsStandardCoroutineTraitsSpecialization(owner)) {
+      CheckExpressionReference(owner);CheckEnclosingClassArguments(declaration);
+      TraverseType(declaration->getUnderlyingType());return true;
+    }
     if (declaration->getCanonicalDecl()==context_.getBuiltinVaListDecl()->getCanonicalDecl()) return true;
     // Runtime headers redeclare these compiler-provided language types. Accept
     // only the same native name and type, without additional typedef contracts.
@@ -4508,6 +4581,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     visitor.CheckVariableTemplate(pattern);
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
     visitor.CheckClassTemplate(pattern);
+  if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
+      IsStandardCoroutineTraitsSpecialization(record)) visitor.CheckCoroutineTraits(record);
   if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       HasDirectMemberTemplates(record)) visitor.CheckTemplateRecord(record);
   for (const auto *pattern:ClosedParentPatterns(declaration)) {
@@ -4849,6 +4924,12 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports = {}) {
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+  if (IsStandardCoroutineTraitsSpecialization(record)) {
+    const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record);
+    if (record->isCompleteDefinition() && CoroutineTraitsReturnOwner(record) &&
+        IsBoundedTemplateRecord(record) && (!partial || IsBoundedNestedTemplateParameters(partial->getTemplateParameters()))) return true;
+    AddDiagnostic(result,"O3IFC101","coroutine traits specialization requires a complete bounded definition and named return owner",record->getQualifiedNameAsString());return false;
+  }
   bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {
     bool dependent_factory_local=false;
@@ -5087,6 +5168,16 @@ class InterfaceCollector final
       return true;
     if (llvm::isa<clang::TemplateTypeParmDecl,clang::NonTypeTemplateParmDecl,
                   clang::TemplateTemplateParmDecl>(declaration)) return true;
+    // The standard header supplies these namespace owners. Authored traits
+    // customizations publish independently through their return-type root.
+    if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(declaration);
+        space && IsStandardCoroutineNamespace(space,context_)) {
+      if (IsInMainFile(context_,space->getLocation()))
+        for (const auto *attribute:space->attrs())
+          if (!attribute->isImplicit() && !attribute->isInherited())
+            AddDiagnostic(result_,"O3IFC101","a package cannot change standard coroutine namespace attributes",space->getQualifiedNameAsString());
+      return true;
+    }
     if (IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration) ||
         IsDetachedNestedTemplateRoot(declaration)) {
       if (IsInMainFile(context_,declaration->getLocation()) && SelectedExport(declaration,exports_))
@@ -5612,7 +5703,9 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
       scopes.push_back(space);
   std::reverse(scopes.begin(), scopes.end());
   for (const auto *space : scopes) {
-    PrintNamespaceHead(space, out, false);
+    if (IsStandardCoroutineTraitsSpecialization(declaration))
+      out << (space->isInline()?"inline namespace ":"namespace ") << space->getName();
+    else PrintNamespaceHead(space, out, false);
     out << " {\n";
   }
   if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration)) {
@@ -5887,6 +5980,10 @@ bool ReadInterfaceDeclarationIdentity(
     RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
     if (arguments.HasCxxCoroutines)
       identity.canonical_type_identity+=";cxx-coroutine-bodies:v1;";
+    if (!arguments.StandardCoroutineHeaders.empty()) {
+      std::string headers;for (const auto &header:arguments.StandardCoroutineHeaders) headers+=header;
+      identity.canonical_type_identity+=";cxx-standard-coroutines:v1;headers="+ComputeInterfaceSourceSha256(headers)+";";
+    }
     if (arguments.FactoryTypes.nested)
       identity.canonical_type_identity+=";cxx-nested-factory-types:v1;";
     if (arguments.FactoryTypes.lambda_result)
@@ -6349,7 +6446,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   llvm::raw_string_ostream source(result.source_bytes);
   for (auto *root:collector.RootDeclarations()) {
     RuntimeDeclarationFinder finder(context);VisitPublishedRuntimeContracts(root,finder);
-    if (finder.HasCxxCoroutines) {source << "#include <coroutine>\n";break;}
+    if (finder.HasCxxCoroutines || !finder.StandardCoroutineHeaders.empty()) {source << "#include <coroutine>\n";break;}
   }
   if (collector.UsesCxxAsyncBodies())
     source << "#include <objc3c/runtime/objc3_task.hpp>\n";
@@ -6468,6 +6565,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
     if (HasNativeDeclarationAttributeIdentity(declaration))
       sidecar.required_semantics.push_back(kNativeDeclarationAttributeSemantic);
+    if (HasCxxStandardCoroutineIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxStandardCoroutineSemantic);
     if (HasCxxCoroutineBodyIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxCoroutineBodySemantic);
     if (HasForeignImportAttributeIdentity(declaration))
@@ -6677,6 +6776,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -6853,6 +6953,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,

@@ -139,6 +139,15 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    standard_coroutines=[row for row in metadata['declarations']
+                         if ';cxx-standard-coroutines:v1;' in row.get('canonical_type_identity','')]
+    assert 'objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']
+    assert {'NativeStandardCoroutines::Task','NativeStandardCoroutines::External',
+            'NativeStandardCoroutines::Promise','NativeStandardCoroutines::Handle',
+            'NativeStandardCoroutines::erase','NativeStandardCoroutines::noop'}<= {row['qualified_name'] for row in standard_coroutines}
+    traits=[row for row in standard_coroutines if ';cxx-coroutine-traits-specializations:v1;' in row['canonical_type_identity']]
+    assert len(traits)==2 and {row['kind'] for row in traits}=={'ClassTemplateSpecialization','ClassTemplatePartialSpecialization'}
+    assert all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)
     native_attributes={row['qualified_name'] for row in metadata['declarations']
                        if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.native-declaration-attributes.v1' in metadata['required_semantics']

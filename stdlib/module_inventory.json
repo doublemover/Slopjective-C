@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 89,
+        "minor": 90,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -217,13 +217,14 @@
         "Dynamic Class metadata transfers, plain union executor frames and owned C++ callable child/detached/group spawning through actual frame teardown (source)",
         "Canonical Swift importer names, async/error conventions, newtypes, bridges, private-import markers and declaration/parameter attribute payloads with exact replay and semantic capability checks (source)",
         "Published custom-promise C++ coroutine bodies, written await/yield/return syntax, resolved promise/awaiter dependencies and native yield import, with source-free lifecycle witnesses (source)",
-        "Native declaration attribute contracts for record/field/storage layout, visibility, optimizer effects and diagnostics, including dependent alignment and source-free ABI witnesses (source)"
+        "Native declaration attribute contracts for record/field/storage layout, visibility, optimizer effects and diagnostics, including dependent alignment and source-free ABI witnesses (source)",
+        "Public standard coroutine handles, suspend/no-op types and provider-authored full/partial coroutine_traits specializations, with checked header identities and source-free native frames (implementation)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent/unnamed-type, public standard coroutine types, external coroutine_traits specializations and dependent lookup/attribute/profile publication contracts"
+        "Remaining dependent/unnamed-type and dependent lookup/unmodeled-attribute/profile publication contracts"
       ]
     },
     {

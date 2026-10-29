@@ -1,5 +1,6 @@
 #include "declaration_attributes.h"
 #include "custom_coroutines.h"
+#include "standard_coroutines.h"
 #if defined(OBJC3_FACTORY_PACKAGE_FOCUSED)
 #include "factory_state.h"
 #include "factory_type_projections.h"
@@ -1967,3 +1968,8 @@ Task<NativeDeclarationAttributes::Packet> attribute_packet(int value) {
   co_return NativeDeclarationAttributes::Packet{2,value};
 }
 }
+
+NativeStandardCoroutines::Task<int> NativeStandardCoroutines::provider_task(int value){return ordinary(value);}
+NativeStandardCoroutines::External<int> NativeStandardCoroutines::provider_external(int value){return external(value);}
+void *NativeStandardCoroutines::provider_address(std::coroutine_handle<> handle){return handle.address();}
+int NativeStandardCoroutines::provider_frames(){return Counts::frames;}

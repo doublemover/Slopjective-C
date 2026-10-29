@@ -185,6 +185,13 @@ inline constexpr const char *kNativeDeclarationAttributeSemantic = "objc3.native
 inline bool HasNativeDeclarationAttributeIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";native-declaration-attributes:v1;") != std::string::npos;
 }
+inline bool HasCxxCoroutineTraitsSpecializationIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;") != std::string::npos;
+}
+inline constexpr const char *kCxxStandardCoroutineSemantic = "objc3.cxx-standard-coroutines.v1";
+inline bool HasCxxStandardCoroutineIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-standard-coroutines:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxCoroutineBodySemantic = "objc3.cxx-coroutine-bodies.v1";
 inline bool HasCxxCoroutineBodyIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-coroutine-bodies:v1;") != std::string::npos;

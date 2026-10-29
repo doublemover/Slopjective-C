@@ -3,6 +3,33 @@
 
 int factory_package_checks() {
   {
+    namespace Standard=NativeStandardCoroutines;
+    static_assert(sizeof(Standard::Handle<int>)==sizeof(void *));
+    static_assert(__is_same(Standard::IntPromise,Standard::Promise<int>));
+    static_assert(__is_same(Standard::WidePromise,Standard::Promise<long>));
+    static_assert(__is_same(typename std::coroutine_traits<Standard::External<int>,int>::promise_type,Standard::Promise<int>));
+    static_assert(__is_same(typename std::coroutine_traits<Standard::External<long>,long>::promise_type,Standard::Promise<long>));
+    if(Standard::provider_frames() || Standard::Counts::values)return 181;
+    {
+      auto task=Standard::provider_task(40);
+      if(!task.resume() || Standard::Counts::values!=1 || task.run()!=42)return 182;
+      auto generic=Standard::generic(40L);
+      if(!generic.resume() || generic.handle.promise().value!=40 || generic.run()!=42)return 183;
+      auto external=Standard::provider_external(40);
+      Standard::Bridge bridge{external.handle};auto erased=Standard::erase(bridge.handle);
+      if(erased.address()!=Standard::provider_address(external.handle) || external.run()!=42)return 184;
+      auto partial=Standard::external_generic(40);auto full=Standard::external_full(40L);
+      if(partial.run()!=42 || full.run()!=42)return 185;
+      Standard::Worker worker{40};auto member=worker.run(2);if(member.run()!=42)return 186;
+      auto factory=Standard::closure(40);auto closure=factory(2);if(closure.run()!=42)return 187;
+      auto throwing=Standard::throwing();throwing.run();if(throwing.error()!=73)return 188;
+      auto no_op=Standard::noop();if(!no_op || no_op.done())return 189;no_op.resume();no_op.destroy();
+      {auto cancelled=Standard::external(40);if(!cancelled.resume() || Standard::Counts::values!=1)return 190;}
+      if(Standard::Counts::values)return 191;
+    }
+    if(Standard::provider_frames() || Standard::Counts::values || Standard::Counts::destroyed!=9)return 192;
+  }
+  {
     namespace Attr=NativeDeclarationAttributes;
     static_assert(sizeof(Attr::Packet)==5 && alignof(Attr::Packet)==1);
     static_assert(alignof(Attr::FieldAligned)==32 && sizeof(Attr::FieldAligned)==64);

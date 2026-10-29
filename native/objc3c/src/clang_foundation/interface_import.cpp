@@ -117,6 +117,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -334,7 +335,9 @@ bool CheckExportCollisions(
       continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
-    const std::string lookup_key = HasCxxVariableSpecializationIdentity(decl)
+    const std::string lookup_key = HasCxxCoroutineTraitsSpecializationIdentity(decl)
+          ? "coroutine-traits-specialization:" + decl.stable_id
+          : HasCxxVariableSpecializationIdentity(decl)
           ? "variable-specialization:" + decl.stable_id
           : (decl.kind == "ObjCProtocol" ? "protocol:"
                                     : is_tag                    ? "tag:"
@@ -1028,7 +1031,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);
         variable && (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplateSpecializationDecl>(variable))) continue;
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(named);
-        record && record->getDescribedClassTemplate()) continue;
+        record && (record->getDescribedClassTemplate() || llvm::isa<clang::ClassTemplateSpecializationDecl>(record))) continue;
     if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
     auto *scope = named->getDeclContext();
     while (scope && scope->isTransparentContext()) scope=scope->getParent();
@@ -1072,7 +1075,9 @@ bool InterfaceImportSession::RequiresCoroutineHeader() const {
   if (!impl_) return false;
   return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
     return std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
-                     kCxxCoroutineBodySemantic)!=module.sidecar.required_semantics.end();
+                     kCxxCoroutineBodySemantic)!=module.sidecar.required_semantics.end() ||
+        std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
+                     kCxxStandardCoroutineSemantic)!=module.sidecar.required_semantics.end();
   });
 }
 

@@ -446,6 +446,14 @@ InterfaceContractValidation ValidateSemanticInterface(
       [](const auto &d){return !HasNativeDeclarationAttributeIdentity(d) || d.kind!="Namespace";});
   if (has_native_attributes!=native_attribute_capability || !native_attribute_owners)
     Add(result,"O3IFC098","native declaration attribute identities and required capability must agree",expected.canonical_name);
+  const bool standard_coroutines=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardCoroutineIdentity);
+  const bool standard_coroutine_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardCoroutineSemantic)!=sidecar.required_semantics.end();
+  const bool standard_coroutine_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    return (!HasCxxStandardCoroutineIdentity(d) || d.kind!="Namespace") &&
+        (d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;")==std::string::npos ||
+         (HasCxxStandardCoroutineIdentity(d) && (d.kind=="ClassTemplateSpecialization" || d.kind=="ClassTemplatePartialSpecialization")));});
+  if (standard_coroutines!=standard_coroutine_capability || !standard_coroutine_owners)
+    Add(result,"O3IFC099","standard coroutine identities, specialization owners and required capability must agree",expected.canonical_name);
   const bool has_cxx_coroutine_bodies=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxCoroutineBodyIdentity);
   const bool cxx_coroutine_body_capability=std::find(sidecar.required_semantics.begin(),

@@ -418,6 +418,78 @@ void TestNativeAttributeTemplateImports() {
   fs::remove_all(root);
 }
 
+void TestStandardCoroutineTypesAndTraitsImports() {
+  const auto root=fs::temp_directory_path()/"objc3-standard-coroutine-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/standard_coroutines.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.standard_coroutines",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    provider.interface_exports={"NativeStandardCoroutines"};
+    const auto interface_path=root/"test.standard_coroutines.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    auto other=provider;other.module_name="test.other_coroutines";
+    other.interface_output_path=(root/"test.other_coroutines.objc3i").string();
+    for(std::size_t at=0;(at=other.source_text->find("NativeStandardCoroutines",at))!=std::string::npos;at+=23)
+      other.source_text->replace(at,24,"OtherStandardCoroutines");
+    other.interface_exports={"OtherStandardCoroutines"};
+    auto second=Compile(other);assert(second.success && second.interface_artifact);
+    for(unsigned mode=0;mode!=4;++mode) {
+      bool directed=mode & 1,late_header=mode & 2;
+      auto consumer=ModuleRequest(root/"consumer.mm","",
+          std::string(late_header ? "" : "#include <coroutine>\n")+(directed ? "@import test.standard_coroutines;\n@import test.other_coroutines;\n" : "")+
+          (late_header ? "#include <coroutine>\n" : "")+
+          "int use(){auto factory=NativeStandardCoroutines::closure(40);auto task=factory(2);"
+          "auto generic=NativeStandardCoroutines::generic(40L);auto partial=NativeStandardCoroutines::external_generic(40);"
+          "auto full=NativeStandardCoroutines::external_full(40L);auto no_op=NativeStandardCoroutines::noop();"
+          "auto other=OtherStandardCoroutines::external_generic(40);"
+          "return task.run()+int(generic.run())+partial.run()+int(full.run())+int(no_op.done())+other.run();}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.standard_coroutines";
+        locked.locked_identity=emitted.interface_artifact->identity;
+        InterfaceModuleRequest other_locked;other_locked.canonical_name="test.other_coroutines";
+        other_locked.locked_identity=second.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked,other_locked};
+      } else consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity),
+          ImportOf(root/"test.other_coroutines.objc3i",second.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+    auto only=provider;only.module_name="test.standard_types_only";
+    only.interface_output_path=(root/"test.standard_types_only.objc3i").string();
+    only.source_text="#include <coroutine>\nnamespace NativeStandardCoroutines {using Handle=std::coroutine_handle<>; std::suspend_always suspend(Handle);}";
+    auto typed=Compile(only);assert(typed.success && typed.interface_artifact);
+    assert(typed.interface_artifact->sidecar_json.find("objc3.cxx-standard-coroutines.v1")!=std::string::npos);
+    assert(typed.interface_artifact->sidecar_json.find("objc3.cxx-coroutine-bodies.v1")==std::string::npos);
+    for(unsigned mode=0;mode!=4;++mode) {
+      const bool directed=mode&1,late_header=mode&2;
+      auto consumer=ModuleRequest(root/"types-only-consumer.mm","",
+          std::string(late_header?"":"#include <coroutine>\n")+
+          (directed?"@import test.standard_types_only;\n":"")+
+          (late_header?"#include <coroutine>\n":"")+
+          "void *use(NativeStandardCoroutines::Handle handle){return handle.address();}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};
+      consumer.emit_semantic_interface=false;consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.standard_types_only";locked.locked_identity=typed.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(root/"test.standard_types_only.objc3i",typed.interface_artifact->identity)};
+      auto result=Compile(consumer);if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+  }
+  fs::remove_all(root);
+}
+
 void TestCustomCoroutinePromiseRedeclarations() {
   const auto root=fs::temp_directory_path()/"objc3-custom-coroutine-import";
   fs::remove_all(root);fs::create_directories(root);
@@ -495,6 +567,7 @@ int main() {
   TestThreeModuleSemanticLookupAndIdentity();
   TestPinnedRuntimeTypesSurvivePreparedImport();
   TestCompilerVarargsMembersAreReused();
+  TestStandardCoroutineTypesAndTraitsImports();
   TestCustomCoroutinePromiseRedeclarations();
   TestNativeAttributeTemplateImports();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();

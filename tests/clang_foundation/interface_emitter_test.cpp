@@ -1876,6 +1876,59 @@ void TestNativeDeclarationAttributes() {
   auto replay=emit_c(c.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==c.identity.semantic_fingerprint);
 }
 
+void TestStandardCoroutineTypesAndTraits() {
+  const auto header=std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/standard_coroutines.h";
+  std::ifstream input(header);assert(input);
+  const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &text,const char *filename="standard-coroutines.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu","-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR},filename);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_coroutines","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.standard_coroutines","test",{},{},{},{"NativeStandardCoroutines"});
+    };
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"STD %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    assert(first.source_bytes.find("#include <coroutine>")!=std::string::npos);
+    assert(first.source_bytes.find("coroutine_traits<")!=std::string::npos);
+    auto replay=emit(first.source_bytes);
+    for(const auto &d:replay.diagnostics)std::fprintf(stderr,"STD REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    assert(replay.source_bytes==first.source_bytes);
+    auto relocated=emit("\n\n"+source,"relocated-standard-coroutines.mm");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasCxxStandardCoroutineIdentity));
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &d){return d.canonical_type_identity.find(";cxx-coroutine-traits-specializations:v1;")!=std::string::npos;})==2);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxStandardCoroutineSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxStandardCoroutineIdentity);owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto changed=source;auto at=changed.find("using promise_type=NativeStandardCoroutines::Promise<long>;");assert(at!=std::string::npos);
+    changed.insert(at,"static constexpr int marker=42; ");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto private_traits=source;
+    const std::string wide_promise="using promise_type=NativeStandardCoroutines::Promise<long>;";
+    at=private_traits.find(wide_promise);assert(at!=std::string::npos);
+    private_traits.replace(at,wide_promise.size(),"using promise_type=NativePrivate::WidePromise;");
+    at=private_traits.find("namespace std {");assert(at!=std::string::npos);
+    private_traits.insert(at,"namespace NativePrivate {using WidePromise=NativeStandardCoroutines::Promise<long>;}\n");
+    auto denied_traits=emit(private_traits);
+    assert(!denied_traits.success && std::any_of(denied_traits.diagnostics.begin(),denied_traits.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    auto private_type=emit("namespace NativePrivate {struct Promise {};}\n"+source+
+        "namespace NativeStandardCoroutines {using PrivateHandle=std::coroutine_handle<NativePrivate::Promise>;}\n");
+    assert(!private_type.success && std::any_of(private_type.diagnostics.begin(),private_type.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    auto spoofed=emit("namespace std {template<class T=void>struct coroutine_handle {void *frame;};} namespace NativeStandardCoroutines {std::coroutine_handle<> handle();}");
+    assert(!spoofed.success && std::any_of(spoofed.diagnostics.begin(),spoofed.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestCustomCoroutineBodies() {
   const auto header=std::filesystem::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/custom_coroutines.h";
   std::ifstream input(header);assert(input);
@@ -5661,6 +5714,7 @@ int main() {
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
   TestNativeDeclarationAttributes();
+  TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();
   TestForeignImportAttributes();
   TestNestedFactoryTypes();

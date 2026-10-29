@@ -94,6 +94,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxAddressTemplateArgumentSemantic,
     kNativeDeclarationAttributeSemantic,
     kCxxCoroutineBodySemantic,
+    kCxxStandardCoroutineSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -321,7 +322,8 @@ InterfaceModuleResolution ResolveInterfaceModules(
     inputs.emplace(identity.canonical_name, std::move(input));
     selected.emplace(identity.canonical_name, &candidate);
     result.requires_coroutine_header |= std::find(candidate.sidecar.required_semantics.begin(),
-        candidate.sidecar.required_semantics.end(),kCxxCoroutineBodySemantic)!=candidate.sidecar.required_semantics.end();
+        candidate.sidecar.required_semantics.end(),kCxxCoroutineBodySemantic)!=candidate.sidecar.required_semantics.end() ||
+        std::find(candidate.sidecar.required_semantics.begin(),candidate.sidecar.required_semantics.end(),kCxxStandardCoroutineSemantic)!=candidate.sidecar.required_semantics.end();
     return true;
   };
 

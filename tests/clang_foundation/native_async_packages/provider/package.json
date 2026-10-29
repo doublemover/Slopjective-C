@@ -362,7 +362,8 @@
     "NativeNestedFactoryTypes",
     "NativeForeignAttributes",
     "NativeCustomCoroutines",
-    "NativeDeclarationAttributes"
+    "NativeDeclarationAttributes",
+    "NativeStandardCoroutines"
   ],
   "dependencies": []
 }
