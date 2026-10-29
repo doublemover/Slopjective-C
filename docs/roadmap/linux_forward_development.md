@@ -101,6 +101,19 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## Public C++ factory type projections
+
+The [2.80 source span](linux_cxx_factory_type_projections.md) publishes aliases,
+fields, bases, callbacks, storage and function signatures using concrete factory
+result types. Ordered nominal origins distinguish equal anonymous layouts and
+reversed callback arguments. Native local-tag identities survive relocation;
+import retains mangling disambiguators before recursive type/body use. Provider
+calls preserve shared storage and nontrivial anonymous value copy/move/destruction.
+All 42 native import-family tests, the emitter suite, 84 tooling tests and four
+representative source-free configurations / 24 commands pass. Generic/closure
+origins, template-argument use and wider type/profile work remain separate;
+exhaustive source/sanitizer checks and SDK delivery stay batched.
+
 ## Factory-owned local C++ results
 
 The [2.79 source span](linux_cxx_local_factory_results.md) publishes direct deduced

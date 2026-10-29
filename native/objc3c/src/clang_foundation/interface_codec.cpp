@@ -477,6 +477,14 @@ llvm::Error ValidateForEncoding(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     return Invalid("nullable key-path write identity and required write/key-path capabilities must agree");
+  const bool has_factory_type_projections=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxFactoryTypeProjectionIdentity);
+  const bool factory_type_projection_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxFactoryTypeProjectionSemantic)!=sidecar.required_semantics.end();
+  const bool factory_type_projection_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxFactoryTypeProjectionIdentity(d) || d.kind!="Namespace";});
+  if (has_factory_type_projections!=factory_type_projection_capability || !factory_type_projection_owners)
+    return Invalid("factory type projection identities and required capability must agree");
   const bool has_local_factory_results=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxLocalFactoryResultIdentity);
   const bool local_factory_result_capability=std::find(sidecar.required_semantics.begin(),

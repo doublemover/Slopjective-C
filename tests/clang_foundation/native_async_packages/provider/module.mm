@@ -1921,3 +1921,5 @@ namespace NativeEffectLambdas {
 #include "closure_factories.h"
 
 #include "local_factory_results.h"
+
+#include "factory_type_projections.h"

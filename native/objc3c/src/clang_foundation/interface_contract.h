@@ -181,6 +181,10 @@ inline constexpr const char *kNullableKeyPathWriteSemantic = "objc3.keypath-null
 inline bool HasNullableKeyPathWriteIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";keypath-nullable-writes:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxFactoryTypeProjectionSemantic = "objc3.cxx-factory-type-projections.v1";
+inline bool HasCxxFactoryTypeProjectionIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-factory-type-projections:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxLocalFactoryResultSemantic = "objc3.cxx-local-factory-results.v1";
 inline bool HasCxxLocalFactoryResultIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-local-factory-results:v1;") != std::string::npos;

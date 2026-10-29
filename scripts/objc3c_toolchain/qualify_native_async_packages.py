@@ -173,6 +173,19 @@ def check_cpp_metadata(metadata):
     effectful_members=[row for row in metadata['declarations']
                        if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
     assert 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']
+    factory_type_projections={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-factory-type-projections:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-factory-type-projections.v1' in metadata['required_semantics']
+    assert {'NativeFactoryTypeProjections::First','NativeFactoryTypeProjections::Second',
+            'NativeFactoryTypeProjections::Chosen','NativeFactoryTypeProjections::Reader',
+            'NativeFactoryTypeProjections::ReverseReader','NativeFactoryTypeProjections::Holder',
+            'NativeFactoryTypeProjections::Derived',
+            'NativeFactoryTypeProjections::read','NativeFactoryTypeProjections::shared',
+            'NativeFactoryTypeProjections::pointer','NativeFactoryTypeProjections::reference',
+            'NativeFactoryTypeProjections::Member','NativeFactoryTypeProjections::member',
+            'NativeFactoryTypeProjections::provider_read','NativeFactoryTypeProjections::provider_shared',
+            'NativeFactoryTypeProjections::provider_chosen','NativeFactoryTypeProjections::Owned',
+            'NativeFactoryTypeProjections::provider_owned','NativeFactoryTypeProjections::provider_owned_value'}<=factory_type_projections
     local_factory_results={row['qualified_name'] for row in metadata['declarations']
                        if ';cxx-local-factory-results:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-local-factory-results.v1' in metadata['required_semantics']

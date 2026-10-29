@@ -352,7 +352,8 @@
     "NativeAddressArguments",
     "NativeEffectLambdas",
     "NativeClosureFactories",
-    "NativeLocalFactoryResults"
+    "NativeLocalFactoryResults",
+    "NativeFactoryTypeProjections"
   ],
   "dependencies": []
 }

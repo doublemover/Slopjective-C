@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 79,
+        "minor": 80,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -205,7 +205,8 @@
         "Non-null declaration and structural template address values with exact module-owned function/object/member identities, subobject paths, offsets and checked dependency references (source)",
         "Concrete and closed generic local C++ lambdas with canonical async/frame and typed-error suffixes, preserved source printing and callable-scoped published body contracts (source)",
         "Ordinary and generic returned closure factories with complete published owners, canonical deduced results, mutable/reference and owned-record captures, nested closures and native consumer instantiation (source)",
-        "Factory-owned named and unnamed local record, enum and union results with direct auto/decltype(auto) deduction, complete checked bodies and native value lifetimes (source)"
+        "Factory-owned named and unnamed local record, enum and union results with direct auto/decltype(auto) deduction, complete checked bodies and native value lifetimes (source)",
+        "Public aliases, callbacks, fields, storage and function signatures using module-owned concrete factory result types, with ordered nominal origins, stable native local-tag identities and preserved import disambiguators (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
