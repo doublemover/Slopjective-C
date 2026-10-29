@@ -486,6 +486,25 @@ void TestStandardCoroutineTypesAndTraitsImports() {
       for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
       assert(result.success);
     }
+    auto single=provider;single.module_name="test.single_coroutine_trait";
+    const auto single_path=root/"test.single_coroutine_trait.objc3i";
+    single.interface_output_path=single_path.string();
+    single.source_text="#include <coroutine>\nnamespace NativeStandardCoroutines {struct Token {};struct Promise {}; }"
+        "namespace std {template<>struct coroutine_traits<NativeStandardCoroutines::Token>{using promise_type=NativeStandardCoroutines::Promise;};}";
+    auto trait=Compile(single);assert(trait.success && trait.interface_artifact);
+    auto scope_check=ModuleRequest(root/"traits-lookup.mm","",
+        "@import test.single_coroutine_trait;\n"
+        "using Promise=std::coroutine_traits<NativeStandardCoroutines::Token>::promise_type;"
+        "static_assert(__is_same(Promise,NativeStandardCoroutines::Promise));");
+    scope_check.language=BaseLanguage::ObjectiveCxx;scope_check.arc=true;scope_check.arguments={standard};
+    scope_check.emit_semantic_interface=false;scope_check.source_directed_imports=true;
+    scope_check.interface_search_paths={root.string()};
+    InterfaceModuleRequest single_locked;single_locked.canonical_name="test.single_coroutine_trait";single_locked.locked_identity=trait.interface_artifact->identity;
+    scope_check.module_imports={single_locked};
+    auto scoped=Compile(scope_check);assert(scoped.success);
+    scope_check.source_text=*scope_check.source_text+"using Leaked=coroutine_traits;";
+    auto leaked=Compile(scope_check);assert(!leaked.success);
+    assert(std::any_of(leaked.diagnostics.begin(),leaked.diagnostics.end(),[](const auto &d){return d.message.find("coroutine_traits")!=std::string::npos;}));
   }
   fs::remove_all(root);
 }

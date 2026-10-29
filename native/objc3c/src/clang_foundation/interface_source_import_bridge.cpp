@@ -375,6 +375,9 @@ void InterfaceSourceImportBridge::AppendModuleDeclarations(
     }
     if(auto *shadow=llvm::dyn_cast_or_null<clang::UsingShadowDecl>(declaration))
       declaration=shadow->getTargetDecl()->getUnderlyingDecl();
+    // A class specialization is selected through its primary template; it
+    // does not introduce another ordinary or module-qualified lookup name.
+    if (llvm::isa_and_nonnull<clang::ClassTemplateSpecializationDecl>(declaration)) return;
     if (!declaration || !declaration->getIdentifier() ||
         declaration->getIdentifier()->getName()!=identifier) return;
     if(identifier_namespace && !(declaration->getIdentifierNamespace()&identifier_namespace)) return;
