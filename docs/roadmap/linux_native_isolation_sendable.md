@@ -83,13 +83,15 @@ Checked throws are preserved and explicitly propagated inside the thunk.
 
 Synchronous typed instance messages use the same private native frame, with
 semantic bindings that evaluate the original receiver and arguments once before
-frame creation. Actor entry obtains a retained mailbox from the runtime's
-explicit object association and hops to that mailbox. A declared executor is
-checked against the retained mailbox's exact backing executor identity before
-the hop. Nil receivers keep ordinary nil-message behavior without requiring an
-association. Missing/retired associations and conflicting executor bindings
-produce native service failures. The actor lookup lease is balanced after the
-runtime has retained the destination, while the frame owns its receiver.
+frame creation. Actor entry obtains a retained mailbox from an explicit binding
+or creates an object-owned automatic mailbox under serialized first-entry lookup.
+A declared executor selects the initial backing executor and must match an
+existing mailbox's immutable affinity. Nil receivers keep ordinary nil-message
+behavior. Retired bindings and conflicting executor affinity produce native
+service failures. The actor lookup lease is balanced after the runtime retains
+the destination, while the frame owns its receiver. Association teardown cancels
+the automatic mailbox without retaining its source object. Native association
+classes inherit their ARC policy before the first retain/release operation.
 
 Retainable results use independent native result ownership. ARC claims a +1
 result or retains/copies a +0 result before copying into the task result owner;

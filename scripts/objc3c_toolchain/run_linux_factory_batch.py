@@ -34,10 +34,14 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
     output.mkdir(parents=True, exist_ok=True)
     inputs = {str(path): packages.digest(path) for path in
               (compiler, foundation / 'bin/clang', runtime, objc_runtime)}
+    sources = [Path(__file__), *sorted(fixture.rglob('*')),
+               *sorted(headers.rglob('*')), *sorted((ROOT / 'stdlib/include').rglob('*'))]
+    source_inputs = {str(path): packages.digest(path) for path in sources if path.is_file()}
     development_lock = packages.content_hash(inputs)
     report = {'schema': 'objc3c.linux-development-factory-batch.v1',
               'status': 'running', 'development_input_lock': development_lock,
-              'inputs': inputs, 'full_fixture': full, 'eager': eager,
+              'inputs': inputs, 'source_inputs': source_inputs,
+              'full_fixture': full, 'eager': eager,
               'cases': [], 'commands': []}
     environment = {**os.environ, 'LD_LIBRARY_PATH': str(objc_runtime.parent)}
 
@@ -153,6 +157,8 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                     'package_sha256': identity, 'specialization_lookup_rejected': True})
         if inputs != {path: packages.digest(Path(path)) for path in inputs}:
             raise ValueError('compiler/runtime inputs changed during qualification')
+        if source_inputs != {path: packages.digest(Path(path)) for path in source_inputs}:
+            raise ValueError('source/header inputs changed during qualification')
         report['status'] = 'PASS'
     except Exception as error:
         report.update(status='FAIL', error=str(error))

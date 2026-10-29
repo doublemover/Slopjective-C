@@ -5680,6 +5680,10 @@ std::string ReadInterfaceDeclarationStableId(
   if (llvm::isa<clang::TypedefNameDecl>(declaration) &&
       declaration->getDeclContext()->getRedeclContext()->isTranslationUnit())
     return "c:@T@" + declaration->getNameAsString();
+  if (llvm::isa<clang::TypedefDecl>(declaration))
+    if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(
+            declaration->getDeclContext()->getRedeclContext()))
+      return ReadInterfaceDeclarationStableId(space)+"@T@"+declaration->getNameAsString();
   if(const auto *using_decl=llvm::dyn_cast<clang::UsingDecl>(declaration)) {
     std::set<std::string> targets;
     for(const auto *shadow:using_decl->shadows())
