@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..3c8b921e3 100644
+index d743717ad..c3cafe135 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -4572,7 +4572,19 @@ index d743717ad..3c8b921e3 100644
      Result.MakeLValue();
      if (FromValue.hasLValuePath()) {
        MutableArrayRef<APValue::LValuePathEntry> ToPath = Result.setLValueUninit(
-@@ -11049,3 +12216,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
+@@ -11006,6 +12173,11 @@ Decl *ASTImporter::MapImported(Decl *From, Decl *To) {
+   // This mapping should be maintained only in this function. Therefore do not
+   // check for additional consistency.
+   ImportedFromDecls[To] = From;
++  // Anonymous local and nested tags use the source disambiguator in their
++  // native names. Copy it before recursive type/body import can use that name.
++  if (const auto *FromTag=dyn_cast<TagDecl>(From))
++    if (const auto *ToTag=dyn_cast<TagDecl>(To))
++      ToContext.setManglingNumber(ToTag,FromContext.getManglingNumber(FromTag));
+   // In the case of TypedefNameDecl we create the Decl first and only then we
+   // import and set its DeclContext. So, the DC is still not set when we reach
+   // here from GetImportedOrCreateDecl.
+@@ -11049,3 +12221,16 @@ bool ASTImporter::IsStructurallyEquivalent(QualType From, QualType To,
        getStructuralEquivalenceKind(*this), false, Complain);
    return Ctx.IsEquivalent(From, To);
  }
@@ -14746,10 +14758,25 @@ index 6b598d26c..2a59bc5d7 100644
    }
  
 diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-index 5f689ad32..6f5218769 100644
+index 5f689ad32..a6d4061f2 100644
 --- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 +++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-@@ -725,6 +725,23 @@ void USRGenerator::VisitType(QualType T) {
+@@ -613,7 +613,13 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
+       Buf[off] = 'A';
+       Out << '@' << *TD;
+     } else {
+-      if (D->isEmbeddedInDeclarator() && !D->isFreeStanding()) {
++      const auto *Record=dyn_cast<CXXRecordDecl>(D);
++      // An externally visible local type is owned by its enclosing callable.
++      // Its native disambiguator survives source relocation and AST replay.
++      if (Context->getLangOpts().ObjC3 && D->isExternallyVisible() &&
++          D->getParentFunctionOrMethod() && !(Record && Record->isLambda())) {
++        Out << "local@" << Context->getManglingNumber(D);
++      } else if (D->isEmbeddedInDeclarator() && !D->isFreeStanding()) {
+         printLoc(Out, D->getLocation(), Context->getSourceManager(), true);
+       } else {
+         Buf[off] = 'a';
+@@ -725,6 +731,23 @@ void USRGenerator::VisitType(QualType T) {
        T = Expansion->getPattern();
      }
  
@@ -14773,7 +14800,7 @@ index 5f689ad32..6f5218769 100644
      if (const BuiltinType *BT = T->getAs<BuiltinType>()) {
        switch (BT->getKind()) {
        case BuiltinType::Void:
-@@ -989,13 +1006,28 @@ void USRGenerator::VisitType(QualType T) {
+@@ -989,13 +1012,28 @@ void USRGenerator::VisitType(QualType T) {
        Out << 'F';
        VisitType(FT->getReturnType());
        Out << '(';
@@ -19009,10 +19036,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..8e8cb2dff
+index 000000000..e28cd5c39
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,2019 @@
+@@ -0,0 +1,2066 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -19035,6 +19062,7 @@ index 000000000..8e8cb2dff
 +#include "clang/Sema/Sema.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Tooling/Tooling.h"
++#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 +#include "llvm/Support/Error.h"
 +#include "gtest/gtest.h"
 +
@@ -21030,6 +21058,52 @@ index 000000000..8e8cb2dff
 +      EXPECT_EQ(&Tag->getASTContext(),&To->getASTContext());
 +      EXPECT_EQ(Tag->getDeclContext()->getRedeclContext(),Function->getDefinition());
 +    }
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, StabilizesAnonymousFactoryTypeIdentities) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      inline auto first(){struct {int value;} result{42};return result;}
++      using First=decltype(first());int use(First);
++      inline auto second(){struct {int value;} result{42};return result;}
++      using Second=decltype(second());int use(Second);
++      inline auto choose(){struct {int value;} a{1};struct {int value;} b{42};return b;}
++      using Chosen=decltype(choose());int use(Chosen);
++    )";
++    std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"anonymous-factory-from.mm");
++    auto Relocated=tooling::buildASTFromCodeWithArgs("\n\n"+Source,Args,"relocated-anonymous-factory.mm");
++    auto To=tooling::buildASTFromCodeWithArgs("",Args,"anonymous-factory-to.mm");
++    ASSERT_TRUE(From && Relocated && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto identities=[](ASTContext &Context) {
++      std::set<std::string> Result;
++      for(auto *D:Context.getTranslationUnitDecl()->decls())
++        if(auto *Function=dyn_cast<FunctionDecl>(D);Function && Function->getName()=="use") {
++          llvm::SmallString<128> USR;
++          EXPECT_FALSE(index::generateUSRForDecl(Function,USR));Result.insert(USR.str().str());
++        }
++      return Result;
++    };
++    auto Expected=identities(From->getASTContext());EXPECT_EQ(Expected.size(),3u);
++    EXPECT_EQ(Expected,identities(Relocated->getASTContext()));
++    auto *Chosen=findFunction(From->getASTContext(),"choose");ASSERT_TRUE(Chosen);
++    const auto *FromTag=Chosen->getReturnType()->getAsTagDecl();ASSERT_TRUE(FromTag);
++    EXPECT_EQ(From->getASTContext().getManglingNumber(FromTag),2u);
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported))<<llvm::toString(Imported.takeError());
++    }
++    EXPECT_EQ(Expected,identities(To->getASTContext()));
++    auto *ImportedChosen=findFunction(To->getASTContext(),"choose");ASSERT_TRUE(ImportedChosen);
++    const auto *ToTag=ImportedChosen->getReturnType()->getAsTagDecl();ASSERT_TRUE(ToTag);
++    EXPECT_EQ(To->getASTContext().getManglingNumber(ToTag),2u);
++    std::string Printed;llvm::raw_string_ostream Stream(Printed);
++    PrintingPolicy Policy(From->getASTContext().getLangOpts());Policy.IncludeTagDefinition=true;
++    From->getASTContext().getTranslationUnitDecl()->print(Stream,Policy);
++    auto Replayed=tooling::buildASTFromCodeWithArgs(Printed,Args,"replayed-anonymous-factory.mm");
++    ASSERT_TRUE(Replayed);ASSERT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
++    EXPECT_EQ(Expected,identities(Replayed->getASTContext()));
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp

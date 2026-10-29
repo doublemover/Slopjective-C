@@ -154,6 +154,18 @@
       {
         "path": "out/native-validation/local-factory-results-packages-normal-eager/qualification.json",
         "sha256": "c277719e3a53f7085551bdacfcbc2b6df190271eb003c8f224057dcc84792b79"
+      },
+      {
+        "path": "out/local-factory-results-facade-final.log",
+        "sha256": "f525fe103c776e4aab8edf22dbae58a1433831b49e3919b898334b4cc3cfc064"
+      },
+      {
+        "path": "out/local-factory-results-facade-followup.log",
+        "sha256": "fcbe72820a017818283b1552ee21f21da09066578b5d071b031b1bc657ad6b42"
+      },
+      {
+        "path": "out/local-factory-results-emitter-build-followup.log",
+        "sha256": "17273ebd0db1adcb6a1fde3eb473a1f89bba0fc83b435261966c61dd2b084df2"
       }
     ]
   },
