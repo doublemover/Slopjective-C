@@ -16,5 +16,21 @@ Native declaration printing preserves definitions, inherited contracts and escap
 diagnostic messages. Source-free witnesses check packed/aligned calling ABI,
 shared storage alignment, empty nontrivial member overlap and exact destruction,
 closed dependent alignment, optimizer annotations and provider symbol visibility.
-Combined compilation, replay, runtime and sanitizer checks are pending. SDK 2.62
-remains the accepted archive; full language/profile conformance remains open.
+The same contracts cover bounded function/class/alias/variable template owners,
+member templates and partial/explicit specializations, alongside generic Swift
+metadata. Canonical printing sorts attribute kinds without reordering repeated
+payloads. Recursive import retains one copy of an exact source occurrence;
+distinct written repetitions survive. Structural comparison handles omitted
+optional expression/type arguments, including standard-library owner/pointer
+annotations encountered while importing the complete async graph.
+
+All 33 frontend suites, 236 native unit tests, 412 compiler regressions and 27
+focused tooling tests pass; three platform compiler cases remain unsupported.
+Source-free checks pass 32 configurations / 224 commands across normal, eager,
+ASan/UBSan and TSan. Three full async-fixture smoke configurations / 21 commands
+also pass, one per normal/ASan/TSan mode. The
+[source receipt](../support/linux_native_declaration_attributes_progress.json)
+binds the final compiler and reports. These are source checks; SDK 2.62 remains
+the accepted archive. Other unmodeled declaration attributes, public standard
+coroutine types, dependent lookup projections and full language/profile
+conformance remain open.

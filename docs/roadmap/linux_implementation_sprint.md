@@ -72,3 +72,14 @@ configurations / 18 commands, including sanitizer modes. Standard coroutine
 headers are prepared before eager or source-directed AST merging; exact nested
 promise forward mappings preserve template friend redeclaration chains. This is
 a separate checkpoint from the 2.87 feature/runtime matrices above.
+
+The [native declaration attribute span](linux_native_declaration_attributes.md),
+source **2.89**, extends packed/aligned layout, visibility and optimizer/diagnostic
+contracts through template owners and specializations, including generic foreign
+metadata and packed coroutine values. Its
+[receipt](../support/linux_native_declaration_attributes_progress.json) records
+33 frontend suites, 236 native unit tests, 412 compiler regressions and 27 focused
+tooling tests passing, plus 32 focused package configurations / 224 commands and
+three full-fixture smoke configurations / 21 commands. Three platform compiler
+cases remain unsupported. Optional-argument comparison and recursive attribute
+copying are covered by the final compiler; accepted SDK 2.62 remains unchanged.
