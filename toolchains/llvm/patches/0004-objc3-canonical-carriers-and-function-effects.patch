@@ -19036,10 +19036,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..e28cd5c39
+index 000000000..c49c0329a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,2066 @@
+@@ -0,0 +1,2089 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21104,6 +21104,29 @@ index 000000000..e28cd5c39
 +    auto Replayed=tooling::buildASTFromCodeWithArgs(Printed,Args,"replayed-anonymous-factory.mm");
 +    ASSERT_TRUE(Replayed);ASSERT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
 +    EXPECT_EQ(Expected,identities(Replayed->getASTContext()));
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, PreservesWrittenLocalMemberQualifiers) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      inline auto factory(int n){struct {int value;} result{n};return result;}
++      using Value=decltype(factory(0));
++      using Member=decltype(&Value::value);
++      template<class T> struct Box {T value;};
++      using Closed=Box<Member>;
++    )";
++    std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"factory-member-from.mm");
++    ASSERT_TRUE(From);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    std::string Printed;llvm::raw_string_ostream Stream(Printed);
++    PrintingPolicy Policy(From->getASTContext().getLangOpts());
++    Policy.FullyQualifiedName=true;Policy.IncludeTagDefinition=true;
++    From->getASTContext().getTranslationUnitDecl()->print(Stream,Policy);
++    EXPECT_NE(Printed.find("&Value::value"),std::string::npos);
++    EXPECT_EQ(Printed.find("factory(int)::"),std::string::npos);
++    auto Replayed=tooling::buildASTFromCodeWithArgs(Printed,Args,"factory-member-replay.mm");
++    ASSERT_TRUE(Replayed);EXPECT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp

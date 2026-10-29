@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..bd0ca93be 100644
+index 9a97d52fd..15685ea1e 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -246,17 +246,23 @@ index 9a97d52fd..bd0ca93be 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1367,7 +1369,8 @@ void StmtPrinter::VisitDeclRefExpr(DeclRefExpr *Node) {
+@@ -1367,7 +1369,14 @@ void StmtPrinter::VisitDeclRefExpr(DeclRefExpr *Node) {
    bool CleanUglifiedParameter = Policy.CleanUglifiedParameters &&
                                  isa<ParmVarDecl, NonTypeTemplateParmDecl>(VD);
  
 -  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter) {
-+  if (Policy.FullyQualifiedName && !ForceAnonymous && !CleanUglifiedParameter &&
++  bool WrittenLocalQualifier=false;
++  if (Node->getQualifier())
++    for (const auto *Scope=VD->getDeclContext();Scope;Scope=Scope->getParent())
++      WrittenLocalQualifier |= Scope->isFunctionOrMethod();
++  // A local member's semantic context includes an unspellable function scope.
++  // Its written qualifier can name a public alias of that local type.
++  if (Policy.FullyQualifiedName && !WrittenLocalQualifier && !ForceAnonymous && !CleanUglifiedParameter &&
 +      !isa<ParmVarDecl, NonTypeTemplateParmDecl>(VD)) {
      VD->printQualifiedName(OS, Policy);
    } else {
      Node->getQualifier().print(OS, Policy);
-@@ -1623,6 +1626,12 @@ void StmtPrinter::VisitStringLiteral(StringLiteral *Str) {
+@@ -1623,6 +1632,12 @@ void StmtPrinter::VisitStringLiteral(StringLiteral *Str) {
  }
  
  void StmtPrinter::VisitParenExpr(ParenExpr *Node) {
@@ -269,7 +275,7 @@ index 9a97d52fd..bd0ca93be 100644
    OS << "(";
    PrintExpr(Node->getSubExpr());
    OS << ")";
-@@ -1819,6 +1828,20 @@ void StmtPrinter::PrintCallArgs(CallExpr *Call) {
+@@ -1819,6 +1834,20 @@ void StmtPrinter::PrintCallArgs(CallExpr *Call) {
  }
  
  void StmtPrinter::VisitCallExpr(CallExpr *Call) {
@@ -290,7 +296,7 @@ index 9a97d52fd..bd0ca93be 100644
    PrintExpr(Call->getCallee());
    OS << "(";
    PrintCallArgs(Call);
-@@ -1832,6 +1855,16 @@ static bool isImplicitThis(const Expr *E) {
+@@ -1832,6 +1861,16 @@ static bool isImplicitThis(const Expr *E) {
  }
  
  void StmtPrinter::VisitMemberExpr(MemberExpr *Node) {
@@ -307,7 +313,7 @@ index 9a97d52fd..bd0ca93be 100644
    if (!Policy.SuppressImplicitBase || !isImplicitThis(Node->getBase())) {
      PrintExpr(Node->getBase());
  
-@@ -1889,6 +1922,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
+@@ -1889,6 +1928,14 @@ void StmtPrinter::VisitCStyleCastExpr(CStyleCastExpr *Node) {
  }
  
  void StmtPrinter::VisitCompoundLiteralExpr(CompoundLiteralExpr *Node) {
@@ -322,7 +328,7 @@ index 9a97d52fd..bd0ca93be 100644
    OS << '(';
    Node->getType().print(OS, Policy);
    OS << ')';
-@@ -1939,6 +1980,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1939,6 +1986,253 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -576,7 +582,7 @@ index 9a97d52fd..bd0ca93be 100644
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
-@@ -2467,21 +2755,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2467,21 +2761,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
          /*OmitTemplateKW*/true);
    }
  
@@ -607,7 +613,7 @@ index 9a97d52fd..bd0ca93be 100644
      }
      if (Method->isVariadic()) {
        if (NeedComma)
-@@ -2490,8 +2776,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2490,8 +2782,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
      }
      OS << ')';
  
@@ -622,7 +628,7 @@ index 9a97d52fd..bd0ca93be 100644
  
      auto *Proto = Method->getType()->castAs<FunctionProtoType>();
      Proto->printExceptionSpecification(OS, Policy);
-@@ -2503,6 +2794,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2503,6 +2800,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
        OS << " -> ";
        Proto->getReturnType().print(OS, Policy);
      }
@@ -643,7 +649,7 @@ index 9a97d52fd..bd0ca93be 100644
    }
  
    // Print the body.
-@@ -2748,6 +3053,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
+@@ -2748,6 +3059,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
  }
  
  void StmtPrinter::VisitConceptSpecializationExpr(ConceptSpecializationExpr *E) {
@@ -660,7 +666,7 @@ index 9a97d52fd..bd0ca93be 100644
    NestedNameSpecifierLoc NNS = E->getNestedNameSpecifierLoc();
    NNS.getNestedNameSpecifier().print(OS, Policy);
    if (E->getTemplateKWLoc().isValid())
-@@ -2828,6 +3143,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
+@@ -2828,6 +3149,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
  }
  
  void StmtPrinter::VisitCoawaitExpr(CoawaitExpr *S) {
@@ -672,7 +678,7 @@ index 9a97d52fd..bd0ca93be 100644
    OS << "co_await ";
    PrintExpr(S->getOperand());
  }
-@@ -2955,8 +3275,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,8 +3281,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -697,7 +703,7 @@ index 9a97d52fd..bd0ca93be 100644
  
    if (isa<FunctionNoProtoType>(AFT)) {
      OS << "()";
-@@ -2976,7 +3312,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
+@@ -2976,7 +3318,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
      }
      OS << ')';
    }
@@ -725,7 +731,7 @@ index 9a97d52fd..bd0ca93be 100644
  }
  
  void StmtPrinter::VisitOpaqueValueExpr(OpaqueValueExpr *Node) {
-@@ -3045,3 +3400,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3406,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;
