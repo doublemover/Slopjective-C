@@ -793,7 +793,7 @@ index 5ac70a39d..c151ab2c5 100644
   * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
   * libcxxrt (PathScale).
 diff --git a/runtime.c b/runtime.c
-index be03c3f70..8f52a9c73 100644
+index be03c3f70..cc34219a6 100644
 --- a/runtime.c
 +++ b/runtime.c
 @@ -28,16 +28,13 @@ void objc_send_initialize(id object);
@@ -814,7 +814,13 @@ index be03c3f70..8f52a9c73 100644
  	while (cls)
  	{
  		// If we're deallocating a class with a hidden class, then the
-@@ -51,6 +48,34 @@ PRIVATE void call_cxx_destruct(id obj)
+@@ -46,11 +43,39 @@ PRIVATE void call_cxx_destruct(id obj)
+ 		cls = cls->super_class;
+ 		if (currentClass->cxx_destruct)
+ 		{
+-			currentClass->cxx_destruct(obj, cxx_destruct);
++			((void (*)(id, SEL))currentClass->cxx_destruct)(obj, cxx_destruct);
+ 		}
  	}
  }
  
@@ -860,7 +866,8 @@ index be03c3f70..8f52a9c73 100644
 +		{ cls->super_class, obj };
  	if (cls->cxx_construct)
  	{
- 		cls->cxx_construct(obj, cxx_construct);
+-		cls->cxx_construct(obj, cxx_construct);
++		((id (*)(id, SEL))cls->cxx_construct)(obj, cxx_construct);
  	}
 +	cleanup.completed_superclass = Nil;
  }

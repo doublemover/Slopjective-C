@@ -52,7 +52,7 @@
       "source_patches": [
         {
           "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
-          "sha256": "7f1d3ee6baba7b844b59323043f3b9134ddfdefb912748ca7533a1f993a7a206"
+          "sha256": "c2774e63694a06bef4269cd434144541d1aa7020bc64d0c3eff88a92b694b2bb"
         }
       ],
       "autorelease_pool_policy": "native-arc-only"

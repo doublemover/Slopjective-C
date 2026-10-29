@@ -1858,6 +1858,37 @@ inline int hidden(int value) __attribute__((swift_private)){return value;}
   auto changed=source;const auto at=changed.find("Interop.increment");assert(at!=std::string::npos);
   changed.replace(at,std::string("Interop.increment").size(),"Interop.advance");
   auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  // The metadata contract is shared by native C headers and Objective-C
+  // declarations, rather than depending on C++ namespace publication.
+  for(const char *language:{"c","objective-c"}) {
+    std::vector<std::string> args={"-x",language,"-std=c17","-fblocks"};
+    const bool objc=std::string_view(language)=="objective-c";
+    if(objc)args.insert(args.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"});
+    auto emit_c=[&](const std::string &code,const char *file) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(code,args,file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.foreign_c","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.foreign_c","test");
+    };
+    std::string code=R"FOREIGN(
+      typedef int ForeignHandle __attribute__((swift_newtype(enum)));
+      void complete(int value,void (^callback)(int))
+        __attribute__((swift_async(not_swift_private,2),swift_async_error(zero_argument,1)));
+    )FOREIGN";
+    if(objc)code+=R"FOREIGN(
+      __attribute__((objc_root_class,swift_name("ForeignOwner"),swift_objc_members))
+      @interface ForeignOwner
+      - (int)read:(int)value __attribute__((swift_name("read(_:)"),swift_attr("@available(*, message: \"quoted\")")));
+      @end
+    )FOREIGN";
+    auto original=emit_c(code,"foreign.h");
+    for(const auto &d:original.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(original.success);
+    auto repeated=emit_c(original.source_bytes,"replayed-foreign.h");
+    assert(repeated.success && repeated.identity.semantic_fingerprint==original.identity.semantic_fingerprint);
+    auto moved=emit_c("\n"+code,"relocated-foreign.h");
+    assert(moved.success && moved.identity.semantic_fingerprint==original.identity.semantic_fingerprint);
+  }
 }
 
 void TestNestedFactoryTypes() {
