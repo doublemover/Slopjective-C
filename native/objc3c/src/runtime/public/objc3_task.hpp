@@ -406,7 +406,11 @@ public:
   // Keep the callable's address stable through the spawned frame's actual
   // destruction, including coroutine lambdas that borrow their closure object.
   template<class Work> requires requires(Work &work) {work().release_native();}
-  auto spawn(Work work) const __attribute__((objc_task_spawn)) {
+  auto spawn(Work work) const
+#if defined(__OBJC3__)
+      __attribute__((objc_task_spawn))
+#endif
+  {
     using Task=decltype(work());
     return std::move(task_detail::own_callable_as<Task>(std::move(work))).start_child(*this);
   }

@@ -21,7 +21,18 @@ MODULE = 'fixture.NativeAsync'
 
 
 def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
-            objc_runtime: Path, output: Path, *, full=False, eager=False) -> dict:
+            objc_runtime: Path, output: Path, *, full=False, eager=False,
+            sanitizer: str | None = None, resource_root: Path | None = None) -> dict:
+    if sanitizer not in (None, 'address,undefined', 'thread'):
+        raise ValueError('unsupported sanitizer')
+    if sanitizer and resource_root is None:
+        raise ValueError('sanitizer checks require an explicit compiler resource root')
+    instrumentation = []
+    if resource_root is not None:
+        resource_root = resource_root.resolve(strict=True)
+        instrumentation += ['-resource-dir', str(resource_root)]
+    if sanitizer:
+        instrumentation += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer']
     sdk, compiler, foundation, runtime, objc_runtime = (
         path.resolve(strict=True) for path in
         (sdk, compiler, foundation, runtime, objc_runtime))
@@ -42,8 +53,14 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
               'status': 'running', 'development_input_lock': development_lock,
               'inputs': inputs, 'source_inputs': source_inputs,
               'full_fixture': full, 'eager': eager,
+              'sanitizer': sanitizer,
+              'resource_root': str(resource_root) if resource_root else None,
               'cases': [], 'commands': []}
     environment = {**os.environ, 'LD_LIBRARY_PATH': str(objc_runtime.parent)}
+    if sanitizer:
+        environment.setdefault('ASAN_OPTIONS', 'detect_leaks=1:halt_on_error=1')
+        environment.setdefault('UBSAN_OPTIONS', 'halt_on_error=1:print_stacktrace=1')
+        environment.setdefault('TSAN_OPTIONS', 'halt_on_error=1')
 
     def run(name, command, *, expected=0):
         log = output / (name + '.log')
@@ -88,7 +105,8 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                         '--target', 'x86_64-unknown-linux-gnu', '--sdk-root', str(foundation)]
                 if ownership == 'arc':
                     mode.append('--arc')
-                flags = ['--no-default-config', '-std=' + standard, '-' + optimization,
+                flags = ['--no-default-config', *instrumentation,
+                         '-std=' + standard, '-' + optimization,
                          '-fblocks', '-fcoro-aligned-allocation', '-fexceptions',
                          '-fobjc-exceptions', '-fobjc-arc-exceptions',
                          '-fmodules', '-fmodules-cache-path=' + str(work / 'modules'),
@@ -143,7 +161,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                     '--emit-object', obj, *imports, '--', *flags])
                 executable = work / 'witness'
                 run(label + '-link', [foundation / 'bin/clang++', '--no-default-config',
-                    '-fuse-ld=lld', obj, module / 'module.o', runtime, objc_runtime,
+                    *instrumentation, '-fuse-ld=lld', obj, module / 'module.o', runtime, objc_runtime,
                     '-pthread', '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable])
                 run(label + '-execute', [executable])
                 rejected = run(label + '-rejected', [compiler,
@@ -174,9 +192,12 @@ def main(argv=None):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--full', action='store_true')
     parser.add_argument('--eager', action='store_true')
+    parser.add_argument('--sanitizer', choices=('address,undefined', 'thread'))
+    parser.add_argument('--resource-root', type=Path)
     args = parser.parse_args(argv)
     report = qualify(args.sdk, args.compiler, args.foundation, args.runtime,
-                     args.objc_runtime, args.output, full=args.full, eager=args.eager)
+                     args.objc_runtime, args.output, full=args.full, eager=args.eager,
+                     sanitizer=args.sanitizer, resource_root=args.resource_root)
     print(json.dumps({'status': report['status'], 'cases': len(report['cases']),
                       'commands': len(report['commands'])}))
     return 0
