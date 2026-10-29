@@ -27,3 +27,10 @@ Combined validation and SDK delivery remain batched;
 Remaining generic closure/type projections, custom coroutine promises, ownership,
 concurrency, isolation, key-path, language/library/profile work and native Linux
 AArch64 remain open.
+
+The [combined 2.74–2.77 source receipt](../support/linux_lambda_address_batch_progress.json)
+completes the deferred source checks above: 412 compiler regressions, 226 native
+unit tests, all 33 optimized frontend suites and 335 maintained tooling tests pass.
+Normal, ASan/UBSan and TSan each pass 168 source/PCH configurations / 1,158 commands.
+Source-free C++/key-path packages pass 80 configurations / 384 commands.
+SDK delivery remains batched; SDK 2.62 stays accepted.
