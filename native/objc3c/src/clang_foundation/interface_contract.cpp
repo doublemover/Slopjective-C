@@ -438,6 +438,14 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool nullable_write_paths = std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),"objc3.typed-keypaths.v1")!=sidecar.required_semantics.end();
   if (nullable_writes!=nullable_write_capability || (nullable_write_capability && !nullable_write_paths))
     Add(result,"O3IFC057","nullable key-path write identity and required write/key-path capabilities must agree",expected.canonical_name);
+  const bool has_local_factory_results=std::any_of(sidecar.declarations.begin(),
+      sidecar.declarations.end(),HasCxxLocalFactoryResultIdentity);
+  const bool local_factory_result_capability=std::find(sidecar.required_semantics.begin(),
+      sidecar.required_semantics.end(),kCxxLocalFactoryResultSemantic)!=sidecar.required_semantics.end();
+  const bool local_factory_result_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),
+      [](const auto &d){return !HasCxxLocalFactoryResultIdentity(d) || d.kind!="Namespace";});
+  if (has_local_factory_results!=local_factory_result_capability || !local_factory_result_owners)
+    Add(result,"O3IFC088","local factory result identities and required capability must agree",expected.canonical_name);
   const bool has_closure_factories=std::any_of(sidecar.declarations.begin(),
       sidecar.declarations.end(),HasCxxClosureFactoryIdentity);
   const bool closure_factory_capability=std::find(sidecar.required_semantics.begin(),

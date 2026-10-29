@@ -92,6 +92,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxLocalFactoryResultSemantic,
     kCxxClosureFactorySemantic,
     kCxxEffectfulLambdaSemantic,
     "objc3.cxx-async-definitions.v1",

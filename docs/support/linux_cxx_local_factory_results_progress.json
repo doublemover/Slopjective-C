@@ -1,0 +1,173 @@
+{
+  "schema": "objc3c.linux-cxx-local-factory-results-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-0f1fdbc16660-00b75dc3",
+  "compiler_patch_digest": "0f1fdbc16660d07fd7a7b0ff02b77fd3c8482bd3930ffbdf378395273be5926e",
+  "frontend_input_sha256": "b22bf422caa1b90a9e352c40788c97af1c1bc1cd8152a1c37dd9114ca8ba55b5",
+  "concurrency_module_version": "2.79.0",
+  "required_semantics": [
+    "objc3.cxx-local-factory-results.v1"
+  ],
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "0ef8bd65e37a548719404cf519914f0b0c19f3acb50b94feb8a403e12ef6b4d5"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "6f08836d90d5b3feec6ecd4e82d723296f7b63747cb18628ade4285136dc7fa4"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "ee1a0abe78ec7baf7282ae84e893b4acb566ca97b8956500b3b0bddcaf955879"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "60aea5727279cd771bd03f509fe9ff393a3e1c1583244c3d7fa85d5059071a2c"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "920819d514ec12e0b83d25d7cf32a0a6b1e5c571d5383c70792d27a91deca8bf"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "ec411b324cad6acf18edc3054a588a92c11db7ffab317ff91fb3cfdc8c01f8d1"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "acac38e7dcdc28ed0fad537ea1e13f855b421866ed4b4406693115c15814e23d"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "2e7b2965327f523823e68d40a9c2010a8b56f482d07de4203801f998131e5ef4"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "6e95e36f3c66d67d8369b25df5cd3d7506f8f1e1247ad053e78ff311dd168038"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "776fbb59a8c2069ca2afd4dfa079816bd09f8fa5afba31f3e37b49ad6031b258"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/main.mm",
+      "sha256": "3688520fb1d794a090bd8b2d031aa0a229fc96dad8a49aecff2efa9f76d953bc"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "68e9ea421df482483b107d79431954405b170f0094062db258ce31ac12cf93fa"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "1bc74b33835470767262b7e037024c0abddffb0c66d38fe46fc1254d26fa613c"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/local_factory_results.h",
+      "sha256": "3977786441ebd27ad92adea4cd1d8255a605877e7bb9594b22165ff79c78abb9"
+    }
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 84,
+    "source_free_runtime_configurations": 4,
+    "source_free_commands": 24,
+    "representative_cases": [
+      {
+        "transport": "normal",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal",
+        "name": "c++23-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++20-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "normal-eager",
+        "name": "c++23-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      }
+    ],
+    "complete_factory_definition_required": true,
+    "canonical_factory_result_ownership": true,
+    "named_unnamed_nested_local_record_results": true,
+    "scoped_and_anonymous_enum_results": true,
+    "active_union_values": true,
+    "lambda_owned_local_results": true,
+    "consumer_created_local_template_instances": true,
+    "nontrivial_copy_move_and_destruction": true,
+    "pointers_references_foreign_owned_types_remain_gated": true,
+    "relocation_and_replay_fingerprints_stable": true,
+    "changed_public_body_changes_fingerprint": true,
+    "private_dependencies_and_capability_owner_mismatches_rejected": true,
+    "native_foundation": {
+      "status": "COMPILED_STAGED_FOCUSED_VALIDATED",
+      "checkpoint": "2e63f4da65b1f8535916badd8682375d35c7d1fd",
+      "native_import_family_tests_passed": 41,
+      "reports": [
+        {
+          "path": "out/local-factory-results-native-build.json",
+          "sha256": "d0bfc3ef05f028f231024878571ef743490d5867429c6e4377032839ee83c45a"
+        },
+        {
+          "path": "out/local-factory-results-native-import-family.log",
+          "sha256": "4806d7b00b11e55c3cca89d3f9d0430e2995ee3c5facb6d5fdf121f1d5e1a19d"
+        },
+        {
+          "path": "out/local-factory-results-native-focused-import.log",
+          "sha256": "4135cf9b2b326f9fc77221b4c65a474dd936e0e9786956d246b7d3ad0e4b62a4"
+        }
+      ]
+    },
+    "reports": [
+      {
+        "path": "out/local-factory-results-facade-build.log",
+        "sha256": "f9e1a67d2fd1d3a14b3e5adb6b5065f5a1a6151ba762263d9947dd3122956ba9"
+      },
+      {
+        "path": "out/local-factory-results-emitter-ctest.log",
+        "sha256": "8d318f5bdea77dedb68c578b90e1f06bee694ce82f6e0a0582933ce0af6e513f"
+      },
+      {
+        "path": "out/local-factory-results-tooling.log",
+        "sha256": "e718f2e2ac38d7740af3a3e555d8c35c83ce4f94b4d0baae56aae0fc32fe2838"
+      },
+      {
+        "path": "out/native-validation/local-factory-results-packages-normal/qualification.json",
+        "sha256": "8328dc83c51d1aa79dc7ac8e65c9a6b4be2f43d58bdb6080fcf95d49a80bb889"
+      },
+      {
+        "path": "out/native-validation/local-factory-results-packages-normal-eager/qualification.json",
+        "sha256": "c277719e3a53f7085551bdacfcbc2b6df190271eb003c8f224057dcc84792b79"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Full Cartesian source-free and sanitizer matrices in the next combined implementation batch",
+    "Coordinated SDK delivery of post-2.62 source milestones"
+  ],
+  "remaining": [
+    "Other public/dependent closure and unnamed-type projections, custom coroutine promises and dependent lookup/attribute contracts",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

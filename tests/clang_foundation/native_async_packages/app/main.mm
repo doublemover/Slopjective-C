@@ -1303,6 +1303,17 @@ int main() {
        task.result()!=42 || wide_task.result()!=42 || frame.result()!=42 || checked.result()!=42)return 243;
   }
   if(NativeClosureFactories::State::live)return 244;
+  {
+    using namespace NativeLocalFactoryResults;
+    auto value=named(40);auto copy=value;auto moved=static_cast<decltype(value) &&>(value);
+    auto anonymous=unnamed(42);auto owner=owned(42);auto owner_copy=owner;
+    auto outer=nested(42);auto result=closure()(42);auto pattern=templated(42L);
+    if(copy.get()!=40 || moved.get()!=40 || value.get()!=0 || live!=3 || anonymous.get()!=42 ||
+       owner.get()!=42 || owner_copy.get()!=42 || outer.get()!=42 || result.value!=42 ||
+       pattern.get()!=42 || static_cast<int>(enumeration())!=42 || anonymous_enum()!=42 ||
+       NativeLocalFactoryResults::union_value(42).value!=42 || NativeClosureFactories::State::live!=2)return 245;
+  }
+  if(NativeLocalFactoryResults::live || NativeClosureFactories::State::live)return 246;
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
     return 5;

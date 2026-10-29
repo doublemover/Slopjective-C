@@ -101,6 +101,17 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## Factory-owned local C++ results
+
+The [2.79 source span](linux_cxx_local_factory_results.md) publishes direct deduced
+named/unnamed record, enum and union values under their complete factory bodies.
+Native deduction, canonical lexical identity, nested/lambda-owned results and
+consumer-created local template instances retain complete definitions and native
+copy/move/destruction. All 41 native import-family tests, the emitter suite,
+84 tooling tests and four representative source-free configurations / 24 commands
+pass. Pointer/reference escapes and other callable-owned types remain separate;
+exhaustive source/sanitizer checks and SDK delivery stay batched.
+
 ## Published C++ closure factories
 
 The [2.78 source span](linux_cxx_closure_factories.md) publishes concrete and generic

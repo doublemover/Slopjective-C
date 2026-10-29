@@ -50,6 +50,8 @@ void AddDiagnostic(InterfaceEmissionArtifact &result, llvm::StringRef code,
   result.diagnostics.push_back({code.str(), message.str(), subject.str()});
 }
 
+bool IsExpressionLocalTag(const clang::TagDecl *declaration);
+
 std::string CanonicalType(clang::QualType type,
                           const clang::ASTContext &context) {
   clang::PrintingPolicy policy(context.getLangOpts());
@@ -59,7 +61,7 @@ std::string CanonicalType(clang::QualType type,
   policy.SuppressUnwrittenScope = false;
   clang::QualType result=type;
   if(const auto *function=type->getAs<clang::FunctionType>())result=function->getReturnType();
-  if(const auto *record=result->getAsCXXRecordDecl();record && record->isLambda())
+  if(const auto *tag=result->getAsTagDecl();tag && IsExpressionLocalTag(tag))
     // Complete published factories bind closure bodies and captures. Physical
     // source file/line spelling is not part of their deduced result identity.
     policy.AnonymousTagNameStyle=static_cast<unsigned>(clang::PrintingPolicy::AnonymousTagMode::Plain);
@@ -2090,17 +2092,46 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
 bool HasDeclarationLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, ContainsLambda);
 }
-// Only a complete published definition may expose its own deduced closure.
-// Its checked body binds the lambda head, captures, operators and dependencies.
-const clang::CXXRecordDecl *PublishedClosureResult(const clang::FunctionDecl *function) {
-  if (!function || !PublishesFunctionBody(function) || !function->getDefinition() ||
-      !function->getDeclaredReturnType()->getContainedAutoType()) return nullptr;
-  const auto *record=function->getReturnType()->getAsCXXRecordDecl();
-  if (!record || !record->isLambda()) return nullptr;
-  for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
+// A direct deduced result belongs to its complete published factory body.
+// References/pointers and types originating in other factories remain separate.
+bool IsPublishedDeducedFactory(const clang::FunctionDecl *function) {
+  return function && PublishesFunctionBody(function) && function->getDefinition() &&
+         function->getDeclaredReturnType()->getContainedAutoType();
+}
+
+const clang::TagDecl *PublishedFactoryResult(const clang::FunctionDecl *function) {
+  if (!IsPublishedDeducedFactory(function)) return nullptr;
+  const auto *tag=function->getReturnType()->getAsTagDecl();
+  if (!tag || !tag->getDefinition() || !IsExpressionLocalTag(tag)) return nullptr;
+  for (const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
     if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope))
-      return owner->getCanonicalDecl()==function->getCanonicalDecl() ? record : nullptr;
+      return owner->getCanonicalDecl()==function->getCanonicalDecl() ? tag : nullptr;
   return nullptr;
+}
+
+const clang::CXXRecordDecl *PublishedClosureResult(const clang::FunctionDecl *function) {
+  const auto *record=llvm::dyn_cast_or_null<clang::CXXRecordDecl>(PublishedFactoryResult(function));
+  return record && record->isLambda() ? record : nullptr;
+}
+
+bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
+    struct Finder:clang::RecursiveASTVisitor<Finder> {
+      bool found=false;
+      bool VisitTagDecl(clang::TagDecl *tag) {
+        if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag);record && record->isLambda())return true;
+        for (const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
+          if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
+            const auto *result=PublishedFactoryResult(owner);
+            found |= (result && result->getCanonicalDecl()==tag->getCanonicalDecl()) ||
+                (!result && owner->isTemplated() && IsPublishedDeducedFactory(owner));
+            break;
+          }
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));return visitor.found;
+  });
 }
 
 bool HasDeclarationClosureFactory(const clang::NamedDecl *declaration) {
@@ -3076,9 +3107,13 @@ class TypeDependencyVisitor final
          exports_(exports), spi_group_(std::move(spi_group)),
          source_root_(source_root) {}
 
-   void AllowPublishedClosureResult(const clang::FunctionDecl *function) {
-     if (const auto *record=PublishedClosureResult(function))
-       closure_results_.insert(record->getCanonicalDecl());
+   void AllowPublishedFactoryResult(const clang::FunctionDecl *function) {
+     if (const auto *tag=PublishedFactoryResult(function)) {
+       factory_results_.insert(tag->getCanonicalDecl());
+       for (const auto *scope=tag->getDeclContext();scope && !scope->isFunctionOrMethod();scope=scope->getParent())
+         if (const auto *parent=llvm::dyn_cast<clang::TagDecl>(scope))
+           factory_results_.insert(parent->getCanonicalDecl());
+     }
    }
 
    void CheckVisibility(const clang::NamedDecl *declaration) {
@@ -3744,10 +3779,11 @@ class TypeDependencyVisitor final
                     declaration->getQualifiedNameAsString());
     if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
         record && record->isLambda())
-      return in_expression_ || closure_results_.count(record->getCanonicalDecl())
+      return in_expression_ || factory_results_.count(record->getCanonicalDecl())
           ? true : UnsupportedExpression("closure type escapes its expression context");
     if (IsExpressionLocalTag(declaration))
-      return in_expression_ && IsLocalExpressionContext(declaration->getDeclContext())
+      return (in_expression_ && IsLocalExpressionContext(declaration->getDeclContext())) ||
+             factory_results_.count(declaration->getCanonicalDecl())
                  ? true : UnsupportedExpression("local type escapes its callable context");
     CheckVisibility(declaration);
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
@@ -3852,7 +3888,7 @@ class TypeDependencyVisitor final
 private:
   bool public_template_type_ = false;
   bool in_expression_ = false;
-  std::set<const clang::Decl *> closure_results_;
+  std::set<const clang::Decl *> factory_results_;
   std::set<const clang::Decl *> lambda_contexts_;
   std::set<const clang::Decl *> lambda_locals_;
   const clang::FunctionDecl *body_function_ = nullptr;
@@ -3882,7 +3918,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
                                 ReadInterfaceSPIGroup(declaration),
                                 source_root);
-  visitor.AllowPublishedClosureResult(llvm::dyn_cast<clang::FunctionDecl>(declaration));
+  visitor.AllowPublishedFactoryResult(llvm::dyn_cast<clang::FunctionDecl>(declaration));
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -4264,8 +4300,14 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
   bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {
+    bool dependent_factory_local=false;
+    if (IsExpressionLocalTag(record))
+      for (const auto *scope=record->getDeclContext();scope;scope=scope->getParent())
+        if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
+          dependent_factory_local=IsPublishedDeducedFactory(owner);break;
+        }
     supported &=
-        !record->isDependentContext() && !record->getDescribedClassTemplate() &&
+        (!record->isDependentContext() || dependent_factory_local) && !record->getDescribedClassTemplate() &&
         record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
         (!record->isDynamicClass() || record->getASTContext().getLangOpts().RTTI);
     for (const auto *member : record->decls()) {
@@ -4331,7 +4373,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       }
       const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
       supported &=
-          method && !method->isTemplated() &&
+          method && (!method->isTemplated() ||
+              (dependent_factory_local && !method->getDescribedFunctionTemplate() && !method->getPrimaryTemplate())) &&
           (!method->isDefaulted() || IsSupportedDefaultedSpecialMember(method) ||
            IsInClassDefaultedComparison(method)) &&
           !method->getTrailingRequiresClause();
@@ -5469,6 +5512,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-detached-callable-templates:v1;definitions="+
         ComputeInterfaceSourceSha256(contract)+";";
   }
+  if (HasDeclarationLocalFactoryResult(representative))
+    identity.canonical_type_identity+=";cxx-local-factory-results:v1;";
   if (HasDeclarationClosureFactory(representative))
     identity.canonical_type_identity+=";cxx-closure-factories:v1;";
   if (HasDeclarationEffectfulLambda(representative))
@@ -5832,6 +5877,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxLocalFactoryResultIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxLocalFactoryResultSemantic);
     if (HasCxxClosureFactoryIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxClosureFactorySemantic);
     if (HasCxxEffectfulLambdaIdentity(declaration))
@@ -6019,6 +6066,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxLocalFactoryResultSemantic,
     kCxxClosureFactorySemantic,
     kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,
@@ -6184,6 +6232,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxLocalFactoryResultSemantic,
     kCxxClosureFactorySemantic,
     kCxxEffectfulLambdaSemantic,
     kCxxAsyncDefinitionSemantic,

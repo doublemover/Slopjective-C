@@ -1272,11 +1272,10 @@ void TestCxxLocalTypes() {
     erased.module.semantic_fingerprint = ComputeInterfaceSourceSha256(BuildSemanticFingerprintInput(erased));
     auto invalid = EncodeSemanticInterfaceSidecar(erased, semantics);
     assert(!invalid); llvm::consumeError(invalid.takeError());
-    auto escapes = emit("inline auto escape() { struct Local {int n;}; return Local{42}; }");
-    assert(!escapes.success);
+    auto factory = emit("inline auto factory() { struct Local {int n;}; return Local{42}; }");
+    assert(factory.success && factory.sidecar_json.find(kCxxLocalFactoryResultSemantic)!=std::string::npos);
     for (const auto *boundary : {
              "static int hidden(); inline int call() {struct Local {int get() {return hidden();}}; return Local{}.get();}",
-             "inline auto escape() {struct {int n;} value{42};return value;}",
              "struct Public {struct {int n;} value;};"}) {
       auto rejected = emit(boundary);
       assert(!rejected.success);
@@ -1473,8 +1472,8 @@ void TestCxxUnionValues() {
     std::erase(decoded->required_semantics,kCxxUnionValueSemantic);
     auto damaged=EncodeSemanticInterfaceSidecar(*decoded,semantics);
     assert(!damaged);llvm::consumeError(damaged.takeError());
-    auto escaping=emit("inline auto escape(){union Local{int n;};return Local{42};}");
-    assert(!escaping.success);
+    auto factory=emit("inline auto factory(){union Local{int n;};return Local{42};}");
+    assert(factory.success && factory.sidecar_json.find(kCxxLocalFactoryResultSemantic)!=std::string::npos);
     auto anonymous_public=emit("struct Public{union{int n;double d;} value;};");
     assert(!anonymous_public.success);
   }
@@ -1813,6 +1812,52 @@ namespace NativeAddressArguments {
         [](const auto &d){return d.code=="O3IFC156";}));
     auto private_object=emit("static int hidden=42;template<int* P>struct Box{};using Public=Box<&hidden>;");
     assert(!private_object.success);
+  }
+}
+
+void TestLocalFactoryResults() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="local-factory-results.cpp") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","c++",standard,"--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.local_factory_results","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.local_factory_results","test");
+    };
+    const std::string source=R"(
+      inline auto named(int n) {struct Local {int value;int get() const {return value;}};return Local{n};}
+      inline decltype(auto) unnamed(int n) {struct {int value;int get() const {return value;}} result{n};return result;}
+      inline auto enumeration() {enum class Local {answer=42};return Local::answer;}
+      inline auto anonymous_enum() {enum {answer=42};return answer;}
+      inline auto union_value(int n) {union Local {int value;double other;};return Local{n};}
+      inline auto nested(int n) {struct Outer {struct Value {int value;};};return Outer::Value{n};}
+      inline auto closure() {return [](int n){struct Local {int value;};return Local{n};};}
+      template<class T> auto pattern(T n) {struct Local {T value;T get() const {return value;}};return Local{n};}
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-local-factory-results.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    assert(std::count_if(decoded->declarations.begin(),decoded->declarations.end(),HasCxxLocalFactoryResultIdentity)==8);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxLocalFactoryResultSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxLocalFactoryResultIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto changed=source;changed.replace(changed.find("return value;"),13,"return value+1;");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    auto secret=emit("static int hidden(); inline auto api(){struct Local {int get() const{return hidden();}};return Local{};}");
+    assert(!secret.success && std::any_of(secret.diagnostics.begin(),secret.diagnostics.end(),
+        [](const auto &d){return d.code=="O3IFC112";}));
+    auto borrowed=emit("inline auto pointer(){static struct Local {int value;} storage;return &storage;}");
+    assert(!borrowed.success);
   }
 }
 
@@ -4871,6 +4916,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestLocalFactoryResults();
   TestClosureFactories();
   TestEffectfulLambdas();
   TestAddressTemplateArguments();
