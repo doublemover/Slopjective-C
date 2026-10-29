@@ -52,7 +52,9 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
         if not sanitizer_libraries:
             raise ValueError('compiler resource root has no requested sanitizer libraries')
         inputs.update({str(path): packages.digest(path) for path in sanitizer_libraries})
-    sources = [Path(__file__), *sorted(fixture.rglob('*')),
+    sources = [Path(__file__), Path(packages.__file__),
+               ROOT / 'scripts/objc3c_toolchain/qualify_native_async_packages.py',
+               *sorted(fixture.rglob('*')),
                *sorted(headers.rglob('*')), *sorted((ROOT / 'stdlib/include').rglob('*'))]
     source_inputs = {str(path): packages.digest(path) for path in sources if path.is_file()}
     development_lock = packages.content_hash(inputs)

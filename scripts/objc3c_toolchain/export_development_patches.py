@@ -197,6 +197,7 @@ PACKETS = {
         "clang/include/clang/AST/ExprCXX.h",
         "clang/lib/AST/ExprCXX.cpp",
         "clang/lib/AST/ASTImporter.cpp",
+        "clang/lib/AST/AttrImpl.cpp",
         "clang/lib/AST/ASTStructuralEquivalence.cpp",
         "clang/lib/AST/ASTConcept.cpp",
         "clang/lib/AST/ODRHash.cpp",
