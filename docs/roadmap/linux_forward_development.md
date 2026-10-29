@@ -1450,3 +1450,20 @@ SDK 2.62 are unchanged. Broader dependent lookup and unnamed contexts outside
 complete template-owned member graphs remain open, alongside the ownership,
 concurrency, isolation, key-path, language/library/profile and AArch64 obligations
 above.
+
+
+## Native parameter and callable contracts, source 2.93
+
+[Native parameter contracts](linux_native_parameter_contracts.md) preserve hidden
+static/dynamic object-size ABI arguments and overload identities, native lifetime
+and noescape metadata, ordered callback/sentinel contracts, typed diagnostic
+predicates and callable optimization/control attributes. Polished printing keeps
+predicate parameter scope, inherited copies and renamed parameters stable;
+AST import owns predicate expressions and parent declarations in the consumer.
+
+The [receipt](../support/linux_native_parameter_contracts_progress.json) records
+33 frontend suites, 238 native unit tests, 412 compiler regressions and 27 focused
+tooling tests passing, plus all 32 source-free configurations / 224 commands and
+three full-fixture smoke configurations / 21 commands. Further attribute forms,
+including enable-if overload identity, and the broader remaining implementation
+categories above remain open. Runtime binaries and SDK 2.62 are unchanged.
