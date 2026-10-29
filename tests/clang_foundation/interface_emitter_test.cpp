@@ -1843,6 +1843,7 @@ inline int hidden(int value) __attribute__((swift_private)){return value;}
   for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
   assert(first.success && first.source_bytes.find("swift_name")!=std::string::npos);
   auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+  assert(replay.source_bytes==first.source_bytes);
   auto relocated=emit("\n\n"+source,"relocated-foreign.mm");
   assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
   auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
@@ -1886,6 +1887,7 @@ inline int hidden(int value) __attribute__((swift_private)){return value;}
     assert(original.success);
     auto repeated=emit_c(original.source_bytes,"replayed-foreign.h");
     assert(repeated.success && repeated.identity.semantic_fingerprint==original.identity.semantic_fingerprint);
+    assert(repeated.source_bytes==original.source_bytes);
     auto moved=emit_c("\n"+code,"relocated-foreign.h");
     assert(moved.success && moved.identity.semantic_fingerprint==original.identity.semantic_fingerprint);
   }

@@ -129,6 +129,9 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                     *[arg for name in exports for arg in ('--export-declaration', name)],
                     '--', *flags])
                 sidecar = interface.with_suffix('.objc3i.json')
+                if not report['cases']:
+                    shutil.copyfile(interface, output / 'emitted.objc3i')
+                    shutil.copyfile(sidecar, output / 'emitted.objc3i.json')
                 metadata = json.loads(sidecar.read_text())
                 (check_cpp_metadata if full else check_factory_metadata)(metadata)
                 symbols = run(label + '-symbols', ['nm', '--defined-only', provider])
