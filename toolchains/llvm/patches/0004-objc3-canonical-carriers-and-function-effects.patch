@@ -14973,7 +14973,7 @@ index 6b598d26c..2a59bc5d7 100644
    }
  
 diff --git a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
-index 5f689ad32..1cd0b4742 100644
+index 5f689ad32..1aef5a5f8 100644
 --- a/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 +++ b/clang/lib/UnifiedSymbolResolution/USRGeneration.cpp
 @@ -122,6 +122,7 @@ public:
@@ -14984,7 +14984,35 @@ index 5f689ad32..1cd0b4742 100644
    void VisitBindingDecl(const BindingDecl *D);
    void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *D);
    void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *D);
-@@ -348,6 +349,20 @@ void USRGenerator::VisitNamedDecl(const NamedDecl *D) {
+@@ -212,7 +213,27 @@ bool USRGenerator::EmitDeclName(const NamedDecl *D) {
+   return false;
+ }
+ 
++// Objective-C 3 publication gives unnamed template members a lexical owner.
++// Locations cannot distinguish their native USRs after interface relocation.
++static bool hasObjC3UnnamedTemplateOwner(const NamedDecl *D) {
++  if (D->getParentFunctionOrMethod()) return false;
++  bool Unnamed=false;
++  const DeclContext *Start=dyn_cast<DeclContext>(D);
++  if (!Start) Start=D->getDeclContext();
++  for (const DeclContext *DC=Start; DC; DC=DC->getParent()) {
++    const auto *Record=dyn_cast<CXXRecordDecl>(DC);
++    if (!Record) continue;
++    if (Record->isLambda() || Record->isLocalClass()) return false;
++    Unnamed |= !Record->getIdentifier() && !Record->getTypedefNameForAnonDecl();
++    if (Unnamed && (Record->getDescribedClassTemplate() ||
++                    isa<ClassTemplateSpecializationDecl>(Record))) return true;
++  }
++  return false;
++}
++
+ bool USRGenerator::ShouldGenerateLocation(const NamedDecl *D) {
++  if (Context->getLangOpts().ObjC3 && hasObjC3UnnamedTemplateOwner(D))
++    return false;
+   if (D->isExternallyVisible())
+     return false;
+   if (D->getParentFunctionOrMethod())
+@@ -348,6 +369,20 @@ void USRGenerator::VisitNamedDecl(const NamedDecl *D) {
    }
  }
  
@@ -15005,7 +15033,7 @@ index 5f689ad32..1cd0b4742 100644
  void USRGenerator::VisitVarDecl(const VarDecl *D) {
    // VarDecls can be declared 'extern' within a function or method body,
    // but their enclosing DeclContext is the function, not the TU.  We need
-@@ -613,7 +628,13 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
+@@ -613,7 +648,26 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
        Buf[off] = 'A';
        Out << '@' << *TD;
      } else {
@@ -15016,11 +15044,24 @@ index 5f689ad32..1cd0b4742 100644
 +      if (Context->getLangOpts().ObjC3 && D->isExternallyVisible() &&
 +          D->getParentFunctionOrMethod() && !(Record && Record->isLambda())) {
 +        Out << "local@" << Context->getManglingNumber(D);
++      } else if (Context->getLangOpts().ObjC3 && Record &&
++                 hasObjC3UnnamedTemplateOwner(D)) {
++        const auto *Parent=cast<CXXRecordDecl>(Record->getDeclContext());
++        unsigned Index=0;bool Found=false;
++        for (const auto *Member:Parent->decls()) {
++          const auto *Sibling=dyn_cast<CXXRecordDecl>(Member);
++          if (!Sibling || Sibling->isImplicit() || Sibling->getIdentifier() ||
++              Sibling->getTypedefNameForAnonDecl()) continue;
++          if (Sibling->getCanonicalDecl()==Record->getCanonicalDecl()) {Found=true;break;}
++          ++Index;
++        }
++        if (!Found) {IgnoreResults=true;return;}
++        Out << "template-member@" << Index;
 +      } else if (D->isEmbeddedInDeclarator() && !D->isFreeStanding()) {
          printLoc(Out, D->getLocation(), Context->getSourceManager(), true);
        } else {
          Buf[off] = 'a';
-@@ -725,6 +746,23 @@ void USRGenerator::VisitType(QualType T) {
+@@ -725,6 +779,23 @@ void USRGenerator::VisitType(QualType T) {
        T = Expansion->getPattern();
      }
  
@@ -15044,7 +15085,7 @@ index 5f689ad32..1cd0b4742 100644
      if (const BuiltinType *BT = T->getAs<BuiltinType>()) {
        switch (BT->getKind()) {
        case BuiltinType::Void:
-@@ -989,13 +1027,28 @@ void USRGenerator::VisitType(QualType T) {
+@@ -989,13 +1060,28 @@ void USRGenerator::VisitType(QualType T) {
        Out << 'F';
        VisitType(FT->getReturnType());
        Out << '(';
@@ -22015,10 +22056,10 @@ index 000000000..6b3cc6b29
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3IndexIdentityTest.cpp b/clang/unittests/AST/ObjC3IndexIdentityTest.cpp
 new file mode 100644
-index 000000000..11dbbf3c9
+index 000000000..4c7bcf53a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3IndexIdentityTest.cpp
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,172 @@
 +//===- ObjC3IndexIdentityTest.cpp - Canonical extension USRs
 +//---------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -22154,6 +22195,39 @@ index 000000000..11dbbf3c9
 +      Factories.insert(typeUSR(Context.getTypeDeclType(cast<TypedefNameDecl>(Found.front())),Context));
 +    }
 +    EXPECT_EQ(Factories.size(),2u);
++  }
++}
++
++TEST(ObjC3IndexIdentity, UnnamedTemplateMemberTypesAndOverloadsSurviveRelocation) {
++  for (const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      template<class T>struct Family {struct {T value;} first;struct {T value;} second;};
++      using First=decltype(Family<int>{}.first);using Second=decltype(Family<int>{}.second);
++      void choose(First);void choose(Second);
++    )";
++    auto FirstAST=tooling::buildASTFromCodeWithArgs(Source,
++        {"-x","objective-c++",Standard,"-fobjc-version=3"},"member-provider.mm");
++    auto MovedAST=tooling::buildASTFromCodeWithArgs("\n\n"+Source,
++        {"-x","objective-c++",Standard,"-fobjc-version=3"},"relocated-provider.mm");
++    ASSERT_TRUE(FirstAST);ASSERT_TRUE(MovedAST);
++    ASSERT_FALSE(FirstAST->getDiagnostics().hasErrorOccurred());
++    ASSERT_FALSE(MovedAST->getDiagnostics().hasErrorOccurred());
++    std::set<std::string> Types,Overloads,RelocatedOverloads;
++    for (const char *Name:{"First","Second"}) {
++      auto &A=FirstAST->getASTContext();auto &B=MovedAST->getASTContext();
++      auto Left=A.getTranslationUnitDecl()->lookup(&A.Idents.get(Name));
++      auto Right=B.getTranslationUnitDecl()->lookup(&B.Idents.get(Name));
++      ASSERT_FALSE(Left.empty());ASSERT_FALSE(Right.empty());
++      auto Identity=typeUSR(A.getTypeDeclType(cast<TypedefNameDecl>(Left.front())),A);
++      EXPECT_EQ(Identity,typeUSR(B.getTypeDeclType(cast<TypedefNameDecl>(Right.front())),B));
++      EXPECT_EQ(Identity.find("member-provider.mm"),std::string::npos);Types.insert(Identity);
++    }
++    auto Collect=[](ASTContext &C,std::set<std::string> &Set) {
++      auto Found=C.getTranslationUnitDecl()->lookup(&C.Idents.get("choose"));
++      for (const auto *D:Found) {llvm::SmallString<128> USR;EXPECT_FALSE(index::generateUSRForDecl(D,USR));Set.insert(USR.str().str());}
++    };
++    Collect(FirstAST->getASTContext(),Overloads);Collect(MovedAST->getASTContext(),RelocatedOverloads);
++    EXPECT_EQ(Types.size(),2u);EXPECT_EQ(Overloads.size(),2u);EXPECT_EQ(Overloads,RelocatedOverloads);
 +  }
 +}
 +
