@@ -1815,6 +1815,81 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestFactoryValueArguments() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="factory-value-arguments.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.factory_value_arguments","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.factory_value_arguments","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+#ifndef NATIVE_FACTORY_VALUE_ARGUMENTS_H
+#define NATIVE_FACTORY_VALUE_ARGUMENTS_H
+namespace NativeFactoryValueArguments {
+constexpr auto first(int n){struct Local {int value;};return Local{n};}
+constexpr auto second(int n){struct Local {int value;};return Local{n};}
+template<class T> constexpr auto generic(T n){struct Local {T value;};return Local{n};}
+template<auto V> struct Box {static constexpr int get(){return V.value;}};
+template<> struct Box<first(42)> {static constexpr int get(){return 42;}};
+template<auto V> requires(V.value==40) struct Box<V> {static constexpr int get(){return V.value;}};
+template<auto... V> struct Pack {static constexpr int get(){return (0+...+V.value);}};
+template<auto V> using Alias=Box<V>;
+using First=Box<first(42)>;using Other=Box<second(42)>;
+using Partial=Box<first(40)>;using Generic=Box<generic(42L)>;
+using Packed=Pack<first(40),second(2)>;using Aliased=Alias<first(42)>;
+template<auto V> inline int slot=V.value;
+template<> inline int slot<first(42)> = 42;
+template<auto V> int read(){return V.value;}
+template<> int read<first(42)>(){return 42;}
+inline int local(){return []<auto V>(){return V.value;}.template operator()<first(42)>();}
+int provider_value(First){return First::get();}
+int *provider_slot(){return &slot<first(42)>;}
+}
+#endif
+
+      constexpr auto array_value(int n){struct Local {int values[2];};return Local{{n,2}};}
+      template<auto V> struct ArrayBox {static constexpr int get(){return V.values[0]+V.values[1];}};
+      using Array=ArrayBox<array_value(40)>;
+      inline int target=42;
+      constexpr auto address(){struct Local{int *value;};return Local{&target};}
+      template<auto V> struct PointerBox {static int get(){return *V.value;}};
+      using Pointer=PointerBox<address()>;
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-factory-value.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxFactoryValueArgumentIdentity(find("NativeFactoryValueArguments::First")));
+    assert(HasCxxFactoryValueArgumentIdentity(find("NativeFactoryValueArguments::local")));
+    assert(find("NativeFactoryValueArguments::First").canonical_type_identity!=find("NativeFactoryValueArguments::Other").canonical_type_identity);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxFactoryValueArgumentSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxFactoryValueArgumentIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("constexpr auto hidden(){struct Local{int value;};return Local{42};} template<auto>struct Box{};using Public=Box<hidden()>;", "excluded-factory-value.cpp",{"Box","Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+    auto changed=source;auto position=changed.find("Pack<first(40),second(2)>");assert(position!=std::string::npos);
+    changed.replace(position,25,"Pack<first(40),second(3)>");
+    auto altered=emit(changed);assert(altered.success && altered.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+  }
+}
+
 void TestGenericFactoryProjections() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="generic-factory-projections.cpp",
@@ -5100,6 +5175,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestFactoryValueArguments();
   TestGenericFactoryProjections();
   TestFactoryTemplateArguments();
   TestFactoryTypeProjections();

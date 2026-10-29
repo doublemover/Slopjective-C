@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 82,
+        "minor": 83,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -208,7 +208,8 @@
         "Factory-owned named and unnamed local record, enum and union results with direct auto/decltype(auto) deduction, complete checked bodies and native value lifetimes (source)",
         "Public aliases, callbacks, fields, storage and function signatures using module-owned concrete factory result types, with ordered nominal origins, stable native local-tag identities and preserved import disambiguators (source)",
         "Concrete factory result types as checked template type arguments, including nested/packed/pointer/array/member-pointer uses, full/partial selection, closed generic lambdas and provider-owned specializations/storage (source)",
-        "Public projections of closed namespace/member generic factory result types, with exact function and enclosing class arguments, checked primary-owner dependencies and nontrivial cross-provider values (source)"
+        "Public projections of closed namespace/member generic factory result types, with exact function and enclosing class arguments, checked primary-owner dependencies and nontrivial cross-provider values (source)",
+        "Structural non-type template arguments from public constexpr factory results, preserving exact nominal origins, value bits, recursive packs and checked provider ownership (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",

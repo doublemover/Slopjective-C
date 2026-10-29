@@ -53,6 +53,7 @@ void AddDiagnostic(InterfaceEmissionArtifact &result, llvm::StringRef code,
 bool IsExpressionLocalTag(const clang::TagDecl *declaration);
 std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context,bool *generic=nullptr);
 bool HasOnlyFactoryLocalTypes(clang::QualType type);
+bool HasFactoryValueArgument(const clang::TemplateArgument &,const clang::ASTContext &);
 bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context,bool *generic=nullptr);
 
 std::string CanonicalType(clang::QualType type,
@@ -842,9 +843,10 @@ class RuntimeDeclarationFinder final
 public:
   explicit RuntimeDeclarationFinder(const clang::ASTContext &context)
       : context_(context) {}
-  bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false, HasGenericFactoryArguments=false;
+  bool Found=false, HasCallableEffects=false, HasAddressArguments=false, HasFactoryArguments=false, HasGenericFactoryArguments=false, HasFactoryValueArguments=false;
   void InspectArguments(llvm::ArrayRef<clang::TemplateArgument> arguments) {
     for (const auto &argument:arguments) {
+      HasFactoryValueArguments |= HasFactoryValueArgument(argument,context_);
       HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
       HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_,&HasGenericFactoryArguments);
     }
@@ -857,11 +859,13 @@ public:
   }
   bool VisitTypeLoc(clang::TypeLoc location) {InspectType(location.getType());return true;}
   bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    HasFactoryValueArguments |= HasFactoryValueArgument(argument,context_);
     HasAddressArguments |= HasAddressTemplateArgument(argument,context_);
     HasFactoryArguments |= HasFactoryTemplateArgument(argument,context_,&HasGenericFactoryArguments);
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgument(argument);
   }
   bool TraverseTemplateArgumentLoc(const clang::TemplateArgumentLoc &argument) {
+    HasFactoryValueArguments |= HasFactoryValueArgument(argument.getArgument(),context_);
     HasAddressArguments |= HasAddressTemplateArgument(argument.getArgument(),context_);
     HasFactoryArguments |= HasFactoryTemplateArgument(argument.getArgument(),context_,&HasGenericFactoryArguments);
     return clang::RecursiveASTVisitor<RuntimeDeclarationFinder>::TraverseTemplateArgumentLoc(argument);
@@ -1183,14 +1187,15 @@ bool GenericArgumentKey(const clang::TemplateArgument &argument,
   case clang::TemplateArgument::NullPtr:return type(argument.getNullPtrType());
   case clang::TemplateArgument::Declaration: {
     const auto *declaration=argument.getAsDecl();
-    if (!type(argument.getParamTypeForDecl())) return false;
     if (const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(declaration)) {
+      if (!type(object->getType(),true)) return false;
       unsigned budget=4096;return StructuralArgumentKey(object->getValue(),context,key,budget);
     }
+    if (!type(argument.getParamTypeForDecl())) return false;
     return AddressDeclarationKey(declaration,context,key);
   }
   case clang::TemplateArgument::StructuralValue: {
-    if (!type(argument.getStructuralValueType())) return false;
+    if (!type(argument.getStructuralValueType(),true)) return false;
     unsigned budget = 4096;
     return StructuralArgumentKey(argument.getAsStructuralValue(),context,key,budget);
   }
@@ -2200,6 +2205,14 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
     bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
       return type.isNull() || clang::RecursiveASTVisitor<Origins>::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+      if(argument.getKind()==clang::TemplateArgument::StructuralValue)
+        return TraverseType(argument.getStructuralValueType());
+      if(argument.getKind()==clang::TemplateArgument::Declaration)
+        if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+          return TraverseType(object->getType());
+      return clang::RecursiveASTVisitor<Origins>::TraverseTemplateArgument(argument);
+    }
     bool VisitTagType(clang::TagType *type) {
       const auto *tag=type->getDecl();
       if(const auto *factory=FactoryResultOrigin(tag)) {
@@ -2227,6 +2240,14 @@ bool HasOnlyFactoryLocalTypes(clang::QualType type) {
     bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
       return type.isNull() || clang::RecursiveASTVisitor<Qualified>::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+      if(argument.getKind()==clang::TemplateArgument::StructuralValue)
+        return TraverseType(argument.getStructuralValueType());
+      if(argument.getKind()==clang::TemplateArgument::Declaration)
+        if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+          return TraverseType(object->getType());
+      return clang::RecursiveASTVisitor<Qualified>::TraverseTemplateArgument(argument);
+    }
     bool VisitTagType(clang::TagType *type) {
       const auto *tag=type->getDecl();
       if(IsExpressionLocalTag(tag) || (!tag->getIdentifier() && !tag->getTypedefNameForAnonDecl()))
@@ -2246,6 +2267,22 @@ bool HasFactoryTemplateArgument(const clang::TemplateArgument &argument,const cl
   if(argument.getKind()==clang::TemplateArgument::Pack)
     for(const auto &element:argument.pack_elements())found |= HasFactoryTemplateArgument(element,context,generic);
   return found;
+}
+
+bool HasFactoryValueArgument(const clang::TemplateArgument &argument,const clang::ASTContext &context) {
+  if(argument.getKind()==clang::TemplateArgument::StructuralValue)
+    return !FactoryTypeKey(argument.getStructuralValueType(),context).empty();
+  if(argument.getKind()==clang::TemplateArgument::Declaration)
+    if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))
+      return !FactoryTypeKey(object->getType(),context).empty();
+  if(argument.getKind()==clang::TemplateArgument::Pack)
+    for(const auto &element:argument.pack_elements())
+      if(HasFactoryValueArgument(element,context))return true;
+  if(argument.getKind()==clang::TemplateArgument::Type)
+    if(const auto *specialization=llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(argument.getAsType()->getAsCXXRecordDecl()))
+      for(const auto &element:specialization->getTemplateArgs().asArray())
+        if(HasFactoryValueArgument(element,context))return true;
+  return false;
 }
 
 std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration) {
@@ -5501,6 +5538,8 @@ bool ReadInterfaceDeclarationIdentity(
     identity.canonical_type_identity+=";cxx-template-callable-projections:v1;";
   if (!llvm::isa<clang::NamespaceDecl>(representative)) {
     RuntimeDeclarationFinder arguments(context);VisitPublishedRuntimeContracts(representative,arguments);
+    if (arguments.HasFactoryValueArguments)
+      identity.canonical_type_identity+=";cxx-factory-value-arguments:v1;";
     if (arguments.HasGenericFactoryArguments)
       identity.canonical_type_identity+=";cxx-generic-factory-projections:v1;";
     if (arguments.HasAddressArguments)
@@ -6059,6 +6098,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxMemberTemplateSemantic);
     if (HasCxxMemberAliasTemplateIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxMemberAliasTemplateSemantic);
+    if (HasCxxFactoryValueArgumentIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxFactoryValueArgumentSemantic);
     if (HasCxxGenericFactoryProjectionIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxGenericFactoryProjectionSemantic);
     if (HasCxxFactoryTemplateArgumentIdentity(declaration))
@@ -6254,6 +6295,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxFactoryValueArgumentSemantic,
     kCxxGenericFactoryProjectionSemantic,
     kCxxFactoryTemplateArgumentSemantic,
     kCxxFactoryTypeProjectionSemantic,
@@ -6423,6 +6465,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxEffectfulTemplateMemberSemantic,
     kCxxTemplateCallableProjectionSemantic,
     kCxxAddressTemplateArgumentSemantic,
+    kCxxFactoryValueArgumentSemantic,
     kCxxGenericFactoryProjectionSemantic,
     kCxxFactoryTemplateArgumentSemantic,
     kCxxFactoryTypeProjectionSemantic,

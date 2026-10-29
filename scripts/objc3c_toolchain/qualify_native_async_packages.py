@@ -139,6 +139,13 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    value_arguments={row['qualified_name'] for row in metadata['declarations']
+                     if ';cxx-factory-value-arguments:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-factory-value-arguments.v1' in metadata['required_semantics']
+    assert {'NativeFactoryValueArguments::First','NativeFactoryValueArguments::Other',
+            'NativeFactoryValueArguments::Partial','NativeFactoryValueArguments::Generic',
+            'NativeFactoryValueArguments::Packed','NativeFactoryValueArguments::Aliased',
+            'NativeFactoryValueArguments::local','NativeFactoryValueArguments::provider_value'}<=value_arguments
     generic_factory_projections={row['qualified_name'] for row in metadata['declarations']
                        if ';cxx-generic-factory-projections:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-generic-factory-projections.v1' in metadata['required_semantics']
@@ -170,7 +177,10 @@ def check_factory_metadata(metadata):
             'NativeFactoryTypeProjections::provider_read','NativeFactoryTypeProjections::provider_shared',
             'NativeFactoryTypeProjections::provider_chosen','NativeFactoryTypeProjections::Owned',
             'NativeFactoryTypeProjections::provider_owned','NativeFactoryTypeProjections::provider_owned_value'}<=factory_type_projections
-    for name,marker in [('NativeFactoryTemplateArguments::slot','cxx-variable-specializations'),
+    for name,marker in [('NativeFactoryValueArguments::slot','cxx-variable-specializations'),
+                        ('NativeFactoryValueArguments::read','cxx-function-specializations'),
+                        ('NativeFactoryValueArguments::Box','cxx-class-partial-specializations'),
+                        ('NativeFactoryTemplateArguments::slot','cxx-variable-specializations'),
                         ('NativeFactoryTemplateArguments::read','cxx-function-specializations'),
                         ('NativeFactoryTemplateArguments::Box','cxx-class-partial-specializations')]:
         rows=[row for row in metadata['declarations'] if row['qualified_name']==name and
@@ -329,22 +339,22 @@ def check_cpp_metadata(metadata):
     partial_classes=[row for row in metadata['declarations']
                  if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box'}):
+            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box'}):
         raise ValueError('C++ package lost partial class specialization owner contracts')
     class_specializations=[row for row in metadata['declarations']
                  if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
-            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box'}):
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box'}):
         raise ValueError('C++ package lost explicit class specialization owner contracts')
     variable_specializations=[row for row in metadata['declarations']
                  if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
-            len(variable_specializations)!=12 or len({row['native_symbol_name'] for row in variable_specializations})!=12):
+            len(variable_specializations)!=13 or len({row['native_symbol_name'] for row in variable_specializations})!=13):
         raise ValueError('C++ package lost exact explicit variable specialization bindings')
     specialized=[row for row in metadata['declarations']
                  if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
     if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
-            len(specialized)!=10 or len({row['native_symbol_name'] for row in specialized})!=10):
+            len(specialized)!=11 or len({row['native_symbol_name'] for row in specialized})!=11):
         raise ValueError('C++ package lost exact explicit function specialization bindings')
     for capability in ('objc3.cxx-template-template-parameters.v1',
                        'objc3.cxx-nominal-alias-templates.v1'):

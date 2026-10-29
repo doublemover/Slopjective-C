@@ -48,6 +48,15 @@ int factory_package_checks() {
     if(owned.get().value!=0 || copy.get().value!=40 || moved.get().value!=40 || NativeClosureFactories::State::live!=3)return 226;
   }
   if(NativeClosureFactories::State::live)return 227;
+  {
+    namespace Value=NativeFactoryValueArguments;
+    if(Value::First::get()!=42 || Value::Other::get()!=42 || Value::Partial::get()!=40 ||
+       Value::Generic::get()!=42 || Value::Packed::get()!=42 || Value::Aliased::get()!=42 ||
+       Value::read<Value::first(42)>()!=42 || Value::read<Value::second(42)>()!=42 ||
+       Value::local()!=42 || Value::provider_value({})!=42 ||
+       Value::provider_slot()!=&Value::slot<Value::first(42)>)return 228;
+    Value::slot<Value::first(42)> = 40;if(*Value::provider_slot()!=40)return 229;
+  }
   return 0;
 }
 

@@ -101,6 +101,16 @@ source validation is complete through 2.77; the newer factory spans retain their
 separate focused checks. Coordinated SDK delivery remains batched, with SDK 2.62
 accepted. Full profiles and native Linux AArch64 remain open.
 
+## Structural C++ factory values
+
+The [2.83 source span](linux_cxx_factory_value_arguments.md) publishes structural
+non-type template arguments from complete public constexpr factories. Exact
+factory origins and converted bits preserve primary/full/constrained-partial
+selection, aliases, packs, shared specialization storage and closed generic
+lambdas. Focused source-free and full-fixture smoke checks pass. Broad validation
+and SDK delivery remain batched; other closure/dependent-type and profile work
+remains open.
+
 ## Public generic C++ factory results
 
 The [2.82 source span](linux_cxx_generic_factory_projections.md) publishes local
@@ -110,7 +120,7 @@ records, wrappers, storage and closed generic lambdas preserve checked dependenc
 and consumer instantiation. The emitter suite, 84 tooling tests and 16 focused
 source-free configurations / 96 commands pass, with nontrivial cross-provider
 copy/move/destruction. Broader source/sanitizer validation and SDK delivery stay
-batched. Closure origins, factory-valued non-type arguments and broader profiles
+batched. Closure origins and broader profiles
 remain open.
 
 ## C++ factory template arguments
