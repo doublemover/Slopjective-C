@@ -50941,10 +50941,10 @@ index ae69d152c..cd3a55fd4 100644
      return T->getStmtClass() == CoyieldExprClass;
    }
 diff --git a/clang/lib/AST/ExprCXX.cpp b/clang/lib/AST/ExprCXX.cpp
-index a1ea91994..ff6059388 100644
+index a1ea91994..3f88c51ab 100644
 --- a/clang/lib/AST/ExprCXX.cpp
 +++ b/clang/lib/AST/ExprCXX.cpp
-@@ -2043,3 +2043,55 @@ CXXExpansionSelectExpr::CXXExpansionSelectExpr(const ASTContext &C,
+@@ -2043,3 +2043,59 @@ CXXExpansionSelectExpr::CXXExpansionSelectExpr(const ASTContext &C,
    SubExprs[RANGE] = Range;
    SubExprs[INDEX] = Idx;
  }
@@ -50967,6 +50967,10 @@ index a1ea91994..ff6059388 100644
 +    }
 +    if (auto *Await = dyn_cast<DependentCoawaitExpr>(Current)) {
 +      Current = Await->getOperand(); continue;
++    }
++    if (auto *Await = dyn_cast<UnaryOperator>(Current);
++        Await && Await->getOpcode() == UO_Coawait) {
++      Current = Await->getSubExpr(); continue;
 +    }
 +    auto *Call = dyn_cast<CallExpr>(Current);
 +    if (!Call) return nullptr;
