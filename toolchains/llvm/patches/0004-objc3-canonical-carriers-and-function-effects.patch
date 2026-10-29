@@ -2595,7 +2595,7 @@ index 222881154..e8957f112 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..c3cafe135 100644
+index d743717ad..c9320da0c 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,10 @@
@@ -3175,19 +3175,21 @@ index d743717ad..c3cafe135 100644
      SmallVector<NamedDecl *, 4> ConflictingDecls;
      unsigned IDNS = Decl::IDNS_Ordinary | Decl::IDNS_OrdinaryFriend;
      auto FoundDecls = Importer.findDeclsInToCtx(DC, Name);
-@@ -4052,6 +4378,12 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4052,7 +4378,13 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
          if (!hasSameVisibilityContextAndLinkage(FoundFunction, D))
            continue;
  
+-        if (IsStructuralMatch(D, FoundFunction)) {
 +        if (Importer.IsStructurallyEquivalent(D->getType().getCanonicalType(),
-+                              FoundFunction->getType().getCanonicalType()) &&
++                              FoundFunction->getType().getCanonicalType(), /*Complain=*/false) &&
 +            (!sameObjC3BorrowedSignature(Importer.getFromContext(), D,
 +                                        Importer.getToContext(), FoundFunction) ||
 +             !haveSameObjC3Isolation(D, FoundFunction)))
 +          return make_error<ASTImportError>(ASTImportError::NameConflict);
-         if (IsStructuralMatch(D, FoundFunction)) {
++        if (IsStructuralMatch(D, FoundFunction, /*Complain=*/false)) {
            if (Decl *Def = FindAndMapDefinition(D, FoundFunction))
              return Def;
+           FoundByLookup = FoundFunction;
 @@ -4120,6 +4452,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
@@ -4602,7 +4604,7 @@ index d743717ad..c3cafe135 100644
 +      ObjC3LifetimeStmt(Storage, Keyword, LParen, RParen, Semi);
 +}
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index e0b62591a..478d853e0 100644
+index e0b62591a..ef5ce11d7 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
 @@ -60,6 +60,9 @@
@@ -4848,7 +4850,27 @@ index e0b62591a..478d853e0 100644
        if (!IsStructurallyEquivalent(Context, Proto1->getParamType(I),
                                      Proto2->getParamType(I)))
          return false;
-@@ -1819,8 +2010,12 @@ static bool NameIsStructurallyEquivalent(const TagDecl &D1, const TagDecl &D2) {
+@@ -1794,6 +1985,19 @@ IsRecordContextStructurallyEquivalent(StructuralEquivalenceContext &Context,
+         return false;
+     }
+ 
++    if (Context.LangOpts.ObjC3)
++      if (const auto *Function1=dyn_cast<FunctionDecl>(DC1)) {
++        const auto *Function2=cast<FunctionDecl>(DC2);
++        if(Function1->getNumParams()!=Function2->getNumParams())return false;
++        for(unsigned I=0;I<Function1->getNumParams();++I)
++          if(!IsStructurallyEquivalent(Context,Function1->getParamDecl(I)->getType(),
++                                      Function2->getParamDecl(I)->getType()))return false;
++        const auto *Arguments1=Function1->getTemplateSpecializationArgs();
++        const auto *Arguments2=Function2->getTemplateSpecializationArgs();
++        if(bool(Arguments1)!=bool(Arguments2) || (Arguments1 &&
++            !IsStructurallyEquivalent(Context,Arguments1->asArray(),Arguments2->asArray())))return false;
++      }
++
+     if (auto *D1Spec = dyn_cast<ClassTemplateSpecializationDecl>(DC1)) {
+       auto *D2Spec = dyn_cast<ClassTemplateSpecializationDecl>(DC2);
+       if (!IsStructurallyEquivalent(Context, D1Spec, D2Spec))
+@@ -1819,8 +2023,12 @@ static bool NameIsStructurallyEquivalent(const TagDecl &D1, const TagDecl &D2) {
  }
  
  /// Determine structural equivalence of two records.
@@ -4861,7 +4883,7 @@ index e0b62591a..478d853e0 100644
    // C23 6.2.7p1:
    // ... Moreover, two complete structure, union, or enumerated types declared
    // with the same tag are compatible if members satisfy the following
-@@ -2290,7 +2485,8 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2290,7 +2498,8 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
        return false;
    }
  
@@ -4871,7 +4893,7 @@ index e0b62591a..478d853e0 100644
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2308,7 +2504,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2308,7 +2517,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
      return false;
    }
  
@@ -4883,7 +4905,7 @@ index e0b62591a..478d853e0 100644
  }
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
-@@ -2380,6 +2579,8 @@ static bool IsTemplateDeclCommonStructurallyEquivalent(
+@@ -2380,6 +2592,8 @@ static bool IsTemplateDeclCommonStructurallyEquivalent(
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ClassTemplateDecl *D1,
                                       ClassTemplateDecl *D2) {
@@ -4892,7 +4914,7 @@ index e0b62591a..478d853e0 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2389,9 +2590,32 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2389,9 +2603,32 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                    D2->getTemplatedDecl());
  }
  
@@ -4925,7 +4947,7 @@ index e0b62591a..478d853e0 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2401,9 +2625,28 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2401,9 +2638,28 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                    D2->getTemplatedDecl()->getType());
  }
  
@@ -4954,7 +4976,7 @@ index e0b62591a..478d853e0 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2416,6 +2659,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2416,6 +2672,14 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ConceptDecl *D1,
                                       ConceptDecl *D2) {
@@ -4969,7 +4991,7 @@ index e0b62591a..478d853e0 100644
    // Check template parameters.
    if (!IsTemplateDeclCommonStructurallyEquivalent(Context, D1, D2))
      return false;
-@@ -2443,15 +2694,63 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2443,15 +2707,63 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       TypedefNameDecl *D1, TypedefNameDecl *D2) {
@@ -5033,7 +5055,7 @@ index e0b62591a..478d853e0 100644
    if (!IsStructurallyEquivalent(D1->getIdentifier(), D2->getIdentifier()))
      return false;
  
-@@ -2489,6 +2788,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2489,6 +2801,10 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
  static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       ObjCMethodDecl *Method1,
                                       ObjCMethodDecl *Method2) {
@@ -5044,7 +5066,7 @@ index e0b62591a..478d853e0 100644
    bool PropertiesEqual =
        Method1->isInstanceMethod() == Method2->isInstanceMethod() &&
        Method1->isVariadic() == Method2->isVariadic() &&
-@@ -2600,6 +2903,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -2600,6 +2916,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
                                       Decl *D1, Decl *D2) {
    // FIXME: Check for known structural equivalences via a callback of some sort.
  
@@ -5062,7 +5084,7 @@ index e0b62591a..478d853e0 100644
    D1 = D1->getCanonicalDecl();
    D2 = D2->getCanonicalDecl();
  
-@@ -2784,8 +3098,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
+@@ -2784,8 +3111,24 @@ bool StructuralEquivalenceContext::CheckKindSpecificEquivalence(
      Decl *D1, Decl *D2) {
  
    // Kind mismatch.
@@ -19036,10 +19058,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..c49c0329a
+index 000000000..48810d918
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,2089 @@
+@@ -0,0 +1,2124 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -21127,6 +21149,41 @@ index 000000000..c49c0329a
 +    EXPECT_EQ(Printed.find("factory(int)::"),std::string::npos);
 +    auto Replayed=tooling::buildASTFromCodeWithArgs(Printed,Args,"factory-member-replay.mm");
 +    ASSERT_TRUE(Replayed);EXPECT_FALSE(Replayed->getDiagnostics().hasErrorOccurred());
++  }
++}
++
++TEST(ObjC3FunctionEffectImport, DistinguishesGenericFactoryLocalRecordContexts) {
++  for(const char *Standard:{"-std=c++20","-std=c++23"}) {
++    const std::string Source=R"(
++      template<class T> auto make(T n){struct Local {T value;};return Local{n};}
++      using Integer=decltype(make(0));using Wide=decltype(make(0L));
++      int read(Integer value){return value.value;}
++      int read(Wide value){return value.value;}
++    )";
++    std::vector<std::string> Args={"-x","objective-c++",Standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"generic-context-from.mm");
++    auto To=tooling::buildASTFromCodeWithArgs("",Args,"generic-context-to.mm");
++    ASSERT_TRUE(From && To);ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    auto alias=[&](llvm::StringRef Name)->TypeAliasDecl * {
++      for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls())
++        if(auto *Alias=dyn_cast<TypeAliasDecl>(D);Alias && Alias->getName()==Name)return Alias;
++      return nullptr;
++    };
++    auto *Integer=alias("Integer");auto *Wide=alias("Wide");
++    ASSERT_TRUE(Integer && Wide);
++    llvm::DenseSet<std::pair<Decl *,Decl *>> NonEquivalent;
++    StructuralEquivalenceContext Equivalence(From->getASTContext().getLangOpts(),
++        From->getASTContext(),From->getASTContext(),NonEquivalent,
++        StructuralEquivalenceKind::Default,false,false);
++    EXPECT_FALSE(Equivalence.IsEquivalent(Integer->getUnderlyingType(),Wide->getUnderlyingType()));
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),From->getASTContext(),From->getFileManager(),false);
++    for(auto *D:From->getASTContext().getTranslationUnitDecl()->decls()) {
++      auto Imported=Importer.Import(D);ASSERT_TRUE(bool(Imported))<<llvm::toString(Imported.takeError());
++    }
++    unsigned Count=0;
++    for(auto *D:To->getASTContext().getTranslationUnitDecl()->decls())
++      if(auto *Function=dyn_cast<FunctionDecl>(D);Function && Function->getName()=="read")++Count;
++    EXPECT_EQ(Count,2u);
 +  }
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
