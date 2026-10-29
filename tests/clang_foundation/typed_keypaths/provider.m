@@ -14,6 +14,7 @@ __unsafe_unretained RuntimePathNode *path_clear_optional_parent;
 
 @implementation RuntimePathNode
 @synthesize copied = _copied;
+@synthesize unionValue = _unionValue;
 #if __has_feature(objc_arc)
 @synthesize observer = _observer;
 #endif
@@ -140,3 +141,15 @@ WritableKeyPath<RuntimePathNode *, long> runtime_inherited_path(void) {
   return @keypath(RuntimePathNode, inherited.right);
 }
 #endif
+
+@implementation NSString
++ (instancetype)stringWithUTF8String:(const char *)bytes {
+  NSString *string=class_createInstance(self,0);string->_kvcBytes=bytes;
+#if __has_feature(objc_arc)
+  return string;
+#else
+  return objc_autorelease(string);
+#endif
+}
+- (const char *)UTF8String {return _kvcBytes;}
+@end

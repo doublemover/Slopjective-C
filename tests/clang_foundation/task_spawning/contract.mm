@@ -7,6 +7,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 #include "ownership_wait.h"
 #include "cxx_frame_values.h"
 #include "cxx_frame_borrows.h"
@@ -451,6 +452,77 @@ void checked_cxx_scope_exits(objc3_executor_t *source) {
 
 #include "dynamic_frame_storage.h"
 
+
+// The explicit unsafe admission covers only an atomic observer and exclusively
+// owned scalar state. It does not admit a borrowed/reference capture.
+struct __attribute__((objc_unsafe_sendable)) OwnedCallableWork {
+  std::atomic<int> *live;
+  int value=42;
+  explicit OwnedCallableWork(std::atomic<int> *counter):live(counter){++*live;}
+  OwnedCallableWork(const OwnedCallableWork &other):live(other.live),value(other.value){++*live;}
+  OwnedCallableWork(OwnedCallableWork &&other):live(other.live),value(other.value){++*live;}
+  ~OwnedCallableWork(){--*live;}
+  objc3::task<int> operator()() {
+    co_await objc3::task_yield;
+    assert(value==42);
+    co_return value;
+  }
+};
+int owned_callable_parent(std::atomic<int> *live) __objc3_async
+    __attribute__((objc_task_group)) {
+  auto scope=objc3::task_group_handle::current_scope();
+  auto direct=objc3_task_spawn(OwnedCallableWork(live));
+  auto framed=objc3_task_spawn<int>([value=42]() -> int __objc3_async_frame {
+    return __objc3_await raw_pause(value);
+  });
+  auto grouped=scope.spawn([value=42]() -> int __objc3_async {
+    return __objc3_await pause(value);
+  });
+  auto detached=objc3_task_detached([value=42]() -> int __objc3_async {
+    return __objc3_await pause(value);
+  });
+  int result=__objc3_await direct;
+  result+=__objc3_await framed;
+  result+=__objc3_await grouped;
+  return result+__objc3_await detached;
+}
+void owned_callable_spawn_contract(objc3_executor_t *source) {
+  std::atomic<int> live{0};
+  auto finish=[&](const auto &parent) {
+    for(unsigned step=0;step!=1000000;++step) {
+      uint32_t count=0;
+      assert(objc3_executor_pump(source,UINT32_MAX,&count)==OBJC3_SERVICE_OK);
+      objc3_completion completion{};
+      auto status=objc3_task_get_completion(parent.native_handle(),&completion);
+      if(status==OBJC3_SERVICE_OK)return;
+      assert(status==OBJC3_SERVICE_NOT_READY);
+      std::this_thread::yield();
+    }
+    assert(!"owned callable did not quiesce");
+  };
+  {
+    auto parent=owned_callable_parent(&live).start(source);
+    uint32_t count=0;
+    assert(objc3_executor_pump(source,UINT32_MAX,&count)==OBJC3_SERVICE_OK);
+    finish(parent);
+    assert(parent.result()==168 && live.load()==0);
+  }
+  {
+    auto parent=owned_callable_parent(&live).start(source);
+    uint32_t count=0;
+    assert(objc3_executor_pump(source,1,&count)==OBJC3_SERVICE_OK);
+    parent.cancel();
+    assert(objc3_executor_pump(source,UINT32_MAX,&count)==OBJC3_SERVICE_OK);
+    finish(parent);
+    bool cancelled=false;try{(void)parent.result();}catch(const objc3::task_cancelled &){cancelled=true;}
+    assert(cancelled && live.load()==0);
+  }
+  bool failed=false;
+  try{(void)objc3_task_spawn(OwnedCallableWork(&live));}
+  catch(const objc3::service_failure &error){failed=error.status()==OBJC3_SERVICE_NOT_READY;}
+  assert(failed && live.load()==0);
+}
+
 int main() {
   objc3_executor_t *source = nullptr, *global = nullptr;
   objc3_actor_t *actor = nullptr;
@@ -458,6 +530,7 @@ int main() {
   assert(objc3_executor_get_global(&global) == OBJC3_SERVICE_OK);
   dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
+  owned_callable_spawn_contract(source);
   checked_cxx_scope_exits(source);
   callback_group_owns_callable_until_quiescence(source);
   callback_frame_cleanup_is_scope_work(source);

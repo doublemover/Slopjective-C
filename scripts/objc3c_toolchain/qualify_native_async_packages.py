@@ -139,6 +139,15 @@ def qualify(sdk: Path, output: Path) -> dict:
 
 def check_factory_metadata(metadata):
     """Validate the focused factory projection and template package surface."""
+    nested_types={row['qualified_name'] for row in metadata['declarations']
+                  if ';cxx-nested-factory-types:v1;' in row.get('canonical_type_identity','')}
+    assert 'objc3.cxx-nested-factory-types.v1' in metadata['required_semantics']
+    assert {'NativeNestedFactoryTypes::Left','NativeNestedFactoryTypes::Right',
+            'NativeNestedFactoryTypes::Code','NativeNestedFactoryTypes::Choice',
+            'NativeNestedFactoryTypes::Integer','NativeNestedFactoryTypes::Wide',
+            'NativeNestedFactoryTypes::Closure','NativeNestedFactoryTypes::Owned',
+            'NativeNestedFactoryTypes::Wrapped','NativeNestedFactoryTypes::Holder',
+            'NativeNestedFactoryTypes::shared','NativeNestedFactoryTypes::provider_owned'}<=nested_types
     lambda_results={row['qualified_name'] for row in metadata['declarations']
                     if ';cxx-lambda-factory-results:v1;' in row.get('canonical_type_identity','')}
     assert 'objc3.cxx-lambda-factory-results.v1' in metadata['required_semantics']

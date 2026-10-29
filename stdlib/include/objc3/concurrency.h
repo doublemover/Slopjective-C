@@ -57,6 +57,32 @@ task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
 }
 } // namespace objc3
 
+/* C++ callable spawn owns its closure until native frame teardown, not merely
+ * until completion publication. Result, cancellation, executor and structured
+ * parent contracts are the same as direct task/frame spawn. */
+template<class Work> requires requires(Work &work) {work().release_native();}
+inline auto objc3_task_spawn(Work work) __attribute__((objc_task_spawn)) {
+  using Task=decltype(work());
+  return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child();
+}
+template<class Work> requires requires(Work &work) {work().release_native();}
+inline auto objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
+  using Task=decltype(work());
+  return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).detach();
+}
+template<class R,class Work> requires requires(Work &work) {
+  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+}
+inline objc3::task_handle<R> objc3_task_spawn(Work work) __attribute__((objc_task_spawn)) {
+  return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).start_child();
+}
+template<class R,class Work> requires requires(Work &work) {
+  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+}
+inline objc3::task_handle<R> objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
+  return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).detach();
+}
+
 /* Both native async entry representations preserve the source result type.
  * A Block factory owns its captures in the lazy frame before returning, in ARC
  * and MRC. Startup errors throw service_failure; the lazy owner reclaims the

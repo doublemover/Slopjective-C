@@ -526,6 +526,14 @@ objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
 objc3_service_status objc3_actor_bind_object(void *object, objc3_actor_t *actor);
 objc3_service_status objc3_actor_get_for_object(const void *object,
                                                 objc3_actor_t **out_actor);
+/* Native actor entry uses an object-owned automatic mailbox when no explicit
+ * binding exists. preferred is optional (global by default) and must match an
+ * existing binding. Returns one actor lease; the caller keeps object live during
+ * lookup. Concurrent first entries share one mailbox. The association does not
+ * retain object and cancels/retires its mailbox when the object is destroyed.
+ * Explicit bindings retain their existing bind/unbind ownership contract. */
+objc3_service_status objc3_actor_get_or_create_for_object(
+    void *object, objc3_executor_t *preferred, objc3_actor_t **out_actor);
 objc3_service_status objc3_actor_unbind_object(void *object);
 /* On success ownership of context transfers to the actor. destroy runs once
  * after job returns, or after cancellation discards the queued job. On failure

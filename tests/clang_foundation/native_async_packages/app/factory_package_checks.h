@@ -84,6 +84,25 @@ int factory_package_checks() {
     if(owned.value.value!=0 || copy.value.value!=42 || moved.value.value!=42 || NativeClosureFactories::State::live!=3)return 234;
   }
   if(NativeClosureFactories::State::live)return 235;
+  {
+    namespace Nested=NativeNestedFactoryTypes;
+    Nested::Left left{40};Nested::Right right{2};Nested::Holder holder{left,right};Nested::Wrapped wrapped{left};
+    Nested::Integer integer{40};Nested::Wide wide{2L};Nested::Closure closure{42};
+    Nested::Choice choice{.number=42};
+    if(Nested::read(left)+Nested::read(right)!=42 || holder.left.value+holder.right.value!=42 || wrapped.value.value!=40 ||
+       integer.value+wide.value!=42 || closure.value!=42 || choice.number!=42 || static_cast<int>(Nested::Code::good)!=42 ||
+       Nested::provider_read(left)!=40 || Nested::provider_shared()!=&Nested::shared)return 236;
+    auto aggregate=Nested::provider_aggregate(40);auto callback=Nested::provider_callback();
+    auto member=Nested::provider_member(2);Nested::MemberSecond other=Nested::member_factory(40).second(2);
+    if(aggregate.first.value+aggregate.second.value!=42 || callback.first(callback.second)!=42 ||
+       Nested::wrapped(42).value.value!=42 || Nested::wrapped(42L).value.value!=42 ||
+       Nested::provider_pointer(42)!=Nested::pointer(42) || &Nested::provider_reference()!=&Nested::reference() ||
+       Nested::read(member)!=42 || Nested::read(other)!=42 || Nested::member_factory(40).make(2L).value!=42 ||
+       Nested::member_factory(40).nested(2).value.value!=42)return 239;
+    auto owned=Nested::provider_owned(42);auto copy=owned;auto moved=static_cast<Nested::Owned &&>(owned);
+    if(owned.value.value!=0 || copy.value.value!=42 || moved.value.value!=42 || NativeClosureFactories::State::live!=3)return 237;
+  }
+  if(NativeClosureFactories::State::live)return 238;
   return 0;
 }
 

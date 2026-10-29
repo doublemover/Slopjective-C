@@ -358,7 +358,8 @@
     "NativeGenericFactoryProjections",
     "NativeFactoryValueArguments",
     "NativeClosureResultProjections",
-    "NativeLambdaFactoryResults"
+    "NativeLambdaFactoryResults",
+    "NativeNestedFactoryTypes"
   ],
   "dependencies": []
 }

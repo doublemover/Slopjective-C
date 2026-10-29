@@ -329,6 +329,14 @@ int main(void) {
     }
     assert(path_destroyed == destroyed_before_owned_getter + 1);
 
+    NSString *kvc=KeyPathToKVCString(@keypath(RuntimePathNode,child.count));
+    assert(kvc && !strcmp([kvc UTF8String],"child.count"));
+    assert(!KeyPathToKVCString(@keypath(RuntimePathNode,pair.first)));
+    PathUnion union_value={.value=40};root.unionValue=union_value;
+    WritableKeyPath<RuntimePathNode *,long> union_path=@keypath(RuntimePathNode,unionValue.value);
+    assert(KeyPathGet(union_path,root)==40);
+    root[union_path]+=2;
+    assert(KeyPathGet(union_path,root)==42 && root.unionValue.value==42);
     PathPair pair = {21, 22};
     KeyPathSet(runtime_pair_path(), root, pair);
     PathPair actual = KeyPathGet(runtime_pair_path(), root);

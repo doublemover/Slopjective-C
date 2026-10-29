@@ -40097,10 +40097,10 @@ index 000000000..1e0226ed1
 +#endif
 diff --git a/clang/include/clang/AST/ObjC3KeyPath.h b/clang/include/clang/AST/ObjC3KeyPath.h
 new file mode 100644
-index 000000000..4412c4f89
+index 000000000..82c046abc
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3KeyPath.h
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,217 @@
 +//===--- ObjC3KeyPath.h - Native key-path record identity ---------*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -40192,7 +40192,7 @@ index 000000000..4412c4f89
 +enum class ObjC3KeyPathMemberKind { None, ReadOnly, Metadata, Get, Set };
 +
 +struct ObjC3KeyPathApplicationInfo {
-+  unsigned Operation = 0; // Get, Set, Metadata, AsReadOnly, in that order.
++  unsigned Operation = 0; // Get, Set, Metadata, AsReadOnly, KVCString, in that order.
 +  const CallExpr *Syntax = nullptr;
 +};
 +
@@ -40202,6 +40202,7 @@ index 000000000..4412c4f89
 +  case 1: return "KeyPathSet";
 +  case 2: return "KeyPathMetadata";
 +  case 3: return "KeyPathAsReadOnly";
++  case 4: return "KeyPathToKVCString";
 +  default: return {};
 +  }
 +}
@@ -40225,7 +40226,7 @@ index 000000000..4412c4f89
 +    Marked |= Attribute->getAnnotation() == "objc3.keypath.application.v2";
 +  if (!Marked)
 +    return false;
-+  for (unsigned Kind = 0; Kind != 4; ++Kind)
++  for (unsigned Kind = 0; Kind != 5; ++Kind)
 +    if (Function->getName() == getObjC3KeyPathOperationName(Kind)) {
 +      const unsigned Count = Kind == 0 ? 2 : Kind == 1 ? 3 : 1;
 +      if (Syntax->getNumArgs() != Count)
@@ -40349,10 +40350,10 @@ index 9514dead3..e9fbcba4f 100644
    Scope *TheScope;
 diff --git a/clang/lib/Parse/ParseObjC3KeyPath.cpp b/clang/lib/Parse/ParseObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..173e860ae
+index 000000000..ae004bb80
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3KeyPath.cpp
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,107 @@
 +//===--- ParseObjC3KeyPath.cpp - Native typed key paths --------------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -40435,7 +40436,8 @@ index 000000000..173e860ae
 +  SourceLocation KeywordLoc = ConsumeToken();
 +  const unsigned Kind = Operation->isStr("KeyPathGet") ? 0
 +                      : Operation->isStr("KeyPathSet") ? 1
-+                      : Operation->isStr("KeyPathMetadata") ? 2 : 3;
++                      : Operation->isStr("KeyPathMetadata") ? 2
++                      : Operation->isStr("KeyPathAsReadOnly") ? 3 : 4;
 +  BalancedDelimiterTracker Parens(*this, tok::l_paren);
 +  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
 +                              Operation->getNameStart()))
@@ -40813,14 +40815,15 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..ab2aa84c2
+index 000000000..e42b5b17a
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3106 @@
+@@ -0,0 +1,3138 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
 +#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/StmtCXX.h"
@@ -41696,6 +41699,36 @@ index 000000000..ab2aa84c2
 +      InheritedEffects[Locations[I]] = std::move(Effect);
 +    }
 +  }
++  SmallVector<std::pair<Decl *,Stmt *>,4> closureBodies(const Expr *Closure) const {
++    if(const auto *Block=dyn_cast<BlockExpr>(Closure)) {
++      auto *Declaration=const_cast<BlockDecl *>(Block->getBlockDecl());
++      return {{Declaration,Declaration->getBody()}};
++    }
++    const auto *Lambda=cast<LambdaExpr>(Closure);
++    SmallVector<std::pair<Decl *,Stmt *>,4> Bodies;
++    if(Lambda->isGenericLambda())
++      if(const auto *Pattern=Lambda->getCallOperator()->getDescribedFunctionTemplate())
++        for(auto *Function:Pattern->specializations()) {
++          const auto *Prototype=Function->getType()->getAs<FunctionProtoType>();
++          if(Function->isInvalidDecl() || Function->getType()->isDependentType() ||
++              !Function->hasBody() || !Prototype || Prototype->getObjC3FunctionEffects().Async ||
++              isa<CoroutineBodyStmt>(Function->getBody()))
++            return {{Lambda->getCallOperator(),Lambda->getBody()}};
++          Bodies.push_back({Function,Function->getBody()});
++        }
++    if(Bodies.empty())Bodies.push_back({Lambda->getCallOperator(),Lambda->getBody()});
++    return Bodies;
++  }
++  bool qualifiedGenericCapture(const LambdaExpr *Lambda) const {
++    if(!Lambda->isGenericLambda())return true;
++    for(const auto &[Declaration,Body]:closureBodies(Lambda)) {
++      (void)Body;
++      const auto *Function=cast<FunctionDecl>(Declaration);
++      if(!Function->getTemplateSpecializationArgs() || Function->getType()->isDependentType())return false;
++    }
++    return true;
++  }
++
 +  OwnerSummary futureOwnerRequirements(const Expr *Closure) {
 +    if (auto Found = OwnerSummaries->find(Closure); Found != OwnerSummaries->end())
 +      return Found->second;
@@ -41703,16 +41736,13 @@ index 000000000..ab2aa84c2
 +    // Each capture has a symbolic owner root, so local aliases/assignments and
 +    // nested closures use the ordinary CFG solver without recursive inlining.
 +    (*OwnerSummaries)[Closure] = {};
-+    Decl *Declaration;
-+    Stmt *NestedBody;
-+    if (const auto *Block = dyn_cast<BlockExpr>(Closure)) {
-+      Declaration = const_cast<BlockDecl *>(Block->getBlockDecl());
-+      NestedBody = cast<BlockDecl>(Declaration)->getBody();
-+    } else {
-+      const auto *Lambda = cast<LambdaExpr>(Closure);
-+      Declaration = Lambda->getCallOperator();
-+      NestedBody = Lambda->getBody();
-+    }
++    OwnerSummary Result;
++    auto Append=[](auto &Values,const VarDecl *Variable) {
++      if(!llvm::is_contained(Values,Variable))Values.push_back(Variable);
++    };
++    // Each closed synchronous specialization has its own CFG and parameter
++    // types. Union the required owners/effects across all materialized bodies.
++    for(const auto &[Declaration,NestedBody]:closureBodies(Closure)) {
 +    BorrowedFlow Summary(Actions, Declaration, NestedBody);
 +    Summary.IsOwnerSummary = true;
 +    Summary.OwnerSummaries = OwnerSummaries;
@@ -41729,16 +41759,16 @@ index 000000000..ab2aa84c2
 +        Summary.InheritedOwners[Capture.Variable] = std::move(Identity);
 +      }
 +    Summary.check();
-+    OwnerSummary Result;
 +    for (const auto &Capture : Captures) {
-+      if (Summary.AcquiredOwnerRoots.count(Capture.Variable)) Result.Borrowed.push_back(Capture.Variable);
-+      if (Summary.ConsumedOwnerRoots.count(Capture.Variable)) Result.Consumed.push_back(Capture.Variable);
-+      if (Summary.InvokedCallableCaptures.count(Capture.Variable)) Result.Invoked.push_back(Capture.Variable);
-+      if (Summary.MutatedCaptures.count(Capture.Variable)) Result.Mutated.push_back(Capture.Variable);
++      if (Summary.AcquiredOwnerRoots.count(Capture.Variable)) Append(Result.Borrowed,Capture.Variable);
++      if (Summary.ConsumedOwnerRoots.count(Capture.Variable)) Append(Result.Consumed,Capture.Variable);
++      if (Summary.InvokedCallableCaptures.count(Capture.Variable)) Append(Result.Invoked,Capture.Variable);
++      if (Summary.MutatedCaptures.count(Capture.Variable)) Append(Result.Mutated,Capture.Variable);
 +    }
 +    for (unsigned Token : Summary.InvokedCallableTokens)
 +      if (auto Path = Summary.SymbolicCallablePaths.find(Token); Path != Summary.SymbolicCallablePaths.end())
 +        Result.InvokedPaths.push_back(Path->second);
++    }
 +    (*OwnerSummaries)[Closure] = Result;
 +    return Result;
 +  }
@@ -42952,7 +42982,8 @@ index 000000000..ab2aa84c2
 +    while (!Pending.empty()) {
 +      const auto *Record = Pending.pop_back_val();
 +      if (!Seen.insert(Record).second) continue;
-+      if (Record->getNumBases() || Record->isPolymorphic() || Record->isUnion()) return false;
++      if (Record->getNumBases() || Record->isPolymorphic() ||
++          (Record->isUnion() && !Record->isTriviallyCopyable())) return false;
 +      for (const auto *Member : Record->methods())
 +        if (Member->isCopyOrMoveConstructorOrAssignment() &&
 +            !Member->isTrivial() && !Member->isImplicit()) return false;
@@ -43370,7 +43401,9 @@ index 000000000..ab2aa84c2
 +            if (UnstableFutureOwners.count(Invocation))
 +              diagnose(Invocation, "an owner init-capture requiring an explicit stable lifetime binding");
 +            if (NestedCallable && !NestedCallable->isInvalidDecl()) {
-+              BorrowedFlow Nested(Actions, NestedCallable, NestedBody);
++              bool NestedInvalid=false;
++              for(const auto &[Declaration,SpecializedBody]:closureBodies(Invocation)) {
++              BorrowedFlow Nested(Actions, Declaration, SpecializedBody);
 +              Nested.OwnerSummaries = OwnerSummaries;
 +              Nested.Origins = Origins;
 +              Nested.OwnerRoots = OwnerRoots;
@@ -43422,11 +43455,12 @@ index 000000000..ab2aa84c2
 +                  }
 +                }
 +              }
-+              const bool NestedInvalid = Nested.check();
++              NestedInvalid |= Nested.check();
++              }
 +              Invalid |= NestedInvalid;
 +              if (!NestedInvalid && Lambda &&
 +                  (State.CapturedValues[Slot].any() || !FutureBorrowCaptures.lookup(Lambda).empty())) {
-+                bool RequiresContract = Lambda->isGenericLambda();
++                bool RequiresContract = !qualifiedGenericCapture(Lambda);
 +                if (Lambda->isMutable()) {
 +                  const auto *Prototype = Lambda->getCallOperator()->getType()->getAs<FunctionProtoType>();
 +                  RequiresContract |= isa<CoroutineBodyStmt>(Lambda->getBody()) ||
@@ -43953,10 +43987,10 @@ index 000000000..b19de611d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..59a23f0f0
+index 000000000..c96c959f4
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1131 @@
+@@ -0,0 +1,1138 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -44061,6 +44095,9 @@ index 000000000..59a23f0f0
 +    }
 +    if (const auto *Array = C.getAsArrayType(T))
 +      return classify(Array->getElementType());
++    // Class metadata is immutable; transferring a Class value does not transfer
++    // an instance or attest the instance type's Sendable conformance.
++    if (T->isObjCClassType())return {true, false};
 +    if (const auto *Object = T->getAs<ObjCObjectPointerType>()) {
 +      if (isObjC3Actor(Object->getInterfaceDecl()))
 +        return {true, false};
@@ -44089,7 +44126,7 @@ index 000000000..59a23f0f0
 +      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
 +        // An implicit ARC destructor only releases the fields checked below.
 +        // User-provided destruction still needs explicit unsafe admission.
-+        Safe = Class->isAggregate() &&
++        Safe = (Class->isAggregate() || Class->isLambda()) &&
 +               (!Class->hasNonTrivialDestructor() ||
 +                !Class->hasUserDeclaredDestructor());
 +      for (const auto *Field : Definition->fields()) {
@@ -44671,25 +44708,29 @@ index 000000000..59a23f0f0
 +  if (isolationFrameScalar(T, Result)) return true;
 +  if (!T->isRecordType()) return false;
 +  unsigned Budget = 256;
-+  auto Check = [&](auto &&Self, QualType Value, unsigned Depth) -> bool {
++  auto Check = [&](auto &&Self, QualType Value, unsigned Depth, bool UnionArm = false) -> bool {
 +    if (Value.isNull() || Depth > 64 || Budget == 0 ||
 +        Value->isDependentType() || Value.isVolatileQualified() ||
 +        Value->isAtomicType() || Value->isReferenceType() ||
 +        getObjC3ResourceTypeContract(S.Context, Value).Cleanup)
 +      return false;
 +    --Budget;
-+    if (Value->isObjCRetainableType()) return S.getLangOpts().ObjCAutoRefCount;
++    if (Value->isObjCRetainableType()) return !UnionArm && S.getLangOpts().ObjCAutoRefCount;
 +    if (const auto *Array = S.Context.getAsArrayType(Value))
 +      return isa<ConstantArrayType>(Array) &&
-+             Self(Self, Array->getElementType(), Depth + 1);
++             Self(Self, Array->getElementType(), Depth + 1, UnionArm);
 +    if (const auto *Record = Value->getAs<RecordType>()) {
 +      const auto *Definition = Record->getDecl()->getDefinition();
-+      if (!Definition || Definition->isUnion()) return false;
++      if (!Definition) return false;
++      // Plain unions have native object-representation copy semantics. Managed
++      // union arms need an active-arm ownership contract and remain rejected.
++      if (Definition->isUnion() && !Value.isTriviallyCopyableType(S.Context))return false;
++      UnionArm |= Definition->isUnion();
 +      for (const auto *Field : Definition->fields())
-+        if (!Self(Self, Field->getType(), Depth + 1)) return false;
++        if (!Self(Self, Field->getType(), Depth + 1, UnionArm)) return false;
 +      if (const auto *Class = dyn_cast<CXXRecordDecl>(Definition))
 +        for (const auto &Base : Class->bases())
-+          if (!Self(Self, Base.getType(), Depth + 1)) return false;
++          if (!Self(Self, Base.getType(), Depth + 1, UnionArm)) return false;
 +      return true;
 +    }
 +    return isolationFrameScalar(Value, false);
@@ -45118,10 +45159,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..be39acfa7
+index 000000000..6d1168aed
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1410 @@
+@@ -0,0 +1,1438 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -45136,6 +45177,7 @@ index 000000000..be39acfa7
 +#include "clang/AST/ExprCXX.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/ObjC3KeyPath.h"
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/ObjC3Isolation.h"
 +#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
@@ -45393,6 +45435,18 @@ index 000000000..be39acfa7
 +    return false;
 +  };
 +  return Visit(Visit, Value);
++}
++
++bool unionHasManagedLeaves(QualType Type,unsigned Depth=0) {
++  if(Depth>64)return true;
++  if(Type->isObjCRetainableType() || containsObjC3CarrierManagedStorage(Type))return true;
++  if(const auto *Array=Type->getAsArrayTypeUnsafe())return unionHasManagedLeaves(Array->getElementType(),Depth+1);
++  if(const auto *Record=Type->getAs<RecordType>())
++    if(const auto *Definition=Record->getDecl()->getDefinition()) {
++      for(const auto *Field:Definition->fields())
++        if(unionHasManagedLeaves(Field->getType(),Depth+1))return true;
++    }
++  return false;
 +}
 +
 +std::string typeIdentity(ASTContext &Context, QualType Type) {
@@ -46177,13 +46231,14 @@ index 000000000..be39acfa7
 +  for (unsigned I = 0; I != Members.size(); ++I) {
 +    if (const auto *RecordType = Current->getAs<clang::RecordType>()) {
 +      RecordDecl *Record = RecordType->getDecl()->getDefinition();
-+      if (!Record || Record->isUnion() ||
++      if (!Record ||
 +          (!Record->getIdentifier() && !Record->getTypedefNameForAnonDecl()) ||
 +          !Current.isTriviallyCopyableType(Context) ||
-+          erasesOwnership(*this, Current)) {
++          erasesOwnership(*this, Current) ||
++          (Record->isUnion() && unionHasManagedLeaves(Current))) {
 +        reject(*this, MemberLocs[I],
 +               "key-path record traversal requires a complete trivially "
-+               "copyable nonunion record without borrowed/resource ownership");
++               "copyable record without borrowed/resource or managed-union ownership");
 +        return ExprError();
 +      }
 +      FieldDecl *Field = nullptr;
@@ -46432,7 +46487,7 @@ index 000000000..be39acfa7
 +    reject(S, Loc, "key-path application requires a typed key-path value");
 +    return ExprError();
 +  }
-+  if (Kind == 2) {
++  if (Kind == 2 || Kind == 4) {
 +    QualType Descriptor =
 +        importedType(S, "objc3_keypath_descriptor_v2", Loc);
 +    QualType Component =
@@ -46491,15 +46546,29 @@ index 000000000..be39acfa7
 +  // Descriptor-only operations have one operand and one use. Defer its
 +  // evaluation to that use; eager aggregate OVE storage would be materialized
 +  // twice by the constant evaluator's member-access path.
-+  if (Kind == 2 || Kind == 3)
++  if (Kind == 2 || Kind == 3 || Kind == 4)
 +    cast<OpaqueValueExpr>(Path)->setIsUnique(true);
 +  ExprResult Result;
 +  if (Kind == 3) {
 +    Result = Info.Read ? field(S, Path, Info.Read) : Path;
-+  } else if (Kind == 2) {
-+    if (Info.Read)
-+      Path = field(S, Path, Info.Read);
++  } else if (Kind == 2 || Kind == 4) {
++    if (Info.Read)Path = field(S, Path, Info.Read);
 +    Result = field(S, Path, Info.Metadata);
++    if(Kind == 4) {
++      if(S.getLangOpts().ObjC3Profile)
++        S.Diag(Loc,S.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++            DiagnosticIDs::Warning,"explicit KVC conversion loses typed key-path root/value safety; incompatible metadata returns nil"));
++      LookupResult Hook(S,&S.Context.Idents.get("objc3_keypath_kvc_string"),Loc,Sema::LookupOrdinaryName);
++      Hook.suppressDiagnostics();S.LookupQualifiedName(Hook,S.Context.getTranslationUnitDecl());
++      auto *Function=Hook.getAsSingle<FunctionDecl>();
++      if(!Function || Result.isInvalid()) {
++        reject(S,Loc,"KeyPathToKVCString requires the native key-path runtime header");return ExprError();
++      }
++      ExprResult Callee=S.BuildDeclRefExpr(Function,Function->getType(),VK_LValue,Loc);
++      if(Callee.isInvalid())return ExprError();
++      Expr *Argument=Result.get();
++      Result=S.BuildCallExpr(nullptr,Callee.get(),Loc,Argument,RParenLoc);
++    }
 +  } else {
 +    FieldDecl *Callable = Kind == 1 ? Info.Set : Info.Get;
 +    if (Kind == 0 && Info.Read)
@@ -46800,10 +46869,10 @@ index 000000000..d172593fa
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-keypath-record-fields.m b/clang/test/ObjC3/Sema/typed-keypath-record-fields.m
 new file mode 100644
-index 000000000..edcafb409
+index 000000000..bed041dae
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-keypath-record-fields.m
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,75 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +#include "../Inputs/keypath-abi.h"
@@ -46841,7 +46910,9 @@ index 000000000..edcafb409
 +  WritableKeyPath<RecordPathRoot *, unsigned> bits = @keypath(RecordPathRoot, bitRecord.bits);
 +  KeyPathSet(bits, root, 10U);
 +  (void)KeyPathGet(bits, root);
-+  (void)@keypath(RecordPathRoot, unionRecord.value); // expected-error {{key-path record traversal requires a complete trivially copyable nonunion record without borrowed/resource ownership}}
++  WritableKeyPath<RecordPathRoot *,int> union_path=@keypath(RecordPathRoot, unionRecord.value);
++  KeyPathSet(union_path,root,42);
++  (void)KeyPathGet(union_path,root);
 +}
 +
 +#ifdef __cplusplus
@@ -46871,6 +46942,12 @@ index 000000000..edcafb409
 +  (void)@keypath(RecordPathRoot, ambiguous.value); // expected-error {{key-path component must name an unambiguous visible record field}}
 +}
 +#endif
++
++extern id objc3_keypath_kvc_string(const objc3_keypath_descriptor_v2 *);
++id explicit_kvc(RecordPathRoot * _Nonnull root) {
++  (void)root;
++  return KeyPathToKVCString(@keypath(RecordPathRoot,record));
++}
 diff --git a/clang/test/ObjC3/Sema/typed-keypaths.m b/clang/test/ObjC3/Sema/typed-keypaths.m
 new file mode 100644
 index 000000000..2ab3c034f
@@ -47959,10 +48036,10 @@ index 000000000..81b4197d7
 +struct BorrowedAddress { const char **pointer; };
 diff --git a/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
 new file mode 100644
-index 000000000..0e3670e20
+index 000000000..151f30bd3
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-lambda-captures.mm
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,163 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc3-profile=strict-system -fsyntax-only -verify %s
@@ -48057,7 +48134,7 @@ index 000000000..0e3670e20
 +}
 +void generic_capture(id owner) {
 +  const char *pointer=bytes(owner);
-+  auto work=[pointer](auto) {use_noescape(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  auto work=[pointer](auto) {use_noescape(pointer);};
 +  work(0);
 +}
 +void persistent_capture(id owner) {
@@ -48099,6 +48176,33 @@ index 000000000..0e3670e20
 +  work.operator()(); // expected-error {{after its captured owner lifetime ended}}
 +}
 +#endif
++
++void closed_generic_variants(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer]<class T>(T value){if(value)use_noescape(pointer);};
++  work(1);work(2L);
++  auto copied=work;copied(1U);
++}
++void closed_generic_escape(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer](auto){escape(pointer);}; // expected-error {{borrowed pointer escapes}}
++  work(0);
++}
++void open_generic_capture(id owner) {
++  const char *pointer=bytes(owner);
++  auto work=[pointer](auto){use_noescape(pointer);}; // expected-error {{mutable or generic C++ lambda capture}}
++  (void)work;
++}
++union BorrowedUnionCopy {const char *pointer;unsigned long bits;};
++void copied_union_capture(id owner) {
++  BorrowedUnionCopy original{.pointer=bytes(owner)};
++  auto work=[copy=original]{use_noescape(copy.pointer);};work();
++}
++void copied_union_escape(id owner) {
++  BorrowedUnionCopy original{.pointer=bytes(owner)};
++  auto work=[copy=original]{escape(copy.pointer);}; // expected-error {{borrowed pointer escapes}}
++  work();
++}
 diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-manual-release.h b/clang/test/ObjC3/Sema/Inputs/borrowed-manual-release.h
 new file mode 100644
 index 000000000..336fbb33a
@@ -48833,7 +48937,7 @@ index 000000000..be1320b34
 +@end
 diff --git a/clang/test/ObjC3/Sema/borrowed-future-captures.mm b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 new file mode 100644
-index 000000000..7e8e6b55c
+index 000000000..e86dfaeb8
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-future-captures.mm
 @@ -0,0 +1,170 @@
@@ -48912,7 +49016,7 @@ index 000000000..7e8e6b55c
 +  work();
 +}
 +void unqualified_generic(void *owner) {
-+  auto work=[owner](auto){future_use(future_bytes(owner));}; // expected-error {{mutable or generic C++ lambda capture}}
++  auto work=[owner](auto){future_use(future_bytes(owner));};
 +  work(0);
 +}
 +void materialize_owner(void) {

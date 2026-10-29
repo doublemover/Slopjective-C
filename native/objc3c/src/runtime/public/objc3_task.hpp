@@ -16,6 +16,7 @@
 #include <coroutine>
 #include <exception>
 #include <new>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -350,6 +351,10 @@ public:
   }
 };
 
+namespace task_detail {
+template<class Task,class Work> Task own_callable_as(Work work);
+}
+
 template <class T> struct task_group_next_request;
 struct task_group_cleanup_request;
 
@@ -397,6 +402,13 @@ public:
   explicit operator bool() const noexcept { return group_ != nullptr; }
   template <class U> void add(const basic_task_handle<U> &task) const {
     task_detail::check(objc3_task_group_add(group_, task.native_handle()));
+  }
+  // Keep the callable's address stable through the spawned frame's actual
+  // destruction, including coroutine lambdas that borrow their closure object.
+  template<class Work> requires requires(Work &work) {work().release_native();}
+  auto spawn(Work work) const __attribute__((objc_task_spawn)) {
+    using Task=decltype(work());
+    return std::move(task_detail::own_callable_as<Task>(std::move(work))).start_child(*this);
   }
   void close() const { task_detail::check(objc3_task_group_close(group_)); }
   void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
@@ -886,6 +898,33 @@ public:
     return task_handle<T>(started);
   }
 };
+
+namespace task_detail {
+template<class Task,class Work> Task own_callable_as(Work work) {
+  static_assert(std::is_nothrow_destructible_v<Work>,
+      "spawned callable destruction must not throw");
+  struct Context {
+    Work work;
+    objc3_async_frame inner{};
+    explicit Context(Work &&value):work(std::move(value)) {}
+    ~Context(){(void)objc3_async_frame_dispose(&inner);}
+    static void resume(void *opaque,objc3_task_t *owner) {
+      auto *context=static_cast<Context *>(opaque);
+      context->inner.resume(context->inner.context,owner);
+    }
+    static void destroy(void *opaque) noexcept {delete static_cast<Context *>(opaque);}
+  };
+  auto context=std::make_unique<Context>(std::move(work));
+  if constexpr(std::is_same_v<decltype(context->work()),objc3_async_frame>)
+    context->inner=context->work();
+  else context->inner=std::move(context->work()).release_native();
+  objc3_async_frame frame{sizeof(objc3_async_frame),OBJC3_ASYNC_ABI_VERSION,
+      context.get(),Context::resume,Context::destroy,context->inner.result_type};
+  auto result=Task::from_native(&frame);
+  (void)context.release();
+  return result;
+}
+}
 
 /* Borrow an existing raw C handle into a lazy typed await. The adapter takes
  * its own lease immediately. Failure/type rejection releases only that lease;

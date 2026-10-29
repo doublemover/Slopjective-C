@@ -1815,6 +1815,117 @@ namespace NativeAddressArguments {
   }
 }
 
+void TestNestedFactoryTypes() {
+  for(const auto *standard:{"-std=c++20","-std=c++23"}) {
+    auto emit=[&](const std::string &source,const char *file="nested-factory-types.cpp",
+                  const std::vector<std::string> &exports=std::vector<std::string>{}) {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(source,
+          {"-x","objective-c++",standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+           "--target=x86_64-unknown-linux-gnu"},file);
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                   "fixture.nested_factory_types","test",{}));
+      return EmitSemanticInterface(ast->getASTContext(),"fixture.nested_factory_types","test",{},{},{},exports);
+    };
+    const std::string source=R"(
+      namespace NativeClosureFactories {
+        struct State {int value;State(int n):value(n){};State(const State &)=default;State(State &&other):value(other.value){other.value=0;}~State(){}};
+      }
+#ifndef NATIVE_NESTED_FACTORY_TYPES_H
+#define NATIVE_NESTED_FACTORY_TYPES_H
+namespace NativeNestedFactoryTypes {
+inline auto factory(int n){
+  struct Root {
+    struct Left {struct Value {int value;};};
+    struct Right {struct Value {int value;};};
+    enum class Code:int {good=42};
+    union Choice {int number;double real;};
+    Left::Value value;
+  };
+  return Root{{n}};
+}
+using Root=decltype(factory(0));using Left=Root::Left::Value;using Right=Root::Right::Value;
+using Code=Root::Code;using Choice=Root::Choice;
+template<class T> auto family(T n){struct Root {struct Leaf {T value;};Leaf value;};return Root{{n}};}
+using Integer=decltype(family(0))::Leaf;using Wide=decltype(family(0L))::Leaf;
+inline auto closure(int base){return [base](int n){struct Root{struct Leaf{int value;};Leaf value;};return Root{{base+n}};};}
+using Closure=decltype(closure(0)(0))::Leaf;
+inline auto owned(int n){struct Root{struct Leaf{NativeClosureFactories::State value;};Leaf value;};return Root{{NativeClosureFactories::State(n)}};}
+using Owned=decltype(owned(0))::Leaf;
+template<class T> struct Box{T value;};using Wrapped=Box<Left>;
+struct Holder{Left left;Right right;};
+inline int read(Left value){return value.value;}
+inline int read(Right value){return value.value;}
+inline Left shared{42};
+int provider_read(Left value){return value.value;}
+Left *provider_shared(){return &shared;}
+Owned provider_owned(int n){return {NativeClosureFactories::State(n)};}
+template<class A,class B> struct Pair {A first;B second;};
+inline auto aggregate(int n){struct A{int value;};struct B{int value;};return Pair<A,B>{{n},{2}};}
+using Aggregate=decltype(aggregate(0));
+using AggregateFirst=decltype(aggregate(0).first);using AggregateSecond=decltype(aggregate(0).second);
+template<class T> auto wrapped(T n){struct Local{T value;};return Box<Local>{{n}};}
+using WrappedInteger=decltype(wrapped(0));using WrappedWide=decltype(wrapped(0L));
+inline auto pointer(int n){struct Local{int value;};static Local value{42};value.value=n;return &value;}
+inline decltype(auto) reference(){struct Local{int value;};static Local value{42};return (value);}
+using Pointer=decltype(pointer(0));using Reference=decltype(reference());
+inline auto callback(){struct Local{int value;};return Pair{+[](Local value){return value.value;},Local{42}};}
+using Callback=decltype(callback());using CallbackValue=decltype(callback().second);
+inline auto member_factory(int base){
+  struct Root {
+    int base;
+    auto make(int n) const {struct Local{int value;};return Local{base+n};}
+    auto make(long n) const {struct Local{long value;};return Local{base+n};}
+    auto second(int n) const {struct Local{int value;};return Local{base+n};}
+    auto nested(int n) const {struct Local{struct Leaf{int value;};Leaf value;};return Local{{base+n}};}
+  };
+  return Root{base};
+}
+using Member=decltype(member_factory(0).make(0));using MemberWide=decltype(member_factory(0).make(0L));
+using MemberSecond=decltype(member_factory(0).second(0));using MemberLeaf=decltype(member_factory(0).nested(0))::Leaf;
+inline int read(Member value){return value.value;}
+inline int read(MemberSecond value){return value.value;}
+Aggregate provider_aggregate(int n){return aggregate(n);}
+Callback provider_callback(){return callback();}
+Pointer provider_pointer(int n){return pointer(n);}
+Reference provider_reference(){return reference();}
+Member provider_member(int n){return member_factory(40).make(n);}
+
+}
+#endif
+    )";
+    auto first=emit(source);
+    for(const auto &d:first.diagnostics)std::fprintf(stderr,"%s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+    assert(first.success);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto relocated=emit("\n\n"+source,"relocated-closure-result.cpp");
+    assert(relocated.success && relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    auto metadata=llvm::json::parse(first.sidecar_json);assert(metadata);
+    std::vector<llvm::StringRef> semantics;
+    for(const auto &v:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*v.getAsString());
+    auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+    auto find=[&](llvm::StringRef name)->const InterfaceDeclarationIdentity & {
+      auto row=std::find_if(decoded->declarations.begin(),decoded->declarations.end(),[&](const auto &d){return d.qualified_name==name;});
+      assert(row!=decoded->declarations.end());return *row;
+    };
+    assert(HasCxxNestedFactoryTypeIdentity(find("NativeNestedFactoryTypes::Left")));
+    assert(HasCxxNestedFactoryTypeIdentity(find("NativeNestedFactoryTypes::Choice")));
+    assert(find("NativeNestedFactoryTypes::Left").canonical_type_identity!=find("NativeNestedFactoryTypes::Right").canonical_type_identity);
+    assert(find("NativeNestedFactoryTypes::Integer").canonical_type_identity!=find("NativeNestedFactoryTypes::Wide").canonical_type_identity);
+    for(const auto *name:{"Aggregate","AggregateFirst","AggregateSecond","WrappedInteger","Pointer","Reference","Callback","Member","MemberWide","MemberSecond","MemberLeaf"})
+      assert(HasCxxNestedFactoryTypeIdentity(find(std::string("NativeNestedFactoryTypes::")+name)));
+    assert(find("NativeNestedFactoryTypes::AggregateFirst").canonical_type_identity!=find("NativeNestedFactoryTypes::AggregateSecond").canonical_type_identity);
+    assert(find("NativeNestedFactoryTypes::Member").canonical_type_identity!=find("NativeNestedFactoryTypes::MemberSecond").canonical_type_identity);
+    auto missing=*decoded;std::erase(missing.required_semantics,kCxxNestedFactoryTypeSemantic);
+    auto invalid=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!invalid);llvm::consumeError(invalid.takeError());
+    auto wrong=*decoded;auto owner=std::find_if(wrong.declarations.begin(),wrong.declarations.end(),HasCxxNestedFactoryTypeIdentity);
+    assert(owner!=wrong.declarations.end());owner->kind="Namespace";
+    auto invalid_owner=EncodeSemanticInterfaceSidecar(wrong,semantics);assert(!invalid_owner);llvm::consumeError(invalid_owner.takeError());
+    auto excluded=emit("inline auto hidden(){struct Root{struct Leaf{int value;};};return Root{};} using Public=decltype(hidden())::Leaf;", "excluded-closure-result.cpp",{"Public"});
+    assert(!excluded.success && std::any_of(excluded.diagnostics.begin(),excluded.diagnostics.end(),[](const auto &d){return d.code=="O3IFC156";}));
+  }
+}
+
 void TestLambdaFactoryResults() {
   for(const auto *standard:{"-std=c++20","-std=c++23"}) {
     auto emit=[&](const std::string &source,const char *file="lambda-factory-results.cpp",
@@ -5321,6 +5432,7 @@ int main() {
   TestPartialClassSpecializations();
   TestPartialVariableSpecializations();
   TestExternalVariableSpecializations();
+  TestNestedFactoryTypes();
   TestLambdaFactoryResults();
   TestClosureResultProjections();
   TestFactoryValueArguments();

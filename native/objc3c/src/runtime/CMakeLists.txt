@@ -22,12 +22,18 @@ add_library(objc3_runtime_services STATIC
   concurrency/service_group.cpp
   concurrency/service_actor.cpp
   concurrency/service_actor_object.cpp
+  concurrency/service_actor_association.cpp
   concurrency/service_public.cpp
   stdlib/text_service.cpp
   stdlib/keypath_service.cpp
+  stdlib/keypath_kvc.cpp
   stdlib/collections_service.cpp
   stdlib/generic_collection_service.cpp
   stdlib/generic_associative_service.cpp)
+# Keep native association ownership in its own archive member. No Foundation
+# classes or Clang libraries are required; Clang supplies the Blocks ABI.
+set_source_files_properties(concurrency/service_actor_association.cpp stdlib/keypath_kvc.cpp PROPERTIES
+  COMPILE_OPTIONS "-x;objective-c++;-fblocks;-fno-objc-arc;-fobjc-exceptions;-fobjc-runtime=gnustep-2.2")
 target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
 target_compile_options(objc3_runtime_services INTERFACE
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fcoro-aligned-allocation>"

@@ -8,6 +8,7 @@
 @class RuntimePathNode;
 typedef struct PathRoute { __unsafe_unretained RuntimePathNode * _Nullable next; } PathRoute;
 typedef struct PathPair { long first, second; } PathPair;
+typedef union PathUnion {long value;double other;} PathUnion;
 typedef struct PathBits { unsigned value:3; signed small:5; unsigned sibling:7; } PathBits;
 #ifdef __cplusplus
 struct PathLeft { int left; };
@@ -38,6 +39,7 @@ __attribute__((objc_root_class))
   __weak RuntimePathNode *_observer;
 #endif
   PathPair _pair;
+  PathUnion _unionValue;
   PathRoute _route;
   PathBits _bits;
 #ifdef __cplusplus
@@ -51,6 +53,7 @@ __attribute__((objc_root_class))
     RuntimePathNode * _Nonnull child;
 @property(nonatomic, copy) RuntimePathNode * _Nullable copied;
 @property(nonatomic) PathPair pair;
+@property(nonatomic) PathUnion unionValue;
 @property(nonatomic) PathRoute route;
 @property(nonatomic) PathBits bits;
 #ifdef __cplusplus
@@ -81,4 +84,9 @@ WritableKeyPath<RuntimePathNode *, unsigned> runtime_bits_path(void);
 #ifdef __cplusplus
 WritableKeyPath<RuntimePathNode *, long> runtime_inherited_path(void);
 #endif
+
+@interface NSString : RuntimePathNode {const char *_kvcBytes;}
++ (instancetype)stringWithUTF8String:(const char *)bytes;
+- (const char *)UTF8String;
+@end
 #endif

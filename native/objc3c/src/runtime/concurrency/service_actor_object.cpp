@@ -44,6 +44,18 @@ objc3::services::Actor *implementation(objc3_actor_t *actor) noexcept {
 }
 } // namespace
 
+namespace objc3::services {
+std::recursive_mutex &actor_object_binding_mutex() {
+  static auto *mutex = new std::recursive_mutex;
+  return *mutex;
+}
+namespace { AutomaticActorLookup automatic_lookup = nullptr; }
+void register_automatic_actor_lookup(AutomaticActorLookup lookup) {
+  std::lock_guard<std::recursive_mutex> lock(actor_object_binding_mutex());
+  automatic_lookup = lookup;
+}
+} // namespace objc3::services
+
 extern "C" objc3_service_status objc3_actor_bind_object(
     void *object, objc3_actor_t *actor) {
   if (!object || !actor) return OBJC3_SERVICE_INVALID_ARGUMENT;
@@ -53,6 +65,7 @@ extern "C" objc3_service_status objc3_actor_bind_object(
     if (!owners.actor) return OBJC3_SERVICE_NOT_READY;
     owners.object = objc3_actor_object_retain(object);
     if (!owners.object) return OBJC3_SERVICE_NOT_READY;
+    std::lock_guard<std::recursive_mutex> coordination(objc3::services::actor_object_binding_mutex());
     auto &registry = object_registry();
     std::lock_guard<std::mutex> lock(registry.mutex);
     auto found = registry.bindings.find(object);
@@ -61,6 +74,13 @@ extern "C" objc3_service_status objc3_actor_bind_object(
                                           : OBJC3_SERVICE_INVALID_ARGUMENT;
     if (objc3::services::actor_is_closed(implementation(actor)))
       return OBJC3_SERVICE_CLOSED;
+    if (objc3::services::automatic_lookup) {
+      if (auto *automatic = objc3::services::automatic_lookup(object)) {
+        const bool same = automatic == actor;
+        objc3_actor_release(automatic);
+        if (!same) return OBJC3_SERVICE_INVALID_ARGUMENT;
+      }
+    }
     if (found == registry.bindings.end())
       found = registry.bindings.emplace(object, ObjectBinding{}).first;
     found->second = {std::exchange(owners.object, nullptr),
@@ -79,6 +99,7 @@ extern "C" objc3_service_status objc3_actor_get_for_object(
   *out_actor = nullptr;
   if (!object) return OBJC3_SERVICE_INVALID_ARGUMENT;
   try {
+    std::lock_guard<std::recursive_mutex> coordination(objc3::services::actor_object_binding_mutex());
     auto &registry = object_registry();
     std::lock_guard<std::mutex> lock(registry.mutex);
     const auto found = registry.bindings.find(object);
@@ -97,6 +118,7 @@ extern "C" objc3_service_status objc3_actor_unbind_object(void *object) {
   if (!object) return OBJC3_SERVICE_INVALID_ARGUMENT;
   BindingOwners owners;
   try {
+    std::lock_guard<std::recursive_mutex> coordination(objc3::services::actor_object_binding_mutex());
     auto &registry = object_registry();
     std::lock_guard<std::mutex> lock(registry.mutex);
     const auto found = registry.bindings.find(object);

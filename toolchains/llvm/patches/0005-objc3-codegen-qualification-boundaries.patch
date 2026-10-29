@@ -27536,10 +27536,10 @@ index 000000000..ef1aae95f
 +// CHECK: call void @objc_msgSend
 diff --git a/clang/lib/CodeGen/CGObjC3Isolation.cpp b/clang/lib/CodeGen/CGObjC3Isolation.cpp
 new file mode 100644
-index 000000000..efc74f478
+index 000000000..a7a03994e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Isolation.cpp
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,146 @@
 +//===--- CGObjC3Isolation.cpp - Executor entry for private frames
 +//-----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -27602,44 +27602,28 @@ index 000000000..efc74f478
 +  // no mailbox association. The original nil message supplies its zero result.
 +  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Receiver), Done, Lookup);
 +  CGF.EmitBlock(Lookup);
-+  llvm::Value *Found =
-+      runtimeCall(CGF, "objc3_actor_get_for_object", CGF.Int32Ty,
-+                  {Receiver, Actor.emitRawPointer(CGF)});
-+  CGF.Builder.CreateStore(Found, Status);
-+  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Found), Ready, Done);
-+  CGF.EmitBlock(Ready);
-+  llvm::Value *Target = CGF.Builder.CreateLoad(Actor);
++  llvm::Value *Preferred = Null;
 +  if (Executor) {
 +    Address Required = CGF.CreateTempAlloca(
 +        CGF.Int8PtrTy, CGF.getPointerAlign(), "objc3.actor.required.executor");
 +    CGF.Builder.CreateStore(Null, Required);
 +    llvm::Value *Resolved = lookupExecutor(CGF, *Executor, Required);
 +    CGF.Builder.CreateStore(Resolved, Status);
-+    auto *Check = CGF.createBasicBlock("objc3.actor.check.executor");
-+    auto *Failed = CGF.createBasicBlock("objc3.actor.lookup.failed");
-+    auto *Match = CGF.createBasicBlock("objc3.actor.executor.matched");
-+    auto *Mismatch = CGF.createBasicBlock("objc3.actor.executor.mismatch");
-+    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Resolved), Check, Failed);
-+    CGF.EmitBlock(Failed);
-+    runtimeCall(CGF, "objc3_actor_release", CGF.VoidTy, {Target});
-+    CGF.Builder.CreateBr(Done);
-+    CGF.EmitBlock(Check);
-+    llvm::Value *RequiredExecutor = CGF.Builder.CreateLoad(Required);
-+    llvm::Value *RequiredIdentity = runtimeCall(
-+        CGF, "objc3_executor_identity", CGF.Int64Ty, {RequiredExecutor});
-+    llvm::Value *ActorIdentity = runtimeCall(
-+        CGF, "objc3_actor_executor_identity", CGF.Int64Ty, {Target});
-+    runtimeCall(CGF, "objc3_executor_release", CGF.VoidTy, {RequiredExecutor});
-+    CGF.Builder.CreateCondBr(
-+        CGF.Builder.CreateICmpEQ(RequiredIdentity, ActorIdentity), Match,
-+        Mismatch);
-+    CGF.EmitBlock(Mismatch);
-+    // The explicit association disagrees with the declaration's executor.
-+    CGF.Builder.CreateStore(CGF.Builder.getInt32(1), Status);
-+    runtimeCall(CGF, "objc3_actor_release", CGF.VoidTy, {Target});
-+    CGF.Builder.CreateBr(Done);
-+    CGF.EmitBlock(Match);
++    auto *ResolvedBlock = CGF.createBasicBlock("objc3.actor.executor.resolved");
++    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Resolved), ResolvedBlock, Done);
++    CGF.EmitBlock(ResolvedBlock);
++    Preferred = CGF.Builder.CreateLoad(Required);
 +  }
++  // Runtime lookup atomically creates an object-owned mailbox or checks the
++  // immutable affinity of an existing automatic/explicit association.
++  llvm::Value *Found = runtimeCall(CGF, "objc3_actor_get_or_create_for_object",
++      CGF.Int32Ty, {Receiver, Preferred, Actor.emitRawPointer(CGF)});
++  if (Executor)
++    runtimeCall(CGF, "objc3_executor_release", CGF.VoidTy, {Preferred});
++  CGF.Builder.CreateStore(Found, Status);
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNull(Found), Ready, Done);
++  CGF.EmitBlock(Ready);
++  llvm::Value *Target = CGF.Builder.CreateLoad(Actor);
 +  llvm::Value *Hopped =
 +      runtimeCall(CGF, "objc3_task_hop", CGF.Int32Ty, {Owner, Null, Target});
 +  CGF.Builder.CreateStore(Hopped, Status);
@@ -27893,10 +27877,10 @@ index 000000000..010247614
 +objc3_async_frame raw_call(int n) { return from_c(n); }
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
 new file mode 100644
-index 000000000..50a6c876a
+index 000000000..e66de45f9
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-entry.m
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,120 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,ARC-CHECK
 +#include "Inputs/native-c-async-frame.h"
@@ -27938,8 +27922,7 @@ index 000000000..50a6c876a
 +  int first = __objc3_await [source_receiver() read];
 +  return first + __objc3_await [source_receiver() affineRead];
 +}
-+// CHECK-DAG: {{call|invoke}} i32 @objc3_actor_get_for_object
-+// CHECK-DAG: {{call|invoke}} i64 @objc3_actor_executor_identity
++// CHECK-DAG: {{call|invoke}} i32 @objc3_actor_get_or_create_for_object
 +// CHECK-DAG: {{call|invoke}} i64 @objc3_executor_identity
 +// CHECK-DAG: {{call|invoke}} void @objc3_actor_release
 +
@@ -28005,9 +27988,22 @@ index 000000000..50a6c876a
 +  return __objc3_await [Message classValue:source_argument()];
 +}
 +// CHECK-DAG: @._OBJC_REF_CLASS_Message
++
++typedef union PlainHopUnion {long number;double real;} PlainHopUnion;
++extern PlainHopUnion union_entry(PlainHopUnion) __attribute__((objc_executor(global)));
++PlainHopUnion union_parent(PlainHopUnion value) __objc3_async_frame {
++  return __objc3_await union_entry(value);
++}
++// CHECK-DAG: {{call|invoke}}{{.*}} @union_entry
++@interface Message (DynamicClassEntry)
+++ (int)dynamicValue __attribute__((nothrow,objc_executor(global)));
++@end
++int dynamic_class_parent(Class receiver) __objc3_async_frame {
++  return __objc3_await [receiver dynamicValue];
++}
 diff --git a/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 new file mode 100644
-index 000000000..ab169e147
+index 000000000..20bc34b40
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-isolation-executor-pch.m
 @@ -0,0 +1,30 @@
@@ -28033,7 +28029,7 @@ index 000000000..ab169e147
 +// CHECK-DAG: call i32 @objc3_task_hop
 +// CHECK-DAG: call i32 @isolated_pch_entry
 +// CHECK-DAG: call i32 @objc3_async_frame_start_child
-+// CHECK-DAG: call i32 @objc3_actor_get_for_object
++// CHECK-DAG: call i32 @objc3_actor_get_or_create_for_object
 +// CHECK-DAG: call void @objc3_actor_release
 +
 +objc3_async_frame use_pch_class(int value) {

@@ -100,6 +100,7 @@ static int class_roundtrip(int kind, objc3_executor_t *destination)
   return result;
 }
 int main(void) {
+  hop_automatic_association_checks();
   @autoreleasepool {
     assert(objc3_executor_create(1, &caller) == OBJC3_SERVICE_OK);
     assert(objc3_executor_create(1, &named) == OBJC3_SERVICE_OK);
@@ -506,6 +507,10 @@ int main(void) {
          ++step)
       sched_yield();
     assert(hop_destroyed() == before + 1);
+    frame=hop_automatic_transfer_roundtrip();type=frame.result_type;task=start(&frame);
+    assert(finish(task).kind==OBJC3_COMPLETION_SUCCESS);
+    result=0;assert(objc3_task_copy_result(task,type,&int_ops,&result)==OBJC3_SERVICE_OK && result==126);
+    objc3_task_release(task);
     assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
     assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
     assert(objc3_actor_unbind_object(object) == OBJC3_SERVICE_OK);

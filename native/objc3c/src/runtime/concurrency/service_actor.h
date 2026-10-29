@@ -4,10 +4,16 @@
 #include "service_internal.h"
 
 #include <cstdint>
+#include <mutex>
 
 namespace objc3::services {
 
 struct Actor;
+// Serializes explicit bindings with lazy object-owned association creation.
+std::recursive_mutex &actor_object_binding_mutex();
+using AutomaticActorLookup = objc3_actor_t *(*)(const void *);
+void register_automatic_actor_lookup(AutomaticActorLookup lookup);
+
 
 using ActorJob = objc3_actor_job;
 using ActorContextDestroy = objc3_actor_context_destroy;

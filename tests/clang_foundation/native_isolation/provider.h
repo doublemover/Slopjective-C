@@ -103,3 +103,7 @@ int hop_snapshot_arguments(void);
 }
 #endif
 #endif
+
+void hop_automatic_association_checks(void);
+
+int hop_automatic_transfer_roundtrip(void) __objc3_async_frame;

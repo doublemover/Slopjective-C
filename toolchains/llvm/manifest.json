@@ -23,15 +23,15 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "983c904aa50a7bea37daadde3cc8c0e2e3098478100cd6bb10681b5f52ffc242"
+      "sha256": "eee0031341a469c765f259aa1d2c80cf36ff54a14e8411a037c0a66ab4e3e203"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "7efcd7bb3b1b45821fc5f3a5897b90069677d04dfb1f673f6ee84f08c3e1cfbc"
+      "sha256": "182402b02d938a9c487ab2e4da7b988ded231a0ae57c9a21e6d0edb49495d4fb"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "a15ea8514a2d993ab4038b5f4aacd849219fe918fbbf9f353ce507ac3e896d99"
+      "sha256": "6a058278e48993a3067f5c285ebdd8b8a4abe9188baf776878a3c0005dc2a80e"
     },
     {
       "file": "0007-objc3-linux-debugger-runtime-contracts.patch",

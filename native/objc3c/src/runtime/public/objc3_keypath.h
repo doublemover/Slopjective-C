@@ -70,6 +70,13 @@ int objc3_keypath_equal_v2(const objc3_keypath_descriptor_v2 *left,
                           const objc3_keypath_descriptor_v2 *right,
                           int *out_equal);
 
+#ifdef __OBJC__
+/* Explicit property-only KVC boxing. Returns an autoreleased NSString when
+ * Foundation is present; nil for invalid/non-KVC metadata or an absent factory.
+ * Typed key-path access remains independent of Foundation. */
+id objc3_keypath_kvc_string(const objc3_keypath_descriptor_v2 *descriptor);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
