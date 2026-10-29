@@ -4,6 +4,10 @@ This sprint works across the PR's remaining implementation backlog before a
 combined validation batch. Source changes target Linux Objective-C 3.0 as defined
 by the specification. SDK 2.62 remains the accepted archive during development.
 
+The subsequent [2.92 projection batch](linux_cxx_unnamed_template_projections.md)
+removes the public unnamed-template-member signature boundary described below.
+Its receipt records the newer native indexing and frontend/package inputs.
+
 This implementation wave advances concurrency **2.91**, System **2.16** and
 keypath **2.6** together:
 

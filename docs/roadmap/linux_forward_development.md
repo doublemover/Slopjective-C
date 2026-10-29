@@ -1430,3 +1430,23 @@ instance/class/category super messages, preserving lexical superclass lookup
 with independently owned self. Actor-super entry, ARC consuming receivers,
 record/retained results and ordinary C++ task callers are covered by maintained
 runtime and PCH witnesses. Combined validation and SDK 2.33.0 delivery pass.
+
+
+## Public unnamed template member graphs, source 2.92
+
+[Public template member projections](linux_cxx_unnamed_template_projections.md)
+now preserve aliases, signatures, overloads, callbacks, arrays, member pointers,
+storage and nontrivial C++ values. Closed generic, nested class/alias template,
+default, structural and member-enum arguments retain ordered nominal origins;
+native USRs survive source relocation. A second provider reuses locked dependency
+exports only after checking their exact admitted identities.
+
+The [receipt](../support/linux_cxx_unnamed_template_projections_progress.json)
+records 33 frontend suites, 237 native unit tests, 412 compiler regressions and
+27 focused tooling tests passing. Source-free packages pass 32 configurations /
+224 commands across normal, eager and sanitizer modes; the full async fixture
+adds three smoke configurations / 21 commands. Runtime binaries and accepted
+SDK 2.62 are unchanged. Broader dependent lookup and unnamed contexts outside
+complete template-owned member graphs remain open, alongside the ownership,
+concurrency, isolation, key-path, language/library/profile and AArch64 obligations
+above.
