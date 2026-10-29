@@ -785,10 +785,18 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       auto imported = importer->Import(exported.Declarations.at(expected.stable_id));
       if (!imported) {
         std::string reason=llvm::toString(imported.takeError());
-        if(module.import_diagnostics)
-          for(const auto &diagnostic:llvm::make_range(
-                  module.import_diagnostics->err_begin(),module.import_diagnostics->err_end()))
-            reason+="; "+diagnostic.second;
+        if(module.import_diagnostics) {
+          unsigned remaining=12;
+          auto append=[&](auto begin,auto end) {
+            for(const auto &diagnostic:llvm::make_range(begin,end)) {
+              if(!remaining)break;
+              --remaining;reason+="; "+diagnostic.second;
+            }
+          };
+          append(module.import_diagnostics->err_begin(),module.import_diagnostics->err_end());
+          append(module.import_diagnostics->warn_begin(),module.import_diagnostics->warn_end());
+          append(module.import_diagnostics->note_begin(),module.import_diagnostics->note_end());
+        }
         Add(report.diagnostics, "O3IFC142",
             ModuleImportFailure(module.sidecar.module,
                 llvm::Twine("could not import exported declaration '") +
@@ -1057,6 +1065,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   });
   report.success = true;
   return report;
+}
+
+bool InterfaceImportSession::RequiresCoroutineHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
+                     kCxxCoroutineBodySemantic)!=module.sidecar.required_semantics.end();
+  });
 }
 
 bool InterfaceImportSession::RequiresTaskHeader() const {

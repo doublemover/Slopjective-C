@@ -172,6 +172,8 @@ if (BUILD_TESTING)
   target_include_directories(objc3_interface_import_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_import_test PRIVATE objc3c_clang_foundation)
+  target_compile_definitions(objc3_interface_import_test PRIVATE
+    OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages")
   add_test(NAME objc3_interface_import COMMAND objc3_interface_import_test)
   add_executable(objc3_interface_import_api_test
     ../../../../tests/clang_foundation/interface_import_api_test.cpp)

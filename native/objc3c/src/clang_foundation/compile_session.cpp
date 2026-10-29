@@ -121,7 +121,7 @@ public:
   void Initialize(clang::ASTContext &context) override {
     const auto &language = context.getLangOpts();
     const auto &predefines = compiler_.getPreprocessorOpts();
-    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader())) {
+    if (session_ && (session_->RequiresRuntimeHeader() || session_->RequiresKeyPathHeader() || session_->RequiresCoroutineHeader())) {
       deferred_context_ = &context;
       waiting_for_runtime_ = true;
       return;
@@ -423,9 +423,6 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           result_.failure = "Declared module imports require search paths and cannot be mixed with resolved artifact inputs";
           return false;
         }
-        if (request_.source_directed_imports)
-          return FrontendActionFactory::runInvocation(std::move(invocation), files,
-              std::move(containers), diagnostics);
         auto declared = request_.module_imports;
         for (auto &module : declared) {
           if (request_.source_directed_imports)
@@ -439,6 +436,25 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
           if (identity.extension_abi.empty()) identity.extension_abi = target.extension_abi;
           if (identity.language_revision.empty()) identity.language_revision = target.language_revision;
           if (identity.language_profile.empty()) identity.language_profile = target.language_profile;
+        }
+        if (request_.source_directed_imports) {
+          // Prepare compiler-owned protocol declarations before on-demand AST
+          // merging. No provider declaration becomes visible here. Keep unused
+          // invalid registry entries deferred until their source directive.
+          auto headers=ResolveInterfaceModules(search_paths,declared,target);
+          bool needs_coroutine=headers.success && headers.requires_coroutine_header;
+          if (!headers.success)
+            for (const auto &module:declared) {
+              auto selected=ResolveInterfaceModules(search_paths,{module},target);
+              if (selected.success && selected.requires_coroutine_header) {
+                needs_coroutine=true;break;
+              }
+            }
+          if (needs_coroutine)
+            invocation->getPreprocessorOpts().Includes.insert(
+                invocation->getPreprocessorOpts().Includes.begin(),"coroutine");
+          return FrontendActionFactory::runInvocation(std::move(invocation), files,
+              std::move(containers), diagnostics);
         }
         auto resolution = ResolveInterfaceModules(
             search_paths, declared, target);
@@ -479,9 +495,10 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       }
     }
     if (import_session_ && (import_session_->RequiresRuntimeHeader() ||
-                            import_session_->RequiresKeyPathHeader())) {
+                            import_session_->RequiresKeyPathHeader() || import_session_->RequiresCoroutineHeader())) {
       auto &preprocessor = invocation->getPreprocessorOpts();
       std::string prelude;
+      if (import_session_->RequiresCoroutineHeader()) prelude+="#include <coroutine>\n";
       if (import_session_->RequiresRuntimeHeader()) {
         preprocessor.addRemappedFile(kEagerRuntimeHeader,
             llvm::MemoryBuffer::getMemBufferCopy(RuntimeInterfaceHeaderSource(),kEagerRuntimeHeader).release());

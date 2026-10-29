@@ -103,6 +103,7 @@ public:
   GetSourceArtifacts() const;
   [[nodiscard]] bool RequiresRuntimeHeader() const;
   [[nodiscard]] bool RequiresTaskHeader() const;
+  [[nodiscard]] bool RequiresCoroutineHeader() const;
   [[nodiscard]] bool RequiresKeyPathHeader() const;
 
 private:

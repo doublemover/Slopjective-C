@@ -319,6 +319,8 @@ InterfaceModuleResolution ResolveInterfaceModules(
     input.reexported = reexported;
     inputs.emplace(identity.canonical_name, std::move(input));
     selected.emplace(identity.canonical_name, &candidate);
+    result.requires_coroutine_header |= std::find(candidate.sidecar.required_semantics.begin(),
+        candidate.sidecar.required_semantics.end(),kCxxCoroutineBodySemantic)!=candidate.sidecar.required_semantics.end();
     return true;
   };
 
