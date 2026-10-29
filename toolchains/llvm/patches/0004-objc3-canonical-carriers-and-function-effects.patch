@@ -19144,7 +19144,7 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..3d7e21f25
+index 000000000..407379b81
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 @@ -0,0 +1,2213 @@
@@ -21342,7 +21342,7 @@ index 000000000..3d7e21f25
 +        inline const auto *const_pointer(){struct Local{int value;};static Local value{42};return &value;}
 +        inline auto &reference(){struct Local{int value;};static Local value{42};return value;}
 +        inline decltype(auto) exact_reference(){struct Local{int value;};static Local value{42};return (value);}
-+        inline auto callback(){struct Local{int value;};return Pair<int(*)(Local),Local>{+[](Local value){return value.value;},{42}};}
++        inline auto callback(){struct Local{int value;};return Pair{+[](Local value){return value.value;},Local{42}};}
 +      }
 +    )FACTORY";
 +    auto From=tooling::buildASTFromCodeWithArgs(Source,Args,"factory-graphs.mm");

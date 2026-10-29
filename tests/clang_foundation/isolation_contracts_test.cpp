@@ -602,8 +602,7 @@ int executor_ir(SafeMessage *message) __objc3_async {
        {"@objc3_executor_get_main", "@objc3_executor_get_global",
         "@objc3_executor_get_named", "@objc3_executor_is_current",
         "@objc3_executor_release", "@objc3_task_hop",
-        "@objc3_actor_get_for_object", "@objc3_actor_release",
-        "@objc3_actor_executor_identity", "@objc3_executor_identity",
+        "@objc3_actor_get_or_create_for_object", "@objc3_actor_release",
         "@objc3_task_await", "@llvm.coro.suspend"})
     assert(IR.find(Symbol) != std::string::npos);
   assert(IR.find("ir.destination") != std::string::npos);
