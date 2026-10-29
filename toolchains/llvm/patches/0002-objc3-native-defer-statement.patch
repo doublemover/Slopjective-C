@@ -218,7 +218,7 @@ index 15d0e6435..74e772342 100644
 +  return cast<VarDecl>(getBindingStatement()->getSingleDecl());
 +}
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 9a97d52fd..15685ea1e 100644
+index 9a97d52fd..7f5ee3958 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -25,6 +25,7 @@
@@ -582,7 +582,32 @@ index 9a97d52fd..15685ea1e 100644
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
-@@ -2467,21 +2761,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2342,12 +2636,18 @@ void StmtPrinter::VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr *Node) {
+   auto *Auto = TargetType->getContainedDeducedType();
+   bool Bare = Auto && Auto->isDeduced();
+ 
+-  // Parenthesize deduced casts.
+-  if (Bare)
+-    OS << '(';
+-  TargetType.print(OS, Policy);
+-  if (Bare)
+-    OS << ')';
++  // Class template deduction is source syntax: `(Pair<A, B>){...}` is a
++  // compound literal on replay, while `Pair{...}` retains the functional cast
++  // and its deduction-guide contract. Do not expose callable-local arguments.
++  if (const auto *Deduced = dyn_cast_or_null<DeducedTemplateSpecializationType>(Auto)) {
++    Deduced->getTemplateName().print(OS, Policy);
++  } else {
++    if (Bare)
++      OS << '(';
++    TargetType.print(OS, Policy);
++    if (Bare)
++      OS << ')';
++  }
+ 
+   // No extra braces surrounding the inner construct.
+   if (!Node->isListInitialization())
+@@ -2467,21 +2767,19 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
          /*OmitTemplateKW*/true);
    }
  
@@ -613,7 +638,7 @@ index 9a97d52fd..15685ea1e 100644
      }
      if (Method->isVariadic()) {
        if (NeedComma)
-@@ -2490,8 +2782,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2490,8 +2788,13 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
      }
      OS << ')';
  
@@ -628,7 +653,7 @@ index 9a97d52fd..15685ea1e 100644
  
      auto *Proto = Method->getType()->castAs<FunctionProtoType>();
      Proto->printExceptionSpecification(OS, Policy);
-@@ -2503,6 +2800,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
+@@ -2503,6 +2806,20 @@ void StmtPrinter::VisitLambdaExpr(LambdaExpr *Node) {
        OS << " -> ";
        Proto->getReturnType().print(OS, Policy);
      }
@@ -649,7 +674,7 @@ index 9a97d52fd..15685ea1e 100644
    }
  
    // Print the body.
-@@ -2748,6 +3059,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
+@@ -2748,6 +3065,16 @@ void StmtPrinter::VisitCXXParenListInitExpr(CXXParenListInitExpr *Node) {
  }
  
  void StmtPrinter::VisitConceptSpecializationExpr(ConceptSpecializationExpr *E) {
@@ -666,7 +691,7 @@ index 9a97d52fd..15685ea1e 100644
    NestedNameSpecifierLoc NNS = E->getNestedNameSpecifierLoc();
    NNS.getNestedNameSpecifier().print(OS, Policy);
    if (E->getTemplateKWLoc().isValid())
-@@ -2828,6 +3149,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
+@@ -2828,6 +3155,11 @@ void StmtPrinter::VisitCoreturnStmt(CoreturnStmt *S) {
  }
  
  void StmtPrinter::VisitCoawaitExpr(CoawaitExpr *S) {
@@ -678,7 +703,7 @@ index 9a97d52fd..15685ea1e 100644
    OS << "co_await ";
    PrintExpr(S->getOperand());
  }
-@@ -2955,8 +3281,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
+@@ -2955,8 +3287,24 @@ StmtPrinter::VisitObjCBridgedCastExpr(ObjCBridgedCastExpr *E) {
  void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
    BlockDecl *BD = Node->getBlockDecl();
    OS << "^";
@@ -703,7 +728,7 @@ index 9a97d52fd..15685ea1e 100644
  
    if (isa<FunctionNoProtoType>(AFT)) {
      OS << "()";
-@@ -2976,7 +3318,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
+@@ -2976,7 +3324,26 @@ void StmtPrinter::VisitBlockExpr(BlockExpr *Node) {
      }
      OS << ')';
    }
@@ -731,7 +756,7 @@ index 9a97d52fd..15685ea1e 100644
  }
  
  void StmtPrinter::VisitOpaqueValueExpr(OpaqueValueExpr *Node) {
-@@ -3045,3 +3406,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
+@@ -3045,3 +3412,15 @@ void Stmt::printJson(raw_ostream &Out, PrinterHelper *Helper,
  
  // Implement virtual destructor.
  PrinterHelper::~PrinterHelper() = default;
