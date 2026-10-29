@@ -381,6 +381,43 @@ void TestPinnedRuntimeTypesSurvivePreparedImport() {
   fs::remove_all(root);
 }
 
+void TestNativeAttributeTemplateImports() {
+  const auto root=fs::temp_directory_path()/"objc3-native-attribute-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/declaration_attributes.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.native_attributes",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    provider.interface_exports={"NativeDeclarationAttributes"};
+    const auto interface_path=root/"test.native_attributes.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    for(bool directed:{false,true}) {
+      auto consumer=ModuleRequest(root/"consumer.mm","",
+          std::string(directed ? "@import test.native_attributes;\n" : "")+
+          "static_assert(sizeof(NativeDeclarationAttributes::Packet)==5);"
+          "static_assert(alignof(NativeDeclarationAttributes::Slot<int,32>)==32);"
+          "int use(){NativeDeclarationAttributes::ForeignBox<int> value{42};"
+          "return value.value+NativeDeclarationAttributes::Family<int>{40}.call(2);}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.native_attributes";
+        locked.locked_identity=emitted.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+  }
+  fs::remove_all(root);
+}
+
 void TestCustomCoroutinePromiseRedeclarations() {
   const auto root=fs::temp_directory_path()/"objc3-custom-coroutine-import";
   fs::remove_all(root);fs::create_directories(root);
@@ -459,6 +496,7 @@ int main() {
   TestPinnedRuntimeTypesSurvivePreparedImport();
   TestCompilerVarargsMembersAreReused();
   TestCustomCoroutinePromiseRedeclarations();
+  TestNativeAttributeTemplateImports();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();

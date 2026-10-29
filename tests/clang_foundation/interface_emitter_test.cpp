@@ -1831,6 +1831,10 @@ void TestNativeDeclarationAttributes() {
     assert(first.success);
     for(const auto *spelling:{"packed","alignas","no_unique_address","nodiscard","noinline","always_inline","visibility","pure"})
       assert(first.source_bytes.find(spelling)!=std::string::npos);
+    const auto second=first.source_bytes.find("swift_attr(\"@Second\")");
+    const auto middle=first.source_bytes.find("swift_attr(\"@First\")",second+1);
+    const auto repeated=first.source_bytes.find("swift_attr(\"@Second\")",middle+1);
+    assert(second!=std::string::npos && middle!=std::string::npos && repeated!=std::string::npos);
     auto replay=emit(first.source_bytes);
     for(const auto &d:replay.diagnostics)std::fprintf(stderr,"ATTR REPLAY %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
     assert(replay.success && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);

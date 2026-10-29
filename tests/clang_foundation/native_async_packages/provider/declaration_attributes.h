@@ -12,7 +12,7 @@ template<class T> inline int partial=0;
 template<class T> alignas(64) inline int partial<T *> = 42;
 template<class T> inline T selected(T value){return value;}
 template<> [[nodiscard]] __attribute__((noinline)) inline int selected<int>(int value){return value;}
-template<class T> struct __attribute__((swift_bridge("Interop.NativeBox"))) ForeignBox {T value;};
+template<class T> struct __attribute__((swift_bridge("Interop.NativeBox"),swift_attr("@Second"),swift_attr("@First"),swift_attr("@Second"))) ForeignBox {T value;};
 template<class T> __attribute__((swift_name("Interop.project(_:)"))) inline T foreign(T value){return value;}
 template<class T> __attribute__((always_inline,pure)) inline T project(T value){return value;}
 template<class T> struct Family {
