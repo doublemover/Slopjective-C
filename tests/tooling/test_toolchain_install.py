@@ -115,3 +115,116 @@ def test_root_install_is_readable_and_executable_with_a_private_umask(tmp_path):
     assert prefix.stat().st_mode & 0o777 == 0o755
     assert (prefix / 'bin/objc3c').stat().st_mode & 0o777 == 0o755
     package.verify_sdk(prefix)
+
+
+def selected_by_shell(root):
+    import subprocess
+    result = subprocess.run(['sh', '-c', '. "$1/activate.sh" && printf "%s" "$OBJC3C_SDK_ROOT"',
+                             'sh', str(root)], capture_output=True, text=True)
+    return Path(result.stdout) if result.returncode == 0 else None
+
+
+@pytest.mark.parametrize('old_generation', [False, True])
+@pytest.mark.parametrize('boundary', ['write', 'chmod', 'reader-rename', 'symlink', 'commit'])
+def test_activation_precommit_failure_preserves_coherent_selection(tmp_path, monkeypatch, old_generation, boundary):
+    import errno
+    from scripts.objc3c_toolchain import install_sdk
+    root = tmp_path / "install 'with spaces"
+    a, b = root / 'sdks/A', root / 'sdks/B'
+    for path in (a, b):
+        path.mkdir(parents=True)
+    if old_generation:
+        install_sdk.activate(root, a)
+        # Exercise migration from an older concrete-path activation reader.
+        (root / 'activate.sh').write_text('export OBJC3C_SDK_ROOT=' + __import__('shlex').quote(str(a)) + '\n')
+    write, chmod, replace, symlink = Path.write_text, Path.chmod, install_sdk.os.replace, Path.symlink_to
+    def fail():
+        raise OSError(errno.ENOSPC, 'injected activation failure')
+    def wrapped_write(path, *args, **kw):
+        if boundary == 'write' and path.name.startswith('.activate-'):
+            fail()
+        return write(path, *args, **kw)
+    def wrapped_chmod(path, *args, **kw):
+        if boundary == 'chmod' and path.name.startswith('.activate-'):
+            fail()
+        return chmod(path, *args, **kw)
+    def wrapped_replace(src, dst):
+        if ((boundary == 'reader-rename' and Path(dst).name == 'activate.sh') or
+                (boundary == 'commit' and Path(dst).name == 'current')):
+            fail()
+        return replace(src, dst)
+    def wrapped_symlink(path, *args, **kw):
+        if boundary == 'symlink' and path.name.startswith('.current-'):
+            fail()
+        return symlink(path, *args, **kw)
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, 'write_text', wrapped_write)
+        patch.setattr(Path, 'chmod', wrapped_chmod)
+        patch.setattr(install_sdk.os, 'replace', wrapped_replace)
+        patch.setattr(Path, 'symlink_to', wrapped_symlink)
+        with pytest.raises(OSError, match='injected activation failure'):
+            install_sdk.activate(root, b)
+    expected = a if old_generation else None
+    assert ((root / 'current').resolve() if (root / 'current').exists() else None) == expected
+    assert selected_by_shell(root) == expected
+    # A failed attempt remains idempotently retryable; only current publishes B.
+    install_sdk.activate(root, b)
+    assert selected_by_shell(root) == (root / 'current').resolve() == b
+
+
+@pytest.mark.parametrize('old_generation', [False, True])
+@pytest.mark.parametrize('commit', [False, True])
+def test_process_termination_at_activation_commit_is_coherent(tmp_path, old_generation, commit):
+    import os
+    import subprocess
+    import sys
+    from scripts.objc3c_toolchain import install_sdk
+    root = tmp_path / "install 'with spaces"
+    a, b = root / 'sdks/A', root / 'sdks/B'
+    for path in (a, b):
+        path.mkdir(parents=True)
+    if old_generation:
+        install_sdk.activate(root, a)
+    code = '''
+import os, sys
+from pathlib import Path
+from scripts.objc3c_toolchain import install_sdk
+root = Path(sys.argv[1])
+replace = os.replace
+def stop(src, dst):
+    if Path(dst).name == 'current':
+        if sys.argv[2] == 'True':
+            replace(src, dst)
+        os._exit(99)
+    return replace(src, dst)
+os.replace = stop
+install_sdk.activate(root, root / 'sdks/B')
+'''
+    env = {**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[2])}
+    completed = subprocess.run([sys.executable, '-c', code, str(root), str(commit)], env=env)
+    assert completed.returncode == 99
+    expected = b if commit else (a if old_generation else None)
+    assert ((root / 'current').resolve() if (root / 'current').exists() else None) == expected
+    assert selected_by_shell(root) == expected
+    install_sdk.activate(root, b)
+    assert selected_by_shell(root) == b
+
+
+def test_activation_reader_is_stable_and_existing_shell_remains_pinned(tmp_path):
+    import subprocess
+    from scripts.objc3c_toolchain.install_sdk import activate
+    root = tmp_path / 'installed'
+    a, b = root / 'sdks/A', root / 'sdks/B'
+    for path in (a, b):
+        path.mkdir(parents=True)
+    activate(root, a)
+    script = (root / 'activate.sh').read_bytes()
+    activate(root, b)
+    assert (root / 'activate.sh').read_bytes() == script
+    assert selected_by_shell(root) == b
+    activate(root, a)
+    assert selected_by_shell(root) == a
+    moved = tmp_path / 'relocated'
+    root.rename(moved)
+    activate(moved, moved / 'sdks/B')
+    assert selected_by_shell(moved) == moved / 'sdks/B'

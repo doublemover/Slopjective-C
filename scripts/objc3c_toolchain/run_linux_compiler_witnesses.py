@@ -50,7 +50,7 @@ def qualify(sdk: Path, output: Path, *, fixtures: Path | None = None,
         commands.append({'name': label, 'argv': list(map(str, command)),
                          'exit_code': result.returncode, 'expected': expected,
                          'log_sha256': digest(log)})
-        if (result.returncode == 0) != (expected == 0):
+        if result.returncode != expected:
             raise ValueError('compiler witness failed: ' + label + '; see ' + str(log))
         return log
 

@@ -18,10 +18,13 @@ def runner(tmp_path, monkeypatch):
     def plan(repo, *, phase, **kwargs):
         return {'paths': {'build': str(directory)}, 'identity': phase + '-identity',
                 'source_build_id': 'qualified-source', 'source_tree': 'tree',
+                'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
                 'build_config_digest': 'config', 'host_environment': {'compiler': 'original'},
                 'command': [phase], 'follow_up_commands': [[phase, 'follow-up']],
                 'command_environment': {'QUALIFIED_BUILD': 'yes'}}
     monkeypatch.setattr(build, 'build_plans', lambda repo, **kwargs: {phase: plan(repo, phase=phase) for phase in ('configure', 'build', 'test', 'stage')})
+    directory.mkdir()
+    (directory / "CMakeCache.txt").write_text("LLVM_ENABLE_ASSERTIONS:BOOL=ON\n")
     calls = []
     def run(command, **kwargs):
         calls.append((command, kwargs['env']))
@@ -81,3 +84,37 @@ def test_foundation_lock_preserves_an_active_build_and_releases_after_failure(tm
             raise RuntimeError('build failure')
     with build.foundation_lock(tmp_path):
         pass
+
+
+@pytest.mark.parametrize('value', ['OFF', '', 'on'])
+def test_effective_cache_must_match_intended_configuration(tmp_path, value):
+    cache = tmp_path / 'CMakeCache.txt'
+    cache.write_text('LLVM_ENABLE_ASSERTIONS:BOOL=' + value + '\n')
+    with pytest.raises(ToolchainError, match='effective configuration mismatch.*LLVM_ENABLE_ASSERTIONS'):
+        build.verify_effective_configuration({'paths': {'build': str(tmp_path)},
+            'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'}})
+
+
+@pytest.mark.parametrize('outside', [False, True])
+def test_cmake_executed_include_must_belong_to_configuration_inventory(tmp_path, outside):
+    import subprocess
+    root = tmp_path / 'repo'
+    directory = root / 'toolchains/llvm/cmake'
+    directory.mkdir(parents=True)
+    primary = directory / 'ObjC3LLVMCache.cmake'
+    fragment = (root if outside else directory) / 'profile.cmake'
+    fragment.write_text('set(LLVM_ENABLE_ASSERTIONS ON CACHE BOOL "" FORCE)\n')
+    primary.write_text('include("' + str(fragment) + '")\n')
+    trace = tmp_path / 'trace.jsonl'
+    subprocess.run(['cmake', '--trace-expand', '--trace-format=json-v1',
+                    '--trace-redirect='+str(trace), '--trace-source='+str(primary),
+                    '--trace-source='+str(fragment), '-P', str(primary)],
+                   check=True, capture_output=True)
+    plan = {'configuration_root': str(root), 'configuration_trace': str(trace),
+            'configuration_inputs': {'toolchains/llvm/cmake/ObjC3LLVMCache.cmake': 'hash'}}
+    if not outside:
+        plan['configuration_inputs']['toolchains/llvm/cmake/profile.cmake'] = 'hash'
+        assert len(build.verify_configuration_trace(plan)['executed_inputs']) == 2
+    else:
+        with pytest.raises(ToolchainError, match='outside its configuration inventory'):
+            build.verify_configuration_trace(plan)

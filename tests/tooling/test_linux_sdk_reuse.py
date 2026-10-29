@@ -229,3 +229,23 @@ def test_packaged_filecheck_does_not_change_foundation_signature(tmp_path):
     before = foundation_identity(prefix)
     (prefix / 'bin/FileCheck').write_bytes(b'newly packaged qualification tool')
     assert foundation_identity(prefix) == before
+
+
+@pytest.mark.parametrize('name', ['keypath_service_test.cpp', 'support/new_oracle.hpp'])
+def test_native_test_sources_invalidate_qualification_without_rebuilding_foundation(tmp_path, monkeypatch, name):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'source_build_id': 'same-foundation'})
+    path = repo / 'native/objc3c/tests' / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('pass')
+    before = linux_sdk.input_identity(repo, prefix)
+    stamp = path.stat()
+    path.write_text('fail')
+    import os
+    os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    after = linux_sdk.input_identity(repo, prefix)
+    assert after['sha256'] != before['sha256']
+    assert after['foundation_plan'] == before['foundation_plan']
+    assert after['frontend'] == before['frontend']
+    path.unlink()
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != after['sha256']

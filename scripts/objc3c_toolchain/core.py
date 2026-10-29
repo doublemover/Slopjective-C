@@ -120,17 +120,38 @@ def _series(manifest: dict[str, Any], repo: Path, base: Path, *, pristine: bool)
     return patches
 
 
-def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pristine: bool) -> dict[str, Any]:
+def configuration_inputs(repo: Path) -> dict[str, str]:
+    """Exact bytes of the owned foundation CMake input directory.
+
+    All repository-owned initial-cache fragments must live under this root;
+    adding an include there automatically joins the configuration inventory.
+    Symlinks are rejected, including links in directory components.
+    """
+    repo = repo.resolve()
+    root = repo / 'toolchains/llvm/cmake'
+    primary = root / 'ObjC3LLVMCache.cmake'
+    if not primary.is_file():
+        raise ToolchainError('foundation configuration input missing: toolchains/llvm/cmake/ObjC3LLVMCache.cmake')
+    for path in [*root.parents][:3] + [root, *root.rglob('*')]:
+        if path.is_symlink():
+            raise ToolchainError(f'foundation configuration input must not be a symlink: {path}')
+    return {path.relative_to(repo).as_posix(): _sha256(path)
+            for path in sorted(root.rglob('*')) if path.is_file()}
+
+
+def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pristine: bool, repo: Path) -> dict[str, Any]:
     upstream = manifest["upstream"]
     patch_rows = [{"file": name, "sha256": digest} for name, _, digest in patches]
     patch_digest = hashlib.sha256(json.dumps(patch_rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    build_digest = hashlib.sha256(json.dumps(manifest["build"], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    config_inputs = configuration_inputs(repo)
+    build_digest = hashlib.sha256(json.dumps({"build": manifest["build"], "configuration_inputs": config_inputs}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     if pristine:
         build_id = f"{manifest['pristine_baseline_build_id']}-{build_digest[:8]}"
     else:
         build_id = f"{upstream['tag']}-{upstream['commit'][:12]}-{patch_digest[:12]}-{build_digest[:8]}"
     return {
-        "schema_version": 1,
+        "schema_version": 2,
+        "configuration_inputs": config_inputs,
         "build_id": build_id,
         "upstream_tag": upstream["tag"],
         "upstream_tag_object": upstream["tag_object"],
@@ -181,7 +202,7 @@ def _development_tree(source: Path, commit: str,
 def _development_identity(source: Path, repo: Path, manifest_path: Path) -> tuple[dict[str, Any], dict[str, Any], list[tuple[str, Path, str]], str]:
     manifest, base = _load_manifest(manifest_path)
     patches = _series(manifest, repo, base, pristine=False)
-    expected = _identity(manifest, patches, False)
+    expected = _identity(manifest, patches, False, repo)
     if not source.is_relative_to((repo / "out" / "toolchains").resolve()):
         raise ToolchainError("development source must remain under repo/out/toolchains")
     head = _run(["git", "rev-parse", "HEAD"], cwd=source)
@@ -337,8 +358,13 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     cl_path = Path(environment.get("cl_path", environment.get("clang_path", ""))).as_posix()
     link_path = Path(environment["link_path"]).as_posix()
     cmake_cache = (repo / "toolchains" / "llvm" / "cmake" / "ObjC3LLVMCache.cmake").as_posix()
+    configuration_trace = build_dir / "foundation-configuration-trace.jsonl"
+    trace_options = ["--trace-expand", "--trace-format=json-v1",
+                     "--trace-redirect=" + str(configuration_trace)]
+    trace_options += ["--trace-source=" + str(repo / name)
+                      for name in sealed["configuration_inputs"] if name.endswith('.cmake')]
     configure = [
-        "cmake", "-S", llvm_source, "-B", build_path, "-G", "Ninja",
+        "cmake", *trace_options, "-S", llvm_source, "-B", build_path, "-G", "Ninja",
         "-C", cmake_cache,
         f"-DCMAKE_C_COMPILER={cl_path}",
         f"-DCMAKE_CXX_COMPILER={Path(environment.get('clangxx_path', cl_path)).as_posix()}",
@@ -355,6 +381,7 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "-DCLANG_INCLUDE_TESTS=ON",
         "-DLLVM_INSTALL_UTILS=OFF",
         f"-DCLANG_OBJC3_PATCH_DIGEST={sealed['patch_digest']}",
+        f"-DCLANG_OBJC3_CONFIG_DIGEST={sealed['build_config_digest']}",
         f"-DCMAKE_JOB_POOLS=objc3_link={build['link_jobs']}",
         "-DCMAKE_JOB_POOL_LINK=objc3_link",
     ]
@@ -416,6 +443,18 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         "source_build_id": source_id,
         "source_tree": sealed["tree_sha256"],
         "build_config_digest": sealed["build_config_digest"],
+        "configuration_inputs": sealed["configuration_inputs"],
+        "configuration_trace": str(configuration_trace),
+        "configuration_root": str(repo),
+        "effective_configuration": {
+            "CMAKE_BUILD_TYPE": build["configuration"],
+            "LLVM_ENABLE_ASSERTIONS": "ON" if build["assertions"] else "OFF",
+            "LLVM_ENABLE_RTTI": "ON" if build["rtti"] else "OFF",
+            "LLVM_ENABLE_EH": "ON" if build["eh"] else "OFF",
+            "LLVM_TARGETS_TO_BUILD": ";".join(build["targets"]),
+            "LLVM_ENABLE_PROJECTS": ";".join(build["projects"]),
+            "CLANG_OBJC3_CONFIG_DIGEST": sealed["build_config_digest"],
+        },
         "host_environment": environment,
         "paths": {"source": str(source), "llvm_source": llvm_source, "build": build_path, "stage": stage_path},
         "include_roots": {
@@ -479,7 +518,7 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
     manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
     manifest, base = _load_manifest(manifest_path)
     patches = _series(manifest, repo, base, pristine=pristine)
-    expected = _identity(manifest, patches, pristine)
+    expected = _identity(manifest, patches, pristine, repo)
     source = (source_dir or repo / "out" / "toolchains" / expected["build_id"] / "src").resolve()
     output_root = (repo / "out" / "toolchains").resolve()
     if not source.is_relative_to(output_root):

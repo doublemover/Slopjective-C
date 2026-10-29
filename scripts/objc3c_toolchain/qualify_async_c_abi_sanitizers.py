@@ -27,8 +27,10 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
     fixture = fixture or sdk / 'share/objc3c/examples/async-c-abi'
     runtime = repo / 'native/objc3c/src/runtime'
     # The instrumented service implementation and selected public ABI must agree.
-    assert digest(headers / 'objc3_runtime_services.h') == digest(runtime / 'public/objc3_runtime_services.h')
-    assert digest(headers / 'objc3_task.hpp') == digest(runtime / 'public/objc3_task.hpp')
+    if not (digest(headers / 'objc3_runtime_services.h') == digest(runtime / 'public/objc3_runtime_services.h')):
+        raise ValueError("qualify_async_c_abi_sanitizers: required semantic check failed: digest(headers / 'objc3_runtime_services.h') == digest(runtime / 'public/objc3_runtime_services.h')")
+    if not (digest(headers / 'objc3_task.hpp') == digest(runtime / 'public/objc3_task.hpp')):
+        raise ValueError("qualify_async_c_abi_sanitizers: required semantic check failed: digest(headers / 'objc3_task.hpp') == digest(runtime / 'public/objc3_task.hpp')")
     sources = [runtime / name for name in (
         'services/error_service.cpp', 'services/objc_task_error.cpp',
         'services/carrier_service.cpp', 'concurrency/service_executor.cpp',

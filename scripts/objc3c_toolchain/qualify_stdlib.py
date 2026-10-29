@@ -54,11 +54,11 @@ def qualify(sdk: Path, output: Path, *, include_root: Path | None = None,
             result = subprocess.run(list(map(str, argv)), cwd=root, env=env,
                                     stdout=stream, stderr=subprocess.STDOUT, timeout=120)
         commands.append({'name': label, 'exit_code': result.returncode,
-                         'expected_failure': failure is not None,
+                         'expected_exit_code': 1 if failure is not None else 0,
                          'log_sha256': packages.digest(log)})
         if failure is None and result.returncode != 0:
             raise ValueError('standard library failed: ' + label)
-        if failure is not None and (result.returncode == 0 or failure not in log.read_text()):
+        if failure is not None and (result.returncode != 1 or failure not in log.read_text()):
             raise ValueError('standard library rejection missing: ' + label)
 
     try:

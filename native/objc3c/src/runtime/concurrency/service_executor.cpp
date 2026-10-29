@@ -347,7 +347,11 @@ extern "C" void objc3_executor_release(objc3_executor_t *executor) {
     executor->ready.notify_all();
     for (auto &worker : executor->workers) {
       if (!worker.joinable()) continue;
-      if (worker.get_id() == std::this_thread::get_id())
+      // Runtime callbacks cannot wait for another executor's worker: two
+      // callbacks may release each other's last public owner concurrently.
+      // Worker-owned references keep drained queues alive after detachment.
+      if (current_executor_logical_identity != 0 ||
+          worker.get_id() == std::this_thread::get_id())
         worker.detach();
       else
         worker.join();

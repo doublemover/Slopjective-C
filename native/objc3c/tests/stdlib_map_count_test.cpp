@@ -2,14 +2,22 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <thread>
 #include <vector>
 
+static void check(bool condition) {
+  if (!condition) {
+    std::fputs("concurrent map-count contract failed\n", stderr);
+    std::abort();
+  }
+}
+
 int main() {
   objc3_map_i32_i32_v2_t map = nullptr;
-  assert(objc3_runtime_stdlib_map_i32_i32_v2_create(&map) == OBJC3_STDLIB_V2_OK);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_create(&map) == OBJC3_STDLIB_V2_OK);
   constexpr unsigned workers = 4, per_worker = 64;
   std::array<uint64_t, workers * per_worker> counts{};
   std::vector<std::thread> threads;
@@ -17,7 +25,7 @@ int main() {
     threads.emplace_back([&, worker] {
       for (unsigned item = 0; item != per_worker; ++item) {
         const unsigned key = worker * per_worker + item;
-        assert(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(
+        check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(
                    map, static_cast<int32_t>(key), 42, &counts[key]) ==
                OBJC3_STDLIB_V2_OK);
       }
@@ -28,13 +36,13 @@ int main() {
   // insert/count operations can duplicate or omit counts under this schedule.
   std::sort(counts.begin(), counts.end());
   for (unsigned index = 0; index != counts.size(); ++index)
-    assert(counts[index] == index + 1);
+    check(counts[index] == index + 1);
   uint64_t count = 0;
-  assert(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, 0, 43, &count) == 0);
-  assert(count == counts.size());
-  assert(objc3_runtime_stdlib_map_i32_i32_v2_release(map) == 0);
+  check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, 0, 43, &count) == 0);
+  check(count == counts.size());
+  check(objc3_runtime_stdlib_map_i32_i32_v2_release(map) == 0);
   count = 99;
-  assert(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, 0, 44, &count) ==
+  check(objc3_runtime_stdlib_map_i32_i32_v2_insert_count(map, 0, 44, &count) ==
          OBJC3_STDLIB_V2_STALE_HANDLE);
-  assert(count == 0);
+  check(count == 0);
 }

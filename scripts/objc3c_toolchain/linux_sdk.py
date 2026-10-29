@@ -72,7 +72,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
-                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'stdlib/include'):
+                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests', 'stdlib/include'):
         files.update(path for path in (repo / directory).rglob('*') if path.is_file()
                      and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
     # Qualification owners, including editor fixtures and shared executor code,

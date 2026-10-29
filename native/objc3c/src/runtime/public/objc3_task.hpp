@@ -333,8 +333,14 @@ public:
   void cancel() const noexcept { objc3_task_request_cancel(task_); }
   void wait() const { task_detail::check(objc3_task_wait(task_)); }
   T result() const {
+    // User result/error copying may release or reassign the caller's last
+    // handle. Pin the original task through construction of the return value.
+    basic_task_handle lease;
+    lease.task_ = objc3_task_retain(task_);
+    if (!lease.task_)
+      throw service_failure(task_ ? OBJC3_SERVICE_NOT_READY : OBJC3_SERVICE_INVALID_ARGUMENT);
     objc3_completion completion{};
-    task_detail::check(objc3_task_get_completion(task_, &completion));
+    task_detail::check(objc3_task_get_completion(lease.task_, &completion));
     task_detail::rethrow_completion(completion);
     if (!objc3_async_result_type_equal(completion.result_type,
                                        task_detail::result_type<T>()))
@@ -939,6 +945,10 @@ template<class Task,class Work> Task own_callable_as(Work work) {
   if constexpr(std::is_same_v<decltype(context->work()),objc3_async_frame>)
     context->inner=context->work();
   else context->inner=std::move(context->work()).release_native();
+  // Admission applies to the producer's carrier, before a valid wrapper can
+  // hide its ABI fields. Malformed producers retain responsibility for their
+  // unadmitted contexts: dispose intentionally refuses their callbacks.
+  task_detail::check(objc3_async_frame_validate(&context->inner));
   objc3_async_frame frame{sizeof(objc3_async_frame),OBJC3_ASYNC_ABI_VERSION,
       context,Context::resume,Context::destroy,context->inner.result_type};
   auto result=Task::from_native(&frame);

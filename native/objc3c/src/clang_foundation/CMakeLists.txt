@@ -128,6 +128,33 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cCon
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
+  set(_runtime_lifetime_source "${_objc3_repo}/native/objc3c/tests/runtime_lifetime_test.cpp")
+  set(_runtime_lifetime_object "${CMAKE_CURRENT_BINARY_DIR}/runtime-lifetime.o")
+  add_custom_command(OUTPUT "${_runtime_lifetime_object}"
+    COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
+      -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
+      "-I${_objc3_repo}/native/objc3c/src"
+      -c "${_runtime_lifetime_source}" -o "${_runtime_lifetime_object}"
+    DEPENDS "${_runtime_lifetime_source}"
+      "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
+      "${OBJC3C_FOUNDATION_DRIVER}" VERBATIM)
+  set_source_files_properties("${_runtime_lifetime_object}"
+    PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  add_executable(objc3_runtime_lifetime_test "${_runtime_lifetime_object}")
+  set_target_properties(objc3_runtime_lifetime_test PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(objc3_runtime_lifetime_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_runtime_lifetime COMMAND objc3_runtime_lifetime_test)
+  set_tests_properties(objc3_runtime_lifetime PROPERTIES TIMEOUT 20)
+  add_executable(objc3_opaque_storage_transaction_test ../../tests/opaque_storage_transaction_test.cpp)
+  target_link_libraries(objc3_opaque_storage_transaction_test PRIVATE objc3_runtime_services)
+  target_link_options(objc3_opaque_storage_transaction_test PRIVATE "LINKER:--wrap=_Znwm")
+  add_test(NAME objc3_opaque_storage_transaction COMMAND objc3_opaque_storage_transaction_test)
+  set_tests_properties(objc3_opaque_storage_transaction PROPERTIES TIMEOUT 20)
+  add_executable(objc3_assertion_control_test ../../tests/assertion_control_test.cpp)
+  add_test(NAME objc3_assertion_control COMMAND objc3_assertion_control_test)
+  set_tests_properties(objc3_assertion_control PROPERTIES WILL_FAIL TRUE)
   add_executable(objc3_async_error_bridge_test
     ../../../../tests/clang_foundation/structured_runtime/error_bridge.cpp)
   target_link_libraries(objc3_async_error_bridge_test PRIVATE objc3_runtime_services)
@@ -303,10 +330,10 @@ if (BUILD_TESTING)
     set(_source "${_objc3_repo}/tests/clang_foundation/task_coroutines/${_part}.cpp")
     add_custom_command(OUTPUT "${_object}"
       COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
-        -O2 -g -UNDEBUG -fcoro-aligned-allocation
+        -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
         "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
         -c "${_source}" -o "${_object}"
-      DEPENDS "${_source}"
+      DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_source}"
         "${_objc3_repo}/tests/clang_foundation/task_coroutines/provider.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
@@ -325,10 +352,10 @@ if (BUILD_TESTING)
   set(_task_group_await_object "${CMAKE_CURRENT_BINARY_DIR}/task-group-await.o")
   add_custom_command(OUTPUT "${_task_group_await_object}"
     COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
-      -O2 -g -UNDEBUG -fcoro-aligned-allocation
+      -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
       "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
       -c "${_task_group_await_source}" -o "${_task_group_await_object}"
-    DEPENDS "${_task_group_await_source}"
+    DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_task_group_await_source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h"
       "${OBJC3C_FOUNDATION_DRIVER}"
@@ -361,22 +388,7 @@ if (BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
       "$<TARGET_FILE:objc3_text_file_cli>")
   set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
-  foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_interface_codec_test objc3_compile_session_test
-      objc3_ownership_projection_test objc3_module_method_names_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
-      objc3_interface_import_api_test objc3_isolation_contracts_test
-      objc3_explicit_capture_lists_test objc3_borrowed_pointers_test
-      objc3_keypath_service_test objc3_keypath_native_ast_test
-      objc3_async_error_bridge_test
-      objc3_interface_module_resolution_test objc3_interface_module_provenance_test
-      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test objc3_task_coroutines_test objc3_task_group_await_test
-      objc3_generic_collection_service_test objc3_generic_associative_service_test
-      objc3_text_scalar_boundary_test)
-    if (MSVC)
-      target_compile_options(${_objc3_test} PRIVATE /UNDEBUG)
-    else()
-      target_compile_options(${_objc3_test} PRIVATE -UNDEBUG)
-    endif()
-  endforeach()
+
 endif()
 
 # Keep the SDK qualification plan available before test executables exist.
@@ -394,6 +406,10 @@ if(BUILD_TESTING)
     if(NOT TARGET "${_target}")
       message(FATAL_ERROR "Frontend CTest ${_test} has no owned target ${_target}")
     endif()
+    # CTest inventory is the single owner of assertion policy: new targets
+    # cannot silently miss a separately maintained list in optimized builds.
+    target_compile_options(${_target} PRIVATE -UNDEBUG
+      "SHELL:-include '${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h'")
     if(_frontend_test_rows)
       string(APPEND _frontend_test_rows ",\n")
     endif()

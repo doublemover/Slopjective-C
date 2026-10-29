@@ -32,6 +32,7 @@ PACKETS = {
         "clang/lib/Frontend/InitPreprocessor.cpp",
         "clang/lib/Lex/PPMacroExpansion.cpp",
         "clang/include/clang/Lex/Preprocessor.h",
+        "clang/include/clang/Lex/PreprocessorOptions.h",
         "clang/lib/Lex/PPDirectives.cpp",
         "clang/test/ObjC3/Driver",
         "clang/test/ObjC3/LanguageMode",

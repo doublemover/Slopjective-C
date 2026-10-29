@@ -17,17 +17,21 @@ bool reenter_destroy = false;
 objc3_generic_map_t destroy_reentry_map = nullptr;
 int destroy_reentry_status = -1;
 int item_destroyed = 0;
+unsigned payload_callbacks = 0;
 
 objc3_service_status CopyI64(void *dst, const void *src) {
+  ++payload_callbacks;
   std::memcpy(dst, src, sizeof(std::int64_t));
   return OBJC3_SERVICE_OK;
 }
 objc3_service_status MoveI64(void *dst, void *src) {
+  ++payload_callbacks;
   std::memcpy(dst, src, sizeof(std::int64_t));
   return OBJC3_SERVICE_OK;
 }
 void DestroyI64(void *) {}
 objc3_service_status HashI64(const void *key, std::uint64_t *out) {
+  ++payload_callbacks;
   std::int64_t value = 0;
   std::memcpy(&value, key, sizeof(value));
   *out = static_cast<std::uint64_t>(value) * UINT64_C(11400714819323198485);
@@ -45,6 +49,7 @@ objc3_service_status HashI64(const void *key, std::uint64_t *out) {
 }
 objc3_service_status EqualI64(const void *left, const void *right,
                               int *out_equal) {
+  ++payload_callbacks;
   if (equal_all_keys) { *out_equal = 1; return OBJC3_SERVICE_OK; }
   std::int64_t lhs = 0, rhs = 0;
   std::memcpy(&lhs, left, sizeof(lhs));
@@ -103,6 +108,26 @@ int main() {
   int inserted = -1;
   assert(objc3_generic_map_insert(map, &zero, &value_zero, &inserted) ==
          OBJC3_GENERIC_COLLECTION_OK && inserted == 1);
+  {
+    objc3_generic_associative_iterator_t stable = nullptr;
+    assert(objc3_generic_map_iterator(map, &stable) == OBJC3_GENERIC_COLLECTION_OK);
+    alignas(std::int64_t) unsigned char misaligned[sizeof(std::int64_t) + 1]{};
+    for (const auto *key : {&zero, &one}) {
+      for (const void *invalid : {static_cast<const void *>(nullptr),
+                                  static_cast<const void *>(misaligned + 1)}) {
+        const auto before = payload_callbacks;
+        inserted = 99;
+        assert(objc3_generic_map_insert(map, key, invalid, &inserted) ==
+               OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && inserted == 0);
+        assert(payload_callbacks == before);
+      }
+    }
+    int has = 0;
+    std::int64_t key = -1, value = -1;
+    assert(objc3_generic_associative_iterator_next(stable, &has, &key, &value) ==
+           OBJC3_GENERIC_COLLECTION_OK && has == 1 && key == zero && value == value_zero);
+    assert(objc3_generic_associative_iterator_release(stable) == OBJC3_GENERIC_COLLECTION_OK);
+  }
   assert(objc3_generic_map_insert(map, &one, &seven, &inserted) ==
          OBJC3_GENERIC_COLLECTION_OK && inserted == 1);
   const std::int64_t nine = 9;

@@ -296,3 +296,55 @@ def test_spi_grants_are_canonical_without_mutating_the_lock():
     assert canonical[0]['spi'] == ['Diagnostics', 'Testing']
     assert edge['spi'] == ['Testing', 'Diagnostics']
     assert canonical != [edge]
+
+
+@pytest.mark.parametrize('case', ['optional', 'shadow', 'include-next'])
+def test_fresh_header_discovery_detects_changes_outside_source_root(tmp_path, case):
+    import os
+    import subprocess
+    from scripts.objc3c_toolchain.source_graph import discover_lookup
+    compiler = shutil.which('clang')
+    if not compiler:
+        pytest.skip('header discovery control requires Clang')
+    sdk = tmp_path / 'sdk'
+    (sdk / 'bin').mkdir(parents=True)
+    (sdk / 'bin/clang').symlink_to(compiler)
+    source = tmp_path / 'source/main.cpp'
+    source.parent.mkdir()
+    external = tmp_path / 'external'
+    earlier, later = external / 'earlier', external / 'later'
+    earlier.mkdir(parents=True)
+    later.mkdir()
+    if case == 'optional':
+        source.write_text('#if __has_include("optional.h")\n#include "optional.h"\n#else\nint answer = 40;\n#endif\n')
+        new = earlier / 'optional.h'
+    elif case == 'shadow':
+        source.write_text('#include "value.h"\n')
+        (later / 'value.h').write_text('int answer = 40;\n')
+        new = earlier / 'value.h'
+    else:
+        source.write_text('#include "value.h"\n')
+        (earlier / 'value.h').write_text('#include_next "optional.h"\n')
+        # Create a third, lower-priority root to witness include_next shadowing.
+        final = external / 'final'
+        final.mkdir()
+        (final / 'optional.h').write_text('int answer = 40;\n')
+        new = later / 'optional.h'
+    flags = ['-std=c++20', '-I'+str(earlier), '-I'+str(later)]
+    if case == 'include-next':
+        flags.append('-I'+str(final))
+    flags += ['-MD', '-MF', str(tmp_path / 'unused.d')]
+    config = {'input': source, 'language': 'c++', 'ownership': 'none'}
+    output = tmp_path / 'build'
+    output.mkdir()
+    def lookup():
+        return discover_lookup(sdk, config, flags, 'x86_64-unknown-linux-gnu', output, output, os.environ)
+    before = lookup()
+    assert lookup() == before
+    new.write_text('int answer = 42;\n')
+    after = lookup()
+    assert after != before
+    assert str(new) in after[str(source)]['dependencies']
+    assert lookup() == after
+    new.unlink()
+    assert lookup() == before

@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/Basic/CMakeLists.txt b/clang/include/clang/Basic/CMakeLists.txt
-index d334c1d41..42591e114 100644
+index d334c1d41..b123e0a8a 100644
 --- a/clang/include/clang/Basic/CMakeLists.txt
 +++ b/clang/include/clang/Basic/CMakeLists.txt
-@@ -1,3 +1,12 @@
+@@ -1,3 +1,18 @@
 +set(CLANG_OBJC3_PATCH_DIGEST "" CACHE STRING "Canonical ObjC3 patch stack SHA256")
 +string(LENGTH "${CLANG_OBJC3_PATCH_DIGEST}" OBJC3_DIGEST_LENGTH)
 +if(NOT OBJC3_DIGEST_LENGTH EQUAL 64 OR
@@ -10,6 +10,12 @@ index d334c1d41..42591e114 100644
 +  message(FATAL_ERROR "ObjC3 foundation requires the sealed patch stack SHA256")
 +endif()
 +configure_file(ObjC3Foundation.h.in ObjC3Foundation.h @ONLY)
++set(CLANG_OBJC3_CONFIG_DIGEST "" CACHE STRING "Canonical ObjC3 foundation configuration SHA256")
++string(LENGTH "${CLANG_OBJC3_CONFIG_DIGEST}" OBJC3_CONFIG_DIGEST_LENGTH)
++if(NOT OBJC3_CONFIG_DIGEST_LENGTH EQUAL 64 OR
++   NOT CLANG_OBJC3_CONFIG_DIGEST MATCHES "^[0-9a-f]+$")
++  message(FATAL_ERROR "A canonical ObjC3 foundation configuration SHA256 is required")
++endif()
 +configure_file(ObjC3BuildIdentity.h.in ObjC3BuildIdentity.h @ONLY)
 +
  macro(clang_diag_gen component)
@@ -94,7 +100,7 @@ index 000000000..5b82f095e
 +#endif
 +#endif
 diff --git a/clang/include/clang/Options/Options.td b/clang/include/clang/Options/Options.td
-index f893d858d..b6d186b5c 100644
+index f893d858d..c83b20418 100644
 --- a/clang/include/clang/Options/Options.td
 +++ b/clang/include/clang/Options/Options.td
 @@ -3972,6 +3972,18 @@ def fno_verbose_asm : Flag<["-"], "fno-verbose-asm">, Group<f_Group>,
@@ -116,6 +122,17 @@ index f893d858d..b6d186b5c 100644
  def fobjc_arc : Flag<["-"], "fobjc-arc">, Group<f_Group>,
    Visibility<[ClangOption, CC1Option]>,
    HelpText<"Synthesize retain and release calls for Objective-C pointers">;
+@@ -5297,6 +5309,10 @@ def iframeworkwithsysroot : JoinedOrSeparate<["-"], "iframeworkwithsysroot">,
+   HelpText<"Add directory to SYSTEM framework search path, "
+            "absolute paths are relative to -isysroot">,
+   MetaVarName<"<directory>">, Visibility<[ClangOption, CC1Option]>;
++def fobjc3_source_module_EQ : Joined<["-"], "fobjc3-source-module=">,
++  Group<f_Group>, Visibility<[CC1Option]>,
++  HelpText<"Keep a named ObjC3 semantic-interface import parser-owned during preprocessing">,
++  MarshallingInfoStringVector<PreprocessorOpts<"ObjC3SourceModuleNames">>;
+ def imacros : JoinedOrSeparate<["-", "--"], "imacros">, Group<clang_i_Group>,
+   Visibility<[ClangOption, CC1Option]>,
+   HelpText<"Include macros from file before parsing">, MetaVarName<"<file>">,
 diff --git a/clang/lib/Basic/CMakeLists.txt b/clang/lib/Basic/CMakeLists.txt
 index 21851e79b..f7e54e878 100644
 --- a/clang/lib/Basic/CMakeLists.txt
@@ -154,7 +171,7 @@ index 000000000..aae761dec
 +  return false;
 +}
 diff --git a/clang/lib/Basic/Version.cpp b/clang/lib/Basic/Version.cpp
-index 4823f566b..de1fa3c3c 100644
+index 4823f566b..8a46a499c 100644
 --- a/clang/lib/Basic/Version.cpp
 +++ b/clang/lib/Basic/Version.cpp
 @@ -11,6 +11,8 @@
@@ -175,11 +192,12 @@ index 4823f566b..de1fa3c3c 100644
  std::string getClangRepositoryPath() {
  #if defined(CLANG_REPOSITORY_STRING)
    return CLANG_REPOSITORY_STRING;
-@@ -90,6 +94,7 @@ std::string getClangFullRepositoryVersion() {
+@@ -90,6 +94,8 @@ std::string getClangFullRepositoryVersion() {
        OS << LLVMRepo << ' ';
      OS << LLVMRev << ')';
    }
 +  OS << " ObjC3-patches=" << getObjC3PatchDigest();
++  OS << " ObjC3-config=" << CLANG_OBJC3_CONFIG_DIGEST;
    return buf;
  }
  
@@ -260,7 +278,7 @@ index 8898e63ab..b699a23fa 100644
    if (const Arg *A = Args.getLastArg(OPT_fcf_protection_EQ)) {
      StringRef Name = A->getValue();
 diff --git a/clang/lib/Frontend/InitPreprocessor.cpp b/clang/lib/Frontend/InitPreprocessor.cpp
-index 65b065dc8..09f5ee622 100644
+index 65b065dc8..5bb6abdc5 100644
 --- a/clang/lib/Frontend/InitPreprocessor.cpp
 +++ b/clang/lib/Frontend/InitPreprocessor.cpp
 @@ -14,6 +14,8 @@
@@ -299,6 +317,14 @@ index 65b065dc8..09f5ee622 100644
 +
    if (LangOpts.ObjC)
      Builder.defineMacro("__OBJC__");
+ 
+@@ -1665,6 +1688,7 @@ void clang::InitializePreprocessor(Preprocessor &PP,
+   }
+ 
+   // Instruct the preprocessor to skip the preamble.
++  PP.setObjC3SourceModuleNames(InitOpts.ObjC3SourceModuleNames);
+   PP.setSkipMainFilePreamble(InitOpts.PrecompiledPreambleBytes.first,
+                              InitOpts.PrecompiledPreambleBytes.second);
  
 diff --git a/clang/lib/Lex/PPMacroExpansion.cpp b/clang/lib/Lex/PPMacroExpansion.cpp
 index e09e80a06..dcb15c3e0 100644
@@ -663,13 +689,45 @@ index 3e2f66f27..2a16794b6 100644
                          .Case("zvector", LangOpts.ZVector)
 diff --git a/clang/include/clang/Basic/ObjC3BuildIdentity.h.in b/clang/include/clang/Basic/ObjC3BuildIdentity.h.in
 new file mode 100644
-index 000000000..d98a5c7d9
+index 000000000..c2d4cc81c
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3BuildIdentity.h.in
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,7 @@
 +#ifndef LLVM_CLANG_BASIC_OBJC3_BUILD_IDENTITY_H
 +#define LLVM_CLANG_BASIC_OBJC3_BUILD_IDENTITY_H
 +// Include only from the version implementation. Foundation declarations stay
 +// stable across source seals; the installed stamp also supports SDK admission.
 +#define CLANG_OBJC3_PATCH_DIGEST "@CLANG_OBJC3_PATCH_DIGEST@"
++#define CLANG_OBJC3_CONFIG_DIGEST "@CLANG_OBJC3_CONFIG_DIGEST@"
++#endif
+diff --git a/clang/include/clang/Lex/PreprocessorOptions.h b/clang/include/clang/Lex/PreprocessorOptions.h
+index 4d1a30712..fa04844bd 100644
+--- a/clang/include/clang/Lex/PreprocessorOptions.h
++++ b/clang/include/clang/Lex/PreprocessorOptions.h
+@@ -80,6 +80,7 @@ public:
+   std::vector<std::pair<std::string, bool/*isUndef*/>> Macros;
+   std::vector<std::string> Includes;
+   std::vector<std::string> MacroIncludes;
++  std::vector<std::string> ObjC3SourceModuleNames;
+ 
+   /// Perform extra checks when loading PCM files for mutable file systems.
+   bool ModulesCheckRelocated = true;
+diff --git a/clang/test/ObjC3/Driver/interface-preprocessing.m b/clang/test/ObjC3/Driver/interface-preprocessing.m
+new file mode 100644
+index 000000000..9e7d3503c
+--- /dev/null
++++ b/clang/test/ObjC3/Driver/interface-preprocessing.m
+@@ -0,0 +1,13 @@
++// RUN: %clang -E -x objective-c -std=c17 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: %clang -E -x objective-c++ -std=c++20 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: %clang -E -x objective-c++ -std=c++23 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: not %clang -E -x objective-c -std=c17 -fobjc-version=3 -fmodules %s 2>&1 | FileCheck %s --check-prefix=UNREGISTERED
++// CHECK: @{{(__preprocessed_)?}}import fixture.Dependency;
++// CHECK: int no_optional_header;
++// UNREGISTERED: fatal error: module 'fixture' not found
++@import fixture.Dependency;
++#if __has_include("objc3_deliberately_absent_header.h")
++int optional_header;
++#else
++int no_optional_header;
 +#endif

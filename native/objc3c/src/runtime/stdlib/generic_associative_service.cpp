@@ -297,13 +297,13 @@ Status FindEntry(const AssociativeRecord &record,
 
 Status CopyEntry(Entry &destination, const Entry &source,
                  const AssociativeRecord &record, bool with_value,
-                 const void *replacement_value = nullptr) {
+                 const void *replacement_value = nullptr, bool replace_value = false) {
   Status status = CopyPayload(destination.key, source.key.data(), KeyOps(record));
   if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
   destination.hash = source.hash;
   if (record.is_set || !with_value) return OBJC3_GENERIC_COLLECTION_OK;
   return CopyPayload(destination.value,
-      replacement_value ? replacement_value : source.value.data(), ValueOps(record));
+      replace_value ? replacement_value : source.value.data(), ValueOps(record));
 }
 
 Status Commit(AssociativeRecord &record, std::uint64_t expected,
@@ -325,6 +325,12 @@ Status Commit(AssociativeRecord &record, std::uint64_t expected,
 
 Status Insert(AssociativeRecord &record, const void *key, const void *value,
               int *out_inserted) {
+  if (!record.is_set) {
+    const auto &ops = ValueOps(record);
+    if ((!value && ops.payload_size != 0) ||
+        (value && !IsAligned(value, static_cast<std::size_t>(ops.payload_alignment))))
+      return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT;
+  }
   std::shared_ptr<Snapshot> before;
   std::uint64_t generation = 0;
   Status status = SnapshotRecord(record, before, generation);
@@ -351,7 +357,7 @@ Status Insert(AssociativeRecord &record, const void *key, const void *value,
     Entry entry;
     const bool replace_value = found && i == found_index && !record.is_set;
     status = CopyEntry(entry, before->entries[i], record, true,
-                       replace_value ? value : nullptr);
+                       replace_value ? value : nullptr, replace_value);
     if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
     candidate->entries.push_back(std::move(entry));
   }

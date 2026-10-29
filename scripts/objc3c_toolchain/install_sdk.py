@@ -14,6 +14,7 @@ import subprocess
 import tarfile
 import tempfile
 import types
+import uuid
 
 
 def file_hash(path: Path) -> str:
@@ -35,18 +36,16 @@ def activate(root: Path, prefix: Path) -> None:
     active = root / 'current'
     if active.exists() and not active.is_symlink():
         raise ValueError(f'activation path is not a symbolic link; preserving {active}')
-    temporary = root / f'.current-{os.getpid()}'
-    try:
-        temporary.symlink_to(prefix.relative_to(root))
-        os.replace(temporary, active)
-    finally:
-        temporary.unlink(missing_ok=True)
     script = root / 'activate.sh'
     text = '''# Source this file in a POSIX shell. Bootstrap and product SDKs are separate.
 if [ -z "${OBJC3C_BOOTSTRAP_LLVM_ROOT:-}" ] && [ -n "${LLVM_ROOT:-}" ] && [ ! -f "$LLVM_ROOT/objc3-sdk.json" ]; then
   export OBJC3C_BOOTSTRAP_LLVM_ROOT="$LLVM_ROOT"
 fi
-export OBJC3C_SDK_ROOT=SDK_PATH
+# Resolve the single published pointer once. Existing shells keep this concrete
+# generation even when a later installation changes current.
+_objc3_selected=$(CDPATH= cd -P -- SDK_PATH && pwd -P) || return 1
+export OBJC3C_SDK_ROOT="$_objc3_selected"
+unset _objc3_selected
 export OBJC3C_CLANG_FOUNDATION_ROOT="$OBJC3C_SDK_ROOT"
 export LLVM_ROOT="$OBJC3C_SDK_ROOT"
 export OBJC3C_LLVM_ROOT="$OBJC3C_SDK_ROOT"
@@ -54,14 +53,31 @@ export LLVM_DIR="$OBJC3C_SDK_ROOT/lib/cmake/llvm"
 export Clang_DIR="$OBJC3C_SDK_ROOT/lib/cmake/clang"
 export PATH="$OBJC3C_SDK_ROOT/bin:$PATH"
 export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
-'''.replace('SDK_PATH', shlex.quote(str(prefix)))
-    pending = root / f'.activate-{os.getpid()}'
+'''.replace('SDK_PATH', shlex.quote(str(root / 'current')))
+    # Prepare the stable reader before publishing a new generation. Replacing
+    # this reader is safe during migration: it still selects the old current.
+    # Subsequent updates only need the atomic pointer replacement below.
+    if script.is_symlink() or (script.exists() and not script.is_file()):
+        raise ValueError('activation script must be an owned regular file')
+    nonce = f'{os.getpid()}-{uuid.uuid4().hex}'
+    pending = root / f'.activate-{nonce}'
+    temporary = root / f'.current-{nonce}'
     try:
-        pending.write_text(text)
-        pending.chmod(0o644)
-        os.replace(pending, script)
-    finally:
+        if not script.exists() or script.read_text() != text:
+            pending.write_text(text)
+            pending.chmod(0o644)
+            os.replace(pending, script)
+        temporary.symlink_to(prefix.relative_to(root))
+    except BaseException:
         pending.unlink(missing_ok=True)
+        temporary.unlink(missing_ok=True)
+        raise
+    # Sole commit point. No required writes or fallible cleanup follow it.
+    try:
+        os.replace(temporary, active)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def install(archive: Path, expected_sha256: str, root: Path) -> dict:

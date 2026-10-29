@@ -374,6 +374,9 @@ objc3_service_status objc3_executor_get_named(const char *name,
                                               objc3_executor_t **out_executor);
 objc3_service_status objc3_executor_unregister_named(const char *name);
 objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor);
+/* Last release closes admission and drains queued work. From a runtime
+ * callback, worker reclamation is nonblocking; worker-owned references keep
+ * the destination alive until drain completes. Ordinary host release waits. */
 void objc3_executor_release(objc3_executor_t *executor);
 objc3_service_status objc3_executor_enqueue(objc3_executor_t *executor,
                                             objc3_executor_callback callback,

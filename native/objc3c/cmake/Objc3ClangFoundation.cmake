@@ -25,6 +25,7 @@ if (NOT _objc3_verify_exit EQUAL 0)
   message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
 endif()
 string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch_digest)
+string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_source_identity}" build_config_digest)
 unset(_objc3_identity_header)
 unset(_objc3_identity_header CACHE)
 find_file(_objc3_identity_header ObjC3Foundation.h
@@ -40,7 +41,8 @@ find_file(_objc3_build_identity_header ObjC3BuildIdentity.h
   NO_DEFAULT_PATH REQUIRED)
 file(READ "${_objc3_build_identity_header}" _objc3_compiled_stamp)
 if (NOT _objc3_compiled_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
-    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
+    NOT _objc3_compiled_stamp MATCHES "${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang headers do not match the pinned source and patch stack")
 endif()
 unset(OBJC3C_FOUNDATION_DRIVER)
@@ -58,7 +60,8 @@ execute_process(
   ERROR_VARIABLE _objc3_driver_error)
 if (NOT _objc3_driver_exit EQUAL 0 OR
     NOT _objc3_driver_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
-    NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+    NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}" OR
+    NOT _objc3_driver_identity MATCHES "ObjC3-config=${OBJC3C_FOUNDATION_CONFIG_DIGEST}")
   message(FATAL_ERROR "Clang executable does not match the sealed source and SDK headers: ${_objc3_driver_error}")
 endif()
 set(OBJC3C_FOUNDATION_RESOURCE_DIR "${_objc3_sdk}/lib/clang/23")

@@ -103,7 +103,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                 command += ['--', '--no-default-config', '-fblocks', '-' + optimization]
                 result = subprocess.run(command, cwd=client, capture_output=True, text=True, timeout=180)
                 (output / f'{optimization}-reject-{case}.log').write_text(result.stdout + result.stderr)
-                if result.returncode == 0 or code not in result.stderr or obj.exists() or deps.exists():
+                if result.returncode != 1 or code not in result.stderr or obj.exists() or deps.exists():
                     raise ValueError(f'{optimization} {case}: invalid import did not fail atomically with {code}')
                 negative.append({'optimization': optimization, 'case': case,
                                  'exit_code': result.returncode, 'diagnostic': code, 'outputs_absent': True})
