@@ -14,5 +14,7 @@ require their own contracts and are not covered by this capability.
 
 This work preserves native importer metadata. It does not establish Swift
 compiler/runtime interoperability or complete Objective-C 3.0 profile conformance.
-Combined replay, source-free package and sanitizer checks remain pending. SDK
-2.62 remains the accepted archive.
+C, Objective-C and C++ replay and source-free factory package checks pass,
+including normal, eager, ASan/UBSan and TSan modes; see the
+[combined receipt](../support/linux_implementation_sprint_progress.json).
+SDK 2.62 remains the accepted archive.

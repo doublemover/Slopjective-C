@@ -1,9 +1,10 @@
 # Linux implementation sprint
 
-This working span fronts development across the current PR backlog. Source
-2.85 is the last completed checkpoint. The following implementation is pending
-combined validation (native compiler and facade compilation pass); it does not establish profile conformance
-or delivery in the accepted 2.62 SDK.
+This combined sprint is source-validated through **2.87**, with System **2.15**
+and keypath **2.5**. The [source receipt](../support/linux_implementation_sprint_progress.json)
+binds the reports and records their exact limits. SDK **2.62** remains the accepted
+archive; no archive was rebuilt for these implementation checkpoints. Full profile
+conformance remains open.
 
 - Factory type graphs: nested records/enums/unions, exact lexical and overload
   origins, local member factories, aggregate wrappers, callbacks, pointers,
@@ -30,10 +31,23 @@ or delivery in the accepted 2.62 SDK.
   through validated property-only metadata. Strict profiles diagnose the loss of
   typed root/value checking; incompatible metadata returns nil.
 
-The source witnesses extend maintained native semantic/codegen/PCH fixtures and
-runtime feature matrices. Broad compiler/frontend/tooling, sanitizer, source-free
-package and SDK checks follow the implementation batch. Earlier reports remain
-historical and must not be overwritten.
+All 33 frontend suites, 234 native unit tests and 409 compiler regressions pass;
+three compiler cases remain unsupported. The maintained tooling selection passes
+335 tests and 33 subtests, with three existing skips. Normal and TSan feature
+matrices each pass 168 configurations / 1,206 commands. ASan/UBSan completes the
+same families across complementary 96-case and corrected 72-case runs; the initial
+failed report is retained. Final owned-callable checks pass 24 configurations /
+132 commands per normal/ASan/TSan mode, and all ten native runtime clients pass
+in each mode. Exact C++ ivar lifecycle callback types fix sanitizer-reported UB.
+
+Final source-free factory checks pass 32 configurations / 192 commands across
+normal, eager, ASan/UBSan and TSan; the full async fixture additionally passes one
+normal configuration / six commands. Native replay preserves all written deduced
+return graphs, CTAD expression syntax and complete lexical member order. Foreign
+contracts deduplicate identical redeclaration payloads. Source-directed consumers
+reuse compiler-owned `va_list` declarations even after standard-library imports.
+Historical reports are retained; broader SDK and full async-package sanitizer
+delivery remain separate work.
 
 The maintained [factory batch driver](../../scripts/objc3c_toolchain/run_linux_factory_batch.py)
 checks development compiler/runtime inputs directly. It validates interface

@@ -13,7 +13,8 @@ factory chain; unrelated callable-local types remain
 outside this contract. Aliases, fields, wrappers, storage and provider entries
 retain native type and ABI identity.
 
-Focused compilation and source-free validation are in progress. Broader source
-and sanitizer matrices stay batched; SDK 2.62 remains accepted. Remaining
+Compilation, replay and source-free checks pass in normal, eager, ASan/UBSan
+and TSan modes; see the [combined receipt](../support/linux_implementation_sprint_progress.json).
+SDK 2.62 remains accepted. Remaining
 ownership, concurrency, isolation, key-path, language/profile implementation and
 native Linux AArch64 qualification remain open.

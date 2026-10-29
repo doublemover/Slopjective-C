@@ -212,16 +212,16 @@
         "Structural non-type template arguments from public constexpr factory results, preserving exact nominal origins, value bits, recursive packs and checked provider ownership (source)",
         "Public closure factory result projections through aliases, records, template arguments and provider/consumer entries, retaining exact factory origins, captures and native value lifetimes (source)",
         "Public local result projections from ordinary/generic closures returned by complete factories, preserving recursive factory roots, closed arguments and captured record lifetimes (source)",
-        "Nested record/enum/union, local-member factory and wrapped/indirect result graphs, with exact lexical/overload origins, closed generic/closure roots, static storage and native cross-provider lifetimes (implementation)",
-        "Object-owned automatic actor mailboxes with concurrent first-entry identity, native association teardown and checked explicit affinity (implementation)",
-        "Dynamic Class metadata transfers, plain union executor frames and owned C++ callable child/detached/group spawning through actual frame teardown (implementation)",
-        "Canonical Swift importer names, async/error conventions, newtypes, bridges, private-import markers and declaration/parameter attribute payloads with exact replay and semantic capability checks (implementation)"
+        "Nested record/enum/union, local-member factory and wrapped/indirect result graphs, with exact lexical/overload origins, closed generic/closure roots, static storage and native cross-provider lifetimes (source)",
+        "Object-owned automatic actor mailboxes with concurrent first-entry identity, native association teardown and checked explicit affinity (source)",
+        "Dynamic Class metadata transfers, plain union executor frames and owned C++ callable child/detached/group spawning through actual frame teardown (source)",
+        "Canonical Swift importer names, async/error conventions, newtypes, bridges, private-import markers and declaration/parameter attribute payloads with exact replay and semantic capability checks (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
         "remaining awaited isolation/executor crossing forms",
         "complete strict concurrency and Sendable enforcement",
-        "Remaining dependent/unnamed-type, custom coroutine-promise, namespace attribute and lookup/profile publication contracts"
+        "Remaining dependent/unnamed-type, custom coroutine-promise and dependent lookup/attribute/profile publication contracts"
       ]
     },
     {
@@ -246,13 +246,12 @@
         "Writable nullable object/Block chains with exact-once operands, nil no-op updates, receiver pinning, native cleanup and semantic capability admission (source)",
         "Named native bit-fields and unambiguous inherited C++ record fields with native access, base adjustment, signed/truncated values and exact-once property writeback (source)",
         "Typed root[path] reads, assignments, compound updates and increments with source-ordered root/key/value snapshots, shared native lifetime/EH cleanup and source-free published inline syntax (source)",
-        "Plain union field access/writeback and explicit checked KVC NSString boxing with strict safety-loss diagnostics (implementation)"
+        "Plain union field access/writeback and explicit checked KVC NSString boxing with strict safety-loss diagnostics (source)"
       ],
       "remaining": [
         "nullable chains with nonnull/scalar/aggregate results",
         "dependent, effectful and isolated paths",
         "borrowed and owned-resource value semantics",
-        "optional KVC conversion",
         "complete installed contract validation"
       ]
     },
@@ -288,7 +287,7 @@
         "Field- and element-sensitive invocation summaries for callable members of captured records and arrays, nested/init/copy capture forwarding and structural ARC record copies (source)",
         "Known memory-fill nonescape/write-only contracts, exact direct local overwrite kills for borrowed/callable/address provenance, nested arrays/fields, owner expiry and preserved wildcard/partial/uncertain facts (source)",
         "Conservative invocation/initializer summaries beyond eagerly tracked array elements, nested captured callback arrays, fresh initialization resets and preserved possible address sets (source)",
-        "Closed synchronous generic C++ capture CFGs, merged per-instantiation owner/effect summaries and trivial union copy provenance (implementation)"
+        "Closed synchronous generic C++ capture CFGs, merged per-instantiation owner/effect summaries and trivial union copy provenance (source)"
       ],
       "remaining": [
         "remaining borrowed alias/escape and required diagnostic boundaries",
