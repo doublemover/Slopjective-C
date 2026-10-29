@@ -1973,3 +1973,5 @@ NativeStandardCoroutines::Task<int> NativeStandardCoroutines::provider_task(int 
 NativeStandardCoroutines::External<int> NativeStandardCoroutines::provider_external(int value){return external(value);}
 void *NativeStandardCoroutines::provider_address(std::coroutine_handle<> handle){return handle.address();}
 int NativeStandardCoroutines::provider_frames(){return Counts::frames;}
+
+__attribute__((preserve_most,noinline)) int NativeDeclarationAttributes::provider_preserved(int value){return value+2;}

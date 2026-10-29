@@ -551,6 +551,43 @@ void owned_callable_spawn_contract(objc3_executor_t *source) {
   assert(mismatch && live.load()==0);
 }
 
+struct RawGroupWork {
+  static inline int entered=0;
+  std::shared_ptr<int> owner;
+  int operator()(objc3::task_group_handle group) __objc3_async_frame {
+    ++entered;
+    auto child=objc3_task_spawn_in_group<int>(group,[value=*owner]() -> int __objc3_async_frame {return value;});
+    return co_await child;
+  }
+};
+void raw_group_adapter_contract(objc3_executor_t *source) {
+  auto owner=std::make_shared<int>(42);std::weak_ptr<int> witness=owner;
+  auto joined=objc3::with_task_group<int>(RawGroupWork{std::move(owner)}).start(source);
+  assert(!witness.expired());uint32_t executed=0;
+  assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
+  assert(joined.result()==42);joined={};assert(witness.expired());
+  const int entered=RawGroupWork::entered;
+  {
+    auto owner=std::make_shared<int>(42);std::weak_ptr<int> weak=owner;
+    auto cancelled=objc3::with_task_group<int>(RawGroupWork{std::move(owner)}).start(source);
+    cancelled.cancel();assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
+    bool caught=false;try{(void)cancelled.result();}catch(const objc3::task_cancelled &){caught=true;}
+    cancelled={};assert(caught && weak.expired() && RawGroupWork::entered==entered);
+  }
+  {
+    auto owner=std::make_shared<int>(42);std::weak_ptr<int> weak=owner;
+    auto rejected=objc3::with_task_group<double>(RawGroupWork{std::move(owner)}).start(source);
+    assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);
+    bool caught=false;try{(void)rejected.result();}catch(const objc3::service_failure &error){caught=error.status()==OBJC3_SERVICE_TYPE_MISMATCH;}
+    rejected={};assert(caught && weak.expired() && RawGroupWork::entered==entered);
+  }
+  auto group=objc3::task_group_handle::create();
+  auto scope_task=objc3::with_task_group<int>([](objc3::task_group_handle group)->objc3::task<int>{
+    auto child=objc3_task_spawn_in_group(group,[]()->objc3::task<int>{co_return 42;});co_return co_await child;
+  }).start(source);
+  assert(objc3_executor_pump(source,UINT32_MAX,&executed)==OBJC3_SERVICE_OK);assert(scope_task.result()==42);
+}
+
 int main() {
   objc3_executor_t *source = nullptr, *global = nullptr;
   objc3_actor_t *actor = nullptr;
@@ -559,6 +596,7 @@ int main() {
   dynamic_frame_storage_contract(source);
   assert(objc3_actor_create(source, &actor) == OBJC3_SERVICE_OK);
   owned_callable_spawn_contract(source);
+  raw_group_adapter_contract(source);
   checked_cxx_scope_exits(source);
   callback_group_owns_callable_until_quiescence(source);
   callback_frame_cleanup_is_scope_work(source);

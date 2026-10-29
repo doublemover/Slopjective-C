@@ -222,6 +222,10 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o) { const char *p=bytes(o); if(!p) escape(p); else use(p); }",
       "void f(id o) { const char *p=bytes(o); if(p==0) global_pointer=p; }",
       "void f(id o) { const char *p=bytes(o); const char **alias=&p; *alias=0; escape(p); }",
+      "void f(id o,int b) {const char *p=0,*q=0;*(b?&p:&q)=bytes(o);use(p);use(q);}",
+      "void f(id o,int b) {struct Holder p={0},q={0};*(b?&p:&q)=(struct Holder){bytes(o)};use(p.pointer);use(q.pointer);}",
+      "void f(id o,int b) {const char *p=bytes(o);*(b?&p:&p)=0;escape(p);}",
+      "void f(id o) {const char *p[2]={bytes(o),0};const char **a=p+1;*(a-1)=0;escape(p[0]);}",
       "void f(id o) { const char *p=bytes(o); const char **alias; alias=&p; use(*alias); }",
       "void f(id o) { struct Holder h={bytes(o)}; struct Holder *alias=&h; alias->pointer=0; escape(h.pointer); }",
       "void f(id o) { const char *p[2]={bytes(o),0}; const char **alias=p; *alias=0; escape(p[0]); }",
@@ -263,6 +267,10 @@ void SemanticCases(const fs::path &Root, BaseLanguage Language,
       "void f(id o, struct Holder *h) { h->pointer=bytes(o); }",
       "void f(id o) { escape(bytes(o)); }",
       "void f(id o) { const char *p=bytes(o); const char **alias=&p; escape_address(alias); }",
+      "void f(id o,int b) {const char *p=0,*q=0;*(b?&p:&q)=bytes(o);escape(p);}",
+      "void f(id o,int b) {const char *p=bytes(o),*q=0;*(b?&p:&q)=0;escape(p);}",
+      "void f(id o,int b) {const char *p=0,*q=0;*(b?&p:&q)=bytes(o);o=0;use(q);}",
+      "void f(id o,int b) {const char *p=0;*(b?&p:&global_pointer)=bytes(o);}",
       "void f(id o) { const char *p=bytes(o); const char **alias=&p; invoke(^{escape(*alias);}); }",
       "void f(id o) { struct Holder h={bytes(o)}; struct Holder *alias=&h; escape(alias->pointer); }",
       "void f(id o) { const char *p[2]={bytes(o),0}; const char **alias=p; escape(*alias); }",
@@ -686,7 +694,23 @@ void ForeignPersistenceCases(const fs::path &Root) {
   }
 }
 } // namespace
+void TestIndependentStrongAliases() {
+  for (const std::string &Standard:{std::string("c++20"),std::string("c++23")}) {
+    for (const char *Source:{
+        "void f(id o){id alias=o;const char *p=bytes(o);o=0;use(p);}",
+        "void f(id o){id alias=o;const char *p=bytes(alias);alias=0;use(p);}",
+        "void f(id o){const char *p=bytes(o);id alias=o;id second=alias;o=0;alias=0;use(p);}",
+        "void f(id o,int b){id alias=o;const char *p=bytes(o);if(b)o=0;use(p);}"})
+      Expect(Request(fs::temp_directory_path(),Header+Source,BaseLanguage::ObjectiveCxx,Standard,true),true);
+    for (const char *Source:{
+        "void f(id o){id alias=o;const char *p=bytes(o);o=0;alias=0;use(p);}",
+        "void f(id o,int b){id alias=o;const char *p=bytes(o);if(b)alias=0;o=0;use(p);}",
+        "void f(id o){const char *p=bytes(o);{id alias=o;o=0;}use(p);}"})
+      Expect(Request(fs::temp_directory_path(),Header+Source,BaseLanguage::ObjectiveCxx,Standard,true),false);
+  }
+}
 int main() {
+  TestIndependentStrongAliases();
   const auto Stamp = std::chrono::steady_clock::now().time_since_epoch().count();
   const auto Root = fs::temp_directory_path() / ("objc3-borrowed-" + std::to_string(Stamp));
   fs::create_directories(Root);

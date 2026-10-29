@@ -363,7 +363,12 @@ struct task_group_cleanup_request;
  * Destruction releases ownership, and abandoning one await does not cancel the
  * shared tasks. Close and join before releasing the last caller owner, unless
  * this is a current_scope() view whose compiler guard owns finalization. */
-class [[nodiscard]] task_group_handle {
+// Copies own independent leases to synchronized shared group state.
+class [[nodiscard]]
+#if defined(__OBJC3__)
+    __attribute__((objc_unsafe_sendable))
+#endif
+    task_group_handle {
   objc3_task_group_t *group_ = nullptr;
   explicit task_group_handle(objc3_task_group_t *owned) noexcept
       : group_(owned) {}

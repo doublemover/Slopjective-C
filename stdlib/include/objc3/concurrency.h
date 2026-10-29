@@ -47,7 +47,14 @@ task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
   auto group = scope.child();
   // Awaiting completion alone does not join callback frame/callback cleanup.
   // Registration must precede dispatch, including failed-start paths.
-  auto callback = work(group).__objc3_start_group_body(scope);
+  auto body = [&]() {
+    if constexpr (std::is_same_v<decltype(work(group)),objc3_async_frame>) {
+      auto frame=work(group);
+      try {return task<T>::from_native(&frame);}
+      catch (...) {(void)objc3_async_frame_dispose(&frame);throw;}
+    } else return work(group);
+  }();
+  auto callback = std::move(body).__objc3_start_group_body(scope);
   if constexpr (std::is_void_v<T>) {
     co_await callback;
     co_return;
@@ -81,6 +88,22 @@ template<class R,class Work> requires requires(Work &work) {
 }
 inline objc3::task_handle<R> objc3_task_detached(Work work) __attribute__((objc_task_detached)) {
   return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).detach();
+}
+
+/* Register the frame in the selected group before dispatch, while its adapter
+ * owns the callable through complete inner-frame teardown. */
+template<class Work> requires requires(Work &work) {work().release_native();}
+inline auto objc3_task_spawn_in_group(objc3::task_group_handle group,Work work)
+    __attribute__((objc_task_spawn)) {
+  using Task=decltype(work());
+  return std::move(objc3::task_detail::own_callable_as<Task>(std::move(work))).start_child(group);
+}
+template<class R,class Work> requires requires(Work &work) {
+  requires std::is_same_v<decltype(work()),objc3_async_frame>;
+}
+inline objc3::task_handle<R> objc3_task_spawn_in_group(objc3::task_group_handle group,Work work)
+    __attribute__((objc_task_spawn)) {
+  return std::move(objc3::task_detail::own_callable_as<objc3::task<R>>(std::move(work))).start_child(group);
 }
 
 /* Both native async entry representations preserve the source result type.

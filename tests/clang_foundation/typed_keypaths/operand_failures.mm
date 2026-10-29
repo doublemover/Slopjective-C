@@ -4,6 +4,7 @@
 #include "runtime.h"
 #endif
 #include <cassert>
+#include "cxx_values.h"
 
 struct SnapshotCapture {
   static inline bool fail_copy = false;
@@ -18,6 +19,7 @@ struct SnapshotCapture {
 };
 
 int main() {
+  keypath_cxx_value_contract();
   const bool modes[]={false,true};
   for (bool subscript : modes) {
   @autoreleasepool {

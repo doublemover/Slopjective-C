@@ -89,6 +89,7 @@ typedef struct ASTPathPair { long first, second; } ASTPathPair;
 struct ASTLeft { int left; };
 struct ASTRight { long right; };
 struct ASTInherited : ASTLeft, ASTRight { unsigned bits:3; };
+struct ASTOwnedValue {int value;ASTOwnedValue():value(0){} ASTOwnedValue(const ASTOwnedValue &other):value(other.value){} ~ASTOwnedValue(){} };
 __attribute__((objc_root_class))
 @interface ASTPathRoot
 @property(nonatomic) int count;
@@ -97,7 +98,10 @@ __attribute__((objc_root_class))
 @property(nonatomic, readonly) int identity;
 @property(nonatomic) ASTPathPair pair;
 @property(nonatomic) ASTInherited inherited;
+@property(nonatomic) ASTOwnedValue owned;
 @end
+WritableKeyPath<ASTPathRoot *, ASTOwnedValue> owned_path(void) {return @keypath(ASTPathRoot,owned);}
+WritableKeyPath<ASTPathRoot *, int> owned_field_path(void) {return @keypath(ASTPathRoot,owned.value);}
 WritableKeyPath<ASTPathRoot *, int> writable_path(void) {
   return @keypath(ASTPathRoot, count);
 }

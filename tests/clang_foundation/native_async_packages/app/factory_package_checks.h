@@ -31,6 +31,8 @@ int factory_package_checks() {
   }
   {
     namespace Attr=NativeDeclarationAttributes;
+    int contract_value=40;
+    if(Attr::provider_preserved(contract_value)!=42 || Attr::required_template(&contract_value)!=40)return 180;
     static_assert(sizeof(Attr::Packet)==5 && alignof(Attr::Packet)==1);
     static_assert(alignof(Attr::FieldAligned)==32 && sizeof(Attr::FieldAligned)==64);
     static_assert(alignof(Attr::Special<int>)==32);

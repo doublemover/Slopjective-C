@@ -5183,7 +5183,7 @@ index e0b62591a..ef5ce11d7 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..5096bd477 100644
+index 4be3e977b..d6fe75d19 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,139 @@
@@ -5488,7 +5488,7 @@ index 4be3e977b..5096bd477 100644
    for (unsigned i = 0; i != Indentation; ++i)
      Out << "  ";
    return Out;
-@@ -265,11 +274,62 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,11 +274,64 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
    std::string AttrStr;
    llvm::raw_string_ostream AOut(AttrStr);
    llvm::ListSeparator LS(" ");
@@ -5512,6 +5512,7 @@ index 4be3e977b..5096bd477 100644
 +         !(Policy.PolishForDeclaration &&
 +           isa<AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, ObjCFamilyRetainAttr, ObjCFamilyReleaseAttr,
 +               ObjCFamilyAutoreleaseAttr, SwiftNameAttr, SwiftAsyncNameAttr,
 +               SwiftAsyncAttr, SwiftErrorAttr, SwiftAsyncErrorAttr,
@@ -5528,6 +5529,7 @@ index 4be3e977b..5096bd477 100644
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
 +        !isa<AlignedAttr, PackedAttr, NoUniqueAddressAttr, VisibilityAttr, TypeVisibilityAttr,
 +               NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +               ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr, CXX11NoReturnAttr, AbiTagAttr, DeprecatedAttr, UnavailableAttr, AvailabilityAttr,
 +             ObjCExecutorAttr, ObjCNonisolatedAttr, ObjCUnsafeSendableAttr,
 +             ObjCTaskSpawnAttr, ObjCTaskDetachedAttr, ObjCTaskGroupAttr,
@@ -5554,7 +5556,7 @@ index 4be3e977b..5096bd477 100644
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -278,11 +338,125 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -278,11 +340,126 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
        break;
      default:
        AttrPosAsWritten APos = getPosAsWritten(A, D);
@@ -5566,6 +5568,7 @@ index 4be3e977b..5096bd477 100644
 +        APos = AttrPosAsWritten::Right;
 +      if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) && isa<FunctionDecl>(D) &&
 +          isa<NoInlineAttr, AlwaysInlineAttr, FlattenAttr, ColdAttr, HotAttr,
++               AllocSizeAttr, AllocAlignAttr, AssumeAlignedAttr, NonNullAttr, ReturnsNonNullAttr, FormatAttr, FormatArgAttr, RestrictAttr, SysVABIAttr, PreserveMostAttr, PreserveAllAttr, PreserveNoneAttr, RegCallAttr, VectorCallAttr,
 +              ConstAttr, PureAttr, WarnUnusedResultAttr, UnusedAttr, NoReturnAttr,
 +              CXX11NoReturnAttr, VisibilityAttr>(A))
 +        APos = AttrPosAsWritten::Left;
@@ -5681,7 +5684,7 @@ index 4be3e977b..5096bd477 100644
        }
        break;
      }
-@@ -348,12 +522,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
+@@ -348,12 +525,11 @@ void DeclPrinter::printDeclType(QualType T, StringRef DeclName, bool Pack) {
    T.print(Out, Policy, (Pack ? "..." : "") + DeclName, Indentation);
  }
  
@@ -5695,7 +5698,7 @@ index 4be3e977b..5096bd477 100644
  }
  
  void DeclPrinter::Print(AccessSpecifier AS) {
-@@ -451,7 +624,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -451,7 +627,7 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
    if (Indent)
      Indentation += Policy.Indentation;
  
@@ -5704,7 +5707,7 @@ index 4be3e977b..5096bd477 100644
    for (DeclContext::decl_iterator D = DC->decls_begin(), DEnd = DC->decls_end();
         D != DEnd; ++D) {
  
-@@ -471,6 +644,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -471,6 +647,15 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
            !isa<ClassTemplateSpecializationDecl>(DC))
          continue;
  
@@ -5720,7 +5723,7 @@ index 4be3e977b..5096bd477 100644
      // The next bits of code handle stuff like "struct {int x;} a,b"; we're
      // forced to merge the declarations because there's no other way to
      // refer to the struct in question.  When that struct is named instead, we
-@@ -554,9 +736,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
+@@ -554,9 +739,12 @@ void DeclPrinter::VisitDeclContext(DeclContext *DC, bool Indent) {
        Out << Terminator;
      if (!Policy.TerseOutput &&
          ((isa<FunctionDecl>(*D) &&
@@ -5735,7 +5738,7 @@ index 4be3e977b..5096bd477 100644
        ; // StmtPrinter already added '\n' after CompoundStmt.
      else
        Out << "\n";
-@@ -669,45 +854,94 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
+@@ -669,45 +857,112 @@ static void printExplicitSpecifier(ExplicitSpecifier ES, llvm::raw_ostream &Out,
    Out << Proto;
  }
  
@@ -5789,6 +5792,24 @@ index 4be3e977b..5096bd477 100644
        printTemplateParameters(TPL);
    }
  
++  // Calling-convention attributes can live only in FunctionType::ExtInfo,
++  // with no declaration Attr node to print. Preserve the callable ABI just as
++  // the noreturn type bit below; type aliases already use the type printer.
++  if (Policy.PolishForDeclaration || Policy.PrintAsCanonical) {
++    StringRef Convention;
++    bool HasAttribute=false;
++    switch (D->getType()->castAs<FunctionType>()->getCallConv()) {
++    case CC_PreserveMost:Convention="preserve_most";HasAttribute=D->hasAttr<PreserveMostAttr>();break;
++    case CC_PreserveAll:Convention="preserve_all";HasAttribute=D->hasAttr<PreserveAllAttr>();break;
++    case CC_PreserveNone:Convention="preserve_none";HasAttribute=D->hasAttr<PreserveNoneAttr>();break;
++    case CC_X86RegCall:Convention="regcall";HasAttribute=D->hasAttr<RegCallAttr>();break;
++    case CC_X86VectorCall:Convention="vectorcall";HasAttribute=D->hasAttr<VectorCallAttr>();break;
++    case CC_X86_64SysV:Convention="sysv_abi";HasAttribute=D->hasAttr<SysVABIAttr>();break;
++    default:break;
++    }
++    if (!Convention.empty() && !HasAttribute) Out << "__attribute__((" << Convention << ")) ";
++  }
++
 +  if ((Policy.PolishForDeclaration || Policy.PrintAsCanonical) &&
 +      D->getType()->castAs<FunctionType>()->getNoReturnAttr() &&
 +      !D->hasAttr<NoReturnAttr>() && !D->hasAttr<CXX11NoReturnAttr>())
@@ -5845,7 +5866,7 @@ index 4be3e977b..5096bd477 100644
        printExplicitSpecifier(ExplicitSpec, Out, Policy, Indentation, Context);
    }
  
-@@ -721,12 +955,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -721,12 +976,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
      llvm::raw_string_ostream OS(Proto);
      if (!Policy.SuppressScope)
        D->getQualifier().print(OS, Policy);
@@ -5872,7 +5893,7 @@ index 4be3e977b..5096bd477 100644
      llvm::raw_string_ostream POut(Proto);
      DeclPrinter TArgPrinter(POut, SubPolicy, Context, Indentation);
      const auto *TArgAsWritten = D->getTemplateSpecializationArgsAsWritten();
-@@ -753,12 +999,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -753,12 +1020,14 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        llvm::raw_string_ostream POut(Proto);
        DeclPrinter ParamPrinter(POut, SubPolicy, Context, Indentation);
        for (unsigned i = 0, e = D->getNumParams(); i != e; ++i) {
@@ -5889,7 +5910,7 @@ index 4be3e977b..5096bd477 100644
          POut << "...";
        } else if (!D->getNumParams() && !Context.getLangOpts().CPlusPlus) {
          // The function has a prototype, so it needs to retain the prototype
-@@ -807,7 +1055,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -807,7 +1076,10 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            Proto += FT->getExceptionType(I).getAsString(SubPolicy);
          }
        Proto += ")";
@@ -5901,7 +5922,7 @@ index 4be3e977b..5096bd477 100644
        Proto += " noexcept";
        if (isComputedNoexcept(FT->getExceptionSpecType())) {
          Proto += "(";
-@@ -818,17 +1069,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,17 +1090,35 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -5942,7 +5963,7 @@ index 4be3e977b..5096bd477 100644
        Proto.clear();
      }
      Out << Proto;
-@@ -850,7 +1119,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -850,7 +1140,12 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
            prettyPrintAttributes(D, AttrPosAsWritten::Right))
      Out << ' ' << *Attrs;
  
@@ -5956,7 +5977,7 @@ index 4be3e977b..5096bd477 100644
      Out << " = 0";
    else if (D->isDeletedAsWritten()) {
      Out << " = delete";
-@@ -878,8 +1152,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -878,8 +1173,8 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
  
        if (D->getBody())
@@ -5967,7 +5988,7 @@ index 4be3e977b..5096bd477 100644
      } else {
        if (!Policy.TerseOutput && isa<CXXConstructorDecl>(*D))
          Out << " {}";
-@@ -894,19 +1168,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
+@@ -894,19 +1189,15 @@ void DeclPrinter::VisitFriendDecl(FriendDecl *D) {
        printTemplateParameters(D->getFriendTypeTemplateParameterList(i));
      Out << "friend ";
      Out << TSI->getType().getAsString(Policy);
@@ -5992,7 +6013,7 @@ index 4be3e977b..5096bd477 100644
      Out << "friend ";
      VisitRedeclarableTemplateDecl(CTD);
    }
-@@ -923,8 +1193,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1214,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -6005,7 +6026,7 @@ index 4be3e977b..5096bd477 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,12 +1216,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,12 +1237,52 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -6060,7 +6081,7 @@ index 4be3e977b..5096bd477 100644
  
    if (std::optional<std::string> Attrs =
            prettyPrintAttributes(D, AttrPosAsWritten::Left))
-@@ -959,9 +1271,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -959,9 +1292,10 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        Param && Param->isExplicitObjectParameter())
      Out << "this ";
  
@@ -6074,7 +6095,7 @@ index 4be3e977b..5096bd477 100644
  
    if (!Policy.SuppressSpecifiers) {
      StorageClass SC = D->getStorageClass();
-@@ -985,22 +1298,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -985,22 +1319,43 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
      if (D->isModulePrivate())
        Out << "__module_private__ ";
  
@@ -6122,7 +6143,7 @@ index 4be3e977b..5096bd477 100644
    if (!Policy.SuppressInitializers && Init) {
      bool ImplicitInit = false;
      if (D->isCXXForRangeDecl()) {
-@@ -1022,6 +1356,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1022,6 +1377,8 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
        }
        PrintingPolicy SubPolicy(Policy);
        SubPolicy.SuppressSpecifiers = false;
@@ -6131,7 +6152,7 @@ index 4be3e977b..5096bd477 100644
        Init->printPretty(Out, nullptr, SubPolicy, Indentation, "\n", &Context);
        if ((D->getInitStyle() == VarDecl::CallInit) && !isa<ParenListExpr>(Init))
          Out << ")";
-@@ -1029,9 +1365,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
+@@ -1029,9 +1386,7 @@ void DeclPrinter::VisitVarDecl(VarDecl *D) {
    }
  }
  
@@ -6142,7 +6163,7 @@ index 4be3e977b..5096bd477 100644
  
  void DeclPrinter::VisitFileScopeAsmDecl(FileScopeAsmDecl *D) {
    Out << "__asm (";
-@@ -1046,8 +1380,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
+@@ -1046,8 +1401,7 @@ void DeclPrinter::VisitTopLevelStmtDecl(TopLevelStmtDecl *D) {
  }
  
  void DeclPrinter::VisitImportDecl(ImportDecl *D) {
@@ -6152,7 +6173,7 @@ index 4be3e977b..5096bd477 100644
  }
  
  void DeclPrinter::VisitStaticAssertDecl(StaticAssertDecl *D) {
-@@ -1069,6 +1402,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
+@@ -1069,6 +1423,8 @@ void DeclPrinter::VisitNamespaceDecl(NamespaceDecl *D) {
      Out << "inline ";
  
    Out << "namespace ";
@@ -6161,7 +6182,7 @@ index 4be3e977b..5096bd477 100644
    if (D->getDeclName())
      Out << D->getDeclName() << ' ';
    Out << "{\n";
-@@ -1095,6 +1430,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
+@@ -1095,6 +1451,9 @@ void DeclPrinter::VisitEmptyDecl(EmptyDecl *D) {
  }
  
  void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
@@ -6171,7 +6192,7 @@ index 4be3e977b..5096bd477 100644
    // FIXME: add printing of pragma attributes if required.
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
-@@ -1131,7 +1469,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
+@@ -1131,7 +1490,8 @@ void DeclPrinter::VisitCXXRecordDecl(CXXRecordDecl *D) {
      if (D->getNumBases()) {
        Out << ": ";
        for (CXXRecordDecl::base_class_iterator Base = D->bases_begin(),
@@ -6181,7 +6202,7 @@ index 4be3e977b..5096bd477 100644
          if (Base != D->bases_begin())
            Out << ", ";
  
-@@ -1262,7 +1601,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1262,7 +1622,7 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    printTemplateParameters(D->getTemplateParameters());
  
    if (const TemplateTemplateParmDecl *TTP =
@@ -6190,7 +6211,7 @@ index 4be3e977b..5096bd477 100644
      if (TTP->wasDeclaredWithTypename())
        Out << "typename";
      else
-@@ -1282,12 +1621,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
+@@ -1282,12 +1642,21 @@ void DeclPrinter::VisitTemplateDecl(const TemplateDecl *D) {
    } else if (auto *TD = D->getTemplatedDecl())
      Visit(TD);
    else if (const auto *Concept = dyn_cast<ConceptDecl>(D)) {
@@ -6213,7 +6234,7 @@ index 4be3e977b..5096bd477 100644
  void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
    prettyPrintPragmas(D->getTemplatedDecl());
    // Print any leading template parameter lists.
-@@ -1302,7 +1650,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1302,7 +1671,11 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  
    // Never print "instantiations" for deduction guides (they don't really
    // have them).
@@ -6226,7 +6247,7 @@ index 4be3e977b..5096bd477 100644
        !isa<CXXDeductionGuideDecl>(D->getTemplatedDecl())) {
      FunctionDecl *PrevDecl = D->getTemplatedDecl();
      const FunctionDecl *Def;
-@@ -1320,6 +1672,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
+@@ -1320,6 +1693,14 @@ void DeclPrinter::VisitFunctionTemplateDecl(FunctionTemplateDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateDecl(ClassTemplateDecl *D) {
@@ -6241,7 +6262,7 @@ index 4be3e977b..5096bd477 100644
    VisitRedeclarableTemplateDecl(D);
  
    if (PrintInstantiation) {
-@@ -1377,13 +1737,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
+@@ -1377,13 +1758,17 @@ void DeclPrinter::VisitExplicitInstantiationDecl(ExplicitInstantiationDecl *D) {
  }
  
  void DeclPrinter::VisitClassTemplateSpecializationDecl(
@@ -6262,7 +6283,7 @@ index 4be3e977b..5096bd477 100644
    printTemplateParameters(D->getTemplateParameters());
    VisitCXXRecordDecl(D);
  }
-@@ -1398,9 +1762,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
+@@ -1398,9 +1783,18 @@ void DeclPrinter::VisitCXXExpansionStmtDecl(const CXXExpansionStmtDecl *D) {
  //----------------------------------------------------------------------------
  
  void DeclPrinter::PrintObjCMethodType(ASTContext &Ctx,
@@ -6283,7 +6304,7 @@ index 4be3e977b..5096bd477 100644
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_In)
      Out << "in ";
    if (Quals & Decl::ObjCDeclQualifier::OBJC_TQ_Inout)
-@@ -1472,9 +1845,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1472,9 +1866,8 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      if (lastPos != 0)
        Out << " ";
      Out << name.substr(lastPos, pos - lastPos) << ':';
@@ -6295,7 +6316,7 @@ index 4be3e977b..5096bd477 100644
      Out << *PI;
      lastPos = pos + 1;
    }
-@@ -1483,8 +1855,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1483,8 +1876,22 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << name;
  
    if (OMD->isVariadic())
@@ -6320,7 +6341,7 @@ index 4be3e977b..5096bd477 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1492,8 +1878,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1492,8 +1899,7 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
      Out << ' ';
      OMD->getBody()->printPretty(Out, nullptr, Policy, Indentation, "\n",
                                  &Context);
@@ -6330,7 +6351,7 @@ index 4be3e977b..5096bd477 100644
      Out << ';';
  }
  
-@@ -1512,8 +1897,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1918,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -6341,7 +6362,7 @@ index 4be3e977b..5096bd477 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1545,7 +1930,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1545,7 +1951,7 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OID))
      Out << *Attrs << "\n";
  
@@ -6350,7 +6371,7 @@ index 4be3e977b..5096bd477 100644
  
    if (auto TypeParams = OID->getTypeParamListAsWritten()) {
      PrintObjCTypeParams(TypeParams);
-@@ -1558,7 +1943,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1558,7 +1964,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
    const ObjCList<ObjCProtocolDecl> &Protocols = OID->getReferencedProtocols();
    if (!Protocols.empty()) {
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -6360,7 +6381,7 @@ index 4be3e977b..5096bd477 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << "> ";
    }
-@@ -1568,9 +1954,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1975,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -6372,7 +6393,7 @@ index 4be3e977b..5096bd477 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1972,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1993,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -6381,7 +6402,7 @@ index 4be3e977b..5096bd477 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1596,7 +1983,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
+@@ -1596,7 +2004,8 @@ void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
    if (!Protocols.empty()) {
      Out << "@protocol " << *PID;
      for (ObjCList<ObjCProtocolDecl>::iterator I = Protocols.begin(),
@@ -6391,7 +6412,7 @@ index 4be3e977b..5096bd477 100644
        Out << (I == Protocols.begin() ? '<' : ',') << **I;
      Out << ">\n";
    } else
-@@ -1619,6 +2007,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +2028,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -6400,7 +6421,7 @@ index 4be3e977b..5096bd477 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +2021,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +2042,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -6414,7 +6435,7 @@ index 4be3e977b..5096bd477 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2036,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +2057,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -6425,7 +6446,7 @@ index 4be3e977b..5096bd477 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2144,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2165,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -6447,7 +6468,7 @@ index 4be3e977b..5096bd477 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2187,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2208,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -6465,7 +6486,7 @@ index 4be3e977b..5096bd477 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2216,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2237,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -41205,10 +41226,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..e42b5b17a
+index 000000000..9febf4436
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3138 @@
+@@ -0,0 +1,3218 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -41393,6 +41414,7 @@ index 000000000..e42b5b17a
 +    const Expr *HeldByClosure = nullptr;
 +    bool ConsumedByClosure = false;
 +    bool SymbolicCallable = false;
++    bool IndependentAlias = false;
 +  };
 +  using Value = llvm::BitVector;
 +  struct Storage {
@@ -41683,11 +41705,11 @@ index 000000000..e42b5b17a
 +          int64_t Delta = Amount->getSExtValue();
 +          if (Offset->getOpcode() == BO_Sub)
 +            Delta = -Delta;
-+          if (Base.Index >= 0 && Delta >= 0 &&
-+              Base.Index <= INT64_MAX - Delta)
++          if (Base.Index >= 0 &&
++              ((Delta >= 0 && Base.Index <= INT64_MAX-Delta) ||
++               (Delta < 0 && Delta >= -Base.Index)))
 +            Base.Index += Delta;
-+          else
-+            Base.Index = -2;
++          else Base.Index = -2;
 +          return Base;
 +        }
 +      }
@@ -42019,6 +42041,40 @@ index 000000000..e42b5b17a
 +    }
 +    return Captures;
 +  }
++  void prepareIndependentAliases() {
++    if (!Actions.getLangOpts().ObjCAutoRefCount || Origins.size()>4096) return;
++    const unsigned Limit=Origins.size()+4096;
++    SmallVector<const VarDecl *,8> Aliases;
++    for (const auto &[Location,Index]:Slots) {
++      (void)Index;
++      const auto *Alias=Location.first;
++      if (!Location.second && Location.Index==-1 && !Location.Parent && Alias &&
++          Alias->hasLocalStorage() &&
++          Alias->getType().getObjCLifetime()==Qualifiers::OCL_Strong) Aliases.push_back(Alias);
++    }
++    unsigned Count=Origins.size();
++    for (unsigned I=0;I<Count;++I) {
++      const Origin Original=Origins[I];
++      if (!Original.Acquisition || !Original.Owner || !Original.Identity || Original.Pin ||
++          Original.Unstable || Original.HeldByClosure || Original.ConsumedByClosure || Original.SymbolicCallable) continue;
++      for (const auto *Alias:Aliases) {
++        auto reaches=[&](const VarDecl *Source,const VarDecl *Target) {
++          for (unsigned Depth=0;Source && Depth<32;++Depth) {
++            Source=Source->hasInit()?variable(Source->getInit()->IgnoreParenCasts()):nullptr;
++            if (Source==Target) return true;
++          }
++          return false;
++        };
++        bool Related=reaches(Alias,Original.Owner) || reaches(Original.Owner,Alias);
++        if (!Related || Alias==Original.Owner) continue;
++        if (Origins.size()==Limit) return;
++        addOrigin(Original.Acquisition,Alias,false,nullptr,Original.Identity,true);
++        Origins.back().IndependentAlias=true;
++        if (!Alias->hasAttr<ObjCPreciseLifetimeAttr>())
++          const_cast<VarDecl *>(Alias)->addAttr(ObjCPreciseLifetimeAttr::CreateImplicit(Context));
++      }
++    }
++  }
 +  void prepareSymbolicCallableInputs() {
 +    if (!IsOwnerSummary) return;
 +    SmallVector<std::pair<unsigned, Storage>, 16> Candidates;
@@ -42322,7 +42378,7 @@ index 000000000..e42b5b17a
 +      return Result;
 +    for (unsigned I : Found->second) {
 +      const Origin &O = Origins[I];
-+      if (O.Pin || (SnapshotSource && O.Owner != variable(SnapshotSource)))
++      if (O.IndependentAlias || O.Pin || (SnapshotSource && O.Owner != variable(SnapshotSource)))
 +        continue;
 +      if (O.Owner) {
 +        auto Slot = Slots.find({O.Owner, nullptr});
@@ -42843,6 +42899,17 @@ index 000000000..e42b5b17a
 +          if (Acquisition != Acquisitions.end())
 +            for (unsigned Candidate : Acquisition->second) {
 +              const Origin &Alternative = Origins[Candidate];
++              if (!O.Pin && !O.Unstable && !Alternative.Unstable && !Alternative.Pin &&
++                  Alternative.Identity==O.Identity && O.Identity && Alternative.Owner &&
++                  Alternative.Owner!=Owner && (O.IndependentAlias || Alternative.IndependentAlias)) {
++                auto Slot=Slots.find({Alternative.Owner,nullptr});
++                if (Slot!=Slots.end() && !State.UnownedOwners.test(Slot->second)) {
++                  const auto &Identity=State.OwnerIdentities[Slot->second];
++                  if (Identity.count()==1 && Identity.test(OwnerRoots.lookup(O.Identity))) {
++                    Replacement=Candidate;break;
++                  }
++                }
++              }
 +              if (Alternative.Identity != O.Identity || Alternative.Owner != O.Owner)
 +                continue;
 +              if (!O.Pin && Alternative.Pin && Alternative.Pin != Owner &&
@@ -43426,6 +43493,70 @@ index 000000000..e42b5b17a
 +        return false;
 +    return true;
 +  }
++  bool finiteWrittenTargets(const Expr *E, SmallVectorImpl<Storage> &Targets,
++                            unsigned Depth=0) const {
++    if (!E || Depth>32) return false;
++    E=E->IgnoreParenCasts();
++    if (const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context))
++        return finiteWrittenTargets(Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Targets,Depth+1);
++      return finiteWrittenTargets(Conditional->getTrueExpr(),Targets,Depth+1) &&
++             finiteWrittenTargets(Conditional->getFalseExpr(),Targets,Depth+1);
++    }
++    if (const auto *Address=dyn_cast<UnaryOperator>(E);Address && Address->getOpcode()==UO_AddrOf) {
++      Storage Target=storage(Address->getSubExpr());
++      if (!Target.first || !Target.first->hasLocalStorage() || !Slots.count(Target) || hasUnknownIndex(Target)) return false;
++      if (!llvm::is_contained(Targets,Target)) Targets.push_back(Target);
++      return true;
++    }
++    return false;
++  }
++  void assignLocal(const BinaryOperator *Assignment, Storage Target, Facts &State, bool Emit) {
++          Value V = value(Assignment->getRHS(), State);
++          if (isObjC3BorrowedType(Context, Assignment->getLHS()->getType()) &&
++              V.none() && !Assignment->getRHS()->isNullPointerConstant(
++                  Context, Expr::NPC_ValueDependentIsNotNull))
++            V.set(0);
++          if (Assignment->isCompoundAssignmentOp())
++            V |= value(Assignment->getLHS(), State);
++          const bool Unowned = ownerIsUnowned(Assignment->getRHS(), State);
++          Value Owner = ownerIdentity(Assignment->getRHS(), State);
++          Storage Address = referent(Assignment->getRHS(), &State);
++          Value Targets = possibleTargets(Assignment->getRHS(), State);
++          if (Targets.any() && Target.first && Target.first->hasLocalStorage() &&
++              !hasUnknownIndex(Target) &&
++              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
++            V = empty();
++          if (auto Found = Slots.find(Target);
++              Target.first && !Target.second && Target.Index == -1 &&
++              Found != Slots.end()) {
++            unsigned Slot = Found->second;
++            if (Owner.none() || Owner != State.OwnerIdentities[Slot])
++              expire(Target.first, State);
++            if (Owner.none() && OwnerRoots.count(Target.first))
++              Owner.set(OwnerRoots.lookup(nullptr));
++            State.OwnerIdentities[Slot] = Owner;
++            if (Unowned) State.UnownedOwners.set(Slot);
++            else State.UnownedOwners.reset(Slot);
++          }
++          if (auto Found = Slots.find(Target); Found != Slots.end()) {
++            State.LocalTargets[Found->second] = Address;
++            if (hasUnknownIndex(Target))
++              State.MayTargets[Found->second] |= Targets;
++            else
++              State.MayTargets[Found->second] = std::move(Targets);
++          }
++          Value Effects = effects(Assignment->getRHS(), State);
++          if (Targets.any() && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
++          store(Assignment, Target, V, State, Emit, false, &Effects);
++          if (Target.first && Slots.count(Target) &&
++              (Assignment->getLHS()->getType()->isRecordType() ||
++               Assignment->getLHS()->getType()->isArrayType()))
++            initializeAggregate(Assignment, Target, Assignment->getLHS()->getType(),
++                                Assignment->getRHS(), State, Emit);
++  }
 +  void checkCall(const Expr *Invocation, Facts &State, bool Emit) {
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation))
@@ -43666,49 +43797,18 @@ index 000000000..e42b5b17a
 +          }
 +      } else if (const auto *Assignment = dyn_cast<BinaryOperator>(Node)) {
 +        if (Assignment->isAssignmentOp()) {
-+          Storage Target = storage(Assignment->getLHS(), &State);
-+          Value V = value(Assignment->getRHS(), State);
-+          if (isObjC3BorrowedType(Context, Assignment->getLHS()->getType()) &&
-+              V.none() && !Assignment->getRHS()->isNullPointerConstant(
-+                  Context, Expr::NPC_ValueDependentIsNotNull))
-+            V.set(0);
-+          if (Assignment->isCompoundAssignmentOp())
-+            V |= value(Assignment->getLHS(), State);
-+          const bool Unowned = ownerIsUnowned(Assignment->getRHS(), State);
-+          Value Owner = ownerIdentity(Assignment->getRHS(), State);
-+          Storage Address = referent(Assignment->getRHS(), &State);
-+          Value Targets = possibleTargets(Assignment->getRHS(), State);
-+          if (Targets.any() && Target.first && Target.first->hasLocalStorage() &&
-+              !hasUnknownIndex(Target) &&
-+              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
-+            V = empty();
-+          if (auto Found = Slots.find(Target);
-+              Target.first && !Target.second && Target.Index == -1 &&
-+              Found != Slots.end()) {
-+            unsigned Slot = Found->second;
-+            if (Owner.none() || Owner != State.OwnerIdentities[Slot])
-+              expire(Target.first, State);
-+            if (Owner.none() && OwnerRoots.count(Target.first))
-+              Owner.set(OwnerRoots.lookup(nullptr));
-+            State.OwnerIdentities[Slot] = Owner;
-+            if (Unowned) State.UnownedOwners.set(Slot);
-+            else State.UnownedOwners.reset(Slot);
-+          }
-+          if (auto Found = Slots.find(Target); Found != Slots.end()) {
-+            State.LocalTargets[Found->second] = Address;
-+            if (hasUnknownIndex(Target))
-+              State.MayTargets[Found->second] |= Targets;
-+            else
-+              State.MayTargets[Found->second] = std::move(Targets);
-+          }
-+          Value Effects = effects(Assignment->getRHS(), State);
-+          if (Targets.any() && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
-+          store(Node, Target, V, State, Emit, false, &Effects);
-+          if (Target.first && Slots.count(Target) &&
-+              (Assignment->getLHS()->getType()->isRecordType() ||
-+               Assignment->getLHS()->getType()->isArrayType()))
-+            initializeAggregate(Node, Target, Assignment->getLHS()->getType(),
-+                                Assignment->getRHS(), State, Emit);
++          Storage Target=storage(Assignment->getLHS(), &State);
++          SmallVector<Storage,4> WrittenTargets;
++          const auto *Dereference=dyn_cast<UnaryOperator>(Assignment->getLHS()->IgnoreParenCasts());
++          if (!Target.first && Dereference && Dereference->getOpcode()==UO_Deref &&
++              finiteWrittenTargets(Dereference->getSubExpr(),WrittenTargets) && !WrittenTargets.empty()) {
++            Facts Joined;bool First=true;
++            for (Storage Destination:WrittenTargets) {
++              Facts Branch=State;assignLocal(Assignment,Destination,Branch,Emit);
++              if (First) {Joined=std::move(Branch);First=false;} else join(Joined,Branch);
++            }
++            State=std::move(Joined);
++          } else assignLocal(Assignment,Target,State,Emit);
 +        }
 +      } else if (const auto *Return = dyn_cast<ReturnStmt>(Node)) {
 +        Value V = value(Return->getRetValue(), State);
@@ -44117,6 +44217,7 @@ index 000000000..e42b5b17a
 +    prepareSymbolicCallableInputs();
 +    prepareFutureOwnerLoans();
 +    prepareClosureLoans();
++    prepareIndependentAliases();
 +    CFG::BuildOptions Options;
 +    Options.setAllAlwaysAdd();
 +    Options.AddLifetime = true;
@@ -45585,10 +45686,10 @@ index 000000000..ac32b7dd5
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3KeyPath.cpp b/clang/lib/Sema/SemaObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..6d1168aed
+index 000000000..f8d648774
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3KeyPath.cpp
-@@ -0,0 +1,1438 @@
+@@ -0,0 +1,1458 @@
 +//===--- SemaObjC3KeyPath.cpp - Typed property paths and native accessors ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -45985,6 +46086,26 @@ index 000000000..6d1168aed
 +  return Conversion;
 +}
 +
++bool keyPathRecordValue(Sema &S, QualType Type) {
++  if (Type.isTriviallyCopyableType(S.Context)) return true;
++  const auto *Record=Type->getAsCXXRecordDecl();
++  auto managedUnion=[&](auto &&Self,QualType Current,unsigned Depth)->bool {
++    if (Depth>64) return true;
++    if (const auto *Array=S.Context.getAsArrayType(Current)) return Self(Self,Array->getElementType(),Depth+1);
++    if (const auto *Tag=Current->getAs<RecordType>())
++      if (const auto *Definition=Tag->getDecl()->getDefinition()) {
++        if (Definition->isUnion() && unionHasManagedLeaves(Current)) return true;
++        for (const auto *Field:Definition->fields())
++          if (Self(Self,Field->getType(),Depth+1)) return true;
++        if (const auto *Class=dyn_cast<CXXRecordDecl>(Definition))
++          for (const auto &Base:Class->bases()) if (Self(Self,Base.getType(),Depth+1)) return true;
++      }
++    return false;
++  };
++  return S.getLangOpts().CPlusPlus && Record && Record->hasDefinition() &&
++      !Record->isAbstract() && !Record->isUnion() && !managedUnion(managedUnion,Type,0);
++}
++
 +QualType keyPathType(Sema &S, QualType Root, QualType Value, bool Writable,
 +                     QualType Descriptor, SourceLocation Loc) {
 +  if (erasesOwnership(S, Value)) {
@@ -45995,8 +46116,8 @@ index 000000000..6d1168aed
 +  if (Value->isDependentType() || Value->isVoidType() ||
 +      Value->isReferenceType() || Value->isArrayType() ||
 +      Value->isFunctionType() || Value->isVariablyModifiedType() ||
-+      Value->isIncompleteType() || !Value.isTriviallyCopyableType(S.Context)) {
-+    reject(S, Loc, "key-path value must be a complete nondependent trivially "
++      Value->isIncompleteType() || !keyPathRecordValue(S, Value)) {
++    reject(S, Loc, "key-path value must be a complete nondependent native "
 +                   "copyable value or Objective-C object pointer");
 +    return {};
 +  }
@@ -46659,11 +46780,11 @@ index 000000000..6d1168aed
 +      RecordDecl *Record = RecordType->getDecl()->getDefinition();
 +      if (!Record ||
 +          (!Record->getIdentifier() && !Record->getTypedefNameForAnonDecl()) ||
-+          !Current.isTriviallyCopyableType(Context) ||
++          !keyPathRecordValue(*this, Current) ||
 +          erasesOwnership(*this, Current) ||
 +          (Record->isUnion() && unionHasManagedLeaves(Current))) {
 +        reject(*this, MemberLocs[I],
-+               "key-path record traversal requires a complete trivially "
++               "key-path record traversal requires a complete native "
 +               "copyable record without borrowed/resource or managed-union ownership");
 +        return ExprError();
 +      }

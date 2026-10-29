@@ -72,7 +72,11 @@ bool IsForeignImportAttribute(const clang::Attr *attribute) {
 }
 
 bool IsPublishedNativeAttribute(const clang::Attr *attribute) {
-  return llvm::isa<clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
+  // An explicit allocator deallocator is a declaration dependency, not just
+  // an allocator hint. Keep that form gated until its owner can be published.
+  if (const auto *allocator=llvm::dyn_cast<clang::RestrictAttr>(attribute))
+    return !allocator->getDeallocator();
+  return llvm::isa<clang::AllocSizeAttr,clang::AllocAlignAttr,clang::AssumeAlignedAttr,clang::NonNullAttr,clang::ReturnsNonNullAttr,clang::FormatAttr,clang::FormatArgAttr,clang::RestrictAttr,clang::SysVABIAttr,clang::PreserveMostAttr,clang::PreserveAllAttr,clang::PreserveNoneAttr,clang::RegCallAttr,clang::VectorCallAttr,clang::AlignedAttr,clang::PackedAttr,clang::NoUniqueAddressAttr,
       clang::VisibilityAttr,clang::TypeVisibilityAttr,clang::NoInlineAttr,
       clang::AlwaysInlineAttr,clang::FlattenAttr,clang::ColdAttr,clang::HotAttr,
       clang::ConstAttr,clang::PureAttr,clang::WarnUnusedResultAttr,clang::UnusedAttr,
@@ -2191,6 +2195,29 @@ std::string NativeAttributeValue(const clang::Attr *attribute,const clang::Named
     add(std::to_string(visibility->getVisibility()));
   else if(const auto *visibility=llvm::dyn_cast<clang::TypeVisibilityAttr>(attribute))
     add(std::to_string(visibility->getVisibility()));
+  auto parameter=[&](clang::ParamIdx index){add(index.isValid()?std::to_string(index.getASTIndex()):"none");};
+  if (const auto *size=llvm::dyn_cast<clang::AllocSizeAttr>(attribute)) {
+    parameter(size->getElemSizeParam());parameter(size->getNumElemsParam());
+  } else if (const auto *alignment=llvm::dyn_cast<clang::AllocAlignAttr>(attribute)) parameter(alignment->getParamIndex());
+  else if (const auto *nonnull=llvm::dyn_cast<clang::NonNullAttr>(attribute)) {
+    std::set<unsigned> indices;for(auto index:nonnull->args())indices.insert(index.getASTIndex());
+    for(auto index:indices)add(std::to_string(index));
+  } else if (const auto *format=llvm::dyn_cast<clang::FormatAttr>(attribute)) {
+    add(format->getType()->getName());add(std::to_string(format->getFormatIdx()));add(std::to_string(format->getFirstArg()));
+  } else if (const auto *format=llvm::dyn_cast<clang::FormatArgAttr>(attribute)) parameter(format->getFormatIdx());
+  else if (const auto *alignment=llvm::dyn_cast<clang::AssumeAlignedAttr>(attribute)) {
+    DeclarationExpressionIdentity identity(declaration->getASTContext(),llvm::dyn_cast<clang::FunctionDecl>(declaration));
+    auto bind=[&](auto &&self,const clang::DeclContext *scope)->void {
+      if(!scope)return;self(self,scope->getParent());
+      if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(scope))
+        if(const auto *pattern=record->getDescribedClassTemplate())identity.TemplateParameters(pattern);
+      if(const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(scope))
+        for(auto *parameter:*partial->getTemplateParameters())identity.Local(parameter);
+    };
+    bind(bind,declaration->getDeclContext());
+    add(identity.Get(alignment->getAlignment()));
+    add(alignment->getOffset()?identity.Get(alignment->getOffset()):"zero");
+  }
   return key;
 }
 
@@ -3632,7 +3659,7 @@ class TypeDependencyVisitor final
    void CheckDeclarationAttributes(const clang::NamedDecl *declaration) {
      if (!declaration) return;
      for (const auto *attribute:declaration->attrs())
-       if (llvm::isa<clang::AlignedAttr>(attribute))
+       if (llvm::isa<clang::AlignedAttr,clang::AssumeAlignedAttr>(attribute))
          TraverseAttr(const_cast<clang::Attr *>(attribute));
      if (const auto *pattern=llvm::dyn_cast<clang::TemplateDecl>(declaration))
        CheckDeclarationAttributes(pattern->getTemplatedDecl());

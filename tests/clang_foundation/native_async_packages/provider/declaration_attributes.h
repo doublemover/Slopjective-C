@@ -44,6 +44,13 @@ __attribute__((hot)) inline int hot(int value){return value;}
 inline int parameter([[maybe_unused]] int value){return value+2;}
 [[noreturn]] inline void stop(){__builtin_trap();}
 __attribute__((noreturn)) inline void terminate(){__builtin_trap();}
+__attribute__((malloc,alloc_size(1),alloc_align(2),returns_nonnull)) void *allocate(unsigned long size,unsigned long alignment);
+__attribute__((assume_aligned(32,8))) void *aligned_offset(void *value);
+__attribute__((nonnull(1))) int required(const int *value);
+__attribute__((format(printf,1,2))) int formatted(const char *format,...);
+__attribute__((format_arg(1))) const char *format_source(const char *value);
+__attribute__((preserve_most,noinline)) int provider_preserved(int value);
+template<class T> __attribute__((nonnull(1))) inline T required_template(const T *value){return *value;}
 __attribute__((visibility("hidden"))) int provider_packet(Packet value);
 Aligned provider_aligned(Aligned value);
 Slot<int,32> provider_slot(Slot<int,32> value);

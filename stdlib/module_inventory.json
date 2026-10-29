@@ -94,7 +94,7 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 90,
+        "minor": 91,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
@@ -218,7 +218,8 @@
         "Canonical Swift importer names, async/error conventions, newtypes, bridges, private-import markers and declaration/parameter attribute payloads with exact replay and semantic capability checks (source)",
         "Published custom-promise C++ coroutine bodies, written await/yield/return syntax, resolved promise/awaiter dependencies and native yield import, with source-free lifecycle witnesses (source)",
         "Native declaration attribute contracts for record/field/storage layout, visibility, optimizer effects and diagnostics, including dependent alignment and source-free ABI witnesses (source)",
-        "Public standard coroutine handles, suspend/no-op types and provider-authored full/partial coroutine_traits specializations, with checked header identities and source-free native frames (implementation)"
+        "Public standard coroutine handles, suspend/no-op types and provider-authored full/partial coroutine_traits specializations, with checked header identities and source-free native frames (source)",
+        "Owned raw-frame task-group callbacks, explicit group callable spawning and independently retained Sendable group leases (source)"
       ],
       "remaining": [
         "remaining spawn/capture forms and abstract group-library forms",
@@ -233,12 +234,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 5,
+        "minor": 6,
         "patch": 0
       },
       "header": "include/objc3/keypath.h",
       "status": "partial",
       "implemented": [
+        "Native C++ nontrivial record values and record-field writeback with checked copying and exception cleanup (source)",
         "native typed property key-path literals",
         "typed read/write and readonly conversion",
         "immutable component metadata and native accessor dispatch",
@@ -264,12 +266,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 15,
+        "minor": 16,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Finite conditional local writes, signed tracked-array offsets and independent precise strong-alias loan lifetimes (source)",
         "Linux file-descriptor adoption, duplication and exact-once close",
         "heap-buffer allocation, adoption and free",
         "native typedef cleanup/family/sentinel contracts",

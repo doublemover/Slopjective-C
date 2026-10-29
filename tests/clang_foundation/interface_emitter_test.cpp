@@ -397,7 +397,7 @@ void TestConsumedAndMethodOwnershipRoundTrips() {
 
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((returns_nonnull)) void *old_api(void);\n",
+      "__attribute__((no_profile_instrument_function)) void *old_api(void);\n",
       {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -1858,6 +1858,10 @@ void TestNativeDeclarationAttributes() {
     auto aligned=emit(changed);assert(aligned.success && aligned.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     changed=source;at=changed.find("keep ");assert(at!=std::string::npos);changed.replace(at,4,"save");
     auto message=emit(changed);assert(message.success && message.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("alloc_size(1)");assert(at!=std::string::npos);changed.replace(at,13,"alloc_size(2)");
+    auto allocation=emit(changed);assert(allocation.success && allocation.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+    changed=source;at=changed.find("format(printf,1,2)");assert(at!=std::string::npos);changed.replace(at,18,"format(printf,1,0)");
+    auto format=emit(changed);assert(format.success && format.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
     // Dependent attribute expressions must retain their real API dependencies.
     auto denied=emit("namespace Private {inline constexpr int alignment=32;}\n"
         "namespace NativeDeclarationAttributes {template<class T>struct alignas(sizeof(T)+Private::alignment) Bad {T value;};}\n");
