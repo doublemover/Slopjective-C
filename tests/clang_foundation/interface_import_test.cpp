@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -380,11 +381,46 @@ void TestPinnedRuntimeTypesSurvivePreparedImport() {
   fs::remove_all(root);
 }
 
+void TestCompilerVarargsMembersAreReused() {
+  const auto root=fs::temp_directory_path()/"objc3-builtin-varargs-import";
+  fs::remove_all(root);fs::create_directories(root);
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.varargs",
+        "template<class T> inline T sum(int count,...) {"
+        "__builtin_va_list args;__builtin_va_start(args,count);T value{};"
+        "for(int i=0;i<count;++i)value+=__builtin_va_arg(args,T);"
+        "__builtin_va_end(args);return value;}\n");
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    const auto interface_path=root/"test.varargs.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    auto consumer=ModuleRequest(root/"consumer.mm","",
+        "#include <memory>\n@import test.varargs;\n"
+        "int use(){return sum<int>(2,20,22);}");
+    consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+    consumer.arguments={standard};consumer.emit_semantic_interface=false;
+    consumer.source_directed_imports=true;
+    InterfaceModuleRequest locked;
+    locked.canonical_name="test.varargs";
+    locked.locked_identity=emitted.interface_artifact->identity;
+    consumer.interface_search_paths={root.string()};
+    consumer.module_imports={locked};
+    auto result=Compile(consumer);
+    for(const auto &diagnostic:result.diagnostics)
+      std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+    if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+    assert(result.success);
+  }
+  fs::remove_all(root);
+}
+
 } // namespace
 
 int main() {
   TestThreeModuleSemanticLookupAndIdentity();
   TestPinnedRuntimeTypesSurvivePreparedImport();
+  TestCompilerVarargsMembersAreReused();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();

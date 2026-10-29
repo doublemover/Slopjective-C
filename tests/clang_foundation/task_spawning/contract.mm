@@ -468,20 +468,35 @@ struct __attribute__((objc_unsafe_sendable)) OwnedCallableWork {
     co_return value;
   }
 };
+struct __attribute__((objc_unsafe_sendable)) MoveOnlyCallableWork:OwnedCallableWork {
+  using OwnedCallableWork::OwnedCallableWork;
+  MoveOnlyCallableWork(const MoveOnlyCallableWork &)=delete;
+  MoveOnlyCallableWork(MoveOnlyCallableWork &&)=default;
+};
+struct __attribute__((objc_unsafe_sendable)) ThrowingCallableWork:OwnedCallableWork {
+  using OwnedCallableWork::OwnedCallableWork;
+  objc3::task<int> operator()(){throw 73;}
+};
 int owned_callable_parent(std::atomic<int> *live) __objc3_async
     __attribute__((objc_task_group)) {
   auto scope=objc3::task_group_handle::current_scope();
   auto direct=objc3_task_spawn(OwnedCallableWork(live));
+  auto moved=objc3_task_spawn(MoveOnlyCallableWork(live));
   auto framed=objc3_task_spawn<int>([value=42]() -> int __objc3_async_frame {
     return __objc3_await raw_pause(value);
   });
   auto grouped=scope.spawn([value=42]() -> int __objc3_async {
     return __objc3_await pause(value);
   });
+  auto grouped_frame=scope.spawn<int>([value=42]() -> int __objc3_async_frame {
+    return __objc3_await raw_pause(value);
+  });
   auto detached=objc3_task_detached([value=42]() -> int __objc3_async {
     return __objc3_await pause(value);
   });
   int result=__objc3_await direct;
+  result+=__objc3_await moved;
+  result+=__objc3_await grouped_frame;
   result+=__objc3_await framed;
   result+=__objc3_await grouped;
   return result+__objc3_await detached;
@@ -505,7 +520,7 @@ void owned_callable_spawn_contract(objc3_executor_t *source) {
     uint32_t count=0;
     assert(objc3_executor_pump(source,UINT32_MAX,&count)==OBJC3_SERVICE_OK);
     finish(parent);
-    assert(parent.result()==168 && live.load()==0);
+    assert(parent.result()==252 && live.load()==0);
   }
   {
     auto parent=owned_callable_parent(&live).start(source);
@@ -521,6 +536,19 @@ void owned_callable_spawn_contract(objc3_executor_t *source) {
   try{(void)objc3_task_spawn(OwnedCallableWork(&live));}
   catch(const objc3::service_failure &error){failed=error.status()==OBJC3_SERVICE_NOT_READY;}
   assert(failed && live.load()==0);
+  bool threw=false;
+  try{(void)objc3_task_spawn(ThrowingCallableWork(&live));}
+  catch(int value){threw=value==73;}
+  assert(threw && live.load()==0);
+  bool mismatch=false;
+  try {
+    (void)objc3_task_spawn<double>([owned=OwnedCallableWork(&live)]() -> int __objc3_async_frame {
+      return owned.value;
+    });
+  } catch(const objc3::service_failure &error) {
+    mismatch=error.status()==OBJC3_SERVICE_TYPE_MISMATCH;
+  }
+  assert(mismatch && live.load()==0);
 }
 
 int main() {

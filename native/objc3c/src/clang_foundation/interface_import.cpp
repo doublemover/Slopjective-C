@@ -27,6 +27,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Frontend/ASTUnit.h"
+#include "clang/Frontend/TextDiagnosticBuffer.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/ArrayRef.h"
@@ -264,6 +265,29 @@ public:
   std::set<const clang::VarDecl *> Variables;
 };
 
+// The target compiler owns va_list and its implicit C++ special members.
+// Reusing those declarations avoids duplicate default constructors when a
+// consumer has already instantiated varargs helpers from <string>/<memory>.
+void SeedCompilerBuiltinDeclarations(clang::ASTImporter &importer,
+    clang::ASTContext &source,clang::ASTContext &target) {
+  auto *from=llvm::dyn_cast_or_null<clang::RecordDecl>(source.getVaListTagDecl());
+  auto *to=llvm::dyn_cast_or_null<clang::RecordDecl>(target.getVaListTagDecl());
+  if(!from || !to)return;
+  importer.MapImported(from,to);
+  importer.MapImported(source.getBuiltinVaListDecl(),target.getBuiltinVaListDecl());
+  std::map<std::pair<unsigned,std::string>,clang::NamedDecl *> members;
+  for(auto *declaration:to->decls())
+    if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration)) {
+      const auto usr=ReadInterfaceDeclarationStableId(named);
+      if(!usr.empty())members.emplace(std::pair{unsigned(named->getKind()),usr},named);
+    }
+  for(auto *declaration:from->decls())
+    if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration)) {
+      const auto found=members.find({unsigned(named->getKind()),ReadInterfaceDeclarationStableId(named)});
+      if(found!=members.end())importer.MapImported(named,found->second);
+    }
+}
+
 class DefinitionTrackingImporter final : public clang::ASTImporter {
 public:
   using clang::ASTImporter::ASTImporter;
@@ -351,6 +375,9 @@ struct InterfaceImportSession::Impl {
     // alive until after the AST, including deferred source location imports.
     clang::tooling::FileContentMappings virtual_files;
     std::unique_ptr<clang::ASTUnit> ast;
+    // Owned by ast's DiagnosticsEngine after parsing ends. ASTImporter can
+    // diagnose the source AST long after TextDiagnosticPrinter::EndSourceFile.
+    clang::TextDiagnosticBuffer *import_diagnostics = nullptr;
   };
   InterfaceImportTarget target;
   std::vector<Module> modules;
@@ -573,6 +600,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
           module.sidecar.module.canonical_name);
       return nullptr;
     }
+    module.import_diagnostics = new clang::TextDiagnosticBuffer;
+    module.ast->getDiagnostics().setClient(module.import_diagnostics, true);
     auto regenerated = EmitSemanticInterface(
         module.ast->getASTContext(), module.sidecar.module.canonical_name,
         module.sidecar.module.package_identity, module.sidecar.dependencies,
@@ -735,6 +764,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         target_context, target_file_manager,
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
+    SeedCompilerBuiltinDeclarations(*importer,module.ast->getASTContext(),target_context);
     importer->Existing=&existing_definitions.Definitions;
     importer->ExistingVariables=&existing_definitions.Variables;
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
@@ -753,11 +783,15 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         continue;
       auto imported = importer->Import(exported.Declarations.at(expected.stable_id));
       if (!imported) {
+        std::string reason=llvm::toString(imported.takeError());
+        if(module.import_diagnostics)
+          for(const auto &diagnostic:llvm::make_range(
+                  module.import_diagnostics->err_begin(),module.import_diagnostics->err_end()))
+            reason+="; "+diagnostic.second;
         Add(report.diagnostics, "O3IFC142",
             ModuleImportFailure(module.sidecar.module,
                 llvm::Twine("could not import exported declaration '") +
-                    expected.qualified_name + "': " +
-                    llvm::toString(imported.takeError())), expected.stable_id);
+                    expected.qualified_name + "': " + reason), expected.stable_id);
         return report;
       }
       if (HasCxxClassSpecializationIdentity(expected)) {

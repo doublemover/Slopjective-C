@@ -16,7 +16,6 @@
 #include <coroutine>
 #include <exception>
 #include <new>
-#include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -413,6 +412,15 @@ public:
   {
     using Task=decltype(work());
     return std::move(task_detail::own_callable_as<Task>(std::move(work))).start_child(*this);
+  }
+  template<class R,class Work> requires
+      std::is_same_v<decltype(std::declval<Work &>()()),objc3_async_frame>
+  auto spawn(Work work) const
+#if defined(__OBJC3__)
+      __attribute__((objc_task_spawn))
+#endif
+  {
+    return std::move(task_detail::own_callable_as<task<R>>(std::move(work))).start_child(*this);
   }
   void close() const { task_detail::check(objc3_task_group_close(group_)); }
   void cancel() const { task_detail::check(objc3_task_group_cancel(group_)); }
@@ -918,14 +926,18 @@ template<class Task,class Work> Task own_callable_as(Work work) {
     }
     static void destroy(void *opaque) noexcept {delete static_cast<Context *>(opaque);}
   };
-  auto context=std::make_unique<Context>(std::move(work));
+  auto *context=new Context(std::move(work));
+  struct Owner {
+    Context *pointer;
+    ~Owner(){delete pointer;}
+  } owner{context};
   if constexpr(std::is_same_v<decltype(context->work()),objc3_async_frame>)
     context->inner=context->work();
   else context->inner=std::move(context->work()).release_native();
   objc3_async_frame frame{sizeof(objc3_async_frame),OBJC3_ASYNC_ABI_VERSION,
-      context.get(),Context::resume,Context::destroy,context->inner.result_type};
+      context,Context::resume,Context::destroy,context->inner.result_type};
   auto result=Task::from_native(&frame);
-  (void)context.release();
+  owner.pointer=nullptr;
   return result;
 }
 }
