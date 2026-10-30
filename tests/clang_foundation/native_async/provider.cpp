@@ -1096,9 +1096,15 @@ __attribute__((objc_root_class))
   ++actor_reuse_destroyed;
   if (preserveStorage) {
     auto selector = sel_registerName(".cxx_destruct");
-    auto destructor = class_getMethodImplementation(object_getClass(self), selector);
+    // object_getClass deliberately hides GNUstep association subclasses.
+    // The actual isa owns the .cxx_destruct routine that disposes their state.
+    __unsafe_unretained Class actual_class;
+    __builtin_memcpy((void *)&actual_class, (__bridge const void *)self, sizeof(actual_class));
+    auto destructor = class_getMethodImplementation(actual_class, selector);
     assert(destructor);
     reinterpret_cast<void (*)(__unsafe_unretained id, SEL)>(destructor)(self, selector);
+    __builtin_memcpy((void *)&actual_class, (__bridge const void *)self, sizeof(actual_class));
+    assert(actual_class == object_getClass(self));
     actor_reuse_storage = (__bridge void *)self;
   } else object_dispose(self);
 }
