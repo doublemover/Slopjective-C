@@ -18,6 +18,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/ASTImporterSharedState.h"
+#include "clang/AST/DeclObjC.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
@@ -27,6 +28,104 @@
 using namespace objc3::clang_foundation;
 
 namespace {
+
+void TestPrimitiveAndObjectiveCContractIdentity() {
+  auto emit = [](const std::string &source, std::vector<std::string> flags) {
+    flags.push_back("--target=x86_64-unknown-linux-gnu");
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, flags, "contract.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.contracts", "contracts");
+    for (const auto &diagnostic : result.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+    assert(result.success);
+    return result;
+  };
+  const std::vector<std::string> c = {"-x", "c", "-std=c17"};
+  const std::vector<std::string> objc = {"-x", "objective-c", "-std=c17", "-fobjc-runtime=gnustep-2.2"};
+  const std::string byte = "char api_byte(void);\n";
+  auto signed_byte = emit(byte, c);
+  auto unsigned_flags = c;
+  unsigned_flags.push_back("-funsigned-char");
+  auto unsigned_byte = emit(byte, unsigned_flags);
+  assert(signed_byte.identity.semantic_fingerprint != unsigned_byte.identity.semantic_fingerprint);
+  assert(signed_byte.identity.language_profile != unsigned_byte.identity.language_profile);
+  auto cpp = std::vector<std::string>{"-x", "c++", "-std=c++20"};
+  const std::string wide = "extern \"C\" unsigned second(const wchar_t *);\n";
+  auto normal_wide = emit(wide, cpp);
+  cpp.push_back("-fshort-wchar");
+  auto short_wide = emit(wide, cpp);
+  assert(normal_wide.identity.semantic_fingerprint != short_wide.identity.semantic_fingerprint);
+  for (const auto &flags : {c, objc}) {
+    auto ordinary = emit("extern int counter;\n", flags);
+    auto tls = emit("extern _Thread_local int counter;\n", flags);
+    auto gnu_tls = emit("extern __thread int counter;\n", flags);
+    assert(ordinary.identity.semantic_fingerprint != tls.identity.semantic_fingerprint);
+    assert(tls.identity.semantic_fingerprint == gnu_tls.identity.semantic_fingerprint);
+    for (const std::string shape : {"int * QUAL find_value(void);\n",
+        "typedef int * QUAL Alias; Alias find_value(void);\n",
+        "void callback(int * QUAL (*factory)(void));\n"}) {
+      auto nullable_source = shape, nonnull_source = shape;
+      nullable_source.replace(nullable_source.find("QUAL"), 4, "_Nullable");
+      nonnull_source.replace(nonnull_source.find("QUAL"), 4, "_Nonnull");
+      auto nullable = emit(nullable_source, flags);
+      auto nonnull = emit(nonnull_source, flags);
+      assert(nullable.identity.semantic_fingerprint != nonnull.identity.semantic_fingerprint);
+    }
+  }
+  auto avx_flags = c;
+  avx_flags.push_back("-mavx2");
+  auto avx = emit(byte, avx_flags);
+  assert(avx.identity.language_profile != signed_byte.identity.language_profile);
+  avx_flags.push_back("-mavx2");
+  assert(emit(byte, avx_flags).identity.language_profile == avx.identity.language_profile);
+  const std::string object = "__attribute__((objc_root_class)) @interface Object @end\n";
+  auto width_one = emit(object + "@interface Flags : Object { @public unsigned flag : 1; unsigned neighbor : 2; } @end\n", objc);
+  auto width_two = emit(object + "@interface Flags : Object { @public unsigned flag : 2; unsigned neighbor : 2; } @end\n", objc);
+  assert(width_one.identity.semantic_fingerprint != width_two.identity.semantic_fingerprint);
+  auto getter_one = emit(object + "@interface Widget : Object\n- (int)first; - (int)second;\n@property(nonatomic,readonly,getter=first) int value;\n@end\n", objc);
+  auto getter_two = emit(object + "@interface Widget : Object\n- (int)first; - (int)second;\n@property(nonatomic,readonly,getter=second) int value;\n@end\n", objc);
+  assert(getter_one.identity.semantic_fingerprint != getter_two.identity.semantic_fingerprint);
+  auto setter_one = emit(object + "@interface Widget : Object\n- (void)first:(int)value; - (void)second:(int)value;\n@property(nonatomic,setter=first:) int value;\n@end\n", objc);
+  auto setter_two = emit(object + "@interface Widget : Object\n- (void)first:(int)value; - (void)second:(int)value;\n@property(nonatomic,setter=second:) int value;\n@end\n", objc);
+  assert(setter_one.identity.semantic_fingerprint != setter_two.identity.semantic_fingerprint);
+  auto required = emit("@protocol P\n@required\n@property(nonatomic) int value;\n@end\n", objc);
+  auto optional = emit("@protocol P\n@optional\n@property(nonatomic) int value;\n@end\n", objc);
+  assert(required.identity.semantic_fingerprint != optional.identity.semantic_fingerprint);
+  const auto protocols = "@protocol P @end\n@protocol Q @end\n";
+  auto adopts_p = emit(object + protocols + "@interface Object (Extra) <P> @end\n", objc);
+  auto adopts_q = emit(object + protocols + "@interface Object (Extra) <Q> @end\n", objc);
+  assert(adopts_p.source_bytes.find("(Extra) <P>") != std::string::npos);
+  assert(adopts_p.identity.semantic_fingerprint != adopts_q.identity.semantic_fingerprint);
+  auto invariant = emit(object + "@interface Box<T> : Object @end\n", objc);
+  auto covariant = emit(object + "@interface Box<__covariant T> : Object @end\n", objc);
+  assert(invariant.identity.semantic_fingerprint != covariant.identity.semantic_fingerprint);
+  auto animal_bound = emit(object + "@interface Animal : Object @end\n@interface Dog : Animal @end\n@interface Box<T : Animal *> : Object @end\n", objc);
+  auto dog_bound = emit(object + "@interface Animal : Object @end\n@interface Dog : Animal @end\n@interface Box<T : Dog *> : Object @end\n", objc);
+  assert(animal_bound.identity.semantic_fingerprint != dog_bound.identity.semantic_fingerprint);
+  const std::string generic = object + "@interface Animal : Object @end\n@interface Dog : Animal @end\n@interface Box<T> : Object @end\n";
+  auto animal_super = emit(generic + "@interface Sub : Box<Animal *> @end\n", objc);
+  auto dog_super = emit(generic + "@interface Sub : Box<Dog *> @end\n", objc);
+  assert(animal_super.identity.semantic_fingerprint != dog_super.identity.semantic_fingerprint);
+  auto rejects_hidden_dependency = [&](const std::string &source,
+                                        std::vector<std::string> exports) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, objc, "hidden.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    for (auto *decl : ast->getASTContext().getTranslationUnitDecl()->decls())
+      if (auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(decl))
+        exports.push_back(ReadInterfaceExportRoot(category));
+    auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.hidden", "test",
+                                        {}, {}, {}, exports);
+    assert(!result.success && std::any_of(result.diagnostics.begin(),
+        result.diagnostics.end(), [](const auto &d) { return d.code == "O3IFC112"; }));
+  };
+  rejects_hidden_dependency(object + "@protocol Hidden @end\n"
+      "@interface Object (Extra) <Hidden> @end\n", {"Object"});
+  rejects_hidden_dependency(object + "@interface Hidden : Object @end\n"
+      "@interface Box<T : Hidden *> : Object @end\n", {"Object", "Box"});
+  rejects_hidden_dependency(object + "@interface Hidden : Object @end\n"
+      "@interface Box<T> : Object @end\n@interface Sub : Box<Hidden *> @end\n",
+      {"Object", "Box", "Sub"});
+}
 
 void TestOrdinaryCDeclarationsRoundTrip() {
   constexpr llvm::StringRef source =
@@ -4919,7 +5018,8 @@ void TestCxxFriends() {
 void TestCxxThreadLocalData() {
   const std::vector<llvm::StringRef> semantics = {
       "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
-      "objc3.cxx-definitions.v1", "objc3.cxx-thread-local.v1", "objc3.module-owned-names.v1"};
+      "objc3.cxx-definitions.v1", "objc3.cxx-thread-local.v1", "objc3.module-owned-names.v1",
+      "objc3.native-ownership-contracts.v1", "objc3.canonical-function-effects.v1"};
   for (const char *standard : {"-std=c++20", "-std=c++23"}) {
     auto emit = [&](const std::string &source) {
       auto ast = clang::tooling::buildASTFromCodeWithArgs(source,
@@ -4940,7 +5040,10 @@ void TestCxxThreadLocalData() {
     assert(emitted.success);
     assert(emitted.source_bytes.find("extern thread_local int external") != std::string::npos);
     auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, semantics);
-    assert(decoded);
+    if (!decoded) {
+      std::fprintf(stderr, "TLS decode: %s\n", llvm::toString(decoded.takeError()).c_str());
+      std::abort();
+    }
     auto round = emit(emitted.source_bytes);
     assert(round.success && round.source_bytes == emitted.source_bytes &&
            round.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
@@ -5743,6 +5846,7 @@ void TestBoundedCxxSemanticInterfaces() {
 } // namespace
 
 int main() {
+  TestPrimitiveAndObjectiveCContractIdentity();
   TestOrdinaryCDeclarationsRoundTrip();
   TestStandardLibraryImportsAndInstancetype();
   TestNativeOwnershipContractsRoundTrip();

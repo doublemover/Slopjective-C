@@ -32,6 +32,9 @@
 #include "clang/Basic/LangStandard.h"
 #include "clang/Basic/ObjC3Foundation.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TargetInfo.h"
+#include "clang/Basic/TargetOptions.h"
+#include "llvm/ADT/APFloat.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/SmallString.h"
@@ -3463,10 +3466,22 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
     if (interface->hasAttr<clang::ObjCRootClassAttr>()) text += ";root-class";
     for (const auto *protocol : interface->protocols())
       text += ";protocol=" + protocol->getNameAsString();
-    for (const auto *ivar : interface->ivars())
+    for (const auto *ivar : interface->ivars()) {
       text += ";ivar=" + ivar->getNameAsString() + ':' +
               CanonicalType(ivar->getType(), context) + "@" +
               std::to_string(static_cast<unsigned>(ivar->getAccessControl()));
+      text += ivar->isBitField() ? ":bitfield=" + std::to_string(ivar->getBitWidthValue()) : ":ordinary";
+    }
+    if (const auto *parameters = interface->getTypeParamList()) {
+      text += ";objc-generics:v1;count=" + std::to_string(parameters->size());
+      for (const auto *parameter : *parameters) {
+        text += ";parameter=" + std::to_string(parameter->getIndex()) + ":variance=" +
+                std::to_string(static_cast<unsigned>(parameter->getVariance())) + ":bound=" +
+                CanonicalType(parameter->getUnderlyingType(), context);
+      }
+    }
+    if (const auto *superclass = interface->getSuperClassType())
+      text += ";super-type=" + CanonicalType(clang::QualType(superclass, 0), context);
     return text;
   }
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration)) {
@@ -3476,12 +3491,16 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
     return text;
   }
   if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
-    return "objc-category:" +
+    std::string text = "objc-category:" +
            (category->getClassInterface()
                 ? category->getClassInterface()->getNameAsString()
                 : std::string("<missing-class>")) +
            '(' + category->getNameAsString() + ')';
+    for (const auto *protocol : category->protocols())
+      text += ";protocol=" + protocol->getNameAsString();
+    return text;
   }
+
   return {};
 }
 
@@ -3651,7 +3670,10 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     return ObjCMethodIdentity(method, context);
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
-           std::to_string(static_cast<unsigned>(property->getPropertyAttributes()));
+           std::to_string(static_cast<unsigned>(property->getPropertyAttributes())) +
+           ";objc-property-contract:v1;getter=" + property->getGetterName().getAsString() +
+           ";setter=" + (property->isReadOnly() ? std::string() : property->getSetterName().getAsString()) +
+           ";implementation=" + std::to_string(static_cast<unsigned>(property->getPropertyImplementation()));
   if (const auto *using_enum=llvm::dyn_cast<clang::UsingEnumDecl>(declaration))
     return "using-enum{target="+ReadInterfaceDeclarationStableId(using_enum->getEnumDecl())+
            ";access="+CxxAccessName(using_enum->getAccess())+"};cxx-using:v1;";
@@ -3760,6 +3782,9 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
   }
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
     std::string identity = CanonicalType(value->getType(), context);
+    if (const auto *ivar = llvm::dyn_cast<clang::ObjCIvarDecl>(value))
+      identity += ivar->isBitField() ? ";objc-ivar-bitfield:v1;width=" + std::to_string(ivar->getBitWidthValue())
+                                    : ";objc-ivar-ordinary:v1;";
     if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(value);
         field && field->hasInClassInitializer())
       identity += ";cxx-declaration-expressions:v1;init=" +
@@ -4959,6 +4984,10 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                       "adopted Objective-C protocol dependency has no resolved interface identity",
                       protocol->getNameAsString());
     for (const auto *ivar : interface->ivars()) check(ivar->getType());
+    if (const auto *parameters = interface->getTypeParamList())
+      for (const auto *parameter : *parameters) check(parameter->getUnderlyingType());
+    if (const auto *superclass = interface->getSuperClassType())
+      check(clang::QualType(superclass, 0));
   }
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
     for (const auto *adopted : protocol->protocols()) {
@@ -4970,8 +4999,17 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                       adopted->getNameAsString());
     }
   if (const auto *category =
-          llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration))
+          llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
     visitor.CheckVisibility(category->getClassInterface());
+    for (const auto *protocol : category->protocols()) {
+      visitor.CheckVisibility(protocol);
+      if (!IsInMainFile(context, protocol->getLocation(), source_root) &&
+          !visitor.IsResolved(protocol))
+        AddDiagnostic(result, "O3IFC112",
+                      "category-adopted Objective-C protocol dependency has no resolved interface identity",
+                      protocol->getNameAsString());
+    }
+  }
   uses_runtime_frame |= visitor.UsesRuntimeFrame;
   uses_cxx_task_runtime |= visitor.UsesCxxTaskRuntime;
   if (uses_typed_keypaths) *uses_typed_keypaths |= visitor.UsesTypedKeyPaths;
@@ -6060,6 +6098,34 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
   if (lang.CoroAlignedAllocation) args.push_back("-fcoro-aligned-allocation");
   if (lang.Blocks) args.push_back("-fblocks");
   if (lang.ShortEnums) args.push_back("-fshort-enums");
+  args.push_back(lang.CharIsSigned ? "-fsigned-char" : "-funsigned-char");
+  if (lang.WCharSize) {
+    const char *underlying = lang.WCharSize == 1 ? "char" : lang.WCharSize == 2 ? "short" : "int";
+    args.insert(args.end(), {"-Xclang", std::string("-fwchar-type=") + underlying});
+  }
+  if (!lang.WCharIsSigned) args.insert(args.end(), {"-Xclang", "-fno-signed-wchar"});
+  switch (lang.getClangABICompat()) {
+#define ABI_VER_MAJOR_MINOR(Major, Minor) \
+  case clang::LangOptions::ClangABI::Ver##Major##_##Minor: \
+    args.push_back("-fclang-abi-compat=" #Major "." #Minor); break;
+#define ABI_VER_MAJOR(Major) \
+  case clang::LangOptions::ClangABI::Ver##Major: \
+    args.push_back("-fclang-abi-compat=" #Major ".0"); break;
+#define ABI_VER_LATEST(Latest) case clang::LangOptions::ClangABI::Latest: break;
+#include "clang/Basic/ABIVersions.def"
+  }
+  const auto &target = context.getTargetInfo();
+  if (!target.getTargetOpts().CPU.empty())
+    args.insert(args.end(), {"-Xclang", "-target-cpu", "-Xclang", target.getTargetOpts().CPU});
+  if (!target.getTargetOpts().ABI.empty())
+    args.insert(args.end(), {"-Xclang", "-target-abi", "-Xclang", target.getTargetOpts().ABI});
+  for (const auto &feature : target.getTargetOpts().FeaturesAsWritten)
+    args.insert(args.end(), {"-Xclang", "-target-feature", "-Xclang", feature});
+  if (lang.PackStruct) args.push_back("-fpack-struct=" + std::to_string(lang.PackStruct));
+  if (lang.MaxTypeAlign) args.push_back("-fmax-type-align=" + std::to_string(lang.MaxTypeAlign));
+  if (lang.AlignDouble) args.push_back("-malign-double");
+  if (lang.LongDoubleSize) args.push_back("-mlong-double-" + std::to_string(lang.LongDoubleSize));
+
   if (lang.ObjC3) {
     args.push_back("-fobjc-version=3");
     static constexpr const char *profiles[] = {
@@ -6149,13 +6215,14 @@ std::vector<clang::VarTemplateSpecializationDecl *> ReadConcreteMemberVariableSp
   return ConcreteMemberVariableSpecializations(owner);
 }
 
-std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
+std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang,
+                                         const clang::TargetInfo &target) {
   static constexpr const char *profiles[] = {
       "compatibility", "strict", "strict-concurrency", "strict-system"};
   const auto index = static_cast<unsigned>(lang.ObjC3Profile);
   const auto &standard =
       clang::LangStandard::getLangStandardForKind(lang.LangStd);
-  return std::string("objc3=") + (lang.ObjC3 ? "enabled" : "disabled") +
+  std::string profile = std::string("objc3=") + (lang.ObjC3 ? "enabled" : "disabled") +
          ";profile=" +
          (index < std::size(profiles) ? profiles[index] : "unknown") +
          ";strict-concurrency=" +
@@ -6165,6 +6232,43 @@ std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
                     : (lang.CPlusPlus ? "c++" : "c")) +
          ";standard=" + standard.getName() +
          ";blocks=" + (lang.Blocks ? "true" : "false");
+  profile += ";primitive-target-abi:v1;layout=" + std::string(target.getDataLayoutString()) +
+      ";abi=" + target.getABI().str() +
+      ";cxx-abi=" + std::to_string(static_cast<unsigned>(target.getCXXABI().getKind())) +
+      ";short-enums=" + std::to_string(lang.ShortEnums) +
+      ";char-signed=" + std::to_string(lang.CharIsSigned) +
+      ";wchar-size=" + std::to_string(lang.WCharSize) +
+      ";wchar-signed=" + std::to_string(lang.WCharIsSigned) +
+      ";pack-struct=" + std::to_string(lang.PackStruct) +
+      ";max-type-align=" + std::to_string(lang.MaxTypeAlign) +
+      ";align-double=" + std::to_string(lang.AlignDouble) +
+      ";long-double-size=" + std::to_string(lang.LongDoubleSize) +
+      ";long-double-format=" + std::to_string(static_cast<unsigned>(
+          llvm::APFloat::SemanticsToEnum(target.getLongDoubleFormat()))) +
+      ";clang-abi-compat=" + std::to_string(static_cast<unsigned>(lang.getClangABICompat()));
+  profile += ";target-cpu=" + target.getTargetOpts().CPU;
+  std::string features;
+  for (const auto &feature : target.getTargetOpts().Features)
+    AppendNativeContractField(features, feature);
+  profile += ";target-features-sha256=" + ComputeInterfaceSourceSha256(features);
+  for (const auto [width, alignment] : {
+       std::pair{target.getCharWidth(), target.getCharAlign()},
+       std::pair{target.getWCharWidth(), target.getWCharAlign()},
+       std::pair{target.getShortWidth(), target.getShortAlign()},
+       std::pair{target.getIntWidth(), target.getIntAlign()},
+       std::pair{target.getLongWidth(), target.getLongAlign()},
+       std::pair{target.getLongLongWidth(), target.getLongLongAlign()},
+       std::pair{target.getHalfWidth(), target.getHalfAlign()},
+       std::pair{target.getFloatWidth(), target.getFloatAlign()},
+       std::pair{target.getDoubleWidth(), target.getDoubleAlign()},
+       std::pair{target.getLongDoubleWidth(), target.getLongDoubleAlign()}})
+    profile += ";primitive=" + std::to_string(width) + ":" + std::to_string(alignment);
+  return profile;
+
+}
+
+std::string ReadInterfaceLanguageProfile(const clang::ASTContext &context) {
+  return ReadInterfaceLanguageProfile(context.getLangOpts(), context.getTargetInfo());
 }
 
 std::string ReadInterfaceDeclarationStableId(
@@ -6735,7 +6839,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   result.identity.language_revision = lang.ObjC3
       ? std::to_string(lang.ObjC3Revision)
       : "objc3-disabled";
-  result.identity.language_profile = ReadInterfaceLanguageProfile(lang);
+  result.identity.language_profile = ReadInterfaceLanguageProfile(context);
   result.identity.package_identity = package_identity.str();
 
   if (!ValidateExportNames(exports, result))

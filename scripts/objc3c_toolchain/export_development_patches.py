@@ -258,6 +258,7 @@ PACKETS = {
         "clang/lib/Sema/SemaDeclCXX.cpp",
         "clang/lib/Sema/SemaDeclObjC.cpp",
         "clang/lib/Sema/SemaExprObjC.cpp",
+        "clang/lib/Sema/Sema.cpp",
         "clang/lib/Sema/SemaExpr.cpp",
         "clang/lib/Sema/SemaExprCXX.cpp",
         "clang/lib/Sema/SemaTypeTraits.cpp",

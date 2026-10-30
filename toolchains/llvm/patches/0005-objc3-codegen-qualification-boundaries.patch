@@ -5717,7 +5717,7 @@ index 6f7b7e7d6..0835d15e5 100644
    Value *V = Visit(E->getSubExpr());
    // Defend against dominance problems caused by jumps out of expression
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..d0a374947 100644
+index c724a063b..24e204910 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,7 +12,13 @@
@@ -5979,7 +5979,25 @@ index c724a063b..d0a374947 100644
    llvm::Value *result
      = emitARCValueOperation(*this, value, nullptr,
                              CGM.getObjCEntrypoints().objc_retainBlock,
-@@ -3525,6 +3638,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -2558,6 +2671,17 @@ llvm::Value *CodeGenFunction::EmitARCStoreStrongCall(Address addr,
+                                                      bool ignored) {
+   assert(addr.getElementType() == value->getType());
+ 
++  // The runtime barrier receives an id* and therefore requires pointer
++  // alignment, including when called directly by an -O0 destruction path.
++  // Packed managed carrier subobjects can have weaker address alignment.
++  if (addr.getAlignment() < CharUnits::fromQuantity(PointerAlignInBytes)) {
++    value = EmitARCRetainNonBlock(value);
++    llvm::Value *oldValue = Builder.CreateLoad(addr);
++    Builder.CreateStore(value, addr);
++    EmitARCRelease(oldValue, ARCPreciseLifetime);
++    return ignored ? nullptr : value;
++  }
++
+   llvm::Function *&fn = CGM.getObjCEntrypoints().objc_storeStrong;
+   if (!fn)
+     fn = getARCIntrinsic(llvm::Intrinsic::objc_storeStrong, CGM);
+@@ -3525,6 +3649,7 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCRetainScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5987,7 +6005,7 @@ index c724a063b..d0a374947 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainScalarExpr(cleanups->getSubExpr());
    }
-@@ -3540,6 +3654,7 @@ llvm::Value *
+@@ -3540,6 +3665,7 @@ llvm::Value *
  CodeGenFunction::EmitARCRetainAutoreleaseScalarExpr(const Expr *e) {
    // The retain needs to happen within the full-expression.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -5995,7 +6013,7 @@ index c724a063b..d0a374947 100644
      RunCleanupsScope scope(*this);
      return EmitARCRetainAutoreleaseScalarExpr(cleanups->getSubExpr());
    }
-@@ -3650,6 +3765,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
+@@ -3650,6 +3776,7 @@ static llvm::Value *emitARCUnsafeUnretainedScalarExpr(CodeGenFunction &CGF,
  llvm::Value *CodeGenFunction::EmitARCUnsafeUnretainedScalarExpr(const Expr *e) {
    // Look through full-expressions.
    if (const ExprWithCleanups *cleanups = dyn_cast<ExprWithCleanups>(e)) {
@@ -6003,7 +6021,7 @@ index c724a063b..d0a374947 100644
      RunCleanupsScope scope(*this);
      return emitARCUnsafeUnretainedScalarExpr(*this, cleanups->getSubExpr());
    }
-@@ -3719,6 +3835,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
+@@ -3719,6 +3846,10 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
  
  void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
                                            const ObjCAutoreleasePoolStmt &ARPS) {
@@ -6014,6 +6032,16 @@ index c724a063b..d0a374947 100644
    const Stmt *subStmt = ARPS.getSubStmt();
    const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
  
+@@ -3736,8 +3867,7 @@ void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
+     EHStack.pushCleanup<CallObjCMRRAutoreleasePoolObject>(NormalCleanup, token);
+   }
+ 
+-  for (const auto *I : S.body())
+-    EmitStmt(I);
++  EmitCompoundStmtWithoutScope(S);
+ 
+   if (DI)
+     DI->EmitLexicalBlockEnd(Builder, S.getRBracLoc());
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
 index 000000000..7975d386f
@@ -20402,7 +20430,7 @@ index 57c6bad67..fe9c24a69 100644
      if (I == DelayedCXXInitPosition.end()) {
        CXXGlobalInits.push_back(Fn);
 diff --git a/clang/lib/CodeGen/CGNonTrivialStruct.cpp b/clang/lib/CodeGen/CGNonTrivialStruct.cpp
-index 0a383c8f9..b5566a357 100644
+index 0a383c8f9..0d306e2ac 100644
 --- a/clang/lib/CodeGen/CGNonTrivialStruct.cpp
 +++ b/clang/lib/CodeGen/CGNonTrivialStruct.cpp
 @@ -12,6 +12,8 @@
@@ -20484,7 +20512,7 @@ index 0a383c8f9..b5566a357 100644
  llvm::Function *clang::CodeGen::getNonTrivialCStructDefaultConstructor(
      CodeGenModule &CGM, CharUnits DstAlignment, bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::DefaultInitialize);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::DefaultInitialize, DstAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenDefaultInitializeFuncName GenName(DstAlignment, Ctx);
@@ -20494,7 +20522,7 @@ index 0a383c8f9..b5566a357 100644
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Copy);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Copy, DstAlignment, SrcAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<false> GenName("__copy_constructor_", DstAlignment,
@@ -20504,7 +20532,7 @@ index 0a383c8f9..b5566a357 100644
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Move);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Move, DstAlignment, SrcAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<true> GenName("__move_constructor_", DstAlignment,
@@ -20514,7 +20542,7 @@ index 0a383c8f9..b5566a357 100644
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::CopyAssign);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::CopyAssign, DstAlignment, SrcAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<false> GenName("__copy_assignment_", DstAlignment,
@@ -20524,7 +20552,7 @@ index 0a383c8f9..b5566a357 100644
      CodeGenModule &CGM, CharUnits DstAlignment, CharUnits SrcAlignment,
      bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::MoveAssign);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::MoveAssign, DstAlignment, SrcAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenBinaryFuncName<true> GenName("__move_assignment_", DstAlignment,
@@ -20534,17 +20562,17 @@ index 0a383c8f9..b5566a357 100644
  llvm::Function *clang::CodeGen::getNonTrivialCStructDestructor(
      CodeGenModule &CGM, CharUnits DstAlignment, bool IsVolatile, QualType QT) {
 +  if (containsObjC3CarrierManagedStorage(QT))
-+    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Destroy);
++    return getObjC3ManagedStorageFunction(CGM, QT, ObjC3StorageOperation::Destroy, DstAlignment);
 +
    ASTContext &Ctx = CGM.getContext();
    GenDestructorFuncName GenName("__destructor_", DstAlignment, Ctx);
    std::string FuncName = GenName.getName(QT, IsVolatile);
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 new file mode 100644
-index 000000000..ea5a9549b
+index 000000000..e7691d2e7
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
-@@ -0,0 +1,434 @@
+@@ -0,0 +1,446 @@
 +//===--- CGObjC3ManagedStorage.cpp - Owned enclosing storage
 +//----------------===//
 +//
@@ -20698,7 +20726,8 @@ index 000000000..ea5a9549b
 +    return Address(CGF.Builder.CreateInBoundsGEP(A.getElementType(),
 +                                                 A.emitRawPointer(CGF), I),
 +                   A.getElementType(),
-+                   CGF.getContext().getTypeAlignInChars(Element));
++                   A.getAlignment().alignmentOfArrayElement(
++                       CGF.getContext().getTypeSizeInChars(Element)));
 +  };
 +  emitOperation(CGF, Element, At(Dst, Index),
 +                Src.isValid() ? At(Src, Index) : Address::invalid(), Op);
@@ -20762,6 +20791,9 @@ index 000000000..ea5a9549b
 +      auto DstLV = CGF.MakeAddrLValue(Dst, Type);
 +      auto SrcLV = Src.isValid() ? CGF.MakeAddrLValue(Src, Type) : LValue();
 +      auto EmitField = [&](const FieldDecl *Field) {
++        // Unnamed bit-fields carry layout/padding only and have no addressable
++        // value. In particular, zero-width separators have no storage unit.
++        if (Field->isBitField() && !Field->getIdentifier()) return;
 +        auto D = CGF.EmitLValueForFieldInitialization(DstLV, Field);
 +        if (Field->isBitField()) {
 +          if (Op == Operation::Copy || Op == Operation::Move) {
@@ -20888,7 +20920,9 @@ index 000000000..ea5a9549b
 +
 +llvm::Function *CodeGen::getObjC3ManagedStorageFunction(CodeGenModule &CGM,
 +                                                        QualType Type,
-+                                                        Operation Op) {
++                                                        Operation Op,
++                                                        CharUnits DstAlignment,
++                                                        CharUnits SrcAlignment) {
 +  std::string Description;
 +  unsigned Budget = 256;
 +  if (!describe(CGM.getContext(), CGM, Type, Description, Budget)) {
@@ -20897,6 +20931,11 @@ index 000000000..ea5a9549b
 +        "ObjC3 enclosing managed storage lifetime has no qualified lowering");
 +    return nullptr;
 +  }
++  auto &Ctx = CGM.getContext();
++  if (DstAlignment.isZero()) DstAlignment = Ctx.getTypeAlignInChars(Type);
++  if (SrcAlignment.isZero()) SrcAlignment = Ctx.getTypeAlignInChars(Type);
++  Description += ";destination-alignment=" + std::to_string(DstAlignment.getQuantity()) +
++                 ";source-alignment=" + std::to_string(SrcAlignment.getQuantity());
 +  llvm::SHA256 Hash;
 +  Hash.update(Description);
 +  std::string Name = "__objc3_v12_storage_" + std::to_string(unsigned(Op)) +
@@ -20904,7 +20943,6 @@ index 000000000..ea5a9549b
 +  if (auto *F = CGM.getModule().getFunction(Name))
 +    return F;
 +  bool Binary = Op != Operation::DefaultInitialize && Op != Operation::Destroy;
-+  auto &Ctx = CGM.getContext();
 +  FunctionArgList Args;
 +  SmallVector<CanQualType, 2> Types;
 +  for (unsigned I = 0; I != (Binary ? 2u : 1u); ++I) {
@@ -20927,7 +20965,7 @@ index 000000000..ea5a9549b
 +  auto Debug = ApplyDebugLocation::CreateArtificial(CGF);
 +  auto Argument = [&](unsigned I) {
 +    return Address(CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(Args[I])),
-+                   CGF.ConvertTypeForMem(Type), Ctx.getTypeAlignInChars(Type));
++                   CGF.ConvertTypeForMem(Type), I ? SrcAlignment : DstAlignment);
 +  };
 +  Address Dst = Argument(0), Src = Binary ? Argument(1) : Address::invalid();
 +  if (Op == Operation::CopyAssign || Op == Operation::MoveAssign) {
@@ -20951,7 +20989,7 @@ index 000000000..ea5a9549b
 +                                          Operation Op) {
 +  if (!containsObjC3CarrierManagedStorage(Dst.getType()))
 +    return false;
-+  if (auto *F = getObjC3ManagedStorageFunction(CGF.CGM, Dst.getType(), Op))
++  if (auto *F = getObjC3ManagedStorageFunction(CGF.CGM, Dst.getType(), Op, Dst.getAddress().getAlignment()))
 +    CGF.EmitRuntimeCallOrInvoke(F, {Dst.getAddress().emitRawPointer(CGF)});
 +  return true;
 +}
@@ -20965,7 +21003,9 @@ index 000000000..ea5a9549b
 +    if (Op == Operation::MoveAssign)
 +      Op = Operation::CopyAssign;
 +  }
-+  if (auto *F = getObjC3ManagedStorageFunction(CGF.CGM, Dst.getType(), Op))
++  if (auto *F = getObjC3ManagedStorageFunction(CGF.CGM, Dst.getType(), Op,
++                                                   Dst.getAddress().getAlignment(),
++                                                   Src.getAddress().getAlignment()))
 +    CGF.EmitRuntimeCallOrInvoke(F, {Dst.getAddress().emitRawPointer(CGF),
 +                                    Src.getAddress().emitRawPointer(CGF)});
 +  return true;
@@ -20981,10 +21021,10 @@ index 000000000..ea5a9549b
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.h b/clang/lib/CodeGen/CGObjC3ManagedStorage.h
 new file mode 100644
-index 000000000..8f64042cf
+index 000000000..bd22a8a23
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,46 @@
 +//===--- CGObjC3ManagedStorage.h - Owned enclosing storage --------*- C++
 +//-*-===//
 +//
@@ -21019,7 +21059,9 @@ index 000000000..8f64042cf
 +bool supportsObjC3ManagedRuntimeStorage(CodeGenModule &CGM, QualType Type);
 +llvm::Function *getObjC3ManagedStorageFunction(CodeGenModule &CGM,
 +                                               QualType Type,
-+                                               ObjC3StorageOperation Operation);
++                                               ObjC3StorageOperation Operation,
++                                               CharUnits DestinationAlignment = CharUnits::Zero(),
++                                               CharUnits SourceAlignment = CharUnits::Zero());
 +bool emitObjC3ManagedStorageCall(CodeGenFunction &CGF, LValue Destination,
 +                                 ObjC3StorageOperation Operation);
 +bool emitObjC3ManagedStorageCall(CodeGenFunction &CGF, LValue Destination,
@@ -21066,10 +21108,10 @@ index 2b8bd170b..0df3194d5 100644
            break;
 diff --git a/clang/test/ObjC3/CodeGen/carrier-managed-records.m b/clang/test/ObjC3/CodeGen/carrier-managed-records.m
 new file mode 100644
-index 000000000..5dae206f3
+index 000000000..e8ab8e6d6
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-managed-records.m
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,46 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefix=C
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefix=CPP
 +// REQUIRES: x86-registered-target
@@ -21105,6 +21147,17 @@ index 000000000..5dae206f3
 +// C: @__objc3_v12_storage_5_
 +// CPP-LABEL: define{{.*}} void {{.*}}record_assign
 +// CPP: call {{.*}} @_ZN6RecordaSERKS_
++
++// A zero-width separator has no storage-unit lvalue. Named bitfields remain
++// copied as native values while the enclosing record owns managed carriers.
++struct Separated { Strong value; unsigned first : 2; unsigned : 0; unsigned last : 3; };
++#ifdef __cplusplus
++extern "C"
++#endif
++struct Separated separated_echo(struct Separated value) { return value; }
++// C-LABEL: define{{.*}} void @separated_echo
++// C: @__objc3_v12_storage_
++// CPP-LABEL: define{{.*}} void @separated_echo
 diff --git a/clang/test/ObjC3/CodeGen/carrier-constructor-rollback.mm b/clang/test/ObjC3/CodeGen/carrier-constructor-rollback.mm
 new file mode 100644
 index 000000000..fdc439293
@@ -25278,10 +25331,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..6823aab76
+index 000000000..73b6a685f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1273 @@
+@@ -0,0 +1,1272 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -26357,8 +26410,7 @@ index 000000000..6823aab76
 +  Builder.CreateStore(EmitObjCAutoreleasePoolPush(), Token);
 +  Pools.push_back(Token);
 +  EHStack.pushCleanup<CloseAutoreleasePool>(NormalAndEHCleanup, Token);
-+  for (const Stmt *Child : Body.body())
-+    EmitStmt(Child);
++  EmitCompoundStmtWithoutScope(Body);
 +  Scope.ForceCleanup();
 +  Pools.pop_back();
 +  if (auto *DI = getDebugInfo())
@@ -28217,10 +28269,10 @@ index 000000000..b7c277bdc
 +// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/native-c-async-pools.m b/clang/test/ObjC3/CodeGen/native-c-async-pools.m
 new file mode 100644
-index 000000000..5bcab04fe
+index 000000000..d11be6393
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-c-async-pools.m
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,24 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#include "Inputs/native-c-async-frame.h"
@@ -28238,9 +28290,10 @@ index 000000000..5bcab04fe
 +// CHECK: llvm.objc.autoreleasePoolPush
 +int pool_parent(void) __objc3_async {
 +  @autoreleasepool {
++    guard let bound = Some(int, 42) else { return -1; }
 +    @autoreleasepool {
 +      int n = __objc3_await leaf();
-+      return n + __objc3_await leaf();
++      return n + __objc3_await leaf() + bound;
 +    }
 +  }
 +}
@@ -28393,10 +28446,10 @@ index 000000000..e27f5d6f9
 +objc3_async_frame different(double value) { return (objc3_async_frame){0}; }
 diff --git a/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm b/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm
 new file mode 100644
-index 000000000..fd8cb9ca8
+index 000000000..f2fd14d02
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-cxx-async-pools.mm
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,38 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-llvm -disable-llvm-passes -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc-arc-exceptions -emit-llvm -disable-llvm-passes -o /dev/null -verify %s
 +// expected-no-diagnostics
@@ -28411,8 +28464,9 @@ index 000000000..fd8cb9ca8
 +// CHECK: @llvm.objc.autoreleasePoolPush
 +int pool_parent() __objc3_async {
 +  @autoreleasepool {
++    guard let bound = Some(int, 42) else { return -1; }
 +    @autoreleasepool {
-+      return __objc3_await pool_leaf();
++      return __objc3_await pool_leaf() + bound;
 +    }
 +  }
 +}
@@ -29251,3 +29305,31 @@ index 000000000..b58c47ac3
 +// CHECK-DAG: @_ZZ4nextI5AliasB21__objc3_m_alias_ownerEivE1n = {{.*}}global i32 40
 +#endif
 +// CHECK-DAG: define {{.*}} @_Z4nextI5OwnedB21__objc3_m_class_ownerEiv
+diff --git a/clang/test/ObjC3/CodeGen/carrier-storage-alignment.m b/clang/test/ObjC3/CodeGen/carrier-storage-alignment.m
+new file mode 100644
+index 000000000..dcc76e673
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-storage-alignment.m
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -disable-llvm-passes -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -disable-llvm-passes -o - %s | FileCheck %s --check-prefix=ALIGNED
++// REQUIRES: x86-registered-target
++typedef Optional(id) Owned;
++struct Inner { Owned object; };
++#pragma pack(push, 1)
++struct Envelope { char prefix; struct Inner inner; };
++#pragma pack(pop)
++void replace_inner(struct Envelope *out, const struct Inner *in) {
++  out->inner = *in;
++}
++void read_inner(struct Inner *out, const struct Envelope *in) {
++  *out = in->inner;
++}
++// CHECK-LABEL: define{{.*}} void @replace_inner
++// CHECK: @__objc3_v12_storage_
++// CHECK-LABEL: define{{.*}} void @read_inner
++// CHECK: @__objc3_v12_storage_
++// At least one helper must honor an underaligned destination/source. The
++// concrete address alignment participates in helper specialization identity.
++// ALIGNED-DAG: load ptr, ptr {{.*}}, align 1
++// ALIGNED-DAG: store ptr {{.*}}, ptr {{.*}}, align 1

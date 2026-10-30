@@ -349,7 +349,15 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       static constexpr const char *profiles[] = {
           "compatibility", "strict", "strict-concurrency", "strict-system"};
       const auto profile_index = static_cast<unsigned>(language.ObjC3Profile);
-      target.language_profile = ReadInterfaceLanguageProfile(language);
+      // Admission happens before the real frontend instance creates its AST.
+      // Derive the same adjusted target from the exact consumer invocation.
+      clang::CompilerInstance target_instance(invocation);
+      target_instance.createDiagnostics(diagnostics, false);
+      if (!target_instance.createTarget()) {
+        result_.failure = "Cannot derive the consumer primitive/target ABI";
+        return false;
+      }
+      target.language_profile = ReadInterfaceLanguageProfile(language, target_instance.getTarget());
       target.objc = language.ObjC;
       target.objc3 = language.ObjC3;
       target.arc = language.ObjCAutoRefCount;

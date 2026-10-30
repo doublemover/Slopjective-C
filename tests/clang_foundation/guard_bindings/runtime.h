@@ -100,7 +100,77 @@ __attribute__((objc_root_class))
 }
 - (void)dealloc { ++guard_destroyed; object_dispose(self); }
 @end
+static GuardObject * __weak guard_pool_observed;
+static GuardObject *guard_pool_new(void) __attribute__((ns_returns_retained));
+static GuardObject *guard_pool_new(void) {
+  GuardObject *object = [GuardObject make:42];
+  guard_pool_observed = object;
+  return object;
+}
+static int guard_pool_binding(void) {
+  @autoreleasepool {
+    guard let held = guard_pool_new() else { return -1; }
+    if (guard_pool_observed == (id)0) return -2;
+    return held->number;
+  }
+}
+static void guard_pool_source_order(void) {
+  @autoreleasepool {
+    defer { GUARD_CHECK(guard_pool_observed != (id)0); }
+    __attribute__((objc_precise_lifetime)) GuardObject *owner = guard_pool_new();
+    GUARD_CHECK(owner->number == 42);
+  }
+  GUARD_CHECK(guard_pool_observed == (id)0);
+  @autoreleasepool {
+    __attribute__((objc_precise_lifetime)) GuardObject *owner = guard_pool_new();
+    defer { GUARD_CHECK(guard_pool_observed != (id)0); }
+    GUARD_CHECK(owner->number == 42);
+  }
+  GUARD_CHECK(guard_pool_observed == (id)0);
+}
+struct GuardManagedRecord {
+  Optional(id) object;
+  unsigned : 0;
+  unsigned first : 3;
+  unsigned second : 2;
+};
+#ifndef __cplusplus
+#pragma pack(push, 1)
+struct GuardPackedRecord { char prefix; struct GuardManagedRecord inner; };
+#pragma pack(pop)
+#endif
+static void guard_managed_record_storage(void) {
+  GuardObject * __weak witness;
+  {
+    GuardObject *owner = [GuardObject make:42];
+    witness = owner;
+    struct GuardManagedRecord source = {Some(id, owner), 5, 2};
+#ifndef __cplusplus
+    // C records use the qualified managed-storage helpers. C++ nontrivial
+    // record constructors require their native type alignment.
+    struct GuardPackedRecord packed = {7, source};
+    owner = (id)0;
+    source.object = None(id);
+    GUARD_CHECK(witness != (id)0 && packed.prefix == 7);
+    struct GuardManagedRecord copied = packed.inner;
+    packed.inner = source;
+    GUARD_CHECK(!hasValue(packed.inner.object));
+#else
+    struct GuardManagedRecord copied = source;
+    owner = (id)0;
+    source.object = None(id);
+#endif
+    GUARD_CHECK(copied.first == 5 && copied.second == 2);
+    guard let held = copied.object else { ++guard_failures; return; }
+    GUARD_CHECK(((GuardObject *)held)->number == 42);
+  }
+  GUARD_CHECK(witness == (id)0);
+}
 static void guard_managed(void) {
+  GUARD_CHECK(guard_pool_binding() == 42);
+  GUARD_CHECK(guard_pool_observed == (id)0);
+  guard_pool_source_order();
+  guard_managed_record_storage();
   GuardObject * __weak witness;
   {
     GuardObject *owner = [GuardObject make:42];

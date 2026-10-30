@@ -163,6 +163,7 @@ static void autoreleased_worker(int *destroyed) {
 int native_c_pools(int *destroyed) __objc3_async {
   int before = __atomic_load_n(destroyed, __ATOMIC_ACQUIRE);
   @autoreleasepool {
+    guard let pool_binding = Some(int, 42) else { return -4; }
     autoreleased_worker(destroyed);
     @autoreleasepool {
       autoreleased_worker(destroyed);
@@ -173,6 +174,7 @@ int native_c_pools(int *destroyed) __objc3_async {
       if (__atomic_load_n(destroyed, __ATOMIC_ACQUIRE) != before + 3) return -2;
     }
     autoreleased_worker(destroyed);
+    if (pool_binding != 42) return -5;
   }
   return __atomic_load_n(destroyed, __ATOMIC_ACQUIRE) == before + 4 ? 42 : -3;
 }

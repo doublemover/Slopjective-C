@@ -13,6 +13,7 @@ class VarTemplateSpecializationDecl;
 class ASTContext;
 class NamedDecl;
 class LangOptions;
+class TargetInfo;
 }
 
 namespace objc3::clang_foundation {
@@ -37,7 +38,9 @@ namespace objc3::clang_foundation {
 // Exact parser dialect, standard and ownership mode used by providers and
 // importers.
 [[nodiscard]] std::string
-ReadInterfaceLanguageProfile(const clang::LangOptions &language);
+ReadInterfaceLanguageProfile(const clang::ASTContext &context);
+[[nodiscard]] std::string ReadInterfaceLanguageProfile(
+    const clang::LangOptions &language, const clang::TargetInfo &target);
 
 // Native declaration owning the selected export policy of a row.
 [[nodiscard]] std::string

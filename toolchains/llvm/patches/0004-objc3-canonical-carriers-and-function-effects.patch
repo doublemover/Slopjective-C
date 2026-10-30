@@ -5281,7 +5281,7 @@ index e0b62591a..1246914c4 100644
    // Cast the Decls to their actual subclass so that the right overload of
    // IsStructurallyEquivalent is called.
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..ba075d34c 100644
+index 4be3e977b..a29cced55 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -19,133 +19,141 @@
@@ -6591,7 +6591,24 @@ index 4be3e977b..ba075d34c 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +2113,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1627,13 +2109,26 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+   if (auto TypeParams = PID->getTypeParamList()) {
+     PrintObjCTypeParams(TypeParams);
+   }
+-  Out << "(" << *PID << ")\n";
++  Out << "(" << *PID << ")";
++  if (PID->protocol_begin() != PID->protocol_end()) {
++    Out << " <";
++    bool First = true;
++    for (const auto *Protocol : PID->protocols()) {
++      if (!First) Out << ", ";
++      Out << Protocol->getName();
++      First = false;
++    }
++    Out << ">";
++  }
++  Out << "\n";
++
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -6605,7 +6622,7 @@ index 4be3e977b..ba075d34c 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1645,8 +2128,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1645,8 +2140,8 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCompatibleAliasDecl(ObjCCompatibleAliasDecl *AID) {
@@ -6616,7 +6633,7 @@ index 4be3e977b..ba075d34c 100644
  }
  
  /// PrintObjCPropertyDecl - print a property declaration.
-@@ -1753,15 +2236,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1753,15 +2248,14 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
        }
      }
  
@@ -6638,7 +6655,7 @@ index 4be3e977b..ba075d34c 100644
    if (Policy.PolishForDeclaration)
      Out << ';';
  }
-@@ -1797,11 +2279,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
+@@ -1797,11 +2291,14 @@ void DeclPrinter::VisitUsingDecl(UsingDecl *D) {
  }
  
  void DeclPrinter::VisitUsingEnumDecl(UsingEnumDecl *D) {
@@ -6656,7 +6673,7 @@ index 4be3e977b..ba075d34c 100644
    Out << "using typename ";
    D->getQualifier().print(Out, Policy);
    Out << D->getDeclName();
-@@ -1823,7 +2308,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
+@@ -1823,7 +2320,7 @@ void DeclPrinter::VisitOMPThreadPrivateDecl(OMPThreadPrivateDecl *D) {
    if (!D->varlist_empty()) {
      for (OMPThreadPrivateDecl::varlist_iterator I = D->varlist_begin(),
                                                  E = D->varlist_end();
@@ -10974,17 +10991,18 @@ index 04ba52809..7bbfc8b21 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..cbe4a41ee 100644
+index 5d4c5ff7d..e9bc7b363 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
-@@ -1,3 +1,6 @@
+@@ -1,3 +1,7 @@
++#include "SemaObjC3Borrowed.h"
 +#include "clang/AST/ObjC3Async.h"
 +#include "SemaObjC3Effects.h"
 +#include "SemaObjC3Isolation.h"
  //===--- SemaExpr.cpp - Semantic Analysis for Expressions -----------------===//
  //
  // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-@@ -10,11 +13,15 @@
+@@ -10,11 +14,15 @@
  //
  //===----------------------------------------------------------------------===//
  
@@ -11000,7 +11018,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/ASTMutationListener.h"
-@@ -69,6 +76,7 @@
+@@ -69,6 +77,7 @@
  #include "llvm/Support/SaveAndRestore.h"
  #include "llvm/Support/TimeProfiler.h"
  #include "llvm/Support/TypeSize.h"
@@ -11008,7 +11026,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
  #include <limits>
  #include <optional>
  
-@@ -4701,6 +4709,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+@@ -4701,6 +4710,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
      case Type::Atomic:
        T = cast<AtomicType>(Ty)->getValueType();
        break;
@@ -11029,7 +11047,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -6271,7 +6293,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
+@@ -6271,7 +6294,11 @@ bool Sema::GatherArgumentsForCall(SourceLocation CallLoc, FunctionDecl *FDecl,
        if (Proto->getExtParameterInfo(i).isNoEscape() &&
            ProtoArgType->isBlockPointerType())
          if (auto *BE = dyn_cast<BlockExpr>(Arg->IgnoreParenNoopCasts(Context)))
@@ -11042,7 +11060,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
        if ((Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLOut ||
             Proto->getExtParameterInfo(i).getABI() == ParameterABI::HLSLInOut)) {
          ExprResult ArgExpr = HLSL().ActOnOutParamExpr(Param, Arg);
-@@ -7276,7 +7302,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7276,7 +7303,21 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
      return ExprError();
  
    // We know the result type of the call, set it.
@@ -11065,7 +11083,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
    TheCall->setValueKind(Expr::getValueKindForType(FuncT->getReturnType()));
  
    // WebAssembly tables can't be used as arguments.
-@@ -9422,7 +9462,87 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9422,7 +9463,87 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -11154,7 +11172,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9551,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9552,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -11162,7 +11180,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9571,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9572,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -11186,7 +11204,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9658,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9659,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -11209,7 +11227,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9734,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9735,61 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -11273,7 +11291,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -10173,6 +10364,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+@@ -10173,6 +10365,25 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
    ExprResult LocalRHS = CallerRHS;
    ExprResult &RHS = ConvertRHS ? CallerRHS : LocalRHS;
  
@@ -11299,7 +11317,21 @@ index 5d4c5ff7d..cbe4a41ee 100644
    if (const auto *LHSPtrType = LHSType->getAs<PointerType>()) {
      if (const auto *RHSPtrType = RHS.get()->getType()->getAs<PointerType>()) {
        if (RHSPtrType->getPointeeType()->hasAttr(attr::NoDeref) &&
-@@ -16922,6 +17132,211 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
+@@ -10184,6 +10395,13 @@ AssignConvertType Sema::CheckSingleAssignmentConstraints(QualType LHSType,
+     }
+   }
+ 
++  if (!getLangOpts().CPlusPlus && RHS.isUsable() &&
++      checkObjC3CallableOwnershipCast(*this, RHS.get(), LHSType,
++                                     RHS.get()->getExprLoc(), false, Diagnose)) {
++    if (ConvertRHS) RHS = ExprError();
++    return AssignConvertType::Incompatible;
++  }
++
+   if (getLangOpts().CPlusPlus) {
+     if (!LHSType->isRecordType() && !LHSType->isAtomicType()) {
+       // C++ 5.17p3: If the left operand is not of class type, the
+@@ -16922,6 +17140,211 @@ void Sema::ActOnBlockStart(SourceLocation CaretLoc, Scope *CurScope) {
        ExpressionEvaluationContext::PotentiallyEvaluated);
  }
  
@@ -11511,7 +11543,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
  void Sema::ActOnBlockArguments(SourceLocation CaretLoc, Declarator &ParamInfo,
                                 Scope *CurScope) {
    assert(ParamInfo.getIdentifier() == nullptr &&
-@@ -17047,6 +17462,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17047,6 +17470,44 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
    if (!LangOpts.Blocks)
      Diag(CaretLoc, diag::err_blocks_disable) << LangOpts.OpenCL;
  
@@ -11556,7 +11588,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
    // Leave the expression-evaluation context.
    if (hasAnyUnrecoverableErrorsInThisFunction())
      DiscardCleanupsInEvaluationContext();
-@@ -17054,9 +17507,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17054,9 +17515,6 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
           "cleanups within block not correctly bound!");
    PopExpressionEvaluationContext();
  
@@ -11566,7 +11598,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
    maybeAddDeclWithEffects(BD);
  
    if (BSI->HasImplicitReturnType)
-@@ -17140,9 +17590,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17140,9 +17598,40 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // Cap.getVariable() is always a VarDecl because
      // blocks cannot capture structured bindings or other ValueDecl kinds.
      auto *Var = cast<VarDecl>(Cap.getVariable());
@@ -11608,7 +11640,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
          // The capture logic needs the destructor, so make sure we mark it.
          // Usually this is unnecessary because most local variables have
          // their destructors marked at declaration time, but parameters are
-@@ -17161,6 +17642,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17161,6 +17650,31 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
          SourceLocation Loc = Cap.getLocation();
  
@@ -11640,7 +11672,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
          ExprResult Result = BuildDeclarationNameExpr(
              CXXScopeSpec(), DeclarationNameInfo(Var->getDeclName(), Loc), Var);
  
-@@ -17193,12 +17699,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17193,12 +17707,22 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
        }
      }
  
@@ -11666,7 +11698,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
    // Pop the block scope now but keep it alive to the end of this function.
    AnalysisBasedWarnings::Policy WP =
        AnalysisWarnings.getPolicyInEffectAt(Body->getEndLoc());
-@@ -17218,7 +17734,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17742,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -11677,7 +11709,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
          setFunctionHasBranchProtectedScope();
          break;
        }
-@@ -19492,6 +20010,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19492,6 +20018,24 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
                             const bool Nested, Sema &S, bool Invalid) {
    bool ByRef = false;
  
@@ -11702,7 +11734,7 @@ index 5d4c5ff7d..cbe4a41ee 100644
    // Blocks are not allowed to capture arrays, excepting OpenCL.
    // OpenCL v2.0 s1.12.5 (revision 40): arrays are captured by reference
    // (decayed to pointers).
-@@ -19506,7 +20042,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
+@@ -19506,7 +20050,7 @@ static bool captureInBlock(BlockScopeInfo *BSI, ValueDecl *Var,
    }
  
    // Forbid the block-capture of autoreleasing variables.
@@ -22873,13 +22905,14 @@ index 000000000..c40497364
 +  }
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 538604aa2..d63a153a2 100644
+index 538604aa2..03c45d539 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
-@@ -11,9 +11,11 @@
+@@ -11,9 +11,12 @@
  ///
  //===----------------------------------------------------------------------===//
  
++#include "SemaObjC3Borrowed.h"
 +#include "SemaObjC3ErrorContext.h"
  #include "TreeTransform.h"
  #include "TypeLocBuilder.h"
@@ -22888,7 +22921,18 @@ index 538604aa2..d63a153a2 100644
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/CharUnits.h"
-@@ -6604,6 +6606,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -4785,6 +4788,10 @@ Sema::PerformImplicitConversion(Expr *From, QualType ToType,
+                                 CheckedConversionKind CCK) {
+   bool CStyle = (CCK == CheckedConversionKind::CStyleCast ||
+                  CCK == CheckedConversionKind::FunctionalCast);
++  if (checkObjC3CallableOwnershipCast(*this, From, ToType,
++                                     From->getExprLoc(), CStyle))
++    return ExprError();
++
+ 
+   // Overall FIXME: we are recomputing too many types here and doing far too
+   // much extra work. What this means is that we need to keep track of more
+@@ -6604,6 +6611,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
@@ -22928,7 +22972,7 @@ index 538604aa2..d63a153a2 100644
    // If the result is a glvalue, we shouldn't bind it.
    if (E->isGLValue())
      return E;
-@@ -7781,6 +7816,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
+@@ -7781,6 +7821,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
    if (FullExpr.isInvalid())
      return ExprError();
  
@@ -28442,10 +28486,10 @@ index 000000000..d6c2d433f
 +}
 diff --git a/clang/lib/Sema/TreeTransformObjC3Conditions.inc b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
 new file mode 100644
-index 000000000..c78ec0ab0
+index 000000000..7fe1386d6
 --- /dev/null
 +++ b/clang/lib/Sema/TreeTransformObjC3Conditions.inc
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,106 @@
 +// Native condition reconstruction must rerun use-site initialization. Include
 +// after TreeTransform declarations and before explicit instantiation sites.
 +template <typename Derived>
@@ -28485,27 +28529,35 @@ index 000000000..c78ec0ab0
 +  return New;
 +}
 +
-+template <typename Derived>
-+StmtResult TreeTransform<Derived>::TransformObjC3GuardStmt(ObjC3GuardStmt *Old) {
-+  SmallVector<Stmt *, 4> Conditions;
++template <typename TransformType, typename Statement>
++static bool TransformObjC3ConditionList(TransformType &Transform,
++    Sema &SemaReference, Statement *Old, SmallVectorImpl<Stmt *> &Conditions) {
 +  for (unsigned I = 0; I != Old->getNumConditions(); ++I) {
 +    Stmt *Condition = Old->getCondition(I);
 +    if (auto *Binding = dyn_cast<ObjC3BindingCondition>(Condition)) {
-+      StmtResult New = getDerived().TransformObjC3BindingCondition(Binding);
-+      if (New.isInvalid()) return StmtError();
++      StmtResult New = Transform.TransformObjC3BindingCondition(Binding);
++      if (New.isInvalid()) return false;
 +      Conditions.push_back(New.get());
 +    } else {
 +      auto *Initializer = cast<Expr>(Condition);
 +      while (auto *Cleanups = dyn_cast<ExprWithCleanups>(Initializer))
 +        Initializer = Cleanups->getSubExpr();
-+      ExprResult Value = getDerived().TransformExpr(Initializer);
-+      if (Value.isInvalid()) return StmtError();
-+      Value = SemaRef.ActOnObjC3BooleanCondition(
++      ExprResult Value = Transform.TransformExpr(Initializer);
++      if (Value.isInvalid()) return false;
++      Value = SemaReference.ActOnObjC3BooleanCondition(
 +          nullptr, Value.get(), Initializer->getExprLoc());
-+      if (Value.isInvalid()) return StmtError();
++      if (Value.isInvalid()) return false;
 +      Conditions.push_back(Value.get());
 +    }
 +  }
++  return true;
++}
++
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3GuardStmt(ObjC3GuardStmt *Old) {
++  SmallVector<Stmt *, 4> Conditions;
++  if (!TransformObjC3ConditionList(getDerived(), SemaRef, Old, Conditions))
++    return StmtError();
 +  StmtResult Else = getDerived().TransformStmt(Old->getElse());
 +  if (Else.isInvalid()) return StmtError();
 +  return SemaRef.ActOnObjC3GuardStmt(nullptr, Conditions, Else.get(),
@@ -28516,11 +28568,8 @@ index 000000000..c78ec0ab0
 +StmtResult TreeTransform<Derived>::TransformObjC3IfBindingStmt(
 +    ObjC3IfBindingStmt *Old) {
 +  SmallVector<Stmt *, 4> Conditions;
-+  for (unsigned I = 0; I != Old->getNumConditions(); ++I) {
-+    StmtResult Condition = getDerived().TransformStmt(Old->getCondition(I));
-+    if (Condition.isInvalid()) return StmtError();
-+    Conditions.push_back(Condition.get());
-+  }
++  if (!TransformObjC3ConditionList(getDerived(), SemaRef, Old, Conditions))
++    return StmtError();
 +  StmtResult Then = getDerived().TransformStmt(Old->getThen());
 +  StmtResult Else = getDerived().TransformStmt(Old->getElse());
 +  if (Then.isInvalid() || Else.isInvalid()) return StmtError();
@@ -33144,10 +33193,10 @@ index 000000000..9f55af3f8
 +}
 diff --git a/clang/test/ObjC3/Sema/guard-binding-semantics.mm b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
 new file mode 100644
-index 000000000..accfd73e4
+index 000000000..fee0db4e1
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/guard-binding-semantics.mm
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,102 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +
@@ -33232,6 +33281,24 @@ index 000000000..accfd73e4
 +}
 +template int dependent_boolean<bool>(bool);
 +template int dependent_boolean<int>(int); // expected-note {{in instantiation of function template specialization}}
++
++template <class T> int dependent_if_boolean(MaybeInt source, T condition) {
++  if let value = source, condition { // expected-error {{condition must have Bool type}}
++    return value;
++  }
++  return 0;
++}
++template int dependent_if_boolean<bool>(MaybeInt, bool);
++template int dependent_if_boolean<int>(MaybeInt, int); // expected-note {{in instantiation of function template specialization}}
++template <class T> int dependent_if_var_boolean(MaybeInt source, T condition) {
++  if var value = source, condition { // expected-error {{condition must have Bool type}}
++    value += 1;
++    return value;
++  }
++  return 0;
++}
++template int dependent_if_var_boolean<bool>(MaybeInt, bool);
++template int dependent_if_var_boolean<int>(MaybeInt, int); // expected-note {{in instantiation of function template specialization}}
 diff --git a/clang/test/ObjC3/Sema/guard-nullable-flow.m b/clang/test/ObjC3/Sema/guard-nullable-flow.m
 new file mode 100644
 index 000000000..cbb1e8be8
@@ -41671,10 +41738,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..9febf4436
+index 000000000..07c8714e2
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3218 @@
+@@ -0,0 +1,3248 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -41962,6 +42029,11 @@ index 000000000..9febf4436
 +  bool Invalid = false;
 +  bool MightBorrow = false;
 +
++  const Expr *statementResult(const StmtExpr *Expression) const {
++    const CompoundStmt *Body = Expression->getSubStmt();
++    if (Body->body_empty()) return nullptr;
++    return dyn_cast<Expr>(Body->body_back()->stripLabelLikeStatements());
++  }
 +  bool carriesBorrowedValueImpl(QualType Type,
 +      llvm::SmallPtrSetImpl<const clang::Type *> &Seen) const {
 +    if (Type.isNull())
@@ -42107,6 +42179,8 @@ index 000000000..9febf4436
 +    if (!E)
 +      return {};
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return storage(statementResult(Statement), State);
 +    if (const VarDecl *Variable = variable(E))
 +      return {Variable, nullptr};
 +    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
@@ -42139,6 +42213,8 @@ index 000000000..9febf4436
 +    if (!E || Depth > 32)
 +      return {};
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return referent(statementResult(Statement), State, Depth + 1);
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E))
 +      if (Address->getOpcode() == UO_AddrOf)
 +        return storage(Address->getSubExpr(), State);
@@ -42750,6 +42826,8 @@ index 000000000..9febf4436
 +    if (!E)
 +      return Result;
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return evaluatedOwnerIdentity(statementResult(Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIdentity(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -42779,6 +42857,8 @@ index 000000000..9febf4436
 +  bool ownerIsUnowned(const Expr *E, const Facts &State) const {
 +    if (!E) return false;
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return ownerIsUnowned(statementResult(Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return ownerIsUnowned(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -42949,6 +43029,8 @@ index 000000000..9febf4436
 +        return Result;
 +      }
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return effects(statementResult(Statement), State);
 +    if (const auto *Writeback = dyn_cast<ObjCIndirectCopyRestoreExpr>(E))
 +      return Writeback->shouldCopy() ? effects(Writeback->getSubExpr(), State) : empty();
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E)) return effects(Cleanups->getSubExpr(), State);
@@ -43065,6 +43147,8 @@ index 000000000..9febf4436
 +    if (!E)
 +      return Targets;
 +    E = E->IgnoreParenCasts();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return possibleTargets(statementResult(Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
 +      return possibleTargets(Cleanups->getSubExpr(), State);
 +    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
@@ -43151,6 +43235,8 @@ index 000000000..9febf4436
 +    // Casts, including void* and uintptr_t, carry the facts until the result's
 +    // actual use establishes an escape. A local cast alone is not an escape.
 +    E = E->IgnoreParens();
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return value(statementResult(Statement), State);
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      if (Cast->getType()->isBooleanType())
 +        return empty();
@@ -44793,9 +44879,11 @@ index 000000000..9febf4436
 +
 +bool clang::checkObjC3CallableOwnershipCast(Sema &S, const Expr *Source,
 +                                           QualType Destination,
-+                                           SourceLocation Location) {
++                                           SourceLocation Location,
++                                           bool ExplicitCast, bool Diagnose) {
 +  if (!S.getLangOpts().ObjC3 || S.getLangOpts().ObjC3Profile != 3 || !Source ||
 +      Source->isTypeDependent() || Destination->isDependentType() ||
++      Source->getType()->isSpecificPlaceholderType(BuiltinType::Overload) ||
 +      Destination->isVoidType() || Destination->isBooleanType() ||
 +      Source->isNullPointerConstant(S.Context, Expr::NPC_ValueDependentIsNotNull))
 +    return false;
@@ -44803,6 +44891,7 @@ index 000000000..9febf4436
 +    for (;;) {
 +      if (const auto *F = Type->getAs<FunctionType>()) return F;
 +      if (const auto *P = Type->getAs<PointerType>()) Type = P->getPointeeType();
++      else if (const auto *P = Type->getAs<BlockPointerType>()) Type = P->getPointeeType();
 +      else if (const auto *P = Type->getAs<MemberPointerType>()) Type = P->getPointeeType();
 +      else if (const auto *R = Type->getAs<ReferenceType>()) Type = R->getPointeeType();
 +      else if (const auto *A = S.Context.getAsArrayType(Type)) Type = A->getElementType();
@@ -44836,7 +44925,10 @@ index 000000000..9febf4436
 +      return HasContract(HasContract, A ? A : B, Nested || !A);
 +    const bool BorrowedA = containsObjC3BorrowedType(S.Context, A->getReturnType());
 +    const bool BorrowedB = containsObjC3BorrowedType(S.Context, B->getReturnType());
-+    if (A->getExtInfo().getProducesResult() != B->getExtInfo().getProducesResult() ||
++    // Native implicit conversion rules already enforce physical consumed/
++    // retained signatures. Keep their diagnostics; this semantic gate adds
++    // ABI-neutral permissions/obligations and explicit erasure protection.
++    if ((ExplicitCast && A->getExtInfo().getProducesResult() != B->getExtInfo().getProducesResult()) ||
 +        (Nested ? BorrowedA != BorrowedB : BorrowedA && !BorrowedB) ||
 +        Self(Self, Function(A->getReturnType()), Function(B->getReturnType()), true))
 +      return true;
@@ -44855,7 +44947,7 @@ index 000000000..9febf4436
 +          isObjC3BorrowedType(S.Context, PB->getParamType(I).getNonReferenceType()));
 +      const bool ForeignA = HasA && PA->getExtParameterInfo(I).isCFConsumed();
 +      const bool ForeignB = HasB && PB->getExtParameterInfo(I).isCFConsumed();
-+      if (ConsumedA != ConsumedB || ForeignA != ForeignB ||
++      if ((ExplicitCast && (ConsumedA != ConsumedB || ForeignA != ForeignB)) ||
 +          (Nested ? NoEscapeA != NoEscapeB : NoEscapeB && !NoEscapeA) ||
 +          Self(Self, HasA ? Function(PA->getParamType(I)) : nullptr,
 +                     HasB ? Function(PB->getParamType(I)) : nullptr, true))
@@ -44864,9 +44956,14 @@ index 000000000..9febf4436
 +    return false;
 +  };
 +  const bool Invalid = ChangesContract(ChangesContract, From, To, false);
-+  if (Invalid)
-+    S.Diag(Location, S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
-+        "callable cast changes an ownership or borrowed lifetime contract; preserve the declared callable type"));
++  if (Invalid && Diagnose) {
++    unsigned ID = ExplicitCast
++        ? S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++            "callable cast changes an ownership or borrowed lifetime contract; preserve the declared callable type")
++        : S.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error,
++            "callable conversion changes an ownership or borrowed lifetime contract; preserve the declared callable type");
++    S.Diag(Location, ID);
++  }
 +  return Invalid;
 +}
 +
@@ -44895,10 +44992,10 @@ index 000000000..9febf4436
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.h b/clang/lib/Sema/SemaObjC3Borrowed.h
 new file mode 100644
-index 000000000..b19de611d
+index 000000000..d78d0e4c0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +//===--- SemaObjC3Borrowed.h - Mandatory borrowed pointer checking -*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3BORROWED_H
@@ -44916,7 +45013,8 @@ index 000000000..b19de611d
 +QualType preserveObjC3BorrowedType(Sema &, QualType Composite, QualType Source);
 +void handleObjC3ReturnsBorrowedAttr(Sema &, Decl *, const ParsedAttr &);
 +bool checkObjC3BorrowedRedeclaration(Sema &, FunctionDecl *, FunctionDecl *);
-+bool checkObjC3CallableOwnershipCast(Sema &, const Expr *, QualType, SourceLocation);
++bool checkObjC3CallableOwnershipCast(Sema &, const Expr *, QualType, SourceLocation,
++                                    bool ExplicitCast = true, bool Diagnose = true);
 +bool checkObjC3BorrowedFlow(Sema &, Decl *, Stmt *);
 +bool checkObjC3BorrowedGlobalInitializer(Sema &, VarDecl *);
 +} // namespace clang
@@ -49515,10 +49613,10 @@ index 133837623..1d3b5f587 100644
        if (IsARCUnbridgedCast) {
 diff --git a/clang/test/ObjC3/Sema/Inputs/callable-ownership-casts.h b/clang/test/ObjC3/Sema/Inputs/callable-ownership-casts.h
 new file mode 100644
-index 000000000..79a37b5be
+index 000000000..1a930933b
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/Inputs/callable-ownership-casts.h
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,32 @@
 +typedef id (*RetainedFactory)(void) __attribute__((ns_returns_retained));
 +typedef id (*PlainFactory)(void);
 +typedef void (*ConsumedCallback)(id __attribute__((ns_consumed)));
@@ -49544,26 +49642,33 @@ index 000000000..79a37b5be
 +typedef void (CallableOwner::*ConsumedMember)(id __attribute__((ns_consumed)));
 +typedef void (CallableOwner::*PlainMember)(id);
 +#endif
++
++typedef void (^ConsumedBlock)(id __attribute__((ns_consumed)));
++typedef void (^PlainBlock)(id);
++typedef void (^NoEscapeBlock)(id __attribute__((noescape)));
++typedef void (*ReceivesConsumedBlock)(ConsumedBlock);
++typedef void (*ReceivesPlainBlock)(PlainBlock);
++void raw_callback_declaration(const char *);
 diff --git a/clang/test/ObjC3/Sema/callable-ownership-casts.m b/clang/test/ObjC3/Sema/callable-ownership-casts.m
 new file mode 100644
-index 000000000..77dc4699d
+index 000000000..945b70967
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/callable-ownership-casts.m
-@@ -0,0 +1,80 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,c %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,c %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
-+// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-c.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-c.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
-+// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-c-arc.pch
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-c-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-cxx.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-cxx.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
-+// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-cxx-arc.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-cxx-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
+@@ -0,0 +1,99 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-c.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-c.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-c-arc.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-c-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,c %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-cxx.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system  -include-pch %t-cxx.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/callable-ownership-casts.h -o %t-cxx-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc  -include-pch %t-cxx-arc.pch -DFROM_PCH -fsyntax-only -verify=expected,cxx %s
 +#ifndef FROM_PCH
 +#include "Inputs/callable-ownership-casts.h"
 +#endif
@@ -49630,6 +49735,25 @@ index 000000000..77dc4699d
 +  (void)ordinary;(void)sameMember;
 +}
 +#endif
++
++void block_cast_contracts(ConsumedBlock consumed, PlainBlock plain,
++                          ReceivesConsumedBlock nested) {
++  (void)(PlainBlock)consumed; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(ConsumedBlock)plain; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(NoEscapeBlock)plain; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  (void)(ReceivesPlainBlock)nested; // expected-error {{callable cast changes an ownership or borrowed lifetime contract}}
++  PlainBlock same = plain;
++  (void)same;
++}
++void implicit_callable_contracts(RawBytesCallback raw, BorrowedCallback borrowed,
++                                  BorrowedFactory result) {
++  BorrowedCallback fabricated = raw; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++  BorrowedCallback named = raw_callback_declaration; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++  RawBytesFactory erased = result; // expected-error {{callable conversion changes an ownership or borrowed lifetime contract}}
++  BorrowedCallback same = borrowed;
++  RawBytesCallback weakened = borrowed;
++  (void)same; (void)weakened;
++}
 diff --git a/clang/test/ObjC3/AST/retained-callable-print.mm b/clang/test/ObjC3/AST/retained-callable-print.mm
 new file mode 100644
 index 000000000..e2c26db2f
@@ -51791,3 +51915,59 @@ index 000000000..0d7c49f63
 +    llvm::function_ref<void(const TemplateArgument &,llvm::FoldingSetNodeID &)>);
 +}
 +#endif
+diff --git a/clang/lib/Sema/Sema.cpp b/clang/lib/Sema/Sema.cpp
+index 5a7dfb1b5..a7fb362be 100644
+--- a/clang/lib/Sema/Sema.cpp
++++ b/clang/lib/Sema/Sema.cpp
+@@ -11,6 +11,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3Borrowed.h"
+ #include "UsedDeclVisitor.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/ASTDiagnostic.h"
+@@ -771,6 +772,10 @@ ExprResult Sema::ImpCastExprToType(Expr *E, QualType Ty,
+                                    CastKind Kind, ExprValueKind VK,
+                                    const CXXCastPath *BasePath,
+                                    CheckedConversionKind CCK) {
++  if (checkObjC3CallableOwnershipCast(*this, E, Ty, E->getExprLoc(),
++        CCK == CheckedConversionKind::CStyleCast ||
++        CCK == CheckedConversionKind::FunctionalCast))
++    return ExprError();
+ #ifndef NDEBUG
+   if (VK == VK_PRValue && !E->isPRValue()) {
+     switch (Kind) {
+diff --git a/clang/test/ObjC3/Sema/borrowed-statement-expression.m b/clang/test/ObjC3/Sema/borrowed-statement-expression.m
+new file mode 100644
+index 000000000..3b2381935
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-statement-expression.m
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++const char *escaped_statement_result;
++void uncontracted_pointer(const char *);
++void direct_negative(borrowed const char *value) {
++  const char *alias = value;
++  escaped_statement_result = alias; // expected-error {{borrowed pointer}}
++}
++void wrapped_global_negative(borrowed const char *value) {
++  const char *alias = value;
++  escaped_statement_result = __extension__ ({ alias; }); // expected-error {{borrowed pointer}}
++}
++const char *wrapped_return_negative(borrowed const char *value) {
++  const char *alias = value;
++  return __extension__ ({ alias; }); // expected-error {{borrowed pointer}}
++}
++void wrapped_call_negative(borrowed const char *value) {
++  const char *alias = value;
++  uncontracted_pointer(__extension__ ({ alias; })); // expected-error {{borrowed pointer}}
++}
++void terminal_result_only(borrowed const char *value) {
++  const char *alias = value;
++  escaped_statement_result = __extension__ ({ (void)alias; (const char *)0; });
++  int scalar = __extension__ ({ alias[0]; });
++  (void)scalar;
++}

@@ -738,7 +738,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       (language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime") +
       std::string(language.ObjCAutoRefCount ? ";arc"
                                             : ";manual-reference-counting");
-  if (ReadInterfaceLanguageProfile(language) !=
+  if (ReadInterfaceLanguageProfile(target_context) !=
           impl_->target.language_profile ||
       runtime != impl_->target.runtime_abi ||
       target_context.getTargetInfo().getTriple().str() !=

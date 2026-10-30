@@ -75,6 +75,10 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
     out += "!unmodeled";
     return;
   }
+  if (const auto nullability = type->getNullability()) {
+    AppendNativeContractField(out, position + ":nullability");
+    AppendNativeContractField(out, std::to_string(static_cast<unsigned>(*nullability)));
+  }
   clang::ObjC3KeyPathInfo keypath;
   if (clang::getObjC3KeyPathInfo(type, keypath)) {
     AppendNativeContractField(
@@ -174,6 +178,12 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (const auto *property =
           llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     AppendNativeTypeContracts(ownership, property->getType(), context, "type");
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+      variable && variable->getTLSKind() != clang::VarDecl::TLS_None) {
+    AppendNativeContractField(ownership, "variable-storage:v1");
+    AppendNativeContractField(ownership, std::to_string(static_cast<unsigned>(variable->getStorageDuration())));
+    AppendNativeContractField(ownership, std::to_string(static_cast<unsigned>(variable->getTLSKind())));
+  }
   if (const auto *borrow = clang::getObjC3BorrowedReturnContract(declaration)) {
     AppendNativeContractField(ownership, "returns-borrowed");
     AppendNativeContractField(ownership,
@@ -192,6 +202,8 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (declaration->hasAttr<clang::NSConsumesSelfAttr>())
     AppendNativeContractField(ownership, "ns-consumes-self");
   auto parameter = [&](const clang::ParmVarDecl *value, unsigned index) {
+    AppendNativeTypeContracts(ownership, value->getType(), context,
+                              "parameter[" + std::to_string(index) + "]");
     if (value->hasAttr<clang::NoEscapeAttr>())
       AppendNativeContractField(
           ownership, "parameter[" + std::to_string(index) + "]:noescape");
