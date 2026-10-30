@@ -709,6 +709,52 @@ void TestIndependentStrongAliases() {
       Expect(Request(fs::temp_directory_path(),Header+Source,BaseLanguage::ObjectiveCxx,Standard,true),false);
   }
 }
+void InheritedBorrowPersistenceCases(const fs::path &Root) {
+  const std::string Provider = R"(
+typedef borrowed const char *ImportedBytes;
+struct ImportedBase { ImportedBytes bytes; };
+struct ImportedDerived : ImportedBase {};
+struct ImportedLeft : ImportedBase {};
+struct ImportedRight : ImportedBase {};
+struct ImportedDiamond : ImportedLeft, ImportedRight {};
+)";
+  for (const std::string &Standard : {std::string("c++20"), std::string("c++23")})
+    for (bool ARC : {false, true}) {
+      auto Emission = Request(Root, Provider, BaseLanguage::ObjectiveCxx, Standard, ARC);
+      Emission.emit_semantic_interface = true;
+      Emission.module_name = "Borrowed.Bases";
+      Emission.package_identity = "borrowed-bases-v1";
+      Emission.interface_output_path = (Root / "BorrowedBases.objc3i").string();
+      auto Emitted = Compile(Emission);
+      if (!Emitted.success) {
+        for (const auto &D : Emitted.interface_import_diagnostics) std::cerr << D.message << '\n';
+        for (const auto &D : Emitted.diagnostics) std::cerr << D.message << '\n';
+      }
+      assert(Emitted.success && Emitted.interface_artifact);
+      auto Consumer = Request(Root, "", BaseLanguage::ObjectiveCxx, Standard, ARC);
+      InterfaceImportInput Input;
+      Input.source_path = Emission.interface_output_path;
+      Input.locked_identity = Emitted.interface_artifact->identity;
+      Consumer.imported_interfaces = {Input};
+      for (const char *Source : {
+          "ImportedDerived escape(ImportedDerived input) { return input; }",
+          "ImportedDerived global; void save(ImportedDerived input) { global=input; }",
+          "ImportedBase distinct(ImportedDiamond input) { static_cast<ImportedLeft&>(input).bytes=nullptr; return static_cast<ImportedRight&>(input); }",
+          "ImportedDerived opaque(); ImportedDerived escape_factory() { ImportedDerived local=opaque(); return local; }",
+          "template<class B> struct Wrapper:B{}; Wrapper<ImportedDerived> escape_template(Wrapper<ImportedDerived> input) { return input; }"}) {
+        Consumer.source_text = Source;
+        Expect(Consumer, false, "borrowed pointer escapes");
+      }
+      for (const char *Source : {
+          "ImportedBase cleared(ImportedDiamond input) { static_cast<ImportedLeft&>(input).bytes=nullptr; static_cast<ImportedRight&>(input).bytes=nullptr; return static_cast<ImportedRight&>(input); }",
+          "ImportedDerived empty() { ImportedDerived local{{nullptr}}; return local; }",
+          "int inspect(ImportedDerived input) { ImportedDerived local=input; return local.bytes!=nullptr; }"}) {
+        Consumer.source_text = Source;
+        Expect(Consumer, true);
+      }
+    }
+}
+
 int main() {
   TestIndependentStrongAliases();
   const auto Stamp = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -719,6 +765,7 @@ int main() {
     SemanticCases(Root, BaseLanguage::ObjectiveCxx, "c++20", ARC);
     SemanticCases(Root, BaseLanguage::ObjectiveCxx, "c++23", ARC);
   }
+  InheritedBorrowPersistenceCases(Root);
   PersistenceCases(Root);
   ForeignPersistenceCases(Root);
   RetainablePersistenceCases(Root);

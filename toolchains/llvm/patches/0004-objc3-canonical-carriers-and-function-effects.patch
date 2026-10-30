@@ -40751,10 +40751,10 @@ index 0a6f256af..81d89af12 100644
  
 diff --git a/clang/include/clang/AST/ObjC3Borrowed.h b/clang/include/clang/AST/ObjC3Borrowed.h
 new file mode 100644
-index 000000000..0c1062833
+index 000000000..b41b1b002
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Borrowed.h
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,185 @@
 +//===--- ObjC3Borrowed.h - Borrowed pointer type contracts --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3BORROWED_H
@@ -40762,6 +40762,7 @@ index 000000000..0c1062833
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +
@@ -40785,7 +40786,8 @@ index 000000000..0c1062833
 +/// and aggregate fields. The visited set bounds recursive record graphs.
 +inline bool containsObjC3BorrowedTypeImpl(const ASTContext &Context,
 +                                          QualType Type,
-+                                          llvm::SmallPtrSetImpl<const clang::Type *> &Seen) {
++                                          llvm::SmallPtrSetImpl<const clang::Type *> &Seen,
++                                          bool IncludeSignatures = true) {
 +  if (Type.isNull())
 +    return false;
 +  if (isObjC3BorrowedType(Context, Type))
@@ -40796,10 +40798,11 @@ index 000000000..0c1062833
 +      break;
 +    Type = Next;
 +  }
-+  if (!Seen.insert(Type.getTypePtr()).second)
++  if (!Seen.insert(Type.getTypePtr()).second ||
++      (!IncludeSignatures && (Type->isFunctionType() || Type->isBlockPointerType())))
 +    return false;
 +  auto Contains = [&](QualType Child) {
-+    return containsObjC3BorrowedTypeImpl(Context, Child, Seen);
++    return containsObjC3BorrowedTypeImpl(Context, Child, Seen, IncludeSignatures);
 +  };
 +  if (Type->isPointerType() || Type->isReferenceType() || Type->isBlockPointerType())
 +    return Contains(Type->getPointeeType());
@@ -40809,10 +40812,16 @@ index 000000000..0c1062833
 +    return Contains(Optional->getElementType());
 +  if (const auto *Result = dyn_cast<ObjC3ResultType>(Type.getTypePtr()))
 +    return Contains(Result->getSuccessType()) || Contains(Result->getErrorType());
-+  if (const auto *Record = Type->getAs<RecordType>())
-+    for (const FieldDecl *Field : Record->getDecl()->fields())
-+      if (Contains(Field->getType()))
-+        return true;
++  if (const auto *Record = Type->getAs<RecordType>()) {
++    const auto *Definition = Record->getDecl()->getDefinition();
++    if (Definition) {
++      if (const auto *CXX = dyn_cast<CXXRecordDecl>(Definition))
++        for (const auto &Base : CXX->bases())
++          if (Contains(Base.getType())) return true;
++      for (const FieldDecl *Field : Definition->fields())
++        if (Contains(Field->getType())) return true;
++    }
++  }
 +  if (const auto *Function = dyn_cast<FunctionType>(Type.getTypePtr())) {
 +    if (Contains(Function->getReturnType()))
 +      return true;
@@ -40826,6 +40835,11 @@ index 000000000..0c1062833
 +inline bool containsObjC3BorrowedType(const ASTContext &Context, QualType Type) {
 +  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
 +  return containsObjC3BorrowedTypeImpl(Context, Type, Seen);
++}
++/// Stored loans exclude borrowed types that occur only in callable signatures.
++inline bool carriesObjC3BorrowedValue(const ASTContext &Context, QualType Type) {
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  return containsObjC3BorrowedTypeImpl(Context, Type, Seen, false);
 +}
 +inline const ObjCReturnsBorrowedAttr *
 +getObjC3BorrowedReturnContract(const Decl *Declaration) {
@@ -41738,10 +41752,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..07c8714e2
+index 000000000..a60c6641b
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3248 @@
+@@ -0,0 +1,3399 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -41935,14 +41949,17 @@ index 000000000..07c8714e2
 +    // -1 is the variable/field itself; -2 is an unknown array index.
 +    int64_t Index = -1;
 +    unsigned Parent = 0;
++    const CXXRecordDecl *BaseRecord = nullptr;
++    bool VirtualBase = false;
 +    bool operator==(const Storage &Other) const {
 +      return first == Other.first && second == Other.second &&
-+             Index == Other.Index && Parent == Other.Parent;
++             Index == Other.Index && Parent == Other.Parent &&
++             BaseRecord == Other.BaseRecord && VirtualBase == Other.VirtualBase;
 +    }
 +  };
 +  struct StorageInfo {
 +    static unsigned getHashValue(const Storage &S) {
-+      return llvm::hash_combine(S.first, S.second, S.Index, S.Parent);
++      return llvm::hash_combine(S.first, S.second, S.Index, S.Parent, S.BaseRecord, S.VirtualBase);
 +    }
 +    static bool isEqual(const Storage &A, const Storage &B) { return A == B; }
 +  };
@@ -41975,10 +41992,18 @@ index 000000000..07c8714e2
 +  Decl *Callable;
 +  Stmt *Body;
 +  llvm::DenseMap<Storage, unsigned, StorageInfo> Slots;
-+  struct PathNode { unsigned Parent = 0; const ValueDecl *Field = nullptr; int64_t Index = -1; };
++  struct PathNode {
++    unsigned Parent = 0;
++    const ValueDecl *Field = nullptr;
++    int64_t Index = -1;
++    const CXXRecordDecl *BaseRecord = nullptr;
++    bool VirtualBase = false;
++  };
 +  mutable std::vector<PathNode> Paths{{}};
 +  mutable llvm::DenseMap<std::pair<unsigned, const ValueDecl *>, unsigned> FieldPaths;
 +  mutable llvm::DenseMap<std::pair<unsigned, int64_t>, unsigned> ArrayPaths;
++  mutable llvm::DenseMap<std::pair<unsigned, const CXXRecordDecl *>, unsigned> BasePaths, VirtualBasePaths;
++  llvm::DenseMap<Storage, bool, StorageInfo> OpaqueBorrowedStorage;
 +  struct CallableCapturePath {
 +    const VarDecl *Variable = nullptr;
 +    SmallVector<PathNode, 4> Components;
@@ -42034,41 +42059,8 @@ index 000000000..07c8714e2
 +    if (Body->body_empty()) return nullptr;
 +    return dyn_cast<Expr>(Body->body_back()->stripLabelLikeStatements());
 +  }
-+  bool carriesBorrowedValueImpl(QualType Type,
-+      llvm::SmallPtrSetImpl<const clang::Type *> &Seen) const {
-+    if (Type.isNull())
-+      return false;
-+    if (isObjC3BorrowedType(Context, Type))
-+      return true;
-+    while (true) {
-+      QualType Next = Type.getSingleStepDesugaredType(Context);
-+      if (Next == Type)
-+        break;
-+      Type = Next;
-+    }
-+    if (!Seen.insert(Type.getTypePtr()).second || Type->isFunctionType() ||
-+        Type->isBlockPointerType())
-+      return false; // Callable signature contracts are metadata, not loans.
-+    auto Carries = [&](QualType Payload) {
-+      return carriesBorrowedValueImpl(Payload, Seen);
-+    };
-+    if (Type->isPointerType() || Type->isReferenceType())
-+      return Carries(Type->getPointeeType());
-+    if (const auto *Array = Context.getAsArrayType(Type))
-+      return Carries(Array->getElementType());
-+    if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
-+      return Carries(Optional->getElementType());
-+    if (const auto *Result = Type->getAs<ObjC3ResultType>())
-+      return Carries(Result->getSuccessType()) || Carries(Result->getErrorType());
-+    if (const auto *Record = Type->getAs<RecordType>())
-+      for (const FieldDecl *Field : Record->getDecl()->fields())
-+        if (Carries(Field->getType()))
-+          return true;
-+    return false;
-+  }
 +  bool carriesBorrowedValue(QualType Type) const {
-+    llvm::SmallPtrSet<const clang::Type *, 16> Seen;
-+    return carriesBorrowedValueImpl(Type, Seen);
++    return carriesObjC3BorrowedValue(Context, Type);
 +  }
 +  const VarDecl *variable(const Expr *E) const {
 +    if (!E)
@@ -42107,6 +42099,13 @@ index 000000000..07c8714e2
 +  }
 +  unsigned path(Storage Location) const {
 +    unsigned Parent = Location.Parent;
++    if (Location.BaseRecord) {
++      auto Key = std::make_pair(Parent, Location.BaseRecord);
++      auto &Interner = Location.VirtualBase ? VirtualBasePaths : BasePaths;
++      auto [It, Inserted] = Interner.try_emplace(Key, Paths.size());
++      if (Inserted) Paths.push_back({Parent, nullptr, -1, Location.BaseRecord, Location.VirtualBase});
++      Parent = It->second;
++    }
 +    if (Location.second) {
 +      auto Key = std::make_pair(Parent, Location.second);
 +      auto [It, Inserted] = FieldPaths.try_emplace(Key, Paths.size());
@@ -42123,6 +42122,19 @@ index 000000000..07c8714e2
 +    }
 +    return Parent;
 +  }
++  unsigned completeObjectPath(unsigned Path) const {
++    while (Path && Paths[Path].BaseRecord) Path = Paths[Path].Parent;
++    return Path;
++  }
++  Storage baseStorage(Storage Object, const CXXRecordDecl *Record, bool Virtual) const {
++    if (!Object.first || !Record) return {};
++    unsigned Parent = path(Object);
++    if (Virtual) Parent = completeObjectPath(Parent);
++    return {Object.first, nullptr, -1, Parent, Record->getCanonicalDecl(), Virtual};
++  }
++  Storage baseStorage(Storage Object, const CXXBaseSpecifier &Base) const {
++    return baseStorage(Object, Base.getType()->getAsCXXRecordDecl(), Base.isVirtual());
++  }
 +  Storage fieldStorage(Storage Base, const ValueDecl *Field) const {
 +    return {Base.first, Base.first ? Field : nullptr, -1, path(Base)};
 +  }
@@ -42133,13 +42145,14 @@ index 000000000..07c8714e2
 +    if (!Location.Parent)
 +      return {Location.first, nullptr};
 +    const PathNode &Node = Paths[Location.Parent];
-+    return {Location.first, Node.Field, Node.Index, Node.Parent};
++    return {Location.first, Node.Field, Node.Index, Node.Parent, Node.BaseRecord, Node.VirtualBase};
 +  }
 +  bool pathsMayAlias(unsigned A, unsigned B) const {
 +    if (!A || !B)
 +      return A == B;
 +    const PathNode &L = Paths[A], &R = Paths[B];
-+    if (L.Field != R.Field ||
++    if (L.BaseRecord != R.BaseRecord || L.VirtualBase != R.VirtualBase ||
++        L.Field != R.Field ||
 +        (L.Index != R.Index && L.Index != -2 && R.Index != -2))
 +      return false;
 +    return pathsMayAlias(L.Parent, R.Parent);
@@ -42150,7 +42163,21 @@ index 000000000..07c8714e2
 +    unsigned Prefix = path(Container), Current = path(Location);
 +    while (Current && !pathsMayAlias(Current, Prefix))
 +      Current = Paths[Current].Parent;
-+    return pathsMayAlias(Current, Prefix);
++    if (pathsMayAlias(Current, Prefix)) return true;
++    // A shared virtual base has one physical selector at the complete-object
++    // root, but is also part of each intermediate base's stored value.
++    QualType ContainerType = storageType(Container);
++    if (ContainerType.isNull()) return false;
++    const auto *Record = ContainerType.getNonReferenceType()->getAsCXXRecordDecl();
++    if (!Record || !(Record = Record->getDefinition())) return false;
++    const unsigned Complete = completeObjectPath(Prefix);
++    for (unsigned P = path(Location); P; P = Paths[P].Parent) {
++      PathNode Node = Paths[P];
++      if (Node.BaseRecord && Node.VirtualBase && pathsMayAlias(Node.Parent, Complete) &&
++          (Record->getCanonicalDecl() == Node.BaseRecord || Record->isVirtuallyDerivedFrom(Node.BaseRecord)))
++        return true;
++    }
++    return false;
 +  }
 +  QualType pathType(const VarDecl *Root, unsigned Path) const {
 +    if (!Root)
@@ -42158,6 +42185,7 @@ index 000000000..07c8714e2
 +    if (!Path)
 +      return Root->getType();
 +    const PathNode &Node = Paths[Path];
++    if (Node.BaseRecord) return Context.getCanonicalTagType(Node.BaseRecord);
 +    if (Node.Field)
 +      return Node.Field->getType();
 +    QualType Parent = pathType(Root, Node.Parent);
@@ -42168,21 +42196,39 @@ index 000000000..07c8714e2
 +  QualType storageType(Storage Location) const {
 +    if (!Location.first)
 +      return {};
-+    QualType Type = Location.second ? Location.second->getType()
-+                                    : pathType(Location.first, Location.Parent);
-+    if (Location.Index != -1)
-+      if (const auto *Array = Context.getAsArrayType(Type))
-+        return Array->getElementType();
-+    return Type;
++    return pathType(Location.first, path(Location));
 +  }
++  Storage adjustBaseStorage(Storage Object, const CastExpr *Cast) const {
++    if (Cast->getCastKind() == CK_DerivedToBase || Cast->getCastKind() == CK_UncheckedDerivedToBase) {
++      for (const CXXBaseSpecifier *Base : Cast->path()) Object = baseStorage(Object, *Base);
++    } else if (Cast->getCastKind() == CK_BaseToDerived) {
++      for (const CXXBaseSpecifier *Base : llvm::reverse(Cast->path())) {
++        const auto *Record = Base->getType()->getAsCXXRecordDecl();
++        if (!Record || Object.BaseRecord != Record->getCanonicalDecl() || Object.VirtualBase) return {};
++        Object = parentStorage(Object);
++      }
++    }
++    return Object;
++  }
++
 +  Storage storage(const Expr *E, const Facts *State = nullptr) const {
 +    if (!E)
 +      return {};
-+    E = E->IgnoreParenCasts();
++    E = E->IgnoreParens();
++    if (const auto *Cast = dyn_cast<CastExpr>(E))
++      return adjustBaseStorage(storage(Cast->getSubExpr(), State), Cast);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
 +      return storage(statementResult(Statement), State);
-+    if (const VarDecl *Variable = variable(E))
-+      return {Variable, nullptr};
++    if (const VarDecl *Variable = variable(E)) {
++      Storage Object{Variable, nullptr};
++      if (State && Variable->getType()->isReferenceType())
++        if (auto Found = Slots.find(Object); Found != Slots.end()) {
++          if (State->LocalTargets[Found->second].first) return State->LocalTargets[Found->second];
++          if (State->MayTargets[Found->second].count() == 1)
++            return location(State->MayTargets[Found->second].find_first());
++        }
++      return Object;
++    }
 +    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
 +      Storage Base = Member->isArrow()
 +                         ? referent(Member->getBase(), State)
@@ -42212,7 +42258,16 @@ index 000000000..07c8714e2
 +                   unsigned Depth = 0) const {
 +    if (!E || Depth > 32)
 +      return {};
-+    E = E->IgnoreParenCasts();
++    E = E->IgnoreParens();
++    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      Storage Source = E->isGLValue() && E->getType()->isRecordType()
++                           ? storage(Cast->getSubExpr(), State)
++                           : referent(Cast->getSubExpr(), State, Depth + 1);
++      return adjustBaseStorage(Source, Cast);
++    }
++    if (const VarDecl *Variable = variable(E))
++      if (Variable->getType()->isReferenceType() && E->getType()->isRecordType())
++        return storage(E, State);
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
 +      return referent(statementResult(Statement), State, Depth + 1);
 +    if (const auto *Address = dyn_cast<UnaryOperator>(E))
@@ -42263,11 +42318,20 @@ index 000000000..07c8714e2
 +    Slots[Location] = Slots.size();
 +    if (Type.isNull())
 +      Type = storageType(Location);
-+    if (Type.isNull() || Depth > 32)
++    if (Type.isNull()) return;
++    if (Depth > 32) {
++      if (carriesBorrowedValue(Type)) OpaqueBorrowedStorage[Location] = true;
 +      return;
++    }
++    Type = Type.getNonReferenceType();
 +    if (const auto *Record = Type->getAs<RecordType>())
-+      for (const FieldDecl *Field : Record->getDecl()->fields())
-+        addStorage(fieldStorage(Location, Field), Field->getType(), Depth + 1);
++      if (const auto *Definition = Record->getDecl()->getDefinition()) {
++        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Definition))
++          for (const auto &Base : CXX->bases())
++            addStorage(baseStorage(Location, Base), Base.getType(), Depth + 1);
++        for (const FieldDecl *Field : Definition->fields())
++          addStorage(fieldStorage(Location, Field), Field->getType(), Depth + 1);
++      }
 +    if (const auto *Array = Context.getAsArrayType(Type)) {
 +      addStorage(indexedStorage(Location, -2), Array->getElementType(), Depth + 1);
 +      addStorage(indexedStorage(Location, 0), Array->getElementType(), Depth + 1);
@@ -42569,7 +42633,7 @@ index 000000000..07c8714e2
 +    for (const auto &[Location,Index]:Slots) {
 +      (void)Index;
 +      const auto *Alias=Location.first;
-+      if (!Location.second && Location.Index==-1 && !Location.Parent && Alias &&
++      if (!Location.second && !Location.BaseRecord && Location.Index==-1 && !Location.Parent && Alias &&
 +          Alias->hasLocalStorage() &&
 +          Alias->getType().getObjCLifetime()==Qualifiers::OCL_Strong) Aliases.push_back(Alias);
 +    }
@@ -42634,6 +42698,7 @@ index 000000000..07c8714e2
 +      bool FullyTracked = true;
 +      QualType CurrentType = Descriptor.Variable->getType().getNonReferenceType();
 +      for (const auto &Component : Descriptor.Components) {
++        if (Component.BaseRecord) {CurrentType = Context.getCanonicalTagType(Component.BaseRecord);continue;}
 +        if (Component.Field) {CurrentType = Component.Field->getType();continue;}
 +        const auto *Array = Context.getAsArrayType(CurrentType);
 +        const auto *Bound = dyn_cast_or_null<ConstantArrayType>(Array);
@@ -42649,7 +42714,8 @@ index 000000000..07c8714e2
 +          bool Match = true;
 +          for (unsigned J = 0; J != Other.Components.size(); ++J) {
 +            const auto &A = Descriptor.Components[J];const auto &B = Other.Components[J];
-+            Match &= A.Field == B.Field && (A.Field || (B.Index >= 0 && (A.Index == -2 || A.Index == B.Index)));
++            Match &= A.Field == B.Field && A.BaseRecord == B.BaseRecord && A.VirtualBase == B.VirtualBase &&
++                     (A.Field || A.BaseRecord || (B.Index >= 0 && (A.Index == -2 || A.Index == B.Index)));
 +          }
 +          Covered |= Match;
 +        }
@@ -42961,11 +43027,16 @@ index 000000000..07c8714e2
 +      }
 +    for (const PathNode &Component : Components) {
 +      Type = Type.getNonReferenceType();
-+      if (Component.Field) {
++      if (Component.BaseRecord) {
++        const auto *Record = Type->getAsCXXRecordDecl();
++        if (!Record || !(Record = Record->getDefinition()) ||
++            !Record->isDerivedFrom(Component.BaseRecord)) return false;
++        Source = baseStorage(Source, Component.BaseRecord, Component.VirtualBase);
++        Type = Context.getCanonicalTagType(Component.BaseRecord);
++      } else if (Component.Field) {
 +        const auto *Field = dyn_cast<FieldDecl>(Component.Field);
 +        const auto *Record = Type->getAs<RecordType>();
 +        if (!Field || !Record || Field->getParent()->getCanonicalDecl() != Record->getDecl()->getCanonicalDecl()) return false;
-+        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()); CXX && CXX->getNumBases()) return false;
 +        Source = fieldStorage(Source, Component.Field);Type = Component.Field->getType();
 +      } else {
 +        const auto *Array = Context.getAsArrayType(Type);
@@ -42999,15 +43070,23 @@ index 000000000..07c8714e2
 +      if (List->getSemanticForm()) List = List->getSemanticForm();
 +      const PathNode &Component = Components.front();
 +      int64_t Index = Component.Index;
-+      if (Component.Field) {
++      if (Component.BaseRecord || Component.Field) {
 +        const auto *Record = E->getType()->getAs<RecordType>();
 +        if (!Record) return false;
-+        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()); CXX && CXX->getNumBases()) return false;
-+        Index = 0;bool Found = false;
-+        for (const FieldDecl *Field : Record->getDecl()->fields()) {
-+          if (Field == Component.Field) {Found = true;break;}
-+          ++Index;
-+        }
++        Index = 0; bool Found = false;
++        if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()))
++          for (const auto &Base : CXX->bases()) {
++            if (Component.BaseRecord && Base.getType()->getAsCXXRecordDecl() &&
++                Base.getType()->getAsCXXRecordDecl()->getCanonicalDecl() == Component.BaseRecord) {
++              Found = true; break;
++            }
++            ++Index;
++          }
++        if (!Component.BaseRecord)
++          for (const FieldDecl *Field : Record->getDecl()->fields()) {
++            if (Field == Component.Field) {Found = true;break;}
++            ++Index;
++          }
 +        if (!Found) return false;
 +      }
 +      if (Index == -2) {
@@ -43146,7 +43225,21 @@ index 000000000..07c8714e2
 +    Value Targets(Slots.size());
 +    if (!E)
 +      return Targets;
-+    E = E->IgnoreParenCasts();
++    E = E->IgnoreParens();
++    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      Storage Known = referent(Cast, &State);
++      if (auto Found = Slots.find(Known); Found != Slots.end()) {
++        Targets.set(Found->second);
++        return Targets;
++      }
++      Value Sources = possibleTargets(Cast->getSubExpr(), State);
++      for (int I = Sources.find_first(); I >= 0; I = Sources.find_next(I)) {
++        Storage Adjusted = adjustBaseStorage(location(I), Cast);
++        if (auto Found = Slots.find(Adjusted); Found != Slots.end()) Targets.set(Found->second);
++        else Targets.set(I); // Keep an opaque target conservative.
++      }
++      return Targets;
++    }
 +    if (const auto *Statement = dyn_cast<StmtExpr>(E))
 +      return possibleTargets(statementResult(Statement), State);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
@@ -43240,6 +43333,15 @@ index 000000000..07c8714e2
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      if (Cast->getType()->isBooleanType())
 +        return empty();
++      if (Cast->getType()->isRecordType() &&
++          (Cast->getCastKind() == CK_DerivedToBase || Cast->getCastKind() == CK_UncheckedDerivedToBase ||
++           Cast->getCastKind() == CK_BaseToDerived)) {
++        Storage Object = storage(Cast, &State);
++        if (Object.first) return storedValue(Object, Cast->getType(), State);
++        Value Result = value(Cast->getSubExpr(), State);
++        if (carriesBorrowedValue(Cast->getType())) Result.set(0);
++        return Result;
++      }
 +      return value(Cast->getSubExpr(), State);
 +    }
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
@@ -43641,13 +43743,21 @@ index 000000000..07c8714e2
 +      Suffix.push_back(Current);
 +      Current = Paths[Current].Parent;
 +    }
-+    if (Current != Prefix)
-+      return {};
++    if (Current != Prefix) {
++      Suffix.clear(); Current = path(Location);
++      while (Current && !(Paths[Current].BaseRecord && Paths[Current].VirtualBase)) {
++        Suffix.push_back(Current); Current = Paths[Current].Parent;
++      }
++      if (!Current || !within(Location, From) ||
++          !pathsMayAlias(Paths[Current].Parent, completeObjectPath(Prefix))) return {};
++      PathNode Virtual = Paths[Current];
++      To = baseStorage(To, Virtual.BaseRecord, true);
++    }
 +    for (unsigned I : llvm::reverse(Suffix)) {
 +      // Interner insertion can reallocate Paths, so copy the selector first.
 +      PathNode Node = Paths[I];
-+      To = Node.Field ? fieldStorage(To, Node.Field)
-+                      : indexedStorage(To, Node.Index);
++      To = Node.BaseRecord ? baseStorage(To, Node.BaseRecord, Node.VirtualBase)
++          : Node.Field ? fieldStorage(To, Node.Field) : indexedStorage(To, Node.Index);
 +    }
 +    return To;
 +  }
@@ -43660,22 +43770,47 @@ index 000000000..07c8714e2
 +      if (Target.first && Slots.count(Target))
 +        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index]});
 +    }
++    Value AncestorValue = empty(), AncestorEffects = empty();
++    Value AncestorTargets(Slots.size());
++    for (auto [Location, Index] : Slots)
++      if (within(Source, Location) && !within(Location, Source)) {
++        AncestorValue |= State.Values[Index];
++        AncestorEffects |= State.Effects[Index];
++        AncestorTargets |= State.MayTargets[Index];
++      }
 +    for (Copy &Entry : Copies) {
 +      store(Operation, Entry.Destination, Entry.Contents, State, Emit,
 +            !hasUnknownIndex(Destination), &Entry.Effects);
 +      State.LocalTargets[Slots.lookup(Entry.Destination)] = Entry.Target;
 +      State.MayTargets[Slots.lookup(Entry.Destination)] = std::move(Entry.Targets);
 +    }
++    if (AncestorValue.any() || AncestorEffects.any() || AncestorTargets.any())
++      if (auto Root = Slots.find(Destination); Root != Slots.end()) {
++        AncestorValue |= State.Values[Root->second];
++        AncestorEffects |= State.Effects[Root->second];
++        store(Operation, Destination, AncestorValue, State, Emit, false, &AncestorEffects);
++        State.MayTargets[Root->second] |= AncestorTargets;
++      }
 +  }
 +  void initializeAggregate(const Stmt *Operation, Storage Destination,
 +                            QualType Type, const Expr *Initializer,
 +                            Facts &State, bool Emit, unsigned Depth = 0) {
-+    if (Depth > 32 || !Destination.first)
++    if (!Destination.first) return;
++    if (Depth > 32) {
++      if (carriesBorrowedValue(Type)) {
++        Value Unknown = empty(); Unknown.set(0);
++        store(Operation, Destination, Unknown, State, Emit);
++      }
 +      return;
++    }
 +    if (!Type->isRecordType() && !Type->isArrayType()) {
 +      Value V = value(Initializer, State);
-+      Storage Target = referent(Initializer, &State);
++      Storage Target = Type->isReferenceType() ? storage(Initializer, &State) : referent(Initializer, &State);
 +      Value Targets = possibleTargets(Initializer, State);
++      if (Type->isReferenceType())
++        if (auto Found = Slots.find(Target); Found != Slots.end()) {
++          Targets.reset(); Targets.set(Found->second);
++        }
 +      if (Targets.any() && !hasUnknownIndex(Destination) &&
 +          !isObjC3BorrowedType(Context, Type))
 +        V = empty();
@@ -43691,16 +43826,23 @@ index 000000000..07c8714e2
 +      }
 +      return;
 +    }
-+    const Expr *Written = Initializer ? Initializer->IgnoreParenCasts() : nullptr;
++    const Expr *Written = Initializer;
++    while (Written) {
++      Written = Written->IgnoreParens();
++      if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Written)) Written = Cleanups->getSubExpr();
++      else if (const auto *Temporary = dyn_cast<MaterializeTemporaryExpr>(Written)) Written = Temporary->getSubExpr();
++      else if (const auto *Binding = dyn_cast<CXXBindTemporaryExpr>(Written)) Written = Binding->getSubExpr();
++      else if (const auto *Cast = dyn_cast<CastExpr>(Written)) {
++        if (Cast->getCastKind() == CK_DerivedToBase || Cast->getCastKind() == CK_UncheckedDerivedToBase ||
++            Cast->getCastKind() == CK_BaseToDerived) break;
++        Written = Cast->getSubExpr();
++      } else break;
++    }
 +    if (const auto *Construction = dyn_cast_or_null<CXXConstructExpr>(Written))
-+      if (modeledRecordCopy(Construction->getConstructor()) &&
-+          Construction->getNumArgs() == 1) {
-+        initializeAggregate(Operation, Destination, Type, Construction->getArg(0),
-+                            State, Emit, Depth + 1);
++      if (modeledRecordCopy(Construction->getConstructor()) && Construction->getNumArgs() == 1) {
++        initializeAggregate(Operation, Destination, Type, Construction->getArg(0), State, Emit, Depth + 1);
 +        return;
 +      }
-+    if (const auto *Cleanups = dyn_cast_or_null<ExprWithCleanups>(Written))
-+      Written = Cleanups->getSubExpr()->IgnoreParenCasts();
 +    const auto *List = dyn_cast_or_null<InitListExpr>(Written);
 +    if (List && List->getSemanticForm())
 +      List = List->getSemanticForm();
@@ -43709,8 +43851,21 @@ index 000000000..07c8714e2
 +      copyStorageShape(Operation, Destination, Source, State, Emit);
 +      return;
 +    }
++    if (!List && Written) {
++      // An opaque constructor/factory must retain its declaration-provided
++      // obligation instead of default-initializing every tracked leaf to empty.
++      Value Opaque = value(Written, State), Effect = effects(Written, State);
++      store(Operation, Destination, Opaque, State, Emit, false, &Effect);
++    }
 +    if (const auto *Record = Type->getAs<RecordType>()) {
 +      unsigned I = 0;
++      if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()))
++        for (const auto &Base : CXX->bases()) {
++          const Expr *BaseInit = List && I < List->getNumInits() ? List->getInit(I) : nullptr;
++          initializeAggregate(Operation, baseStorage(Destination, Base), Base.getType(),
++                              BaseInit, State, Emit, Depth + 1);
++          ++I;
++        }
 +      for (const FieldDecl *Field : Record->getDecl()->fields()) {
 +        const Expr *FieldInit = List && I < List->getNumInits()
 +                                    ? List->getInit(I) : nullptr;
@@ -43970,11 +44125,17 @@ index 000000000..07c8714e2
 +    while (!Pending.empty()) {
 +      const auto *Record = Pending.pop_back_val();
 +      if (!Seen.insert(Record).second) continue;
-+      if (Record->getNumBases() || Record->isPolymorphic() ||
++      if (Record->isPolymorphic() ||
 +          (Record->isUnion() && !Record->isTriviallyCopyable())) return false;
 +      for (const auto *Member : Record->methods())
 +        if (Member->isCopyOrMoveConstructorOrAssignment() &&
 +            !Member->isTrivial() && !Member->isImplicit()) return false;
++      for (const auto &Base : Record->bases()) {
++        if (Base.isVirtual()) return false;
++        const auto *Definition = Base.getType()->getAsCXXRecordDecl();
++        if (!Definition || !(Definition = Definition->getDefinition())) return false;
++        Pending.push_back(Definition);
++      }
 +      for (const FieldDecl *Field : Record->fields()) {
 +        QualType Type = Context.getBaseElementType(Field->getType());
 +        if (const auto *Nested = Type->getAsCXXRecordDecl()) Pending.push_back(Nested);
@@ -44061,7 +44222,7 @@ index 000000000..07c8714e2
 +              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
 +            V = empty();
 +          if (auto Found = Slots.find(Target);
-+              Target.first && !Target.second && Target.Index == -1 &&
++              Target.first && !Target.second && !Target.BaseRecord && !Target.Parent && Target.Index == -1 &&
 +              Found != Slots.end()) {
 +            unsigned Slot = Found->second;
 +            if (Owner.none() || Owner != State.OwnerIdentities[Slot])
@@ -44431,6 +44592,9 @@ index 000000000..07c8714e2
 +              Nested.Paths = Paths;
 +              Nested.FieldPaths = FieldPaths;
 +              Nested.ArrayPaths = ArrayPaths;
++              Nested.BasePaths = BasePaths;
++              Nested.VirtualBasePaths = VirtualBasePaths;
++              Nested.OpaqueBorrowedStorage = OpaqueBorrowedStorage;
 +              Nested.InheritedReferenceCaptures = InheritedReferenceCaptures;
 +              Nested.InheritedLambdaStorage = InheritedLambdaStorage;
 +              if (Lambda)
@@ -44452,7 +44616,7 @@ index 000000000..07c8714e2
 +                     Target = State.MayTargets[Index].find_next(Target))
 +                  Nested.InheritedMayTargets[Location].push_back(location(Target));
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
-+                if (!Location.second && Location.Index == -1) {
++                if (!Location.second && !Location.BaseRecord && !Location.Parent && Location.Index == -1) {
 +                  Nested.InheritedOwners[Location.first] = State.OwnerIdentities[Index];
 +                  if (State.UnownedOwners.test(Index))
 +                    Nested.InheritedUnownedOwners.insert(Location.first);
@@ -44823,17 +44987,18 @@ index 000000000..07c8714e2
 +    for (auto [Location, Index] : Slots) {
 +      if (!Location.first)
 +        continue;
-+      if (!Location.first->hasLocalStorage() && !Location.second &&
++      if (!Location.first->hasLocalStorage() && !Location.second && !Location.BaseRecord && !Location.Parent &&
 +          Location.Index == -1 &&
 +          carriesBorrowedValue(Location.first->getType()))
 +        Initial.Values[Index].set(0);
-+      if (isa<ParmVarDecl>(Location.first) && Location.second &&
-+          carriesBorrowedValue(Location.second->getType()))
++      if (isa<ParmVarDecl>(Location.first) &&
++          ((Location.second && carriesBorrowedValue(Location.second->getType())) ||
++           OpaqueBorrowedStorage.count(Location)))
 +        Initial.Values[Index].set(0);
 +    }
 +    for (ParmVarDecl *Parameter : Parameters)
 +      if ((carriesBorrowedValue(Parameter->getType()) &&
-+           !Parameter->getType()->isRecordType()) ||
++           !Parameter->getType().getNonReferenceType()->isRecordType()) ||
 +          Parameter->hasAttr<NoEscapeAttr>()) {
 +        Value V = empty();
 +        // Borrowed parameters have no owner-return identity unless an explicit
@@ -50892,10 +51057,10 @@ index 000000000..50e17f3f0
 +void path_consume(void *owner __attribute__((cf_consumed)));
 diff --git a/clang/test/ObjC3/Sema/borrowed-callable-paths.mm b/clang/test/ObjC3/Sema/borrowed-callable-paths.mm
 new file mode 100644
-index 000000000..d813086fc
+index 000000000..21c60dca1
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/borrowed-callable-paths.mm
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,109 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
@@ -50983,8 +51148,17 @@ index 000000000..d813086fc
 +void inherited_callable_boundary(void *owner) {
 +  const char *p=path_bytes(owner);auto inner=[owner]{path_consume(owner);};
 +  struct Base{decltype(inner) callback;};struct Holder:Base{};Holder holder{{inner}};
-+  auto outer=[holder]{holder.callback();}; // expected-error {{captured callable path requiring an explicit invocation lifetime contract}}
-+  outer();path_use(p);
++  auto outer=[holder]{holder.callback();};
++  outer();path_use(p); // expected-error {{after its owner lifetime ended}}
++}
++void inherited_precise_callable_fields(void *first,void *second) {
++  const char *a=path_bytes(first),*b=path_bytes(second);
++  auto one=[first]{path_consume(first);};auto two=[second]{path_consume(second);};
++  struct Left{decltype(one) callback;};struct Right{decltype(two) callback;};
++  struct Holder:Left,Right{};Holder holder{{one},{two}};
++  auto outer=[holder]{static_cast<const Right&>(holder).callback();};
++  outer();path_use(a);
++  path_use(b); // expected-error {{after its owner lifetime ended}}
 +}
 +void custom_copy_boundary(void *owner) {
 +  const char *p=path_bytes(owner);auto inner=[owner]{path_consume(owner);};
@@ -51970,4 +52144,163 @@ index 000000000..3b2381935
 +  escaped_statement_result = __extension__ ({ (void)alias; (const char *)0; });
 +  int scalar = __extension__ ({ alias[0]; });
 +  (void)scalar;
++}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-base-subobjects.h b/clang/test/ObjC3/Sema/Inputs/borrowed-base-subobjects.h
+new file mode 100644
+index 000000000..be5cf98c4
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-base-subobjects.h
+@@ -0,0 +1,25 @@
++typedef borrowed const char *BaseBytes;
++struct BorrowedBase { BaseBytes bytes; };
++struct BorrowedDerived : BorrowedBase {};
++struct LeftBase : BorrowedBase {};
++struct RightBase : BorrowedBase {};
++struct RepeatedBases : LeftBase, RightBase {};
++struct VirtualLeft : virtual BorrowedBase {};
++struct VirtualRight : virtual BorrowedBase {};
++struct SharedVirtual : VirtualLeft, VirtualRight {};
++struct NestedBase { BorrowedDerived nested[2]; };
++template <class Base> struct BaseTemplate : Base {};
++template <unsigned Depth> struct DeepBase : DeepBase<Depth - 1> {};
++template <> struct DeepBase<0> { BaseBytes bytes; };
++struct ArcBorrowedBase { id object; BaseBytes bytes; };
++struct ArcBorrowedDerived : ArcBorrowedBase {};
++typedef void (*BorrowedSignature)(BaseBytes);
++struct CallableBase { BorrowedSignature callback; };
++struct CallableDerived : CallableBase {};
++struct OwnedBase { int value; };
++struct OwnedDerived : OwnedBase {};
++extern BorrowedDerived escaped_derived;
++extern RepeatedBases escaped_repeated;
++void unknown_derived(BorrowedDerived);
++BorrowedDerived opaque_derived();
++BaseBytes base_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+diff --git a/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm b/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm
+new file mode 100644
+index 000000000..484628105
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-base-subobjects.mm
+@@ -0,0 +1,122 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-mrc.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-base-subobjects.h -o %t-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-arc.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-base-subobjects.h"
++#endif
++
++BorrowedBase direct_control(BorrowedBase input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++BorrowedDerived inherited_return(BorrowedDerived input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++void inherited_global(BorrowedDerived input) {
++  escaped_derived = input; // expected-error {{borrowed pointer escapes}}
++}
++void inherited_unknown_call(BorrowedDerived input) {
++  unknown_derived(input); // expected-error {{borrowed pointer escapes}}
++}
++BorrowedDerived aggregate_base_initializer(BaseBytes pointer) {
++  BorrowedDerived local{{pointer}};
++  return local; // expected-error {{borrowed pointer escapes}}
++}
++BorrowedDerived opaque_base_factory() {
++  BorrowedDerived local = opaque_derived();
++  return local; // expected-error {{borrowed pointer escapes}}
++}
++NestedBase nested_base_array(NestedBase input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++BaseTemplate<BorrowedBase> instantiated_base(BaseTemplate<BorrowedBase> input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++DeepBase<40> bounded_deep_base(DeepBase<40> input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++
++// The same FieldDecl in two nonvirtual bases denotes distinct physical loans.
++BorrowedBase repeated_base_retains_other_loan(RepeatedBases input) {
++  static_cast<LeftBase &>(input).bytes = nullptr;
++  return static_cast<RightBase &>(input); // expected-error {{borrowed pointer escapes}}
++}
++void repeated_base_global(RepeatedBases input) {
++  static_cast<LeftBase &>(input).bytes = nullptr;
++  escaped_repeated = input; // expected-error {{borrowed pointer escapes}}
++}
++BorrowedBase repeated_base_cleared(RepeatedBases input) {
++  static_cast<LeftBase &>(input).bytes = nullptr;
++  static_cast<RightBase &>(input).bytes = nullptr;
++  return static_cast<RightBase &>(input);
++}
++BorrowedBase reference_adjusted_base(RepeatedBases input) {
++  RightBase &part = input;
++  part.bytes = nullptr;
++  return static_cast<RightBase &>(input);
++}
++BorrowedBase pointer_adjusted_base(RepeatedBases input) {
++  RightBase *part = &input;
++  part->bytes = nullptr;
++  return static_cast<RightBase &>(input);
++}
++RepeatedBases downcast_retains_complete_object(RepeatedBases input) {
++  RightBase &part = input;
++  part.bytes = nullptr;
++  RepeatedBases &whole = static_cast<RepeatedBases &>(part);
++  return whole; // expected-error {{borrowed pointer escapes}}
++}
++
++// Both virtual paths address one physical base. Clearing one clears the other.
++BorrowedBase virtual_base_uncleared(SharedVirtual input) {
++  return static_cast<VirtualRight &>(input); // expected-error {{borrowed pointer escapes}}
++}
++BorrowedBase virtual_base_shared_write(SharedVirtual input) {
++  static_cast<VirtualLeft &>(input).bytes = nullptr;
++  return static_cast<VirtualRight &>(input);
++}
++BorrowedBase virtual_reference_shared_write(SharedVirtual &input) {
++  VirtualRight &part = input;
++  part.bytes = nullptr;
++  return static_cast<VirtualLeft &>(input);
++}
++
++ArcBorrowedDerived arc_inherited_escape(ArcBorrowedDerived input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++ArcBorrowedDerived arc_structural_copy_clear(ArcBorrowedDerived input) {
++  ArcBorrowedDerived local = input;
++  local.bytes = nullptr;
++  return local;
++}
++BorrowedDerived known_empty_base() {
++  BorrowedDerived local{{nullptr}};
++  return local;
++}
++int local_copy_keeps_borrow(BorrowedDerived input) {
++  BorrowedDerived local = input;
++  return local.bytes != nullptr;
++}
++OwnedDerived owned_bases_are_not_loans(OwnedDerived input) { return input; }
++// Callable parameter metadata is not an actual stored borrowed pointer value.
++CallableDerived inherited_callable_metadata(CallableDerived input) { return input; }
++
++// A separate known loan forces CFG analysis even without the inherited input.
++BorrowedDerived inherited_escape_with_existing_cfg(BorrowedDerived input,
++                                                   void *owner) {
++  BaseBytes unrelated = base_bytes(owner);
++  if (unrelated) return input; // expected-error {{borrowed pointer escapes}}
++  return BorrowedDerived{{nullptr}};
++}
++__objc3_optional(BorrowedDerived) optional_base_escape(
++    __objc3_optional(BorrowedDerived) input) {
++  return input; // expected-error {{borrowed pointer escapes}}
++}
++__objc3_result(int, BorrowedDerived) result_base_escape(
++    __objc3_result(int, BorrowedDerived) input) {
++  return input; // expected-error {{borrowed pointer escapes}}
 +}

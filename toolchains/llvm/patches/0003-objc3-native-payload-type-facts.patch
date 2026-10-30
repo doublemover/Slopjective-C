@@ -766,10 +766,10 @@ index 000000000..d9b55af08
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..46b9ea203
+index 000000000..d2047cc0f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,838 @@
+@@ -0,0 +1,893 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -786,6 +786,7 @@ index 000000000..46b9ea203
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3Borrowed.h"
 +#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
@@ -1605,6 +1606,60 @@ index 000000000..46b9ea203
 +      FirstType.AddQualType(findFunction(From,"operation")->getType());
 +      SecondType.AddQualType(findFunction(To,"operation")->getType());
 +      EXPECT_NE(FirstType.CalculateHash(),SecondType.CalculateHash());
++    }
++  }
++}
++
++TEST(ObjC3TypeContracts, BorrowedBasePredicatesIncludePhysicalPayloads) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    for (bool ARC : {false, true}) {
++      std::vector<std::string> Args = {"-x", "objective-c++", Standard,
++          "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "-fblocks"};
++      if (ARC) Args.push_back("-fobjc-arc");
++      auto AST = parse(R"objc(
++        typedef borrowed const char *Bytes;
++        struct Base { Bytes bytes; };
++        struct Derived : Base {};
++        struct Left : Derived {};
++        struct Right : Derived {};
++        struct Repeated : Left, Right {};
++        struct Virtual : virtual Base {};
++        struct Nested { Derived values[2]; };
++        template<class T> struct Instance : T {};
++        struct Private : private Base {};
++        struct Owned { int value; };
++        struct OwnedDerived : Owned {};
++        struct Callable { void (*callback)(Bytes); };
++        struct CallableDerived : Callable {};
++        extern Base base;
++        extern Derived derived;
++        extern Repeated repeated;
++        extern Virtual virtualBase;
++        extern Nested nested;
++        static_assert(sizeof(Instance<Derived>) > 0);
++        extern Instance<Derived> instance;
++        extern Private privateBase;
++        extern __objc3_optional(Derived) optional;
++        extern __objc3_result(int, Derived) result;
++        extern OwnedDerived owned;
++        extern CallableDerived callable;
++      )objc", Args);
++      ASSERT_TRUE(AST);
++      ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      ASTContext &Context = AST->getASTContext();
++      for (const char *Name : {"base", "derived", "repeated", "virtualBase",
++                              "nested", "instance", "privateBase", "optional", "result"}) {
++        SCOPED_TRACE(Name);
++        const VarDecl *Variable = findVar(Context, Name);
++        ASSERT_TRUE(Variable);
++        EXPECT_TRUE(containsObjC3BorrowedType(Context, Variable->getType()));
++        EXPECT_TRUE(carriesObjC3BorrowedValue(Context, Variable->getType()));
++      }
++      EXPECT_FALSE(containsObjC3BorrowedType(Context, findVar(Context, "owned")->getType()));
++      EXPECT_FALSE(carriesObjC3BorrowedValue(Context, findVar(Context, "owned")->getType()));
++      QualType Callable = findVar(Context, "callable")->getType();
++      EXPECT_TRUE(containsObjC3BorrowedType(Context, Callable));
++      EXPECT_FALSE(carriesObjC3BorrowedValue(Context, Callable));
 +    }
 +  }
 +}
