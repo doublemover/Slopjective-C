@@ -1,0 +1,44 @@
+{
+  "schema": "objc3c.compiler-instrumentation-profiles.v1",
+  "profiles": {
+    "compiler-asan-ubsan": {
+      "subject": "compiler-implementation",
+      "host": "linux-x86_64",
+      "projects": ["clang", "lld"],
+      "configuration": "Release",
+      "optimization": "O1",
+      "facade_sanitizer": "address,undefined",
+      "cmake": {
+        "LLVM_USE_SANITIZER": "Address;Undefined",
+        "LLVM_BUILD_LLVM_DYLIB": "ON",
+        "LLVM_LINK_LLVM_DYLIB": "ON",
+        "CLANG_LINK_CLANG_DYLIB": "ON",
+        "CMAKE_C_FLAGS_RELEASE": "-O1 -DNDEBUG",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG",
+        "LLVM_UBSAN_FLAGS": "-fsanitize=undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined"
+      },
+      "build_target_groups": [
+        {"name": "instrumented_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
+        {"name": "instrumented_tools", "targets": ["FileCheck", "count", "not", "llvm-config", "llvm-nm", "clang-resource-headers", "llc", "llvm-ar", "llvm-ranlib", "llvm-readobj", "llvm-objdump", "llvm-dwarfdump", "c-index-test"]},
+        {"name": "instrumented_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+      ],
+      "test_binaries": [
+        "tools/clang/unittests/AST/ObjC3TypeContractsTests",
+        "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+      ],
+      "additional_test_suites": [
+        "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/test/Index/objc3-native-expression-cursors.mm"
+      ],
+      "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
+      "additional_distribution_components": ["LLVM", "clang-cpp"],
+      "boundaries": [
+        "This profile instruments Clang/LLVM and the embedding graph; emitted-client and complete-runtime instrumentation are separate subjects.",
+        "LLVM uses its supported undefined-behavior profile with function/vptr checks excluded for upstream erased callback/type representations; ASan and the remaining UBSan checks stay enabled without recovery.",
+        "clangd, clang-format and LLDB are outside this first compiler-process profile; their ordinary native regression lanes remain separate.",
+        "Compiler TSan and MSan are not supported by this profile."
+      ]
+    }
+  }
+}

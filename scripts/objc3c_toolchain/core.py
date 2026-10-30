@@ -329,7 +329,8 @@ def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_plans(repo: Path, *, manifest_path: Path | None = None,
-                source_dir: Path | None = None, host: str | None = None) -> dict[str, dict[str, Any]]:
+                source_dir: Path | None = None, host: str | None = None,
+                instrumentation_profile: str | None = None) -> dict[str, dict[str, Any]]:
     """Identify one sealed build session and all its commands; never execute them."""
     repo = repo.resolve()
     manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
@@ -348,7 +349,20 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
     else:
         raise ToolchainError(f"unsupported foundation host: {host}")
     build = manifest["build"]
+    profile = None
+    if instrumentation_profile is not None:
+        from .instrumentation_profiles import select
+        try:
+            profile = select(repo, instrumentation_profile, host, build, sealed, manifest['upstream'])
+        except (ValueError, KeyError, OSError) as error:
+            raise ToolchainError(str(error)) from error
+        build = profile['build']
+        sealed = {**sealed, 'build_id': profile['source_build_id'],
+                  'build_config_digest': profile['build_config_digest'],
+                  'configuration_inputs': profile['configuration_inputs']}
     output_suffix = "" if host == "windows-x86_64" else "-" + host
+    if profile:
+        output_suffix += "-"+profile["name"]
     build_dir = repo / "out" / "toolchains" / "objc3-development" / ("build" + output_suffix)
     stage_dir = repo / "out" / "toolchains" / "objc3-development" / ("stage" + output_suffix)
     source_id = sealed["build_id"]
@@ -396,6 +410,8 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         if environment.get("ccache_path"):
             configure += [f"-DCMAKE_C_COMPILER_LAUNCHER={environment['ccache_path']}",
                           f"-DCMAKE_CXX_COMPILER_LAUNCHER={environment['ccache_path']}"]
+    if profile:
+        configure += [f'-D{key}={value}' for key, value in profile['cmake'].items()]
     target_groups = build.get("build_target_groups")
     if not isinstance(target_groups, list) or not target_groups:
         raise ToolchainError("build.build_target_groups must define ordered nonempty target groups")
@@ -474,6 +490,10 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
             "resource_dir": _artifact_identity(stage_dir / "lib" / "clang" / "23"),
         },
     }
+    if profile:
+        common['instrumentation_profile'] = profile['name']
+        common['instrumentation'] = profile['recipe']
+        common['effective_configuration'].update(profile['cmake'])
     plans = {}
     for phase, command in commands.items():
         identity_payload = {**common, "phase": phase, "command": command}
@@ -571,8 +591,10 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
 
 
 def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
-               source_dir: Path | None = None, host: str | None = None) -> dict[str, Any]:
+               source_dir: Path | None = None, host: str | None = None,
+               instrumentation_profile: str | None = None) -> dict[str, Any]:
     """Return one identified command plan; standalone calls reverify all inputs."""
     if phase not in {"configure", "build", "test", "stage"}:
         raise ToolchainError(f"unsupported build phase: {phase}")
-    return build_plans(repo, manifest_path=manifest_path, source_dir=source_dir, host=host)[phase]
+    return build_plans(repo, manifest_path=manifest_path, source_dir=source_dir, host=host,
+                       instrumentation_profile=instrumentation_profile)[phase]

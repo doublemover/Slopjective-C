@@ -43,6 +43,7 @@ def _parser():
     build.add_argument("--repo", type=Path, default=Path.cwd())
     build.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"))
     build.add_argument("--fetch", action="store_true", help="acquire pinned source when the development checkout is absent")
+    build.add_argument("--instrumentation-profile", choices=("compiler-asan-ubsan",))
     build.add_argument("--stage", action="store_true", help="also install the SDK distribution")
     for name in ("prepare", "verify"):
         command = commands.add_parser(name, help=f"{'materialize' if name == 'prepare' else 'verify'} pinned LLVM source")
@@ -63,6 +64,7 @@ def _parser():
     plan.add_argument("--repo", type=Path, default=Path.cwd(), help="repository root")
     plan.add_argument("--manifest", type=Path, help="manifest path (defaults to repository manifest)")
     plan.add_argument("--source-dir", type=Path, help="sealed development source directory")
+    plan.add_argument("--instrumentation-profile", choices=("compiler-asan-ubsan",))
     plan.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"),
                       help="native build host (defaults to the current host)")
     return parser, frozenset(commands.choices)
@@ -104,7 +106,8 @@ def main(argv: list[str] | None = None) -> int:
             result = facade_identity(args.repo)
         elif args.command == "build":
             from .build import build_foundation
-            result = build_foundation(args.repo, host=args.host, fetch=args.fetch, stage=args.stage)
+            result = build_foundation(args.repo, host=args.host, fetch=args.fetch, stage=args.stage,
+                                     instrumentation_profile=args.instrumentation_profile)
         elif args.command == "check-host-tools":
             from .versions import check_host_tools
             result = check_host_tools(args.repo, runtime=args.runtime)
@@ -123,7 +126,8 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_development(args.repo, manifest_path=args.manifest, source_dir=args.source_dir)
         else:
             result = build_plan(args.repo, phase=args.phase, manifest_path=args.manifest,
-                                source_dir=args.source_dir, host=args.host)
+                                source_dir=args.source_dir, host=args.host,
+                                instrumentation_profile=args.instrumentation_profile)
     except (ToolchainError, ValueError, OSError, KeyError, subprocess.SubprocessError) as exc:
         print(f"objc3c-toolchain: {exc}", file=sys.stderr)
         return 2

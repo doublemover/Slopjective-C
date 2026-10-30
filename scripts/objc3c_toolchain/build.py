@@ -91,13 +91,13 @@ def build_foundation(repo: Path, **options) -> dict:
 
 
 def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = False,
-                     stage: bool = False) -> dict:
+                     stage: bool = False, instrumentation_profile: str | None = None) -> dict:
     repo = repo.resolve()
     source = repo / "out/toolchains/objc3-development/src"
     if not source.exists():
         prepare(repo, source_dir=source, fetch=fetch)
         seal_development(repo, source_dir=source)
-    plans = build_plans(repo, source_dir=source, host=host)
+    plans = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)
     report = {"status": "running", "source_identity": plans["configure"]["source_build_id"], "phases": [],
               "started_utc": datetime.now(timezone.utc).isoformat()}
     started = time.monotonic()
@@ -117,6 +117,15 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             history_path = run_directory / "report.json"
             report["run_directory"] = str(run_directory)
             environment = os.environ.copy()
+            if instrumentation_profile:
+                from .sanitizer_policy import strict_environment
+                toolchain = plan['host_environment']
+                bootstrap = Path(toolchain['clang_path']).resolve().parent.parent
+                environment = strict_environment(Path(toolchain['clang_path']), bootstrap / 'bin/llvm-symbolizer')
+                environment['PATH'] = os.pathsep.join(dict.fromkeys([
+                    str(Path(toolchain['cmake_path']).parent),
+                    str(Path(toolchain['ninja_path']).parent),
+                    *environment['PATH'].split(os.pathsep)]))
             environment.update(plan.get("command_environment", {}))
             environment["PYTHONDONTWRITEBYTECODE"] = "1"
             environment["CCACHE_COMPILERCHECK"] = "content"
@@ -134,7 +143,7 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
                 report_path.write_text(json.dumps(report, indent=2) + "\n")
                 if result.returncode:
                     raise ToolchainError(f"foundation {phase} exited {result.returncode}; see {log_path}")
-        refreshed = build_plans(repo, source_dir=source, host=host)["configure"]
+        refreshed = build_plans(repo, source_dir=source, host=host, instrumentation_profile=instrumentation_profile)["configure"]
         for key in ("source_build_id", "source_tree", "build_config_digest", "host_environment"):
             if refreshed[key] != plans["configure"][key]:
                 raise ToolchainError(f"foundation {key} changed during the build")
