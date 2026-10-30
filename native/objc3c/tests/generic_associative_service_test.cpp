@@ -17,6 +17,7 @@ bool reenter_destroy = false;
 objc3_generic_map_t destroy_reentry_map = nullptr;
 int destroy_reentry_status = -1;
 int item_destroyed = 0;
+int item_copied = 0;
 unsigned payload_callbacks = 0;
 
 objc3_service_status CopyI64(void *dst, const void *src) {
@@ -62,6 +63,7 @@ objc3_service_status CopyItem(void *dst, const void *src) {
   if (source.oom_copy) return OBJC3_SERVICE_OUT_OF_MEMORY;
   if (source.fail_copy) return OBJC3_SERVICE_INVALID_ARGUMENT;
   new (dst) Item(source);
+  ++item_copied;
   return OBJC3_SERVICE_OK;
 }
 objc3_service_status MoveItem(void *dst, void *src) {
@@ -176,19 +178,23 @@ int main() {
   Item replacement{"replacement-2", false};
   destroy_reentry_map = aggregate_map;
   reenter_destroy = true;
+  const auto replacement_copies = item_copied, replacement_destroys = item_destroyed;
   assert(objc3_generic_map_insert(aggregate_map, &key_two, &replacement,
       &inserted) == OBJC3_GENERIC_COLLECTION_OK && inserted == 0);
   reenter_destroy = false;
+  assert(item_destroyed - replacement_destroys == item_copied - replacement_copies);
   destroy_reentry_map = nullptr;
   assert(destroy_reentry_status == OBJC3_GENERIC_COLLECTION_OK);
   assert(objc3_generic_map_lookup(aggregate_map, &key_two, &has_value,
       item_storage) == OBJC3_GENERIC_COLLECTION_OK && has_value == 1 &&
       reinterpret_cast<Item *>(item_storage)->text == "replacement-2");
   DestroyItem(item_storage);
+  const auto failed_copies = item_copied, failed_destroys = item_destroyed;
   Item allocation_failure{"out-of-memory", false, true};
   assert(objc3_generic_map_insert(aggregate_map, &key_two,
       &allocation_failure, &inserted) ==
       OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY && inserted == 0);
+  assert(item_destroyed - failed_destroys == item_copied - failed_copies);
   assert(objc3_generic_map_lookup(aggregate_map, &key_two, &has_value,
       item_storage) == OBJC3_GENERIC_COLLECTION_OK && has_value == 1 &&
       reinterpret_cast<Item *>(item_storage)->text == "replacement-2");

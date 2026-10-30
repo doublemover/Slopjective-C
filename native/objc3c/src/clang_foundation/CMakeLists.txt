@@ -381,6 +381,12 @@ if (BUILD_TESTING)
     ../../tests/generic_associative_service_test.cpp)
   target_link_libraries(objc3_generic_associative_service_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_generic_associative_service COMMAND objc3_generic_associative_service_test)
+  add_executable(objc3_generic_collection_ownership_test
+    ../../tests/generic_collection_ownership_test.cpp)
+  target_link_libraries(objc3_generic_collection_ownership_test PRIVATE objc3_runtime_services)
+  target_link_options(objc3_generic_collection_ownership_test PRIVATE "LINKER:--wrap=_Znwm")
+  add_test(NAME objc3_generic_collection_ownership COMMAND objc3_generic_collection_ownership_test)
+  set_tests_properties(objc3_generic_collection_ownership PROPERTIES TIMEOUT 30)
   add_executable(objc3_text_scalar_boundary_test ../../tests/text_scalar_boundary_test.cpp
     ../runtime/stdlib/text_service.cpp)
   target_compile_definitions(objc3_text_scalar_boundary_test PRIVATE OBJC3_TEXT_CONSTRUCTION_TESTING)

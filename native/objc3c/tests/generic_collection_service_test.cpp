@@ -12,6 +12,7 @@
 namespace {
 struct Item { std::string text; bool fail_copy = false; };
 int item_destroys = 0;
+int item_copies = 0;
 int copy_failures = 0;
 bool reenter_copy = false;
 bool inside_reentry = false;
@@ -64,6 +65,7 @@ objc3_service_status CopyItem(void *dst, const void *src) {
     inside_reentry = false;
   }
   new (dst) Item(from);
+  ++item_copies;
   return OBJC3_SERVICE_OK;
 }
 objc3_service_status MoveItem(void *dst, void *src) {
@@ -196,10 +198,13 @@ int main() {
   assert(objc3_generic_array_create(&item_ops, initial, 2, &items) ==
          OBJC3_GENERIC_COLLECTION_OK);
   auto before_failure = item_destroys;
+  auto copies_before_failure = item_copies;
   Item failure{"fail", true};
   assert(objc3_generic_array_append(items, &failure) ==
          OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT);
   assert(copy_failures == 1);
+  // Check speculative cleanup before readback can add unrelated destruction.
+  assert(item_destroys - before_failure == item_copies - copies_before_failure);
   assert(objc3_generic_array_count(items, &count) ==
          OBJC3_GENERIC_COLLECTION_OK && count == 2);
   alignas(Item) unsigned char read_storage[sizeof(Item)];
@@ -207,7 +212,7 @@ int main() {
          OBJC3_GENERIC_COLLECTION_OK &&
          reinterpret_cast<Item *>(read_storage)->text == "first");
   DestroyItem(read_storage);
-  assert(item_destroys > before_failure);
+
 
   // A callback may mutate the same array. The outer prepared mutation observes
   // the generation change and fails without replacing the reentrant commit.

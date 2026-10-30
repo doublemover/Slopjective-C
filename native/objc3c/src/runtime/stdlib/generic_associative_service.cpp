@@ -141,17 +141,6 @@ struct AssocIterator final {
     }
   }
 };
-struct PendingHandle final {
-  void *handle = nullptr;
-  std::uint32_t kind = 0;
-  bool keep = false;
-  ~PendingHandle() {
-    if (!keep && handle) {
-      try { (void)AssociativeStorage().Release(handle, kind); }
-      catch (...) {}
-    }
-  }
-};
 storage::OpaqueServiceStorage<AssocIterator> &IteratorStorage() {
   static storage::OpaqueServiceStorage<AssocIterator> value;
   return value;
@@ -418,8 +407,8 @@ Status StoreRecord(std::unique_ptr<AssociativeRecord> record,
 }
 
 template <typename Descriptor>
-Status CreateEmpty(const Descriptor &descriptor, std::uint32_t kind,
-                   bool is_set, void **out) {
+std::unique_ptr<AssociativeRecord> MakeUnpublishedRecord(
+    const Descriptor &descriptor, std::uint32_t kind, bool is_set) {
   auto record = std::make_unique<AssociativeRecord>();
   record->kind = kind;
   record->is_set = is_set;
@@ -428,7 +417,53 @@ Status CreateEmpty(const Descriptor &descriptor, std::uint32_t kind,
   else
     record->map_descriptor = descriptor;
   record->snapshot = std::make_shared<Snapshot>();
-  return StoreRecord(std::move(record), kind, out);
+  return record;
+}
+
+template <typename Descriptor>
+Status CreateEmpty(const Descriptor &descriptor, std::uint32_t kind,
+                   bool is_set, void **out) {
+  return StoreRecord(MakeUnpublishedRecord(descriptor, kind, is_set), kind, out);
+}
+
+// No public identity exists until the complete construction succeeds. Unlike
+// live mutations, this private snapshot has no readers and needs no cloning.
+Status BuildUnpublished(AssociativeRecord &record, const void *keys,
+                        const void *values, std::size_t count,
+                        std::size_t key_stride, std::size_t value_stride) {
+  auto &snapshot = record.snapshot;
+  snapshot->entries.reserve(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto *key = keys ? static_cast<const std::byte *>(keys) + i * key_stride : nullptr;
+    const auto *value = values ? static_cast<const std::byte *>(values) + i * value_stride : nullptr;
+    std::uint64_t hash = 0;
+    Status status = ComputeHash(record, key, hash);
+    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+    std::size_t position = 0;
+    bool found = false;
+    // Deliberately compare every prior key: equal keys with incoherent hashes
+    // remain invalid even when their hashes would fall in separate buckets.
+    status = FindEntry(record, snapshot, key, hash, position, found);
+    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+    if (found) {
+      if (record.is_set) continue;
+      Payload replacement;
+      status = CopyPayload(replacement, value, ValueOps(record));
+      if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+      snapshot->entries[position].value = std::move(replacement);
+      continue;
+    }
+    Entry entry;
+    status = CopyPayload(entry.key, key, KeyOps(record));
+    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+    entry.hash = hash;
+    if (!record.is_set) {
+      status = CopyPayload(entry.value, value, ValueOps(record));
+      if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+    }
+    snapshot->entries.push_back(std::move(entry));
+  }
+  return OBJC3_GENERIC_COLLECTION_OK;
 }
 
 Status StoreIterator(void *owner, std::uint32_t owner_kind,
@@ -605,23 +640,13 @@ extern "C" Status objc3_generic_map_create(
       (values && count &&
        !IsAligned(values, static_cast<std::size_t>(descriptor->value_ops.payload_alignment))))
     return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT;
-  objc3_generic_map_t map = nullptr;
-  void *map_handle = nullptr;
-  status = CreateEmpty(*descriptor, kMapKind, false, &map_handle);
+  auto record = MakeUnpublishedRecord(*descriptor, kMapKind, false);
+  status = BuildUnpublished(*record, keys, values, static_cast<std::size_t>(count), key_stride, value_stride);
   if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
-  map = static_cast<objc3_generic_map_t>(map_handle);
-  PendingHandle cleanup{map, kMapKind, false};
-  for (std::size_t i = 0; i < static_cast<std::size_t>(count); ++i) {
-    const auto *key = keys ? static_cast<const std::byte *>(keys) + i * key_stride : nullptr;
-    const auto *value = values ? static_cast<const std::byte *>(values) + i * value_stride : nullptr;
-    int inserted = 0;
-    bool success = AssociativeStorage().With(map, kMapKind,
-        [&](AssociativeRecord &record) { status = Insert(record, key, value, &inserted); });
-    if (!success) status = Inspect(kMapKind, map);
-    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
-  }
-  *out = map;
-  cleanup.keep = true;
+  void *handle = nullptr;
+  status = StoreRecord(std::move(record), kMapKind, &handle);
+  if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+  *out = static_cast<objc3_generic_map_t>(handle);
   return OBJC3_GENERIC_COLLECTION_OK;
 } catch (const std::bad_alloc &) { return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY; }
   catch (...) { return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT; }
@@ -734,22 +759,13 @@ extern "C" Status objc3_generic_set_create(const objc3_generic_set_descriptor *d
       (values && count &&
        !IsAligned(values, static_cast<std::size_t>(descriptor->key_ops.payload_alignment))))
     return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT;
-  objc3_generic_set_t set = nullptr;
-  void *set_handle = nullptr;
-  status = CreateEmpty(*descriptor, kSetKind, true, &set_handle);
+  auto record = MakeUnpublishedRecord(*descriptor, kSetKind, true);
+  status = BuildUnpublished(*record, values, nullptr, static_cast<std::size_t>(count), stride, 0);
   if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
-  set = static_cast<objc3_generic_set_t>(set_handle);
-  PendingHandle cleanup{set, kSetKind, false};
-  for (std::size_t i = 0; i < static_cast<std::size_t>(count); ++i) {
-    const auto *value = values ? static_cast<const std::byte *>(values) + i * stride : nullptr;
-    int inserted = 0;
-    bool success = AssociativeStorage().With(set, kSetKind,
-        [&](AssociativeRecord &record) { status = Insert(record, value, nullptr, &inserted); });
-    if (!success) status = Inspect(kSetKind, set);
-    if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
-  }
-  *out = set;
-  cleanup.keep = true;
+  void *handle = nullptr;
+  status = StoreRecord(std::move(record), kSetKind, &handle);
+  if (status != OBJC3_GENERIC_COLLECTION_OK) return status;
+  *out = static_cast<objc3_generic_set_t>(handle);
   return OBJC3_GENERIC_COLLECTION_OK;
 } catch (const std::bad_alloc &) { return OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY; }
   catch (...) { return OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT; }

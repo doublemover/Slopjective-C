@@ -181,3 +181,57 @@ def test_actor_generation_oracle_detects_delayed_cleanup_mutant(tmp_path):
         assert result.returncode == (-signal.SIGABRT if failure else 0), result.stderr
         if failure:
             assert 'actor_object_lifetime_reuse' in result.stderr
+
+
+@pytest.mark.parametrize('owner', ['array', 'associative'])
+@pytest.mark.parametrize('mutant', ['missing-destroy', 'duplicate-destroy', 'failed-destination'])
+def test_collection_ownership_ledger_rejects_cleanup_mutants(tmp_path, owner, mutant):
+    """The real semantic oracle rejects cleanup bugs without sanitizer help."""
+    runtime = ROOT / 'native/objc3c/src/runtime'
+    includes = tmp_path / 'include'
+    includes.mkdir()
+    if owner == 'array':
+        source = runtime / 'stdlib/generic_collection_service.cpp'
+        original = source.read_text()
+        call = 'ops.destroy(static_cast<std::byte *>(data) + (i - 1) * stride);'
+        if mutant == 'missing-destroy':
+            changed = original.replace(call, '{ static bool skipped = false; if (!skipped) skipped = true; else ' + call + ' }', 1)
+        elif mutant == 'duplicate-destroy':
+            changed = original.replace(call, call + ' ' + call, 1)
+        else:
+            before = 'if (status != OBJC3_GENERIC_COLLECTION_OK) {\n      if (zero_source)'
+            assert before in original
+            changed = original.replace(before, 'if (status != OBJC3_GENERIC_COLLECTION_OK) {\n      ++candidate->initialized;\n      if (zero_source)', 1)
+        broken_source = tmp_path / 'generic_collection_service.cpp'
+        broken_source.write_text(changed)
+    else:
+        source = runtime / 'services/value_storage.h'
+        original = source.read_text()
+        call = 'if (initialized) ops_.destroy(data);'
+        if mutant == 'missing-destroy':
+            changed = original.replace(call, 'if (initialized) { static bool skipped = false; if (!skipped) skipped = true; else ops_.destroy(data); }', 1)
+        elif mutant == 'duplicate-destroy':
+            changed = original.replace(call, 'if (initialized) { ops_.destroy(data); ops_.destroy(data); }', 1)
+        else:
+            before = 'if (status != OBJC3_SERVICE_OK) return status;\n    candidate.initialized_ = true;'
+            assert before in original
+            changed = original.replace(before, 'candidate.initialized_ = true;\n    if (status != OBJC3_SERVICE_OK) return status;', 1)
+        header = includes / 'runtime/services/value_storage.h'
+        header.parent.mkdir(parents=True)
+        header.write_text(changed)
+    assert changed != original
+    for failure in (False, True):
+        binary = tmp_path / ('bad' if failure else 'good')
+        owners = [runtime / 'stdlib/generic_associative_service.cpp',
+                  broken_source if failure and owner == 'array' else runtime / 'stdlib/generic_collection_service.cpp']
+        command = [str(COMPILER), '--no-default-config', '-std=c++20', '-O2', '-UNDEBUG',
+                   *(['-I'+str(includes)] if failure else []),
+                   '-I'+str(ROOT / 'native/objc3c/src'),
+                   str(ROOT / 'native/objc3c/tests/generic_collection_ownership_test.cpp'),
+                   *map(str, owners), str(LIBRARY), '-Wl,--wrap=_Znwm',
+                   '-pthread', '-fuse-ld=lld', '-o', str(binary)]
+        subprocess.run(command, check=True, capture_output=True, text=True, timeout=120)
+        result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=30)
+        assert result.returncode == (-signal.SIGABRT if failure else 0), result.stderr
+        if failure:
+            assert 'owned_payload_ledger.h' in result.stderr
