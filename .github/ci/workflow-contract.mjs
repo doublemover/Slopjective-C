@@ -33,6 +33,14 @@ export function validateNativeGate(text) {
   ) {
     throw new Error("Native aggregate must validate exact-revision receipt contents");
   }
+  const execute = workflow.jobs.native.steps.find((step) =>
+    step.run?.includes("scripts.objc3c_assurance run"),
+  );
+  if (!execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')) {
+    throw new Error(
+      "Activated container execution must trust only its exact checked-out workspace",
+    );
+  }
   for (const id of ["plan", "native", "gate"]) {
     const job = workflow.jobs?.[id];
     if (!job || job["continue-on-error"])

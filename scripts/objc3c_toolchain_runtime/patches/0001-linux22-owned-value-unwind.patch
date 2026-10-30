@@ -310,7 +310,7 @@ index fbba14c03..66f2d8c5d 100644
  	{
  		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
 diff --git a/associate.m b/associate.m
-index 2b987f99d..31a0dd581 100644
+index 2b987f99d..3d5492fd2 100644
 --- a/associate.m
 +++ b/associate.m
 @@ -190,7 +190,7 @@ static void deallocHiddenClass(id obj, SEL _cmd);
@@ -328,7 +328,7 @@ index 2b987f99d..31a0dd581 100644
  {
 -	Class hiddenClass = allocateHiddenClass(obj->isa); 
 -	assert(!class_isMetaClass(obj->isa));
-+	Class hiddenClass = allocateHiddenClass(classForObject(obj)); 
++	Class hiddenClass = allocateHiddenClass(classForObject(obj));
 +	assert(!class_isMetaClass(classForObject(obj)));
  	static SEL cxx_destruct;
  	if (NULL == cxx_destruct)

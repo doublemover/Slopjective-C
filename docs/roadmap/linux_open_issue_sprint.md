@@ -184,8 +184,8 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**13 issues remain** in the queue below. Compiler implementation instrumentation
-is [underway](linux_compiler_instrumentation.md); the independent assurance and
+**12 issues remain** in the queue below. Compiler implementation instrumentation
+is [source-qualified](linux_compiler_instrumentation.md); the independent assurance and
 platform lanes remain open.
 
 ## Inherited borrowed storage
@@ -214,11 +214,9 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 ## Remaining issue queue
 
 | Issue | Remaining scope |
-| --- | --- |
-
+| ----- | --------------- |
 
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
-| [#8284](https://github.com/doublemover/Slopjective-C/issues/8284) | Add isolated compiler and complete runtime instrumentation profiles |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Checked executor lock pilot and shared warnings implemented; fork-matched analysis tool/TU coverage still open ([details](linux_checked_executor_locks.md)) |
 | [#8286](https://github.com/doublemover/Slopjective-C/issues/8286) | Verify real Objective-C 3 IR across optimizer/backend stages and retain reducible miscompile evidence |
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces |
@@ -250,20 +248,20 @@ iteration order. Selected pairs are reread and both digests are checked before
 loading their dependency closure. Direct-file imports apply the same selected
 input, graph and parser-work budgets.
 
-| Resource | Default limit |
-| --- | --- |
-| Each source or sidecar artifact | 32 MiB |
-| Directory entries scanned | 50,000 |
-| Artifact bytes read, including selected rereads | 512 MiB |
-| Candidate scan-path strings | 16 MiB |
-| Compact index strings | 16 MiB |
-| Unique indexed modules | 16,384 |
-| Decoded declarations, including repeated decoding | 250,000 |
-| Selected artifact bytes | 64 MiB |
-| Selected declarations / modules | 100,000 / 512 |
-| Selected dependency edges / longest path | 8,192 / 128 |
-| Parser input and retained virtual mapping bytes | 128 MiB |
-| Parser declaration work | 500,000 |
+| Resource                                          | Default limit |
+| ------------------------------------------------- | ------------- |
+| Each source or sidecar artifact                   | 32 MiB        |
+| Directory entries scanned                         | 50,000        |
+| Artifact bytes read, including selected rereads   | 512 MiB       |
+| Candidate scan-path strings                       | 16 MiB        |
+| Compact index strings                             | 16 MiB        |
+| Unique indexed modules                            | 16,384        |
+| Decoded declarations, including repeated decoding | 250,000       |
+| Selected artifact bytes                           | 64 MiB        |
+| Selected declarations / modules                   | 100,000 / 512 |
+| Selected dependency edges / longest path          | 8,192 / 128   |
+| Parser input and retained virtual mapping bytes   | 128 MiB       |
+| Parser declaration work                           | 500,000       |
 
 `InterfaceImportTarget::resource_limits` provides explicit policy overrides and
 small deterministic test limits. `O3IFC182` reports an aggregate resource limit;
@@ -278,3 +276,29 @@ internal ASTs. Parser accounting includes repeated dependency mappings/proofs,
 replayed declaration work and pinned runtime mappings. Mappings remain alive as
 long as the ASTs that borrow their strings. Duplicate direct-file requests still
 consume read-work and byte budgets before module coalescing.
+
+## Compiler-process instrumentation completion
+
+The isolated ASan/UBSan compiler profile passes **415 regressions**, **223 selected
+native unit tests** and all **37 frontend suites**. Three lit cases are unsupported.
+Graph evidence covers **3,439 instrumented objects**, five PCH inputs, four named
+assembly kernels and **97 exact-membership archives**. A deliberate ASan fault
+runs inside frontend AST processing; its corrected counterpart remains clean.
+
+Execution found and fixed a missing VFS during interface-admission diagnostics
+and a test fixture which released virtual-header strings before AST import.
+Repeated warning-map admission/recovery and retained mapping ownership defend
+those paths. Canonical archive membership handles duplicate object basenames,
+and module-dependency scans cannot substitute for real compilation edges.
+
+The checked executor pilot passes **four O0/O2 ASan/UBSan and TSan configurations**,
+each building all **17 service translation units** and loading the matching
+instrumented GNUstep dependency in the project executable. Fresh runtime source
+materialization now passes strict patch admission after correcting whitespace and
+regenerating its canonical blob metadata/checksum.
+
+The maintained Linux tooling selection passes **550 tests**, one Windows-only
+skip and 33 subtests locally; **46** cadence/workflow checks pass. All **2,427**
+tooling tests collect without errors after migrating stale owner imports and
+retiring tests for removed guards. This does not claim every historical test was
+executed. Native CI acceptance and the remaining twelve issue owners stay open.

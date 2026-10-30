@@ -136,3 +136,15 @@ def test_actual_loader_rejects_a_foreign_llvm_library(native_graph, tmp_path):
                 loaded_graph(binary, loader, [selected], run=run)
             with pytest.raises(ValueError, match='required instrumented libraries'):
                 loaded_graph(binary, loader, [selected], required=(selected,), run=run)
+
+
+def test_real_cxx20_module_scanning_does_not_duplicate_compiler_objects(native_graph):
+    source, build, compiler, nm, run, collect = native_graph
+    with (source / 'CMakeLists.txt').open('a') as stream:
+        stream.write('\nset_target_properties(control PROPERTIES CXX_STANDARD 20 CXX_SCAN_FOR_MODULES ON)\n')
+    run('configure-cxx20', ['cmake', '-S', source, '-B', build])
+    run('build-cxx20', ['cmake', '--build', build])
+    records = collect()
+    assert len(records) == 1
+    assert Path(records[0]['dependency_scan']['output']).is_file()
+    verify_symbols(records, nm, run=run)

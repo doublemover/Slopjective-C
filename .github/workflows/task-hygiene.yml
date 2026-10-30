@@ -35,8 +35,10 @@ jobs:
           tests/tooling/test_toolchain_host_tools.py
           tests/tooling/test_toolchain_build.py
           tests/tooling/test_compiler_instrumentation_profiles.py
+          tests/tooling/test_compiler_embedding_reuse.py
           tests/tooling/test_compiler_instrumentation_pipeline.py
           tests/tooling/test_compiler_archive_evidence.py
+          tests/tooling/test_compiler_scan_graph.py
           tests/tooling/test_objc3c_toolchain_prepare.py
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
@@ -47,6 +49,10 @@ jobs:
           tests/tooling/test_source_graph.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_current_onboarding.py
+          tests/tooling/test_tooling_source_syntax.py
+          tests/tooling/test_environment_tool_lookup_owner_split.py
+          tests/tooling/test_workflow_command_result_owner_split.py
+          tests/tooling/test_audit_objc3c_planning_publication.py
           tests/tooling/test_ownership_projection_qualification.py
           tests/tooling/test_public_surface_qualification.py tests/tooling/test_api_availability_qualification.py tests/tooling/test_module_spi_qualification.py
           tests/tooling/test_module_names_qualification.py

@@ -49,4 +49,6 @@ commands**, retaining the two explicit Objective-C++ language overrides. The
 existing service/collection tests exercise queue draining, callbacks, task/group
 lifetime and ownership. Full fork-matched clang-tidy implementation analysis,
 reviewed checker/suppression policy and dependency-complete TU accounting remain
-open under #8285. Compiler-profile validation and TSan are separate evidence.
+open under #8285. Separate compiler-profile validation now passes all 37 frontend
+suites. Dedicated runtime ASan/UBSan and TSan O0/O2 checks also pass, retaining
+actual project-executable loader graphs for their matching GNUstep dependencies.

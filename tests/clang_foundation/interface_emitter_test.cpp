@@ -762,15 +762,18 @@ void TestCAsyncPhysicalABIImportBoundaries() {
   // Frame ABI is a property of the callable type, not of the destination AST.
   // A C++ consumer simultaneously owns task-returning and frame-returning
   // signatures with the same logical result type.
-  auto build = [](bool cpp) {
+  // Tooling borrows mapped header bytes. Retain each mapping until after both
+  // ASTs and their importer are destroyed, including deferred line-table reads.
+  std::vector<std::unique_ptr<clang::tooling::FileContentMappings>> mapped_files;
+  auto build = [&](bool cpp) {
     std::vector<std::string> args = {"-x",
                                      cpp ? "objective-c++" : "objective-c",
                                      cpp ? "-std=c++20" : "-std=c17",
                                      "-fobjc-version=3",
                                      "-fobjc-runtime=gnustep-2.2",
                                      "--target=x86_64-unknown-linux-gnu"};
-    clang::tooling::FileContentMappings files;
-    AddRuntimeInterfaceFiles(files, args);
+    auto files = std::make_unique<clang::tooling::FileContentMappings>();
+    AddRuntimeInterfaceFiles(*files, args);
     const std::string source =
         std::string("#include <objc3c/runtime/objc3_runtime_services.h>\n") +
         (cpp ? "template<class T> struct TaskCarrier { void *context; }; "
@@ -780,10 +783,12 @@ void TestCAsyncPhysicalABIImportBoundaries() {
                "void inspect(void) { (void)task_fetch(1); (void)fetch(2); }"
              : "int fetch(int) __objc3_async; "
                "void inspect(void) { (void)fetch(1); }");
-    return clang::tooling::buildASTFromCodeWithArgs(
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source, args, cpp ? "async_import.mm" : "async_import.m", "clang-tool",
         std::make_shared<clang::PCHContainerOperations>(),
-        clang::tooling::getClangStripDependencyFileAdjuster(), files);
+        clang::tooling::getClangStripDependencyFileAdjuster(), *files);
+    mapped_files.push_back(std::move(files));
+    return ast;
   };
   auto function = [](clang::ASTContext &context, llvm::StringRef name) {
     for (auto *decl : context.getTranslationUnitDecl()->decls())

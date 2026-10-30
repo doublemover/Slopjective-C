@@ -352,6 +352,11 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       // Admission happens before the real frontend instance creates its AST.
       // Derive the same adjusted target from the exact consumer invocation.
       clang::CompilerInstance target_instance(invocation);
+      // Diagnostic warning mappings read through this VFS even before an AST
+      // exists. Match Tooling's compiler initialization order, including its
+      // overlay files and working directory, rather than bind a null VFS.
+      target_instance.setVirtualFileSystem(files->getVirtualFileSystemPtr());
+      target_instance.setFileManager(files);
       target_instance.createDiagnostics(diagnostics, false);
       if (!target_instance.createTarget()) {
         result_.failure = "Cannot derive the consumer primitive/target ABI";

@@ -23,6 +23,7 @@ jobs:
         shell: bash
         run: |
           source /opt/objc3c-host/activate.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           python -m scripts.objc3c_toolchain build-sdk --fetch > release.json.log
       - name: Upload shipped archives and qualification receipts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -34,6 +34,11 @@ for (const [name, before, after] of [
   ["privileged PR trigger", "  pull_request:", "  pull_request_target:"],
   ["missing dependency", "    needs: [plan, native]", "    needs: [plan]"],
   ["missing artifact normalized", "if-no-files-found: error", "if-no-files-found: ignore"],
+  [
+    "missing activated checkout trust",
+    'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
+    "echo missing-checkout-trust",
+  ],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
 ]) {
   test(`native workflow rejects ${name}`, () => {

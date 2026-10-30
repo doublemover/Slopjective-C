@@ -71,24 +71,48 @@ interceptors; they are not described as rebuilt with instrumentation.
 
 ## Current evidence
 
-The isolated planner and SDK prerequisite tests pass. Seven real native evidence
-controls accept valid instrumentation and reject disabled/recovering flags,
-missing or inconsistent compilation ownership, substituted ordinary objects and
-incorrect custom source records. An actual loader control rejects a foreign
-LLVM library even when its program returns the correct result. Thirteen isolated
-archive controls also pass, including an archive produced by the native builder;
-normal pytest execution is restored on the replacement instance. CMake rejects ordinary
-foundation headers for
-the instrumented embedding profile. Ordinary facade configuration and four
-custom-runtime/assertion CTests pass after the profile integration.
+The isolated foundation build, tests and stage complete in **2,105 seconds**.
+Actual unchanged build-target reuse takes **1.27 seconds**, without rerunning
+qualification or producing an SDK archive. The native profile passes **415
+compiler regressions**, **223 selected native unit tests** and all **37 frontend
+suites**. Three lit cases are unsupported; SourceTools/clang-tools-extra remain
+outside this profile's declared project inventory.
 
-The replacement instance completes the isolated foundation build, tests and stage
-in **2,105 seconds**, passing **415 compiler regressions** and **223 selected native
-unit tests**; three lit cases are unsupported. SourceTools/clang-tools-extra tests
-remain outside this profile's declared project inventory. Full embedding/frontend
-qualification is now running against that instrumented foundation. The original
-interrupted I/O attempt and the archive-basename admission failure remain retained.
-The latter motivated exact per-target Ninja membership controls, including a real
-archive with duplicate basenames and rejected unrelated-object substitution.
+The final graph verifies **3,439 instrumented objects**, five precompiled-header
+inputs, four approved assembly kernels and **97 archives**. Exact ordered Ninja
+inputs distinguish repeated object basenames and prevent substitution from an
+unrelated target. P1689 dependency scans retain their helper/output identities
+and cannot count as object compilation. Eight native graph/loader controls and
+additional synthetic archive/scan/reuse controls defend the evidence boundaries.
 
-No new SDK archive has been built for this work.
+A paired ASan control parses ObjC3 source and accesses memory inside its frontend
+AST consumer. The intentional overflow requires its symbolized source site,
+`HandleTranslationUnit` stack and exit 86; the corrected path must be clean.
+No emitted client executable can satisfy this compiler-process control.
+
+Execution caught a null VFS reference while deriving interface consumer ABI and
+a fixture which destroyed mapped header strings before importing source locations.
+The fixes initialize the admission compiler before diagnostic creation and retain
+mapping owners through AST destruction. Warning-map admission/recovery is a
+regression witness. Original failed receipts and compressed failing binaries/source
+snapshots remain retained. All subsequent frontend tests pass.
+
+Dedicated owned-runtime qualification additionally passes ASan/UBSan and TSan at
+O0/O2, with all seventeen canonical service TUs and matching GNUstep dependencies.
+Each project executable's loader graph confirms the selected native dependency.
+Fresh source patch materialization, strict detector controls and standalone lock
+contract CTests pass. This is separate from the compiler implementation profile.
+
+The final qualification evidence interval is approximately **470 seconds**, with
+**191 MB** of receipts/logs; frontend execution accounts for **294 seconds**. The
+instance-wide memory high-water charge is 16 GiB including file cache, not an
+isolated compiler RSS measurement.
+
+For incremental development, `--embedding-build` accepts an existing isolated
+embedding tree only when the foundation source/configuration and real bootstrap
+tool identities match. The optional ccache PATH difference is excluded from that
+ABI comparison; actual commands, object symbols/bytes, archive membership and all
+selected tests are verified again. Every invocation writes a fresh evidence tree.
+
+No ordinary SDK archive was rebuilt or promoted. Automated cadence and required
+check acceptance remain tracked by #8283.

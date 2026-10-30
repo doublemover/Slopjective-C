@@ -74,3 +74,38 @@ def test_detector_failure_prevents_project_compilation_and_replaces_pass(tmp_pat
         qualification.qualify(tmp_path, compiler, resources, output)
     report = json.loads(receipt.read_text())
     assert report['status'] == 'FAIL' and report['commands'] == []
+
+
+def test_wrong_loaded_native_dependency_prevents_runtime_execution(tmp_path, monkeypatch):
+    compiler, resources, output = (tmp_path / name for name in ('compiler', 'resources', 'output'))
+    compiler.mkdir(); resources.mkdir()
+    dependency = tmp_path / 'libobjc.so'; dependency.write_bytes(b'qualified dependency fixture')
+    archive = tmp_path / 'services.a'; archive.write_bytes(b'qualified archive fixture')
+    class Profiles:
+        def __init__(self, *args, **kwargs): pass
+        def get(self, *args, **kwargs):
+            return SimpleNamespace(archive=archive, objc_runtime=dependency)
+    class Gate:
+        environment = {}
+        loader = tmp_path / 'loader'
+        def __init__(self, *args, **kwargs): pass
+        def ensure_controls(self, optimization): pass
+    monkeypatch.setattr(qualification, 'RuntimeProfiles', Profiles)
+    monkeypatch.setattr(qualification, 'SanitizerQualification', Gate)
+    commands = []
+    def run(argv, **kwargs):
+        commands.append(argv)
+        assert '-Wl,--no-as-needed' in argv
+        Path(argv[-1]).write_bytes(b'compiled program fixture')
+        return SimpleNamespace(returncode=0)
+    def loaded(binary, loader, libraries, *, required, run):
+        assert loader == Gate.loader and libraries == [dependency]
+        assert required == (dependency.resolve(),)
+        raise ValueError('wrong loaded native runtime')
+    monkeypatch.setattr(qualification.subprocess, 'run', run)
+    monkeypatch.setattr(qualification, 'loaded_graph', loaded)
+    with pytest.raises(ValueError, match='wrong loaded native runtime'):
+        qualification.qualify(tmp_path, compiler, resources, output)
+    receipt = json.loads((output / 'qualification.json').read_text())
+    assert receipt['status'] == 'FAIL' and receipt['executions'] == []
+    assert len(commands) == 1 and not Path(commands[0][-1]).exists()

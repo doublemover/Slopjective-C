@@ -11,6 +11,7 @@ import tempfile
 from .binary_packages import digest, disjoint, write_json
 from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 from .runtime_instrumentation import RuntimeProfiles
+from .compiler_instrumentation import loaded_graph
 
 
 def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) -> dict:
@@ -21,7 +22,8 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
     receipt = output / 'qualification.json'
     receipt.unlink(missing_ok=True)
     fixture = repo / 'tests/clang_foundation/structured_runtime/worker.cpp'
-    inputs = [Path(__file__).resolve(), fixture, fixture.with_name('contract.c'),
+    inputs = [Path(__file__).resolve(), Path(loaded_graph.__code__.co_filename).resolve(),
+              fixture, fixture.with_name('contract.c'),
                         fixture.with_name('actor_scheduling.cpp')]
     inputs += sorted((repo / 'native/objc3c/src/runtime').rglob('*.h'))
     cases, commands = [], []
@@ -36,7 +38,9 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
         if result.returncode:
             raise ValueError('instrumented structured runtime failed: ' + label)
-        require_clean_diagnostic(log.read_text(errors="replace"))
+        diagnostic = log.read_text(errors="replace")
+        require_clean_diagnostic(diagnostic)
+        return diagnostic
 
     try:
         profiles = RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
@@ -49,7 +53,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                     policies[policy_key] = SanitizerQualification(compiler_root / 'bin/clang++',
                         resource_root, output / 'detector-controls' / sanitizer.replace(',', '-') / optimization,
                         sanitizer, libraries=(runtime_profile.archive, objc_runtime),
-                        additional_inputs=(Path(__file__),), base_environment=os.environ)
+                        additional_inputs=(Path(__file__), Path(loaded_graph.__code__.co_filename)), base_environment=os.environ)
                 policy = policies[policy_key]
                 policy.ensure_controls(optimization)
                 with tempfile.TemporaryDirectory(prefix='objc3-structured-sanitizers-') as temporary:
@@ -64,11 +68,14 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                         repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
                         '-I' + str(repo / 'native/objc3c/src'),
                         '-I' + str(repo / 'native/objc3c/src/runtime/public'),
-                        fixture, runtime_profile.archive, objc_runtime,
+                        fixture, runtime_profile.archive, '-Wl,--no-as-needed', objc_runtime, '-Wl,--as-needed',
                         '-Wl,-rpath,'+str(objc_runtime.parent), '-o', executable], env)
+                    loaded = loaded_graph(executable, policy.loader, [objc_runtime],
+                        required=(objc_runtime.resolve(strict=True),),
+                        run=lambda suffix, argv: run(label+'-'+suffix, argv, env))
                     run(label + '-execute', [executable], env)
                     cases.append({'sanitizer': sanitizer, 'optimization': optimization,
-                                  'executable_sha256': digest(executable)})
+                                  'executable_sha256': digest(executable), 'loaded_graph': loaded})
         report = {'schema': 'objc3c.structured-runtime-sanitizers.v1', 'status': 'PASS',
                   'compiler_root': str(compiler_root), 'compiler_sha256': digest(compiler_root / 'bin/clang'),
                   'sanitizer_resource_root': str(resource_root),

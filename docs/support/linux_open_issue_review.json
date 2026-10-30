@@ -80,7 +80,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8284",
       "category": "assurance",
       "body_sha256": "d67127ddd14056c554e84536fc39e380432f70ec5de7c69e0e2f71e55e35096b",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation": "docs/roadmap/linux_compiler_instrumentation.md"
     },
     {
       "number": 8285,
@@ -478,7 +479,7 @@
   ],
   "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb",
   "fixed_in_this_batch": [8280, 8281, 8293, 8294, 8297, 8298, 8305, 8322, 8323, 8324, 8325, 8326],
-  "remaining_implementation_or_host_items": 13,
+  "remaining_implementation_or_host_items": 12,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -560,7 +561,7 @@
   },
   "boundaries": [
     "No SDK/archive was rebuilt or promoted; accepted SDK 2.62 remains unchanged.",
-    "Sanitizer evidence covers the changed runtime owners and their declared dependencies; host compiler and complete runtime graph instrumentation remain tracked by #8284.",
+    "Compiler ASan/UBSan and canonical runtime ASan/UBSan/TSan profiles are source-qualified with the explicit boundaries in docs/roadmap/linux_compiler_instrumentation.md.",
     "The prior 2.94 factory package matrix and 2.91 complete runtime matrix were not rerun for this correction batch.",
     "Native macOS arm64 support still requires a suitable host; all unresolved issues remain in the inventory."
   ],
@@ -956,29 +957,77 @@
   },
   "compiler_instrumentation_progress": {
     "issue": 8284,
-    "status": "implementation-committed-native-build-blocked-on-instance-io",
+    "status": "PASS",
     "implementation_commits": ["75a3cf6ae", "93beb7c08"],
     "completed_checks": {
       "isolated_planner_and_build_tests": 20,
       "existing_preparation_tests": 17,
       "sdk_pipeline_and_reuse_tests": 30,
-      "native_object_and_loader_controls": 7,
+      "native_object_and_loader_controls": 8,
       "isolated_archive_controls": 13,
-      "ordinary_custom_runtime_ctests": 4
+      "ordinary_custom_runtime_ctests": 4,
+      "maintained_archive_tests": 12,
+      "dependency_scan_controls": 6,
+      "embedding_reuse_controls": 9
     },
     "boundaries": [
-      "Full instrumented foundation/embedding execution qualification remains open.",
-      "Normal archive pytest startup is blocked by instance I/O; thirteen isolated canonical-function controls passed, including a real native archive.",
-      "The borrowed correction passes 416 compiler regressions, 240 native units and all 37 frontend suites.",
-      "Accepted SDK 2.62 is unchanged."
+      "The compiler profile selects Clang/LLVM/lld and the native facade, scanner, embedding and all frontend CTests.",
+      "clangd/SourceTools are outside this first profile. Function/vptr, pinned GNU C++ header checks and four assembly kernels retain reviewed exclusions.",
+      "Compiler TSan has no admitted concurrent embedding contract; MSan has no complete instrumented C++/GNUstep closure.",
+      "The accepted ordinary SDK 2.62 and its archive are unchanged. Native CI acceptance remains under #8283."
+    ],
+    "fixed_issues": [8284],
+    "qualification": {
+      "path": "out/compiler-instrumentation/recovered-20261030-v6/qualification.json",
+      "sha256": "c1bb819573bf6836251bb2dc3401cd5fc9399d6af1d288d38eb334a5f397ca70",
+      "status": "PASS"
+    },
+    "owned_runtime_qualification": {
+      "path": "out/checked-executor-runtime-sanitizers-v3/qualification.json",
+      "sha256": "7931f7236b98848d6f3cf90dd7ce15a1212f3c2ff710efd05efc686937d5b023",
+      "status": "PASS"
+    },
+    "counts": {
+      "compiler_regressions": 415,
+      "compiler_unsupported": 3,
+      "selected_native_units": 223,
+      "frontend_suites": 37,
+      "instrumented_objects": 3439,
+      "precompiled_headers": 5,
+      "assembly_kernels": 4,
+      "foundation_archives": 94,
+      "embedding_archives": 3,
+      "runtime_profiles": 4,
+      "service_tus_per_profile": 17
+    },
+    "costs": {
+      "cold_foundation_seconds": 2105.215832,
+      "warm_foundation_build_seconds": 1.265818,
+      "qualification_evidence_interval_seconds": 469.531,
+      "qualification_interval_boundary": "Evidence-directory creation to final receipt; excludes initial source admission.",
+      "frontend_ctest_seconds": 293.825,
+      "evidence_bytes": 191220482,
+      "instance_peak_memory_bytes": 17179869184,
+      "memory_boundary": "Instance-wide charge including file cache; not isolated compiler RSS."
+    },
+    "new_controls": [
+      "ASan fault and corrected path in an ObjC3 frontend AST consumer, without emitted client execution",
+      "P1689 dependency scans separated from actual compilation edges, with helper/output identities",
+      "Exact ordered Ninja archive inputs disambiguate repeated basenames and reject unrelated/missing members",
+      "Matching embedding trees incrementally rebuild only after profile/configuration/bootstrap admission"
+    ],
+    "correctness_fixes": [
+      "Initialize the interface-admission compiler VFS/file manager before diagnostics; warning-map recovery regression",
+      "Keep mapped header bytes alive through both test ASTs and deferred source-location import",
+      "Normalize the owned GNUstep patch, regenerate canonical blob metadata and locked checksum; fresh source materialization passes"
     ]
   },
   "native_ci_implementation": {
     "status": "implementation-prepared-acceptance-pending",
-    "tooling_tests": 520,
-    "tooling_skips": 2,
+    "tooling_tests": 550,
+    "tooling_skips": 1,
     "tooling_subtests": 33,
-    "workflow_policy_tests": 45,
+    "workflow_policy_tests": 46,
     "native_boundary_controls": "Real C compile/runtime failure, missing binary, unexpected CTest skip, empty selection and dynamic test discovery; pytest and revision/artifact fault controls.",
     "remaining": [
       "Live exact-revision native CI execution",
@@ -986,7 +1035,9 @@
       "Administrator-confirmed required check settings"
     ],
     "sdk_archive_rebuilt": false,
-    "clean_host_bootstrap": "Pinned private libsodium for minisign; actual signed ccache archive verification and loader-path witness passed."
+    "clean_host_bootstrap": "Pinned private libsodium for minisign; actual signed ccache archive verification and loader-path witness passed.",
+    "tooling_collection_modules": "2427 tests collect without errors; the complete historical suite was not executed.",
+    "live_ci": "Clean bootstrap passed; scoped Git ownership repair awaits a fresh exact-revision native run."
   },
   "checked_executor_lock_pilot": {
     "status": "PASS",
@@ -1000,6 +1051,12 @@
       "unannotated wait predicate",
       "real implementation guard removal"
     ],
-    "remaining": "Fork-matched clang-tidy tool/selected-TU/checker and suppression baseline; #8285 remains open."
+    "remaining": "Fork-matched clang-tidy tool/selected-TU/checker and suppression baseline; #8285 remains open.",
+    "runtime_sanitizer_qualification": {
+      "path": "out/checked-executor-runtime-sanitizers-v3/qualification.json",
+      "sha256": "7931f7236b98848d6f3cf90dd7ce15a1212f3c2ff710efd05efc686937d5b023",
+      "status": "PASS"
+    },
+    "actual_native_dependency_loading": "Verified in each ASan/UBSan and TSan O0/O2 project executable, not only detector controls."
   }
 }

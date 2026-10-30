@@ -14,7 +14,7 @@ import time
 from .binary_packages import digest, write_json
 from .core import build_plans
 from .frontend_tests import qualify as frontend_tests
-from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic, validate_detection
 
 PROFILE = 'compiler-asan-ubsan'
 # Assembly has no C/C++ sanitizer instrumentation; these exact upstream kernels
@@ -77,11 +77,28 @@ def graph_records(build: Path, source: Path, targets: list[str], ninja: Path, en
     """
     text = run('graph-commands', [ninja, '-C', build, '-t', 'commands', *targets])
     graph = {}
+    scans = {}
     for line in text.splitlines():
         argv = shlex.split(line)
         if '-c' not in argv or '-o' not in argv:
             continue
         output = (build / argv[argv.index('-o') + 1]).resolve()
+        if Path(argv[0]).name == 'clang-scan-deps':
+            # P1689 scans contain a nested compiler -c/-o command but produce
+            # dependency JSON, not the named .o. Count only its actual compiler
+            # edge below; bind the bootstrap helper and scan output separately.
+            if '-format=p1689' not in argv or '--' not in argv or '-MT' not in argv or output in scans:
+                raise ValueError('unrecognized or ambiguous compiler dependency scan')
+            scanner = Path(argv[0]).resolve(strict=True)
+            dependency = (build / argv[argv.index('-MT')+1]).resolve(strict=True)
+            if not dependency.is_relative_to(build) or dependency.suffix != '.ddi':
+                raise ValueError('compiler dependency scan escaped its owned build output')
+            rules = json.loads(dependency.read_text()).get('rules', [])
+            if len(rules) != 1 or (build / rules[0]['primary-output']).resolve() != output:
+                raise ValueError('compiler dependency scan describes a different object')
+            scans[output] = {'tool': str(scanner), 'tool_sha256': digest(scanner),
+                             'output': str(dependency), 'sha256': digest(dependency), 'argv': argv}
+            continue
         if output in graph:
             raise ValueError('ambiguous compiler graph output')
         graph[output] = argv
@@ -117,6 +134,10 @@ def graph_records(build: Path, source: Path, targets: list[str], ninja: Path, en
                                              build, source, foundation=False)
     if set(records) != set(graph):
         raise ValueError('compiler graph is missing compilation records')
+    if set(scans) - set(records):
+        raise ValueError('dependency scanning cannot substitute for a compiler object edge')
+    for output, scan in scans.items():
+        records[output]['dependency_scan'] = scan
     return list(records.values())
 
 
@@ -299,7 +320,7 @@ def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run)
             pch.unlink()
 
 
-def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
+def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = None) -> dict:
     if jobs < 1:
         raise ValueError('compiler qualification requires positive build parallelism')
     repo = repo.resolve(strict=True)
@@ -320,6 +341,24 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             any(phase['exit_code'] for phase in completed['phases'])):
         raise ValueError('compiler instrumentation requires a current complete foundation build/test/stage')
     bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    facade = output / 'facade'
+    if embedding_build is not None:
+        facade = embedding_build.resolve(strict=True)
+        if (not facade.is_relative_to(repo / 'out') or any(
+                facade.is_relative_to(path) or path.is_relative_to(facade)
+                for path in (build, stage, source, output))):
+            raise ValueError('reused embedding build must be a disjoint owned development output')
+        previous = json.loads((facade / 'compiler-instrumentation-plan.json').read_text())
+        for key in ('source_build_id', 'build_config_digest'):
+            if previous[key] != plan[key]:
+                raise ValueError('reused embedding foundation/profile/bootstrap differs: '+key)
+        # The strict CMake subprocess environment intentionally omits a caller's
+        # optional ccache launcher from PATH. It is not a compiler/ABI identity;
+        # all real tools and resources still have to match, and the rebuilt
+        # commands, object symbols/bytes and archive graph are checked below.
+        if ({**previous['host_environment'], 'ccache_path': None} !=
+                {**plan['host_environment'], 'ccache_path': None}):
+            raise ValueError('reused embedding foundation/profile/bootstrap differs: host_environment')
     libraries = [stage / 'lib/libclang-cpp.so', stage / 'lib/libLLVM.so']
     policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
         output / 'detectors', 'address,undefined', libraries=libraries,
@@ -354,9 +393,10 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
                       'owner': 'LLVM upstream BLAKE3 kernels',
                       'reason': 'Four named assembly kernels have no C/C++ sanitizer instrumentation.',
                       'revalidate': 'Every source/toolchain upgrade; #8284'}},
+              'embedding_build': str(facade), 'embedding_build_reused': embedding_build is not None,
               'commands': [], 'foundation_objects': [], 'embedding_objects': [], 'loaded_graphs': {}}
 
-    def run(name, command, *, expected=0):
+    def run(name, command, *, expected=0, detector_source=None):
         log = output / (name+'.log')
         started = time.monotonic()
         argv = list(map(str, command))
@@ -373,7 +413,10 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         diagnostic = log.read_text(errors='replace')
         if code != expected:
             raise ValueError('compiler instrumentation command failed: '+name)
-        require_clean_diagnostic(diagnostic)
+        if detector_source is None:
+            require_clean_diagnostic(diagnostic)
+        else:
+            validate_detection('asan', detector_source, code, diagnostic, bad=True)
         return diagnostic
 
     try:
@@ -394,19 +437,29 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         report['foundation_archives'] = verify_owned_archives(archives, report['foundation_objects'],
             owners=archive_owners(build, archives, ninja,
                 run=lambda name, cmd: run('foundation-'+name, cmd)))
-        facade = output / 'facade'
         run('embedding-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
             '-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
             '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE='+PROFILE])
-        embedding_tools = ['objc3c', 'objc3c_frontend_v2', 'clang-scan-deps']
+        embedding_tools = ['objc3c', 'objc3c_frontend_v2', 'clang-scan-deps', 'objc3_compiler_process_control']
         run('embedding-tools-build', ['cmake', '--build', facade, '--target', *embedding_tools,
                                      '--parallel', str(jobs)])
-        for name in ('objc3c', 'clang-scan-deps'):
+        for name in ('objc3c', 'clang-scan-deps', 'objc3_compiler_process_control'):
             report['loaded_graphs'][name] = loaded_graph(facade / 'src/clang_foundation' / name,
                 policy.loader, libraries, required=(llvm_library,),
                 run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
+        control = facade / 'src/clang_foundation/objc3_compiler_process_control'
+        control_source = repo / 'tests/clang_foundation/compiler_instrumentation_process.cpp'
+        good = run('compiler-process-good', [control, 'good'])
+        bad = run('compiler-process-bad', [control, 'bad'], expected=86, detector_source=control_source)
+        if ('objc3:parsed-ast-detector' not in good or 'objc3:parsed-ast-detector' not in bad or
+                'HandleTranslationUnit' not in bad):
+            raise ValueError('compiler memory control did not execute inside frontend AST processing')
+        report['compiler_process_control'] = {'source': str(control_source),
+            'source_sha256': digest(control_source), 'binary_sha256': digest(control),
+            'status': 'PASS', 'clean_exit': 0, 'detection_exit': 86,
+            'class': 'ASan heap-buffer-overflow in frontend AST consumer; no emitted client executable'}
         metadata = json.loads((facade / 'frontend-test-targets.json').read_text())
         binaries = {row['name']: Path(row['executable']) for row in metadata['tests']}
         def run_frontend(name, command):
@@ -431,6 +484,9 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             if (digest(Path(record['source'])) != record['source_sha256'] or
                     digest(Path(record['object'])) != record['sha256']):
                 raise ValueError('compiler graph changed during implementation qualification')
+            if scan := record.get('dependency_scan'):
+                if digest(Path(scan['tool'])) != scan['tool_sha256'] or digest(Path(scan['output'])) != scan['sha256']:
+                    raise ValueError('compiler dependency scanner or result changed during qualification')
         for archive in report['foundation_archives'] + report['embedding_archives']:
             if digest(Path(archive['path'])) != archive['sha256']:
                 raise ValueError('staged compiler archive changed during qualification')
@@ -473,10 +529,12 @@ def main(argv=None):
     parser.add_argument('--repo', type=Path, default=Path.cwd())
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--jobs', type=int, default=2)
+    parser.add_argument('--embedding-build', type=Path,
+                        help='incrementally rebuild a matching isolated compiler-profile embedding tree')
     args = parser.parse_args(argv)
     if args.jobs < 1:
         parser.error('--jobs must be positive')
-    qualify(args.repo, args.output, jobs=args.jobs)
+    qualify(args.repo, args.output, jobs=args.jobs, embedding_build=args.embedding_build)
     return 0
 
 

@@ -79,6 +79,17 @@ target_include_directories(objc3c SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c PRIVATE objc3c_clang_foundation)
 
+# The compiler-profile qualifier executes paired expected-detection/clean
+# outcomes while parsing source through this in-process frontend consumer.
+if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+  add_executable(objc3_compiler_process_control EXCLUDE_FROM_ALL
+    "${_objc3_repo}/tests/clang_foundation/compiler_instrumentation_process.cpp")
+  target_include_directories(objc3_compiler_process_control SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_compiler_process_control PRIVATE
+    objc3c_build_defaults clangTooling clangFrontend ${_objc3_native_codegen})
+endif()
+
 # CMake's C++20 module scanning must use this SDK, including on fresh hosts.
 # Build the upstream tool against the same qualified Clang/LLVM libraries.
 set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")

@@ -75,3 +75,21 @@ install_ccache
     assert trace.exists() != bad_signature
     if not bad_signature:
         assert not (tmp_path / 'scratch/libsodium.deb').exists()
+
+
+def test_ephemeral_git_trust_is_limited_to_the_checked_out_workspace(tmp_path):
+    repos = [tmp_path / name for name in ('checkout', 'unrelated')]
+    environment = {**os.environ, 'HOME': str(tmp_path / 'home'),
+                   'XDG_CONFIG_HOME': str(tmp_path / 'activated-config'),
+                   'GIT_CONFIG_GLOBAL': str(tmp_path / 'git-global-config'),
+                   'GIT_CONFIG_NOSYSTEM': '1', 'GIT_TEST_ASSUME_DIFFERENT_OWNER': '1'}
+    for repo in repos:
+        subprocess.run(['git','init','-q',str(repo)], env=environment, check=True)
+    def status(repo):
+        return subprocess.run(['git','-C',str(repo),'status','--short'], env=environment,
+                              capture_output=True,text=True)
+    assert status(repos[0]).returncode == 128
+    subprocess.run(['git','config','--global','--add','safe.directory',str(repos[0])],
+                   env=environment,check=True)
+    assert status(repos[0]).returncode == 0
+    assert status(repos[1]).returncode == 128

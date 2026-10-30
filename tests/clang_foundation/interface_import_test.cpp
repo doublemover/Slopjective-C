@@ -58,6 +58,37 @@ bool HasImported(const CompileResult &result, const std::string &name) {
   return false;
 }
 
+void TestAdmissionDiagnosticsUseInvocationFileSystem() {
+  const auto root = fs::temp_directory_path() / "objc3-admission-diagnostic-vfs";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto interface_path = root / "provider.objc3i";
+  auto provider = EmitModule(root / "provider.m", interface_path, "diagnostics.VFS",
+      "typedef struct DiagnosticValue { int value; } DiagnosticValue;");
+  assert(provider.success && provider.interface_artifact);
+  const auto mappings = root / "warning-mappings.txt";
+  { std::ofstream stream(mappings); stream << "[unused-variable]\nsrc:*\n"; }
+  auto consumer = ModuleRequest(root / "consumer.m", "",
+      "int use(DiagnosticValue value) { int unused_local; return value.value; }");
+  consumer.emit_semantic_interface = false;
+  consumer.imported_interfaces = {ImportOf(interface_path, provider.interface_artifact->identity)};
+  consumer.arguments.push_back("-Wunused-variable");
+  // Reading this file during target admission used to dereference a null VFS,
+  // before the real frontend instance was constructed. Repeat after a rejected
+  // consumer to defend session and diagnostic-client ownership during recovery.
+  consumer.arguments.push_back("--warning-suppression-mappings=" + mappings.string());
+  for (int attempt = 0; attempt != 2; ++attempt) {
+    auto accepted = Compile(consumer);
+    assert(accepted.success);
+    for (const auto &diagnostic : accepted.diagnostics)
+      assert(diagnostic.message.find("unused variable") == std::string::npos);
+    auto rejected = consumer;
+    rejected.source_text = "int broken(DiagnosticValue value) { return missing_identifier; }";
+    assert(!Compile(rejected).success);
+  }
+  fs::remove_all(root);
+}
+
 void TestPreparedImportBudgets() {
   const auto root = fs::temp_directory_path() / "objc3-prepared-import-budgets";
   fs::remove_all(root);
@@ -749,6 +780,7 @@ void TestCompilerVarargsMembersAreReused() {
 } // namespace
 
 int main() {
+  TestAdmissionDiagnosticsUseInvocationFileSystem();
   TestPreparedImportBudgets();
   TestPrimitiveABIProfilesRejectMismatchedConsumers();
   TestThreeModuleSemanticLookupAndIdentity();
