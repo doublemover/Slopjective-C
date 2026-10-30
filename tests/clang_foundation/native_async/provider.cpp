@@ -45,6 +45,7 @@ int native_parent(std::shared_ptr<async_state> state, int value) __objc3_async {
   return result + 1;
 }
 
+#ifndef OBJC3_IR_ASSURANCE_BOUNDED
 int native_chain(unsigned depth) __objc3_async {
   if (!depth)
     return 0;
@@ -1304,3 +1305,4 @@ bool native_actor_object_association() {
   return true;
 }
 #endif
+#endif // !OBJC3_IR_ASSURANCE_BOUNDED

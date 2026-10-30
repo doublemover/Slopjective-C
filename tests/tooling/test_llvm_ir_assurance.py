@@ -241,7 +241,7 @@ def test_thinlto_requires_real_per_module_postlink_optimization(tmp_path):
         thinlto_modules(tmp_path, [source])
 
 
-@pytest.mark.parametrize('change', ('runner-only', 'source', 'bootstrap', 'flags', 'tablegen'))
+@pytest.mark.parametrize('change', ('runner-only', 'link-only', 'source', 'bootstrap', 'flags', 'tablegen'))
 def test_debugger_reuse_cannot_cross_a_compilation_boundary(tmp_path, change):
     from scripts.objc3c_toolchain.llvm_debugger import adopt
     old = {'identity': 'old-receipt', 'build': str(tmp_path / 'old'),
@@ -252,7 +252,10 @@ def test_debugger_reuse_cannot_cross_a_compilation_boundary(tmp_path, change):
     new.update(identity='new-receipt', build=str(tmp_path / 'new'))
     new['configure'][2] = new['build']
     new['binding']['owner_sha256'] = 'new-owner'
-    if change == 'source':
+    if change == 'link-only':
+        old['configure'].append('-DCMAKE_EXE_LINKER_FLAGS=-old')
+        new['configure'].append('-DCMAKE_EXE_LINKER_FLAGS=-shared-libasan')
+    elif change == 'source':
         new['binding']['foundation_id'] = 'fork-2'
     elif change == 'bootstrap':
         new['binding']['bootstrap'] = 'bootstrap-2'
@@ -260,9 +263,12 @@ def test_debugger_reuse_cannot_cross_a_compilation_boundary(tmp_path, change):
         new['configure'][-1] = '-DLLVM_USE_SANITIZER='
     elif change == 'tablegen':
         new['tablegen_sha256'] = 'tablegen-2'
-    if change == 'runner-only':
+    if change in ('runner-only', 'link-only'):
         reused = adopt(new, tmp_path / 'old', old)
-        assert reused['configure'] == old['configure']
+        if change == 'runner-only':
+            assert reused['configure'] == old['configure']
+        else:
+            assert reused['configure'][-1] == '-DCMAKE_EXE_LINKER_FLAGS=-shared-libasan'
         assert reused['identity'] == new['identity']
         assert reused['reused_build_identity'] == old['identity']
     else:

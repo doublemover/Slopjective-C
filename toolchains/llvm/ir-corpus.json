@@ -43,11 +43,12 @@
     },
     {
       "name": "native-async", "families": ["async", "cleanup", "calls"],
-      "directory": "native_async", "sources": ["provider.cpp", "client.cpp"],
+      "directory": "native_async", "sources": ["provider.cpp", "ir_client.cpp"],
+      "definitions": ["OBJC3_IR_ASSURANCE_BOUNDED"],
       "language": "objective-c++", "standard": "c++20", "ownership": "arc",
       "transport": "source", "optimizations": ["O0", "O2"], "thinlto": true,
       "optimizer_timeout_seconds": 900,
-      "oracle": "native task assertions: suspend/resume/destroy/cancel, defer, C++ values, owned results and native exceptions"
+      "oracle": "Original native_leaf/native_parent: lazy frame abandonment, suspend/resume/destroy/cancel, exact defer/guard counts, live C++ string/Block and exception propagation"
     },
     {
       "name": "keypaths-pch", "families": ["keypaths", "calls"],

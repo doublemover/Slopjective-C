@@ -213,6 +213,7 @@ def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
                     '-I'+str(work / 'include'), '-I'+str(headers), '-I'+str(sources)]
                 if '++' in case['language']:
                     flags.append('-fcoro-aligned-allocation')
+                flags += ['-D'+definition for definition in case.get('definitions', [])]
                 extra = []
                 if case['transport'] == 'pch':
                     pch = work / 'fixture.pch'

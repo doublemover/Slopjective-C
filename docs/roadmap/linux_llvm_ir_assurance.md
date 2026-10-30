@@ -37,8 +37,11 @@ For each translation unit the runner retains:
 All-optnone O2/size modules fail admission. Canonical instruction-body comparison
 must show real O2 transformation; metadata renumbering is ignored. Expected and
 executed cases, translation units, routes and named stages are reconciled.
-Timeouts retain an incomplete failure report. The large native async witness has
-a separate 900-second optimizer cap; the other command cap defaults to 180 seconds.
+Timeouts retain an incomplete failure report. Repeated whole-module verification
+made the 2,034-function async provider exceed its 900-second O2 cap, so this lane
+selects the original `native_leaf` and `native_parent` implementations with a
+focused client and exact runtime oracle. The broad async witness remains in the
+ordinary source/runtime qualification. Other commands default to 180 seconds.
 
 ## Fork and pipeline identity
 
@@ -131,9 +134,17 @@ The synthetic controls are not presented as frontend-generated semantic proof.
 
 ## Current limits
 
-The source matrix is under qualification. The independent control campaign has
-passed; final corpus results belong to its machine-readable execution receipt.
-The accepted SDK archive remains unchanged.
+The complete bounded source/PCH/interface matrix passed: 17 configurations,
+29 translation units, 37 runtime executions and 603 recorded commands. The
+independent control campaign and real reduction also passed. Final results belong
+to their machine-readable receipts; the accepted SDK archive remains unchanged.
+
+The isolated ASan/UBSan LLDB consumer also passed after matching the foundation's
+TableGen, Debuginfod and HTTP development archives. Its receipt verifies 921 LLDB
+objects, 119 archives, both debugger executables, exact LLVM/Clang/shared-ASan
+loader graphs, and paired clean/detecting ASan and UBSan controls. Link-only reuse
+may retain compiled objects, while source, bootstrap, compile-option and TableGen
+changes are rejected.
 
 The [expensive-check preset](../../toolchains/llvm/expensive-checks.json) has a
 separate source/configuration/build/stage identity and never substitutes for an
