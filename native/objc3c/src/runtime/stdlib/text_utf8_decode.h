@@ -1,8 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
+#include <new>
 
 namespace objc3c::runtime::text_utf8 {
+#ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+inline thread_local uint64_t decode_calls = 0, decoded_input_bytes = 0;
+#endif
 
 inline bool IsContinuation(unsigned char byte) {
   return byte >= 0x80 && byte <= 0xBF;
@@ -13,8 +18,20 @@ inline bool TryDecodeUtf8Scalars(const unsigned char *bytes,
                           int byte_count,
                           int &scalar_count,
                           std::vector<int> *scalars,
-                          int *malformed_offset = nullptr) {
+                          int *malformed_offset = nullptr,
+                          std::vector<std::uint32_t> *offsets = nullptr) {
+#ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+  ++decode_calls;
+  if (byte_count > 0) decoded_input_bytes += static_cast<uint64_t>(byte_count);
+#endif
   scalar_count = 0;
+  bool offset_allocation_failed = false;
+  if (offsets) offsets->clear();
+  auto append_offset = [&](std::uint32_t offset) {
+    if (!offsets || offset_allocation_failed) return;
+    try { offsets->push_back(offset); }
+    catch (const std::bad_alloc &) { offset_allocation_failed = true; }
+  };
   if (malformed_offset != nullptr) {
     *malformed_offset = -1;
   }
@@ -124,12 +141,17 @@ inline bool TryDecodeUtf8Scalars(const unsigned char *bytes,
       }
       return false;
     }
+    append_offset(static_cast<std::uint32_t>(index));
     index += width;
     ++scalar_count;
     if (scalars != nullptr) {
       scalars->push_back(scalar);
     }
   }
+  append_offset(static_cast<std::uint32_t>(byte_count));
+  // Keep malformed-input precedence even if collecting boundaries ran out of
+  // memory earlier in the same pass. Valid input reports the allocation error.
+  if (offset_allocation_failed) throw std::bad_alloc();
   return true;
 }
 

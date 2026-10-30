@@ -78,7 +78,7 @@ struct AllocationHeader { void *base; };
 
 struct TaskReleaseGuard {
   objc3_task_t *task;
-  ~TaskReleaseGuard() { objc3_task_internal_release(task); }
+  ~TaskReleaseGuard() { if (task) objc3_task_internal_release(task); }
 };
 
 struct ResumeDispatch {
@@ -113,6 +113,9 @@ void run_dispatch(void *context) {
   objc3_service_run_task_resume(dispatch->task);
 }
 
+// Consumes one already-retained task lease from the notifying operation.
+void wake_awaiting_task(objc3_task_t *task, bool force_cancel = false) noexcept;
+
 void destroy_dispatch(void *context) {
   std::unique_ptr<ResumeDispatch> dispatch(
       static_cast<ResumeDispatch *>(context));
@@ -123,7 +126,8 @@ void destroy_dispatch(void *context) {
     }
     // Actor cancellation discards queued jobs. Such a continuation must not
     // leave a suspended task and its native frame unreachable.
-    cancel_task(dispatch->task);
+    wake_awaiting_task(dispatch->task, true);
+    return; // The trampoline now owns the discarded dispatch's task lease.
   }
   objc3_task_internal_release(dispatch->task);
 }
@@ -176,11 +180,44 @@ void release_rejected_dispatch(ResumeDispatch *dispatch) {
   objc3_task_internal_release(task);
 }
 
-void wake_awaiting_task(objc3_task_t *task) noexcept {
-  const auto status = objc3_task_schedule_resume(task);
-  if (status == OBJC3_SERVICE_OK || status == OBJC3_SERVICE_ALREADY_COMPLETED)
+void wake_awaiting_task(objc3_task_t *task, bool force_cancel) noexcept {
+  struct WakeQueue {
+    objc3_task_t *head{nullptr};
+    objc3_task_t *tail{nullptr};
+    bool draining{false};
+  };
+  static thread_local WakeQueue queue;
+  // Transfer the caller's lease instead of trying to retain again during
+  // queue pressure, OOM or reference-count saturation.
+  if (force_cancel) task->wake_cancel.store(true, std::memory_order_release);
+  if (task->wake_pending.exchange(true, std::memory_order_acq_rel)) {
+    objc3_task_internal_release(task);
     return;
-  cancel_task(task);
+  }
+  task->wake_next = nullptr;
+  if (queue.tail) queue.tail->wake_next = task;
+  else queue.head = task;
+  queue.tail = task;
+  if (queue.draining) return;
+  queue.draining = true;
+  while (queue.head) {
+    auto *current = queue.head;
+    queue.head = current->wake_next;
+    if (!queue.head) queue.tail = nullptr;
+    current->wake_next = nullptr;
+    current->wake_pending.store(false, std::memory_order_release);
+    if (current->wake_cancel.exchange(false, std::memory_order_acq_rel)) {
+      cancel_task(current);
+    } else {
+      const auto status = objc3_task_schedule_resume(current);
+      if (status != OBJC3_SERVICE_OK && status != OBJC3_SERVICE_ALREADY_COMPLETED)
+        cancel_task(current);
+    }
+    // Completion callbacks may append more failed wakes. Drain those after
+    // this completion/frame cleanup returns, without allocating or recursing.
+    objc3_task_internal_release(current);
+  }
+  queue.draining = false;
 }
 
 void dependency_completed(void *context, const objc3_completion *) {
@@ -776,7 +813,7 @@ void wake_cancelled_tree(const CancellationTarget &root) {
       }
       // No token or group lock spans dispatch, which may synchronously invoke
       // completion or frame cleanup if admission fails.
-      if (wake) wake_awaiting_task(task);
+      if (wake) wake_awaiting_task(std::exchange(guard.task, nullptr));
     }
   }
 }
@@ -917,7 +954,7 @@ extern "C" objc3_service_status objc3_task_complete(
       task->completion_claimed = false;
       resume = std::exchange(task->resume_after_completion_claim, false);
     }
-    if (resume) wake_awaiting_task(task);
+    if (resume) wake_awaiting_task(std::exchange(task_guard.task, nullptr));
     return copy_status;
   }
 
@@ -1115,8 +1152,7 @@ void objc3_task_dispatch_await(ObjC3TaskAwaitClaim claim) {
   if (!claim.parent) return;
   TaskReleaseGuard guard{claim.parent};
   if (claim.wake) {
-    if (claim.cancel_after_cleanup) cancel_task(claim.parent);
-    else wake_awaiting_task(claim.parent);
+    wake_awaiting_task(std::exchange(guard.task, nullptr), claim.cancel_after_cleanup);
   }
 }
 

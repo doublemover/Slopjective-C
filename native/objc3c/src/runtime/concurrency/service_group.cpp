@@ -57,6 +57,8 @@ struct TaskGroup final {
   };
 
   std::atomic<uint32_t> references{1};
+  unsigned depth{1};
+  TaskGroup *reclaim_next{nullptr};
   std::mutex lifetime_mutex;
   mutable std::mutex mutex;
   std::shared_ptr<FailurePublicationState> failure_publication;
@@ -602,12 +604,31 @@ void task_group_release(TaskGroup *group) {
     std::lock_guard<std::mutex> lock(group->lifetime_mutex);
     destroy = group->references.fetch_sub(1, std::memory_order_acq_rel) == 1;
   }
-  if (destroy) delete group;
+  if (!destroy) return;
+  // A parent owns its child records. Releasing that association from the
+  // destructor appends final references here instead of nesting delete calls.
+  static thread_local TaskGroup *pending = nullptr;
+  static thread_local bool draining = false;
+  group->reclaim_next = pending;
+  pending = group;
+  if (draining) return;
+  draining = true;
+  while (pending) {
+    TaskGroup *current = pending;
+    pending = current->reclaim_next;
+    current->reclaim_next = nullptr;
+    delete current;
+  }
+  draining = false;
 }
 
 objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group) {
   if (!out_group) return OBJC3_SERVICE_INVALID_ARGUMENT;
   *out_group = nullptr;
+  // Depth is immutable after admission. Reject before allocating or changing
+  // the parent's child list; every recursive live-tree operation is bounded.
+  if (parent && parent->depth >= OBJC3_TASK_GROUP_MAX_DEPTH)
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
   TaskGroup *group = nullptr;
   try { group = new (std::nothrow) TaskGroup; }
   catch (...) { return OBJC3_SERVICE_OUT_OF_MEMORY; }
@@ -616,6 +637,7 @@ objc3_service_status task_group_create(TaskGroup *parent, TaskGroup **out_group)
   if (parent) {
     std::lock_guard<std::mutex> lock(parent->mutex);
     if (parent->closed) { delete group; return OBJC3_SERVICE_CLOSED; }
+    group->depth = parent->depth + 1;
     if (!task_group_retain(group)) {
       delete group;
       return OBJC3_SERVICE_NOT_READY;

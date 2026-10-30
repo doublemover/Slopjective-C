@@ -385,7 +385,11 @@ objc3_service_status objc3_executor_pump(objc3_executor_t *executor,
                                          uint32_t limit,
                                          uint32_t *out_executed);
 
-/* A group owns its registered tasks and child groups. The parent association
+#define OBJC3_TASK_GROUP_MAX_DEPTH 64u
+/* A group owns its registered tasks and child groups. Root depth is one;
+ * child creation past OBJC3_TASK_GROUP_MAX_DEPTH returns INVALID_ARGUMENT with
+ * a null output and leaves the parent unchanged. Final-reference reclamation
+ * drains iteratively. The parent association
  * is optional. Close recursively prevents new registrations; cancel requests
  * cooperative cancellation without closing. The first failed task cancels its
  * siblings and propagates through the parent tree before publishing completion.
@@ -521,7 +525,10 @@ objc3_service_status objc3_actor_get_executor(objc3_actor_t *actor,
  * retained actor, NOT_READY if absent, CLOSED if retired, and null on failure.
  * Unbind requires the old actor already closed and quiescent; otherwise it
  * returns NOT_READY without changing the binding. Retirement drops both pins
- * outside runtime locks and returns CLOSED on repeat. Rebinding after retirement
+ * outside runtime locks and returns CLOSED on repeat for the same live object.
+ * An object-owned generation distinguishes later allocations at a reused
+ * address; its teardown cannot erase a newer binding. All object entrypoints
+ * require a live receiver. Rebinding after retirement
  * is safe because the old actor cannot accept further isolated work. Pair every
  * successful binding with explicit unbind; allocation/deallocation does not
  * automatically establish or retire actor identity. These entrypoints require

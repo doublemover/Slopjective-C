@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <limits>
 #include <mutex>
 #include <new>
 
@@ -15,6 +16,15 @@ extern "C" void _Block_release(const void *);
 
 namespace {
 char actor_association_key;
+char explicit_lifetime_key;
+using LifetimeAssociation = uint64_t (^)(void);
+struct ExplicitLifetime {
+  const void *object{};
+  uint64_t identity{};
+  ~ExplicitLifetime() {
+    objc3::services::forget_retired_actor_object(object, identity);
+  }
+};
 using Association = objc3_actor_t *(^)(void);
 objc3_actor_t *lookup_automatic(const void *object) {
   id association = objc_getAssociatedObject((id)object, &actor_association_key);
@@ -40,6 +50,33 @@ objc3_service_status accept(objc3_actor_t *actor, objc3_executor_t *preferred,
   return *out_actor ? OBJC3_SERVICE_OK : OBJC3_SERVICE_NOT_READY;
 }
 } // namespace
+
+namespace objc3::services {
+uint64_t actor_object_lifetime(const void *object) {
+  id association = objc_getAssociatedObject((id)object, &explicit_lifetime_key);
+  return association ? ((LifetimeAssociation)association)() : 0;
+}
+objc3_service_status ensure_actor_object_lifetime(void *object, uint64_t *identity) {
+  if ((*identity = actor_object_lifetime(object))) return OBJC3_SERVICE_OK;
+  // The binding mutex serializes issuance. Never recycle a generation, even
+  // when an old association is held by an outstanding autorelease lease.
+  static uint64_t next = 0;
+  if (next == std::numeric_limits<uint64_t>::max()) return OBJC3_SERVICE_NOT_READY;
+  const auto generation = ++next;
+  auto owner = std::make_shared<ExplicitLifetime>();
+  owner->object = object;
+  owner->identity = generation;
+  LifetimeAssociation stack = ^{ return owner->identity; };
+  struct BlockOwner {
+    void *block;
+    ~BlockOwner() { if (block) _Block_release(block); }
+  } copied{_Block_copy((const void *)stack)};
+  if (!copied.block) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  objc_setAssociatedObject((id)object, &explicit_lifetime_key, (id)copied.block, 0x301);
+  *identity = generation;
+  return OBJC3_SERVICE_OK;
+}
+} // namespace objc3::services
 
 extern "C" objc3_service_status objc3_actor_get_or_create_for_object(
     void *object, objc3_executor_t *preferred, objc3_actor_t **out_actor) {

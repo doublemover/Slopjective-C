@@ -1,4 +1,7 @@
 #include "provider.h"
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+#include "runtime/concurrency/service_actor.h"
+#endif
 
 struct frame_guard {
   std::shared_ptr<async_state> state;
@@ -1051,6 +1054,128 @@ static void actor_object_cleanup(void *opaque) {
   ++static_cast<ActorObjectJob *>(opaque)->cleaned;
 }
 
+// A deterministic allocator fixture for the pinned non-GC GNUstep runtime.
+// class_createInstance supplies the initial allocation and ARC class policy.
+// Its allocation has one intptr_t reference-count prefix (gc_none.c); reuse
+// resets that prefix only after the previous lifetime's native hidden-class
+// destructor has run. The last lifetime uses ordinary object_dispose.
+extern "C" Class object_getClass(id);
+extern "C" Class object_setClass(id, Class);
+extern "C" __SIZE_TYPE__ class_getInstanceSize(Class);
+extern "C" SEL sel_registerName(const char *);
+extern "C" void (*class_getMethodImplementation(Class, SEL))(void);
+static void *actor_reuse_storage;
+static unsigned actor_reuse_destroyed;
+__attribute__((objc_root_class))
+@interface RuntimeActorReuseValue {
+  Class isa;
+@public
+  bool preserveStorage;
+  bool expectRetired;
+}
++ (id)new;
+@end
+@implementation RuntimeActorReuseValue
++ (id)new {
+  if (!actor_reuse_storage) return class_createInstance(self, 0);
+  void *storage = std::exchange(actor_reuse_storage, nullptr);
+  auto *allocation = static_cast<unsigned char *>(storage) - sizeof(__INTPTR_TYPE__);
+  __builtin_memset(allocation, 0, sizeof(__INTPTR_TYPE__) + class_getInstanceSize(self));
+  object_setClass((__bridge id)storage, self);
+#if __has_feature(objc_arc)
+  return (__bridge_transfer id)storage;
+#else
+  return (id)storage;
+#endif
+}
+- (void)dealloc {
+  if (expectRetired) {
+    objc3_actor_t *found = nullptr;
+    assert(objc3_actor_get_for_object((__bridge const void *)self, &found) == OBJC3_SERVICE_CLOSED && !found);
+  }
+  ++actor_reuse_destroyed;
+  if (preserveStorage) {
+    auto selector = sel_registerName(".cxx_destruct");
+    auto destructor = class_getMethodImplementation(object_getClass(self), selector);
+    assert(destructor);
+    reinterpret_cast<void (*)(__unsafe_unretained id, SEL)>(destructor)(self, selector);
+    actor_reuse_storage = (__bridge void *)self;
+  } else object_dispose(self);
+}
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {}
+#endif
+@end
+static void actor_object_lifetime_reuse(objc3_executor_t *executor) {
+  const auto before = actor_reuse_destroyed;
+  objc3_actor_t *old = nullptr;
+  assert(objc3_actor_create(executor, &old) == OBJC3_SERVICE_OK);
+  const auto old_identity = objc3_actor_identity(old);
+  __attribute__((objc_precise_lifetime)) RuntimeActorReuseValue *second = (RuntimeActorReuseValue *)0;
+  objc3_actor_t *new_actors[8]{};
+  @autoreleasepool {
+    RuntimeActorReuseValue *first = [RuntimeActorReuseValue new];
+    first->preserveStorage = true;
+    first->expectRetired = true;
+    void *address = (__bridge void *)first;
+    assert(objc3_actor_bind_object(address, old) == OBJC3_SERVICE_OK);
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+    const auto old_generation = objc3::services::actor_object_lifetime(address);
+    assert(old_generation != 0);
+#endif
+    assert(objc3_actor_close(old) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(old) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_unbind_object(address) == OBJC3_SERVICE_OK);
+    objc3_actor_t *found = nullptr;
+    assert(objc3_actor_get_or_create_for_object(address, executor, &found) == OBJC3_SERVICE_CLOSED && !found);
+#if !__has_feature(objc_arc)
+    objc_release(first);
+#endif
+    first = (RuntimeActorReuseValue *)0;
+    assert(actor_reuse_destroyed == before + 1 && actor_reuse_storage == address);
+    second = [RuntimeActorReuseValue new];
+    assert((__bridge void *)second == address);
+    std::thread entrants[8];
+    for (unsigned i = 0; i != 8; ++i)
+      entrants[i] = std::thread([&, i] {
+        @autoreleasepool {
+          assert(objc3_actor_get_or_create_for_object(address, executor, &new_actors[i]) == OBJC3_SERVICE_OK);
+        }
+      });
+    for (auto &entrant : entrants) entrant.join();
+    for (auto *actor : new_actors)
+      assert(actor == new_actors[0] && objc3_actor_identity(actor) != old_identity);
+    // Publish B's explicit generation while A's identity can still have an
+    // autorelease lease. A's delayed destructor must not erase this binding.
+    assert(objc3_actor_bind_object(address, new_actors[0]) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_close(new_actors[0]) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(new_actors[0]) == OBJC3_SERVICE_OK);
+    second->expectRetired = true;
+    assert(objc3_actor_unbind_object(address) == OBJC3_SERVICE_OK);
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+    assert(objc3::services::actor_object_lifetime(address) != old_generation);
+    // Deterministically deliver A's old teardown callback after B retired.
+    // This supplements the real association/autorelease destruction path.
+    objc3::services::forget_retired_actor_object(address, old_generation);
+    objc3_actor_t *retired = nullptr;
+    assert(objc3_actor_get_for_object(address, &retired) == OBJC3_SERVICE_CLOSED && !retired);
+#endif
+  }
+  objc3_actor_t *found = nullptr;
+  void *address = (__bridge void *)second;
+  // A's delayed cleanup must preserve B's distinct retired generation too.
+  assert(objc3_actor_get_for_object(address, &found) == OBJC3_SERVICE_CLOSED && !found);
+  assert(objc3_actor_get_or_create_for_object(address, executor, &found) == OBJC3_SERVICE_CLOSED && !found);
+  assert(objc3_actor_unbind_object(address) == OBJC3_SERVICE_CLOSED);
+#if !__has_feature(objc_arc)
+  objc_release(second);
+#endif
+  second = (RuntimeActorReuseValue *)0;
+  assert(actor_reuse_destroyed == before + 2 && !actor_reuse_storage);
+  for (auto *actor : new_actors) objc3_actor_release(actor);
+  objc3_actor_release(old);
+}
+
 bool native_actor_object_association() {
   const auto before = actor_association_destructions.load();
   objc3_executor_t *executor = nullptr;
@@ -1087,7 +1212,7 @@ bool native_actor_object_association() {
   assert(job.ran == 1 && job.cleaned == 1);
   assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
   assert(actor_association_destructions == before + 1); // Dealloc reenters lookup.
-  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_CLOSED);
+  // raw no longer denotes a live receiver after unbind releases its final pin.
   objc3_actor_release(found);
   assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);
   assert(objc3_actor_join(second) == OBJC3_SERVICE_OK);
@@ -1133,6 +1258,8 @@ bool native_actor_object_association() {
   assert(objc3_actor_join(replacement) == OBJC3_SERVICE_OK);
   raced->expectRetired = true;
   assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_unbind_object(raw) == OBJC3_SERVICE_CLOSED);
+  assert(objc3_actor_get_or_create_for_object(raw, executor, &found) == OBJC3_SERVICE_CLOSED && !found);
 #if !__has_feature(objc_arc)
   objc_release(raced);
 #endif
@@ -1143,6 +1270,7 @@ bool native_actor_object_association() {
     assert(objc3_actor_join(candidate) == OBJC3_SERVICE_OK);
     objc3_actor_release(candidate);
   }
+  actor_object_lifetime_reuse(executor);
   objc3_executor_release(executor);
   return true;
 }

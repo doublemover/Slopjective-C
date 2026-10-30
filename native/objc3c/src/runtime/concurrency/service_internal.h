@@ -90,6 +90,11 @@ struct objc3_task final {
   std::mutex reference_mutex;
   uint32_t cleanup_references{0};
   std::atomic<bool> cancel_requested{false};
+  // One intrusive wake reservation, transferred to its draining thread. The
+  // queue owns a task lease and clears next before releasing the reservation.
+  std::atomic<bool> wake_pending{false};
+  std::atomic<bool> wake_cancel{false};
+  objc3_task_t *wake_next{nullptr};
   mutable std::mutex mutex;
   std::condition_variable completed;
   objc3_executor_t *executor{nullptr};

@@ -13,6 +13,11 @@ struct Actor;
 std::recursive_mutex &actor_object_binding_mutex();
 using AutomaticActorLookup = objc3_actor_t *(*)(const void *);
 void register_automatic_actor_lookup(AutomaticActorLookup lookup);
+// Object-owned generation witness. Call while holding the binding mutex;
+// neither the witness nor its destructor retains the receiver or actor.
+objc3_service_status ensure_actor_object_lifetime(void *object, uint64_t *identity);
+uint64_t actor_object_lifetime(const void *object);
+void forget_retired_actor_object(const void *object, uint64_t identity) noexcept;
 
 
 using ActorJob = objc3_actor_job;
