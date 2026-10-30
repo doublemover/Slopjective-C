@@ -4,17 +4,38 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdio>
+#include <limits>
+#include <algorithm>
+#include <condition_variable>
+#include <thread>
 #include <vector>
 
 using namespace owned_payload_test;
 
 extern "C" void *__real__Znwm(std::size_t);
 extern "C" void *__wrap__Znwm(std::size_t size) {
+  if (ledger.FailAllocation()) throw std::bad_alloc();
   auto expected = ledger.fail_allocation_after_copies.load();
   if (expected >= 0 && ledger.copies >= static_cast<unsigned>(expected) &&
       ledger.fail_allocation_after_copies.exchange(-1) >= 0) throw std::bad_alloc();
   return __real__Znwm(size);
 }
+
+extern "C" void *__real__ZnwmSt11align_val_tRKSt9nothrow_t(
+    std::size_t, std::align_val_t, const std::nothrow_t &) noexcept;
+extern "C" void *__wrap__ZnwmSt11align_val_tRKSt9nothrow_t(
+    std::size_t size, std::align_val_t alignment, const std::nothrow_t &tag) noexcept {
+  if (ledger.FailAllocation()) return nullptr;
+  return __real__ZnwmSt11align_val_tRKSt9nothrow_t(size, alignment, tag);
+}
+
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+extern "C" void objc3_test_array_storage_reset();
+extern "C" std::uint64_t objc3_test_array_metadata_slots();
+extern "C" std::uint64_t objc3_test_array_nodes();
+extern "C" std::uint64_t objc3_test_array_chunks();
+#endif
 
 namespace {
 constexpr auto ok = OBJC3_GENERIC_COLLECTION_OK;
@@ -148,6 +169,306 @@ void BulkCopiesAndOrder() {
   assert(!map); ledger.Balanced();
 }
 
+template <bool Key>
+objc3_service_status CopyZero(void *destination, const void *source) {
+  assert(destination && source && reinterpret_cast<std::uintptr_t>(destination) % 64 == 0 &&
+         reinterpret_cast<std::uintptr_t>(source) % 64 == 0);
+  if (ledger.Fail(Callback::Copy)) return ledger.Failure();
+  ledger.RegisterZero(destination);
+  if constexpr (Key) ++ledger.key_copies; else ++ledger.value_copies;
+  return OBJC3_SERVICE_OK;
+}
+void DestroyZero(void *destination) { ledger.DestroyZero(destination); }
+objc3_service_status MoveZero(void *destination, void *source) { return CopyZero<false>(destination, source); }
+objc3_service_status HashZero(const void *source, std::uint64_t *out) {
+  assert(source && reinterpret_cast<std::uintptr_t>(source) % 64 == 0);
+  if (ledger.Fail(Callback::Hash)) return ledger.Failure();
+  *out = 0; return OBJC3_SERVICE_OK;
+}
+objc3_service_status EqualZero(const void *left, const void *right, int *out) {
+  assert(left && right && reinterpret_cast<std::uintptr_t>(left) % 64 == 0 &&
+         reinterpret_cast<std::uintptr_t>(right) % 64 == 0);
+  if (ledger.Fail(Callback::Equal)) return ledger.Failure();
+  *out = 1; return OBJC3_SERVICE_OK;
+}
+void ZeroSizedAndBounds() {
+  const objc3_value_ops key_ops = {sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION, 0, 64,
+      CopyZero<true>, MoveZero, DestroyZero};
+  auto value_ops = key_ops; value_ops.copy_init = CopyZero<false>;
+  const objc3_generic_map_descriptor descriptor = {sizeof(objc3_generic_map_descriptor),
+      OBJC3_GENERIC_ASSOCIATIVE_DESCRIPTOR_VERSION, key_ops, value_ops, HashZero, EqualZero};
+  const objc3_generic_set_descriptor set_descriptor = {sizeof(objc3_generic_set_descriptor),
+      OBJC3_GENERIC_ASSOCIATIVE_DESCRIPTOR_VERSION, key_ops, HashZero, EqualZero};
+  ledger.Reset(); objc3_generic_map_t map = nullptr;
+  assert(objc3_generic_map_create(&descriptor, nullptr, nullptr, 3, &map) == ok);
+  assert(ledger.key_copies == 1 && ledger.value_copies == 3 && ledger.Live().size() == 2);
+  assert(objc3_generic_map_release(map) == ok); ledger.Balanced();
+  ledger.Reset(); objc3_generic_set_t set = nullptr;
+  assert(objc3_generic_set_create(&set_descriptor, nullptr, 3, &set) == ok);
+  assert(ledger.key_copies == 1 && ledger.Live().size() == 1);
+  assert(objc3_generic_set_release(set) == ok); ledger.Balanced();
+  ledger.Reset(); objc3_generic_array_t array = nullptr;
+  assert(objc3_generic_array_create(&value_ops, nullptr, 33, &array) == ok);
+  assert(ledger.Live().size() == 33);
+  assert(objc3_generic_array_set(array, 31, nullptr) == ok);
+  assert(objc3_generic_array_append(array, nullptr) == ok);
+  assert(ledger.Live().size() == 34);
+  assert(objc3_generic_array_get(array, 32, nullptr) == ok);
+  assert(ledger.Live().size() == 34); // internal copy-out is also destroyed
+  assert(objc3_generic_array_release(array) == ok); ledger.Balanced();
+  for (unsigned position = 0; position != 4; ++position) {
+    ledger.Reset(); ledger.FailAt(Callback::Copy, position);
+    map = nullptr;
+    assert(objc3_generic_map_create(&descriptor, nullptr, nullptr, 3, &map) == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT);
+    assert(!map); ledger.Balanced();
+  }
+  ledger.Reset();
+  constexpr std::uint64_t cap = 1u << 20;
+  assert(objc3_generic_map_create(&descriptor, nullptr, nullptr, cap + 1, &map) == OBJC3_GENERIC_COLLECTION_CAPACITY_EXCEEDED && !map);
+  assert(objc3_generic_set_create(&set_descriptor, nullptr, cap + 1, &set) == OBJC3_GENERIC_COLLECTION_CAPACITY_EXCEEDED && !set);
+  assert(objc3_generic_array_create(&value_ops, nullptr, cap + 1, &array) == OBJC3_GENERIC_COLLECTION_CAPACITY_EXCEEDED && !array);
+  // At the legal cap, controlled callback rejection occurs after admission.
+  ledger.FailAt(Callback::Hash, 0);
+  assert(objc3_generic_map_create(&descriptor, nullptr, nullptr, cap, &map) == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !map);
+  ledger.FailAt(Callback::Hash, 0);
+  assert(objc3_generic_set_create(&set_descriptor, nullptr, cap, &set) == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !set);
+  auto invalid = value_ops; invalid.payload_alignment = std::numeric_limits<std::uint64_t>::max();
+  assert(objc3_generic_array_create(&invalid, nullptr, 1, &array) == OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT && !array);
+  invalid = value_ops; invalid.payload_size = std::numeric_limits<std::uint64_t>::max();
+  assert(objc3_generic_array_create(&invalid, nullptr, 2, &array) != ok && !array);
+  ledger.Balanced();
+}
+
+void AllocationSweeps() {
+  auto ops = Ops(); auto map_descriptor = Map(); auto set_descriptor = Set();
+  const std::array<Payload, 4> sources = {{{1}, {2}, {3}, {4}}};
+  for (unsigned family = 0; family != 3; ++family) {
+    bool completed = false; unsigned failures = 0;
+    for (unsigned position = 0; position != 64 && !completed; ++position) {
+      ledger.Reset(); ledger.allocation_failure_position = position;
+      objc3_generic_map_t map = nullptr; objc3_generic_set_t set = nullptr; objc3_generic_array_t array = nullptr;
+      auto status = family == 0 ? objc3_generic_map_create(&map_descriptor, sources.data(), sources.data(), sources.size(), &map)
+          : family == 1 ? objc3_generic_set_create(&set_descriptor, sources.data(), sources.size(), &set)
+                        : objc3_generic_array_create(&ops, sources.data(), sources.size(), &array);
+      ledger.allocation_failure_position = -1;
+      if (status == ok) {
+        completed = true;
+        if (family == 0) assert(objc3_generic_map_release(map) == ok);
+        if (family == 1) assert(objc3_generic_set_release(set) == ok);
+        if (family == 2) assert(objc3_generic_array_release(array) == ok);
+      } else {
+        ++failures;
+        assert(status == OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY && !map && !set && !array);
+      }
+      ledger.Balanced(); CheckSources(sources);
+    }
+    assert(completed && failures > 0);
+  }
+  for (unsigned operation = 0; operation != 3; ++operation) {
+    bool completed = false; unsigned failures = 0;
+    for (unsigned position = 0; position != 64 && !completed; ++position) {
+      ledger.Reset();
+      std::array<Payload, 33> initial{};
+      objc3_generic_array_t array = nullptr;
+      assert(objc3_generic_array_create(&ops, initial.data(), initial.size(), &array) == ok);
+      objc3_generic_iterator_t iterator = nullptr;
+      assert(objc3_generic_array_iterator(array, &iterator) == ok);
+      const auto published = ledger.Live(); Payload replacement{99};
+      ledger.allocation_failure_position = position;
+      const auto status = operation == 0 ? objc3_generic_array_set(array, 0, &replacement)
+          : operation == 1 ? objc3_generic_array_append(array, &replacement)
+                           : objc3_generic_array_remove(array, 31);
+      ledger.allocation_failure_position = -1;
+      if (status == ok) completed = true;
+      else {
+        ++failures;
+        assert(status == OBJC3_GENERIC_COLLECTION_OUT_OF_MEMORY);
+        assert(ledger.Live() == published && "allocation rollback changed published ownership");
+      }
+      Payload output{}; int has = 0;
+      const auto read = objc3_generic_iterator_next(iterator, &has, &output);
+      if (completed) assert(read == OBJC3_GENERIC_COLLECTION_MUTATED_DURING_ITERATION && !has && !output.instance);
+      else { assert(read == ok && has && output.value == 0); Destroy(&output); }
+      assert(objc3_generic_iterator_release(iterator) == ok);
+      assert(objc3_generic_array_release(array) == ok); ledger.Balanced(); CheckSources(initial);
+    }
+    assert(completed && failures > 0);
+  }
+}
+
+void ArrayScaling() {
+  auto ops = Ops();
+  for (unsigned count : {32u, 128u, 512u, 2048u}) {
+    ledger.Reset();
+    objc3_generic_array_t array = nullptr;
+    assert(objc3_generic_array_create(&ops, nullptr, 0, &array) == ok);
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+    objc3_test_array_storage_reset();
+#endif
+    for (unsigned i = 0; i != count; ++i) {
+      Payload source{static_cast<std::int64_t>(i)};
+      assert(objc3_generic_array_append(array, &source) == ok && source.instance == 0);
+    }
+    const auto append_copies = ledger.copies.load();
+    assert(append_copies >= count && append_copies <= 32 * count);
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+    assert(objc3_test_array_metadata_slots() <= 192 * count);
+    assert(objc3_test_array_nodes() == 3 * count);
+    assert(objc3_test_array_chunks() == count);
+    objc3_test_array_storage_reset();
+#endif
+    const auto before = ledger.Live();
+    const auto copies = ledger.copies.load();
+    Payload replacement{-1};
+    assert(objc3_generic_array_set(array, count / 2, &replacement) == ok);
+    const auto set_copies = ledger.copies.load() - copies;
+    assert(set_copies <= 32);
+    std::printf("array-count=%u append-payload-copies=%u replacement-payload-copies=%u\n", count, append_copies, set_copies);
+    const auto after = ledger.Live();
+    unsigned preserved = 0;
+    for (auto id : before) preserved += std::binary_search(after.begin(), after.end(), id);
+    assert(preserved >= count - 32);
+#ifdef OBJC3_GENERIC_ARRAY_STORAGE_TESTING
+    assert(objc3_test_array_metadata_slots() <= 192);
+    assert(objc3_test_array_nodes() == 3 && objc3_test_array_chunks() == 1);
+#endif
+    for (unsigned i : {0u, 31u, 32u, count / 2, count - 1}) {
+      if (i >= count) continue;
+      Payload output{};
+      assert(objc3_generic_array_get(array, i, &output) == ok);
+      assert(output.value == (i == count / 2 ? -1 : static_cast<std::int64_t>(i)));
+      Destroy(&output);
+    }
+    assert(objc3_generic_array_release(array) == ok); ledger.Balanced();
+    // Bulk input remains one ownership copy per element, with the same layout.
+    ledger.Reset(); std::vector<Payload> source(count);
+    assert(objc3_generic_array_create(&ops, source.data(), count, &array) == ok);
+    assert(ledger.copies == count);
+    assert(objc3_generic_array_release(array) == ok); ledger.Balanced();
+  }
+  ledger.Reset();
+  std::vector<Payload> source(65);
+  std::vector<std::int64_t> expected;
+  for (unsigned i = 0; i != source.size(); ++i) { source[i].value = i; expected.push_back(i); }
+  objc3_generic_array_t array = nullptr;
+  assert(objc3_generic_array_create(&ops, source.data(), source.size(), &array) == ok);
+  while (!expected.empty()) {
+    const auto index = expected.size() > 32 ? 31 : expected.size() / 2;
+    assert(objc3_generic_array_remove(array, index) == ok);
+    expected.erase(expected.begin() + index);
+    for (unsigned i = 0; i != expected.size(); ++i) {
+      Payload output{};
+      assert(objc3_generic_array_get(array, i, &output) == ok && output.value == expected[i]);
+      Destroy(&output);
+    }
+  }
+  std::uint64_t count = 99;
+  assert(objc3_generic_array_count(array, &count) == ok && count == 0);
+  assert(objc3_generic_array_release(array) == ok); ledger.Balanced();
+}
+
+std::mutex reader_mutex;
+std::condition_variable reader_changed;
+bool reader_entered = false, reader_continue = false;
+thread_local bool gated_reader = false;
+void GateReader() {
+  if (!gated_reader) return;
+  gated_reader = false;
+  std::unique_lock lock(reader_mutex);
+  reader_entered = true; reader_changed.notify_all();
+  reader_changed.wait(lock, [] { return reader_continue; });
+}
+void ReaderRetirement() {
+  auto ops = Ops(); auto descriptor = Map();
+  for (unsigned route = 0; route != 4; ++route) {
+    ledger.Reset();
+    std::array<Payload, 40> sources{};
+    for (unsigned i = 0; i != sources.size(); ++i) sources[i].value = i;
+    objc3_generic_array_t array = nullptr;
+    objc3_generic_map_t map = nullptr;
+    objc3_generic_view_t view = nullptr;
+    objc3_generic_iterator_t iterator = nullptr;
+    objc3_generic_associative_iterator_t associative = nullptr;
+    if (route == 3) {
+      assert(objc3_generic_map_create(&descriptor, sources.data(), sources.data(), sources.size(), &map) == ok);
+      assert(objc3_generic_map_iterator(map, &associative) == ok);
+    } else {
+      assert(objc3_generic_array_create(&ops, sources.data(), sources.size(), &array) == ok);
+      if (route == 1) assert(objc3_generic_array_slice(array, 0, 1, &view) == ok);
+      if (route == 2) assert(objc3_generic_array_iterator(array, &iterator) == ok);
+    }
+    const auto old_ids = ledger.Live();
+    reader_entered = reader_continue = false;
+    ledger.on_callback = GateReader;
+    Payload output{}, output_key{}; int has = 0;
+    auto status = OBJC3_GENERIC_COLLECTION_INVALID_ARGUMENT;
+    std::thread reader([&] {
+      gated_reader = true;
+      if (route == 0) status = objc3_generic_array_get(array, 0, &output);
+      if (route == 1) status = objc3_generic_view_get(view, 0, &output);
+      if (route == 2) status = objc3_generic_iterator_next(iterator, &has, &output);
+      if (route == 3) status = objc3_generic_associative_iterator_next(associative, &has, &output_key, &output);
+    });
+    { std::unique_lock lock(reader_mutex); reader_changed.wait(lock, [] { return reader_entered; }); }
+    Payload replacement{999};
+    if (route == 3) {
+      int inserted = 1;
+      assert(objc3_generic_map_insert(map, &sources[0], &replacement, &inserted) == ok && inserted == 0);
+      assert(objc3_generic_map_release(map) == ok);
+      assert(objc3_generic_associative_iterator_release(associative) == ok);
+    } else {
+      assert(objc3_generic_array_set(array, 0, &replacement) == ok);
+      assert(objc3_generic_array_release(array) == ok);
+      if (view) assert(objc3_generic_view_release(view) == ok);
+      if (iterator) assert(objc3_generic_iterator_release(iterator) == ok);
+    }
+    // All old logical instances stay alive while the callback pins its version.
+    const auto during = ledger.Live();
+    for (auto id : old_ids) assert(std::binary_search(during.begin(), during.end(), id));
+    { std::lock_guard lock(reader_mutex); reader_continue = true; }
+    reader_changed.notify_all(); reader.join(); ledger.on_callback = nullptr;
+    if (route == 0) {
+      assert(status == ok && output.value == 0 && ledger.Live().size() == 1);
+      Destroy(&output);
+    } else {
+      assert(status == OBJC3_GENERIC_COLLECTION_MUTATED_DURING_ITERATION && !has);
+      assert(!output.instance && !output_key.instance);
+    }
+    ledger.Balanced(); CheckSources(sources);
+  }
+}
+
+objc3_generic_array_t reentrant_array = nullptr;
+bool reentered_array = false;
+void AppendReentrantly() {
+  if (reentered_array) return;
+  reentered_array = true;
+  Payload next{777};
+  assert(objc3_generic_array_append(reentrant_array, &next) == ok);
+}
+void ArrayReentry() {
+  for (bool destruction : {false, true}) {
+    ledger.Reset(); reentered_array = false;
+    auto ops = Ops(); std::array<Payload, 33> source{};
+    assert(objc3_generic_array_create(&ops, source.data(), source.size(), &reentrant_array) == ok);
+    if (destruction) ledger.on_destroy = AppendReentrantly;
+    else ledger.on_callback = AppendReentrantly;
+    Payload replacement{123};
+    const auto status = objc3_generic_array_set(reentrant_array, 0, &replacement);
+    ledger.on_callback = ledger.on_destroy = nullptr;
+    assert(reentered_array);
+    assert(status == (destruction ? ok : OBJC3_GENERIC_COLLECTION_MUTATED_DURING_ITERATION));
+    std::uint64_t count = 0; Payload output{};
+    assert(objc3_generic_array_count(reentrant_array, &count) == ok && count == 34);
+    assert(objc3_generic_array_get(reentrant_array, 0, &output) == ok && output.value == (destruction ? 123 : 0));
+    Destroy(&output);
+    assert(objc3_generic_array_get(reentrant_array, 33, &output) == ok && output.value == 777);
+    Destroy(&output);
+    assert(objc3_generic_array_release(reentrant_array) == ok);
+    reentrant_array = nullptr; ledger.Balanced();
+  }
+}
+
 objc3_generic_map_t unrelated = nullptr;
 bool entered = false;
 void ReenterUnrelated() {
@@ -172,4 +493,4 @@ void Reentry() {
 }
 } // namespace
 
-int main() { Rollback(); BulkCopiesAndOrder(); Reentry(); ledger.Balanced(); }
+int main() { Rollback(); BulkCopiesAndOrder(); ZeroSizedAndBounds(); AllocationSweeps(); ArrayScaling(); ReaderRetirement(); ArrayReentry(); Reentry(); ledger.Balanced(); }

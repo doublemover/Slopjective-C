@@ -76,4 +76,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
     add_test(NAME objc3_${_test} COMMAND objc3_${_test}_test)
     set_tests_properties(objc3_${_test} PROPERTIES TIMEOUT 30)
   endforeach()
+  include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/GenericCollectionTests.cmake")
+  objc3_add_generic_collection_tests()
+
 endif()

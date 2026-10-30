@@ -30,7 +30,14 @@ struct Ledger {
   unsigned matching_calls = 0;
   bool oom = false, collisions = false, incoherent = false;
   std::atomic<int> fail_allocation_after_copies{-1};
+  std::atomic<int> allocation_failure_position{-1};
+  bool FailAllocation() {
+    if (allocation_failure_position < 0) return false;
+    if (allocation_failure_position.fetch_sub(1) != 0) return false;
+    allocation_failure_position = -1; return true;
+  }
   void (*on_callback)() = nullptr;
+  void (*on_destroy)() = nullptr;
 
   bool Fail(Callback kind) {
     if (on_callback) on_callback();
@@ -50,6 +57,23 @@ struct Ledger {
     events[destination.instance] = {&destination, true, 0};
     ++copies;
   }
+  void RegisterZero(void *destination) {
+    std::lock_guard lock(mutex);
+    for (std::uint64_t i = 1; i < next; ++i)
+      assert(!events[i].live || events[i].address != destination);
+    assert(next < events.size());
+    events[next++] = {destination, true, 0};
+    ++copies;
+  }
+  void DestroyZero(void *destination) {
+    std::lock_guard lock(mutex);
+    std::uint64_t found = 0;
+    for (std::uint64_t i = 1; i < next; ++i)
+      if (events[i].live && events[i].address == destination) { assert(!found); found = i; }
+    assert(found && "destroyed an uninitialized zero-sized logical resource");
+    assert(events[found].destroys == 0);
+    events[found].live = false; ++events[found].destroys;
+  }
   void Validate(const Payload &value) {
     if (!value.instance) return; // caller-owned source
     std::lock_guard lock(mutex);
@@ -57,6 +81,7 @@ struct Ledger {
     assert(events[value.instance].address == &value);
   }
   void Destroy(Payload &value) {
+    {
     std::lock_guard lock(mutex);
     assert(value.instance && value.instance < next && "destroyed a source or uninitialized destination");
     auto &event = events[value.instance];
@@ -64,6 +89,8 @@ struct Ledger {
     event.live = false;
     ++event.destroys;
     value.instance = 0;
+    }
+    if (on_destroy) on_destroy();
   }
   std::vector<std::uint64_t> Live() {
     std::lock_guard lock(mutex);
@@ -80,14 +107,16 @@ struct Ledger {
     Balanced();
     next = 1; copies = 0; key_copies = value_copies = hashes = equals = 0;
     failing = Callback::None; failure_position = -1; matching_calls = 0;
-    oom = collisions = incoherent = false; on_callback = nullptr;
-    fail_allocation_after_copies = -1;
+    oom = collisions = incoherent = false; on_callback = nullptr; on_destroy = nullptr;
+    fail_allocation_after_copies = allocation_failure_position = -1;
   }
 };
 inline Ledger ledger;
 
 template <bool Key>
 inline objc3_service_status Copy(void *destination, const void *source) {
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(Payload) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(Payload) == 0);
   const auto &input = *static_cast<const Payload *>(source);
   ledger.Validate(input);
   auto &output = *new (destination) Payload{input.value, 0};

@@ -201,7 +201,7 @@ def test_collection_ownership_ledger_rejects_cleanup_mutants(tmp_path, owner, mu
         else:
             before = 'if (status != OBJC3_GENERIC_COLLECTION_OK) {\n      if (zero_source)'
             assert before in original
-            changed = original.replace(before, 'if (status != OBJC3_GENERIC_COLLECTION_OK) {\n      ++candidate->initialized;\n      if (zero_source)', 1)
+            changed = original.replace(before, 'if (status != OBJC3_GENERIC_COLLECTION_OK) {\n      candidate->MarkInitialized(i);\n      if (zero_source)', 1)
         broken_source = tmp_path / 'generic_collection_service.cpp'
         broken_source.write_text(changed)
     else:
@@ -229,9 +229,62 @@ def test_collection_ownership_ledger_rejects_cleanup_mutants(tmp_path, owner, mu
                    '-I'+str(ROOT / 'native/objc3c/src'),
                    str(ROOT / 'native/objc3c/tests/generic_collection_ownership_test.cpp'),
                    *map(str, owners), str(LIBRARY), '-Wl,--wrap=_Znwm',
+                   '-Wl,--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t',
                    '-pthread', '-fuse-ld=lld', '-o', str(binary)]
         subprocess.run(command, check=True, capture_output=True, text=True, timeout=120)
         result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=30)
         assert result.returncode == (-signal.SIGABRT if failure else 0), result.stderr
         if failure:
             assert 'owned_payload_ledger.h' in result.stderr
+
+
+@pytest.mark.parametrize('mutant', ['whole-array-copy', 'partial-associative-clone'])
+def test_collection_copy_bounds_reject_reconstruction_mutants(tmp_path, mutant):
+    runtime = ROOT / 'native/objc3c/src/runtime'
+    source = runtime / 'stdlib' / ('generic_collection_service.cpp' if mutant == 'whole-array-copy'
+                                 else 'generic_associative_service.cpp')
+    original = source.read_text()
+    if mutant == 'whole-array-copy':
+        before = '  if (remove) {\n    // Ordered erase'
+        assert before in original
+        changed = original.replace(before, '  if (true) {\n    // Ordered erase', 1)
+        before = 'const auto *from = source->At(target >= replacement_index ? target + 1 : target);'
+        assert before in changed
+        changed = changed.replace(before,
+            'const auto *from = remove ? source->At(target >= replacement_index ? target + 1 : target) '
+            ': ((append && target == source->count) || (!append && target == replacement_index)) '
+            '? replacement : source->At(target);', 1)
+        expected = 'append_copies <= 32 * count'
+    else:
+        before = '  snapshot->entries.reserve(count);\n  for (std::size_t i = 0; i < count; ++i) {'
+        assert before in original
+        changed = original.replace(before, before + '''
+    auto clone = std::make_shared<Snapshot>();
+    for (const auto &old : snapshot->entries) {
+      Entry copied;
+      auto result = CopyEntry(copied, old, record, true);
+      if (result != OBJC3_GENERIC_COLLECTION_OK) return result;
+      clone->entries.push_back(std::move(copied));
+    }
+    snapshot = std::move(clone);
+''', 1)
+        expected = 'ledger.key_copies == count'
+    broken = tmp_path / source.name
+    broken.write_text(changed)
+    for failure in (False, True):
+        owners = [runtime / 'stdlib/generic_collection_service.cpp',
+                  runtime / 'stdlib/generic_associative_service.cpp']
+        if failure:
+            owners = [broken if path == source else path for path in owners]
+        binary = tmp_path / ('bad' if failure else 'good')
+        command = [str(COMPILER), '--no-default-config', '-std=c++20', '-O2', '-UNDEBUG',
+                   '-I'+str(ROOT / 'native/objc3c/src'),
+                   str(ROOT / 'native/objc3c/tests/generic_collection_ownership_test.cpp'),
+                   *map(str, owners), str(LIBRARY), '-Wl,--wrap=_Znwm',
+                   '-Wl,--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t',
+                   '-pthread', '-fuse-ld=lld', '-o', str(binary)]
+        subprocess.run(command, check=True, capture_output=True, text=True, timeout=120)
+        result = subprocess.run([str(binary)], capture_output=True, text=True, timeout=30)
+        assert result.returncode == (-signal.SIGABRT if failure else 0), result.stderr
+        if failure:
+            assert expected in result.stderr
