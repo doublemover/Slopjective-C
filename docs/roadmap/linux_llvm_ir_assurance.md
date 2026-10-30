@@ -153,7 +153,7 @@ The synthetic controls are not presented as frontend-generated semantic proof.
 ## Current limits
 
 The complete bounded source/PCH/interface matrix passed: 17 configurations,
-29 translation units, 37 runtime executions and 603 recorded commands. The
+29 translation units, 37 runtime executions and 764 recorded commands. The
 independent control campaign and real reduction also passed. Final results belong
 to their machine-readable receipts; the accepted SDK archive remains unchanged.
 
@@ -188,5 +188,7 @@ optimized debugger without requiring `-fstandalone-debug`.
 
 Existing O0 debugger qualification keeps its separate intent. Debugify remains a
 targeted diagnostic tool and is not used to assert frontend source-mapping
-accuracy. Final optimized-debug and full-campaign results belong to their
-machine-readable execution receipts.
+accuracy. At `abbfff813`, the complete campaign passes all 21 selected IR/debugger
+configurations; both optimized-local checks correctly report unavailable state.
+The [issue inventory](../support/linux_open_issue_review.json) records the source
+identity and receipt hashes. Hosted cold-run acceptance remains under #8283.

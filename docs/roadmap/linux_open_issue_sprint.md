@@ -218,7 +218,6 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Checked executor lock pilot and shared warnings implemented; fork-matched analysis tool/TU coverage still open ([details](linux_checked_executor_locks.md)) |
-| [#8286](https://github.com/doublemover/Slopjective-C/issues/8286) | Fork-matched bounded source/PCH/interface IR matrix, per-pass/backend checks, runtime oracles, ThinLTO, reduction and isolated sanitizer-instrumented LLDB consumer pass; optimized debugger expectations and CI execution hook pending ([details](linux_llvm_ir_assurance.md)) |
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces |
 | [#8288](https://github.com/doublemover/Slopjective-C/issues/8288) | Add independent generated semantic oracles for carrier ownership, cleanup and separate compilation |
 | [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generate replayable task/group/actor schedules with independent lifetime and quiescence oracles |
@@ -301,4 +300,23 @@ The maintained Linux tooling selection passes **550 tests**, one Windows-only
 skip and 33 subtests locally; **46** cadence/workflow checks pass. All **2,427**
 tooling tests collect without errors after migrating stale owner imports and
 retiring tests for removed guards. This does not claim every historical test was
-executed. Native CI acceptance and the remaining twelve issue owners stay open.
+executed. Native CI acceptance remains open.
+
+## LLVM IR and optimized debugger completion
+
+Commit `abbfff813` completes #8286's bounded executable lane: **17 IR
+configurations**, **29 translation units**, **37 runtime executions**, real
+per-pass/backend verification, production ThinLTO and signature-specific
+reduction. The matched ASan/UBSan debugger verifies **921 objects**, **119
+archives**, exact loader graphs and paired detecting/clean runtime controls.
+Four O2/ThinLTO carrier, cleanup and coroutine debugger configurations pass;
+explicit unavailable local state is accepted, while stale values fail.
+
+Execution found and fixed LLVM MD5's null empty update and incomplete carrier
+storage types under ordinary C++ limited debug information. Native regressions
+defend both. The full campaign passes on that exact commit. Maintained tooling
+passes **589 tests**, one Windows-only skip and 33 subtests; **47** workflow
+controls pass. The dedicated LLVM CI job and a real container process-layout
+preflight are implemented. Local default/corrected container and paired TSan
+controls pass; the hosted preflight also passes. Full hosted acceptance, cost and
+administrator settings remain under #8283. The remaining queue has **11 issues**.

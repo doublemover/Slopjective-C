@@ -98,7 +98,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8286",
       "category": "assurance",
       "body_sha256": "96ebaf648e1a51dc22a243cbe664f00833421e129fb778288889578251fe82d4",
-      "status": "ir-corpus-and-debugger-foundation-qualified-optimized-debug-and-ci-pending",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "abbfff813e519e6491ba466e92808221b591de06",
       "implementation": "docs/roadmap/linux_llvm_ir_assurance.md"
     },
     {
@@ -1025,10 +1026,10 @@
   },
   "native_ci_implementation": {
     "status": "implementation-prepared-acceptance-pending",
-    "tooling_tests": 550,
+    "tooling_tests": 589,
     "tooling_skips": 1,
     "tooling_subtests": 33,
-    "workflow_policy_tests": 46,
+    "workflow_policy_tests": 47,
     "native_boundary_controls": "Real C compile/runtime failure, missing binary, unexpected CTest skip, empty selection and dynamic test discovery; pytest and revision/artifact fault controls.",
     "remaining": [
       "Live exact-revision native CI execution",
@@ -1038,7 +1039,41 @@
     "sdk_archive_rebuilt": false,
     "clean_host_bootstrap": "Pinned private libsodium for minisign; actual signed ccache archive verification and loader-path witness passed.",
     "tooling_collection_modules": "2427 tests collect without errors; the complete historical suite was not executed.",
-    "live_ci": "Clean bootstrap passed; scoped Git ownership repair awaits a fresh exact-revision native run."
+    "live_ci": "First cold run passed foundation/runtime/frontend/installed execution, then TSan could not adjust ASLR under Docker seccomp. Corrected job container and real syscall preflight pass locally and in the hosted LLVM job; complete hosted runs remain active."
+  },
+  "llvm_ir_assurance": {
+    "status": "PASS",
+    "commit": "abbfff813e519e6491ba466e92808221b591de06",
+    "source_build_id": "llvmorg-23.1.3-0d261d1ca552-75cfe6c21f70-d0aefe1d",
+    "receipts": {
+      "campaign": {
+        "path": "out/llvm-abbfff813-campaign/qualification.json",
+        "sha256": "a585e54d8f6694fcca58b31a6487f26baa592adfe05aa50c5ecde71302d64203"
+      },
+      "ir": {
+        "path": "out/llvm-abbfff813-campaign/ir/qualification.json",
+        "sha256": "876bf96b226447e35fda91d991622520c123c5de4e43f9dacb2b49604565b93e"
+      },
+      "debugger": {
+        "path": "out/llvm-abbfff813-campaign/debugger/qualification.json",
+        "sha256": "9391b48354d5052737a65ce196e9997022b3d0fc70c025792bce828b1f536451"
+      },
+      "optimized_debug": {
+        "path": "out/llvm-abbfff813-campaign/optimized-debug/qualification.json",
+        "sha256": "f6ce979682279d34c438f6dcec14f8ebeeb5cf609a7f721bba7d929e2e0d752f"
+      }
+    },
+    "ir_configurations": 17,
+    "translation_units": 29,
+    "runtime_executions": 37,
+    "ir_commands": 764,
+    "optimized_debug_configurations": 4,
+    "lldb_objects": 921,
+    "lldb_archives": 119,
+    "shared_sanitizer_controls": 4,
+    "md5_native_regressions": 4,
+    "hosted_execution": "Process-layout preflight passes; cold complete campaign is running.",
+    "expensive_checks": "Resource-constrained; no expensive-check build or SDK archive qualification claimed."
   },
   "checked_executor_lock_pilot": {
     "status": "PASS",
