@@ -184,21 +184,38 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**14 issues remain** in the queue below. The inherited C++ borrowed issue, remaining
-runtime/performance corrections and independent assurance/platform work remain
-open. This checkpoint does not claim the full backlog is complete.
+**13 issues remain** in the queue below. Compiler implementation instrumentation
+is underway; the independent assurance and platform lanes remain open.
+
+## Inherited borrowed storage
+
+Commit `d3fde4069` addresses #8307. Both AST predicates traverse complete C++
+base definitions; stored-value classification excludes callable signatures.
+Physical base paths distinguish repeated nonvirtual subobjects and share virtual
+base state. Base adjustments, references, aggregate initialization, structural
+copies and callable paths preserve the corresponding loans. Opaque construction
+and paths beyond the depth bound retain conservative aggregate obligations.
+
+The current compiler passes **416 regressions** and **240 native unit tests**;
+three compiler cases remain unsupported. Native AST tests exercise both
+predicates, including private bases, templates and Optional/Result payloads.
+Mandatory diagnostics cover return/global/unknown-call escape, unrelated loans
+that force CFG analysis, deep/nested/array storage and independent repeated bases.
+Safe clears, shared virtual writes, owned bases and callable metadata are paired
+positive controls. Source/PCH coverage includes **C++20/C++23 × ARC/MRC**; the
+complete PCH matrix passes **four configurations / eight commands**. The earlier
+compiler misses thirteen required diagnostics in the regression control.
+
+The borrowed-pointer frontend suite also passes **four source-free producers and
+32 consumer cases**, including opaque factories and inherited template storage.
+The full frontend rerun is in progress. Accepted SDK 2.62 remains unchanged.
 
 ## Remaining issue queue
 
 | Issue | Remaining scope |
 | --- | --- |
 
-| Issue | Remaining scope |
-| --- | --- |
-| [#8307](https://github.com/doublemover/Slopjective-C/issues/8307) | Preserve borrowed obligations carried by C++ base subobjects |
 
-| Issue | Remaining scope |
-| --- | --- |
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Integrate native Clang/Linux execution into truthful PR and periodic assurance gates |
 | [#8284](https://github.com/doublemover/Slopjective-C/issues/8284) | Add isolated compiler and complete runtime instrumentation profiles |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Add fork-matched static analysis and checked lock contracts for the native compiler/runtime implementation |
@@ -210,8 +227,6 @@ open. This checkpoint does not claim the full backlog is complete.
 | [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | Benchmark real ObjC3 semantic workloads beyond warm trivial-C command latency |
 | [#8292](https://github.com/doublemover/Slopjective-C/issues/8292) | Validate preserved Swift-facing metadata with a real, version-pinned Swift consumer |
 
-| Issue | Remaining scope |
-| --- | --- |
 | [#8206](https://github.com/doublemover/Slopjective-C/issues/8206) | Platform And Toolchain Expansion |
 | [#8228](https://github.com/doublemover/Slopjective-C/issues/8228) | Linux x64 Support |
 | [#8229](https://github.com/doublemover/Slopjective-C/issues/8229) | macOS arm64 Support |

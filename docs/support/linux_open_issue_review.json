@@ -305,7 +305,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8307",
       "category": "compiler-interface",
       "body_sha256": "1922a6f6cae846c3a03bc445252bd0ebccc6c181e76da9487fc302e845e2ce61",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "d3fde4069d341fbb01000bf5059c5c7935e91ff3"
     },
     {
       "number": 8308,
@@ -494,7 +495,7 @@
     8325,
     8326
   ],
-  "remaining_implementation_or_host_items": 14,
+  "remaining_implementation_or_host_items": 13,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -961,6 +962,55 @@
       "out/issue-canonical-runtime-profile-initial.log",
       "out/issue-strict-installed-ownership/summary.json",
       "out/issue-strict-canonical-c-bridge/qualification.json"
+    ]
+  },
+  "inherited_borrowed_batch": {
+    "implementation_commit": "d3fde4069d341fbb01000bf5059c5c7935e91ff3",
+    "fixed_issues": [
+      8307
+    ],
+    "validation": {
+      "native": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261030T042137.368037Z/report.json",
+        "sha256": "b3516deb6299a655ff7f3d9a70f8cebce47ad76bd59c600cce6d5291937e7cb6"
+      },
+      "pch_matrix": {
+        "path": "out/issue-inherited-borrowed-complete-pch-matrix/qualification.json",
+        "sha256": "e56efbfb7494615f9214ed62636b60822ed83ef1440dd359a9dbc5c7763320db"
+      },
+      "baseline_control": {
+        "path": "out/issue-inherited-borrowed-baseline-oracle.log",
+        "sha256": "ca237bfa94e4d4642b42d834d57a859914c4ded19ef4b3a246d3ade996cd6bd2"
+      }
+    },
+    "compiler_regressions_passed": 416,
+    "compiler_regressions_unsupported": 3,
+    "native_unit_tests_passed": 240,
+    "pch_configurations": 4,
+    "pch_commands": 8,
+    "source_free_interface_configurations": {
+      "standards": [
+        "c++20",
+        "c++23"
+      ],
+      "ownership": [
+        "arc",
+        "mrc"
+      ],
+      "producers": 4,
+      "consumer_cases": 32
+    },
+    "full_frontend_run": "in-progress: out/issue-inherited-borrowed-acceptance-frontends/qualification.json",
+    "source_inputs": {
+      "toolchains/llvm/manifest.json": "443de42fa6b4fe502201fb89b7c2be43048ccbdef3be650083bc191dfe7c3d05",
+      "toolchains/llvm/patches/0003-objc3-native-payload-type-facts.patch": "2ad1e5344da9bb87e64fafb25787099acb2056222e52b857a46755e50c56127c",
+      "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "10bf771af4e3afcc13ae6cb5833889ae180df293afd0036466f48226e1cc78a8",
+      "tests/clang_foundation/borrowed_pointers_test.cpp": "536d345f4290ba70587d124b92be8e9bb0f417e4edbff10029aebda4b527a698"
+    },
+    "boundaries": [
+      "Source-qualified compiler and source-free interface regression; accepted SDK 2.62 is unchanged.",
+      "Opaque construction and paths deeper than 32 retain conservative aggregate obligations.",
+      "Stored-value classification excludes callable signature metadata; both predicates have direct native AST tests."
     ]
   }
 }
