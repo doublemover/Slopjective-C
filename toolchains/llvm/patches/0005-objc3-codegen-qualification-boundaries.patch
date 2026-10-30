@@ -3952,7 +3952,7 @@ index 08cb9860f..829194fc2 100644
  
        // If the value is offset in memory, apply the offset now.
 diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
-index 7421733ef..1d3ed014c 100644
+index 7421733ef..fc98b6929 100644
 --- a/clang/lib/CodeGen/CGDebugInfo.cpp
 +++ b/clang/lib/CodeGen/CGDebugInfo.cpp
 @@ -12,6 +12,7 @@
@@ -4020,7 +4020,7 @@ index 7421733ef..1d3ed014c 100644
  
    QualType QTy(Ty, 0);
    TypeCache[QTy.getAsOpaquePtr()].reset(RealDecl);
-@@ -4312,6 +4329,72 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
+@@ -4312,6 +4329,78 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
      return CreateType(cast<BlockPointerType>(Ty), Unit);
    case Type::Typedef:
      return CreateType(cast<TypedefType>(Ty), Unit);
@@ -4083,6 +4083,12 @@ index 7421733ef..1d3ed014c 100644
 +    // target's actual size, alignment, union offset, and payload-qualified
 +    // fields. The typedef wrapper gives debuggers the canonical source carrier
 +    // identity without inventing a parallel layout or operation semantics.
++    // These implicit records are not homed in another translation unit or
++    // emitted by a user constructor. Limited C++ debug information must still
++    // describe their tag and selected payload, including the payload union.
++    if (Representation.PayloadUnion)
++      completeClass(Representation.PayloadUnion);
++    completeClass(Representation.Record);
 +    llvm::DIType *PhysicalType = getOrCreateType(Representation.Type, Unit);
 +    if (!PhysicalType)
 +      return DiagnoseUnavailable();
@@ -4093,7 +4099,7 @@ index 7421733ef..1d3ed014c 100644
    case Type::Record:
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
-@@ -4828,8 +4911,15 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
+@@ -4828,8 +4917,15 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
    if (It == TypeCache.end())
      return nullptr;
    auto *InterfaceType = cast<llvm::DICompositeType>(It->second);
@@ -4110,7 +4116,7 @@ index 7421733ef..1d3ed014c 100644
        InterfaceType->getFile(), LineNo, FnType, LineNo, Flags, SPFlags);
    DBuilder.finalizeSubprogram(FD);
    ObjCMethodCache[ID].push_back({FD, OMD->isDirectMethod()});
-@@ -4969,6 +5059,8 @@ void CGDebugInfo::emitFunctionStart(GlobalDecl GD, SourceLocation Loc,
+@@ -4969,6 +5065,8 @@ void CGDebugInfo::emitFunctionStart(GlobalDecl GD, SourceLocation Loc,
          KeyInstructions && !isa_and_present<CoroutineBodyStmt>(FD->getBody());
    } else if (const auto *OMD = dyn_cast<ObjCMethodDecl>(D)) {
      Name = getObjCMethodName(OMD);
@@ -4119,7 +4125,7 @@ index 7421733ef..1d3ed014c 100644
      Flags |= llvm::DINode::FlagPrototyped;
    } else if (isa<VarDecl>(D) &&
               GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
-@@ -5700,7 +5792,8 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
+@@ -5700,7 +5798,8 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
    if (VD->hasAttr<NoDebugAttr>())
      return;
  
@@ -4129,7 +4135,7 @@ index 7421733ef..1d3ed014c 100644
  
    uint64_t XOffset = 0;
    llvm::DIFile *Unit = getOrCreateFile(VD->getLocation());
-@@ -5708,7 +5801,7 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
+@@ -5708,7 +5807,7 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
    if (isByRef)
      Ty = EmitTypeForVarWithBlocksAttr(VD, &XOffset).WrappedType;
    else
@@ -4138,7 +4144,7 @@ index 7421733ef..1d3ed014c 100644
  
    // Self is passed along as an implicit non-arg variable in a
    // block. Mark it as the object pointer.
-@@ -5731,7 +5824,11 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
+@@ -5731,7 +5830,11 @@ void CGDebugInfo::EmitDeclareOfBlockDeclRefVariable(
    addr.push_back(llvm::dwarf::DW_OP_deref);
    addr.push_back(llvm::dwarf::DW_OP_plus_uconst);
    addr.push_back(offset.getQuantity());
@@ -4151,7 +4157,7 @@ index 7421733ef..1d3ed014c 100644
      addr.push_back(llvm::dwarf::DW_OP_deref);
      addr.push_back(llvm::dwarf::DW_OP_plus_uconst);
      // offset of __forwarding field
-@@ -5911,7 +6008,9 @@ void CGDebugInfo::EmitDeclareOfBlockLiteralArgVariable(const CGBlockInfo &block,
+@@ -5911,7 +6014,9 @@ void CGDebugInfo::EmitDeclareOfBlockLiteralArgVariable(const CGBlockInfo &block,
                                              llvm::DINode::FlagZero, fieldType);
      } else {
        auto Align = getDeclAlignIfRequired(variable, CGM.getContext());
@@ -16931,11 +16937,14 @@ index 000000000..ab1565281
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info.c b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
 new file mode 100644
-index 000000000..b41d6a565
+index 000000000..8769763eb
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,42 @@
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=limited -O2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=limited -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=limited -O2 -emit-llvm -o - %s | FileCheck %s
 +//
 +// Debug types use the same AST-owned materialized record as carrier storage.
 +// These checks cover native storage/debug identity, not lifetime or call ABI.

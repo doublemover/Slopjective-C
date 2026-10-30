@@ -274,3 +274,59 @@ def test_debugger_reuse_cannot_cross_a_compilation_boundary(tmp_path, change):
     else:
         with pytest.raises(ValueError, match='compilation recipe'):
             adopt(new, tmp_path / 'old', old)
+
+
+def test_optimized_debugger_accepts_unavailable_state_but_rejects_wrong_visible_values():
+    from scripts.objc3c_toolchain.llvm_optimized_debug import check_optimized_away, check_source_frame
+    assert check_optimized_away('(int) optimized_away = <variable not available>\n') == 'unavailable'
+    assert check_optimized_away('(int) optimized_away = <optimized out>\n') == 'unavailable'
+    assert check_optimized_away('(int) optimized_away = <register rax is not available>\n') == 'unavailable'
+    assert check_optimized_away('(int) optimized_away = <no location, value may have been optimized out>\n') == 'unavailable'
+    assert check_optimized_away('(int) optimized_away = 17\n') == 'correct-visible'
+    with pytest.raises(ValueError, match='incorrect'):
+        check_optimized_away('(int) optimized_away = 170\n')
+    with pytest.raises(ValueError, match='incorrect'):
+        check_optimized_away('(int) optimized_away = 999\n')
+    with pytest.raises(ValueError, match='incorrect'):
+        check_optimized_away('(int) optimized_away = 17\n(int) optimized_away = 999\n')
+    with pytest.raises(ValueError, match='incorrect'):
+        check_optimized_away('(int) optimized_away = <cannot read memory>\n')
+    check_source_frame('frame #1: 0x1234 optimized_scope() at main.mm:42:5 [opt]', 'main.mm')
+    with pytest.raises(ValueError, match='real source location'):
+        check_source_frame('frame #1: 0x1234 optimized_scope() at other.mm:42:5 [opt]', 'main.mm')
+
+
+@pytest.mark.parametrize('fault', ('none', 'failed-owner', 'missing-case', 'duplicate-case',
+    'missing-stage', 'missing-detector', 'missing-debugger', 'missing-optimized-case', 'stale-visible-local'))
+def test_campaign_cannot_promote_incomplete_inner_owners(fault):
+    from scripts.objc3c_toolchain.llvm_campaign import verify_results
+    ir = {'status': 'PASS', 'expected_cases': ['capture-O2'],
+          'cases': [{'name': 'capture-O2', 'status': 'PASS'}],
+          'expected_stages': ['capture-O2-opt'],
+          'commands': [{'name': 'capture-O2-opt', 'status': 'PASS'}]}
+    debugger = {'status': 'PASS', 'tools': dict.fromkeys(('lldb', 'lldb-server')),
+                'shared_sanitizer_controls': [{'detector': kind, 'classification': result}
+                    for kind in ('asan', 'ubsan') for result in ('clean-control', 'expected-detection')]}
+    optimized = {'status': 'PASS', 'cases': [{'name': name, 'status': 'PASS'}
+        for name in ('O2', 'O2-thinlto', 'async-production', 'async-thinlto')]}
+    if fault == 'failed-owner':
+        ir['status'] = 'FAIL'
+    elif fault == 'missing-case':
+        ir['cases'] = []
+    elif fault == 'duplicate-case':
+        ir['cases'] += ir['cases']
+    elif fault == 'missing-stage':
+        ir['commands'] = []
+    elif fault == 'missing-detector':
+        debugger['shared_sanitizer_controls'].pop()
+    elif fault == 'missing-debugger':
+        debugger['tools'].pop('lldb-server')
+    elif fault == 'missing-optimized-case':
+        optimized['cases'].pop()
+    elif fault == 'stale-visible-local':
+        optimized['cases'][0]['status'] = 'FAIL'
+    if fault == 'none':
+        assert len(verify_results(ir, debugger, optimized)) == 5
+    else:
+        with pytest.raises(ValueError):
+            verify_results(ir, debugger, optimized)

@@ -79,6 +79,16 @@ The jobs use existing ephemeral Linux runners, read-only contents, SHA-pinned
 actions and checkout without persisted credentials. PR source never executes
 through `pull_request_target` or a privileged workflow-run consumer.
 
+Native job containers permit process layout controls through
+`--security-opt seccomp=unconfined`. The first cold run reached and passed the
+foundation, runtime, frontend and installed witnesses, then TSan's clean control
+failed because Docker blocked its `personality(2)` ASLR adjustment. This is a
+job-container setting; sanitizer options, findings and exit requirements remain
+strict. A real syscall preflight rejects an incompatible container before the
+compiler build. Default-policy failure, corrected-policy success and paired
+clean/faulting TSan controls were exercised in local Debian 13 containers.
+Workflow controls reject removal of the required setting or preflight.
+
 ## Acceptance still required
 
 Implementation and boundary controls are prepared. A live exact-revision native

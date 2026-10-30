@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { validateNativeGate, validateWorkflowContracts } from "./workflow-contract.mjs";
+import * as yaml from "js-yaml";
+import {
+  validateNativeContainer,
+  validateNativeGate,
+  validateWorkflowContracts,
+} from "./workflow-contract.mjs";
 
 const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
 const workflows = Object.fromEntries(
@@ -26,6 +31,26 @@ const native = await readFile(
 
 test("native PR workflow has a guaranteed receipt-verifying aggregate", () => {
   validateNativeGate(native);
+});
+
+test("native containers admit TSan personality and debugger process controls", async () => {
+  const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");
+  for (const [text, name] of [
+    [native, "native"],
+    [workflows["adaptive-closeout.yml"], "compiler-closeout"],
+    [llvm, "llvm-assurance"],
+  ]) {
+    const job = yaml.load(text).jobs[name];
+    validateNativeContainer(job);
+    assert.throws(() => validateNativeContainer({ ...job, steps: [] }));
+    for (const container of [
+      "debian:13",
+      { image: "debian:13" },
+      { image: "debian:13", options: "--privileged" },
+    ]) {
+      assert.throws(() => validateNativeContainer({ ...job, container }));
+    }
+  }
 });
 for (const [name, before, after] of [
   ["missing aggregate", "  gate:", "  renamed:"],

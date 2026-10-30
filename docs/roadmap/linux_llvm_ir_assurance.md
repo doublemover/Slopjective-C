@@ -80,6 +80,24 @@ ThinLTO, whose language, coroutine and target pipeline ownership stays intact.
 
 ## Execution and triage
 
+The complete bounded development campaign builds the instrumented foundation,
+matched development tools and native LLDB, prepares ordinary runtime libraries
+and an instrumented import facade, then runs the IR, reduction and optimized
+debugger owners. It produces no SDK archive:
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.llvm_campaign \
+  --fetch --output out/llvm-assurance-current
+```
+
+`--prepared` admits a previously built/tested/staged matching foundation; it
+still rebuilds required development targets and executes every selected witness.
+The [CI workflow](../../.github/workflows/llvm-assurance.yml) runs this campaign
+for relevant PR changes and supports manual execution. It retains receipts,
+diagnostics, source bundles and IR on success or failure. The campaign reconciles
+the inner case/stage/control inventories before reporting success. First cold
+hosted execution and measured runner cost remain under #8283.
+
 After building the compiler instrumentation foundation and the three development
 tools, select the ordinary owned runtime archive and GNUstep dependency:
 
@@ -155,9 +173,20 @@ on this instance. It reports `resource-constrained`, `qualified: false`; no
 expensive-check build is claimed. Resource admission is an estimate from a real
 comparable build, not a measurement of expensive-check execution.
 
-Optimized DWARF structure and source tables are covered. Optimized carrier,
-cleanup and coroutine **LLDB value/state expectations**, their optimized-out
-controls, and a maintained CI execution hook remain open. Existing O0 debugger
-qualification keeps its separate intent. Debugify is diagnostic only and is not
-used to assert frontend source-mapping accuracy. These remaining items keep
-#8286 open; tool inventory and source-only tests do not close it.
+Optimized LLDB expectations check carrier Some-to-None transitions without
+inactive payloads, native exception/defer/RAII ordering, coroutine checkpoint
+arguments and live nontrivial frame text, at O2 and ThinLTO. Source frames must
+point at the actual fixture. An unused local may show its correct value or an
+explicit unavailable/optimized-out register; a wrong visible value, memory read
+failure or duplicate conflicting values fail.
+
+This execution found two defects now defended by regressions: LLVM MD5 must
+ignore empty updates before touching a possibly null data pointer; limited C++
+debug information must emit complete compiler-owned carrier storage records and
+payload unions. The latter is checked in C/C++ limited debug modes and by the
+optimized debugger without requiring `-fstandalone-debug`.
+
+Existing O0 debugger qualification keeps its separate intent. Debugify remains a
+targeted diagnostic tool and is not used to assert frontend source-mapping
+accuracy. Final optimized-debug and full-campaign results belong to their
+machine-readable execution receipts.

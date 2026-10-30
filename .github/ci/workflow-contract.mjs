@@ -4,6 +4,26 @@ import { resolve, join } from "node:path";
 import * as yaml from "js-yaml";
 import { validateConfig } from "./adaptive-ci.mjs";
 
+export function validateNativeContainer(job) {
+  if (
+    job.container?.image !== "debian:13" ||
+    job.container?.options !== "--security-opt seccomp=unconfined"
+  ) {
+    throw new Error("Native sanitizer/debugger container must permit its process layout controls");
+  }
+  if (
+    !(job.steps ?? []).some(
+      (step) =>
+        step.run?.includes("tests/tooling/fixtures/native_container/personality.c") &&
+        step.run.includes("out/native-container-control") &&
+        !step.if &&
+        !step["continue-on-error"],
+    )
+  ) {
+    throw new Error("Native container must execute its real process layout preflight");
+  }
+}
+
 export function validateNativeGate(text) {
   const workflow = yaml.load(text);
   const events = workflow.on ?? {};
@@ -36,6 +56,7 @@ export function validateNativeGate(text) {
   const execute = workflow.jobs.native.steps.find((step) =>
     step.run?.includes("scripts.objc3c_assurance run"),
   );
+  validateNativeContainer(workflow.jobs.native);
   if (!execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')) {
     throw new Error(
       "Activated container execution must trust only its exact checked-out workspace",
@@ -87,6 +108,9 @@ export async function validateWorkflowContracts(config, readWorkflow) {
       );
       if (jobs.length !== 1) throw new Error(`Missing or duplicate expected job ${expected.name}`);
       const [, job] = jobs[0];
+      if ((job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_assurance run"))) {
+        validateNativeContainer(job);
+      }
       if (
         Object.hasOwn(job, "if") ||
         job["continue-on-error"] ||

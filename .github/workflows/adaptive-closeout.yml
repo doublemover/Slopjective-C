@@ -11,7 +11,10 @@ jobs:
   compiler-closeout:
     name: compiler-closeout
     runs-on: ubuntu-26.04
-    container: debian:13
+    container:
+      image: debian:13
+      # TSan adjusts its own ASLR layout with personality(2).
+      options: --security-opt seccomp=unconfined
     timeout-minutes: 360
     env:
       OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
@@ -29,6 +32,11 @@ jobs:
       - name: Pinned host tools
         shell: bash
         run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/native-assurance/startup
+      - name: Require sanitizer process layout support
+        run: |
+          mkdir -p out
+          g++ tests/tooling/fixtures/native_container/personality.c -o out/native-container-control
+          out/native-container-control
       - name: Select immutable periodic source
         shell: bash
         run: |

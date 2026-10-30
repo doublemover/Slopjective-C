@@ -422,6 +422,8 @@ PACKETS = {
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
     ],
     "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "llvm/lib/Support/MD5.cpp",
+        "llvm/unittests/Support/MD5Test.cpp",
         "lldb/test/Shell/Expr/objc3-carrier-summaries.mm",
         "lldb/source/DataFormatters/FormatManager.cpp",
         "lldb/source/Plugins/Language/ObjC/CMakeLists.txt",

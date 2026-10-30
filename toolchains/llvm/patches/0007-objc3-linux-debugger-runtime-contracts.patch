@@ -998,3 +998,46 @@ index 000000000..ccbd3f5bf
 +// CHECK: (lldb) frame variable result.error
 +// CHECK: result.error = -5
 +// CHECK: exited with status = 0
+diff --git a/llvm/lib/Support/MD5.cpp b/llvm/lib/Support/MD5.cpp
+index 32e2a2ed2..6ccf2f3d3 100644
+--- a/llvm/lib/Support/MD5.cpp
++++ b/llvm/lib/Support/MD5.cpp
+@@ -186,6 +186,11 @@ MD5::MD5() = default;
+ 
+ /// Incrementally add the bytes in \p Data to the hash.
+ void MD5::update(ArrayRef<uint8_t> Data) {
++  // Empty ArrayRefs may have a null data pointer. Do not pass it to memcpy,
++  // even for a zero-byte copy, or perform arithmetic on that pointer.
++  if (Data.empty())
++    return;
++
+   MD5_u32plus saved_lo;
+   unsigned long used, free;
+   const uint8_t *Ptr = Data.data();
+diff --git a/llvm/unittests/Support/MD5Test.cpp b/llvm/unittests/Support/MD5Test.cpp
+index 9742e1b7c..7e72b19f6 100644
+--- a/llvm/unittests/Support/MD5Test.cpp
++++ b/llvm/unittests/Support/MD5Test.cpp
+@@ -69,6 +69,22 @@ TEST(MD5HashTest, MD5) {
+   EXPECT_EQ(0x00e49261d7d3fcc3ULL, MD5Res.low());
+ }
+ 
++TEST(MD5Test, NullEmptyUpdates) {
++  TestMD5Sum(ArrayRef<uint8_t>(), "d41d8cd98f00b204e9800998ecf8427e");
++  TestMD5Sum(StringRef(), "d41d8cd98f00b204e9800998ecf8427e");
++  for (unsigned Length : {1u, 63u, 64u, 65u, 128u}) {
++    std::string Input(Length, 'a');
++    MD5 Hash, Reference;
++    Reference.update(Input);
++    Hash.update(ArrayRef<uint8_t>());
++    Hash.update(StringRef(Input).take_front(1));
++    Hash.update(ArrayRef<uint8_t>());
++    Hash.update(StringRef(Input).drop_front(1));
++    Hash.update(StringRef());
++    EXPECT_EQ(Hash.final(), Reference.final()) << "length " << Length;
++  }
++}
++
+ TEST(MD5Test, FinalAndResultHelpers) {
+   MD5 Hash;
+ 
