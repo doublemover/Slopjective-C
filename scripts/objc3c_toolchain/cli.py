@@ -26,6 +26,8 @@ def _parser():
     sdk.add_argument("--repo", type=Path, default=Path.cwd())
     sdk.add_argument("--fetch", action="store_true")
     sdk.add_argument("--install-root", type=Path)
+    sdk.add_argument("--compiler-instrumentation-profile", choices=("compiler-asan-ubsan",),
+                     help="qualify the isolated compiler implementation before ordinary SDK delivery")
     sdk.add_argument("--foundation-sdk", type=Path, help="reuse a fully verified sealed SDK with the same LLVM source/build identity")
     compile_command = commands.add_parser("compile", help="invoke the installed public compiler")
     compile_command.add_argument("arguments", nargs=argparse.REMAINDER)
@@ -92,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
                       'reused': [name for name, node in report['nodes'].items() if node['reused']]}
         elif args.command == "build-sdk":
             from .linux_sdk import build_sdk
-            result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk)
+            result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk,
+                               compiler_instrumentation_profile=args.compiler_instrumentation_profile)
         elif args.command == "compile":
             import os
             root = Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))

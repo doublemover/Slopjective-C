@@ -26,6 +26,55 @@ if (NOT _objc3_verify_exit EQUAL 0)
 endif()
 string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch_digest)
 string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_source_identity}" build_config_digest)
+if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain build-plan
+      --repo "${_objc3_repo}" --host linux-x86_64 configure
+      --instrumentation-profile "${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}"
+    WORKING_DIRECTORY "${_objc3_repo}"
+    RESULT_VARIABLE _objc3_profile_exit OUTPUT_VARIABLE _objc3_profile
+    ERROR_VARIABLE _objc3_profile_error)
+  if(NOT _objc3_profile_exit EQUAL 0)
+    message(FATAL_ERROR "Compiler instrumentation profile rejected: ${_objc3_profile_error}")
+  endif()
+  string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_profile}" build_config_digest)
+  string(JSON _objc3_profile_sanitizer GET "${_objc3_profile}" instrumentation facade_sanitizer)
+  if(NOT _objc3_profile_sanitizer STREQUAL "address,undefined")
+    message(FATAL_ERROR "Unrecognized compiler embedding sanitizer contract")
+  endif()
+  # Instrument every facade, embedding and test object, as well as the complete
+  # LLVM/Clang implementation selected above. Emitted client code is separate.
+  set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
+    -O1 -gline-tables-only -fno-omit-frame-pointer
+    "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+    -fno-sanitize-recover=undefined)
+  target_compile_options(objc3c_build_defaults INTERFACE
+    ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
+  target_link_options(objc3c_build_defaults INTERFACE
+    "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+    -fno-sanitize-recover=undefined)
+  file(WRITE "${CMAKE_BINARY_DIR}/compiler-instrumentation-plan.json" "${_objc3_profile}")
+  message(STATUS "Compiler implementation instrumentation: ${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}")
+endif()
+
+# Custom product-compiler invocations are outside compile_commands.json. Keep
+# their source/object ownership beside CTest's canonical target inventory so
+# instrumentation verification cannot silently omit these translation units.
+function(objc3c_register_custom_object source object)
+  set(_row "{}")
+  foreach(_field IN ITEMS file output)
+    if(_field STREQUAL "file")
+      set(_value "${source}")
+    else()
+      set(_value "${object}")
+    endif()
+    string(REPLACE "\\" "\\\\" _value "${_value}")
+    string(REPLACE "\"" "\\\"" _value "${_value}")
+    string(JSON _row SET "${_row}" "${_field}" "\"${_value}\"")
+  endforeach()
+  set_property(GLOBAL APPEND PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS "${_row}")
+endfunction()
+
 unset(_objc3_identity_header)
 unset(_objc3_identity_header CACHE)
 find_file(_objc3_identity_header ObjC3Foundation.h

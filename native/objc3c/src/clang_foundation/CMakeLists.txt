@@ -77,6 +77,10 @@ target_link_libraries(objc3c PRIVATE objc3c_clang_foundation)
 # Build the upstream tool against the same qualified Clang/LLVM libraries.
 set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")
 set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen")
+if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
+  string(JSON _profile_build GET "${_objc3_profile}" paths build)
+  set(_tablegen "${_profile_build}/bin/llvm-tblgen")
+endif()
 if(NOT EXISTS "${_tablegen}")
   message(FATAL_ERROR "The sealed foundation build must provide llvm-tblgen")
 endif()
@@ -91,7 +95,7 @@ add_executable(clang-scan-deps "${_scan_source}/ClangScanDeps.cpp"
 target_include_directories(clang-scan-deps SYSTEM PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}" ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_compile_features(clang-scan-deps PRIVATE cxx_std_20)
-target_link_libraries(clang-scan-deps PRIVATE clangAST clangBasic clangDependencyScanning
+target_link_libraries(clang-scan-deps PRIVATE objc3c_build_defaults clangAST clangBasic clangDependencyScanning
   clangDriver clangFrontend clangLex clangSerialization clangTooling ${_objc3_native_codegen})
 install(TARGETS clang-scan-deps RUNTIME DESTINATION bin)
 
@@ -134,6 +138,7 @@ if (BUILD_TESTING)
     COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
       -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
       "-I${_objc3_repo}/native/objc3c/src"
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
       -c "${_runtime_lifetime_source}" -o "${_runtime_lifetime_object}"
     DEPENDS "${_runtime_lifetime_source}"
       "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
@@ -142,6 +147,7 @@ if (BUILD_TESTING)
       "${OBJC3C_FOUNDATION_DRIVER}" VERBATIM)
   set_source_files_properties("${_runtime_lifetime_object}"
     PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  objc3c_register_custom_object("${_runtime_lifetime_source}" "${_runtime_lifetime_object}")
   add_executable(objc3_runtime_lifetime_test "${_runtime_lifetime_object}")
   set_target_properties(objc3_runtime_lifetime_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_runtime_lifetime_test PRIVATE objc3_runtime_services)
@@ -336,6 +342,7 @@ if (BUILD_TESTING)
       COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
         -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
         "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+        ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
         -c "${_source}" -o "${_object}"
       DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_source}"
         "${_objc3_repo}/tests/clang_foundation/task_coroutines/provider.h"
@@ -344,6 +351,7 @@ if (BUILD_TESTING)
         "${OBJC3C_FOUNDATION_DRIVER}"
       VERBATIM)
     set_source_files_properties("${_object}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+    objc3c_register_custom_object("${_source}" "${_object}")
     list(APPEND _task_coroutine_objects "${_object}")
   endforeach()
   add_executable(objc3_task_coroutines_test ${_task_coroutine_objects})
@@ -358,6 +366,7 @@ if (BUILD_TESTING)
     COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --no-default-config -x c++ -std=c++20
       -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
       "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
       -c "${_task_group_await_source}" -o "${_task_group_await_object}"
     DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_task_group_await_source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"
@@ -366,6 +375,7 @@ if (BUILD_TESTING)
     VERBATIM)
   set_source_files_properties("${_task_group_await_object}"
     PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
+  objc3c_register_custom_object("${_task_group_await_source}" "${_task_group_await_object}")
   add_executable(objc3_task_group_await_test "${_task_group_await_object}")
   set_target_properties(objc3_task_group_await_test PROPERTIES LINKER_LANGUAGE CXX)
   target_link_libraries(objc3_task_group_await_test PRIVATE objc3_runtime_services)
@@ -412,6 +422,7 @@ if(BUILD_TESTING)
     # cannot silently miss a separately maintained list in optimized builds.
     target_compile_options(${_target} PRIVATE -UNDEBUG
       "SHELL:-include '${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h'")
+    target_link_libraries(${_target} PRIVATE objc3c_build_defaults)
     if(_frontend_test_rows)
       string(APPEND _frontend_test_rows ",\n")
     endif()
@@ -420,4 +431,8 @@ if(BUILD_TESTING)
   endforeach()
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/frontend-test-targets.json"
     CONTENT "{\n  \"tests\": [\n${_frontend_test_rows}\n  ]\n}\n")
+  get_property(_custom_compile_rows GLOBAL PROPERTY OBJC3C_CUSTOM_COMPILE_ROWS)
+  list(JOIN _custom_compile_rows ",\n" _custom_compile_json)
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/custom-compile-records.json"
+    CONTENT "[\n${_custom_compile_json}\n]\n")
 endif()

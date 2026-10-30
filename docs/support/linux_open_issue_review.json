@@ -981,6 +981,10 @@
       "baseline_control": {
         "path": "out/issue-inherited-borrowed-baseline-oracle.log",
         "sha256": "ca237bfa94e4d4642b42d834d57a859914c4ded19ef4b3a246d3ade996cd6bd2"
+      },
+      "frontends": {
+        "path": "out/issue-inherited-borrowed-acceptance-frontends/qualification.json",
+        "sha256": "008133ff58cfd1998045bb5a12343a1f52e08fede2e3ff4ee571aa1b57cff27e"
       }
     },
     "compiler_regressions_passed": 416,
@@ -1000,7 +1004,6 @@
       "producers": 4,
       "consumer_cases": 32
     },
-    "full_frontend_run": "in-progress: out/issue-inherited-borrowed-acceptance-frontends/qualification.json",
     "source_inputs": {
       "toolchains/llvm/manifest.json": "443de42fa6b4fe502201fb89b7c2be43048ccbdef3be650083bc191dfe7c3d05",
       "toolchains/llvm/patches/0003-objc3-native-payload-type-facts.patch": "2ad1e5344da9bb87e64fafb25787099acb2056222e52b857a46755e50c56127c",
@@ -1011,6 +1014,7 @@
       "Source-qualified compiler and source-free interface regression; accepted SDK 2.62 is unchanged.",
       "Opaque construction and paths deeper than 32 retain conservative aggregate obligations.",
       "Stored-value classification excludes callable signature metadata; both predicates have direct native AST tests."
-    ]
+    ],
+    "frontend_suites_passed": 37
   }
 }

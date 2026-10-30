@@ -185,7 +185,8 @@ external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
 **13 issues remain** in the queue below. Compiler implementation instrumentation
-is underway; the independent assurance and platform lanes remain open.
+is [underway](linux_compiler_instrumentation.md); the independent assurance and
+platform lanes remain open.
 
 ## Inherited borrowed storage
 
@@ -208,7 +209,7 @@ compiler misses thirteen required diagnostics in the regression control.
 
 The borrowed-pointer frontend suite also passes **four source-free producers and
 32 consumer cases**, including opaque factories and inherited template storage.
-The full frontend rerun is in progress. Accepted SDK 2.62 remains unchanged.
+All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 
 ## Remaining issue queue
 

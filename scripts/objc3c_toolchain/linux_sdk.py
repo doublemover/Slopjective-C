@@ -99,13 +99,23 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
 
-def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None) -> dict:
+def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None,
+              compiler_instrumentation_profile: str | None = None) -> dict:
     repo = repo.resolve()
     base = repo / 'out/toolchains/linux-sdk-builds'
     base.mkdir(parents=True, exist_ok=True)
     with (base / '.pipeline.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        instrumentation = None
+        if compiler_instrumentation_profile:
+            from .compiler_instrumentation import build_and_qualify
+            instrumentation = build_and_qualify(repo, profile=compiler_instrumentation_profile, fetch=fetch)
+        report = _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        # This is evidence about a distinct compiler-process graph, not a claim
+        # that the ordinary shipped archive contains instrumented libraries.
+        if instrumentation is not None:
+            report = {**report, 'compiler_implementation_qualification': instrumentation}
+        return report
 
 
 def _install_qualified_archive(report: dict, directory: Path, install_root: Path,
