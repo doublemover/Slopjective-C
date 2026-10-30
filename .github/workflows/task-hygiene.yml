@@ -29,6 +29,7 @@ jobs:
           tests/tooling/test_toolchain_build.py
           tests/tooling/test_compiler_instrumentation_profiles.py
           tests/tooling/test_compiler_instrumentation_pipeline.py
+          tests/tooling/test_compiler_archive_evidence.py
           tests/tooling/test_objc3c_toolchain_prepare.py
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
