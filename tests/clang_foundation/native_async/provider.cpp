@@ -1,6 +1,9 @@
 #include "provider.h"
 #ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
 #include "runtime/concurrency/service_actor.h"
+#include <barrier>
+extern "C" void *actor_control_retain(void *) __asm__("objc_retain");
+extern "C" void actor_control_release(void *) __asm__("objc_release");
 #endif
 
 struct frame_guard {
@@ -1229,9 +1232,25 @@ bool native_actor_object_association() {
   objc3_actor_t *candidates[8]{};
   objc3_service_status outcomes[8]{};
   std::thread registrations[8];
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+  std::barrier first_binding(12);
+  std::atomic<bool> registrations_done{false};
+  std::thread retainers[4];
+  for (auto &retainer : retainers) retainer = std::thread([&] {
+    first_binding.arrive_and_wait();
+    do {
+      auto *pin = actor_control_retain(raw);
+      assert(pin == raw);
+      actor_control_release(pin);
+    } while (!registrations_done.load());
+  });
+#endif
   for (unsigned index = 0; index != 8; ++index) {
     assert(objc3_actor_create(executor, &candidates[index]) == OBJC3_SERVICE_OK);
     registrations[index] = std::thread([&, index] {
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+      first_binding.arrive_and_wait();
+#endif
       outcomes[index] = objc3_actor_bind_object(raw, candidates[index]);
     });
   }
@@ -1247,6 +1266,10 @@ bool native_actor_object_association() {
       replacement = candidates[index];
     }
   }
+#ifdef OBJC3_ACTOR_LIFETIME_INTERNAL_TESTING
+  registrations_done = true;
+  for (auto &retainer : retainers) retainer.join();
+#endif
   assert(winners == 1 && replacement);
   assert(objc3_actor_get_for_object(raw, &found) == OBJC3_SERVICE_OK && found == winner);
   assert(objc3_actor_close(winner) == OBJC3_SERVICE_OK);
