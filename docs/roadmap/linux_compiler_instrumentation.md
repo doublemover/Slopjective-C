@@ -26,7 +26,8 @@ The controls load the selected instrumented LLVM/Clang libraries. The compiler
 PCH diagnostic matrix covers C++20/C++23 under ARC/MRC.
 
 The runner reconciles transitive Ninja compilation commands against compilation
-ownership, then checks object bytes and actual instrumentation symbols. Custom
+ownership, then checks object bytes and actual instrumentation symbols. Staged LLVM/Clang
+and embedding archive members must match verified object bytes. Custom
 product-compiler objects have CMake-generated source/object records. Their flags
 and symbols are checked too. Replacing an object, omitting a compilation record,
 weakening flags or changing a custom object's source fails qualification.
@@ -67,13 +68,20 @@ interceptors; they are not described as rebuilt with instrumentation.
 
 ## Current evidence
 
-The isolated planner and SDK prerequisite tests pass. Six real native evidence
+The isolated planner and SDK prerequisite tests pass. Seven real native evidence
 controls accept valid instrumentation and reject disabled/recovering flags,
 missing or inconsistent compilation ownership, substituted ordinary objects and
-incorrect custom source records. CMake rejects ordinary foundation headers for
+incorrect custom source records. An actual loader control rejects a foreign
+LLVM library even when its program returns the correct result. Thirteen isolated
+archive controls also pass, including an archive produced by the native builder;
+normal pytest startup is currently blocked by instance I/O. CMake rejects ordinary
+foundation headers for
 the instrumented embedding profile. Ordinary facade configuration and four
 custom-runtime/assertion CTests pass after the profile integration.
 
-The full instrumented LLVM/Clang build is underway. Compiler implementation
-execution qualification remains open until that build and the runner above pass.
+The full instrumented LLVM/Clang build is blocked on instance storage I/O. The
+block device stopped completing requests while the archiver and unrelated tools
+waited for reads; available disk and memory did not explain the stall. Compiler
+implementation execution qualification remains open until that build and the
+runner above pass.
 No new SDK archive has been built for this work.

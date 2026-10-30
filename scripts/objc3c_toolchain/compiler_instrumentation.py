@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from datetime import datetime, timezone
 import json
 import os
@@ -140,6 +141,98 @@ def verify_symbols(records: list[dict], nm: Path, *, run):
         raise ValueError('compiler graph has no UBSan symbol evidence')
 
 
+def archive_members(path: Path) -> list[dict]:
+    """Hash ordinary GNU/BSD ar members without extracting or executing them."""
+    members = []
+    names = b''
+    length = path.stat().st_size
+    with path.open('rb') as stream:
+        if stream.read(8) != b'!<arch>\n':
+            raise ValueError('compiler qualification requires ordinary, non-thin archives')
+        while stream.tell() < length:
+            header = stream.read(60)
+            if len(header) != 60 or header[58:] != b'`\n':
+                raise ValueError('malformed compiler archive header')
+            name = header[:16].decode('ascii').rstrip()
+            size = int(header[48:58])
+            end = stream.tell() + size
+            if size < 0 or end > length:
+                raise ValueError('truncated compiler archive member')
+            if name == '//':
+                if size > 16 * 1024 * 1024:
+                    raise ValueError('compiler archive name table exceeds budget')
+                names = stream.read(size)
+            elif name in ('/', '/SYM64/', '__.SYMDEF', '__.SYMDEF SORTED'):
+                stream.seek(end)
+            else:
+                if name.startswith('#1/'):
+                    count = int(name[3:])
+                    if count < 1 or count > size or count > 65536:
+                        raise ValueError('invalid compiler archive BSD name')
+                    name = stream.read(count).rstrip(b'\0').decode('utf-8')
+                elif name.startswith('/'):
+                    offset = int(name[1:])
+                    stop = names.find(b'/\n', offset)
+                    if offset < 0 or stop < offset:
+                        raise ValueError('invalid compiler archive GNU name')
+                    name = names[offset:stop].decode('utf-8')
+                else:
+                    name = name.removesuffix('/')
+                if not name or Path(name).name != name:
+                    raise ValueError('compiler archive member must be an owned object basename')
+                signature = hashlib.sha256()
+                remaining = end - stream.tell()
+                payload_size = remaining
+                while remaining:
+                    value = stream.read(min(remaining, 1024 * 1024))
+                    if not value:
+                        raise ValueError('truncated compiler object payload')
+                    signature.update(value)
+                    remaining -= len(value)
+                members.append({'name': name, 'sha256': signature.hexdigest(), 'bytes': payload_size})
+            if size % 2:
+                if stream.read(1) != b'\n':
+                    raise ValueError('invalid compiler archive alignment')
+    if not members or len({row['name'] for row in members}) != len(members):
+        raise ValueError('compiler archive has empty or ambiguous object ownership')
+    return members
+
+
+def verify_owned_archives(archives: list[Path], records: list[dict]) -> list[dict]:
+    expected = {}
+    for record in records:
+        if record['classification'] == 'precompiled-header':
+            continue
+        expected.setdefault(Path(record['object']).name, set()).add(record['sha256'])
+    evidence = []
+    if not archives:
+        raise ValueError('compiler profile has no owned static archives')
+    for archive in archives:
+        members = archive_members(archive)
+        for row in members:
+            if row['sha256'] not in expected.get(row['name'], set()):
+                raise ValueError('compiler archive member differs from verified objects: '+str(archive)+':'+row['name'])
+        evidence.append({'path': str(archive), 'sha256': digest(archive), 'members': members})
+    return evidence
+
+
+def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
+    output = run('loader', [loader, '--list', binary])
+    paths = set()
+    for line in output.splitlines():
+        value = line.split(' => ', 1)[-1].strip().rsplit(' (0x', 1)[0]
+        if value.startswith('/'):
+            paths.add(Path(value).resolve(strict=True))
+    owned = {path.resolve(strict=True) for path in libraries}
+    if not paths or 'not found' in output or not set(required).issubset(paths):
+        raise ValueError('compiler executable did not load its required instrumented libraries')
+    for path in paths:
+        if path.name.startswith(('libLLVM', 'libclang-cpp')) and path not in owned:
+            raise ValueError('compiler executable loaded an unselected LLVM/Clang library')
+    return {'binary': str(binary), 'sha256': digest(binary),
+            'libraries': {str(path): digest(path) for path in sorted(paths)}}
+
+
 def borrowed_base_pch_matrix(compiler: Path, source: Path, output: Path, *, run):
     """Reuse the authored mandatory-diagnostic oracle across both PCH standards."""
     fixture = source / 'clang/test/ObjC3/Sema/borrowed-base-subobjects.mm'
@@ -213,7 +306,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
                       'owner': 'LLVM upstream BLAKE3 kernels',
                       'reason': 'Four named assembly kernels have no C/C++ sanitizer instrumentation.',
                       'revalidate': 'Every source/toolchain upgrade; #8284'}},
-              'commands': [], 'foundation_objects': [], 'embedding_objects': []}
+              'commands': [], 'foundation_objects': [], 'embedding_objects': [], 'loaded_graphs': {}}
 
     def run(name, command, *, expected=0):
         log = output / (name+'.log')
@@ -237,13 +330,20 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
 
     try:
         policy.ensure_controls('O1')
+        llvm_library = libraries[1].resolve(strict=True)
+        report['loaded_graphs']['foundation-clang'] = loaded_graph(stage / 'bin/clang',
+            policy.loader, libraries, required=tuple(path.resolve(strict=True) for path in libraries),
+            run=lambda name, cmd: run('foundation-clang-'+name, cmd))
         borrowed_base_pch_matrix(stage / 'bin/clang', source, output, run=run)
         ninja = Path(plan['host_environment']['ninja_path'])
-        targets = [target for group in plan['instrumentation']['build_target_groups'] for target in group['targets']]
+        targets = [target for group in plan['instrumentation']['build_target_groups'] for target in group['targets']] + ['install-distribution']
         report['foundation_objects'] = graph_records(build, source, targets, ninja, environment,
             foundation=True, run=lambda name, cmd: run('foundation-'+name, cmd))
         verify_symbols(report['foundation_objects'], bootstrap / 'bin/llvm-nm',
             run=lambda name, cmd: run('foundation-'+name, cmd))
+        archives = sorted(path for path in (stage / 'lib').glob('*.a')
+                          if path.name.startswith(('libLLVM', 'libclang')))
+        report['foundation_archives'] = verify_owned_archives(archives, report['foundation_objects'])
         facade = output / 'facade'
         run('embedding-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
@@ -253,7 +353,19 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         embedding_tools = ['objc3c', 'objc3c_frontend_v2', 'clang-scan-deps']
         run('embedding-tools-build', ['cmake', '--build', facade, '--target', *embedding_tools,
                                      '--parallel', str(jobs)])
-        report['frontends'] = frontend_tests(facade, output / 'frontends', run, jobs=jobs)
+        for name in ('objc3c', 'clang-scan-deps'):
+            report['loaded_graphs'][name] = loaded_graph(facade / 'src/clang_foundation' / name,
+                policy.loader, libraries, required=(llvm_library,),
+                run=lambda suffix, cmd, name=name: run(name+'-'+suffix, cmd))
+        metadata = json.loads((facade / 'frontend-test-targets.json').read_text())
+        binaries = {row['name']: Path(row['executable']) for row in metadata['tests']}
+        def run_frontend(name, command):
+            if name.endswith('-ctest'):
+                test = name[len('frontend-'):-len('-ctest')]
+                report['loaded_graphs'][test] = loaded_graph(binaries[test], policy.loader,
+                    libraries, run=lambda suffix, cmd: run(name+'-'+suffix, cmd))
+            return run(name, command)
+        report['frontends'] = frontend_tests(facade, output / 'frontends', run_frontend, jobs=jobs)
         # Serial qualification reclaims passing test executables, but retains
         # their object files and exact binary identities in the nested receipt.
         targets = [row['target'] for row in report['frontends']['tests']] + embedding_tools
@@ -261,10 +373,19 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             foundation=False, run=lambda name, cmd: run('embedding-'+name, cmd))
         verify_symbols(report['embedding_objects'], bootstrap / 'bin/llvm-nm',
             run=lambda name, cmd: run('embedding-'+name, cmd))
+        report['embedding_archives'] = verify_owned_archives(
+            sorted((facade / 'src/clang_foundation').rglob('libobjc3*.a')),
+            report['embedding_objects'])
         for record in report['foundation_objects'] + report['embedding_objects']:
             if (digest(Path(record['source'])) != record['source_sha256'] or
                     digest(Path(record['object'])) != record['sha256']):
                 raise ValueError('compiler graph changed during implementation qualification')
+        for archive in report['foundation_archives'] + report['embedding_archives']:
+            if digest(Path(archive['path'])) != archive['sha256']:
+                raise ValueError('staged compiler archive changed during qualification')
+        for graph in report['loaded_graphs'].values():
+            if any(digest(Path(path)) != value for path, value in graph['libraries'].items()):
+                raise ValueError('loaded compiler dependency changed during qualification')
         final = build_plans(repo, host='linux-x86_64', instrumentation_profile=PROFILE)['configure']
         if (final['source_build_id'] != plan['source_build_id'] or
                 final['host_environment'] != plan['host_environment']):

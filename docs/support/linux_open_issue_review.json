@@ -158,7 +158,7 @@
     },
     {
       "number": 8294,
-      "title": "[P2] Validate map replacement values independently of the \u201cno replacement\u201d sentinel",
+      "title": "[P2] Validate map replacement values independently of the “no replacement” sentinel",
       "url": "https://github.com/doublemover/Slopjective-C/issues/8294",
       "category": "runtime",
       "body_sha256": "599dcadaf303b985d98a6ebfa16a4103074226abf9b74dc5dd3b12630fd2240b",
@@ -1016,5 +1016,27 @@
       "Stored-value classification excludes callable signature metadata; both predicates have direct native AST tests."
     ],
     "frontend_suites_passed": 37
+  },
+  "compiler_instrumentation_progress": {
+    "issue": 8284,
+    "status": "implementation-committed-native-build-blocked-on-instance-io",
+    "implementation_commits": [
+      "75a3cf6ae",
+      "93beb7c08"
+    ],
+    "completed_checks": {
+      "isolated_planner_and_build_tests": 20,
+      "existing_preparation_tests": 17,
+      "sdk_pipeline_and_reuse_tests": 30,
+      "native_object_and_loader_controls": 7,
+      "isolated_archive_controls": 13,
+      "ordinary_custom_runtime_ctests": 4
+    },
+    "boundaries": [
+      "Full instrumented foundation/embedding execution qualification remains open.",
+      "Normal archive pytest startup is blocked by instance I/O; thirteen isolated canonical-function controls passed, including a real native archive.",
+      "The borrowed correction passes 416 compiler regressions, 240 native units and all 37 frontend suites.",
+      "Accepted SDK 2.62 is unchanged."
+    ]
   }
 }

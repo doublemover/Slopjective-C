@@ -56,8 +56,14 @@ target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINA
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
 target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
   clangTooling clangFrontend clangCodeGen clangIndex)
-llvm_map_components_to_libnames(_objc3_native_codegen
-  nativecodegen "${LLVM_NATIVE_ARCH}AsmParser")
+if(LLVM_LINK_LLVM_DYLIB)
+  # Match Clang's shared LLVM dependency. Mixing component archives with that
+  # dylib can duplicate LLVM globals and command-line option registrations.
+  set(_objc3_native_codegen LLVM)
+else()
+  llvm_map_components_to_libnames(_objc3_native_codegen
+    nativecodegen "${LLVM_NATIVE_ARCH}AsmParser")
+endif()
 target_link_libraries(objc3c_clang_foundation PRIVATE ${_objc3_native_codegen})
 set_property(SOURCE compile_session.cpp driver_native.cpp APPEND PROPERTY COMPILE_DEFINITIONS
   "OBJC3C_FOUNDATION_DRIVER=\"${OBJC3C_FOUNDATION_DRIVER}\""

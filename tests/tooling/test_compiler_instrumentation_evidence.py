@@ -106,3 +106,33 @@ file(GENERATE OUTPUT "${{CMAKE_BINARY_DIR}}/custom-compile-records.json" CONTENT
         {'file': str(source / 'unit.cpp'), 'output': str(output)}]))
     with pytest.raises(ValueError, match='canonical CMake source'):
         collect()
+
+
+def test_actual_loader_rejects_a_foreign_llvm_library(native_graph, tmp_path):
+    from scripts.objc3c_toolchain.compiler_instrumentation import loaded_graph
+    source, build, compiler, nm, run, collect = native_graph
+    owned, foreign = (tmp_path / name for name in ('owned', 'foreign'))
+    for directory in (owned, foreign):
+        directory.mkdir()
+    library_source = source / 'library.cpp'
+    library_source.write_text('extern "C" int probe() { return 42; }\n')
+    main = source / 'main.cpp'
+    main.write_text('extern "C" int probe(); int main() { return probe() == 42 ? 0 : 1; }\n')
+    for directory in (owned, foreign):
+        run('shared', [compiler, '-shared', '-fPIC', '-fuse-ld=lld', library_source,
+                       '-o', directory / 'libLLVMcontrol.so'])
+    selected = owned / 'libLLVMcontrol.so'
+    loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
+    for directory in (owned, foreign):
+        binary = build / directory.name
+        run('link', [compiler, '-fuse-ld=lld', main, '-L'+str(directory), '-lLLVMcontrol',
+                     '-Wl,-rpath,'+str(directory), '-o', binary])
+        run('semantic-control', [binary])
+        if directory == owned:
+            graph = loaded_graph(binary, loader, [selected], required=(selected,), run=run)
+            assert str(selected) in graph['libraries']
+        else:
+            with pytest.raises(ValueError, match='unselected LLVM/Clang library'):
+                loaded_graph(binary, loader, [selected], run=run)
+            with pytest.raises(ValueError, match='required instrumented libraries'):
+                loaded_graph(binary, loader, [selected], required=(selected,), run=run)
