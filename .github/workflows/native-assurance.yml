@@ -7,7 +7,9 @@ permissions:
   contents: read
 concurrency:
   group: linux-native-assurance-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Finish the active cold compiler build; GitHub keeps the newest pending run.
+  # Each run still qualifies only its own exact source revision.
+  cancel-in-progress: false
 jobs:
   plan:
     name: Classify exact source revision

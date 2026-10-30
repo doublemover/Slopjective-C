@@ -4,6 +4,11 @@ Issue [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) separate
 three results: tooling contract tests, source-based native execution, and shipped
 SDK qualification. A green Python job cannot substitute for native execution.
 
+Native workflow concurrency finishes the active cold build and queues the newest
+pending revision. Implementation pushes do not repeatedly discard a compiler
+build. Each result remains bound to its own exact head/base/tested SHA; a prior
+revision's success cannot satisfy the latest revision's gate.
+
 ## Source gate
 
 `Linux native assurance` runs for every pull request and push to `main`.

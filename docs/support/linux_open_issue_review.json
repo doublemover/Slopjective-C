@@ -98,7 +98,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8286",
       "category": "assurance",
       "body_sha256": "96ebaf648e1a51dc22a243cbe664f00833421e129fb778288889578251fe82d4",
-      "status": "open"
+      "status": "ir-reduction-lane-implemented-qualification-in-progress",
+      "implementation": "docs/roadmap/linux_llvm_ir_assurance.md"
     },
     {
       "number": 8287,
