@@ -1,12 +1,12 @@
 #include <cstdlib>
 __attribute__((noinline)) int objc3_asan_detector(int index) {
-  auto *values = static_cast<int *>(std::calloc(16, sizeof(int)));
+  volatile int *values = static_cast<int *>(std::calloc(16, sizeof(int)));
   if (!values) std::abort();
 #ifndef OBJC3_DETECTOR_BAD
   index %= 16;
 #endif
   volatile int result = values[index];
-  std::free(values);
+  std::free(const_cast<int *>(values));
   return result;
 }
 int main(int argc, char **argv) {

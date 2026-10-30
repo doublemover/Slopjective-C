@@ -24,6 +24,11 @@ def test_instrumented_runtime_failure_replaces_prior_success(tmp_path, monkeypat
         Path(argv[-1]).write_bytes(b'partial executable')
         return SimpleNamespace(returncode=1)
 
+    class Profiles:
+        def __init__(self, *args, **kwargs): pass
+        def get(self, *args, **kwargs):
+            return SimpleNamespace(archive=tmp_path / 'canonical-services.a', objc_runtime=tmp_path / 'libobjc.so')
+    monkeypatch.setattr(qualification, 'RuntimeProfiles', Profiles)
     controls = []
     class Gate:
         environment = {}
@@ -37,7 +42,8 @@ def test_instrumented_runtime_failure_replaces_prior_success(tmp_path, monkeypat
     assert report['status'] == 'FAIL' and not report['executions']
     assert controls == ['O0']
     assert len(calls) == 1 and '-fsanitize=address,undefined' in calls[0]
-    assert any(str(path).endswith('/concurrency/service_public.cpp') for path in calls[0])
+    assert str(tmp_path / 'canonical-services.a') in calls[0]
+    assert not any(str(path).endswith('/concurrency/service_public.cpp') for path in calls[0])
     assert '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS' in calls[0]
     assert any(str(path).endswith('/structured_runtime/actor_scheduling.cpp') for path in calls[0])
     executable = Path(calls[0][-1])
@@ -52,6 +58,11 @@ def test_detector_failure_prevents_project_compilation_and_replaces_pass(tmp_pat
     for path in (compiler, resources, output): path.mkdir()
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
+    class Profiles:
+        def __init__(self, *args, **kwargs): pass
+        def get(self, *args, **kwargs):
+            return SimpleNamespace(archive=tmp_path / 'canonical-services.a', objc_runtime=tmp_path / 'libobjc.so')
+    monkeypatch.setattr(qualification, 'RuntimeProfiles', Profiles)
     class Gate:
         environment = {}
         def __init__(self, *args, **kwargs): pass

@@ -48,6 +48,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     runtime_library = runtime_library or sdk / 'lib/libobjc3_runtime_services.a'
     objc_runtime = objc_runtime or sdk / 'lib/libobjc.so'
     compiler = compiler or sdk / 'bin/clang'
+    compiler, fixture, headers, runtime_library, objc_runtime = (
+        path.resolve(strict=True) for path in (compiler, fixture, headers, runtime_library, objc_runtime))
     env = environment(sdk)
     env['LD_LIBRARY_PATH'] = str(objc_runtime.parent) + ':' + str(sdk / 'lib')
     if sanitizer and resource_root is None:
