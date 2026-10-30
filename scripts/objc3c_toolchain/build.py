@@ -91,7 +91,8 @@ def build_foundation(repo: Path, **options) -> dict:
 
 
 def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = False,
-                     stage: bool = False, instrumentation_profile: str | None = None) -> dict:
+                     stage: bool = False, instrumentation_profile: str | None = None,
+                     test_results: Path | None = None) -> dict:
     repo = repo.resolve()
     source = repo / "out/toolchains/objc3-development/src"
     if not source.exists():
@@ -130,6 +131,13 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             environment["PYTHONDONTWRITEBYTECODE"] = "1"
             environment["CCACHE_COMPILERCHECK"] = "content"
             for index, command in enumerate([plan["command"], *plan.get("follow_up_commands", [])]):
+                command = list(command)
+                result_file = None
+                if phase == 'test' and test_results is not None:
+                    test_results.mkdir(parents=True, exist_ok=True)
+                    result_file = test_results / (f'foundation-{index}.json' if index == 0 else f'foundation-{index}.xml')
+                    command += (['--output', str(result_file)] if index == 0 else
+                                ['--gtest_output=xml:' + str(result_file)])
                 log_path = run_directory / f"{phase}-{index}.log"
                 phase_started = time.monotonic()
                 print(f"foundation {phase} [{index + 1}]: {log_path}", flush=True)
@@ -139,6 +147,8 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
                 report["phases"].append({"phase": phase, "plan_identity": plan["identity"],
                     "command": command, "exit_code": result.returncode, "log": str(log_path),
                     "elapsed_seconds": round(time.monotonic() - phase_started, 6)})
+                if result_file is not None:
+                    report['phases'][-1]['test_results'] = str(result_file)
                 history_path.write_text(json.dumps(report, indent=2) + "\n")
                 report_path.write_text(json.dumps(report, indent=2) + "\n")
                 if result.returncode:

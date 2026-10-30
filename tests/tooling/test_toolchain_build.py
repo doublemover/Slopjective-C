@@ -118,3 +118,14 @@ def test_cmake_executed_include_must_belong_to_configuration_inventory(tmp_path,
     else:
         with pytest.raises(ToolchainError, match='outside its configuration inventory'):
             build.verify_configuration_trace(plan)
+
+
+def test_ci_results_are_requested_from_actual_lit_and_gtest_commands(runner, tmp_path):
+    repo, _, calls = runner
+    report = build.build_foundation(repo, test_results=tmp_path / 'native results')
+    tests = [phase for phase in report['phases'] if phase['phase'] == 'test']
+    assert tests[0]['command'][-2:] == ['--output', str(tmp_path / 'native results/foundation-0.json')]
+    assert tests[1]['command'][-1] == '--gtest_output=xml:' + str(tmp_path / 'native results/foundation-1.xml')
+    assert [phase['test_results'] for phase in tests] == [str(tmp_path / 'native results' / name)
+        for name in ('foundation-0.json', 'foundation-1.xml')]
+    assert all('test_results' not in phase for phase in report['phases'] if phase['phase'] != 'test')

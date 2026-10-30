@@ -1,0 +1,66 @@
+name: Budgeted native compiler closeout
+on:
+  workflow_call:
+    inputs:
+      source_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  compiler-closeout:
+    name: compiler-closeout
+    runs-on: ubuntu-26.04
+    container: debian:13
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+      SOURCE_SHA: ${{ inputs.source_sha }}
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pinned host tools
+        shell: bash
+        run: bash scripts/setup_cloud_environment.sh
+      - name: Select immutable periodic source
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python3 -B -m scripts.objc3c_assurance plan --periodic-sha "$SOURCE_SHA" --plan out/native-assurance/plan.json
+      - name: Build full native objc3c closeout surface
+        id: native
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.3
+          ulimit -c 0
+          python3 -B -m scripts.objc3c_assurance run --periodic-sha "$SOURCE_SHA" --plan out/native-assurance/plan.json --output out/native-assurance/results
+      - name: Preserve periodic native evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-closeout-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/native-assurance/plan.json
+            out/native-assurance/results/**/*.json
+            out/native-assurance/results/**/*.xml
+            out/native-assurance/results/**/*.log
+            !out/native-assurance/results/**/build/**
+            !out/native-assurance/results/**/isolated-install/**
+          if-no-files-found: error
+          retention-days: 7
+      - name: Verify exact-revision periodic evidence
+        if: always()
+        env:
+          ASSURANCE_OUTCOMES: '{"plan":"success","native":"${{ steps.native.outcome }}"}'
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python3 -B -m scripts.objc3c_assurance verify --periodic-sha "$SOURCE_SHA" --plan out/native-assurance/plan.json --output out/native-assurance/results

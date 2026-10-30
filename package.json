@@ -2,6 +2,7 @@
   "name": "slopjective-c",
   "private": true,
   "devDependencies": {
+    "js-yaml": "5.4.1",
     "markdownlint-cli2": "0.23.3",
     "prettier": "3.9.10"
   },

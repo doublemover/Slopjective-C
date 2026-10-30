@@ -217,7 +217,7 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | --- | --- |
 
 
-| [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Integrate native Clang/Linux execution into truthful PR and periodic assurance gates |
+| [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
 | [#8284](https://github.com/doublemover/Slopjective-C/issues/8284) | Add isolated compiler and complete runtime instrumentation profiles |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Add fork-matched static analysis and checked lock contracts for the native compiler/runtime implementation |
 | [#8286](https://github.com/doublemover/Slopjective-C/issues/8286) | Verify real Objective-C 3 IR across optimizer/backend stages and retain reducible miscompile evidence |
