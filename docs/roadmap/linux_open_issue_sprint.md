@@ -1,12 +1,12 @@
 # Linux open-issue implementation sprint
 
-The 2026-10-29 repository inventory contains **51 open issues**. The
+The 2026-10-30 repository inventory contains **51 open issues**. The
 [source-owned inventory](../support/linux_open_issue_review.json) records every
 issue, its category, body digest and implementation status. This sprint keeps
 compiler correctness, runtime correctness and assurance proposals distinct;
 passing tooling checks alone does not complete a native implementation issue.
 
-## Current implementation batch
+## Qualification and runtime corrections
 
 - #8280: CTest inventory owns assertion policy, with forced-include compilation
   guards, an expected-failure control and always-active map-count operations.
@@ -42,7 +42,43 @@ Issue #8279 was already fixed on this branch; its contributor/onboarding repair 
 part of PR #8278. The twelve new fixes pass source validation. The inventory retains all earlier
 failed/interrupted attempts and the exact final report digests.
 
-## Validation checkpoint
+## Compiler contract corrections
+
+Commit `0f9632db9` addresses fourteen additional findings:
+
+- #8306 and #8314: explicit Block casts and implicit callable conversions retain
+  directional borrowed/noescape contracts and native consumed/result diagnostics.
+- #8316: GNU statement-expression results retain value, ownership, effect and
+  referent facts without taint from discarded expressions.
+- #8315: dependent if-let/if-var lists revalidate Boolean conditions and recreate
+  full-expression cleanup when instantiated.
+- #8308: ordinary and async autorelease pools use the common compound-body guard
+  continuation and source-cleanup lowering.
+- #8309 and #8317: managed C record helpers skip unnamed bit-fields, specialize
+  on actual source/destination alignment and preserve array-element alignment.
+  Underaligned strong cleanup avoids a runtime barrier that requires aligned
+  pointer storage, including at O0.
+- #8310: interface admission and replay bind primitive widths/alignment, signed
+  char/wchar, enum and record packing, target features/ABI and Clang ABI mode.
+- #8311 and #8312: C/Objective-C TLS and nested pointer nullability participate
+  in semantic identity before canonical type erasure.
+- #8318–#8321: category protocols, ivar bitfield width, property selectors and
+  required/optional state, generic variance/bounds and specialized superclasses
+  retain identity, printing and dependency admission.
+
+The latest batch passes **36 frontend suites**, **239 native unit tests**,
+**415 compiler regressions** and **144 focused tooling tests**. Three compiler
+cases remain unsupported. Normal guard/pool/record and ASan/UBSan checks each
+pass **24 configurations / 60 commands**. Async source/PCH checks pass
+**48 configurations / 336 commands**. Source-free packages pass **17
+configurations / 119 commands**, including eager and source-directed imports.
+The paired ABI import tests reject mismatched consumers before declaration
+import; private category protocols and generic dependencies also fail admission.
+
+Packed runtime witnesses cover C managed records. C++ nontrivial record objects
+retain native alignment requirements. The accepted SDK archive is unchanged.
+
+## Earlier validation checkpoint
 
 Commit `4c1754c20` passes **36 frontend suites**, **239 native unit tests**,
 **413 compiler regressions** and **180 focused tooling tests**. Three compiler
@@ -57,9 +93,9 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**38 issues remain** in the queue below. Platform/assurance work and the compiler
-correctness defects are still open; this checkpoint does not claim the full
-backlog is complete.
+**24 issues remain** in the queue below. The two compiler issues, remaining
+runtime/performance corrections and independent assurance/platform work remain
+open. This checkpoint does not claim the full backlog is complete.
 
 ## Remaining issue queue
 
@@ -76,22 +112,8 @@ backlog is complete.
 
 | Issue | Remaining scope |
 | --- | --- |
-| [#8306](https://github.com/doublemover/Slopjective-C/issues/8306) | Reject Block casts that erase or fabricate callable ownership contracts |
 | [#8307](https://github.com/doublemover/Slopjective-C/issues/8307) | Preserve borrowed obligations carried by C++ base subobjects |
-| [#8308](https://github.com/doublemover/Slopjective-C/issues/8308) | Preserve guard continuations and source cleanup ownership inside autorelease pools |
-| [#8309](https://github.com/doublemover/Slopjective-C/issues/8309) | Skip zero-width bit-fields before requesting storage in managed C record helpers |
-| [#8310](https://github.com/doublemover/Slopjective-C/issues/8310) | Bind effective primitive/target ABI settings into semantic-interface identity and replay |
-| [#8311](https://github.com/doublemover/Slopjective-C/issues/8311) | Include C and Objective-C thread-storage class in semantic-interface fingerprints |
-| [#8312](https://github.com/doublemover/Slopjective-C/issues/8312) | Preserve pointer nullability in semantic identity before canonical type erasure |
 | [#8313](https://github.com/doublemover/Slopjective-C/issues/8313) | Bound aggregate interface-resolution memory and avoid retaining every unselected artifact |
-| [#8314](https://github.com/doublemover/Slopjective-C/issues/8314) | Reject implicit callable conversions that fabricate borrowed permissions or erase borrowed results |
-| [#8315](https://github.com/doublemover/Slopjective-C/issues/8315) | Revalidate dependent Boolean conditions when instantiating if-let/if-var |
-| [#8316](https://github.com/doublemover/Slopjective-C/issues/8316) | Preserve borrowed facts through GNU statement-expression results |
-| [#8317](https://github.com/doublemover/Slopjective-C/issues/8317) | Preserve actual subobject alignment in managed C-record helpers, or reject underaligned storage |
-| [#8318](https://github.com/doublemover/Slopjective-C/issues/8318) | Preserve category-adopted protocols in canonical source, identity and dependency checks |
-| [#8319](https://github.com/doublemover/Slopjective-C/issues/8319) | Bind Objective-C ivar bitfield shape into semantic-interface identity |
-| [#8320](https://github.com/doublemover/Slopjective-C/issues/8320) | Include property accessor selectors and required/optional state in semantic identity |
-| [#8321](https://github.com/doublemover/Slopjective-C/issues/8321) | Bind lightweight Objective-C generic signatures and specialized superclasses into class interface identity |
 
 | Issue | Remaining scope |
 | --- | --- |

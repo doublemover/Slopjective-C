@@ -1,6 +1,6 @@
 {
   "schema": "objc3c.open-issue-review.v1",
-  "review_date": "2026-10-29",
+  "review_date": "2026-10-30",
   "repository": "doublemover/Slopjective-C",
   "reviewed_head": "45e37d7d1decc9e1cc7940c7171a710e17fbf1d0",
   "open_issue_count": 51,
@@ -258,7 +258,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8306",
       "category": "compiler-interface",
       "body_sha256": "16ee4f35db607fb7f5f40ae9c1513a20006079a08af42b1f3533ff3fd1a4375f",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8307,
@@ -274,7 +275,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8308",
       "category": "compiler-interface",
       "body_sha256": "e81a6934047d06177aeede6ff01947b8474d0d5dbdb93172202f0e7beb3bbef7",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8309,
@@ -282,7 +284,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8309",
       "category": "compiler-interface",
       "body_sha256": "8fdc6e8a495c7c936f3a12ec73ebbb51b8f94c217520b4d1e5fb1e328c259835",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8310,
@@ -290,7 +293,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8310",
       "category": "compiler-interface",
       "body_sha256": "429a949b26f0ce02441c75749e4af5b8502e3a2d7f76a8b56764fa5d490eca9b",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8311,
@@ -298,7 +302,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8311",
       "category": "compiler-interface",
       "body_sha256": "e39bbae96edc5afcdb79cfd4e937a6d52a83c9eb119ddbe932290caa2d0051e5",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8312,
@@ -306,7 +311,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8312",
       "category": "compiler-interface",
       "body_sha256": "114153a8181ebc0bf61ac2930d1c90beb1a8e1f8f1927f2516744fcf86c42a91",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8313,
@@ -322,7 +328,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8314",
       "category": "compiler-interface",
       "body_sha256": "12e4878dd2c581f0f695b1971c7144e708ac4d0a7d82b11c7352db14d44f2fb6",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8315,
@@ -330,7 +337,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8315",
       "category": "compiler-interface",
       "body_sha256": "dc66c8f3629d88beaab91cfd8d286c1a6de51c39444e2ead1a29f1cca763c0a5",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8316,
@@ -338,7 +346,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8316",
       "category": "compiler-interface",
       "body_sha256": "34c5d538a140a79f3552104b820c45ac62ce89b06224f2b0f2043bbe446f157a",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8317,
@@ -346,7 +355,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8317",
       "category": "compiler-interface",
       "body_sha256": "e0e95c2cb2692c1ad82b539e8e92d37a24246f0266017f3889aa6376d4e98121",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8318,
@@ -354,7 +364,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8318",
       "category": "compiler-interface",
       "body_sha256": "9f0bb182d5d030f1d8277297953b82fb2df45eed0432dd199cf35c568bb77698",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8319,
@@ -362,7 +373,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8319",
       "category": "compiler-interface",
       "body_sha256": "17596fe1fa3f1d447f48871334aa6622a6df03ff056946597da788b6b18bd1df",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8320,
@@ -370,7 +382,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8320",
       "category": "compiler-interface",
       "body_sha256": "b1b0742fb6240c9866fa59d1bdeccfa4adbdfb299c3b27eae42b0786621e355d",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8321,
@@ -378,7 +391,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8321",
       "category": "compiler-interface",
       "body_sha256": "64dd2e6c34f614915aa40b8c8c37e10b99d294981f7e1f02f870f66bed95c281",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48"
     },
     {
       "number": 8322,
@@ -441,7 +455,7 @@
     8325,
     8326
   ],
-  "remaining_implementation_or_host_items": 38,
+  "remaining_implementation_or_host_items": 24,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -548,5 +562,114 @@
     "out/issue-runtime-lifetime-sanitizers/qualification.json",
     "out/issue-runtime-frontends/qualification.json",
     "out/issue-admission-frontends/qualification.json"
-  ]
+  ],
+  "compiler_correction_batch": {
+    "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48",
+    "fixed_issues": [
+      8306,
+      8308,
+      8309,
+      8310,
+      8311,
+      8312,
+      8314,
+      8315,
+      8316,
+      8317,
+      8318,
+      8319,
+      8320,
+      8321
+    ],
+    "validation": {
+      "native": {
+        "path": "out/issue-compiler-final-check.json",
+        "sha256": "fd16ac2ad78b57a4d43ffaddc748b51a5f3ec45a47aa359b2f59c77556457c9f",
+        "status": "PASS"
+      },
+      "frontends": {
+        "path": "out/issue-compiler-verified-frontends/qualification.json",
+        "sha256": "70e656565e02cc03f43c9b312a463a30f611cfd9ef5266588eff83ac89cdb737",
+        "status": "PASS"
+      },
+      "guard_pool_managed_runtime": {
+        "path": "out/issue-compiler-final-runtime/qualification.json",
+        "sha256": "4ddbcfc9996e12bbfb25b113a45197661923d7253f2973fad9d57ca4f9cc014e",
+        "status": "PASS"
+      },
+      "guard_pool_managed_asan_ubsan": {
+        "path": "out/issue-compiler-final-sanitizers/qualification.json",
+        "sha256": "0040cb13f9b41a253dac2c76a2ba8b379b14ff5a71c9871bfd1fb8272a6d9549",
+        "status": "PASS"
+      },
+      "async_source_pch": {
+        "path": "out/issue-compiler-final-async/batch.json",
+        "sha256": "f6c8bd7cf72a91677840f76f9729e66b3ac8e40bc0f690cf7ad537c48e6917e3",
+        "status": "pass"
+      },
+      "factory_source": {
+        "path": "out/issue-compiler-final-packages/source/qualification.json",
+        "sha256": "8587015ed3259c44eb3643567eeee639bc524404a27b3db024238a9ec30035f2",
+        "status": "PASS"
+      },
+      "factory_eager": {
+        "path": "out/issue-compiler-final-packages/eager/qualification.json",
+        "sha256": "f1f4558e18beaa797c9b3db25050097ed0ecf1c511c4081e2b180b56b080f3ff",
+        "status": "PASS"
+      },
+      "factory_full-source": {
+        "path": "out/issue-compiler-final-packages/full-source/qualification.json",
+        "sha256": "18a421b39b246084b77866a3de9a5571a90c8d4b6074faab4754abc0a6250b8d",
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "frontend_suites": 36,
+      "native_unit_tests": 239,
+      "compiler_regressions": 415,
+      "compiler_unsupported": 3,
+      "focused_tooling_tests": 144,
+      "guard_pool_managed_configurations": 24,
+      "guard_pool_managed_commands": 60,
+      "guard_pool_managed_sanitizer_configurations": 24,
+      "guard_pool_managed_sanitizer_commands": 60,
+      "async_configurations": 48,
+      "async_commands": 336,
+      "source_free_package_configurations": 17,
+      "source_free_package_commands": 119
+    },
+    "tooling_log": {
+      "path": "out/issue-compiler-final-tooling.log",
+      "sha256": "2cc4aa9eae6150f9d7cee8ef7c04cdb062a0a99f0bfa0ba17bd481d66af6c218"
+    },
+    "source_inputs": {
+      "native/objc3c/src/clang_foundation/compile_session.cpp": "96487eed451674b40ae60b7467eb7513fb83a2ddc7c5d1db308b29a74c1f08c2",
+      "native/objc3c/src/clang_foundation/interface_emitter.cpp": "69c53cd3669169af9a7e7aeec58f6ee294e0881e98a18279bb5120359b3f6ddb",
+      "native/objc3c/src/clang_foundation/interface_emitter.h": "d9692a087b6823fdc81826658063c437f7642e2a9e7b24d52533cf217f9745fc",
+      "native/objc3c/src/clang_foundation/interface_import.cpp": "5cf3d5196349ec7fd8f2863ec79b0a79b1936a26eec34b9fc2dec40321f5d891",
+      "native/objc3c/src/clang_foundation/native_contract_identity.h": "3f087bd219e437fae30085cb2e2a680b184e3b5919ffb167bfccd3cfe197e9fb",
+      "scripts/objc3c_toolchain/export_development_patches.py": "a399cd7a99e26ddb5f96caf17ccb62ec1d45ee8444fc500a368ca40240d43c7a",
+      "tests/clang_foundation/guard_bindings/runtime.h": "26447a5638d18c587df9509499667af2a37a923a4aac492e6aedf1e6350c2f38",
+      "tests/clang_foundation/interface_emitter_test.cpp": "c63dbaf0ac0f5db964d6b9c991f0880d12b4151818ee7f5ab116f511725110bb",
+      "tests/clang_foundation/interface_import_test.cpp": "26e6b9db531ce8040ada5a94fdc0d2bc717f0435211daa9b8c7ffcf2ac1f74c6",
+      "tests/clang_foundation/native_c_async/provider.m": "ae456bcbfcc6e1c677469ad0f0e43d42b4e98ecb72417e570e4c1018106cacb7",
+      "toolchains/llvm/manifest.json": "debfa21ad6590d301eb4420bdc67f52db42c11e8ec3e873fa8f73df803cfa528",
+      "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "4ebcfa361722f4faea5ee988b232cf267f9daf9b8ef274357b37c7897043aa6a",
+      "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "8fec7ae2ad9924a49cc7c19d24f26ae46b0d8702f9c67568ac41abeebbbeaf9d"
+    },
+    "boundaries": [
+      "Packed record runtime checks cover C managed-storage helpers; C++ nontrivial record objects retain their native alignment requirement.",
+      "The package matrix uses the current ordinary services archive and GNUstep runtime. It does not repeat sanitizer package variants or qualify an SDK archive.",
+      "The guard/pool/record sanitizer matrix instruments generated clients and the selected GNUstep dependency; it is not host-compiler or complete service-graph instrumentation."
+    ],
+    "retained_failure_artifacts": [
+      "out/issue-primitive-replay-resumed-emitter.log",
+      "out/issue-primitive-admission-tests.log",
+      "out/issue-tls-decode-diagnostic-test.log",
+      "out/issue-managed-pools-sanitizers/qualification.json",
+      "out/issue-packed-destruction-sanitizers/qualification.json",
+      "out/issue-packed-destruction-check.json",
+      "out/issue-compiler-final-frontends/qualification.json"
+    ]
+  }
 }
