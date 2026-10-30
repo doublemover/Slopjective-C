@@ -61,7 +61,11 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8282",
       "category": "assurance",
       "body_sha256": "748ff0dde5fbe079c91357b9592784e7a273f6cbcbde31ff69891f0bae7c3d37",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "9d349791f8fba99a1998550dce31f8fcbef35559",
+      "followup_commits": [
+        "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
+      ]
     },
     {
       "number": 8283,
@@ -490,7 +494,7 @@
     8325,
     8326
   ],
-  "remaining_implementation_or_host_items": 15,
+  "remaining_implementation_or_host_items": 14,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -859,6 +863,104 @@
       "Profile tests instrument all owned runtime translation units and exercise the three real registered collection CTests; this does not instrument the host compiler.",
       "Copy-count and metadata-work results are deterministic bounds, not wall-clock speedup claims.",
       "No SDK/archive was rebuilt or promoted."
+    ]
+  },
+  "strict_sanitizer_batch": {
+    "implementation_commits": [
+      "9d349791f8fba99a1998550dce31f8fcbef35559",
+      "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
+    ],
+    "fixed_issues": [
+      8282
+    ],
+    "partial_progress_issues": [
+      8284
+    ],
+    "validation": {
+      "feature_asan": {
+        "path": "out/issue-strict-feature-policy/asan/batch.json",
+        "sha256": "b32d684d69090386d449a91e9668ecf10337050c9d5adffbb68edb8e01d6ccc7"
+      },
+      "feature_tsan": {
+        "path": "out/issue-strict-feature-policy/tsan/batch.json",
+        "sha256": "cddb32048b8aff0d0458a33d20bf02a976c96a5d084b6cd680cadc9bdafa266a"
+      },
+      "factory_asan": {
+        "path": "out/issue-strict-factory-policy/asan/qualification.json",
+        "sha256": "8d4c581fa244b757678b82c8818d92a72ef259c6abdc38b7f360c074ebe44e6e"
+      },
+      "factory_tsan": {
+        "path": "out/issue-strict-factory-policy/tsan/qualification.json",
+        "sha256": "e565c61b255bbcf8535559247bc88d519800f38349ceb1b764c4cd8afa16957b"
+      },
+      "native_async": {
+        "path": "out/issue-strict-canonical-native-async/qualification.json",
+        "sha256": "225a52845d916f9e0b0bcfec8fb9823f1425e3fe808d6e2fffe06387ea03899f"
+      },
+      "task_coroutines": {
+        "path": "out/issue-strict-canonical-task-coroutines/qualification.json",
+        "sha256": "de5581639f3953e42f0b16c99ccbcfcb20eacf2536add03ca04d4c8b0fbca84d"
+      },
+      "structured": {
+        "path": "out/issue-strict-canonical-structured-final/qualification.json",
+        "sha256": "4892ea9125ac1fe1cc71a62ec59a907ce9af3dc7f8bf93984b20fe20992c9645"
+      },
+      "c_frame_bridge": {
+        "path": "out/issue-strict-canonical-c-bridge-absolute/qualification.json",
+        "sha256": "c2722184f5f0b33a200876342e34a6873f681d340437a047b508c12572cd097a"
+      },
+      "installed_ownership": {
+        "path": "out/issue-strict-installed-ownership-observable/summary.json",
+        "sha256": "98b7e03cede63d9febf68d9fcafc3725f0051d8f0505fda99f9d41c1df196931"
+      },
+      "policy_tests": {
+        "path": "out/issue-strict-complete-policy-tooling.log",
+        "sha256": "ffd52d35c69102fd63903c21e4770e232b3cf293dbbe83c3fffd76f33b89c0a5"
+      },
+      "runtime_evidence_controls": {
+        "path": "out/issue-canonical-runtime-evidence-controls.log",
+        "sha256": "b70f7456ea581bfc4d3ca9ef6a763dfa01e5393f741e8e4d37c5d909a195b8cb"
+      },
+      "probe_environment_guard": {
+        "path": "out/issue-canonical-runtime-policy-fast-tests.log",
+        "sha256": "f0ab463cbd60a7a8e658bb9b7551bfecf887c39a9a6df8ec3ecd3824bbb512dc"
+      }
+    },
+    "counts": {
+      "feature_configurations": 24,
+      "feature_project_commands": 156,
+      "factory_configurations": 16,
+      "factory_project_commands": 112,
+      "native_async_configurations": 16,
+      "native_async_project_commands": 64,
+      "coroutine_configurations": 12,
+      "coroutine_project_commands": 48,
+      "structured_configurations": 4,
+      "structured_project_commands": 8,
+      "c_frame_bridge_configurations": 40,
+      "installed_ownership_configurations": 12,
+      "installed_ownership_project_commands": 72,
+      "policy_tests": 18,
+      "canonical_runtime_negative_controls": 3
+    },
+    "contracts": [
+      "Qualification subprocesses admit only an explicit environment allowlist and owned sanitizer, loader and symbolizer settings.",
+      "Paired ASan, UBSan, LSan and TSan controls require their exact failure disposition, detector class and symbolized fixture site; corrected controls must be clean.",
+      "Control cache identities bind the compiler, linker, symbolizer, sanitizer resources, loaded ELF dependencies, flags, sources and effective environment.",
+      "Canonical runtime profiles compare File API sources, compile commands, per-object sanitizer symbols and exact archive-member bytes, with matching instrumented GNUstep dependencies."
+    ],
+    "boundaries": [
+      "Host compiler/frontend implementation instrumentation remains open under #8284. These runtime profiles compile owned services with the ordinary compiler.",
+      "Broad lane receipts precede the final dependency-symbol-probe environment forwarding; focused regression tests cover that environment-only guard.",
+      "The active feature/factory checkpoint precedes the ASan control observability hardening. Native policy tests and the installed-SDK qualification exercise the hardened volatile access at O0/O2.",
+      "The installed ownership witness uses accepted SDK 2.62 as shipped. No SDK/archive was rebuilt or promoted."
+    ],
+    "retained_failure_artifacts": [
+      "out/issue-strict-detector-initial.log",
+      "out/issue-strict-sanitizer-policy-tests.log",
+      "out/issue-canonical-runtime-profile-initial.log",
+      "out/issue-strict-installed-ownership/summary.json",
+      "out/issue-strict-canonical-c-bridge/qualification.json"
     ]
   }
 }

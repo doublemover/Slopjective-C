@@ -139,6 +139,36 @@ Zero-sized/over-aligned values, capacity/overflow boundaries, duplicate order,
 chunk boundaries and remove-to-empty pass independent contents/lifetime checks.
 These checks do not measure uninstrumented speedup or instrument the host compiler.
 
+## Strict sanitizer policy and canonical runtime profiles
+
+Commits `9d349791f` and `ddc8bb655` address #8282. An explicit environment
+allowlist replaces ambient sanitizer options, suppressions, loader overrides and
+symbolizers. Paired ASan, UBSan, LSan and TSan controls require the expected class,
+source site and exit disposition; corrected programs must remain clean. Control
+identity binds compiler/linker/symbolizer bytes, flags, resources, loaded ELF
+libraries and effective environment. Changed inputs or receipts invalidate reuse.
+
+The current feature and factory runners pass **40 configurations / 268 project
+commands** under both sanitizer modes despite deliberately weakened ambient
+options. Dedicated native async, coroutine, structured and C-frame lanes pass
+**16, 12, 4 and 40 configurations**, respectively. Installed ARC/MRC projections
+pass **12 configurations / 72 commands** against accepted SDK 2.62. The installed
+lane caught an optimized-away ASan access; making the heap access volatile
+restored O2 detection. C-bridge inputs now resolve before leaving the checkout.
+
+Dedicated lanes build the canonical runtime CMake target with its per-file
+Objective-C++ settings and matching pinned GNUstep variant. File API sources
+must match compilation commands; every owned object must expose its sanitizer
+instrumentation, and each archive member must match that object's exact bytes.
+Three executable negative controls reject disabled instrumentation, an omitted
+compile command and a substituted ordinary object. Eighteen policy tests also
+reject weakened options, unapproved suppressions, missing flags, wrong resources,
+non-detector failures and changed cache inputs/receipts.
+
+The receipts preserve checkpoint boundaries. Runtime object instrumentation is
+implemented; host compiler/frontend implementation instrumentation remains part
+of #8284. No compiler stage, SDK archive or accepted installation was replaced.
+
 ## Earlier validation checkpoint
 
 Commit `4c1754c20` passes **36 frontend suites**, **239 native unit tests**,
@@ -154,7 +184,7 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**15 issues remain** in the queue below. The inherited C++ borrowed issue, remaining
+**14 issues remain** in the queue below. The inherited C++ borrowed issue, remaining
 runtime/performance corrections and independent assurance/platform work remain
 open. This checkpoint does not claim the full backlog is complete.
 
@@ -169,7 +199,6 @@ open. This checkpoint does not claim the full backlog is complete.
 
 | Issue | Remaining scope |
 | --- | --- |
-| [#8282](https://github.com/doublemover/Slopjective-C/issues/8282) | Make native sanitizer qualification fail closed against ambient options and verify detection with paired controls |
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Integrate native Clang/Linux execution into truthful PR and periodic assurance gates |
 | [#8284](https://github.com/doublemover/Slopjective-C/issues/8284) | Add isolated compiler and complete runtime instrumentation profiles |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Add fork-matched static analysis and checked lock contracts for the native compiler/runtime implementation |
