@@ -224,7 +224,11 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8300",
       "category": "runtime",
       "body_sha256": "34424740368a286186bdc964c0f7b21de114da46976683ec695a7a952d47ca84",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
+      "followup_commits": [
+        "66ca656437406b576c56cc301e99f79e1d224c48"
+      ]
     },
     {
       "number": 8301,
@@ -232,7 +236,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8301",
       "category": "runtime",
       "body_sha256": "b0487e6eb2cf9b68fb597a6ed3fa496a97c9e0fc007a09ceb4f3eff96bc1281c",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "66ca656437406b576c56cc301e99f79e1d224c48"
     },
     {
       "number": 8302,
@@ -253,7 +258,11 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8303",
       "category": "runtime",
       "body_sha256": "c73f7ac0d39e36be47a29c9d588bb671f0936c2de3a6333c6655da3778976b17",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
+      "followup_commits": [
+        "66ca656437406b576c56cc301e99f79e1d224c48"
+      ]
     },
     {
       "number": 8304,
@@ -345,7 +354,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8313",
       "category": "compiler-interface",
       "body_sha256": "9d1e1f5112acedb33faaad7d5d58de0c383be51dad72342fb5357af877b72081",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "32e5dcdf618646077730369832215135b4acc9ed"
     },
     {
       "number": 8314,
@@ -480,7 +490,7 @@
     8325,
     8326
   ],
-  "remaining_implementation_or_host_items": 19,
+  "remaining_implementation_or_host_items": 15,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -751,6 +761,104 @@
       "out/issue-runtime-corrections-resumed-matrix/qualification.json",
       "out/issue-object-publication-libobjc-tsan.json",
       "out/issue-runtime-atomic-publication-matrix/qualification.json"
+    ]
+  },
+  "interface_resource_batch": {
+    "implementation_commit": "32e5dcdf618646077730369832215135b4acc9ed",
+    "fixed_issues": [
+      8313
+    ],
+    "validation": {
+      "build": {
+        "path": "out/issue-interface-resource-build.log",
+        "sha256": "15c231c52c9386034a91fb4b8387f454c827bb97c1e435ab907165d6136a0be3"
+      },
+      "ctest": {
+        "path": "out/issue-interface-resource-tests.log",
+        "sha256": "d3104b1eaf4697003e7b5c54f73b884d0f36ce6060e5b0785670680543b97204"
+      },
+      "complete_frontends": {
+        "path": "out/issue-interface-collections-final-frontends/qualification.json",
+        "sha256": "9db038e6f525fccef08d8be3eb9067ec6ef1b6ef94874da67cd963b9c7301702"
+      }
+    },
+    "counts": {
+      "focused_frontend_suites": 3
+    },
+    "coverage": [
+      "exact and one-below aggregate budget boundaries",
+      "UINT64_MAX checked arithmetic",
+      "duplicate coalescing and unselected candidate accounting",
+      "root-order independent selected paths",
+      "128-node boundary and 4096-node iterative graphs in both lexical dependency orders",
+      "direct imports, parser bytes/declarations and stale artifact rejection"
+    ],
+    "boundaries": [
+      "Limits bound admitted input and repeated work, not exact Clang AST RSS."
+    ]
+  },
+  "collection_correction_batch": {
+    "implementation_commits": [
+      "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
+      "66ca656437406b576c56cc301e99f79e1d224c48"
+    ],
+    "fixed_issues": [
+      8300,
+      8301,
+      8303
+    ],
+    "validation": {
+      "profiles": {
+        "path": "out/issue-persistent-collection-final-profiles/qualification.json",
+        "sha256": "80731259aefde7e3502de64501b002e748c2183928a1beeb67f3a005ec4916d3"
+      },
+      "frontends": {
+        "path": "out/issue-interface-collections-final-frontends/qualification.json",
+        "sha256": "9db038e6f525fccef08d8be3eb9067ec6ef1b6ef94874da67cd963b9c7301702"
+      },
+      "cleanup_mutants": {
+        "path": "out/issue-persistent-collection-final-mutants.log",
+        "sha256": "12810b7667d8a06a4c025a153611cb9e366f0ed9592a405be76151306e73288e"
+      },
+      "copy_work_mutants": {
+        "path": "out/issue-persistent-collection-work-mutants.log",
+        "sha256": "3d02873ac4167df6ae15448e8638899759df83e503bfdd297196d6c6fd35f3d7"
+      }
+    },
+    "counts": {
+      "frontend_suites": 37,
+      "standalone_runtime_profiles": 6,
+      "registered_collection_ctest_executions": 18,
+      "paired_cleanup_mutants": 6,
+      "paired_copy_work_mutants": 2
+    },
+    "source_inputs": {
+      "native/objc3c/cmake/GenericCollectionTests.cmake": "a32240888ee95a44a1f68c2c1bf95073e07462cfb093a6b8c2f45e648d574235",
+      "native/objc3c/src/runtime/stdlib/generic_collection_service.cpp": "f954996d03f6d35c96d8e486f4110aca849e643cb34fb2aee31e5b5f9bf0f022",
+      "native/objc3c/src/runtime/stdlib/generic_associative_service.cpp": "813cedfa5fcfd3d08255fc378514217dd73bdc4361781e02d14d1b5726483f5e",
+      "native/objc3c/tests/generic_collection_ownership_test.cpp": "0fa098955322c581b6e38983fbc9d926fbb46b497cb75b908586c1005d9a269e",
+      "native/objc3c/tests/owned_payload_ledger.h": "00f9c2ac2badc1d6e2528062e6a02c0668d3fab0d2dc8b17ca7f6d99acfd0b8f",
+      "tests/tooling/test_native_failure_controls.py": "934f8aa4e7544357d9f01cce8656e3ec13ac417d47735d65114f0bd223d0908d"
+    },
+    "contracts": [
+      "Private associative construction copies each new key once and each input map value once; strict hash-coherence checking retains pairwise equality work.",
+      "Persistent arrays copy at most 32 payloads, three metadata nodes and 192 shared-pointer slots per append/set. Ordered removal remains linear.",
+      "Logical instance IDs distinguish caller sources, speculative candidates, published versions and copied-out results, including zero-sized external logical resources."
+    ],
+    "coverage": [
+      "all callback failure positions in small map duplicate/unique construction",
+      "ordinary and aligned allocation sweeps through construction, publication and mutation metadata",
+      "null outputs and unchanged published ownership/generation before readback",
+      "zero-sized and over-aligned payloads, count limits and overflow rejection",
+      "gate-controlled get/view/iterator reads overlapping mutation and final public release",
+      "mutation-winning reentry and destructor reentry after a successful commit",
+      "linear payload-copy bounds at 32, 128, 512 and 2048 elements",
+      "independent order/content oracles and remove-to-empty across chunk boundaries"
+    ],
+    "boundaries": [
+      "Profile tests instrument all owned runtime translation units and exercise the three real registered collection CTests; this does not instrument the host compiler.",
+      "Copy-count and metadata-work results are deterministic bounds, not wall-clock speedup claims.",
+      "No SDK/archive was rebuilt or promoted."
     ]
   }
 }

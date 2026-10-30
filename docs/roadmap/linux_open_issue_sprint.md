@@ -106,6 +106,39 @@ contents/order oracles. Nine semantic mutants are rejected by the real regressio
 The runtime implementation checkpoint also passes all **36 frontend suites**.
 These checks do not instrument the host compiler or qualify a new SDK archive.
 
+## Generic collection construction and ownership
+
+Commits `a9ce2eae5` and `66ca65643` address #8300, #8301 and #8303:
+
+- Map/set constructors own one private construction snapshot and publish once.
+  New keys are copied once; each input map value is copied once, with duplicate
+  replacement preserving the first key and insertion slot. Strict hash-coherence
+  checking still compares earlier keys; total construction is not claimed linear.
+- Arrays retain immutable 32-element chunks behind a persistent three-level
+  index. Append/set copy at most 32 payloads, three metadata nodes and 192
+  shared-pointer slots. Ordered erase still copies shifted contents.
+- A shared logical-instance ledger separates caller inputs, initialized
+  candidates, published versions and copied-out values. It checks cleanup before
+  readback, including zero-sized logical resources and reused storage addresses.
+  Existing handwritten rollback counters also check before output destruction.
+
+The current combined build passes **37 frontend suites**. The three collection
+CTests share one registration owner and pass **18 executions across six profiles**:
+Debug and RelWithDebInfo, each normal, ASan/UBSan and TSan. The profiles compile
+all seventeen service translation units. Eight paired semantic controls reject
+missing/duplicate destruction, destruction of failed destinations and restored
+whole-array/partial-map reconstruction. Exact work bounds cover 32, 128, 512 and
+2,048 elements. Fault sweeps cover ordinary/aligned allocations and every
+callback position, including publication and mutation-metadata failures.
+
+Gated reads overlap mutation and final public release through get, view and
+array/map iterators. Retained versions preserve their logical instances until
+read completion; losing outputs are destroyed once. Mutation-winning callback
+reentry and post-commit destructor reentry retain their distinct outcomes.
+Zero-sized/over-aligned values, capacity/overflow boundaries, duplicate order,
+chunk boundaries and remove-to-empty pass independent contents/lifetime checks.
+These checks do not measure uninstrumented speedup or instrument the host compiler.
+
 ## Earlier validation checkpoint
 
 Commit `4c1754c20` passes **36 frontend suites**, **239 native unit tests**,
@@ -121,7 +154,7 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**19 issues remain** in the queue below. The two compiler issues, remaining
+**15 issues remain** in the queue below. The inherited C++ borrowed issue, remaining
 runtime/performance corrections and independent assurance/platform work remain
 open. This checkpoint does not claim the full backlog is complete.
 
@@ -129,14 +162,10 @@ open. This checkpoint does not claim the full backlog is complete.
 
 | Issue | Remaining scope |
 | --- | --- |
-| [#8300](https://github.com/doublemover/Slopjective-C/issues/8300) | Build generic maps and sets privately before publication without cloning every partial result |
-| [#8301](https://github.com/doublemover/Slopjective-C/issues/8301) | Avoid whole-array payload reconstruction for every generic append/set |
-| [#8303](https://github.com/doublemover/Slopjective-C/issues/8303) | Make generic-collection rollback tests actually account for destroyed candidate payloads |
 
 | Issue | Remaining scope |
 | --- | --- |
 | [#8307](https://github.com/doublemover/Slopjective-C/issues/8307) | Preserve borrowed obligations carried by C++ base subobjects |
-| [#8313](https://github.com/doublemover/Slopjective-C/issues/8313) | Bound aggregate interface-resolution memory and avoid retaining every unselected artifact |
 
 | Issue | Remaining scope |
 | --- | --- |
@@ -163,6 +192,9 @@ SDK remains 2.62; these source changes do not qualify a replacement archive.
 Windows work and retired compatibility routes remain outside this sprint.
 
 ## Interface import resource policy
+
+Commit `32e5dcdf6` addresses #8313 and passes the interface contract, import and
+module-resolution suites, including exact-limit and overflow regressions.
 
 The resolver validates every discovered artifact pair, then releases its source,
 JSON and decoded declarations before indexing the next pair. Its compact index
