@@ -78,6 +78,34 @@ import; private category protocols and generic dependencies also fail admission.
 Packed runtime witnesses cover C managed records. C++ nontrivial record objects
 retain native alignment requirements. The accepted SDK archive is unchanged.
 
+## Runtime lifetime and collection corrections
+
+Commits `334c61b80`, `a2dbf6edc` and `039c2f16f` address five more issues:
+
+- #8295: generation witnesses scope retired actor bindings to one live object
+  lifetime; delayed cleanup cannot erase a new object's retirement at the same
+  address. GNUstep publishes association classes and ARC flags atomically against
+  concurrent external retain/release operations.
+- #8296: task groups reject depth 65 before allocation or parent mutation; final
+  release drains an intrusive queue instead of recursively deleting descendants.
+- #8299: failed wakes transfer an existing task lease into a thread-local
+  trampoline, including executor saturation and closed-actor cancellation.
+- #8302: one strict UTF-8 pass establishes immutable text boundaries. Concatenation,
+  slicing and builder operations reuse validated offsets, reserve transactionally
+  and copy each output payload once.
+- #8304: concrete i32 maps/sets use a private hash index while retaining insertion
+  order, transactional insertion and no-op iterator validity.
+
+Focused witnesses pass **30 configurations / 60 commands** across O0/O2 normal,
+ASan/UBSan and TSan builds. All owned service translation units and the selected
+GNUstep dependency are instrumented for sanitizer witnesses. Actor cases cover
+ARC/MRC, deterministic address reuse, delayed cleanup, concurrent bind/retain and
+allocation failures. Group/wake cases exercise a 512 KiB stack and 4,096 tasks.
+Text and index tests defend operation counts, fault rollback and independent
+contents/order oracles. Nine semantic mutants are rejected by the real regressions.
+The runtime implementation checkpoint also passes all **36 frontend suites**.
+These checks do not instrument the host compiler or qualify a new SDK archive.
+
 ## Earlier validation checkpoint
 
 Commit `4c1754c20` passes **36 frontend suites**, **239 native unit tests**,
@@ -93,7 +121,7 @@ The five-case sealed local source-graph witness proves cold/warm reuse and
 external-header creation/removal invalidation. Its SDK-shaped directory is an
 integration fixture, not a qualified release archive.
 
-**24 issues remain** in the queue below. The two compiler issues, remaining
+**19 issues remain** in the queue below. The two compiler issues, remaining
 runtime/performance corrections and independent assurance/platform work remain
 open. This checkpoint does not claim the full backlog is complete.
 
@@ -101,14 +129,9 @@ open. This checkpoint does not claim the full backlog is complete.
 
 | Issue | Remaining scope |
 | --- | --- |
-| [#8295](https://github.com/doublemover/Slopjective-C/issues/8295) | Scope retired actor-object bindings to object lifetime, not a reusable address |
-| [#8296](https://github.com/doublemover/Slopjective-C/issues/8296) | Bound task-group depth or traverse and reclaim group trees without recursive native stack |
-| [#8299](https://github.com/doublemover/Slopjective-C/issues/8299) | Trampoline failed task wakes instead of recursively cancelling dependency chains |
 | [#8300](https://github.com/doublemover/Slopjective-C/issues/8300) | Build generic maps and sets privately before publication without cloning every partial result |
 | [#8301](https://github.com/doublemover/Slopjective-C/issues/8301) | Avoid whole-array payload reconstruction for every generic append/set |
-| [#8302](https://github.com/doublemover/Slopjective-C/issues/8302) | Centralize validated text construction before publication and eliminate redundant UTF-8 copies |
 | [#8303](https://github.com/doublemover/Slopjective-C/issues/8303) | Make generic-collection rollback tests actually account for destroyed candidate payloads |
-| [#8304](https://github.com/doublemover/Slopjective-C/issues/8304) | Index concrete i32 map/set membership instead of scanning every prior element |
 
 | Issue | Remaining scope |
 | --- | --- |

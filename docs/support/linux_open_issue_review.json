@@ -167,7 +167,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8295",
       "category": "runtime",
       "body_sha256": "1c37daf221ab32f9479837f55b2cd1f43972aa23f785759b39d5608d7eb1a75b",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "followup_commits": [
+        "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+        "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+      ]
     },
     {
       "number": 8296,
@@ -175,7 +180,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8296",
       "category": "runtime",
       "body_sha256": "67e89e1a0e36fe68c4d7abbd2f0938f97ec77dcf7fd13b0bf3b6e645b33796be",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "followup_commits": [
+        "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+        "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+      ]
     },
     {
       "number": 8297,
@@ -201,7 +211,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8299",
       "category": "runtime",
       "body_sha256": "64f61d5e1e8acb82056ee8666d1e600f585643d72955ad7e3dbe85cb9fb701b0",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "followup_commits": [
+        "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+        "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+      ]
     },
     {
       "number": 8300,
@@ -225,7 +240,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8302",
       "category": "runtime",
       "body_sha256": "75b65199c2e58f29880469be4f3eeb913252b5e7e069bacf990af8dbc5527a3b",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "followup_commits": [
+        "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+        "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+      ]
     },
     {
       "number": 8303,
@@ -241,7 +261,12 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8304",
       "category": "runtime",
       "body_sha256": "070f7bd523cb5414c6c06473aaf32a9b458eca086bc8da1de55b01f6261f9c4f",
-      "status": "open"
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "followup_commits": [
+        "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+        "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+      ]
     },
     {
       "number": 8305,
@@ -455,7 +480,7 @@
     8325,
     8326
   ],
-  "remaining_implementation_or_host_items": 24,
+  "remaining_implementation_or_host_items": 19,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -670,6 +695,62 @@
       "out/issue-packed-destruction-sanitizers/qualification.json",
       "out/issue-packed-destruction-check.json",
       "out/issue-compiler-final-frontends/qualification.json"
+    ]
+  },
+  "runtime_correction_batch": {
+    "implementation_commits": [
+      "334c61b807eff794ba2a9703cb7336a1bfc28338",
+      "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
+      "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
+    ],
+    "fixed_issues": [
+      8295,
+      8296,
+      8299,
+      8302,
+      8304
+    ],
+    "validation": {
+      "matrix": {
+        "path": "out/issue-runtime-atomic-publication-final/qualification.json",
+        "sha256": "84cdd1ebf86e86fb0268884e258b7581f27d5eeeef653b09610410e44964c6c9"
+      },
+      "frontends": {
+        "path": "out/issue-runtime-corrections-frontends/qualification.json",
+        "sha256": "486c01beb1c0e15ba00b246e0ef7f0c92fada5dddf5eaeac3e422955359a3c0e"
+      },
+      "semantic_actor_mutant": {
+        "path": "out/issue-object-atomic-publication-mutant.log",
+        "sha256": "711745f2bca82e696b8db5c31bea6f122a57189c45b0cd7d60d1910d83859df9"
+      }
+    },
+    "counts": {
+      "configurations": 30,
+      "commands": 60,
+      "frontend_suites_at_runtime_implementation_checkpoint": 36
+    },
+    "semantic_controls": [
+      "missing-group-depth-guard",
+      "omitted-failed-wake-cancellation",
+      "omitted-actor-generation-match",
+      "omitted-i32-insertion-rollback",
+      "omitted-i32-shifted-index-repair",
+      "i32-degenerate-hash",
+      "text-revalidation",
+      "extra-text-payload-copy",
+      "omitted-builder-offset-reservation"
+    ],
+    "boundaries": [
+      "Complete owned runtime services and the selected GNUstep dependency are instrumented for the focused runtime witnesses. The host compiler is not instrumented.",
+      "The 36 frontend suites precede the subsequent interface resource-budget implementation.",
+      "No SDK archive was rebuilt or activated."
+    ],
+    "retained_failure_artifacts": [
+      "out/issue-runtime-corrections-matrix/qualification.json",
+      "out/issue-runtime-corrections-final-matrix/qualification.json",
+      "out/issue-runtime-corrections-resumed-matrix/qualification.json",
+      "out/issue-object-publication-libobjc-tsan.json",
+      "out/issue-runtime-atomic-publication-matrix/qualification.json"
     ]
   }
 }
