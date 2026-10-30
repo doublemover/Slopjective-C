@@ -284,6 +284,8 @@ void test_task_pending_self_wait_returns_not_ready() {
   options.destroy = destroy_frame;
   objc3_task_t *task = nullptr;
   assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  // The owner of a manual destination must remain able to pump its work.
+  assert(objc3_task_wait(task) == OBJC3_SERVICE_NOT_READY);
   uint32_t executed = 0;
   assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
   assert(executed == 1 && destroyed == 1);
@@ -536,7 +538,7 @@ void test_start_closed_executor_failure_keeps_frame_with_caller() {
   std::atomic<int> destroyed{0};
   auto *frame = new Frame{executor, 0, 0, false, &destroyed};
   {
-    std::lock_guard<std::mutex> lock(executor->mutex);
+    objc3::services::ExecutorQueueLock lock(executor->mutex);
     executor->stopping = true; // closed-path injection without invalid handle use
   }
   objc3_task_start_options options{};
@@ -632,10 +634,10 @@ struct WorkerSignal {
 
 void signal_worker(void *opaque) {
   auto *signal = static_cast<WorkerSignal *>(opaque);
-  {
-    std::lock_guard<std::mutex> lock(signal->mutex);
-    signal->ready = true;
-  }
+  std::lock_guard<std::mutex> lock(signal->mutex);
+  signal->ready = true;
+  // The waiter may destroy this stack state as soon as it reacquires the lock.
+  // Finish notifying before handing that lifetime back to the waiter.
   signal->condition.notify_one();
 }
 
@@ -1051,6 +1053,63 @@ void release_public_group_reference(void *opaque) {
   objc3::services::TaskGroup *released = *context->group;
   *context->group = nullptr;
   task_group_release(released);
+}
+
+void test_completed_group_registration_survives_reentrant_last_owner_release() {
+  using namespace objc3::services;
+  auto *executor = manual_executor();
+  std::atomic<int> destroyed{0};
+  auto *task = start_task(executor, new Frame{executor, 0, 0, false, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(complete_with_int_error(task, 321) == OBJC3_SERVICE_OK);
+  assert(destroyed == 1);
+  TaskGroup *group = nullptr;
+  assert(task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  DropGroupReferenceOnce drop{&group};
+  task_group_test_set_failure_propagation_hook(release_public_group_reference,
+                                               &drop);
+  // The terminal observer runs inside add(), drops the last caller owner, and
+  // releases its own association before add() finishes registration cleanup.
+  const auto status = task_group_add_task(group, task);
+  task_group_test_set_failure_propagation_hook(nullptr, nullptr);
+  assert(status == OBJC3_SERVICE_OK && drop.dropped && !group);
+  objc3_task_release(task);
+  objc3_executor_release(executor);
+}
+
+void test_service_status_errors_are_owned_and_distinct_from_cancellation() {
+  for (int value = OBJC3_SERVICE_INVALID_ARGUMENT;
+       value <= OBJC3_SERVICE_TYPE_MISMATCH; ++value) {
+    const auto status = static_cast<objc3_service_status>(value);
+    if (status == OBJC3_SERVICE_CANCELLED) continue;
+    objc3_error_t *error = nullptr, *same = nullptr;
+    assert(objc3_async_error_create_service(status, &error) == OBJC3_SERVICE_OK);
+    assert(objc3_async_error_create_service(status, &same) == OBJC3_SERVICE_OK);
+    assert(error && same == error);
+    const auto *ops = objc3_error_payload_ops(error);
+    assert(ops && objc3_value_ops_validate(ops) == OBJC3_SERVICE_OK);
+    assert(*static_cast<const objc3_service_status *>(objc3_error_payload(error)) == status);
+    auto *retained = objc3_error_retain(error);
+    objc3_error_release(error);
+    objc3_error_release(same);
+    objc3_service_status recovered = OBJC3_SERVICE_OK;
+    assert(objc3_async_error_get_service(retained, &recovered) == OBJC3_SERVICE_OK);
+    assert(recovered == status);
+    objc3_error_release(retained);
+  }
+  objc3_error_t *invalid = reinterpret_cast<objc3_error_t *>(1);
+  assert(objc3_async_error_create_service(OBJC3_SERVICE_OK, &invalid) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT && !invalid);
+  assert(objc3_async_error_create_service(OBJC3_SERVICE_CANCELLED, &invalid) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT && !invalid);
+  int ordinary_payload = 91;
+  objc3_error_t *ordinary = nullptr;
+  assert(objc3_error_create(&ordinary_payload, &int_ops, &ordinary) == OBJC3_SERVICE_OK);
+  objc3_service_status unchanged = OBJC3_SERVICE_CLOSED;
+  assert(objc3_async_error_get_service(ordinary, &unchanged) ==
+         OBJC3_SERVICE_TYPE_MISMATCH && unchanged == OBJC3_SERVICE_CLOSED);
+  objc3_error_release(ordinary);
 }
 
 void test_group_failure_release_defers_reentrant_destruction_until_unlocked() {
@@ -1663,6 +1722,8 @@ void test_actor_scheduling();
 
 int main() {
   test_actor_scheduling();
+  test_completed_group_registration_survives_reentrant_last_owner_release();
+  test_service_status_errors_are_owned_and_distinct_from_cancellation();
   test_same_executor_pending_wait_returns_not_ready();
   test_task_pending_self_wait_returns_not_ready();
   test_zero_payload_and_reentry();

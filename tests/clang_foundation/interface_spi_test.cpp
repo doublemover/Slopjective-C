@@ -46,7 +46,9 @@ const std::vector<llvm::StringRef> semantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
+    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
+    "objc3.cxx-namespaces.v1", "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-definitions.v1", "objc3.cxx-friends.v1"};
 void Check(const fs::path &root, BaseLanguage language,
            const std::string &standard, bool arc) {
   const bool objc = language == BaseLanguage::ObjectiveC ||
@@ -72,6 +74,19 @@ void Check(const fs::path &root, BaseLanguage language,
     @end
     SPI(Testing) @protocol SecretProtocol @end
   )";
+  const bool cpp = language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx;
+  if (cpp) source += R"(
+    struct SPI(Testing) HiddenFriend { int n; friend int hidden_probe(HiddenFriend v) {return v.n;} };
+    namespace SPI(Testing) GroupSPI {
+      int secret() { return 22; }
+      struct Secret { int n; };
+    }
+    namespace ScopedSPI {
+      int visible() { return 20; }
+      SPI(Testing) int secret() { return 22; }
+      struct SPI(Testing) Secret { int n; };
+    }
+  )";
   auto provider = Request(root / "provider.m", language, standard, arc, source);
   provider.emit_semantic_interface = true;
   provider.module_name = "SPI.Leaf";
@@ -86,7 +101,7 @@ void Check(const fs::path &root, BaseLanguage language,
       artifact.sidecar_json, artifact.source_bytes, semantics);
   assert(decoded);
   for (const auto &d : decoded->declarations) {
-    if (d.qualified_name == "Secret::field" ||
+    if (d.qualified_name == "hidden_probe" || d.qualified_name == "Secret::field" ||
         d.qualified_name == "secret_choice")
       assert(d.spi_group == "Testing");
   }
@@ -103,6 +118,8 @@ void Check(const fs::path &root, BaseLanguage language,
   std::vector<std::string> expressions = {
       "secret()",      "secret_global",  "sizeof(struct Secret)",
       "secret_choice", "(SecretAlias)0", "other()"};
+  if (cpp)
+    expressions.insert(expressions.end(), {"sizeof(HiddenFriend)", "ScopedSPI::secret()", "sizeof(ScopedSPI::Secret)", "GroupSPI::secret()", "sizeof(GroupSPI::Secret)"});
   if (objc)
     expressions.insert(expressions.end(),
                        {"sizeof(SecretRoot*)", "sizeof(id<SecretProtocol>)"});
@@ -119,6 +136,10 @@ void Check(const fs::path &root, BaseLanguage language,
       "int client(void) { return secret() + secret_global + sizeof(struct "
       "Secret) + secret_choice + (SecretAlias)0; }";
   CheckResult(Compile(client));
+  if (cpp) {
+    client.source_text="int client() {return hidden_probe(HiddenFriend{42});}";
+    CheckResult(Compile(client));
+  }
   if (objc) {
     client.source_text = "int client(SecretRoot *v, id<SecretProtocol> p) { "
                          "return [v onlySecret] + v.secretProperty + !!p; }";
@@ -177,6 +198,37 @@ void Check(const fs::path &root, BaseLanguage language,
     client.source_text =
         "@import SPI.Leaf;\nint client(void) { return @SPI.Leaf.secret(); }";
     assert(!Compile(client).success);
+  }
+  if (cpp) {
+    auto scoped = Request(root / "scoped.m", language, standard, arc,
+                          "int f() { return ScopedSPI::visible(); }");
+    scoped.imported_interfaces = {input};
+    CheckResult(Compile(scoped));
+    scoped.source_text = "int f() { return ScopedSPI::secret(); }";
+    assert(!Compile(scoped).success);
+    scoped.imported_interfaces[0].spi_groups={"Testing"};
+    CheckResult(Compile(scoped));
+    scoped.source_text="int f() { return GroupSPI::secret()+sizeof(GroupSPI::Secret); }";
+    CheckResult(Compile(scoped));
+    if (objc) {
+      scoped.imported_interfaces.clear();
+      scoped.source_directed_imports=true;
+      scoped.interface_search_paths={root.string()};
+      InterfaceModuleRequest scoped_leaf;
+      scoped_leaf.canonical_name="SPI.Leaf";
+      scoped_leaf.locked_identity=artifact.identity;
+      scoped_leaf.spi_groups={"Testing"};
+      InterfaceModuleRequest scoped_parent;
+      scoped_parent.canonical_name="SPI.Top";
+      scoped_parent.locked_identity=top_artifact.identity;
+      scoped.module_imports={scoped_leaf,scoped_parent};
+      scoped.source_text="@import SPI.Top;\nint before() { return ScopedSPI::visible(); } "
+                         "\n@import SPI.Leaf;\nint after() { return ScopedSPI::secret()+GroupSPI::secret(); }";
+      CheckResult(Compile(scoped));
+      scoped.module_imports[0].spi_groups.clear();
+      scoped.source_text="@import SPI.Leaf;\nint f() { return ScopedSPI::secret(); }";
+      assert(!Compile(scoped).success);
+    }
   }
   if (language == BaseLanguage::ObjectiveC && !arc) {
     const std::string source =

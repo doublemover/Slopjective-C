@@ -14,8 +14,14 @@ def test_failed_c_or_cpp_compilation_cannot_leave_reusable_success(
     fixture = sdk / 'share/objc3c/examples/async-c-abi'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
-    for name in ('bridge.h', 'bridge.c', 'client.cpp'):
+    for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
         (fixture / name).write_text('fixture')
+    for relative in ('bin/clang', 'lib/libobjc3_runtime_services.a', 'lib/libobjc.so',
+                     'include/objc3c/runtime/objc3_task.hpp',
+                     'include/objc3c/runtime/objc3_runtime_services.h'):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('bound test input')
     output = tmp_path / 'evidence'
     output.mkdir()
     receipt = output / 'qualification.json'
@@ -45,8 +51,9 @@ def test_failed_c_or_cpp_compilation_cannot_leave_reusable_success(
         output / (command['name'] + '.log'))
 
 
-def test_failed_instrumented_service_build_cleans_scratch_and_keeps_report(
-        tmp_path, monkeypatch):
+@pytest.mark.parametrize('failure_boundary', ['constructor', 'build'])
+def test_failed_canonical_runtime_preserves_the_original_error_and_evidence(
+        tmp_path, monkeypatch, failure_boundary):
     repo, sdk, resources, output = (tmp_path / name for name in
                                     ('repo', 'sdk', 'resources', 'output'))
     resources.mkdir()
@@ -57,24 +64,43 @@ def test_failed_instrumented_service_build_cleans_scratch_and_keeps_report(
     for name in ('objc3_runtime_services.h', 'objc3_task.hpp'):
         (runtime / name).write_text('matching header')
         (installed / name).write_text('matching header')
+    compiler = sdk / 'bin/clang'
+    compiler.parent.mkdir()
+    compiler.write_text('bound test compiler')
+    fixture = sdk / 'share/objc3c/examples/async-c-abi'
+    fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
     output.mkdir()
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
-    workspaces = []
+    message = 'forced canonical runtime ' + failure_boundary + ' failure'
+    build_log = output / 'canonical-build.log'
 
-    def run(argv, **kwargs):
-        workspaces.append(kwargs['cwd'].parent)
-        (kwargs['cwd'] / 'partial.o').write_bytes(b'partial object')
-        kwargs['stdout'].write('forced service compilation failure\n')
-        return SimpleNamespace(returncode=1)
+    class Profiles:
+        def __init__(self, *args, **kwargs):
+            if failure_boundary == 'constructor':
+                raise ValueError(message)
 
-    monkeypatch.setattr(sanitizers.subprocess, 'run', run)
-    with pytest.raises(ValueError, match='instrumented async C ABI runtime failed'):
+        def get(self, mode, optimization):
+            assert (mode, optimization) == ('address,undefined', 'O1')
+            build_log.write_text(message)
+            raise ValueError(message)
+
+        def receipts(self):
+            return [{'status': 'FAIL', 'log': str(build_log)}]
+
+    def forbidden(*args, **kwargs):
+        pytest.fail('bridge execution ran after failed canonical runtime admission')
+
+    monkeypatch.setattr(sanitizers, 'RuntimeProfiles', Profiles)
+    monkeypatch.setattr(sanitizers, 'qualify_bridge', forbidden)
+    with pytest.raises(ValueError, match=message):
         sanitizers.qualify(repo, sdk, resources, output)
     report = json.loads(receipt.read_text())
     assert report['status'] == 'FAIL' and not report['sanitizers']
-    assert workspaces and all(path != output for path in workspaces)
-    assert all(not path.exists() for path in workspaces)
-    assert report['commands'][0]['log_sha256'] == sanitizers.digest(
-        output / 'address-undefined-runtime-build.log')
+    assert report['error'] == message
+    if failure_boundary == 'constructor':
+        assert report['runtime_profiles'] == []
+    else:
+        assert build_log.read_text() == message
+        assert report['runtime_profiles'] == [{'status': 'FAIL', 'log': str(build_log)}]

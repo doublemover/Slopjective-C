@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,6 +15,7 @@
 #include "clang_foundation/interface_validation.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/ASTImporterSharedState.h"
 #include "clang/AST/Decl.h"
@@ -26,6 +28,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/TargetInfo.h"
 #include "clang/Frontend/ASTUnit.h"
+#include "clang/Frontend/TextDiagnosticBuffer.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/ArrayRef.h"
@@ -41,16 +44,95 @@
 
 namespace objc3::clang_foundation {
 namespace {
-constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
+constexpr std::uint64_t kMaxInterfaceBytes = kInterfaceArtifactByteLimit;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCarrierSemantics,
     kEffectSemantics,
     "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v1",
+    "objc3.keypath-subscripts.v1",
+    kNullableKeyPathWriteSemantic,
+    "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
+    kCxxClassLifecycleSemantic,
+    kCxxClassStructureSemantic,
+    kCxxClassDispatchSemantic,
+    kCxxNamespaceSemantic,
+    kCxxNestedTypeSemantic,
+    kCxxUsingSemantic,
+    kCxxDeclarationExpressionSemantic,
+    kCxxDefinitionSemantic,
+    kCxxDefaultedComparisonSemantic,
+    kCxxOutOfLineDefaultingSemantic,
+    kCxxImmediateDefaultingSemantic,
+    kCxxNamespaceAttributeSemantic,
+    kCxxLambdaExpressionSemantic,
+    kCxxThreadLocalSemantic,
+    kCxxFriendSemantic,
+    kCxxBlockExpressionSemantic,
+    kCxxStatementExpressionSemantic,
+    kCxxLocalTypeSemantic,
+    kCxxUnnamedLocalTypeSemantic,
+    kCxxGenericLocalLambdaSemantic,
+    kCxxUnionValueSemantic,
+    kCxxConceptSemantic,
+    kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
+    kCxxVariableTemplateSemantic,
+    kCxxClassTemplateSemantic,
+    kCxxTemplateStructureSemantic,
+    kCxxTemplateDeductionSemantic,
+    kCxxMemberTemplateSemantic,
+    kCxxMemberAliasTemplateSemantic,
+    kCxxNestedTemplateSemantic,
+    kCxxVariadicTemplateSemantic,
+    kCxxConcreteMemberTemplateSemantic,
+    kCxxConcreteNestedTemplateSemantic,
+    kCxxTemplateTemplateSemantic,
+    kCxxNominalAliasTemplateSemantic,
+    kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
+    kCxxClassSpecializationSemantic,
+    kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
+    kCxxVariableSpecializationStorageSemantic,
+    kCxxDetachedCallableTemplateSemantic,
+    kCxxDetachedStaticDataTemplateSemantic,
+    kCxxDetachedNestedTemplateSemantic,
+    kCxxConcreteMemberClassSpecializationSemantic,
+    kCxxConcreteMemberFunctionSpecializationSemantic,
+    kCxxConcreteMemberVariableSpecializationSemantic,
+    kCxxConcreteSpecialMemberSpecializationSemantic,
+    kCxxDependentMemberPartialSemantic,
+    kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
+    kCxxEffectfulFunctionTemplateSemantic,
+    kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
+    kCxxAddressTemplateArgumentSemantic,
+    kNativeDeclarationAttributeSemantic,
+    kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
+    kCxxStandardCoroutineSemantic,
+    kForeignImportAttributeSemantic,
+    kCxxNestedFactoryTypeSemantic,
+    kCxxLambdaFactoryResultSemantic,
+    kCxxClosureResultProjectionSemantic,
+    kCxxFactoryValueArgumentSemantic,
+    kCxxGenericFactoryProjectionSemantic,
+    kCxxFactoryTemplateArgumentSemantic,
+    kCxxFactoryTypeProjectionSemantic,
+    kCxxLocalFactoryResultSemantic,
+    kCxxClosureFactorySemantic,
+    kCxxEffectfulLambdaSemantic,
+    kCxxAsyncDefinitionSemantic,
+    kSdkRuntimeDeclarationSemantic,
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -83,7 +165,8 @@ bool CompatibleTarget(const InterfaceModuleIdentity &module,
 
 bool ReadBoundedFile(llvm::StringRef path, std::string &contents,
                      std::vector<InterfaceContractDiagnostic> &diagnostics,
-                     llvm::StringRef kind) {
+                     llvm::StringRef kind, InterfaceResourceUsage &usage,
+                     const InterfaceResourceLimits &limits) {
   std::uint64_t size = 0;
   if (auto error = llvm::sys::fs::file_size(path, size)) {
     Add(diagnostics, "O3IFC130",
@@ -95,19 +178,30 @@ bool ReadBoundedFile(llvm::StringRef path, std::string &contents,
         llvm::Twine(kind) + " artifact exceeds the 32 MiB import bound", path);
     return false;
   }
-  auto buffer = llvm::MemoryBuffer::getFile(path);
-  if (!buffer) {
-    Add(diagnostics, "O3IFC130",
-        llvm::Twine("cannot read ") + kind + " artifact: " +
-            buffer.getError().message(), path);
+  if (!ChargeInterfaceResource(usage.read_bytes, size, limits.read_bytes) ||
+      !ChargeInterfaceResource(usage.selected_bytes, size, limits.selected_bytes)) {
+    Add(diagnostics, kInterfaceResourceDiagnostic, "direct interface inputs exceed their aggregate byte budget");
     return false;
   }
-  if ((*buffer)->getBufferSize() > kMaxInterfaceBytes) {
-    Add(diagnostics, "O3IFC130",
-        llvm::Twine(kind) + " artifact grew beyond the 32 MiB import bound while being read", path);
+  // Allocate only the already admitted byte count. A concurrent replacement or
+  // growth must not make MemoryBuffer allocate/map an unbounded new file.
+  std::ifstream input(path.str(), std::ios::binary);
+  if (!input) {
+    Add(diagnostics, "O3IFC130", llvm::Twine("cannot open ") + kind + " artifact", path);
     return false;
   }
-  contents.assign((*buffer)->getBufferStart(), (*buffer)->getBufferEnd());
+  contents.resize(size);
+  input.read(contents.data(), static_cast<std::streamsize>(size));
+  const auto actual = static_cast<std::uint64_t>(input.gcount());
+  if (input.bad() || (actual == size && input.peek() != std::char_traits<char>::eof())) {
+    Add(diagnostics, "O3IFC130", llvm::Twine(kind) + " artifact changed or failed during bounded reading", path);
+    return false;
+  }
+  if (actual < size) {
+    usage.read_bytes -= size - actual;
+    if (true) usage.selected_bytes -= size - actual;
+    contents.resize(actual);
+  }
   return true;
 }
 
@@ -115,13 +209,22 @@ class ExportedDeclarationCollector final
     : public clang::RecursiveASTVisitor<ExportedDeclarationCollector> {
 public:
   ExportedDeclarationCollector(clang::ASTContext &context,
-                                const std::set<std::string> &expected_ids)
-      : context_(context), expected_ids_(expected_ids) {}
+                                const std::set<std::string> &expected_ids,
+                                bool main_file_only=true)
+      : context_(context), expected_ids_(expected_ids), main_file_only_(main_file_only) {}
 
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() || !decl->getLocation().isValid() ||
-        !context_.getSourceManager().isWrittenInMainFile(decl->getLocation()))
+        (main_file_only_ && !context_.getSourceManager().isWrittenInMainFile(decl->getLocation())))
       return true;
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
+        function && function->getDescribedFunctionTemplate()) return true;
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+        record && record->getDescribedClassTemplate()) return true;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+        alias && alias->getDescribedAliasTemplate()) return true;
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+        variable && variable->getDescribedVarTemplate()) return true;
     const auto stable_id = ReadInterfaceDeclarationStableId(decl);
     if (stable_id.empty()) return true;
     if (expected_ids_.count(stable_id)) Declarations[stable_id] = decl;
@@ -132,10 +235,19 @@ public:
 private:
   clang::ASTContext &context_;
   const std::set<std::string> &expected_ids_;
+  bool main_file_only_;
 };
 
 bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
-  if (!decl->getIdentifier()) return false;
+  if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+      record && record->getDescribedClassTemplate()) return false;
+  if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+      variable && (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplateSpecializationDecl>(variable))) return false;
+  if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+      alias && alias->getDescribedAliasTemplate()) return false;
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl);
+      function && (function->getDescribedFunctionTemplate() || function->getPrimaryTemplate())) return false;
+  if (!decl->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(decl)) return false;
   const auto *context = decl->getDeclContext();
   while (context && context->isTransparentContext()) context = context->getParent();
   return context && context->isTranslationUnit();
@@ -151,37 +263,147 @@ public:
   std::set<clang::NamedDecl *> Declarations;
 };
 
+// Native header templates may already have concrete definitions in the
+// consumer. Only newly imported executable definitions need backend delivery.
+class FunctionDefinitionSnapshot final
+    : public clang::RecursiveASTVisitor<FunctionDefinitionSnapshot> {
+public:
+  bool shouldVisitImplicitCode() const { return true; }
+  bool shouldVisitTemplateInstantiations() const { return true; }
+  bool VisitFunctionDecl(clang::FunctionDecl *function) {
+    if (function->doesThisDeclarationHaveABody())
+      Definitions.insert(function->getCanonicalDecl());
+    return true;
+  }
+  bool VisitVarDecl(clang::VarDecl *variable) {
+    if (variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly)
+      Variables.insert(variable->getCanonicalDecl());
+    return true;
+  }
+  std::set<const clang::FunctionDecl *> Definitions;
+  std::set<const clang::VarDecl *> Variables;
+};
+
+// The target compiler owns va_list and its implicit C++ special members.
+// Reusing those declarations avoids duplicate default constructors when a
+// consumer has already instantiated varargs helpers from <string>/<memory>.
+void SeedCompilerBuiltinDeclarations(clang::ASTImporter &importer,
+    clang::ASTContext &source,clang::ASTContext &target) {
+  auto *from=llvm::dyn_cast_or_null<clang::RecordDecl>(source.getVaListTagDecl());
+  auto *to=llvm::dyn_cast_or_null<clang::RecordDecl>(target.getVaListTagDecl());
+  if(!from || !to)return;
+  importer.MapImported(from,to);
+  importer.MapImported(source.getBuiltinVaListDecl(),target.getBuiltinVaListDecl());
+  std::map<std::pair<unsigned,std::string>,clang::NamedDecl *> members;
+  for(auto *declaration:to->decls())
+    if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration)) {
+      const auto usr=ReadInterfaceDeclarationStableId(named);
+      if(!usr.empty())members.emplace(std::pair{unsigned(named->getKind()),usr},named);
+    }
+  for(auto *declaration:from->decls())
+    if(auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration)) {
+      const auto found=members.find({unsigned(named->getKind()),ReadInterfaceDeclarationStableId(named)});
+      if(found!=members.end())importer.MapImported(named,found->second);
+    }
+}
+
+// A dependency is parsed again as an include of each importing interface.
+// Reuse its admitted exports by exact sidecar identity, rather than asking
+// structural lookup to reconstruct dependent alias expression equivalence.
+// This mapping is session-local and only covers successfully imported locks.
+void MapAdmittedDependencyDeclaration(clang::ASTImporter &importer,
+    clang::NamedDecl *from,clang::NamedDecl *to) {
+  importer.MapImported(from,to);
+  auto *source=llvm::dyn_cast<clang::TemplateDecl>(from);
+  auto *target=llvm::dyn_cast<clang::TemplateDecl>(to);
+  if(!source || !target)return;
+  if(source->getTemplatedDecl() && target->getTemplatedDecl())
+    importer.MapImported(source->getTemplatedDecl(),target->getTemplatedDecl());
+  auto parameters=[&](auto &&self,clang::TemplateParameterList *left,
+                       clang::TemplateParameterList *right)->void {
+    if(left->size()!=right->size())return;
+    for(unsigned i=0;i<left->size();++i) {
+      auto *a=left->getParam(i);auto *b=right->getParam(i);
+      if(a->getKind()!=b->getKind())continue;
+      importer.MapImported(a,b);
+      if(auto *nested=llvm::dyn_cast<clang::TemplateTemplateParmDecl>(a))
+        self(self,nested->getTemplateParameters(),
+            llvm::cast<clang::TemplateTemplateParmDecl>(b)->getTemplateParameters());
+    }
+  };
+  parameters(parameters,source->getTemplateParameters(),target->getTemplateParameters());
+}
+
+class DefinitionTrackingImporter final : public clang::ASTImporter {
+public:
+  using clang::ASTImporter::ASTImporter;
+  const std::set<const clang::FunctionDecl *> *Existing = nullptr;
+  const std::set<const clang::VarDecl *> *ExistingVariables = nullptr;
+  std::vector<clang::NamedDecl *> Definitions;
+  void Imported(clang::Decl *from, clang::Decl *to) override {
+    auto *variable=llvm::dyn_cast<clang::VarDecl>(to);
+    const auto *source_variable=llvm::dyn_cast<clang::VarDecl>(from);
+    if (variable && source_variable && !source_variable->getDescribedVarTemplate() &&
+        !llvm::isa<clang::VarTemplatePartialSpecializationDecl>(source_variable) &&
+        variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+        source_variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+        variable->hasGlobalStorage() && variable->isInline() &&
+        !variable->getDeclContext()->isDependentContext() &&
+        !variable->getType()->isDependentType() &&
+        !ExistingVariables->count(variable->getCanonicalDecl()))
+      Definitions.push_back(variable);
+    auto *function=llvm::dyn_cast<clang::FunctionDecl>(to);
+    const auto *source=llvm::dyn_cast<clang::FunctionDecl>(from);
+    if (function && source && !source->getDescribedFunctionTemplate() &&
+        source->doesThisDeclarationHaveABody() &&
+        function->doesThisDeclarationHaveABody() &&
+        !function->isDependentContext() &&
+        (function->isInlined() ||
+         function->getTemplateSpecializationKind()==clang::TSK_ImplicitInstantiation ||
+         function->hasAttr<clang::ObjC3IsolationThunkAttr>()) &&
+        !Existing->count(function->getCanonicalDecl()))
+      Definitions.push_back(function);
+  }
+};
+
 bool CheckExportCollisions(
     const std::vector<InterfaceDeclarationIdentity> &declarations,
     bool allow_function_overloads,
     std::vector<InterfaceContractDiagnostic> &diagnostics) {
-  std::map<std::string, InterfaceDeclarationIdentity> by_name;
+  std::map<std::string, std::vector<InterfaceDeclarationIdentity>> by_name;
   for (const auto &decl : declarations) {
     if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
         decl.kind == "ObjCIvar" || decl.kind == "Field" ||
-        decl.kind == "ObjCCategory")
+        (decl.kind == "ObjCCategory" || decl.kind == "UsingDirective"))
       continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
-    const std::string lookup_key = (decl.kind == "ObjCProtocol" ? "protocol:"
+    const std::string lookup_key = HasCxxCoroutineTraitsSpecializationIdentity(decl)
+          ? "coroutine-traits-specialization:" + decl.stable_id
+          : HasCxxVariableSpecializationIdentity(decl)
+          ? "variable-specialization:" + decl.stable_id
+          : (decl.kind == "ObjCProtocol" ? "protocol:"
                                     : is_tag                    ? "tag:"
                                                                 : "ordinary:") +
                                    decl.qualified_name;
-    const auto found = by_name.find(lookup_key);
-    if (found == by_name.end()) {
-      by_name.emplace(lookup_key, decl);
-      continue;
+    auto &prior_declarations = by_name[lookup_key];
+    bool repeated = false;
+    for (const auto &prior : prior_declarations) {
+      if (SameInterfaceDeclarationIdentity(prior, decl)) {
+        repeated = true;
+        continue; // The same canonical declaration can be re-exported.
+      }
+      if (allow_function_overloads && prior.stable_id != decl.stable_id &&
+          (IsCxxOverloadDeclaration(prior) && IsCxxOverloadDeclaration(decl)))
+        continue;
+      Add(diagnostics, "O3IFC132",
+          "multiple imported modules provide incompatible declarations with "
+          "the same lookup name",
+          decl.qualified_name);
+      return false;
     }
-    const auto &prior = found->second;
-    if (SameInterfaceDeclarationIdentity(prior, decl))
-      continue; // Same canonical export re-exported through two modules.
-    if (allow_function_overloads && prior.kind == "Function" &&
-        decl.kind == "Function" && prior.stable_id != decl.stable_id)
-      continue;
-    Add(diagnostics, "O3IFC132",
-        "multiple imported modules provide incompatible declarations with the same lookup name",
-        decl.qualified_name);
-    return false;
+    if (!repeated)
+      prior_declarations.push_back(decl);
   }
   return true;
 }
@@ -197,9 +419,16 @@ struct InterfaceImportSession::Impl {
     InterfaceImportInput input;
     SemanticInterfaceSidecar sidecar;
     std::string source_bytes;
+    // Tooling's virtual-file MemoryBuffers borrow these strings. Keep them
+    // alive until after the AST, including deferred source location imports.
+    clang::tooling::FileContentMappings virtual_files;
     std::unique_ptr<clang::ASTUnit> ast;
+    // Owned by ast's DiagnosticsEngine after parsing ends. ASTImporter can
+    // diagnose the source AST long after TextDiagnosticPrinter::EndSourceFile.
+    clang::TextDiagnosticBuffer *import_diagnostics = nullptr;
   };
   InterfaceImportTarget target;
+  InterfaceResourceUsage resource_usage;
   std::vector<Module> modules;
   std::vector<std::size_t> import_order;
   std::vector<InterfaceDependency> direct_dependencies;
@@ -209,6 +438,9 @@ struct InterfaceImportSession::Impl {
 InterfaceImportSession::InterfaceImportSession(std::unique_ptr<Impl> impl)
     : impl_(std::move(impl)) {}
 InterfaceImportSession::~InterfaceImportSession() = default;
+InterfaceResourceUsage InterfaceImportSession::GetResourceUsage() const {
+  return impl_->resource_usage;
+}
 InterfaceImportSession::InterfaceImportSession(InterfaceImportSession &&) noexcept = default;
 InterfaceImportSession &InterfaceImportSession::operator=(InterfaceImportSession &&) noexcept = default;
 
@@ -264,6 +496,19 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   if (inputs.empty()) return std::unique_ptr<InterfaceImportSession>(
       new InterfaceImportSession(std::move(impl)));
 
+  const auto &limits = target.resource_limits;
+  auto &usage = impl->resource_usage;
+  auto charge = [&](std::uint64_t &used, std::uint64_t amount, std::uint64_t limit,
+                     llvm::StringRef name) {
+    if (ChargeInterfaceResource(used, amount, limit)) return true;
+    Add(diagnostics, kInterfaceResourceDiagnostic,
+        llvm::Twine("interface import exceeds its ") + name + " budget");
+    return false;
+  };
+  if (inputs.size() > limits.selected_modules) {
+    Add(diagnostics, kInterfaceResourceDiagnostic, "direct interface requests exceed the module budget");
+    return nullptr;
+  }
   std::map<std::string, std::size_t> module_index;
   for (const auto &input : inputs) {
     if (input.source_path.empty() || input.locked_identity.canonical_name.empty()) {
@@ -275,9 +520,12 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     std::string sidecar_path = input.sidecar_path.empty()
         ? input.source_path + ".json" : input.sidecar_path;
     std::string source_bytes, sidecar_json;
-    if (!ReadBoundedFile(input.source_path, source_bytes, diagnostics, "source") ||
-        !ReadBoundedFile(sidecar_path, sidecar_json, diagnostics, "sidecar"))
+    if (!ReadBoundedFile(input.source_path, source_bytes, diagnostics, "source", usage, limits) ||
+        !ReadBoundedFile(sidecar_path, sidecar_json, diagnostics, "sidecar", usage, limits)) {
+      if (!diagnostics.empty() && diagnostics.back().code == kInterfaceResourceDiagnostic)
+        return nullptr;
       continue;
+    }
     auto sidecar = DecodeSemanticInterfaceSidecar(
         sidecar_json, source_bytes,
         llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
@@ -287,6 +535,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
           input.locked_identity.canonical_name);
       continue;
     }
+    if (!charge(usage.decoded_declarations, sidecar->declarations.size(),
+                limits.decoded_declarations, "decoded declaration work")) return nullptr;
     if (!SameIdentity(sidecar->module, input.locked_identity)) {
       Add(diagnostics, "O3IFC134",
           "sidecar identity does not match the dependency lock",
@@ -341,6 +591,10 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
       continue;
     }
 
+    if (!charge(usage.selected_modules, 1, limits.selected_modules, "selected module") ||
+        !charge(usage.selected_declarations, sidecar->declarations.size(), limits.selected_declarations, "selected declaration") ||
+        !charge(usage.dependency_edges, sidecar->dependencies.size(), limits.dependency_edges, "dependency-edge"))
+      return nullptr;
     Impl::Module module;
     module.input = input;
     module.sidecar = std::move(*sidecar);
@@ -354,7 +608,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   graph_nodes.reserve(impl->modules.size());
   for (const auto &module : impl->modules)
     graph_nodes.push_back({module.sidecar.module, module.sidecar.dependencies});
-  auto graph = ResolveInterfaceDependencyGraph(graph_nodes);
+  auto graph = ResolveInterfaceDependencyGraph(graph_nodes, limits);
   for (const auto &d : graph.diagnostics)
     Add(diagnostics, d.code, d.message,
         llvm::join(d.modules, ", "));
@@ -366,7 +620,10 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   for (const auto &name : graph.topological_order) {
     const auto index = module_index.at(name);
     auto &module = impl->modules[index];
-    clang::tooling::FileContentMappings virtual_files;
+    if (!charge(usage.parser_input_bytes, module.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+        !charge(usage.parser_declarations, module.sidecar.declarations.size(), limits.parser_declarations, "parser declaration work"))
+      return nullptr;
+    auto &virtual_files=module.virtual_files;
     llvm::SmallString<256> include_directory(module.input.source_path);
     llvm::sys::path::remove_filename(include_directory);
     std::vector<InterfaceSourceArtifact> dependency_sources;
@@ -388,6 +645,12 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
       const auto &provider = impl->modules[dep_it->second];
       for (const auto &nested : provider.sidecar.dependencies)
         dependency_worklist.push_back(nested.module.canonical_name);
+      // A dependency has both a retained virtual-file mapping and a temporary
+      // declaration/source proof during replay. Budget both before copying.
+      if (!charge(usage.parser_input_bytes, provider.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+          !charge(usage.parser_input_bytes, provider.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+          !charge(usage.parser_declarations, provider.sidecar.declarations.size(), limits.parser_declarations, "parser declaration work"))
+        return nullptr;
       llvm::SmallString<256> include_path(include_directory);
       llvm::sys::path::append(include_path, BuildInterfaceIncludePath(dependency_name));
       virtual_files.emplace_back(include_path.str().str(), provider.source_bytes);
@@ -401,7 +664,13 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     }
     if (!diagnostics.empty()) return nullptr;
     auto ast_arguments = target.ast_arguments;
-    AddRuntimeInterfaceFiles(virtual_files, ast_arguments);
+    const auto mappings_before_runtime = virtual_files.size();
+    AddRuntimeInterfaceFiles(virtual_files, ast_arguments,
+        module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
+            std::string::npos);
+    for (std::size_t i = mappings_before_runtime; i < virtual_files.size(); ++i)
+      if (!charge(usage.parser_input_bytes, virtual_files[i].second.size(), limits.parser_input_bytes, "parser runtime mapping byte"))
+        return nullptr;
     ast_arguments.push_back("-iquote");
     ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
     module.ast = clang::tooling::buildASTFromCodeWithArgs(
@@ -418,6 +687,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
           module.sidecar.module.canonical_name);
       return nullptr;
     }
+    module.import_diagnostics = new clang::TextDiagnosticBuffer;
+    module.ast->getDiagnostics().setClient(module.import_diagnostics, true);
     auto regenerated = EmitSemanticInterface(
         module.ast->getASTContext(), module.sidecar.module.canonical_name,
         module.sidecar.module.package_identity, module.sidecar.dependencies,
@@ -434,6 +705,9 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     auto regenerated_sidecar = DecodeSemanticInterfaceSidecar(
         regenerated.sidecar_json, regenerated.source_bytes,
         llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+    if (regenerated_sidecar && !charge(usage.decoded_declarations,
+          regenerated_sidecar->declarations.size(), limits.decoded_declarations,
+          "decoded declaration replay work")) return nullptr;
     if (!regenerated_sidecar ||
         !SameIdentity(regenerated.identity, module.sidecar.module) ||
         BuildSemanticFingerprintInput(*regenerated_sidecar) !=
@@ -519,7 +793,7 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       (language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime") +
       std::string(language.ObjCAutoRefCount ? ";arc"
                                             : ";manual-reference-counting");
-  if (ReadInterfaceLanguageProfile(language) !=
+  if (ReadInterfaceLanguageProfile(target_context) !=
           impl_->target.language_profile ||
       runtime != impl_->target.runtime_abi ||
       target_context.getTargetInfo().getTriple().str() !=
@@ -541,7 +815,11 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         *target_context.getTranslationUnitDecl());
   NamedDeclarationSnapshot preexisting;
   preexisting.TraverseDecl(target_context.getTranslationUnitDecl());
+  FunctionDefinitionSnapshot existing_definitions;
+  existing_definitions.TraverseDecl(target_context.getTranslationUnitDecl());
   std::set<std::string> recorded_ids;
+  std::map<std::string,std::map<std::string,clang::NamedDecl *>> admitted_dependencies;
+  std::vector<clang::NamedDecl *> auxiliary_definitions;
   std::vector<std::unique_ptr<clang::ASTImporter>> importers;
   for (auto index : impl_->import_order) {
     auto &module = impl_->modules[index];
@@ -573,10 +851,13 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     std::set<std::string> expected_ids;
     for (const auto &identity : module.sidecar.declarations)
       expected_ids.insert(identity.stable_id);
-    auto importer = std::make_unique<clang::ASTImporter>(
+    auto importer = std::make_unique<DefinitionTrackingImporter>(
         target_context, target_file_manager,
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
+    SeedCompilerBuiltinDeclarations(*importer,module.ast->getASTContext(),target_context);
+    importer->Existing=&existing_definitions.Definitions;
+    importer->ExistingVariables=&existing_definitions.Variables;
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.
@@ -588,17 +869,171 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
           module.sidecar.module.canonical_name);
       return report;
     }
+    std::set<std::string> dependency_names;
+    std::vector<std::string> dependency_work;
+    for(const auto &dependency:module.sidecar.dependencies)
+      dependency_work.push_back(dependency.module.canonical_name);
+    for(std::size_t cursor=0;cursor<dependency_work.size();++cursor) {
+      const auto name=dependency_work[cursor];
+      if(!dependency_names.insert(name).second)continue;
+      const auto provider=std::find_if(impl_->modules.begin(),impl_->modules.end(),
+          [&](const auto &candidate){return candidate.sidecar.module.canonical_name==name;});
+      if(provider==impl_->modules.end())continue; // Prepare already validates the lock graph.
+      for(const auto &nested:provider->sidecar.dependencies)
+        dependency_work.push_back(nested.module.canonical_name);
+      const auto admitted=admitted_dependencies.find(name);
+      if(admitted==admitted_dependencies.end())continue;
+      std::set<std::string> ids;
+      for(const auto &[id,target]:admitted->second)ids.insert(id);
+      ExportedDeclarationCollector included(module.ast->getASTContext(),ids,/*main_file_only=*/false);
+      included.TraverseDecl(from_tu);
+      for(const auto &expected:provider->sidecar.declarations) {
+        const auto target=admitted->second.find(expected.stable_id);
+        const auto source=included.Declarations.find(expected.stable_id);
+        if(target==admitted->second.end() || source==included.Declarations.end())continue;
+        InterfaceDeclarationIdentity actual;
+        if(!ReadInterfaceDeclarationIdentity(source->second,module.ast->getASTContext(),actual) ||
+            !SameInterfaceDeclarationIdentity(expected,actual)) {
+          Add(report.diagnostics,"O3IFC144",
+              "included dependency differs from its admitted declaration identity",expected.stable_id);
+          return report;
+        }
+        MapAdmittedDependencyDeclaration(*importer,source->second,target->second);
+      }
+    }
     for (const auto &expected : module.sidecar.declarations) {
       if (!IsGrantedSPI(expected, module.input.spi_groups))
         continue;
       auto imported = importer->Import(exported.Declarations.at(expected.stable_id));
       if (!imported) {
+        std::string reason=llvm::toString(imported.takeError());
+        if(module.import_diagnostics) {
+          unsigned remaining=12;
+          auto append=[&](auto begin,auto end) {
+            for(const auto &diagnostic:llvm::make_range(begin,end)) {
+              if(!remaining)break;
+              --remaining;reason+="; "+diagnostic.second;
+            }
+          };
+          append(module.import_diagnostics->err_begin(),module.import_diagnostics->err_end());
+          append(module.import_diagnostics->warn_begin(),module.import_diagnostics->warn_end());
+          append(module.import_diagnostics->note_begin(),module.import_diagnostics->note_end());
+        }
         Add(report.diagnostics, "O3IFC142",
             ModuleImportFailure(module.sidecar.module,
-                llvm::Twine("could not import an exported declaration: ") +
-                    llvm::toString(imported.takeError())), expected.stable_id);
+                llvm::Twine("could not import exported declaration '") +
+                    expected.qualified_name + "': " + reason), expected.stable_id);
         return report;
       }
+      if (HasCxxClassSpecializationIdentity(expected)) {
+        const auto *pattern=llvm::dyn_cast<clang::ClassTemplateDecl>(exported.Declarations.at(expected.stable_id));
+        if (!pattern) return report;
+        llvm::SmallVector<clang::ClassTemplateSpecializationDecl *,4> specializations;
+        for (auto *specialization:pattern->specializations())
+          if (specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization)
+            specializations.push_back(specialization);
+        llvm::SmallVector<clang::ClassTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        specializations.append(partials.begin(),partials.end());
+        for (auto *specialization:specializations) {
+          if (auto *definition=specialization->getDefinition())
+            specialization=llvm::cast<clang::ClassTemplateSpecializationDecl>(definition);
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      }
+      if (HasCxxVariablePartialSpecializationIdentity(expected)) {
+        const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(exported.Declarations.at(expected.stable_id));
+        if (!pattern) return report;
+        llvm::SmallVector<clang::VarTemplatePartialSpecializationDecl *,4> partials;
+        pattern->getPartialSpecializations(partials);
+        for (auto *partial:partials) {
+          if (auto *definition=partial->getDefinition())
+            partial=llvm::cast<clang::VarTemplatePartialSpecializationDecl>(definition);
+          auto imported_partial=importer->Import(partial);
+          if (!imported_partial) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_partial.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      }
+      if (HasCxxClosedParentPatternIdentity(expected))
+        for (auto *pattern:ReadClosedParentPatterns(exported.Declarations.at(expected.stable_id))) {
+          auto imported_pattern=importer->Import(pattern);
+          if (!imported_pattern) {
+            Add(report.diagnostics,"O3IFC142",
+                "could not import closed-parent pattern '"+pattern->getQualifiedNameAsString()+
+                    "': "+llvm::toString(imported_pattern.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxClosedParentMemberIdentity(expected))
+        for (auto *member:ReadClosedParentMemberSpecializations(exported.Declarations.at(expected.stable_id))) {
+          auto imported_member=importer->Import(member);
+          if (!imported_member) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_member.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxDependentMemberPartialIdentity(expected))
+        for (auto *partial:ReadDependentMemberPartials(exported.Declarations.at(expected.stable_id))) {
+          auto imported_partial=importer->Import(partial);
+          if (!imported_partial) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_partial.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxConcreteMemberVariableSpecializationIdentity(expected))
+        for (auto *specialization:ReadConcreteMemberVariableSpecializations(exported.Declarations.at(expected.stable_id))) {
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxConcreteMemberFunctionSpecializationIdentity(expected))
+        for (auto *specialization:ReadConcreteMemberFunctionSpecializations(exported.Declarations.at(expected.stable_id))) {
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxConcreteMemberClassSpecializationIdentity(expected))
+        for (auto *specialization:ReadConcreteMemberClassSpecializations(exported.Declarations.at(expected.stable_id))) {
+          auto imported_specialization=importer->Import(specialization);
+          if (!imported_specialization) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_specialization.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxDetachedNestedTemplateIdentity(expected))
+        for (auto *definition:ReadDetachedNestedTemplateDefinitions(exported.Declarations.at(expected.stable_id))) {
+          auto imported_definition=importer->Import(definition);
+          if (!imported_definition) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_definition.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxDetachedStaticDataTemplateIdentity(expected))
+        for (auto *definition:ReadDetachedStaticDataTemplateDefinitions(exported.Declarations.at(expected.stable_id))) {
+          auto imported_definition=importer->Import(definition);
+          if (!imported_definition) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_definition.takeError()),expected.stable_id);
+            return report;
+          }
+        }
+      if (HasCxxDetachedCallableTemplateIdentity(expected))
+        for (auto *definition:ReadDetachedCallableTemplateDefinitions(exported.Declarations.at(expected.stable_id))) {
+          auto imported_definition=importer->Import(definition);
+          if (!imported_definition) {
+            Add(report.diagnostics,"O3IFC142",llvm::toString(imported_definition.takeError()),expected.stable_id);
+            return report;
+          }
+        }
       auto *named = llvm::dyn_cast_or_null<clang::NamedDecl>(*imported);
       if (!named || &named->getASTContext() != &target_context) {
         Add(report.diagnostics, "O3IFC143",
@@ -610,12 +1045,26 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       if (!ReadInterfaceDeclarationIdentity(named, target_context, actual) ||
           !SameInterfaceDeclarationIdentity(expected, actual)) {
         Add(report.diagnostics, "O3IFC144",
-            "ASTImporter changed an exported declaration's canonical type, layout, or effects",
+            "ASTImporter changed an exported declaration's canonical type, "
+            "layout, or effects: " +
+                expected.canonical_type_identity + " -> " +
+                actual.canonical_type_identity,
             expected.stable_id);
         return report;
       }
+      admitted_dependencies[module.sidecar.module.canonical_name].emplace(actual.stable_id,named);
       if (recorded_ids.insert(actual.stable_id).second)
         report.imported_declarations.push_back(std::move(actual));
+      if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
+          function && function->isInlined()) {
+        if (auto *definition = function->getDefinition();
+            definition && definition->doesThisDeclarationHaveABody())
+          report.inline_definitions.push_back(definition);
+      }
+      if (auto *variable = llvm::dyn_cast<clang::VarDecl>(named);
+          variable && variable->isInline())
+        if (auto *definition = variable->getDefinition())
+          report.inline_definitions.push_back(definition);
       if (IsTranslationUnitLookupDeclaration(named)) {
         report.declarations_by_module[module.sidecar.module.canonical_name]
             .push_back(named);
@@ -628,6 +1077,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       }
     }
     report.dependency_order.push_back(module.sidecar.module.canonical_name);
+    auxiliary_definitions.insert(auxiliary_definitions.end(),
+        importer->Definitions.begin(),importer->Definitions.end());
     importers.push_back(std::move(importer));
   }
   // Dependencies required only to spell a visible provider's public types
@@ -635,6 +1086,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   // neither directly imported nor re-exported to this consumer.
   std::set<std::string> hidden_ids;
   std::set<std::string> visible_ids;
+  std::set<std::string> hidden_namespace_ids;
+  std::set<std::string> visible_namespace_ids;
   for (const auto &module : impl_->modules) {
     for (const auto &identity : module.sidecar.declarations) {
       auto &destination =
@@ -645,8 +1098,14 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
               ? visible_ids
               : hidden_ids;
       destination.insert(identity.stable_id);
+      auto &namespace_destination =
+          impl_->visible_modules.count(module.sidecar.module.canonical_name) &&
+                  IsGrantedSPI(identity, module.input.spi_groups)
+              ? visible_namespace_ids : hidden_namespace_ids;
+      namespace_destination.insert(identity.stable_id);
     }
   }
+  for (const auto &id : visible_namespace_ids) hidden_namespace_ids.erase(id);
   for (const auto &id : visible_ids) hidden_ids.erase(id);
   auto *target_tu = target_context.getTranslationUnitDecl();
   // Keep the lexical declarations and redeclaration chains intact. Imported
@@ -677,8 +1136,94 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
     }
   }
 
+  // Importing a namespace recursively imports its contents. Its public name
+  // must not expose ungranted SPI or members of a private dependency. Keep
+  // lexical declarations for ABI/type references and control namespace lookup.
+  // A later direct import or SPI grant can promote a previously hidden member.
+  for (auto *named : all_declarations.Declarations) {
+    // Only the FunctionTemplateDecl participates in ordinary lookup. Its
+    // underlying function shares its USR but is not a second overload.
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(named);
+        function && (function->getDescribedFunctionTemplate() || function->getPrimaryTemplate())) continue;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(named);
+        alias && alias->getDescribedAliasTemplate()) continue;
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(named);
+        variable && (variable->getDescribedVarTemplate() || llvm::isa<clang::VarTemplateSpecializationDecl>(variable))) continue;
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(named);
+        record && (record->getDescribedClassTemplate() || llvm::isa<clang::ClassTemplateSpecializationDecl>(record))) continue;
+    if (named->isImplicit() || (!named->getIdentifier() && !llvm::isa<clang::UsingDirectiveDecl>(named))) continue;
+    auto *scope = named->getDeclContext();
+    while (scope && scope->isTransparentContext()) scope=scope->getParent();
+    if (!scope || !scope->isNamespace()) continue;
+    scope=scope->getPrimaryContext();
+    const auto id = ReadInterfaceDeclarationStableId(named);
+    if (id.empty()) continue;
+    auto *table=scope->buildLookup();
+    auto found=table ? table->find(named->getDeclName()) : clang::StoredDeclsMap::iterator();
+    if (visible_namespace_ids.count(id)) {
+      bool present=false;
+      if (table && found!=table->end() && !found->second.isNull())
+        for (auto *entry : found->second.getLookupResult())
+          present |= entry->getCanonicalDecl()==named->getCanonicalDecl();
+      if (!present) scope->makeDeclVisibleInContext(named);
+    } else if (!preexisting.Declarations.count(named) && hidden_namespace_ids.count(id) &&
+               table && found!=table->end() && !found->second.isNull()) {
+      const auto entries=found->second.getLookupResult();
+      if (std::find(entries.begin(),entries.end(),named)!=entries.end())
+        found->second.remove(named);
+    }
+  }
+  const auto &manager = target_context.getSourceManager();
+  std::stable_sort(report.inline_definitions.begin(), report.inline_definitions.end(),
+      [&](const auto *left, const auto *right) {
+        return manager.isBeforeInTranslationUnit(left->getLocation(), right->getLocation());
+      });
+  // Header/template instantiations can have independent SourceManager roots.
+  // Keep their dependency import order instead of comparing unrelated roots.
+  report.inline_definitions.insert(report.inline_definitions.begin(),
+      auxiliary_definitions.begin(),auxiliary_definitions.end());
+  std::set<const clang::Decl *> registered_definitions;
+  std::erase_if(report.inline_definitions, [&](const auto *declaration) {
+    return !registered_definitions.insert(declaration->getCanonicalDecl()).second;
+  });
   report.success = true;
   return report;
+}
+
+bool InterfaceImportSession::RequiresCoroutineHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
+                     kCxxCoroutineBodySemantic)!=module.sidecar.required_semantics.end() ||
+        std::find(module.sidecar.required_semantics.begin(),module.sidecar.required_semantics.end(),
+                     kCxxStandardCoroutineSemantic)!=module.sidecar.required_semantics.end();
+  });
+}
+
+bool InterfaceImportSession::RequiresTaskHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
+           std::string::npos;
+  });
+}
+
+bool InterfaceImportSession::RequiresKeyPathHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return std::find(module.sidecar.required_semantics.begin(),
+        module.sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") !=
+        module.sidecar.required_semantics.end();
+  });
+}
+
+bool InterfaceImportSession::RequiresRuntimeHeader() const {
+  if (!impl_) return false;
+  return std::any_of(impl_->modules.begin(), impl_->modules.end(), [](const auto &module) {
+    return std::find(module.sidecar.required_semantics.begin(),
+        module.sidecar.required_semantics.end(), RuntimeInterfaceSemantic()) !=
+        module.sidecar.required_semantics.end();
+  });
 }
 
 std::vector<InterfaceSourceArtifact>

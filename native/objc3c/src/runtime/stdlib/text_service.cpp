@@ -15,6 +15,8 @@ namespace {
 namespace storage = objc3c::runtime::stdlib_runtime;
 using objc3c::runtime::text_utf8::TryDecodeUtf8Scalars;
 struct TextV2Value {
+  // Published text bytes and boundaries are immutable. Registry With leases
+  // keep the complete value alive while trusted operations read either table.
   std::mutex mutex;
   std::vector<unsigned char> bytes;
   std::vector<std::uint32_t> scalar_offsets;
@@ -22,6 +24,7 @@ struct TextV2Value {
 struct TextBuilderV2Value {
   std::mutex mutex;
   std::vector<unsigned char> bytes;
+  std::vector<std::uint32_t> scalar_offsets{0};
 };
 storage::OpaqueServiceStorage<TextV2Value> &TextV2Storage() {
   static storage::OpaqueServiceStorage<TextV2Value> storage;
@@ -60,22 +63,58 @@ int TextBuilderV2RegistryStatus(
   }
 }
 
-std::unique_ptr<TextV2Value> MakeTextV2Value(
-    const unsigned char *bytes, std::size_t byte_count) {
-  int scalar_count = 0;
-  if (!TryDecodeUtf8Scalars(bytes, static_cast<int>(byte_count), scalar_count,
-                            nullptr)) return nullptr;
-  auto value = std::make_unique<TextV2Value>();
-  if (byte_count != 0) value->bytes.assign(bytes, bytes + byte_count);
-  value->scalar_offsets.reserve(static_cast<std::size_t>(scalar_count) + 1);
-  std::size_t index = 0;
-  while (index < byte_count) {
-    value->scalar_offsets.push_back(static_cast<std::uint32_t>(index));
-    const unsigned char first = bytes[index];
-    index += first <= 0x7f ? 1 : first <= 0xdf ? 2 : first <= 0xef ? 3 : 4;
-  }
-  value->scalar_offsets.push_back(static_cast<std::uint32_t>(byte_count));
-  return value;
+#ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+thread_local uint64_t text_copied_bytes = 0;
+#endif
+void RecordByteCopy(std::size_t bytes) {
+#ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+  text_copied_bytes += bytes;
+#else
+  (void)bytes;
+#endif
+}
+template <class T>
+void ReserveTextGrowth(std::vector<T> &values, std::size_t required,
+                        std::size_t limit) {
+  if (required <= values.capacity()) return;
+  const auto grown = std::min(limit, std::max<std::size_t>(16, values.capacity() * 2));
+  values.reserve(std::max(required, grown));
+}
+// Accept only complete, validated owned values. No unchecked caller bytes can
+// reach publication without going through the authoritative decoder.
+int PublishValidatedText(std::unique_ptr<TextV2Value> value, objc3_text_v2_t *out) {
+  void *handle = TextV2Storage().Store(std::move(value), kTextV2Kind);
+  if (!handle) return TextV2Storage().AtCapacity() ? OBJC3_STDLIB_V2_CAPACITY_EXCEEDED
+                                                : OBJC3_STDLIB_V2_OUT_OF_MEMORY;
+  *out = static_cast<objc3_text_v2_t>(handle);
+  return OBJC3_STDLIB_V2_OK;
+}
+int AppendValidatedText(objc3_text_builder_v2_t builder,
+                        const unsigned char *bytes, std::size_t byte_count,
+                        const std::uint32_t *offsets, std::size_t offset_count) {
+  int status = OBJC3_STDLIB_V2_OK;
+  const bool found = TextBuilderV2Storage().With(builder, kTextBuilderV2Kind,
+      [&](TextBuilderV2Value &value) {
+        std::lock_guard<std::mutex> lock(value.mutex);
+        const auto old_size = value.bytes.size();
+        if (byte_count > kTextV2MaxBytes - old_size) {
+          status = OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
+          return;
+        }
+        // Reserve both tables before changing either logical sequence. A
+        // failed reservation changes capacity only, never builder contents.
+        const auto old_capacity = value.bytes.capacity();
+        ReserveTextGrowth(value.bytes, old_size + byte_count, kTextV2MaxBytes);
+        if (old_capacity != value.bytes.capacity()) RecordByteCopy(old_size);
+        ReserveTextGrowth(value.scalar_offsets, value.scalar_offsets.size() + offset_count - 1,
+                           kTextV2MaxBytes + 1);
+        if (byte_count) value.bytes.insert(value.bytes.end(), bytes, bytes + byte_count);
+        RecordByteCopy(byte_count);
+        for (std::size_t i = 1; i < offset_count; ++i)
+          value.scalar_offsets.push_back(static_cast<std::uint32_t>(old_size + offsets[i]));
+      });
+  return found ? status : TextBuilderV2RegistryStatus(
+      TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
 }
 
 
@@ -126,28 +165,24 @@ extern "C" int objc3_runtime_stdlib_text_v2_byte_at(
 
 extern "C" int objc3_runtime_stdlib_text_v2_create_utf8_checked(
     const char *bytes, uint64_t byte_count, objc3_text_v2_t *out_text) {
-  if (out_text == nullptr) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  if (!out_text) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   *out_text = nullptr;
-  if (byte_count > kTextV2MaxBytes || (bytes == nullptr && byte_count != 0))
+  if (byte_count > kTextV2MaxBytes || (!bytes && byte_count))
     return byte_count > kTextV2MaxBytes ? OBJC3_STDLIB_V2_CAPACITY_EXCEEDED
-                                        : OBJC3_STDLIB_V2_INVALID_ARGUMENT;
-  const auto *raw = reinterpret_cast<const unsigned char *>(bytes);
-  int scalar_count = 0;
-  if (!TryDecodeUtf8Scalars(raw, static_cast<int>(byte_count), scalar_count,
-                            nullptr)) return OBJC3_STDLIB_V2_INVALID_UTF8;
+                                      : OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   try {
-    auto value = MakeTextV2Value(raw, static_cast<std::size_t>(byte_count));
-    if (!value) return OBJC3_STDLIB_V2_INVALID_UTF8;
-    void *handle = TextV2Storage().Store(std::move(value), kTextV2Kind);
-    if (handle == nullptr) {
-      return TextV2Storage().AtCapacity() ? OBJC3_STDLIB_V2_CAPACITY_EXCEEDED
-                                          : OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-    }
-    *out_text = static_cast<objc3_text_v2_t>(handle);
-    return OBJC3_STDLIB_V2_OK;
-  } catch (const std::bad_alloc &) {
-    return OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-  }
+    std::vector<std::uint32_t> offsets;
+    int scalar_count = 0;
+    const auto *raw = reinterpret_cast<const unsigned char *>(bytes);
+    if (!TryDecodeUtf8Scalars(raw, static_cast<int>(byte_count), scalar_count,
+                               nullptr, nullptr, &offsets))
+      return OBJC3_STDLIB_V2_INVALID_UTF8;
+    auto value = std::make_unique<TextV2Value>();
+    if (byte_count) value->bytes.assign(raw, raw + byte_count);
+    RecordByteCopy(byte_count);
+    value->scalar_offsets = std::move(offsets);
+    return PublishValidatedText(std::move(value), out_text);
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_v2_retain_checked(
@@ -216,32 +251,29 @@ extern "C" int objc3_runtime_stdlib_text_v2_scalar_count_checked(
 extern "C" int objc3_runtime_stdlib_text_v2_slice_scalars(
     objc3_text_v2_t text, uint64_t start_scalar, uint64_t scalar_count,
     objc3_text_v2_t *out_text) {
-  if (out_text == nullptr) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  if (!out_text) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   *out_text = nullptr;
-  std::vector<unsigned char> bytes;
-  int status = OBJC3_STDLIB_V2_OK;
-  bool found = false;
   try {
-    found = TextV2Storage().With(text, kTextV2Kind,
-        [&](TextV2Value &value) {
-          std::lock_guard<std::mutex> lock(value.mutex);
-          const uint64_t available = value.scalar_offsets.size() - 1;
-          if (start_scalar > available || scalar_count > available - start_scalar) {
-            status = OBJC3_STDLIB_V2_OUT_OF_BOUNDS;
-            return;
-          }
-          const std::size_t first = value.scalar_offsets[start_scalar];
-          const std::size_t last = value.scalar_offsets[start_scalar + scalar_count];
-          bytes.assign(value.bytes.begin() + static_cast<std::ptrdiff_t>(first),
-                       value.bytes.begin() + static_cast<std::ptrdiff_t>(last));
-        });
-  } catch (const std::bad_alloc &) {
-    return OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-  }
-  if (!found) return TextV2RegistryStatus(TextV2Storage().Inspect(text, kTextV2Kind));
-  if (status != OBJC3_STDLIB_V2_OK) return status;
-  return objc3_runtime_stdlib_text_v2_create_utf8_checked(
-      reinterpret_cast<const char *>(bytes.data()), bytes.size(), out_text);
+    std::unique_ptr<TextV2Value> result;
+    int status = OBJC3_STDLIB_V2_OK;
+    if (!TextV2Storage().With(text, kTextV2Kind, [&](TextV2Value &value) {
+      const auto available = value.scalar_offsets.size() - 1;
+      if (start_scalar > available || scalar_count > available - start_scalar) {
+        status = OBJC3_STDLIB_V2_OUT_OF_BOUNDS;
+        return;
+      }
+      const auto first = value.scalar_offsets[start_scalar];
+      const auto last = value.scalar_offsets[start_scalar + scalar_count];
+      result = std::make_unique<TextV2Value>();
+      result->bytes.assign(value.bytes.begin() + first, value.bytes.begin() + last);
+      RecordByteCopy(last - first);
+      result->scalar_offsets.reserve(scalar_count + 1);
+      for (uint64_t i = 0; i <= scalar_count; ++i)
+        result->scalar_offsets.push_back(value.scalar_offsets[start_scalar + i] - first);
+    })) return TextV2RegistryStatus(TextV2Storage().Inspect(text, kTextV2Kind));
+    if (status != OBJC3_STDLIB_V2_OK) return status;
+    return PublishValidatedText(std::move(result), out_text);
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_v2_find_bytes(
@@ -359,32 +391,37 @@ extern "C" int objc3_runtime_stdlib_text_v2_find_scalars(
 }
 
 extern "C" int objc3_runtime_stdlib_text_v2_concat(
-    objc3_text_v2_t left, objc3_text_v2_t right,
-    objc3_text_v2_t *out_text) {
-  if (out_text == nullptr) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+    objc3_text_v2_t left, objc3_text_v2_t right, objc3_text_v2_t *out_text) {
+  if (!out_text) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   *out_text = nullptr;
   try {
-    std::vector<unsigned char> left_bytes;
-    std::vector<unsigned char> right_bytes;
-    if (!TextV2Storage().With(left, kTextV2Kind, [&](TextV2Value &value) {
-          std::lock_guard<std::mutex> lock(value.mutex);
-          left_bytes = value.bytes;
-        })) return TextV2RegistryStatus(TextV2Storage().Inspect(left, kTextV2Kind));
-    if (!TextV2Storage().With(right, kTextV2Kind, [&](TextV2Value &value) {
-          std::lock_guard<std::mutex> lock(value.mutex);
-          right_bytes = value.bytes;
-        })) return TextV2RegistryStatus(TextV2Storage().Inspect(right, kTextV2Kind));
-    if (left_bytes.size() > kTextV2MaxBytes - right_bytes.size())
-      return OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
-    std::vector<unsigned char> combined;
-    combined.reserve(left_bytes.size() + right_bytes.size());
-    combined.insert(combined.end(), left_bytes.begin(), left_bytes.end());
-    combined.insert(combined.end(), right_bytes.begin(), right_bytes.end());
-    return objc3_runtime_stdlib_text_v2_create_utf8_checked(
-        reinterpret_cast<const char *>(combined.data()), combined.size(), out_text);
-  } catch (const std::bad_alloc &) {
-    return OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-  }
+    std::unique_ptr<TextV2Value> result;
+    int status = OBJC3_STDLIB_V2_OK;
+    bool right_found = false;
+    if (!TextV2Storage().With(left, kTextV2Kind, [&](TextV2Value &lhs) {
+      // Nested registry leases protect both immutable operands, including
+      // concat(x,x), without taking two arbitrarily ordered object mutexes.
+      right_found = TextV2Storage().With(right, kTextV2Kind, [&](TextV2Value &rhs) {
+        const auto prefix = lhs.bytes.size();
+        if (rhs.bytes.size() > kTextV2MaxBytes - prefix) {
+          status = OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
+          return;
+        }
+        result = std::make_unique<TextV2Value>();
+        result->bytes.reserve(prefix + rhs.bytes.size());
+        result->bytes.insert(result->bytes.end(), lhs.bytes.begin(), lhs.bytes.end());
+        result->bytes.insert(result->bytes.end(), rhs.bytes.begin(), rhs.bytes.end());
+        RecordByteCopy(prefix + rhs.bytes.size());
+        result->scalar_offsets.reserve(lhs.scalar_offsets.size() + rhs.scalar_offsets.size() - 1);
+        result->scalar_offsets.insert(result->scalar_offsets.end(), lhs.scalar_offsets.begin(), lhs.scalar_offsets.end());
+        for (std::size_t i = 1; i < rhs.scalar_offsets.size(); ++i)
+          result->scalar_offsets.push_back(static_cast<std::uint32_t>(prefix + rhs.scalar_offsets[i]));
+      });
+    })) return TextV2RegistryStatus(TextV2Storage().Inspect(left, kTextV2Kind));
+    if (!right_found) return TextV2RegistryStatus(TextV2Storage().Inspect(right, kTextV2Kind));
+    if (status != OBJC3_STDLIB_V2_OK) return status;
+    return PublishValidatedText(std::move(result), out_text);
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_create(
@@ -408,33 +445,18 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_create(
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_append_utf8(
     objc3_text_builder_v2_t builder, const char *bytes, uint64_t byte_count) {
-  if (byte_count > kTextV2MaxBytes || (bytes == nullptr && byte_count != 0))
+  if (byte_count > kTextV2MaxBytes || (!bytes && byte_count))
     return byte_count > kTextV2MaxBytes ? OBJC3_STDLIB_V2_CAPACITY_EXCEEDED
-                                        : OBJC3_STDLIB_V2_INVALID_ARGUMENT;
-  int scalar_count = 0;
-  if (!TryDecodeUtf8Scalars(reinterpret_cast<const unsigned char *>(bytes),
-                            static_cast<int>(byte_count), scalar_count, nullptr))
-    return OBJC3_STDLIB_V2_INVALID_UTF8;
-  int status = OBJC3_STDLIB_V2_OK;
-  const bool found = TextBuilderV2Storage().With(builder, kTextBuilderV2Kind,
-      [&](TextBuilderV2Value &value) {
-        std::lock_guard<std::mutex> lock(value.mutex);
-        if (byte_count > kTextV2MaxBytes - value.bytes.size()) {
-          status = OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
-          return;
-        }
-        try {
-          if (byte_count != 0) {
-            const auto *first = reinterpret_cast<const unsigned char *>(bytes);
-            value.bytes.insert(value.bytes.end(), first,
-                               first + static_cast<std::size_t>(byte_count));
-          }
-        } catch (const std::bad_alloc &) {
-          status = OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-        }
-      });
-  return found ? status : TextBuilderV2RegistryStatus(
-      TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
+                                      : OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  try {
+    std::vector<std::uint32_t> offsets;
+    int scalar_count = 0;
+    const auto *raw = reinterpret_cast<const unsigned char *>(bytes);
+    if (!TryDecodeUtf8Scalars(raw, static_cast<int>(byte_count), scalar_count,
+                               nullptr, nullptr, &offsets))
+      return OBJC3_STDLIB_V2_INVALID_UTF8;
+    return AppendValidatedText(builder, raw, byte_count, offsets.data(), offsets.size());
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_append_scalar(
@@ -459,42 +481,40 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_append_scalar(
     bytes[byte_count++] = static_cast<char>(0x80 | ((scalar >> 6) & 0x3f));
     bytes[byte_count++] = static_cast<char>(0x80 | (scalar & 0x3f));
   }
-  return objc3_runtime_stdlib_text_builder_v2_append_utf8(
-      builder, bytes, byte_count);
+  const std::uint32_t offsets[] = {0, static_cast<std::uint32_t>(byte_count)};
+  try {
+    return AppendValidatedText(builder, reinterpret_cast<const unsigned char *>(bytes),
+                               byte_count, offsets, 2);
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_append_text(
     objc3_text_builder_v2_t builder, objc3_text_v2_t text) {
   try {
-    std::vector<unsigned char> bytes;
+    int status = OBJC3_STDLIB_V2_OK;
     if (!TextV2Storage().With(text, kTextV2Kind, [&](TextV2Value &value) {
-          std::lock_guard<std::mutex> lock(value.mutex);
-          bytes = value.bytes;
-        })) return TextV2RegistryStatus(TextV2Storage().Inspect(text, kTextV2Kind));
-    return objc3_runtime_stdlib_text_builder_v2_append_utf8(
-        builder, reinterpret_cast<const char *>(bytes.data()), bytes.size());
-  } catch (const std::bad_alloc &) {
-    return OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-  }
+      status = AppendValidatedText(builder, value.bytes.data(), value.bytes.size(),
+                                    value.scalar_offsets.data(), value.scalar_offsets.size());
+    })) return TextV2RegistryStatus(TextV2Storage().Inspect(text, kTextV2Kind));
+    return status;
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_finish(
     objc3_text_builder_v2_t builder, objc3_text_v2_t *out_text) {
-  if (out_text == nullptr) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  if (!out_text) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   *out_text = nullptr;
   try {
-    std::vector<unsigned char> bytes;
-    if (!TextBuilderV2Storage().With(builder, kTextBuilderV2Kind,
-        [&](TextBuilderV2Value &value) {
-          std::lock_guard<std::mutex> lock(value.mutex);
-          bytes = value.bytes;
-        })) return TextBuilderV2RegistryStatus(
-            TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
-    return objc3_runtime_stdlib_text_v2_create_utf8_checked(
-        reinterpret_cast<const char *>(bytes.data()), bytes.size(), out_text);
-  } catch (const std::bad_alloc &) {
-    return OBJC3_STDLIB_V2_OUT_OF_MEMORY;
-  }
+    std::unique_ptr<TextV2Value> result;
+    if (!TextBuilderV2Storage().With(builder, kTextBuilderV2Kind, [&](TextBuilderV2Value &value) {
+      std::lock_guard<std::mutex> lock(value.mutex);
+      result = std::make_unique<TextV2Value>();
+      result->bytes = value.bytes;
+      RecordByteCopy(value.bytes.size());
+      result->scalar_offsets = value.scalar_offsets;
+    })) return TextBuilderV2RegistryStatus(TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
+    return PublishValidatedText(std::move(result), out_text);
+  } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_reset(
@@ -504,6 +524,8 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_reset(
       [&](TextBuilderV2Value &value) {
         std::lock_guard<std::mutex> lock(value.mutex);
         std::vector<unsigned char>().swap(value.bytes);
+        value.scalar_offsets.resize(1);
+        value.scalar_offsets[0] = 0;
       });
   if (!found) status = TextBuilderV2RegistryStatus(
       TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
@@ -518,3 +540,14 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_release(
   }
   return OBJC3_STDLIB_V2_OK;
 }
+
+#ifdef OBJC3_TEXT_CONSTRUCTION_TESTING
+extern "C" void objc3_test_text_construction_reset() {
+  text_copied_bytes = 0;
+  objc3c::runtime::text_utf8::decode_calls = 0;
+  objc3c::runtime::text_utf8::decoded_input_bytes = 0;
+}
+extern "C" uint64_t objc3_test_text_copied_bytes() { return text_copied_bytes; }
+extern "C" uint64_t objc3_test_text_decode_calls() { return objc3c::runtime::text_utf8::decode_calls; }
+extern "C" uint64_t objc3_test_text_decoded_input_bytes() { return objc3c::runtime::text_utf8::decoded_input_bytes; }
+#endif

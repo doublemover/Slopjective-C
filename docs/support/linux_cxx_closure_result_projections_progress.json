@@ -1,0 +1,255 @@
+{
+  "schema": "objc3c.linux-cxx-closure-result-projections-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-29",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-54d0f2bd9b92-00b75dc3",
+  "compiler_patch_digest": "54d0f2bd9b92e4d8cff604d6306afbec37a23a465b820205fe969198861748c9",
+  "frontend_input_sha256": "871804b2cf49488dfd70bec822db98723f4ae14699e9130eb13dd0d2b2695793",
+  "concurrency_module_version": "2.84.0",
+  "required_semantics": [
+    "objc3.cxx-closure-result-projections.v1"
+  ],
+  "source_inputs": [
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_artifact_io.cpp",
+      "sha256": "04a9c0b5a5b3c02802790104c959f4a5373917ddb535062f04f924e046edbe09"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_codec.cpp",
+      "sha256": "ed2a9efca2e1d4c1ec60799aaef250784bc220a89261536e2fa64a8f640eabce"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.cpp",
+      "sha256": "4367fa1841225ea54a2d5bd1d4362e1df124e005c7f065d39fa76fd92cad0728"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_contract.h",
+      "sha256": "175f03ed7d4fb71ecb16cd7e68886fa89da6b1c4e3eecc7489bffce28dc35579"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_emitter.cpp",
+      "sha256": "5494504026e63ea0ab8ebb5d55b5be0e2844464d1adeb9b75326e23052020b19"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_import.cpp",
+      "sha256": "83a0dd4066bee34e495b6a3ce5914b336da625e02e16fb461231e575e6db1d79"
+    },
+    {
+      "path": "native/objc3c/src/clang_foundation/interface_module_resolver.cpp",
+      "sha256": "86d5e33f1dd50b97463a9e414b383c6d5740494ef2596daede2ed9549fa57fec"
+    },
+    {
+      "path": "scripts/objc3c_toolchain/qualify_native_async_packages.py",
+      "sha256": "dd28ba57e9af45bf2e3e295484d29839abe723b42e9484ada66c493dd3a92cde"
+    },
+    {
+      "path": "stdlib/module_inventory.json",
+      "sha256": "476f35930c4bff544247bfeede1b800359b54d11d1d03cba05d1462c48162e3c"
+    },
+    {
+      "path": "tests/clang_foundation/interface_emitter_test.cpp",
+      "sha256": "14941672139364cd1d470b03160fce06d06dc4cf70491fadac1ef870130bf885"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/app/factory_package_checks.h",
+      "sha256": "ee99c851dd38d47c93912c521b677208f9d5e2a352766da97bb6478371d9c94d"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/module.mm",
+      "sha256": "81423d9e0f4a8a3fe6f68571f9b7702f90821d9e48b810e1ce737d4f83d0c079"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/package.json",
+      "sha256": "538bee7d8fb26f0bd5cd1f375a426f92e6276f85371302b9b35bdbf0b72a68c1"
+    },
+    {
+      "path": "tests/clang_foundation/native_async_packages/provider/closure_result_projections.h",
+      "sha256": "54dd5b20601085858de533d72f14d8fb34ffe8597585ff6026538dc44360a402"
+    }
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 84,
+    "source_free_runtime_configurations": 16,
+    "source_free_commands": 96,
+    "full_fixture_smoke_configurations": 1,
+    "full_fixture_smoke_commands": 6,
+    "representative_cases": [
+      {
+        "transport": "packages-normal",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++20-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++20-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++20-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++23-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++23-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++23-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal",
+        "name": "c++23-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++20-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++20-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++20-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++23-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++23-arc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++23-mrc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "packages-normal-eager",
+        "name": "c++23-mrc-O2",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      },
+      {
+        "transport": "full-smoke-normal",
+        "name": "c++20-arc-O0",
+        "status": "PASS",
+        "provider_source_removed": true,
+        "specialization_lookup_rejected": true
+      }
+    ],
+    "distinct_nominal_closure_factory_origins": true,
+    "ordinary_generic_and_closed_factory_closures": true,
+    "aliases_records_wrappers_and_shared_storage": true,
+    "provider_owned_entries_and_returned_closures": true,
+    "nontrivial_captured_record_copy_move_destruction": true,
+    "captureless_structural_closure_values": true,
+    "closed_generic_lambda_instantiation": true,
+    "private_roots_and_capability_owner_mismatches_rejected": true,
+    "relocation_and_replay_fingerprints_stable": true,
+    "native_foundation": {
+      "status": "REUSED_UNCHANGED_2_83_NATIVE_FOUNDATION",
+      "receipt": {
+        "path": "docs/support/linux_cxx_factory_value_arguments_progress.json",
+        "sha256": "1e9ee9110a61d8abb1535f9dc545423f47534273441be0140e2d1cd8c002e454"
+      }
+    },
+    "reports": [
+      {
+        "path": "out/closure-result-projections-facade-build.log",
+        "sha256": "5c3b2f7132feca7a2f5d2abc8b0ab3a62ec97a98ca52d0339d82fc7cc30255e9"
+      },
+      {
+        "path": "out/closure-result-projections-emitter-ctest.log",
+        "sha256": "9eaaf0eaa2bbc701cb43676107380e60088561f751c80ba6f81e9b43895a20a4"
+      },
+      {
+        "path": "out/closure-result-projections-tooling.log",
+        "sha256": "829c526ece20d6b044a1f3b93ba25771ce29dae0eaa1a2fa26f49016d6b714cb"
+      },
+      {
+        "path": "out/native-validation/closure-result-projections-packages-normal/qualification.json",
+        "sha256": "95af322e974c31e7392f5d5284a5f03762cbc98f5d80280430b248b01d9d3f20"
+      },
+      {
+        "path": "out/native-validation/closure-result-projections-packages-normal-eager/qualification.json",
+        "sha256": "975acdc4dbacfd89c2c6472e6abdc816165b7a4cc159ffb1ad43fa1a870b157e"
+      },
+      {
+        "path": "out/native-validation/closure-result-projections-full-smoke-normal/qualification.json",
+        "sha256": "98bebf65b219796e5bb642565248ba493f0dd6fbe646d9b7d72ef8e407d89d59"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.62.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined full-fixture and sanitizer matrices after further implementation",
+    "Coordinated SDK delivery of post-2.62 source milestones"
+  ],
+  "remaining": [
+    "Other public/dependent closure and unnamed-type projections, custom coroutine promises and dependent lookup/attribute contracts",
+    "Remaining ownership, structured concurrency, isolation, key-path, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

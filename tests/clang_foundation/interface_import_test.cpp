@@ -1,10 +1,13 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/ArrayRef.h"
 
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -55,6 +58,126 @@ bool HasImported(const CompileResult &result, const std::string &name) {
   return false;
 }
 
+void TestAdmissionDiagnosticsUseInvocationFileSystem() {
+  const auto root = fs::temp_directory_path() / "objc3-admission-diagnostic-vfs";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto interface_path = root / "provider.objc3i";
+  auto provider = EmitModule(root / "provider.m", interface_path, "diagnostics.VFS",
+      "typedef struct DiagnosticValue { int value; } DiagnosticValue;");
+  assert(provider.success && provider.interface_artifact);
+  const auto mappings = root / "warning-mappings.txt";
+  { std::ofstream stream(mappings); stream << "[unused-variable]\nsrc:*\n"; }
+  auto consumer = ModuleRequest(root / "consumer.m", "",
+      "int use(DiagnosticValue value) { int unused_local; return value.value; }");
+  consumer.emit_semantic_interface = false;
+  consumer.imported_interfaces = {ImportOf(interface_path, provider.interface_artifact->identity)};
+  consumer.arguments.push_back("-Wunused-variable");
+  // Reading this file during target admission used to dereference a null VFS,
+  // before the real frontend instance was constructed. Repeat after a rejected
+  // consumer to defend session and diagnostic-client ownership during recovery.
+  consumer.arguments.push_back("--warning-suppression-mappings=" + mappings.string());
+  for (int attempt = 0; attempt != 2; ++attempt) {
+    auto accepted = Compile(consumer);
+    assert(accepted.success);
+    for (const auto &diagnostic : accepted.diagnostics)
+      assert(diagnostic.message.find("unused variable") == std::string::npos);
+    auto rejected = consumer;
+    rejected.source_text = "int broken(DiagnosticValue value) { return missing_identifier; }";
+    assert(!Compile(rejected).success);
+  }
+  fs::remove_all(root);
+}
+
+void TestPreparedImportBudgets() {
+  const auto root = fs::temp_directory_path() / "objc3-prepared-import-budgets";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path_a = root / "a.objc3i", path_b = root / "b.objc3i";
+  auto a = EmitModule(root / "a.m", path_a, "budget.A", "typedef struct BudgetValue { int value; } BudgetValue;");
+  assert(a.success && a.interface_artifact);
+  const auto input_a = ImportOf(path_a, a.interface_artifact->identity);
+  auto b = EmitModule(root / "b.m", path_b, "budget.B", "BudgetValue echo(BudgetValue value);", {input_a});
+  assert(b.success && b.interface_artifact);
+  const std::vector<InterfaceImportInput> inputs = {input_a, ImportOf(path_b, b.interface_artifact->identity)};
+  InterfaceImportTarget target;
+  const auto &id = a.interface_artifact->identity;
+  target.target_triple = id.target_triple;
+  target.runtime_abi = id.runtime_abi;
+  target.extension_abi = id.extension_abi;
+  target.language_revision = id.language_revision;
+  target.language_profile = id.language_profile;
+  target.objc = target.objc3 = true;
+  target.objc_runtime = "gnustep-2.2";
+  target.ast_arguments = BuildInterfaceASTArguments({}, "objective-c", "c17", target);
+  std::vector<InterfaceContractDiagnostic> diagnostics;
+  auto prepared = InterfaceImportSession::Prepare(inputs, target, diagnostics);
+  for (const auto &d : diagnostics) std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+  assert(prepared && diagnostics.empty());
+  const auto usage = prepared->GetResourceUsage();
+  assert(usage.selected_modules == 2 && usage.dependency_edges == 1);
+  assert(usage.parser_input_bytes > 0 && usage.parser_declarations > 0);
+  using Field = std::uint64_t InterfaceResourceLimits::*;
+  for (auto [field, exact] : std::vector<std::pair<Field, std::uint64_t>>{
+      {&InterfaceResourceLimits::read_bytes, usage.read_bytes},
+      {&InterfaceResourceLimits::selected_bytes, usage.selected_bytes},
+      {&InterfaceResourceLimits::decoded_declarations, usage.decoded_declarations},
+      {&InterfaceResourceLimits::selected_declarations, usage.selected_declarations},
+      {&InterfaceResourceLimits::selected_modules, usage.selected_modules},
+      {&InterfaceResourceLimits::dependency_edges, usage.dependency_edges},
+      {&InterfaceResourceLimits::parser_input_bytes, usage.parser_input_bytes},
+      {&InterfaceResourceLimits::parser_declarations, usage.parser_declarations}}) {
+    assert(exact > 0);
+    auto policy = target;
+    policy.resource_limits.*field = exact;
+    diagnostics.clear();
+    assert(InterfaceImportSession::Prepare(inputs, policy, diagnostics) && diagnostics.empty());
+    policy.resource_limits.*field = exact - 1;
+    diagnostics.clear();
+    assert(!InterfaceImportSession::Prepare(inputs, policy, diagnostics));
+    assert(std::any_of(diagnostics.begin(), diagnostics.end(),
+        [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
+  }
+  // Resolving a lock does not authorize subsequent byte changes. Preparation
+  // must fail before any declarations can enter the consumer AST.
+  std::ofstream(path_a, std::ios::app) << "\n// changed after resolution\n";
+  diagnostics.clear();
+  assert(!InterfaceImportSession::Prepare(inputs, target, diagnostics));
+  assert(!diagnostics.empty());
+  fs::remove_all(root);
+}
+
+void TestPrimitiveABIProfilesRejectMismatchedConsumers() {
+  const auto root = fs::temp_directory_path() / "objc3-primitive-abi-import-test";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  for (const auto &flag : {"-funsigned-char", "-fshort-wchar", "-fshort-enums",
+                           "-fpack-struct=1", "-mavx2"}) {
+    const auto path = root / "provider.objc3i";
+    auto provider = ModuleRequest(root / "provider.m", "fixture.abi",
+                                  "char byte_value(void); extern int counter;");
+    provider.arguments.push_back(flag);
+    provider.interface_output_path = path.string();
+    auto emitted = Compile(provider);
+    assert(emitted.success && emitted.interface_artifact);
+    auto consumer = ModuleRequest(root / "consumer.m", "",
+                                  "int use(void) { return byte_value() + counter; }");
+    consumer.emit_semantic_interface = false;
+    consumer.imported_interfaces = {ImportOf(path, emitted.interface_artifact->identity)};
+    auto rejected = Compile(consumer);
+    assert(!rejected.success && rejected.imported_declarations.empty());
+    assert(std::any_of(rejected.interface_import_diagnostics.begin(),
+                       rejected.interface_import_diagnostics.end(),
+                       [](const auto &d) { return d.code == "O3IFC135"; }));
+    consumer.arguments.push_back(flag);
+    auto admitted = Compile(consumer);
+    for (const auto &d : admitted.interface_import_diagnostics)
+      std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+    assert(admitted.success && HasImported(admitted, "byte_value"));
+  }
+  fs::remove_all(root);
+}
+
 void TestThreeModuleSemanticLookupAndIdentity() {
   const auto root = fs::temp_directory_path() / "objc3-interface-import-test";
   fs::remove_all(root);
@@ -90,6 +213,7 @@ void TestThreeModuleSemanticLookupAndIdentity() {
                                 "         hasValue(zero) + isOk(value); "
                                 "}");
   consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
   consumer.imported_interfaces = {
       ImportOf(a_path, a.interface_artifact->identity),
       ImportOf(b_path, b.interface_artifact->identity)};
@@ -169,6 +293,7 @@ void TestDuplicateLookupNamesAreRejected() {
   assert(a.success && b.success && a.interface_artifact && b.interface_artifact);
   auto consumer = ModuleRequest(root / "use.m", "", "int use(void) { return collide(); }");
   consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
   consumer.imported_interfaces = {
       ImportOf(a_path, a.interface_artifact->identity),
       ImportOf(b_path, b.interface_artifact->identity)};
@@ -233,6 +358,67 @@ void TestCompleteExportIdentitiesAndPrivateDirectLookup() {
   fs::remove_all(root);
 }
 
+void TestCxxBaseAndDefaultedImports() {
+  const auto root = fs::temp_directory_path() / "objc3-cxx-structure-import";
+  fs::remove_all(root); fs::create_directories(root);
+  for (const char *standard : {"-std=c++20", "-std=c++23"}) {
+    auto provider = ModuleRequest(root / "provider.cpp", "fixture.structure",
+        "struct Empty {}; struct Base { int n; }; "
+        "class Access : private Base, protected Empty { public: Access(int); int get() const; }; "
+        "struct Derived : Base, Empty { Derived()=default; Derived(const Derived&)=default; ~Derived()=default; }; ");
+    provider.language = BaseLanguage::Cxx; provider.objc3 = false; provider.objc_runtime.clear();
+    provider.arguments = {standard};
+    provider.interface_output_path = (root / "structure.objc3i").string();
+    auto built = Compile(provider);
+    assert(built.success && built.interface_artifact);
+    auto consumer = provider;
+    consumer.module_name.clear(); consumer.package_identity.clear();
+    consumer.interface_output_path.clear(); consumer.emit_semantic_interface = false;
+    consumer.input_path = (root / "consumer.cpp").string();
+    consumer.source_text =
+        "template<class T> concept public_base = requires(T *p) { static_cast<Base *>(p); }; "
+        "static_assert(public_base<Derived>); static_assert(!public_base<Access>); "
+        "static_assert(__is_standard_layout(Access)); "
+        "int use() { Derived d{}; d.n=42; Derived copy(d); Access a(42); return copy.n+a.get(); }";
+    consumer.imported_interfaces = {ImportOf(provider.interface_output_path, built.interface_artifact->identity)};
+    auto imported = Compile(consumer);
+    assert(imported.success && HasImported(imported, "Derived"));
+  }
+  fs::remove_all(root);
+}
+
+void TestLaterCxxOverloadConflicts() {
+  const auto root = fs::temp_directory_path() / "objc3-cxx-overload-collision";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  auto cpp = [&](const char *file, const char *module, const char *source) {
+    auto request = ModuleRequest(root / file, module, source);
+    request.language = BaseLanguage::Cxx;
+    request.objc3 = false;
+    request.objc_runtime.clear();
+    request.arguments = {"-std=c++20"};
+    request.interface_output_path =
+        (root / (std::string(module) + ".objc3i")).string();
+    return request;
+  };
+  auto left = cpp("left.cpp", "left", "int clash(int); long clash(long);");
+  auto right = cpp("right.cpp", "right", "double clash(long);");
+  auto a = Compile(left), b = Compile(right);
+  assert(a.success && b.success);
+  auto consumer = cpp("client.cpp", "", "void use() {}");
+  consumer.emit_semantic_interface = false;
+  consumer.interface_output_path.clear();
+  consumer.imported_interfaces = {
+      ImportOf(left.interface_output_path, a.interface_artifact->identity),
+      ImportOf(right.interface_output_path, b.interface_artifact->identity)};
+  auto rejected = Compile(consumer);
+  assert(!rejected.success);
+  assert(std::any_of(rejected.interface_import_diagnostics.begin(),
+                     rejected.interface_import_diagnostics.end(),
+                     [](const auto &d) { return d.code == "O3IFC132"; }));
+  fs::remove_all(root);
+}
+
 void TestRelativeArtifactsAndResponseFileLayoutFlags() {
   const auto caller_directory = fs::current_path();
   const auto root = fs::temp_directory_path() / "objc3-interface-import-working-directory";
@@ -287,13 +473,328 @@ void TestRelativeArtifactsAndResponseFileLayoutFlags() {
   assert(fs::current_path() == caller_directory);
   fs::remove_all(root);
 }
+void TestPinnedRuntimeTypesSurvivePreparedImport() {
+  const auto root=fs::temp_directory_path()/"objc3-runtime-declaration-import";
+  fs::remove_all(root);
+  fs::create_directories(root/"include/objc3c/runtime");
+  {
+    std::ofstream header(root/"include/objc3c/runtime/objc3_runtime_services.h");
+    header<<RuntimeInterfaceHeaderSource().str();
+  }
+  auto provider=ModuleRequest(root/"provider.m","test.runtime_types",
+      "#include <objc3c/runtime/objc3_runtime_services.h>\n"
+      "int runtime_actor(objc3_actor_t *actor);\n"
+      "objc3_task_t *runtime_task(objc3_task_t *task);\n");
+  provider.arguments.push_back("-I"+(root/"include").string());
+  const auto interface_path=root/"runtime.objc3i";
+  provider.interface_output_path=interface_path.string();
+  auto emitted=Compile(provider);
+  assert(emitted.success && emitted.interface_artifact && emitted.interface_artifact->success);
+  fs::remove_all(root/"include");
+  auto consumer=ModuleRequest(root/"consumer.m","",
+      "int use_runtime(void) {return runtime_actor((objc3_actor_t *)0) +\n"
+      "    (runtime_task((objc3_task_t *)0)!=(objc3_task_t *)0);}\n");
+  consumer.emit_semantic_interface=false;
+  consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity)};
+  auto imported=Compile(consumer);
+  assert(imported.success && HasImported(imported,"runtime_actor") &&
+         HasImported(imported,"runtime_task"));
+  fs::remove_all(root);
+}
+
+void TestNativeAttributeTemplateImports() {
+  const auto root=fs::temp_directory_path()/"objc3-native-attribute-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/declaration_attributes.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.native_attributes",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    provider.interface_exports={"NativeDeclarationAttributes"};
+    const auto interface_path=root/"test.native_attributes.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    for(bool directed:{false,true}) {
+      auto consumer=ModuleRequest(root/"consumer.mm","",
+          std::string(directed ? "@import test.native_attributes;\n" : "")+
+          "static_assert(sizeof(NativeDeclarationAttributes::Packet)==5);"
+          "static_assert(alignof(NativeDeclarationAttributes::Slot<int,32>)==32);"
+          "int use(){NativeDeclarationAttributes::ForeignBox<int> value{42};"
+          "NativeDeclarationAttributes::EnabledMember conditional{40};"
+          "return value.value+NativeDeclarationAttributes::Family<int>{40}.call(2)+"
+          "NativeDeclarationAttributes::enabled(40)+NativeDeclarationAttributes::enabled(-40)+"
+          "NativeDeclarationAttributes::enabled_template(40)+conditional.choose(-2);}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.native_attributes";
+        locked.locked_identity=emitted.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+      auto invalid=consumer;
+      invalid.source_text=std::string(directed?"@import test.native_attributes;\n":"")+
+          "void invalid(){NativeDeclarationAttributes::checked(-1);"
+          "NativeDeclarationAttributes::checked_template(-1);"
+          "NativeDeclarationAttributes::inline_enabled(-1);NativeDeclarationAttributes::nonnegative_template(-1);"
+          "auto pointer=&NativeDeclarationAttributes::provider_object_size;}";
+      auto rejected=Compile(invalid);assert(!rejected.success);
+      for(const char *message:{"negative value","negative template value","pass_object_size"})
+        assert(std::any_of(rejected.diagnostics.begin(),rejected.diagnostics.end(),[&](const auto &d){return d.message.find(message)!=std::string::npos;}));
+    }
+  }
+  fs::remove_all(root);
+}
+
+void TestUnnamedTemplateProjectionImports() {
+  const auto root=fs::temp_directory_path()/"objc3-unnamed-template-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/unnamed_template_projections.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for (const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.unnamed_projections",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;provider.arguments={standard};
+    provider.module_owned_names=true;provider.interface_exports={"NativeUnnamedTemplateProjections"};
+    auto path=root/"test.unnamed_projections.objc3i";provider.interface_output_path=path.string();
+    auto emitted=Compile(provider);
+    if(!emitted.success)std::fprintf(stderr,"UNNAMED PROVIDER %s\n",emitted.failure.c_str());
+    assert(emitted.success && emitted.interface_artifact);
+    for(bool directed:{false,true}) {
+      auto consumer=ModuleRequest(root/"consumer.mm","",std::string(directed?"@import test.unnamed_projections;\n":"")+R"(
+        namespace P=NativeUnnamedTemplateProjections;
+        static_assert(!__is_same(P::First,P::Second));
+        static_assert(!__is_same(P::Ordered,P::Reversed));
+        int use(){P::First a{17};P::Second b{25};P::Wrapped box{{42}};
+          return P::provider_read(a,b)+P::provider_wrapped(box).value.value;}
+      )");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};
+      consumer.emit_semantic_interface=false;consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.unnamed_projections";locked.locked_identity=emitted.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"UNNAMED IMPORT %s\n",result.failure.c_str());
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+      assert(result.success);
+    }
+    auto bridge=ModuleRequest(root/"bridge.mm","test.unnamed_bridge",R"(
+      namespace Bridge {
+        using First=NativeUnnamedTemplateProjections::First;
+        using Wrapped=NativeUnnamedTemplateProjections::Wrapped;
+        using Kind=NativeUnnamedTemplateProjections::Kind;
+        inline Kind pass_kind(Kind value){return value;}
+        inline First pass(First value){return value;}
+        inline Wrapped pass_box(Wrapped value){return value;}
+      }
+    )");
+    bridge.language=BaseLanguage::ObjectiveCxx;bridge.arc=true;bridge.arguments={standard};bridge.module_owned_names=true;
+    bridge.interface_exports={"Bridge"};bridge.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity)};
+    auto bridge_path=root/"test.unnamed_bridge.objc3i";bridge.interface_output_path=bridge_path.string();
+    auto projected=Compile(bridge);
+    if(!projected.success)std::fprintf(stderr,"UNNAMED BRIDGE %s\n",projected.failure.c_str());
+    assert(projected.success && projected.interface_artifact);
+    auto consumer=ModuleRequest(root/"second-consumer.mm","",R"(
+      int use(){Bridge::First value{42};Bridge::Wrapped box{{42}};
+        return Bridge::pass(value).value+Bridge::pass_box(box).value.value+static_cast<int>(Bridge::pass_kind(Bridge::Kind::answer));}
+    )");
+    consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};consumer.emit_semantic_interface=false;
+    consumer.imported_interfaces={ImportOf(path,emitted.interface_artifact->identity),ImportOf(bridge_path,projected.interface_artifact->identity)};
+    auto result=Compile(consumer);
+    if(!result.success) {
+      std::fprintf(stderr,"UNNAMED SECOND IMPORT %s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+    }
+    assert(result.success);
+  }
+  fs::remove_all(root);
+}
+
+void TestStandardCoroutineTypesAndTraitsImports() {
+  const auto root=fs::temp_directory_path()/"objc3-standard-coroutine-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/standard_coroutines.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.standard_coroutines",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    provider.interface_exports={"NativeStandardCoroutines"};
+    const auto interface_path=root/"test.standard_coroutines.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    auto other=provider;other.module_name="test.other_coroutines";
+    other.interface_output_path=(root/"test.other_coroutines.objc3i").string();
+    for(std::size_t at=0;(at=other.source_text->find("NativeStandardCoroutines",at))!=std::string::npos;at+=23)
+      other.source_text->replace(at,24,"OtherStandardCoroutines");
+    other.interface_exports={"OtherStandardCoroutines"};
+    auto second=Compile(other);assert(second.success && second.interface_artifact);
+    for(unsigned mode=0;mode!=4;++mode) {
+      bool directed=mode & 1,late_header=mode & 2;
+      auto consumer=ModuleRequest(root/"consumer.mm","",
+          std::string(late_header ? "" : "#include <coroutine>\n")+(directed ? "@import test.standard_coroutines;\n@import test.other_coroutines;\n" : "")+
+          (late_header ? "#include <coroutine>\n" : "")+
+          "int use(){auto factory=NativeStandardCoroutines::closure(40);auto task=factory(2);"
+          "auto generic=NativeStandardCoroutines::generic(40L);auto partial=NativeStandardCoroutines::external_generic(40);"
+          "auto full=NativeStandardCoroutines::external_full(40L);auto no_op=NativeStandardCoroutines::noop();"
+          "auto other=OtherStandardCoroutines::external_generic(40);"
+          "return task.run()+int(generic.run())+partial.run()+int(full.run())+int(no_op.done())+other.run();}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.standard_coroutines";
+        locked.locked_identity=emitted.interface_artifact->identity;
+        InterfaceModuleRequest other_locked;other_locked.canonical_name="test.other_coroutines";
+        other_locked.locked_identity=second.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked,other_locked};
+      } else consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity),
+          ImportOf(root/"test.other_coroutines.objc3i",second.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+    auto only=provider;only.module_name="test.standard_types_only";
+    only.interface_output_path=(root/"test.standard_types_only.objc3i").string();
+    only.source_text="#include <coroutine>\nnamespace NativeStandardCoroutines {using Handle=std::coroutine_handle<>; std::suspend_always suspend(Handle);}";
+    auto typed=Compile(only);assert(typed.success && typed.interface_artifact);
+    assert(typed.interface_artifact->sidecar_json.find("objc3.cxx-standard-coroutines.v1")!=std::string::npos);
+    assert(typed.interface_artifact->sidecar_json.find("objc3.cxx-coroutine-bodies.v1")==std::string::npos);
+    for(unsigned mode=0;mode!=4;++mode) {
+      const bool directed=mode&1,late_header=mode&2;
+      auto consumer=ModuleRequest(root/"types-only-consumer.mm","",
+          std::string(late_header?"":"#include <coroutine>\n")+
+          (directed?"@import test.standard_types_only;\n":"")+
+          (late_header?"#include <coroutine>\n":"")+
+          "void *use(NativeStandardCoroutines::Handle handle){return handle.address();}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;consumer.arguments={standard};
+      consumer.emit_semantic_interface=false;consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.standard_types_only";locked.locked_identity=typed.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(root/"test.standard_types_only.objc3i",typed.interface_artifact->identity)};
+      auto result=Compile(consumer);if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+    auto single=provider;single.module_name="test.single_coroutine_trait";
+    const auto single_path=root/"test.single_coroutine_trait.objc3i";
+    single.interface_output_path=single_path.string();
+    single.source_text="#include <coroutine>\nnamespace NativeStandardCoroutines {struct Token {};struct Promise {}; }"
+        "namespace std {template<>struct coroutine_traits<NativeStandardCoroutines::Token>{using promise_type=NativeStandardCoroutines::Promise;};}";
+    auto trait=Compile(single);assert(trait.success && trait.interface_artifact);
+    auto scope_check=ModuleRequest(root/"traits-lookup.mm","",
+        "@import test.single_coroutine_trait;\n"
+        "using Promise=std::coroutine_traits<NativeStandardCoroutines::Token>::promise_type;"
+        "static_assert(__is_same(Promise,NativeStandardCoroutines::Promise));");
+    scope_check.language=BaseLanguage::ObjectiveCxx;scope_check.arc=true;scope_check.arguments={standard};
+    scope_check.emit_semantic_interface=false;scope_check.source_directed_imports=true;
+    scope_check.interface_search_paths={root.string()};
+    InterfaceModuleRequest single_locked;single_locked.canonical_name="test.single_coroutine_trait";single_locked.locked_identity=trait.interface_artifact->identity;
+    scope_check.module_imports={single_locked};
+    auto scoped=Compile(scope_check);assert(scoped.success);
+    scope_check.source_text=*scope_check.source_text+"using Leaked=coroutine_traits;";
+    auto leaked=Compile(scope_check);assert(!leaked.success);
+    assert(std::any_of(leaked.diagnostics.begin(),leaked.diagnostics.end(),[](const auto &d){return d.message.find("coroutine_traits")!=std::string::npos;}));
+  }
+  fs::remove_all(root);
+}
+
+void TestCustomCoroutinePromiseRedeclarations() {
+  const auto root=fs::temp_directory_path()/"objc3-custom-coroutine-import";
+  fs::remove_all(root);fs::create_directories(root);
+  std::ifstream input(fs::path(OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES)/"provider/custom_coroutines.h");
+  assert(input);const std::string source((std::istreambuf_iterator<char>(input)),{});
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.custom_coroutines",source);
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    provider.interface_exports={"NativeCustomCoroutines"};
+    const auto interface_path=root/"test.custom_coroutines.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    for(unsigned mode=0;mode!=4;++mode) {
+      bool directed=mode & 1,late_header=mode & 2;
+      auto consumer=ModuleRequest(root/"consumer.mm","",
+          std::string(late_header ? "" : "#include <coroutine>\n")+(directed ? "@import test.custom_coroutines;\n" : "")+
+          (late_header ? "#include <coroutine>\n" : "")+
+          "int use(){auto factory=NativeCustomCoroutines::closure(40);auto task=factory(2);"
+          "auto generic=NativeCustomCoroutines::generic(40L);return task.run()+int(generic.run());}");
+      consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+      consumer.arguments={standard};consumer.emit_semantic_interface=false;
+      consumer.source_directed_imports=directed;
+      if(directed) {
+        InterfaceModuleRequest locked;locked.canonical_name="test.custom_coroutines";
+        locked.locked_identity=emitted.interface_artifact->identity;
+        consumer.interface_search_paths={root.string()};consumer.module_imports={locked};
+      } else consumer.imported_interfaces={ImportOf(interface_path,emitted.interface_artifact->identity)};
+      auto result=Compile(consumer);
+      if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+      for(const auto &diagnostic:result.diagnostics)std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+      assert(result.success);
+    }
+  }
+  fs::remove_all(root);
+}
+
+void TestCompilerVarargsMembersAreReused() {
+  const auto root=fs::temp_directory_path()/"objc3-builtin-varargs-import";
+  fs::remove_all(root);fs::create_directories(root);
+  for(const char *standard:{"-std=c++20","-std=c++23"}) {
+    auto provider=ModuleRequest(root/"provider.mm","test.varargs",
+        "template<class T> inline T sum(int count,...) {"
+        "__builtin_va_list args;__builtin_va_start(args,count);T value{};"
+        "for(int i=0;i<count;++i)value+=__builtin_va_arg(args,T);"
+        "__builtin_va_end(args);return value;}\n");
+    provider.language=BaseLanguage::ObjectiveCxx;provider.arc=true;
+    provider.arguments={standard};provider.module_owned_names=true;
+    const auto interface_path=root/"test.varargs.objc3i";
+    provider.interface_output_path=interface_path.string();
+    auto emitted=Compile(provider);assert(emitted.success && emitted.interface_artifact);
+    auto consumer=ModuleRequest(root/"consumer.mm","",
+        "#include <memory>\n@import test.varargs;\n"
+        "int use(){return sum<int>(2,20,22);}");
+    consumer.language=BaseLanguage::ObjectiveCxx;consumer.arc=true;
+    consumer.arguments={standard};consumer.emit_semantic_interface=false;
+    consumer.source_directed_imports=true;
+    InterfaceModuleRequest locked;
+    locked.canonical_name="test.varargs";
+    locked.locked_identity=emitted.interface_artifact->identity;
+    consumer.interface_search_paths={root.string()};
+    consumer.module_imports={locked};
+    auto result=Compile(consumer);
+    for(const auto &diagnostic:result.diagnostics)
+      std::fprintf(stderr,"%s\n",diagnostic.message.c_str());
+    if(!result.success)std::fprintf(stderr,"%s\n",result.failure.c_str());
+    assert(result.success);
+  }
+  fs::remove_all(root);
+}
+
 } // namespace
 
 int main() {
+  TestAdmissionDiagnosticsUseInvocationFileSystem();
+  TestPreparedImportBudgets();
+  TestPrimitiveABIProfilesRejectMismatchedConsumers();
   TestThreeModuleSemanticLookupAndIdentity();
+  TestPinnedRuntimeTypesSurvivePreparedImport();
+  TestCompilerVarargsMembersAreReused();
+  TestStandardCoroutineTypesAndTraitsImports();
+  TestCustomCoroutinePromiseRedeclarations();
+  TestNativeAttributeTemplateImports();
+  TestUnnamedTemplateProjectionImports();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();
   TestRelativeArtifactsAndResponseFileLayoutFlags();
+  TestLaterCxxOverloadConflicts();
+  TestCxxBaseAndDefaultedImports();
   return 0;
 }

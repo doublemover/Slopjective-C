@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <filesystem>
 #include <map>
 #include <set>
@@ -21,15 +22,94 @@
 namespace objc3::clang_foundation {
 namespace fs = std::filesystem;
 namespace {
-constexpr std::uint64_t kMaxArtifactBytes = 32ull * 1024ull * 1024ull;
+constexpr std::uint64_t kMaxArtifactBytes = kInterfaceArtifactByteLimit;
 constexpr std::size_t kMaxSearchEntries = 50000;
 const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.canonical-function-effects.v1",
     "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",
+    "objc3.native-ownership-contracts.v1",
+    "objc3.isolation-contracts.v1",
+    "objc3.typed-keypaths.v1",
+    "objc3.keypath-subscripts.v1",
+    kNullableKeyPathWriteSemantic,
+    "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.cxx-member-interfaces.v1",
+    "objc3.cxx-class-lifecycles.v1",
+    "objc3.cxx-class-structure.v1",
+    "objc3.cxx-class-dispatch.v1",
+    "objc3.cxx-namespaces.v1",
+    "objc3.cxx-nested-types.v1",
+    "objc3.cxx-using.v1",
+    "objc3.cxx-declaration-expressions.v1",
+    "objc3.cxx-definitions.v1",
+    "objc3.cxx-defaulted-comparisons.v1",
+    "objc3.cxx-out-of-line-defaulting.v1",
+    "objc3.cxx-immediate-defaulting.v1",
+    "objc3.cxx-namespace-attributes.v1",
+    "objc3.cxx-lambda-expressions.v1",
+    "objc3.cxx-thread-local.v1",
+    "objc3.cxx-friends.v1",
+    "objc3.cxx-block-expressions.v1",
+    "objc3.cxx-statement-expressions.v1",
+    "objc3.cxx-local-types.v1",
+    "objc3.cxx-unnamed-local-types.v1",
+    "objc3.cxx-generic-local-lambdas.v2",
+    "objc3.cxx-union-values.v1",
+    "objc3.cxx-concepts.v1",
+    kCxxFunctionTemplateSemantic,
+    kCxxAliasTemplateSemantic,
+    kCxxVariableTemplateSemantic,
+    kCxxClassTemplateSemantic,
+    kCxxTemplateStructureSemantic,
+    kCxxTemplateDeductionSemantic,
+    kCxxMemberTemplateSemantic,
+    kCxxMemberAliasTemplateSemantic,
+    kCxxNestedTemplateSemantic,
+    kCxxVariadicTemplateSemantic,
+    kCxxConcreteMemberTemplateSemantic,
+    kCxxConcreteNestedTemplateSemantic,
+    kCxxTemplateTemplateSemantic,
+    kCxxNominalAliasTemplateSemantic,
+    kCxxFunctionSpecializationSemantic,
+    kCxxVariableSpecializationSemantic,
+    kCxxClassSpecializationSemantic,
+    kCxxClassPartialSpecializationSemantic,
+    kCxxVariablePartialSpecializationSemantic,
+    kCxxVariableSpecializationStorageSemantic,
+    kCxxDetachedCallableTemplateSemantic,
+    kCxxDetachedStaticDataTemplateSemantic,
+    kCxxDetachedNestedTemplateSemantic,
+    kCxxConcreteMemberClassSpecializationSemantic,
+    kCxxConcreteMemberFunctionSpecializationSemantic,
+    kCxxConcreteMemberVariableSpecializationSemantic,
+    kCxxConcreteSpecialMemberSpecializationSemantic,
+    kCxxDependentMemberPartialSemantic,
+    kCxxClosedParentMemberSemantic,
+    kCxxClosedParentPatternSemantic,
+    kCxxEffectfulFunctionTemplateSemantic,
+    kCxxEffectfulTemplateMemberSemantic,
+    kCxxTemplateCallableProjectionSemantic,
+    kCxxAddressTemplateArgumentSemantic,
+    kNativeDeclarationAttributeSemantic,
+    kCxxCoroutineBodySemantic,
+    kCxxUnnamedTemplateProjectionSemantic,
+    kCxxStandardCoroutineSemantic,
+    kForeignImportAttributeSemantic,
+    kCxxNestedFactoryTypeSemantic,
+    kCxxLambdaFactoryResultSemantic,
+    kCxxClosureResultProjectionSemantic,
+    kCxxFactoryValueArgumentSemantic,
+    kCxxGenericFactoryProjectionSemantic,
+    kCxxFactoryTemplateArgumentSemantic,
+    kCxxFactoryTypeProjectionSemantic,
+    kCxxLocalFactoryResultSemantic,
+    kCxxClosureFactorySemantic,
+    kCxxEffectfulLambdaSemantic,
+    "objc3.cxx-async-definitions.v1",
+    "objc3.sdk-runtime-declarations.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
     "objc3.api-partitions.v1",
@@ -42,7 +122,8 @@ void Add(InterfaceModuleResolution &result, llvm::StringRef code,
 }
 
 bool ReadBounded(llvm::StringRef path, std::string &text,
-                 InterfaceModuleResolution &result, llvm::StringRef kind) {
+                 InterfaceModuleResolution &result, llvm::StringRef kind,
+                 const InterfaceResourceLimits &limits, bool selected = false) {
   std::uint64_t size = 0;
   if (auto error = llvm::sys::fs::file_size(path, size)) {
     Add(result, "O3IFC130", llvm::Twine("cannot stat ") + kind +
@@ -54,18 +135,34 @@ bool ReadBounded(llvm::StringRef path, std::string &text,
         " artifact exceeds the 32 MiB import bound", path);
     return false;
   }
-  auto buffer = llvm::MemoryBuffer::getFile(path);
-  if (!buffer) {
-    Add(result, "O3IFC130", llvm::Twine("cannot read ") + kind +
-        " artifact: " + buffer.getError().message(), path);
+  if (!ChargeInterfaceResource(result.resource_usage.read_bytes, size, limits.read_bytes)) {
+    Add(result, kInterfaceResourceDiagnostic, "interface artifacts exceed the aggregate read-work budget");
     return false;
   }
-  if ((*buffer)->getBufferSize() > kMaxArtifactBytes) {
-    Add(result, "O3IFC130", llvm::Twine(kind) +
-        " artifact grew beyond the 32 MiB import bound while being read", path);
+  if (selected && !ChargeInterfaceResource(result.resource_usage.selected_bytes, size,
+                                             limits.selected_bytes)) {
+    Add(result, kInterfaceResourceDiagnostic, "selected interface artifacts exceed their aggregate byte budget");
     return false;
   }
-  text.assign((*buffer)->getBufferStart(), (*buffer)->getBufferEnd());
+  // Allocate only the already admitted byte count. A concurrent replacement or
+  // growth must not make MemoryBuffer allocate/map an unbounded new file.
+  std::ifstream input(path.str(), std::ios::binary);
+  if (!input) {
+    Add(result, "O3IFC130", llvm::Twine("cannot open ") + kind + " artifact", path);
+    return false;
+  }
+  text.resize(size);
+  input.read(text.data(), static_cast<std::streamsize>(size));
+  const auto actual = static_cast<std::uint64_t>(input.gcount());
+  if (input.bad() || (actual == size && input.peek() != std::char_traits<char>::eof())) {
+    Add(result, "O3IFC130", llvm::Twine(kind) + " artifact changed or failed during bounded reading", path);
+    return false;
+  }
+  if (actual < size) {
+    result.resource_usage.read_bytes -= size - actual;
+    if (selected) result.resource_usage.selected_bytes -= size - actual;
+    text.resize(actual);
+  }
   return true;
 }
 
@@ -91,10 +188,23 @@ bool CompatibleTarget(const InterfaceModuleIdentity &identity,
 struct Candidate {
   std::string source_path;
   std::string sidecar_path;
-  std::string source_bytes;
-  std::string sidecar_bytes;
-  SemanticInterfaceSidecar sidecar;
+  InterfaceModuleIdentity identity;
+  std::string source_sha256;
+  std::string sidecar_sha256;
+  std::uint64_t stringBytes() const {
+    return source_path.size() + sidecar_path.size() + source_sha256.size() + sidecar_sha256.size() +
+        2 * identity.canonical_name.size() + identity.semantic_fingerprint.size() +
+        identity.target_triple.size() + identity.runtime_abi.size() + identity.extension_abi.size() +
+        identity.language_revision.size() + identity.language_profile.size() + identity.package_identity.size();
+  }
 };
+
+bool Resource(InterfaceModuleResolution &result, std::uint64_t &used,
+               std::uint64_t amount, std::uint64_t limit, llvm::StringRef name) {
+  if (ChargeInterfaceResource(used, amount, limit)) return true;
+  Add(result, kInterfaceResourceDiagnostic, llvm::Twine("interface resolution exceeds its ") + name + " budget");
+  return false;
+}
 
 } // namespace
 
@@ -114,8 +224,13 @@ InterfaceModuleResolution ResolveInterfaceModules(
     const std::vector<InterfaceModuleRequest> &requested_modules,
     const InterfaceImportTarget &target) {
   InterfaceModuleResolution result;
-  std::map<std::string, std::vector<Candidate>> index;
+  // Compact index: no source bodies, JSON buffers or unselected declarations
+  // survive one candidate iteration. Identical copies share one chosen path.
+  std::map<std::string, Candidate> index;
+  const auto &limits = target.resource_limits;
+  auto &usage = result.resource_usage;
   std::set<std::string> canonical_roots;
+  std::set<std::string> candidate_paths;
   std::size_t visited = 0;
 
   for (const auto &root_text : search_roots) {
@@ -151,22 +266,12 @@ InterfaceModuleResolution ResolveInterfaceModules(
       source_path.replace_filename(name.substr(0, name.size() - 5));
       if (source_path.extension() != ".objc3i") continue;
 
-      Candidate candidate;
-      candidate.source_path = source_path.string();
-      candidate.sidecar_path = sidecar_path.string();
-      if (!ReadBounded(candidate.source_path, candidate.source_bytes, result, "source") ||
-          !ReadBounded(candidate.sidecar_path, candidate.sidecar_bytes, result, "sidecar"))
-        continue;
-      auto decoded = DecodeSemanticInterfaceSidecar(
-          candidate.sidecar_bytes, candidate.source_bytes,
-          llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
-      if (!decoded) {
-        Add(result, "O3IFC133", llvm::Twine("invalid interface artifact: ") +
-            llvm::toString(decoded.takeError()), candidate.sidecar_path);
-        continue;
+      const auto path = sidecar_path.string();
+      if (!candidate_paths.count(path)) {
+        if (!Resource(result, usage.scan_path_bytes, path.size(),
+                      limits.scan_path_bytes, "scan path string")) return result;
+        candidate_paths.insert(path);
       }
-      candidate.sidecar = std::move(*decoded);
-      index[candidate.sidecar.module.canonical_name].push_back(std::move(candidate));
     }
     if (error)
       Add(result, "O3IFC145", llvm::Twine("failed while scanning interface search root: ") +
@@ -174,36 +279,72 @@ InterfaceModuleResolution ResolveInterfaceModules(
   }
   if (!result.diagnostics.empty()) return result;
 
-  for (auto &[name, candidates] : index) {
-    std::sort(candidates.begin(), candidates.end(), [](const auto &a, const auto &b) {
-      return a.source_path < b.source_path;
-    });
-    for (std::size_t i = 1; i < candidates.size(); ++i) {
-      if (!SameIdentity(candidates.front().sidecar.module,
-                        candidates[i].sidecar.module) ||
-          candidates.front().sidecar.canonical_source_sha256 !=
-              candidates[i].sidecar.canonical_source_sha256) {
-        Add(result, "O3IFC146",
-            "search roots resolve one canonical module name to conflicting artifacts",
-            name);
-        break;
+  // Decode in canonical path order so duplicates, selected paths and budget
+  // boundaries do not depend on directory iteration or caller root order.
+  for (const auto &sidecar_path : candidate_paths) {
+      Candidate candidate;
+      candidate.source_path = sidecar_path.substr(0, sidecar_path.size() - 5);
+      candidate.sidecar_path = sidecar_path;
+      std::string source_bytes, sidecar_bytes;
+      if (!ReadBounded(candidate.source_path, source_bytes, result, "source", limits) ||
+          !ReadBounded(candidate.sidecar_path, sidecar_bytes, result, "sidecar", limits)) {
+        if (!result.diagnostics.empty() && result.diagnostics.back().code == kInterfaceResourceDiagnostic)
+          return result;
+        continue;
       }
-    }
+      ++usage.candidate_pairs;
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          sidecar_bytes, source_bytes, llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+      if (!decoded) {
+        Add(result, "O3IFC133", llvm::Twine("invalid interface artifact: ") +
+            llvm::toString(decoded.takeError()), candidate.sidecar_path);
+        continue;
+      }
+      if (!Resource(result, usage.decoded_declarations, decoded->declarations.size(),
+                    limits.decoded_declarations, "decoded declaration work")) return result;
+      candidate.identity = decoded->module;
+      candidate.source_sha256 = decoded->canonical_source_sha256;
+      candidate.sidecar_sha256 = ComputeInterfaceSourceSha256(sidecar_bytes);
+      auto existing = index.find(candidate.identity.canonical_name);
+      if (existing != index.end()) {
+        ++usage.coalesced_duplicates;
+        if (!SameIdentity(existing->second.identity, candidate.identity) ||
+            existing->second.source_sha256 != candidate.source_sha256) {
+          Add(result, "O3IFC146", "search roots resolve one canonical module name to conflicting artifacts",
+              candidate.identity.canonical_name);
+          continue;
+        }
+        if (candidate.source_path < existing->second.source_path) {
+          const auto old_size = existing->second.stringBytes();
+          const auto new_size = candidate.stringBytes();
+          if (new_size > old_size && !Resource(result, usage.index_string_bytes,
+                new_size - old_size, limits.index_string_bytes, "compact index string")) return result;
+          if (new_size < old_size) usage.index_string_bytes -= old_size - new_size;
+          existing->second = std::move(candidate);
+        }
+      } else {
+        if (!Resource(result, usage.index_modules, 1, limits.index_modules, "indexed module") ||
+            !Resource(result, usage.index_string_bytes, candidate.stringBytes(),
+                      limits.index_string_bytes, "compact index string")) return result;
+        const auto name = candidate.identity.canonical_name;
+        index.emplace(name, std::move(candidate));
+      }
   }
   if (!result.diagnostics.empty()) return result;
+  candidate_paths.clear(); // release scan strings before retaining selected bodies
 
-  std::map<std::string, Candidate *> selected;
+  std::map<std::string, SemanticInterfaceSidecar> selected;
   std::map<std::string, InterfaceImportInput> inputs;
   auto select = [&](const InterfaceModuleIdentity &identity,
                     bool direct, bool public_import, bool reexported) -> bool {
     auto found = index.find(identity.canonical_name);
-    if (found == index.end() || found->second.empty()) {
+    if (found == index.end()) {
       Add(result, "O3IFC147", "required canonical interface artifact is absent from all search roots",
           identity.canonical_name);
       return false;
     }
-    Candidate &candidate = found->second.front();
-    if (!SameIdentity(candidate.sidecar.module, identity)) {
+    Candidate &candidate = found->second;
+    if (!SameIdentity(candidate.identity, identity)) {
       Add(result, "O3IFC134", "artifact identity does not match the dependency lock",
           identity.canonical_name);
       return false;
@@ -234,6 +375,32 @@ InterfaceModuleResolution ResolveInterfaceModules(
       }
       return true;
     }
+    if (!Resource(result, usage.selected_modules, 1, limits.selected_modules, "selected module"))
+      return false;
+    std::string source_bytes, sidecar_bytes;
+    if (!ReadBounded(candidate.source_path, source_bytes, result, "source", limits, true) ||
+        !ReadBounded(candidate.sidecar_path, sidecar_bytes, result, "sidecar", limits, true)) return false;
+    if (ComputeInterfaceSourceSha256(source_bytes) != candidate.source_sha256 ||
+        ComputeInterfaceSourceSha256(sidecar_bytes) != candidate.sidecar_sha256) {
+      Add(result, "O3IFC134", "indexed interface bytes changed before selected artifact loading",
+          identity.canonical_name);
+      return false;
+    }
+    auto decoded = DecodeSemanticInterfaceSidecar(sidecar_bytes, source_bytes,
+        llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+    if (!decoded) {
+      Add(result, "O3IFC133", llvm::Twine("invalid selected interface artifact: ") +
+          llvm::toString(decoded.takeError()), candidate.sidecar_path);
+      return false;
+    }
+    if (!SameIdentity(decoded->module, identity)) {
+      Add(result, "O3IFC134", "selected interface identity changed after indexing", identity.canonical_name);
+      return false;
+    }
+    if (!Resource(result, usage.decoded_declarations, decoded->declarations.size(), limits.decoded_declarations, "decoded declaration work") ||
+        !Resource(result, usage.selected_declarations, decoded->declarations.size(), limits.selected_declarations, "selected declaration") ||
+        !Resource(result, usage.dependency_edges, decoded->dependencies.size(), limits.dependency_edges, "selected dependency-edge"))
+      return false;
     InterfaceImportInput input;
     input.source_path = candidate.source_path;
     input.sidecar_path = candidate.sidecar_path;
@@ -242,7 +409,10 @@ InterfaceModuleResolution ResolveInterfaceModules(
     input.public_import = public_import;
     input.reexported = reexported;
     inputs.emplace(identity.canonical_name, std::move(input));
-    selected.emplace(identity.canonical_name, &candidate);
+    result.requires_coroutine_header |= std::find(decoded->required_semantics.begin(),
+        decoded->required_semantics.end(), kCxxCoroutineBodySemantic) != decoded->required_semantics.end() ||
+        std::find(decoded->required_semantics.begin(), decoded->required_semantics.end(), kCxxStandardCoroutineSemantic) != decoded->required_semantics.end();
+    selected.emplace(identity.canonical_name, std::move(*decoded));
     return true;
   };
 
@@ -270,8 +440,8 @@ InterfaceModuleResolution ResolveInterfaceModules(
   // candidate bytes and never substitute for dependency identity.
   for (std::size_t cursor = 0; cursor < worklist.size(); ++cursor) {
     const auto current_name = worklist[cursor];
-    const auto *candidate = selected.at(current_name);
-    for (const auto &dependency : candidate->sidecar.dependencies) {
+    const auto &candidate = selected.at(current_name);
+    for (const auto &dependency : candidate.dependencies) {
       if (!select(dependency.module, false, dependency.public_import,
                   dependency.reexported))
         continue;
@@ -284,9 +454,9 @@ InterfaceModuleResolution ResolveInterfaceModules(
 
   std::vector<InterfaceDependencyNode> graph_nodes;
   for (const auto &entry : selected)
-    graph_nodes.push_back({entry.second->sidecar.module,
-                           entry.second->sidecar.dependencies});
-  const auto graph = ResolveInterfaceDependencyGraph(graph_nodes);
+    graph_nodes.push_back({entry.second.module,
+                           entry.second.dependencies});
+  const auto graph = ResolveInterfaceDependencyGraph(graph_nodes, limits);
   for (const auto &diagnostic : graph.diagnostics)
     Add(result, diagnostic.code, diagnostic.message,
         llvm::join(diagnostic.modules, ", "));
@@ -302,8 +472,8 @@ InterfaceModuleResolution ResolveInterfaceModules(
       visibility_worklist.push_back(input.first);
     }
   for (std::size_t cursor = 0; cursor < visibility_worklist.size(); ++cursor) {
-    const auto *candidate = selected.at(visibility_worklist[cursor]);
-    for (const auto &dependency : candidate->sidecar.dependencies) {
+    const auto &candidate = selected.at(visibility_worklist[cursor]);
+    for (const auto &dependency : candidate.dependencies) {
       if (!dependency.reexported || !dependency.public_import) continue;
       if (visible.insert(dependency.module.canonical_name).second)
         visibility_worklist.push_back(dependency.module.canonical_name);

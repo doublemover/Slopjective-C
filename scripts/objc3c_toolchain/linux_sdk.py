@@ -21,7 +21,9 @@ from .qualify_installed import qualify_installed
 from .sdk_example import write_json
 
 
-PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
+# FileCheck is added by project packaging, with its bytes bound separately in
+# input_identity. It must not mutate the reusable LLVM foundation signature.
+PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'bin/FileCheck', 'lib/libobjc',
                         'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
                         'include/objc3/', 'include/runtime/', 'share/objc3c/')
 
@@ -70,7 +72,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
-                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'stdlib/include'):
+                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'native/objc3c/tests', 'stdlib/include'):
         files.update(path for path in (repo / directory).rglob('*') if path.is_file()
                      and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
     # Qualification owners, including editor fixtures and shared executor code,
@@ -82,6 +84,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files.add(repo / 'scripts/install_objc3c_linux.sh')
     files.add(repo / 'stdlib/module_inventory.json')
     files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
+    files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck')
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in sorted(files)}
     configure = build_plans(repo, host='linux-x86_64')['configure']
@@ -96,13 +99,23 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
 
-def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None) -> dict:
+def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = None, foundation_sdk: Path | None = None,
+              compiler_instrumentation_profile: str | None = None) -> dict:
     repo = repo.resolve()
     base = repo / 'out/toolchains/linux-sdk-builds'
     base.mkdir(parents=True, exist_ok=True)
     with (base / '.pipeline.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        instrumentation = None
+        if compiler_instrumentation_profile:
+            from .compiler_instrumentation import build_and_qualify
+            instrumentation = build_and_qualify(repo, profile=compiler_instrumentation_profile, fetch=fetch)
+        report = _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
+        # This is evidence about a distinct compiler-process graph, not a claim
+        # that the ordinary shipped archive contains instrumented libraries.
+        if instrumentation is not None:
+            report = {**report, 'compiler_implementation_qualification': instrumentation}
+        return report
 
 
 def _install_qualified_archive(report: dict, directory: Path, install_root: Path,

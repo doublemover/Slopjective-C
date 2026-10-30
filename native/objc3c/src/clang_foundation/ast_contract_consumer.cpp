@@ -1,3 +1,4 @@
+#include "clang_foundation/native_contract_identity.h"
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_emitter.h"
@@ -7,6 +8,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/UnifiedSymbolResolution/USRGeneration.h"
@@ -67,8 +69,21 @@ class ContractConsumer final : public clang::ASTConsumer,
     if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
         !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
+    if (const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(decl);
+        record && record->getDescribedClassTemplate()) return true;
+    if (const auto *alias = llvm::dyn_cast<clang::TypeAliasDecl>(decl);
+        alias && alias->getDescribedAliasTemplate()) return true;
+    if (const auto *variable=llvm::dyn_cast<clang::VarDecl>(decl);
+        variable && variable->getDescribedVarTemplate()) return true;
+    if (llvm::isa<clang::ConceptDecl, clang::FunctionTemplateDecl, clang::TypeAliasTemplateDecl,
+                  clang::VarTemplateDecl, clang::ClassTemplateDecl>(decl)) {
+      InterfaceDeclarationIdentity identity;
+      if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
+        result_.declarations.push_back(std::move(identity));
+      return true;
+    }
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
-      if (!function->isExternallyVisible()) return true;
+      if (function->getDescribedFunctionTemplate() || !function->isExternallyVisible()) return true;
       InterfaceDeclarationIdentity identity;
       if (ReadInterfaceDeclarationIdentity(function, *context_, identity))
         result_.declarations.push_back(std::move(identity));
@@ -84,6 +99,7 @@ class ContractConsumer final : public clang::ASTConsumer,
     identity.stable_id = usr.str().str();
     identity.kind = decl->getDeclKindName();
     identity.qualified_name = decl->getQualifiedNameAsString();
+    identity.export_root = ReadInterfaceExportRoot(decl);
     clang::QualType type;
     if (auto *value = llvm::dyn_cast<clang::ValueDecl>(decl)) type = value->getType();
     if (auto *type_decl = llvm::dyn_cast<clang::TypeDecl>(decl))
@@ -97,6 +113,7 @@ class ContractConsumer final : public clang::ASTConsumer,
     }
     const auto ownership = ReadNativeReturnOwnership(decl);
     if (!ownership.empty()) identity.effects.ownership_identity = ownership;
+    ReadNativeDeclarationContracts(decl, *context_, identity.effects);
     identity.native_symbol_name = ReadNativeSymbolName(decl);
     identity.spi_group = ReadInterfaceSPIGroup(decl);
     result_.declarations.push_back(std::move(identity));
@@ -106,6 +123,13 @@ class ContractConsumer final : public clang::ASTConsumer,
   void HandleTranslationUnit(clang::ASTContext &context) override {
     if (context.getDiagnostics().hasErrorOccurred()) return;
     context_ = &context;
+    if (request_.emit_semantic_interface && context.getLangOpts().CPlusPlus &&
+        !ApplyCxxConceptOwners(context, request_.module_name, request_.package_identity, source_root_)) {
+      const auto id = context.getDiagnostics().getCustomDiagID(
+          clang::DiagnosticsEngine::Error, "concept owner conflicts with its semantic module");
+      context.getDiagnostics().Report(id);
+      return;
+    }
     TraverseDecl(context.getTranslationUnitDecl());
     auto &declarations = result_.declarations;
     std::sort(declarations.begin(), declarations.end(), [](const auto &a, const auto &b) {

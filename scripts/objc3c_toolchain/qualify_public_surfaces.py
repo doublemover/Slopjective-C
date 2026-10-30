@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import json
@@ -20,8 +21,10 @@ else:
     from build import build_graph
 
 
-def prepare(sdk: Path, root: Path, language: str, standard: str, ownership: str, *, fixture: str = "public-module-surface") -> Path:
-    shutil.copytree(sdk / "share/objc3c/examples" / fixture, root)
+def prepare(sdk: Path, root: Path, language: str, standard: str, ownership: str, *,
+            fixture: str = "public-module-surface", fixture_root: Path | None = None) -> Path:
+    shutil.copytree(fixture_root if fixture_root is not None else
+                    sdk / "share/objc3c/examples" / fixture, root)
     suffix = {'objective-c': '.m', 'objective-c++': '.mm', 'c++': '.cpp'}[language]
     for path in root.glob('*/package.json'):
         config = json.loads(path.read_text())
@@ -170,7 +173,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     configurations = [(*mode, opt) for mode in modes for opt in ('O0', 'O2')]
     cases, failures = [], []
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *case) for case in configurations]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *case) for case in configurations]
         for future in futures:
             try: cases.append(future.result())
             except Exception as error: failures.append(str(error))

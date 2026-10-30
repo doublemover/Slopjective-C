@@ -1,0 +1,141 @@
+{
+  "schema": "objc3c.linux-cxx-union-values-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "5cc02370f66f1ab874f4467c146a681e6309e352",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-d28c251241dd-00b75dc3",
+  "compiler_patch_digest": "d28c251241dd97ef7c96e1c3df860251d31c61b82deafd3ab73d926ef0d039eb",
+  "frontend_input_sha256": "ba6deb4ebafa88cdcc6e42a14b16804201921d637699009007dc924a158ec460",
+  "concurrency_module_version": "2.41.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "scope": [
+    "Native named/nested/typedef-owned/forward/local C++ union publication with union-kind layout, size/alignment, overlapping field offsets and native by-value ABI",
+    "Source-written nontrivial active-member construction/copy/destruction, constexpr evaluation, anonymous local closure copies and exact copy/destruction accounting",
+    "Failed union member copy during closure construction rolls back an earlier completed capture while preserving the live source and avoiding destruction of an incomplete member",
+    "Structural union template arguments bind active member index and value; equal payloads in distinct members retain separate instantiations",
+    "Required union-value capability agrees with native identity and C++ data capability across emission, codecs, module validation, loading, resolution and import",
+    "Native ABI-tag attribute admits unions with GNU Itanium mangling; tagged constructors/destructors and parameter/derived-return symbols survive source/PCH code generation",
+    "Pure C++20/23 source-free object consumers and Objective-C++ ARC/MRC O0/O2 normal/eager/ASan packages; C interface union identity remains unchanged"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/union-values-foundation-build.json",
+      "sha256": "3ef32bad12a52c90c0ed82def681356c876a673fe04646fd267c77cb058184cf",
+      "bytes": 6506
+    },
+    "source_verification": {
+      "path": "out/union-values-source-verification.json",
+      "sha256": "7a1a1d7ca5d559888874721e02e4d24607b4eb6734a5883768fac590f8866a1b",
+      "bytes": 7444
+    },
+    "compiler_regressions_passed": 408,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 194,
+    "native_report": {
+      "path": "out/union-values-native-batch.json",
+      "sha256": "0b25997e7a6dac720446f6b885fcb797ce2532a7ce22a6d6a1508cc00e5977ef",
+      "bytes": 1986
+    },
+    "native_logs": [
+      {
+        "path": "out/union-values-native-0.log",
+        "sha256": "f7298e0a5ac245c0da49900c3c316e402c00cb7c3d297f862cee11027626a4b1",
+        "bytes": 6698
+      },
+      {
+        "path": "out/union-values-native-1.log",
+        "sha256": "0c39b669955cf0ebdbaa71fded303c9a61dc26a1353cb3f0f7dbcd26d3cfd3c2",
+        "bytes": 33486
+      },
+      {
+        "path": "out/union-values-native-2.log",
+        "sha256": "3a8ad6c5b1b2a503a82681da4bc69d2ab163dafe79147d10664ffe016fbfb7ec",
+        "bytes": 1112
+      },
+      {
+        "path": "out/union-values-native-3.log",
+        "sha256": "4683f39dccb1c111312b34344675061c4484cf3c61b72acd114f9a8c9fe4ecbc",
+        "bytes": 4598
+      },
+      {
+        "path": "out/union-values-native-4.log",
+        "sha256": "2153f7c7cd5c681ae7bdd9b544975104c9f78aef0de5882cf19956249885dd72",
+        "bytes": 5151
+      }
+    ],
+    "additional_upstream_abi_tag_tests_passed": 2,
+    "upstream_abi_tag_log": {
+      "path": "out/union-values-abi-tag-upstream.log",
+      "sha256": "9184b3d4cb71c92b5c03478be3246c025554c52b944949e73ae54d946c6c7a1b",
+      "bytes": 6233
+    },
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 332,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/union-values-frontend-checkpoint.json",
+      "sha256": "8fbff508a6a988981b45bbb999470aa97c6e5a63fb075c2fdd6ede417b015e37",
+      "bytes": 1129
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "2acf9a25c5b974fa1b19315aa8973abfba4f3402d268458147539dafef462abb",
+        "bytes": 201640592
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/union-values-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/union-values-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/union-values-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "prior_complete_runtime_matrices": "docs/support/linux_keypath_subscripts_progress.json"
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Public unnamed nested types, public/dependent templates and escaping local/closure types",
+    "Separate union frame/isolation/key-path admission and stricter ownership/alias precision",
+    "Remaining ownership, structured runtime, language/library/profile implementation and coordinated SDK delivery",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

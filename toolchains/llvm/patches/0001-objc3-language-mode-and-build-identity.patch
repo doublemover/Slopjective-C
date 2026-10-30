@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/Basic/CMakeLists.txt b/clang/include/clang/Basic/CMakeLists.txt
-index d334c1d41..5ec741212 100644
+index d334c1d41..b123e0a8a 100644
 --- a/clang/include/clang/Basic/CMakeLists.txt
 +++ b/clang/include/clang/Basic/CMakeLists.txt
-@@ -1,3 +1,11 @@
+@@ -1,3 +1,18 @@
 +set(CLANG_OBJC3_PATCH_DIGEST "" CACHE STRING "Canonical ObjC3 patch stack SHA256")
 +string(LENGTH "${CLANG_OBJC3_PATCH_DIGEST}" OBJC3_DIGEST_LENGTH)
 +if(NOT OBJC3_DIGEST_LENGTH EQUAL 64 OR
@@ -10,6 +10,13 @@ index d334c1d41..5ec741212 100644
 +  message(FATAL_ERROR "ObjC3 foundation requires the sealed patch stack SHA256")
 +endif()
 +configure_file(ObjC3Foundation.h.in ObjC3Foundation.h @ONLY)
++set(CLANG_OBJC3_CONFIG_DIGEST "" CACHE STRING "Canonical ObjC3 foundation configuration SHA256")
++string(LENGTH "${CLANG_OBJC3_CONFIG_DIGEST}" OBJC3_CONFIG_DIGEST_LENGTH)
++if(NOT OBJC3_CONFIG_DIGEST_LENGTH EQUAL 64 OR
++   NOT CLANG_OBJC3_CONFIG_DIGEST MATCHES "^[0-9a-f]+$")
++  message(FATAL_ERROR "A canonical ObjC3 foundation configuration SHA256 is required")
++endif()
++configure_file(ObjC3BuildIdentity.h.in ObjC3BuildIdentity.h @ONLY)
 +
  macro(clang_diag_gen component)
    clang_tablegen(Diagnostic${component}Kinds.inc
@@ -75,19 +82,25 @@ index 000000000..f9c0321df
 +#endif
 diff --git a/clang/include/clang/Basic/ObjC3Foundation.h.in b/clang/include/clang/Basic/ObjC3Foundation.h.in
 new file mode 100644
-index 000000000..dd84796b7
+index 000000000..5b82f095e
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Foundation.h.in
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,13 @@
 +#ifndef LLVM_CLANG_BASIC_OBJC3_FOUNDATION_H
 +#define LLVM_CLANG_BASIC_OBJC3_FOUNDATION_H
 +#define CLANG_OBJC3_UPSTREAM_COMMIT "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
-+#define CLANG_OBJC3_PATCH_DIGEST "@CLANG_OBJC3_PATCH_DIGEST@"
 +#define CLANG_OBJC3_LANGUAGE_REVISION 202610
-+#define CLANG_OBJC3_EXTENSION_ABI_REVISION 20
++#define CLANG_OBJC3_EXTENSION_ABI_REVISION 21
++#ifdef __cplusplus
++#include "llvm/ADT/StringRef.h"
++namespace clang {
++/// The sealed compiler stamp lives in clangBasic, not every including object.
++llvm::StringRef getObjC3PatchDigest();
++}
++#endif
 +#endif
 diff --git a/clang/include/clang/Options/Options.td b/clang/include/clang/Options/Options.td
-index f893d858d..b6d186b5c 100644
+index f893d858d..c83b20418 100644
 --- a/clang/include/clang/Options/Options.td
 +++ b/clang/include/clang/Options/Options.td
 @@ -3972,6 +3972,18 @@ def fno_verbose_asm : Flag<["-"], "fno-verbose-asm">, Group<f_Group>,
@@ -109,6 +122,17 @@ index f893d858d..b6d186b5c 100644
  def fobjc_arc : Flag<["-"], "fobjc-arc">, Group<f_Group>,
    Visibility<[ClangOption, CC1Option]>,
    HelpText<"Synthesize retain and release calls for Objective-C pointers">;
+@@ -5297,6 +5309,10 @@ def iframeworkwithsysroot : JoinedOrSeparate<["-"], "iframeworkwithsysroot">,
+   HelpText<"Add directory to SYSTEM framework search path, "
+            "absolute paths are relative to -isysroot">,
+   MetaVarName<"<directory>">, Visibility<[ClangOption, CC1Option]>;
++def fobjc3_source_module_EQ : Joined<["-"], "fobjc3-source-module=">,
++  Group<f_Group>, Visibility<[CC1Option]>,
++  HelpText<"Keep a named ObjC3 semantic-interface import parser-owned during preprocessing">,
++  MarshallingInfoStringVector<PreprocessorOpts<"ObjC3SourceModuleNames">>;
+ def imacros : JoinedOrSeparate<["-", "--"], "imacros">, Group<clang_i_Group>,
+   Visibility<[ClangOption, CC1Option]>,
+   HelpText<"Include macros from file before parsing">, MetaVarName<"<file>">,
 diff --git a/clang/lib/Basic/CMakeLists.txt b/clang/lib/Basic/CMakeLists.txt
 index 21851e79b..f7e54e878 100644
 --- a/clang/lib/Basic/CMakeLists.txt
@@ -147,22 +171,33 @@ index 000000000..aae761dec
 +  return false;
 +}
 diff --git a/clang/lib/Basic/Version.cpp b/clang/lib/Basic/Version.cpp
-index 4823f566b..f01109110 100644
+index 4823f566b..8a46a499c 100644
 --- a/clang/lib/Basic/Version.cpp
 +++ b/clang/lib/Basic/Version.cpp
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,8 @@
  //===----------------------------------------------------------------------===//
  
  #include "clang/Basic/Version.h"
 +#include "clang/Basic/ObjC3Foundation.h"
++#include "clang/Basic/ObjC3BuildIdentity.h"
  #include "clang/Basic/LLVM.h"
  #include "clang/Config/config.h"
  #include "llvm/Support/raw_ostream.h"
-@@ -90,6 +91,7 @@ std::string getClangFullRepositoryVersion() {
+@@ -21,6 +23,8 @@
+ 
+ namespace clang {
+ 
++llvm::StringRef getObjC3PatchDigest() { return CLANG_OBJC3_PATCH_DIGEST; }
++
+ std::string getClangRepositoryPath() {
+ #if defined(CLANG_REPOSITORY_STRING)
+   return CLANG_REPOSITORY_STRING;
+@@ -90,6 +94,8 @@ std::string getClangFullRepositoryVersion() {
        OS << LLVMRepo << ' ';
      OS << LLVMRev << ')';
    }
-+  OS << " ObjC3-patches=" << CLANG_OBJC3_PATCH_DIGEST;
++  OS << " ObjC3-patches=" << getObjC3PatchDigest();
++  OS << " ObjC3-config=" << CLANG_OBJC3_CONFIG_DIGEST;
    return buf;
  }
  
@@ -243,7 +278,7 @@ index 8898e63ab..b699a23fa 100644
    if (const Arg *A = Args.getLastArg(OPT_fcf_protection_EQ)) {
      StringRef Name = A->getValue();
 diff --git a/clang/lib/Frontend/InitPreprocessor.cpp b/clang/lib/Frontend/InitPreprocessor.cpp
-index 65b065dc8..09f5ee622 100644
+index 65b065dc8..5bb6abdc5 100644
 --- a/clang/lib/Frontend/InitPreprocessor.cpp
 +++ b/clang/lib/Frontend/InitPreprocessor.cpp
 @@ -14,6 +14,8 @@
@@ -282,6 +317,14 @@ index 65b065dc8..09f5ee622 100644
 +
    if (LangOpts.ObjC)
      Builder.defineMacro("__OBJC__");
+ 
+@@ -1665,6 +1688,7 @@ void clang::InitializePreprocessor(Preprocessor &PP,
+   }
+ 
+   // Instruct the preprocessor to skip the preamble.
++  PP.setObjC3SourceModuleNames(InitOpts.ObjC3SourceModuleNames);
+   PP.setSkipMainFilePreamble(InitOpts.PrecompiledPreambleBytes.first,
+                              InitOpts.PrecompiledPreambleBytes.second);
  
 diff --git a/clang/lib/Lex/PPMacroExpansion.cpp b/clang/lib/Lex/PPMacroExpansion.cpp
 index e09e80a06..dcb15c3e0 100644
@@ -412,7 +455,7 @@ index 000000000..fd9a42063
 +// MODE-MISMATCH: error:
 diff --git a/clang/test/ObjC3/LanguageMode/profile-macros.m b/clang/test/ObjC3/LanguageMode/profile-macros.m
 new file mode 100644
-index 000000000..c49364a40
+index 000000000..37482ffad
 --- /dev/null
 +++ b/clang/test/ObjC3/LanguageMode/profile-macros.m
 @@ -0,0 +1,42 @@
@@ -437,7 +480,7 @@ index 000000000..c49364a40
 +#if __OBJC3_LANGUAGE_REVISION__ != 202610
 +#error incorrect Objective-C 3 language revision
 +#endif
-+#if __OBJC3_EXTENSION_ABI_REVISION__ != 20
++#if __OBJC3_EXTENSION_ABI_REVISION__ != 21
 +#error incorrect Objective-C 3 extension ABI revision
 +#endif
 +#if __OBJC3_PROFILE__ != TEST_PROFILE
@@ -562,4 +605,129 @@ index 000000000..b74e36155
 +
 +#if __has_feature(objc3_throws) != EXPECT_CARRIERS || __has_feature(objc3_typed_throws) != EXPECT_CARRIERS
 +#error synchronous error predicates differ from the qualified profile
++#endif
+diff --git a/clang/test/ObjC3/LanguageMode/Inputs/identity/consumer.m b/clang/test/ObjC3/LanguageMode/Inputs/identity/consumer.m
+new file mode 100644
+index 000000000..264d9f83d
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/Inputs/identity/consumer.m
+@@ -0,0 +1,2 @@
++@import Identity;
++struct IdentityValue value;
+diff --git a/clang/test/ObjC3/LanguageMode/Inputs/identity/identity.h b/clang/test/ObjC3/LanguageMode/Inputs/identity/identity.h
+new file mode 100644
+index 000000000..ab239702e
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/Inputs/identity/identity.h
+@@ -0,0 +1,4 @@
++#ifndef IDENTITY_H
++#define IDENTITY_H
++struct IdentityValue { int value; };
++#endif
+diff --git a/clang/test/ObjC3/LanguageMode/Inputs/identity/module.modulemap b/clang/test/ObjC3/LanguageMode/Inputs/identity/module.modulemap
+new file mode 100644
+index 000000000..49f83b9d4
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/Inputs/identity/module.modulemap
+@@ -0,0 +1 @@
++module Identity { header "identity.h" export * }
+diff --git a/clang/test/ObjC3/LanguageMode/Inputs/identity/mutate.py b/clang/test/ObjC3/LanguageMode/Inputs/identity/mutate.py
+new file mode 100644
+index 000000000..0c3c75269
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/Inputs/identity/mutate.py
+@@ -0,0 +1,15 @@
++import pathlib
++import sys
++source, destination, mode = sys.argv[1:]
++data = bytearray(pathlib.Path(source).read_bytes())
++prefix = b"objc3-compiler-identity-v1:"
++assert data.count(prefix) == 1
++position = data.index(prefix)
++if mode == "digest":
++    position += len(prefix)
++    data[position] = ord("1") if data[position] == ord("0") else ord("0")
++elif mode == "malformed":
++    data[position] = ord("X")
++else:
++    raise ValueError(mode)
++pathlib.Path(destination).write_bytes(data)
+diff --git a/clang/test/ObjC3/LanguageMode/precompiled-identity.m b/clang/test/ObjC3/LanguageMode/precompiled-identity.m
+new file mode 100644
+index 000000000..3b1ff38b3
+--- /dev/null
++++ b/clang/test/ObjC3/LanguageMode/precompiled-identity.m
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c-header -fobjc-version=3 -emit-pch %S/Inputs/identity/identity.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -include-pch %t.pch -fsyntax-only %S/Inputs/empty.m
++// RUN: %python %S/Inputs/identity/mutate.py %t.pch %t.digest.pch digest
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fno-validate-pch -include-pch %t.digest.pch -fsyntax-only %S/Inputs/empty.m 2>&1 | FileCheck %s --check-prefix=MISMATCH
++// RUN: %python %S/Inputs/identity/mutate.py %t.pch %t.malformed.pch malformed
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fno-validate-pch -include-pch %t.malformed.pch -fsyntax-only %S/Inputs/empty.m 2>&1 | FileCheck %s --check-prefix=MALFORMED
++// RUN: %clang_cc1 -x objective-c-header -emit-pch %S/Inputs/identity/identity.h -o %t.plain.pch
++// RUN: %clang_cc1 -x objective-c -include-pch %t.plain.pch -fsyntax-only %S/Inputs/empty.m
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fno-validate-pch -include-pch %t.plain.pch -fsyntax-only %S/Inputs/empty.m 2>&1 | FileCheck %s --check-prefix=MISSING
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fmodules -fmodule-name=Identity -emit-module %S/Inputs/identity/module.modulemap -o %t.pcm
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fmodules -fmodule-file=Identity=%t.pcm -I %S/Inputs/identity -fsyntax-only %S/Inputs/identity/consumer.m
++// RUN: %python %S/Inputs/identity/mutate.py %t.pcm %t.digest.pcm digest
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fmodules -fno-validate-pch -fmodule-file=Identity=%t.digest.pcm -I %S/Inputs/identity -fsyntax-only %S/Inputs/identity/consumer.m 2>&1 | FileCheck %s --check-prefix=MISMATCH
++// MISMATCH: has a different compiler identity; rebuild it with this toolchain
++// MALFORMED: has a malformed compiler identity; rebuild it with this toolchain
++// MISSING: has no compiler identity; rebuild it with this toolchain
+diff --git a/clang/lib/Basic/Module.cpp b/clang/lib/Basic/Module.cpp
+index 3e2f66f27..2a16794b6 100644
+--- a/clang/lib/Basic/Module.cpp
++++ b/clang/lib/Basic/Module.cpp
+@@ -114,6 +114,8 @@ static bool hasFeature(StringRef Feature, const LangOptions &LangOpts,
+                         .Case("gnuinlineasm", LangOpts.GNUAsm)
+                         .Case("objc", LangOpts.ObjC)
+                         .Case("objc_arc", LangOpts.ObjCAutoRefCount)
++                        .Case("objc3_strict_system",
++                              LangOpts.ObjC3 && LangOpts.ObjC3Profile == 3)
+                         .Case("opencl", LangOpts.OpenCL)
+                         .Case("tls", Target.isTLSSupported())
+                         .Case("zvector", LangOpts.ZVector)
+diff --git a/clang/include/clang/Basic/ObjC3BuildIdentity.h.in b/clang/include/clang/Basic/ObjC3BuildIdentity.h.in
+new file mode 100644
+index 000000000..c2d4cc81c
+--- /dev/null
++++ b/clang/include/clang/Basic/ObjC3BuildIdentity.h.in
+@@ -0,0 +1,7 @@
++#ifndef LLVM_CLANG_BASIC_OBJC3_BUILD_IDENTITY_H
++#define LLVM_CLANG_BASIC_OBJC3_BUILD_IDENTITY_H
++// Include only from the version implementation. Foundation declarations stay
++// stable across source seals; the installed stamp also supports SDK admission.
++#define CLANG_OBJC3_PATCH_DIGEST "@CLANG_OBJC3_PATCH_DIGEST@"
++#define CLANG_OBJC3_CONFIG_DIGEST "@CLANG_OBJC3_CONFIG_DIGEST@"
++#endif
+diff --git a/clang/include/clang/Lex/PreprocessorOptions.h b/clang/include/clang/Lex/PreprocessorOptions.h
+index 4d1a30712..fa04844bd 100644
+--- a/clang/include/clang/Lex/PreprocessorOptions.h
++++ b/clang/include/clang/Lex/PreprocessorOptions.h
+@@ -80,6 +80,7 @@ public:
+   std::vector<std::pair<std::string, bool/*isUndef*/>> Macros;
+   std::vector<std::string> Includes;
+   std::vector<std::string> MacroIncludes;
++  std::vector<std::string> ObjC3SourceModuleNames;
+ 
+   /// Perform extra checks when loading PCM files for mutable file systems.
+   bool ModulesCheckRelocated = true;
+diff --git a/clang/test/ObjC3/Driver/interface-preprocessing.m b/clang/test/ObjC3/Driver/interface-preprocessing.m
+new file mode 100644
+index 000000000..9e7d3503c
+--- /dev/null
++++ b/clang/test/ObjC3/Driver/interface-preprocessing.m
+@@ -0,0 +1,13 @@
++// RUN: %clang -E -x objective-c -std=c17 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: %clang -E -x objective-c++ -std=c++20 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: %clang -E -x objective-c++ -std=c++23 -fobjc-version=3 -fmodules -Xclang -fobjc3-source-module=fixture.Dependency %s | FileCheck %s
++// RUN: not %clang -E -x objective-c -std=c17 -fobjc-version=3 -fmodules %s 2>&1 | FileCheck %s --check-prefix=UNREGISTERED
++// CHECK: @{{(__preprocessed_)?}}import fixture.Dependency;
++// CHECK: int no_optional_header;
++// UNREGISTERED: fatal error: module 'fixture' not found
++@import fixture.Dependency;
++#if __has_include("objc3_deliberately_absent_header.h")
++int optional_header;
++#else
++int no_optional_header;
 +#endif

@@ -11,6 +11,394 @@ index 3f0733757..e6b303498 100644
  
  list(APPEND libobjc_CXX_SRCS ${libobjcxx_CXX_SRCS})
  target_sources(objc PRIVATE ${libobjc_CXX_SRCS})
+diff --git a/arc.mm b/arc.mm
+index fbba14c03..66f2d8c5d 100644
+--- a/arc.mm
++++ b/arc.mm
+@@ -91,12 +91,6 @@ extern "C"
+ }
+ #endif
+ 
+-@interface NSAutoreleasePool
+-+ (Class)class;
+-+ (id)new;
+-- (void)release;
+-@end
+-
+ #define POOL_SIZE (4096 / sizeof(void*) - (2 * sizeof(void*)))
+ /**
+  * Structure used for ARC-managed autorelease pools.  This structure should be
+@@ -125,7 +119,6 @@ struct arc_autorelease_pool
+ struct arc_tls
+ {
+ 	struct arc_autorelease_pool *pool;
+-	id returnRetained;
+ };
+ 
+ /**
+@@ -211,32 +204,16 @@ static void emptyPool(struct arc_tls *tls, void *stop)
+ #ifdef arc_tls_store
+ static TLS_CALLBACK(cleanupPools)(struct arc_tls* tls)
+ {
+-	if (tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
+ 	if (NULL != tls->pool)
+ 	{
+ 		emptyPool(tls, NULL);
+ 		assert(NULL == tls->pool);
+ 	}
+-	if (tls->returnRetained)
+-	{
+-		cleanupPools(tls);
+-	}
+ 	free(tls);
+ }
+ #endif
+ 
+ 
+-static Class AutoreleasePool;
+-static IMP NewAutoreleasePool;
+-static IMP DeleteAutoreleasePool;
+-static IMP AutoreleaseAdd;
+-
+-static BOOL useARCAutoreleasePool;
+-
+ static const long refcount_shift = 1;
+ /**
+  * We use the top bit of the reference count to indicate whether an object has
+@@ -317,13 +294,13 @@ static inline BOOL isPersistentObject(id obj)
+ 	}
+ 	// Persistent objects are persistent.  Safe to access isa directly here
+ 	// because we've already handled the small object case separately.
+-	return objc_test_class_flag(obj->isa, objc_class_flag_permanent_instances);
++	return objc_test_class_flag(classForObject(obj), objc_class_flag_permanent_instances);
+ }
+ 
+ static inline id retain(id obj, BOOL isWeak)
+ {
+ 	if (isPersistentObject(obj)) { return obj; }
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
+ 	{
+ 		return Block_copy(obj);
+@@ -383,7 +360,7 @@ extern "C" OBJC_PUBLIC void objc_release_fast_np(id obj)
+ static inline void release(id obj)
+ {
+ 	if (isPersistentObject(obj)) { return; }
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	if (UNLIKELY(objc_test_class_flag(cls, objc_class_flag_is_block)))
+ 	{
+ 		if (cls == static_cast<void*>(&_NSConcreteStackBlock))
+@@ -401,64 +378,24 @@ static inline void release(id obj)
+ 	return ManualRetainReleaseMessage(obj, release, void(*)(id, SEL));
+ }
+ 
+-static inline void initAutorelease(void)
+-{
+-	if (Nil == AutoreleasePool)
+-	{
+-		AutoreleasePool = objc_getClass("NSAutoreleasePool");
+-		if (Nil == AutoreleasePool)
+-		{
+-			useARCAutoreleasePool = YES;
+-		}
+-		else
+-		{
+-			useARCAutoreleasePool = (0 != class_getInstanceMethod(AutoreleasePool,
+-			                                                      SELECTOR(_ARCCompatibleAutoreleasePool)));
+-			if (!useARCAutoreleasePool)
+-			{
+-				[AutoreleasePool class];
+-				NewAutoreleasePool = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                                   SELECTOR(new));
+-				DeleteAutoreleasePool = class_getMethodImplementation(AutoreleasePool,
+-				                                                      SELECTOR(release));
+-				AutoreleaseAdd = class_getMethodImplementation(object_getClass(AutoreleasePool),
+-				                                               SELECTOR(addObject:));
+-			}
+-		}
+-	}
+-}
+-
++// GNUstep 2.2 uses native per-thread ARC pools exclusively. Switching a
++// process-global mode after class lookup races with concurrent callbacks and
++// makes live token interpretation depend on later Foundation loading.
+ static inline id autorelease(id obj)
+ {
+-	//fprintf(stderr, "Autoreleasing %p\n", obj);
+-	if (useARCAutoreleasePool)
+-	{
+-		struct arc_tls *tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			*pool->insert = obj;
+-			pool->insert++;
+-			return obj;
+-		}
+-	}
+-	if (objc_test_class_flag(classForObject(obj), objc_class_flag_fast_arc))
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		initAutorelease();
+-		if (0 != AutoreleaseAdd)
+-		{
+-			AutoreleaseAdd(AutoreleasePool, SELECTOR(addObject:), obj);
+-		}
+-		return obj;
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	return ManualRetainReleaseMessage(obj, autorelease, id(*)(id, SEL));
++	*pool->insert++ = obj;
++	return obj;
+ }
+ 
+ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_np(void)
+@@ -498,58 +435,24 @@ extern "C" OBJC_PUBLIC unsigned long objc_arc_autorelease_count_for_object_np(id
+ 
+ extern "C" OBJC_PUBLIC void *objc_autoreleasePoolPush(void)
+ {
+-	initAutorelease();
+-	struct arc_tls* tls = getARCThreadData();
+-	// If there is an object in the return-retained slot, then we need to
+-	// promote it to the real autorelease pool BEFORE pushing the new
+-	// autorelease pool.  If we don't, then it may be prematurely autoreleased.
+-	if ((NULL != tls) && (nil != tls->returnRetained))
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	struct arc_autorelease_pool *pool = tls->pool;
++	if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+ 	{
+-		autorelease(tls->returnRetained);
+-		tls->returnRetained = nil;
++		pool = new_zeroed<struct arc_autorelease_pool>();
++		if (NULL == pool) { abort(); }
++		pool->previous = tls->pool;
++		pool->insert = pool->pool;
++		tls->pool = pool;
+ 	}
+-	if (useARCAutoreleasePool)
+-	{
+-		if (NULL != tls)
+-		{
+-			struct arc_autorelease_pool *pool = tls->pool;
+-			if (NULL == pool || (pool->insert >= &pool->pool[POOL_SIZE]))
+-			{
+-				pool = new_zeroed<struct arc_autorelease_pool>();
+-				pool->previous = tls->pool;
+-				pool->insert = pool->pool;
+-				tls->pool = pool;
+-			}
+-			// If there is no autorelease pool allocated for this thread, then
+-			// we lazily allocate one the first time something is autoreleased.
+-			return (NULL != tls->pool) ? tls->pool->insert : NULL;
+-		}
+-	}
+-	initAutorelease();
+-	if (0 == NewAutoreleasePool) { return NULL; }
+-	return NewAutoreleasePool(AutoreleasePool, SELECTOR(new));
++	return tls->pool->insert;
+ }
+ extern "C" OBJC_PUBLIC void objc_autoreleasePoolPop(void *pool)
+ {
+-	if (useARCAutoreleasePool)
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			if (NULL != tls->pool)
+-			{
+-				emptyPool(tls, pool);
+-			}
+-			return;
+-		}
+-	}
+-	DeleteAutoreleasePool(static_cast<id>(pool), SELECTOR(release));
+-	struct arc_tls* tls = getARCThreadData();
+-	if (tls && tls->returnRetained)
+-	{
+-		release(tls->returnRetained);
+-		tls->returnRetained = nil;
+-	}
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL == tls) { abort(); }
++	if (NULL != tls->pool) { emptyPool(tls, pool); }
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+@@ -563,47 +466,19 @@ extern "C" OBJC_PUBLIC id objc_autorelease(id obj)
+ 
+ extern "C" OBJC_PUBLIC id objc_autoreleaseReturnValue(id obj)
+ {
+-	if (!useARCAutoreleasePool) 
+-	{
+-		struct arc_tls* tls = getARCThreadData();
+-		if (NULL != tls)
+-		{
+-			objc_autorelease(tls->returnRetained);
+-			tls->returnRetained = obj;
+-			return obj;
+-		}
+-	}
+ 	return objc_autorelease(obj);
+ }
+ 
+ extern "C" OBJC_PUBLIC id objc_retainAutoreleasedReturnValue(id obj)
+ {
+-	// If the previous object was released  with objc_autoreleaseReturnValue()
+-	// just before return, then it will not have actually been autoreleased.
+-	// Instead, it will have been stored in TLS.  We just remove it from TLS
+-	// and undo the fake autorelease.
+-	//
+-	// If the object was not returned with objc_autoreleaseReturnValue() then
+-	// we actually autorelease the fake object. and then retain the argument.
+-	// In tis case, this is equivalent to objc_retain().
+-	struct arc_tls* tls = getARCThreadData();
+-	if (NULL != tls)
++	if (nil == obj) { return nil; }
++	struct arc_tls *tls = getARCThreadData();
++	if (NULL != tls && NULL != tls->pool &&
++	    tls->pool->insert > tls->pool->pool &&
++	    *(tls->pool->insert - 1) == obj)
+ 	{
+-		// If we're using our own autorelease pool, just pop the object from the top
+-		if (useARCAutoreleasePool)
+-		{
+-			if ((NULL != tls->pool) &&
+-			    (*(tls->pool->insert-1) == obj))
+-			{
+-				tls->pool->insert--;
+-				return obj;
+-			}
+-		}
+-		else if (obj == tls->returnRetained)
+-		{
+-			tls->returnRetained = NULL;
+-			return obj;
+-		}
++		tls->pool->insert--;
++		return obj;
+ 	}
+ 	return objc_retain(obj);
+ }
+@@ -775,7 +650,7 @@ extern "C" void* block_load_weak(void *block);
+ static BOOL setObjectHasWeakRefs(id obj)
+ {
+ 	BOOL isGlobalObject = isPersistentObject(obj);
+-	Class cls = isGlobalObject ? Nil : obj->isa;
++	Class cls = isGlobalObject ? Nil : classForObject(obj);
+ 	if (obj && cls && objc_test_class_flag(cls, objc_class_flag_fast_arc))
+ 	{
+ 		uintptr_t *refCount = ((uintptr_t*)obj) - 1;
+diff --git a/associate.m b/associate.m
+index 2b987f99d..3d5492fd2 100644
+--- a/associate.m
++++ b/associate.m
+@@ -190,7 +190,7 @@ static void deallocHiddenClass(id obj, SEL _cmd);
+ 
+ static inline Class findHiddenClass(id obj)
+ {
+-	Class cls = obj->isa;
++	Class cls = classForObject(obj);
+ 	while (Nil != cls && 
+ 	       !objc_test_class_flag(cls, objc_class_flag_assoc_class))
+ 	{
+@@ -228,8 +228,8 @@ static Class allocateHiddenClass(Class superclass)
+ 
+ static inline Class initHiddenClassForObject(id obj)
+ {
+-	Class hiddenClass = allocateHiddenClass(obj->isa); 
+-	assert(!class_isMetaClass(obj->isa));
++	Class hiddenClass = allocateHiddenClass(classForObject(obj));
++	assert(!class_isMetaClass(classForObject(obj)));
+ 	static SEL cxx_destruct;
+ 	if (NULL == cxx_destruct)
+ 	{
+@@ -238,7 +238,11 @@ static inline Class initHiddenClassForObject(id obj)
+ 	const char *types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
+ 	class_addMethod(hiddenClass, cxx_destruct,
+ 		(IMP)deallocHiddenClass, types);
+-	obj->isa = hiddenClass;
++	// Publish an association class with its inherited ARC policy already set.
++	// The first retain/release consults this bit before installing its dtable;
++	// otherwise a native ARC root is incorrectly sent an MRC retain message.
++	checkARCAccessorsSlow(hiddenClass);
++	publishObjectClass(obj, hiddenClass);
+ 	return hiddenClass;
+ }
+ 
+@@ -274,7 +278,7 @@ static void deallocHiddenClass(id obj, SEL _cmd)
+ 			sub = sub->sibling_class;
+ 		}
+ 	}
+-	obj->isa = hiddenClass->super_class;
++	publishObjectClass(obj, hiddenClass->super_class);
+ 	// Free the introspection structures:
+ 	freeMethodLists(hiddenClass);
+ 	freeIvarLists(hiddenClass);
+@@ -284,7 +288,7 @@ static void deallocHiddenClass(id obj, SEL _cmd)
+ 
+ static struct reference_list* referenceListForObject(id object, BOOL create)
+ {
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+ 		Class cls = (Class)object;
+ 		if ((NULL == cls->extra_data) && create)
+@@ -349,11 +353,11 @@ id objc_getAssociatedObject(id object, const void *key)
+ 		}
+ 		return r->object;
+ 	}
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+ 		return nil;
+ 	}
+-	Class cls = object->isa;
++	Class cls = classForObject(object);
+ 	while (Nil != cls)
+ 	{
+ 		while (Nil != cls && 
+@@ -426,9 +430,9 @@ int objc_sync_exit(id object)
+ static Class hiddenClassForObject(id object)
+ {
+ 	if (isSmallObject(object)) { return nil; }
+-	if (class_isMetaClass(object->isa))
++	if (class_isMetaClass(classForObject(object)))
+ 	{
+-		return object->isa;
++		return classForObject(object);
+ 	}
+ 	Class hiddenClass = findHiddenClass(object);
+ 	if (NULL == hiddenClass)
+@@ -464,7 +468,7 @@ id object_clone_np(id object)
+ 	// Make sure that the prototype has a hidden class, so that methods added
+ 	// to it will appear in the clone.
+ 	referenceListForObject(object, YES);
+-	id new = class_createInstance(object->isa, 0);
++	id new = class_createInstance(classForObject(object), 0);
+ 	Class hiddenClass = initHiddenClassForObject(new);
+ 	struct reference_list *list = object_getIndexedIvars(hiddenClass);
+ 	INIT_LOCK(list->lock);
 diff --git a/blocks_runtime.m b/blocks_runtime.m
 index 91ab85d94..39b18d208 100644
 --- a/blocks_runtime.m
@@ -42,6 +430,70 @@ index 91ab85d94..39b18d208 100644
 -}
 \ No newline at end of file
 +}
+diff --git a/class.h b/class.h
+index 081feab48..f879fa60f 100644
+--- a/class.h
++++ b/class.h
+@@ -374,20 +374,20 @@ enum objc_class_flags
+ };
+ 
+ /**
+- * Sets the specific class flag.  Note: This is not atomic.
++ * Sets a class flag without racing concurrent ARC / dispatch readers.
+  */
+ static inline void objc_set_class_flag(Class aClass,
+                                        enum objc_class_flags flag)
+ {
+-	aClass->info |= (unsigned long)flag;
++	__atomic_fetch_or(&aClass->info, (unsigned long)flag, __ATOMIC_ACQ_REL);
+ }
+ /**
+- * Unsets the specific class flag.  Note: This is not atomic.
++ * Unsets a class flag without losing concurrent flag publications.
+  */
+ static inline void objc_clear_class_flag(Class aClass,
+                                          enum objc_class_flags flag)
+ {
+-	aClass->info &= ~(unsigned long)flag;
++	__atomic_fetch_and(&aClass->info, ~(unsigned long)flag, __ATOMIC_ACQ_REL);
+ }
+ /**
+  * Checks whether a specific class flag is set.
+@@ -395,7 +395,7 @@ static inline void objc_clear_class_flag(Class aClass,
+ static inline BOOL objc_test_class_flag(Class aClass,
+                                         enum objc_class_flags flag)
+ {
+-	return (aClass->info & (unsigned long)flag) == (unsigned long)flag;
++	return (__atomic_load_n(&aClass->info, __ATOMIC_ACQUIRE) & (unsigned long)flag) == (unsigned long)flag;
+ }
+ 
+ 
+@@ -439,7 +439,24 @@ static inline Class classForObject(id obj)
+ 			return SmallObjectClasses[(addr & OBJC_SMALL_OBJECT_MASK)];
+ 		}
+ 	}
+-	return obj->isa;
++	// Association classes are installed on live objects. Acquire their complete
++	// inherited ARC policy and method metadata from the release publication.
++	Class isa;
++	__atomic_load(&obj->isa, &isa, __ATOMIC_ACQUIRE);
++	return isa;
++}
++
++// Generic atomic builtins accept Objective-C Class values in Objective-C and
++// Objective-C++ as well as their C pointer representation.
++static inline void publishObjectClass(id object, Class cls)
++{
++	__atomic_store(&object->isa, &cls, __ATOMIC_RELEASE);
++}
++static inline Class exchangeObjectClass(id object, Class cls)
++{
++	Class previous;
++	__atomic_exchange(&object->isa, &cls, &previous, __ATOMIC_ACQ_REL);
++	return previous;
+ }
+ 
+ static inline BOOL classIsOrInherits(Class cls, Class base)
 diff --git a/dtable.c b/dtable.c
 index a6f164172..4b2a9c4d5 100644
 --- a/dtable.c
@@ -169,6 +621,32 @@ index a6f164172..4b2a9c4d5 100644
  
  	struct objc_method *initializeSlot = skipMeta ? 0 :
  			objc_dtable_lookup(dtable, initializeSel->index);
+diff --git a/dwarf_eh.h b/dwarf_eh.h
+index e06a58557..131bf32ce 100644
+--- a/dwarf_eh.h
++++ b/dwarf_eh.h
+@@ -105,7 +105,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
+ 		// Get the base 128 digit 
+ 		digit = (**data) & 0x7f;
+ 		// Add it to the current value
+-		uleb += digit << bit;
++		uleb += (uint64_t)digit << bit;
+ 		// Increase the shift value
+ 		bit += 7;
+ 		// Proceed to the next octet
+@@ -131,10 +131,10 @@ static int64_t read_sleb128(unsigned char** data)
+ 	// Read as if it's signed
+ 	uint64_t uleb = read_leb128(data, &bits);
+ 	// If the most significant bit read is 1, then we need to sign extend it
+-	if (uleb >> (bits-1) == 1)
++	if (bits < 64 && (uleb >> (bits-1)) == 1)
+ 	{
+ 		// Sign extend by setting all bits in front of it to 1
+-		uleb |= ((int64_t)-1) << bits;
++		uleb |= UINT64_MAX << bits;
+ 	}
+ 	return (int64_t)uleb;
+ }
 diff --git a/eh_personality.c b/eh_personality.c
 index d638d9772..7f1fefdc6 100644
 --- a/eh_personality.c
@@ -488,7 +966,7 @@ index 5ac70a39d..c151ab2c5 100644
   * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
   * libcxxrt (PathScale).
 diff --git a/runtime.c b/runtime.c
-index be03c3f70..8f52a9c73 100644
+index be03c3f70..c05a5719f 100644
 --- a/runtime.c
 +++ b/runtime.c
 @@ -28,16 +28,13 @@ void objc_send_initialize(id object);
@@ -509,7 +987,13 @@ index be03c3f70..8f52a9c73 100644
  	while (cls)
  	{
  		// If we're deallocating a class with a hidden class, then the
-@@ -51,6 +48,34 @@ PRIVATE void call_cxx_destruct(id obj)
+@@ -46,11 +43,39 @@ PRIVATE void call_cxx_destruct(id obj)
+ 		cls = cls->super_class;
+ 		if (currentClass->cxx_destruct)
+ 		{
+-			currentClass->cxx_destruct(obj, cxx_destruct);
++			((void (*)(id, SEL))currentClass->cxx_destruct)(obj, cxx_destruct);
+ 		}
  	}
  }
  
@@ -555,7 +1039,8 @@ index be03c3f70..8f52a9c73 100644
 +		{ cls->super_class, obj };
  	if (cls->cxx_construct)
  	{
- 		cls->cxx_construct(obj, cxx_construct);
+-		cls->cxx_construct(obj, cxx_construct);
++		((id (*)(id, SEL))cls->cxx_construct)(obj, cxx_construct);
  	}
 +	cleanup.completed_superclass = Nil;
  }
@@ -565,15 +1050,27 @@ index be03c3f70..8f52a9c73 100644
  	// its isa pointer!
  	if (cls->instance_size < sizeof(Class)) { return nil; }
  	id obj = gc->allocate_class(cls, extraBytes);
+-	obj->isa = cls;
 +	if (obj == nil) { return nil; }
 +	id allocation __attribute__((cleanup(free_failed_construction))) = obj;
- 	obj->isa = cls;
++	publishObjectClass(obj, cls);
  	checkARCAccessorsSlow(cls);
  	call_cxx_construct(obj);
 +	allocation = nil;
  	return obj;
  }
  
+@@ -820,9 +854,7 @@ Class object_setClass(id obj, Class cls)
+ 	CHECK_ARG(obj);
+ 	// If this is a small object, then don't set its class.
+ 	if (isSmallObject(obj)) { return classForObject(obj); }
+-	Class oldClass =  obj->isa;
+-	obj->isa = cls;
+-	return oldClass;
++	return exchangeObjectClass(obj, cls);
+ }
+ 
+ const char *object_getClassName(id obj)
 diff --git a/selector_table.cc b/selector_table.cc
 index 3723ad57f..89e0c99e1 100644
 --- a/selector_table.cc

@@ -23,10 +23,12 @@ struct InterfaceModuleRequest {
 
 struct InterfaceModuleResolution {
   bool success = false;
+  bool requires_coroutine_header = false;
   std::vector<InterfaceImportInput> artifacts;
   std::vector<std::string> dependency_order;
   std::vector<std::string> visible_module_names;
   std::vector<InterfaceContractDiagnostic> diagnostics;
+  InterfaceResourceUsage resource_usage;
 };
 
 // Resolve canonical module names against checked `.objc3i.json`/`.objc3i`

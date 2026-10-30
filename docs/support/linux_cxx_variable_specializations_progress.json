@@ -1,0 +1,75 @@
+{
+  "schema": "objc3c.linux-cxx-variable-specializations-progress.v1",
+  "status": "FOCUSED_SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8545541a67e0-00b75dc3",
+  "compiler_patch_digest": "8545541a67e06a7024ba72d66754d0c00deea8c677d66ce7ab65c13176224e8b",
+  "native_fix_checkpoint": "ea6bc955d96fb5fd91d90d915146e36d57e722c2",
+  "frontend_input_sha256": "a5b08fa2bf9b8a72f2e8d23e9aa12af641618c1a3eafb43bbccf08f151b1bd32",
+  "concurrency_module_version": "2.58.0",
+  "required_semantics": [
+    "objc3.cxx-variable-specializations.v1"
+  ],
+  "verification": {
+    "optimized_compiler_build": "PASS",
+    "native_import_tests_passed": 5,
+    "native_import_dialects": [
+      "c++20",
+      "c++23"
+    ],
+    "alias_abi_source_pch_regression": "PASS",
+    "emitter_suite": "PASS",
+    "tooling_tests_passed": 19,
+    "source_free_runtime_configurations": 8,
+    "source_free_commands": 40,
+    "function_and_variable_lookup_rejections": 8,
+    "provider_source_removed": true,
+    "specialization_storage_and_worker_tls": true,
+    "reports": [
+      {
+        "path": "out/variable-specialization-native-build.json",
+        "sha256": "17ebd78a708f644d3a81ca0b4d397a901378b9e91eaffa59a082befd96685e63"
+      },
+      {
+        "path": "out/variable-specialization-native-focused-import.log",
+        "sha256": "5b6ffd2b836b62a212689c917c34afa82bd5e4efc2443b62e6e1a9ef6d893fb0"
+      },
+      {
+        "path": "out/variable-specialization-native-focused-codegen.log",
+        "sha256": "17f463a09f0ae6e44fccb4d67fc36fd0075b63e477c16e948ecb306be60dbf34"
+      },
+      {
+        "path": "out/variable-specialization-build.log",
+        "sha256": "0a12672d850cb0d63fd2b9ee8770fa0f177be63ba755585b0329bad6c5a18c4a"
+      },
+      {
+        "path": "out/variable-specialization-lookup-build.log",
+        "sha256": "5a03ec460a7e16308a99528a606f7a4af38f00e71c066e84469d5e9e51ad4b0f"
+      },
+      {
+        "path": "out/variable-specialization-emitter-test.log",
+        "sha256": "0f92057e0b85ae67e2f3a20c6c4d11b3ea4d9557ae666b348bef301609cee5ea"
+      },
+      {
+        "path": "out/variable-specialization-tooling.log",
+        "sha256": "825b6727fceaedd7feedac51e0d0c095b7ccde29fe9cf165ccb025cb0b6672ac"
+      },
+      {
+        "path": "out/native-validation/variable-specialization-packages-normal/qualification.json",
+        "sha256": "74c401afc019a5b0eee38f82dbe5c20458a9d7cb99b96d0b07fe04e946ddb998"
+      },
+      {
+        "path": "out/variable-specialization-docs-lint.log",
+        "sha256": "4e3d2d18a1429f81a9fe12c3a50679b9e0f1eec8ca2335c485d47acf830e8588"
+      }
+    ]
+  },
+  "accepted_sdk_version": "2.52.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Combined compiler/frontend/tooling/sanitizer validation for source 2.53 and later",
+    "Coordinated SDK delivery after the implementation batch"
+  ],
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false
+}

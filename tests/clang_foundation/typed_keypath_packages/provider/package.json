@@ -1,0 +1,24 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.TypedKeyPaths",
+  "package": "typed-keypaths-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "PackagePathRoot",
+    "PackagePathPair",
+    "package_count_path",
+    "package_identity_path",
+    "package_field_path",
+    "package_narrowed_path",
+    "package_live_roots",
+    "PackagePathBits",
+    "package_bits_path",
+    "package_indexed_update",
+    "package_nullable_path"
+  ],
+  "dependencies": []
+}

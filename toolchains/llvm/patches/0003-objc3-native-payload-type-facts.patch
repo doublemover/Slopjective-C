@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..c0a4d44d6
+index 000000000..e98defc57
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,162 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -30,10 +30,25 @@ index 000000000..c0a4d44d6
 +class ASTContext;
 +/// Managed leaves in a recursively nested Optional/Result storage graph.
 +bool hasObjC3CarrierManagedPayload(QualType Type);
++/// Native plain carrier fields captured by value do not need Objective-C
++/// callable encodings. Bound the complete leaf graph and reject ownership,
++/// volatile/atomic/resource storage; moves additionally require mutable leaves.
++bool isObjC3PlainCarrierCaptureType(const ASTContext &Context, QualType Type,
++                                   bool IsMove = false);
 +/// Whether a carrier occurs by value in this object, including array and record
 +/// subobjects. Pointers and references are views, never owned subobjects.
 +bool containsObjC3CarrierManagedStorage(QualType Type);
 +bool containsObjC3CarrierThrowingCopy(QualType Type);
++
++/// Actual C++ object payloads of a direct Optional/Result tree. Carrier-level
++/// const/volatile qualifiers are preserved on each selected source leaf.
++void collectObjC3CarrierCppPayloadTypes(
++    QualType Type, llvm::SmallVectorImpl<QualType> &Payloads);
++bool hasObjC3CarrierCppPayload(QualType Type);
++bool hasObjC3CarrierCppDestructor(QualType Type);
++/// Pure C++ carrier subobjects owned by an ordinary source record or array.
++/// This is a presence query, not an operation or call-ABI qualification.
++bool containsObjC3CarrierCppStorage(QualType Type);
 +
 +
 +/// Versioned storage/ownership encoding for the qualified Linux ARC callable
@@ -152,31 +167,35 @@ index 000000000..c0a4d44d6
 +
 +
 diff --git a/clang/lib/AST/CMakeLists.txt b/clang/lib/AST/CMakeLists.txt
-index e3f74d73f..15bac0545 100644
+index e3f74d73f..3609394b1 100644
 --- a/clang/lib/AST/CMakeLists.txt
 +++ b/clang/lib/AST/CMakeLists.txt
-@@ -58,6 +58,7 @@ add_clang_library(clangAST
+@@ -58,6 +58,10 @@ add_clang_library(clangAST
    DynamicRecursiveASTVisitor.cpp
    ParentMapContext.cpp
    Expr.cpp
 +  ObjC3MatchNodes.cpp
++  ObjC3OptionalOperators.cpp
++  ObjC3OptionalAccess.cpp
++  ObjC3Resources.cpp
    ExprClassification.cpp
    ExprConcepts.cpp
    ExprConstant.cpp
-@@ -131,6 +132,7 @@ add_clang_library(clangAST
+@@ -131,6 +135,8 @@ add_clang_library(clangAST
    TemplateName.cpp
    TextNodeDumper.cpp
    Type.cpp
 +  ObjC3TypeContracts.cpp
++  ObjC3ConditionNodes.cpp
    TypeLoc.cpp
    TypePrinter.cpp
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..9e3216ec1
+index 000000000..d9b55af08
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,568 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -185,6 +204,7 @@ index 000000000..9e3216ec1
 +//===----------------------------------------------------------------------===//
 +
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/DeclCXX.h"
@@ -193,6 +213,7 @@ index 000000000..9e3216ec1
 +#include "clang/Basic/LangOptions.h"
 +#include "clang/Basic/TargetInfo.h"
 +#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/DenseSet.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/ADT/StringExtras.h"
 +#include "llvm/Support/SHA256.h"
@@ -317,6 +338,117 @@ index 000000000..9e3216ec1
 +  };
 +  return !Type.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
 +      Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
++}
++
++bool clang::isObjC3PlainCarrierCaptureType(const ASTContext &Context,
++                                           QualType Type, bool IsMove) {
++  if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
++                           Type.getCanonicalType().getTypePtr()))
++    return false;
++  unsigned Budget = 256;
++  auto Check = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
++    if (T.isNull() || Depth > 64 || Budget == 0 || T->isDependentType() ||
++        T.isVolatileQualified() || T->isAtomicType() ||
++        (IsMove && T.isConstQualified()) ||
++        T.getObjCLifetime() != Qualifiers::OCL_None ||
++        getObjC3ResourceTypeContract(Context, T).Cleanup)
++      return false;
++    --Budget;
++    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++      return Self(Self, Optional->getElementType(), Depth + 1);
++    if (const auto *Result = T->getAs<ObjC3ResultType>())
++      return Self(Self, Result->getSuccessType(), Depth + 1) &&
++             Self(Self, Result->getErrorType(), Depth + 1);
++    if (const auto *Array = Context.getAsArrayType(T))
++      return isa<ConstantArrayType>(Array) &&
++             Self(Self, Array->getElementType(), Depth + 1);
++    if (const auto *Record = T->getAs<RecordType>()) {
++      const auto *Definition = Record->getDecl()->getDefinition();
++      if (!Definition || isa<CXXRecordDecl>(Definition))
++        return false;
++      for (const auto *Field : Definition->fields())
++        if (!Self(Self, Field->getType(), Depth + 1))
++          return false;
++      return true;
++    }
++    return (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
++            T->isRealFloatingType() || T->isPointerType() ||
++            T->isMemberPointerType() || T->isAnyComplexType()) &&
++           !T->isObjCObjectPointerType() && !T->isBlockPointerType();
++  };
++  return Check(Check, Type, 0);
++}
++
++void clang::collectObjC3CarrierCppPayloadTypes(
++    QualType Type, llvm::SmallVectorImpl<QualType> &Payloads) {
++  if (Type.isNull() || !isa<ObjC3OptionalType, ObjC3ResultType>(
++                           Type.getCanonicalType().getTypePtr()))
++    return;
++  SmallVector<QualType, 8> Pending{Type};
++  llvm::DenseSet<QualType> Seen;
++  while (!Pending.empty()) {
++    QualType Current = Pending.pop_back_val().getCanonicalType();
++    if (!Seen.insert(Current).second)
++      continue;
++    auto Add = [&](QualType Child) {
++      if (Current.isConstQualified())
++        Child = Child.withConst();
++      if (Current.isVolatileQualified())
++        Child = Child.withVolatile();
++      Pending.push_back(Child);
++    };
++    if (const auto *Optional = Current->getAs<ObjC3OptionalType>()) {
++      Add(Optional->getElementType());
++    } else if (const auto *Result = Current->getAs<ObjC3ResultType>()) {
++      Add(Result->getSuccessType());
++      Add(Result->getErrorType());
++    } else if (Current->getAsCXXRecordDecl()) {
++      Payloads.push_back(Current);
++    }
++  }
++}
++
++bool clang::hasObjC3CarrierCppPayload(QualType Type) {
++  SmallVector<QualType, 4> Payloads;
++  collectObjC3CarrierCppPayloadTypes(Type, Payloads);
++  return !Payloads.empty();
++}
++
++bool clang::hasObjC3CarrierCppDestructor(QualType Type) {
++  SmallVector<QualType, 4> Payloads;
++  collectObjC3CarrierCppPayloadTypes(Type, Payloads);
++  for (QualType Payload : Payloads) {
++    const CXXRecordDecl *RD = Payload->getAsCXXRecordDecl();
++    if (!RD->hasDefinition() || !RD->hasTrivialDestructor())
++      return true;
++  }
++  return false;
++}
++
++bool clang::containsObjC3CarrierCppStorage(QualType Type) {
++  SmallVector<QualType, 8> Pending{Type};
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  while (!Pending.empty()) {
++    QualType Current = Pending.pop_back_val();
++    if (Current.isNull() ||
++        !Seen.insert(Current.getCanonicalType().getTypePtr()).second)
++      continue;
++    if (hasObjC3CarrierCppPayload(Current))
++      return true;
++    if (const auto *Array = Current->getAsArrayTypeUnsafe()) {
++      Pending.push_back(Array->getElementType());
++    } else if (const auto *Record = Current->getAs<RecordType>()) {
++      const RecordDecl *RD = Record->getDecl()->getDefinition();
++      if (!RD)
++        continue;
++      if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++        for (const auto &Base : CXX->bases())
++          Pending.push_back(Base.getType());
++      for (const auto *Field : RD->fields())
++        Pending.push_back(Field->getType());
++    }
++  }
++  return false;
 +}
 +
 +namespace {
@@ -634,10 +766,10 @@ index 000000000..9e3216ec1
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..de356a5f7
+index 000000000..d2047cc0f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,557 @@
+@@ -0,0 +1,893 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -647,10 +779,15 @@ index 000000000..de356a5f7
 +
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/ASTImporter.h"
++#include "clang/Analysis/CFG.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/ODRHash.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/ObjC3Borrowed.h"
++#include "clang/AST/ObjC3ResourceTypes.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Sema/MultiplexExternalSemaSource.h"
@@ -1195,19 +1332,352 @@ index 000000000..de356a5f7
 +  EXPECT_EQ(Multiplex->LookupObjC3QualifiedName({}, 0, Declarations), ObjC3QualifiedNameLookupStatus::NotHandled);
 +  EXPECT_TRUE(Declarations.empty());
 +}
++
++TEST(ObjC3TypeContracts, ForeignConsumedCallbacksPreserveImportAndHash) {
++  for (bool ARC : {false, true}) {
++    std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
++    if (ARC) Args.push_back("-fobjc-arc");
++    auto From = parse(R"(
++      typedef void (*ForeignCallback)(void * __attribute__((cf_consumed)));
++      void consumed(void * __attribute__((cf_consumed)));
++      void ordinary(void *);
++    )", Args);
++    auto To = parse("", Args);
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    const auto *Consumed = findFunction(From->getASTContext(), "consumed");
++    const auto *Ordinary = findFunction(From->getASTContext(), "ordinary");
++    ASSERT_TRUE(Consumed && Ordinary);
++    const auto *Prototype = Consumed->getType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(Prototype->getExtParameterInfo(0).isCFConsumed());
++    EXPECT_FALSE(Prototype->isParamConsumed(0));
++    EXPECT_FALSE(From->getASTContext().hasSameType(Consumed->getType(), Ordinary->getType()));
++    ODRHash First, Second;
++    First.AddQualType(Consumed->getType());
++    Second.AddQualType(Ordinary->getType());
++    EXPECT_NE(First.CalculateHash(), Second.CalculateHash());
++    ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++        From->getASTContext(), From->getFileManager(), false);
++    auto Imported = Importer.Import(const_cast<NamedDecl *>(
++        lookup(From->getASTContext(), "ForeignCallback")));
++    ASSERT_TRUE(bool(Imported));
++    const auto *Alias = cast<TypedefNameDecl>(*Imported);
++    const auto *Callback = Alias->getUnderlyingType()->getPointeeType()->castAs<FunctionProtoType>();
++    EXPECT_TRUE(Callback->getExtParameterInfo(0).isCFConsumed());
++    EXPECT_FALSE(Callback->isParamConsumed(0));
++  }
++}
++
++TEST(ObjC3TypeContracts, CallableParameterOwnershipIsStructurallySignificant) {
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++      "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
++  auto Plain = parse("void callback(id);", Args);
++  ASSERT_TRUE(Plain);
++  for (const char *Attribute : {"ns_consumed", "cf_consumed", "noescape"}) {
++    auto Owned = parse(std::string("void callback(id __attribute__((") + Attribute + ")));", Args);
++    ASSERT_TRUE(Owned);
++    ASSERT_FALSE(Owned->getDiagnostics().hasErrorOccurred());
++    auto &From = Plain->getASTContext();
++    auto &To = Owned->getASTContext();
++    StructuralEquivalenceContext::NonEquivalentDeclSet Different;
++    StructuralEquivalenceContext Equivalence(To.getLangOpts(), From, To,
++        Different, StructuralEquivalenceKind::Default, false, false);
++    EXPECT_FALSE(Equivalence.IsEquivalent(findFunction(From, "callback")->getType(),
++                                         findFunction(To, "callback")->getType())) << Attribute;
++    ODRHash First, Second;
++    First.AddQualType(findFunction(From, "callback")->getType());
++    Second.AddQualType(findFunction(To, "callback")->getType());
++    EXPECT_NE(First.CalculateHash(), Second.CalculateHash()) << Attribute;
++  }
++}
++
++TEST(ObjC3TypeContracts, BlockPinFailureReleasesOnlyCompletedBindingPrefix) {
++  for (bool ARC : {false, true}) {
++    std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++23",
++        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "-fblocks",
++        "-fexceptions", "-fcxx-exceptions", "-fobjc-exceptions"};
++    if (ARC) Args.push_back("-fobjc-arc");
++    auto AST = parse("typedef void(^Work)(void);void exercise(id owner,Work block){keepAlive(owner);keepAlive(block);}",Args);
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    auto *Function = const_cast<FunctionDecl *>(findFunction(AST->getASTContext(), "exercise"));
++    ASSERT_TRUE(Function);
++    CFG::BuildOptions Options;
++    Options.setAllAlwaysAdd(); Options.AddEHEdges=true;
++    Options.AddLifetime=true; Options.AddImplicitDtors=true;
++    auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++    ASSERT_TRUE(Graph);
++    const VarDecl *Earlier=nullptr,*CopyBinding=nullptr;
++    const CFGBlock *Success=nullptr;
++    for(const CFGBlock *Block:*Graph)
++      for(const CFGElement &Element:*Block)
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Declaration=dyn_cast<DeclStmt>(Statement->getStmt()))
++            if(const auto *Variable=dyn_cast<VarDecl>(Declaration->getSingleDecl()))
++              if(Variable->hasAttr<ObjC3LifetimeBindingAttr>()) {
++                if(Variable->getType()->isBlockPointerType()) {
++                  CopyBinding=Variable;Success=Block;
++                } else Earlier=Variable;
++              }
++    ASSERT_TRUE(Earlier && CopyBinding && Success);
++    const CFGBlock *Copy=nullptr;
++    for(auto Predecessor:Success->preds())
++      if(const CFGBlock *Block=Predecessor.getReachableBlock())
++        if(Block->succ_size()==2) Copy=Block;
++    ASSERT_TRUE(Copy && "the implicit copy needs a separate failure edge");
++    auto Edge=Copy->succ_begin();++Edge;
++    const CFGBlock *Failure=Edge->getReachableBlock();
++    ASSERT_TRUE(Failure);
++    SmallVector<const CFGBlock *,8> Pending{Failure};
++    llvm::SmallPtrSet<const CFGBlock *,16> Seen;
++    unsigned EarlierReleases=0,FailedReleases=0,FailedInitializations=0;
++    while(!Pending.empty()) {
++      const CFGBlock *Block=Pending.pop_back_val();
++      if(!Seen.insert(Block).second) continue;
++      for(const CFGElement &Element:*Block) {
++        if(auto Release=Element.getAs<CFGObjC3LifetimeRelease>()) {
++          EarlierReleases+=Release->getVarDecl()==Earlier;
++          FailedReleases+=Release->getVarDecl()==CopyBinding;
++        }
++        if(auto Statement=Element.getAs<CFGStmt>())
++          if(const auto *Declaration=dyn_cast<DeclStmt>(Statement->getStmt()))
++            FailedInitializations+=Declaration->isSingleDecl() &&
++                Declaration->getSingleDecl()==CopyBinding;
++      }
++      for(auto Successor:Block->succs())
++        if(const CFGBlock *Next=Successor.getReachableBlock()) Pending.push_back(Next);
++    }
++    EXPECT_EQ(EarlierReleases,1u);
++    EXPECT_EQ(FailedReleases,0u);
++    EXPECT_EQ(FailedInitializations,0u);
++  }
++}
++
++TEST(ObjC3TypeContracts, ConsumedBlockCopyThrowsBeforeNoexceptCallWithoutPins) {
++  auto AST=parse(R"(
++    typedef void(^Work)(void);
++    void consume(void * __attribute__((cf_consumed)), Work __attribute__((ns_consumed))) noexcept;
++    void exercise(void *owner,Work block){try{consume(owner,block);}catch(...) {}}
++  )",{"-x","objective-c++","-std=c++23","-fobjc-version=3",
++      "-fobjc-runtime=gnustep-2.2","-fobjc-arc","-fblocks",
++      "-fexceptions","-fcxx-exceptions","-fobjc-exceptions"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  auto *Function=const_cast<FunctionDecl *>(findFunction(AST->getASTContext(),"exercise"));
++  ASSERT_TRUE(Function);
++  CFG::BuildOptions Options;
++  Options.setAllAlwaysAdd();Options.AddEHEdges=true;Options.AddLifetime=true;
++  auto Graph=CFG::buildCFG(Function,Function->getBody(),&AST->getASTContext(),Options);
++  ASSERT_TRUE(Graph);
++  unsigned Copies=0,ThrowingCalls=0;
++  for(const CFGBlock *Block:*Graph)
++    for(const CFGElement &Element:*Block)
++      if(auto Statement=Element.getAs<CFGStmt>()) {
++        if(const auto *Cast=dyn_cast<ImplicitCastExpr>(Statement->getStmt());
++            Cast && Cast->getCastKind()==CK_ARCProduceObject &&
++            Cast->getType()->isBlockPointerType()) {
++          ++Copies;EXPECT_EQ(Block->succ_size(),2u);
++        }
++        if(isa<CallExpr>(Statement->getStmt()) && Block->succ_size()>1) ++ThrowingCalls;
++      }
++  EXPECT_EQ(Copies,1u);
++  EXPECT_EQ(ThrowingCalls,0u);
++}
++
++TEST(ObjC3TypeContracts, PolishedDeclarationsPreserveForeignConsumedParameters) {
++  for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC) Args.push_back("-fobjc-arc");
++    auto AST=parse(R"(
++      typedef void (*ForeignCallback)(void * __attribute__((cf_consumed)));
++      void consume(void *owner __attribute__((cf_consumed)));
++      __attribute__((objc_root_class)) @interface ForeignReceiver
++      - (void)consume:(void * __attribute__((cf_consumed)))owner;
++      @end
++    )",Args);
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    PrintingPolicy Policy(AST->getASTContext().getLangOpts());
++    Policy.PolishForDeclaration=true;
++    std::string Printed;llvm::raw_string_ostream Out(Printed);
++    for(const Decl *Declaration:AST->getASTContext().getTranslationUnitDecl()->decls())
++      if(!Declaration->isImplicit() &&
++          AST->getSourceManager().isWrittenInMainFile(Declaration->getLocation())) {
++        Declaration->print(Out,Policy);Out << ";\n";
++      }
++    auto Reparsed=parse(Printed,Args);
++    ASSERT_TRUE(Reparsed);
++    ASSERT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
++    const auto *Function=findFunction(Reparsed->getASTContext(),"consume");
++    ASSERT_TRUE(Function);
++    EXPECT_TRUE(Function->getParamDecl(0)->hasAttr<CFConsumedAttr>());
++    EXPECT_TRUE(Function->getType()->castAs<FunctionProtoType>()->getExtParameterInfo(0).isCFConsumed());
++    const auto *Receiver=cast<ObjCInterfaceDecl>(lookup(Reparsed->getASTContext(),"ForeignReceiver"));
++    ASSERT_NE(Receiver->instmeth_begin(),Receiver->instmeth_end());
++    EXPECT_TRUE((*Receiver->instmeth_begin())->getParamDecl(0)->hasAttr<CFConsumedAttr>()) << Printed;
++  }
++}
++
++TEST(ObjC3TypeContracts, RetainableFamiliesSurviveImportAndPolishedDeclarations) {
++  for(bool ARC:{false,true}) {
++    std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++        "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++    if(ARC) Args.push_back("-fobjc-arc");
++    auto From=parse(R"(
++      typedef struct Opaque *Family __attribute__((NSObject,objc_retainable_family(Example)));
++      using Alias=Family;
++      Family hold(Family value) __attribute__((objc_family_retain(Example)));
++      void drop(Alias value) __attribute__((objc_family_release(Example)));
++      void drop(Alias value);
++      Alias schedule(Alias value) __attribute__((objc_family_autorelease(Example)));
++    )",Args);
++    auto To=parse("",Args);
++    ASSERT_TRUE(From && To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(),To->getFileManager(),
++        From->getASTContext(),From->getFileManager(),false);
++    for(const char *Name:{"Family","Alias","hold","drop","schedule"}) {
++      auto Imported=Importer.Import(const_cast<NamedDecl *>(lookup(From->getASTContext(),Name)));
++      ASSERT_TRUE(bool(Imported));
++    }
++    const auto *Alias=cast<TypedefNameDecl>(lookup(To->getASTContext(),"Alias"));
++    const auto *Family=getObjC3RetainableFamily(To->getASTContext(),Alias->getUnderlyingType());
++    ASSERT_TRUE(Family);
++    EXPECT_EQ(Family->getFamily()->getName(),"Example");
++    EXPECT_EQ(Family->getFamily(), &To->getASTContext().Idents.get("Example"));
++    llvm::SmallPtrSet<const FunctionDecl *, 4> CanonicalDrops;
++    for(const auto *Declaration : To->getASTContext().getTranslationUnitDecl()->lookup(
++        &To->getASTContext().Idents.get("drop")))
++      if(const auto *Function = dyn_cast<FunctionDecl>(Declaration)) {
++        CanonicalDrops.insert(Function->getCanonicalDecl());
++        const auto *Operation = getObjC3FamilyOperation(Function);
++        ASSERT_TRUE(Operation);
++        EXPECT_EQ(getObjC3FamilyOperationName(Operation), &To->getASTContext().Idents.get("Example"));
++      }
++    EXPECT_EQ(CanonicalDrops.size(), 1u);
++    EXPECT_TRUE(Alias->getUnderlyingType()->isObjCRetainableType());
++    EXPECT_TRUE(findFunction(To->getASTContext(),"drop")->hasAttr<ObjCFamilyReleaseAttr>());
++    PrintingPolicy Policy(From->getASTContext().getLangOpts());
++    Policy.PolishForDeclaration=true;
++    std::string Printed;llvm::raw_string_ostream Out(Printed);
++    for(const Decl *Declaration:From->getASTContext().getTranslationUnitDecl()->decls())
++      if(!Declaration->isImplicit() &&
++          From->getSourceManager().isWrittenInMainFile(Declaration->getLocation())) {
++        Declaration->print(Out,Policy);Out << ";\n";
++      }
++    auto Reparsed=parse(Printed,Args);
++    ASSERT_TRUE(Reparsed);
++    ASSERT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
++    const auto *PrintedAlias=cast<TypedefNameDecl>(lookup(Reparsed->getASTContext(),"Alias"));
++    EXPECT_TRUE(PrintedAlias->getUnderlyingType()->isObjCRetainableType()) << Printed;
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"hold")->hasAttr<ObjCFamilyRetainAttr>());
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"drop")->hasAttr<ObjCFamilyReleaseAttr>());
++    EXPECT_TRUE(findFunction(Reparsed->getASTContext(),"schedule")->hasAttr<ObjCFamilyAutoreleaseAttr>());
++  }
++}
++
++TEST(ObjC3TypeContracts, RetainableFamilyIdentityRejectsIncompatibleNativeMerges) {
++  const std::vector<std::string> Args={"-x","objective-c++","-std=c++23",
++      "-fobjc-version=3","-fobjc-runtime=gnustep-2.2"};
++  auto Original=parse("typedef void *Family __attribute__((objc_retainable_family(Example)));Family operation(Family) __attribute__((objc_family_retain(Example)));",Args);
++  ASSERT_TRUE(Original);
++  for(const std::string &Source:{
++      "typedef void *Family __attribute__((objc_retainable_family(Other)));Family operation(Family) __attribute__((objc_family_retain(Other)));",
++      "typedef void *Family __attribute__((objc_retainable_family(Example)));Family operation(Family) __attribute__((objc_family_autorelease(Example)));",
++      "typedef void *Family;Family operation(Family);"}) {
++    auto Other=parse(Source,Args);
++    ASSERT_TRUE(Other);
++    ASSERT_FALSE(Other->getDiagnostics().hasErrorOccurred());
++    auto &From=Original->getASTContext();auto &To=Other->getASTContext();
++    StructuralEquivalenceContext::NonEquivalentDeclSet Different;
++    StructuralEquivalenceContext Equivalence(To.getLangOpts(),From,To,
++        Different,StructuralEquivalenceKind::Default,false,false);
++    EXPECT_FALSE(Equivalence.IsEquivalent(
++        const_cast<FunctionDecl *>(findFunction(From,"operation")),
++        const_cast<FunctionDecl *>(findFunction(To,"operation"))));
++    ODRHash First,Second;
++    First.AddFunctionDecl(findFunction(From,"operation"));
++    Second.AddFunctionDecl(findFunction(To,"operation"));
++    EXPECT_NE(First.CalculateHash(),Second.CalculateHash());
++    if(Source.find("autorelease")==std::string::npos) {
++      ODRHash FirstType,SecondType;
++      FirstType.AddQualType(findFunction(From,"operation")->getType());
++      SecondType.AddQualType(findFunction(To,"operation")->getType());
++      EXPECT_NE(FirstType.CalculateHash(),SecondType.CalculateHash());
++    }
++  }
++}
++
++TEST(ObjC3TypeContracts, BorrowedBasePredicatesIncludePhysicalPayloads) {
++  for (const char *Standard : {"-std=c++20", "-std=c++23"}) {
++    for (bool ARC : {false, true}) {
++      std::vector<std::string> Args = {"-x", "objective-c++", Standard,
++          "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "-fblocks"};
++      if (ARC) Args.push_back("-fobjc-arc");
++      auto AST = parse(R"objc(
++        typedef borrowed const char *Bytes;
++        struct Base { Bytes bytes; };
++        struct Derived : Base {};
++        struct Left : Derived {};
++        struct Right : Derived {};
++        struct Repeated : Left, Right {};
++        struct Virtual : virtual Base {};
++        struct Nested { Derived values[2]; };
++        template<class T> struct Instance : T {};
++        struct Private : private Base {};
++        struct Owned { int value; };
++        struct OwnedDerived : Owned {};
++        struct Callable { void (*callback)(Bytes); };
++        struct CallableDerived : Callable {};
++        extern Base base;
++        extern Derived derived;
++        extern Repeated repeated;
++        extern Virtual virtualBase;
++        extern Nested nested;
++        static_assert(sizeof(Instance<Derived>) > 0);
++        extern Instance<Derived> instance;
++        extern Private privateBase;
++        extern __objc3_optional(Derived) optional;
++        extern __objc3_result(int, Derived) result;
++        extern OwnedDerived owned;
++        extern CallableDerived callable;
++      )objc", Args);
++      ASSERT_TRUE(AST);
++      ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++      ASTContext &Context = AST->getASTContext();
++      for (const char *Name : {"base", "derived", "repeated", "virtualBase",
++                              "nested", "instance", "privateBase", "optional", "result"}) {
++        SCOPED_TRACE(Name);
++        const VarDecl *Variable = findVar(Context, Name);
++        ASSERT_TRUE(Variable);
++        EXPECT_TRUE(containsObjC3BorrowedType(Context, Variable->getType()));
++        EXPECT_TRUE(carriesObjC3BorrowedValue(Context, Variable->getType()));
++      }
++      EXPECT_FALSE(containsObjC3BorrowedType(Context, findVar(Context, "owned")->getType()));
++      EXPECT_FALSE(carriesObjC3BorrowedValue(Context, findVar(Context, "owned")->getType()));
++      QualType Callable = findVar(Context, "callable")->getType();
++      EXPECT_TRUE(containsObjC3BorrowedType(Context, Callable));
++      EXPECT_FALSE(carriesObjC3BorrowedValue(Context, Callable));
++    }
++  }
++}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..bc62e13e0
+index 000000000..9029a5b9c
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,135 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
 +#define LLVM_CLANG_AST_OBJC3ASYNC_H
++#include "clang/AST/Attr.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/ExprCXX.h"
++#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/StmtCXX.h"
 +namespace clang {
 +/// Canonical logical signature shared by functions, methods, and Blocks.
@@ -1248,12 +1718,89 @@ index 000000000..bc62e13e0
 +  const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit());
 +  return Await ? getObjC3CheckedAsyncAdapterCall(Await->getOperand()) : nullptr;
 +}
-+inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
-+  if (const auto *Adapter = getObjC3CheckedAsyncAdapter(E))
-+    return Adapter->getArg(0)->IgnoreImplicit();
-+  if (const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit()))
-+    return Await->getOperand()->IgnoreImplicit();
-+  return E->IgnoreParenImpCasts();
++/// The explicit C-frame entry adapter owns the carrier until task adoption.
++/// Unwrap it for logical effect checking without changing its evaluated type.
++inline const Expr *getObjC3FrameAdapterSource(const Expr *E) {
++  E = E->IgnoreImplicit();
++  const auto *Call = dyn_cast<CallExpr>(E);
++  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
++  if (FD && FD->getIdentifier() &&
++      (FD->getIdentifier()->isStr("__objc3_async_from_frame") ||
++       FD->getIdentifier()->isStr("__objc3_async_to_frame")) &&
++      Call->getNumArgs() == 1)
++    return Call->getArg(0)->IgnoreImplicit()->IgnoreParenImpCasts();
++  return E;
 +}
++inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
++  const Expr *Source;
++  if (const auto *Adapter = getObjC3CheckedAsyncAdapter(E))
++    Source = getObjC3FrameAdapterSource(Adapter->getArg(0));
++  else if (const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit()))
++    Source = getObjC3FrameAdapterSource(Await->getOperand());
++  else
++    Source = getObjC3FrameAdapterSource(E->IgnoreParenImpCasts());
++  while (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Source->IgnoreImplicit())) {
++    if (!Pseudo->getResultExpr())
++      break;
++    Source = Pseudo->getResultExpr();
++  }
++  return Source->IgnoreParenImpCasts();
++}
++
++inline const FunctionProtoType *getObjC3AsyncCalleeFunctionType(const Expr *E) {
++  E = getObjC3AsyncSourceCall(E);
++  if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
++    return getObjC3CallableFunctionType(Message->getMethodDecl());
++  const auto *Call = dyn_cast<CallExpr>(E);
++  if (!Call) return nullptr;
++  QualType Type = Call->getCallee()->getType();
++  if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++    Type = Expr::findBoundMemberType(Call->getCallee());
++  if (Type.isNull()) return nullptr;
++  if (const auto *Pointer = Type->getAs<PointerType>())
++    Type = Pointer->getPointeeType();
++  else if (const auto *Block = Type->getAs<BlockPointerType>())
++    Type = Block->getPointeeType();
++  return Type->getAs<FunctionProtoType>();
++}
++
++/// Source projection is separate from logical effect checking above: the
++/// latter must continue seeing the encapsulated async frame requirement.
++inline const Expr *getObjC3IsolationSourceSyntax(const Expr *E) {
++  const auto *Pseudo = dyn_cast_or_null<PseudoObjectExpr>(
++      E ? E->IgnoreImplicit()->IgnoreParenImpCasts() : nullptr);
++  const auto *Result = Pseudo ? Pseudo->getResultExpr() : nullptr;
++  const auto *Call = dyn_cast_or_null<CallExpr>(
++      Result ? Result->IgnoreImplicit()->IgnoreParenImpCasts() : nullptr);
++  const auto *Function = Call ? Call->getDirectCallee() : nullptr;
++  return Function && Function->hasAttr<ObjC3IsolationThunkAttr>()
++             ? Pseudo->getSyntacticForm() : nullptr;
++}
++
++/// Recover a native frame await's written operand, including its C++ frame
++/// adapter and checked-error adapter. Opaque protocol operations are compiler
++/// execution details and do not belong in source/interface identities.
++inline const Expr *getObjC3AwaitSourceExpression(const CoawaitExpr *Await) {
++  const Expr *Operand = Await->getOperand();
++  if (const auto *Checked = getObjC3CheckedAsyncAdapterCall(Operand))
++    Operand = Checked->getArg(0);
++  const bool FrameAdapter = getObjC3FrameAdapterSource(Operand) !=
++                            Operand->IgnoreImplicit();
++  Operand = getObjC3FrameAdapterSource(Operand);
++  if (const Expr *Source = getObjC3IsolationSourceSyntax(Operand))
++    return Source;
++  const auto *Function = getObjC3AsyncCalleeFunctionType(Await);
++  if (Function && Function->getObjC3FunctionEffects().Async &&
++      !Function->getObjC3FunctionEffects().AsyncFrame)
++    return Operand;
++  if (Function && Function->getObjC3FunctionEffects().AsyncFrame &&
++      (FrameAdapter ||
++       (isa_and_nonnull<OpaqueValueExpr>(Await->getReadyExpr()) &&
++        isa_and_nonnull<OpaqueValueExpr>(Await->getSuspendExpr()) &&
++        isa_and_nonnull<OpaqueValueExpr>(Await->getResumeExpr()))))
++    return Operand;
++  return nullptr;
++}
++
 +} // namespace clang
 +#endif

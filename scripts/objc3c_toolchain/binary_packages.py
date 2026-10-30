@@ -15,11 +15,11 @@ import sys
 import tempfile
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
+    from .sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, verify_installed_sdk, write_json
     from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 else:
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
+    from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, verify_installed_sdk, write_json
     from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 
 SCHEMA = 'objc3c.binary-package.v3'
@@ -53,8 +53,7 @@ def lock(root: Path, name: str):
 
 
 def sdk_identity(sdk: Path) -> dict:
-    subprocess.run([sys.executable, '-B', str(sdk / 'share/objc3c/verify-sdk.py'), str(sdk)],
-                   env=environment(sdk), check=True, capture_output=True, timeout=120)
+    verify_installed_sdk(sdk)
     return json.loads((sdk / 'objc3-sdk.json').read_text())
 
 
@@ -145,16 +144,30 @@ def verify_files(root: Path, manifest: dict, *, exact: bool):
         sidecar = json.loads((root / f'modules/{name}/{name}.objc3i.json').read_text())
         if not isinstance(sidecar, dict) or sidecar.get('module') != row['module']:
             raise ValueError('binary package sidecar differs from its module identity')
+        # Schema 2.2 binds export ownership in native metadata. A declaration
+        # kind alone cannot distinguish namespace descendants, static members
+        # and friends from independent public roots.
+        declarations = sidecar.get('declarations')
+        if (sidecar.get('schema_major') != 2 or sidecar.get('schema_minor') != 2 or
+                not isinstance(declarations, list) or
+                any(not isinstance(declaration, dict) or
+                    any(not isinstance(declaration.get(key), str) or not declaration[key]
+                        for key in ('kind', 'qualified_name', 'export_root'))
+                    for declaration in declarations)):
+            raise ValueError('binary exports require native schema 2.2 root identities')
+        names = {declaration['qualified_name'] for declaration in declarations}
+        roots = {declaration['export_root'] for declaration in declarations}
+        namespaces = {declaration['qualified_name'] for declaration in declarations
+                      if declaration['kind'] == 'Namespace'}
+        if not roots <= names:
+            raise ValueError('binary exports reference an absent native root')
         if row['exports'] != ['*']:
-            root_kinds = {'Function', 'Var', 'Record', 'CXXRecord', 'Enum', 'Typedef',
-                          'TypeAlias', 'ObjCInterface', 'ObjCProtocol', 'ObjCCategory'}
-            declarations = sidecar.get('declarations')
-            if (not isinstance(declarations, list) or
-                    any(not isinstance(declaration, dict) or
-                        not isinstance(declaration.get('kind'), str) or
-                        not isinstance(declaration.get('qualified_name'), str) for declaration in declarations) or
-                    {declaration.get('qualified_name') for declaration in declarations
-                     if declaration.get('kind') in root_kinds} != set(row['exports'])):
+            selected = set(row['exports'])
+            if not selected <= roots or any(
+                    not any(root == wanted or root.startswith(wanted + '::') or
+                            (root in namespaces and wanted.startswith(root + '::'))
+                            for wanted in selected)
+                    for root in roots):
                 raise ValueError('binary exports differ from the native public root declarations')
         projection = sidecar.get('ownership_projection')
         projected = row['provider_ownership'] != row['ownership']
@@ -319,7 +332,8 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
                         '--reexport-import' if edge['visibility'] == 'public' else '--private-import']
             for group in edge.get('spi', []):
                 command += ['--import-spi', group]
-        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']), '-fblocks',
+        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']),
+                    *native_module_compile_flags(config['language'], output), '-fblocks',
                     '-' + manifest['optimization'], '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         env = environment(sdk)

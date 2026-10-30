@@ -1,0 +1,153 @@
+{
+  "schema": "objc3c.linux-compiler-identity-build-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "2e294692c540def2600725619d15997480d75581",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a3aee8568e8a-00b75dc3",
+  "compiler_patch_digest": "a3aee8568e8a1fcd3285b4e9f891fe9194264a92230ced4fc1108f6a73cf63aa",
+  "frontend_input_sha256": "94204c86abc266ea14ead50b94f89f580b7d679c41934e7dc36619e74e9fd849",
+  "concurrency_module_version": "2.41.0",
+  "system_module_version": "2.14.0",
+  "keypath_module_version": "2.3.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "scope": [
+    "Stable ObjC3Foundation API and a separate generated build-stamp header included only by Version.cpp",
+    "Compiled patch-digest getter preserves compiler version output, PCH/PCM checks and semantic interface/import extension keys",
+    "Frontend CMake and Linux SDK admission require the separate stamp, bind its sealed digest and hash both header inputs without combined-header fallback",
+    "Build plans expose the stable foundation and build-stamp header paths",
+    "Native and frontend dependency evidence excludes the build stamp from serialization and interface-emitter object dependencies"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/build-identity-foundation-build.json",
+      "sha256": "f061f568d54d8b54c7b255d6a5f080509a4a8f323c09ac7a315a1bd73a31134a",
+      "bytes": 6520
+    },
+    "source_verification": {
+      "path": "out/build-identity-source-verification.json",
+      "sha256": "5a6e5b618a2b170dadf327395a224e2aed6e8931c168c94c3446cc5ba9c03810",
+      "bytes": 7444
+    },
+    "compiler_regressions_passed": 408,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 194,
+    "native_report": {
+      "path": "out/build-identity-native-batch.json",
+      "sha256": "0a52bfd71d15dab459f2e5f870d782c8d095f3065076d414a48c9d78b1b1f276",
+      "bytes": 1996
+    },
+    "native_logs": [
+      {
+        "path": "out/build-identity-native-0.log",
+        "sha256": "2144160cfdfdd05fadbbf07498c9f7eee10ee9b957beef0f926135b95e5fcc49",
+        "bytes": 6699
+      },
+      {
+        "path": "out/build-identity-native-1.log",
+        "sha256": "392656684e2239d10544ba20defafdc633de58b5f07117973ef02e6051a11d0a",
+        "bytes": 33489
+      },
+      {
+        "path": "out/build-identity-native-2.log",
+        "sha256": "b740b800c10856877187469d75080dcc5ac11c0428a776632a0b3ca045f92c30",
+        "bytes": 1114
+      },
+      {
+        "path": "out/build-identity-native-3.log",
+        "sha256": "ef2970b363a15413959fa3d1cdc46df471b5889e41f8b44d22fab4920b108172",
+        "bytes": 4600
+      },
+      {
+        "path": "out/build-identity-native-4.log",
+        "sha256": "feb2fefd7a3a3ffacf2bcd616502b73f37f56e2db19bb42b725b353919e874a6",
+        "bytes": 5151
+      }
+    ],
+    "frontend_suites_passed": 33,
+    "tooling_tests_passed": 335,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "frontend_checkpoint": {
+      "path": "out/build-identity-frontend-checkpoint.json",
+      "sha256": "5afa8f65a1bb7b5afd140f4e585581b2088164d31b106733b7d195d4233ebc17",
+      "bytes": 1134
+    },
+    "compiled_binaries": [
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "31ef01d92848bbaa441927556a2eedc58bb9deca198360e5245b54f410f2d25f",
+        "bytes": 201641928
+      }
+    ],
+    "source_free_packages": {
+      "configurations_passed": 24,
+      "commands_passed": 96,
+      "modes": [
+        {
+          "mode": "normal",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/build-identity-packages-normal/qualification.json",
+            "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa",
+            "bytes": 4559
+          }
+        },
+        {
+          "mode": "normal-eager",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/build-identity-packages-normal-eager/qualification.json",
+            "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9",
+            "bytes": 4549
+          }
+        },
+        {
+          "mode": "asan",
+          "configurations_passed": 8,
+          "commands_passed": 32,
+          "report": {
+            "path": "out/native-validation/build-identity-packages-asan/qualification.json",
+            "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109",
+            "bytes": 4557
+          }
+        }
+      ]
+    },
+    "incremental_probe": {
+      "scope": "unchanged generated stamp marked dirty; incremental clang target",
+      "cpp_objects_recompiled": 1,
+      "cpp_object": "Version.cpp.o",
+      "build_seconds": 3.343,
+      "serialization_objects_unchanged": true,
+      "report": {
+        "path": "out/build-identity-incremental-native.json",
+        "sha256": "be4a416018c1a983b1c1c62d601f5668a2b719768c68bd356d163acdeedd85ff",
+        "bytes": 713
+      },
+      "native_dependencies": {
+        "path": "out/build-identity-native-dependency-checkpoint.json",
+        "sha256": "e00846ab5b1bb1719e593f34c9e1710ee8008a19034c87e572cc2b5c79ceff68",
+        "bytes": 831
+      },
+      "frontend_dependencies": {
+        "path": "out/build-identity-frontend-dependency-checkpoint.json",
+        "sha256": "0e24d5047ff3ee53d546feab4a4dd2f473ed6d1001fc674211e5643ca02bc326",
+        "bytes": 192
+      }
+    }
+  },
+  "delivery": {
+    "accepted_sdk_version": "2.33.0",
+    "sdk_archive_rebuilt": false,
+    "full_profile_conformance_claimed": false,
+    "native_aarch64_qualified": false
+  },
+  "remaining": [
+    "Coordinated installed SDK delivery of post-2.33 source spans",
+    "Remaining native C++ package, ownership, isolation, runtime, language/library and profile implementation",
+    "Native Linux AArch64 implementation and qualification on a native host"
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "schema": "objc3c.linux-source-batch-2.29-acceptance.v1",
+  "status": "PASS",
+  "date": "2026-10-27",
+  "scope": "Linux x86-64 / GNUstep 2.2 source milestones 2.10\u20132.29: C++ executable package contracts, carrier captures, native export roots and local types; coordinated installed SDK and exact-archive focused C++ package qualification",
+  "qualified_source_checkpoint": "861418ac10a760f7e5e1e898ced7efd4828f600e",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-da2a9f68497e-00b75dc3",
+  "compiler_patch_digest": "da2a9f68497e0039e342b87244f177bb00749efebbcd6d38271a1ea78bd1537a",
+  "concurrency_module_version": "2.29.0",
+  "semantic_interface_schema": "2.2",
+  "extension_abi_revision": 21,
+  "runtime_service_abi": 4,
+  "async_frame_abi": 1,
+  "profile_conformance_claimed": false,
+  "native_linux_aarch64_qualified": false,
+  "archive": {
+    "path": "/workspace/Slopjective-C/out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-da2a9f68497e-00b75dc3-linux-x86_64-4c424d73c78b0ef0.tar.zst",
+    "sha256": "dfa28ac60002d4f35a5d5e4f615a49779777620904aae77506b18533771d295e",
+    "bytes": 439199858,
+    "sdk_seal": "4c424d73c78b0ef0ce7c64f7f3b1c21a99384fada4f44b69698a4c8f73d5605d"
+  },
+  "verification": {
+    "release": {
+      "path": "out/toolchains/linux-sdk-builds/d2c76f9bbcc4721c5aeca8944c7e2e0221ea74989a960b72390d201a31cc52f4/release.json",
+      "sha256": "a4276cf199975bdffa13ca07f02f777820431af7a04bab0851ae78fc6841ff38"
+    },
+    "foundation": {
+      "report": {
+        "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261027T061534.216521Z/report.json",
+        "sha256": "7d5381aa105eb507bb5ea8ba512e2086ee0559f7fd7fe8b0f06918f1f069dcd4"
+      },
+      "compiler_regressions_passed": 373,
+      "unsupported": 3,
+      "native_unit_tests_passed": 179,
+      "reused_verified_foundation": true
+    },
+    "runtime": {
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/d2c76f9bbcc4721c5aeca8944c7e2e0221ea74989a960b72390d201a31cc52f4/runtime-report.json",
+        "sha256": "c24b4db959c18f5d1e747b556d008d83fd1df7581e46710982281f638d0c518a"
+      },
+      "source_patch": {
+        "path": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+        "sha256": "11bcf8ddc507dff55633f5810bbb4f22a1b456ee2a33d78792f53bdafb96b05f"
+      }
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/d2c76f9bbcc4721c5aeca8944c7e2e0221ea74989a960b72390d201a31cc52f4/frontend-tests/qualification.json",
+        "sha256": "1e4b584e273c59f4adb38e2e29635f1824b334994f68bf128dee1eed6b127a07"
+      }
+    },
+    "installed_consumers": {
+      "commands_passed": 37,
+      "report": {
+        "path": "out/toolchains/linux-sdk-builds/d2c76f9bbcc4721c5aeca8944c7e2e0221ea74989a960b72390d201a31cc52f4/installed-qualification/summary.json",
+        "sha256": "5bd745141d1bf812f935c41c70aa536e7c8a153a691a343e7ce082d66b0e9745"
+      }
+    },
+    "native_integration": {
+      "nodes_passed": 13,
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261027T075014746829Z/summary.json",
+        "sha256": "4252ace7720e7ebeccc4063bf418634085cadaa9cde7f17de7f054fce461f629"
+      }
+    },
+    "installed_gates": {
+      "count": 33,
+      "passed": [
+        "installed_compiler_witnesses",
+        "installed_typed_keypath_packages",
+        "installed_recursive_carriers",
+        "installed_async_c_abi",
+        "installed_stdlib",
+        "installed_match_results",
+        "installed_task_coroutines",
+        "installed_native_async",
+        "installed_carrier_debugger",
+        "installed_optional_access",
+        "installed_guard_bindings",
+        "installed_defer_control_flow",
+        "installed_source_modules",
+        "installed_source_graph",
+        "installed_binary_packages",
+        "installed_ownership_projections",
+        "installed_public_surfaces",
+        "installed_api_availability",
+        "installed_module_spi",
+        "installed_module_names",
+        "installed_structured_runtime",
+        "installed_native_features",
+        "installed_native_async_packages",
+        "installed_carrier_calls",
+        "installed_runtime_carrier_calls",
+        "installed_managed_throws",
+        "installed_direct_calls",
+        "installed_nested_calls",
+        "installed_captured_carriers",
+        "installed_array_carriers",
+        "installed_record_carriers",
+        "installed_heap_carriers",
+        "installed_cxx_interfaces"
+      ],
+      "results_bound_by": {
+        "path": "out/toolchains/linux-sdk-builds/d2c76f9bbcc4721c5aeca8944c7e2e0221ea74989a960b72390d201a31cc52f4/release.json",
+        "sha256": "a4276cf199975bdffa13ca07f02f777820431af7a04bab0851ae78fc6841ff38"
+      }
+    },
+    "installed_feature_matrix": {
+      "configurations": 168,
+      "commands": 966,
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261027T075014746829Z/installed-native-features/batch.json",
+        "sha256": "3dcaa01c93b5783ce067de7d7b3948437cbff376f186e4327c0b230ad89943af"
+      }
+    },
+    "source_free_native_async_packages": {
+      "configurations": 12,
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261027T075014746829Z/installed-native-async-packages/qualification.json",
+        "sha256": "40457f98d13b4d91b74f1e54f98df1ddc4f26b9b5f18ef3028109ae6fb044d68"
+      }
+    },
+    "source_free_cxx_interfaces": {
+      "commands": 98,
+      "rejections": 18,
+      "report": {
+        "path": "out/native-validation/linux-sdk-20261027T075014746829Z/installed-cpp-interfaces/qualification.json",
+        "sha256": "d2f534d470871b43a3569e63118e4afd22e120895f25c1628b1c8abada1631d3"
+      }
+    },
+    "fresh_distributions": {
+      "scope": "cxx-class-packages",
+      "distributions": ["debian13", "ubuntu2604"],
+      "ordinary_user": true,
+      "containers_removed": true,
+      "report": {
+        "path": "out/native-validation/fresh-linux-sdk-2.29/qualification.json",
+        "sha256": "e916eaac8a3e78269bce828e73b790a7372ec868f109cd367857156a2cbbe7ac"
+      }
+    },
+    "focused_source_progress": [
+      {
+        "path": "docs/support/linux_source_batch_2_24_progress.json",
+        "sha256": "a4cef371158a828697013acdae9a68014cd32f50c19edb45474e7f1f43843a7c"
+      },
+      {
+        "path": "docs/support/linux_carrier_captures_progress.json",
+        "sha256": "d623ee44e10d1d906b97d026bcccccbd4852bfd37e8b6a8ebe51809cb23ad2a1"
+      },
+      {
+        "path": "docs/support/linux_mixed_carrier_captures_progress.json",
+        "sha256": "efc9b1b21341f3c23a0d4dcfda0d7bd0ac0114e191e04fe4c77cfe6b5be2bad0"
+      },
+      {
+        "path": "docs/support/linux_native_carrier_captures_progress.json",
+        "sha256": "23aa1e2d253e0ed637ba7ca5bb4c46bf032faaf9d751fcc6af4e74aeb010d1ea"
+      },
+      {
+        "path": "docs/support/linux_native_export_roots_progress.json",
+        "sha256": "d0591078412269722c56f4d577c6c1dfae0457c637c67b3754d029893f2118e9"
+      },
+      {
+        "path": "docs/support/linux_cxx_local_types_progress.json",
+        "sha256": "38c7507d7ef264d1f3b1721f993dbf985ec1db54082685936367bb31f7004ee3"
+      }
+    ]
+  },
+  "remaining": [
+    "Aggregate/consuming and task-ABI isolation entry, automatic actor association and full Strict Concurrency enforcement",
+    "Mixed C++ lambda/MRC ownership, precise borrowed alias/union effects, throwing resources and broader exceptional CFG ownership",
+    "Dependent/template/generic and public closure contracts, expanded key paths and specified language/interop/profile surfaces",
+    "Native Linux AArch64 implementation and qualification"
+  ]
+}

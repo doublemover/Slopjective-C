@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextvars import copy_context
 import hashlib
 import json
 import os
@@ -104,7 +105,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         command = [str(sdk / 'bin/objc3c-build'), '--workspace', str(sources / 'workspace.json'),
                    '--output-dir', str(build), '--optimization', optimization]
         rejected = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=180)
-        if (rejected.returncode == 0 or 'identity lock' not in rejected.stderr or
+        if (rejected.returncode != 1 or 'identity lock' not in rejected.stderr or
                 (build / 'build-report.json').read_bytes() != prior_report):
             raise ValueError('wrong package lock did not reject before changing a prior build record')
         manifest.write_bytes(content)
@@ -117,13 +118,16 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
         before = hashlib.sha256(obj.read_bytes()).hexdigest()
         rejected = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=180)
         log = build / 'application/compile.log'
-        if (rejected.returncode == 0 or ('fixture.Right' if language != 'c++' else 'right') not in log.read_text() or
+        outcome = json.loads((build / 'application/compile-result.json').read_text())
+        if (rejected.returncode != 1 or outcome['exit_code'] != 1 or ('fixture.Right' if language != 'c++' else 'right') not in log.read_text() or
                 hashlib.sha256(obj.read_bytes()).hexdigest() != before or
                 (build / 'build-report.json').exists()):
             raise ValueError('private transitive visibility did not reject with the object preserved')
         shutil.copyfile(log, output / f'{case_prefix}-private-visibility.log')
         negatives.append({'language': language, 'standard': standard, 'ownership': ownership, 'optimization': optimization, 'case': 'private-transitive-visibility',
-                          'prior_object_preserved': True, 'failed_build_record_removed': True})
+                          'prior_object_preserved': True, 'failed_build_record_removed': True,
+                          'exit_code': rejected.returncode, 'compiler_exit_code': outcome['exit_code'],
+                          'expected_exit_code': 1})
     return records, negatives
 
 
@@ -147,7 +151,7 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     # Each case has its own temporary source tree and log prefix. Joining the
     # executor preserves evidence from other cases when any one case fails.
     with ThreadPoolExecutor(max_workers=jobs) as executor:
-        futures = [executor.submit(qualify_case, sdk, output, *case) for case in cases]
+        futures = [executor.submit(copy_context().run, qualify_case, sdk, output, *case) for case in cases]
         for case, future in zip(cases, futures):
             try:
                 built, rejected = future.result()
@@ -159,7 +163,8 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
         receipt_path.write_text(json.dumps({'schema': 'objc3c.source-graph-qualification.v4',
             'status': 'FAIL', 'failures': failures, 'builds': records, 'rejections': negatives}, indent=2) + '\n')
         raise ValueError(f'installed graph qualification failed; see {receipt_path}')
-    assert len(records) == 112 and len(negatives) == 32
+    if not (len(records) == 112 and len(negatives) == 32):
+        raise ValueError('qualify_source_graph: required semantic check failed: len(records) == 112 and len(negatives) == 32')
     result = {'schema': 'objc3c.source-graph-qualification.v4', 'status': 'PASS',
               'outside_checkout': True, 'paths_with_spaces_and_quotes': True,
               'builds': records, 'rejections': negatives}

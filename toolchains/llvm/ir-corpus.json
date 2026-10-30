@@ -1,0 +1,72 @@
+{
+  "schema": "objc3c.llvm-ir-corpus.v1",
+  "target": "x86_64-unknown-linux-gnu",
+  "families": ["carriers", "calls", "cleanup", "async", "keypaths"],
+  "cases": [
+    {
+      "name": "captures-arc", "families": ["carriers", "calls", "cleanup"],
+      "directory": "explicit_capture_lists", "sources": ["main.m"],
+      "language": "objective-c++", "standard": "c++20", "ownership": "arc",
+      "transport": "source", "optimizations": ["O0", "O2", "Os"],
+      "thinlto": true,
+      "oracle": "capture_suite: active/nested payloads, exact capture evaluation, destruction and defer counts"
+    },
+    {
+      "name": "captures-pch-mrc", "families": ["carriers", "calls", "cleanup"],
+      "directory": "explicit_capture_lists", "sources": ["main.m"],
+      "language": "objective-c++", "standard": "c++23", "ownership": "mrc",
+      "transport": "pch", "header": "runtime.h", "marker": "CAPTURE_RUNTIME_PCH",
+      "optimizations": ["O0", "O2"],
+      "oracle": "capture_suite: manual ownership, nontrivial C++ payload and partial construction assertions"
+    },
+    {
+      "name": "managed-calls", "families": ["carriers", "calls", "cleanup"],
+      "directory": "installed_sdk",
+      "sources": ["carrier-call-provider.m", "carrier-runtime-provider.m", "carrier-runtime-main.m"],
+      "language": "objective-c", "standard": "c17", "ownership": "arc",
+      "transport": "source", "optimizations": ["O0", "O2"], "thinlto": true,
+      "oracle": "messages/blocks: nil receiver, weak/strong arms, copied snapshots and per-object destruction counts"
+    },
+    {
+      "name": "guard-cleanup", "families": ["cleanup"],
+      "directory": ".", "sources": ["match-guard-cleanup-runtime.mm"],
+      "language": "objective-c++", "standard": "c++20", "ownership": "mrc",
+      "transport": "source", "optimizations": ["O0", "O2"],
+      "oracle": "guard acceptance/rejection/native C++ unwind: exact temporary destruction order and scalar snapshots"
+    },
+    {
+      "name": "carrier-transfer", "families": ["carriers", "cleanup"],
+      "directory": ".", "sources": ["carrier-transfer-runtime.cpp"],
+      "language": "objective-c++", "standard": "c++23", "ownership": "mrc",
+      "transport": "source", "optimizations": ["O0", "O2"],
+      "oracle": "Tracked/Failed/ThrowOnMove: active arm, construction/move/destruction event sequences"
+    },
+    {
+      "name": "native-async", "families": ["async", "cleanup", "calls"],
+      "directory": "native_async", "sources": ["provider.cpp", "ir_client.cpp"],
+      "definitions": ["OBJC3_IR_ASSURANCE_BOUNDED"],
+      "language": "objective-c++", "standard": "c++20", "ownership": "arc",
+      "transport": "source", "optimizations": ["O0", "O2"], "thinlto": true,
+      "optimizer_timeout_seconds": 900,
+      "oracle": "Original native_leaf/native_parent: lazy frame abandonment, suspend/resume/destroy/cancel, exact defer/guard counts, live C++ string/Block and exception propagation"
+    },
+    {
+      "name": "keypaths-pch", "families": ["keypaths", "calls"],
+      "directory": "typed_keypaths", "sources": ["provider.m", "main.m"],
+      "language": "objective-c", "standard": "c17", "ownership": "arc",
+      "transport": "pch", "header": "runtime.h", "marker": "TYPED_KEYPATH_RUNTIME_PCH",
+      "optimizations": ["O0", "O2"],
+      "oracle": "typed keypath assertions: exact-once root/path/value operands, aggregate/property writeback and native EH"
+    },
+    {
+      "name": "managed-interface", "families": ["carriers", "calls"],
+      "directory": "installed_sdk",
+      "sources": ["carrier-call-provider.m", "carrier-runtime-provider.m", "carrier-runtime-import.m"],
+      "language": "objective-c", "standard": "c17", "ownership": "arc",
+      "transport": "interface", "module_source": "carrier-runtime-module.m",
+      "module": "RuntimeCarrierCalls", "package": "runtime-carrier-calls-v1",
+      "optimizations": ["O0", "O2"],
+      "oracle": "semantic-import client: strong/weak carrier ownership, Block result retention and exact destruction counts"
+    }
+  ]
+}

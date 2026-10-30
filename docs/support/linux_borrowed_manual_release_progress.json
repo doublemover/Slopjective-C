@@ -1,0 +1,98 @@
+{
+  "schema": "objc3c.linux-borrowed-manual-release-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "date": "2026-10-27",
+  "source_checkpoint": "ad1dbf3ccfaf3218bc4634fde1ea2182531e37c9",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-5ab0cd0f937e-00b75dc3",
+  "compiler_patch_digest": "5ab0cd0f937e22bfd5eeec23850db9cf356112bffe9f5e0ae2122559631fbe74",
+  "system_module_version": "2.2.0",
+  "extension_abi": 21,
+  "interface_schema": "2.2",
+  "scope": [
+    "MRC instance-release effects through known aliases and conditional joins, with separate pointer identity and live ownership claim state",
+    "Independent/late/ended pins, new acquisitions, raw alias copies, fresh assignment and nested Block/lambda propagation",
+    "Implicit Objective-C self owner identity and lexical super release; explicit non-release method families remain ordinary calls"
+  ],
+  "verification": {
+    "foundation": {
+      "path": "out/borrowed-manual-release-foundation-build.json",
+      "sha256": "1d69185799cab7b7726586639be3d27511cfe8918ca8df9446c4a4889d32abd6"
+    },
+    "source_verification": {
+      "path": "out/borrowed-manual-release-source-verification.json",
+      "sha256": "5b67b46a89b887dac70d16f05b5bde19905ce727f6d267c6e2725fd79478e340"
+    },
+    "native": {
+      "compiler_regressions_passed": 381,
+      "platform_cases_unsupported": 3,
+      "native_unit_tests_passed": 182,
+      "report": {
+        "path": "out/borrowed-manual-release-native-batch.json",
+        "sha256": "e306b35ec274acec3ebf978822dcfa9b198e9b0457b84d398953e8e4e9d3de7d"
+      },
+      "logs": [
+        {
+          "path": "out/borrowed-manual-release-native-0.log",
+          "sha256": "1abfdae7c48fd50edf3e6f0359d8e6f7f5159b8b09e343946eda7b38b437eab8"
+        },
+        {
+          "path": "out/borrowed-manual-release-native-1.log",
+          "sha256": "6f95a209f42c03270e2387c8be96887f31e6cf942b32f97475b7b8a7b404e068"
+        },
+        {
+          "path": "out/borrowed-manual-release-native-2.log",
+          "sha256": "907f6a919f8676e146c99630ef07e0b6c72b7b6c2ffb5c1aefa76aa0c2021e95"
+        },
+        {
+          "path": "out/borrowed-manual-release-native-3.log",
+          "sha256": "5e762ffee05741f0fcdb018e55605912fe1e8fcf554bc3380b30dc06922c5202"
+        },
+        {
+          "path": "out/borrowed-manual-release-native-4.log",
+          "sha256": "091648a8e8482c6e11b56a2b79c300255edcc1529a4038f699d61f1461bb852e"
+        }
+      ]
+    },
+    "frontend": {
+      "suites_passed": 33,
+      "build": {
+        "path": "out/borrowed-manual-release-all-frontend-build.log",
+        "sha256": "63550880c14157133e4b2c2fa571c91424fbb5f6393b09b03e18243f7a70a8dc"
+      },
+      "log": {
+        "path": "out/borrowed-manual-release-all-frontend-tests.log",
+        "sha256": "0abe73012b9aae706b8a218010bc933dd97f41e1a9b71023c1913cd95283da8b"
+      }
+    },
+    "tooling": {
+      "tests_passed": 14,
+      "log": {
+        "path": "out/borrowed-manual-release-tooling-tests.log",
+        "sha256": "43bdc2f4d6f1151cd12628b4ac4c18f2aa21f8ed3e0f7a2de01268e608d7a04a"
+      }
+    },
+    "binary_snapshot": [
+      {
+        "path": "out/toolchains/objc3-development/stage-linux-x86_64/bin/clang-23",
+        "sha256": "af5d19bc9aaec7a6139c9a0ea03e9c3f926bb3e414b405d05cfe1139e80cda55"
+      },
+      {
+        "path": "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c",
+        "sha256": "84699d98bbe31775e242f7a94ac9e62479a7ce65197149aecae2b360d06f7ad4"
+      }
+    ]
+  },
+  "delivery": {
+    "accepted_sdk": "2.33.0",
+    "new_archive_built": false,
+    "combined_runtime_and_sanitizer_batch_deferred": true
+  },
+  "remaining": [
+    "Annotated consumed arguments/receivers, raw runtime release calls and Core Foundation/foreign ownership effects",
+    "Independent manual retains, ambiguous aliases and indirect/interprocedural effects",
+    "Remaining ownership, async, isolation, structured runtime, key-path and language/library implementation",
+    "Combined sanitizer/runtime source batch and coordinated SDK delivery",
+    "Full profile conformance and native Linux AArch64 qualification"
+  ],
+  "profile_conformance_claimed": false
+}

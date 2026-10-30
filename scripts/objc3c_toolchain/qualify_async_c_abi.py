@@ -13,10 +13,13 @@ import tempfile
 if __package__:
     from . import binary_packages as packages
     from .sdk_example import environment
+    from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
     from sdk_example import environment
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 
 
 def configurations():
@@ -45,11 +48,16 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     runtime_library = runtime_library or sdk / 'lib/libobjc3_runtime_services.a'
     objc_runtime = objc_runtime or sdk / 'lib/libobjc.so'
     compiler = compiler or sdk / 'bin/clang'
+    compiler, fixture, headers, runtime_library, objc_runtime = (
+        path.resolve(strict=True) for path in (compiler, fixture, headers, runtime_library, objc_runtime))
     env = environment(sdk)
     env['LD_LIBRARY_PATH'] = str(objc_runtime.parent) + ':' + str(sdk / 'lib')
-    env.update(ASAN_OPTIONS='detect_leaks=1:halt_on_error=1',
-               UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1',
-               TSAN_OPTIONS='halt_on_error=1')
+    if sanitizer and resource_root is None:
+        raise ValueError('sanitizer execution requires explicit resources')
+    policy = SanitizerQualification(compiler, resource_root, output / 'detector-controls',
+        sanitizer, libraries=(runtime_library, objc_runtime), additional_inputs=(Path(__file__),), base_environment=env) if sanitizer else None
+    if policy:
+        env = policy.environment
     cases, commands = [], []
 
     def run(label, argv, cwd):
@@ -61,20 +69,40 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                          'log_sha256': packages.digest(log)})
         if result.returncode:
             raise ValueError('typed async C ABI failed: ' + label)
+        if policy:
+            require_clean_diagnostic(log.read_text(errors='replace'))
         return log
 
+    def inputs():
+        return {
+            'compiler_sha256': packages.digest(compiler.resolve()),
+            'runtime_library_sha256': packages.digest(runtime_library),
+            'objc_runtime_sha256': packages.digest(objc_runtime),
+            'sdk_manifest_sha256': packages.digest(sdk / 'objc3-sdk.json'),
+            'qualification_script_sha256': packages.digest(Path(__file__).resolve()),
+            'header_hashes': {name: packages.digest(headers / name)
+                             for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
+            'source_hashes': {name: packages.digest(fixture / name) for name in
+                             ('bridge.h', 'bridge.c', 'client.cpp',
+                              'logical_calls.h', 'logical_calls.m')},
+        }
+
     try:
+        initial_inputs = inputs()
         with tempfile.TemporaryDirectory(prefix="objc3 C async 'outside checkout ") as temporary:
             root = Path(temporary)
             for plang, powner, clang, standard, cowner, opt in configurations():
+                if policy:
+                    policy.ensure_controls(opt)
                 label = '-'.join((plang, powner, standard, cowner, opt))
-                for name in ('bridge.h', 'bridge.c', 'client.cpp'):
+                for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
                     shutil.copyfile(fixture / name, root / name)
                 common = ['--no-default-config', '-' + opt, '-g', '-UNDEBUG',
                           '-Wall', '-Wextra', '-Werror', '-Wno-unused-command-line-argument',
                           '-I' + str(headers), '-fobjc-runtime=gnustep-2.2', '-fblocks']
                 if sanitizer:
-                    common += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer']
+                    common += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer',
+                               '-fno-sanitize-recover=undefined']
                     if resource_root:
                         common += ['-resource-dir', str(resource_root)]
                 provider_flags = [*common, '-x', plang, '-std=c17']
@@ -90,9 +118,24 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 (root / 'bridge.c').unlink()
                 run(label + '-consumer', [compiler, *consumer_flags, root / 'client.cpp',
                                          '-c', '-o', root / 'client.o'], root)
+                logical_objects = []
+                logical_pch = plang == 'objective-c' and opt == 'O2'
+                if plang == 'objective-c':
+                    logical_flags = [*provider_flags]
+                    if logical_pch:
+                        pch = root / 'logical-calls.pch'
+                        run(label + '-logical-header', [compiler, *logical_flags,
+                            '-x', 'objective-c-header', root / 'logical_calls.h',
+                            '-o', pch], root)
+                        logical_flags += ['-include-pch', pch]
+                    logical_object = root / 'logical-calls.o'
+                    run(label + '-logical-calls', [compiler, *logical_flags,
+                        root / 'logical_calls.m', '-c', '-o', logical_object], root)
+                    (root / 'logical_calls.m').unlink()
+                    logical_objects.append(logical_object)
                 executable = root / 'client'
                 link = [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
-                        root / 'bridge.o', root / 'client.o', runtime_library,
+                        root / 'bridge.o', root / 'client.o', *logical_objects, runtime_library,
                         '-pthread', '-L' + str(sdk / 'lib'),
                         '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
                         '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff']
@@ -128,19 +171,20 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                               'provider_ownership': powner, 'consumer_language': clang,
                               'consumer_standard': standard, 'consumer_ownership': cowner,
                               'optimization': opt, 'provider_source_removed': True,
+                              'logical_frame_calls': plang == 'objective-c',
+                              'logical_frame_input': 'PCH' if logical_pch else 'ordinary',
                               'debugger_values': debugger_values,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.async-c-abi-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'], 'service_abi': 4, 'async_abi': 1,
                   'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
-                  'compiler_sha256': packages.digest(compiler.resolve()),
-                  'runtime_library_sha256': packages.digest(runtime_library),
-                  'objc_runtime_sha256': packages.digest(objc_runtime),
-                  'header_hashes': {name: packages.digest(headers / name)
-                      for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
+                  **initial_inputs,
                   'sanitizer': sanitizer, 'executions': len(cases), 'cases': cases,
-                  'commands': commands, 'source_hashes': {name: packages.digest(fixture / name)
-                      for name in ('bridge.h', 'bridge.c', 'client.cpp')}}
+                  'profile_conformance_claimed': False, 'commands': commands}
+        if policy:
+            report['sanitizer_policy'] = policy.finalize()
+        if inputs() != initial_inputs:
+            raise ValueError('typed async C ABI inputs changed during qualification')
     except Exception as error:
         packages.write_json(receipt, {'schema': 'objc3c.async-c-abi-qualification.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'], 'cases': cases,

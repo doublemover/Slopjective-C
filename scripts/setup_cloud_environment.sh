@@ -119,12 +119,19 @@ install_ccache() {
     download_verified https://deb.debian.org/debian/pool/main/m/minisign/minisign_0.12-1_amd64.deb \
       "$scratch/minisign.deb" 4a3f9611a0e363e5c574129dc0195ba951c6be4b8f7ac13d64880000e3b22ebe
     dpkg-deb -x "$scratch/minisign.deb" "$scratch/minisign"
+    # The verification tool is dynamically linked. Clean Debian containers do
+    # not necessarily have libsodium; keep its pinned dependency private to the
+    # verifier instead of relying on the development image or installing it globally.
+    download_verified https://deb.debian.org/debian/pool/main/libs/libsodium/libsodium23_1.0.18-1+deb13u1_amd64.deb \
+      "$scratch/libsodium.deb" 9ff9d97bb7ce3aee7f6e6ec3a785cdbe237454a7b9fd84728121bc4ef2bebebe
+    dpkg-deb -x "$scratch/libsodium.deb" "$scratch/minisign"
     download_verified https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz \
       "$archive" bd1313f5316f594443dcb4113a4191c666ac6450e0cf016ff8cb8b080f46c160
     curl -fsSL --max-filesize 4096 https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz.minisig -o "$archive.minisig"
-    "$scratch/minisign/usr/bin/minisign" -P RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF -Vm "$archive"
+    env LD_LIBRARY_PATH="$scratch/minisign/usr/lib/x86_64-linux-gnu" \
+      "$scratch/minisign/usr/bin/minisign" -P RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF -Vm "$archive"
     tar -xJf "$archive" -C "$setup_root"
-    rm -rf "$archive" "$archive.minisig" "$scratch/minisign" "$scratch/minisign.deb"
+    rm -rf "$archive" "$archive.minisig" "$scratch/minisign" "$scratch/minisign.deb" "$scratch/libsodium.deb"
   fi
   ln -sfn ../ccache-4.14.2-linux-x86_64-glibc/ccache "$setup_root/bin/ccache"
   "$dest/ccache" --version

@@ -1,0 +1,67 @@
+{
+  "schema": "objc3c.linux-cxx-local-types-progress.v1",
+  "status": "FOCUSED_VALIDATED",
+  "source_checkpoint": "b1a758c0dd15679e7d151b6c1ba3ec2a1f390bb4",
+  "concurrency_module_version": "2.29.0",
+  "interface_schema": "2.2",
+  "required_semantics": ["objc3.cxx-local-types.v1"],
+  "scope": [
+    "Concrete named local classes, structs and enums in published definitions, defaults, member initializers and lambdas",
+    "Lexical type/member identities independent of physical filenames; capability agreement in codec and contract validation",
+    "Canonical local scope printing; native construction/copy/destruction, virtual dispatch, RTTI and constexpr evaluation",
+    "Dependency/export/SPI checking and rejection of local types escaping through public signatures"
+  ],
+  "frontend": {
+    "suites_passed": ["interface_emitter", "interface_contract", "interface_codec"],
+    "logs": [
+      {
+        "path": "out/cxx-local-types-emitter-test.log",
+        "sha256": "5d6cac9eaa2ae53f2d846af02f7b4348de608939d43a2a4ce5571569b880a38e"
+      },
+      {
+        "path": "out/cxx-local-types-contract-test.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "out/cxx-local-types-codec-test.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "tooling": {
+    "tests_passed": 179,
+    "log": {
+      "path": "out/cxx-local-types-tooling-tests.log",
+      "sha256": "66de176301c9a01e62255890993c515ce50aa7ee7f6e32a2801b6a852cec6c1e"
+    }
+  },
+  "source_free_cpp_packages": [
+    {
+      "mode": "normal",
+      "configurations": 8,
+      "commands": 32,
+      "report": {
+        "path": "out/native-validation/cxx-local-types-packages-normal/qualification.json",
+        "sha256": "aa7641176054da525529b8effeb8313f6ba0468888f1a014efbc0c154a36af92"
+      }
+    },
+    {
+      "mode": "asan",
+      "configurations": 8,
+      "commands": 32,
+      "report": {
+        "path": "out/native-validation/cxx-local-types-packages-asan/qualification.json",
+        "sha256": "77e4911004d4fc3473e124b6845c272be53e4e63045f2e6114a75584a346e669"
+      }
+    }
+  ],
+  "delivery": {
+    "accepted_sdk": "2.9.0",
+    "new_archive_built": false
+  },
+  "remaining": [
+    "Generic/dependent bodies and public closure types",
+    "Unnamed local tags, unions and broader dependent lookup projections",
+    "Installed SDK/archive cutover, broader language/profile work and native Linux AArch64 qualification"
+  ]
+}

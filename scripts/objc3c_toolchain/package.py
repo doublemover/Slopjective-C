@@ -67,21 +67,39 @@ def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
 
 
 def _run_qualifications(tasks: dict, workers: int) -> dict:
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
     results, failures = {}, []
-    # Always join every independent gate before reporting failure. Each gate owns
-    # a disjoint output directory, so its receipt and logs survive other failures.
+    remaining = iter(tasks.items())
+    # Drain already running gates and preserve their evidence on failure. Stop
+    # starting more work against a candidate that already needs repair.
     with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
-        futures = {name: executor.submit(task) for name, task in tasks.items()}
-        for name, future in futures.items():
-            try:
-                results[name] = future.result()
-            except Exception as error:
-                failures.append(f'{name}: {error}')
+        active = {}
+
+        def fill():
+            while len(active) < max(1, workers):
+                try:
+                    name, task = next(remaining)
+                except StopIteration:
+                    return
+                active[executor.submit(task)] = name
+
+        fill()
+        while active:
+            done, _ = wait(active, return_when=FIRST_COMPLETED)
+            for future in done:
+                name = active.pop(future)
+                try:
+                    results[name] = future.result()
+                except Exception as error:
+                    failures.append(f'{name}: {error}')
+            if not failures:
+                fill()
     if failures:
-        raise ValueError('installed SDK qualification failed: ' + '; '.join(failures))
-    return results
+        skipped = len(tasks) - len(results) - len(failures)
+        raise ValueError('installed SDK qualification failed: ' + '; '.join(failures)
+                         + f'; {skipped} later suites not started')
+    return {name: results[name] for name in tasks}
 
 
 def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, counts: dict) -> dict:
@@ -101,6 +119,21 @@ def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, count
             or any(row['exit_code'] != row['expected_exit_code'] for row in evidence['commands'])):
         raise ValueError(f'{suite} qualification receipt is incomplete')
     return evidence
+
+
+# Source workspace examples are distributed as executable qualification inputs.
+# Tests discover maintained workspaces independently to catch forgotten staging.
+SOURCE_PACKAGE_EXAMPLES = {
+    'source_graph': 'packages',
+    'ownership_projection': 'ownership-projection',
+    'public_module_surface': 'public-module-surface',
+    'api_availability': 'api-availability',
+    'module_spi': 'module-spi',
+    'module_names': 'module-names',
+    'native_async_packages': 'native-async-packages',
+    'async_c_frame_packages': 'async-c-frame-packages',
+    'typed_keypath_packages': 'typed-keypath-packages',
+}
 
 
 def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
@@ -174,22 +207,34 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_task_coroutines.py', 'qualify_task_coroutines.py'),
                                 ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
                                 ('qualify_stdlib.py', 'qualify_stdlib.py'),
+                                ('run_linux_feature_batch.py', 'run_linux_feature_batch.py'),
+                                ('run_linux_compiler_witnesses.py', 'run_linux_compiler_witnesses.py'),
                                 ('qualify_match_results.py', 'qualify_match_results.py'),
+                                ('qualify_defer_control_flow.py', 'qualify_defer_control_flow.py'),
+                                ('qualify_guard_bindings.py', 'qualify_guard_bindings.py'),
+                                ('qualify_optional_access.py', 'qualify_optional_access.py'),
+                                ('qualify_carrier_debugger.py', 'qualify_carrier_debugger.py'),
+                                ('qualify_recursive_carriers.py', 'qualify_recursive_carriers.py'),
                                 ('qualify_native_async.py', 'qualify_native_async.py'),
-                                ('qualify_native_async_packages.py', 'qualify_native_async_packages.py')):
+                                ('qualify_native_async_packages.py', 'qualify_native_async_packages.py'),
+                                ('qualify_typed_keypath_packages.py', 'qualify_typed_keypath_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
-    shutil.copytree(repo / 'tests/clang_foundation/source_graph',
-                    prefix / 'share/objc3c/examples/packages')
-    shutil.copytree(repo / 'tests/clang_foundation/ownership_projection',
-                    prefix / 'share/objc3c/examples/ownership-projection')
-    shutil.copytree(repo / 'tests/clang_foundation/public_module_surface',
-                    prefix / 'share/objc3c/examples/public-module-surface')
-    shutil.copytree(repo / 'tests/clang_foundation/api_availability',
-                    prefix / 'share/objc3c/examples/api-availability')
-    shutil.copytree(repo / 'tests/clang_foundation/module_spi',
-                    prefix / 'share/objc3c/examples/module-spi')
-    shutil.copytree(repo / 'tests/clang_foundation/module_names',
-                    prefix / 'share/objc3c/examples/module-names')
+    shutil.copyfile(repo / 'scripts/objc3c_native_validation/defer_source.py',
+                    builder / 'defer_source.py')
+    shutil.copyfile(repo / 'scripts/objc3c_native_validation/guard_source.py',
+                    builder / 'guard_source.py')
+    shutil.copyfile(repo / 'scripts/objc3c_native_validation/optional_access_source.py',
+                    builder / 'optional_access_source.py')
+    shutil.copytree(repo / 'tests/clang_foundation/optional_access',
+                    prefix / 'share/objc3c/examples/optional-access')
+    shutil.copytree(repo / 'tests/clang_foundation/guard_bindings',
+                    prefix / 'share/objc3c/examples/guard-bindings')
+    shutil.copytree(repo / 'tests/clang_foundation/carrier_debugger',
+                    prefix / 'share/objc3c/examples/carrier-debugger')
+    shutil.copytree(repo / 'tests/clang_foundation/recursive_carriers',
+                    prefix / 'share/objc3c/examples/recursive-carriers')
+    shutil.copytree(repo / 'tests/clang_foundation/defer_control_flow',
+                    prefix / 'share/objc3c/examples/defer-control-flow')
     shutil.copytree(repo / 'tests/clang_foundation/structured_runtime',
                     prefix / 'share/objc3c/examples/structured-runtime')
     shutil.copytree(repo / 'tests/clang_foundation/task_coroutines',
@@ -202,10 +247,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/async-c-abi')
     shutil.copytree(repo / 'tests/clang_foundation/native_async',
                     prefix / 'share/objc3c/examples/native-async')
-    shutil.copytree(repo / 'tests/clang_foundation/native_async_packages',
-                    prefix / 'share/objc3c/examples/native-async-packages')
-    shutil.copytree(repo / 'tests/clang_foundation/async_c_frame_packages',
-                    prefix / 'share/objc3c/examples/async-c-frame-packages')
+    for fixture_name, installed_name in SOURCE_PACKAGE_EXAMPLES.items():
+        shutil.copytree(repo / 'tests/clang_foundation' / fixture_name,
+                        prefix / 'share/objc3c/examples' / installed_name)
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
@@ -233,6 +277,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     license_dir = prefix / 'share/licenses/robin-map'
     license_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(robin_license, license_dir / 'LICENSE')
+    shutil.copy2(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/FileCheck',
+                 prefix / 'bin/FileCheck')
     normalize_permissions(prefix)
     data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
@@ -257,12 +303,20 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_module_spi import qualify as qualify_spi
     from .qualify_module_names import qualify as qualify_names
     from .qualify_structured_runtime import qualify as qualify_structured
+    from .run_linux_feature_batch import run_batch as qualify_native_features
+    from .run_linux_compiler_witnesses import qualify as qualify_compiler_witnesses
     from .qualify_task_coroutines import qualify as qualify_coroutines
     from .qualify_async_c_abi import qualify as qualify_async_c_abi
     from .qualify_stdlib import qualify as qualify_stdlib
     from .qualify_match_results import qualify as qualify_match_results
+    from .qualify_defer_control_flow import qualify as qualify_defer_control_flow
+    from .qualify_guard_bindings import qualify as qualify_guard_bindings
+    from .qualify_optional_access import qualify as qualify_optional_access
+    from .qualify_carrier_debugger import qualify as qualify_carrier_debugger
+    from .qualify_recursive_carriers import qualify as qualify_recursive_carriers
     from .qualify_native_async import qualify as qualify_async
     from .qualify_native_async_packages import qualify as qualify_async_packages
+    from .qualify_typed_keypath_packages import qualify as qualify_keypath_packages
 
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
@@ -280,12 +334,23 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_module_spi': partial(qualify_spi, prefix, validation_report.parent / 'installed-module-spi', jobs=1),
         'installed_module_names': partial(qualify_names, prefix, validation_report.parent / 'installed-module-names', jobs=1),
         'installed_structured_runtime': partial(qualify_structured, prefix, validation_report.parent / 'installed-structured-runtime'),
+        'installed_compiler_witnesses': partial(qualify_compiler_witnesses, prefix,
+            validation_report.parent / 'installed-compiler-witnesses'),
+        'installed_native_features': partial(qualify_native_features, prefix,
+            validation_report.parent / 'installed-native-features',
+            fixtures=prefix / 'share/objc3c/examples/linux-features'),
         'installed_task_coroutines': partial(qualify_coroutines, prefix, validation_report.parent / 'installed-task-coroutines'),
         'installed_match_results': partial(qualify_match_results, prefix, validation_report.parent / 'installed-match-results'),
+        'installed_optional_access': partial(qualify_optional_access, prefix, validation_report.parent / 'installed-optional-access'),
+        'installed_guard_bindings': partial(qualify_guard_bindings, prefix, validation_report.parent / 'installed-guard-bindings'),
+        'installed_carrier_debugger': partial(qualify_carrier_debugger, prefix, validation_report.parent / 'installed-carrier-debugger'),
+        'installed_recursive_carriers': partial(qualify_recursive_carriers, prefix, validation_report.parent / 'installed-recursive-carriers'),
+        'installed_defer_control_flow': partial(qualify_defer_control_flow, prefix, validation_report.parent / 'installed-defer-control-flow'),
         'installed_stdlib': partial(qualify_stdlib, prefix, validation_report.parent / 'installed-stdlib'),
         'installed_async_c_abi': partial(qualify_async_c_abi, prefix, validation_report.parent / 'installed-async-c-abi'),
         'installed_native_async': partial(qualify_async, prefix, validation_report.parent / 'installed-native-async'),
         'installed_native_async_packages': partial(qualify_async_packages, prefix, validation_report.parent / 'installed-native-async-packages'),
+        'installed_typed_keypath_packages': partial(qualify_keypath_packages, prefix, validation_report.parent / 'installed-typed-keypath-packages'),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),
@@ -297,12 +362,27 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         ('installed_array_carriers', 'array-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6, 'rejections': 6}),
         ('installed_record_carriers', 'record-carriers', {'executions': 17, 'commands': 109, 'rejections': 10}),
         ('installed_heap_carriers', 'heap-carriers', {'executions': 17, 'commands': 111, 'rejections': 12}),
-        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 12, 'commands': 98, 'rejections': 18}),
+        ('installed_cxx_interfaces', 'cpp-interfaces', {'executions': 12, 'commands': 112, 'rejections': 18}),
     )
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
                              data['seal_sha256'], suite, counts)
-    qualification = _run_qualifications(tasks, workers)
+    priority = ('installed_compiler_witnesses', 'installed_typed_keypath_packages',
+                'installed_recursive_carriers', 'installed_async_c_abi',
+                'installed_stdlib', 'installed_match_results',
+                'installed_task_coroutines', 'installed_native_async',
+                'installed_carrier_debugger', 'installed_optional_access',
+                'installed_guard_bindings', 'installed_defer_control_flow')
+    tasks = {**{name: tasks[name] for name in priority},
+             **{name: task for name, task in tasks.items() if name not in priority}}
+    from .sdk_example import sdk_verification
+
+    def qualify_frozen_sdk(task):
+        with sdk_verification(prefix):
+            return task()
+
+    qualification = _run_qualifications(
+        {name: partial(qualify_frozen_sdk, task) for name, task in tasks.items()}, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():

@@ -1,29 +1,33 @@
 #if CASE == 1
-namespace Nested { int api(); }
+namespace Nested { inline auto open = [](auto value) { return value; }; }
 #elif CASE == 2
-template<class T> struct Generic { T value; };
+template<class T> struct Generic;
 #elif CASE == 3
-struct Special { Special(); int value; };
+struct Defaulted { template<class T> Defaulted(T); };
 #elif CASE == 4
-struct Base { int value; }; struct Derived : Base { int second; };
+template<class T> struct Generic { T value; };
+template<class T> struct Generic<T *> { T *value; Generic(); };
 #elif CASE == 5
-struct Methods { int value; int get() const { return value; } };
+struct Methods { template<class T> int get(T value); };
 #elif CASE == 6
-class Hidden { int value; };
+template<class T> struct Methods { template<class U> int get(U value) { return int(value); } };
+template<> template<> int Methods<int>::get<int>(int value) { return value; }
 #elif CASE == 7
-struct Default { int value=42; };
+static int hidden() { return 42; }
+struct Default { int value = hidden(); };
 #elif CASE == 8
-int api(int value=42);
+template<class T> struct Storage { template<class U> static U value; };
 #elif CASE == 9
-inline int api() { return 42; }
+inline auto api() { return [](auto value) { return value; }; }
 #elif CASE == 10
-extern constexpr int exported=42;
+template<class T> extern T exported;
 #elif CASE == 11
-struct Nested { struct Inner { int value; }; Inner child; };
+struct Nested { struct { int value; } child; };
 #elif CASE == 12
-union Overlap { int one; long two; };
+template<class T> struct Overlap { union Inner { T one; long two; }; };
 #elif CASE == 13
-extern const int exported=42;
+template<class T> T api(T value) { return value; }
+template<> int api<int>(int value) = delete;
 #elif CASE == 14
-constexpr int evaluated() { return 42; }
+template<template<class> class C, class T> int api(C<T> value);
 #endif

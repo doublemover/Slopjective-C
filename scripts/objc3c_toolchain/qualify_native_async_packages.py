@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 if __package__:
@@ -67,9 +68,16 @@ def qualify(sdk: Path, output: Path) -> dict:
                     raise ValueError('native async interface lost its exact SDK frame contract')
                 if language == 'objective-c++':
                     check_cpp_metadata(metadata)
-                elif {row['qualified_name'] for row in metadata['declarations']} != {
-                        'c_frame_factory', 'c_frame_destroyed'}:
-                    raise ValueError('C frame interface lost its exported factories')
+                else:
+                    names = {row['qualified_name']: row for row in metadata['declarations']}
+                    if set(names) != {'c_frame_factory', 'c_frame_destroyed', 'c_frame_scoped'}:
+                        raise ValueError('C frame interface lost its exported factories/scopes')
+                    scope = names['c_frame_scoped']
+                    effects = scope.get('effects', {})
+                    if (not has_async(scope) or
+                            'c-frame-v1' not in effects.get('async_abi_identity', '') or
+                            'task-boundary:4' not in effects.get('actor_isolation_identity', '')):
+                        raise ValueError('C frame scope lost its callable ABI or group contract')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],
@@ -90,9 +98,30 @@ def qualify(sdk: Path, output: Path) -> dict:
                                              application, root / 'consumer')
                 if consumed['provider_compilations'] or len(consumed['modules']) != 1:
                     raise ValueError('native async consumer rebuilt or lost its provider')
+                specialization_rejected = False
+                if language == 'objective-c++':
+                    command = list(consumed['commands'][0])
+                    command[1] = str(client / 'function-specialization-rejected.mm')
+                    rejected_object = root / 'rejected-specialization.o'
+                    command[command.index('--emit-object') + 1] = str(rejected_object)
+                    if '-MF' in command:
+                        command[command.index('-MF') + 1] = str(root / 'rejected-specialization.d')
+                    log = root / 'rejected-specialization.log'
+                    with log.open('w') as stream:
+                        rejected = subprocess.run(command, cwd=root / 'consumer',
+                            env=packages.environment(sdk), stdout=stream,
+                            stderr=subprocess.STDOUT, timeout=180)
+                    diagnostic = log.read_text()
+                    if (rejected.returncode != 1 or rejected_object.exists() or
+                            'overloaded' not in diagnostic or
+                            'variable template' not in diagnostic or
+                            'requires template arguments' not in diagnostic):
+                        raise ValueError('explicit specialization escaped primary-template lookup')
+                    specialization_rejected = True
                 cases.append({'language': language, 'standard': standard,
                     'ownership': ownership, 'optimization': optimization,
                     'provider_source_removed': True, 'provider_compilations': 0,
+                    'specialization_lookup_rejected': specialization_rejected,
                     'runtime_semantic': runtime_semantic,
                     'interface_sha256': interface_sha, 'package_sha256': publication['content_sha256'],
                     'source_graph': first, 'reused_graph': repeated, 'consumer': consumed})
@@ -108,22 +137,552 @@ def qualify(sdk: Path, output: Path) -> dict:
     return report
 
 
+def check_factory_metadata(metadata):
+    """Validate the focused factory projection and template package surface."""
+    projections={row['qualified_name'] for row in metadata['declarations']
+                 if ';cxx-unnamed-template-projections:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-unnamed-template-projections.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-unnamed-template-projections.v1' in metadata['required_semantics']")
+    if not ({'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',
+            'NativeUnnamedTemplateProjections::Owned','NativeUnnamedTemplateProjections::Reader',
+            'NativeUnnamedTemplateProjections::Wrapped','NativeUnnamedTemplateProjections::Ordered',
+            'NativeUnnamedTemplateProjections::Kind','NativeUnnamedTemplateProjections::OtherKind',
+            'NativeUnnamedTemplateProjections::EnumAnswer','NativeUnnamedTemplateProjections::OtherEnumAnswer',
+            'NativeUnnamedTemplateProjections::MemberExplicit','NativeUnnamedTemplateProjections::EmptyMember',
+            'NativeUnnamedTemplateProjections::Defaulted','NativeUnnamedTemplateProjections::TemplateDefault',
+            'NativeUnnamedTemplateProjections::Answer','NativeUnnamedTemplateProjections::Different',
+            'NativeUnnamedTemplateProjections::provider_first','NativeUnnamedTemplateProjections::provider_read'}<=projections):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeUnnamedTemplateProjections::First','NativeUnnamedTemplateProjections::Second',")
+    native_contracts={row['qualified_name'] for row in metadata['declarations']
+                      if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
+    if not ({'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',
+            'NativeDeclarationAttributes::lifetime','NativeDeclarationAttributes::noescape',
+            'NativeDeclarationAttributes::provider_callback','NativeDeclarationAttributes::provider_sentinel',
+            'NativeDeclarationAttributes::checked','NativeDeclarationAttributes::checked_template',
+            'NativeDeclarationAttributes::returns_twice','NativeDeclarationAttributes::provider_controlled',
+            'NativeDeclarationAttributes::unoptimized','NativeDeclarationAttributes::enabled',
+            'NativeDeclarationAttributes::inline_enabled','NativeDeclarationAttributes::enabled_template',
+            'NativeDeclarationAttributes::EnabledMember::choose','NativeDeclarationAttributes::ordered',
+            'NativeDeclarationAttributes::bounded','NativeDeclarationAttributes::renamed_enabled'}<=native_contracts):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeDeclarationAttributes::provider_object_size','NativeDeclarationAttributes::provider_dynamic_size',")
+    standard_coroutines=[row for row in metadata['declarations']
+                         if ';cxx-standard-coroutines:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-standard-coroutines.v1' in metadata['required_semantics']")
+    if not ({'NativeStandardCoroutines::Task','NativeStandardCoroutines::External',
+            'NativeStandardCoroutines::Promise','NativeStandardCoroutines::Handle',
+            'NativeStandardCoroutines::erase','NativeStandardCoroutines::noop'}<= {row['qualified_name'] for row in standard_coroutines}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeStandardCoroutines::Task','NativeStandardCoroutines::External',")
+    traits=[row for row in standard_coroutines if ';cxx-coroutine-traits-specializations:v1;' in row['canonical_type_identity']]
+    if not (len(traits)==2 and {row['kind'] for row in traits}=={'ClassTemplateSpecialization','ClassTemplatePartialSpecialization'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: len(traits)==2 and {row['kind'] for row in traits}=={'ClassTemplateSpecialization','ClassTemplatePartialSpecialization'}")
+    if not (all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: all(row['export_root'].startswith('NativeStandardCoroutines::External') for row in traits)")
+    native_attributes={row['qualified_name'] for row in metadata['declarations']
+                       if ';native-declaration-attributes:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.native-declaration-attributes.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.native-declaration-attributes.v1' in metadata['required_semantics']")
+    if not ({'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',
+            'NativeDeclarationAttributes::Slot','NativeDeclarationAttributes::TypeAligned',
+            'NativeDeclarationAttributes::Special','NativeDeclarationAttributes::partial',
+            'NativeDeclarationAttributes::Compact','NativeDeclarationAttributes::Result',
+            'NativeDeclarationAttributes::shared','NativeDeclarationAttributes::slow',
+            'NativeDeclarationAttributes::fast','NativeDeclarationAttributes::answer'}<=native_attributes):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeDeclarationAttributes::Packet','NativeDeclarationAttributes::Aligned',")
+    coroutine_bodies={row['qualified_name'] for row in metadata['declarations']
+                      if ';cxx-coroutine-bodies:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-coroutine-bodies.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-coroutine-bodies.v1' in metadata['required_semantics']")
+    if not ({'NativeCustomCoroutines::transformed','NativeCustomCoroutines::generic',
+            'NativeCustomCoroutines::Worker::run','NativeCustomCoroutines::throwing',
+            'NativeCustomCoroutines::closure'}<=coroutine_bodies):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeCustomCoroutines::transformed','NativeCustomCoroutines::generic',")
+    foreign_attributes={row['qualified_name'] for row in metadata['declarations']
+                        if ';foreign-import-attributes:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.foreign-import-attributes.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.foreign-import-attributes.v1' in metadata['required_semantics']")
+    if not ({'NativeForeignAttributes::Value','NativeForeignAttributes::Handle',
+            'NativeForeignAttributes::read','NativeForeignAttributes::increment',
+            'NativeForeignAttributes::hidden'}<=foreign_attributes):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeForeignAttributes::Value','NativeForeignAttributes::Handle',")
+    nested_types={row['qualified_name'] for row in metadata['declarations']
+                  if ';cxx-nested-factory-types:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-nested-factory-types.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-nested-factory-types.v1' in metadata['required_semantics']")
+    if not ({'NativeNestedFactoryTypes::Left','NativeNestedFactoryTypes::Right',
+            'NativeNestedFactoryTypes::Code','NativeNestedFactoryTypes::Choice',
+            'NativeNestedFactoryTypes::Integer','NativeNestedFactoryTypes::Wide',
+            'NativeNestedFactoryTypes::Closure','NativeNestedFactoryTypes::Owned',
+            'NativeNestedFactoryTypes::Wrapped','NativeNestedFactoryTypes::Holder',
+            'NativeNestedFactoryTypes::shared','NativeNestedFactoryTypes::provider_owned'}<=nested_types):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeNestedFactoryTypes::Left','NativeNestedFactoryTypes::Right',")
+    lambda_results={row['qualified_name'] for row in metadata['declarations']
+                    if ';cxx-lambda-factory-results:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-lambda-factory-results.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-lambda-factory-results.v1' in metadata['required_semantics']")
+    if not ({'NativeLambdaFactoryResults::First','NativeLambdaFactoryResults::Second',
+            'NativeLambdaFactoryResults::Integer','NativeLambdaFactoryResults::Wide',
+            'NativeLambdaFactoryResults::Outer','NativeLambdaFactoryResults::OuterWide',
+            'NativeLambdaFactoryResults::Nested','NativeLambdaFactoryResults::Owned',
+            'NativeLambdaFactoryResults::Wrapped','NativeLambdaFactoryResults::Holder',
+            'NativeLambdaFactoryResults::shared','NativeLambdaFactoryResults::local',
+            'NativeLambdaFactoryResults::Structural','NativeLambdaFactoryResults::provider_owned'}<=lambda_results):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeLambdaFactoryResults::First','NativeLambdaFactoryResults::Second',")
+    closure_projections={row['qualified_name'] for row in metadata['declarations']
+                         if ';cxx-closure-result-projections:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-closure-result-projections.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-closure-result-projections.v1' in metadata['required_semantics']")
+    if not ({'NativeClosureResultProjections::First','NativeClosureResultProjections::Second',
+            'NativeClosureResultProjections::Generic','NativeClosureResultProjections::Integer',
+            'NativeClosureResultProjections::Wide','NativeClosureResultProjections::Owned',
+            'NativeClosureResultProjections::Wrapped','NativeClosureResultProjections::Holder',
+            'NativeClosureResultProjections::shared','NativeClosureResultProjections::local',
+            'NativeClosureResultProjections::structural','NativeClosureResultProjections::provider_owned'}<=closure_projections):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeClosureResultProjections::First','NativeClosureResultProjections::Second',")
+    value_arguments={row['qualified_name'] for row in metadata['declarations']
+                     if ';cxx-factory-value-arguments:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-factory-value-arguments.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-factory-value-arguments.v1' in metadata['required_semantics']")
+    if not ({'NativeFactoryValueArguments::First','NativeFactoryValueArguments::Other',
+            'NativeFactoryValueArguments::Partial','NativeFactoryValueArguments::Generic',
+            'NativeFactoryValueArguments::Packed','NativeFactoryValueArguments::Aliased',
+            'NativeFactoryValueArguments::local','NativeFactoryValueArguments::provider_value'}<=value_arguments):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeFactoryValueArguments::First','NativeFactoryValueArguments::Other',")
+    generic_factory_projections={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-generic-factory-projections:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-generic-factory-projections.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-generic-factory-projections.v1' in metadata['required_semantics']")
+    if not ({'NativeGenericFactoryProjections::Integer','NativeGenericFactoryProjections::Wide',
+            'NativeGenericFactoryProjections::Member','NativeGenericFactoryProjections::MemberWide',
+            'NativeGenericFactoryProjections::Method','NativeGenericFactoryProjections::Owned',
+            'NativeGenericFactoryProjections::Holder','NativeGenericFactoryProjections::Wrapped',
+            'NativeGenericFactoryProjections::read','NativeGenericFactoryProjections::shared',
+            'NativeGenericFactoryProjections::local','NativeGenericFactoryProjections::provider_owned'}<=generic_factory_projections):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeGenericFactoryProjections::Integer','NativeGenericFactoryProjections::Wide',")
+    factory_template_arguments={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-factory-template-arguments:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-factory-template-arguments.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-factory-template-arguments.v1' in metadata['required_semantics']")
+    if not ({'NativeFactoryTemplateArguments::Closed','NativeFactoryTemplateArguments::Nested',
+            'NativeFactoryTemplateArguments::Other','NativeFactoryTemplateArguments::Packed',
+            'NativeFactoryTemplateArguments::Aliased','NativeFactoryTemplateArguments::ArrayBox',
+            'NativeFactoryTemplateArguments::MemberBox','NativeFactoryTemplateArguments::OwnedBox',
+            'NativeFactoryTemplateArguments::deduced','NativeFactoryTemplateArguments::closed_lambda',
+            'NativeFactoryTemplateArguments::provider_value','NativeFactoryTemplateArguments::provider_owned'}<=factory_template_arguments):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeFactoryTemplateArguments::Closed','NativeFactoryTemplateArguments::Nested',")
+    factory_type_projections={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-factory-type-projections:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-factory-type-projections.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-factory-type-projections.v1' in metadata['required_semantics']")
+    if not ({'NativeFactoryTypeProjections::First','NativeFactoryTypeProjections::Second',
+            'NativeFactoryTypeProjections::Chosen','NativeFactoryTypeProjections::Reader',
+            'NativeFactoryTypeProjections::ReverseReader','NativeFactoryTypeProjections::Holder',
+            'NativeFactoryTypeProjections::Derived',
+            'NativeFactoryTypeProjections::read','NativeFactoryTypeProjections::shared',
+            'NativeFactoryTypeProjections::pointer','NativeFactoryTypeProjections::reference',
+            'NativeFactoryTypeProjections::Member','NativeFactoryTypeProjections::member',
+            'NativeFactoryTypeProjections::provider_read','NativeFactoryTypeProjections::provider_shared',
+            'NativeFactoryTypeProjections::provider_chosen','NativeFactoryTypeProjections::Owned',
+            'NativeFactoryTypeProjections::provider_owned','NativeFactoryTypeProjections::provider_owned_value'}<=factory_type_projections):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeFactoryTypeProjections::First','NativeFactoryTypeProjections::Second',")
+    for name,marker in [('NativeFactoryValueArguments::slot','cxx-variable-specializations'),
+                        ('NativeFactoryValueArguments::read','cxx-function-specializations'),
+                        ('NativeFactoryValueArguments::Box','cxx-class-partial-specializations'),
+                        ('NativeFactoryTemplateArguments::slot','cxx-variable-specializations'),
+                        ('NativeFactoryTemplateArguments::read','cxx-function-specializations'),
+                        ('NativeFactoryTemplateArguments::Box','cxx-class-partial-specializations')]:
+        rows=[row for row in metadata['declarations'] if row['qualified_name']==name and
+              ';'+marker+':v1;' in row.get('canonical_type_identity','')]
+        if not (len(rows)==1 and rows[0].get('native_symbol_name')):
+            raise ValueError(name+' lost its exact specialization owner')
+
+
+
 def check_cpp_metadata(metadata):
     if not has_async(metadata['declarations']):
         raise ValueError('native async interface erased the callable effect')
     if not has_checked_async(metadata['declarations']):
         raise ValueError('native async interface erased checked error identity')
     members = [row for row in metadata['declarations']
-               if row.get('kind') == 'CXXMethod']
+               if row.get('kind') in ('CXXMethod', 'CXXConstructor',
+                                      'CXXDestructor', 'CXXConversion')]
     if (not members or not has_checked_async(members)
             or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
-            or any(not row.get('native_symbol_name') for row in members)):
+            or any(not row.get('native_symbol_name') for row in members
+                   if ';deleted=1' not in row.get('canonical_type_identity', ''))):
         raise ValueError('native async interface lost owned C++ member contracts')
     objc_methods = [row for row in metadata['declarations']
                     if row.get('kind') == 'ObjCMethod']
     if not has_checked_async(objc_methods):
         raise ValueError('native async interface lost Objective-C method effects')
     names = {row['qualified_name']: row for row in metadata['declarations']}
+    if 'objc3.cxx-async-definitions.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its async-definition capability')
+    for name, abi in (('native_published_isolation_frame', 'c-frame-v1'),
+                      ('native_published_isolation_task', 'cxx-task-v1'),
+                      ('native_published_task_await', 'cxx-task-v1'),
+                      ('native_published_task_entry_frame', 'c-frame-v1'),
+                      ('native_published_task_entry', 'cxx-task-v1'),
+                      ('native_published_frame_await', 'cxx-task-v1')):
+        declaration = names.get(name, {})
+        if (not has_async(declaration) or
+                ';cxx-async-definitions:v1;' not in declaration.get('canonical_type_identity', '') or
+                abi not in declaration.get('effects', {}).get('async_abi_identity', '')):
+            raise ValueError('published async body lost its contract: ' + name)
+    if 'objc3.sdk-runtime-declarations.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its pinned runtime-declaration capability')
+    effectful_members=[row for row in metadata['declarations']
+                       if ';cxx-effectful-template-members:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-effectful-template-members.v1' in metadata['required_semantics']")
+    check_factory_metadata(metadata)
+    local_factory_results={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-local-factory-results:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-local-factory-results.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-local-factory-results.v1' in metadata['required_semantics']")
+    if not ({'NativeLocalFactoryResults::named','NativeLocalFactoryResults::unnamed',
+            'NativeLocalFactoryResults::owned','NativeLocalFactoryResults::enumeration',
+            'NativeLocalFactoryResults::anonymous_enum','NativeLocalFactoryResults::union_value',
+            'NativeLocalFactoryResults::nested','NativeLocalFactoryResults::closure',
+            'NativeLocalFactoryResults::templated'}<=local_factory_results):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeLocalFactoryResults::named','NativeLocalFactoryResults::unnamed',")
+    closure_factories={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-closure-factories:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-closure-factories.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-closure-factories.v1' in metadata['required_semantics']")
+    if not ({'NativeClosureFactories::State','NativeClosureFactories::concrete',
+            'NativeClosureFactories::generic','NativeClosureFactories::mutable_factory',
+            'NativeClosureFactories::reference_factory','NativeClosureFactories::nested_factory',
+            'NativeClosureFactories::owned_factory','NativeClosureFactories::task_factory',
+            'NativeClosureFactories::frame_factory','NativeClosureFactories::checked_factory'}<=closure_factories):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeClosureFactories::State','NativeClosureFactories::concrete',")
+    effectful_lambdas={row['qualified_name'] for row in metadata['declarations']
+                      if ';cxx-effectful-lambdas:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-effectful-lambdas.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-effectful-lambdas.v1' in metadata['required_semantics']")
+    if not ({'NativeEffectLambdas::task','NativeEffectLambdas::frame',
+            'NativeEffectLambdas::checked','NativeEffectLambdas::checked_task',
+            'NativeEffectLambdas::factory','NativeEffectLambdas::owned_factory'}<=effectful_lambdas):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeEffectLambdas::task','NativeEffectLambdas::frame',")
+    address_arguments={row['qualified_name'] for row in metadata['declarations']
+                       if ';cxx-address-template-arguments:v1;' in row.get('canonical_type_identity','')}
+    if not ('objc3.cxx-address-template-arguments.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-address-template-arguments.v1' in metadata['required_semantics']")
+    if not ({'NativeAddressArguments::Bound','NativeAddressArguments::Object',
+            'NativeAddressArguments::Function','NativeAddressArguments::Member',
+            'NativeAddressArguments::Ref','NativeAddressArguments::Element',
+            'NativeAddressArguments::End'}<=address_arguments):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeAddressArguments::Bound','NativeAddressArguments::Object',")
+    projections=[row for row in metadata['declarations']
+                 if ';cxx-template-callable-projections:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-template-callable-projections.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-template-callable-projections.v1' in metadata['required_semantics']")
+    projection_names={row['qualified_name'] for row in projections}
+    if not ({'NativeCallableProjections::Callback','NativeCallableProjections::FrameCallback',
+            'NativeCallableProjections::callback','NativeCallableProjections::dependent',
+            'NativeCallableProjections::dependent_task','NativeCallableProjections::Family',
+            'NativeCallableProjections::Concrete','NativeCallableProjections::Checked',
+            'NativeCallableProjections::Member','NativeCallableProjections::member',
+            'NativeCallableProjections::partial','NativeCallableProjections::stored'}<=projection_names):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {'NativeCallableProjections::Callback','NativeCallableProjections::FrameCallback',")
+
+    if not ({row['qualified_name'] for row in effectful_members}=={
+        'NativeEffectMembers::Family','NativeEffectMembers::Concrete',
+        'NativeCallableProjections::Family','NativeCallableProjections::Concrete'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in effectful_members}=={")
+    for name,abi in [('Callback','cxx-task-v1'),('FrameCallback','c-frame-v1'),
+                     ('Member','cxx-task-v1'),('callback','cxx-task-v1'),('member','cxx-task-v1')]:
+        row=next(row for row in projections if row['qualified_name']=='NativeCallableProjections::'+name)
+        if not (row['effects']['async'] and abi in row['effects']['async_abi_identity']):
+            raise ValueError("qualify_native_async_packages: required semantic check failed: row['effects']['async'] and abi in row['effects']['async_abi_identity']")
+    effectful_templates=[row for row in metadata['declarations']
+                         if row['kind']=='FunctionTemplate' and
+                         ';cxx-effectful-function-templates:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-effectful-function-templates.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in effectful_templates}=={
+        'NativeEffectTemplates::task','NativeEffectTemplates::frame',
+        'NativeEffectTemplates::checked','NativeEffectTemplates::checked_task',
+        'NativeCallableProjections::task','NativeCallableProjections::frame',
+        'NativeCallableProjections::provider','NativeCallableProjections::dependent',
+        'NativeCallableProjections::dependent_task'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in effectful_templates}=={")
+    closed_patterns=[row for row in metadata['declarations']
+                     if ';cxx-closed-parent-patterns:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-closed-parent-patterns.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-closed-parent-patterns.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in closed_patterns}=={'NativeClosedPatterns::Outer'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in closed_patterns}=={'NativeClosedPatterns::Outer'}")
+    closed_members=[row for row in metadata['declarations']
+                    if ';cxx-closed-parent-members:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-closed-parent-members.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-closed-parent-members.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in closed_members}=={
+        'NativeClosedParents::Outer','NativeCallableProjections::Family'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in closed_members}=={")
+    dependent_partials=[row for row in metadata['declarations']
+                        if ';cxx-dependent-member-partials:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-dependent-member-partials.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-dependent-member-partials.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in dependent_partials}=={'NativeDependentPartials::Outer'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in dependent_partials}=={'NativeDependentPartials::Outer'}")
+    special_member_specs=[row for row in metadata['declarations']
+                          if ';cxx-concrete-special-member-specializations:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-concrete-special-member-specializations.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-concrete-special-member-specializations.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in special_member_specs}=={'NativeConcreteOperators'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in special_member_specs}=={'NativeConcreteOperators'}")
+    member_variable_specs=[row for row in metadata['declarations']
+                           if ';cxx-concrete-member-variable-specializations:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-concrete-member-variable-specializations.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-concrete-member-variable-specializations.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in member_variable_specs}=={'NativeDetached::Concrete'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in member_variable_specs}=={'NativeDetached::Concrete'}")
+    member_function_specs=[row for row in metadata['declarations']
+                           if ';cxx-concrete-member-function-specializations:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-concrete-member-function-specializations.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-concrete-member-function-specializations.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in member_function_specs}=={
+        'NativeDetached::Concrete','NativeConcreteOperators','NativeCallableProjections::Concrete'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in member_function_specs}=={")
+    member_class_specs=[row for row in metadata['declarations']
+                        if ';cxx-concrete-member-class-specializations:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-concrete-member-class-specializations.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-concrete-member-class-specializations.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in member_class_specs}=={'NativeDetached::Concrete'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in member_class_specs}=={'NativeDetached::Concrete'}")
+    detached_nested=[row for row in metadata['declarations']
+                     if ';cxx-detached-nested-templates:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-detached-nested-templates.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-detached-nested-templates.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in detached_nested}=={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in detached_nested}=={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}")
+    detached_data=[row for row in metadata['declarations']
+                   if ';cxx-detached-static-data-templates:v1;' in row.get('canonical_type_identity','')]
+    if not ('objc3.cxx-detached-static-data-templates.v1' in metadata['required_semantics']):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: 'objc3.cxx-detached-static-data-templates.v1' in metadata['required_semantics']")
+    if not ({row['qualified_name'] for row in detached_data}=={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}):
+        raise ValueError("qualify_native_async_packages: required semantic check failed: {row['qualified_name'] for row in detached_data}=={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}")
+    detached_callables=[row for row in metadata['declarations']
+                 if ';cxx-detached-callable-templates:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-detached-callable-templates.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in detached_callables}!={'NativeDetached::Family','NativeDetached::Concrete','NativePartialFamily'}):
+        raise ValueError('C++ package lost detached callable owner definitions')
+    external_variables=[row for row in metadata['declarations']
+                 if ';cxx-variable-specialization-storage:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-specialization-storage.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in external_variables}!={'native_external_object','native_external_special','native_external_tls','native_zero_special','NativeCallableProjections::stored'}):
+        raise ValueError('C++ package lost explicit specialization storage delivery contracts')
+    partial_variables=[row for row in metadata['declarations']
+                 if ';cxx-variable-partial-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-partial-specializations.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in partial_variables}!={'native_partial_shared','native_partial_tls','native_partial_count','native_partial_width','native_partial_auto','native_partial_size','native_partial_ordinary','NativeCallableProjections::partial','NativeDeclarationAttributes::partial'}):
+        raise ValueError('C++ package lost partial variable specialization owner contracts')
+    partial_classes=[row for row in metadata['declarations']
+                 if ';cxx-class-partial-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-class-partial-specializations.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in partial_classes}!={'NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
+        raise ValueError('C++ package lost partial class specialization owner contracts')
+    class_specializations=[row for row in metadata['declarations']
+                 if ';cxx-class-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-class-specializations.v1' not in metadata['required_semantics'] or
+            {row['qualified_name'] for row in class_specializations}!={'NativeExplicitFamily','NativeExplicitNumber','NativePartialFamily','NativePartialCount','NativePartialPack','NativePartialTemplate','NativeAddressArguments::Selection','NativeFactoryTemplateArguments::Box','NativeFactoryValueArguments::Box','NativeDeclarationAttributes::Special','NativeDeclarationAttributes::Projected','NativeUnnamedTemplateProjections::Box'}):
+        raise ValueError('C++ package lost explicit class specialization owner contracts')
+    variable_specializations=[row for row in metadata['declarations']
+                 if ';cxx-variable-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-variable-specializations.v1' not in metadata['required_semantics'] or
+            len(variable_specializations)!=13 or len({row['native_symbol_name'] for row in variable_specializations})!=13):
+        raise ValueError('C++ package lost exact explicit variable specialization bindings')
+    specialized=[row for row in metadata['declarations']
+                 if ';cxx-function-specializations:v1;' in row.get('canonical_type_identity','')]
+    if ('objc3.cxx-function-specializations.v1' not in metadata['required_semantics'] or
+            len(specialized)!=12 or len({row['native_symbol_name'] for row in specialized})!=12):
+        raise ValueError('C++ package lost exact explicit function specialization bindings')
+    for capability in ('objc3.cxx-template-template-parameters.v1',
+                       'objc3.cxx-nominal-alias-templates.v1'):
+        if capability not in metadata['required_semantics']:
+            raise ValueError('C++ package lost template argument contract: '+capability)
+    if not names.get('NativeTTAlias', {}).get('native_symbol_name', '').startswith('__objc3_m_'):
+        raise ValueError('C++ package lost nominal alias ABI owner')
+    if ('objc3.cxx-concrete-nested-templates.v1' not in metadata['required_semantics'] or
+            ';cxx-concrete-nested-templates:v1;' not in names.get(
+                'NativeConcreteTemplates', {}).get('canonical_type_identity', '')):
+        raise ValueError('C++ package lost concrete nested class-template ownership')
+    if ('objc3.cxx-concrete-member-templates.v1' not in metadata['required_semantics'] or
+            ';cxx-concrete-member-templates:v1;' not in names.get(
+                'NativeConcreteTemplates', {}).get('canonical_type_identity', '')):
+        raise ValueError('C++ package lost concrete member template ownership')
+    if 'objc3.cxx-variadic-templates.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost variadic template publication capability')
+    for name in ('native_variadic_sum', 'NativeVariadic'):
+        if ';cxx-variadic-templates:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost variadic template identity: ' + name)
+    for name in ('native_published_runtime', 'native_published_group',
+                 'native_published_raw_task', 'native_published_actor',
+                 'NativePublishedRuntime::run'):
+        declaration = names.get(name, {})
+        identity = declaration.get('canonical_type_identity', '')
+        if (not has_async(declaration) or
+                ';sdk-runtime-declarations:v1;' not in identity or
+                ';cxx-async-definitions:v1;' not in identity or
+                'cxx-task-v1' not in declaration.get('effects', {}).get('async_abi_identity', '')):
+            raise ValueError('published runtime request lost its contract: ' + name)
+    if ';sdk-runtime-declarations:v1;' not in names.get(
+            'native_published_checkpoint', {}).get('canonical_type_identity', ''):
+        raise ValueError('published runtime constant lost its contract')
+    for name, contract in (
+            ('NativeForeignRef', ':retainable-family'),
+            ('NativeIntegratedRef', 'objc-integrated'),
+            ('NativeIntegratedAlias', 'objc-integrated'),
+            ('native_foreign_consume', 'family-release'),
+            ('NativeForeignConsumer', ':cf-consumed'),
+            ('native_foreign_consume', ':cf-consumed'),
+            ('native_foreign_forward', ':cf-consumed'),
+            ('NativeRetainedFactory', ':ns-returns-retained'),
+            ('native_foreign_borrow', 'returns-borrowed')):
+        declaration = names.get(name, {})
+        if contract not in declaration.get('effects', {}).get('ownership_identity', ''):
+            raise ValueError('source-free package lost callable ownership: ' + name)
+    ownership_overloads = [row for row in metadata['declarations']
+                           if row.get('qualified_name') == 'native_foreign_select']
+    if (len(ownership_overloads) != 2 or
+            len({row['stable_id'] for row in ownership_overloads}) != 2 or
+            len({row.get('native_symbol_name') for row in ownership_overloads}) != 2):
+        raise ValueError('foreign callback overloads lost distinct USRs or native symbols')
+    scope = names.get('native_module_scoped', {})
+    scope_effects = scope.get('effects', {})
+    if (not has_async(scope) or
+            'cxx-task-v1' not in scope_effects.get('async_abi_identity', '') or
+            'task-boundary:4' not in scope_effects.get('actor_isolation_identity', '')):
+        raise ValueError('C++ task scope lost its callable ABI or group contract')
+    if 'objc3.cxx-class-lifecycles.v1' not in metadata['required_semantics']:
+        raise ValueError('nontrivial C++ class package lost its lifecycle capability')
+    for kind in ('CXXConstructor', 'CXXDestructor', 'CXXConversion'):
+        if not any(row['kind'] == kind for row in metadata['declarations']):
+            raise ValueError('nontrivial C++ class package lost declaration kind: ' + kind)
+    for name in ('NativeClassValue', 'NativeMoveOnly', 'NativeDeletedMember'):
+        if ';cxx-class-lifecycle:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('class package lost structural lifecycle identity: ' + name)
+    deleted_member = names.get('NativeDeletedMember::number', {})
+    if ';deleted=1' not in deleted_member.get('canonical_type_identity', ''):
+        raise ValueError('deleted aggregate member lost its unavailable declaration identity')
+    if 'objc3.cxx-class-structure.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ class package lost its base/defaulting capability')
+    for name in ('NativeAggregate', 'NativeDefaultedValue', 'NativeDerivedValue', 'NativeAccessValue'):
+        identity = names.get(name, {}).get('canonical_type_identity', '')
+        if ';cxx-class-structure:v1;' not in identity or ';base=' not in identity:
+            raise ValueError('C++ class package lost base layout identity: ' + name)
+    if not any(';defaulted=1;' in row.get('canonical_type_identity', '')
+               for row in metadata['declarations']):
+        raise ValueError('C++ class package lost defaulted special member identity')
+    access = names['NativeAccessValue']['canonical_type_identity']
+    if ':access=private' not in access or ':access=protected' not in access:
+        raise ValueError('C++ class package lost private/protected base access')
+    if 'objc3.cxx-class-dispatch.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ class package lost its virtual dispatch capability')
+    for name in ('NativeVirtualRoot', 'NativeVirtualLeft', 'NativeVirtualRight', 'NativeVirtualDiamond'):
+        row = names.get(name, {})
+        identity = row.get('canonical_type_identity', '')
+        if (';cxx-class-dispatch:v1;' not in identity or
+                not row.get('native_symbol_name', '').startswith('__objc3_m_')):
+            raise ValueError('C++ class package lost dispatch/type ownership: ' + name)
+    diamond = names['NativeVirtualDiamond']['canonical_type_identity']
+    if ';vbase=' not in diamond or ';final=1' not in diamond:
+        raise ValueError('C++ class package lost shared virtual base/final identity')
+    root_score = names.get('NativeVirtualRoot::score', {}).get('canonical_type_identity', '')
+    final_score = names.get('NativeVirtualDiamond::score', {}).get('canonical_type_identity', '')
+    if ';pure=1' not in root_score or ';override=' not in final_score or ';final=1' not in final_score:
+        raise ValueError('C++ class package lost pure/override/final member contracts')
+    if 'objc3.cxx-namespaces.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its named namespace capability')
+    for name in ('NativePublished', 'NativePublished::v1', 'NativePublished::v1::Value',
+                 'NativePublished::v1::frame', 'NativeOther::Scalar'):
+        if ';cxx-namespaces:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost namespace/inline scope identity: ' + name)
+    aliases = [names.get(name, {}).get('stable_id')
+               for name in ('NativePublished::v1::Scalar', 'NativeOther::Scalar')]
+    if not all(aliases) or aliases[0] == aliases[1]:
+        raise ValueError('C++ namespace aliases lost distinct native declaration identities')
+    if 'objc3.cxx-nested-types.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its nested type capability')
+    for name in ('NativeFamily','NativeFamily::Value','NativeFamily::Kind','NativeFamily::Result'):
+        if ';cxx-nested-types:v1;' not in names.get(name,{}).get('canonical_type_identity',''):
+            raise ValueError('C++ package lost nested type identity: '+name)
+    if ';access=private' not in names.get('NativeFamily::Hidden',{}).get('canonical_type_identity',''):
+        raise ValueError('C++ package lost private nested access')
+    if 'objc3.cxx-using.v1' not in metadata['required_semantics']:
+        raise ValueError('C++ package lost its using capability')
+    if not any(row['kind']=='UsingDirective' for row in metadata['declarations']):
+        raise ValueError('C++ package lost its using-directive')
+    for semantic, name, marker in (
+        ('objc3.cxx-block-expressions.v1', 'native_published_block', ';cxx-block-expressions:v1;'),
+        ('objc3.cxx-statement-expressions.v1', 'native_published_statement', ';cxx-statement-expressions:v1;'),
+        ('objc3.cxx-local-types.v1', 'native_published_local_type', ';cxx-local-types:v1;'),
+        ('objc3.cxx-unnamed-local-types.v1', 'native_unnamed_nested', ';cxx-unnamed-local-types:v1;'),
+        ('objc3.cxx-generic-local-lambdas.v2', 'native_generic_local', ';cxx-generic-local-lambdas:v2;'),
+        ('objc3.cxx-union-values.v1', 'NativePlainUnion', ';cxx-union-values:v1;'),
+        ('objc3.cxx-concepts.v1', 'NativeNumber', ';cxx-concepts:v1;'),
+        ('objc3.cxx-function-templates.v2', 'native_template_add', ';cxx-function-templates:v2;'),
+        ('objc3.cxx-alias-templates.v1', 'NativeTemplatePointer', ';cxx-alias-templates:v1;'),
+        ('objc3.cxx-variable-templates.v1', 'native_template_answer', ';cxx-variable-templates:v1;'),
+        ('objc3.cxx-class-templates.v1', 'NativeTemplateBox', ';cxx-class-templates:v1;'),
+        ('objc3.cxx-template-structure.v1', 'NativeTemplateRoot', ';cxx-template-structure:v1;'),
+        ('objc3.cxx-template-deduction.v1', 'native_template_deduced_add', ';cxx-template-deduction:v1;'),
+    ):
+        if semantic not in metadata.get('required_semantics', []):
+            raise AssertionError('missing local expression capability: ' + semantic)
+        if marker not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise AssertionError('missing local expression identity: ' + name)
+    if 'objc3.cxx-friends.v1' not in metadata.get('required_semantics', []):
+        raise AssertionError('missing C++ friend capability')
+    for name in ('NativeFriendValue', 'native_friend_reveal', 'native_friend_external', 'native_friend_delayed'):
+        if ';cxx-friends:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise AssertionError('missing C++ friend identity: ' + name)
+    if 'objc3.cxx-thread-local.v1' not in metadata.get('required_semantics', []):
+        raise AssertionError('missing C++ thread-local capability')
+    for name in ('native_thread_value', 'native_inline_thread_value', 'NativeThreadState', 'native_local_thread_value'):
+        if ';cxx-thread-local:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise AssertionError('missing C++ thread-local identity: ' + name)
+    if 'objc3.cxx-lambda-expressions.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its lambda-expression capability')
+    for name in ('native_closure', 'NativeClosureDefaults', 'native_closure_frame'):
+        if ';cxx-lambda-expressions:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost lambda-expression identity: ' + name)
+    if 'objc3.cxx-namespace-attributes.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its namespace attribute capability')
+    for name in ('NativeHiddenScope', 'NativeVersioned::v2'):
+        if ';cxx-namespace-attributes:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost namespace attribute identity: ' + name)
+    if 'objc3.cxx-immediate-defaulting.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its immediate defaulting capability')
+    for name in ('NativeImmediate', 'NativeImmediateOut'):
+        if ';cxx-immediate-defaulting:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost record-owned immediate defaulting: ' + name)
+    if 'objc3.cxx-out-of-line-defaulting.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its out-of-line defaulting capability')
+    if ';cxx-out-of-line-defaulting:v1;' not in names.get('NativeOutOfLineDefaulted', {}).get('canonical_type_identity', ''):
+        raise ValueError('C++ package lost record-owned out-of-line defaulting identity')
+    if 'objc3.cxx-defaulted-comparisons.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its defaulted-comparison capability')
+    for name in ('NativeComparable', 'NativeFriendComparable', 'NativeDerivedComparable'):
+        if ';cxx-defaulted-comparisons:v1;' not in names.get(name, {}).get('canonical_type_identity', ''):
+            raise ValueError('C++ package lost record-owned defaulted comparisons: ' + name)
+    if 'objc3.cxx-definitions.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('C++ package lost its inline/constexpr definition capability')
+    if ';cxx-definitions:v1;' not in names.get('NativeInline::Value', {}).get('canonical_type_identity', ''):
+        raise ValueError('C++ package lost its record-owned inline definition identity')
+    if 'objc3.cxx-declaration-expressions.v1' not in metadata.get('required_semantics', []):
+        raise ValueError('missing C++ declaration-expression capability')
+    if ';cxx-declaration-expressions:v1;' not in names.get('NativeDefaults::Object', {}).get('canonical_type_identity', ''):
+        raise ValueError('missing record-owned declaration-expression identity')
+    if ';cxx-using:v1;' not in names.get('NativeInherited',{}).get('canonical_type_identity',''):
+        raise ValueError('C++ package lost member using/inherited constructor identity')
+    for name in ('native_module_reference', 'NativeModuleWorker::frame_borrow'):
+        declaration = names.get(name, {})
+        if (not has_async(declaration) or
+                'c-frame-v1' not in declaration.get('effects', {}).get('async_abi_identity', '') or
+                not declaration.get('native_symbol_name')):
+            raise ValueError('native borrowed frame lost its callable/member identity: ' + name)
     for name in ('native_module_frame', 'native_module_object_frame',
                  'native_module_block_frame'):
         if name not in names:

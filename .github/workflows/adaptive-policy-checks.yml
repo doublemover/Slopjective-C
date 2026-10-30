@@ -26,10 +26,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.12.0"
+      - name: Locked workflow parser
+        run: |
+          npm install --global npm@12.2.1
+          npm ci --ignore-scripts
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { execFileSync } = require('node:child_process');
-            execFileSync(process.execPath, ['--test', '.github/ci/adaptive-ci.test.mjs'], { stdio: 'inherit' });
+            execFileSync('node', ['--test', '.github/ci/adaptive-ci.test.mjs', '.github/ci/workflow-contract.test.mjs'], { stdio: 'inherit' });
             const { validateConfig } = await import(process.env.GITHUB_WORKSPACE + '/.github/ci/adaptive-ci.mjs');
             validateConfig(JSON.parse(require('node:fs').readFileSync('.github/ci/adaptive-ci.json', 'utf8')));
+            execFileSync('node', ['.github/ci/workflow-contract.mjs'], { stdio: 'inherit' });

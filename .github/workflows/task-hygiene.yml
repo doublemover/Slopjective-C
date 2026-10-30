@@ -24,9 +24,22 @@ jobs:
           uv run python -m scripts.objc3c_toolchain.generate_features --check
       - name: SDK integrity, installer and native validation owners
         run: >-
-          uv run python -m pytest -q
+          uv run python -m pytest -q -ra
+          -p scripts.objc3c_toolchain.pytest_inventory
+          --execution-inventory=out/tooling/inventory.json
+          --junitxml=out/tooling/results.xml
+          tests/tooling/test_native_assurance.py
+          tests/tooling/test_native_assurance_bootstrap.py
+          tests/tooling/test_executor_lock_qualification.py
+          tests/tooling/test_pytest_execution_inventory.py
           tests/tooling/test_toolchain_host_tools.py
           tests/tooling/test_toolchain_build.py
+          tests/tooling/test_compiler_instrumentation_profiles.py
+          tests/tooling/test_compiler_embedding_reuse.py
+          tests/tooling/test_compiler_instrumentation_pipeline.py
+          tests/tooling/test_compiler_archive_evidence.py
+          tests/tooling/test_compiler_scan_graph.py
+          tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_objc3c_toolchain_prepare.py
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py
@@ -37,6 +50,10 @@ jobs:
           tests/tooling/test_source_graph.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_current_onboarding.py
+          tests/tooling/test_tooling_source_syntax.py
+          tests/tooling/test_environment_tool_lookup_owner_split.py
+          tests/tooling/test_workflow_command_result_owner_split.py
+          tests/tooling/test_audit_objc3c_planning_publication.py
           tests/tooling/test_ownership_projection_qualification.py
           tests/tooling/test_public_surface_qualification.py tests/tooling/test_api_availability_qualification.py tests/tooling/test_module_spi_qualification.py
           tests/tooling/test_module_names_qualification.py
@@ -57,3 +74,11 @@ jobs:
           tests/tooling/test_native_validation_plan.py
           tests/tooling/test_native_validation_artifacts.py
           tests/tooling/test_native_validation_cli.py
+      - name: Preserve actual tooling inventory and skip reasons
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tooling-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/tooling/
+          if-no-files-found: error
+          retention-days: 7

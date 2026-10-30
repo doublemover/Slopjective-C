@@ -23,7 +23,7 @@ index 3a3c86842..913b6a1a3 100644
  } // namespace clang
  #endif
 diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
-index 53107e279..f5a455bf5 100644
+index 53107e279..d8e4cdb96 100644
 --- a/clang/include/clang/AST/Expr.h
 +++ b/clang/include/clang/AST/Expr.h
 @@ -16,6 +16,8 @@
@@ -35,16 +35,19 @@ index 53107e279..f5a455bf5 100644
  #include "clang/AST/ComputeDependence.h"
  #include "clang/AST/Decl.h"
  #include "clang/AST/DeclAccessPair.h"
-@@ -3608,6 +3610,8 @@ public:
+@@ -3608,6 +3610,11 @@ public:
  
  /// CompoundLiteralExpr - [C99 6.5.2.5]
  ///
 +#include "clang/AST/ObjC3MatchNodes.inc"
++#include "clang/AST/ObjC3OptionalOperators.inc"
++#include "clang/AST/ObjC3OptionalAccess.inc"
++#include "clang/AST/ObjC3Resources.inc"
 +
  class CompoundLiteralExpr : public Expr {
    /// LParenLoc - If non-null, this is the location of the left paren in a
    /// compound literal like "(int){4}".  This can be null if this is a
-@@ -4851,6 +4855,213 @@ public:
+@@ -4851,6 +4858,213 @@ public:
  ///   and all predicates (whether it's an l-value, whether it's an integer
  ///   constant expression, etc.) return the same result as for the chosen
  ///   sub-expression.
@@ -259,26 +262,33 @@ index 53107e279..f5a455bf5 100644
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
-index f5fa397c9..14c6af8f6 100644
+index f5fa397c9..88fdb0a46 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
 +++ b/clang/include/clang/Basic/StmtNodes.td
-@@ -18,6 +18,9 @@ def GotoStmt : StmtNode<Stmt>;
+@@ -18,6 +18,13 @@ def GotoStmt : StmtNode<Stmt>;
  def IndirectGotoStmt : StmtNode<Stmt>;
  def ReturnStmt : StmtNode<Stmt>;
  def DeferStmt : StmtNode<Stmt>;
 +def ObjC3ThrowStmt : StmtNode<Stmt>;
 +def ObjC3CatchStmt : StmtNode<Stmt>;
 +def ObjC3DoCatchStmt : StmtNode<Stmt>;
++def ObjC3BindingCondition : StmtNode<Stmt>;
++def ObjC3LifetimeStmt : StmtNode<Stmt>;
++def ObjC3GuardStmt : StmtNode<Stmt>;
++def ObjC3IfBindingStmt : StmtNode<Stmt>;
  def DeclStmt  : StmtNode<Stmt>;
  def SwitchCase : StmtNode<Stmt, 1>;
  def CaseStmt : StmtNode<SwitchCase>;
-@@ -124,6 +127,15 @@ def AtomicExpr : StmtNode<Expr>;
+@@ -124,6 +131,18 @@ def AtomicExpr : StmtNode<Expr>;
  def AddrLabelExpr : StmtNode<Expr>;
  def StmtExpr : StmtNode<Expr>;
  def ChooseExpr : StmtNode<Expr>;
 +def ObjC3CarrierTransferExpr : StmtNode<Expr>;
 +
 +def ObjC3OptionalExpr : StmtNode<Expr>;
++def ObjC3CoalesceExpr : StmtNode<Expr>;
++def ObjC3OptionalAccessExpr : StmtNode<Expr>;
++def ObjC3ResourceExpr : StmtNode<Expr>;
 +def ObjC3ResultExpr : StmtNode<Expr>;
 +def ObjC3MatchArm : StmtNode<Stmt>;
 +def ObjC3MatchStmt : StmtNode<Stmt>;
@@ -318,7 +328,7 @@ index 95cfd19c0..804b26750 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index 0bb9c6aa0..f4f828cfd 100644
+index 0bb9c6aa0..7267fa5d7 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
 @@ -42,6 +42,123 @@
@@ -445,23 +455,25 @@ index 0bb9c6aa0..f4f828cfd 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -1633,6 +1750,12 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
+@@ -1633,6 +1750,11 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
    }
  
    const FunctionType *FnType = CalleeType->castAs<FunctionType>();
-+  const bool NativeCall = !getCallee()->getType()->isBlockPointerType();
 +  if (const auto *Proto = dyn_cast<FunctionProtoType>(FnType))
-+    if (NativeCall && Proto->getObjC3FunctionEffects().Async)
-+      if (QualType Task = Ctx.getObjC3AsyncTaskType(Proto->getReturnType());
++    if (Proto->getObjC3FunctionEffects().Async)
++      if (QualType Task = Ctx.getObjC3AsyncReturnType(Proto);
 +          !Task.isNull())
 +        return Task;
    return FnType->getReturnType();
  }
  
-@@ -2653,6 +2776,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -2653,6 +2775,15 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
++  case ObjC3OptionalAccessExprClass:
++    return cast<ObjC3OptionalAccessExpr>(this)->getAccess()->
++        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
 +  case ObjC3TryExprClass:
 +    // Retain the throwing call's native unused-result contract. Propagating
 +    // and forcing an error are observable operations even if the value is
@@ -471,7 +483,26 @@ index 0bb9c6aa0..f4f828cfd 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3691,6 +3820,13 @@ namespace {
+@@ -2660,9 +2791,15 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+     return cast<GenericSelectionExpr>(this)->getResultExpr()->
+       isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+   case CoawaitExprClass:
+-  case CoyieldExprClass:
+-    return cast<CoroutineSuspendExpr>(this)->getResumeExpr()->
+-      isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
++  case CoyieldExprClass: {
++    const Expr *Resume = cast<CoroutineSuspendExpr>(this)->getResumeExpr();
++    // Native frame awaits use an opaque protocol operation, without a source
++    // await_resume call. The await itself is an observable suspension.
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Resume))
++      if (!Opaque->getSourceExpr())
++        return false;
++    return Resume->isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
++  }
+   case ChooseExprClass:
+     return cast<ChooseExpr>(this)->getChosenSubExpr()->
+       isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+@@ -3691,6 +3828,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -485,7 +516,7 @@ index 0bb9c6aa0..f4f828cfd 100644
    };
  }
  
-@@ -3870,6 +4006,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4014,65 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -505,7 +536,23 @@ index 0bb9c6aa0..f4f828cfd 100644
 +  }
 +
 +  case ObjC3CarrierTransferExprClass:
++  case ObjC3ResourceExprClass:
 +    return true;
++
++  case ObjC3CoalesceExprClass: {
++    const auto *E = cast<ObjC3CoalesceExpr>(this);
++    if (const Expr *Semantic = E->getSemanticExpr())
++      return Semantic->HasSideEffects(Ctx, IncludePossibleEffects);
++    return E->getLHS()->HasSideEffects(Ctx, IncludePossibleEffects) ||
++           E->getRHS()->HasSideEffects(Ctx, IncludePossibleEffects);
++  }
++  case ObjC3OptionalAccessExprClass: {
++    const auto *E = cast<ObjC3OptionalAccessExpr>(this);
++    if (const Expr *Semantic = E->getSemanticExpr())
++      return Semantic->HasSideEffects(Ctx, IncludePossibleEffects);
++    return E->getReceiver()->HasSideEffects(Ctx, IncludePossibleEffects) ||
++           E->getAccess()->HasSideEffects(Ctx, IncludePossibleEffects);
++  }
 +
 +  case ObjC3MatchExprClass: {
 +    const auto *Match = cast<ObjC3MatchExpr>(this);
@@ -536,16 +583,19 @@ index 0bb9c6aa0..f4f828cfd 100644
      return cast<ChooseExpr>(this)->getChosenSubExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
 diff --git a/clang/lib/AST/ExprClassification.cpp b/clang/lib/AST/ExprClassification.cpp
-index ef071cdef..74aabcb4d 100644
+index ef071cdef..b9cd9b3de 100644
 --- a/clang/lib/AST/ExprClassification.cpp
 +++ b/clang/lib/AST/ExprClassification.cpp
-@@ -170,6 +170,14 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
+@@ -170,6 +170,17 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
    case Expr::CompoundLiteralExprClass:
      return !E->isLValue() ? ClassifyTemporary(E->getType()) : Cl::CL_LValue;
  
 +    // Carrier constructors and queries produce values, never payload lvalues.
 +  case Expr::ObjC3CarrierTransferExprClass:
 +  case Expr::ObjC3OptionalExprClass:
++  case Expr::ObjC3CoalesceExprClass:
++  case Expr::ObjC3OptionalAccessExprClass:
++  case Expr::ObjC3ResourceExprClass:
 +  case Expr::ObjC3ResultExprClass:
 +  case Expr::ObjC3MatchExprClass:
 +  case Expr::ObjC3TryExprClass:
@@ -555,10 +605,10 @@ index ef071cdef..74aabcb4d 100644
    case Expr::CXXBoolLiteralExprClass:
    case Expr::CXXPseudoDestructorExprClass:
 diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
-index 120af89a9..b276b0d64 100644
+index 120af89a9..52edceb63 100644
 --- a/clang/lib/AST/ExprConstant.cpp
 +++ b/clang/lib/AST/ExprConstant.cpp
-@@ -8538,6 +8538,40 @@ public:
+@@ -8538,6 +8538,56 @@ public:
    bool VisitStmt(const Stmt *) {
      llvm_unreachable("Expression evaluator should not be called on stmts");
    }
@@ -579,6 +629,9 @@ index 120af89a9..b276b0d64 100644
 +    return RejectObjC3ConstexprStmt(S);
 +  }
 +
++  bool VisitObjC3BindingCondition(const ObjC3BindingCondition *S) { return RejectObjC3ConstexprStmt(S); }
++  bool VisitObjC3GuardStmt(const ObjC3GuardStmt *S) { return RejectObjC3ConstexprStmt(S); }
++  bool VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *S) { return RejectObjC3ConstexprStmt(S); }
 +  bool VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S) {
 +    return RejectObjC3ConstexprStmt(S);
 +  }
@@ -586,6 +639,19 @@ index 120af89a9..b276b0d64 100644
 +  bool VisitObjC3MatchArm(const ObjC3MatchArm *S) { return RejectObjC3ConstexprStmt(S); }
 +  bool VisitObjC3MatchStmt(const ObjC3MatchStmt *S) { return RejectObjC3ConstexprStmt(S); }
 +  bool VisitObjC3MatchExpr(const ObjC3MatchExpr *E) { return Error(E); }
++
++  bool VisitObjC3CoalesceExpr(const ObjC3CoalesceExpr *E) {
++    if (const Expr *Semantic = E->getSemanticExpr())
++      return StmtVisitorTy::Visit(Semantic);
++    return Error(E);
++  }
++  bool VisitObjC3OptionalAccessExpr(const ObjC3OptionalAccessExpr *E) {
++    if (const Expr *Semantic = E->getSemanticExpr())
++      return StmtVisitorTy::Visit(Semantic);
++    return Error(E);
++  }
++
++  bool VisitObjC3ResourceExpr(const ObjC3ResourceExpr *E) { return Error(E); }
 +
 +  bool VisitObjC3CarrierTransferExpr(const ObjC3CarrierTransferExpr *E) { return Error(E); }
 +
@@ -599,7 +665,7 @@ index 120af89a9..b276b0d64 100644
    bool VisitExpr(const Expr *E) {
      return Error(E);
    }
-@@ -16184,6 +16218,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+@@ -16184,6 +16234,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
      return CanTy->isUnionType() ? GCCTypeClass::Union
                                  : GCCTypeClass::ClassOrStruct;
  
@@ -612,12 +678,15 @@ index 120af89a9..b276b0d64 100644
    case Type::Atomic:
      // GCC classifies _Atomic T the same as T.
      return EvaluateBuiltinClassifyType(
-@@ -22121,6 +22161,11 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+@@ -22121,6 +22177,14 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
  #define STMT(Node, Base) case Expr::Node##Class:
  #define EXPR(Node, Base)
  #include "clang/AST/StmtNodes.inc"
 +  case Expr::ObjC3CarrierTransferExprClass:
 +  case Expr::ObjC3OptionalExprClass:
++  case Expr::ObjC3CoalesceExprClass:
++  case Expr::ObjC3OptionalAccessExprClass:
++  case Expr::ObjC3ResourceExprClass:
 +  case Expr::ObjC3ResultExprClass:
 +  case Expr::ObjC3MatchExprClass:
 +  case Expr::ObjC3TryExprClass:
@@ -625,10 +694,93 @@ index 120af89a9..b276b0d64 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index fdefb6d6b..ae47c3ef7 100644
+index fdefb6d6b..5e554dbcb 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1653,6 +1653,67 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -21,6 +21,7 @@
+ #include "clang/AST/ODRHash.h"
+ #include "clang/AST/OpenMPClause.h"
+ #include "clang/AST/StmtVisitor.h"
++#include "clang/AST/StableExpressionProfile.h"
+ #include "llvm/ADT/FoldingSet.h"
+ using namespace clang;
+ 
+@@ -80,7 +81,7 @@ namespace {
+                                 unsigned NumArgs);
+ 
+     /// Visit a single template argument.
+-    void VisitTemplateArgument(const TemplateArgument &Arg);
++    virtual void VisitTemplateArgument(const TemplateArgument &Arg);
+   };
+ 
+   class StmtProfilerWithPointers : public StmtProfiler {
+@@ -92,7 +93,7 @@ namespace {
+                              bool ProfileLambdaExpr)
+         : StmtProfiler(ID, Canonical, ProfileLambdaExpr), Context(Context) {}
+ 
+-  private:
++  protected:
+     void HandleStmtClass(Stmt::StmtClass SC) override {
+       ID.AddInteger(SC);
+     }
+@@ -184,6 +185,56 @@ namespace {
+     }
+   };
+ 
++  class StableExpressionProfiler final:public StmtProfilerWithPointers {
++    const ASTContext &Context;
++    llvm::function_ref<void(const Decl *,llvm::FoldingSetNodeID &)> Declaration;
++    llvm::function_ref<void(QualType,llvm::FoldingSetNodeID &)> Type;
++    llvm::function_ref<void(TemplateName,llvm::FoldingSetNodeID &)> Template;
++    llvm::function_ref<void(const TemplateArgument &,llvm::FoldingSetNodeID &)> Argument;
++  public:
++    StableExpressionProfiler(llvm::FoldingSetNodeID &ID,const ASTContext &Context,
++        decltype(Declaration) Declaration,decltype(Type) Type,decltype(Template) Template,
++        decltype(Argument) Argument)
++        :StmtProfilerWithPointers(ID,Context,true,true),Context(Context),
++         Declaration(Declaration),Type(Type),Template(Template),Argument(Argument) {}
++    void VisitDecl(const Decl *D) override {
++      if(D && isa<ParmVarDecl,NonTypeTemplateParmDecl,TemplateTypeParmDecl,TemplateTemplateParmDecl>(D))
++        return StmtProfilerWithPointers::VisitDecl(D);
++      ID.AddBoolean(D);if(D)Declaration(D->getCanonicalDecl(),ID);
++    }
++    void VisitType(QualType T) override {
++      ID.AddBoolean(!T.isNull());if(!T.isNull())Type(Context.getCanonicalType(T),ID);
++    }
++    void VisitIdentifierInfo(const IdentifierInfo *II) override {
++      ID.AddBoolean(II);if(II)ID.AddString(II->getName());
++    }
++    void VisitName(DeclarationName Name,bool=false) override {
++      ID.AddInteger(Name.getNameKind());
++      switch(Name.getNameKind()) {
++      case DeclarationName::CXXConstructorName:case DeclarationName::CXXDestructorName:
++      case DeclarationName::CXXConversionFunctionName:VisitType(Name.getCXXNameType());break;
++      case DeclarationName::CXXDeductionGuideName:VisitDecl(Name.getCXXDeductionGuideTemplate());break;
++      default:ID.AddString(Name.getAsString());break;
++      }
++    }
++    void VisitNestedNameSpecifier(NestedNameSpecifier NNS) override {
++      NNS=NNS.getCanonical();ID.AddInteger(unsigned(NNS.getKind()));
++      switch(NNS.getKind()) {
++      case NestedNameSpecifier::Kind::Namespace: {
++        auto [Namespace,Prefix]=NNS.getAsNamespaceAndPrefix();VisitNestedNameSpecifier(Prefix);VisitDecl(Namespace);break;
++      }
++      case NestedNameSpecifier::Kind::Type:VisitType(QualType(NNS.getAsType(),0));break;
++      case NestedNameSpecifier::Kind::Null:case NestedNameSpecifier::Kind::Global:break;
++      case NestedNameSpecifier::Kind::MicrosoftSuper:llvm_unreachable("unsupported stable expression context");
++      }
++    }
++    void VisitTemplateName(TemplateName Name) override {Template(Context.getCanonicalTemplateName(Name),ID);}
++    void VisitTemplateArgument(const TemplateArgument &Arg) override {
++      if(Arg.getKind()==TemplateArgument::StructuralValue) {ID.AddInteger(Arg.getKind());Argument(Arg,ID);}
++      else StmtProfiler::VisitTemplateArgument(Arg);
++    }
++  };
++
+   class StmtProfilerWithoutPointers : public StmtProfiler {
+     ODRHash &Hash;
+   public:
+@@ -1653,6 +1704,108 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -671,6 +823,26 @@ index fdefb6d6b..ae47c3ef7 100644
 +  ID.AddInteger(static_cast<unsigned>(S->getKind()));
 +}
 +
++void StmtProfiler::VisitObjC3CoalesceExpr(const ObjC3CoalesceExpr *S) {
++  VisitStmtNoChildren(S);
++  VisitType(S->getType());
++  VisitStmt(S->getLHS());
++  VisitStmt(S->getRHS());
++}
++
++void StmtProfiler::VisitObjC3OptionalAccessExpr(const ObjC3OptionalAccessExpr *S) {
++  VisitStmtNoChildren(S);
++  VisitType(S->getType());
++  ID.AddBoolean(S->isMessage());
++  VisitStmt(S->getReceiver());
++  VisitStmt(S->getAccess());
++}
++
++void StmtProfiler::VisitObjC3ResourceExpr(const ObjC3ResourceExpr *S) {
++  VisitExpr(S);
++  ID.AddInteger(static_cast<unsigned>(S->getKind()));
++}
++
 +void StmtProfiler::VisitObjC3ThrowStmt(const ObjC3ThrowStmt *S) {
 +  VisitStmt(S);
 +}
@@ -685,6 +857,27 @@ index fdefb6d6b..ae47c3ef7 100644
 +  VisitStmt(S->getHandlerBody());
 +}
 +
++void StmtProfiler::VisitObjC3BindingCondition(const ObjC3BindingCondition *S) {
++  VisitStmtNoChildren(S);
++  ID.AddBoolean(S->isMutableBinding());
++  for (const Stmt *Child : S->children())
++    if (Child) VisitStmt(Child);
++}
++
++void StmtProfiler::VisitObjC3GuardStmt(const ObjC3GuardStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddInteger(S->getNumConditions());
++  for (const Stmt *Child : S->children())
++    if (Child) VisitStmt(Child);
++}
++
++void StmtProfiler::VisitObjC3IfBindingStmt(const ObjC3IfBindingStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddInteger(S->getNumConditions());
++  for (const Stmt *Child : S->children())
++    if (Child) VisitStmt(Child);
++}
++
 +void StmtProfiler::VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S) {
 +  VisitStmtNoChildren(S);
 +  ID.AddInteger(S->getNumCatchClauses());
@@ -696,8 +889,59 @@ index fdefb6d6b..ae47c3ef7 100644
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
+@@ -1730,7 +1883,29 @@ void StmtProfiler::VisitMatrixElementExpr(const MatrixElementExpr *S) {
+ 
+ void StmtProfiler::VisitBlockExpr(const BlockExpr *S) {
+   VisitExpr(S);
+-  VisitDecl(S->getBlockDecl());
++  const BlockDecl *Block = S->getBlockDecl();
++  VisitDecl(Block);
++  ID.AddBoolean(Block->hasObjC3CaptureList());
++  ID.AddBoolean(Block->capturesCXXThis());
++  ID.AddInteger(Block->getNumCaptures());
++  for (const auto &Capture : Block->captures()) {
++    VisitDecl(Capture.getVariable());
++    VisitType(Capture.getCaptureType());
++    ID.AddInteger(static_cast<unsigned>(Capture.getObjC3CaptureKind()));
++    ID.AddBoolean(Capture.isObjC3ResourceCapture());
++    ID.AddBoolean(Capture.isByRef());
++    ID.AddBoolean(Capture.isNested());
++    ID.AddBoolean(Capture.getObjC3InitExpr());
++    if (Capture.getObjC3InitExpr())
++      Visit(Capture.getObjC3InitExpr());
++    ID.AddBoolean(Capture.hasCopyExpr());
++    if (Capture.hasCopyExpr())
++      Visit(Capture.getCopyExpr());
++  }
++  // BlockExpr deliberately has no children: capture/body identity must be
++  // profiled explicitly or a different capture order/ownership can hash equal.
++  if (Block->getBody())
++    Visit(Block->getBody());
+ }
+ 
+ void StmtProfiler::VisitGenericSelectionExpr(const GenericSelectionExpr *S) {
+@@ -3013,3 +3188,19 @@ void Stmt::ProcessODRHash(llvm::FoldingSetNodeID &ID,
+   StmtProfilerWithoutPointers Profiler(ID, Hash);
+   Profiler.Visit(this);
+ }
++
++void StmtProfiler::VisitObjC3LifetimeStmt(const ObjC3LifetimeStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddBoolean(S->isKeepAlive());
++  VisitStmt(S->getStorage());
++}
++
++void clang::profileStableExpression(const Expr *Expression,const ASTContext &Context,
++    llvm::FoldingSetNodeID &ID,
++    llvm::function_ref<void(const Decl *,llvm::FoldingSetNodeID &)> Declaration,
++    llvm::function_ref<void(QualType,llvm::FoldingSetNodeID &)> Type,
++    llvm::function_ref<void(TemplateName,llvm::FoldingSetNodeID &)> Template,
++    llvm::function_ref<void(const TemplateArgument &,llvm::FoldingSetNodeID &)> Argument) {
++  StableExpressionProfiler Profiler(ID,Context,Declaration,Type,Template,Argument);
++  Profiler.Visit(Expression);
++}
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..39f99eb7d 100644
+index 74209f579..239c51941 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -24,6 +24,8 @@
@@ -709,16 +953,62 @@ index 74209f579..39f99eb7d 100644
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Lex/LiteralSupport.h"
  #include "clang/Parse/Parser.h"
-@@ -890,6 +892,64 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -305,6 +307,7 @@ bool Parser::isNotExpressionStart() {
+ 
+ bool Parser::isFoldOperator(prec::Level Level) const {
+   return Level > prec::Unknown && Level != prec::Conditional &&
++         Level != prec::NilCoalescing &&
+          Level != prec::Spaceship;
+ }
+ 
+@@ -328,6 +331,9 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+     // then we are done!
+     if (NextTokPrec < MinPrec)
+       return LHS;
++    if (NextTokPrec == prec::Conditional && !LHS.isInvalid() &&
++        isObjC3OptionalSendIndicatorAhead(LHS.get()))
++      return LHS;
+ 
+     // Consume the operator, saving the operator token for error reporting.
+     Token OpToken = Tok;
+@@ -495,6 +501,7 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+ 
+     // Assignment and conditional expressions are right-associative.
+     bool isRightAssoc = ThisPrec == prec::Conditional ||
++                        ThisPrec == prec::NilCoalescing ||
+                         ThisPrec == prec::Assignment;
+ 
+     // Get the precedence of the operator to the right of the RHS.  If it binds
+@@ -546,6 +553,9 @@ Parser::ParseRHSOfBinaryExpression(ExprResult LHS, prec::Level MinPrec) {
+         LHS = Actions.CreateRecoveryExpr(LHS.get()->getBeginLoc(),
+                                          PrevTokLocation,
+                                          {LHS.get()});
++      } else if (OpToken.is(tok::questionquestion)) {
++        LHS = Actions.ActOnObjC3CoalesceExpr(LHS.get(), RHS.get(),
++                                             OpToken.getLocation());
+       } else if (TernaryMiddle.isInvalid()) {
+         // If we're using '>>' as an operator within a template
+         // argument list (in C++98), suggest the addition of
+@@ -890,6 +900,95 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        NextToken().is(tok::l_paren) &&
++        (Tok.getIdentifierInfo()->isStr("KeyPathGet") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathSet") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathMetadata") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathAsReadOnly") ||
++         Tok.getIdentifierInfo()->isStr("KeyPathToKVCString"))) {
++      Res = ParseObjC3KeyPathApplication();
++      break;
++    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
 +        Tok.getIdentifierInfo()->isStr("__objc3_await")) {
 +      SourceLocation AwaitLoc = ConsumeToken();
 +      const auto *FT = getObjC3CallableFunctionType(
 +          Decl::castFromDeclContext(Actions.CurContext));
-+      if (!getLangOpts().CPlusPlus20 || !FT ||
++      if ((getLangOpts().CPlusPlus && !getLangOpts().CPlusPlus20) || !FT ||
 +          !FT->getObjC3FunctionEffects().Async) {
 +        Diag(AwaitLoc, diag::err_objc3_await_context);
 +        return ExprError();
@@ -727,8 +1017,29 @@ index 74209f579..39f99eb7d 100644
 +        *NotPrimaryExpression = true;
 +      Res = ParseCastExpression(CastParseKind::AnyCastExpr);
 +      if (!Res.isInvalid())
-+        Res = Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get());
++        Res = Actions.BuildObjC3IsolationAwaitOperand(AwaitLoc, Res.get());
++      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
++          Actions.isObjC3NonSuspendingAwait(Res.get()))
++        return Actions.ActOnObjC3NonSuspendingAwait(AwaitLoc, Res.get());
++      if (!Res.isInvalid() && getLangOpts().CPlusPlus &&
++          !FT->getObjC3FunctionEffects().AsyncFrame)
++        Res = Actions.BuildObjC3CxxFrameAwaitOperand(AwaitLoc, Res.get());
++      if (!Res.isInvalid())
++        Res = getLangOpts().CPlusPlus &&
++                      !FT->getObjC3FunctionEffects().AsyncFrame
++                  ? Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get())
++                  : Actions.ActOnObjC3CAwaitExpr(AwaitLoc, Res.get());
 +      return Res;
++    }
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        NextToken().is(tok::l_paren) &&
++        GetLookAheadToken(2).isNot(tok::r_paren)) {
++      ObjC3Syntax Syntax = classifyObjC3Syntax(Tok.getIdentifierInfo()->getName());
++      if (Syntax == ObjC3Syntax::Take || Syntax == ObjC3Syntax::Reset ||
++          Syntax == ObjC3Syntax::Discard) {
++        Res = ParseObjC3ResourceExpression();
++        break;
++      }
 +    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
@@ -774,8 +1085,105 @@ index 74209f579..39f99eb7d 100644
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
+@@ -1632,6 +1731,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+ 
+       [[fallthrough]];
+     case tok::period:
++    case tok::questionperiod:
+     case tok::arrow:
+       break;
+ 
+@@ -1934,6 +2034,21 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+ 
+       break;
+     }
++    case tok::questionperiod: {
++      SourceLocation OperatorLoc = ConsumeToken();
++      if (!Tok.isOneOf(tok::identifier, tok::kw_class)) {
++        Diag(Tok, diag::err_expected) << tok::identifier;
++        LHS = ExprError();
++        break;
++      }
++      IdentifierInfo *Member = Tok.getIdentifierInfo();
++      SourceLocation MemberLoc = ConsumeToken();
++      if (!LHS.isInvalid())
++        LHS = Actions.ActOnObjC3OptionalMemberExpr(
++            getCurScope(), LHS.get(), OperatorLoc, Member, MemberLoc,
++            CurParsedObjCImpl ? CurParsedObjCImpl->Dcl : nullptr);
++      break;
++    }
+     case tok::arrow:
+     case tok::period: {
+       // postfix-expression: p-e '->' template[opt] id-expression
+@@ -3330,6 +3445,66 @@ ExprResult Parser::ParseBlockLiteralExpression() {
+   // Inform sema that we are starting a block.
+   Actions.ActOnBlockStart(CaretLoc, getCurScope());
+ 
++  // Ownership is contextual here: weak/strong/unowned/move remain ordinary
++  // identifiers everywhere outside the modifier position of a capture item.
++  if (Tok.is(tok::l_square)) {
++    BalancedDelimiterTracker Captures(*this, tok::l_square);
++    Captures.consumeOpen();
++    auto CaptureError = [&](SourceLocation Loc, StringRef Message) {
++      Diag(Loc, PP.getDiagnostics().getDiagnosticIDs()->getCustomDiagID(
++                    DiagnosticIDs::Error, Message));
++    };
++    if (Tok.is(tok::r_square))
++      CaptureError(Tok.getLocation(),
++                   "an explicit Block capture list requires a capture item");
++    while (Tok.isNot(tok::r_square) && Tok.isNot(tok::eof)) {
++      SourceLocation Begin = Tok.getLocation();
++      unsigned Kind = static_cast<unsigned>(BlockDecl::ObjC3CaptureKind::Strong);
++      if (Tok.is(tok::code_completion)) {
++        Actions.CodeCompletion().CodeCompleteOrdinaryName(
++            getCurScope(), SemaCodeCompletion::PCC_Expression);
++        cutOffParsing();
++        break;
++      }
++      IdentifierInfo *Name = Tok.is(tok::identifier) ? Tok.getIdentifierInfo()
++                                                    : nullptr;
++      if (!Name) {
++        CaptureError(Begin, "expected an identifier in Block capture list");
++        SkipUntil(tok::comma, tok::r_square, StopBeforeMatch);
++      } else {
++        StringRef Spelling = Name->getName();
++        if ((Spelling == "strong" || Spelling == "weak" ||
++             Spelling == "unowned" || Spelling == "move") &&
++            NextToken().is(tok::identifier)) {
++          Kind = static_cast<unsigned>(
++              Spelling == "weak" ? BlockDecl::ObjC3CaptureKind::Weak :
++              Spelling == "unowned" ? BlockDecl::ObjC3CaptureKind::Unowned :
++              Spelling == "move" ? BlockDecl::ObjC3CaptureKind::Move :
++                                    BlockDecl::ObjC3CaptureKind::Strong);
++          ConsumeToken();
++          Name = Tok.getIdentifierInfo();
++        }
++        SourceLocation NameLoc = ConsumeToken();
++        Actions.ActOnObjC3BlockCapture(Name, Kind, SourceRange(Begin, NameLoc),
++                                       getCurScope());
++        if (Tok.isNot(tok::comma) && Tok.isNot(tok::r_square)) {
++          CaptureError(Tok.getLocation(),
++                       "expected ',' or ']' after Block capture item");
++          SkipUntil(tok::comma, tok::r_square, StopBeforeMatch);
++        }
++      }
++      if (Tok.isNot(tok::comma))
++        break;
++      ConsumeToken();
++      if (Tok.is(tok::r_square))
++        CaptureError(Tok.getLocation(),
++                     "expected a Block capture item after ','");
++    }
++    Captures.consumeClose();
++    Actions.ActOnObjC3BlockCaptureList(
++        SourceRange(Captures.getOpenLocation(), Captures.getCloseLocation()));
++  }
++
+   // Parse the return type if present.
+   DeclSpec DS(AttrFactory);
+   Declarator ParamInfo(DS, ParsedAttributesView::none(),
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
-index 0ed5c35c4..b7d001ba9 100644
+index 0ed5c35c4..3f71c52c7 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
 +++ b/clang/lib/Sema/SemaExceptionSpec.cpp
 @@ -14,6 +14,7 @@
@@ -786,7 +1194,7 @@ index 0ed5c35c4..b7d001ba9 100644
  #include "clang/AST/StmtObjC.h"
  #include "clang/AST/StmtSYCL.h"
  #include "clang/AST/TypeLoc.h"
-@@ -1340,6 +1341,55 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1340,6 +1341,85 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
    }
  
@@ -829,6 +1237,36 @@ index 0ed5c35c4..b7d001ba9 100644
 +  case Stmt::ObjC3MatchArmClass:
 +    return canSubStmtsThrow(*this, S);
 +
++  case Expr::ObjC3ResourceExprClass: {
++    const auto *E = cast<ObjC3ResourceExpr>(S);
++    if (E->isTypeDependent())
++      return CT_Dependent;
++    CanThrowResult Result = canSubStmtsThrow(*this, S);
++    if (E->getKind() != ObjC3ResourceExpr::Kind::Take)
++      if (const VarDecl *Variable = E->getResourceVariable())
++        if (const auto *Resource = Variable->getAttr<ObjCResourceAttr>())
++          Result = mergeCanThrow(Result, canThrow(Resource->getCall()));
++    return Result;
++  }
++
++  case Expr::ObjC3CoalesceExprClass: {
++    const auto *E = cast<ObjC3CoalesceExpr>(S);
++    if (E->isTypeDependent() || E->isValueDependent())
++      return CT_Dependent;
++    CanThrowResult Result = mergeCanThrow(canThrow(E->getLHS()),
++                                          canThrow(E->getRHS()));
++    if (const Expr *Semantic = E->getSemanticExpr())
++      Result = mergeCanThrow(Result, canThrow(Semantic));
++    return Result;
++  }
++
++  case Expr::ObjC3OptionalAccessExprClass: {
++    const auto *E = cast<ObjC3OptionalAccessExpr>(S);
++    if (E->isTypeDependent() || E->isValueDependent())
++      return CT_Dependent;
++    return mergeCanThrow(canThrow(E->getReceiver()), canThrow(E->getAccess()));
++  }
++
 +  case Expr::ObjC3TryExprClass: {
 +    // ObjC3 error propagation is not C++ EH. Preserve only native C++ throws
 +    // that may arise while evaluating the operand.
@@ -842,7 +1280,7 @@ index 0ed5c35c4..b7d001ba9 100644
    case Expr::CXXDefaultArgExprClass:
      return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
  
-@@ -1617,6 +1667,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1617,6 +1697,18 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return canSubStmtsThrow(*this, S);
    }
  
@@ -851,7 +1289,11 @@ index 0ed5c35c4..b7d001ba9 100644
 +  // constructors used to form payloads or execute handler bodies.
 +  case Stmt::ObjC3ThrowStmtClass:
 +  case Stmt::ObjC3CatchStmtClass:
++  case Stmt::ObjC3BindingConditionClass:
++  case Stmt::ObjC3GuardStmtClass:
++  case Stmt::ObjC3IfBindingStmtClass:
 +  case Stmt::ObjC3DoCatchStmtClass:
++  case Stmt::ObjC3LifetimeStmtClass:
 +    return canSubStmtsThrow(*this, S);
 +
    case Stmt::ObjCAtThrowStmtClass:
@@ -1483,7 +1925,7 @@ index 000000000..718ff5d6c
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3OptionalExprTest.cpp b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
 new file mode 100644
-index 000000000..f3085d69a
+index 000000000..35c7a5c52
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
 @@ -0,0 +1,252 @@
@@ -1648,7 +2090,7 @@ index 000000000..f3085d69a
 +  OptionalExprCollector Collector;
 +  Collector.TraverseDecl(Context.getTranslationUnitDecl());
 +  auto HasCarrier = [&Context](const ObjC3OptionalExpr *E, bool IsDependent) {
-+    QualType Carrier = E->getCarrierType();
++    QualType Carrier = E->getCarrierType().getCanonicalType();
 +    if (Carrier->isDependentType() != IsDependent)
 +      return false;
 +    if (E->getKind() == ObjC3OptionalExpr::Kind::HasValue)
@@ -1741,7 +2183,7 @@ index 000000000..f3085d69a
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3ResultExprTest.cpp b/clang/unittests/AST/ObjC3ResultExprTest.cpp
 new file mode 100644
-index 000000000..f6ec1a941
+index 000000000..ae8ac6429
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ResultExprTest.cpp
 @@ -0,0 +1,258 @@
@@ -1921,7 +2363,7 @@ index 000000000..f6ec1a941
 +  ResultExprCollector Collector;
 +  Collector.TraverseDecl(Context.getTranslationUnitDecl());
 +  auto IsCarrier = [&Context](const ObjC3ResultExpr *E, bool IsDependent) {
-+    QualType Carrier = E->getCarrierType();
++    QualType Carrier = E->getCarrierType().getCanonicalType();
 +    if (Carrier->isDependentType() != IsDependent)
 +      return false;
 +    const auto *Result = Carrier->getAs<ObjC3ResultType>();
@@ -2004,7 +2446,7 @@ index 000000000..f6ec1a941
 +
 +} // namespace
 diff --git a/clang/lib/AST/ExprObjC.cpp b/clang/lib/AST/ExprObjC.cpp
-index 502c374f4..e9eb6cb0d 100644
+index 502c374f4..ee2671f16 100644
 --- a/clang/lib/AST/ExprObjC.cpp
 +++ b/clang/lib/AST/ExprObjC.cpp
 @@ -273,6 +273,9 @@ void ObjCMessageExpr::getSelectorLocs(
@@ -2012,7 +2454,7 @@ index 502c374f4..e9eb6cb0d 100644
    if (const ObjCMethodDecl *MD = getMethodDecl()) {
      QualType QT = MD->getReturnType();
 +    if (MD->getObjC3FunctionEffects().Async)
-+      if (QualType Task = Ctx.getObjC3AsyncTaskType(QT); !Task.isNull())
++      if (QualType Task = Ctx.getObjC3AsyncReturnType(MD->getObjC3FunctionType()->castAs<FunctionProtoType>()); !Task.isNull())
 +        return Task;
      if (QT == Ctx.getObjCInstanceType()) {
        // instancetype corresponds to expression types.

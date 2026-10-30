@@ -87,53 +87,16 @@ def test_native_binary_builds_are_serialized_per_build_directory() -> None:
 
 
 def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
-    cmake_lists = (ROOT / "native" / "objc3c" / "CMakeLists.txt").read_text(
-        encoding="utf-8"
-    )
-    toolchain_module = (
-        ROOT / "scripts" / "objc3c_native_cmake" / "toolchain.psm1"
-    ).read_text(encoding="utf-8")
-    configure_module = (
-        ROOT / "scripts" / "objc3c_native_cmake" / "configure.psm1"
-    ).read_text(encoding="utf-8")
-    fingerprint_module = (
-        ROOT / "scripts" / "objc3c_native_cmake" / "fingerprint.psm1"
-    ).read_text(encoding="utf-8")
+    from scripts.objc3c_toolchain.facade import facade_identity
 
-    assert "OBJC3C_ENABLE_REPRODUCIBLE_BUILD" in cmake_lists
-    assert "/Brepro" in cmake_lists
-    assert "-ffile-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
-    assert "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
-    assert "function Get-Objc3cNativeToolExecutableName" in toolchain_module
-    assert 'return $CommandName + ".exe"' in toolchain_module
-    assert 'Join-Path (Join-Path $LlvmRoot "bin")' in toolchain_module
-    assert (
-        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ar"'
-        in toolchain_module
-    )
-    assert (
-        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ranlib"'
-        in toolchain_module
-    )
-    assert "LlvmArTool = $llvmArTool" in toolchain_module
-    assert "LlvmRanlibTool = $llvmRanlibTool" in toolchain_module
-    assert "-DCMAKE_AR=$LlvmArTool" in configure_module
-    assert "-DCMAKE_RANLIB=$LlvmRanlibTool" in configure_module
-    assert "-DCMAKE_BUILD_TYPE=RelWithDebInfo" in configure_module
-    assert "set(CMAKE_BUILD_TYPE RelWithDebInfo" in cmake_lists
-    assert "-DOBJC3C_ENABLE_REPRODUCIBLE_BUILD=ON" in configure_module
-    assert "llvm_ar = $LlvmArTool" in fingerprint_module
-    assert "llvm_ranlib = $LlvmRanlibTool" in fingerprint_module
-    assert "llvm_lib = $LlvmLibTool" in fingerprint_module
-    assert 'build_type = "RelWithDebInfo"' in fingerprint_module
-    assert "reproducible_build = $true" in fingerprint_module
-    assert "source_date_epoch = $SourceDateEpoch" in fingerprint_module
-    assert "cmake_build_parallelism=" in (
-        ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
-    ).read_text(encoding="utf-8")
-    assert "--parallel --target" not in (
-        ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
-    ).read_text(encoding="utf-8")
+    cmake_lists = (ROOT / "native/objc3c/CMakeLists.txt").read_text(encoding="utf-8")
+    assert '-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.' in cmake_lists
+    assert '-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.' in cmake_lists
+    # Reproducibility is unconditional in the native Linux cutover. The actual
+    # frontend input identity binds this policy, including its CMake modules.
+    inputs = facade_identity(ROOT)["inputs"]
+    assert "native/objc3c/CMakeLists.txt" in inputs
+    assert "native/objc3c/cmake/Objc3ClangFoundation.cmake" in inputs
 
 
 def test_runnable_package_includes_native_cmake_support_modules() -> None:

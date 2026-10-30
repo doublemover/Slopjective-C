@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/interface_resource_limits.h"
 
 namespace llvm {
 template <typename T> class ArrayRef;
@@ -52,6 +53,7 @@ struct InterfaceImportTarget {
   bool strict_concurrency = false;
   std::vector<std::string> ast_arguments;
   bool allow_function_overloads = false;
+  InterfaceResourceLimits resource_limits;
 };
 
 struct InterfaceImportReport {
@@ -64,6 +66,9 @@ struct InterfaceImportReport {
   // These identities are recorded only after ASTImporter has inserted the
   // corresponding declarations in the consumer ASTContext.
   std::vector<InterfaceDeclarationIdentity> imported_declarations;
+  // Verified inline definitions require backend registration as well as Sema
+  // insertion. Provider-only code cannot supply consumer-only ODR uses.
+  std::vector<clang::NamedDecl *> inline_definitions;
   std::vector<clang::NamedDecl *> visible_lookup_declarations;
   // Imported TU lookup declarations (including unscoped enum constants)
   // grouped by their originating module. Each vector
@@ -83,6 +88,7 @@ public:
       std::vector<InterfaceContractDiagnostic> &diagnostics);
 
   ~InterfaceImportSession();
+  [[nodiscard]] InterfaceResourceUsage GetResourceUsage() const;
   InterfaceImportSession(InterfaceImportSession &&) noexcept;
   InterfaceImportSession &operator=(InterfaceImportSession &&) noexcept;
   InterfaceImportSession(const InterfaceImportSession &) = delete;
@@ -98,6 +104,10 @@ public:
 
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetSourceArtifacts() const;
+  [[nodiscard]] bool RequiresRuntimeHeader() const;
+  [[nodiscard]] bool RequiresTaskHeader() const;
+  [[nodiscard]] bool RequiresCoroutineHeader() const;
+  [[nodiscard]] bool RequiresKeyPathHeader() const;
 
 private:
   struct Impl;

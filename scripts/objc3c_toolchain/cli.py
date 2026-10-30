@@ -11,7 +11,7 @@ from pathlib import Path
 from .core import ToolchainError, build_plan, prepare, seal_development, verify_development
 
 
-def main(argv: list[str] | None = None) -> int:
+def _parser():
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
     binary = commands.add_parser("packages", help="publish, install or consume immutable offline packages")
@@ -26,6 +26,8 @@ def main(argv: list[str] | None = None) -> int:
     sdk.add_argument("--repo", type=Path, default=Path.cwd())
     sdk.add_argument("--fetch", action="store_true")
     sdk.add_argument("--install-root", type=Path)
+    sdk.add_argument("--compiler-instrumentation-profile", choices=("compiler-asan-ubsan",),
+                     help="qualify the isolated compiler implementation before ordinary SDK delivery")
     sdk.add_argument("--foundation-sdk", type=Path, help="reuse a fully verified sealed SDK with the same LLVM source/build identity")
     compile_command = commands.add_parser("compile", help="invoke the installed public compiler")
     compile_command.add_argument("arguments", nargs=argparse.REMAINDER)
@@ -43,6 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--repo", type=Path, default=Path.cwd())
     build.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"))
     build.add_argument("--fetch", action="store_true", help="acquire pinned source when the development checkout is absent")
+    build.add_argument("--instrumentation-profile", choices=("compiler-asan-ubsan",))
     build.add_argument("--stage", action="store_true", help="also install the SDK distribution")
     for name in ("prepare", "verify"):
         command = commands.add_parser(name, help=f"{'materialize' if name == 'prepare' else 'verify'} pinned LLVM source")
@@ -63,8 +66,19 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--repo", type=Path, default=Path.cwd(), help="repository root")
     plan.add_argument("--manifest", type=Path, help="manifest path (defaults to repository manifest)")
     plan.add_argument("--source-dir", type=Path, help="sealed development source directory")
+    plan.add_argument("--instrumentation-profile", choices=("compiler-asan-ubsan",))
     plan.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"),
                       help="native build host (defaults to the current host)")
+    return parser, frozenset(commands.choices)
+
+
+def repository_commands() -> frozenset[str]:
+    """Return registered commands without executing any workflow."""
+    return _parser()[1]
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser, _ = _parser()
     args = parser.parse_args(argv)
     try:
         if args.command == "packages":
@@ -80,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
                       'reused': [name for name, node in report['nodes'].items() if node['reused']]}
         elif args.command == "build-sdk":
             from .linux_sdk import build_sdk
-            result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk)
+            result = build_sdk(args.repo, fetch=args.fetch, install_root=args.install_root, foundation_sdk=args.foundation_sdk,
+                               compiler_instrumentation_profile=args.compiler_instrumentation_profile)
         elif args.command == "compile":
             import os
             root = Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))
@@ -94,7 +109,8 @@ def main(argv: list[str] | None = None) -> int:
             result = facade_identity(args.repo)
         elif args.command == "build":
             from .build import build_foundation
-            result = build_foundation(args.repo, host=args.host, fetch=args.fetch, stage=args.stage)
+            result = build_foundation(args.repo, host=args.host, fetch=args.fetch, stage=args.stage,
+                                     instrumentation_profile=args.instrumentation_profile)
         elif args.command == "check-host-tools":
             from .versions import check_host_tools
             result = check_host_tools(args.repo, runtime=args.runtime)
@@ -113,7 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_development(args.repo, manifest_path=args.manifest, source_dir=args.source_dir)
         else:
             result = build_plan(args.repo, phase=args.phase, manifest_path=args.manifest,
-                                source_dir=args.source_dir, host=args.host)
+                                source_dir=args.source_dir, host=args.host,
+                                instrumentation_profile=args.instrumentation_profile)
     except (ToolchainError, ValueError, OSError, KeyError, subprocess.SubprocessError) as exc:
         print(f"objc3c-toolchain: {exc}", file=sys.stderr)
         return 2

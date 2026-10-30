@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -18,17 +19,20 @@ PACKETS = {
         "clang/include/clang/Basic/CMakeLists.txt",
         "clang/include/clang/Basic/LangOptions.def",
         "clang/include/clang/Basic/ObjC3Foundation.h.in",
+        "clang/include/clang/Basic/ObjC3BuildIdentity.h.in",
         "clang/include/clang/Basic/ObjC3Features.h",
         "clang/include/clang/Basic/ObjC3Features.def",
         "clang/include/clang/Options/Options.td",
         "clang/lib/Basic/Version.cpp",
         "clang/lib/Basic/ObjC3Features.cpp",
+        "clang/lib/Basic/Module.cpp",
         "clang/lib/Basic/CMakeLists.txt",
         "clang/lib/Driver/ToolChains/Clang.cpp",
         "clang/lib/Frontend/CompilerInvocation.cpp",
         "clang/lib/Frontend/InitPreprocessor.cpp",
         "clang/lib/Lex/PPMacroExpansion.cpp",
         "clang/include/clang/Lex/Preprocessor.h",
+        "clang/include/clang/Lex/PreprocessorOptions.h",
         "clang/lib/Lex/PPDirectives.cpp",
         "clang/test/ObjC3/Driver",
         "clang/test/ObjC3/LanguageMode",
@@ -61,6 +65,93 @@ PACKETS = {
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
+        "clang/include/clang/AST/StableExpressionProfile.h",
+        "clang/include/clang/AST/Decl.h",
+        "clang/include/clang/AST/EvaluatedExprVisitor.h",
+        "clang/include/clang/AST/ObjC3Borrowed.h",
+        "clang/include/clang/AST/ObjC3Isolation.h",
+        "clang/include/clang/AST/ObjC3KeyPath.h",
+        "clang/include/clang/Sema/ScopeInfo.h",
+        "clang/lib/Parse/ParseObjC3KeyPath.cpp",
+        "clang/lib/Sema/SemaObjC.cpp",
+        "clang/lib/Sema/SemaObjC3Async.cpp",
+        "clang/lib/Sema/SemaObjC3Borrowed.cpp",
+        "clang/lib/Sema/SemaObjC3Borrowed.h",
+        "clang/lib/Sema/SemaObjC3Isolation.cpp",
+        "clang/lib/Sema/SemaObjC3Isolation.h",
+        "clang/lib/Sema/SemaObjC3KeyPath.cpp",
+        "clang/lib/Sema/SemaObjC3KeyPath.h",
+        "clang/lib/Sema/SemaPseudoObject.cpp",
+        "clang/lib/Sema/SemaObjCProperty.cpp",
+        "clang/test/ObjC3/Inputs/keypath-abi.h",
+        "clang/test/ObjC3/Parser/optional-access.mm",
+        "clang/test/ObjC3/Parser/optional-access-pch.mm",
+        "clang/test/ObjC3/Parser/Inputs/optional-access-pch.h",
+        "clang/test/ObjC3/Parser/Inputs/optional-access-pch-consumer.mm",
+        "clang/lib/Sema/SemaObjC3ResourceOperations.cpp",
+        "clang/lib/Sema/SemaObjC3ResourceFlow.cpp",
+        "clang/include/clang/AST/ObjC3ResourceTypes.h",
+        "clang/test/ObjC3/Sema/resource-type-contracts.m",
+        "clang/test/ObjC3/Sema/lifetime-control.m",
+        "clang/test/ObjC3/AST/Inputs/lifetime-control.h",
+        "clang/test/ObjC3/AST/lifetime-control-pch.m",
+        "clang/test/ObjC3/AST/Inputs/resource-type-contracts.h",
+        "clang/test/ObjC3/AST/resource-type-contracts-pch.m",
+        "clang/test/ObjC3/AST/resource-type-contracts-pch-errors.m",
+        "clang/lib/Sema/SemaObjC3NonlocalJumps.cpp",
+        "clang/test/ObjC3/Sema/cleanup-nonlocal-jumps.m",
+        "clang/lib/Sema/SemaObjC3OptionalAccess.cpp",
+        "clang/lib/Sema/SemaObjC3Effects.h",
+        "clang/lib/Index/IndexBody.cpp",
+        "clang/lib/AST/ObjC3Resources.cpp",
+        "clang/lib/AST/ObjC3OptionalAccess.cpp",
+        "clang/include/clang/Basic/DiagnosticSerializationKinds.td",
+        "clang/include/clang/AST/ObjC3Resources.inc",
+        "clang/include/clang/AST/ObjC3OptionalAccess.inc",
+        "clang-tools-extra/clangd/unittests/ObjC3SourceToolsTests.cpp",
+        "clang-tools-extra/clangd/unittests/CMakeLists.txt",
+        "clang-tools-extra/clangd/SemanticHighlighting.cpp",
+        "clang-tools-extra/clangd/Selection.cpp",
+        "clang-tools-extra/clangd/ObjC3SourceInfo.h",
+        "clang-tools-extra/clangd/Hover.cpp",
+        "clang-tools-extra/clangd/FindTarget.cpp",
+        "clang/utils/TableGen/ClangAttrEmitter.cpp",
+        "clang/test/ObjC3/Parser/resource-attribute.m",
+        "clang/test/ObjC3/Parser/resource-operations.m",
+        "clang/test/ObjC3/Sema/cleanup-ownership.m",
+        "clang/test/ObjC3/Sema/guard-unspecified-receivers.m",
+        "clang/test/ObjC3/Parser/optional-coalescing.mm",
+        "clang/test/ObjC3/Parser/optional-coalescing-pch.mm",
+        "clang/test/ObjC3/Parser/optional-coalescing-lex.m",
+        "clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch.h",
+        "clang/test/ObjC3/Parser/Inputs/optional-coalescing-pch-consumer.mm",
+        "clang/lib/Sema/SemaObjC3Resources.h",
+        "clang/lib/Sema/SemaObjC3Resources.cpp",
+        "clang/lib/Sema/SemaObjC3OptionalOperators.cpp",
+        "clang/lib/Sema/SemaDeclAttr.cpp",
+        "clang/lib/Lex/Lexer.cpp",
+        "clang/lib/Basic/OperatorPrecedence.cpp",
+        "clang/lib/AST/ObjC3OptionalOperators.cpp",
+        "clang/include/clang/Basic/OperatorPrecedence.h",
+        "clang/include/clang/Basic/AttrDocs.td",
+        "clang/include/clang/Basic/Attr.td",
+        "clang/include/clang/AST/ObjC3OptionalOperators.inc",
+        "clang-tools-extra/test/clang-query/objc3-conditions.mm",
+        "clang/unittests/ASTMatchers/Dynamic/RegistryTest.cpp",
+        "clang/unittests/ASTMatchers/ObjC3MatchersTest.cpp",
+        "clang/unittests/ASTMatchers/CMakeLists.txt",
+        "clang/unittests/ASTMatchers/Dynamic/CMakeLists.txt",
+        "clang/lib/AST/ParentMapContext.cpp",
+        "clang/lib/ASTMatchers/Dynamic/Registry.cpp",
+        "clang/lib/ASTMatchers/ASTMatchFinder.cpp",
+        "clang/lib/ASTMatchers/ASTMatchersInternal.cpp",
+        "clang/include/clang/ASTMatchers/ASTMatchers.h",
+        "clang/test/Index/objc3-native-expression-cursors.mm",
+        "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/unittests/AST/ObjC3ConditionToolingTest.cpp",
+        "clang/tools/libclang/CXCursor.cpp",
+        "clang/tools/libclang/CIndex.cpp",
+        "clang/include/clang/AST/JSONNodeDumper.h",
         "clang/CMakeLists.txt",
         "clang/include/clang/Basic/ObjC3Syntax.h",
         "clang/include/clang/Basic/TokenKinds.def",
@@ -73,6 +164,7 @@ PACKETS = {
         "clang/include/clang/AST/NonTrivialTypeVisitor.h",
         "clang/lib/AST/DeclCXX.cpp",
         "clang/lib/Sema/SemaChecking.cpp",
+        "clang/lib/Analysis/RetainSummaryManager.cpp",
         "clang/include/clang/Basic/Builtins.td",
         "clang/lib/Sema/SemaLookup.cpp",
         "clang/include/clang/AST/TextNodeDumper.h",
@@ -80,6 +172,9 @@ PACKETS = {
         "clang/include/clang/AST/RecursiveASTVisitor.h",
         "clang/include/clang/AST/ObjC3MatchCoverage.h",
         "clang/include/clang/AST/ObjC3MatchNodes.inc",
+        "clang/include/clang/AST/ObjC3ConditionNodes.inc",
+        "clang/include/clang/AST/ObjC3SourceScopes.h",
+        "clang/lib/AST/ObjC3ConditionNodes.cpp",
         "clang/include/clang/AST/ObjC3MatchSemantic.h",
         "clang/include/clang/AST/ObjC3ModuleNames.h",
         "clang/include/clang/AST/TypeBase.h",
@@ -96,15 +191,21 @@ PACKETS = {
         "clang/include/clang/Sema/MultiplexExternalSemaSource.h",
         "clang/lib/Sema/MultiplexExternalSemaSource.cpp",
         "clang/include/clang/Sema/Sema.h",
+        "clang/include/clang/Sema/ObjC3GuardExit.h",
         "clang/include/clang/Sema/SemaObjC.h",
         "clang/include/clang/Serialization/ASTBitCodes.h",
         "clang/include/clang/Serialization/TypeBitCodes.def",
         "clang/lib/AST/ASTContext.cpp",
+        "clang/include/clang/AST/ExprCXX.h",
+        "clang/lib/AST/ExprCXX.cpp",
         "clang/lib/AST/ASTImporter.cpp",
+        "clang/lib/AST/AttrImpl.cpp",
         "clang/lib/AST/ASTStructuralEquivalence.cpp",
+        "clang/lib/AST/ASTConcept.cpp",
         "clang/lib/AST/ODRHash.cpp",
         "clang/lib/AST/ObjC3MatchNodes.cpp",
         "clang/lib/AST/DeclPrinter.cpp",
+        "clang/lib/AST/DeclBase.cpp",
         "clang/lib/AST/Mangle.cpp",
         "clang/lib/AST/TextNodeDumper.cpp",
         "clang/lib/AST/JSONNodeDumper.cpp",
@@ -115,11 +216,14 @@ PACKETS = {
         "clang/lib/AST/MicrosoftMangle.cpp",
         "clang/lib/Parse/CMakeLists.txt",
         "clang/lib/Parse/ParseDecl.cpp",
+        "clang/lib/Parse/ParseExprCXX.cpp",
+        "clang/test/ObjC3/Parser/native-lambda-effects.mm",
         "clang/lib/Parse/Parser.cpp",
         "clang/lib/Sema/SemaModule.cpp",
         "clang/lib/Parse/ParseTentative.cpp",
         "clang/lib/Parse/Parser.cpp",
         "clang/lib/Parse/ParseObjc.cpp",
+        "clang/lib/Parse/ParseObjC3Conditions.cpp",
         "clang/lib/Parse/ParseObjC3Match.cpp",
         "clang/lib/Parse/ParseObjC3QualifiedName.cpp",
         "clang/lib/Parse/ParseObjC3Type.cpp",
@@ -132,7 +236,10 @@ PACKETS = {
         "clang/lib/Sema/ObjC3MatchCoverage.cpp",
         "clang/lib/Sema/ObjC3MatchSemantic.cpp",
         "clang/lib/Sema/SemaObjC3Match.cpp",
+        "clang/lib/Sema/SemaObjC3GuardExit.cpp",
+        "clang/lib/Sema/SemaObjC3Conditions.cpp",
         "clang/lib/Sema/TreeTransformObjC3Match.inc",
+        "clang/lib/Sema/TreeTransformObjC3Conditions.inc",
         "clang/lib/Sema/SemaObjC3CarrierARC.h",
         "clang/lib/Sema/SemaObjC3CarrierARC.cpp",
         "clang/lib/Sema/SemaObjC3Effects.cpp",
@@ -145,11 +252,13 @@ PACKETS = {
         "clang/lib/Sema/CoroutineStmtBuilder.h",
         "clang/lib/Sema/TypeLocBuilder.h",
         "clang/lib/Sema/SemaType.cpp",
+        "clang/lib/Sema/SemaCast.cpp",
         "clang/lib/Sema/SemaDecl.cpp",
         "clang/lib/Sema/SemaInit.cpp",
         "clang/lib/Sema/SemaDeclCXX.cpp",
         "clang/lib/Sema/SemaDeclObjC.cpp",
         "clang/lib/Sema/SemaExprObjC.cpp",
+        "clang/lib/Sema/Sema.cpp",
         "clang/lib/Sema/SemaExpr.cpp",
         "clang/lib/Sema/SemaExprCXX.cpp",
         "clang/lib/Sema/SemaTypeTraits.cpp",
@@ -172,6 +281,10 @@ PACKETS = {
         "clang/unittests/AST/ObjC3DoCatchPersistenceTest.cpp",
         "clang/unittests/AST/ObjC3TryThrowConsumerTest.cpp",
         "clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp",
+        "clang/unittests/AST/ObjC3GuardExitTest.cpp",
+        "clang/unittests/AST/ObjC3ConditionNodesTest.cpp",
+        "clang/unittests/AST/ObjC3ConditionScopeTest.cpp",
+        "clang/unittests/AST/ObjC3ConditionCodeGenTest.cpp",
         "clang/unittests/AST/ObjC3CarrierCommonSugarTest.cpp",
         "clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp",
         "clang/unittests/AST/ObjC3CarrierIdentityTest.cpp",
@@ -179,6 +292,19 @@ PACKETS = {
         "clang/unittests/AST/ObjC3MatchImporterTest.cpp",
         "clang/test/ObjC3/AST",
         "clang/test/ObjC3/Sema",
+        "clang/test/ObjC3/Parser/Inputs/guard-pch-consumer.mm",
+        "clang/test/ObjC3/Parser/Inputs/guard-pch.h",
+        "clang/test/ObjC3/Parser/guard-c-mode.m",
+        "clang/test/ObjC3/Parser/guard-conditions.mm",
+        "clang/test/ObjC3/Parser/guard-contextual.mm",
+        "clang/test/ObjC3/Parser/resource-contextual-empty-call.m",
+        "clang/test/ObjC3/Parser/borrowed-eof-recovery.c",
+        "clang/test/ObjC3/Parser/guard-disabled.mm",
+        "clang/test/ObjC3/Parser/guard-lookahead.mm",
+        "clang/test/ObjC3/Parser/guard-pch.mm",
+        "clang/test/ObjC3/Parser/guard-recovery.mm",
+        "clang/test/ObjC3/Parser/guard-scopes.mm",
+        "clang/test/ObjC3/Parser/guard-template.mm",
         "clang/test/ObjC3/Parser/public-carriers.mm",
         "clang/test/ObjC3/Parser/public-errors.mm",
         "clang/test/ObjC3/Parser/public-carriers-disabled.c",
@@ -194,7 +320,39 @@ PACKETS = {
         "clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h",
     ],
     "0005-objc3-codegen-qualification-boundaries.patch": [
+        "clang/lib/CodeGen/CGBuiltin.cpp",
+        "clang/lib/CodeGen/CGException.cpp",
+        "clang/lib/CodeGen/CGObjC3Async.cpp",
+        "clang/lib/CodeGen/CGObjC3Async.h",
+        "clang/lib/CodeGen/CGObjC3Isolation.cpp",
+        "clang/lib/CodeGen/CGObjC3Isolation.h",
+        "clang/lib/CodeGen/CGObjC3KeyPath.cpp",
+        "clang/lib/CodeGen/CGObjC3KeyPath.h",
+        "clang/lib/CodeGen/CGObjC3BlockCaptures.cpp",
+        "clang/lib/CodeGen/CGObjC3BlockCaptures.h",
+        "clang/lib/CodeGen/CodeGenModule.h",
+        "clang/test/ObjC3/Analysis/optional-access-unsupported.m",
+        "clang/test/ObjC3/Analysis/cleanup-unsupported.m",
+        "clang/test/ObjC3/CodeGen/cleanup-ownership.m",
+        "clang/lib/Analysis/CalledOnceCheck.cpp",
+        "clang/lib/CodeGen/CGObjC3ResourceOperations.cpp",
+        "clang/lib/CodeGen/CGObjC3OptionalAccess.h",
+        "clang/lib/CodeGen/CGObjC3OptionalAccess.cpp",
+        "clang/test/ObjC3/Analysis/defer-match-coalesce.mm",
+        "clang/lib/CodeGen/CGObjC3Resources.h",
+        "clang/lib/CodeGen/CGObjC3Resources.cpp",
+        "clang/lib/CodeGen/CGObjC3OptionalOperators.h",
+        "clang/lib/CodeGen/CGObjC3OptionalOperators.cpp",
+        "clang/lib/CodeGen/CGObjC3MixedCarriers.h",
+        "clang/lib/CodeGen/CGObjC3MixedCarriers.cpp",
+        "clang/lib/CodeGen/CGExprCXX.cpp",
+        "clang/test/ObjC3/Analysis/defer-native-cxx.mm",
+        "clang/include/clang/Analysis/CFG.h",
         "clang/lib/Analysis/CFG.cpp",
+        "clang/lib/Analysis/UninitializedValues.cpp",
+        "clang/lib/Analysis/PathDiagnostic.cpp",
+        "clang/lib/StaticAnalyzer/Core/SymbolManager.cpp",
+        "clang/lib/StaticAnalyzer/Core/ExprEngine.cpp",
         "clang/lib/Sema/AnalysisBasedWarnings.cpp",
         "clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp",
         "clang/lib/CodeGen/CGObjC3Carriers.h",
@@ -207,6 +365,7 @@ PACKETS = {
         "clang/lib/CodeGen/CGObjC3Carriers.cpp",
         "clang/lib/CodeGen/CGObjC3Match.h",
         "clang/lib/CodeGen/CGObjC3Match.cpp",
+        "clang/lib/CodeGen/CGObjC3Conditions.cpp",
         "clang/lib/CodeGen/CGObjC3ArcCarriers.h",
         "clang/lib/CodeGen/CGObjC3ArcCarriers.cpp",
         "clang/lib/CodeGen/CGObjC3ResultExpr.h",
@@ -232,6 +391,9 @@ PACKETS = {
         "clang/lib/CodeGen/CGObjC.cpp",
         "clang/lib/CodeGen/CGObjCGNU.cpp",
         "clang/lib/CodeGen/CGStmt.cpp",
+        "clang/lib/CodeGen/CGCleanup.cpp",
+        "clang/lib/CodeGen/CGObjC3Defer.h",
+        "clang/lib/CodeGen/VarBypassDetector.cpp",
         "clang/lib/CodeGen/CGVTables.cpp",
         "clang/lib/CodeGen/CodeGenFunction.cpp",
         "clang/lib/CodeGen/CodeGenFunction.h",
@@ -260,6 +422,15 @@ PACKETS = {
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
     ],
     "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "llvm/lib/Support/MD5.cpp",
+        "llvm/unittests/Support/MD5Test.cpp",
+        "lldb/test/Shell/Expr/objc3-carrier-summaries.mm",
+        "lldb/source/DataFormatters/FormatManager.cpp",
+        "lldb/source/Plugins/Language/ObjC/CMakeLists.txt",
+        "lldb/source/Plugins/Language/ObjC/ObjCLanguage.cpp",
+        "lldb/source/Plugins/Language/ObjC/ObjC3Carriers.cpp",
+        "lldb/source/Plugins/Language/ObjC/ObjC3Carriers.h",
+        "lldb/test/Shell/Expr/objc3-condition-locals.mm",
         "lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h",
         "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",
         "lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp",
@@ -276,12 +447,14 @@ def git(*arguments: str) -> bytes:
     return subprocess.check_output(["git", "-C", str(SOURCE), *arguments])
 
 
+def packet_sections(data: bytes) -> dict[bytes, bytes]:
+    return {part.split(b"\n", 1)[0].split(b" b/", 1)[1]: b"diff --git " + part
+            for part in data.split(b"diff --git ")[1:]}
+
+
 def stable_packet(current: bytes, previous: bytes) -> bytes:
     """Keep packet identity independent of intent-to-add and existing ordering."""
-    def sections(data: bytes) -> dict[bytes, bytes]:
-        return {part.split(b"\n", 1)[0].split(b" b/", 1)[1]: b"diff --git " + part
-                for part in data.split(b"diff --git ")[1:]}
-    old, new = sections(previous), sections(current)
+    old, new = packet_sections(previous), packet_sections(current)
     for path, section in new.items():
         # Older packets contain both forms of Git's optional new-file index
         # metadata. Preserve that choice to avoid changing unrelated identities.
@@ -292,7 +465,22 @@ def stable_packet(current: bytes, previous: bytes) -> bytes:
     return b"".join(new[path] for path in order)
 
 
-def export() -> None:
+def export(selected_paths: list[str] | None = None) -> None:
+    """Export all source edits, or replace only explicitly completed file sections.
+
+    Selected files are exact repository-relative paths, never directory selectors.
+    Other packet sections retain their previously committed contents, allowing
+    independent development in one source tree without exporting unfinished work.
+    """
+    selected = set(selected_paths) if selected_paths is not None else None
+    if selected is not None:
+        if not selected:
+            raise RuntimeError("Selective export requires at least one source file")
+        for relative in selected:
+            path = Path(relative)
+            if (path.is_absolute() or ".." in path.parts or
+                    path.as_posix() != relative or (SOURCE / path).is_dir()):
+                raise RuntimeError(f"Selective export requires an exact relative file: {relative}")
     expected_table, _ = generated(json.loads(AUTHORITY.read_text(encoding="utf-8")))
     native_table = SOURCE / "clang/include/clang/Basic/ObjC3Features.def"
     if native_table.read_text(encoding="utf-8") != expected_table:
@@ -306,7 +494,7 @@ def export() -> None:
     untracked_paths = [p.decode() for p in untracked.split(b"\0") if p]
     changed = git("diff", "--name-only", "-z", "HEAD").split(b"\0")
     changed_paths = [p.decode() for p in changed if p] + untracked_paths
-    for relative in changed_paths:
+    for relative in (changed_paths if selected is None else sorted(selected)):
         if relative == ".objc3c-prepared-source.json":
             continue
         owners = [name for name, paths in PACKETS.items()
@@ -315,9 +503,17 @@ def export() -> None:
             raise RuntimeError(f"Source path requires exactly one patch owner: {relative}: {owners}")
     records = []
     for name, paths in PACKETS.items():
-        patch = git("diff", "--binary", "--abbrev=9", "--no-ext-diff", "HEAD", "--", *paths)
+        packet = STACK / name
+        previous = packet.read_bytes() if packet.exists() else b""
+        export_paths = paths if selected is None else sorted(
+            relative for relative in selected
+            if any(relative == p or relative.startswith(p + "/") for p in paths))
+        if not export_paths:
+            records.append({"file": name, "sha256": hashlib.sha256(previous).hexdigest()})
+            continue
+        patch = git("diff", "--binary", "--abbrev=9", "--no-ext-diff", "HEAD", "--", *export_paths)
         for relative in sorted(untracked_paths):
-            if not any(relative == p or relative.startswith(p + "/") for p in paths):
+            if not any(relative == p or relative.startswith(p + "/") for p in export_paths):
                 continue
             data = (SOURCE / relative).read_bytes().replace(b"\r\n", b"\n")
             if b"\0" in data:
@@ -337,10 +533,19 @@ def export() -> None:
                 patch += b"+" + line
                 if not line.endswith(b"\n"):
                     patch += b"\n\\ No newline at end of file\n"
+        if selected is not None:
+            replacement = packet_sections(patch)
+            retained = packet_sections(previous)
+            for relative in export_paths:
+                key = relative.encode()
+                if key in replacement:
+                    retained[key] = replacement[key]
+                else:
+                    retained.pop(key, None)
+            patch = b"".join(retained.values())
         if not patch:
             raise RuntimeError(f"Refusing empty patch packet: {name}")
-        packet = STACK / name
-        patch = stable_packet(patch, packet.read_bytes() if packet.exists() else b"")
+        patch = stable_packet(patch, previous)
         packet.write_bytes(patch)
         records.append({"file": name, "sha256": hashlib.sha256(patch).hexdigest()})
     (STACK / "series").write_text("\n".join(PACKETS) + "\n", encoding="utf-8")
@@ -350,4 +555,7 @@ def export() -> None:
 
 
 if __name__ == "__main__":
-    export()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--paths", nargs="+", metavar="SOURCE_FILE",
+                        help="export only completed files; preserve other packet sections")
+    export(parser.parse_args().paths)

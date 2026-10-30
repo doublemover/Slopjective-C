@@ -1,0 +1,229 @@
+{
+  "schema": "objc3c.linux-template-member-batch-progress.v1",
+  "status": "SOURCE_VALIDATED",
+  "date": "2026-10-28",
+  "source_checkpoint": "573ab5b31ff33da41cfa07ddd3e50087e3984dce",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-fea4e2217ffd-00b75dc3",
+  "compiler_patch_digest": "fea4e2217ffdc7b5c82431e3632ae2a7d730d7d118e6f4c85393c3c42d907782",
+  "concurrency_module_version": "2.52.0",
+  "keypath_module_version": "2.4.0",
+  "system_module_version": "2.14.0",
+  "interface_schema": "2.2",
+  "extension_abi": 21,
+  "service_abi": 4,
+  "frame_abi": 1,
+  "keypath_metadata_layout": 2,
+  "scope": [
+    "Writable nullable object/Block key-path chains, nil no-op updates, exact-once operands, native ARC/MRC normal/EH cleanup, record routing/writeback and runtime metadata hard cutover",
+    "In-class member function templates, converting constructors/operators, constraints/defaults, packs, deduction, closures and shared specialization state",
+    "Nested alias templates with dependent member types, rebinding, arrays and callback packs",
+    "Named nested records/primary class templates and inline mutable/constexpr/thread-local member variable templates under the complete outer ABI/export owner",
+    "Exact enclosing specialization arguments, required recursive capabilities, explicit specialization/detached definition gates and complete dependency checks",
+    "Native import preserves expression-owned requires contexts and complete dependent-record member order; imported nested argument normalization uses the outer ABI owner",
+    "Source-free lifetime, virtual deletion, shared state and independent worker-thread TLS witnesses"
+  ],
+  "verification": {
+    "compiler_regressions_passed": 410,
+    "platform_cases_unsupported": 3,
+    "native_unit_tests_passed": 201,
+    "optimized_frontend_suites_passed": 33,
+    "tooling_tests_passed": 335,
+    "tooling_tests_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "reports": [
+      {
+        "path": "out/nested-template-types-foundation-build.json",
+        "bytes": 6569,
+        "sha256": "4bf1dfb401edc95a8779a3c832b7853f58a0bb6dc8f951b9ff76dcc1ceb124e3"
+      },
+      {
+        "path": "out/nested-template-types-verify.json",
+        "bytes": 7444,
+        "sha256": "c5452545d0aae88f386fbedde0d15592beacd23dbb4ad0324ca217cf7bfa8416"
+      },
+      {
+        "path": "out/template-member-batch-native-batch.json",
+        "bytes": 2031,
+        "sha256": "68321e5532106a226123099a7d6cd5205c020632427a51f1ef3c410184fb9a38"
+      },
+      {
+        "path": "out/template-member-batch-frontend-checkpoint.json",
+        "bytes": 982,
+        "sha256": "3edc8f7ed1a95efbfc4982e2dbed8dcecadc30b58eef91e5c1b8b1f542c3e2f7"
+      },
+      {
+        "path": "out/template-member-batch-tooling.log",
+        "bytes": 491,
+        "sha256": "8be0133bbddec01a681183a50bc99e2ada5d94a0fb2b54bb874d8ac819ee1fa3"
+      },
+      {
+        "path": "out/template-member-batch-runtime-asan-build.log",
+        "bytes": 348,
+        "sha256": "868cd6d09bd2e00524a9f4dba2dec170b2f6ecce0be8c5910253a8afd8abf48e"
+      },
+      {
+        "path": "out/template-member-batch-runtime-tsan-build.log",
+        "bytes": 348,
+        "sha256": "868cd6d09bd2e00524a9f4dba2dec170b2f6ecce0be8c5910253a8afd8abf48e"
+      }
+    ],
+    "native_logs": [
+      {
+        "path": "out/template-member-batch-native-0.log",
+        "bytes": 6698,
+        "sha256": "cb0f0c7f31e58aa72e60cbed6dfb516aeed3edc6e2d25e0fd2ac9c9773521a21"
+      },
+      {
+        "path": "out/template-member-batch-native-1.log",
+        "bytes": 34652,
+        "sha256": "e3b32e851826fbe7ff5f6b74a740e8575260598cf57f9a6e5a80ad58882c1660"
+      },
+      {
+        "path": "out/template-member-batch-native-2.log",
+        "bytes": 1113,
+        "sha256": "0ce3e301be3b27e0fa00869a95f4aad6b17b61404867c88398b71dd716fb57c8"
+      },
+      {
+        "path": "out/template-member-batch-native-3.log",
+        "bytes": 4601,
+        "sha256": "b7500413365a51d1cbbb8a7901a7e38bb42fd10381b0f0f9477482e3961bcc69"
+      },
+      {
+        "path": "out/template-member-batch-native-4.log",
+        "bytes": 5151,
+        "sha256": "d145d5be110602042609c3aeb9618c578f57ec1c0fa418736f3304adcc2a3e7b"
+      }
+    ],
+    "runtime_matrices": [
+      {
+        "mode": "normal",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/template-member-batch-features-normal/batch.json",
+          "bytes": 1194050,
+          "sha256": "7f1c6b8ff9a797769bc160ff8d0510e981a2d9b7cb88a01ba0b350b794101950"
+        }
+      },
+      {
+        "mode": "asan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/template-member-batch-features-asan/batch.json",
+          "bytes": 1264199,
+          "sha256": "f03dbdb6cb470f5a5244dfc5ef9494f4c4866f06600fd58a48377633a2f5bc68"
+        }
+      },
+      {
+        "mode": "tsan",
+        "configurations_passed": 168,
+        "commands_passed": 1158,
+        "report": {
+          "path": "out/native-validation/template-member-batch-features-tsan/batch.json",
+          "bytes": 1252681,
+          "sha256": "8b108bf09ac758510426e0ce9ae98cb8861b20056fe109fd10adcfa5a06babad"
+        }
+      }
+    ],
+    "source_free_packages": [
+      {
+        "family": "cxx",
+        "mode": "normal",
+        "configurations_passed": 8,
+        "commands_passed": 32,
+        "report": {
+          "path": "out/native-validation/template-member-batch-cxx-packages-normal/qualification.json",
+          "bytes": 4559,
+          "sha256": "0ecf2d8fdf5fe6f06db2cffa03a74eac689e2939b48ee2161cb28551a6672aaa"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "normal-eager",
+        "configurations_passed": 8,
+        "commands_passed": 32,
+        "report": {
+          "path": "out/native-validation/template-member-batch-cxx-packages-normal-eager/qualification.json",
+          "bytes": 4549,
+          "sha256": "ee65ed7d2f310f670e5cd66f5c3e5db615e709a4249b60f906fdec66268479d9"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "asan",
+        "configurations_passed": 8,
+        "commands_passed": 32,
+        "report": {
+          "path": "out/native-validation/template-member-batch-cxx-packages-asan/qualification.json",
+          "bytes": 4557,
+          "sha256": "5faa760017ec053f3263d93f9e0bd87221a03effe236ddbc903684fb185e9109"
+        }
+      },
+      {
+        "family": "cxx",
+        "mode": "tsan",
+        "configurations_passed": 8,
+        "commands_passed": 32,
+        "report": {
+          "path": "out/native-validation/template-member-batch-cxx-packages-tsan/qualification.json",
+          "bytes": 4557,
+          "sha256": "2d536231e52ddf414e06963d291e03e0451d2562356fea9d35b330152ea177e7"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "normal",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/template-member-batch-keypath-packages-normal/qualification.json",
+          "bytes": 6707,
+          "sha256": "b0f660ea6c331078765f8e9cea9cba4e2d186a5ea5d0070aa06dc56718c828ab"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "normal-eager",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/template-member-batch-keypath-packages-normal-eager/qualification.json",
+          "bytes": 6697,
+          "sha256": "e0b9f0c8d6da67396da3d5f33498af55a127d5e1f4f4431da0dad9d1a72c2fa4"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "asan",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/template-member-batch-keypath-packages-asan/qualification.json",
+          "bytes": 6705,
+          "sha256": "5d27a72464bea0a5f9082109d5b391a8749d30843829c7ec5f23a5a777c57df8"
+        }
+      },
+      {
+        "family": "keypath",
+        "mode": "tsan",
+        "configurations_passed": 12,
+        "commands_passed": 48,
+        "report": {
+          "path": "out/native-validation/template-member-batch-keypath-packages-tsan/qualification.json",
+          "bytes": 6705,
+          "sha256": "4030142070a45d9c06f018cb7bf3c24e779e2ce1ec09cb2c639aab69321d98d3"
+        }
+      }
+    ],
+    "source_free_package_configurations_passed": 80,
+    "source_free_package_commands_passed": 320
+  },
+  "accepted_sdk": "2.33.0",
+  "sdk_rebuilt": false,
+  "deferred": [
+    "Coordinated SDK/archive build and installed/fresh-host qualification"
+  ],
+  "full_profile_conformance": false,
+  "native_aarch64_qualified": false
+}
