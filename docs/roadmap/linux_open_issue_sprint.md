@@ -161,3 +161,43 @@ open. This checkpoint does not claim the full backlog is complete.
 Native macOS arm64 completion requires a suitable host. The accepted Linux
 SDK remains 2.62; these source changes do not qualify a replacement archive.
 Windows work and retired compatibility routes remain outside this sprint.
+
+## Interface import resource policy
+
+The resolver validates every discovered artifact pair, then releases its source,
+JSON and decoded declarations before indexing the next pair. Its compact index
+retains canonical identity, two digests and paths. Identical pairs coalesce;
+conflicting identities or source digests still fail admission. Canonical path
+ordering makes duplicate selection independent of search-root and directory
+iteration order. Selected pairs are reread and both digests are checked before
+loading their dependency closure. Direct-file imports apply the same selected
+input, graph and parser-work budgets.
+
+| Resource | Default limit |
+| --- | --- |
+| Each source or sidecar artifact | 32 MiB |
+| Directory entries scanned | 50,000 |
+| Artifact bytes read, including selected rereads | 512 MiB |
+| Candidate scan-path strings | 16 MiB |
+| Compact index strings | 16 MiB |
+| Unique indexed modules | 16,384 |
+| Decoded declarations, including repeated decoding | 250,000 |
+| Selected artifact bytes | 64 MiB |
+| Selected declarations / modules | 100,000 / 512 |
+| Selected dependency edges / longest path | 8,192 / 128 |
+| Parser input and retained virtual mapping bytes | 128 MiB |
+| Parser declaration work | 500,000 |
+
+`InterfaceImportTarget::resource_limits` provides explicit policy overrides and
+small deterministic test limits. `O3IFC182` reports an aggregate resource limit;
+existing per-file oversize and malformed-artifact diagnostics remain intact.
+Charges use checked subtraction before addition, including at `UINT64_MAX`.
+Readers allocate only the admitted file length and reject growth while reading.
+The graph walk is iterative and computes the longest dependency path even when
+shared dependencies were already visited from another root.
+
+These are admitted-input and work limits, not an exact RSS ceiling for Clang's
+internal ASTs. Parser accounting includes repeated dependency mappings/proofs,
+replayed declaration work and pinned runtime mappings. Mappings remain alive as
+long as the ASTs that borrow their strings. Duplicate direct-file requests still
+consume read-work and byte budgets before module coalescing.

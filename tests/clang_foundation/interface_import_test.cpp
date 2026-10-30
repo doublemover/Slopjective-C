@@ -3,6 +3,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/runtime_interface_types.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/ArrayRef.h"
 
 #include <algorithm>
 #include <cassert>
@@ -55,6 +56,64 @@ bool HasImported(const CompileResult &result, const std::string &name) {
     if (decl.qualified_name == name || decl.qualified_name.ends_with("::" + name))
       return true;
   return false;
+}
+
+void TestPreparedImportBudgets() {
+  const auto root = fs::temp_directory_path() / "objc3-prepared-import-budgets";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path_a = root / "a.objc3i", path_b = root / "b.objc3i";
+  auto a = EmitModule(root / "a.m", path_a, "budget.A", "typedef struct BudgetValue { int value; } BudgetValue;");
+  assert(a.success && a.interface_artifact);
+  const auto input_a = ImportOf(path_a, a.interface_artifact->identity);
+  auto b = EmitModule(root / "b.m", path_b, "budget.B", "BudgetValue echo(BudgetValue value);", {input_a});
+  assert(b.success && b.interface_artifact);
+  const std::vector<InterfaceImportInput> inputs = {input_a, ImportOf(path_b, b.interface_artifact->identity)};
+  InterfaceImportTarget target;
+  const auto &id = a.interface_artifact->identity;
+  target.target_triple = id.target_triple;
+  target.runtime_abi = id.runtime_abi;
+  target.extension_abi = id.extension_abi;
+  target.language_revision = id.language_revision;
+  target.language_profile = id.language_profile;
+  target.objc = target.objc3 = true;
+  target.objc_runtime = "gnustep-2.2";
+  target.ast_arguments = BuildInterfaceASTArguments({}, "objective-c", "c17", target);
+  std::vector<InterfaceContractDiagnostic> diagnostics;
+  auto prepared = InterfaceImportSession::Prepare(inputs, target, diagnostics);
+  for (const auto &d : diagnostics) std::fprintf(stderr, "%s: %s\n", d.code.c_str(), d.message.c_str());
+  assert(prepared && diagnostics.empty());
+  const auto usage = prepared->GetResourceUsage();
+  assert(usage.selected_modules == 2 && usage.dependency_edges == 1);
+  assert(usage.parser_input_bytes > 0 && usage.parser_declarations > 0);
+  using Field = std::uint64_t InterfaceResourceLimits::*;
+  for (auto [field, exact] : std::vector<std::pair<Field, std::uint64_t>>{
+      {&InterfaceResourceLimits::read_bytes, usage.read_bytes},
+      {&InterfaceResourceLimits::selected_bytes, usage.selected_bytes},
+      {&InterfaceResourceLimits::decoded_declarations, usage.decoded_declarations},
+      {&InterfaceResourceLimits::selected_declarations, usage.selected_declarations},
+      {&InterfaceResourceLimits::selected_modules, usage.selected_modules},
+      {&InterfaceResourceLimits::dependency_edges, usage.dependency_edges},
+      {&InterfaceResourceLimits::parser_input_bytes, usage.parser_input_bytes},
+      {&InterfaceResourceLimits::parser_declarations, usage.parser_declarations}}) {
+    assert(exact > 0);
+    auto policy = target;
+    policy.resource_limits.*field = exact;
+    diagnostics.clear();
+    assert(InterfaceImportSession::Prepare(inputs, policy, diagnostics) && diagnostics.empty());
+    policy.resource_limits.*field = exact - 1;
+    diagnostics.clear();
+    assert(!InterfaceImportSession::Prepare(inputs, policy, diagnostics));
+    assert(std::any_of(diagnostics.begin(), diagnostics.end(),
+        [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
+  }
+  // Resolving a lock does not authorize subsequent byte changes. Preparation
+  // must fail before any declarations can enter the consumer AST.
+  std::ofstream(path_a, std::ios::app) << "\n// changed after resolution\n";
+  diagnostics.clear();
+  assert(!InterfaceImportSession::Prepare(inputs, target, diagnostics));
+  assert(!diagnostics.empty());
+  fs::remove_all(root);
 }
 
 void TestPrimitiveABIProfilesRejectMismatchedConsumers() {
@@ -690,6 +749,7 @@ void TestCompilerVarargsMembersAreReused() {
 } // namespace
 
 int main() {
+  TestPreparedImportBudgets();
   TestPrimitiveABIProfilesRejectMismatchedConsumers();
   TestThreeModuleSemanticLookupAndIdentity();
   TestPinnedRuntimeTypesSurvivePreparedImport();

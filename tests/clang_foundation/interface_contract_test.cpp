@@ -1,7 +1,9 @@
 #include "clang_foundation/interface_contract.h"
 #include "clang_foundation/interface_validation.h"
 
+#include <algorithm>
 #include <cassert>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -125,7 +127,58 @@ static void TestAsyncABIContracts() {
   assert(check());
 }
 
+static void TestResourceBoundedDependencyGraphs() {
+  std::uint64_t used = std::numeric_limits<std::uint64_t>::max() - 1;
+  assert(ChargeInterfaceResource(used, 1, std::numeric_limits<std::uint64_t>::max()));
+  assert(!ChargeInterfaceResource(used, 1, std::numeric_limits<std::uint64_t>::max()));
+  assert(used == std::numeric_limits<std::uint64_t>::max());
+  assert(!ChargeInterfaceResource(used, 0, 0));
+  auto chain = [](unsigned count, bool reversed) {
+    std::vector<InterfaceDependencyNode> nodes;
+    for (unsigned i = 0; i < count; ++i)
+      nodes.push_back({Id(std::to_string(100000 + i), "sha256:" + std::to_string(i)), {}});
+    for (unsigned i = 1; i < count; ++i) {
+      const auto from = reversed ? count - i - 1 : i;
+      const auto to = reversed ? count - i : i - 1;
+      nodes[from].dependencies.push_back({nodes[to].identity, true, true});
+    }
+    return nodes;
+  };
+  auto resource_error = [](const auto &result) {
+    assert(!result.ok() && result.topological_order.empty());
+    assert(std::any_of(result.diagnostics.begin(), result.diagnostics.end(),
+        [](const auto &d) { return d.code == kInterfaceResourceDiagnostic; }));
+  };
+  for (bool reversed : {false, true}) {
+    auto nodes = chain(128, reversed);
+    assert(ResolveInterfaceDependencyGraph(nodes).ok());
+    resource_error(ResolveInterfaceDependencyGraph(chain(129, reversed)));
+    InterfaceResourceLimits limits;
+    limits.selected_modules = 127;
+    resource_error(ResolveInterfaceDependencyGraph(nodes, limits));
+    limits.selected_modules = 128;
+    limits.dependency_edges = 126;
+    resource_error(ResolveInterfaceDependencyGraph(nodes, limits));
+    limits.dependency_edges = 127;
+    assert(ResolveInterfaceDependencyGraph(nodes, limits).ok());
+    limits.dependency_depth = 0;
+    resource_error(ResolveInterfaceDependencyGraph(nodes, limits));
+    // Exercise an actual deep graph with explicit heap frames and a widened
+    // policy. Both dependency-first and parent-first lexical orders matter.
+    nodes = chain(4096, reversed);
+    limits.selected_modules = 4096;
+    limits.dependency_depth = 4096;
+    limits.dependency_edges = 4095;
+    auto result = ResolveInterfaceDependencyGraph(nodes, limits);
+    assert(result.ok() && result.topological_order.size() == nodes.size());
+    assert(result.reexport_closure.size() == nodes.size() - 1);
+    std::reverse(nodes.begin(), nodes.end());
+    assert(ResolveInterfaceDependencyGraph(nodes, limits).topological_order == result.topological_order);
+  }
+}
+
 int main() {
+  TestResourceBoundedDependencyGraphs();
   TestNativeContractCapabilities();
   TestAsyncABIContracts();
   auto module = Id("A", "sha256:aaa");

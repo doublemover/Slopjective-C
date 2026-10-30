@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/interface_resource_limits.h"
 
 namespace llvm {
 template <typename T> class ArrayRef;
@@ -52,6 +53,7 @@ struct InterfaceImportTarget {
   bool strict_concurrency = false;
   std::vector<std::string> ast_arguments;
   bool allow_function_overloads = false;
+  InterfaceResourceLimits resource_limits;
 };
 
 struct InterfaceImportReport {
@@ -86,6 +88,7 @@ public:
       std::vector<InterfaceContractDiagnostic> &diagnostics);
 
   ~InterfaceImportSession();
+  [[nodiscard]] InterfaceResourceUsage GetResourceUsage() const;
   InterfaceImportSession(InterfaceImportSession &&) noexcept;
   InterfaceImportSession &operator=(InterfaceImportSession &&) noexcept;
   InterfaceImportSession(const InterfaceImportSession &) = delete;

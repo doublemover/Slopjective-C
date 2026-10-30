@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -43,7 +44,7 @@
 
 namespace objc3::clang_foundation {
 namespace {
-constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
+constexpr std::uint64_t kMaxInterfaceBytes = kInterfaceArtifactByteLimit;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
@@ -164,7 +165,8 @@ bool CompatibleTarget(const InterfaceModuleIdentity &module,
 
 bool ReadBoundedFile(llvm::StringRef path, std::string &contents,
                      std::vector<InterfaceContractDiagnostic> &diagnostics,
-                     llvm::StringRef kind) {
+                     llvm::StringRef kind, InterfaceResourceUsage &usage,
+                     const InterfaceResourceLimits &limits) {
   std::uint64_t size = 0;
   if (auto error = llvm::sys::fs::file_size(path, size)) {
     Add(diagnostics, "O3IFC130",
@@ -176,19 +178,30 @@ bool ReadBoundedFile(llvm::StringRef path, std::string &contents,
         llvm::Twine(kind) + " artifact exceeds the 32 MiB import bound", path);
     return false;
   }
-  auto buffer = llvm::MemoryBuffer::getFile(path);
-  if (!buffer) {
-    Add(diagnostics, "O3IFC130",
-        llvm::Twine("cannot read ") + kind + " artifact: " +
-            buffer.getError().message(), path);
+  if (!ChargeInterfaceResource(usage.read_bytes, size, limits.read_bytes) ||
+      !ChargeInterfaceResource(usage.selected_bytes, size, limits.selected_bytes)) {
+    Add(diagnostics, kInterfaceResourceDiagnostic, "direct interface inputs exceed their aggregate byte budget");
     return false;
   }
-  if ((*buffer)->getBufferSize() > kMaxInterfaceBytes) {
-    Add(diagnostics, "O3IFC130",
-        llvm::Twine(kind) + " artifact grew beyond the 32 MiB import bound while being read", path);
+  // Allocate only the already admitted byte count. A concurrent replacement or
+  // growth must not make MemoryBuffer allocate/map an unbounded new file.
+  std::ifstream input(path.str(), std::ios::binary);
+  if (!input) {
+    Add(diagnostics, "O3IFC130", llvm::Twine("cannot open ") + kind + " artifact", path);
     return false;
   }
-  contents.assign((*buffer)->getBufferStart(), (*buffer)->getBufferEnd());
+  contents.resize(size);
+  input.read(contents.data(), static_cast<std::streamsize>(size));
+  const auto actual = static_cast<std::uint64_t>(input.gcount());
+  if (input.bad() || (actual == size && input.peek() != std::char_traits<char>::eof())) {
+    Add(diagnostics, "O3IFC130", llvm::Twine(kind) + " artifact changed or failed during bounded reading", path);
+    return false;
+  }
+  if (actual < size) {
+    usage.read_bytes -= size - actual;
+    if (true) usage.selected_bytes -= size - actual;
+    contents.resize(actual);
+  }
   return true;
 }
 
@@ -415,6 +428,7 @@ struct InterfaceImportSession::Impl {
     clang::TextDiagnosticBuffer *import_diagnostics = nullptr;
   };
   InterfaceImportTarget target;
+  InterfaceResourceUsage resource_usage;
   std::vector<Module> modules;
   std::vector<std::size_t> import_order;
   std::vector<InterfaceDependency> direct_dependencies;
@@ -424,6 +438,9 @@ struct InterfaceImportSession::Impl {
 InterfaceImportSession::InterfaceImportSession(std::unique_ptr<Impl> impl)
     : impl_(std::move(impl)) {}
 InterfaceImportSession::~InterfaceImportSession() = default;
+InterfaceResourceUsage InterfaceImportSession::GetResourceUsage() const {
+  return impl_->resource_usage;
+}
 InterfaceImportSession::InterfaceImportSession(InterfaceImportSession &&) noexcept = default;
 InterfaceImportSession &InterfaceImportSession::operator=(InterfaceImportSession &&) noexcept = default;
 
@@ -479,6 +496,19 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   if (inputs.empty()) return std::unique_ptr<InterfaceImportSession>(
       new InterfaceImportSession(std::move(impl)));
 
+  const auto &limits = target.resource_limits;
+  auto &usage = impl->resource_usage;
+  auto charge = [&](std::uint64_t &used, std::uint64_t amount, std::uint64_t limit,
+                     llvm::StringRef name) {
+    if (ChargeInterfaceResource(used, amount, limit)) return true;
+    Add(diagnostics, kInterfaceResourceDiagnostic,
+        llvm::Twine("interface import exceeds its ") + name + " budget");
+    return false;
+  };
+  if (inputs.size() > limits.selected_modules) {
+    Add(diagnostics, kInterfaceResourceDiagnostic, "direct interface requests exceed the module budget");
+    return nullptr;
+  }
   std::map<std::string, std::size_t> module_index;
   for (const auto &input : inputs) {
     if (input.source_path.empty() || input.locked_identity.canonical_name.empty()) {
@@ -490,9 +520,12 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     std::string sidecar_path = input.sidecar_path.empty()
         ? input.source_path + ".json" : input.sidecar_path;
     std::string source_bytes, sidecar_json;
-    if (!ReadBoundedFile(input.source_path, source_bytes, diagnostics, "source") ||
-        !ReadBoundedFile(sidecar_path, sidecar_json, diagnostics, "sidecar"))
+    if (!ReadBoundedFile(input.source_path, source_bytes, diagnostics, "source", usage, limits) ||
+        !ReadBoundedFile(sidecar_path, sidecar_json, diagnostics, "sidecar", usage, limits)) {
+      if (!diagnostics.empty() && diagnostics.back().code == kInterfaceResourceDiagnostic)
+        return nullptr;
       continue;
+    }
     auto sidecar = DecodeSemanticInterfaceSidecar(
         sidecar_json, source_bytes,
         llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
@@ -502,6 +535,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
           input.locked_identity.canonical_name);
       continue;
     }
+    if (!charge(usage.decoded_declarations, sidecar->declarations.size(),
+                limits.decoded_declarations, "decoded declaration work")) return nullptr;
     if (!SameIdentity(sidecar->module, input.locked_identity)) {
       Add(diagnostics, "O3IFC134",
           "sidecar identity does not match the dependency lock",
@@ -556,6 +591,10 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
       continue;
     }
 
+    if (!charge(usage.selected_modules, 1, limits.selected_modules, "selected module") ||
+        !charge(usage.selected_declarations, sidecar->declarations.size(), limits.selected_declarations, "selected declaration") ||
+        !charge(usage.dependency_edges, sidecar->dependencies.size(), limits.dependency_edges, "dependency-edge"))
+      return nullptr;
     Impl::Module module;
     module.input = input;
     module.sidecar = std::move(*sidecar);
@@ -569,7 +608,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   graph_nodes.reserve(impl->modules.size());
   for (const auto &module : impl->modules)
     graph_nodes.push_back({module.sidecar.module, module.sidecar.dependencies});
-  auto graph = ResolveInterfaceDependencyGraph(graph_nodes);
+  auto graph = ResolveInterfaceDependencyGraph(graph_nodes, limits);
   for (const auto &d : graph.diagnostics)
     Add(diagnostics, d.code, d.message,
         llvm::join(d.modules, ", "));
@@ -581,6 +620,9 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   for (const auto &name : graph.topological_order) {
     const auto index = module_index.at(name);
     auto &module = impl->modules[index];
+    if (!charge(usage.parser_input_bytes, module.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+        !charge(usage.parser_declarations, module.sidecar.declarations.size(), limits.parser_declarations, "parser declaration work"))
+      return nullptr;
     auto &virtual_files=module.virtual_files;
     llvm::SmallString<256> include_directory(module.input.source_path);
     llvm::sys::path::remove_filename(include_directory);
@@ -603,6 +645,12 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
       const auto &provider = impl->modules[dep_it->second];
       for (const auto &nested : provider.sidecar.dependencies)
         dependency_worklist.push_back(nested.module.canonical_name);
+      // A dependency has both a retained virtual-file mapping and a temporary
+      // declaration/source proof during replay. Budget both before copying.
+      if (!charge(usage.parser_input_bytes, provider.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+          !charge(usage.parser_input_bytes, provider.source_bytes.size(), limits.parser_input_bytes, "parser input byte") ||
+          !charge(usage.parser_declarations, provider.sidecar.declarations.size(), limits.parser_declarations, "parser declaration work"))
+        return nullptr;
       llvm::SmallString<256> include_path(include_directory);
       llvm::sys::path::append(include_path, BuildInterfaceIncludePath(dependency_name));
       virtual_files.emplace_back(include_path.str().str(), provider.source_bytes);
@@ -616,9 +664,13 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     }
     if (!diagnostics.empty()) return nullptr;
     auto ast_arguments = target.ast_arguments;
+    const auto mappings_before_runtime = virtual_files.size();
     AddRuntimeInterfaceFiles(virtual_files, ast_arguments,
         module.source_bytes.find("#include <objc3c/runtime/objc3_task.hpp>") !=
             std::string::npos);
+    for (std::size_t i = mappings_before_runtime; i < virtual_files.size(); ++i)
+      if (!charge(usage.parser_input_bytes, virtual_files[i].second.size(), limits.parser_input_bytes, "parser runtime mapping byte"))
+        return nullptr;
     ast_arguments.push_back("-iquote");
     ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
     module.ast = clang::tooling::buildASTFromCodeWithArgs(
@@ -653,6 +705,9 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     auto regenerated_sidecar = DecodeSemanticInterfaceSidecar(
         regenerated.sidecar_json, regenerated.source_bytes,
         llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+    if (regenerated_sidecar && !charge(usage.decoded_declarations,
+          regenerated_sidecar->declarations.size(), limits.decoded_declarations,
+          "decoded declaration replay work")) return nullptr;
     if (!regenerated_sidecar ||
         !SameIdentity(regenerated.identity, module.sidecar.module) ||
         BuildSemanticFingerprintInput(*regenerated_sidecar) !=
