@@ -131,6 +131,9 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             return result['commands']
         if name == 'sanitizers':
             resource_root = Path(subprocess.check_output([bootstrap / 'bin/clang', '-print-resource-dir'], text=True).strip())
+            command('executor-locks', [sys.executable, '-B', '-m',
+                'scripts.objc3c_toolchain.qualify_executor_locks', '--repo', repo,
+                '--compiler', sdk / 'bin/clang++', '--output', directory / 'executor-locks'])
             command('structured', [sys.executable, '-B', '-m',
                 'scripts.objc3c_toolchain.qualify_structured_sanitizers', '--repo', repo,
                 '--compiler-root', sdk, '--resource-root', resource_root, '--output-dir', directory / 'structured'])

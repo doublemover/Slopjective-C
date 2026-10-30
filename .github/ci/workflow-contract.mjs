@@ -26,7 +26,11 @@ export function validateNativeGate(text) {
   ) {
     throw new Error("Native aggregate must always evaluate both required prerequisites");
   }
-  if (!(gate.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_assurance verify"))) {
+  if (
+    !(gate.steps ?? []).some(
+      (step) => step.run?.includes("scripts.objc3c_assurance verify") && step.if === "always()",
+    )
+  ) {
     throw new Error("Native aggregate must validate exact-revision receipt contents");
   }
   for (const id of ["plan", "native", "gate"]) {

@@ -6,7 +6,13 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+  endif()
   add_library(objc3c_build_defaults INTERFACE)
+  include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/Objc3BuildWarnings.cmake")
+  objc3c_configure_build_warnings(objc3c_build_defaults)
   target_include_directories(objc3c_build_defaults INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/..")
   include(CTest)
@@ -35,6 +41,8 @@ add_library(objc3_runtime_services STATIC
 set_source_files_properties(concurrency/service_actor_association.cpp stdlib/keypath_kvc.cpp PROPERTIES
   COMPILE_OPTIONS "-x;objective-c++;-fblocks;-fno-objc-arc;-fobjc-exceptions;-fobjc-runtime=gnustep-2.2")
 target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
+target_compile_options(objc3_runtime_services PRIVATE
+  "$<$<CXX_COMPILER_ID:Clang>:-Wthread-safety;-Werror=thread-safety>")
 target_compile_options(objc3_runtime_services INTERFACE
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fcoro-aligned-allocation>"
   "$<$<COMPILE_LANG_AND_ID:OBJCXX,Clang>:-fcoro-aligned-allocation>")
@@ -51,6 +59,15 @@ target_link_libraries(objc3_runtime_services PRIVATE Threads::Threads)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND BUILD_TESTING)
   get_filename_component(_repo "${CMAKE_CURRENT_SOURCE_DIR}/../../../.." ABSOLUTE)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME objc3_executor_lock_contract
+      COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain.qualify_executor_locks
+        --repo "${_repo}" --compiler "${CMAKE_CXX_COMPILER}"
+        --output "${CMAKE_BINARY_DIR}/executor-lock-contract")
+    set_tests_properties(objc3_executor_lock_contract PROPERTIES
+      WORKING_DIRECTORY "${_repo}" TIMEOUT 120)
+  endif()
   add_executable(objc3_task_services_test
     "${_repo}/tests/tooling/fixtures/clang_foundation/services/task_services.cpp"
     "${_repo}/tests/clang_foundation/structured_runtime/actor_scheduling.cpp"

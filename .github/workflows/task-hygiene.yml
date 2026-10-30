@@ -29,6 +29,8 @@ jobs:
           --execution-inventory=out/tooling/inventory.json
           --junitxml=out/tooling/results.xml
           tests/tooling/test_native_assurance.py
+          tests/tooling/test_native_assurance_bootstrap.py
+          tests/tooling/test_executor_lock_qualification.py
           tests/tooling/test_pytest_execution_inventory.py
           tests/tooling/test_toolchain_host_tools.py
           tests/tooling/test_toolchain_build.py

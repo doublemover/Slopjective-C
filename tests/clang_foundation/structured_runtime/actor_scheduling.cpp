@@ -679,7 +679,7 @@ void named_retirement_releases_executor_outside_registry_lock() {
   for (;;) {
     bool stopping;
     {
-      std::lock_guard lock(worker->mutex);
+      objc3::services::ExecutorQueueLock lock(worker->mutex);
       stopping = worker->stopping;
     }
     if (stopping) break;

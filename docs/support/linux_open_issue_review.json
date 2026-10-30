@@ -88,7 +88,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8285",
       "category": "assurance",
       "body_sha256": "c428ea1b7068ffecdd2d2c73c7d09a01afd4ead1693ea44b50b6c532538d6423",
-      "status": "open"
+      "status": "checked-lock-pilot-implemented-analysis-lane-open",
+      "implementation": "docs/roadmap/linux_checked_executor_locks.md"
     },
     {
       "number": 8286,
@@ -974,7 +975,7 @@
   },
   "native_ci_implementation": {
     "status": "implementation-prepared-acceptance-pending",
-    "tooling_tests": 503,
+    "tooling_tests": 520,
     "tooling_skips": 2,
     "tooling_subtests": 33,
     "workflow_policy_tests": 45,
@@ -984,6 +985,21 @@
       "Cold/reuse/invalidation cost measurements",
       "Administrator-confirmed required check settings"
     ],
-    "sdk_archive_rebuilt": false
+    "sdk_archive_rebuilt": false,
+    "clean_host_bootstrap": "Pinned private libsodium for minisign; actual signed ccache archive verification and loader-path witness passed."
+  },
+  "checked_executor_lock_pilot": {
+    "status": "PASS",
+    "standalone_runtime_ctests": 9,
+    "canonical_service_compile_commands": 17,
+    "compiler_control_cases": 7,
+    "negative_controls": [
+      "unlocked write",
+      "missing required lock",
+      "callback under excluded lock",
+      "unannotated wait predicate",
+      "real implementation guard removal"
+    ],
+    "remaining": "Fork-matched clang-tidy tool/selected-TU/checker and suppression baseline; #8285 remains open."
   }
 }

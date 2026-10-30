@@ -120,6 +120,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
             raise ValueError('installed native execution is incomplete')
         return commands
     if name == 'sanitizers':
+        from scripts.objc3c_toolchain.qualify_executor_locks import CASES
+        locks = read('executor-locks/qualification.json')
+        expected = {'correct-contract', 'current-executor', 'implementation-missing-lock',
+                    *(marker for marker, _ in CASES.values())}
+        if (len(locks.get('cases', [])) != len(expected) or
+                {row['name'] for row in locks['cases'] if row.get('status') == 'PASS'} != expected):
+            raise ValueError('executor lock contract controls are incomplete')
         result = read('structured/qualification.json')
         rows = result.get('executions', [])
         if (len(rows) != 4 or {(row['sanitizer'], row['optimization']) for row in rows} !=

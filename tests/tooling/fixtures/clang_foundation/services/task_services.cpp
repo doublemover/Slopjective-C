@@ -538,7 +538,7 @@ void test_start_closed_executor_failure_keeps_frame_with_caller() {
   std::atomic<int> destroyed{0};
   auto *frame = new Frame{executor, 0, 0, false, &destroyed};
   {
-    std::lock_guard<std::mutex> lock(executor->mutex);
+    objc3::services::ExecutorQueueLock lock(executor->mutex);
     executor->stopping = true; // closed-path injection without invalid handle use
   }
   objc3_task_start_options options{};

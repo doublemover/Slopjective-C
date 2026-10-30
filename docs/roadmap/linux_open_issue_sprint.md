@@ -219,7 +219,7 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
 | [#8284](https://github.com/doublemover/Slopjective-C/issues/8284) | Add isolated compiler and complete runtime instrumentation profiles |
-| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Add fork-matched static analysis and checked lock contracts for the native compiler/runtime implementation |
+| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Checked executor lock pilot and shared warnings implemented; fork-matched analysis tool/TU coverage still open ([details](linux_checked_executor_locks.md)) |
 | [#8286](https://github.com/doublemover/Slopjective-C/issues/8286) | Verify real Objective-C 3 IR across optimizer/backend stages and retain reducible miscompile evidence |
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces |
 | [#8288](https://github.com/doublemover/Slopjective-C/issues/8288) | Add independent generated semantic oracles for carrier ownership, cleanup and separate compilation |

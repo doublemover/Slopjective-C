@@ -63,7 +63,9 @@ conditional execution, mutable source forwarding and missing terminal verificati
 Evidence names include tested revision, run ID and attempt. Required uploads fail
 when absent and expire after seven days. Native receipts hash the complete durable
 JSON/XML/log set, with a 256 MiB budget; generated SDKs, build trees and passing
-executables are excluded. Failure receipts and compiler diagnostics are preserved.
+executables are excluded. Failure receipts and compiler diagnostics are preserved. A separate startup
+receipt retains clean-host tool provisioning logs before native execution begins;
+the signature verifier uses its own pinned private libsodium dependency.
 Receipts report elapsed time, descendant peak RSS and available disk. Tooling CI
 also exports actual selected/deselected pytest node IDs, collection failures,
 per-phase outcomes, explicit skips and expected failures, plus JUnit and `-ra`.

@@ -3,6 +3,7 @@
 
 #include "../public/objc3_runtime_services.h"
 #include "service_ref_count.h"
+#include "service_checked_lock.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -39,13 +40,13 @@ struct objc3_executor final {
   const bool manual;
   bool main_thread_only{false};
   bool worker_slot{false};
-  std::mutex mutex;
+  objc3::services::ExecutorQueueMutex mutex;
   // Separate from the queue lock so callbacks remain reentrant-safe. A pump
   // attempted while another pump is active returns NOT_READY.
   std::mutex pump_mutex;
   std::condition_variable ready;
-  std::list<WorkItem> queue;
-  bool stopping{false};
+  std::list<WorkItem> queue OBJC3_GUARDED_BY(mutex);
+  bool stopping OBJC3_GUARDED_BY(mutex){false};
   std::vector<std::thread> workers;
 
   explicit objc3_executor(bool is_manual, uint64_t logical_identity)

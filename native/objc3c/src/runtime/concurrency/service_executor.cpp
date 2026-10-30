@@ -92,7 +92,8 @@ bool is_process_main_thread() noexcept {
 }
 
 void run_callback(objc3_executor_t *executor,
-                  std::list<objc3_executor_t::WorkItem> &active) noexcept {
+                  std::list<objc3_executor_t::WorkItem> &active) noexcept
+    OBJC3_EXCLUDES(executor->mutex) {
   bool reschedule = false;
   {
     ExecutorIdentityScope current(executor->identity);
@@ -106,7 +107,7 @@ void run_callback(objc3_executor_t *executor,
   }
   if (reschedule) {
     {
-      std::lock_guard<std::mutex> lock(executor->mutex);
+      objc3::services::ExecutorQueueLock lock(executor->mutex);
       // Keep the active node rather than allocating a new callback. A full
       // public queue cannot strand an already-admitted actor continuation.
       executor->queue.splice(executor->queue.end(), active);
@@ -119,8 +120,8 @@ void worker_main(objc3_executor_t *executor) noexcept {
   for (;;) {
     std::list<objc3_executor_t::WorkItem> active;
     {
-      std::unique_lock<std::mutex> lock(executor->mutex);
-      executor->ready.wait(lock, [executor] {
+      objc3::services::ExecutorQueueLock lock(executor->mutex);
+      lock.wait(executor->ready, [executor]() OBJC3_REQUIRES(executor->mutex) {
         return executor->stopping || !executor->queue.empty();
       });
       if (executor->queue.empty() && executor->stopping) break;
@@ -199,7 +200,7 @@ objc3_service_status create_executor(uint32_t manual,
       // A partially initialized shared pool is never published. Stop and join
       // its successfully created workers before dropping the initial owner.
       {
-        std::lock_guard<std::mutex> lock(executor->mutex);
+        objc3::services::ExecutorQueueLock lock(executor->mutex);
         executor->stopping = true;
       }
       executor->ready.notify_all();
@@ -341,7 +342,7 @@ extern "C" void objc3_executor_release(objc3_executor_t *executor) {
   if (!executor) return;
   if (executor->public_references.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     {
-      std::lock_guard<std::mutex> lock(executor->mutex);
+      objc3::services::ExecutorQueueLock lock(executor->mutex);
       executor->stopping = true;
     }
     executor->ready.notify_all();
@@ -365,7 +366,7 @@ extern "C" objc3_service_status objc3_executor_enqueue(
     void *context) {
   if (!executor || !callback) return OBJC3_SERVICE_INVALID_ARGUMENT;
   {
-    std::lock_guard<std::mutex> lock(executor->mutex);
+    objc3::services::ExecutorQueueLock lock(executor->mutex);
     if (executor->stopping) return OBJC3_SERVICE_CLOSED;
     if (executor->queue.size() >= kMaximumQueuedCallbacks)
       return OBJC3_SERVICE_NOT_READY;
@@ -393,7 +394,7 @@ extern "C" objc3_service_status objc3_executor_pump(
   while (*out_executed < limit) {
     std::list<objc3_executor_t::WorkItem> active;
     {
-      std::lock_guard<std::mutex> lock(executor->mutex);
+      objc3::services::ExecutorQueueLock lock(executor->mutex);
       if (executor->queue.empty()) break;
       active.splice(active.end(), executor->queue, executor->queue.begin());
     }

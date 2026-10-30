@@ -141,7 +141,7 @@ def verify_symbols(records: list[dict], nm: Path, *, run):
         raise ValueError('compiler graph has no UBSan symbol evidence')
 
 
-def archive_members(path: Path) -> list[dict]:
+def archive_members(path: Path, *, allow_repeated_names=False) -> list[dict]:
     """Hash ordinary GNU/BSD ar members without extracting or executing them."""
     members = []
     names = b''
@@ -193,12 +193,47 @@ def archive_members(path: Path) -> list[dict]:
             if size % 2:
                 if stream.read(1) != b'\n':
                     raise ValueError('invalid compiler archive alignment')
-    if not members or len({row['name'] for row in members}) != len(members):
+    if not members or (not allow_repeated_names and len({row['name'] for row in members}) != len(members)):
         raise ValueError('compiler archive has empty or ambiguous object ownership')
     return members
 
 
-def verify_owned_archives(archives: list[Path], records: list[dict]) -> list[dict]:
+def archive_owners(build: Path, archives: list[Path], ninja: Path, *, run) -> dict[str, list[str]]:
+    """Bind each staged/build archive to its ordered canonical Ninja inputs.
+
+    Clang CodeGen/Driver have distinct TUs with repeated object basenames.
+    Names alone cannot establish membership; neither can a global bag of valid
+    object hashes, which would permit substitution from an unrelated target.
+    """
+    result = {}
+    for index, archive in enumerate(archives):
+        compiled = archive if archive.is_relative_to(build) else build / 'lib' / archive.name
+        if digest(compiled) != digest(archive):
+            raise ValueError('staged compiler archive differs from its canonical build output')
+        relative = compiled.relative_to(build).as_posix()
+        query = run('archive-inputs-'+str(index), [ninja, '-C', build, '-t', 'query', relative])
+        inputs = []
+        collecting = False
+        for line in query.splitlines():
+            if line.startswith('  input: '):
+                collecting = True
+            elif line.startswith('  outputs:'):
+                collecting = False
+            elif collecting:
+                name = line.strip()
+                if name.startswith('|'):
+                    continue # CMake's order-only/implicit target dependencies.
+                candidate = (build / name).resolve(strict=True)
+                if not name.endswith('.o') or not candidate.is_relative_to(build.resolve()):
+                    raise ValueError('compiler archive input is not a canonical owned object')
+                inputs.append(str(candidate))
+        if not inputs or len(inputs) != len(set(inputs)):
+            raise ValueError('compiler archive has missing or ambiguous canonical Ninja inputs')
+        result[str(archive)] = inputs
+    return result
+
+
+def verify_owned_archives(archives: list[Path], records: list[dict], *, owners=None) -> list[dict]:
     expected = {}
     for record in records:
         if record['classification'] == 'precompiled-header':
@@ -207,12 +242,25 @@ def verify_owned_archives(archives: list[Path], records: list[dict]) -> list[dic
     evidence = []
     if not archives:
         raise ValueError('compiler profile has no owned static archives')
+    if owners is not None and set(owners) != {str(archive) for archive in archives}:
+        raise ValueError('compiler archive ownership inventory differs from the selected archives')
+    objects = {row['object']: row for row in records if row['classification'] != 'precompiled-header'}
     for archive in archives:
-        members = archive_members(archive)
+        members = archive_members(archive, allow_repeated_names=owners is not None)
         for row in members:
             if row['sha256'] not in expected.get(row['name'], set()):
                 raise ValueError('compiler archive member differs from verified objects: '+str(archive)+':'+row['name'])
-        evidence.append({'path': str(archive), 'sha256': digest(archive), 'members': members})
+        ownership = {}
+        if owners is not None:
+            paths = owners[str(archive)]
+            if not paths or len(paths) != len(set(paths)) or any(path not in objects for path in paths):
+                raise ValueError('compiler archive target contains unverified or duplicate objects')
+            actual = [(row['name'], row['sha256']) for row in members]
+            intended = [(Path(path).name, objects[path]['sha256']) for path in paths]
+            if actual != intended:
+                raise ValueError('compiler archive members differ from ordered canonical target inputs')
+            ownership = {'objects': paths}
+        evidence.append({'path': str(archive), 'sha256': digest(archive), 'members': members, **ownership})
     return evidence
 
 
@@ -343,7 +391,9 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             run=lambda name, cmd: run('foundation-'+name, cmd))
         archives = sorted(path for path in (stage / 'lib').glob('*.a')
                           if path.name.startswith(('libLLVM', 'libclang')))
-        report['foundation_archives'] = verify_owned_archives(archives, report['foundation_objects'])
+        report['foundation_archives'] = verify_owned_archives(archives, report['foundation_objects'],
+            owners=archive_owners(build, archives, ninja,
+                run=lambda name, cmd: run('foundation-'+name, cmd)))
         facade = output / 'facade'
         run('embedding-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
@@ -373,9 +423,10 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             foundation=False, run=lambda name, cmd: run('embedding-'+name, cmd))
         verify_symbols(report['embedding_objects'], bootstrap / 'bin/llvm-nm',
             run=lambda name, cmd: run('embedding-'+name, cmd))
-        report['embedding_archives'] = verify_owned_archives(
-            sorted((facade / 'src/clang_foundation').rglob('libobjc3*.a')),
-            report['embedding_objects'])
+        archives = sorted((facade / 'src/clang_foundation').rglob('libobjc3*.a'))
+        report['embedding_archives'] = verify_owned_archives(archives, report['embedding_objects'],
+            owners=archive_owners(facade, archives, ninja,
+                run=lambda name, cmd: run('embedding-'+name, cmd)))
         for record in report['foundation_objects'] + report['embedding_objects']:
             if (digest(Path(record['source'])) != record['source_sha256'] or
                     digest(Path(record['object'])) != record['sha256']):

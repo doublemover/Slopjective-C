@@ -21,8 +21,8 @@ set(CMAKE_JOB_POOL_LINK objc3_link)
 add_library(objc3c_build_defaults INTERFACE)
 target_include_directories(objc3c_build_defaults INTERFACE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
-target_compile_options(objc3c_build_defaults INTERFACE
-  "$<BUILD_INTERFACE:-Wall;-Wextra;-pedantic;-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.;-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.>")
+include(Objc3BuildWarnings)
+objc3c_configure_build_warnings(objc3c_build_defaults)
 include(Objc3ClangFoundation)
 include(CTest)
 add_subdirectory(src/clang_foundation)

@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
       - name: Pinned host tools
         shell: bash
-        run: bash scripts/setup_cloud_environment.sh
+        run: python3 -B -m scripts.objc3c_assurance.bootstrap --root /opt/objc3c-host --output out/native-assurance/startup
       - name: Select immutable periodic source
         shell: bash
         run: |
@@ -48,6 +48,7 @@ jobs:
         with:
           name: native-closeout-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            out/native-assurance/startup/
             out/native-assurance/plan.json
             out/native-assurance/results/**/*.json
             out/native-assurance/results/**/*.xml
