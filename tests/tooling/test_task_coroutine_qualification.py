@@ -54,6 +54,35 @@ def test_failed_native_provider_replaces_stale_success(tmp_path, monkeypatch):
     assert report['commands'][0]['exit_code'] == 1
 
 
+def _mock_canonical_profiles(monkeypatch, output):
+    archive = output / 'canonical-services.a'
+    dependency = output / 'libobjc.so'
+    archive.write_bytes(b'qualified test archive')
+    dependency.write_bytes(b'qualified test dependency')
+    selected, controls = [], []
+
+    class Profiles:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get(self, mode, optimization, *, objc_runtime=None):
+            selected.append((mode, optimization, objc_runtime))
+            return SimpleNamespace(archive=archive, objc_runtime=dependency)
+
+    class Policy:
+        environment = {'OBJC3_TEST_STRICT_POLICY': 'owned'}
+
+        def __init__(self, *args, libraries, **kwargs):
+            assert libraries == (archive, dependency)
+
+        def ensure_controls(self, optimization):
+            controls.append(optimization)
+
+    monkeypatch.setattr(sanitizers, 'RuntimeProfiles', Profiles)
+    monkeypatch.setattr(sanitizers, 'SanitizerQualification', Policy)
+    return selected, controls, archive, dependency
+
+
 @pytest.mark.parametrize('failed_command', [0, 1])
 def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch, failed_command):
     compiler, resources, output = (tmp_path / name for name in ('compiler', 'resources', 'output'))
@@ -62,17 +91,18 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch, faile
     output.mkdir()
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
-    calls = []
-    runtime_workspaces = []
+    selected, controls, archive, dependency = _mock_canonical_profiles(monkeypatch, output)
+    calls, workspaces = [], []
 
     def run(argv, **kwargs):
+        assert controls == ['O0']
+        assert kwargs['env'] == {'OBJC3_TEST_STRICT_POLICY': 'owned'}
         calls.append(argv)
         kwargs['stdout'].write('forced sanitizer failure\n')
-        if kwargs.get('cwd'):
-            runtime_workspaces.append(kwargs['cwd'])
-            (kwargs['cwd'] / 'partial.o').write_bytes(b'partial runtime object')
-        else:
-            Path(argv[-1]).write_bytes(b'partial executable')
+        if '-o' in argv:
+            executable = Path(argv[argv.index('-o') + 1])
+            workspaces.append(executable.parent)
+            executable.write_bytes(b'partial executable')
         return SimpleNamespace(returncode=int(len(calls) > failed_command))
 
     monkeypatch.setattr(sanitizers.subprocess, 'run', run)
@@ -81,14 +111,19 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch, faile
         sanitizers.qualify(tmp_path, compiler, resources, output)
     report = json.loads(receipt.read_text())
     assert report['status'] == 'FAIL' and not report['executions']
-    assert len(calls) == failed_command + 1 and '-fsanitize=address,undefined' in calls[0]
+    assert selected == [('address,undefined', 'O0', None)]
+    assert len(calls) == failed_command + 1
+    assert '-fsanitize=address,undefined' in calls[0]
+    assert '-fno-sanitize-recover=undefined' in calls[0]
     assert '-fcoro-aligned-allocation' in calls[0]
-    assert '-fobjc-version=3' not in calls[0] and '-x' not in calls[0]
+    assert '-fobjc-version=3' in calls[0] and 'objective-c++' in calls[0]
+    assert str(archive) in calls[0] and str(dependency) in calls[0]
     if failed_command:
-        assert '-fobjc-version=3' in calls[1] and 'objective-c++' in calls[1]
-        assert not Path(calls[1][-1]).exists()
-    assert runtime_workspaces and all(not path.exists() for path in runtime_workspaces)
+        assert calls[1] == [str(workspaces[0] / 'address-undefined-O0-arc')]
+    assert workspaces and all(not path.exists() for path in workspaces)
+    assert archive.is_file() and dependency.is_file()
     log = output / (report['commands'][-1]['name'] + '.log')
+    assert report['commands'][-1]['exit_code'] == 1
     assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log)
 
 

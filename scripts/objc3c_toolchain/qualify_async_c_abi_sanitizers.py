@@ -50,7 +50,7 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
                   'service_optimization': 'O1',
                   'executions': sum(r['executions'] for r in results),
                   'sanitizers': results, 'commands': commands,
-                  'runtime_profiles': profiles.receipts(),
+                  'runtime_profiles': profiles.receipts() if profiles is not None else [],
                   'compiler_sha256': digest(compiler.resolve()),
                   'sanitizer_resource_root': str(resource_root),
                   'sanitizer_runtime_sha256': {str(p.relative_to(resource_root)): digest(p)
@@ -63,7 +63,7 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
         write_json(receipt, {'schema': 'objc3c.async-c-abi-sanitizer-qualification.v1',
             'status': 'FAIL', 'sdk_seal': manifest['seal_sha256'],
             'sanitizers': results, 'commands': commands,
-                  'runtime_profiles': profiles.receipts(), 'error': str(error)})
+                  'runtime_profiles': profiles.receipts() if profiles is not None else [], 'error': str(error)})
         raise
     write_json(receipt, report)
     return report
