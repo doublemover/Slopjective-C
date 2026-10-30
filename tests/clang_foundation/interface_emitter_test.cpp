@@ -116,7 +116,7 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
     auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.hidden", "test",
                                         {}, {}, {}, exports);
     assert(!result.success && std::any_of(result.diagnostics.begin(),
-        result.diagnostics.end(), [](const auto &d) { return d.code == "O3IFC112"; }));
+        result.diagnostics.end(), [](const auto &d) { return d.code == "O3IFC156"; }));
   };
   rejects_hidden_dependency(object + "@protocol Hidden @end\n"
       "@interface Object (Extra) <Hidden> @end\n", {"Object"});
