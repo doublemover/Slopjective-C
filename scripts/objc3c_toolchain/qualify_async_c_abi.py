@@ -13,10 +13,13 @@ import tempfile
 if __package__:
     from . import binary_packages as packages
     from .sdk_example import environment
+    from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
     from sdk_example import environment
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 
 
 def configurations():
@@ -47,9 +50,12 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     compiler = compiler or sdk / 'bin/clang'
     env = environment(sdk)
     env['LD_LIBRARY_PATH'] = str(objc_runtime.parent) + ':' + str(sdk / 'lib')
-    env.update(ASAN_OPTIONS='detect_leaks=1:halt_on_error=1',
-               UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1',
-               TSAN_OPTIONS='halt_on_error=1')
+    if sanitizer and resource_root is None:
+        raise ValueError('sanitizer execution requires explicit resources')
+    policy = SanitizerQualification(compiler, resource_root, output / 'detector-controls',
+        sanitizer, libraries=(runtime_library, objc_runtime), additional_inputs=(Path(__file__),), base_environment=env) if sanitizer else None
+    if policy:
+        env = policy.environment
     cases, commands = [], []
 
     def run(label, argv, cwd):
@@ -61,6 +67,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                          'log_sha256': packages.digest(log)})
         if result.returncode:
             raise ValueError('typed async C ABI failed: ' + label)
+        if policy:
+            require_clean_diagnostic(log.read_text(errors='replace'))
         return log
 
     def inputs():
@@ -82,6 +90,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
         with tempfile.TemporaryDirectory(prefix="objc3 C async 'outside checkout ") as temporary:
             root = Path(temporary)
             for plang, powner, clang, standard, cowner, opt in configurations():
+                if policy:
+                    policy.ensure_controls(opt)
                 label = '-'.join((plang, powner, standard, cowner, opt))
                 for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
                     shutil.copyfile(fixture / name, root / name)
@@ -89,7 +99,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                           '-Wall', '-Wextra', '-Werror', '-Wno-unused-command-line-argument',
                           '-I' + str(headers), '-fobjc-runtime=gnustep-2.2', '-fblocks']
                 if sanitizer:
-                    common += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer']
+                    common += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer',
+                               '-fno-sanitize-recover=undefined']
                     if resource_root:
                         common += ['-resource-dir', str(resource_root)]
                 provider_flags = [*common, '-x', plang, '-std=c17']
@@ -168,6 +179,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                   **initial_inputs,
                   'sanitizer': sanitizer, 'executions': len(cases), 'cases': cases,
                   'profile_conformance_claimed': False, 'commands': commands}
+        if policy:
+            report['sanitizer_policy'] = policy.finalize()
         if inputs() != initial_inputs:
             raise ValueError('typed async C ABI inputs changed during qualification')
     except Exception as error:

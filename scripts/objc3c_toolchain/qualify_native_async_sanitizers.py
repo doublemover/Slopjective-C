@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from .binary_packages import digest, disjoint, write_json
+from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 
 
 def configurations():
@@ -44,6 +45,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
     inputs += sorted((repo / 'native/objc3c/src/runtime').rglob('*.h'))
     inputs += sorted((repo / 'native/objc3c/src/runtime/public').glob('*.hpp'))
     cases, commands = [], []
+    policies = {}
 
     def run(label, argv, environment, *, cwd=None):
         log = output / (label + '.log')
@@ -53,22 +55,26 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
         if result.returncode:
             raise ValueError('instrumented native async failed: ' + label)
+        require_clean_diagnostic(log.read_text(errors="replace"))
 
     try:
         for sanitizer, optimization, ownership, provider in execution_configurations():
+            if sanitizer not in policies:
+                policies[sanitizer] = SanitizerQualification(compiler_root / 'bin/clang++',
+                    resource_root, output / 'detector-controls' / sanitizer.replace(',', '-'),
+                    sanitizer, libraries=(objc_runtime,), additional_inputs=(Path(__file__),), base_environment=os.environ)
+            policy = policies[sanitizer]
+            policy.ensure_controls(optimization)
             with tempfile.TemporaryDirectory(prefix='objc3-native-async-') as temporary:
                 work = Path(temporary)
                 label = sanitizer.replace(',', '-') + '-' + optimization + '-' + ownership
                 if provider != ownership:
                     label += '-provider-' + provider
                 executable = work / label
-                env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
-                       'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
-                       'TSAN_OPTIONS': 'halt_on_error=1'}
-                env['LD_LIBRARY_PATH'] = str(objc_runtime.parent)
+                env = policy.environment
                 common = [compiler_root / 'bin/clang++', '--no-default-config',
                           '-std=c++20', '-g', '-' + optimization, '-UNDEBUG',
-                          '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
+                          '-fno-omit-frame-pointer', '-fno-sanitize-recover=undefined', '-fcoro-aligned-allocation',
                           '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
                           '-pthread', '-I' + str(repo / 'native/objc3c/src'),
                           '-I' + str(repo / 'native/objc3c/src/runtime/public')]
@@ -99,6 +105,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                   'objc_runtime_sha256': digest(objc_runtime),
                   'instrumentation': 'Objective-C++ native async provider/client in all ARC/MRC pairs and C++ task, executor, group, actor, value/error services',
                   'executions': cases, 'commands': commands,
+                  'sanitizer_policy': {mode: policy.finalize() for mode, policy in policies.items()},
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)
                       for path in sorted(resource_root.rglob('libclang_rt.*san*.a'))}}

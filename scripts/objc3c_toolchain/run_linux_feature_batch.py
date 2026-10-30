@@ -17,8 +17,12 @@ import tempfile
 
 if __package__:
     from .sdk_example import environment, write_json
+    from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 else:
     from sdk_example import environment, write_json
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
@@ -69,7 +73,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
         resource_root = resource_root.resolve(strict=True)
         instrumentation += ["-resource-dir", str(resource_root)]
     if sanitizer:
-        instrumentation += ["-fsanitize=" + sanitizer, "-fno-omit-frame-pointer"]
+        instrumentation += ["-fsanitize=" + sanitizer, "-fno-omit-frame-pointer",
+                            "-fno-sanitize-recover=undefined"]
     sdk = sdk.resolve(strict=True)
     output = output.resolve()
     compiler = (compiler or sdk / "bin/clang").resolve(strict=True)
@@ -91,11 +96,11 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     report_path = output / "batch.json"
     report_path.unlink(missing_ok=True)
     env = environment(sdk)
-    if sanitizer:
-        env.setdefault("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1")
-        env.setdefault("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1")
-        env.setdefault("TSAN_OPTIONS", "halt_on_error=1")
     env["LD_LIBRARY_PATH"] = os.pathsep.join((str(objc_runtime.parent), str(sdk / "lib")))
+    policy = SanitizerQualification(compiler, resource_root, output / "detector-controls", sanitizer,
+        libraries=(runtime_library, objc_runtime), additional_inputs=(Path(__file__),), base_environment=env) if sanitizer else None
+    if policy:
+        env = policy.environment
     report = {"schema": "objc3c.linux-development-features.v1", "status": "running",
               "compiler": str(compiler), "runtime_library": str(runtime_library),
               "headers": str(headers), "include_root": str(include_root),
@@ -119,6 +124,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                                    "exit_code": code, "log": log.name})
         if code:
             raise RuntimeError("native feature command failed: " + label)
+        if policy:
+            require_clean_diagnostic(log.read_text(errors="replace"))
 
     def flags(case, language, standard, ownership, optimization, work):
         result = ["--no-default-config", *instrumentation, "-x", language, "-std=" + standard,
@@ -171,6 +178,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
 
     try:
         for case in configurations(features, transports):
+            if policy:
+                policy.ensure_controls(case.optimization)
+                report["sanitizer_policy"] = policy.receipt()
             with tempfile.TemporaryDirectory(prefix="objc3-feature-") as temporary:
                 work = Path(temporary)
                 (work / "include/objc3c").mkdir(parents=True)
@@ -280,6 +290,8 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                         execute(case, [returns], work, "-return-cleanup")
                 report["cases"].append({"name": case.name, "status": "pass"})
             write_json(report_path, report)
+        if policy:
+            report["sanitizer_policy"] = policy.finalize()
         report["status"] = "pass"
     except (OSError, RuntimeError, ValueError) as error:
         report["status"] = "failed"

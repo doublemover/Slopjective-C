@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 
 from . import binary_packages as packages
+from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 from .qualify_native_async_packages import check_cpp_metadata, check_factory_metadata
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,7 +33,8 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
         resource_root = resource_root.resolve(strict=True)
         instrumentation += ['-resource-dir', str(resource_root)]
     if sanitizer:
-        instrumentation += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer']
+        instrumentation += ['-fsanitize=' + sanitizer, '-fno-omit-frame-pointer',
+                            '-fno-sanitize-recover=undefined']
     sdk, compiler, foundation, runtime, objc_runtime = (
         path.resolve(strict=True) for path in
         (sdk, compiler, foundation, runtime, objc_runtime))
@@ -66,10 +68,11 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
               'resource_root': str(resource_root) if resource_root else None,
               'cases': [], 'commands': []}
     environment = {**os.environ, 'LD_LIBRARY_PATH': str(objc_runtime.parent)}
-    if sanitizer:
-        environment.setdefault('ASAN_OPTIONS', 'detect_leaks=1:halt_on_error=1')
-        environment.setdefault('UBSAN_OPTIONS', 'halt_on_error=1:print_stacktrace=1')
-        environment.setdefault('TSAN_OPTIONS', 'halt_on_error=1')
+    policy = SanitizerQualification(foundation / 'bin/clang', resource_root,
+        output / 'detector-controls', sanitizer, libraries=(runtime, objc_runtime),
+        additional_inputs=(compiler, Path(__file__)), base_environment=environment) if sanitizer else None
+    if policy:
+        environment = policy.environment
 
     def run(name, command, *, expected=0):
         log = output / (name + '.log')
@@ -81,7 +84,10 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                                    'log': log.name})
         if result.returncode != expected:
             raise ValueError(f'{name}: expected {expected}, got {result.returncode}; see {log}')
-        return log.read_text()
+        diagnostic = log.read_text()
+        if policy and expected == 0:
+            require_clean_diagnostic(diagnostic)
+        return diagnostic
 
     try:
         modes = [('c++20', 'arc', 'O0')] if full else [
@@ -89,6 +95,9 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
             for standard in ('c++20', 'c++23')
             for ownership in ('arc', 'mrc') for optimization in ('O0', 'O2')]
         for standard, ownership, optimization in modes:
+            if policy:
+                policy.ensure_controls(optimization)
+                report['sanitizer_policy'] = policy.receipt()
             label = '-'.join((standard, ownership, optimization))
             with tempfile.TemporaryDirectory(prefix='objc3-factory-package-') as temporary:
                 work = Path(temporary)
@@ -199,6 +208,8 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
             raise ValueError('compiler/runtime inputs changed during qualification')
         if source_inputs != {path: packages.digest(Path(path)) for path in source_inputs}:
             raise ValueError('source/header inputs changed during qualification')
+        if policy:
+            report['sanitizer_policy'] = policy.finalize()
         report['status'] = 'PASS'
     except Exception as error:
         report.update(status='FAIL', error=str(error))

@@ -10,6 +10,7 @@ import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 from .qualify_async_c_abi import qualify as qualify_bridge
+from .sanitizer_policy import strict_environment, require_clean_diagnostic
 
 
 def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compiler: Path | None = None,
@@ -37,16 +38,18 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
         'concurrency/service_task.cpp', 'concurrency/service_async_join.cpp', 'concurrency/service_group.cpp',
         'concurrency/service_actor.cpp', 'concurrency/service_public.cpp')]
     commands, results = [], []
+    build_environment = strict_environment(compiler, resource_root.parents[2] / 'bin/llvm-symbolizer')
 
     def run(label, argv, cwd):
         log = output / (label + '.log')
         with log.open('w') as stream:
-            result = subprocess.run(list(map(str, argv)), cwd=cwd, env=os.environ.copy(),
+            result = subprocess.run(list(map(str, argv)), cwd=cwd, env=build_environment,
                                     stdout=stream, stderr=subprocess.STDOUT, timeout=180)
         commands.append({'name': label, 'exit_code': result.returncode,
                          'log_sha256': digest(log)})
         if result.returncode:
             raise ValueError('instrumented async C ABI runtime failed: ' + label)
+        require_clean_diagnostic(log.read_text(errors='replace'))
 
     try:
         for sanitizer in ('address,undefined', 'thread'):
@@ -58,7 +61,7 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
                 run(label + '-runtime-build', [compiler, '--no-default-config',
                     '-std=c++20', '-O1', '-g', '-fno-omit-frame-pointer', '-pthread',
                     '-resource-dir', resource_root,
-                    '-fsanitize=' + sanitizer, '-I' + str(repo / 'native/objc3c/src'),
+                    '-fsanitize=' + sanitizer, '-fno-sanitize-recover=undefined', '-I' + str(repo / 'native/objc3c/src'),
                     '-c', *sources], objects)
                 library = work / (label + '-services.a')
                 library.unlink(missing_ok=True)

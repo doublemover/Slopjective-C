@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from .binary_packages import digest, disjoint, write_json
+from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
 
 
 def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) -> dict:
@@ -28,6 +29,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                         fixture.with_name('actor_scheduling.cpp')]
     inputs += sorted((repo / 'native/objc3c/src/runtime').rglob('*.h'))
     cases, commands = [], []
+    policies = {}
 
     def run(label, argv, environment):
         log = output / (label + '.log')
@@ -37,19 +39,24 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
         commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
         if result.returncode:
             raise ValueError('instrumented structured runtime failed: ' + label)
+        require_clean_diagnostic(log.read_text(errors="replace"))
 
     try:
         for sanitizer in ('address,undefined', 'thread'):
             for optimization in ('O0', 'O2'):
+                if sanitizer not in policies:
+                    policies[sanitizer] = SanitizerQualification(compiler_root / 'bin/clang++',
+                        resource_root, output / 'detector-controls' / sanitizer.replace(',', '-'),
+                        sanitizer, additional_inputs=(Path(__file__),), base_environment=os.environ)
+                policy = policies[sanitizer]
+                policy.ensure_controls(optimization)
                 with tempfile.TemporaryDirectory(prefix='objc3-structured-sanitizers-') as temporary:
                     work = Path(temporary)
                     label = sanitizer.replace(',', '-') + '-' + optimization
                     executable = work / label
-                    env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
-                           'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
-                           'TSAN_OPTIONS': 'halt_on_error=1'}
+                    env = policy.environment
                     run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
-                        '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
+                        '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer', '-fno-sanitize-recover=undefined',
                         '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
                         '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS',
                         repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
@@ -64,6 +71,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                   'sanitizer_resource_root': str(resource_root),
                   'instrumentation': 'task, executor, group, actor, public API, value/error services and threaded client',
                   'executions': cases, 'commands': commands,
+                  'sanitizer_policy': {mode: policy.finalize() for mode, policy in policies.items()},
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)
                       for path in sorted(resource_root.rglob('libclang_rt.*san*.a'))}}
