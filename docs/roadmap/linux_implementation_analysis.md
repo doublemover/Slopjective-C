@@ -43,3 +43,12 @@ The maintained fix registers storage destruction with `ASTContext`. A native AST
 unit regression creates repeated long diagnostic strings and overflowing fix-it
 lists, then explicitly destroys the AST. Sanitizer qualification of that repair
 and completion of the full analyzer inventory are required before #8285 closes.
+
+Interrupted scans can resume exact successful TU actions. Reuse checks the
+effective original/projected command, checker configuration, current source and
+header closure, compiler/tool/loaded-library identities, native exit/timeout
+disposition and immutable diagnostic log. Changed inputs are misses; corrupted
+proof is rejected. Prior aggregate failure remains failed, and reused actions
+are labeled separately from fresh execution. Spawned worker processes avoid
+forking a threaded process through the subprocess pre-exec hook. Parallelism is
+bounded to one through four workers; each TU keeps its own durable result.

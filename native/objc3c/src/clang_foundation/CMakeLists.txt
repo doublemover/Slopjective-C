@@ -156,6 +156,7 @@ if (BUILD_TESTING)
       -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
       "-I${_objc3_repo}/native/objc3c/src"
       ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
+      ${OBJC3C_SOURCE_COVERAGE_FLAGS}
       -c "${_runtime_lifetime_source}" -o "${_runtime_lifetime_object}"
     DEPENDS "${_runtime_lifetime_source}"
       "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h"
@@ -360,6 +361,7 @@ if (BUILD_TESTING)
         -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
         "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
         ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
+        ${OBJC3C_SOURCE_COVERAGE_FLAGS}
         -c "${_source}" -o "${_object}"
       DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_source}"
         "${_objc3_repo}/tests/clang_foundation/task_coroutines/provider.h"
@@ -384,6 +386,7 @@ if (BUILD_TESTING)
       -O2 -g -UNDEBUG -include "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" -fcoro-aligned-allocation
       "-I${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public"
       ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS}
+      ${OBJC3C_SOURCE_COVERAGE_FLAGS}
       -c "${_task_group_await_source}" -o "${_task_group_await_object}"
     DEPENDS "${_objc3_repo}/native/objc3c/tests/test_assertion_policy.h" "${_task_group_await_source}"
       "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_task.hpp"

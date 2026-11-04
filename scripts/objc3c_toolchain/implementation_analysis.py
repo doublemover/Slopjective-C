@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
+import multiprocessing
 from pathlib import Path
 import re
 import shlex
@@ -13,6 +15,7 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
+from .analysis_checkpoint import run_unit, successful_action
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
 
@@ -143,10 +146,17 @@ def textual_pch(row):
     return result, projections
 
 
-def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=()):
+def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('implementation analysis requires fresh owned evidence')
+    if jobs not in (1, 2, 3, 4): raise ValueError('implementation analysis requires one to four worker processes')
+    previous = None
+    if resume:
+        resume = resume.resolve(strict=True)
+        if not resume.is_relative_to(repo / 'out') or resume.stat().st_size > 64*1024**2:
+            raise ValueError('implementation analysis checkpoint is outside bounded owned output')
+        previous = json.loads(resume.read_text())
     plan, _ = foundation(repo)
     source, stage, build = (Path(plan['paths'][key]).resolve(strict=True)
                             for key in ('source', 'stage', 'build'))
@@ -169,6 +179,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'environment': environment, 'inventory': [], 'results': [], 'exclusions': [],
+        'repository_output': str(repo / 'out'),
+        'parallel_workers': jobs,
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
@@ -191,7 +203,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         if any(not tool_headers.get(row['object']) for row in records):
             raise ValueError('implementation analyzer lacks its build header closure')
         report['inputs'].update({path: digest(Path(path)) for values in tool_headers.values() for path in values})
-        for name in ('compiler_instrumentation', 'llvm_tools', 'llvm_ir_execution', 'sanitizer_policy', 'binary_packages'):
+        for name in ('compiler_instrumentation', 'llvm_tools', 'llvm_ir_execution', 'sanitizer_policy', 'binary_packages', 'analysis_checkpoint'):
             path = Path(__file__).with_name(name+'.py')
             report['inputs'][str(path)] = digest(path)
         libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
@@ -211,10 +223,12 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             'SystemHeaders': False, 'FormatStyle': 'none'})
         report['inputs'].update({str(tool): digest(tool), str(config): digest(config),
                                   **report['tool_graph']['libraries']})
+        report['configuration'] = str(config)
+        report['resource_directory'] = str(bootstrap / 'lib/clang/23')
         for row in records:
             report['inputs'][row['source']] = row['source_sha256']
             report['inputs'][row['object']] = row['sha256']
-        def analyze(name, row, *, expected=0, contains=()):
+        def prepare_analysis(name, row):
             directory = output / name
             directory.mkdir()
             args, projection = textual_pch(row)
@@ -224,9 +238,11 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 report['inputs'][item['textual_wrapper']] = item['wrapper_sha256']
             write_json(directory / 'compile_commands.json', [{'file': row['file'],
                 'directory': row['directory'], 'arguments': args}])
-            run(name, [tool, '-p', directory, row['file'], '--config-file='+str(config),
+            return list(map(str, [tool, '-p', directory, row['file'], '--config-file='+str(config),
                 '--warnings-as-errors=*', '--extra-arg=-resource-dir='+str(bootstrap / 'lib/clang/23'),
-                '--export-fixes='+str(directory / 'diagnostics.yaml')], expected=expected, contains=contains)
+                '--export-fixes='+str(directory / 'diagnostics.yaml')]))
+        def analyze(name, row, *, expected=0, contains=()):
+            run(name, prepare_analysis(name, row), expected=expected, contains=contains)
         control = repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp'
         for bad in (False, True):
             analyze('control-'+('defective' if bad else 'corrected'), {'file': str(control), 'directory': str(repo),
@@ -299,20 +315,30 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 'selected_variants': len(rows), 'analyzed_variants': len(chosen),
                 'reason': 'Owned implementation TUs and every maintained Clang patch TU; vendor/test/generated-only TUs excluded. Unaffected variants omitted only for explicit dependency-based incremental selection.'})
             executor.timeout = policy['translation_unit_timeout_seconds']
-            for row in chosen:
-                name = label+'-'+row['identity'][:16]
-                try:
-                    analyze(name, row)
-                    report['results'].append({'identity': row['identity'], 'status': 'PASS'})
-                except StageFailure as error:
-                    report['results'].append({'identity': row['identity'], 'status': 'FAIL',
-                        'classification': error.classification, 'error': str(error)})
-                executor.save()
+            with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
+                futures = []
+                for row in chosen:
+                    name = label+'-'+row['identity'][:16]
+                    argv = prepare_analysis(name, row)
+                    cached = successful_action(resume, previous, report, row,
+                        arguments=row['analysis_arguments']) if previous else None
+                    if cached:
+                        report['results'].append(cached)
+                    else:
+                        futures.append(workers.submit(run_unit, {'name': name, 'identity': row['identity'],
+                            'directory': str(output / name), 'environment': environment, 'argv': argv,
+                            'timeout': policy['translation_unit_timeout_seconds']}))
+                    executor.save()
+                for future in as_completed(futures):
+                    result, commands = future.result()
+                    report['results'].append(result);report['commands'].extend(commands);executor.save()
         if not report['results'] or any(row['status'] != 'PASS' for row in report['results']):
             raise ValueError('implementation analysis contains findings or incomplete translation units')
         if any(digest(Path(path)) != value for path, value in report['inputs'].items()):
             raise ValueError('implementation analysis inputs changed')
         report.update(status='PASS', analyzed_variants=len(report['results']), inventory_variants=len(report['inventory']))
+        report['fresh_native_executions'] = sum(not row.get('execution_reused', False) for row in report['results'])
+        report['verified_checkpoint_actions'] = sum(row.get('execution_reused', False) for row in report['results'])
     except (OSError, ValueError) as error:
         report.update(status='FAIL', error=str(error))
         raise
@@ -328,6 +354,8 @@ def main():
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--tool-build', type=Path)
     parser.add_argument('--changed', nargs='*', type=Path, default=[])
+    parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
+    parser.add_argument('--resume', type=Path)
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'analyzed_variants': result['analyzed_variants']}))
 

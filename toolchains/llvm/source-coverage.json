@@ -1,0 +1,24 @@
+{
+  "schema": "objc3c.native-source-coverage-policy.v1",
+  "host": "linux-x86_64",
+  "compile_flags": ["-fprofile-instr-generate", "-fcoverage-mapping", "-fprofile-update=atomic"],
+  "frontend_tests": [
+    "objc3_compile_session",
+    "objc3_interface_contract",
+    "objc3_interface_emitter",
+    "objc3_interface_import_api",
+    "objc3_interface_module_resolution",
+    "objc3_interface_artifact_io"
+  ],
+  "runtime_tests": [
+    "objc3_task_services",
+    "objc3_structured_runtime",
+    "objc3_async_error_bridge",
+    "objc3_keypath_service",
+    "objc3_async_handle_join",
+    "objc3_generic_collection_service",
+    "objc3_generic_associative_service",
+    "objc3_generic_collection_ownership"
+  ],
+  "purpose": "Measured first-party implementation pilot; patched LLVM/Clang coverage and a required regression baseline remain separate. No percentage threshold."
+}

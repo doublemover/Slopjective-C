@@ -1,8 +1,8 @@
 {
   "schema": "objc3c.open-issue-review.v1",
-  "review_date": "2026-10-30",
+  "review_date": "2026-11-04",
   "repository": "doublemover/Slopjective-C",
-  "reviewed_head": "45e37d7d1decc9e1cc7940c7171a710e17fbf1d0",
+  "reviewed_head": "42f2f874a93db6333766730e405f9192e11e4000",
   "open_issue_count": 51,
   "issues": [
     {
@@ -128,7 +128,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8289",
       "category": "assurance",
       "body_sha256": "fe6f1c9387d14802d520d82b2ef3755e9d8fb9965fbe870fc75e87a96538f6d7",
-      "status": "open"
+      "status": "bounded-manual-worker-model-qualified-expansion-open",
+      "implementation": "docs/roadmap/linux_generated_runtime_schedules.md"
     },
     {
       "number": 8290,
@@ -136,7 +137,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8290",
       "category": "assurance",
       "body_sha256": "b23f778bdc2475c3886c29d0a1f93f14478568fce40de92f69cba5fde51d2e29",
-      "status": "open"
+      "status": "first-party-source-coverage-pilot-qualified-patched-clang-open",
+      "implementation": "docs/roadmap/linux_source_coverage.md"
     },
     {
       "number": 8291,
@@ -1349,7 +1351,7 @@
     }
   },
   "november_native_assurance_development": {
-    "status": "implementation-complete-with-native-campaigns-running",
+    "status": "swift-schedule-and-first-party-coverage-pilots-qualified-full-analysis-running",
     "source_build_id": "llvmorg-23.1.3-0d261d1ca552-616ca86288bb-d0aefe1d",
     "foundation": {
       "path": "out/toolchains/objc3-development/build-linux-x86_64-compiler-asan-ubsan/foundation-build-report.json",
@@ -1366,7 +1368,7 @@
       }
     },
     "product_campaign": "out/sanitizer-products-qualified/campaign/qualification.json",
-    "implementation_analysis": "out/implementation-analysis/full-evidence-v6/qualification.json",
+    "implementation_analysis": "out/implementation-analysis/full-evidence-v7/qualification.json",
     "semantic_benchmarks": {
       "path": "out/semantic-workload-benchmarks-v3/qualification.json",
       "sha256": "98561df5e0ea0bce42b37303808053319f41cca57d74f3bef98bd0ff85d59ac4",
@@ -1404,5 +1406,75 @@
     "repaired_c_bridge_executions": 40,
     "repaired_c_bridge_status": "PASS",
     "scope": "Current compiler and actual product processes. Historical campaign remains FAIL; fresh targeted repair passes. No release archive rebuilt."
+  },
+  "first_party_source_coverage_pilot": {
+    "status": "PASS",
+    "documentation": "docs/roadmap/linux_source_coverage.md",
+    "receipt": {
+      "path": "out/first-party-source-coverage-v7/qualification.json",
+      "sha256": "bc249f267fe33bba601e5097d6690dfb8e8368e4b74f65770d9a73c7f9d960f7"
+    },
+    "suites": 14,
+    "eligible_source_files": 78,
+    "compile_objects": {
+      "frontend": 22,
+      "runtime": 28
+    },
+    "seconds": 253.799301,
+    "scope": "First-party facade/embedding and standalone runtime. Patched Clang/LLVM coverage, calibrated full-lane baseline and CI promotion remain open.",
+    "temporary_build_reclaimed": true,
+    "reader_controls": {
+      "path": "out/source-coverage-reader-controls-final/qualification.json",
+      "sha256": "f06f8713dbaab1de5ef387fcffe30051e53e86d249615d42a81dc819f859570a",
+      "controls": 5
+    },
+    "policy_semantics_unchanged_after_formatting": true
+  },
+  "generated_runtime_schedule_pilot": {
+    "status": "PASS",
+    "documentation": "docs/roadmap/linux_generated_runtime_schedules.md",
+    "receipt": {
+      "path": "out/generated-runtime-schedules-final/qualification.json",
+      "sha256": "41f7800b4b0a5529c10e33381a6a1e244901a5905c265ee7bab5b16bdbba6722"
+    },
+    "executions": 96,
+    "controls": 2,
+    "model_transitions": 20,
+    "model_adjacent_pairs": 33,
+    "reduction": {
+      "original_operations": 53,
+      "reduced_operations": 6,
+      "candidate_attempts": 58,
+      "minimality": "valid contiguous deletion fixed point within budget",
+      "native_trials": 12
+    },
+    "scope": "Public C tasks, one group and one actor, explicit manual pump and one gated serial worker epoch. No exhaustive scheduler/memory-model or typed await-next/abandonment claim.",
+    "remaining": "Concurrent registration/cancellation, global-pool multi-actor exclusion, nested/abandoned awaits, typed next mismatch, failure injection, unforced stress and broader schedule shrinking remain separate."
+  },
+  "analysis_interruption": {
+    "receipt": {
+      "path": "out/implementation-analysis/full-evidence-v6/qualification.json",
+      "sha256": "25761825dc76f645284b6645d6000bdb102a0dad7bb0e7e42391bacbe0cc3154"
+    },
+    "status": "FAIL",
+    "completed_translation_units": 77,
+    "known_findings": "interface emitter timeout; lexer null-preprocessor state-model diagnostics; lambda attribute ownership and condition-slot diagnostics need review.",
+    "cause": "Persistent disk filled during a concurrent coverage build. Coverage builds now use temporary storage and one linked executable; exact analysis action checkpoint reuse avoids discarding successful unchanged TUs."
+  },
+  "latest_github_review": {
+    "open_issues": 51,
+    "all_comment_threads_reviewed": true,
+    "scope": "Bodies and full comment discussions; issue states remain open until accepted fixes land."
+  },
+  "current_pilot_tooling": {
+    "passed": 1105,
+    "skipped": 1,
+    "skip_reason": "Windows filename-derived executable permissions",
+    "subtests_passed": 33,
+    "workflow_policy_tests": 47,
+    "inventory": {
+      "path": "out/nov04-tooling-complete/inventory.json",
+      "sha256": "26ee38574bdbf3df16e40804fad88398296be6b510ac192ebe248c3500011f59"
+    }
   }
 }
