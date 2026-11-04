@@ -120,13 +120,19 @@ def qualify(sdk: Path, output: Path) -> dict:
                         response.write_text(' '.join('"' + str(arg).replace('\\', '\\\\').replace('"', '\\"') + '"' for arg in args) + '\n')
                         args = ['@' + str(response)]
                 run(name, [compiler, *args], expected=expected)
-                assert 'requires GNUstep 2.2' in (output / (name + '.log')).read_text()
-                assert not target.exists()
+                if not ('requires GNUstep 2.2' in (output / (name + '.log')).read_text()):
+                    raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:123')
+                if not (not target.exists()):
+                    raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:124')
                 report['runtime_rejections'].append({'runtime': runtime, 'mode': mode})
-        assert len(report['executions']) == 9
-        assert len(report['forced_failures']) == 12
-        assert report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']
-        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
+        if not (len(report['executions']) == 9):
+            raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:126')
+        if not (len(report['forced_failures']) == 12):
+            raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:127')
+        if not (report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']):
+            raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:128')
+        if not (all((row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces']))):
+            raise ValueError('installed qualification contract failed: qualify-direct-carrier-calls.py:129')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

@@ -34,4 +34,9 @@ template<class T> T api(T value) { return value; }
 template<> inline int api<int>(int value) { return value+1; }
 #elif CASE == 14
 template<template<class> class C, class T> int api(C<T> value) { return 42; }
+#elif CASE == 15
+template<class T> struct Methods { template<class U> int get(U value) { return int(value); } };
+template<> template<> int Methods<int>::get<int>(int value) { return value+1; }
+#elif CASE == 16
+inline auto api() { return [](auto value) { return value+1; }; }
 #endif

@@ -37,7 +37,7 @@ def qualify(sdk: Path, output: Path) -> dict:
     def save():
         path.write_text(json.dumps(report, indent=2) + '\n')
 
-    def run(name, args, expected=0):
+    def run(name, args, expected=0, diagnostic=None):
         started = time.monotonic()
         with (output / (name + '.log')).open('w') as log:
             result = subprocess.run(list(map(str, args)), cwd=sources, env=env,
@@ -53,7 +53,9 @@ def qualify(sdk: Path, output: Path) -> dict:
             if not any(word in text for word in ('error:', 'O3IFC')) or any(
                     word in text for word in ('PLEASE submit a bug report', 'Assertion failed')):
                 raise ValueError(name + ' failed without a source diagnostic')
-            report['rejections'].append({'name': name})
+            if diagnostic and diagnostic not in text:
+                raise ValueError(name + ' failed without its required diagnostic '+diagnostic)
+            report['rejections'].append({'name': name, 'diagnostic': diagnostic})
 
     def import_command(standard, directory, identity, source, obj, *, arc=True):
         return [compiler, source, '--objc3', '--objcxx', *(['--arc'] if arc else []),
@@ -84,9 +86,12 @@ def qualify(sdk: Path, output: Path) -> dict:
                     '--', '-std=' + standard, '-fblocks', *flags])
                 sidecar = json.loads(interface.with_suffix('.objc3i.json').read_text())
                 identity = sidecar['module']
-                assert 'objc3.cxx-data-interfaces.v1' in sidecar['required_semantics']
-                assert ';language=objective-c++;' in identity['language_profile']
-                assert ';standard=' + standard + ';' in identity['language_profile']
+                if not ('objc3.cxx-data-interfaces.v1' in sidecar['required_semantics']):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:87')
+                if not (';language=objective-c++;' in identity['language_profile']):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:88')
+                if not (';standard=' + standard + ';' in identity['language_profile']):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:89')
                 run(key + '-consumer', [*import_command(standard, directory, identity,
                     'cpp-data-import.mm', consumer), *flags])
                 executable = output / key
@@ -115,8 +120,10 @@ def qualify(sdk: Path, output: Path) -> dict:
                     '-std=' + standard, *flags])
                 sidecar = json.loads(interface.with_suffix('.objc3i.json').read_text())
                 identity = sidecar['module']
-                assert 'objc3.cxx-data-interfaces.v1' in sidecar['required_semantics']
-                assert ';language=c++;' in identity['language_profile']
+                if not ('objc3.cxx-data-interfaces.v1' in sidecar['required_semantics']):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:118')
+                if not (';language=c++;' in identity['language_profile']):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:119')
                 run(key + '-consumer', [compiler, 'cpp-plain-import.cpp',
                     '--module-search-path', directory, '--import-module', 'CxxPlain',
                     identity['semantic_fingerprint'], 'cpp-data-v1', '--emit-object', consumer,
@@ -131,19 +138,42 @@ def qualify(sdk: Path, output: Path) -> dict:
                 report['interfaces'].append({'standard': standard, 'optimization': optimization,
                                              'language': 'c++', 'identity': identity})
         # Former rejection cases now belong to the supported publication surface.
-        for case in range(1, 15):
-            interface = output / ('published-' + str(case) + '.objc3i')
+        for case in range(1, 17):
+            directory = output / ('published-' + str(case) + '-module')
+            directory.mkdir()
+            interface, provider = directory / 'Published.objc3i', directory / 'provider.o'
             run('published-interface-' + str(case), [compiler, 'cpp-data-published.mm', '--objc3',
                 '--objcxx', '--arc', '--emit-interface', interface, '--module', 'Published',
-                '--package', 'cpp-data-v1', '--', '-std=c++20', '-DCASE=' + str(case)])
+                '--package', 'cpp-data-v1', *(['--emit-object', provider] if case in (15, 16) else []),
+                '--', '-std=c++20', '-DCASE=' + str(case)])
             sidecar = json.loads(interface.with_suffix('.objc3i.json').read_text())
             if not interface.is_file() or not sidecar['module']['semantic_fingerprint']:
                 raise ValueError('supported publication did not emit a complete interface')
-        for case in range(1, 15):
+            if case in (15, 16):
+                client = sources / ('published-client-'+str(case)+'.mm')
+                call = ('Methods<int> value; return value.get<int>(41) != 42;'
+                        if case == 15 else 'auto value = @Published.api(); return value(41) != 42;')
+                client.write_text('@import Published;\nint main() { '+call+' }\n')
+                original = sources / 'cpp-data-published.mm'
+                held = output / ('held-provider-'+str(case)+'.mm')
+                original.rename(held)
+                obj, binary = output / ('published-client-'+str(case)+'.o'), output / ('published-client-'+str(case))
+                run('published-consumer-'+str(case), [compiler, client, '--objc3', '--objcxx', '--arc',
+                    '--source-imports', '--module-search-path', directory, '--import-module', 'Published',
+                    sidecar['module']['semantic_fingerprint'], 'cpp-data-v1', '--emit-object', obj,
+                    '--', '-std=c++20'])
+                run('published-link-'+str(case), [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
+                    provider, obj, '-L'+str(sdk / 'lib'), '-lobjc', '-Wl,-rpath,'+str(sdk / 'lib'), '-o', binary])
+                run('published-execute-'+str(case), [binary])
+                report['executions'].append({'case': case, 'source_free': True,
+                    'executable_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()})
+                held.rename(original)
+        for case in (1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 13, 14):
             interface = output / ('rejected-' + str(case) + '.objc3i')
             run('rejected-interface-' + str(case), [compiler, 'cpp-data-rejected.mm', '--objc3',
                 '--objcxx', '--arc', '--emit-interface', interface, '--module', 'Rejected',
-                '--package', 'cpp-data-v1', '--', '-std=c++20', '-DCASE=' + str(case)], expected=1)
+                '--package', 'cpp-data-v1', '--', '-std=c++20', '-DCASE=' + str(case)], expected=1,
+                diagnostic='O3IFC112' if case == 7 else 'O3IFC101')
             if interface.exists() or interface.with_suffix('.objc3i.json').exists():
                 raise ValueError('rejected interface left published output')
         directory = output / 'c++20-O0-module'
@@ -159,13 +189,16 @@ def qualify(sdk: Path, output: Path) -> dict:
             obj = output / ('rejected-visibility-' + str(case) + '.o')
             run('rejected-visibility-' + str(case), [*import_command('c++20', directory, identity,
                 'cpp-data-import-rejected.mm', obj), '-DCASE=' + str(case)], expected=1)
-        assert len(report['executions']) == 12 and len(report['rejections']) == 18
-        assert len(report['commands']) == 111
+        if len(report['executions']) != 14 or len(report['rejections']) != 16:
+            raise ValueError('C++ interface execution/rejection inventory is incomplete')
+        if len(report['commands']) != 117:
+            raise ValueError('C++ interface command inventory is incomplete')
         for language in ('c++', 'objective-c++'):
             for standard in ('c++20', 'c++23'):
-                assert len({row['identity']['semantic_fingerprint'] for row in report['interfaces']
-                            if row['standard'] == standard and row['language'] == language}) == 1
-        assert len({row['identity']['semantic_fingerprint'] for row in report['interfaces']}) == 4
+                if not (len({row['identity']['semantic_fingerprint'] for row in report['interfaces'] if row['standard'] == standard and row['language'] == language}) == 1):
+                    raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:190')
+        if not (len({row['identity']['semantic_fingerprint'] for row in report['interfaces']}) == 4):
+            raise ValueError('installed qualification contract failed: qualify-cpp-interfaces.py:192')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

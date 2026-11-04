@@ -28,8 +28,37 @@ def test_missing_semantic_contract_rejected_by_optimized_python(optimization, ch
 
 
 def test_qualification_gates_cannot_introduce_optimization_removable_checks():
-    for path in OWNERS.glob('*.py'):
+    installed = ROOT / 'tests/clang_foundation/installed_sdk'
+    for path in [*OWNERS.glob('*.py'), *installed.glob('qualify*.py')]:
         assert not any(isinstance(node, ast.Assert) for node in ast.walk(ast.parse(path.read_text()))), path
+
+
+def installed_guards():
+    cases = []
+    for path in sorted((ROOT / 'tests/clang_foundation/installed_sdk').glob('qualify*.py')):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if (isinstance(node, ast.If) and len(node.body) == 1 and
+                    isinstance(node.body[0], ast.Raise) and
+                    'installed qualification contract failed:' in ast.unparse(node.body[0])):
+                cases.append(pytest.param(path, node, id=path.stem+'-'+str(node.lineno)))
+    return cases
+
+
+@pytest.mark.parametrize('optimization', [0, 1, 2])
+@pytest.mark.parametrize('path,guard', installed_guards())
+def test_every_installed_contract_rejects_corrupt_evidence_under_python_optimization(tmp_path, path, guard, optimization):
+    (tmp_path / 'control.log').write_text('unrelated diagnostic\n')
+    rows = [{'semantic_fingerprint': str(index), 'runtime_abi': 'wrong-runtime',
+             'identity': {'semantic_fingerprint': str(index)},
+             'language': 'unselected', 'standard': 'unselected'} for index in range(3)]
+    namespace = {'report': {'executions': [], 'forced_failures': [], 'rejections': [],
+                           'commands': [], 'interfaces': rows},
+                 'identity': {'language_profile': 'wrong-profile'}, 'sidecar': {'required_semantics': []},
+                 'output': tmp_path, 'name': 'control', 'target': Path(sys.executable),
+                 'language': 'c++', 'standard': 'c++20'}
+    code = compile(ast.Module(body=[guard], type_ignores=[]), str(path), 'exec', optimize=optimization)
+    with pytest.raises(ValueError, match='installed qualification contract failed:'):
+        exec(code, namespace)
 
 
 @pytest.mark.parametrize('owner', ['run_linux_compiler_witnesses', 'qualify_stdlib'])

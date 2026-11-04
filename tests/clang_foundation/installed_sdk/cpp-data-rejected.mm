@@ -9,16 +9,11 @@ template<class T> struct Generic { T value; };
 template<class T> struct Generic<T *> { T *value; Generic(); };
 #elif CASE == 5
 struct Methods { template<class T> int get(T value); };
-#elif CASE == 6
-template<class T> struct Methods { template<class U> int get(U value) { return int(value); } };
-template<> template<> int Methods<int>::get<int>(int value) { return value; }
 #elif CASE == 7
 static int hidden() { return 42; }
 struct Default { int value = hidden(); };
 #elif CASE == 8
 template<class T> struct Storage { template<class U> static U value; };
-#elif CASE == 9
-inline auto api() { return [](auto value) { return value; }; }
 #elif CASE == 10
 template<class T> extern T exported;
 #elif CASE == 11

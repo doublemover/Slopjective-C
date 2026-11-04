@@ -1163,6 +1163,22 @@
     ],
     "sdk_archive_rebuilt": false
   },
+  "installed_qualification_refresh": {
+    "documentation": "docs/roadmap/linux_installed_qualification_refresh.md",
+    "observed_hosted_failure": "41855596747: installed C++ interface rejection case 6 is now supported; source-graph repair passed.",
+    "llvm_hosted_campaign": "41855596652: PASS on 277d14b64a3042c9118b6132a1117901195a17c4",
+    "cxx_executions": 14,
+    "cxx_commands": 118,
+    "cxx_rejections": 16,
+    "shipped_python_gates_repaired": 46,
+    "optimization_levels_tested": [0, 1, 2],
+    "gate_and_assurance_tests": 213,
+    "cxx_receipt": {
+      "path": "out/cxx-interfaces-current-qualified/qualification.json",
+      "sha256": "2b795ce4a61b7eb5e377c137a222acfbe9c6ab0b21046ff2835417c074be5cd8"
+    },
+    "sdk_archive_rebuilt": false
+  },
   "checked_executor_lock_pilot": {
     "status": "PASS",
     "standalone_runtime_ctests": 9,

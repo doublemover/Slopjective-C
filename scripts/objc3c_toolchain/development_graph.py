@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import runpy
 import shutil
 
 from .binary_packages import digest, write_json
@@ -25,7 +26,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         destination.parent.mkdir(parents=True, exist_ok=True)
         os.link(source.resolve(strict=True), destination)
 
-    for name in ('clang', 'clang++', 'ld.lld'):
+    for name in ('clang', 'clang++', 'ld.lld', 'llvm-dwarfdump'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     link(facade, prefix / 'bin/objc3c')
     for name in ('libLLVM.so', 'libclang-cpp.so'):
@@ -39,7 +40,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
     link(services, prefix / 'lib/libobjc3_runtime_services.a')
     for source, target in ((stage / 'lib/clang/23/include', 'lib/clang/23/include'),
                            (repo / 'stdlib/include', 'include'),
-                           (repo / 'native/objc3c/src/runtime/public', 'include'),
+                           (repo / 'native/objc3c/src/runtime/public', 'include/objc3c/runtime'),
                            (objc_runtime.parent.parent / 'include/objc', 'include/objc')):
         shutil.copytree(source, prefix / target, copy_function=os.link, dirs_exist_ok=True)
     builder = prefix / 'share/objc3c/source-build'
@@ -48,6 +49,8 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         shutil.copyfile(Path(__file__).with_name(source), builder / name)
     shutil.copyfile(Path(__file__).with_name('package.py'), prefix / 'share/objc3c/verify-sdk.py')
     shutil.copytree(repo / 'tests/clang_foundation/source_graph', prefix / 'share/objc3c/examples/packages')
+    shutil.copytree(repo / 'tests/clang_foundation/installed_sdk', prefix / 'share/objc3c/examples/native')
+    shutil.copytree(repo / 'tests/clang_foundation/ownership_projection', prefix / 'share/objc3c/examples/ownership-projection')
     example = prefix / 'share/objc3c/examples/managed'
     sources = example / 'src'
     sources.mkdir(parents=True)
@@ -86,13 +89,17 @@ def main(argv=None):
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--matrix', action='store_true', help='run the complete 16-mode source graph matrix')
     selection.add_argument('--managed-example', action='store_true', help='qualify installed managed-example freshness')
+    selection.add_argument('--cxx-interfaces', action='store_true', help='qualify the current C++ interface boundary')
     parser.add_argument('--jobs', type=int, choices=range(1, 5), default=2)
     args = parser.parse_args(argv)
     root = args.output.resolve()
     prepare(args.repo.resolve(strict=True), root / 'prefix', facade=args.facade,
             services=args.services, objc_runtime=args.objc_runtime)
     try:
-        if args.managed_example:
+        if args.cxx_interfaces:
+            owner = runpy.run_path(str(root / 'prefix/share/objc3c/examples/native/qualify-cpp-interfaces.py'))
+            report = owner['qualify'](root / 'prefix', root / 'evidence')
+        elif args.managed_example:
             report = qualify_managed(root / 'prefix', root / 'evidence')
         elif args.matrix:
             report = qualify(root / 'prefix', root / 'evidence', jobs=args.jobs)
@@ -104,7 +111,7 @@ def main(argv=None):
         write_json(root / 'qualification.json', {'status': 'FAIL', 'error': str(error)})
         raise
     write_json(root / 'qualification.json', report)
-    print(json.dumps({'status': report['status'], 'builds': len(report['builds']),
+    print(json.dumps({'status': report['status'], 'builds': len(report.get('builds', report.get('executions', []))),
                       'rejections': len(report.get('rejections', report.get('rejected_imports', [])))}))
 
 

@@ -102,10 +102,14 @@ def qualify(sdk: Path, output: Path) -> dict:
         executable = output / 'pch-application'
         run('pch-link', [compiler, '-pthread', output / 'objective-c++-O2-base.o', output / 'objective-c++-O2-errors.o', output / 'objective-c++-O2-provider.o', consumer, '-o', executable])
         execute('pch-application', executable)
-        assert len(report['executions']) == 9
-        assert len(report['forced_failures']) == 6
-        assert report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']
-        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
+        if not (len(report['executions']) == 9):
+            raise ValueError('installed qualification contract failed: qualify-nested-carrier-calls.py:105')
+        if not (len(report['forced_failures']) == 6):
+            raise ValueError('installed qualification contract failed: qualify-nested-carrier-calls.py:106')
+        if not (report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']):
+            raise ValueError('installed qualification contract failed: qualify-nested-carrier-calls.py:107')
+        if not (all((row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces']))):
+            raise ValueError('installed qualification contract failed: qualify-nested-carrier-calls.py:108')
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:
