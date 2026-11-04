@@ -119,6 +119,30 @@ def selected_variants(rows, headers, changed):
     return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
 
 
+def textual_pch(row):
+    """Reprocess exact CMake wrapper text; never admit bootstrap serialized AST."""
+    original, result, projections = row['arguments'], [], []
+    index = 0
+    while index < len(original):
+        if original[index:index+3] == ['-Xclang', '-include-pch', '-Xclang']:
+            pch = (Path(row['directory']) / original[index+3]).resolve(strict=True)
+            wrapper = pch.with_suffix('')
+            if (pch.name != 'cmake_pch.hxx.pch' or not wrapper.is_file() or
+                    original[index+4:index+7] != ['-Xclang', '-include', '-Xclang'] or
+                    index+7 >= len(original) or
+                    (Path(row['directory']) / original[index+7]).resolve() != wrapper):
+                raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
+            projections.append({'bootstrap_pch': str(pch), 'pch_sha256': digest(pch),
+                'textual_wrapper': str(wrapper), 'wrapper_sha256': digest(wrapper),
+                'reason': 'The matched fork cannot deserialize bootstrap PCH. Preserve the existing forced textual include, all TU defines and include order.'})
+            index += 4
+        elif original[index] == '-include-pch':
+            raise ValueError('unreviewed analysis PCH invocation')
+        else:
+            result.append(original[index]);index += 1
+    return result, projections
+
+
 def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=()):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
@@ -135,6 +159,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
     if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v1' or
             policy.get('host') != 'linux-x86_64' or policy.get('tool') != 'objc3-clang-tidy' or
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
+            policy.get('translation_unit_timeout_seconds') != 600 or
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
@@ -192,7 +217,13 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         def analyze(name, row, *, expected=0, contains=()):
             directory = output / name
             directory.mkdir()
-            write_json(directory / 'compile_commands.json', [{key: row[key] for key in ('file', 'directory', 'arguments')}])
+            args, projection = textual_pch(row)
+            row['analysis_arguments'], row['pch_projection'] = args, projection
+            for item in projection:
+                report['inputs'][item['bootstrap_pch']] = item['pch_sha256']
+                report['inputs'][item['textual_wrapper']] = item['wrapper_sha256']
+            write_json(directory / 'compile_commands.json', [{'file': row['file'],
+                'directory': row['directory'], 'arguments': args}])
             run(name, [tool, '-p', directory, row['file'], '--config-file='+str(config),
                 '--warnings-as-errors=*', '--extra-arg=-resource-dir='+str(bootstrap / 'lib/clang/23'),
                 '--export-fixes='+str(directory / 'diagnostics.yaml')], expected=expected, contains=contains)
@@ -267,7 +298,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             report['exclusions'].append({'owner': label, 'database_entries': len(json.loads(database.read_text())),
                 'selected_variants': len(rows), 'analyzed_variants': len(chosen),
                 'reason': 'Owned implementation TUs and every maintained Clang patch TU; vendor/test/generated-only TUs excluded. Unaffected variants omitted only for explicit dependency-based incremental selection.'})
-            executor.timeout = 180
+            executor.timeout = policy['translation_unit_timeout_seconds']
             for row in chosen:
                 name = label+'-'+row['identity'][:16]
                 try:

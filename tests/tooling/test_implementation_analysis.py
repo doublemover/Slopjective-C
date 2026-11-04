@@ -4,7 +4,7 @@ import shlex
 
 import pytest
 
-from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, selected_variants
+from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, selected_variants, textual_pch
 
 
 @pytest.fixture
@@ -75,3 +75,18 @@ def test_dependency_closure_is_required_and_stale_selected_records_fail(tmp_path
     with pytest.raises(ValueError, match='stale'):
         dependencies(text.replace('VALID', 'STALE'), build=tmp_path)
     assert dependencies(text.replace('VALID', 'STALE'), build=tmp_path, selected_outputs=set()) == {}
+
+
+def test_bootstrap_pch_is_replaced_only_by_its_already_forced_exact_wrapper(tmp_path):
+    pch, wrapper = tmp_path / 'cmake_pch.hxx.pch', tmp_path / 'cmake_pch.hxx'
+    pch.write_bytes(b'bootstrap serialization')
+    wrapper.write_text('#include "contract.h"\n')
+    prefix = ['clang++', '-DREAL_FEATURE=1', '-Ireal/include', '-std=c++20']
+    textual = ['-Xclang', '-include', '-Xclang', str(wrapper)]
+    row = {'directory': str(tmp_path), 'arguments': [*prefix, '-Xclang', '-include-pch', '-Xclang', str(pch), *textual]}
+    args, proof = textual_pch(row)
+    assert args == [*prefix, *textual]
+    assert proof[0]['bootstrap_pch'] == str(pch) and len(proof[0]['wrapper_sha256']) == 64
+    row['arguments'] = row['arguments'][:-4]
+    with pytest.raises(ValueError, match='textual include counterpart'):
+        textual_pch(row)

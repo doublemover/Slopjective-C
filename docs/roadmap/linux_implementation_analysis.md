@@ -22,6 +22,13 @@ frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
 
+The matched analyzer cannot deserialize the foundation's bootstrap-produced
+CMake PCH. Analysis validates the exact PCH/wrapper pair, removes only that
+serialized-PCH argument and preserves its already-present forced textual
+include, TU definitions and include order. Both original and projected commands
+and input hashes are retained. PCH validation is never disabled. Each TU has a
+bounded ten-minute analysis allowance; a timeout remains a failed TU.
+
 ```sh
 python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
   --frontend-build /path/to/current/native-build \
