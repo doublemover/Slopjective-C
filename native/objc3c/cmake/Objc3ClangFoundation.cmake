@@ -38,21 +38,37 @@ if(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE)
     message(FATAL_ERROR "Compiler instrumentation profile rejected: ${_objc3_profile_error}")
   endif()
   string(JSON OBJC3C_FOUNDATION_CONFIG_DIGEST GET "${_objc3_profile}" build_config_digest)
-  string(JSON _objc3_profile_sanitizer GET "${_objc3_profile}" instrumentation facade_sanitizer)
-  if(NOT _objc3_profile_sanitizer STREQUAL "address,undefined")
-    message(FATAL_ERROR "Unrecognized compiler embedding sanitizer contract")
+  string(JSON _objc3_profile_kind GET "${_objc3_profile}" instrumentation kind)
+  if(_objc3_profile_kind STREQUAL "sanitizer" OR _objc3_profile_kind STREQUAL "fuzzer")
+    string(JSON _objc3_profile_sanitizer GET "${_objc3_profile}" instrumentation facade_sanitizer)
+    if(NOT _objc3_profile_sanitizer STREQUAL "address,undefined")
+      message(FATAL_ERROR "Unrecognized compiler embedding sanitizer contract")
+    endif()
+    set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
+      -O1 -gline-tables-only -fno-omit-frame-pointer
+      "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+      -fno-sanitize-recover=undefined)
+    if(_objc3_profile_kind STREQUAL "fuzzer")
+      list(APPEND OBJC3C_COMPILER_INSTRUMENTATION_FLAGS -fsanitize=fuzzer-no-link)
+    endif()
+    target_compile_options(objc3c_build_defaults INTERFACE
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
+    target_link_options(objc3c_build_defaults INTERFACE
+      "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
+      -fno-sanitize-recover=undefined)
+    if(_objc3_profile_kind STREQUAL "fuzzer")
+      target_link_options(objc3c_build_defaults INTERFACE -fsanitize=fuzzer-no-link)
+    endif()
+  elseif(_objc3_profile_kind STREQUAL "source-coverage")
+    set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
+      -O1 -gline-tables-only -fprofile-instr-generate -fcoverage-mapping
+      -fprofile-update=atomic)
+    target_compile_options(objc3c_build_defaults INTERFACE
+      ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
+    target_link_options(objc3c_build_defaults INTERFACE -fprofile-instr-generate)
+  else()
+    message(FATAL_ERROR "Unrecognized compiler embedding instrumentation contract")
   endif()
-  # Instrument every facade, embedding and test object, as well as the complete
-  # LLVM/Clang implementation selected above. Emitted client code is separate.
-  set(OBJC3C_COMPILER_INSTRUMENTATION_FLAGS
-    -O1 -gline-tables-only -fno-omit-frame-pointer
-    "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
-    -fno-sanitize-recover=undefined)
-  target_compile_options(objc3c_build_defaults INTERFACE
-    ${OBJC3C_COMPILER_INSTRUMENTATION_FLAGS})
-  target_link_options(objc3c_build_defaults INTERFACE
-    "-fsanitize=${_objc3_profile_sanitizer}" -fno-sanitize=function,vptr
-    -fno-sanitize-recover=undefined)
   file(WRITE "${CMAKE_BINARY_DIR}/compiler-instrumentation-plan.json" "${_objc3_profile}")
   message(STATUS "Compiler implementation instrumentation: ${OBJC3C_COMPILER_INSTRUMENTATION_PROFILE}")
 endif()

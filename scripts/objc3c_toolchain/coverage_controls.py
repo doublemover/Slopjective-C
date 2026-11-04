@@ -10,7 +10,7 @@ import time
 
 from .binary_packages import digest, write_json
 from .llvm_ir_execution import command
-from .llvm_tools import foundation
+from .core import build_plans
 from .sanitizer_policy import strict_environment
 from .source_coverage import raw_profiles, read_export
 
@@ -19,13 +19,16 @@ def qualify(repo, output):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('coverage controls require fresh owned output')
-    plan, _ = foundation(repo)
-    bootstrap = Path(plan['host_environment']['bootstrap_root'])
-    tools = {name: bootstrap / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata')}
+    plan = build_plans(repo, host='linux-x86_64',
+                       instrumentation_profile='compiler-source-coverage')['configure']
+    bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
+    tools = {name: stage / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata')}
     source = repo / 'tests/tooling/fixtures/source_coverage'
     inputs = {str(path): digest(path) for path in [Path(__file__), *tools.values(), *source.glob('*.cpp')]}
     output.mkdir(parents=True)
-    env = strict_environment(tools['clang++'], bootstrap / 'bin/llvm-symbolizer')
+    env = strict_environment(tools['clang++'], bootstrap / 'bin/llvm-symbolizer',
+                             library_dirs=(stage / 'lib',))
+    env['LLVM_PROFILE_FILE'] = os.devnull
     report = {'schema': 'objc3c.source-coverage-controls.v1', 'status': 'running', 'commands': [], 'controls': [], 'inputs': inputs}
     started = time.monotonic()
     def save():

@@ -78,6 +78,47 @@ def test_prose_exclusion_is_explicit_and_periodic_never_uses_it():
                            tested=REV['tested'])
 
 
+def test_periodic_and_owner_selection_include_new_native_qualification_suites():
+    periodic = select(['README.md'], **REV, periodic=True)
+    expected = {'foundation', 'runtime', 'frontend', 'installed', 'sanitizers', 'upstream',
+        'swift-consumer', 'semantic-workloads', 'package', 'sanitizer-products',
+        'runtime-schedules', 'frontend-fuzz', 'source-coverage'}
+    assert {row['id'] for row in periodic['suites']} == expected
+    assert 'frontend-fuzz' in {row['id'] for row in select(['native/fuzz/FrontendTarget.cpp'], **REV)['suites']}
+    assert 'runtime-schedules' in {row['id'] for row in select([
+        'tests/clang_foundation/runtime_schedules/history.cpp'], **REV)['suites']}
+    assert 'source-coverage' in {row['id'] for row in select([
+        'scripts/objc3c_toolchain/compiler_source_coverage.py'], **REV)['suites']}
+
+
+def test_native_assurance_workflow_has_exact_periodic_and_dispatch_revision_gate():
+    workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/native-assurance.yml').read_text()
+    assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
+    assert '--periodic-sha "$GITHUB_SHA"' in workflow
+    assert workflow.count('--periodic-sha "$GITHUB_SHA"') == 2
+    assert 'objc3c_assurance plan' in workflow and 'objc3c_assurance verify' in workflow
+
+
+def test_frontend_fuzz_evidence_requires_patched_frontend_feedback(tmp_path):
+    root = tmp_path / 'frontend-fuzz/campaign';root.mkdir(parents=True)
+    campaigns = [{'strategy': name, 'status': 'PASS', 'executions': 8} for name in
+                 ('raw-dictionary', 'structured-pair', 'frontend-syntax-sema')]
+    campaigns[-1]['covered_patched_frontend_functions'] = {'Parse': ['p'], 'Sema': ['s']}
+    controls = [{'name': str(index), 'status': 'PASS'} for index in range(6)]
+    (root / 'qualification.json').write_text(json.dumps({'status': 'PASS', 'campaigns': campaigns,
+        'controls': controls, 'foundation_feedback': {'libclang-cpp.so': {}, 'libLLVM.so': {}},
+        'frontend_import_fixture': {'canonical_name': 'Fuzz.Dependency'},
+        'temporary_build_reclaimed': True}))
+    assert len(evidence.suite_results(tmp_path, 'frontend-fuzz')) == 9
+    campaigns[-1]['covered_patched_frontend_functions'].pop('Sema')
+    (root / 'qualification.json').write_text(json.dumps({'status': 'PASS', 'campaigns': campaigns,
+        'controls': controls, 'foundation_feedback': {'libclang-cpp.so': {}, 'libLLVM.so': {}},
+        'frontend_import_fixture': {'canonical_name': 'Fuzz.Dependency'},
+        'temporary_build_reclaimed': True}))
+    with pytest.raises(ValueError, match='fuzz campaigns'):
+        evidence.suite_results(tmp_path, 'frontend-fuzz')
+
+
 @pytest.mark.parametrize('paths', [['scripts/objc3c_toolchain/build.py'],
     ['native/objc3c/src/runtime/service.cpp'], ['tests/clang_foundation/codegen.mm'], None])
 def test_codegen_and_runtime_changes_select_actual_sanitizer_owner(paths):

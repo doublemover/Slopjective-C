@@ -184,6 +184,65 @@ def suite_results(root: Path, name: str) -> list[dict]:
     if name == 'package':
         result = read('release.json')
         return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]
+    if name == 'sanitizer-products':
+        result = read('campaign/qualification.json')
+        rows = result.get('owners', [])
+        expected = {'structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
+            *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
+              for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))}
+        if (len(rows) != len(expected) or {row['name'] for row in rows} != expected or
+                any(row.get('status') != 'PASS' for row in rows) or
+                len(result.get('runtime_profiles', [])) != 6 or
+                result.get('expected_owners') != [row['name'] for row in rows] and
+                set(result.get('expected_owners', [])) != expected):
+            raise ValueError('sanitizer product owner/profile matrix is incomplete')
+        return sorted(rows, key=lambda row: row['name'])
+    if name == 'runtime-schedules':
+        result = read('campaign/qualification.json')
+        histories, cases = result.get('histories', []), result.get('cases', [])
+        scenarios, controls = result.get('scenario_cases', []), result.get('controls', [])
+        expected_scenarios = set(result.get('scenario_inventory', {}))
+        if (len(histories) != 8 or len(cases) != 8*2*2*3 or len(scenarios) != 2*2*3 or
+                len(controls) != 5 or {row.get('name') for row in controls} != {
+                    'missing-frame-destruction', 'duplicate-waiter-delivery',
+                    'premature-quiescence-publication', 'overlapping-actor-jobs',
+                    'type-mismatched-next-consumption'} or
+                {scenario for row in scenarios for scenario in row.get('scenarios', [])} != expected_scenarios or
+                result.get('reduction', {}).get('status') != 'PASS' or
+                result.get('model_coverage', {}).get('missing_transitions') or
+                result.get('model_coverage', {}).get('missing_pairs') or
+                len(result.get('sanitizer_policy', {})) != 4):
+            raise ValueError('generated runtime schedule matrix/controls are incomplete')
+        return cases + scenarios + controls
+    if name == 'frontend-fuzz':
+        result = read('campaign/qualification.json')
+        campaigns, controls = result.get('campaigns', []), result.get('controls', [])
+        if (len(campaigns) != 3 or {row.get('strategy') for row in campaigns} !=
+                {'raw-dictionary', 'structured-pair', 'frontend-syntax-sema'} or
+                any(row.get('status') != 'PASS' or row.get('executions', 0) < 5 for row in campaigns) or
+                set(result.get('foundation_feedback', {})) != {'libclang-cpp.so', 'libLLVM.so'} or
+                result.get('frontend_import_fixture', {}).get('canonical_name') != 'Fuzz.Dependency' or
+                set(next((row.get('covered_patched_frontend_functions', {}) for row in campaigns
+                          if row.get('strategy') == 'frontend-syntax-sema'), {})) != {'Parse', 'Sema'} or
+                len(controls) != 6 or any(row.get('status') != 'PASS' for row in controls) or
+                not result.get('temporary_build_reclaimed')):
+            raise ValueError('frontend/paired-codec fuzz campaigns or controls are incomplete')
+        return campaigns + controls
+    if name == 'source-coverage':
+        controls = read('controls/qualification.json')
+        native = read('first-party/qualification.json')
+        compiler = read('compiler/qualification.json')
+        if (len(controls.get('controls', [])) != 5 or
+                len(native.get('suites', [])) != 14 or
+                any(not any(value.get('state') == 'executed' for value in row.get('source_coverage', {}).values())
+                    for row in native['suites']) or
+                len(compiler.get('suites', [])) != 4 or not compiler.get('eligible') or
+                not any(row.get('state') == 'executed' for row in compiler.get('source_coverage', {}).values()) or
+                not compiler.get('binary_ids') or not native.get('temporary_build_reclaimed')):
+            raise ValueError('first-party/patched compiler source coverage is incomplete')
+        return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(controls['controls'])}] +
+                [{'name': row['component']+'-'+row['name'], 'status': 'PASS'} for row in native['suites']] +
+                [{'name': row['name'], 'status': 'PASS'} for row in compiler['suites']])
     raise ValueError('unrecognized native assurance suite')
 
 

@@ -19,12 +19,33 @@ def select(repo: Path, name: str, host: str, base_build: dict, sealed: dict, ups
     if not all(base_build[key] for key in ('assertions', 'rtti', 'eh')):
         raise ValueError('compiler instrumentation must preserve assertions, RTTI and exceptions')
     cmake = profile['cmake']
-    if (cmake.get('LLVM_USE_SANITIZER') != 'Address;Undefined' or
-            shlex.split(cmake.get('LLVM_UBSAN_FLAGS', '')) != [
-                '-fsanitize=undefined', '-fno-sanitize=function,vptr',
-                '-fno-sanitize-recover=undefined'] or
-            profile.get('facade_sanitizer') != 'address,undefined'):
-        raise ValueError('compiler instrumentation requires the owned nonrecovering ASan/UBSan recipe')
+    kind = profile.get('kind')
+    if kind in ('sanitizer', 'fuzzer'):
+        if (cmake.get('LLVM_USE_SANITIZER') != 'Address;Undefined' or
+                shlex.split(cmake.get('LLVM_UBSAN_FLAGS', '')) != [
+                    '-fsanitize=undefined', '-fno-sanitize=function,vptr',
+                    '-fno-sanitize-recover=undefined'] or
+                profile.get('facade_sanitizer') != 'address,undefined'):
+            raise ValueError('compiler instrumentation requires the owned nonrecovering ASan/UBSan recipe')
+        if kind == 'fuzzer':
+            required = ['-fsanitize=fuzzer-no-link', '-gline-tables-only']
+            if (profile.get('fuzzer_flags') != required or
+                    any(not set(required) <= set(shlex.split(cmake.get(key, '')))
+                        for key in ('CMAKE_C_FLAGS_RELEASE', 'CMAKE_CXX_FLAGS_RELEASE')) or
+                    any('-fsanitize=fuzzer-no-link' not in shlex.split(cmake.get(key, ''))
+                        for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                                    'CMAKE_MODULE_LINKER_FLAGS'))):
+                raise ValueError('compiler fuzzer profile requires owned feedback and line-table instrumentation')
+    elif kind == 'source-coverage':
+        required = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
+        if (profile.get('coverage_flags') != required or not profile.get('facade_source_coverage') or
+                any(not set(required) <= set(shlex.split(cmake.get(key, '')))
+                    for key in ('CMAKE_C_FLAGS_RELEASE', 'CMAKE_CXX_FLAGS_RELEASE')) or
+                any('-fprofile-instr-generate' not in shlex.split(cmake.get(key, ''))
+                    for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS', 'CMAKE_MODULE_LINKER_FLAGS'))):
+            raise ValueError('compiler source coverage requires the owned compile/link counter recipe')
+    else:
+        raise ValueError('unknown compiler instrumentation profile kind')
     if any(not isinstance(key, str) or not isinstance(value, str) for key, value in cmake.items()):
         raise ValueError('instrumentation CMake values must be explicit strings')
     build = {**base_build, **{key: profile[key] for key in

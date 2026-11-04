@@ -42,13 +42,22 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=(0, 1, 2, 3, 7,
     products = profiles = None
     report = {'schema': 'objc3c.generated-runtime-schedules.v1', 'status': 'running', 'commands': [],
         'histories': histories, 'history_hashes': list(map(signature, histories)), 'cases': [], 'controls': [],
-        'scope': 'Public C tasks, one group and one actor, explicit manual pump and one gated serial worker epoch. No exhaustive scheduler/memory-model or typed await-next/abandonment claim.',
-        'remaining': 'Concurrent registration/cancellation, global-pool multi-actor exclusion, nested/abandoned awaits, typed next mismatch, failure injection, unforced stress and broader schedule shrinking remain separate.'}
+        'scope': 'Bounded generated public-C histories plus current public-contract scenario fixtures. Manual/gated replay is complemented by unforced worker/global-pool executions; this is not exhaustive scheduler or memory-model verification.',
+        'scenario_inventory': {
+            'concurrent-registration-cancellation-publication': 'task-services',
+            'global-pool-multi-actor-and-task-exclusion': 'task-services',
+            'queued-discard-and-named-binding-retirement': 'task-services',
+            'nested-and-last-owner-abandoned-awaits': 'structured-runtime',
+            'typed-next-mismatch-nonconsumption': 'async-handle-joins',
+            'allocation-publication-and-copy-failure-injection': 'async-handle-joins',
+            'unforced-worker-group-and-actor-stress': 'structured-runtime'},
+        'bounds': {'generated_operations': 96, 'generated_tasks': 8, 'generated_actors': 1,
+                   'worker_fixture_timeout_seconds': 90, 'native_reduction_trials': 32}}
     tick = time.monotonic()
     def save():
         report['seconds'] = round(time.monotonic()-tick, 6);write_json(output / 'qualification.json', report)
-    def run(name, argv):
-        row = products.record(policy, name, argv, report['commands'], cwd=work, timeout=30)
+    def run(name, argv, *, timeout=30):
+        row = products.record(policy, name, argv, report['commands'], cwd=work, timeout=timeout)
         return Path(row['log']).read_text(errors='replace')
     try:
         products = ProductCommands(output / 'product-evidence', sources=(fixture, model_source, Path(__file__), work))
@@ -72,6 +81,19 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=(0, 1, 2, 3, 7,
                     run(suffix+'-link', [*common, '-fuse-ld=lld', obj, runtime.archive, '-Wl,--no-as-needed',
                         runtime.objc_runtime, '-Wl,--as-needed', '-Wl,-rpath,'+str(runtime.objc_runtime.parent), '-o', binary])
                     return binary
+                def build_fixture(suffix, sources, *, definitions=(), link_options=()):
+                    objects = []
+                    for source_index, source in enumerate(sources):
+                        obj = work / (suffix+'-'+str(source_index)+'.o')
+                        run(suffix+'-'+str(source_index)+'-compile', [*common,
+                            *('-D'+value for value in definitions), '-I'+str(repo / 'native/objc3c/src'),
+                            '-c', source, '-o', obj], timeout=120)
+                        objects.append(obj)
+                    binary = work / suffix
+                    run(suffix+'-link', [*common, '-fuse-ld=lld', *objects, runtime.archive,
+                        *link_options, '-Wl,--no-as-needed', runtime.objc_runtime, '-Wl,--as-needed',
+                        '-Wl,-rpath,'+str(runtime.objc_runtime.parent), '-o', binary], timeout=120)
+                    return binary
                 binary = build(label)
                 for index, history in enumerate(histories):
                     manual = None
@@ -90,7 +112,9 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=(0, 1, 2, 3, 7,
                             'service_optimization': 'O1', 'observation_sha256': digest(Path(report['commands'][-1]['log'])), **result})
                         save()
                 if sanitizer == 'address,undefined' and optimization == 'O0':
-                    for mutant, kind in ((1, 'missing-frame-destruction'), (2, 'duplicate-waiter-delivery')):
+                    for mutant, kind in ((1, 'missing-frame-destruction'), (2, 'duplicate-waiter-delivery'),
+                                         (3, 'premature-quiescence-publication'), (4, 'overlapping-actor-jobs'),
+                                         (5, 'type-mismatched-next-consumption')):
                         bad = build(label+'-mutant-'+str(mutant), mutant)
                         text = run(label+'-mutant-'+str(mutant)+'-execute', [bad, 'manual', work / 'protocol-0.json'])
                         try: check(histories[0], observations(text))
@@ -122,9 +146,35 @@ def qualify(repo, compiler_root, resource_root, output, *, seeds=(0, 1, 2, 3, 7,
                             report['reduction'] = {'status': 'PASS', 'original': histories[0], 'reduced': reduced,
                                 'attempts': attempts, 'budget': budget, 'failure_signature': failure_signature,
                                 'fresh_native_replay': True}
+                fixtures = {
+                    'task-services': build_fixture(label+'-task-services', [
+                        repo / 'tests/tooling/fixtures/clang_foundation/services/task_services.cpp',
+                        repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
+                        repo / 'native/objc3c/src/runtime/concurrency/service_group.cpp'],
+                        definitions=('OBJC3_RUNTIME_SERVICE_TESTING',)),
+                    'structured-runtime': build_fixture(label+'-structured-runtime', [
+                        repo / 'tests/clang_foundation/structured_runtime/worker.cpp']),
+                    'async-handle-joins': build_fixture(label+'-async-handle-joins', [
+                        repo / 'tests/clang_foundation/async_handle_joins/runtime.cpp'],
+                        link_options=('-Wl,--wrap=_ZnwmRKSt9nothrow_t',
+                                      '-Wl,--wrap=_ZnwmSt11align_val_tRKSt9nothrow_t'))}
+                for fixture_name, fixture_binary in fixtures.items():
+                    text = run(label+'-'+fixture_name+'-execute', [fixture_binary], timeout=90)
+                    if fixture_name == 'task-services' and 'task services: all focused checks passed' not in text:
+                        raise ValueError('task-service scenario fixture omitted its completion witness')
+                    report.setdefault('scenario_cases', []).append({'name': label+'-'+fixture_name,
+                        'fixture': fixture_name, 'status': 'PASS', 'sanitizer': sanitizer,
+                        'client_optimization': optimization, 'service_optimization': 'O1',
+                        'observation_sha256': digest(Path(report['commands'][-1]['log'])),
+                        'scenarios': sorted(name for name, owner in report['scenario_inventory'].items()
+                                            if owner == fixture_name)})
+                    save()
                 report.setdefault('sanitizer_policy', {})[label] = policy.finalize()
         expected = len(histories)*2*2*3
-        if len(report['cases']) != expected or len(report['controls']) != 2:
+        if (len(report['cases']) != expected or len(report['controls']) != 5 or
+                len(report.get('scenario_cases', [])) != 2*2*3 or
+                {scenario for row in report['scenario_cases'] for scenario in row['scenarios']} !=
+                set(report['scenario_inventory'])):
             raise ValueError('runtime schedule configuration/control inventory is incomplete')
         domain, pair_domain = coverage_domain()
         report['model_coverage'] = {'denominator': 'Reviewed 64-seed bounded grammar; not all public API states or implementation coverage.',

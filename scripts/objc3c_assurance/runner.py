@@ -43,6 +43,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
     environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
     report['bootstrap'] = {'clang_sha256': digest(bootstrap / 'bin/clang'),
                            'linker_sha256': digest(bootstrap / 'bin/ld.lld')}
+    shared = {}
     directory = None
 
     def save():
@@ -59,6 +60,30 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
                             directory=directory, records=report['commands'])
         finally:
             save()
+
+    def profile_foundation(profile):
+        if profile not in shared:
+            shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                                               instrumentation_profile=profile)
+        plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=profile)['configure']
+        return Path(plan['paths']['stage'])
+
+    def profile_facade(profile):
+        key = profile+'-facade'
+        if key in shared:
+            return shared[key]
+        foundation = profile_foundation(profile)
+        build = output / 'build' / key
+        build.parent.mkdir(exist_ok=True)
+        command(key+'-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
+            f'-DOBJC3C_CLANG_FOUNDATION_ROOT={foundation}',
+            f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={profile}',
+            f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}', '-DCMAKE_BUILD_TYPE=Release',
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'])
+        command(key+'-build', ['cmake', '--build', build, '--target', 'objc3c', 'objc3c_frontend_v2',
+                               '--parallel', '2'])
+        shared[key] = build
+        return build
 
     def execute(suite):
         name = suite['id']
@@ -186,7 +211,51 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             # in this host distribution. The two-distribution matrix remains release CI.
             command('archive-install', ['sh', repo / 'scripts/qualify_linux_archive.sh',
                 result['archive'], result['archive_sha256'], directory / 'isolated-install'])
+            shared['release'] = result
             return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]
+        if name == 'sanitizer-products':
+            from scripts.objc3c_toolchain.sanitizer_products import qualify
+            release = shared.get('release')
+            if not release:
+                raise ValueError('sanitizer product suite requires the selected package suite')
+            compiler = profile_foundation('compiler-asan-ubsan')
+            facade = profile_facade('compiler-asan-ubsan') / 'src/clang_foundation/objc3c'
+            resource_root = Path(subprocess.check_output(
+                [bootstrap / 'bin/clang', '-print-resource-dir'], text=True).strip())
+            result = qualify(repo, Path(release['installed']['prefix']), compiler, facade,
+                             resource_root, directory / 'campaign', jobs=2)
+            if result['status'] != 'PASS' or len(result['owners']) != 13:
+                raise ValueError('complete sanitizer product campaign did not pass')
+            return sorted(result['owners'], key=lambda row: row['name'])
+        if name == 'runtime-schedules':
+            from scripts.objc3c_toolchain.runtime_schedules import qualify
+            compiler = profile_foundation('compiler-asan-ubsan')
+            resource_root = Path(subprocess.check_output(
+                [bootstrap / 'bin/clang', '-print-resource-dir'], text=True).strip())
+            result = qualify(repo, compiler, resource_root, directory / 'campaign')
+            if result['status'] != 'PASS':
+                raise ValueError('generated runtime schedule qualification did not pass')
+            return result['cases'] + result['scenario_cases'] + result['controls']
+        if name == 'frontend-fuzz':
+            from scripts.objc3c_toolchain.codec_fuzz import qualify
+            facade = profile_facade('compiler-fuzz-asan-ubsan')
+            result = qualify(repo, directory / 'campaign', facade_build=facade, seconds=15, jobs=2)
+            if result['status'] != 'PASS':
+                raise ValueError('frontend/paired-codec fuzz qualification did not pass')
+            return result['campaigns'] + result['controls']
+        if name == 'source-coverage':
+            profile_foundation('compiler-source-coverage')
+            from scripts.objc3c_toolchain.coverage_controls import qualify as controls
+            from scripts.objc3c_toolchain.source_coverage import qualify as first_party
+            from scripts.objc3c_toolchain.compiler_source_coverage import qualify as compiler_coverage
+            control = controls(repo, directory / 'controls')
+            native = first_party(repo, directory / 'first-party', jobs=2)
+            compiler = compiler_coverage(repo, directory / 'compiler', jobs=2)
+            if any(result['status'] != 'PASS' for result in (control, native, compiler)):
+                raise ValueError('complete source coverage qualification did not pass')
+            return ([{'name': 'coverage-controls', 'status': 'PASS', 'controls': len(control['controls'])}] +
+                    [{'name': row['component']+'-'+row['name'], 'status': 'PASS'} for row in native['suites']] +
+                    [{'name': row['name'], 'status': 'PASS'} for row in compiler['suites']])
         raise ValueError('unimplemented native suite: ' + name)
 
     try:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +15,7 @@ CONTRACT_ID = "objc3c.debug-source-maps.v1"
 VALIDATION_CONTRACT_ID = "objc3c.debug-source-maps.validation.v1"
 INSPECTION_CONTRACT_ID = "objc3c.debug-map.inspection.v1"
 NATIVE_DEBUG_INFO_CONTRACT_ID = "objc3c.debug-source-maps.native-debug-info.v1"
+INLINE_FRAME_CONTRACT_ID = "objc3c.inline-frames.v1"
 DEFAULT_FIXTURE_PATH = (
     ROOT
     / "tests"
@@ -572,6 +573,7 @@ class DebugSourceMapBundle:
     debug_maps: tuple[DebugMapEntry, ...]
     native_line_tables: tuple[NativeLineTableRow, ...]
     native_debug_info: NativeDebugInfoEvidence
+    inline_frame_contract_id: str
     inline_frames: tuple[InlineFrame, ...]
     native_inline_ranges: tuple[NativeInlineRange, ...]
     inline_debug_chains: tuple[InlineDebugChain, ...]
@@ -727,6 +729,8 @@ def _schema_diagnostics(payload: dict[str, Any]) -> list[Diagnostic]:
             diagnostics.append(_diag("schema-type", f"{field} must be an object", field))
 
     _validate_list_items(_object(payload.get("source_graph")).get("nodes"), "source_graph.nodes", diagnostics)
+    if "inline_frames" in payload and "contract_id" not in _object(payload.get("inline_frames")):
+        diagnostics.append(_diag("schema-missing-field", "missing inline-frame contract id", "inline_frames.contract_id"))
     _validate_list_items(_object(payload.get("inline_frames")).get("frames"), "inline_frames.frames", diagnostics)
     _validate_list_items(_object(payload.get("inline_frames")).get("native_ranges"), "inline_frames.native_ranges", diagnostics)
     _validate_list_items(_object(payload.get("inline_frames")).get("chains"), "inline_frames.chains", diagnostics)
@@ -784,6 +788,7 @@ def load_bundle(path: Path | str) -> DebugSourceMapBundle:
         debug_maps=tuple(DebugMapEntry.from_payload(item) for item in _list(payload.get("debug_maps"))),
         native_line_tables=tuple(NativeLineTableRow.from_payload(item) for item in _list(payload.get("native_line_tables"))),
         native_debug_info=NativeDebugInfoEvidence.from_payload(payload.get("native_debug_info")),
+        inline_frame_contract_id=_safe_str(inline_frames.get("contract_id")),
         inline_frames=tuple(InlineFrame.from_payload(item) for item in _list(inline_frames.get("frames"))),
         native_inline_ranges=tuple(NativeInlineRange.from_payload(item) for item in _list(inline_frames.get("native_ranges"))),
         inline_debug_chains=tuple(InlineDebugChain.from_payload(item) for item in _list(inline_frames.get("chains"))),
@@ -1429,6 +1434,12 @@ def _validate_inline_frame_model(
     claims: dict[str, OptimizationPreservationClaim],
     diagnostics: list[Diagnostic],
 ) -> None:
+    if bundle.inline_frame_contract_id != INLINE_FRAME_CONTRACT_ID:
+        diagnostics.append(_diag(
+            "inline-frame-contract-id",
+            "inline-frame records require the current explicit versioned contract",
+            "inline_frames.contract_id",
+        ))
     ranges_by_frame: dict[str, list[NativeInlineRange]] = {}
     for native_range in bundle.native_inline_ranges:
         ranges_by_frame.setdefault(native_range.frame_id, []).append(native_range)
@@ -1611,10 +1622,15 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
             "debug_map_count": 0,
             "native_line_table_count": 0,
             "native_debug_info_evidence_id": "",
+            "inline_frame_contract_id": "",
             "inline_frame_count": 0,
             "native_inline_range_count": 0,
             "inline_debug_chain_count": 0,
             "inline_frame_failure_count": 0,
+            "inline_frames": [],
+            "native_inline_ranges": [],
+            "inline_debug_chains": [],
+            "inline_frame_failures": [],
             "record_kinds": [],
             "capability_rows": [],
             "optimization_transforms": [],
@@ -1630,10 +1646,15 @@ def inspect_bundle_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict[str, ob
         "debug_map_count": len(bundle.debug_maps),
         "native_line_table_count": len(bundle.native_line_tables),
         "native_debug_info_evidence_id": bundle.native_debug_info.evidence_id,
+        "inline_frame_contract_id": bundle.inline_frame_contract_id,
         "inline_frame_count": len(bundle.inline_frames),
         "native_inline_range_count": len(bundle.native_inline_ranges),
         "inline_debug_chain_count": len(bundle.inline_debug_chains),
         "inline_frame_failure_count": len(bundle.inline_frame_failures),
+        "inline_frames": [asdict(frame) for frame in bundle.inline_frames],
+        "native_inline_ranges": [asdict(native_range) for native_range in bundle.native_inline_ranges],
+        "inline_debug_chains": [asdict(chain) for chain in bundle.inline_debug_chains],
+        "inline_frame_failures": [asdict(failure) for failure in bundle.inline_frame_failures],
         "record_kinds": sorted({entry.record_kind for entry in bundle.source_maps}),
         "capability_rows": sorted(row.row_id for row in bundle.capability_rows),
         "optimization_transforms": sorted(claim.transform_kind for claim in bundle.optimization_claims),

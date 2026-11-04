@@ -1,6 +1,7 @@
 {
   "schema": "objc3c.native-source-coverage-policy.v1",
   "host": "linux-x86_64",
+  "compiler_profile": "compiler-source-coverage",
   "compile_flags": ["-fprofile-instr-generate", "-fcoverage-mapping", "-fprofile-update=atomic"],
   "frontend_tests": [
     "objc3_compile_session",
@@ -20,5 +21,5 @@
     "objc3_generic_associative_service",
     "objc3_generic_collection_ownership"
   ],
-  "purpose": "Measured first-party implementation pilot; patched LLVM/Clang coverage and a required regression baseline remain separate. No percentage threshold."
+  "purpose": "Measured first-party and patched-compiler implementation coverage with separate denominators and patch-hunk views. No uncalibrated percentage threshold."
 }

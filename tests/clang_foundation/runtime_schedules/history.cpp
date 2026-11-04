@@ -76,7 +76,7 @@ void barrier_callback(void *context) {
 }
 void trace(const std::string &operation, unsigned id, int status, int output) {
   std::printf("{\"operation\":\"%s\",\"id\":%u,\"status\":%d,\"output\":%d,\"tasks\":[",
-              operation.c_str(), id, status, output);
+      operation.c_str(), id, status, output);
   for (unsigned i = 0; i != tasks.size(); ++i) {
     std::printf("%s[", i ? "," : "");
     for (unsigned j = 0; j != tasks[i].counts.size(); ++j)
@@ -90,7 +90,8 @@ void trace(const std::string &operation, unsigned id, int status, int output) {
       std::printf("%s%u", j ? "," : "", jobs[i].counts[j].load());
     std::printf("]");
   }
-  std::printf("],\"actor_overlap\":%u}\n", overlap.load());
+  std::printf("],\"actor_overlap\":%u}\n",
+              overlap.load() + (SCHEDULE_MUTANT == 4 ? 1 : 0));
   std::fflush(stdout);
 }
 } // namespace
@@ -191,6 +192,17 @@ int main(int argc, char **argv) {
       objc3_completion view{};view.struct_size = sizeof(view);view.version = OBJC3_SERVICE_ABI_VERSION;
       status = objc3_task_get_completion(state.handle, &view);
     } else assert(false && "unmodeled schedule operation");
+    if constexpr (SCHEDULE_MUTANT == 3) {
+      if (operation == "drain")
+        for (auto &task : tasks) task.counts[1] = 0;
+    }
+    if constexpr (SCHEDULE_MUTANT == 5) {
+      static int first_next = -1;
+      if (operation == "next" && output >= 0) {
+        if (first_next < 0) first_next = output;
+        else output = first_next;
+      }
+    }
     trace(operation, id, status, output);
     input >> delimiter;
     if (delimiter == ']') break;

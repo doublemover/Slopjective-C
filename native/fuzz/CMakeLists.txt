@@ -3,6 +3,7 @@ project(objc3_codec_fuzz LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(OBJC3_FUZZ_FOUNDATION "" CACHE PATH "Matched ASan/UBSan foundation")
 set(OBJC3_FUZZ_GENERATED_HEADERS "" CACHE PATH "Admitted native frontend generated headers")
+set(OBJC3_FUZZ_FRONTEND_DEFINITIONS "" CACHE STRING "Exact compile-session identity definitions")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT OBJC3_FUZZ_FOUNDATION OR NOT OBJC3_FUZZ_GENERATED_HEADERS)
   message(FATAL_ERROR "Codec fuzzing requires native Linux and matching foundation/generated headers")
 endif()
@@ -30,6 +31,42 @@ foreach(_target objc3_codec_fuzz_objects objc3_codec_fuzz_support objc3_codec_pr
   target_compile_options(${_target} PRIVATE -O1 -gline-tables-only -UNDEBUG -fno-omit-frame-pointer
     -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined
     -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic)
+endforeach()
+
+add_library(objc3_frontend_fuzz_objects OBJECT
+  "${_native}/clang_foundation/compile_session.cpp"
+  "${_native}/clang_foundation/frontend_api.cpp")
+add_library(objc3_frontend_fuzz_support OBJECT FrontendTarget.cpp)
+add_library(objc3_frontend_cleanup_fault OBJECT FrontendTarget.cpp)
+target_compile_definitions(objc3_frontend_cleanup_fault PRIVATE OBJC3_FUZZ_FRONTEND_CLEANUP_FAULT=1)
+foreach(_target objc3_frontend_fuzz_objects objc3_frontend_fuzz_support objc3_frontend_cleanup_fault)
+  target_compile_features(${_target} PRIVATE cxx_std_20)
+  target_include_directories(${_target} PRIVATE "${_native}" "${OBJC3_FUZZ_GENERATED_HEADERS}" ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_compile_options(${_target} PRIVATE -O1 -gline-tables-only -UNDEBUG -fno-omit-frame-pointer
+    -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined
+    -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic)
+endforeach()
+target_compile_definitions(objc3_frontend_fuzz_objects PRIVATE ${OBJC3_FUZZ_FRONTEND_DEFINITIONS})
+
+add_executable(objc3-frontend-fuzzer FrontendFuzzerEntry.cpp
+  $<TARGET_OBJECTS:objc3_frontend_fuzz_support> $<TARGET_OBJECTS:objc3_frontend_fuzz_objects>)
+add_executable(objc3-frontend-replay FrontendReplay.cpp
+  $<TARGET_OBJECTS:objc3_frontend_fuzz_support> $<TARGET_OBJECTS:objc3_frontend_fuzz_objects>)
+add_executable(objc3-frontend-cleanup-fault FrontendFuzzerEntry.cpp
+  $<TARGET_OBJECTS:objc3_frontend_cleanup_fault> $<TARGET_OBJECTS:objc3_frontend_fuzz_objects>)
+foreach(_target objc3-frontend-fuzzer objc3-frontend-replay objc3-frontend-cleanup-fault)
+  target_compile_features(${_target} PRIVATE cxx_std_20)
+  target_include_directories(${_target} PRIVATE "${_native}" ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_compile_options(${_target} PRIVATE -O1 -gline-tables-only -UNDEBUG -fno-omit-frame-pointer
+    -fsanitize=address,undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined)
+  target_link_options(${_target} PRIVATE -fuse-ld=lld -fsanitize=address,undefined
+    -fno-sanitize-recover=undefined -fprofile-instr-generate "LINKER:--build-id=sha1")
+  target_link_libraries(${_target} PRIVATE "${_native_archive}" clang-cpp LLVM OpenSSL::Crypto)
+  set_target_properties(${_target} PROPERTIES BUILD_RPATH "${OBJC3_FUZZ_FOUNDATION}/lib")
+endforeach()
+foreach(_target objc3-frontend-fuzzer objc3-frontend-cleanup-fault)
+  target_compile_options(${_target} PRIVATE -fsanitize=fuzzer-no-link)
+  target_link_options(${_target} PRIVATE -fsanitize=fuzzer)
 endforeach()
 add_executable(objc3-codec-fuzzer FuzzerEntry.cpp StructuredMutator.cpp
   $<TARGET_OBJECTS:objc3_codec_fuzz_support> $<TARGET_OBJECTS:objc3_codec_fuzz_objects>)

@@ -119,10 +119,19 @@ def _build_foundation(repo: Path, *, host: str | None = None, fetch: bool = Fals
             report["run_directory"] = str(run_directory)
             environment = os.environ.copy()
             if instrumentation_profile:
-                from .sanitizer_policy import strict_environment
                 toolchain = plan['host_environment']
-                bootstrap = Path(toolchain['clang_path']).resolve().parent.parent
-                environment = strict_environment(Path(toolchain['clang_path']), bootstrap / 'bin/llvm-symbolizer')
+                if plan['instrumentation']['kind'] in ('sanitizer', 'fuzzer'):
+                    from .sanitizer_policy import strict_environment
+                    bootstrap = Path(toolchain['clang_path']).resolve().parent.parent
+                    environment = strict_environment(Path(toolchain['clang_path']), bootstrap / 'bin/llvm-symbolizer')
+                elif plan['instrumentation']['kind'] == 'source-coverage':
+                    # Build-time generators must not leave unowned profiles in
+                    # the checkout. Qualification replaces this sink with one
+                    # isolated %p/%m directory per executed suite.
+                    environment.pop('LLVM_PROFILE_FILE', None)
+                    environment['LLVM_PROFILE_FILE'] = os.devnull
+                else:
+                    raise ToolchainError('unknown compiler instrumentation environment policy')
                 environment['PATH'] = os.pathsep.join(dict.fromkeys([
                     str(Path(toolchain['cmake_path']).parent),
                     str(Path(toolchain['ninja_path']).parent),

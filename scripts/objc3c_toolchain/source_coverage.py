@@ -15,7 +15,8 @@ import time
 from .binary_packages import digest, write_json
 from .compiler_instrumentation import loaded_graph, _without_dependency_flags
 from .llvm_ir_execution import command
-from .llvm_tools import foundation, identity
+from .core import build_plans
+from .llvm_tools import identity
 from .sanitizer_policy import strict_environment, require_clean_diagnostic
 from .sdk_example import dependencies
 from scripts.objc3c_assurance.evidence import junit
@@ -113,8 +114,14 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
         raise ValueError('source coverage requires fresh owned output and bounded jobs')
-    plan, _ = foundation(repo)
+    plan = build_plans(repo, host='linux-x86_64',
+                       instrumentation_profile='compiler-source-coverage')['configure']
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
+    completed = json.loads((Path(plan['paths']['build']) / 'foundation-build-report.json').read_text())
+    if (completed.get('status') != 'passed' or completed.get('source_identity') != plan['source_build_id'] or
+            {row['phase'] for row in completed.get('phases', [])} != {'configure', 'build', 'test', 'stage'} or
+            any(row.get('exit_code') != 0 for row in completed['phases'])):
+        raise ValueError('source coverage requires the complete matching compiler coverage profile')
     policy_path = repo / 'toolchains/llvm/source-coverage.json'
     policy = json.loads(policy_path.read_text())
     if policy.get('schema') != 'objc3c.native-source-coverage-policy.v1' or policy.get('host') != 'linux-x86_64':
@@ -143,20 +150,22 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     if __import__('shutil').disk_usage(build_root).free < 1536 * 1024**2:
         raise ValueError('source coverage needs at least 1.5 GiB free temporary build space')
     started = time.monotonic()
-    env = strict_environment(bootstrap / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer')
+    env = strict_environment(stage / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer',
+                             library_dirs=(stage / 'lib',))
+    env['LLVM_PROFILE_FILE'] = os.devnull
     env['PATH'] = os.pathsep.join([str(Path(plan['host_environment'][key]).parent)
         for key in ('cmake_path', 'ninja_path')]+[env['PATH']])
     env['OBJC3C_BOOTSTRAP_LLVM_ROOT'] = str(bootstrap)
-    tools = {name: bootstrap / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata', 'llvm-readobj')}
+    tools = {name: stage / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata', 'llvm-readobj')}
     report = {'schema': 'objc3c.native-source-coverage.v1', 'status': 'running',
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
-        'scope': 'First-party compiler and standalone runtime pilot; patched Clang/LLVM is not coverage-instrumented.',
+        'scope': 'First-party façade and standalone-runtime denominator linked to the exact isolated patched-compiler source-coverage profile.',
         'policy': policy, 'commands': [], 'suites': [], 'objects': {}, 'inputs': {}, 'eligible': {},
         'temporary_build_root': str(build_root), 'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission.',
         'compiled_product_reuse': {'receipt': str(reuse_build_receipt), 'sha256': digest(reuse_build_receipt),
             'execution_reused': False} if reused else None,
-        'exclusions': {'patched-clang-llvm': 'Current shared foundation has sanitizer instrumentation, no source coverage; separate profile/disk budget required.',
+        'exclusions': {'patched-clang-llvm': 'Measured by compiler_source_coverage.py from the same profile and reported as a separate denominator.',
             'upstream-system-headers': 'Reported separately from first-party ownership, never added to its denominator.',
             'language-and-fuzzer-coverage': 'Separate claims; not inferred from implementation percentages.'}}
     frozen = report['inputs']
@@ -210,7 +219,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 '-DOBJC3C_SOURCE_COVERAGE=ON', '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
             if component == 'frontend':
                 configure += ['-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
-                              '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-asan-ubsan']
+                              '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-source-coverage']
             run(component+'-configure', configure)
             discovery = json.loads(run(component+'-discovery', ['ctest', '--test-dir', build, '--show-only=json-v1']))
             cases = {row['name']: row for row in discovery['tests']}

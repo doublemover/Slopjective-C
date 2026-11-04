@@ -10,6 +10,8 @@ from scripts.objc3c_toolchain import core, host, instrumentation_profiles as pro
 
 ROOT = Path(__file__).resolve().parents[2]
 NAME = 'compiler-asan-ubsan'
+FUZZ_NAME = 'compiler-fuzz-asan-ubsan'
+COVERAGE_NAME = 'compiler-source-coverage'
 
 
 @pytest.fixture
@@ -48,6 +50,33 @@ def test_profile_identity_is_distinct_stable_and_preserves_ordinary_inputs(owned
     owner.write_text(owner.read_text() + '\n# recipe owner changed\n')
     assert select(owned)['build_config_digest'] != first['build_config_digest']
     assert sealed == before[1]
+
+
+def test_fuzzer_profile_instruments_the_compiler_graph_without_linking_an_engine_main(owned):
+    repo, manifest, sealed = owned
+    profile = profiles.select(repo, FUZZ_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
+    assert profile['recipe']['kind'] == 'fuzzer'
+    assert profile['recipe']['fuzzer_flags'] == ['-fsanitize=fuzzer-no-link', '-gline-tables-only']
+    assert profile['cmake']['LLVM_USE_SANITIZER'] == 'Address;Undefined'
+    assert '-fsanitize=fuzzer-no-link' in profile['cmake']['CMAKE_CXX_FLAGS_RELEASE']
+    assert '-fsanitize=fuzzer' not in profile['cmake']['CMAKE_CXX_FLAGS_RELEASE'].split()
+    assert {'clang', 'clang-cpp', 'LLVM'} <= set(profile['build']['build_targets'])
+
+
+def test_fuzzer_and_source_coverage_profiles_reject_weakened_instrumentation(owned):
+    repo, manifest, sealed = owned
+    path = repo / 'toolchains/llvm/instrumentation-profiles.json'
+    document = json.loads(path.read_text())
+    document['profiles'][FUZZ_NAME]['cmake']['CMAKE_CXX_FLAGS_RELEASE'] = '-O1 -gline-tables-only'
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match='fuzzer profile'):
+        profiles.select(repo, FUZZ_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
+    shutil.copyfile(ROOT / 'toolchains/llvm/instrumentation-profiles.json', path)
+    document = json.loads(path.read_text())
+    document['profiles'][COVERAGE_NAME]['cmake']['CMAKE_SHARED_LINKER_FLAGS'] = ''
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match='source coverage'):
+        profiles.select(repo, COVERAGE_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
 
 
 @pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'wrong-subject',

@@ -14,6 +14,7 @@ for import_root in (ROOT, SCRIPTS_ROOT):
         sys.path.insert(0, import_root_text)
 
 from scripts.objc3c_debug_maps import (
+    INLINE_FRAME_CONTRACT_ID,
     NATIVE_DEBUG_INFO_CONTRACT_ID,
     REQUIRED_CAPABILITY_ROWS,
     REQUIRED_OPTIMIZATION_TRANSFORMS,
@@ -86,9 +87,9 @@ def test_debug_source_map_positive_fixture_validates_source_debug_and_line_links
     assert {entry.record_kind for entry in bundle.source_maps} == REQUIRED_SOURCE_MAP_RECORD_KINDS
     assert {row.row_id for row in bundle.capability_rows} >= REQUIRED_CAPABILITY_ROWS
     assert {claim.transform_kind for claim in bundle.optimization_claims} == REQUIRED_OPTIMIZATION_TRANSFORMS
-    assert len(bundle.source_graph_nodes) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
-    assert len(bundle.debug_maps) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
-    assert len(bundle.native_line_tables) == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert len(bundle.source_graph_nodes) >= len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert len(bundle.debug_maps) == len(bundle.source_graph_nodes)
+    assert len(bundle.native_line_tables) == len(bundle.source_graph_nodes)
     assert len(bundle.inline_frames) == 1
     assert len(bundle.native_inline_ranges) == 1
     assert len(bundle.inline_debug_chains) == 1
@@ -107,15 +108,31 @@ def test_debug_map_inspection_summary_is_stable_and_diagnostic_backed() -> None:
 
     assert payload["ok"] is True
     assert payload["contract_id"] == "objc3c.debug-map.inspection.v1"
-    assert payload["source_map_count"] == len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
+    assert payload["source_map_count"] >= len(REQUIRED_SOURCE_MAP_RECORD_KINDS)
     assert payload["native_debug_info_evidence_id"] == "debugmaps.foundation.native-debug-info"
     assert payload["inline_frame_count"] == 1
+    assert payload["inline_frame_contract_id"] == INLINE_FRAME_CONTRACT_ID
     assert payload["native_inline_range_count"] == 1
     assert payload["inline_debug_chain_count"] == 1
     assert payload["inline_frame_failure_count"] == 0
     assert set(payload["record_kinds"]) == REQUIRED_SOURCE_MAP_RECORD_KINDS
     assert set(payload["capability_rows"]) >= REQUIRED_CAPABILITY_ROWS
     assert payload["diagnostics"] == []
+    assert payload["inline_frames"][0]["frame_id"] == "inline.frame.main_helper"
+    assert payload["native_inline_ranges"][0]["artifact_symbol_id"].startswith("_objc3_")
+    assert payload["inline_debug_chains"][0]["optimization_proof_id"] == "opt.method_inlining"
+
+
+def test_debug_source_maps_reject_missing_or_stale_inline_frame_contract(tmp_path: Path) -> None:
+    for index, value in enumerate((None, "objc3c.inline-frames.v0")):
+        payload = load_json(POSITIVE_FIXTURE)
+        if value is None:
+            payload["inline_frames"].pop("contract_id")
+        else:
+            payload["inline_frames"]["contract_id"] = value
+        path = tmp_path / f"contract-{index}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        assert "inline-frame-contract-id" in diagnostic_codes(path)
 
 
 def test_debug_source_map_public_action_is_registered() -> None:

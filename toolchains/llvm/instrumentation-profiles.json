@@ -2,6 +2,7 @@
   "schema": "objc3c.compiler-instrumentation-profiles.v1",
   "profiles": {
     "compiler-asan-ubsan": {
+      "kind": "sanitizer",
       "subject": "compiler-implementation",
       "host": "linux-x86_64",
       "projects": ["clang", "lld"],
@@ -38,6 +39,90 @@
         "LLVM uses its supported undefined-behavior profile with function/vptr checks excluded for upstream erased callback/type representations; ASan and the remaining UBSan checks stay enabled without recovery.",
         "clangd, clang-format and LLDB are outside this first compiler-process profile; their ordinary native regression lanes remain separate.",
         "Compiler TSan and MSan are not supported by this profile."
+      ]
+    },
+    "compiler-fuzz-asan-ubsan": {
+      "kind": "fuzzer",
+      "subject": "compiler-implementation",
+      "host": "linux-x86_64",
+      "projects": ["clang", "lld"],
+      "configuration": "Release",
+      "optimization": "O1",
+      "facade_sanitizer": "address,undefined",
+      "fuzzer_flags": ["-fsanitize=fuzzer-no-link", "-gline-tables-only"],
+      "cmake": {
+        "LLVM_USE_SANITIZER": "Address;Undefined",
+        "LLVM_BUILD_LLVM_DYLIB": "ON",
+        "LLVM_LINK_LLVM_DYLIB": "ON",
+        "CLANG_LINK_CLANG_DYLIB": "ON",
+        "CMAKE_C_FLAGS_RELEASE": "-O1 -gline-tables-only -DNDEBUG -fsanitize=fuzzer-no-link",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O1 -gline-tables-only -DNDEBUG -fsanitize=fuzzer-no-link",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
+        "CMAKE_MODULE_LINKER_FLAGS": "-fsanitize=fuzzer-no-link",
+        "LLVM_UBSAN_FLAGS": "-fsanitize=undefined -fno-sanitize=function,vptr -fno-sanitize-recover=undefined"
+      },
+      "build_target_groups": [
+        {"name": "feedback_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
+        {"name": "feedback_tools", "targets": ["FileCheck", "count", "not", "llvm-config", "llvm-nm", "clang-resource-headers", "c-index-test"]},
+        {"name": "feedback_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+      ],
+      "test_binaries": [
+        "tools/clang/unittests/AST/ObjC3TypeContractsTests",
+        "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+      ],
+      "additional_test_suites": [
+        "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/test/Index/objc3-native-expression-cursors.mm"
+      ],
+      "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
+      "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-nm"],
+      "boundaries": [
+        "This profile instruments the actual patched Clang/LLVM compiler graph with libFuzzer feedback counters plus nonrecovering ASan/UBSan; the harness links the single engine main separately.",
+        "Line tables are retained so campaign coverage can prove execution in patched parser and semantic-analysis sources instead of only in the embedding harness.",
+        "This profile is isolated from ordinary compiler qualification, source-coverage measurement, TSan, emitted-client and runtime-library instrumentation."
+      ]
+    },
+    "compiler-source-coverage": {
+      "kind": "source-coverage",
+      "subject": "compiler-implementation",
+      "host": "linux-x86_64",
+      "projects": ["clang", "lld"],
+      "configuration": "Release",
+      "optimization": "O1",
+      "facade_source_coverage": true,
+      "coverage_flags": ["-fprofile-instr-generate", "-fcoverage-mapping", "-fprofile-update=atomic"],
+      "cmake": {
+        "CMAKE_C_FLAGS_RELEASE": "-O1 -DNDEBUG -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic",
+        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fprofile-instr-generate",
+        "CMAKE_MODULE_LINKER_FLAGS": "-fprofile-instr-generate",
+        "LLVM_BUILD_LLVM_DYLIB": "ON",
+        "LLVM_LINK_LLVM_DYLIB": "ON",
+        "CLANG_LINK_CLANG_DYLIB": "ON"
+      },
+      "build_target_groups": [
+        {"name": "covered_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
+        {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "FileCheck", "count", "not", "clang-resource-headers"]},
+        {"name": "covered_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
+      ],
+      "test_binaries": [
+        "tools/clang/unittests/AST/ObjC3TypeContractsTests",
+        "tools/clang/unittests/ASTMatchers/ObjC3MatchersTests",
+        "tools/clang/unittests/ASTMatchers/Dynamic/DynamicASTMatchersTests"
+      ],
+      "additional_test_suites": [
+        "clang/test/Index/objc3-condition-cursors.mm",
+        "clang/test/Index/objc3-native-expression-cursors.mm"
+      ],
+      "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
+      "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-cov", "llvm-profdata", "llvm-nm"],
+      "boundaries": [
+        "This profile measures the actual patched Clang/LLVM compiler process and its first-party embedding graph; emitted-client/runtime coverage remains a separately labeled denominator.",
+        "Raw profiles are revision, binary and LLVM-version specific and are never merged with sanitizer or ordinary build variants.",
+        "Coverage percentages do not establish language conformance, ownership safety, schedule completeness or fuzzer feedback."
       ]
     }
   }

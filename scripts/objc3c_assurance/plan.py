@@ -24,6 +24,22 @@ SWIFT = FOUNDATION + ('toolchains/swift/', 'tests/foreign/swift_consumer/',
     'native/objc3c/src/clang_foundation/objc3_cli_', '.github/workflows/native-assurance.yml')
 BENCHMARK = FOUNDATION + ('tests/benchmarks/', 'scripts/objc3c_toolchain/semantic_benchmarks.py',
     'scripts/objc3c_assurance/', 'native/objc3c/', 'stdlib/', '.github/workflows/native-assurance.yml')
+SANITIZER_PRODUCTS = RUNTIME + PACKAGE + ('scripts/objc3c_toolchain/sanitizer_',
+    'scripts/objc3c_toolchain/runtime_instrumentation.py',
+    'scripts/objc3c_toolchain/run_linux_feature_batch.py',
+    'scripts/objc3c_toolchain/run_linux_factory_batch.py',
+    'scripts/qualify_linux_ownership_sanitizers.py')
+RUNTIME_SCHEDULES = RUNTIME + ('scripts/objc3c_toolchain/runtime_schedule_',
+    'scripts/objc3c_toolchain/runtime_schedules.py',
+    'tests/clang_foundation/runtime_schedules/',
+    'tests/clang_foundation/async_handle_joins/')
+FUZZ = FOUNDATION + ('native/fuzz/', 'scripts/objc3c_toolchain/codec_fuzz.py',
+    'native/objc3c/src/clang_foundation/compile_session.cpp',
+    'native/objc3c/src/clang_foundation/frontend_api.',
+    'native/objc3c/src/clang_foundation/interface_')
+COVERAGE = FOUNDATION + ('scripts/objc3c_toolchain/source_coverage.py',
+    'scripts/objc3c_toolchain/compiler_source_coverage.py',
+    'scripts/objc3c_toolchain/coverage_controls.py', 'toolchains/llvm/source-coverage.json')
 
 
 def signature(value: dict) -> str:
@@ -87,8 +103,23 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
         if periodic or not paths or any(path.startswith(BENCHMARK) for path in paths):
             add('semantic-workloads', ['native-compile', 'native-execute', 'semantic-work-count', 'advisory-timing'],
                 'scripts/objc3c_toolchain/semantic_benchmarks.py')
-        if (not paths and not periodic) or any(path.startswith(PACKAGE) for path in paths or []):
+        if (periodic or not paths or any(path.startswith(PACKAGE) for path in paths or []) or
+                any(path.startswith(SANITIZER_PRODUCTS) for path in paths or [])):
             add('package', ['installed-package-qualification'], 'scripts/objc3c_toolchain/linux_sdk.py')
+        if periodic or not paths or any(path.startswith(SANITIZER_PRODUCTS) for path in paths or []):
+            add('sanitizer-products', ['paired-detector-controls', 'native-product-execute'],
+                'scripts/objc3c_toolchain/sanitizer_products.py')
+        if periodic or not paths or any(path.startswith(RUNTIME_SCHEDULES) for path in paths or []):
+            add('runtime-schedules', ['generated-history', 'manual-replay', 'worker-replay',
+                'semantic-mutant-rejection', 'asan-ubsan', 'tsan'],
+                'scripts/objc3c_toolchain/runtime_schedules.py')
+        if periodic or not paths or any(path.startswith(FUZZ) for path in paths or []):
+            add('frontend-fuzz', ['exact-corpus-replay', 'coverage-guided-discovery',
+                'source-branch-feedback', 'fault-minimization'],
+                'scripts/objc3c_toolchain/codec_fuzz.py')
+        if periodic or not paths or any(path.startswith(COVERAGE) for path in paths or []):
+            add('source-coverage', ['first-party-source-coverage', 'patched-compiler-source-coverage',
+                'reader-fault-controls'], 'scripts/objc3c_toolchain/compiler_source_coverage.py')
     foundation_changes = not paths or any(path.startswith(FOUNDATION) for path in paths)
     plan = {'schema': SCHEMA, 'revision': revision, 'changed_paths': paths, 'periodic': periodic,
             'classification': 'prose-only' if docs_only else 'native', 'reasons': reasons,
