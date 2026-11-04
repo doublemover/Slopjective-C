@@ -160,6 +160,27 @@ def suite_results(root: Path, name: str) -> list[dict]:
         for row in cases:
             execution_result(json.dumps(row.get('result')))
         return cases
+    if name == 'semantic-workloads':
+        from scripts.objc3c_toolchain.semantic_benchmarks import SCALES, runtime_result
+        result = read('measurement/qualification.json')
+        expected = {phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES}
+        summaries, samples = result.get('summaries', []), result.get('samples', [])
+        if (result.get('correctness') != 'PASS' or result.get('workload_version') != 1 or
+                result.get('repetitions') != 3 or result.get('timing_decision') != 'advisory-inconclusive-uncalibrated' or
+                len(result.get('sdks', [])) != 1 or len(summaries) != len(expected) or
+                {row['workload'] for row in summaries} != expected or
+                any(row['wall']['samples'] != 3 or row['sdk_index'] != 0 for row in summaries) or
+                result.get('delay_control', {}).get('status') != 'PASS' or
+                not result['delay_control'].get('semantic_output_unchanged') or
+                any(row.get('exit_code') != 0 or row.get('timed_out') for row in samples)):
+            raise ValueError('semantic workload correctness/sample/control inventory is incomplete')
+        for workload in expected:
+            rows = [row for row in samples if row.get('workload') == workload]
+            if len(rows) != 4 or len([row for row in rows if row.get('warmup') is False]) != 3:
+                raise ValueError('semantic workload omitted its actual warmup/repetition set')
+            if workload.startswith('runtime-'):
+                for row in rows: runtime_result(json.dumps(row.get('semantic_result')), int(workload.split('-')[1]))
+        return summaries
     if name == 'package':
         result = read('release.json')
         return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]

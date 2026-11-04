@@ -12,7 +12,8 @@ import subprocess
 import time
 
 from .binary_packages import digest, write_json
-from .package import verify_sdk
+from .package import SCHEMA, _digest, inventory, verify_sdk
+import shutil
 from .compiler_instrumentation import loaded_graph
 
 SCALES = (32, 256, 2048)
@@ -106,6 +107,30 @@ def host_context():
         'noise_limits': 'Shared runner; frequency/contention uncontrolled. Timing remains advisory.'}
 
 
+def prepare_prefix(stage, prefix, *, source_build_id, target):
+    """Seal current compiler/runtime build products for the existing CI lane."""
+    stage, prefix = stage.resolve(strict=True), prefix.resolve()
+    if prefix.exists() or prefix.is_relative_to(stage):
+        raise ValueError('benchmark preparation requires a fresh independent development prefix')
+    prefix.mkdir(parents=True)
+    def link(source, destination):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        os.link(source.resolve(strict=True), destination)
+    for name in ('clang', 'clang++', 'ld.lld'):
+        link(stage / 'bin' / name, prefix / 'bin' / name)
+    for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
+        source = (stage / 'lib' / name).resolve(strict=True)
+        link(source, prefix / 'lib' / source.name)
+        if source.name != name: (prefix / 'lib' / name).symlink_to(source.name)
+    for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
+        shutil.copytree(stage / name, prefix / name, copy_function=os.link)
+    record = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
+        'purpose': 'Development-only semantic workload measurement; no SDK archive qualification', 'files': inventory(prefix)}
+    record['seal_sha256'] = _digest(record)
+    write_json(prefix / 'objc3-sdk.json', record);(prefix / 'objc3-sdk.json').chmod(0o644)
+    return verify_sdk(prefix)
+
+
 def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
     repo, output = repo.resolve(strict=True), output.resolve()
     if (platform.system() != 'Linux' or platform.machine() != 'x86_64' or
@@ -114,7 +139,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
         raise ValueError('benchmark needs native Linux x86-64, fresh owned output and 3..15 samples')
     prefixes = [Path(value).resolve(strict=True) for value in ([baseline_sdk] if baseline_sdk else [])+[sdk]]
     manifests = [verify_sdk(prefix) for prefix in prefixes]
-    if len({value['target'] for value in manifests}) != 1:
+    if {value['target'] for value in manifests} != {'x86_64-unknown-linux-gnu'}:
         raise ValueError('benchmark SDK target contexts differ')
     output.mkdir(parents=True)
     fixture = repo / 'tests/benchmarks/collections.cpp'

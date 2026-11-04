@@ -39,3 +39,20 @@ ARC/MRC object lifetimes, source/PCH/interface cache behavior or concurrent task
 throughput. Those dimensions require further workload definitions and measured
 cost before expanding the existing budgeted CI/release lanes. No new schedule or
 performance claim follows merely from successful measurement.
+
+The existing native CI owner now selects a three-repetition characterization
+for compiler, runtime, stdlib, workload, foundation and runner changes and its
+complete periodic/release selection. It seals only the required current compiler,
+linker, resources, runtime archive/dependency and headers; it builds no archive.
+The terminal gate checks all nine phase/scale summaries, each actual warmup and
+three measured samples, runtime work-count oracles and the paired delay control.
+Missing samples or wrong semantic results block correctness. Timings stay
+advisory, with no performance-pass claim and no automatically accepted baseline.
+
+The real native CI protocol passes nine phase/scale rows and forty-five command
+samples. A separate two-SDK experiment compares the admitted 75cfe6c21f70 and
+616ca86288bb compiler checkpoints with eighty-seven retained samples. Both use
+instrumented compilers and ordinary runtime archives; the result is an
+uncalibrated diagnostic-build comparison, not an uninstrumented speedup claim.
+Trusted baseline governance, runner-specific noise/effect calibration, memory
+budgets and further workload families remain open under #8291.

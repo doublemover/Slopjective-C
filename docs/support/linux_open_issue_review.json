@@ -63,9 +63,7 @@
       "body_sha256": "748ff0dde5fbe079c91357b9592784e7a273f6cbcbde31ff69891f0bae7c3d37",
       "status": "fixed-and-source-validated",
       "implementation_commit": "9d349791f8fba99a1998550dce31f8fcbef35559",
-      "followup_commits": [
-        "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
-      ]
+      "followup_commits": ["ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"]
     },
     {
       "number": 8283,
@@ -146,7 +144,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8291",
       "category": "assurance",
       "body_sha256": "e0f44d8de2c63e3cc383ac6b989485c6a3b79f52fba7632957f662cdeb46d374",
-      "status": "open"
+      "status": "semantic-workloads-and-ci-characterization-qualified-calibration-open",
+      "implementation": "docs/roadmap/linux_semantic_benchmarks.md"
     },
     {
       "number": 8292,
@@ -240,9 +239,7 @@
       "body_sha256": "34424740368a286186bdc964c0f7b21de114da46976683ec695a7a952d47ca84",
       "status": "fixed-and-source-validated",
       "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
-      "followup_commits": [
-        "66ca656437406b576c56cc301e99f79e1d224c48"
-      ]
+      "followup_commits": ["66ca656437406b576c56cc301e99f79e1d224c48"]
     },
     {
       "number": 8301,
@@ -274,9 +271,7 @@
       "body_sha256": "c73f7ac0d39e36be47a29c9d588bb671f0936c2de3a6333c6655da3778976b17",
       "status": "fixed-and-source-validated",
       "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
-      "followup_commits": [
-        "66ca656437406b576c56cc301e99f79e1d224c48"
-      ]
+      "followup_commits": ["66ca656437406b576c56cc301e99f79e1d224c48"]
     },
     {
       "number": 8304,
@@ -491,20 +486,7 @@
     }
   ],
   "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb",
-  "fixed_in_this_batch": [
-    8280,
-    8281,
-    8293,
-    8294,
-    8297,
-    8298,
-    8305,
-    8322,
-    8323,
-    8324,
-    8325,
-    8326
-  ],
+  "fixed_in_this_batch": [8280, 8281, 8293, 8294, 8297, 8298, 8305, 8322, 8323, 8324, 8325, 8326],
   "remaining_implementation_or_host_items": 10,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
@@ -581,15 +563,8 @@
     "compiler_unsupported": 3,
     "sanitizer_cases": 12,
     "sanitizer_commands": 24,
-    "configuration_modes": [
-      "Debug",
-      "Release",
-      "RelWithDebInfo"
-    ],
-    "semantic_mutant_controls": [
-      "wrong-map-count",
-      "missing-unpublished-token-rollback"
-    ],
+    "configuration_modes": ["Debug", "Release", "RelWithDebInfo"],
+    "semantic_mutant_controls": ["wrong-map-count", "missing-unpublished-token-rollback"],
     "source_graph_cases": 5
   },
   "boundaries": [
@@ -616,20 +591,7 @@
   "compiler_correction_batch": {
     "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48",
     "fixed_issues": [
-      8306,
-      8308,
-      8309,
-      8310,
-      8311,
-      8312,
-      8314,
-      8315,
-      8316,
-      8317,
-      8318,
-      8319,
-      8320,
-      8321
+      8306, 8308, 8309, 8310, 8311, 8312, 8314, 8315, 8316, 8317, 8318, 8319, 8320, 8321
     ],
     "validation": {
       "native": {
@@ -728,13 +690,7 @@
       "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
       "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
     ],
-    "fixed_issues": [
-      8295,
-      8296,
-      8299,
-      8302,
-      8304
-    ],
+    "fixed_issues": [8295, 8296, 8299, 8302, 8304],
     "validation": {
       "matrix": {
         "path": "out/issue-runtime-atomic-publication-final/qualification.json",
@@ -780,9 +736,7 @@
   },
   "interface_resource_batch": {
     "implementation_commit": "32e5dcdf618646077730369832215135b4acc9ed",
-    "fixed_issues": [
-      8313
-    ],
+    "fixed_issues": [8313],
     "validation": {
       "build": {
         "path": "out/issue-interface-resource-build.log",
@@ -808,20 +762,14 @@
       "128-node boundary and 4096-node iterative graphs in both lexical dependency orders",
       "direct imports, parser bytes/declarations and stale artifact rejection"
     ],
-    "boundaries": [
-      "Limits bound admitted input and repeated work, not exact Clang AST RSS."
-    ]
+    "boundaries": ["Limits bound admitted input and repeated work, not exact Clang AST RSS."]
   },
   "collection_correction_batch": {
     "implementation_commits": [
       "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
       "66ca656437406b576c56cc301e99f79e1d224c48"
     ],
-    "fixed_issues": [
-      8300,
-      8301,
-      8303
-    ],
+    "fixed_issues": [8300, 8301, 8303],
     "validation": {
       "profiles": {
         "path": "out/issue-persistent-collection-final-profiles/qualification.json",
@@ -881,12 +829,8 @@
       "9d349791f8fba99a1998550dce31f8fcbef35559",
       "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
     ],
-    "fixed_issues": [
-      8282
-    ],
-    "partial_progress_issues": [
-      8284
-    ],
+    "fixed_issues": [8282],
+    "partial_progress_issues": [8284],
     "validation": {
       "feature_asan": {
         "path": "out/issue-strict-feature-policy/asan/batch.json",
@@ -976,9 +920,7 @@
   },
   "inherited_borrowed_batch": {
     "implementation_commit": "d3fde4069d341fbb01000bf5059c5c7935e91ff3",
-    "fixed_issues": [
-      8307
-    ],
+    "fixed_issues": [8307],
     "validation": {
       "native": {
         "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261030T042137.368037Z/report.json",
@@ -1003,14 +945,8 @@
     "pch_configurations": 4,
     "pch_commands": 8,
     "source_free_interface_configurations": {
-      "standards": [
-        "c++20",
-        "c++23"
-      ],
-      "ownership": [
-        "arc",
-        "mrc"
-      ],
+      "standards": ["c++20", "c++23"],
+      "ownership": ["arc", "mrc"],
       "producers": 4,
       "consumer_cases": 32
     },
@@ -1030,10 +966,7 @@
   "compiler_instrumentation_progress": {
     "issue": 8284,
     "status": "PASS",
-    "implementation_commits": [
-      "75a3cf6ae",
-      "93beb7c08"
-    ],
+    "implementation_commits": ["75a3cf6ae", "93beb7c08"],
     "completed_checks": {
       "isolated_planner_and_build_tests": 20,
       "existing_preparation_tests": 17,
@@ -1051,9 +984,7 @@
       "Compiler TSan has no admitted concurrent embedding contract; MSan has no complete instrumented C++/GNUstep closure.",
       "The accepted ordinary SDK 2.62 and its archive are unchanged. Native CI acceptance remains under #8283."
     ],
-    "fixed_issues": [
-      8284
-    ],
+    "fixed_issues": [8284],
     "qualification": {
       "path": "out/compiler-instrumentation/recovered-20261030-v6/qualification.json",
       "sha256": "c1bb819573bf6836251bb2dc3401cd5fc9399d6af1d288d38eb334a5f397ca70",
@@ -1157,14 +1088,7 @@
     "default_positive_cases": 33,
     "expanded_positive_cases": 63,
     "controls": 7,
-    "expanded_seeds": [
-      7,
-      19,
-      41,
-      3733196313,
-      2586782689,
-      2778965653
-    ],
+    "expanded_seeds": [7, 19, 41, 3733196313, 2586782689, 2778965653],
     "native_compilations": 103,
     "commands": 401,
     "typed_reduction_trials": 8,
@@ -1209,14 +1133,7 @@
   "acceptance_followups": {
     "reviewed_checkpoint": "08e5b64bd9f8f29a7faa35839066225d48e52e16",
     "documentation": "docs/roadmap/linux_acceptance_followups.md",
-    "repaired_requirements": [
-      8286,
-      8284,
-      8302,
-      8312,
-      8325,
-      8326
-    ],
+    "repaired_requirements": [8286, 8284, 8302, 8312, 8325, 8326],
     "remaining_requirement": 8282,
     "boundaries": "Focused source/acceptance-gap controls; the historical complete-acceptance review and release SDK qualification remain separate.",
     "receipts": {
@@ -1258,11 +1175,7 @@
     "cxx_commands": 118,
     "cxx_rejections": 16,
     "shipped_python_gates_repaired": 46,
-    "optimization_levels_tested": [
-      0,
-      1,
-      2
-    ],
+    "optimization_levels_tested": [0, 1, 2],
     "gate_and_assurance_tests": 213,
     "cxx_receipt": {
       "path": "out/cxx-interfaces-current-qualified/qualification.json",
@@ -1331,11 +1244,7 @@
       }
     },
     "generation_experiment": {
-      "seeds": [
-        7,
-        19,
-        41
-      ],
+      "seeds": [7, 19, 41],
       "programs_per_strategy": 3,
       "wall_and_cpu_budget_seconds": 180,
       "uniform": {
@@ -1476,5 +1385,20 @@
       "path": "out/nov04-tooling-complete/inventory.json",
       "sha256": "26ee38574bdbf3df16e40804fad88398296be6b510ac192ebe248c3500011f59"
     }
+  },
+  "semantic_workload_ci": {
+    "status": "PASS",
+    "phase_scale_rows": 9,
+    "raw_command_samples": 45,
+    "receipt": {
+      "path": "out/semantic-workload-ci-pilot-v2/semantic-workloads/measurement/qualification.json",
+      "sha256": "50b340a1cd12b869851322d44d41558a08f028cff6e08a35d364754297c970de"
+    },
+    "baseline_candidate_experiment": {
+      "path": "out/semantic-workload-baseline-candidate/qualification.json",
+      "sha256": "d8c75f894d9193eb920a91ea7054cbb8b83718c247db098086d55debcac0e42f"
+    },
+    "selection": "Existing native gate; relevant compiler/runtime/stdlib/workload/runner/foundation edits and complete sweeps.",
+    "decision": "Correctness/completeness block; timing stays advisory and uncalibrated. Trusted baseline governance and calibration remain open."
   }
 }

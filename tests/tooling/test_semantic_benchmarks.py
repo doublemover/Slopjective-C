@@ -102,4 +102,48 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(tmp_path, 
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
         assert len([row for row in report['samples'] if row.get('semantic_result')]) == 12
         assert report['delay_control']['status'] == 'PASS'
+        from scripts.objc3c_assurance.evidence import suite_results
+        import copy
+        import shutil
+        native_root = repo / 'out/native'
+        destination = native_root / 'semantic-workloads/measurement';destination.parent.mkdir(parents=True)
+        shutil.move(output, destination)
+        assert len(suite_results(native_root, 'semantic-workloads')) == 9
+        for mutation in ('summary', 'sample', 'delay', 'oracle'):
+            broken = copy.deepcopy(report)
+            if mutation == 'summary': broken['summaries'].pop()
+            elif mutation == 'sample':
+                broken['samples'] = [row for row in broken['samples'] if row.get('workload') != 'syntax-32']
+            elif mutation == 'delay': broken['delay_control']['status'] = 'FAIL'
+            else:
+                next(row for row in broken['samples'] if row.get('semantic_result'))['semantic_result']['completed_operations'] = 0
+            (destination / 'qualification.json').write_text(json.dumps(broken))
+            with pytest.raises(ValueError): suite_results(native_root, 'semantic-workloads')
     assert len(calls) == 2
+
+
+def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path):
+    from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix
+    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+    for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
+        'lib/libobjc.so.4.6', 'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+        'include/objc3c/runtime/objc3_collections.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    for name, actual in (('libLLVM.so', 'libLLVM.so.23.1'), ('libclang-cpp.so', 'libclang-cpp.so.23.1'),
+                         ('libobjc.so', 'libobjc.so.4.6')):
+        (stage / 'lib' / name).symlink_to(actual)
+    result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
+    assert result['source_build_id'] == 'current-build'
+    assert (prefix / 'lib/libobjc.so').resolve() == prefix / 'lib/libobjc.so.4.6'
+    assert (stage / 'bin/clang').stat().st_ino == (prefix / 'bin/clang').stat().st_ino
+    with pytest.raises(ValueError, match='fresh independent'):
+        prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
+
+
+@pytest.mark.parametrize('path', ['stdlib/include/objc3/ObjC3Map.h', 'native/objc3c/src/runtime/stdlib/collections_service.cpp',
+    'tests/benchmarks/collections.cpp', 'scripts/objc3c_toolchain/semantic_benchmarks.py', 'toolchains/llvm/patches/change.patch'])
+def test_semantic_work_changes_select_the_existing_native_lane(path):
+    from scripts.objc3c_assurance.plan import select
+    plan = select([path], head='a'*40, base='b'*40, tested='c'*40)
+    suite = next(row for row in plan['suites'] if row['id'] == 'semantic-workloads')
+    assert 'semantic-work-count' in suite['execution'] and 'advisory-timing' in suite['execution']

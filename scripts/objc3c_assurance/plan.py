@@ -22,6 +22,8 @@ SWIFT = FOUNDATION + ('toolchains/swift/', 'tests/foreign/swift_consumer/',
     'scripts/objc3c_toolchain/swift_', 'scripts/objc3c_assurance/',
     'native/objc3c/src/clang_foundation/interface_', 'native/objc3c/src/clang_foundation/module_',
     'native/objc3c/src/clang_foundation/objc3_cli_', '.github/workflows/native-assurance.yml')
+BENCHMARK = FOUNDATION + ('tests/benchmarks/', 'scripts/objc3c_toolchain/semantic_benchmarks.py',
+    'scripts/objc3c_assurance/', 'native/objc3c/', 'stdlib/', '.github/workflows/native-assurance.yml')
 
 
 def signature(value: dict) -> str:
@@ -82,6 +84,9 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
         if periodic or not paths or any(path.startswith(SWIFT) for path in paths):
             add('swift-consumer', ['foreign-import', 'native-compile', 'native-execute', 'expected-rejection'],
                 'scripts/objc3c_toolchain/swift_consumer.py')
+        if periodic or not paths or any(path.startswith(BENCHMARK) for path in paths):
+            add('semantic-workloads', ['native-compile', 'native-execute', 'semantic-work-count', 'advisory-timing'],
+                'scripts/objc3c_toolchain/semantic_benchmarks.py')
         if (not paths and not periodic) or any(path.startswith(PACKAGE) for path in paths or []):
             add('package', ['installed-package-qualification'], 'scripts/objc3c_toolchain/linux_sdk.py')
     foundation_changes = not paths or any(path.startswith(FOUNDATION) for path in paths)

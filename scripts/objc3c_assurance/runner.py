@@ -162,6 +162,15 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             result = qualify(repo, directory / 'consumer', sdk=prefix, swift_root=root,
                              symbolizer=bootstrap / 'bin/llvm-symbolizer')
             return result['cases']
+        if name == 'semantic-workloads':
+            from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix, measure
+            prefix = directory / 'build/compiler-prefix'
+            prepare_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],
+                           target=report['product']['host_environment']['target_triple'])
+            result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3)
+            # Correctness/completeness block the native gate. Timings have no
+            # calibrated baseline here and cannot claim a performance pass.
+            return result['summaries']
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
             from .package_evidence import preserve, snapshot
