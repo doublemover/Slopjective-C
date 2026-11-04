@@ -48860,7 +48860,7 @@ index 000000000..a90418213
 +  return ^{ return 1; };
 +}
 diff --git a/clang/lib/AST/DeclBase.cpp b/clang/lib/AST/DeclBase.cpp
-index 70f61fa57..244eaa20b 100644
+index 70f61fa57..4c9468fa0 100644
 --- a/clang/lib/AST/DeclBase.cpp
 +++ b/clang/lib/AST/DeclBase.cpp
 @@ -2202,6 +2202,11 @@ void DeclContext::makeDeclVisibleInContextImpl(NamedDecl *D, bool Internal) {
@@ -48874,6 +48874,20 @@ index 70f61fa57..244eaa20b 100644
 +    return;
    DeclNameEntries.addOrReplaceDecl(D);
  }
+ 
+@@ -2276,8 +2281,12 @@ DependentDiagnostic *DependentDiagnostic::Create(ASTContext &C,
+   // Allocate the copy of the PartialDiagnostic via the ASTContext's
+   // BumpPtrAllocator, rather than the ASTContext itself.
+   DiagnosticStorage *DiagStorage = nullptr;
+-  if (PDiag.hasStorage())
++  if (PDiag.hasStorage()) {
+     DiagStorage = new (C) DiagnosticStorage;
++    // The arena owns storage bytes, but strings and overflow vectors own heap
++    // allocations. Run their destructor before reclaiming the AST arena.
++    C.addDestruction(DiagStorage);
++  }
+ 
+   auto *DD = new (C) DependentDiagnostic(PDiag, DiagStorage);
  
 diff --git a/clang/test/ObjC3/Sema/Inputs/profile-modules/core.h b/clang/test/ObjC3/Sema/Inputs/profile-modules/core.h
 new file mode 100644
@@ -52304,3 +52318,51 @@ index 000000000..484628105
 +    __objc3_result(int, BorrowedDerived) input) {
 +  return input; // expected-error {{borrowed pointer escapes}}
 +}
+diff --git a/clang/unittests/AST/DeclTest.cpp b/clang/unittests/AST/DeclTest.cpp
+index b95d36189..1787d52b9 100644
+--- a/clang/unittests/AST/DeclTest.cpp
++++ b/clang/unittests/AST/DeclTest.cpp
+@@ -14,6 +14,7 @@
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/DeclTemplate.h"
++#include "clang/AST/DependentDiagnostic.h"
+ #include "clang/AST/Mangle.h"
+ #include "clang/ASTMatchers/ASTMatchFinder.h"
+ #include "clang/ASTMatchers/ASTMatchers.h"
+@@ -31,6 +32,35 @@ using namespace clang::ast_matchers;
+ using namespace clang::tooling;
+ using namespace clang;
+ 
++TEST(Decl, CleansUpDependentDiagnosticStorage) {
++  // Run under LSan as well as ordinary ASTTests. Both diagnostic strings and
++  // fix-it strings/vectors exceed inline capacity and outlive the source PDiag.
++  auto AST = buildASTFromCode("template<class T> struct Holder {};", "input.cc");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++  auto Found = Context.getTranslationUnitDecl()->lookup(&Context.Idents.get("Holder"));
++  ASSERT_TRUE(Found.isSingleResult());
++  auto *Record = cast<ClassTemplateDecl>(Found.front())->getTemplatedDecl();
++  unsigned ID = Context.getDiagnostics().getCustomDiagID(DiagnosticsEngine::Error, "%0");
++  std::string Message(512, 'm');
++  for (int Index = 0; Index != 16; ++Index) {
++    PartialDiagnostic Original(ID, Context.getDiagAllocator());
++    Original << Message;
++    for (int Hint = 0; Hint != 16; ++Hint)
++      Original << FixItHint::CreateInsertion(Record->getLocation(), std::string(512, 'x'));
++    auto *Stored = DependentDiagnostic::Create(Context, Record,
++        DependentDiagnostic::Access, Record->getLocation(), true, AS_private,
++        Record, Record, Context.getCanonicalTagType(Record), Original);
++    EXPECT_EQ(Stored->getDiagnostic().getDiagID(), ID);
++    llvm::SmallString<1024> Text;
++    Stored->getDiagnostic().EmitToString(Context.getDiagnostics(), Text);
++    EXPECT_EQ(Text, Message);
++  }
++  // Explicit destruction makes the test exercise storage cleanup in embedded
++  // compiler users such as clang-tidy, rather than relying on driver exit.
++  AST.reset();
++}
++
+ TEST(Decl, CleansUpAPValues) {
+   MatchFinder Finder;
+   std::unique_ptr<FrontendActionFactory> Factory(
