@@ -1199,4 +1199,65 @@
     },
     "actual_native_dependency_loading": "Verified in each ASan/UBSan and TSan O0/O2 project executable, not only detector controls."
   }
+,
+  "generated_semantic_eligibility": {
+    "model_version": 2,
+    "status": "PASS",
+    "positive_cases": 33,
+    "controls": 7,
+    "model_tests": 103,
+    "transition_domain": 50,
+    "transitions_covered": 38,
+    "pairs_supported": 196,
+    "pairs_covered": 38,
+    "eligibility_counts": {
+      "eligible": 47,
+      "generator-invalid": 0,
+      "unsupported": 0
+    },
+    "outcome_counts": {
+      "clean": 36,
+      "expected-control-mismatch": 11,
+      "infrastructure": 0,
+      "mismatch": 0,
+      "timeout": 0
+    },
+    "receipts": {
+      "campaign": {
+        "path": "out/semantic-eligibility-v2/qualification.json",
+        "sha256": "6af0b90e9802e1285c1330ee47c44f7e98ddc6987b73633488f867eedb72e9db"
+      },
+      "reduction": {
+        "path": "out/semantic-eligibility-v2/reduction.json",
+        "sha256": "eaeb5b249b086ef342ef2ce264978fb2d04c656ca9b783028945a283e204071a"
+      },
+      "fresh_execution_replay": {
+        "path": "out/semantic-eligibility-v2-replay/qualification.json",
+        "sha256": "251760d5b2a6d8f39a58cae9a111971e4ef7c4af5d79d1afa712f19963c1b921"
+      },
+      "generation_strategy_measurement": {
+        "path": "out/semantic-generation-v2/qualification.json",
+        "sha256": "bf0fa3f7e3710c0ea794c1ba83467686b8b61a5f449ca1eb777508010454c4f2"
+      }
+    },
+    "generation_experiment": {
+      "seeds": [
+        7,
+        19,
+        41
+      ],
+      "programs_per_strategy": 3,
+      "wall_and_cpu_budget_seconds": 180,
+      "uniform": {
+        "model_transitions": 38,
+        "operation_pairs": 38
+      },
+      "pair_balanced": {
+        "model_transitions": 35,
+        "operation_pairs": 40
+      },
+      "adaptive_enabled": false,
+      "compiler_source_coverage": "Not measured; #8290 owns target-source coverage. No adaptive promotion or speedup claim."
+    }
+  }
 }

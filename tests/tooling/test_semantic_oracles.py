@@ -1,11 +1,15 @@
 """Defend the independent model and typed reduction's semantic boundaries."""
 import copy
+import json
+from pathlib import Path
 
 import pytest
 
-from scripts.objc3c_toolchain.semantic_model import OPERATIONS, Operation as Op, coverage, generate, interpret, mismatch, transform, validate
-from scripts.objc3c_toolchain.semantic_oracles import seed_bank, shrink, source_bundle
+from scripts.objc3c_toolchain.semantic_model import (OPERATIONS, EligibilityFailure, Operation as Op,
+    coverage, eligibility, generate, interpret, mismatch, transform, transition_domain, validate)
+from scripts.objc3c_toolchain.semantic_oracles import replay, seed_bank, shrink, source_bundle
 from scripts.objc3c_toolchain.semantic_sources import consumer
+from scripts.objc3c_toolchain.semantic_generation import program as strategy_program
 
 
 def test_curated_seed_prefix_covers_every_modeled_operation_reproducibly():
@@ -106,3 +110,71 @@ def test_long_campaign_seeds_are_bounded_reproducible_and_keep_the_reviewed_bank
         validate(generate(seed))
     with pytest.raises(ValueError, match='tested revision'):
         seed_bank([7], 'HEAD')
+
+
+@pytest.mark.parametrize('kind', OPERATIONS)
+@pytest.mark.parametrize('value', [-2**31, -21, 21, 2**31-1])
+def test_integer_limits_and_adjacent_operand_boundaries_are_ineligible(kind, value):
+    validate([Op(kind, value=-20), Op(kind, value=20)])
+    with pytest.raises(EligibilityFailure, match='out-of-range'):
+        eligibility([Op(kind, value=value)])
+
+
+def test_maximum_length_arithmetic_remains_within_the_declared_int32_envelope():
+    program = [Op('ok', value=20), *[Op('step', value=20)]*63]
+    for bias in (0, 1):
+        manifest = eligibility(program, bias=bias, mutant='provider')
+        assert max(row[5] for row in interpret(program, bias=bias)['states']) < manifest['bounds']['signed_intermediate_abs_max']
+
+
+@pytest.mark.parametrize('change', ['width', 'runtime', 'witness', 'precondition', 'operation',
+                                  'version', 'observations', 'missing'])
+def test_incompatible_replay_is_an_eligibility_failure_before_any_compiler_runs(tmp_path, change):
+    root = tmp_path / 'record'
+    source_bundle(generate(7), root, relation='rename')
+    record = json.loads((root / 'program.json').read_text())
+    if change == 'width': record['eligibility']['profile']['int_bits'] = 64
+    elif change == 'runtime': record['eligibility']['profile']['runtime'] = 'ambient'
+    elif change == 'witness': record['eligibility']['witness']['argv'] = ['unreviewed']
+    elif change == 'precondition': record['eligibility']['relation']['preconditions'] = []
+    elif change == 'operation': record['operations'][0]['value'] += 1
+    elif change == 'version': record['model_version'] = 1
+    elif change == 'observations': record['expected']['events'].append(999)
+    elif change == 'missing': del record['eligibility']
+    document = root / 'incompatible.json'
+    document.write_text(json.dumps(record))
+    output = tmp_path / 'must-not-exist'
+    with pytest.raises(EligibilityFailure):
+        replay(tmp_path, output, document, facade=Path('/missing'), services=Path('/missing'), runtime=Path('/missing'))
+    assert not output.exists()
+
+
+def test_transition_coverage_has_a_stable_declared_domain_and_pair_denominator():
+    result = coverage([generate(seed) for seed in (7, 19, 41)])
+    assert set(result['transition_ids']) <= transition_domain()
+    assert result['transitions_supported'] == len(transition_domain())
+    assert result['transitions_covered'] == len(result['transition_ids'])
+    assert result['pairs_supported'] == len(OPERATIONS)**2
+    assert result['pairs_covered'] == len(result['pair_ids'])
+    assert any(name.startswith('ownership:') for name in result['transition_ids'])
+    assert 'cleanup:partial_throw' in result['transition_ids']
+
+
+@pytest.mark.parametrize('kind', ['read-absent', 'move-from', 'reorder-cleanup', 'shift'])
+def test_active_arm_moves_cleanup_reordering_and_shifts_need_separate_admission(kind):
+    with pytest.raises(EligibilityFailure) as error:
+        eligibility([Op(kind)])
+    assert error.value.classification == 'unsupported'
+
+
+@pytest.mark.parametrize('strategy', ['uniform', 'pair-balanced'])
+def test_generation_feedback_is_reproducible_bounded_and_separate_from_expectations(strategy):
+    for seed in (7, 19, 41):
+        witness = strategy_program(seed, strategy)
+        assert witness == strategy_program(seed, strategy)
+        assert witness[:15] == generate(seed)[:15]
+        assert len(witness) == 24
+        validate(witness)
+    assert strategy_program(7, 'uniform') != strategy_program(7, 'pair-balanced')
+    with pytest.raises(ValueError, match='unknown generation'):
+        strategy_program(7, 'adaptive')

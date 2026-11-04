@@ -1,10 +1,16 @@
 """Independent, bounded value/lifetime model for defined ObjC3 programs."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
+import itertools
+import json
 import random
 
-VERSION = 1
+VERSION = 2
+RELATIONS = {'rename': 'local-alpha-rename-reserved-prefix.v1',
+             'comments': 'comment-insertion-token-boundaries.v1',
+             'pure-grouping': 'bounded-integer-add-zero-grouping.v1'}
 OPERATIONS = ('some', 'none', 'copy_optional', 'alias_optional', 'self_optional',
               'ok', 'err', 'step', 'copy_result', 'new', 'copy_object', 'clear',
               'scope', 'partial_throw')
@@ -18,18 +24,63 @@ class Operation:
     other: int = 1
 
 
+class EligibilityFailure(ValueError):
+    def __init__(self, message, classification='generator-invalid'):
+        super().__init__(message)
+        self.classification = classification
+
+
 def validate(program: list[Operation]):
     if not program or len(program) > 64:
-        raise ValueError('semantic program must contain 1..64 operations')
+        raise EligibilityFailure('semantic program must contain 1..64 operations')
     allocated = 0
     for op in program:
-        if (not isinstance(op, Operation) or op.kind not in OPERATIONS or
+        if not isinstance(op, Operation) or op.kind not in OPERATIONS:
+            raise EligibilityFailure('unsupported typed operation', 'unsupported')
+        if (
                 type(op.slot) is not int or type(op.other) is not int or type(op.value) is not int or
                 op.slot not in (0, 1) or op.other not in (0, 1) or not -20 <= op.value <= 20):
-            raise ValueError('unsupported or out-of-range typed operation')
+            raise EligibilityFailure('unsupported or out-of-range typed operation')
         allocated += op.kind == 'new'
     if allocated > 32:
-        raise ValueError('semantic program exceeds its logical allocation bound')
+        raise EligibilityFailure('semantic program exceeds its logical allocation bound')
+
+
+def eligibility(program, *, transport='source', optimization='O2', standard='c++20',
+                relation='', mutant='', bias=0, sanitized=False, expected_mismatch=None):
+    """Inspectable eligibility claims for this closed, bounded witness only."""
+    validate(program)
+    if (transport not in ('source', 'pch', 'interface') or optimization not in ('O0', 'O2', 'thinlto') or
+            standard not in ('c++20', 'c++23') or relation not in ('', *RELATIONS) or
+            mutant not in ('', 'tag', 'defer', 'destructor', 'provider', 'error') or
+            type(bias) is not int or bias not in (0, 1) or type(sanitized) is not bool or
+            expected_mismatch not in (None, 'value-or-lifetime', 'cleanup-order')):
+        raise EligibilityFailure('unsupported semantic program configuration', 'unsupported')
+    operations = [asdict(op) for op in program]
+    return {'schema': 'objc3c.semantic-eligibility.v2', 'model_version': VERSION, 'generator_version': VERSION,
+        'program_sha256': hashlib.sha256(json.dumps(operations, sort_keys=True).encode()).hexdigest(),
+        'profile': {'target': 'x86_64-unknown-linux-gnu', 'int_bits': 32, 'pointer_bits': 64,
+            'runtime': 'gnustep-2.2', 'language_revision': 3, 'language': 'objective-c++',
+            'standard': standard, 'ownership': 'arc', 'transport': transport,
+            'optimization': optimization, 'generated_sanitizers': 'address,undefined' if sanitized else None},
+        'features': sorted({op.kind for op in program}),
+        'bounds': {'operations': 64, 'allocations': 32, 'slots': 2, 'operand_min': -20, 'operand_max': 20,
+            'signed_intermediate_abs_max': 64*22, 'event_max': 5063},
+        'assumptions': ['initialized-active-arm-only.v1', 'explicit-full-expression-sequencing.v1',
+            'bounded-signed-arithmetic.v1', 'logical-last-owner-destruction.v1',
+            'weak-zeroing-before-snapshot.v1', 'no-observable-retain-count.v1',
+            'no-moves-floats-shifts-or-concurrent-effects.v1', 'bounded-unrolled-termination.v1'],
+        'relation': {'name': relation, 'preconditions': [RELATIONS[relation]] if relation else [],
+            'scope': 'This exact generated witness; no arbitrary-input equivalence claim.'},
+        'witness': {'argv': [], 'stdin': 'closed', 'external_inputs': [], 'operations': operations,
+            'provider_bias': bias, 'fault_injection': mutant, 'expected_mismatch': expected_mismatch}}
+
+
+def verify_eligibility(record, program, **configuration):
+    if record.get('eligibility') != eligibility(program, **configuration):
+        raise EligibilityFailure('semantic replay eligibility manifest is missing or incompatible')
+    if 'expected' in record and record['expected'] != interpret(program, bias=configuration.get('bias', 0)):
+        raise EligibilityFailure('semantic replay model observations are incompatible')
 
 
 def generate(seed: int, length=24) -> list[Operation]:
@@ -146,7 +197,7 @@ def mismatch(expected: dict, actual: dict) -> str | None:
 
 
 def coverage(programs: list[list[Operation]]) -> dict:
-    optional, result, pairs = set(), set(), set()
+    optional, result, pairs, covered = set(), set(), set(), set()
     for program in programs:
         states = interpret(program)['states']
         previous = [0] * 8
@@ -154,10 +205,59 @@ def coverage(programs: list[list[Operation]]) -> dict:
             optional.update((previous[index], state[index]) for index in (0, 2))
             result.update((previous[index], state[index]) for index in (4, 6))
             previous = state
+        before = [0] * len(states[0])
+        for op, state in zip(program, states):
+            covered.add('operation:'+op.kind)
+            if op.kind in ('some', 'none', 'copy_optional', 'alias_optional', 'self_optional'):
+                offset = 2*op.slot
+                covered.add(f'optional:{op.kind}:{before[offset]}>{state[offset]}')
+            if op.kind in ('ok', 'err', 'step', 'copy_result'):
+                offset = 4+2*op.slot
+                covered.add(f'result:{op.kind}:{before[offset]}>{state[offset]}')
+            if op.kind in ('new', 'copy_object', 'clear'):
+                dead = sum(state[11::2])-sum(before[11::2])
+                covered.add(owner_transition(op.kind, before[8:10], state[8:10], op.slot, dead))
+            if op.kind in ('scope', 'partial_throw'):
+                covered.add('cleanup:'+op.kind)
+            before = state
         pairs.update((left.kind, right.kind) for left, right in zip(program, program[1:]))
     required = {(0, 0), (0, 1), (1, 0), (1, 1)}
     if optional != required or result != required:
         raise ValueError('semantic seed bank lost required active-arm transitions')
-    return {'operations': sorted({op.kind for program in programs for op in program}),
+    domain = transition_domain()
+    if not covered <= domain:
+        raise ValueError('semantic transition escaped its declared supported domain')
+    return {'scope': 'Bounded model transitions; compiler source coverage is measured separately.',
+            'operations': sorted({op.kind for program in programs for op in program}),
             'optional_tag_transitions': sorted(optional), 'result_tag_transitions': sorted(result),
-            'operation_pairs': sorted(pairs)}
+            'operation_pairs': sorted(pairs),
+            'transition_ids': sorted(covered), 'transition_domain': sorted(domain),
+            'transitions_covered': len(covered), 'transitions_supported': len(domain),
+            'pair_ids': sorted(left+'>'+right for left, right in pairs),
+            'pairs_covered': len(pairs), 'pairs_supported': len(OPERATIONS)**2}
+
+
+def owner_transition(kind, before, after, slot, destroyed):
+    def state(values):
+        key = values[slot]
+        return 'empty' if not key else 'shared' if values[1-slot] == key else 'sole'
+    return f'ownership:{kind}:{state(before)}>{state(after)}:destroyed={destroyed}'
+
+
+def transition_domain():
+    """Enumerate the feasible finite state categories, independently of seeds."""
+    domain = {'operation:'+name for name in OPERATIONS} | {'cleanup:scope', 'cleanup:partial_throw'}
+    for family, operations in (('optional', {'some': (1,), 'none': (0,), 'copy_optional': (0, 1),
+            'alias_optional': (1,), 'self_optional': ()}),
+            ('result', {'ok': (1,), 'err': (0,), 'copy_result': (0, 1), 'step': ()})):
+        for kind, outcomes in operations.items():
+            domain.update(f'{family}:{kind}:{before}>{after}' for before in (0, 1)
+                          for after in outcomes or (before,))
+    for kind in ('new', 'copy_object', 'clear'):
+        for values in itertools.product(range(3), repeat=2):
+            for slot, other in itertools.product(range(2), repeat=2):
+                after = list(values)
+                after[slot] = 3 if kind == 'new' else values[other] if kind == 'copy_object' else 0
+                destroyed = int(bool(values[slot]) and values[slot] not in after)
+                domain.add(owner_transition(kind, values, after, slot, destroyed))
+    return domain

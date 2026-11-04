@@ -73,7 +73,12 @@ before compilation. Evidence includes typed operations, expected model traces,
 generated sources, transformations, artifacts and hashes, exact compiler/link
 commands, loader libraries, real header dependencies, timeout outcomes and
 per-route oracle/differential disagreement. The model/generator version and owner
-hashes bind replay inputs.
+hashes bind replay inputs. Version 2 also requires an exact machine-readable
+eligibility manifest before invoking a tool: target and integer/pointer widths,
+GNUstep runtime, language/ownership/profile, operation bounds and hash, logical
+lifetime assumptions, reviewed relation precondition IDs, fault-control mode and
+the complete closed runtime witness. Missing, old or incompatible manifests fail
+admission. Reduced witnesses retain original and reduced manifests.
 
 The LLVM assurance workflow runs the reviewed seed bank after its compiler/IR
 campaign, reusing that exact tool/runtime bundle. Dispatch campaigns add three
@@ -85,6 +90,33 @@ archive build. Coverage-guided frontend fuzzing, concurrent schedules and native
 platform expansion retain their own issue owners.
 
 ## Completed native checkpoint
+
+Version 2 passes **33 positive cases and seven controls**, followed by a fresh
+CLI reduction replay. Its reviewed bank covers **38/50 declared model transition
+categories** and **38/196 operation pairs**. These denominators describe the
+small supported model, independently of compiler source coverage. The tooling
+suite has 103 model/eligibility tests, including valid operand endpoints,
+adjacent invalid values, INT_MIN/INT_MAX and incompatible-manifest controls.
+
+A non-promoting generation experiment compares uniform and pair-balanced tails
+on identical seeds, compiler/runtime inputs, 24-operation lengths and 180-second
+wall/CPU budgets per strategy. Each runs three native programs against the model.
+Uniform covers 38 model categories and 38 pairs; pair-balanced covers 35 categories
+and 40 pairs. Their measured wall times are 7.73 and 7.93 seconds in this sample.
+This shows no overall improvement, so adaptive selection remains disabled.
+Target-source coverage remains with #8290; no speedup or full-language coverage
+claim follows from this experiment.
+
+Run the comparison after a current semantic campaign:
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.semantic_generation \
+  --baseline out/semantic-oracles/qualification.json \
+  --facade /path/to/matched/objc3c --services /path/to/matched/services.a \
+  --runtime /path/to/matched/libobjc.so --output out/semantic-generation
+```
+
+The earlier version-1 checkpoint remains historical evidence:
 
 The default bank passes **33 positive cases and seven controls**. The expanded
 six-seed campaign passes **63 positive cases and seven controls**, with **103

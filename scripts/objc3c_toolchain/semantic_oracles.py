@@ -14,7 +14,8 @@ from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import identity, selected, verify_receipt
 from .sdk_example import dependencies
-from .semantic_model import VERSION, Operation, candidates, coverage, generate, interpret, mismatch, validate
+from .semantic_model import (VERSION, EligibilityFailure, Operation, candidates, coverage,
+                            eligibility, generate, interpret, mismatch, validate, verify_eligibility)
 from .semantic_sources import HEADER, consumer, provider
 
 EXPORTS = ('OracleResult', 'oracle_make', 'oracle_value', 'oracle_alive', 'oracle_destroyed', 'oracle_step')
@@ -32,19 +33,14 @@ def seed_bank(seeds, rotation=''):
 
 def source_bundle(program, output: Path, *, transport='source', relation='', mutant='', bias=0,
                   optimization='O2', standard='c++20', sanitized=False, expected_mismatch=None):
-    validate(program)
-    if (transport not in ('source', 'pch', 'interface') or optimization not in ('O0', 'O2', 'thinlto') or
-            standard not in ('c++20', 'c++23') or relation not in ('', 'rename', 'comments', 'pure-grouping') or
-            mutant not in ('', 'tag', 'defer', 'destructor', 'provider', 'error') or
-            type(bias) is not int or bias not in (0, 1) or type(sanitized) is not bool or
-            expected_mismatch not in (None, 'value-or-lifetime', 'cleanup-order')):
-        raise ValueError('unsupported semantic program configuration')
+    manifest = eligibility(program, transport=transport, optimization=optimization, standard=standard,
+        relation=relation, mutant=mutant, bias=bias, sanitized=sanitized, expected_mismatch=expected_mismatch)
     output.mkdir(parents=True, exist_ok=False)
     write_json(output / 'program.json', {'model_version': VERSION, 'operations': [asdict(op) for op in program],
         'expected': interpret(program, bias=bias), 'transform': relation, 'mutant': mutant, 'provider_bias': bias,
         'transport': transport, 'optimization': optimization, 'standard': standard,
         'sanitized': sanitized, 'expected_mismatch': expected_mismatch,
-        'requirements': {'target': 'x86_64-unknown-linux-gnu', 'ownership': 'arc', 'language': 'objective-c++'}})
+        'eligibility': manifest})
     (output / 'oracle.h').write_text(HEADER)
     (output / 'provider.mm').write_text(provider(bias=bias, mutant=mutant if mutant in ('provider', 'error') else ''))
     (output / 'consumer.mm').write_text(consumer(program, transport=transport, relation=relation,
@@ -66,7 +62,7 @@ class Campaign:
         self.repo, self.output = repo, output
         self.foundation, self.tools, environment = selected(repo)
         self.facade, self.services, self.runtime = facade.resolve(strict=True), services.resolve(strict=True), runtime.resolve(strict=True)
-        self.report = {'schema': 'objc3c.generated-semantic-oracles.v1', 'status': 'running',
+        self.report = {'schema': 'objc3c.generated-semantic-oracles.v2', 'status': 'running',
             'model_version': VERSION, 'source_build_id': self.foundation['source_build_id'],
             'build_config_digest': self.foundation['build_config_digest'],
             'permitted_environment': environment,
@@ -76,6 +72,9 @@ class Campaign:
             'profile': {'host': 'linux-x86_64', 'language': 'objective-c++', 'standards': ['c++20', 'c++23'],
                         'ownership': 'arc', 'target': 'x86_64-unknown-linux-gnu'},
             'cases': [], 'controls': [],
+            'eligibility_counts': {'eligible': 0, 'unsupported': 0, 'generator-invalid': 0},
+            'outcome_counts': {'clean': 0, 'expected-control-mismatch': 0, 'mismatch': 0,
+                               'timeout': 0, 'infrastructure': 0},
             'boundaries': ['ARC managed leaves and scalar carriers; MRC adaptation is not modeled.',
                 'Exact logical survival/weak-zeroing/last destruction, not raw retain/release or copy counts.',
                 'C++ scope and partial-construction cleanup order is explicitly sequenced.',
@@ -111,7 +110,30 @@ class Campaign:
             if path.is_file() and not path.is_relative_to(self.output):
                 self.inputs[str(path)] = digest(path)
 
-    def case(self, name, program, *, transport='source', optimization='O2', standard='c++20',
+    def case(self, name, program, **configuration):
+        try:
+            eligibility(program, **{key: value for key, value in configuration.items() if key != 'probe'})
+        except EligibilityFailure as error:
+            self.report['eligibility_counts'][error.classification] += 1
+            self.executor.save()
+            raise
+        self.report['eligibility_counts']['eligible'] += 1
+        try:
+            result = self._case(name, program, **configuration)
+        except (OSError, ValueError) as error:
+            classification = getattr(error, 'classification', 'infrastructure')
+            outcome = 'mismatch' if classification in ('value-or-lifetime', 'cleanup-order', 'output-schema') else (
+                'timeout' if classification == 'timeout' else 'infrastructure')
+            self.report['outcome_counts'][outcome] += 1
+            raise
+        else:
+            outcome = 'expected-control-mismatch' if result and configuration.get('mutant') else 'mismatch' if result else 'clean'
+            self.report['outcome_counts'][outcome] += 1
+            return result
+        finally:
+            self.executor.save()
+
+    def _case(self, name, program, *, transport='source', optimization='O2', standard='c++20',
              relation='', mutant='', bias=0, expected_mismatch=None, probe=False, sanitized=False):
         work = self.output / name
         source_bundle(program, work, transport=transport, relation=relation, mutant=mutant, bias=bias,
@@ -233,7 +255,7 @@ class Campaign:
         self.report['controls'].append({'name': name, 'status': 'PASS', 'old': old_fingerprint, 'changed': changed})
 
     def reduce(self, program, *, mutant='', mismatch_class='value-or-lifetime',
-               transport='source', optimization='O2', standard='c++20', relation='', bias=0):
+               transport='source', optimization='O2', standard='c++20', relation='', bias=0, sanitized=False):
         attempts = 0
         def interesting(trial):
             nonlocal attempts
@@ -241,7 +263,7 @@ class Campaign:
             name = 'reduction-trial-'+str(attempts)
             try:
                 return self.case(name, trial, mutant=mutant, probe=True, transport=transport,
-                    optimization=optimization, standard=standard, relation=relation, bias=bias)
+                    optimization=optimization, standard=standard, relation=relation, bias=bias, sanitized=sanitized)
             except StageFailure as error:
                 self.report.setdefault('reduction_rejections', []).append({'name': name,
                     'classification': error.classification, 'error': str(error)})
@@ -250,12 +272,16 @@ class Campaign:
         if mutant == 'tag' and len(reduced) >= len(program):
             raise ValueError('native semantic reduction removed no irrelevant operations')
         self.case('reduction-replay', reduced, mutant=mutant, expected_mismatch=mismatch_class,
-            transport=transport, optimization=optimization, standard=standard, relation=relation, bias=bias)
+            transport=transport, optimization=optimization, standard=standard, relation=relation, bias=bias, sanitized=sanitized)
+        configuration = dict(transport=transport, optimization=optimization, standard=standard,
+            relation=relation, bias=bias, mutant=mutant, sanitized=sanitized, expected_mismatch=mismatch_class)
         write_json(self.output / 'reduction.json', {'status': 'PASS', 'model_version': VERSION,
             'original': [asdict(op) for op in program], 'reduced': [asdict(op) for op in reduced],
             'mismatch': mismatch_class, 'attempts': attempts, 'transport': transport,
-            'optimization': optimization, 'standard': standard, 'mutant': mutant, 'bias': bias,
-            'transform': relation})
+            'optimization': optimization, 'standard': standard, 'mutant': mutant, 'provider_bias': bias,
+            'sanitized': sanitized, 'transform': relation,
+            'eligibility': eligibility(reduced, **configuration),
+            'original_eligibility': eligibility(program, **configuration)})
 
     def checked_case(self, name, program, **configuration):
         try:
@@ -331,9 +357,19 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
 def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: Path, runtime: Path):
     record = json.loads(document.read_text())
     if record.get('model_version') != VERSION:
-        raise ValueError('semantic replay requires its exact model/generator version')
-    program = [Operation(**item) for item in record.get('reduced', record.get('operations', []))]
-    validate(program)
+        raise EligibilityFailure('semantic replay requires its exact model/generator version')
+    try:
+        program = [Operation(**item) for item in record.get('reduced', record.get('operations', []))]
+        configuration = dict(transport=record['transport'], optimization=record['optimization'],
+            standard=record['standard'], relation=record['transform'], mutant=record['mutant'],
+            bias=record['provider_bias'], sanitized=record['sanitized'],
+            expected_mismatch=record['mismatch'] if 'reduced' in record else record['expected_mismatch'])
+    except (KeyError, TypeError) as error:
+        raise EligibilityFailure('semantic replay has an incomplete typed witness/configuration') from error
+    verify_eligibility(record, program, **configuration)
+    if 'reduced' in record:
+        original = [Operation(**item) for item in record['original']]
+        verify_eligibility({'eligibility': record.get('original_eligibility')}, original, **configuration)
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('semantic replay needs fresh owned evidence')
@@ -342,11 +378,7 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
     try:
         campaign = Campaign(repo, output, facade, services, runtime)
         campaign.report['subject'] = 'semantic-failure-replay'
-        campaign.case('replay', program, transport=record.get('transport', 'source'),
-            optimization=record.get('optimization', 'O2'), standard=record.get('standard', 'c++20'),
-            relation=record.get('transform', ''), mutant=record.get('mutant', ''),
-            bias=record.get('bias', record.get('provider_bias', 0)), sanitized=record.get('sanitized', False),
-            expected_mismatch=record.get('mismatch', record.get('expected_mismatch')))
+        campaign.case('replay', program, **configuration)
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
             raise ValueError('semantic replay input changed during execution')
         campaign.report.update(status='PASS', reproduced_mismatch=record.get('mismatch', record.get('expected_mismatch')))
