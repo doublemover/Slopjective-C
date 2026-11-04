@@ -14,7 +14,7 @@ def test_failed_c_or_cpp_compilation_cannot_leave_reusable_success(
     fixture = sdk / 'share/objc3c/examples/async-c-abi'
     fixture.mkdir(parents=True)
     (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
-    for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
+    for name in qualification.FIXTURE_FILES:
         (fixture / name).write_text('fixture')
     for relative in ('bin/clang', 'lib/libobjc3_runtime_services.a', 'lib/libobjc.so',
                      'include/objc3c/runtime/objc3_task.hpp',

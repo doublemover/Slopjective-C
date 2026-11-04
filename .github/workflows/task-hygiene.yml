@@ -45,6 +45,7 @@ jobs:
           tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_semantic_oracles.py
           tests/tooling/test_semantic_benchmarks.py
+          tests/tooling/test_swift_consumer.py
           tests/tooling/test_native_sanitizer_policy.py
           tests/tooling/test_product_command_evidence.py
           tests/tooling/test_sanitizer_product_campaign.py

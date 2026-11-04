@@ -63,7 +63,9 @@
       "body_sha256": "748ff0dde5fbe079c91357b9592784e7a273f6cbcbde31ff69891f0bae7c3d37",
       "status": "fixed-and-source-validated",
       "implementation_commit": "9d349791f8fba99a1998550dce31f8fcbef35559",
-      "followup_commits": ["ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"]
+      "followup_commits": [
+        "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
+      ]
     },
     {
       "number": 8283,
@@ -89,8 +91,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8285",
       "category": "assurance",
       "body_sha256": "c428ea1b7068ffecdd2d2c73c7d09a01afd4ead1693ea44b50b6c532538d6423",
-      "status": "checked-lock-pilot-implemented-analysis-lane-open",
-      "implementation": "docs/roadmap/linux_checked_executor_locks.md"
+      "status": "matched-analysis-implemented-full-scan-findings-open",
+      "implementation": "docs/roadmap/linux_implementation_analysis.md"
     },
     {
       "number": 8286,
@@ -150,7 +152,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8292",
       "category": "assurance",
       "body_sha256": "193d35623a21c8ab52502e6576a0ac3b7032c885b953bbd5b42cf3fb72ffe78a",
-      "status": "open"
+      "status": "independent-c-consumer-qualified-ci-selected",
+      "implementation": "docs/roadmap/linux_swift_consumer.md"
     },
     {
       "number": 8293,
@@ -235,7 +238,9 @@
       "body_sha256": "34424740368a286186bdc964c0f7b21de114da46976683ec695a7a952d47ca84",
       "status": "fixed-and-source-validated",
       "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
-      "followup_commits": ["66ca656437406b576c56cc301e99f79e1d224c48"]
+      "followup_commits": [
+        "66ca656437406b576c56cc301e99f79e1d224c48"
+      ]
     },
     {
       "number": 8301,
@@ -267,7 +272,9 @@
       "body_sha256": "c73f7ac0d39e36be47a29c9d588bb671f0936c2de3a6333c6655da3778976b17",
       "status": "fixed-and-source-validated",
       "implementation_commit": "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
-      "followup_commits": ["66ca656437406b576c56cc301e99f79e1d224c48"]
+      "followup_commits": [
+        "66ca656437406b576c56cc301e99f79e1d224c48"
+      ]
     },
     {
       "number": 8304,
@@ -482,7 +489,20 @@
     }
   ],
   "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb",
-  "fixed_in_this_batch": [8280, 8281, 8293, 8294, 8297, 8298, 8305, 8322, 8323, 8324, 8325, 8326],
+  "fixed_in_this_batch": [
+    8280,
+    8281,
+    8293,
+    8294,
+    8297,
+    8298,
+    8305,
+    8322,
+    8323,
+    8324,
+    8325,
+    8326
+  ],
   "remaining_implementation_or_host_items": 10,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
@@ -559,8 +579,15 @@
     "compiler_unsupported": 3,
     "sanitizer_cases": 12,
     "sanitizer_commands": 24,
-    "configuration_modes": ["Debug", "Release", "RelWithDebInfo"],
-    "semantic_mutant_controls": ["wrong-map-count", "missing-unpublished-token-rollback"],
+    "configuration_modes": [
+      "Debug",
+      "Release",
+      "RelWithDebInfo"
+    ],
+    "semantic_mutant_controls": [
+      "wrong-map-count",
+      "missing-unpublished-token-rollback"
+    ],
     "source_graph_cases": 5
   },
   "boundaries": [
@@ -587,7 +614,20 @@
   "compiler_correction_batch": {
     "implementation_commit": "0f9632db9c426f423c4db840b483326b9f304e48",
     "fixed_issues": [
-      8306, 8308, 8309, 8310, 8311, 8312, 8314, 8315, 8316, 8317, 8318, 8319, 8320, 8321
+      8306,
+      8308,
+      8309,
+      8310,
+      8311,
+      8312,
+      8314,
+      8315,
+      8316,
+      8317,
+      8318,
+      8319,
+      8320,
+      8321
     ],
     "validation": {
       "native": {
@@ -686,7 +726,13 @@
       "a2dbf6edce3752a329a1e5a6c94cda280bea5574",
       "039c2f16f6ecf9a670282e5ed4b8c04ad7fa99ef"
     ],
-    "fixed_issues": [8295, 8296, 8299, 8302, 8304],
+    "fixed_issues": [
+      8295,
+      8296,
+      8299,
+      8302,
+      8304
+    ],
     "validation": {
       "matrix": {
         "path": "out/issue-runtime-atomic-publication-final/qualification.json",
@@ -732,7 +778,9 @@
   },
   "interface_resource_batch": {
     "implementation_commit": "32e5dcdf618646077730369832215135b4acc9ed",
-    "fixed_issues": [8313],
+    "fixed_issues": [
+      8313
+    ],
     "validation": {
       "build": {
         "path": "out/issue-interface-resource-build.log",
@@ -758,14 +806,20 @@
       "128-node boundary and 4096-node iterative graphs in both lexical dependency orders",
       "direct imports, parser bytes/declarations and stale artifact rejection"
     ],
-    "boundaries": ["Limits bound admitted input and repeated work, not exact Clang AST RSS."]
+    "boundaries": [
+      "Limits bound admitted input and repeated work, not exact Clang AST RSS."
+    ]
   },
   "collection_correction_batch": {
     "implementation_commits": [
       "a9ce2eae51f9d8025f66e374ea7b1fabd0e05581",
       "66ca656437406b576c56cc301e99f79e1d224c48"
     ],
-    "fixed_issues": [8300, 8301, 8303],
+    "fixed_issues": [
+      8300,
+      8301,
+      8303
+    ],
     "validation": {
       "profiles": {
         "path": "out/issue-persistent-collection-final-profiles/qualification.json",
@@ -825,8 +879,12 @@
       "9d349791f8fba99a1998550dce31f8fcbef35559",
       "ddc8bb6558ca0e31068b7c113ddb35ab444b36d9"
     ],
-    "fixed_issues": [8282],
-    "partial_progress_issues": [8284],
+    "fixed_issues": [
+      8282
+    ],
+    "partial_progress_issues": [
+      8284
+    ],
     "validation": {
       "feature_asan": {
         "path": "out/issue-strict-feature-policy/asan/batch.json",
@@ -916,7 +974,9 @@
   },
   "inherited_borrowed_batch": {
     "implementation_commit": "d3fde4069d341fbb01000bf5059c5c7935e91ff3",
-    "fixed_issues": [8307],
+    "fixed_issues": [
+      8307
+    ],
     "validation": {
       "native": {
         "path": "out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261030T042137.368037Z/report.json",
@@ -941,8 +1001,14 @@
     "pch_configurations": 4,
     "pch_commands": 8,
     "source_free_interface_configurations": {
-      "standards": ["c++20", "c++23"],
-      "ownership": ["arc", "mrc"],
+      "standards": [
+        "c++20",
+        "c++23"
+      ],
+      "ownership": [
+        "arc",
+        "mrc"
+      ],
       "producers": 4,
       "consumer_cases": 32
     },
@@ -962,7 +1028,10 @@
   "compiler_instrumentation_progress": {
     "issue": 8284,
     "status": "PASS",
-    "implementation_commits": ["75a3cf6ae", "93beb7c08"],
+    "implementation_commits": [
+      "75a3cf6ae",
+      "93beb7c08"
+    ],
     "completed_checks": {
       "isolated_planner_and_build_tests": 20,
       "existing_preparation_tests": 17,
@@ -980,7 +1049,9 @@
       "Compiler TSan has no admitted concurrent embedding contract; MSan has no complete instrumented C++/GNUstep closure.",
       "The accepted ordinary SDK 2.62 and its archive are unchanged. Native CI acceptance remains under #8283."
     ],
-    "fixed_issues": [8284],
+    "fixed_issues": [
+      8284
+    ],
     "qualification": {
       "path": "out/compiler-instrumentation/recovered-20261030-v6/qualification.json",
       "sha256": "c1bb819573bf6836251bb2dc3401cd5fc9399d6af1d288d38eb334a5f397ca70",
@@ -1084,7 +1155,14 @@
     "default_positive_cases": 33,
     "expanded_positive_cases": 63,
     "controls": 7,
-    "expanded_seeds": [7, 19, 41, 3733196313, 2586782689, 2778965653],
+    "expanded_seeds": [
+      7,
+      19,
+      41,
+      3733196313,
+      2586782689,
+      2778965653
+    ],
     "native_compilations": 103,
     "commands": 401,
     "typed_reduction_trials": 8,
@@ -1129,7 +1207,14 @@
   "acceptance_followups": {
     "reviewed_checkpoint": "08e5b64bd9f8f29a7faa35839066225d48e52e16",
     "documentation": "docs/roadmap/linux_acceptance_followups.md",
-    "repaired_requirements": [8286, 8284, 8302, 8312, 8325, 8326],
+    "repaired_requirements": [
+      8286,
+      8284,
+      8302,
+      8312,
+      8325,
+      8326
+    ],
     "remaining_requirement": 8282,
     "boundaries": "Focused source/acceptance-gap controls; the historical complete-acceptance review and release SDK qualification remain separate.",
     "receipts": {
@@ -1171,7 +1256,11 @@
     "cxx_commands": 118,
     "cxx_rejections": 16,
     "shipped_python_gates_repaired": 46,
-    "optimization_levels_tested": [0, 1, 2],
+    "optimization_levels_tested": [
+      0,
+      1,
+      2
+    ],
     "gate_and_assurance_tests": 213,
     "cxx_receipt": {
       "path": "out/cxx-interfaces-current-qualified/qualification.json",
@@ -1198,8 +1287,7 @@
       "status": "PASS"
     },
     "actual_native_dependency_loading": "Verified in each ASan/UBSan and TSan O0/O2 project executable, not only detector controls."
-  }
-,
+  },
   "generated_semantic_eligibility": {
     "model_version": 2,
     "status": "PASS",
@@ -1259,8 +1347,7 @@
       "adaptive_enabled": false,
       "compiler_source_coverage": "Not measured; #8290 owns target-source coverage. No adaptive promotion or speedup claim."
     }
-  }
-,
+  },
   "november_native_assurance_development": {
     "status": "implementation-complete-with-native-campaigns-running",
     "source_build_id": "llvmorg-23.1.3-0d261d1ca552-616ca86288bb-d0aefe1d",
@@ -1279,7 +1366,7 @@
       }
     },
     "product_campaign": "out/sanitizer-products-qualified/campaign/qualification.json",
-    "implementation_analysis": "out/implementation-analysis/full-evidence-v5/qualification.json",
+    "implementation_analysis": "out/implementation-analysis/full-evidence-v6/qualification.json",
     "semantic_benchmarks": {
       "path": "out/semantic-workload-benchmarks-v3/qualification.json",
       "sha256": "98561df5e0ea0bce42b37303808053319f41cca57d74f3bef98bd0ff85d59ac4",
@@ -1288,6 +1375,34 @@
       "runtime_instrumentation": "none",
       "scope": "Same-SDK self-comparison; advisory uncalibrated timings, checksum/work-count and paired delay controls pass."
     },
-    "remaining": "Full current-input sanitizer product matrix, complete matched implementation analysis, benchmark baseline calibration/CI selection, and the existing independent issue/feature queue. No SDK archive built."
+    "remaining": "Matched implementation analysis findings/timeout and remaining inventory; benchmark calibration/CI selection; generated schedule, coverage and fuzz lanes; broader PR feature queue. No SDK archive built."
+  },
+  "swift_consumer_pilot": {
+    "status": "PASS",
+    "documentation": "docs/roadmap/linux_swift_consumer.md",
+    "toolchain": "Swift 6.4.1 / Debian 13 x86-64",
+    "executions": 8,
+    "controls": 8,
+    "receipt": {
+      "path": "out/swift-consumer-final/consumer/qualification.json",
+      "sha256": "337b805c1a5c82630b73fb3aa15d5fa5918dbb359fd5155dd956fb3d13df0fac"
+    },
+    "selection": "Existing native CI: relevant foreign/foundation/tool/fixture changes and complete sweep; no new schedule.",
+    "boundaries": "Only exact C declarations and opaque C lifetime API; GNUstep objects, C++, async/actors and product PCH remain unqualified."
+  },
+  "sanitizer_product_checkpoint": {
+    "source_build_id": "llvmorg-23.1.3-0d261d1ca552-616ca86288bb-d0aefe1d",
+    "campaign": {
+      "path": "out/sanitizer-products-qualified/campaign/qualification.json",
+      "sha256": "9de26a9285eb68c091a7f30e0608560758b5118e2fa6df222d603357aeb24147"
+    },
+    "campaign_status": "FAIL: 12 of 13 groups pass; C bridge worker teardown raced its final private dispatch lease.",
+    "repaired_c_bridge": {
+      "path": "out/c-frame-bridge-worker-drain-final/qualification.json",
+      "sha256": "f88803adc22ed7090826d33c4e60b738c17456e0df87d01e99c120cb6eb415ee"
+    },
+    "repaired_c_bridge_executions": 40,
+    "repaired_c_bridge_status": "PASS",
+    "scope": "Current compiler and actual product processes. Historical campaign remains FAIL; fresh targeted repair passes. No release archive rebuilt."
   }
 }

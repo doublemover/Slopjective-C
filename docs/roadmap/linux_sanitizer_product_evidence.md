@@ -46,8 +46,16 @@ saved client with its immutable compiler/resource/runtime route. Compilation
 commands and exact source/artifact bytes are retained separately; this command
 does not claim to recompile a complete PCH/interface pipeline automatically.
 
-The initial structured/native-async/coroutine checkpoint passed. A missing
-development-prefix inspector stopped its C bridge owner before execution and is
-repaired by full preflight. The final campaign uses the compiler with the
-dependent-diagnostic storage fix. Its complete current-input matrices must pass
-before the original product-evidence requirement closes.
+On the compiler with the dependent-diagnostic storage fix, twelve of thirteen
+campaign groups passed: structured runtime, native async, task coroutines, four
+authored-feature batches, four source-free factory batches and installed
+ownership. The C bridge exposed process teardown racing its worker's remaining
+private task lease. Its fixture now queues a bounded FIFO acknowledgment before
+the ordinary host last-release joins the worker and drains its autorelease pool.
+It passed all forty ASan/UBSan and TSan executions after that repair. No runtime
+suppression or production scheduler behavior changed.
+
+The failed campaign remains a failed receipt; the repaired bridge has its own
+fresh passing receipt. These are explicit implementation checkpoints, not a
+rewritten all-current-source campaign or release SDK qualification. Earlier
+prefix-inspector and strict-C clock bring-up failures are retained separately.

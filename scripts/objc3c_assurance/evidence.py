@@ -139,6 +139,27 @@ def suite_results(root: Path, name: str) -> list[dict]:
         return rows
     if name == 'upstream':
         return lit(directory / 'lit.json')
+    if name == 'swift-consumer':
+        from scripts.objc3c_toolchain.swift_consumer import REQUIRED_ROWS, execution_result
+        result = read('consumer/qualification.json')
+        cases, controls, rows = (result.get(key, []) for key in ('cases', 'controls', 'rows'))
+        expected = {(transport, native, swift) for transport in ('original', 'emitted')
+                    for native in ('O0', 'O2') for swift in ('Onone', 'O')}
+        control_names = {'original-header-independent-import', 'unmodified-emitted-header-import',
+            'old-spelling', 'wrong-type', 'nullability', 'availability',
+            'public-name-identity-and-consumer', 'missing-provider-symbol'}
+        if (len(cases) != 8 or {(row['transport'], row['native_optimization'], row['swift_optimization'])
+                              for row in cases if row.get('status') == 'PASS'} != expected or
+                len(controls) != 8 or {row['name'] for row in controls if row.get('status') == 'PASS'} != control_names or
+                len(rows) != len(REQUIRED_ROWS) or {row['id'] for row in rows} != set(REQUIRED_ROWS) or
+                any(row.get('status') != ('swift-import-qualified' if row['id'] == 'availability'
+                                         else 'swift-call-qualified') for row in rows) or
+                not result.get('commands') or result.get('relocation') != {
+                    'original_header_hidden': True, 'provider_source_hidden': True, 'replayed_header_unchanged': True}):
+            raise ValueError('independent Swift import/execution/control inventory is incomplete')
+        for row in cases:
+            execution_result(json.dumps(row.get('result')))
+        return cases
     if name == 'package':
         result = read('release.json')
         return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]

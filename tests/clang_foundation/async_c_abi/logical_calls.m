@@ -3,6 +3,7 @@
 #endif
 #include <assert.h>
 #include <string.h>
+#include "worker_drain.h"
 
 #define TYPE_ID(T) __builtin_objc3_type_identity((T *)0)
 #define RESULT_TYPE(T, K)                                                       \
@@ -189,6 +190,6 @@ int bridge_logical_c_calls(objc3_executor_t *executor) {
   assert(objc3_executor_create(0, &worker) == OBJC3_SERVICE_OK);
   values(worker, 0, 0);
   references(worker, 0, 0);
-  objc3_executor_release(worker);
+  bridge_finish_serial_worker(worker);
   return 1;
 }

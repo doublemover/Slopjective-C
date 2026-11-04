@@ -10,6 +10,9 @@ import subprocess
 import sys
 import tempfile
 
+FIXTURE_FILES = ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h',
+                 'logical_calls.m', 'worker_drain.h')
+
 if __package__:
     from . import binary_packages as packages
     from .sdk_example import environment
@@ -88,9 +91,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             'qualification_script_sha256': packages.digest(Path(__file__).resolve()),
             'header_hashes': {name: packages.digest(headers / name)
                              for name in ('objc3_task.hpp', 'objc3_runtime_services.h')},
-            'source_hashes': {name: packages.digest(fixture / name) for name in
-                             ('bridge.h', 'bridge.c', 'client.cpp',
-                              'logical_calls.h', 'logical_calls.m')},
+            'source_hashes': {name: packages.digest(fixture / name) for name in FIXTURE_FILES},
         }
 
     try:
@@ -103,7 +104,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 if policy:
                     policy.ensure_controls(opt)
                 label = '-'.join((plang, powner, standard, cowner, opt))
-                for name in ('bridge.h', 'bridge.c', 'client.cpp', 'logical_calls.h', 'logical_calls.m'):
+                for name in FIXTURE_FILES:
                     shutil.copyfile(fixture / name, root / name)
                 common = ['--no-default-config', '-' + opt, '-g', '-UNDEBUG',
                           '-Wall', '-Wextra', '-Werror', '-Wno-unused-command-line-argument',

@@ -151,6 +151,17 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             command('upstream-lit', [sys.executable, '-B', foundation / 'build-linux-x86_64/bin/llvm-lit',
                 '-sv', '--show-unsupported', '-j', '2', '--output', result_file, *selected])
             return lit(result_file)
+        if name == 'swift-consumer':
+            from scripts.objc3c_toolchain.swift_consumer import prepare_compiler_prefix, qualify
+            from scripts.objc3c_toolchain.swift_toolchain import install
+            root = Path(environment['OBJC3C_CLOUD_SETUP_ROOT']) / 'swift-6.4.1'
+            install(repo, root)
+            prefix = directory / 'build/compiler-prefix'
+            prepare_compiler_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],
+                                    target=report['product']['host_environment']['target_triple'])
+            result = qualify(repo, directory / 'consumer', sdk=prefix, swift_root=root,
+                             symbolizer=bootstrap / 'bin/llvm-symbolizer')
+            return result['cases']
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
             from .package_evidence import preserve, snapshot

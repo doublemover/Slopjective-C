@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from .runtime_instrumentation import RuntimeProfiles, shared_profiles, used_rece
 
 
 def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compiler: Path | None = None,
-            fixture: Path | None = None, headers: Path | None = None, runtime_profiles=None) -> dict:
+            fixture: Path | None = None, headers: Path | None = None, runtime_profiles=None, jobs=1) -> dict:
     repo, sdk, output = repo.resolve(strict=True), sdk.resolve(strict=True), output.resolve()
     resource_root = resource_root.resolve(strict=True)
     disjoint(output, sdk)
@@ -31,23 +32,34 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
     if not (digest(headers / 'objc3_task.hpp') == digest(runtime / 'public/objc3_task.hpp')):
         raise ValueError("qualify_async_c_abi_sanitizers: required semantic check failed: digest(headers / 'objc3_task.hpp') == digest(runtime / 'public/objc3_task.hpp')")
     commands, results = [], []
+    if jobs not in (1, 2):
+        raise ValueError('C bridge sanitizer qualification requires one or two jobs')
     profiles = None
     try:
         profiles = shared_profiles(runtime_profiles, repo, compiler.parent.parent, resource_root) or RuntimeProfiles(repo, compiler.resolve(strict=True).parent.parent,
                                    resource_root, output / 'runtime-profiles')
-        for sanitizer in ('address,undefined', 'thread'):
-            profile = profiles.get(sanitizer, 'O1')
+        def run(sanitizer, profile):
             label = sanitizer.replace(',', '-')
             result = qualify_bridge(sdk, output / label, compiler=compiler,
                 fixture=fixture, headers=headers, runtime_library=profile.archive,
                 objc_runtime=profile.objc_runtime, sanitizer=sanitizer, resource_root=resource_root)
-            results.append({'sanitizer': sanitizer, 'executions': result['executions'],
+            return {'sanitizer': sanitizer, 'executions': result['executions'],
                             'service_library_sha256': digest(profile.archive),
-                            'qualification_sha256': digest(output / label / 'qualification.json')})
+                            'qualification_sha256': digest(output / label / 'qualification.json')}
+        if jobs == 1:
+            for sanitizer in ('address,undefined', 'thread'):
+                results.append(run(sanitizer, profiles.get(sanitizer, 'O1')))
+        else:
+            selected = [(mode, profiles.get(mode, 'O1')) for mode in ('address,undefined', 'thread')]
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                futures = [workers.submit(run, mode, profile) for mode, profile in selected]
+                for future in futures:
+                    results.append(future.result())
         report = {'schema': 'objc3c.async-c-abi-sanitizer-qualification.v1',
                   'status': 'PASS', 'sdk_seal': manifest['seal_sha256'],
                   'input_binding': 'development-overlay' if development else 'sealed-sdk',
                   'service_optimization': 'O1',
+                  'parallel_sanitizers': jobs,
                   'executions': sum(r['executions'] for r in results),
                   'sanitizers': results, 'commands': commands,
                   'runtime_profiles': used_receipts(profiles, ('O1',)),
@@ -77,9 +89,10 @@ def main():
     parser.add_argument('--output-dir', type=Path, required=True)
     for name in ('compiler', 'fixture', 'headers'):
         parser.add_argument('--'+name, type=Path)
+    parser.add_argument('--jobs', type=int, choices=(1, 2), default=1)
     args = parser.parse_args()
     report = qualify(args.repo, args.sdk_root, args.resource_root, args.output_dir,
-                     compiler=args.compiler, fixture=args.fixture, headers=args.headers)
+                     compiler=args.compiler, fixture=args.fixture, headers=args.headers, jobs=args.jobs)
     print(json.dumps({'status': report['status'], 'executions': report['executions']}))
 
 

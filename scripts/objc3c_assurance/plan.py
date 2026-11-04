@@ -18,6 +18,10 @@ PACKAGE = ('scripts/install_objc3c_linux.sh', 'scripts/qualify_linux_archive.sh'
 FOUNDATION = ('toolchains/llvm/', 'scripts/objc3c_toolchain/core.py',
               'scripts/objc3c_toolchain/build.py', 'scripts/objc3c_toolchain/host.py',
               'scripts/objc3c_toolchain/instrumentation_profiles.py')
+SWIFT = FOUNDATION + ('toolchains/swift/', 'tests/foreign/swift_consumer/',
+    'scripts/objc3c_toolchain/swift_', 'scripts/objc3c_assurance/',
+    'native/objc3c/src/clang_foundation/interface_', 'native/objc3c/src/clang_foundation/module_',
+    'native/objc3c/src/clang_foundation/objc3_cli_', '.github/workflows/native-assurance.yml')
 
 
 def signature(value: dict) -> str:
@@ -75,6 +79,9 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
                 'scripts/objc3c_toolchain/qualify_structured_sanitizers.py')
         if periodic:
             add('upstream', ['native-compile', 'expected-rejection'], 'LLVM lit')
+        if periodic or not paths or any(path.startswith(SWIFT) for path in paths):
+            add('swift-consumer', ['foreign-import', 'native-compile', 'native-execute', 'expected-rejection'],
+                'scripts/objc3c_toolchain/swift_consumer.py')
         if (not paths and not periodic) or any(path.startswith(PACKAGE) for path in paths or []):
             add('package', ['installed-package-qualification'], 'scripts/objc3c_toolchain/linux_sdk.py')
     foundation_changes = not paths or any(path.startswith(FOUNDATION) for path in paths)
