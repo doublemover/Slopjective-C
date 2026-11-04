@@ -11,15 +11,14 @@ import re
 import subprocess
 import sys
 import time
-import tempfile
 
 if __package__:
-    from .sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
+    from .sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, discover_lookup, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 else:
     # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
     # bytecode out of that installation without changing library callers.
     sys.dont_write_bytecode = True
-    from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
+    from sdk_example import coroutine_compile_flags, native_module_compile_flags, runtime_link_flags, discover_lookup, dependencies, digest, environment, hashes, reusable, verify_installed_sdk, write_json
 
 MAX_EXPORT_NAMES = 4096
 WORKSPACE = 'objc3c.source-workspace.v4'
@@ -199,65 +198,6 @@ def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2') -> 
     with (output / '.build.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return _build(sdk, graph, output, optimization)
-
-
-def discover_lookup(sdk: Path, config: dict, flags: list[str], target: str,
-                    output: Path, directory: Path, env: dict, module_names=(), interfaces=()) -> dict:
-    """Replay preprocessing before object reuse, including negative lookups.
-
-    Existing depfiles cannot describe a previously absent __has_include header
-    or an earlier search directory which now shadows an existing include.
-    Bind both the fresh token stream and fresh transitive header contents.
-    """
-    mode = ['-x', config['language'], '--target=' + target]
-    if config['language'] != 'c++':
-        mode += ['-fobjc-version=3', '-fobjc-runtime=gnustep-2.2']
-        if config.get('provider_ownership', config['ownership']) == 'arc':
-            mode.append('-fobjc-arc')
-    mode += [argument for name in module_names
-             for argument in ('-Xclang', '-fobjc3-source-module=' + name)]
-    # Remove only dependency-output flags. All preprocessing flags stay in the
-    # same order as the actual compile, including the module cache and includes.
-    preprocessing = flags[:flags.index('-MD')]
-    (directory / 'lookup.log').write_text('')
-    with tempfile.TemporaryDirectory(prefix='.lookup-', dir=directory) as temporary:
-        root = Path(temporary)
-        tokens, depfile = root / 'tokens.i', root / 'headers.d'
-        discovered = {}
-        for source in [config['input'], *interfaces]:
-            # Interface replays have their own preprocessing environment;
-            # their macros must not leak into the consumer source probe.
-            replay = []
-            if source in interfaces:
-                # InterfaceImportSession supplies these aliases in its VFS,
-                # rooted beside the interface being replayed. Raw Clang must
-                # see the same transitive headers during freshness discovery.
-                # External names keep token markers and depfiles bound to the
-                # stable original artifacts, never this temporary overlay.
-                aliases = []
-                for interface in interfaces:
-                    module = interface.stem
-                    if not NAME.fullmatch(module) or (module_names and module not in module_names):
-                        raise ValueError('interface replay has an unregistered canonical module')
-                    alias = 'm-' + module.encode('utf-8').hex() + '.objc3i'
-                    aliases.append({'type': 'file',
-                        'name': str(source.parent / '__objc3_imports' / alias),
-                        'external-contents': str(interface)})
-                overlay = root / 'interfaces.json'
-                overlay.write_text(json.dumps({'version': 0, 'use-external-names': True, 'roots': aliases}))
-                replay = ['-ivfsoverlay', str(overlay), '-iquote', str(source.parent)]
-            command = [str(sdk / 'bin/clang'), *mode, *preprocessing, *replay, '-E',
-                       '-MD', '-MF', str(depfile), '-MT', 'dependencies',
-                       str(source), '-o', str(tokens)]
-            with (directory / 'lookup.log').open('a') as stream:
-                stream.write(json.dumps(command) + '\n')
-                stream.flush()
-                subprocess.run(command, cwd=output, env=env, stdout=stream,
-                               stderr=subprocess.STDOUT, check=True, timeout=180)
-            discovered[str(source)] = {'tokens_sha256': digest(tokens),
-                'dependencies': hashes(dependencies(depfile, output))}
-        return discovered
-
 
 
 def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:

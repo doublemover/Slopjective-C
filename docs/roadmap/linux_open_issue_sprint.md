@@ -341,3 +341,14 @@ attempts now preserve nested diagnostic logs without retaining archives/prefixes
 The current independent issue queue has **10 issues**. Historical checkpoints
 above retain their original counts. Native hosted CI and the acceptance review's
 other specific requirements remain open; accepted SDK 2.62 is unchanged.
+
+## Acceptance follow-up corrections
+
+Six of the original review's seven concrete requirements now have source repairs
+and focused controls: clean-host LLVM tool ordering, staged DSO link provenance,
+text metadata rejection before token publication, recursive carrier payload
+nullability identity, installed managed-example header freshness and successful
+activation reporting after cleanup failure. The [follow-up record](linux_acceptance_followups.md)
+preserves their evidence and boundaries. Issue #8282's actual-product sanitizer
+receipt contract remains open, alongside complete acceptance of the earlier
+reviewed repairs. The independent issue queue remains at ten.

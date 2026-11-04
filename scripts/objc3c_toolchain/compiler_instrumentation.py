@@ -7,8 +7,11 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import shlex
+import shutil
 import subprocess
+import tempfile
 import time
 
 from .binary_packages import digest, write_json
@@ -285,6 +288,111 @@ def verify_owned_archives(archives: list[Path], records: list[dict], *, owners=N
     return evidence
 
 
+def verify_owned_shared_libraries(build: Path, libraries: list[Path], records: list[dict], archives: list[dict],
+                                  ninja: Path, *, run) -> list[dict]:
+    """Bind staged DSOs to canonical link outputs and verified native inputs."""
+    build = build.resolve(strict=True)
+    objects = {Path(row['object']).resolve(): row['sha256'] for row in records
+               if row['classification'] != 'precompiled-header'}
+    static = {row['path'].split('/')[-1]: row['sha256'] for row in archives}
+    selected = {}
+    for index, library in enumerate(libraries):
+        staged = library.resolve(strict=True)
+        compiled = (build / 'lib' / staged.name).resolve(strict=True)
+        if not compiled.is_relative_to(build):
+            raise ValueError('canonical compiler DSO escaped its build')
+        signature, canonical_signature = digest(staged), digest(compiled)
+        transformation = None
+        if signature != canonical_signature:
+            # LLVM's CMake install removes its build-library search entry and
+            # reserved trailing ':'. Reproduce that transform on a disposable
+            # copy; every other ELF byte must still match the canonical output.
+            rpath = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+            # Preserve argv[0]: llvm-readelf is a personality symlink to
+            # llvm-readobj, whose default output uses a different format.
+            readelf = Path(shutil.which('llvm-readelf') or '')
+            if not readelf.is_file():
+                raise ValueError('compiler DSO provenance requires the owned ELF reader')
+            dynamic = run('shared-build-rpath-'+str(index), [readelf, '--dynamic', compiled])
+            paths = re.findall(r'\((?:RUNPATH|RPATH)\).*?\[([^\]]*)\]', dynamic)
+            if len(paths) != 1 or paths[0] not in (rpath+':', rpath+':'+str(build / 'lib')+':'):
+                raise ValueError('canonical compiler DSO has an unmodeled install runpath')
+            old_rpath = paths[0]
+            with tempfile.TemporaryDirectory(prefix='objc3-dso-provenance-') as temporary:
+                expected = Path(temporary) / staged.name
+                shutil.copyfile(compiled, expected)
+                script = expected.with_suffix('.cmake')
+                text = ('file(RPATH_CHANGE FILE [==['+str(expected)+']==] OLD_RPATH [==['+
+                        old_rpath+']==] NEW_RPATH [==['+rpath+']==])\n')
+                script.write_text(text)
+                try:
+                    run('shared-install-rpath-'+str(index), ['cmake', '-P', script])
+                except (ValueError, subprocess.SubprocessError) as error:
+                    raise ValueError('staged compiler DSO differs from its canonical link output') from error
+                if digest(expected) != signature:
+                    raise ValueError('staged compiler DSO differs from its canonical link output')
+                transformation = {'kind': 'LLVM CMake install RPATH change', 'old_rpath': old_rpath,
+                                  'new_rpath': rpath, 'script': text, 'expected_sha256': signature,
+                                  'elf_reader': str(readelf), 'elf_reader_sha256': digest(readelf)}
+        if staged.name != compiled.name:
+            raise ValueError('staged compiler DSO differs from its canonical link output')
+        selected[compiled] = (staged, signature, canonical_signature, transformation)
+    if not selected or len(selected) != len(libraries):
+        raise ValueError('compiler DSO selection is empty or ambiguous')
+    evidence = []
+    for index, (compiled, (staged, signature, canonical_signature, transformation)) in enumerate(selected.items()):
+        target = compiled.relative_to(build).as_posix()
+        query = run('shared-inputs-'+str(index), [ninja, '-C', build, '-t', 'query', target])
+        inputs, additional_archives, collecting = [], [], False
+        for line in query.splitlines():
+            if line.startswith('  input: '):
+                if 'SHARED_LIBRARY_LINKER' not in line:
+                    raise ValueError('compiler DSO lacks a canonical shared-library link edge')
+                collecting = True
+            elif line.startswith('  outputs:'):
+                collecting = False
+            elif collecting:
+                name = line.strip()
+                if name.startswith('||'):
+                    continue
+                path = (build / name.removeprefix('|').strip()).resolve(strict=True)
+                value = digest(path)
+                if path.is_relative_to(build):
+                    if path.suffix == '.o' and objects.get(path) == value:
+                        kind = 'verified-object'
+                    elif path.suffix == '.a':
+                        if static.get(path.name) != value:
+                            # LLVM links some private archives which are not
+                            # distribution components. Admit their complete
+                            # ordered object membership through the same owner.
+                            label = 'shared-private-'+str(index)+'-'+str(len(additional_archives))+'-'
+                            owner = archive_owners(build, [path], ninja,
+                                run=lambda name, argv: run(label+name, argv))
+                            verified, = verify_owned_archives([path], records, owners=owner)
+                            additional_archives.append(verified)
+                            static[path.name] = value
+                        kind = 'verified-archive'
+                    elif path in selected and selected[path][2] == value:
+                        kind = 'verified-shared-library'
+                    else:
+                        raise ValueError('compiler DSO link input lacks verified ownership: '+str(path))
+                else:
+                    kind = 'external-link-input'
+                inputs.append({'path': str(path), 'sha256': value, 'classification': kind})
+        if not inputs or not any(row['classification'] == 'verified-object' for row in inputs):
+            raise ValueError('compiler DSO link edge has no verified native objects')
+        command = run('shared-command-'+str(index), [ninja, '-C', build, '-t', 'commands', '-s', target])
+        if (('-fsanitize=address,undefined' not in command and
+                not ('-fsanitize=address ' in command and '-fsanitize=undefined ' in command)) or
+                '-shared' not in command):
+            raise ValueError('compiler DSO link does not select its sanitizer profile')
+        evidence.append({'path': str(staged), 'sha256': signature, 'canonical_output': str(compiled),
+                         'canonical_sha256': canonical_signature, 'stage_transform': transformation,
+                         'link_command': command.strip(), 'inputs': inputs,
+                         'additional_archives': additional_archives})
+    return evidence
+
+
 def loaded_graph(binary: Path, loader: Path, libraries: list[Path], *, required=(), run) -> dict:
     output = run('loader', [loader, '--list', binary])
     paths = set()
@@ -437,6 +545,9 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         report['foundation_archives'] = verify_owned_archives(archives, report['foundation_objects'],
             owners=archive_owners(build, archives, ninja,
                 run=lambda name, cmd: run('foundation-'+name, cmd)))
+        report['foundation_shared_libraries'] = verify_owned_shared_libraries(build, libraries,
+            report['foundation_objects'], report['foundation_archives'], ninja,
+            run=lambda name, cmd: run('foundation-'+name, cmd))
         run('embedding-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', facade, '-G', 'Ninja',
             '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'), '-DCMAKE_BUILD_TYPE=Release',
             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld',
@@ -490,6 +601,11 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         for archive in report['foundation_archives'] + report['embedding_archives']:
             if digest(Path(archive['path'])) != archive['sha256']:
                 raise ValueError('staged compiler archive changed during qualification')
+        for library in report['foundation_shared_libraries']:
+            if (digest(Path(library['path'])) != library['sha256'] or
+                    digest(Path(library['canonical_output'])) != library['canonical_sha256'] or
+                    any(digest(Path(row['path'])) != row['sha256'] for row in library['inputs'])):
+                raise ValueError('canonical compiler DSO link changed during qualification')
         for graph in report['loaded_graphs'].values():
             if any(digest(Path(path)) != value for path, value in graph['libraries'].items()):
                 raise ValueError('loaded compiler dependency changed during qualification')

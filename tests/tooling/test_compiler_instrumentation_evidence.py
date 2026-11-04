@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from scripts.objc3c_toolchain.compiler_instrumentation import graph_records, verify_symbols
+from scripts.objc3c_toolchain.compiler_instrumentation import graph_records, verify_symbols, verify_owned_shared_libraries
 
 
 @pytest.fixture
@@ -75,6 +75,56 @@ def test_compilation_database_cannot_lie_about_the_ninja_command(native_graph):
     path.write_text(json.dumps(commands))
     with pytest.raises(ValueError, match='differs from compilation ownership'):
         collect()
+
+
+@pytest.mark.parametrize('mutation', ['', 'installed-rpath', 'foreign-byte', 'ordinary-staged-library', 'unverified-object', 'weakened-link'])
+def test_staged_shared_library_binds_canonical_instrumented_link_inputs(native_graph, mutation):
+    source, build, compiler, nm, run, collect = native_graph
+    with (source / 'CMakeLists.txt').open('a') as stream:
+        stream.write('''
+add_library(owned SHARED unit.cpp)
+target_link_libraries(owned PRIVATE control)
+set_target_properties(owned PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+target_compile_options(owned PRIVATE -O1 -gline-tables-only -fno-omit-frame-pointer
+  -fsanitize=address,undefined -fno-sanitize-recover=undefined)
+target_link_options(owned PRIVATE -fsanitize=address,undefined)
+target_link_options(owned PRIVATE "-Wl,-rpath,$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu:")
+''')
+    run('configure-shared', ['cmake', '-S', source, '-B', build])
+    run('build-shared', ['cmake', '--build', build, '--target', 'owned'])
+    ninja = Path(shutil.which('ninja')).resolve()
+    records = graph_records(build, source, ['owned'], ninja, dict(os.environ), foundation=False, run=run)
+    verify_symbols(records, nm, run=run)
+    stage = source.parent / 'stage'
+    stage.mkdir()
+    library = stage / 'libowned.so'
+    shutil.copyfile(build / 'lib/libowned.so', library)
+    if mutation in ('installed-rpath', 'foreign-byte'):
+        script = stage / 'install.cmake'
+        rpath = '$ORIGIN/../lib:$ORIGIN/../lib/x86_64-unknown-linux-gnu'
+        script.write_text('file(RPATH_CHANGE FILE [==['+str(library)+']==] OLD_RPATH [==['+
+                          rpath+':]==] NEW_RPATH [==['+rpath+']==])\n')
+        run('installed-rpath', ['cmake', '-P', script])
+        if mutation == 'foreign-byte':
+            with library.open('ab') as stream:
+                stream.write(b'changed native artifact')
+    if mutation == 'ordinary-staged-library':
+        run('ordinary-library', [compiler, '-shared', '-fPIC', source / 'unit.cpp', '-o', library])
+    if mutation == 'unverified-object':
+        records = []
+    def query(name, argv):
+        text = run(name, argv)
+        return text.replace('-fsanitize=address,undefined', '') if mutation == 'weakened-link' and 'command' in name else text
+    if mutation not in ('', 'installed-rpath'):
+        with pytest.raises(ValueError, match='canonical link output|verified ownership|sanitizer profile'):
+            verify_owned_shared_libraries(build, [library], records, [], ninja, run=query)
+    else:
+        result, = verify_owned_shared_libraries(build, [library], records, [], ninja, run=query)
+        assert result['sha256'] == __import__('hashlib').sha256(library.read_bytes()).hexdigest()
+        assert result['canonical_output'] == str(build / 'lib/libowned.so')
+        assert result['inputs'][0]['classification'] == 'verified-object'
+        assert len(result['additional_archives']) == 1
+        assert bool(result['stage_transform']) == (mutation == 'installed-rpath')
 
 
 def test_custom_product_objects_have_canonical_sources_and_real_instrumentation(native_graph):

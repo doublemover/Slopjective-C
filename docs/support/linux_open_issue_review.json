@@ -1028,7 +1028,7 @@
   },
   "native_ci_implementation": {
     "status": "implementation-prepared-acceptance-pending",
-    "tooling_tests": 589,
+    "tooling_tests": 652,
     "tooling_skips": 1,
     "tooling_subtests": 33,
     "workflow_policy_tests": 47,
@@ -1041,7 +1041,7 @@
     "sdk_archive_rebuilt": false,
     "clean_host_bootstrap": "Pinned private libsodium for minisign; actual signed ccache archive verification and loader-path witness passed.",
     "tooling_collection_modules": "2427 tests collect without errors; the complete historical suite was not executed.",
-    "live_ci": "First cold run passed foundation/runtime/frontend/installed execution, then TSan could not adjust ASLR under Docker seccomp. Corrected job container and real syscall preflight pass locally and in the hosted LLVM job; complete hosted runs remain active."
+    "live_ci": "The 08e5b64bd cold native run passed foundation/runtime/frontend/installed and all four sanitizer profiles, then failed source-graph VFS freshness. Its LLVM sibling failed clean-host development-tool ordering. Both are repaired and pass focused real campaigns; 277d14b64 full workflows remain in progress and subsequent heads queue exact-revision execution."
   },
   "llvm_ir_assurance": {
     "status": "PASS",
@@ -1125,6 +1125,43 @@
       }
     },
     "hosted_status": "Both full workflows are executing on 277d14b64; 5bf99bbee full workflows are queued. Tooling/documentation/policy pass on both revisions."
+  },
+  "acceptance_followups": {
+    "reviewed_checkpoint": "08e5b64bd9f8f29a7faa35839066225d48e52e16",
+    "documentation": "docs/roadmap/linux_acceptance_followups.md",
+    "repaired_requirements": [8286, 8284, 8302, 8312, 8325, 8326],
+    "remaining_requirement": 8282,
+    "boundaries": "Focused source/acceptance-gap controls; the historical complete-acceptance review and release SDK qualification remain separate.",
+    "receipts": {
+      "instrumented_carrier_and_text_targets": {
+        "path": "out/nov04-acceptance-native-fixed/qualification.json",
+        "sha256": "0c629ce85f5b5dfd1ae62fcf3227969ceccb87fd286776592ab7e487bb86791c"
+      },
+      "managed_example_freshness": {
+        "path": "out/managed-example-fresh-lookup/qualification.json",
+        "sha256": "07dd27833f897ac223e538f71f7b147adf9bfcbf07d29aa2bf95282b3b9de108"
+      },
+      "canonical_staged_dso_links": {
+        "path": "out/nov04-dso-canonical-links/qualification.json",
+        "sha256": "6aa6950b1080be3a58e4184c8c2937f2709ff97744b1b8618a7cc26328fa70b9"
+      },
+      "updated_compiler_semantic_oracles": {
+        "path": "out/semantic-oracles-final-source/qualification.json",
+        "sha256": "58abd5f5d1538d31e05fb3bbba37c5d5c7e7cac4bf7623b109e2e4d90e30cf27"
+      }
+    },
+    "managed_example_builds": 32,
+    "managed_example_rejections": 6,
+    "shared_library_controls": 6,
+    "foundation_compile_products": 3368,
+    "staged_archives": 94,
+    "additional_private_link_archives": 35,
+    "earlier_failed_attempts": [
+      "out/nov04-acceptance-native: ad hoc build inherited bootstrap loader path; corrected owned environment passes.",
+      "out/nov04-dso-provenance-verified, out/nov04-dso-link-provenance, out/nov04-final-dso-link-provenance: developed exact CMake runpath/private-archive admission; final canonical-link receipt passes.",
+      "out/semantic-oracles-acceptance-current: owner changed during execution; immutability gate correctly rejected the receipt."
+    ],
+    "sdk_archive_rebuilt": false
   },
   "checked_executor_lock_pilot": {
     "status": "PASS",

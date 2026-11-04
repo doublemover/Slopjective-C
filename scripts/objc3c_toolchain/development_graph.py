@@ -11,6 +11,7 @@ from .binary_packages import digest, write_json
 from .llvm_tools import foundation
 from .package import SCHEMA, _digest, inventory, verify_sdk
 from .qualify_source_graph import qualify, qualify_case
+from .qualify_source_modules import qualify as qualify_managed
 
 
 def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runtime: Path) -> dict:
@@ -47,6 +48,14 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         shutil.copyfile(Path(__file__).with_name(source), builder / name)
     shutil.copyfile(Path(__file__).with_name('package.py'), prefix / 'share/objc3c/verify-sdk.py')
     shutil.copytree(repo / 'tests/clang_foundation/source_graph', prefix / 'share/objc3c/examples/packages')
+    example = prefix / 'share/objc3c/examples/managed'
+    sources = example / 'src'
+    sources.mkdir(parents=True)
+    for source, name in (('provider.m', 'provider.m'), ('managed-value-support.h', 'managed-value-support.h'),
+                         ('consumer-source.m', 'main.m')):
+        shutil.copyfile(repo / 'tests/clang_foundation/native_package' / source, sources / name)
+    shutil.copyfile(Path(__file__).with_name('sdk_example.py'), example / 'build.py')
+    shutil.copyfile(Path(__file__).with_name('qualify_source_modules.py'), example / 'qualify.py')
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
@@ -74,14 +83,18 @@ def main(argv=None):
     parser.add_argument('--standard', default='c17')
     parser.add_argument('--ownership', default='arc')
     parser.add_argument('--optimization', default='O0')
-    parser.add_argument('--matrix', action='store_true', help='run the complete 16-mode source graph matrix')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--matrix', action='store_true', help='run the complete 16-mode source graph matrix')
+    selection.add_argument('--managed-example', action='store_true', help='qualify installed managed-example freshness')
     parser.add_argument('--jobs', type=int, choices=range(1, 5), default=2)
     args = parser.parse_args(argv)
     root = args.output.resolve()
     prepare(args.repo.resolve(strict=True), root / 'prefix', facade=args.facade,
             services=args.services, objc_runtime=args.objc_runtime)
     try:
-        if args.matrix:
+        if args.managed_example:
+            report = qualify_managed(root / 'prefix', root / 'evidence')
+        elif args.matrix:
             report = qualify(root / 'prefix', root / 'evidence', jobs=args.jobs)
         else:
             builds, rejections = qualify_case(root / 'prefix', root / 'evidence', args.language,
@@ -92,7 +105,7 @@ def main(argv=None):
         raise
     write_json(root / 'qualification.json', report)
     print(json.dumps({'status': report['status'], 'builds': len(report['builds']),
-                      'rejections': len(report['rejections'])}))
+                      'rejections': len(report.get('rejections', report.get('rejected_imports', [])))}))
 
 
 if __name__ == '__main__':

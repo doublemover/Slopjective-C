@@ -37,6 +37,7 @@ jobs:
           tests/tooling/test_compiler_instrumentation_profiles.py
           tests/tooling/test_compiler_embedding_reuse.py
           tests/tooling/test_compiler_instrumentation_pipeline.py
+          tests/tooling/test_compiler_instrumentation_evidence.py
           tests/tooling/test_compiler_archive_evidence.py
           tests/tooling/test_compiler_scan_graph.py
           tests/tooling/test_llvm_ir_assurance.py
@@ -49,6 +50,7 @@ jobs:
           tests/tooling/test_frontend_serial_tests.py
           tests/tooling/test_linux_sdk_publication.py
           tests/tooling/test_source_graph.py
+          tests/tooling/test_sdk_source_modules.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_current_onboarding.py
           tests/tooling/test_tooling_source_syntax.py

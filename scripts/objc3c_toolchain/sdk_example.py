@@ -8,6 +8,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -168,6 +169,64 @@ def environment(sdk: Path) -> dict:
     return result
 
 
+def discover_lookup(sdk: Path, config: dict, flags: list[str], target: str,
+                    output: Path, directory: Path, env: dict, module_names=(), interfaces=(), interface_names=None) -> dict:
+    """Replay preprocessing before object reuse, including negative lookups.
+
+    Existing depfiles cannot describe a previously absent __has_include header
+    or an earlier search directory which now shadows an existing include.
+    Bind both the fresh token stream and fresh transitive header contents.
+    """
+    mode = ['-x', config['language'], '--target=' + target]
+    if config['language'] != 'c++':
+        mode += ['-fobjc-version=3', '-fobjc-runtime=gnustep-2.2']
+        if config.get('provider_ownership', config['ownership']) == 'arc':
+            mode.append('-fobjc-arc')
+    mode += [argument for name in module_names
+             for argument in ('-Xclang', '-fobjc3-source-module=' + name)]
+    # Remove only dependency-output flags. All preprocessing flags stay in the
+    # same order as the actual compile, including the module cache and includes.
+    preprocessing = flags[:flags.index('-MD')]
+    (directory / 'lookup.log').write_text('')
+    with tempfile.TemporaryDirectory(prefix='.lookup-', dir=directory) as temporary:
+        root = Path(temporary)
+        tokens, depfile = root / 'tokens.i', root / 'headers.d'
+        discovered = {}
+        for source in [config['input'], *interfaces]:
+            # Interface replays have their own preprocessing environment;
+            # their macros must not leak into the consumer source probe.
+            replay = []
+            if source in interfaces:
+                # InterfaceImportSession supplies these aliases in its VFS,
+                # rooted beside the interface being replayed. Raw Clang must
+                # see the same transitive headers during freshness discovery.
+                # External names keep token markers and depfiles bound to the
+                # stable original artifacts, never this temporary overlay.
+                aliases = []
+                for interface in interfaces:
+                    module = (interface_names or {}).get(str(interface), interface.stem)
+                    if not re.fullmatch(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*', module, re.ASCII) or (module_names and module not in module_names):
+                        raise ValueError('interface replay has an unregistered canonical module')
+                    alias = 'm-' + module.encode('utf-8').hex() + '.objc3i'
+                    aliases.append({'type': 'file',
+                        'name': str(source.parent / '__objc3_imports' / alias),
+                        'external-contents': str(interface)})
+                overlay = root / 'interfaces.json'
+                overlay.write_text(json.dumps({'version': 0, 'use-external-names': True, 'roots': aliases}))
+                replay = ['-ivfsoverlay', str(overlay), '-iquote', str(source.parent)]
+            command = [str(sdk / 'bin/clang'), *mode, *preprocessing, *replay, '-E',
+                       '-MD', '-MF', str(depfile), '-MT', 'dependencies',
+                       str(source), '-o', str(tokens)]
+            with (directory / 'lookup.log').open('a') as stream:
+                stream.write(json.dumps(command) + '\n')
+                stream.flush()
+                subprocess.run(command, cwd=output, env=env, stdout=stream,
+                               stderr=subprocess.STDOUT, check=True, timeout=180)
+            discovered[str(source)] = {'tokens_sha256': digest(tokens),
+                'dependencies': hashes(dependencies(depfile, output))}
+        return discovered
+
+
 def build(sdk: Path, sources: Path, output: Path, optimization: str,
           installed_layout: bool, target: str | None) -> dict:
     started = time.monotonic()
@@ -197,7 +256,9 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     report_path = output / 'build-report.json'
     prior = json.loads(report_path.read_text()) if report_path.exists() else {}
     prior_stages = prior.get('stages', {}) if prior.get('schema') == REPORT else {}
+    report_path.unlink(missing_ok=True)
     stages = {}
+    lookups = {}
     common = [str(sdk / 'bin/objc3c')]
     mode = ['--objc3', '--target', target, '--runtime', 'gnustep-2.2']
     flags = ['--', '--no-default-config', '-std=c17', *native_module_compile_flags('objective-c', output), '-fblocks', '-' + optimization, '-g',
@@ -207,7 +268,21 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
             'source_membership': sorted(source_inputs)}
 
     def stage(name, argv, inputs, products, depfile=None):
-        key = hashlib.sha256(json.dumps({**base, 'argv': argv, 'inputs': inputs},
+        source = Path(argv[1])
+        interfaces = [arc_interface] if name == 'consumer' else []
+        configuration = {'input': source, 'language': 'objective-c',
+                         'ownership': 'mrc' if name == 'provider' else 'arc'}
+        preprocessing = argv[argv.index('--')+1:]
+        if '-MD' not in preprocessing:
+            preprocessing = [*preprocessing, '-MD']
+        def fresh_lookup():
+            return discover_lookup(sdk, configuration, preprocessing, target, output,
+                output, env, (MODULE,) if interfaces else (), interfaces,
+                {str(path): MODULE for path in interfaces})
+        lookup = fresh_lookup()
+        lookups[name] = (fresh_lookup, lookup)
+        key = hashlib.sha256(json.dumps({**base, 'argv': argv, 'inputs': inputs,
+                                       'header_lookup': lookup},
                                        sort_keys=True).encode()).hexdigest()
         saved = prior_stages.get(name, {})
         tick = time.monotonic()
@@ -221,6 +296,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
         tracked = dependencies(depfile, output) if depfile else []
         tracked.extend(Path(path) for path in inputs)
         stages[name] = {'key': key, 'argv': argv, 'reused': False,
+                        'header_lookup': lookup,
                         'outputs': hashes(products), 'dependencies': hashes(tracked),
                         'elapsed_seconds': round(time.monotonic() - tick, 6)}
 
@@ -282,8 +358,9 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     subprocess.run([str(executable)], env=run_env, check=True, timeout=30)
     if hashes(path for path in sources.rglob('*') if path.is_file()) != source_inputs:
         raise ValueError('sample sources changed during the build')
-    for saved in stages.values():
-        if not reusable(saved, saved['key']):
+    for name, saved in stages.items():
+        fresh_lookup, lookup = lookups[name]
+        if not reusable(saved, saved['key']) or fresh_lookup() != lookup:
             raise ValueError('a module input or output changed during the build')
     build_seconds = time.monotonic() - started - admission
     tick = time.monotonic()

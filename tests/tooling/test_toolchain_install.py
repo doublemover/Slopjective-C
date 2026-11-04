@@ -14,10 +14,10 @@ from scripts.objc3c_toolchain.install_sdk import file_hash, install
 pytestmark = pytest.mark.skipif(not shutil.which('zstd'), reason='installer needs zstd')
 
 
-def release(tmp_path: Path):
+def release(tmp_path: Path, compiler='compiler'):
     prefix = tmp_path / 'source'
     (prefix / 'bin').mkdir(parents=True)
-    (prefix / 'bin/objc3c').write_text('compiler')
+    (prefix / 'bin/objc3c').write_text(compiler)
     (prefix / 'bin/objc3c').chmod(0o700)
     verifier = prefix / 'share/objc3c/verify-sdk.py'
     verifier.parent.mkdir(parents=True)
@@ -57,6 +57,49 @@ def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     with pytest.raises(ValueError, match='differ'):
         install(archive, digest, root)
     assert (root / 'current').resolve() == Path(installed['prefix'])
+
+
+def test_full_install_reports_postcommit_cleanup_failure_and_keeps_old_shell_pinned(tmp_path, monkeypatch):
+    import errno
+    import subprocess
+    from scripts.objc3c_toolchain import install_sdk
+    archive_a, digest_a = release(tmp_path / 'a', 'compiler A')
+    archive_b, digest_b = release(tmp_path / 'b', 'compiler B')
+    root = tmp_path / 'installed'
+    old = install(archive_a, digest_a, root)
+    rmtree = shutil.rmtree
+    def fail_cleanup(path, *args, **kwargs):
+        if Path(path).parent == root and Path(path).name.startswith('.install-'):
+            raise OSError(errno.EACCES, 'injected postcommit cleanup failure')
+        return rmtree(path, *args, **kwargs)
+    command = ['sh', '-c', '. "$1/activate.sh"; printf "ready\\n"; read line; printf "%s" "$OBJC3C_SDK_ROOT"',
+               'sh', str(root)]
+    with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as shell:
+        assert shell.stdout.readline() == 'ready\n'
+        with monkeypatch.context() as patch:
+            patch.setattr(shutil, 'rmtree', fail_cleanup)
+            current = install(archive_b, digest_b, root)
+            assert current['status'] == 'PASS' and current['activated']
+            assert len(current['cleanup_warnings']) == 1
+            warning = current['cleanup_warnings'][0]
+            assert 'postcommit cleanup failure' in warning['error'] and Path(warning['path']).is_dir()
+            assert selected_by_shell(root) == Path(current['prefix']) != Path(old['prefix'])
+            assert install(archive_b, digest_b, root)['prefix'] == current['prefix']
+        output, _ = shell.communicate('\n', timeout=10)
+        assert shell.returncode == 0 and output == old['prefix']
+    assert install(archive_b, digest_b, root)['cleanup_warnings'] == []
+
+
+def test_full_install_precommit_failure_does_not_report_activation_success(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import install_sdk
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'installed'
+    def fail_activation(*args):
+        raise OSError('injected precommit failure')
+    monkeypatch.setattr(install_sdk, 'activate', fail_activation)
+    with pytest.raises(OSError, match='precommit failure'):
+        install(archive, digest, root)
+    assert not (root / 'current').exists() and not list(root.glob('.install-*'))
 
 
 def test_cached_verifier_cannot_hide_modified_installation_contents(tmp_path):

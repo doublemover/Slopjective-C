@@ -246,6 +246,40 @@ void TestThreeModuleSemanticLookupAndIdentity() {
   fs::remove_all(root);
 }
 
+void TestCarrierPayloadNullabilityRejectsStaleLocks() {
+  const auto root = fs::temp_directory_path() / "objc3-carrier-nullability-lock-test";
+  fs::remove_all(root);
+  fs::create_directories(root);
+  const auto path = root / "provider.objc3i";
+  for (const std::string shape : {
+      "Optional(int * QUAL) value(void);\n",
+      "Result(int * QUAL, int) value(void);\n",
+      "Result(int, Optional(int * QUAL)) value(void);\n",
+      "Optional(Result(Optional(int * QUAL), int)) value(void);\n"}) {
+    auto before = shape, after = shape;
+    before.replace(before.find("QUAL"), 4, "_Nullable");
+    after.replace(after.find("QUAL"), 4, "_Nonnull");
+    auto old = EmitModule(root / "provider.m", path, "test.nullability", before);
+    auto current = EmitModule(root / "provider.m", path, "test.nullability", after);
+    assert(old.success && current.success && old.interface_artifact && current.interface_artifact);
+    assert(old.interface_artifact->identity.semantic_fingerprint !=
+           current.interface_artifact->identity.semantic_fingerprint);
+    auto consumer = ModuleRequest(root / "consumer.m", "", "int use(void) { return 0; }\n");
+    consumer.emit_semantic_interface = false;
+    consumer.imported_interfaces = {ImportOf(path, old.interface_artifact->identity)};
+    auto stale = Compile(consumer);
+    assert(!stale.success && stale.imported_declarations.empty());
+    assert(std::any_of(stale.interface_import_diagnostics.begin(),
+        stale.interface_import_diagnostics.end(), [](const auto &diagnostic) {
+          return diagnostic.code == "O3IFC134";
+        }));
+    consumer.imported_interfaces = {ImportOf(path, current.interface_artifact->identity)};
+    auto fresh = Compile(consumer);
+    assert(fresh.success && HasImported(fresh, "value"));
+  }
+  fs::remove_all(root);
+}
+
 void TestBadLockAndMissingTransitiveArtifactFailBeforeImport() {
   const auto root = fs::temp_directory_path() / "objc3-interface-import-invalid-test";
   fs::remove_all(root);
@@ -791,6 +825,7 @@ int main() {
   TestNativeAttributeTemplateImports();
   TestUnnamedTemplateProjectionImports();
   TestBadLockAndMissingTransitiveArtifactFailBeforeImport();
+  TestCarrierPayloadNullabilityRejectsStaleLocks();
   TestDuplicateLookupNamesAreRejected();
   TestCompleteExportIdentitiesAndPrivateDirectLookup();
   TestRelativeArtifactsAndResponseFileLayoutFlags();

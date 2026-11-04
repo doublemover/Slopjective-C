@@ -66,3 +66,25 @@ def test_hashes_ignore_timestamp_changes(tmp_path):
     prior = digest(path)
     os.utime(path, (1, 1))
     assert digest(path) == prior
+
+
+def test_installed_managed_example_retains_fresh_lookup_failure_after_temporary_build_cleanup(tmp_path, monkeypatch):
+    import subprocess
+    from scripts.objc3c_toolchain import qualify_source_modules
+    sdk, output = tmp_path / 'sdk', tmp_path / 'evidence'
+    sources = sdk / 'share/objc3c/examples/managed/src'
+    sources.mkdir(parents=True)
+    for name in ('provider.m', 'managed-value-support.h', 'main.m'):
+        (sources / name).write_text('fixture input\n')
+    builds = []
+    def fail_build(argv, **kwargs):
+        build = Path(argv[argv.index('--output-dir')+1])
+        build.mkdir()
+        builds.append(build)
+        (build / 'lookup.log').write_text('fatal error: external header lookup failed at provider.m:7\n')
+        raise subprocess.CalledProcessError(1, argv)
+    monkeypatch.setattr(qualify_source_modules.subprocess, 'run', fail_build)
+    with pytest.raises(subprocess.CalledProcessError):
+        qualify_source_modules.qualify(sdk, output)
+    assert builds and not builds[0].exists()
+    assert 'provider.m:7' in (output / 'O0-cold-lookup.log').read_text()

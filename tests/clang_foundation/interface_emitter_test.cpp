@@ -72,6 +72,27 @@ void TestPrimitiveAndObjectiveCContractIdentity() {
       assert(nullable.identity.semantic_fingerprint != nonnull.identity.semantic_fingerprint);
     }
   }
+  for (const std::string standard : {"c17", "c++20", "c++23"}) {
+    const std::vector<std::string> flags = {
+        "-x", standard == "c17" ? "objective-c" : "objective-c++",
+        "-std=" + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2"};
+    for (const std::string shape : {
+        "Optional(int * QUAL) maybe(void);\n",
+        "Result(int * QUAL, int) success(void);\n",
+        "Result(int, int * QUAL) failure(void);\n",
+        "Optional(Result(Optional(int * QUAL), int)) nested(void);\n",
+        "void callback(Result(int, Optional(int * QUAL)) (*factory)(void));\n",
+        "typedef Optional(int * QUAL) Alias; Alias aliased(void);\n"}) {
+      auto nullable_source = shape, nonnull_source = shape;
+      nullable_source.replace(nullable_source.find("QUAL"), 4, "_Nullable");
+      nonnull_source.replace(nonnull_source.find("QUAL"), 4, "_Nonnull");
+      auto nullable = emit(nullable_source, flags);
+      auto nonnull = emit(nonnull_source, flags);
+      assert(nullable.identity.semantic_fingerprint != nonnull.identity.semantic_fingerprint);
+      assert(emit(nullable_source, flags).identity.semantic_fingerprint ==
+             nullable.identity.semantic_fingerprint);
+    }
+  }
   auto avx_flags = c;
   avx_flags.push_back("-mavx2");
   auto avx = emit(byte, avx_flags);

@@ -89,10 +89,13 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
         raise ValueError('archive SHA-256 does not match the release receipt')
     root.mkdir(parents=True, exist_ok=True)
     root.chmod(0o755)
+    cleanup_warnings = []
     with (root / '.install.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        with tempfile.TemporaryDirectory(prefix='.install-', dir=root) as temporary:
-            destination = Path(temporary)
+        temporary = tempfile.TemporaryDirectory(prefix='.install-', dir=root)
+        committed = False
+        try:
+            destination = Path(temporary.name)
             with subprocess.Popen(['zstd', '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
                 try:
                     with tarfile.open(fileobj=decoder.stdout, mode='r|') as tar:
@@ -122,8 +125,17 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             else:
                 os.replace(candidate, prefix)
             activate(root, prefix)
+            committed = True
+        finally:
+            try:
+                temporary.cleanup()
+            except OSError as error:
+                if not committed:
+                    raise
+                cleanup_warnings.append({'path': temporary.name, 'error': str(error)})
     return {'status': 'PASS', 'prefix': str(prefix), 'activation': str(root / 'activate.sh'),
-            'seal_sha256': data['seal_sha256']}
+            'seal_sha256': data['seal_sha256'], 'activated': True,
+            'cleanup_warnings': cleanup_warnings}
 
 
 def main(argv=None) -> int:

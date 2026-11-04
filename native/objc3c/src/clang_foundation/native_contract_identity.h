@@ -111,7 +111,17 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
   if (clang::isObjC3BorrowedType(context, type))
     AppendNativeContractField(out, position + ":borrowed");
   type = type.getDesugaredType(context);
-  if (type->isPointerType() || type->isBlockPointerType() ||
+  if (const auto *optional =
+          llvm::dyn_cast<clang::ObjC3OptionalType>(type.getTypePtr())) {
+    AppendNativeTypeContracts(out, optional->getElementType(), context,
+                              position + ".some", depth + 1);
+  } else if (const auto *result =
+                 llvm::dyn_cast<clang::ObjC3ResultType>(type.getTypePtr())) {
+    AppendNativeTypeContracts(out, result->getSuccessType(), context,
+                              position + ".ok", depth + 1);
+    AppendNativeTypeContracts(out, result->getErrorType(), context,
+                              position + ".error", depth + 1);
+  } else if (type->isPointerType() || type->isBlockPointerType() ||
       type->isReferenceType()) {
     AppendNativeTypeContracts(out, type->getPointeeType(), context,
                               position + ".pointee", depth + 1);

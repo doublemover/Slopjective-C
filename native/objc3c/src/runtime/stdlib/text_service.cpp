@@ -163,8 +163,9 @@ extern "C" int objc3_runtime_stdlib_text_v2_byte_at(
   return valid && found;
 }
 
-extern "C" int objc3_runtime_stdlib_text_v2_create_utf8_checked(
-    const char *bytes, uint64_t byte_count, objc3_text_v2_t *out_text) {
+static int CreateUtf8Checked(const char *bytes, uint64_t byte_count,
+                            const uint64_t *expected_scalar_count,
+                            objc3_text_v2_t *out_text) {
   if (!out_text) return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
   *out_text = nullptr;
   if (byte_count > kTextV2MaxBytes || (!bytes && byte_count))
@@ -177,12 +178,26 @@ extern "C" int objc3_runtime_stdlib_text_v2_create_utf8_checked(
     if (!TryDecodeUtf8Scalars(raw, static_cast<int>(byte_count), scalar_count,
                                nullptr, nullptr, &offsets))
       return OBJC3_STDLIB_V2_INVALID_UTF8;
+    if (expected_scalar_count && *expected_scalar_count !=
+                                     static_cast<uint64_t>(scalar_count))
+      return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
     auto value = std::make_unique<TextV2Value>();
     if (byte_count) value->bytes.assign(raw, raw + byte_count);
     RecordByteCopy(byte_count);
     value->scalar_offsets = std::move(offsets);
     return PublishValidatedText(std::move(value), out_text);
   } catch (const std::bad_alloc &) { return OBJC3_STDLIB_V2_OUT_OF_MEMORY; }
+}
+
+extern "C" int objc3_runtime_stdlib_text_v2_create_utf8_checked(
+    const char *bytes, uint64_t byte_count, objc3_text_v2_t *out_text) {
+  return CreateUtf8Checked(bytes, byte_count, nullptr, out_text);
+}
+
+extern "C" int objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+    const char *bytes, uint64_t byte_count, uint64_t scalar_count,
+    objc3_text_v2_t *out_text) {
+  return CreateUtf8Checked(bytes, byte_count, &scalar_count, out_text);
 }
 
 extern "C" int objc3_runtime_stdlib_text_v2_retain_checked(
@@ -550,4 +565,6 @@ extern "C" void objc3_test_text_construction_reset() {
 extern "C" uint64_t objc3_test_text_copied_bytes() { return text_copied_bytes; }
 extern "C" uint64_t objc3_test_text_decode_calls() { return objc3c::runtime::text_utf8::decode_calls; }
 extern "C" uint64_t objc3_test_text_decoded_input_bytes() { return objc3c::runtime::text_utf8::decoded_input_bytes; }
+extern "C" uint64_t objc3_test_text_token_count() { return TextV2Storage().TokenCount(); }
+extern "C" uint64_t objc3_test_text_live_count() { return TextV2Storage().LiveCount(); }
 #endif

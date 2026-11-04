@@ -15,6 +15,8 @@ extern "C" void objc3_test_text_construction_reset();
 extern "C" uint64_t objc3_test_text_copied_bytes();
 extern "C" uint64_t objc3_test_text_decode_calls();
 extern "C" uint64_t objc3_test_text_decoded_input_bytes();
+extern "C" uint64_t objc3_test_text_token_count();
+extern "C" uint64_t objc3_test_text_live_count();
 static std::atomic<long> fail_text_allocation{-1};
 static std::atomic<std::size_t> pause_text_allocation{0};
 static std::size_t observed_allocation_size = 0;
@@ -65,6 +67,31 @@ void ConstructionTransactions() {
   const std::vector<char> sample = {'A', char(0xc2), char(0xa2), char(0xe2), char(0x82), char(0xac),
       char(0xf0), char(0x9f), char(0x99), char(0x82), 0};
   const unsigned offsets[] = {0, 1, 3, 6, 10, 11};
+  const auto tokens = objc3_test_text_token_count();
+  const auto live = objc3_test_text_live_count();
+  for (unsigned trial = 0; trial < 4096; ++trial) {
+    objc3_text_v2_t rejected = reinterpret_cast<objc3_text_v2_t>(1);
+    assert(objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+               sample.data(), sample.size(), trial % 2 ? 4 : UINT64_MAX,
+               &rejected) == OBJC3_STDLIB_V2_INVALID_ARGUMENT);
+    assert(!rejected);
+  }
+  assert(objc3_test_text_token_count() == tokens && objc3_test_text_live_count() == live);
+  objc3_text_v2_t accepted = nullptr;
+  assert(objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+             sample.data(), sample.size(), 5, &accepted) == OBJC3_STDLIB_V2_OK);
+  assert(accepted && objc3_test_text_token_count() == tokens + 1 &&
+         objc3_test_text_live_count() == live + 1);
+  assert(objc3_runtime_stdlib_text_v2_release_checked(accepted) == OBJC3_STDLIB_V2_OK);
+  assert(objc3_test_text_live_count() == live);
+  objc3_text_v2_t rejected = nullptr;
+  assert(objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+             "\xff", 1, 1, &rejected) == OBJC3_STDLIB_V2_INVALID_UTF8 && !rejected);
+  assert(objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+             nullptr, 0, 1, &rejected) == OBJC3_STDLIB_V2_INVALID_ARGUMENT && !rejected);
+  assert(objc3_runtime_stdlib_text_v2_create_utf8_record_checked(
+             nullptr, 0, 0, nullptr) == OBJC3_STDLIB_V2_INVALID_ARGUMENT);
+  assert(objc3_test_text_token_count() == tokens + 1 && objc3_test_text_live_count() == live);
   objc3_text_v2_t source = nullptr, empty = nullptr;
   Observe(sample.size());
   assert(objc3_runtime_stdlib_text_v2_create_utf8_checked(sample.data(), sample.size(), &source) == 0);
