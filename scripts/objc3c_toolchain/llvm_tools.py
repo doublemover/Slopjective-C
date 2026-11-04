@@ -69,7 +69,8 @@ def verify_installation(canonical: Path, installed: Path, build: Path) -> dict:
             'runpath_before': before, 'runpath_after': after, 'status': 'PASS'}
 
 
-def selected(repo: Path) -> tuple[dict, dict, dict]:
+def foundation(repo: Path) -> tuple[dict, dict]:
+    """Admit the foundation before its development-only targets exist."""
     inventory = repo / 'toolchains/llvm/assurance-tools.json'
     document = json.loads(inventory.read_text())
     if (document.get('schema') != 'objc3c.llvm-development-tools.v1' or
@@ -88,6 +89,12 @@ def selected(repo: Path) -> tuple[dict, dict, dict]:
             any(row['exit_code'] for row in completed['phases'])):
         raise ValueError('development tools require the complete matching foundation')
     verify_effective_configuration(plan)
+    return plan, document
+
+
+def selected(repo: Path) -> tuple[dict, dict, dict]:
+    plan, document = foundation(repo)
+    build, stage = (Path(plan['paths'][key]).resolve(strict=True) for key in ('build', 'stage'))
     tools = {name: (build / 'bin' / name).resolve(strict=True) for name in document['build_targets']}
     for name in document['foundation_tools']:
         # Invocation basename selects clang++ and ld.lld driver behavior.

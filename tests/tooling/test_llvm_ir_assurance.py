@@ -133,6 +133,29 @@ def test_install_identity_allows_only_exact_cmake_runpath_transition(tmp_path):
         verify_installation(canonical, installed, tmp_path / 'build')
 
 
+def test_clean_foundation_admission_does_not_require_unbuilt_development_tools(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import llvm_tools
+    inventory = tmp_path / 'toolchains/llvm/assurance-tools.json'
+    inventory.parent.mkdir(parents=True)
+    inventory.write_bytes((ROOT / 'toolchains/llvm/assurance-tools.json').read_bytes())
+    build, stage = tmp_path / 'build', tmp_path / 'stage'
+    build.mkdir()
+    stage.mkdir()
+    plan = {'paths': {'build': str(build), 'stage': str(stage)}, 'source_build_id': 'current'}
+    report = {'status': 'passed', 'source_identity': 'current',
+              'phases': [{'phase': phase, 'exit_code': 0} for phase in ('configure', 'build', 'test', 'stage')]}
+    (build / 'foundation-build-report.json').write_text(json.dumps(report))
+    monkeypatch.setattr(llvm_tools, 'build_plans', lambda *args, **kwargs: {'configure': plan})
+    monkeypatch.setattr(llvm_tools, 'verify_effective_configuration', lambda value: {})
+    assert llvm_tools.foundation(tmp_path)[0] == plan
+    with pytest.raises(FileNotFoundError):
+        llvm_tools.selected(tmp_path)
+    report['phases'].pop()
+    (build / 'foundation-build-report.json').write_text(json.dumps(report))
+    with pytest.raises(ValueError, match='complete matching foundation'):
+        llvm_tools.foundation(tmp_path)
+
+
 def spec():
     env = strict_environment(Path(sys.executable), Path('/usr/bin/false'))
     return {'schema': 'objc3c.llvm-interestingness.v1', 'timeout_seconds': 1,

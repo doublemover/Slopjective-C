@@ -227,7 +227,26 @@ def discover_lookup(sdk: Path, config: dict, flags: list[str], target: str,
         for source in [config['input'], *interfaces]:
             # Interface replays have their own preprocessing environment;
             # their macros must not leak into the consumer source probe.
-            command = [str(sdk / 'bin/clang'), *mode, *preprocessing, '-E',
+            replay = []
+            if source in interfaces:
+                # InterfaceImportSession supplies these aliases in its VFS,
+                # rooted beside the interface being replayed. Raw Clang must
+                # see the same transitive headers during freshness discovery.
+                # External names keep token markers and depfiles bound to the
+                # stable original artifacts, never this temporary overlay.
+                aliases = []
+                for interface in interfaces:
+                    module = interface.stem
+                    if not NAME.fullmatch(module) or (module_names and module not in module_names):
+                        raise ValueError('interface replay has an unregistered canonical module')
+                    alias = 'm-' + module.encode('utf-8').hex() + '.objc3i'
+                    aliases.append({'type': 'file',
+                        'name': str(source.parent / '__objc3_imports' / alias),
+                        'external-contents': str(interface)})
+                overlay = root / 'interfaces.json'
+                overlay.write_text(json.dumps({'version': 0, 'use-external-names': True, 'roots': aliases}))
+                replay = ['-ivfsoverlay', str(overlay), '-iquote', str(source.parent)]
+            command = [str(sdk / 'bin/clang'), *mode, *preprocessing, *replay, '-E',
                        '-MD', '-MF', str(depfile), '-MT', 'dependencies',
                        str(source), '-o', str(tokens)]
             with (directory / 'lookup.log').open('a') as stream:

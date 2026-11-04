@@ -348,3 +348,37 @@ def test_fresh_header_discovery_detects_changes_outside_source_root(tmp_path, ca
     assert lookup() == after
     new.unlink()
     assert lookup() == before
+
+
+def test_transitive_interface_lookup_replays_virtual_aliases_with_stable_dependencies(tmp_path):
+    import os
+    from scripts.objc3c_toolchain.source_graph import discover_lookup
+    compiler = shutil.which('clang')
+    if not compiler:
+        pytest.skip('interface lookup control requires Clang')
+    sdk = tmp_path / 'sdk'
+    (sdk / 'bin').mkdir(parents=True)
+    (sdk / 'bin/clang').symlink_to(compiler)
+    source = tmp_path / 'main.cpp'
+    source.write_text('int main() { return 0; }\n')
+    external = tmp_path / "interfaces with 'quotes"
+    leaf, left, top = [external / name / (name+'.objc3i') for name in ('Leaf', 'Left', 'Top')]
+    for path in (leaf, left, top):
+        path.parent.mkdir(parents=True)
+    header = external / 'definition.h'
+    header.write_text('#define ANSWER 40\n')
+    leaf.write_text('#pragma once\n#include "'+str(header)+'"\nint leaf = ANSWER;\n')
+    left.write_text('#include "__objc3_imports/m-'+b'Leaf'.hex()+'.objc3i"\n')
+    top.write_text('#include "__objc3_imports/m-'+b'Left'.hex()+'.objc3i"\n')
+    output = tmp_path / 'build'
+    output.mkdir()
+    config = {'input': source, 'language': 'c++', 'ownership': 'none'}
+    def lookup():
+        return discover_lookup(sdk, config, ['-std=c++20', '-MD'], 'x86_64-unknown-linux-gnu',
+                               output, output, os.environ, interfaces=[leaf, left, top])
+    before = lookup()
+    assert lookup() == before
+    assert {str(leaf), str(left), str(top), str(header)} <= set(before[str(top)]['dependencies'])
+    assert all('.lookup-' not in path for row in before.values() for path in row['dependencies'])
+    header.write_text('#define ANSWER 42\n')
+    assert lookup() != before

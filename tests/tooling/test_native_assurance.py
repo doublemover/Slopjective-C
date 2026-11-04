@@ -14,6 +14,39 @@ from scripts.objc3c_assurance.plan import from_checkout, select, validate
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
 
 
+def test_failed_sdk_attempt_preserves_nested_native_logs_without_sdk_payloads(tmp_path):
+    from scripts.objc3c_assurance.package_evidence import preserve, snapshot
+    repo = tmp_path / 'repo'
+    repo.mkdir()
+    before = snapshot(repo)
+    candidate = repo / 'out/toolchains/linux-sdk-builds/current'
+    candidate.mkdir(parents=True)
+    run = repo / 'out/native-validation/current-run'
+    run.mkdir(parents=True)
+    (run / 'qualification.json').write_text('{"status":"FAIL"}')
+    (run / 'lookup.log').write_text('actual preprocessing diagnostic')
+    (run / 'compiler.o').write_bytes(b'must not be uploaded')
+    (candidate / 'prefix').mkdir()
+    (candidate / 'prefix/objc3-sdk.json').write_text('must not be uploaded')
+    (candidate / 'build-report.json').write_text(json.dumps({'status': 'FAIL', 'commands': [
+        {'name': 'native-validation', 'command': ['python', '--run-id', 'current-run']}]}))
+    target = tmp_path / 'evidence'
+    assert preserve(repo, target, before) == ['current']
+    assert (target / 'native-validation/current-run/lookup.log').read_text() == 'actual preprocessing diagnostic'
+    assert not list(target.rglob('compiler.o')) and not list(target.rglob('objc3-sdk.json'))
+    assert preserve(repo, tmp_path / 'unchanged', snapshot(repo)) == []
+
+
+def test_sdk_diagnostics_reject_run_identity_escaping_owned_output(tmp_path):
+    from scripts.objc3c_assurance.package_evidence import preserve
+    candidate = tmp_path / 'out/toolchains/linux-sdk-builds/current'
+    candidate.mkdir(parents=True)
+    (candidate / 'build-report.json').write_text(json.dumps({'commands': [
+        {'name': 'native-validation', 'command': ['python', '--run-id', '../unowned']}]}))
+    with pytest.raises(ValueError, match='unowned run identity'):
+        preserve(tmp_path, tmp_path / 'evidence', {})
+
+
 @pytest.mark.parametrize('paths', [[], None, ['native/objc3c/src/runtime/x.cpp'],
     ['toolchains/llvm/patches/fix.patch'], ['docs/support/evidence.md'], ['docs/contracts/language.md'],
     ['mystery.new'], ['README.md', 'tests/new.cpp'], ['native/deleted.cpp', 'docs/moved.md']])

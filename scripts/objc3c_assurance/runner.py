@@ -153,7 +153,12 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             return lit(result_file)
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
-            result = build_sdk(repo, fetch=True)
+            from .package_evidence import preserve, snapshot
+            before = snapshot(repo)
+            try:
+                result = build_sdk(repo, fetch=True)
+            finally:
+                preserve(repo, directory / 'sdk-diagnostics', before)
             write_json(directory / 'release.json', result)
             if result['status'] != 'PASS':
                 raise ValueError('packaging qualification failed')
@@ -181,6 +186,9 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
                     raise ValueError('native suite produced no execution or artifact inventory')
                 row['status'] = 'PASS'
             except BaseException as error:
+                # Nested owners can fail before returning an execution list.
+                # Their actual diagnostics must still join the durable upload.
+                row['artifacts'] = [artifact(output, path) for path in native_files(directory)]
                 row.update(status='FAIL', error=str(error))
                 raise
             finally:

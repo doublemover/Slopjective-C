@@ -49,8 +49,8 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
                     '--output-dir', str(build), '--optimization', optimization],
                     cwd=root, stdout=stream, stderr=subprocess.STDOUT, check=False, timeout=180)
             if completed.returncode:
-                for failure_log in build.rglob('compile.log'):
-                    destination = output / (case_prefix + '-' + label + '-' + failure_log.parent.name + '.failure.log')
+                for failure_log in sorted([*build.rglob('compile.log'), *build.rglob('lookup.log')]):
+                    destination = output / (case_prefix + '-' + label + '-' + failure_log.parent.name + '-' + failure_log.name + '.failure.log')
                     shutil.copyfile(failure_log, destination)
                 raise ValueError(f'installed graph build failed; see {log}')
             report = json.loads((build / 'build-report.json').read_text())
@@ -162,7 +162,8 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     if failures:
         receipt_path.write_text(json.dumps({'schema': 'objc3c.source-graph-qualification.v4',
             'status': 'FAIL', 'failures': failures, 'builds': records, 'rejections': negatives}, indent=2) + '\n')
-        raise ValueError(f'installed graph qualification failed; see {receipt_path}')
+        details = '; '.join('/'.join(row['mode']) + ': ' + row['error'] for row in failures)
+        raise ValueError(f'installed graph qualification failed: {details}; see {receipt_path}')
     if not (len(records) == 112 and len(negatives) == 32):
         raise ValueError('qualify_source_graph: required semantic check failed: len(records) == 112 and len(negatives) == 32')
     result = {'schema': 'objc3c.source-graph-qualification.v4', 'status': 'PASS',

@@ -14,7 +14,7 @@ from .llvm_debugger import qualify as qualify_debugger
 from .llvm_ir import qualify as qualify_ir
 from .llvm_ir_execution import Execution
 from .llvm_optimized_debug import qualify as qualify_debug
-from .llvm_tools import identity, selected
+from .llvm_tools import foundation as admit_foundation, identity, selected
 from .sanitizer_policy import strict_environment
 
 
@@ -65,7 +65,7 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
                     write_json(evidence / 'build-report.json', saved)
                     for index, phase in enumerate(saved.get('phases', [])):
                         shutil.copyfile(phase['log'], evidence / (str(index)+'-'+phase['phase']+'.log'))
-        foundation, tools, environment = selected(repo)
+        foundation, _ = admit_foundation(repo)
         host = foundation['host_environment']
         bootstrap = Path(host['bootstrap_root'])
         environment = strict_environment(bootstrap / 'bin/clang', bootstrap / 'bin/llvm-symbolizer')
@@ -85,6 +85,9 @@ def qualify(repo: Path, output: Path, *, fetch=False, prepared=False, jobs=3) ->
         run('development-tools', [host['cmake_path'], '--build', build, '--target',
             'opt', 'llvm-dis', 'llvm-reduce', 'llvm-tblgen', 'LLVMTableGen',
             'LLVMDebuginfod', 'LLVMHTTP', 'SupportTests', '--parallel', str(jobs)])
+        # A clean host has no opt/dis/reduce until the preceding build. Admit
+        # the complete tool bundle only now; prepared hosts follow this too.
+        selected(repo)
         run('md5-regressions', [build / 'unittests/Support/SupportTests', '--gtest_filter=MD5*'])
         run('runtime-configure', [host['cmake_path'], '-S', repo / 'native/objc3c/src/runtime',
             '-B', runtime, '-G', 'Ninja', '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),

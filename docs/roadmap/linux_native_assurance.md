@@ -89,6 +89,28 @@ compiler build. Default-policy failure, corrected-policy success and paired
 clean/faulting TSan controls were exercised in local Debian 13 containers.
 Workflow controls reject removal of the required setting or preflight.
 
+Clean-host execution also exposed two assumptions hidden by a populated local
+build tree. Development LLVM tools must be built after foundation admission and
+before complete tool-bundle admission. Source-graph freshness probes must replay
+the facade's transitive `__objc3_imports` virtual includes. A temporary Clang VFS
+overlay supplies only the selected interface artifacts; external filenames keep
+token and dependency hashes stable across probes. Real preprocessing controls
+cover nested aliases and a changed shared header.
+
+Failed SDK packaging now copies its active candidate and nested native-validation
+JSON/XML/log evidence into the uploaded suite. Preprocessing logs survive a failed
+temporary graph as well as compile logs. This preserves the actual failure rather
+than only the outer packaging exception. The development graph reproducer can run
+one case or `--matrix` against existing sealed development tools without producing
+an SDK archive:
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.development_graph \
+  --output out/graph-reproduction --facade /path/to/matched/objc3c \
+  --services /path/to/libobjc3_runtime_services.a \
+  --objc-runtime /path/to/libobjc.so --matrix
+```
+
 ## Acceptance still required
 
 Implementation and boundary controls are prepared. A live exact-revision native
