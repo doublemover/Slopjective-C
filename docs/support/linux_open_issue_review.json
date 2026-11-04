@@ -116,7 +116,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8288",
       "category": "assurance",
       "body_sha256": "365414cb3d07c9a4a7bfe66c2e17c3d801da5058f1a137728d1aedf7df59a055",
-      "status": "open"
+      "status": "independent-model-and-native-lane-implemented-qualification-in-progress",
+      "implementation": "docs/roadmap/linux_generated_semantic_oracles.md"
     },
     {
       "number": 8289,
