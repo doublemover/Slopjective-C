@@ -61,6 +61,17 @@ def _matching_objc_runtime(path: Path, sanitizer: str, nm: Path, *, environment:
             hashlib.sha256(symbols.encode()).hexdigest()}
 
 
+def shared_profiles(value, repo: Path, compiler_root: Path, resource: Path):
+    if value is not None and (value.repo, value.compiler_root, value.resource) != tuple(
+            path.resolve(strict=True) for path in (repo, compiler_root, resource)):
+        raise ValueError('shared runtime profiles belong to a different source/compiler/resource owner')
+    return value
+
+
+def used_receipts(profiles, optimizations):
+    return [row for row in profiles.receipts() if row.get('optimization') in optimizations]
+
+
 class RuntimeProfiles:
     """One immutable set per qualification; each configuration has its own tree."""
     def __init__(self, repo: Path, compiler_root: Path, resource: Path, output: Path, *, jobs=2):

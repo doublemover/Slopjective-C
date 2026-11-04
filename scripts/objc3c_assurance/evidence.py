@@ -25,7 +25,10 @@ def artifact(root: Path, path: Path) -> dict:
 
 def native_files(directory: Path) -> list[Path]:
     return sorted(path for path in directory.rglob('*') if path.is_file() and
-                  path.suffix in ('.json', '.xml', '.log') and not any(
+                  (path.suffix in ('.json', '.xml', '.log') or
+                   (path.parent.name == 'blobs' and path.parent.parent.name == 'product-evidence' and
+                    len(path.stem) == 64 and path.suffix == '.zst' and
+                    all(char in '0123456789abcdef' for char in path.stem))) and not any(
                       part in ('build', 'isolated-install') for part in path.relative_to(directory).parts))
 
 

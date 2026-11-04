@@ -13,7 +13,10 @@ from pathlib import Path
 import subprocess
 import time
 
-from .binary_packages import digest, write_json
+if __package__:
+    from .binary_packages import digest, write_json
+else:
+    from binary_packages import digest, write_json
 
 # Only these developer values may enter promoting sanitizer subprocesses. Tool
 # search paths, library loading, symbolizers and all sanitizer flags are owned.
@@ -85,7 +88,9 @@ class SanitizerQualification:
             raise ValueError('the selected compiler route requires an owned LLD linker')
         self.loader = Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True)
         self.output, self.sanitizer = output.resolve(), sanitizer
-        self.fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
+        self.fixtures = Path(__file__).with_name('native_sanitizer_controls')
+        if not self.fixtures.is_dir():
+            self.fixtures = Path(__file__).resolve().parents[2] / 'tests/tooling/fixtures/native_sanitizer_controls'
         self.environment = strict_environment(self.compiler, self.symbolizer,
             library_dirs=[path.parent for path in self.libraries if '.so' in path.name], base=base_environment)
         if any(self.environment.get(name) != value for name, value in OPTIONS.items()):

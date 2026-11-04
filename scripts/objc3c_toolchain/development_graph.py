@@ -26,7 +26,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         destination.parent.mkdir(parents=True, exist_ok=True)
         os.link(source.resolve(strict=True), destination)
 
-    for name in ('clang', 'clang++', 'ld.lld', 'llvm-dwarfdump'):
+    for name in ('clang', 'clang++', 'ld.lld', 'llvm-dwarfdump', 'llvm-readobj'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     link(facade, prefix / 'bin/objc3c')
     for name in ('libLLVM.so', 'libclang-cpp.so'):

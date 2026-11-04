@@ -80,6 +80,18 @@ def _mock_canonical_profiles(monkeypatch, output):
 
     monkeypatch.setattr(sanitizers, 'RuntimeProfiles', Profiles)
     monkeypatch.setattr(sanitizers, 'SanitizerQualification', Policy)
+    class Products:
+        def __init__(self, *args, **kwargs): pass
+        def record(self, gate, name, argv, rows, *, cwd, log):
+            with log.open('w') as stream:
+                result = sanitizers.subprocess.run(list(map(str, argv)), cwd=cwd,
+                    env=gate.environment, stdout=stream, stderr=sanitizers.subprocess.STDOUT)
+            rows.append({'name': name, 'exit_code': result.returncode,
+                         'log_sha256': sanitizers.digest(log)})
+            if result.returncode:
+                raise ValueError('coroutine product failed: '+name)
+        def finalize(self): pytest.fail('failed owner reached product promotion')
+    monkeypatch.setattr(sanitizers, 'ProductCommands', Products)
     return selected, controls, archive, dependency
 
 
@@ -117,9 +129,9 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch, faile
     assert '-fno-sanitize-recover=undefined' in calls[0]
     assert '-fcoro-aligned-allocation' in calls[0]
     assert '-fobjc-version=3' in calls[0] and 'objective-c++' in calls[0]
-    assert str(archive) in calls[0] and str(dependency) in calls[0]
+    assert '-c' in calls[0] and str(archive) not in calls[0] and str(dependency) not in calls[0]
     if failed_command:
-        assert calls[1] == [str(workspaces[0] / 'address-undefined-O0-arc')]
+        assert '-c' in calls[1] and any(value.endswith('client.cpp') for value in calls[1])
     assert workspaces and all(not path.exists() for path in workspaces)
     assert archive.is_file() and dependency.is_file()
     log = output / (report['commands'][-1]['name'] + '.log')

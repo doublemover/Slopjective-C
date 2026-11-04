@@ -10,11 +10,12 @@ import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
-from .runtime_instrumentation import RuntimeProfiles
+from .product_evidence import ProductCommands
+from .runtime_instrumentation import RuntimeProfiles, shared_profiles, used_receipts
 from .compiler_instrumentation import loaded_graph
 
 
-def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) -> dict:
+def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path, *, runtime_profiles=None) -> dict:
     repo, compiler_root = repo.resolve(strict=True), compiler_root.resolve(strict=True)
     resource_root, output = resource_root.resolve(strict=True), output.resolve()
     disjoint(output, compiler_root)
@@ -29,21 +30,17 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
     cases, commands = [], []
     policies = {}
     profiles = None
+    products = None
 
     def run(label, argv, environment):
         log = output / (label + '.log')
-        with log.open('w') as stream:
-            result = subprocess.run(list(map(str, argv)), env=environment, stdout=stream,
-                                    stderr=subprocess.STDOUT, timeout=180)
-        commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
-        if result.returncode:
-            raise ValueError('instrumented structured runtime failed: ' + label)
-        diagnostic = log.read_text(errors="replace")
-        require_clean_diagnostic(diagnostic)
-        return diagnostic
+        products.record(policy, label, argv, commands, cwd=work, log=log)
+        return log.read_text(errors='replace')
 
     try:
-        profiles = RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
+        products = ProductCommands(output / 'product-evidence', sources=(fixture.parent,
+            repo / 'native/objc3c/src/runtime', Path(__file__)))
+        profiles = shared_profiles(runtime_profiles, repo, compiler_root, resource_root) or RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
         for sanitizer in ('address,undefined', 'thread'):
             for optimization in ('O0', 'O2'):
                 runtime_profile = profiles.get(sanitizer, optimization, objc_runtime=None)
@@ -61,14 +58,18 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                     label = sanitizer.replace(',', '-') + '-' + optimization
                     executable = work / label
                     env = policy.environment
-                    run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
+                    common = [compiler_root / 'bin/clang++', '--no-default-config',
                         '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer', '-fno-sanitize-recover=undefined',
-                        '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
+                        '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread',
                         '-DOBJC3_ACTOR_SCHEDULING_REGRESSIONS',
-                        repo / 'tests/clang_foundation/structured_runtime/actor_scheduling.cpp',
                         '-I' + str(repo / 'native/objc3c/src'),
-                        '-I' + str(repo / 'native/objc3c/src/runtime/public'),
-                        fixture, runtime_profile.archive, '-Wl,--no-as-needed', objc_runtime, '-Wl,--as-needed',
+                        '-I' + str(repo / 'native/objc3c/src/runtime/public')]
+                    objects = []
+                    for index, source in enumerate((fixture.with_name('actor_scheduling.cpp'), fixture)):
+                        obj = work / (str(index)+'.o')
+                        run(label+'-compile-'+str(index), [*common, '-c', source, '-o', obj], env)
+                        objects.append(obj)
+                    run(label + '-link', [*common, '-fuse-ld=lld', *objects, runtime_profile.archive, '-Wl,--no-as-needed', objc_runtime, '-Wl,--as-needed',
                         '-Wl,-rpath,'+str(objc_runtime.parent), '-o', executable], env)
                     loaded = loaded_graph(executable, policy.loader, [objc_runtime],
                         required=(objc_runtime.resolve(strict=True),),
@@ -82,7 +83,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
                   'instrumentation': 'All canonical service objects and matching GNUstep dependency; threaded structured-runtime clients',
                   'executions': cases, 'commands': commands,
                   'sanitizer_policy': {mode+'-'+opt: policy.finalize() for (mode, opt), policy in policies.items()},
-                  'runtime_profiles': profiles.receipts(),
+                  'runtime_profiles': used_receipts(profiles, ('O0', 'O2')), 'product_evidence': products.finalize(),
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)
                       for path in sorted(resource_root.rglob('libclang_rt.*san*.a'))}}

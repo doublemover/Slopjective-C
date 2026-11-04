@@ -14,12 +14,13 @@ if __package__:
     from . import binary_packages as packages
     from .sdk_example import environment
     from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from .product_evidence import ProductCommands
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
     from sdk_example import environment
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from product_evidence import ProductCommands
 
 
 def configurations():
@@ -59,9 +60,14 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     if policy:
         env = policy.environment
     cases, commands = [], []
+    products = None
 
     def run(label, argv, cwd):
         log = output / (label + '.log')
+        if products:
+            products.record(policy, label, argv, commands, cwd=cwd, log=log,
+                required_libraries=() if plang == 'c' else None)
+            return log
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, argv)), cwd=cwd, env=env,
                                     stdout=stream, stderr=subprocess.STDOUT, timeout=120)
@@ -88,6 +94,8 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
         }
 
     try:
+        if policy:
+            products = ProductCommands(output / 'product-evidence', sources=(fixture, headers, Path(__file__)))
         initial_inputs = inputs()
         with tempfile.TemporaryDirectory(prefix="objc3 C async 'outside checkout ") as temporary:
             root = Path(temporary)
@@ -134,7 +142,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                     (root / 'logical_calls.m').unlink()
                     logical_objects.append(logical_object)
                 executable = root / 'client'
-                link = [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
+                link = [compiler, '--driver-mode=g++', '--no-default-config', '-fuse-ld=lld',
                         root / 'bridge.o', root / 'client.o', *logical_objects, runtime_library,
                         '-pthread', '-L' + str(sdk / 'lib'),
                         '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
@@ -182,6 +190,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                   'sanitizer': sanitizer, 'executions': len(cases), 'cases': cases,
                   'profile_conformance_claimed': False, 'commands': commands}
         if policy:
+            report['product_evidence'] = products.finalize()
             report['sanitizer_policy'] = policy.finalize()
         if inputs() != initial_inputs:
             raise ValueError('typed async C ABI inputs changed during qualification')

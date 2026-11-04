@@ -29,6 +29,7 @@ jobs:
           --execution-inventory=out/tooling/inventory.json
           --junitxml=out/tooling/results.xml
           tests/tooling/test_native_assurance.py
+          tests/tooling/test_qualification_integrity.py
           tests/tooling/test_native_assurance_bootstrap.py
           tests/tooling/test_executor_lock_qualification.py
           tests/tooling/test_pytest_execution_inventory.py
@@ -40,8 +41,13 @@ jobs:
           tests/tooling/test_compiler_instrumentation_evidence.py
           tests/tooling/test_compiler_archive_evidence.py
           tests/tooling/test_compiler_scan_graph.py
+          tests/tooling/test_implementation_analysis.py
           tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_semantic_oracles.py
+          tests/tooling/test_semantic_benchmarks.py
+          tests/tooling/test_native_sanitizer_policy.py
+          tests/tooling/test_product_command_evidence.py
+          tests/tooling/test_sanitizer_product_campaign.py
           tests/tooling/test_objc3c_toolchain_prepare.py
           tests/tooling/test_development_patch_export.py
           tests/tooling/test_toolchain_package.py

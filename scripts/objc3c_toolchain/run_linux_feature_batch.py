@@ -1,8 +1,8 @@
 """Run authored native feature witnesses against an already-built Linux compiler.
 
 This driver never builds/seals an SDK or qualifies an archive. Source and PCH
-cases compile into private temporary directories; only command logs and the
-batch report survive. All execution is explicit through this entry point.
+cases compile into private temporary directories. Sanitizer runs retain their
+exact inputs, generated artifacts and actual process evidence.
 """
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ import tempfile
 if __package__:
     from .sdk_example import environment, write_json
     from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from .product_evidence import ProductCommands
 else:
     from sdk_example import environment, write_json
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+    from product_evidence import ProductCommands
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURES = ("captures", "keypaths", "async", "isolation", "spawn")
@@ -63,9 +63,11 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
               runtime_library: Path | None = None, objc_runtime: Path | None = None,
               fixtures: Path | None = None, features=FEATURES,
               transports=("source", "pch"), sanitizer: str | None = None,
-              resource_root: Path | None = None) -> dict:
+              resource_root: Path | None = None, optimizations=('O0', 'O2')) -> dict:
     if sanitizer not in (None, "address,undefined", "thread"):
         raise ValueError("unsupported native feature sanitizer: " + sanitizer)
+    if not optimizations or any(value not in ('O0', 'O2') for value in optimizations):
+        raise ValueError('feature execution requires an explicit nonempty O0/O2 selection')
     if sanitizer and (runtime_library is None or resource_root is None):
         raise ValueError("sanitizers require an explicit instrumented runtime library and resource root")
     instrumentation = []
@@ -101,6 +103,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
         libraries=(runtime_library, objc_runtime), additional_inputs=(Path(__file__),), base_environment=env) if sanitizer else None
     if policy:
         env = policy.environment
+    products = None
     report = {"schema": "objc3c.linux-development-features.v1", "status": "running",
               "compiler": str(compiler), "runtime_library": str(runtime_library),
               "headers": str(headers), "include_root": str(include_root),
@@ -112,6 +115,9 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
     def invoke(label, argv, cwd):
         log = output / (label + ".log")
         command = list(map(str, argv))
+        if products:
+            products.record(policy, label, command, report['commands'], cwd=cwd, log=log)
+            return
         with log.open("w", encoding="utf-8") as stream:
             try:
                 completed = subprocess.run(command, cwd=cwd, env=env, stdout=stream,
@@ -169,7 +175,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
 
     def execute(case, objects, work, suffix=""):
         executable = work / ("witness" + suffix)
-        invoke(case.name + suffix + "-link", [sdk / "bin/clang++", "--no-default-config",
+        invoke(case.name + suffix + "-link", [compiler, "--driver-mode=g++", "--no-default-config",
             *instrumentation, "-fuse-ld=lld", *objects, runtime_library, objc_runtime, "-pthread",
             "-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff",
             "-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff",
@@ -177,7 +183,13 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
         invoke(case.name + suffix + "-execute", [executable], work)
 
     try:
-        for case in configurations(features, transports):
+        if policy:
+            products = ProductCommands(output / 'product-evidence',
+                sources=(fixtures, headers, include_root, Path(__file__)))
+        selected = [case for case in configurations(features, transports) if case.optimization in optimizations]
+        if not selected:
+            raise ValueError('feature execution selected no supported configurations')
+        for case in selected:
             if policy:
                 policy.ensure_controls(case.optimization)
                 report["sanitizer_policy"] = policy.receipt()
@@ -291,6 +303,7 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                 report["cases"].append({"name": case.name, "status": "pass"})
             write_json(report_path, report)
         if policy:
+            report['product_evidence'] = products.finalize()
             report["sanitizer_policy"] = policy.finalize()
         report["status"] = "pass"
     except (OSError, RuntimeError, ValueError) as error:

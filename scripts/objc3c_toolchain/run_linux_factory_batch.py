@@ -15,6 +15,7 @@ import tempfile
 
 from . import binary_packages as packages
 from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+from .product_evidence import ProductCommands
 from .qualify_native_async_packages import check_cpp_metadata, check_factory_metadata
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,11 +24,14 @@ MODULE = 'fixture.NativeAsync'
 
 def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
             objc_runtime: Path, output: Path, *, full=False, eager=False,
-            sanitizer: str | None = None, resource_root: Path | None = None) -> dict:
+            sanitizer: str | None = None, resource_root: Path | None = None,
+            optimizations=('O0', 'O2')) -> dict:
     if sanitizer not in (None, 'address,undefined', 'thread'):
         raise ValueError('unsupported sanitizer')
     if sanitizer and resource_root is None:
         raise ValueError('sanitizer checks require an explicit compiler resource root')
+    if not optimizations or any(value not in ('O0', 'O2') for value in optimizations):
+        raise ValueError('factory execution requires an explicit nonempty O0/O2 selection')
     instrumentation = []
     if resource_root is not None:
         resource_root = resource_root.resolve(strict=True)
@@ -45,6 +49,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
                       headers, ROOT / 'stdlib/include'):
         packages.disjoint(output, protected)
     output.mkdir(parents=True, exist_ok=True)
+    (output / 'qualification.json').unlink(missing_ok=True)
     inputs = {str(path): packages.digest(path) for path in
               (compiler, foundation / 'bin/clang', runtime, objc_runtime)}
     if sanitizer:
@@ -73,9 +78,13 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
         additional_inputs=(compiler, Path(__file__)), base_environment=environment) if sanitizer else None
     if policy:
         environment = policy.environment
+    products = None
 
     def run(name, command, *, expected=0):
         log = output / (name + '.log')
+        if products:
+            products.record(policy, name, command, report['commands'], cwd=work, log=log, expected=expected)
+            return log.read_text(errors='replace')
         with log.open('w') as stream:
             result = subprocess.run(list(map(str, command)), env=environment,
                                     stdout=stream, stderr=subprocess.STDOUT,
@@ -90,10 +99,15 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
         return diagnostic
 
     try:
+        if policy:
+            products = ProductCommands(output / 'product-evidence', sources=sources)
         modes = [('c++20', 'arc', 'O0')] if full else [
             (standard, ownership, optimization)
             for standard in ('c++20', 'c++23')
             for ownership in ('arc', 'mrc') for optimization in ('O0', 'O2')]
+        modes = [mode for mode in modes if mode[2] in optimizations]
+        if not modes:
+            raise ValueError('factory execution selected no supported configurations')
         for standard, ownership, optimization in modes:
             if policy:
                 policy.ensure_controls(optimization)
@@ -209,6 +223,7 @@ def qualify(sdk: Path, compiler: Path, foundation: Path, runtime: Path,
         if source_inputs != {path: packages.digest(Path(path)) for path in source_inputs}:
             raise ValueError('source/header inputs changed during qualification')
         if policy:
+            report['product_evidence'] = products.finalize()
             report['sanitizer_policy'] = policy.finalize()
         report['status'] = 'PASS'
     except Exception as error:

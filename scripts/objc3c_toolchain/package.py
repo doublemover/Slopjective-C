@@ -195,6 +195,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     for original, installed in (('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py'),
                                 ('qualify_source_graph.py', 'qualify.py'),
                                 ('binary_packages.py', 'binary_packages.py'),
+                                ('sanitizer_policy.py', 'sanitizer_policy.py'),
+                                ('llvm_ir_execution.py', 'llvm_ir_execution.py'),
+                                ('product_evidence.py', 'product_evidence.py'),
                                 ('qualify_binary_packages.py', 'qualify_binary_packages.py'),
                                 ('qualify_ownership_projections.py', 'qualify_ownership_projections.py'),
                                 ('qualify_public_surfaces.py', 'qualify_public_surfaces.py'),
@@ -219,6 +222,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_native_async_packages.py', 'qualify_native_async_packages.py'),
                                 ('qualify_typed_keypath_packages.py', 'qualify_typed_keypath_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
+    shutil.copytree(repo / 'tests/tooling/fixtures/native_sanitizer_controls',
+                    builder / 'native_sanitizer_controls')
     shutil.copyfile(repo / 'scripts/objc3c_native_validation/defer_source.py',
                     builder / 'defer_source.py')
     shutil.copyfile(repo / 'scripts/objc3c_native_validation/guard_source.py',

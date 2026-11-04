@@ -7,11 +7,11 @@ from pathlib import Path
 
 from .binary_packages import digest, disjoint, write_json
 from .qualify_async_c_abi import qualify as qualify_bridge
-from .runtime_instrumentation import RuntimeProfiles
+from .runtime_instrumentation import RuntimeProfiles, shared_profiles, used_receipts
 
 
 def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compiler: Path | None = None,
-            fixture: Path | None = None, headers: Path | None = None) -> dict:
+            fixture: Path | None = None, headers: Path | None = None, runtime_profiles=None) -> dict:
     repo, sdk, output = repo.resolve(strict=True), sdk.resolve(strict=True), output.resolve()
     resource_root = resource_root.resolve(strict=True)
     disjoint(output, sdk)
@@ -33,7 +33,7 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
     commands, results = [], []
     profiles = None
     try:
-        profiles = RuntimeProfiles(repo, compiler.resolve(strict=True).parent.parent,
+        profiles = shared_profiles(runtime_profiles, repo, compiler.parent.parent, resource_root) or RuntimeProfiles(repo, compiler.resolve(strict=True).parent.parent,
                                    resource_root, output / 'runtime-profiles')
         for sanitizer in ('address,undefined', 'thread'):
             profile = profiles.get(sanitizer, 'O1')
@@ -50,7 +50,7 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
                   'service_optimization': 'O1',
                   'executions': sum(r['executions'] for r in results),
                   'sanitizers': results, 'commands': commands,
-                  'runtime_profiles': profiles.receipts() if profiles is not None else [],
+                  'runtime_profiles': used_receipts(profiles, ('O1',)),
                   'compiler_sha256': digest(compiler.resolve()),
                   'sanitizer_resource_root': str(resource_root),
                   'sanitizer_runtime_sha256': {str(p.relative_to(resource_root)): digest(p)

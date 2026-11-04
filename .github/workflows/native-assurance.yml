@@ -89,6 +89,7 @@ jobs:
             out/native-assurance/results/**/*.json
             out/native-assurance/results/**/*.xml
             out/native-assurance/results/**/*.log
+            out/native-assurance/results/**/product-evidence/blobs/*
             !out/native-assurance/results/**/build/**
             !out/native-assurance/results/**/isolated-install/**
           if-no-files-found: error

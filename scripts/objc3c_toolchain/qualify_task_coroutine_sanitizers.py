@@ -10,7 +10,8 @@ import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic
-from .runtime_instrumentation import RuntimeProfiles
+from .product_evidence import ProductCommands
+from .runtime_instrumentation import RuntimeProfiles, shared_profiles, used_receipts
 
 
 def configurations():
@@ -20,7 +21,7 @@ def configurations():
 
 
 def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
-            *, objc_runtimes: dict[str, Path] | None = None) -> dict:
+            *, objc_runtimes: dict[str, Path] | None = None, runtime_profiles=None) -> dict:
     repo, compiler_root = repo.resolve(strict=True), compiler_root.resolve(strict=True)
     resource_root, output = resource_root.resolve(strict=True), output.resolve()
     objc_runtimes = objc_runtimes or {}
@@ -37,19 +38,16 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
     cases, commands = [], []
     policies = {}
     profiles = None
+    products = None
 
     def run(label, argv, environment, *, cwd=None):
         log = output / (label + '.log')
-        with log.open('w') as stream:
-            result = subprocess.run(list(map(str, argv)), env=environment, cwd=cwd, stdout=stream,
-                                    stderr=subprocess.STDOUT, timeout=180)
-        commands.append({'name': label, 'exit_code': result.returncode, 'log_sha256': digest(log)})
-        if result.returncode:
-            raise ValueError('instrumented task coroutines failed: ' + label)
-        require_clean_diagnostic(log.read_text(errors="replace"))
+        products.record(policy, label, argv, commands, cwd=cwd or work, log=log)
 
     try:
-        profiles = RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
+        products = ProductCommands(output / 'product-evidence', sources=(fixture,
+            repo / 'native/objc3c/src/runtime', Path(__file__)))
+        profiles = shared_profiles(runtime_profiles, repo, compiler_root, resource_root) or RuntimeProfiles(repo, compiler_root, resource_root, output / 'runtime-profiles')
         for sanitizer, optimization, ownership in configurations():
             runtime_profile = profiles.get(sanitizer, optimization, objc_runtime=objc_runtimes.get(sanitizer))
             objc_runtime = runtime_profile.objc_runtime
@@ -77,17 +75,21 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                     '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread',
                     '-I' + str(repo / 'native/objc3c/src'),
                     '-I' + str(repo / 'native/objc3c/src/runtime/public')]
-                objects = [runtime_profile.archive]
-                run(label + '-build', [*common, '-fuse-ld=lld', *flags,
-                    fixture / 'provider.cpp', fixture / 'client.cpp',
-                    '-x', 'none', *objects, objc_runtime,
+                objects = []
+                for part in ('provider', 'client'):
+                    obj = work / (part+'.o')
+                    run(label+'-'+part+'-build', [*common, *flags, '-c',
+                        fixture / (part+'.cpp'), '-o', obj], env)
+                    objects.append(obj)
+                run(label + '-link', [*common, '-fuse-ld=lld',
+                    *objects, runtime_profile.archive, objc_runtime,
                     '-Wl,-rpath,' + str(objc_runtime.parent), '-o', executable], env)
                 run(label + '-execute', [executable], env)
                 group_executable = work / (label + '-group-await')
                 run(label + '-group-await-build', [*common, '-fuse-ld=lld',
                     '-Wl,--wrap=objc3_task_group_scope_enter',
                     *flags, fixture / 'group_await.cpp',
-                    '-x', 'none', *objects, objc_runtime,
+                    '-x', 'none', runtime_profile.archive, objc_runtime,
                     '-Wl,-rpath,' + str(objc_runtime.parent), '-o', group_executable], env)
                 run(label + '-group-await-execute', [group_executable], env)
                 cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,
@@ -99,7 +101,7 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                   'instrumentation': 'All canonical service objects and matching GNUstep dependency; coroutine and group-await clients',
                   'executions': cases, 'commands': commands,
                   'sanitizer_policy': {mode+'-'+opt: policy.finalize() for (mode, opt), policy in policies.items()},
-                  'runtime_profiles': profiles.receipts(),
+                  'runtime_profiles': used_receipts(profiles, ('O0', 'O2')), 'product_evidence': products.finalize(),
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)
                       for path in sorted(resource_root.rglob('libclang_rt.*san*.a'))}}

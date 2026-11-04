@@ -13,6 +13,7 @@ from scripts.objc3c_toolchain.package import verify_sdk
 from scripts.objc3c_toolchain.qualify_ownership_projections import prepare
 from scripts.objc3c_toolchain.binary_packages import disjoint
 from scripts.objc3c_toolchain.sanitizer_policy import SanitizerQualification, require_clean_diagnostic
+from scripts.objc3c_toolchain.product_evidence import ProductCommands
 
 
 def digest(path: Path) -> str:
@@ -46,6 +47,7 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
         'address', libraries=(sdk / 'lib/libobjc.so', sdk / 'lib/libobjc3_runtime_services.a'),
         additional_inputs=(Path(__file__),))
     environment = policy.environment
+    products = None
 
     def save():
         temporary = output / '.summary.tmp'
@@ -55,19 +57,12 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
     def run(key, phase, command, cwd):
         command = list(map(str, command))
         log = output / (key + '-' + phase + '.log')
-        with log.open('w') as stream:
-            result = subprocess.run(command, cwd=cwd, env=environment, stdout=stream,
-                                    stderr=subprocess.STDOUT, timeout=180, check=False)
-        report['commands'].append({'configuration': key, 'phase': phase, 'command': command,
-                                   'exit_code': result.returncode, 'log': str(log),
-                                   'log_sha256': digest(log)})
+        products.record(policy, key+'-'+phase, command, report['commands'], cwd=cwd, log=log)
         save()
-        if result.returncode:
-            raise RuntimeError(f'{phase} failed; inspect {log}')
-        require_clean_diagnostic(log.read_text(errors='replace'))
 
     save()
     try:
+        products = ProductCommands(output / 'product-evidence', sources=(fixture, sdk / 'include', Path(__file__)))
         compiler = sdk / 'bin/objc3c'
         for language, standard in [('objective-c', 'c17'), ('objective-c++', 'c++20'),
                                     ('objective-c++', 'c++23')]:
@@ -135,6 +130,7 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
             raise ValueError('incomplete ownership sanitizer qualification')
         verify_sdk(sdk, manifest['seal_sha256'])
         report['sanitizer_policy'] = policy.finalize()
+        report['product_evidence'] = products.finalize()
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error=str(error))

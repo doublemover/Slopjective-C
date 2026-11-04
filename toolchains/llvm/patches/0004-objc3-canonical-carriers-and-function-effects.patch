@@ -18452,10 +18452,10 @@ index 000000000..ed9ca35e6
 +
 +int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 81010e046..8d5e8771c 100644
+index 81010e046..dbc7882df 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -55,3 +55,41 @@ add_clang_unittest(ASTTests
+@@ -55,3 +55,42 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -18464,6 +18464,7 @@ index 81010e046..8d5e8771c 100644
 +add_distinct_clang_unittest(ObjC3TypeContractsTests
 +  PARTIAL_SOURCES_INTENDED
 +  ObjC3TypeContractsTest.cpp
++  ObjC3DiagnosticStorageTest.cpp
 +  ObjC3CarrierTypeTest.cpp
 +  ObjC3FunctionEffectTest.cpp
 +  ObjC3IndexIdentityTest.cpp
@@ -52318,23 +52319,28 @@ index 000000000..484628105
 +    __objc3_result(int, BorrowedDerived) input) {
 +  return input; // expected-error {{borrowed pointer escapes}}
 +}
-diff --git a/clang/unittests/AST/DeclTest.cpp b/clang/unittests/AST/DeclTest.cpp
-index b95d36189..1787d52b9 100644
---- a/clang/unittests/AST/DeclTest.cpp
-+++ b/clang/unittests/AST/DeclTest.cpp
-@@ -14,6 +14,7 @@
- #include "clang/AST/ASTContext.h"
- #include "clang/AST/DeclCXX.h"
- #include "clang/AST/DeclTemplate.h"
+diff --git a/clang/unittests/AST/ObjC3DiagnosticStorageTest.cpp b/clang/unittests/AST/ObjC3DiagnosticStorageTest.cpp
+new file mode 100644
+index 000000000..73a407ec7
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3DiagnosticStorageTest.cpp
+@@ -0,0 +1,44 @@
++//===- ObjC3DiagnosticStorageTest.cpp - Embedded diagnostic lifetime tests ===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/DependentDiagnostic.h"
- #include "clang/AST/Mangle.h"
- #include "clang/ASTMatchers/ASTMatchFinder.h"
- #include "clang/ASTMatchers/ASTMatchers.h"
-@@ -31,6 +32,35 @@ using namespace clang::ast_matchers;
- using namespace clang::tooling;
- using namespace clang;
- 
-+TEST(Decl, CleansUpDependentDiagnosticStorage) {
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/ADT/SmallString.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++using namespace clang::tooling;
++
++TEST(ObjC3DiagnosticStorage, CleansUpDependentDiagnosticStorage) {
 +  // Run under LSan as well as ordinary ASTTests. Both diagnostic strings and
 +  // fix-it strings/vectors exceed inline capacity and outlive the source PDiag.
 +  auto AST = buildASTFromCode("template<class T> struct Holder {};", "input.cc");
@@ -52363,6 +52369,3 @@ index b95d36189..1787d52b9 100644
 +  AST.reset();
 +}
 +
- TEST(Decl, CleansUpAPValues) {
-   MatchFinder Finder;
-   std::unique_ptr<FrontendActionFactory> Factory(

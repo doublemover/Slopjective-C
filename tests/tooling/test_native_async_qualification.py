@@ -106,6 +106,18 @@ def _mock_canonical_profiles(monkeypatch, output):
 
     monkeypatch.setattr(sanitizers, 'RuntimeProfiles', Profiles)
     monkeypatch.setattr(sanitizers, 'SanitizerQualification', Policy)
+    class Products:
+        def __init__(self, *args, **kwargs): pass
+        def record(self, gate, name, argv, rows, *, cwd, log):
+            with log.open('w') as stream:
+                result = sanitizers.subprocess.run(list(map(str, argv)), cwd=cwd,
+                    env=gate.environment, stdout=stream, stderr=sanitizers.subprocess.STDOUT)
+            rows.append({'name': name, 'exit_code': result.returncode,
+                         'log_sha256': sanitizers.digest(log)})
+            if result.returncode:
+                raise ValueError('native async product failed: '+name)
+        def finalize(self): pytest.fail('failed owner reached product promotion')
+    monkeypatch.setattr(sanitizers, 'ProductCommands', Products)
     return selected, controls, archive, dependency
 
 

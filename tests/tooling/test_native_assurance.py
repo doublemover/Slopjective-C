@@ -47,6 +47,17 @@ def test_sdk_diagnostics_reject_run_identity_escaping_owned_output(tmp_path):
         preserve(tmp_path, tmp_path / 'evidence', {})
 
 
+def test_native_artifact_inventory_includes_retained_product_bytes(tmp_path):
+    root = tmp_path / 'sanitizers/structured/product-evidence'
+    blobs = root / 'blobs'
+    blobs.mkdir(parents=True)
+    blob = blobs / ('a'*64+'.zst')
+    blob.write_bytes(b'actual retained native input')
+    (root / 'qualification.json').write_text('{"status":"PASS"}')
+    assert blob in evidence.native_files(tmp_path / 'sanitizers')
+    assert evidence.artifact(tmp_path, blob)['bytes'] == len(b'actual retained native input')
+
+
 @pytest.mark.parametrize('paths', [[], None, ['native/objc3c/src/runtime/x.cpp'],
     ['toolchains/llvm/patches/fix.patch'], ['docs/support/evidence.md'], ['docs/contracts/language.md'],
     ['mystery.new'], ['README.md', 'tests/new.cpp'], ['native/deleted.cpp', 'docs/moved.md']])

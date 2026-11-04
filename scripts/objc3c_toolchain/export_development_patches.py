@@ -206,6 +206,7 @@ PACKETS = {
         "clang/lib/AST/ObjC3MatchNodes.cpp",
         "clang/lib/AST/DeclPrinter.cpp",
         "clang/lib/AST/DeclBase.cpp",
+        "clang/unittests/AST/ObjC3DiagnosticStorageTest.cpp",
         "clang/unittests/AST/DeclTest.cpp",
         "clang/lib/AST/Mangle.cpp",
         "clang/lib/AST/TextNodeDumper.cpp",

@@ -8,7 +8,8 @@ import pytest
 from scripts.objc3c_toolchain import sanitizer_policy as policy
 
 ROOT = Path(__file__).resolve().parents[2]
-COMPILER = ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64/bin/clang'
+COMPILER = Path(os.environ.get('OBJC3_TEST_SANITIZER_COMPILER',
+    str(ROOT / 'out/toolchains/objc3-development/stage-linux-x86_64/bin/clang')))
 RESOURCE = Path(os.environ.get('OBJC3_TEST_SANITIZER_RESOURCE',
                                str(COMPILER.parent.parent / 'lib/clang/23')))
 SYMBOLIZER = RESOURCE.parents[2] / 'bin/llvm-symbolizer'

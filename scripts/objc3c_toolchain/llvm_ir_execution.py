@@ -8,8 +8,12 @@ import signal
 import subprocess
 import time
 
-from .binary_packages import digest, write_json
-from .sanitizer_policy import require_clean_diagnostic
+if __package__:
+    from .binary_packages import digest, write_json
+    from .sanitizer_policy import require_clean_diagnostic
+else:
+    from binary_packages import digest, write_json
+    from sanitizer_policy import require_clean_diagnostic
 
 
 class StageFailure(ValueError):

@@ -1,0 +1,24 @@
+{
+  "schema": "objc3c.implementation-analysis-policy.v1",
+  "host": "linux-x86_64",
+  "tool": "objc3-clang-tidy",
+  "checks": [
+    "clang-analyzer-core.CallAndMessage",
+    "clang-analyzer-core.DivideZero",
+    "clang-analyzer-core.NullDereference",
+    "clang-analyzer-core.StackAddressEscape",
+    "clang-analyzer-core.UndefinedBinaryOperatorResult",
+    "clang-analyzer-core.uninitialized.ArraySubscript",
+    "clang-analyzer-core.uninitialized.Assign",
+    "clang-analyzer-core.uninitialized.Branch",
+    "clang-analyzer-core.uninitialized.UndefReturn",
+    "clang-analyzer-cplusplus.NewDelete",
+    "clang-analyzer-cplusplus.NewDeleteLeaks",
+    "bugprone-dangling-handle",
+    "bugprone-sizeof-expression",
+    "bugprone-use-after-move"
+  ],
+  "warnings_as_errors": "*",
+  "baseline": [],
+  "purpose": "Implementation defects in native sources and maintained Clang translation units; separate from ObjC3 language analyzer modeling"
+}
