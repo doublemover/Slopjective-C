@@ -75,8 +75,26 @@ commands, loader libraries, real header dependencies, timeout outcomes and
 per-route oracle/differential disagreement. The model/generator version and owner
 hashes bind replay inputs.
 
-The LLVM assurance workflow runs the seed bank after its compiler/IR campaign,
-reusing that exact tool/runtime bundle. The existing artifact upload retains the
+The LLVM assurance workflow runs the reviewed seed bank after its compiler/IR
+campaign, reusing that exact tool/runtime bundle. Dispatch campaigns add three
+reproducible seeds derived from the tested revision; `--seed-rotation` replays
+that expansion locally. Receipts record seeds, compile/command counts and elapsed
+command time. The existing artifact upload retains the
 semantic sources, reports, controls and reductions. This adds no schedule or SDK
 archive build. Coverage-guided frontend fuzzing, concurrent schedules and native
 platform expansion retain their own issue owners.
+
+## Completed native checkpoint
+
+The default bank passes **33 positive cases and seven controls**. The expanded
+six-seed campaign passes **63 positive cases and seven controls**, with **103
+native compilations / 401 commands**. All fourteen modeled operations and all
+four active-arm transitions for both carriers execute. The five deliberately
+wrong programs exit zero under ASan/UBSan and fail the independent oracle.
+
+Eight typed reduction trials reduce a 24-operation failure to one operation;
+a separate CLI invocation rebuilds it and reproduces the same mismatch. The
+private-body/stable-identity and stale-public-ownership controls also pass.
+The [issue inventory](../support/linux_open_issue_review.json) records the exact
+receipt hashes. These results use the admitted instrumented development tools;
+they do not qualify an SDK archive or extend the model to MRC/concurrency.

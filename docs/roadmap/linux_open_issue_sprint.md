@@ -219,7 +219,6 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
 | [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Checked executor lock pilot and shared warnings implemented; fork-matched analysis tool/TU coverage still open ([details](linux_checked_executor_locks.md)) |
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces |
-| [#8288](https://github.com/doublemover/Slopjective-C/issues/8288) | Add independent generated semantic oracles for carrier ownership, cleanup and separate compilation |
 | [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generate replayable task/group/actor schedules with independent lifetime and quiescence oracles |
 | [#8290](https://github.com/doublemover/Slopjective-C/issues/8290) | Measure current compiler and runtime source/branch coverage with complete provenance |
 | [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | Benchmark real ObjC3 semantic workloads beyond warm trivial-C command latency |
@@ -320,3 +319,25 @@ controls pass. The dedicated LLVM CI job and a real container process-layout
 preflight are implemented. Local default/corrected container and paired TSan
 controls pass; the hosted preflight also passes. Full hosted acceptance, cost and
 administrator settings remain under #8283. The remaining queue has **11 issues**.
+
+## Independent generated semantic oracle completion
+
+Issue #8288's [bounded model and executable owner](linux_generated_semantic_oracles.md)
+pass the default **33 positive cases / seven controls** and an expanded six-seed
+campaign of **63 positive cases / seven controls**. Source/PCH/source-free
+interfaces, O0/O2, ThinLTO and three reviewed C++23 transformations compare with
+independent value/lifetime/cleanup traces. Sanitizer-clean wrong-code controls,
+private-body evolution, stale ownership rejection and typed native reduction all
+pass. A fresh CLI replay reproduces the one-operation reduced failure. The
+maintained workflow owns both reviewed seeds and revision-derived dispatch seeds.
+
+Hosted clean-foundation execution exposed two orchestration defects: development
+LLVM tools were resolved before building them, and raw freshness probes lacked
+the facade's transitive interface VFS aliases. Both are repaired. The complete
+source-graph matrix passes **112 builds / 32 rejections**; the full LLVM campaign
+passes when `opt` is absent at startup and rebuilt by the owner. Failed SDK
+attempts now preserve nested diagnostic logs without retaining archives/prefixes.
+
+The current independent issue queue has **10 issues**. Historical checkpoints
+above retain their original counts. Native hosted CI and the acceptance review's
+other specific requirements remain open; accepted SDK 2.62 is unchanged.

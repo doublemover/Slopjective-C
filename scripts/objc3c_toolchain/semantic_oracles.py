@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
+import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 
 from .binary_packages import digest, write_json
@@ -18,10 +20,26 @@ from .semantic_sources import HEADER, consumer, provider
 EXPORTS = ('OracleResult', 'oracle_make', 'oracle_value', 'oracle_alive', 'oracle_destroyed', 'oracle_step')
 
 
+def seed_bank(seeds, rotation=''):
+    """Keep the reviewed bank and add reproducible bounded long-campaign seeds."""
+    if rotation:
+        if not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', rotation):
+            raise ValueError('seed rotation requires the exact tested revision')
+        seeds = [*seeds, *(int.from_bytes(hashlib.sha256((rotation+':'+str(i)).encode()).digest()[:4], 'big')
+                            for i in range(3))]
+    return tuple(dict.fromkeys(seeds))
+
+
 def source_bundle(program, output: Path, *, transport='source', relation='', mutant='', bias=0,
                   optimization='O2', standard='c++20', sanitized=False, expected_mismatch=None):
-    output.mkdir(parents=True, exist_ok=False)
     validate(program)
+    if (transport not in ('source', 'pch', 'interface') or optimization not in ('O0', 'O2', 'thinlto') or
+            standard not in ('c++20', 'c++23') or relation not in ('', 'rename', 'comments', 'pure-grouping') or
+            mutant not in ('', 'tag', 'defer', 'destructor', 'provider', 'error') or
+            type(bias) is not int or bias not in (0, 1) or type(sanitized) is not bool or
+            expected_mismatch not in (None, 'value-or-lifetime', 'cleanup-order')):
+        raise ValueError('unsupported semantic program configuration')
+    output.mkdir(parents=True, exist_ok=False)
     write_json(output / 'program.json', {'model_version': VERSION, 'operations': [asdict(op) for op in program],
         'expected': interpret(program, bias=bias), 'transform': relation, 'mutant': mutant, 'provider_bias': bias,
         'transport': transport, 'optimization': optimization, 'standard': standard,
@@ -291,7 +309,10 @@ def qualify(repo: Path, output: Path, *, facade: Path, services: Path, runtime: 
         if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
             raise ValueError('semantic campaign input changed during execution')
         campaign.report.update(status='PASS', expected_cases=expected,
-            semantic_coverage=coverage([generate(seed) for seed in seeds]))
+            seeds=list(seeds), semantic_coverage=coverage([generate(seed) for seed in seeds]),
+            metrics={'commands': len(campaign.report['commands']),
+                'native_compilations': sum(row['stage'].startswith('frontend') for row in campaign.report['commands']),
+                'command_seconds': round(sum(row['seconds'] for row in campaign.report['commands']), 6)})
     except (OSError, ValueError) as error:
         if campaign is None:
             receipt = output / 'qualification.json'
@@ -317,20 +338,30 @@ def replay(repo: Path, output: Path, document: Path, *, facade: Path, services: 
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('semantic replay needs fresh owned evidence')
     output.mkdir(parents=True)
-    campaign = Campaign(repo, output, facade, services, runtime)
-    campaign.report['subject'] = 'semantic-failure-replay'
+    campaign = None
     try:
+        campaign = Campaign(repo, output, facade, services, runtime)
+        campaign.report['subject'] = 'semantic-failure-replay'
         campaign.case('replay', program, transport=record.get('transport', 'source'),
             optimization=record.get('optimization', 'O2'), standard=record.get('standard', 'c++20'),
             relation=record.get('transform', ''), mutant=record.get('mutant', ''),
             bias=record.get('bias', record.get('provider_bias', 0)), sanitized=record.get('sanitized', False),
             expected_mismatch=record.get('mismatch', record.get('expected_mismatch')))
+        if any(digest(Path(path)) != signature for path, signature in campaign.inputs.items()):
+            raise ValueError('semantic replay input changed during execution')
         campaign.report.update(status='PASS', reproduced_mismatch=record.get('mismatch', record.get('expected_mismatch')))
     except (OSError, ValueError) as error:
-        campaign.report.update(status='FAIL', error=str(error))
+        if campaign is None:
+            receipt = output / 'qualification.json'
+            report = json.loads(receipt.read_text()) if receipt.exists() else {}
+            report.update(status='FAIL', error=str(error), classification='infrastructure')
+            write_json(receipt, report)
+        else:
+            campaign.report.update(status='FAIL', error=str(error))
         raise
     finally:
-        campaign.executor.save()
+        if campaign is not None:
+            campaign.executor.save()
     return campaign.report
 
 
@@ -344,6 +375,7 @@ def main(argv=None):
     parser.add_argument('--ir-receipt', type=Path, help='use a complete matched IR campaign tool/runtime bundle')
     parser.add_argument('--program-json', type=Path, help='replay a retained typed program or reduction')
     parser.add_argument('--seeds', nargs='+', type=int, default=[7, 19, 41])
+    parser.add_argument('--seed-rotation', default='', help='add three deterministic seeds bound to a tested revision')
     args = parser.parse_args(argv)
     if args.ir_receipt:
         ir = json.loads(args.ir_receipt.read_text())
@@ -364,7 +396,7 @@ def main(argv=None):
                         services=args.services, runtime=args.runtime)
     else:
         result = qualify(args.repo, args.output, facade=args.facade, services=args.services,
-                         runtime=args.runtime, seeds=tuple(args.seeds))
+                         runtime=args.runtime, seeds=seed_bank(args.seeds, args.seed_rotation))
     print(json.dumps({'status': result['status'], 'cases': len(result['cases']), 'controls': len(result['controls'])}))
 
 

@@ -4,7 +4,7 @@ import copy
 import pytest
 
 from scripts.objc3c_toolchain.semantic_model import OPERATIONS, Operation as Op, coverage, generate, interpret, mismatch, transform, validate
-from scripts.objc3c_toolchain.semantic_oracles import shrink
+from scripts.objc3c_toolchain.semantic_oracles import seed_bank, shrink, source_bundle
 from scripts.objc3c_toolchain.semantic_sources import consumer
 
 
@@ -85,3 +85,24 @@ def test_typed_shrinking_preserves_the_specific_mismatch_and_rejects_unrelated_f
     reduced = shrink(original, predicate, 'value-or-lifetime')
     assert len(reduced) == 1 and reduced[0].kind == 'err'
     assert original == generate(7) and len(calls) > 1
+
+
+@pytest.mark.parametrize('configuration', [dict(transport='cache-fallback'), dict(optimization='O3'),
+    dict(standard='c++17'), dict(relation='reverse'), dict(mutant='unknown'), dict(bias=True),
+    dict(bias=20), dict(sanitized=1), dict(expected_mismatch='compiler-crash')])
+def test_replay_configuration_rejects_unsupported_routes_before_creating_outputs(tmp_path, configuration):
+    output = tmp_path / 'case'
+    with pytest.raises(ValueError, match='configuration'):
+        source_bundle(generate(7), output, **configuration)
+    assert not output.exists()
+
+
+def test_long_campaign_seeds_are_bounded_reproducible_and_keep_the_reviewed_bank():
+    seeds = seed_bank([7, 19, 41], 'a'*40)
+    assert seeds[:3] == (7, 19, 41) and len(seeds) == 6
+    assert seeds == seed_bank([7, 19, 41], 'a'*40)
+    assert seeds != seed_bank([7, 19, 41], 'b'*40)
+    for seed in seeds:
+        validate(generate(seed))
+    with pytest.raises(ValueError, match='tested revision'):
+        seed_bank([7], 'HEAD')

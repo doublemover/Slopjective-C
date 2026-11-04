@@ -116,7 +116,8 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8288",
       "category": "assurance",
       "body_sha256": "365414cb3d07c9a4a7bfe66c2e17c3d801da5058f1a137728d1aedf7df59a055",
-      "status": "independent-model-and-native-lane-implemented-qualification-in-progress",
+      "status": "fixed-and-source-validated",
+      "implementation_commit": "5bf99bbee1f45cde5cf3f50a8f69d8883e83b41c",
       "implementation": "docs/roadmap/linux_generated_semantic_oracles.md"
     },
     {
@@ -482,7 +483,7 @@
   ],
   "implementation_commit": "4c1754c20f913a655435444d1ddd19ebd0ad4ecb",
   "fixed_in_this_batch": [8280, 8281, 8293, 8294, 8297, 8298, 8305, 8322, 8323, 8324, 8325, 8326],
-  "remaining_implementation_or_host_items": 12,
+  "remaining_implementation_or_host_items": 10,
   "source_inputs": {
     "native/objc3c/cmake/Objc3ClangFoundation.cmake": "0f69df50a152601d37a5d24f3297ad93f853d99aed805b53cef58263aa2005a7",
     "native/objc3c/src/clang_foundation/CMakeLists.txt": "18b5ed3fc8e6ff9a1a85e9bf70cd4882cfbc28eecc0c75f199a34a2768951980",
@@ -1075,6 +1076,55 @@
     "md5_native_regressions": 4,
     "hosted_execution": "Process-layout preflight passes; cold complete campaign is running.",
     "expensive_checks": "Resource-constrained; no expensive-check build or SDK archive qualification claimed."
+  },
+  "generated_semantic_oracles": {
+    "status": "PASS",
+    "model_version": 1,
+    "profile": "Linux x86-64 Objective-C++20/23 ARC; scalar carriers and explicitly sequenced logical ownership/cleanup",
+    "default_positive_cases": 33,
+    "expanded_positive_cases": 63,
+    "controls": 7,
+    "expanded_seeds": [7, 19, 41, 3733196313, 2586782689, 2778965653],
+    "native_compilations": 103,
+    "commands": 401,
+    "typed_reduction_trials": 8,
+    "original_operations": 24,
+    "reduced_operations": 1,
+    "receipts": {
+      "expanded_campaign": {
+        "path": "out/generated-semantic-oracles-rotated/qualification.json",
+        "sha256": "707df735372a16acd7a1a06eee20a6ac78e0545cdddc59fbcd3094bf87f77ee1"
+      },
+      "reduction": {
+        "path": "out/generated-semantic-oracles-rotated/reduction.json",
+        "sha256": "5a5ecb99d37ac7932518581a675bf2cc571e5d158a5c409ab95a8a47a20fb80e"
+      },
+      "fresh_cli_replay": {
+        "path": "out/generated-semantic-oracle-replay-final/qualification.json",
+        "sha256": "05484ed656f51a83842ef2f07da9dc2757dbeb989216c106b60dda8ce7e63df5"
+      }
+    },
+    "boundaries": "MRC adaptation, raw ARC retain/copy counts, concurrency and full language conformance are outside the initial model. No SDK archive rebuilt."
+  },
+  "clean_host_ci_repairs": {
+    "implementation_commit": "277d14b64a3042c9118b6132a1117901195a17c4",
+    "source_graph_builds": 112,
+    "source_graph_rejections": 32,
+    "receipts": {
+      "source_graph": {
+        "path": "out/source-graph-ci-fixed/full-evidence/qualification.json",
+        "sha256": "954213f706dff2aa5267987de290b25493af02635f87a3db266b3782e32aed0d"
+      },
+      "missing_opt_campaign": {
+        "path": "out/nov04-cold-development-tools-campaign/qualification.json",
+        "sha256": "f1c6e3182cd98022d34b352a255509663c72d3f464e18bcf59b0d2d8d2df61ed"
+      },
+      "missing_opt_control": {
+        "path": "out/nov04-cold-development-tools-control.json",
+        "sha256": "aeef5ef17cf7f77104f1caf98d794c2000399846598bf82cb9b1168283fb7d56"
+      }
+    },
+    "hosted_status": "Both full workflows are executing on 277d14b64; 5bf99bbee full workflows are queued. Tooling/documentation/policy pass on both revisions."
   },
   "checked_executor_lock_pilot": {
     "status": "PASS",

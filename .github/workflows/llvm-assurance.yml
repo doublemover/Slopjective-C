@@ -6,6 +6,8 @@ on:
       - scripts/objc3c_toolchain/llvm_*.py
       - scripts/objc3c_toolchain/compiler_instrumentation.py
       - scripts/objc3c_toolchain/sanitizer_policy.py
+      - scripts/objc3c_toolchain/semantic_*.py
+      - tests/tooling/test_semantic_oracles.py
       - toolchains/llvm/**
       - native/objc3c/**
       - stdlib/**
@@ -60,7 +62,11 @@ jobs:
           source /opt/objc3c-host/activate.sh
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           export OBJC3C_BOOTSTRAP_LLVM_ROOT=/opt/objc3c-host/llvm-23.1.3
-          python3 -B -m scripts.objc3c_toolchain.semantic_oracles --ir-receipt out/llvm-assurance/ir/qualification.json --output out/llvm-assurance/semantic-oracles
+          seeds=()
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            seeds=(--seed-rotation "$GITHUB_SHA")
+          fi
+          python3 -B -m scripts.objc3c_toolchain.semantic_oracles --ir-receipt out/llvm-assurance/ir/qualification.json --output out/llvm-assurance/semantic-oracles "${seeds[@]}"
       - name: Retain LLVM diagnostics and reproducible inputs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
