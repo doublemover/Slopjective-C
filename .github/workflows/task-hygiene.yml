@@ -44,6 +44,7 @@ jobs:
           tests/tooling/test_implementation_analysis.py
           tests/tooling/test_analysis_checkpoint.py
           tests/tooling/test_source_coverage.py
+          tests/tooling/test_codec_fuzz.py
           tests/tooling/test_runtime_schedule_model.py
           tests/tooling/test_llvm_ir_assurance.py
           tests/tooling/test_semantic_oracles.py
