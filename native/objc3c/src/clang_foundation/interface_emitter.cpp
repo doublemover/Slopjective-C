@@ -27,6 +27,7 @@
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/AST/DynamicRecursiveASTVisitor.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/LangStandard.h"
@@ -850,21 +851,24 @@ bool IsExpressionLocalTag(const clang::TagDecl *declaration) {
   return false;
 }
 
+// Identity probes share Clang's dynamic walk instead of instantiating its full
+// CRTP traversal for each probe. Visitors that customize queue/walk-up semantics
+// retain RecursiveASTVisitor below.
 // Bind spelling, typed native nodes and every resolved reference. Text alone
 // cannot distinguish identically spelled defaults that select different overloads.
 // Length delimiters keep user strings from introducing synthetic identity fields.
 std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool native) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return {};
-  struct Attributes:clang::RecursiveASTVisitor<Attributes> {
+  struct Attributes:clang::DynamicRecursiveASTVisitor {
     bool native;
     explicit Attributes(bool native):native(native){}
     std::string key;
     unsigned ordinal=0;
     std::set<const clang::Decl *> visited;
-    bool TraverseStmt(clang::Stmt *) {return true;}
-    bool TraverseDecl(clang::Decl *declaration) {
+    bool TraverseStmt(clang::Stmt *) override {return true;}
+    bool TraverseDecl(clang::Decl *declaration) override {
       if (!declaration || declaration->isImplicit() || !visited.insert(declaration).second) return true;
-      if (!clang::RecursiveASTVisitor<Attributes>::TraverseDecl(declaration)) return false;
+      if (!clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration)) return false;
       const auto *named=llvm::dyn_cast<clang::NamedDecl>(declaration);
       if (!named) return true;
       std::vector<const clang::NamedDecl *> extra;
@@ -883,7 +887,7 @@ std::string DeclarationAttributeKey(const clang::NamedDecl *declaration,bool nat
         if (!TraverseDecl(const_cast<clang::NamedDecl *>(child))) return false;
       return true;
     }
-    bool VisitNamedDecl(clang::NamedDecl *declaration) {
+    bool VisitNamedDecl(clang::NamedDecl *declaration) override {
       const auto slot=ordinal++;
       // ASTImporter can merge the same inherited contract from several
       // redeclarations. Identical metadata is one semantic contract.
@@ -925,7 +929,7 @@ const clang::CoroutineBodyStmt *PublishedCxxCoroutine(const clang::FunctionDecl 
 // Keep the written body independent of compiler-generated frame temporaries.
 // Resolved promise/awaiter customization points get a separate dependency key.
 std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::FunctionDecl *function) {
-  struct References final : clang::RecursiveASTVisitor<References> {
+  struct References final : clang::DynamicRecursiveASTVisitor {
     const clang::ASTContext &context;
     explicit References(const clang::ASTContext &context):context(context){}
     std::map<std::string,const clang::NamedDecl *> declarations;
@@ -945,8 +949,8 @@ std::vector<const clang::NamedDecl *> CxxCoroutineReferences(const clang::Functi
       }
       declarations.emplace(ReadInterfaceDeclarationStableId(declaration),declaration);
     }
-    bool VisitCallExpr(clang::CallExpr *expression) {Add(expression->getDirectCallee());return true;}
-    bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) {Add(expression->getConstructor());return true;}
+    bool VisitCallExpr(clang::CallExpr *expression) override {Add(expression->getDirectCallee());return true;}
+    bool VisitCXXConstructExpr(clang::CXXConstructExpr *expression) override {Add(expression->getConstructor());return true;}
   } references(function->getASTContext());
   if (const auto *body=PublishedCxxCoroutine(function))
     references.TraverseStmt(const_cast<clang::CoroutineBodyStmt *>(body));
@@ -1463,12 +1467,12 @@ std::string FunctionTemplateConstraintKey(const clang::FunctionTemplateDecl *pat
   auto &context = pattern->getASTContext();
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.PrintAsCanonical = policy.FullyQualifiedName = true;
-  struct Parameters : clang::RecursiveASTVisitor<Parameters> {
+  struct Parameters : clang::DynamicRecursiveASTVisitor {
     clang::ASTContext &context;
     std::map<const clang::DeclContext *, unsigned> scopes;
     std::map<clang::NamedDecl *, clang::DeclarationName> saved;
     explicit Parameters(clang::ASTContext &context) : context(context) {}
-    bool VisitParmVarDecl(clang::ParmVarDecl *parameter) {
+    bool VisitParmVarDecl(clang::ParmVarDecl *parameter) override {
       if (saved.count(parameter)) return true;
       auto [scope, inserted] = scopes.emplace(parameter->getDeclContext(), scopes.size());
       saved.emplace(parameter, parameter->getDeclName());
@@ -1476,7 +1480,7 @@ std::string FunctionTemplateConstraintKey(const clang::FunctionTemplateDecl *pat
           "_" + std::to_string(parameter->getFunctionScopeIndex())));
       return true;
     }
-    bool VisitNamedDecl(clang::NamedDecl *parameter) {
+    bool VisitNamedDecl(clang::NamedDecl *parameter) override {
       unsigned depth=0,index=0;
       const char *kind=nullptr;
       if (const auto *type=llvm::dyn_cast<clang::TemplateTypeParmDecl>(parameter)) {
@@ -1493,7 +1497,7 @@ std::string FunctionTemplateConstraintKey(const clang::FunctionTemplateDecl *pat
       }
       return true;
     }
-    bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
+    bool VisitDeclRefExpr(clang::DeclRefExpr *expression) override {
       if (auto *parameter = llvm::dyn_cast<clang::ParmVarDecl>(expression->getDecl()))
         VisitParmVarDecl(parameter);
       return true;
@@ -1594,13 +1598,13 @@ std::string UnnamedTemplateTagKey(const clang::TagDecl *tag,const clang::ASTCont
 }
 
 std::string UnnamedTemplateTypeKey(clang::QualType type,const clang::ASTContext &context) {
-  struct Origins:clang::RecursiveASTVisitor<Origins> {
+  struct Origins:clang::DynamicRecursiveASTVisitor {
     const clang::ASTContext &context;std::string key;
     explicit Origins(const clang::ASTContext &context):context(context) {}
-    bool TraverseType(clang::QualType type,bool qualifier=true) {
-      return type.isNull() || clang::RecursiveASTVisitor<Origins>::TraverseType(type.getCanonicalType(),qualifier);
+    bool TraverseType(clang::QualType type,bool qualifier=true) override {
+      return type.isNull() || clang::DynamicRecursiveASTVisitor::TraverseType(type.getCanonicalType(),qualifier);
     }
-    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) override {
       if(argument.getKind()==clang::TemplateArgument::Integral)return TraverseType(argument.getIntegralType());
       if(argument.getKind()==clang::TemplateArgument::NullPtr)return TraverseType(argument.getNullPtrType());
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)return TraverseType(argument.getStructuralValueType());
@@ -1617,9 +1621,9 @@ std::string UnnamedTemplateTypeKey(clang::QualType type,const clang::ASTContext 
         }
         return true;
       }
-      return clang::RecursiveASTVisitor<Origins>::TraverseTemplateArgument(argument);
+      return clang::DynamicRecursiveASTVisitor::TraverseTemplateArgument(argument);
     }
-    bool VisitTagType(clang::TagType *type) {
+    bool VisitTagType(clang::TagType *type) override {
       const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(type->getDecl());
       const auto origin=UnnamedTemplateTagKey(type->getDecl(),context);
       if(!origin.empty())key+=std::to_string(origin.size())+":"+origin;
@@ -2429,9 +2433,9 @@ bool IsConcreteFriend(const clang::FriendDecl *declaration) {
       (!function->isDefaulted() || IsInClassDefaultedComparison(function));
 }
 
-class LambdaExpressionFinder final : public clang::RecursiveASTVisitor<LambdaExpressionFinder> {
+class LambdaExpressionFinder final : public clang::DynamicRecursiveASTVisitor {
 public:
-  bool VisitLambdaExpr(clang::LambdaExpr *expression) { found = true;generic |= expression->isGenericLambda();return true; }
+  bool VisitLambdaExpr(clang::LambdaExpr *expression) override { found = true;generic |= expression->isGenericLambda();return true; }
   bool found = false;
   bool generic = false;
 };
@@ -2500,9 +2504,9 @@ bool HasPublishedExpression(const clang::NamedDecl *declaration, const Predicate
 }
 bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
-    struct Literals : clang::RecursiveASTVisitor<Literals> {
+    struct Literals : clang::DynamicRecursiveASTVisitor {
       bool found=false;
-      bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) {
+      bool VisitCompoundLiteralExpr(clang::CompoundLiteralExpr *literal) override {
         found |= clang::hasObjC3NullableKeyPathWrite(literal);return true;
       }
     } visitor;
@@ -2525,14 +2529,14 @@ bool IsPublishedDeducedFactory(const clang::FunctionDecl *function) {
 
 std::vector<const clang::TagDecl *> PublishedFactoryResults(const clang::FunctionDecl *function) {
   if(!IsPublishedDeducedFactory(function))return {};
-  struct Results:clang::RecursiveASTVisitor<Results> {
+  struct Results:clang::DynamicRecursiveASTVisitor {
     const clang::FunctionDecl *function;
     std::vector<const clang::TagDecl *> tags;
     explicit Results(const clang::FunctionDecl *function):function(function) {}
-    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
-      return type.isNull() || clang::RecursiveASTVisitor<Results>::TraverseType(type.getCanonicalType(),traverse_qualifier);
+    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) override {
+      return type.isNull() || clang::DynamicRecursiveASTVisitor::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
-    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) override {
       if(argument.getKind()==clang::TemplateArgument::Integral)return TraverseType(argument.getIntegralType());
       if(argument.getKind()==clang::TemplateArgument::NullPtr)return TraverseType(argument.getNullPtrType());
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)return TraverseType(argument.getStructuralValueType());
@@ -2540,9 +2544,9 @@ std::vector<const clang::TagDecl *> PublishedFactoryResults(const clang::Functio
         if(const auto *object=llvm::dyn_cast<clang::TemplateParamObjectDecl>(argument.getAsDecl()))return TraverseType(object->getType());
         return TraverseType(argument.getParamTypeForDecl());
       }
-      return clang::RecursiveASTVisitor<Results>::TraverseTemplateArgument(argument);
+      return clang::DynamicRecursiveASTVisitor::TraverseTemplateArgument(argument);
     }
-    bool VisitTagType(clang::TagType *type) {
+    bool VisitTagType(clang::TagType *type) override {
       const auto *tag=type->getDecl();
       if(tag->getDefinition() && IsExpressionLocalTag(tag))
         for(const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
@@ -2571,9 +2575,9 @@ const clang::CXXRecordDecl *PublishedClosureResult(const clang::FunctionDecl *fu
 
 bool HasDeclarationLocalFactoryResult(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
-    struct Finder:clang::RecursiveASTVisitor<Finder> {
+    struct Finder:clang::DynamicRecursiveASTVisitor {
       bool found=false;
-      bool VisitTagDecl(clang::TagDecl *tag) {
+      bool VisitTagDecl(clang::TagDecl *tag) override {
         if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag);record && record->isLambda())return true;
         for (const auto *scope=tag->getDeclContext();scope;scope=scope->getParent())
           if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
@@ -2690,14 +2694,14 @@ std::string FactoryOriginKey(const clang::FunctionDecl *function) {
 }
 
 std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context,FactoryTypeFeatures *features) {
-  struct Origins:clang::RecursiveASTVisitor<Origins>,FactoryTypeFeatures {
+  struct Origins:clang::DynamicRecursiveASTVisitor,FactoryTypeFeatures {
     const clang::ASTContext &context;
     std::string key;
     explicit Origins(const clang::ASTContext &context):context(context) {}
-    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
-      return type.isNull() || clang::RecursiveASTVisitor<Origins>::TraverseType(type.getCanonicalType(),traverse_qualifier);
+    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) override {
+      return type.isNull() || clang::DynamicRecursiveASTVisitor::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
-    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) override {
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)
         return TraverseType(argument.getStructuralValueType());
       if(argument.getKind()==clang::TemplateArgument::Declaration) {
@@ -2705,9 +2709,9 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
           return TraverseType(object->getType());
         return TraverseType(argument.getParamTypeForDecl());
       }
-      return clang::RecursiveASTVisitor<Origins>::TraverseTemplateArgument(argument);
+      return clang::DynamicRecursiveASTVisitor::TraverseTemplateArgument(argument);
     }
-    bool VisitTagType(clang::TagType *type) {
+    bool VisitTagType(clang::TagType *type) override {
       const auto *tag=type->getDecl();
       if(const auto *factory=FactoryResultOrigin(tag)) {
         if(const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(tag))closure |= record->isLambda();
@@ -2744,12 +2748,12 @@ std::string FactoryTypeKey(clang::QualType type,const clang::ASTContext &context
 }
 
 bool HasOnlyProjectedLocalTypes(clang::QualType type) {
-  struct Qualified:clang::RecursiveASTVisitor<Qualified> {
+  struct Qualified:clang::DynamicRecursiveASTVisitor {
     bool valid=true;
-    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) {
-      return type.isNull() || clang::RecursiveASTVisitor<Qualified>::TraverseType(type.getCanonicalType(),traverse_qualifier);
+    bool TraverseType(clang::QualType type,bool traverse_qualifier=true) override {
+      return type.isNull() || clang::DynamicRecursiveASTVisitor::TraverseType(type.getCanonicalType(),traverse_qualifier);
     }
-    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) {
+    bool TraverseTemplateArgument(const clang::TemplateArgument &argument) override {
       if(argument.getKind()==clang::TemplateArgument::StructuralValue)
         return TraverseType(argument.getStructuralValueType());
       if(argument.getKind()==clang::TemplateArgument::Declaration) {
@@ -2757,9 +2761,9 @@ bool HasOnlyProjectedLocalTypes(clang::QualType type) {
           return TraverseType(object->getType());
         return TraverseType(argument.getParamTypeForDecl());
       }
-      return clang::RecursiveASTVisitor<Qualified>::TraverseTemplateArgument(argument);
+      return clang::DynamicRecursiveASTVisitor::TraverseTemplateArgument(argument);
     }
-    bool VisitTagType(clang::TagType *type) {
+    bool VisitTagType(clang::TagType *type) override {
       const auto *tag=type->getDecl();
       if(IsExpressionLocalTag(tag) || (!tag->getIdentifier() && !tag->getTypedefNameForAnonDecl()))
         valid &= FactoryResultOrigin(tag)!=nullptr ||
@@ -2811,24 +2815,24 @@ bool HasFactoryValueArgument(const clang::TemplateArgument &argument,const clang
 
 std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return {};
-  struct References:clang::RecursiveASTVisitor<References> {
+  struct References:clang::DynamicRecursiveASTVisitor {
     std::string key;
-    bool TraverseStmt(clang::Stmt *) {return true;}
-    bool TraverseDecl(clang::Decl *declaration) {
+    bool TraverseStmt(clang::Stmt *) override {return true;}
+    bool TraverseDecl(clang::Decl *declaration) override {
       return !declaration || declaration->isImplicit() ||
-          clang::RecursiveASTVisitor<References>::TraverseDecl(declaration);
+          clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration);
     }
     void Add(clang::QualType type,const clang::ASTContext &context) {
       const auto origins=FactoryTypeKey(type,context);
       if(!origins.empty())key+=std::to_string(origins.size())+":"+origins;
     }
-    bool VisitValueDecl(clang::ValueDecl *declaration) {
+    bool VisitValueDecl(clang::ValueDecl *declaration) override {
       Add(declaration->getType(),declaration->getASTContext());return true;
     }
-    bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) {
+    bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) override {
       Add(declaration->getUnderlyingType(),declaration->getASTContext());return true;
     }
-    bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
+    bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) override {
       if(declaration->isCompleteDefinition())
         for(const auto &base:declaration->bases())
           Add(base.getType(),declaration->getASTContext());
@@ -2840,18 +2844,18 @@ std::string FactoryDeclarationTypeKey(const clang::NamedDecl *declaration) {
 
 std::string UnnamedTemplateDeclarationTypeKey(const clang::NamedDecl *declaration) {
   if(llvm::isa<clang::NamespaceDecl>(declaration))return {};
-  struct References:clang::RecursiveASTVisitor<References> {
+  struct References:clang::DynamicRecursiveASTVisitor {
     std::string key;
-    bool TraverseStmt(clang::Stmt *) {return true;}
-    bool TraverseDecl(clang::Decl *declaration) {
+    bool TraverseStmt(clang::Stmt *) override {return true;}
+    bool TraverseDecl(clang::Decl *declaration) override {
       return !declaration || declaration->isImplicit() ||
-          clang::RecursiveASTVisitor<References>::TraverseDecl(declaration);
+          clang::DynamicRecursiveASTVisitor::TraverseDecl(declaration);
     }
     void Add(clang::QualType type,const clang::ASTContext &context) {
       const auto origins=UnnamedTemplateTypeKey(type,context);
       if(!origins.empty())key+=std::to_string(origins.size())+":"+origins;
     }
-    bool VisitValueDecl(clang::ValueDecl *declaration) {
+    bool VisitValueDecl(clang::ValueDecl *declaration) override {
       // The enclosing function type already binds each parameter. TypeLoc-only
       // parameter declarations are source sugar omitted by ASTImporter.
       if(!llvm::isa<clang::ParmVarDecl>(declaration))Add(declaration->getType(),declaration->getASTContext());
@@ -2876,30 +2880,30 @@ std::string UnnamedTemplateDeclarationTypeKey(const clang::NamedDecl *declaratio
       default:break;
       }
     }
-    bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl *declaration) {
+    bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl *declaration) override {
       if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
       return true;
     }
-    bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl *declaration) {
+    bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl *declaration) override {
       if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
       return true;
     }
-    bool VisitTemplateTemplateParmDecl(clang::TemplateTemplateParmDecl *declaration) {
+    bool VisitTemplateTemplateParmDecl(clang::TemplateTemplateParmDecl *declaration) override {
       if(declaration->hasDefaultArgument())AddArgument(declaration->getDefaultArgument().getArgument(),declaration->getASTContext());
       return true;
     }
-    bool VisitObjCMethodDecl(clang::ObjCMethodDecl *declaration) {
+    bool VisitObjCMethodDecl(clang::ObjCMethodDecl *declaration) override {
       Add(declaration->getReturnType(),declaration->getASTContext());
       for(const auto *parameter:declaration->parameters())Add(parameter->getType(),declaration->getASTContext());
       return true;
     }
-    bool VisitObjCPropertyDecl(clang::ObjCPropertyDecl *declaration) {
+    bool VisitObjCPropertyDecl(clang::ObjCPropertyDecl *declaration) override {
       Add(declaration->getType(),declaration->getASTContext());return true;
     }
-    bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) {
+    bool VisitTypedefNameDecl(clang::TypedefNameDecl *declaration) override {
       Add(declaration->getUnderlyingType(),declaration->getASTContext());return true;
     }
-    bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) {
+    bool VisitCXXRecordDecl(clang::CXXRecordDecl *declaration) override {
       if(declaration->isCompleteDefinition())
         for(const auto &base:declaration->bases())
           Add(base.getType(),declaration->getASTContext());
@@ -2915,9 +2919,9 @@ bool HasDeclarationFactoryTypeProjection(const clang::NamedDecl *declaration) {
 
 bool HasDeclarationClosureFactory(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
-    struct Finder:clang::RecursiveASTVisitor<Finder> {
+    struct Finder:clang::DynamicRecursiveASTVisitor {
       bool found=false;
-      bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override {
         for (const auto *scope=expression->getLambdaClass()->getDeclContext();scope;scope=scope->getParent())
           if (const auto *owner=llvm::dyn_cast<clang::FunctionDecl>(scope)) {
             found |= PublishedClosureResult(owner)==expression->getLambdaClass();break;
@@ -2931,9 +2935,9 @@ bool HasDeclarationClosureFactory(const clang::NamedDecl *declaration) {
 
 bool HasDeclarationEffectfulLambda(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
-    struct Finder:clang::RecursiveASTVisitor<Finder> {
+    struct Finder:clang::DynamicRecursiveASTVisitor {
       bool found=false;
-      bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override {
         const auto effects=ReadCanonicalFunctionEffects(expression->getCallOperator()->getType(),expression->getLambdaClass()->getASTContext());
         found |= effects.is_async || effects.is_throwing;return true;
       }
@@ -2944,11 +2948,11 @@ bool HasDeclarationEffectfulLambda(const clang::NamedDecl *declaration) {
 
 bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
   if (llvm::isa<clang::ConceptDecl>(declaration)) return true;
-  struct References : clang::RecursiveASTVisitor<References> {
+  struct References : clang::DynamicRecursiveASTVisitor {
     bool found = false;
-    bool TraverseConceptReference(clang::ConceptReference *reference) {
+    bool TraverseConceptReference(clang::ConceptReference *reference) override {
       found |= reference != nullptr;
-      return clang::RecursiveASTVisitor<References>::TraverseConceptReference(reference);
+      return clang::DynamicRecursiveASTVisitor::TraverseConceptReference(reference);
     }
   } visitor;
   if (llvm::isa<clang::TemplateDecl>(declaration) ||
@@ -2988,14 +2992,14 @@ bool HasDeclarationGenericLambda(const clang::NamedDecl *declaration) {
   });
 }
 
-class LocalExpressionFinder final : public clang::RecursiveASTVisitor<LocalExpressionFinder> {
+class LocalExpressionFinder final : public clang::DynamicRecursiveASTVisitor {
 public:
-  bool VisitBlockExpr(clang::BlockExpr *) { blocks = true; return true; }
-  bool VisitVarDecl(clang::VarDecl *variable) {
+  bool VisitBlockExpr(clang::BlockExpr *) override { blocks = true; return true; }
+  bool VisitVarDecl(clang::VarDecl *variable) override {
     blocks |= variable->hasAttr<clang::BlocksAttr>(); return true;
   }
-  bool VisitStmtExpr(clang::StmtExpr *) { statements = true; return true; }
-  bool VisitTagDecl(clang::TagDecl *declaration) {
+  bool VisitStmtExpr(clang::StmtExpr *) override { statements = true; return true; }
+  bool VisitTagDecl(clang::TagDecl *declaration) override {
     const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
     const bool local=IsExpressionLocalTag(declaration) && !(record && record->isLambda());
     types |= local;
@@ -3041,9 +3045,9 @@ bool HasDeclarationLocalExpression(const clang::NamedDecl *declaration, bool blo
   });
 }
 
-class ThreadLocalFinder final : public clang::RecursiveASTVisitor<ThreadLocalFinder> {
+class ThreadLocalFinder final : public clang::DynamicRecursiveASTVisitor {
 public:
-  bool VisitVarDecl(clang::VarDecl *variable) {
+  bool VisitVarDecl(clang::VarDecl *variable) override {
     found |= variable->getTLSKind() != clang::VarDecl::TLS_None;
     return true;
   }
@@ -3120,21 +3124,21 @@ bool HasDeclarationTemplateTemplateParameters(const clang::NamedDecl *declaratio
         if (HasDeclarationTemplateTemplateParameters(named)) return true;
     }
   return HasPublishedExpression(declaration,[](const clang::Stmt *statement) {
-    struct References:clang::RecursiveASTVisitor<References> {
+    struct References:clang::DynamicRecursiveASTVisitor {
       bool found=false;
-      bool VisitLambdaExpr(clang::LambdaExpr *expression) {
+      bool VisitLambdaExpr(clang::LambdaExpr *expression) override {
         if (const auto *pattern=expression->getCallOperator()->getDescribedFunctionTemplate())
           found |= HasTemplateTemplateParameters(pattern->getTemplateParameters());
         return true;
       }
-      bool VisitDeclRefExpr(clang::DeclRefExpr *expression) {
+      bool VisitDeclRefExpr(clang::DeclRefExpr *expression) override {
         if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(expression->getDecl()))
           if (const auto *arguments=function->getTemplateSpecializationArgs())
             for (const auto &argument:arguments->asArray())
               found |= argument.getKind()==clang::TemplateArgument::Template;
         return true;
       }
-      bool VisitTemplateSpecializationType(clang::TemplateSpecializationType *type) {
+      bool VisitTemplateSpecializationType(clang::TemplateSpecializationType *type) override {
         for (const auto &argument:type->template_arguments())
           found |= argument.getKind()==clang::TemplateArgument::Template;
         return true;
@@ -4200,11 +4204,11 @@ class TypeDependencyVisitor final
     const bool previous = public_template_type_;
     public_template_type_ = true;
     auto restore = llvm::scope_exit([&] {lambda_locals_=locals;public_template_type_=previous;});
-    struct Bindings : clang::RecursiveASTVisitor<Bindings> {
+    struct Bindings : clang::DynamicRecursiveASTVisitor {
       std::set<const clang::Decl *> &locals;
       explicit Bindings(std::set<const clang::Decl *> &locals) : locals(locals) {}
-      bool VisitNamedDecl(clang::NamedDecl *decl) {locals.insert(decl->getCanonicalDecl());return true;}
-      bool TraverseStmt(clang::Stmt *) {return true;}
+      bool VisitNamedDecl(clang::NamedDecl *decl) override {locals.insert(decl->getCanonicalDecl());return true;}
+      bool TraverseStmt(clang::Stmt *) override {return true;}
     } bindings(lambda_locals_);
     bindings.TraverseDecl(const_cast<clang::ClassTemplateDecl *>(pattern));
     for (auto *parameter : *pattern->getTemplateParameters()) TraverseDecl(parameter);
@@ -5451,7 +5455,7 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
 }
 
 class InterfaceCollector final
-    : public clang::RecursiveASTVisitor<InterfaceCollector> {
+    : public clang::DynamicRecursiveASTVisitor {
  public:
    InterfaceCollector(clang::ASTContext &context,
                       InterfaceEmissionArtifact &result,
@@ -5462,7 +5466,7 @@ class InterfaceCollector final
          exports_(exports), source_root_(source_root) {}
 
    // Function bodies and initializers do not contribute public declarations.
-   bool TraverseStmt(clang::Stmt *) { return true; }
+   bool TraverseStmt(clang::Stmt *) override { return true; }
 
    void ValidateSelection() {
      for (const auto &name : exports_) {
@@ -5479,7 +5483,7 @@ class InterfaceCollector final
      }
    }
 
-  bool VisitImportDecl(clang::ImportDecl *declaration) {
+  bool VisitImportDecl(clang::ImportDecl *declaration) override {
     if (IsQualifiedStandardLibraryImport(declaration, context_))
       return true;
     if (IsInMainFile(context_, declaration->getLocation())) {
@@ -5491,7 +5495,7 @@ class InterfaceCollector final
     return true;
   }
 
-  bool VisitNamedDecl(clang::NamedDecl *declaration) {
+  bool VisitNamedDecl(clang::NamedDecl *declaration) override {
     if (!result_.diagnostics.empty())
       return true;
     if (llvm::isa<clang::TemplateTypeParmDecl,clang::NonTypeTemplateParmDecl,
@@ -6051,7 +6055,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
     const auto qualifier = function ? function->getQualifierLoc()
                                     : clang::NestedNameSpecifierLoc();
-    auto restore = llvm::make_scope_exit([&] {
+    auto restore = llvm::scope_exit([&] {
       if (function) function->setQualifierInfo(qualifier);
     });
     // Out-of-line source definitions retain an explicit qualifier even with
