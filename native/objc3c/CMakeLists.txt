@@ -26,5 +26,6 @@ target_include_directories(objc3c_build_defaults INTERFACE
 include(Objc3BuildWarnings)
 objc3c_configure_build_warnings(objc3c_build_defaults)
 include(Objc3ClangFoundation)
+include(Objc3ClangLink)
 include(CTest)
 add_subdirectory(src/clang_foundation)
