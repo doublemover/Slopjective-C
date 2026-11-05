@@ -96,9 +96,9 @@
       "cmake": {
         "CMAKE_C_FLAGS_RELEASE": "-O1 -DNDEBUG -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic",
         "CMAKE_CXX_FLAGS_RELEASE": "-O1 -DNDEBUG -fprofile-instr-generate -fcoverage-mapping -fprofile-update=atomic",
-        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate",
-        "CMAKE_SHARED_LINKER_FLAGS": "-fprofile-instr-generate",
-        "CMAKE_MODULE_LINKER_FLAGS": "-fprofile-instr-generate",
+        "CMAKE_EXE_LINKER_FLAGS": "-fprofile-instr-generate -Wl,--build-id=sha1",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fprofile-instr-generate -Wl,--build-id=sha1",
+        "CMAKE_MODULE_LINKER_FLAGS": "-fprofile-instr-generate -Wl,--build-id=sha1",
         "LLVM_BUILD_LLVM_DYLIB": "ON",
         "LLVM_LINK_LLVM_DYLIB": "ON",
         "CLANG_LINK_CLANG_DYLIB": "ON"

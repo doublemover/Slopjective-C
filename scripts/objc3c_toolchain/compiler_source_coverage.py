@@ -186,7 +186,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             raise ValueError('duplicate compiler coverage command')
         directory = profile_root / name
         if profile: directory.mkdir()
-        case_env = {**env, **({'LLVM_PROFILE_FILE': str(directory / '%8m.profraw')} if profile else {})}
+        case_env = {**env, **({'LLVM_PROFILE_FILE': str(directory / '%b-%8m.profraw')} if profile else {})}
         log = Path(stdout) if stdout else output / 'logs' / (name+'.log')
         stderr_log = output / 'logs' / (name+'.stderr.log')
         started_command = time.monotonic()
@@ -205,6 +205,14 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         for name, tool in tools.items():
             if not tool.is_file() or '23.1.3' not in run(name+'-version', [tool, '--version'], profile=False).read_text():
                 raise ValueError('coverage tool differs from the isolated compiler profile')
+        binary_identity = {}
+        for index, binary in enumerate(binaries):
+            notes = run('binary-notes-'+str(index), [tools['llvm-readobj'], '--notes', binary], profile=False).read_text()
+            values = re.findall(r'Build ID: ([0-9a-f]{40})', notes)
+            if len(values) != 1: raise ValueError('covered compiler binary lacks one build identity')
+            binary_identity[str(binary)] = values[0]
+        expected_ids = set(binary_identity.values())
+        expected_profile_ids = {binary_identity[str(binary)] for binary in [binaries[0], *test_binaries]}
         report['objects'] = compile_inventory(build, source, eligible)
         before = {row['object']: row['sha256'] for row in report['objects']}
         lit_json = output / 'lit-results.json'
@@ -226,17 +234,18 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         profiles = []
         for directory in sorted(profile_root.iterdir()):
             profiles.extend(compiler_raw_profiles(directory))
+        filename_ids = set()
+        for profile in profiles:
+            matched = re.fullmatch(r'([0-9a-f]{40})-.+\.profraw', profile.name)
+            if not matched: raise ValueError('compiler raw profile omitted its executable build identity')
+            filename_ids.add(matched[1])
+        if filename_ids != expected_profile_ids:
+            raise ValueError('compiler raw profiles differ from the executed binary identities')
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
         observed_ids = binary_ids(identifiers)
-        expected_ids = set()
-        for index, binary in enumerate(binaries):
-            notes = run('binary-notes-'+str(index), [tools['llvm-readobj'], '--notes', binary], profile=False).read_text()
-            values = re.findall(r'Build ID: ([0-9a-f]{40})', notes)
-            if len(values) != 1: raise ValueError('covered compiler binary lacks one build identity')
-            expected_ids.add(values[0])
-        if observed_ids != expected_ids:
+        if not expected_profile_ids <= observed_ids <= expected_ids:
             raise ValueError('compiler profiles differ from the executed covered binaries')
         export = output / 'coverage-export.json'
         run('export', [tools['llvm-cov'], 'export', binaries[0],
@@ -254,6 +263,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
                                              for path in profiles}}
         for raw in profiles: raw.unlink()
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
+                      covered_binary_ids=binary_identity,
                       artifact_bytes=sum(path.stat().st_size for path in output.rglob('*') if path.is_file()))
     except BaseException as error:
         report.update(status='FAIL', error=str(error));raise

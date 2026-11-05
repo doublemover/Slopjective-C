@@ -85,6 +85,9 @@ def test_source_coverage_profile_owns_lit_support_tools(owned):
     assert 'llvm-config' in profile['build']['build_targets']
     assert 'llvm-config' in profile['build']['distribution_components']
     assert 'c-index-test' in profile['build']['build_targets']
+    assert all('-Wl,--build-id=sha1' in profile['cmake'][key]
+               for key in ('CMAKE_EXE_LINKER_FLAGS', 'CMAKE_SHARED_LINKER_FLAGS',
+                           'CMAKE_MODULE_LINKER_FLAGS'))
 
 
 @pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'wrong-subject',
