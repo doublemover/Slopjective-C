@@ -17,6 +17,10 @@ def fixture(tmp_path, monkeypatch):
     paths = {name: repo / 'out/foundation' / name for name in ('build', 'stage', 'source')}
     for path in paths.values():
         path.mkdir(parents=True)
+    libraries = paths['stage'] / 'lib'
+    libraries.mkdir()
+    for name in ('libLLVM.so.23.1', 'libclang-cpp.so.23.1'):
+        (libraries / name).write_bytes(name.encode())
     bootstrap = repo / 'out/bootstrap'; bootstrap.mkdir()
     plan = {'paths': {key: str(value) for key, value in paths.items()}, 'source_build_id': 'profile-source',
             'build_config_digest': 'profile-config', 'configuration_inputs': {},
