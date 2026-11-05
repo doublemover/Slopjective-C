@@ -491,7 +491,8 @@ void pump_probe_callback(void *opaque) {
 
 void test_manual_pump_is_serial_and_reentrant_safe() {
   auto *executor = manual_executor();
-  PumpProbe probe{executor};
+  PumpProbe probe{};
+  probe.executor = executor;
   assert(objc3_executor_enqueue(executor, pump_probe_callback, &probe) ==
          OBJC3_SERVICE_OK);
   uint32_t first_executed = 0;
@@ -1657,13 +1658,14 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
 
   ActorTrace trace;
   trace.cross_actor = second;
-  ActorHopFacts facts{sizeof(ActorHopFacts), kActorServiceVersion};
+  ActorHopFacts facts{sizeof(ActorHopFacts), kActorServiceVersion, 0, 0,
+                      0, 0, 0, 0};
   assert(actor_enqueue(first, actor_test_job,
                        new ActorJobContext{&trace, first, 1, second, nullptr},
                        destroy_actor_test_job, &facts) == OBJC3_SERVICE_OK);
   assert(facts.actor_identity == actor_identity(first));
   assert(facts.actor_hop == 1 && facts.executor_hop == 1);
-  facts = {sizeof(ActorHopFacts), kActorServiceVersion};
+  facts = {sizeof(ActorHopFacts), kActorServiceVersion, 0, 0, 0, 0, 0, 0};
   assert(actor_enqueue(first, actor_test_job,
                        new ActorJobContext{&trace, first, 2, nullptr, nullptr},
                        destroy_actor_test_job, &facts) == OBJC3_SERVICE_OK);
@@ -1699,7 +1701,7 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
   Actor *cancelled = nullptr;
   assert(actor_create(executor, &cancelled) == OBJC3_SERVICE_OK);
   ActorTrace cancelled_trace;
-  facts = {sizeof(ActorHopFacts), kActorServiceVersion};
+  facts = {sizeof(ActorHopFacts), kActorServiceVersion, 0, 0, 0, 0, 0, 0};
   assert(actor_enqueue(cancelled, actor_test_job,
                        new ActorJobContext{&cancelled_trace, cancelled, 9,
                                            nullptr, nullptr},
