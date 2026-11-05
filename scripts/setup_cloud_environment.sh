@@ -92,6 +92,34 @@ install_node() {
 }
 
 
+prune_llvm() {
+  local dest=$1 path before after restore_nullglob
+  local -a files=()
+  [[ $dest == /* && -d $dest ]] || { echo 'LLVM pruning requires an absolute installed root.' >&2; return 1; }
+  # The Linux foundation is X86 LLVM/Clang/lld/LLDB. Upstream's monolithic
+  # archive also carries separate Flang, MLIR/FIR and BOLT products that are
+  # neither selected by the manifest nor referenced by LLVM/Clang's exported
+  # project targets. Remove those independent products after verified extract.
+  before=$(du -sm "$dest" | cut -f1)
+  restore_nullglob=$(shopt -p nullglob || true)
+  shopt -s nullglob
+  files+=("$dest/bin"/{bbc,f18-parse-demo,flang,flang-23,flang-new,merge-fdata,perf2bolt})
+  files+=("$dest/bin"/fir-* "$dest/bin"/mlir-* "$dest/bin"/tblgen-to-irdl)
+  files+=("$dest/bin"/llvm-bolt "$dest/bin"/llvm-bolt-* "$dest/bin"/llvm-boltdiff)
+  files+=("$dest/lib"/libFortran* "$dest/lib"/libflang* "$dest/lib"/libFIR*)
+  files+=("$dest/lib"/libMLIR* "$dest/lib"/libLLVMBOLT*)
+  if (( ${#files[@]} )); then rm -f -- "${files[@]}"; fi
+  for path in include/flang include/mlir include/mlir-c lib/cmake/flang lib/cmake/mlir; do
+    rm -rf -- "$dest/$path"
+  done
+  eval "$restore_nullglob"
+  printf '%s\n' 'X86 LLVM/Clang/lld/LLDB development surface; Flang, MLIR/FIR and BOLT removed.' \
+    > "$dest/.objc3c-pruned-components"
+  after=$(du -sm "$dest" | cut -f1)
+  echo "LLVM component pruning reclaimed $((before-after)) MiB; installed size is $after MiB."
+}
+
+
 install_llvm() {
   local dest="$setup_root/llvm-23.1.3" archive="$scratch/llvm.tar.xz"
   if [[ -f "$dest/.objc3c-install-incomplete" ]]; then rm -rf -- "$dest"; fi
@@ -105,6 +133,7 @@ install_llvm() {
     rm -f "$dest/.objc3c-install-incomplete"
     rm -f "$archive"
   fi
+  prune_llvm "$dest"
   [[ $("$dest/bin/llvm-config" --version) == 23.1.3 ]]
   for tool in clang clang++ llc llvm-ar llvm-ranlib llvm-readobj llvm-config ld.lld; do
     test -x "$dest/bin/$tool"
