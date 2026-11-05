@@ -6,7 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
-    reclaim_raw_profiles, suite_timeout,
+    reclaim_raw_profiles, single_profile_binary_id, suite_timeout,
 )
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
@@ -49,6 +49,13 @@ def test_elf_build_identity_requires_one_canonical_sha1_note():
     for text in ('', 'Build ID: short', 'Build ID: '+value+'\nBuild ID: '+'b'*40):
         with pytest.raises(ValueError, match='one build identity'):
             elf_build_id(text)
+
+
+def test_raw_module_profile_requires_one_binary_owner():
+    value = 'a' * 40
+    assert single_profile_binary_id('Binary IDs:\n'+value+'\n') == value
+    with pytest.raises(ValueError, match='one binary identity'):
+        single_profile_binary_id('Binary IDs:\n'+value+'\n'+'b'*40+'\n')
 
 
 @pytest.mark.parametrize('mutation', [None, 'flag', 'disabled', 'owner', 'duplicate', 'source'])

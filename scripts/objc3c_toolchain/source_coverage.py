@@ -155,6 +155,14 @@ def elf_build_id(text: str) -> str:
     return values[0]
 
 
+def single_profile_binary_id(text: str) -> str:
+    """Require a raw module profile to name exactly one owning ELF."""
+    values = binary_ids(text)
+    if len(values) != 1:
+        raise ValueError('raw coverage profile must contain one binary identity')
+    return next(iter(values))
+
+
 def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
@@ -319,6 +327,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     raise ValueError('built coverage test has no exact executable command')
                 binary = Path(current[0]['command'][0]).resolve(strict=True)
                 binary_hash = digest(binary)
+                notes = run(component+'-'+name+'-binary-notes',
+                    [tools['llvm-readobj'], '--notes', binary])
+                binary_id = elf_build_id(notes)
                 loader_graph = None
                 if component == 'frontend':
                     loader_graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True),
@@ -335,12 +346,22 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     environment=case_env, timeout=timeout+30)
                 executions = junit(result, expected={name})
                 profiles = raw_profiles(raw, limit=FIRST_PARTY_PROFILE_LIMIT)
+                profile_identity = {profile.name: single_profile_binary_id(run(
+                    component+'-'+name+'-raw-binary-ids-'+str(index),
+                    [tools['llvm-profdata'], 'show', '--binary-ids', profile]))
+                    for index, profile in enumerate(profiles)}
+                expected_ids = {binary_id, *(library_ids if component == 'frontend' else set())}
+                if set(profile_identity.values()) != expected_ids:
+                    raise ValueError('coverage raw profiles differ from the executed module identities')
+                selected_profiles = [profile for profile in profiles
+                                     if profile_identity[profile.name] == binary_id]
+                if not selected_profiles:
+                    raise ValueError('coverage raw profiles omitted the first-party executable owner')
                 profile = work / 'merged.profdata'
-                run(component+'-'+name+'-merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', profile])
+                run(component+'-'+name+'-merge', [tools['llvm-profdata'], 'merge', '--sparse',
+                    *selected_profiles, '-o', profile])
                 profile_ids = run(component+'-'+name+'-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', profile])
-                notes = run(component+'-'+name+'-binary-notes', [tools['llvm-readobj'], '--notes', binary])
-                expected_ids = {elf_build_id(notes), *(library_ids if component == 'frontend' else set())}
-                if binary_ids(profile_ids) != expected_ids:
+                if binary_ids(profile_ids) != {binary_id}:
                     raise ValueError('coverage profile differs from the actual selected test binary')
                 baseline = export(component+'-'+name+'-mapping-baseline', binary, objects, None, build=build)
                 rows = export(component+'-'+name+'-export', binary, (), profile, build=build)
@@ -357,6 +378,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     'executions': executions, 'binary_sha256': digest(binary), 'binary_ids': profile_ids,
                     'raw_profiles': raw_records, 'profile_sha256': digest(profile),
                     'raw_profiles_reclaimed': True,
+                    'raw_profile_binary_ids': profile_identity,
+                    'excluded_loaded_profiles': sorted(name for name, identity in profile_identity.items()
+                                                       if identity != binary_id),
                     'loader_graph': loader_graph,
                     'source_coverage': rows})
                 save()
