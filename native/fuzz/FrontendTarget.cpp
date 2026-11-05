@@ -35,7 +35,8 @@ FrontendObservation Frontend(const std::uint8_t *data, std::size_t size) {
   }
   const char *source = reinterpret_cast<const char *>(data + 4);
   const std::size_t source_size = size - 4;
-  const std::array<const char *, 2> arguments = {"-Wno-everything", "-ferror-limit=4"};
+  const std::array<const char *, 3> arguments = {
+      "-Wno-everything", "-ferror-limit=4", "-fno-caret-diagnostics"};
   objc3c_frontend_v2_options base{};
   base.struct_size = sizeof(base);
   base.abi_version = OBJC3C_FRONTEND_V2_ABI;
