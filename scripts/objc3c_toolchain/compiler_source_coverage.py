@@ -219,6 +219,20 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             binary_identity[str(binary)] = values[0]
         expected_ids = set(binary_identity.values())
         expected_profile_ids = {binary_identity[str(binary)] for binary in [binaries[0], *test_binaries]}
+        execution_binary_identity = dict(binary_identity)
+        targets = [target for group in plan['instrumentation']['build_target_groups']
+                   for target in group['targets']]
+        execution_candidates = sorted({(build / 'bin' / target).resolve()
+                                       for target in targets
+                                       if (build / 'bin' / target).is_file()})
+        for index, binary in enumerate(execution_candidates):
+            if str(binary) in execution_binary_identity: continue
+            notes = run('execution-binary-notes-'+str(index),
+                        [tools['llvm-readobj'], '--notes', binary], profile=False).read_text()
+            values = re.findall(r'Build ID: ([0-9a-f]{40})', notes)
+            if len(values) != 1: raise ValueError('instrumented support binary lacks one build identity')
+            execution_binary_identity[str(binary)] = values[0]
+        allowed_profile_ids = set(execution_binary_identity.values())
         report['objects'] = compile_inventory(build, source, eligible)
         before = {row['object']: row['sha256'] for row in report['objects']}
         lit_json = output / 'lit-results.json'
@@ -245,13 +259,14 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             matched = re.fullmatch(r'([0-9a-f]{40})-.+\.profraw', profile.name)
             if not matched: raise ValueError('compiler raw profile omitted its executable build identity')
             filename_ids.add(matched[1])
-        require_binary_ids(filename_ids, required=expected_profile_ids, allowed=expected_ids,
+        report['raw_profile_binary_ids'] = sorted(filename_ids);save()
+        require_binary_ids(filename_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
                            kind='raw profiles')
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
         observed_ids = binary_ids(identifiers)
-        require_binary_ids(observed_ids, required=expected_profile_ids, allowed=expected_ids,
+        require_binary_ids(observed_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
                            kind='merged profile')
         export = output / 'coverage-export.json'
         run('export', [tools['llvm-cov'], 'export', binaries[0],
@@ -270,6 +285,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         for raw in profiles: raw.unlink()
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
                       covered_binary_ids=binary_identity,
+                      executed_binary_ids=execution_binary_identity,
                       artifact_bytes=sum(path.stat().st_size for path in output.rglob('*') if path.is_file()))
     except BaseException as error:
         report.update(status='FAIL', error=str(error));raise
