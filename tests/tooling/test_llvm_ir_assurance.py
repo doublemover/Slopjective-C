@@ -12,6 +12,7 @@ import time
 import pytest
 
 from scripts.objc3c_toolchain.llvm_ir import corpus, instruction_body, module_facts, pipeline_options
+from scripts.objc3c_toolchain import llvm_ir_execution as execution_owner
 from scripts.objc3c_toolchain.llvm_ir_execution import Execution, StageFailure, classify, command
 from scripts.objc3c_toolchain.llvm_ir_inventory import stages, thinlto_modules, verify as verify_inventory
 from scripts.objc3c_toolchain.llvm_reduce import interesting, matches, validate
@@ -125,6 +126,25 @@ def test_timeout_kills_children_that_create_separate_ninja_style_process_groups(
             break
         time.sleep(.02)
     assert not running
+
+
+def test_interruption_kills_and_reaps_the_detached_command_session(tmp_path, monkeypatch):
+    class Process:
+        pid = 31415
+        calls = 0
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def wait(self, timeout=None):
+            self.calls += 1
+            if self.calls == 1: raise KeyboardInterrupt
+            return -9
+    process, killed = Process(), []
+    monkeypatch.setattr(execution_owner.subprocess, 'Popen', lambda *args, **kwargs: process)
+    monkeypatch.setattr(execution_owner, '_kill_session', killed.append)
+    with pytest.raises(KeyboardInterrupt):
+        command(['compiler'], cwd=tmp_path, environment={},
+                log=tmp_path / 'interrupted.log', timeout=30)
+    assert killed == [process.pid] and process.calls == 2
 
 
 def elf(runpath: str, capacity: int) -> bytes:

@@ -90,6 +90,12 @@ def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float) ->
                     process.wait()
                     code = 124
                     stream.write('\nTimed out after '+str(timeout)+' seconds.\n')
+                except BaseException:
+                    # Interactive cancellation and runner termination must not
+                    # orphan a detached compiler/Ninja session.
+                    _kill_session(process.pid)
+                    process.wait()
+                    raise
         except OSError as error:
             stream.write(str(error)+'\n')
             code = 127

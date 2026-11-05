@@ -217,7 +217,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
         'scope': 'First-party façade and standalone-runtime denominator linked to the exact isolated patched-compiler source-coverage profile.',
         'policy': policy, 'commands': [], 'suites': [], 'objects': {}, 'inputs': {}, 'eligible': {},
-        'temporary_build_root': str(build_root), 'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission.',
+        'temporary_build_root': str(build_root),
+        'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission or interruption.',
         'raw_profile_limit_bytes_per_suite': FIRST_PARTY_PROFILE_LIMIT,
         'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
             'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'},
@@ -397,6 +398,12 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         report['temporary_build_reclaimed'] = True
     except Exception as error:
         report.update(status='FAIL', error=str(error));raise
+    except BaseException as error:
+        report.update(status='FAIL', error=type(error).__name__)
+        if build_root.exists():
+            __import__('shutil').rmtree(build_root)
+        report['temporary_build_reclaimed'] = not build_root.exists()
+        raise
     finally:
         save()
     return report
