@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.codec_fuzz import (bounded_command, frontend_replay_result,
+from scripts.objc3c_toolchain.codec_fuzz import (bounded_command, compact_coverage_log, frontend_replay_result,
     frontend_target_coverage, patched_frontend_coverage, replay_result, target_coverage,
     tree_bytes, verify_feedback, verify_foundation_feedback)
 
@@ -88,3 +88,23 @@ def test_live_discovery_budget_stops_artifact_growth(tmp_path):
                           log=log, timeout=3, watched_root=watched, byte_limit=1024)
     assert row['budget_exceeded'] and not row['timed_out'] and row['exit_code'] == 125
     assert tree_bytes(watched) == 8192
+
+
+def test_successful_coverage_log_compaction_retains_covered_rows_and_full_identity(tmp_path):
+    log = tmp_path / 'coverage.log'
+    text = ('INFO: campaign complete\n'
+            'COVERED_FUNC: hits: 3 edges: 2/4 ParseThing /src/clang/lib/Parse/Parse.cpp:4\n'
+            'UNCOVERED_FUNC: hits: 0 edges: 0/8 Other /src/clang/lib/Sema/Other.cpp:9\n'
+            'stat::number_of_executed_units: 42\n')
+    log.write_text(text)
+    original = hashlib.sha256(text.encode()).hexdigest()
+
+    result = compact_coverage_log(log, text, minimum_bytes=1)
+
+    assert result['full_log_bytes'] == len(text)
+    assert result['full_log_sha256'] == original
+    assert result['log_bytes'] < result['full_log_bytes']
+    assert result['log_sha256'] == hashlib.sha256(log.read_bytes()).hexdigest()
+    assert 'COVERED_FUNC:' in log.read_text()
+    assert 'UNCOVERED_FUNC:' not in log.read_text()
+    assert 'stat::number_of_executed_units: 42' in log.read_text()

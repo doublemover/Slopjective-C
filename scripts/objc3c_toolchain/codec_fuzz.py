@@ -170,6 +170,20 @@ def tree_bytes(root):
     return total
 
 
+def compact_coverage_log(log, text, *, minimum_bytes=8 * 1024**2):
+    """Retain useful coverage rows while binding the complete successful stream."""
+    log = Path(log)
+    if log.stat().st_size <= minimum_bytes:
+        return None
+    full_bytes, full_sha256 = log.stat().st_size, digest(log)
+    compact = ''.join(line for line in text.splitlines(keepends=True)
+                      if not line.startswith('UNCOVERED_FUNC:'))
+    log.write_text(compact)
+    return {'full_log_bytes': full_bytes, 'full_log_sha256': full_sha256,
+            'coverage_log_compaction': 'removed zero-hit UNCOVERED_FUNC rows after clean execution',
+            'log_bytes': log.stat().st_size, 'log_sha256': digest(log)}
+
+
 def bounded_command(argv, *, cwd, environment, log, timeout, watched_root, byte_limit):
     """Run one discovery process with a live wall-clock and retained-byte cap."""
     args = list(map(str, argv));started = time.monotonic();timed_out = budget_exceeded = False
@@ -218,7 +232,8 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         'instrumentation_profile': PROFILE,
         'scope': 'Paired production codec plus production v2/v3 syntax/sema embedding targets. Six first-party implementation TUs and the matched patched Clang/LLVM parser/Sema graph carry engine feedback and ASan/UBSan instrumentation; first-party objects also carry source coverage.',
         'limits': {'input_bytes': 131072, 'part_bytes': 65536, 'input_seconds': 3, 'rss_mb': 1536,
-                   'discovery_seconds_per_strategy': seconds, 'retained_campaign_bytes': 32*1024**2},
+                   'discovery_seconds_per_strategy': seconds, 'coverage_report_seconds': 120,
+                   'retained_campaign_bytes': 32*1024**2},
         'unsupported': ['Frontend code-generation worker target', 'AFL++ engine and CMPLOG comparison',
                         'MSan and Swift/Darwin/Windows equivalence'],
         'temporary_build': str(build), 'foundation_build': str(foundation_build), 'inputs': {}}
@@ -249,6 +264,19 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
             raise ValueError('codec campaign command failed: '+name+'; see '+row['log'])
         if expected == 0 and not bounded: require_clean_diagnostic(text)
         if 'WARNING: unrecognized flag' in text: raise ValueError('fuzzer ignored an unreviewed option')
+        # A fully instrumented LLVM/Clang graph has millions of counters.
+        # libFuzzer prints every zero-hit function after the already-bounded
+        # discovery interval, which can take longer than the campaign itself
+        # and can exhaust the CI evidence budget. Preserve the complete stream
+        # identity, then retain every operational/covered row while removing
+        # only redundant zero-hit function lines from a successful report.
+        log = Path(row['log'])
+        if '-print_coverage=1' in args:
+            compaction = compact_coverage_log(log, text)
+            if compaction:
+                if compaction['full_log_sha256'] != row['log_sha256']:
+                    raise ValueError('coverage log changed before bounded compaction')
+                row.update(compaction)
         row['status'] = 'PASS';row['bounded_completion'] = 'wall-clock' if bounded else 'process-exit';save()
         return text
     try:
@@ -367,7 +395,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
             mode_env = {**discovery, 'LLVM_PROFILE_FILE': str(profiles / '%p-%m.profraw')}
             text = run(strategy, [binary, *flags, '-max_total_time='+str(seconds),
                 '-dict='+str(repo / 'native/fuzz/codec.dict'), '-artifact_prefix='+str(artifacts)+'/', corpus],
-                environment=mode_env, timeout=seconds+30, watched_root=root)
+                environment=mode_env, timeout=seconds+120, watched_root=root)
             coverage = target_coverage(text)
             units = re.search(r'stat::number_of_executed_units:\s+(\d+)', text)
             peak = re.search(r'stat::peak_rss_mb:\s+(\d+)', text)
@@ -419,7 +447,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
             '-max_total_time='+str(seconds), '-dict='+str(repo / 'native/fuzz/frontend.dict'),
             '-artifact_prefix='+str(frontend_artifacts)+'/', frontend_corpus],
             environment={**discovery, 'LLVM_PROFILE_FILE': str(frontend_profiles / '%p-%m.profraw')},
-            timeout=seconds+45, watched_root=frontend_root)
+            timeout=seconds+150, watched_root=frontend_root)
         frontend_coverage = frontend_target_coverage(frontend_text)
         patched_coverage = patched_frontend_coverage(frontend_text)
         frontend_units = re.search(r'stat::number_of_executed_units:\s+(\d+)', frontend_text)
