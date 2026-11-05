@@ -5,6 +5,15 @@ instrumented emitted clients with the complete runtime graph. The latter uses
 `runtime_instrumentation.py` and the existing sanitizer runners. An ordinary
 compiler producing an instrumented client does not qualify the compiler itself.
 
+Shared `clang-cpp` consumers select their Clang dependencies through one CMake
+helper. Four frontend tests previously added static Clang archives to that
+shared graph; ASan detected duplicate implementation definitions before their
+test bodies ran. Provenance, source-import bridge, ownership projection and
+isolation contracts now pass with the shared graph. A configure-time guard
+rejects direct mixed dependencies on facade consumers. Real CMake executables
+check both component/shared selection, and a deliberate mixed-link edit must
+fail configuration. ODR detection remains enabled.
+
 The owned `compiler-asan-ubsan` profile in
 [`instrumentation-profiles.json`](../../toolchains/llvm/instrumentation-profiles.json)
 selects LLVM's `Address;Undefined` configuration, O1, source locations, frame

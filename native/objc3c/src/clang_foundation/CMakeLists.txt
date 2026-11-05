@@ -13,6 +13,10 @@ add_library(objc3c_clang_foundation STATIC
   module_names.cpp
   interface_codec.cpp
   interface_emitter.cpp
+  interface_emission_templates.cpp
+  interface_emission_features.cpp
+  interface_emission_identity.cpp
+  interface_emission_dependencies.cpp
   runtime_interface_types.cpp
   interface_artifact_io.cpp
   interface_validation.cpp

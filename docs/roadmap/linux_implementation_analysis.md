@@ -34,6 +34,16 @@ include remains in the projected command, and a missing or invalid matched PCH
 fails instead of disabling validation. Each TU has a bounded ten-minute analysis
 allowance; a timeout remains a failed TU.
 
+The interface emitter is partitioned by template publication, feature detection,
+AST/declaration identity, dependency admission and final publication. A private
+declaration header joins those units without enlarging the installed API. All
+units remain in the default compilation graph and analyzer inventory. Small
+identity probes use Clang's shared dynamic visitor; the three visitors with
+custom traversal queues or walk-up behavior retain their specialized traversal.
+This addresses repeated CRTP instantiation and the oversized TU without removing
+checks or raising its ten-minute limit. Full regression/analysis acceptance is
+required after the split.
+
 ```sh
 python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
   --frontend-build /path/to/current/native-build \
