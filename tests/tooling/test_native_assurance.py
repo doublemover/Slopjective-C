@@ -92,11 +92,16 @@ def test_periodic_and_owner_selection_include_new_native_qualification_suites():
 
 
 def test_native_assurance_workflow_has_exact_periodic_and_dispatch_revision_gate():
-    workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/native-assurance.yml').read_text()
+    root = Path(__file__).resolve().parents[2]
+    workflow = (root / '.github/workflows/native-assurance.yml').read_text()
     assert 'schedule:' in workflow and 'workflow_dispatch:' in workflow
     assert '--periodic-sha "$GITHUB_SHA"' in workflow
     assert workflow.count('--periodic-sha "$GITHUB_SHA"') == 2
     assert 'objc3c_assurance plan' in workflow and 'objc3c_assurance verify' in workflow
+    dependencies = {'gnupg', 'libxml2', 'libcurl4', 'libedit2', 'libsqlite3-0', 'libncurses6'}
+    for path in ('native-assurance.yml', 'adaptive-closeout.yml'):
+        text = (root / '.github/workflows' / path).read_text()
+        assert all(name in text for name in dependencies)
 
 
 def test_frontend_fuzz_evidence_requires_patched_frontend_feedback(tmp_path):
