@@ -6,7 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, profile_runtime, raw_profiles, read_export,
-    suite_timeout,
+    reclaim_raw_profiles, suite_timeout,
 )
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
@@ -77,6 +77,17 @@ def test_raw_profile_size_override_remains_explicit_and_bounded(tmp_path):
     assert raw_profiles(root, limit=2) == [profile]
     with pytest.raises(ValueError, match='raw coverage profiles'):
         raw_profiles(root, limit=1)
+
+
+def test_raw_profiles_are_hashed_and_reclaimed_after_indexing(tmp_path):
+    one = tmp_path / 'one.profraw';one.write_bytes(b'one')
+    two = tmp_path / 'two.profraw';two.write_bytes(b'two')
+    records = reclaim_raw_profiles([one, two])
+    assert records == {
+        'one.profraw': {'sha256': '7692c3ad3540bb803c020b3aee66cd8887123234ea0c6e7143c0add73ff431ed', 'bytes': 3},
+        'two.profraw': {'sha256': '3fc4ccfe745870e2c0d99f71f30ff0656c8dedd41cc1d7d3d376b0dbe685e2f3', 'bytes': 3},
+    }
+    assert not one.exists() and not two.exists()
 
 
 def test_unreached_owned_sources_stay_in_inventory_and_system_headers_do_not(tmp_path):

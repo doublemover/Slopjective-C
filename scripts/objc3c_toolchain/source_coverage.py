@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from compression import zstd
 import json
 import os
 from pathlib import Path
@@ -128,6 +127,15 @@ def raw_profiles(root, *, limit=LIMIT):
             any(path.suffix != '.profraw' for path in root.iterdir())):
         raise ValueError('missing, escaped, empty or excessive raw coverage profiles')
     return paths
+
+
+def reclaim_raw_profiles(paths):
+    """Record exact inputs after indexing, then reclaim the transient profiles."""
+    records = {}
+    for path in paths:
+        records[path.name] = {'sha256': digest(path), 'bytes': path.stat().st_size}
+        path.unlink()
+    return records
 
 
 def binary_ids(text):
@@ -332,18 +340,11 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 if digest(binary) != binary_hash: raise ValueError('coverage test binary changed during execution/export')
                 if not any(row['state'] == 'executed' for row in rows.values()):
                     raise ValueError('coverage export has no executed first-party source mappings')
-                raw_records = {p.name: digest(p) for p in profiles}
-                compressed = {}
-                for raw_profile in profiles:
-                    archive = raw_profile.with_suffix('.profraw.zst')
-                    archive.write_bytes(zstd.compress(raw_profile.read_bytes(), level=3))
-                    compressed[archive.name] = {'sha256': digest(archive),
-                        'bytes': archive.stat().st_size, 'uncompressed_sha256': digest(raw_profile)}
-                    raw_profile.unlink()
+                raw_records = reclaim_raw_profiles(profiles)
                 report['suites'].append({'name': name, 'component': component, 'status': 'PASS',
                     'executions': executions, 'binary_sha256': digest(binary), 'binary_ids': profile_ids,
                     'raw_profiles': raw_records, 'profile_sha256': digest(profile),
-                    'compressed_raw_profiles': compressed,
+                    'raw_profiles_reclaimed': True,
                     'loader_graph': loader_graph,
                     'source_coverage': rows})
                 save()
