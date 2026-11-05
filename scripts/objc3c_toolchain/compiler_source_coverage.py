@@ -180,6 +180,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
     env['LD_LIBRARY_PATH'] = str(stage / 'lib')
     env['PATH'] = str(stage / 'bin') + os.pathsep + env.get('PATH', '')
     env['LLVM_PROFILE_FILE'] = os.devnull
+    env['PYTHONDONTWRITEBYTECODE'] = '1'
     def run(name, argv, *, profile=True, timeout=900, stdout=None):
         if any(row['name'] == name for row in report['commands']):
             raise ValueError('duplicate compiler coverage command')
