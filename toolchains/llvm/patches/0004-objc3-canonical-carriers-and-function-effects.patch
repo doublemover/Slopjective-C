@@ -34987,10 +34987,28 @@ index f328d1efa..b66ee947b 100644
    case tok::ampamp:               return prec::LogicalAnd;
    case tok::pipe:                 return prec::InclusiveOr;
 diff --git a/clang/lib/Lex/Lexer.cpp b/clang/lib/Lex/Lexer.cpp
-index d5085ca6d..d76f1ee46 100644
+index d5085ca6d..8fd8cc34a 100644
 --- a/clang/lib/Lex/Lexer.cpp
 +++ b/clang/lib/Lex/Lexer.cpp
-@@ -3864,6 +3864,16 @@ LexStart:
+@@ -1280,6 +1280,7 @@ SourceLocation Lexer::getSourceLocation(const char *Loc,
+ /// Diag - Forwarding function for diagnostics.  This translate a source
+ /// position in the current buffer into a SourceLocation object for rendering.
+ DiagnosticBuilder Lexer::Diag(const char *Loc, unsigned DiagID) const {
++  assert(PP && "Diagnostics require a preprocessor-backed lexer");
+   return PP->Diag(getSourceLocation(Loc), DiagID);
+ }
+ 
+@@ -2848,7 +2849,8 @@ bool Lexer::SaveLineComment(Token &Result, const char *CurPtr) {
+     return true;
+ 
+   // If this Line-style comment is in a macro definition, transmogrify it into
+-  // a C-style block comment.
++  // a C-style block comment. Raw lexers returned above and never need PP.
++  assert(PP && "Directive comment rewriting requires a preprocessor");
+   bool Invalid = false;
+   std::string Spelling = PP->getSpelling(Result, &Invalid);
+   if (Invalid)
+@@ -3864,6 +3866,16 @@ LexStart:
  
    unsigned SizeTmp, SizeTmp2;   // Temporaries for use in cases below.
  
@@ -35007,7 +35025,7 @@ index d5085ca6d..d76f1ee46 100644
    // Read a character, advancing over it.
    char Char = getAndAdvanceChar(CurPtr, Result);
    tok::TokenKind Kind;
-@@ -4150,7 +4160,18 @@ LexStart:
+@@ -4150,7 +4162,18 @@ LexStart:
  
    // C99 6.4.6: Punctuators.
    case '?':
@@ -51912,7 +51930,7 @@ index 000000000..d96c20185
 +// CHECK: template <int N> __attribute__((abi_tag("owner"))) int count()
 +// CHECK: template <class ...T> __attribute__((abi_tag("owner"))) constexpr int sum(T ...n)
 diff --git a/clang/lib/Parse/ParseExprCXX.cpp b/clang/lib/Parse/ParseExprCXX.cpp
-index 6b8ab6ce8..ad8a16a72 100644
+index 6b8ab6ce8..9695670c5 100644
 --- a/clang/lib/Parse/ParseExprCXX.cpp
 +++ b/clang/lib/Parse/ParseExprCXX.cpp
 @@ -1345,7 +1345,12 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
@@ -51959,6 +51977,27 @@ index 6b8ab6ce8..ad8a16a72 100644
                    std::move(Attributes), DeclEndLoc);
  
      if (HasParentheses && Tok.is(tok::kw_requires))
+@@ -1447,8 +1466,10 @@ ExprResult Parser::ParseLambdaExpressionAfterIntroducer(
+ 
+   // Emit a warning if we see a CUDA host/device/global attribute
+   // after '(...)'. nvcc doesn't accept this.
+-  if (getLangOpts().CUDA) {
+-    for (const ParsedAttr &A : Attributes)
++  unsigned FunctionIndex = 0;
++  if (getLangOpts().CUDA && D.isFunctionDeclarator(FunctionIndex)) {
++    // AddTypeInfo transferred attribute ownership to this function chunk.
++    for (const ParsedAttr &A : D.getTypeObject(FunctionIndex).getAttrs())
+       if (A.getKind() == ParsedAttr::AT_CUDADevice ||
+           A.getKind() == ParsedAttr::AT_CUDAHost ||
+           A.getKind() == ParsedAttr::AT_CUDAGlobal)
+@@ -1933,6 +1954,7 @@ Sema::ConditionResult Parser::ParseCXXCondition(StmtResult *InitStmt,
+   }
+ 
+   case ConditionOrInitStatement::InitStmtDecl: {
++    assert(InitStmt && "An init-statement requires output storage");
+     WarnOnInit();
+     DeclGroupPtrTy DG;
+     SourceLocation DeclStart = Tok.getLocation(), DeclEnd;
 diff --git a/clang/test/ObjC3/Parser/native-lambda-effects.mm b/clang/test/ObjC3/Parser/native-lambda-effects.mm
 new file mode 100644
 index 000000000..040059ae3
@@ -52369,3 +52408,31 @@ index 000000000..73a407ec7
 +  AST.reset();
 +}
 +
+diff --git a/clang/unittests/Lex/LexerTest.cpp b/clang/unittests/Lex/LexerTest.cpp
+index eaac861fa..402c0b17c 100644
+--- a/clang/unittests/Lex/LexerTest.cpp
++++ b/clang/unittests/Lex/LexerTest.cpp
+@@ -741,6 +741,23 @@ TEST_F(LexerTest, RawAndNormalLexSameForLineComments) {
+   EXPECT_TRUE(ToksView.empty());
+ }
+ 
++TEST_F(LexerTest, RawDirectiveLineCommentDoesNotNeedPreprocessor) {
++  const llvm::StringLiteral Source = "// retained directive comment\n";
++  auto Buffer = llvm::MemoryBuffer::getMemBuffer(Source);
++  const char *Begin = Buffer->getBufferStart();
++  FileID File = SourceMgr.createFileID(std::move(Buffer));
++  Lexer Raw(SourceMgr.getLocForStartOfFile(File), LangOpts, Begin, Begin,
++            Begin + Source.size());
++  Raw.setParsingPreprocessorDirective(true);
++  Raw.SetCommentRetentionState(true);
++  EXPECT_EQ(Raw.getPP(), nullptr);
++
++  Token Comment;
++  Raw.LexFromRawLexer(Comment);
++  EXPECT_TRUE(Comment.is(tok::comment));
++  EXPECT_EQ(Comment.getLength(), Source.size() - 1);
++}
++
+ TEST_F(LexerTest, GetRawTokenOnEscapedNewLineChecksWhitespace) {
+   const llvm::StringLiteral Source = R"cc(
+   #define ONE \

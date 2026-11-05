@@ -1492,5 +1492,53 @@
     },
     "instrumentation": "Matched compiler ASan/UBSan; ordinary timed services and GNUstep dependency. Explicit pinned native sanitizer detector inputs enabled.",
     "boundary": "Development-stage SDK; no release archive or calibrated performance pass. Full implementation analysis still running; hosted/admin acceptance remains open."
+  },
+  "emitter_partition_checkpoint": {
+    "date": "2026-11-05",
+    "partition_commit": "645adde10e2a52556844cd9e55bb1e4e15b89cc8",
+    "frontend": {
+      "status": "PASS",
+      "suites": 37,
+      "instrumentation": "compiler-asan-ubsan; shared clang-cpp",
+      "receipt": {
+        "path": "out/linux-final-qualification/frontend-modular/tests/qualification.json",
+        "sha256": "f0201136ec08a349f8a63fd445f02cd29a063875f2eb7449f5cda4794f3d3824"
+      }
+    },
+    "null_concept_repair": {
+      "commit": "36e9af966",
+      "status": "PASS",
+      "analyzed_units": 3,
+      "receipt": {
+        "path": "out/linux-final-qualification/analysis-concept-null-fix/qualification.json",
+        "sha256": "ad0a1910f6f4a460825e972241426e9c018867b9ff7265a1023d1b0d65cb21ae"
+      },
+      "source_build_id": "llvmorg-23.1.3-0d261d1ca552-616ca86288bb-c55ca8ee"
+    },
+    "operational_observation": {
+      "status": "PASS",
+      "initial_state": "incremental-exact-inputs",
+      "receipt": {
+        "path": "out/linux-final-qualification/foundation-cost-complete/qualification.json",
+        "sha256": "e098f58dbd111db5d14aec3b026d86d88e1373e377f0850ce4458243b50adbb0"
+      },
+      "configure_seconds": 7.374257,
+      "build_seconds": 2.231808,
+      "test_seconds": 68.074499,
+      "stage_seconds": 5.260749,
+      "decision": "One observation; no calibrated performance allowance."
+    },
+    "hosted_tooling": {
+      "run": 42129234959,
+      "artifact": 13463056223,
+      "head_sha": "645adde10e2a52556844cd9e55bb1e4e15b89cc8",
+      "tested_merge_sha": "adc83daa1c25c932bbc0d65834ac62c6722f60c9",
+      "passed": 1441,
+      "skipped": 107,
+      "subtests_passed": 33,
+      "boundary": "Fast hosted job explicitly lacks native bootstrap/runtime/SDK capabilities; local enabled checkpoint and native lanes remain separate.",
+      "inventory_sha256": "da67fb7b1480fedd88a308b416bdb745642cef4f07aba742761c3c1bd3ae29f5"
+    },
+    "remaining": "Complete the running 235-variant scan, batch the confirmed Clang contract repairs, rebuild and verify the corrected fork. No replacement release archive."
   }
 }
