@@ -5,7 +5,7 @@ import shlex
 import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
-    binary_ids, compile_inventory, profile_runtime, raw_profiles, read_export,
+    binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
     reclaim_raw_profiles, suite_timeout,
 )
 
@@ -41,6 +41,14 @@ def test_binary_identity_uses_the_pinned_tools_actual_unindented_format():
     assert binary_ids('Total count: 42\nBinary IDs: \n'+'a'*40+'\n') == {'a'*40}
     for text in ('', 'Binary IDs:\n', 'Binary IDs:\nnot-a-build-id\n'):
         with pytest.raises(ValueError, match='binary identit'): binary_ids(text)
+
+
+def test_elf_build_identity_requires_one_canonical_sha1_note():
+    value = 'a' * 40
+    assert elf_build_id('Notes at offset 0x1:\n  Build ID: '+value+'\n') == value
+    for text in ('', 'Build ID: short', 'Build ID: '+value+'\nBuild ID: '+'b'*40):
+        with pytest.raises(ValueError, match='one build identity'):
+            elf_build_id(text)
 
 
 @pytest.mark.parametrize('mutation', [None, 'flag', 'disabled', 'owner', 'duplicate', 'source'])

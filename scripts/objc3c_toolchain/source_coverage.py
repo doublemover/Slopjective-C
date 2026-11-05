@@ -147,6 +147,14 @@ def binary_ids(text):
     return set(values)
 
 
+def elf_build_id(text: str) -> str:
+    """Extract one canonical SHA-1 GNU build identity from an ELF note view."""
+    values = re.findall(r'Build ID: ([0-9a-f]{40})', text)
+    if len(values) != 1:
+        raise ValueError('covered ELF lacks one build identity')
+    return values[0]
+
+
 def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out') or jobs not in (1, 2, 3, 4):
@@ -247,6 +255,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             if '23.1.3' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
         libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
         frozen.update({str(path): digest(path) for path in libraries})
+        library_identity = {str(library): elf_build_id(run('coverage-library-notes-'+str(index),
+            [tools['llvm-readobj'], '--notes', library])) for index, library in enumerate(libraries)}
+        library_ids = set(library_identity.values())
+        report['coverage_library_build_ids'] = library_identity
         # Keep uninstantiated headers and unused compiled files visible; only
         # LLVM's emitted maps determine executable-region denominators.
         for path in sorted((repo / 'native/objc3c/src').rglob('*')):
@@ -327,8 +339,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 run(component+'-'+name+'-merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', profile])
                 profile_ids = run(component+'-'+name+'-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', profile])
                 notes = run(component+'-'+name+'-binary-notes', [tools['llvm-readobj'], '--notes', binary])
-                expected_ids = re.findall(r'Build ID: ([0-9a-f]{40})', notes)
-                if len(expected_ids) != 1 or binary_ids(profile_ids) != set(expected_ids):
+                expected_ids = {elf_build_id(notes), *(library_ids if component == 'frontend' else set())}
+                if binary_ids(profile_ids) != expected_ids:
                     raise ValueError('coverage profile differs from the actual selected test binary')
                 baseline = export(component+'-'+name+'-mapping-baseline', binary, objects, None, build=build)
                 rows = export(component+'-'+name+'-export', binary, (), profile, build=build)
