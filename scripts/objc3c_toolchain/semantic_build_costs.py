@@ -46,6 +46,7 @@ def foundation_record(path):
     names = {row.get('phase') for row in phases}
     if (report.get('status') != 'passed' or not isinstance(report.get('source_identity'), str) or not report['source_identity'] or
             context.get('schema') != 'objc3c.foundation-cost-context.v1' or
+            not _signature(context.get('configuration_input_identity')) or
             not isinstance(context.get('build_config_digest'), str) or not context['build_config_digest'] or
             not isinstance(context.get('host_environment'), dict) or not context['host_environment'] or
             not isinstance(context.get('host'), dict) or not context['host'].get('system') or
@@ -59,20 +60,19 @@ def foundation_record(path):
             any(value is not None and not _signature(value) for value in cache.values())):
         raise ValueError('foundation initial cache evidence is incomplete')
     state = context['initial_state']
-    configure_plan = next(row.get('plan_identity') for row in phases if row['phase'] == 'configure')
     if state == 'cold-build-directory' and (any(cache.values()) or context.get('initial_entry_count') != 0):
         raise ValueError('foundation called an existing configured tree cold')
     if state == 'incremental-exact-inputs' and (
             not cache['CMakeCache.txt'] or not cache['build.ninja'] or
             not _signature(context.get('prior_report_sha256')) or context.get('prior_status') != 'passed' or
             context.get('prior_source_identity') != report['source_identity'] or
-            context.get('prior_configure_plan_identity') != configure_plan):
+            context.get('prior_configuration_input_identity') != context['configuration_input_identity']):
         raise ValueError('foundation claimed exact-input reuse without a passing prior tree')
     if state == 'invalidation-different-inputs' and (
             context.get('prior_status') != 'passed' or not context.get('prior_source_identity') or
             context['prior_source_identity'] == report['source_identity'] and (
-                context.get('prior_configure_plan_identity') is None or
-                context['prior_configure_plan_identity'] == configure_plan)):
+                context.get('prior_configuration_input_identity') is None or
+                context['prior_configuration_input_identity'] == context['configuration_input_identity'])):
         raise ValueError('foundation invalidation lacks a changed prior identity')
     preparation = context.get('source_preparation', {})
     if type(preparation.get('performed')) is not bool:
@@ -108,7 +108,8 @@ def foundation_record(path):
         raise ValueError('foundation phase durations exceed the recorded owner interval')
     key = {name: context[name] for name in ('build_config_digest', 'instrumentation', 'host', 'host_environment')}
     key.update(source_identity=report['source_identity'],
-               phase_plan_identities=[row['plan_identity'] for row in phases])
+               configuration_input_identity=context['configuration_input_identity'],
+               phase_commands=[{'phase': row['phase'], 'argv': row['command']} for row in phases])
     return {'kind': 'foundation', 'receipt_sha256': digest(path), 'identity': _identity(report),
         'context_sha256': _identity(key), 'context': key, 'state': state,
         'source_preparation': preparation, 'phases_seconds': phase_costs, 'commands': commands,

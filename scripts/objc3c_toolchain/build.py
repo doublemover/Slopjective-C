@@ -19,6 +19,13 @@ def _digest_file(path: Path):
     with path.open('rb') as stream: return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def configuration_input_identity(plan):
+    # The complete plan also inventories generated/staged consumers. Their
+    # appearance after a successful cold build is an output, not invalidation.
+    inputs = {key: value for key, value in plan.items() if key not in ('identity', 'sdk_consumers')}
+    return hashlib.sha256(json.dumps(inputs, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
 def cost_context(plan, *, preparation_seconds, prepared):
     """Record cache state before configuration; cold directories are not cold OS caches."""
     directory = Path(plan['paths']['build'])
@@ -29,16 +36,18 @@ def cost_context(plan, *, preparation_seconds, prepared):
         prior = {}
     prior_configure = next((row.get('plan_identity') for row in prior.get('phases', [])
                             if row.get('phase') == 'configure'), None)
+    input_identity = configuration_input_identity(plan)
+    prior_input_identity = prior.get('cost_context', {}).get('configuration_input_identity')
     cached = {name: _digest_file(directory / name) for name in ('CMakeCache.txt', 'build.ninja', '.ninja_log')}
     initial_entries = len(list(directory.iterdir())) if directory.is_dir() else 0
     if not any(cached.values()) and initial_entries == 0:
         state = 'cold-build-directory'
     elif (cached['CMakeCache.txt'] and cached['build.ninja'] and prior.get('status') == 'passed' and
           prior.get('source_identity') == plan['source_build_id'] and
-          prior_configure == plan['identity']):
+          prior_input_identity == input_identity):
         state = 'incremental-exact-inputs'
     elif prior.get('status') == 'passed' and (prior.get('source_identity') != plan['source_build_id'] or
-            prior_configure is not None and prior_configure != plan['identity']):
+            prior_input_identity is not None and prior_input_identity != input_identity):
         state = 'invalidation-different-inputs'
     else:
         state = 'existing-unqualified-tree'
@@ -47,6 +56,7 @@ def cost_context(plan, *, preparation_seconds, prepared):
         return candidate.read_text().strip() if candidate.is_file() else None
     cpu = read('/proc/cpuinfo') or ''
     return {'schema': 'objc3c.foundation-cost-context.v1',
+        'configuration_input_identity': input_identity,
         'build_config_digest': plan['build_config_digest'],
         'instrumentation': plan.get('instrumentation'),
         'host_environment': plan['host_environment'],
@@ -61,6 +71,7 @@ def cost_context(plan, *, preparation_seconds, prepared):
         'prior_source_identity': prior.get('source_identity'), 'prior_status': prior.get('status'),
         'prior_build_config_digest': prior.get('cost_context', {}).get('build_config_digest'),
         'prior_configure_plan_identity': prior_configure,
+        'prior_configuration_input_identity': prior_input_identity,
         'source_preparation': {'performed': prepared, 'seconds': preparation_seconds},
         'cache_scope': 'Build-tree state only. Shared compiler and filesystem caches are not cleared.'}
 

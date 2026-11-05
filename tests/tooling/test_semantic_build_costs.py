@@ -30,7 +30,9 @@ def native_build_reports(tmp_path_factory):
             'build': ['cmake', '--build', directory, '--parallel', '1'],
             'test': ['ctest', '--test-dir', directory, '--no-tests=error', '--output-on-failure'],
             'stage': ['cmake', '--install', directory]}
-        return {phase: {'paths': {'build': str(directory)}, 'identity': phase+'-'+identity,
+        return {phase: {'paths': {'build': str(directory)},
+            'identity': phase+'-'+identity+('-staged' if prefix.exists() else '-unstaged'),
+            'sdk_consumers': {'installed': {'present': prefix.exists()}},
             'source_build_id': identity, 'source_tree': identity, 'build_config_digest': 'control-config',
             'effective_configuration': {'LLVM_ENABLE_ASSERTIONS': 'ON'},
             'host_environment': {'compiler': compiler}, 'command': list(map(str, argv))}
@@ -74,7 +76,7 @@ def test_real_cold_incremental_and_invalidation_builds_keep_cache_and_input_cont
 
 
 @pytest.mark.parametrize('fault', ['status', 'phase', 'missing-command', 'log', 'duration', 'interval',
-    'cold-lie', 'reuse-identity', 'missing-prior', 'wrong-input-invalidation'])
+    'cold-lie', 'reuse-identity', 'missing-prior', 'reuse-config', 'wrong-input-invalidation'])
 def test_operational_build_reader_rejects_incomplete_stale_or_falsely_labeled_receipts(native_build_reports, tmp_path, fault):
     _, originals = native_build_reports
     path, report = copy_report(originals[1], tmp_path / 'record')
@@ -87,9 +89,31 @@ def test_operational_build_reader_rejects_incomplete_stale_or_falsely_labeled_re
     elif fault == 'cold-lie': report['cost_context']['initial_state'] = 'cold-build-directory'
     elif fault == 'reuse-identity': report['cost_context']['prior_source_identity'] = 'foreign source'
     elif fault == 'missing-prior': report['cost_context']['prior_report_sha256'] = None
+    elif fault == 'reuse-config': report['cost_context']['prior_configuration_input_identity'] = 'f'*64
     else: report['cost_context']['initial_state'] = 'invalidation-different-inputs'
     path.write_text(json.dumps(report))
     with pytest.raises(ValueError): owner.foundation_record(path)
+
+
+def test_cold_build_output_publication_does_not_invalidate_unchanged_inputs(native_build_reports):
+    _, reports = native_build_reports
+    cold, warm = [json.loads(path.read_text()) for path in reports[:2]]
+    assert cold['phases'][0]['plan_identity'] != warm['phases'][0]['plan_identity']
+    assert cold['cost_context']['configuration_input_identity'] == warm['cost_context']['configuration_input_identity']
+    assert warm['cost_context']['initial_state'] == 'incremental-exact-inputs'
+
+
+def test_configuration_changes_invalidate_even_when_source_is_identical(tmp_path):
+    directory = tmp_path / 'build';directory.mkdir()
+    for name in ('CMakeCache.txt', 'build.ninja'): (directory / name).write_text('configured')
+    before = {'identity': 'old-plan', 'paths': {'build': str(directory)}, 'source_build_id': 'source',
+              'build_config_digest': 'old-config', 'host_environment': {'compiler': 'admitted'}}
+    context = build.cost_context(before, preparation_seconds=0, prepared=False)
+    prior = {'status': 'passed', 'source_identity': 'source', 'cost_context': context,
+             'phases': [{'phase': 'configure', 'plan_identity': 'old-plan'}]}
+    (directory / 'foundation-build-report.json').write_text(json.dumps(prior))
+    after = {**before, 'build_config_digest': 'changed-config'}
+    assert build.cost_context(after, preparation_seconds=0, prepared=False)['initial_state'] == 'invalidation-different-inputs'
 
 
 def test_duplicate_reformatted_build_report_cannot_create_an_independent_measurement(native_build_reports, tmp_path):

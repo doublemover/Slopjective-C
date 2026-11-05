@@ -5,7 +5,10 @@ It starts no build, installer or archive qualification. The foundation builder
 records its initial directory/cache state, source preparation, source/config/tool
 identity, host limits, actual phase commands, durations and log digests. Empty
 build directories are labeled cold; exact-input incremental state requires the
-passing prior source and configure-plan identity. Changed inputs and unqualified
+passing prior source and configuration-input identity. Generated/staged consumer
+availability is retained in the complete plan but excluded from this input
+identity: publishing cold-build outputs must not manufacture an invalidation.
+Changed inputs and unqualified
 existing trees remain separate. Shared compiler/filesystem caches are not cleared
 or described as cold.
 

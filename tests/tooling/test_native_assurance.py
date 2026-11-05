@@ -333,6 +333,7 @@ def passing_bundle(tmp_path):
             (root / 'foundation-0.json').write_text(json.dumps({'tests': [{'name': 'parser rejection', 'code': 'PASS'}]}))
             source = {'status': 'passed', 'source_identity': 'fixture', 'elapsed_seconds': 4.1,
                 'cost_context': {'schema': 'objc3c.foundation-cost-context.v1', 'build_config_digest': 'fixture',
+                    'configuration_input_identity': 'e'*64,
                     'instrumentation': None, 'host_environment': {'compiler': 'fixture'}, 'host': {'system': 'fixture'},
                     'initial_state': 'cold-build-directory', 'initial_cache_files': {
                         'CMakeCache.txt': None, 'build.ninja': None, '.ninja_log': None},
