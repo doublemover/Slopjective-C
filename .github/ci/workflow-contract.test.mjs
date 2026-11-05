@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import * as yaml from "js-yaml";
 import {
+  validateImplementationGate,
   validateNativeContainer,
   validateNativeGate,
   validateWorkflowContracts,
@@ -28,10 +29,39 @@ const native = await readFile(
   new URL("../workflows/native-assurance.yml", import.meta.url),
   "utf8",
 );
+const implementation = await readFile(
+  new URL("../workflows/implementation-analysis.yml", import.meta.url),
+  "utf8",
+);
+const release = await readFile(
+  new URL("../workflows/platform-host-evidence.yml", import.meta.url),
+  "utf8",
+);
 
 test("native PR workflow has a guaranteed receipt-verifying aggregate", () => {
   validateNativeGate(native);
 });
+
+test("implementation analysis has exact PR, periodic and release gates", () => {
+  validateImplementationGate(implementation, release);
+});
+
+for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
+  ["missing aggregate", "  gate:", "  renamed:"],
+  ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
+  ["path-filtered PR", "  pull_request:", '  pull_request:\n    paths: ["native/**"]'],
+  ["missing release source", "      source_sha:\n        required: true", "      source_sha:\n        required: false"],
+  ["missing evidence", "if-no-files-found: error", "if-no-files-found: ignore"],
+  ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
+  ["release dependency", "", "", "    needs: [build, implementation-analysis]", "    needs: build"],
+]) {
+  test(`implementation workflow rejects ${name}`, () => {
+    assert.throws(() => validateImplementationGate(
+      implementation.replace(workflowBefore ?? "", workflowAfter ?? ""),
+      release.replace(releaseBefore ?? "", releaseAfter ?? ""),
+    ));
+  });
+}
 
 test("native containers admit TSan personality and debugger process controls", async () => {
   const llvm = await readFile(new URL("../workflows/llvm-assurance.yml", import.meta.url), "utf8");

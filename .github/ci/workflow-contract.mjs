@@ -80,6 +80,78 @@ export function validateNativeGate(text) {
   }
 }
 
+export function validateImplementationGate(text, releaseText) {
+  const workflow = yaml.load(text);
+  const events = workflow.on ?? {};
+  if (
+    !Object.hasOwn(events, "pull_request") ||
+    !Object.hasOwn(events, "push") ||
+    !Object.hasOwn(events, "schedule") ||
+    !Object.hasOwn(events, "workflow_dispatch") ||
+    !events.workflow_call?.inputs?.source_sha?.required ||
+    events.workflow_call.inputs.source_sha.type !== "string" ||
+    Object.hasOwn(events, "pull_request_target") ||
+    events.pull_request?.paths ||
+    events.pull_request?.["paths-ignore"] ||
+    workflow.permissions?.contents !== "read"
+  ) {
+    throw new Error("Implementation analysis must cover unprivileged PR, periodic and exact release sources");
+  }
+  const gate = workflow.jobs?.gate;
+  if (
+    gate?.name !== "Linux implementation analysis gate" ||
+    gate.if !== "always()" ||
+    JSON.stringify(gate.needs?.toSorted()) !== JSON.stringify(["analysis", "plan"]) ||
+    gate["continue-on-error"] ||
+    !(gate.steps ?? []).some(
+      (step) =>
+        step.run?.includes("scripts.objc3c_implementation_assurance verify") &&
+        step.if === "always()",
+    )
+  ) {
+    throw new Error("Implementation aggregate must always verify both exact-revision prerequisites");
+  }
+  const analysis = workflow.jobs?.analysis;
+  const execute = (analysis?.steps ?? []).find((step) =>
+    step.run?.includes("scripts.objc3c_implementation_assurance run"),
+  );
+  if (
+    analysis?.if !== "needs.plan.outputs.analysis == 'true'" ||
+    analysis?.["continue-on-error"] ||
+    !execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')
+  ) {
+    throw new Error("Implementation analysis must execute the selected trusted checkout without normalizing failure");
+  }
+  for (const id of ["plan", "analysis", "gate"]) {
+    const job = workflow.jobs?.[id];
+    if (!job || job["continue-on-error"])
+      throw new Error(`Missing or failure-normalizing implementation job ${id}`);
+    for (const step of job.steps ?? []) {
+      if (step["continue-on-error"])
+        throw new Error("Implementation analysis failures must remain failures");
+      if (step.uses && !/^[^@]+@[a-f0-9]{40}$/.test(step.uses))
+        throw new Error("Implementation analysis actions must be SHA-pinned");
+      if (
+        step.uses?.startsWith("actions/upload-artifact@") &&
+        (step.with?.["if-no-files-found"] !== "error" || !(step.with?.["retention-days"] <= 7))
+      ) {
+        throw new Error("Implementation evidence must fail closed with bounded retention");
+      }
+    }
+  }
+  const release = yaml.load(releaseText);
+  const call = release.jobs?.["implementation-analysis"];
+  const installNeeds = release.jobs?.install?.needs;
+  if (
+    call?.uses !== "./.github/workflows/implementation-analysis.yml" ||
+    call.with?.source_sha !== "${{ github.sha }}" ||
+    !Array.isArray(installNeeds) ||
+    JSON.stringify(installNeeds.toSorted()) !== JSON.stringify(["build", "implementation-analysis"])
+  ) {
+    throw new Error("Linux SDK installation must depend on exact-SHA implementation analysis");
+  }
+}
+
 export async function validateWorkflowContracts(config, readWorkflow) {
   validateConfig(config);
   const dispatcher = yaml.load(await readWorkflow("adaptive-maintenance.yml"));
@@ -142,4 +214,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const config = JSON.parse(await readFile(new URL("./adaptive-ci.json", import.meta.url), "utf8"));
   await validateWorkflowContracts(config, (name) => readFile(join(root, name), "utf8"));
   validateNativeGate(await readFile(join(root, "native-assurance.yml"), "utf8"));
+  validateImplementationGate(
+    await readFile(join(root, "implementation-analysis.yml"), "utf8"),
+    await readFile(join(root, "platform-host-evidence.yml"), "utf8"),
+  );
 }
