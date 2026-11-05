@@ -8,12 +8,12 @@ from pathlib import Path
 import statistics
 
 from .binary_packages import digest, write_json
-from .semantic_benchmarks import SCALES, runtime_result, summarize
+from .semantic_benchmarks import SCALES, semantic_result, summarize, workload_inventory, workload_names
+from .semantic_runtime_oracles import validate_delay_controls
 
 SCHEMA = 'objc3c.semantic-benchmark-calibration.v1'
 HOST_FIELDS = ('system', 'kernel', 'cpu_model', 'cpu_quota', 'cpuset', 'memory_limit',
                'affinity', 'container', 'runtime_threads', 'noise_limits')
-EXPECTED = {phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES}
 
 
 def _read(path):
@@ -35,16 +35,18 @@ def _host_identity(report):
 
 def _workload_inputs(report):
     selected = {}
+    required = {'scripts/objc3c_toolchain/semantic_benchmarks.py', 'tests/benchmarks/collections.cpp'}
+    if report.get('workload_version') == 2:
+        required |= {'tests/benchmarks/runtime_workloads.cpp',
+                     'scripts/objc3c_toolchain/semantic_runtime_oracles.py'}
     for path, value in report.get('inputs', {}).items():
         normalized = str(path).replace('\\', '/')
-        for suffix in ('scripts/objc3c_toolchain/semantic_benchmarks.py',
-                       'tests/benchmarks/collections.cpp'):
+        for suffix in required:
             if normalized.endswith(suffix):
                 if suffix in selected and selected[suffix] != value:
                     raise ValueError('semantic benchmark receipt has conflicting workload inputs')
                 selected[suffix] = value
-    if set(selected) != {'scripts/objc3c_toolchain/semantic_benchmarks.py',
-                         'tests/benchmarks/collections.cpp'}:
+    if set(selected) != required:
         raise ValueError('semantic benchmark receipt omitted its workload implementation identity')
     return selected
 
@@ -53,16 +55,21 @@ def _admit(path):
     path, report = _read(path)
     summaries, samples, sdks = (report.get(key, []) for key in ('summaries', 'samples', 'sdks'))
     repetitions = report.get('repetitions')
+    expected = workload_names(report.get('workload_version'))
     if (report.get('schema') != 'objc3c.semantic-benchmarks.v1' or report.get('status') != 'PASS' or
-            report.get('correctness') != 'PASS' or report.get('workload_version') != 1 or
+            report.get('correctness') != 'PASS' or
             report.get('timing_decision') != 'advisory-inconclusive-uncalibrated' or
             type(repetitions) is not int or not 3 <= repetitions <= 15 or len(sdks) != 1 or
-            len(summaries) != len(EXPECTED) or {row.get('workload') for row in summaries} != EXPECTED or
+            len(summaries) != len(expected) or {row.get('workload') for row in summaries} != expected or
             report.get('delay_control', {}).get('status') != 'PASS' or
             report['delay_control'].get('semantic_output_unchanged') is not True):
         raise ValueError('semantic benchmark receipt is incomplete or already makes a timing decision')
+    if report['workload_version'] == 2:
+        if report.get('workloads') != workload_inventory(2):
+            raise ValueError('semantic benchmark receipt changed its workload contract')
+        validate_delay_controls(report)
     observations = {}
-    for workload in EXPECTED:
+    for workload in expected:
         workload_rows = [row for row in samples if row.get('workload') == workload and
                          row.get('sdk_index') == 0]
         rows = [row for row in workload_rows if row.get('warmup') is False]
@@ -75,9 +82,8 @@ def _admit(path):
             raise ValueError('semantic benchmark receipt omitted measured successful samples')
         field = 'work_seconds' if workload.startswith('runtime-') else 'wall_seconds'
         if workload.startswith('runtime-'):
-            scale = int(workload.split('-')[1])
             for row in workload_rows:
-                semantic = runtime_result(json.dumps(row.get('semantic_result')), scale)
+                semantic = semantic_result(json.dumps(row.get('semantic_result')), workload)
                 if row.get('work_seconds') != semantic['nanoseconds']/1e9:
                     raise ValueError('semantic benchmark runtime timer differs from its retained sample')
         measured = summarize(rows, field)
@@ -115,11 +121,16 @@ def calibrate(repo, receipts, output, *, labels=()):
     for key in ('host', 'inputs', 'sdk'):
         if any(row[key] != admitted[0][key] for row in admitted[1:]):
             raise ValueError('semantic calibration receipts have different '+key+' contexts')
+    versions = {row['report']['workload_version'] for row in admitted}
+    if len(versions) != 1:
+        raise ValueError('semantic calibration workload versions differ')
+    version = versions.pop()
+    expected = workload_names(version)
     repetitions = {row['report']['repetitions'] for row in admitted}
     if len(repetitions) != 1:
         raise ValueError('semantic calibration receipt repetition policies differ')
     observations = []
-    for workload in sorted(EXPECTED):
+    for workload in sorted(expected):
         field = admitted[0]['observations'][workload]['field']
         rows = [sample for receipt in admitted for sample in receipt['observations'][workload]['rows']]
         pooled = summarize(rows, field)
@@ -132,7 +143,7 @@ def calibrate(repo, receipts, output, *, labels=()):
             'peak_process_rss_kib': {'median': statistics.median(rss), 'maximum': max(rss)},
             'decision': 'observed-runner-variance-only'})
     scaling = []
-    for phase in ('syntax', 'object', 'runtime'):
+    for phase in sorted({name.rsplit('-', 1)[0] for name in expected}):
         rows = [next(row for row in observations if row['workload'] == phase+'-'+str(scale))
                 for scale in SCALES]
         scaling.append({'phase': phase, 'points': [{'scale': scale,
@@ -142,7 +153,7 @@ def calibrate(repo, receipts, output, *, labels=()):
             'adjacent_growth': [rows[index+1]['pooled']['median']/rows[index]['pooled']['median']
                                 for index in range(len(rows)-1)]})
     all_samples = [sample for row in admitted for sample in row['report']['samples']]
-    report = {'schema': SCHEMA, 'status': 'PASS', 'workload_version': 1,
+    report = {'schema': SCHEMA, 'status': 'PASS', 'workload_version': version,
         'decision': 'calibrated-observation-advisory',
         'gate_policy': ('Observed spread and cost do not define a product regression budget. '
                         'Promotion requires reviewed per-workload absolute effects and memory goals.'),

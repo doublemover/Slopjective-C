@@ -219,7 +219,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             prefix = directory / 'build/compiler-prefix'
             prepare_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],
                            target=report['product']['host_environment']['target_triple'])
-            result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3)
+            result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3, extended_runtime=True)
             # Correctness/completeness block the native gate. Timings have no
             # calibrated baseline here and cannot claim a performance pass.
             return result['summaries']

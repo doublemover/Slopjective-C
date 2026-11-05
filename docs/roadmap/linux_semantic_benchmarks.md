@@ -1,5 +1,42 @@
 # Current semantic workload benchmarks
 
+The current workload version **2** extends the original nine rows to **18**.
+It adds three public-runtime families at 32, 256 and 2,048 elements, with sixteen
+rounds per sample:
+
+- UTF-8 builder construction, exact scalar/byte counts, byte traversal, scalar
+  slicing, concatenation, scalar search and destruction.
+- Generic arrays with nontrivial copy/destruction callbacks, retained aliases,
+  mutation and reads. Independent value checks and a balanced lifetime ledger
+  reject leaks; the existing 32-element chunk contract bounds payload copying.
+- Actor-affine tasks that resume twice, complete once and destroy their frames
+  before group quiescence. Completion-order consumption checks every child.
+  A manual executor admits batches of 256 below mailbox capacity; this measures
+  sustained scheduling work rather than worker-pool throughput.
+
+The receipt inventories each row's inputs/generator, scale, compiler flags,
+seed/rounds, completed-work oracle, cache state, measurement boundary and timeout.
+Each new family has a paired bounded-delay control with unchanged semantic
+results. The native gate requires every actual warmup and repetition, all three
+delay controls and complete lifetime counters. Calibration compares matching
+workload versions and produces separate scaling curves for all six phases and
+families. Compiler object samples remove the previous object before execution;
+timeouts and interruptions kill/reap the process session. Native regression
+controls compile and execute all nine new family/scale combinations and reject
+wrong-checksum, missing-destruction and missing-callback implementations.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
+  --sdk /path/to/candidate --extended-runtime \
+  --output out/semantic-runtime-measurement --repetitions 3
+```
+
+These local public-runtime controls do not replace qualification with the sealed
+SDK. Source/PCH/interface import costs, ARC/MRC object lifetimes, generated async
+frames, cancellation workloads, worker-pool throughput and cold build/install
+costs remain separate #8291 work. Timing remains advisory pending observed
+runner variance and reviewed latency, throughput and memory goals.
+
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real
 language/runtime work alongside the existing explicitly labeled warm command
 latency probe. The first workload version measures ObjC3 Optional/Result,
@@ -40,7 +77,7 @@ throughput. Those dimensions require further workload definitions and measured
 cost before expanding the existing budgeted CI/release lanes. No new schedule or
 performance claim follows merely from successful measurement.
 
-The existing native CI owner now selects a three-repetition characterization
+The original native CI selection used a three-repetition characterization
 for compiler, runtime, stdlib, workload, foundation and runner changes and its
 complete periodic/release selection. It seals only the required current compiler,
 linker, resources, runtime archive/dependency and headers; it builds no archive.
@@ -49,7 +86,7 @@ three measured samples, runtime work-count oracles and the paired delay control.
 Missing samples or wrong semantic results block correctness. Timings stay
 advisory, with no performance-pass claim and no automatically accepted baseline.
 
-The real native CI protocol passes nine phase/scale rows and forty-five command
+The original native CI protocol passed nine phase/scale rows and forty-five command
 samples. A separate two-SDK experiment compares the admitted 75cfe6c21f70 and
 616ca86288bb compiler checkpoints with eighty-seven retained samples. Both use
 instrumented compilers and ordinary runtime archives; the result is an

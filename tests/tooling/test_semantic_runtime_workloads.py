@@ -1,0 +1,103 @@
+"""Independent runtime-work oracles and actual native public-API mechanism controls."""
+import json
+from pathlib import Path
+import shutil
+import subprocess
+
+import pytest
+
+from scripts.objc3c_toolchain.semantic_runtime_oracles import (
+    FAMILIES, expected_work, runtime_workload_result)
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def result(family, scale=32):
+    row = {**expected_work(family, scale), 'nanoseconds': 1}
+    if family == 'generic-array': row.update(payload_copies=3*16*scale, destructions=3*16*scale)
+    return row
+
+
+@pytest.mark.parametrize('family', FAMILIES)
+@pytest.mark.parametrize('fault', ['zero-work', 'checksum', 'leaked-values', 'zero-timer', 'missing', 'boolean'])
+def test_partial_work_lifetime_mismatch_and_invalid_timing_are_rejected(family, fault):
+    row = result(family)
+    if fault == 'zero-work': row['completed_operations'] = 0
+    elif fault == 'checksum': row['checksum'] += 1
+    elif fault == 'leaked-values': row['live_values'] = 1
+    elif fault == 'zero-timer': row['nanoseconds'] = 0
+    elif fault == 'missing': row.pop('checksum')
+    else: row['live_values'] = False
+    with pytest.raises(ValueError): runtime_workload_result(json.dumps(row), family, 32)
+
+
+def test_generic_array_requires_balanced_and_bounded_native_copy_work():
+    for copies, destroys in ((1, 1), (100000, 100000), (1024, 1023)):
+        row = {**result('generic-array'), 'payload_copies': copies, 'destructions': destroys}
+        with pytest.raises(ValueError, match='bounded chunk'):
+            runtime_workload_result(json.dumps(row), 'generic-array', 32)
+
+
+@pytest.fixture(scope='module')
+def native_workloads(tmp_path_factory):
+    # These value-only C++ runtime controls need neither a sealed compiler fork
+    # nor libobjc. Hosted SDK qualification remains a separate evidence boundary.
+    compiler = shutil.which('clang++')
+    if not compiler: pytest.skip('Clang unavailable for native public-runtime controls')
+    root = tmp_path_factory.mktemp('semantic-runtime-controls')
+    try:
+        build = root / 'build'
+        subprocess.run(['cmake', '-S', ROOT / 'native/objc3c/src/runtime', '-B', build,
+            '-G', 'Ninja', '-DCMAKE_CXX_COMPILER='+compiler, '-DCMAKE_BUILD_TYPE=Release',
+            '-DBUILD_TESTING=OFF'], check=True, capture_output=True)
+        subprocess.run(['cmake', '--build', build, '--parallel', '2'], check=True, capture_output=True)
+        include = root / 'include/objc3c/runtime'
+        shutil.copytree(ROOT / 'native/objc3c/src/runtime/public', include)
+        fixture = ROOT / 'tests/benchmarks/runtime_workloads.cpp'
+        def compile(source, output):
+            subprocess.run([compiler, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror',
+                '-I'+str(root / 'include'), source, build / 'libobjc3_runtime_services.a',
+                '-pthread', '-fuse-ld=lld', '-o', output], check=True, capture_output=True)
+        binary = root / 'runtime-workloads';compile(fixture, binary)
+        yield root, binary, compile
+    finally:
+        shutil.rmtree(root)
+
+
+@pytest.mark.parametrize('family', FAMILIES)
+@pytest.mark.parametrize('scale', [32, 256, 2048])
+def test_real_runtime_workloads_complete_all_work_and_teardown(native_workloads, family, scale):
+    _, binary, _ = native_workloads
+    completed = subprocess.run([binary, family, str(scale), '16', '17'],
+                               capture_output=True, text=True, timeout=60)
+    assert completed.returncode == 0, completed.stderr
+    row = runtime_workload_result(completed.stdout, family, scale)
+    assert row['live_values'] == 0 and row['nanoseconds'] > 0
+
+
+@pytest.mark.parametrize('family', FAMILIES)
+def test_real_runtime_delay_control_preserves_work_and_adds_bounded_cost(native_workloads, family):
+    _, binary, _ = native_workloads
+    completed = subprocess.run([binary, family, '32', '16', '17', '1'],
+                               check=True, capture_output=True, text=True, timeout=60)
+    row = runtime_workload_result(completed.stdout, family, 32)
+    assert row['nanoseconds'] >= 16_000_000
+
+
+@pytest.mark.parametrize('family,before,after', [
+    ('text', 'ledger.checksum += byte;', 'ledger.checksum += byte + 1;'),
+    ('generic-array', 'destroy_payload(value);++ledger.operations;', '++ledger.operations;'),
+    ('task-group-actor', '++ledger.callbacks;', ''),
+])
+def test_native_missing_work_mutants_cannot_appear_faster(native_workloads, family, before, after):
+    root, _, compile = native_workloads
+    source = (ROOT / 'tests/benchmarks/runtime_workloads.cpp').read_text()
+    assert source.count(before) == 1
+    mutant = root / (family+'.cpp');mutant.write_text(source.replace(before, after))
+    binary = root / family;compile(mutant, binary)
+    completed = subprocess.run([binary, family, '32', '16', '17'],
+                               capture_output=True, text=True, timeout=60)
+    if completed.returncode == 0:
+        with pytest.raises(ValueError): runtime_workload_result(completed.stdout, family, 32)
+    else:
+        assert completed.returncode == 4

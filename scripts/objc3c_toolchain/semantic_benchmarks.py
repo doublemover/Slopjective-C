@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import platform
-import signal
 import statistics
 import subprocess
 import time
@@ -15,9 +15,51 @@ from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
+from .semantic_runtime_oracles import FAMILIES, expected_work, runtime_workload_result
+from .llvm_ir_execution import _kill_session
+from .sanitizer_policy import require_clean_diagnostic
 
 SCALES = (32, 256, 2048)
 ROUNDS, SEED = 16, 17
+
+
+def workload_names(version=1):
+    if type(version) is not int or version not in (1, 2):
+        raise ValueError('unreviewed semantic workload version')
+    return {phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES} | (
+        {'runtime-'+family+'-'+str(scale) for family in FAMILIES for scale in SCALES}
+        if version == 2 else set())
+
+
+def semantic_result(text, workload):
+    name, scale = workload.rsplit('-', 1)
+    return (runtime_result(text, int(scale)) if name == 'runtime' else
+            runtime_workload_result(text, name.removeprefix('runtime-'), int(scale)))
+
+
+def workload_inventory(version=2):
+    rows = []
+    for name in sorted(workload_names(version)):
+        phase, scale = name.rsplit('-', 1);scale = int(scale)
+        runtime = phase.startswith('runtime')
+        family = phase.removeprefix('runtime-')
+        rows.append({'id': name, 'scale': scale, 'phase': 'native-execute' if runtime else phase,
+            'source': ('tests/benchmarks/collections.cpp' if phase == 'runtime' else
+                       'tests/benchmarks/runtime_workloads.cpp' if runtime else 'frontend_source(scale)'),
+            'base_compiler_flags': ['--no-default-config', '-std=c++20', '-O2'], 'timeout_seconds': 120,
+            'frontend_flags': [] if runtime else ['-x', 'objective-c++', '-fobjc-version=3',
+                '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fblocks'],
+            'command_identity': 'Each sample retains complete argv, working directory and SDK/resource/loader identities.',
+            'cache_state': 'fresh output artifacts; warm shared filesystem cache; no compiler cache launcher',
+            'measurement': 'steady-clock semantic work including teardown' if runtime else 'compiler command wall time',
+            'runtime_threads': 1 if runtime else None, 'rounds': ROUNDS if runtime else None,
+            'seed': SEED if runtime and family != 'text' else None,
+            'maximum_admitted_task_batch': 256 if family == 'task-group-actor' else None,
+            'expected': (expected_runtime(scale) if phase == 'runtime' else
+                         expected_work(family, scale) if runtime else {'compiler_exit_code': 0}),
+            'oracle': 'independent checksum, completed-work and lifetime accounting' if runtime else
+                      'successful syntax check and fresh nonempty object for object phase'})
+    return rows
 
 
 def frontend_source(scale):
@@ -64,18 +106,23 @@ def sample(argv, *, cwd, environment, log, timeout=120):
         with subprocess.Popen(list(map(str, argv)), cwd=cwd, env=environment,
                 stdin=subprocess.DEVNULL, stdout=stream, stderr=subprocess.STDOUT,
                 start_new_session=True) as process:
-            while True:
-                child, status, usage = os.wait4(process.pid, os.WNOHANG)
-                if child:
-                    process.returncode = os.waitstatus_to_exitcode(status)
-                    break
-                if time.monotonic()-started >= timeout:
-                    timed_out = True
-                    os.killpg(process.pid, signal.SIGKILL)
-                    _, status, usage = os.wait4(process.pid, 0)
-                    process.returncode = os.waitstatus_to_exitcode(status)
-                    break
-                time.sleep(0.002)
+            try:
+                while True:
+                    child, status, usage = os.wait4(process.pid, os.WNOHANG)
+                    if child:
+                        process.returncode = os.waitstatus_to_exitcode(status)
+                        break
+                    if time.monotonic()-started >= timeout:
+                        timed_out = True
+                        _kill_session(process.pid)
+                        _, status, usage = os.wait4(process.pid, 0)
+                        process.returncode = os.waitstatus_to_exitcode(status)
+                        break
+                    time.sleep(0.002)
+            except BaseException:
+                _kill_session(process.pid)
+                process.wait()
+                raise
     row = {'argv': list(map(str, argv)), 'cwd': str(cwd), 'exit_code': process.returncode,
         'timed_out': timed_out, 'wall_seconds': time.monotonic()-started,
         'cpu_seconds': usage.ru_utime+usage.ru_stime, 'peak_process_rss_kib': usage.ru_maxrss,
@@ -88,7 +135,7 @@ def summarize(rows, field='wall_seconds'):
     if len(rows) < 3:
         raise ValueError('benchmark requires at least three retained samples')
     values = [row[field] for row in rows]
-    if any(type(value) not in (int, float) or value <= 0 for value in values):
+    if any(type(value) not in (int, float) or not math.isfinite(value) or value <= 0 for value in values):
         raise ValueError('invalid or missing benchmark sample')
     center = statistics.median(values)
     return {'median': center, 'minimum': min(values), 'maximum': max(values),
@@ -135,7 +182,7 @@ def prepare_prefix(stage, prefix, *, source_build_id, target):
     return verify_sdk(prefix)
 
 
-def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
+def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_runtime=False):
     repo, output = repo.resolve(strict=True), output.resolve()
     if (platform.system() != 'Linux' or platform.machine() != 'x86_64' or
             type(repetitions) is not int or not 3 <= repetitions <= 15 or
@@ -147,14 +194,25 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
         raise ValueError('benchmark SDK target contexts differ')
     output.mkdir(parents=True)
     fixture = repo / 'tests/benchmarks/collections.cpp'
-    frozen = {str(path): digest(path) for path in (Path(__file__), fixture)}
+    fixtures = [Path(__file__), fixture]
+    if extended_runtime:
+        fixtures += [repo / 'tests/benchmarks/runtime_workloads.cpp',
+                     Path(__file__).with_name('semantic_runtime_oracles.py')]
+    frozen = {str(path): digest(path) for path in fixtures}
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'running', 'host': host_context(),
-        'workload_version': 1, 'inputs': frozen, 'repetitions': repetitions, 'samples': [], 'order': [],
-        'scope': 'Warm frontend syntax/object generation and sustained concrete i32 map creation/insertion/lookup/count/teardown. No cold build or filesystem, archive, actor, ARC lifetime or full language claim.',
+        'workload_version': 2 if extended_runtime else 1, 'inputs': frozen,
+        'workloads': workload_inventory(2 if extended_runtime else 1),
+        'repetitions': repetitions, 'samples': [], 'order': [],
+        'scope': 'Warm frontend syntax/object generation and sustained concrete i32 map creation/insertion/lookup/count/teardown. No cold build or filesystem, archive, ARC object lifetime or full language claim.',
         'timing_decision': 'advisory-inconclusive-uncalibrated', 'correctness': 'running',
         'cache_state': 'One unmeasured warmup per SDK/row; fresh output artifacts, warm shared OS caches; compiler cache launchers absent.',
         'sdks': [{'path': str(prefix), 'seal_sha256': value['seal_sha256'], 'source_build_id': value['source_build_id'],
             'purpose': value.get('purpose', 'sealed SDK')} for prefix, value in zip(prefixes, manifests)]}
+    if extended_runtime:
+        report['scope'] += (' Extended runtime: UTF-8 builder/scalar/byte/slice/concat/search and teardown; '
+            'generic-array bounded mutation and copy/destruction accounting; '
+            'manual-executor actor task suspension, completion, group consumption and quiescence. '
+            'This does not measure worker-pool throughput or compiler-generated async frames.')
     states = []
     def run(label, args, state):
         log = output / (label+'.log')
@@ -164,6 +222,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
         write_json(output / 'qualification.json', report)
         if row['timed_out'] or row['exit_code']:
             raise ValueError('semantic benchmark command failed: '+label)
+        require_clean_diagnostic(log.read_text(errors='replace'))
         return row
     try:
         for index, prefix in enumerate(prefixes):
@@ -212,6 +271,24 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
             report['sdks'][index]['runtime_loader'] = loaded_graph(binary,
                 Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
                 run=lambda name, argv: Path(run('sdk-'+str(index)+'-runtime-'+name, argv, state)['log']).read_text())
+            if extended_runtime:
+                extra_source = root / 'runtime_workloads.cpp'
+                extra_source.write_bytes((repo / 'tests/benchmarks/runtime_workloads.cpp').read_bytes())
+                extra_obj, extra_binary = root / 'runtime_workloads.o', root / 'runtime_workloads'
+                run(f'sdk-{index}-extended-runtime-object', [compiler, *flags, '-I'+str(prefix / 'include'),
+                    '-c', extra_source, '-o', extra_obj], state)
+                run(f'sdk-{index}-extended-runtime-link', [compiler, '--no-default-config', '-fuse-ld=lld',
+                    extra_obj, prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
+                    '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', extra_binary], state)
+                report['sdks'][index]['extended_runtime_loader'] = loaded_graph(extra_binary,
+                    Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                    run=lambda name, argv: Path(run('sdk-'+str(index)+'-extended-runtime-'+name,
+                                                   argv, state)['log']).read_text())
+                frozen.update(report['sdks'][index]['extended_runtime_loader']['libraries'])
+                for family in FAMILIES:
+                    for scale in SCALES:
+                        state['rows']['runtime-'+family+'-'+str(scale)] = [
+                            extra_binary, family, str(scale), str(ROUNDS), str(SEED)]
             for graph in ('compiler_loader', 'runtime_loader'):
                 frozen.update(report['sdks'][index][graph]['libraries'])
             for scale in SCALES:
@@ -229,10 +306,14 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
             for index in order:
                 state = states[index]
                 for name, command in state['rows'].items():
+                    if name.startswith('object-'):
+                        # A zero-exit compiler that writes nothing cannot reuse
+                        # the previous repetition's object as completed work.
+                        Path(command[-1]).unlink(missing_ok=True)
                     row = run(f'{iteration}-sdk-{index}-'+name, command, state)
                     row.update(workload=name, warmup=iteration == 0)
                     if name.startswith('runtime-'):
-                        row['semantic_result'] = runtime_result(Path(row['log']).read_text(), int(name.split('-')[1]))
+                        row['semantic_result'] = semantic_result(Path(row['log']).read_text(), name)
                         row['work_seconds'] = row['semantic_result']['nanoseconds']/1e9
                     elif name.startswith('object-'):
                         artifact = Path(command[-1])
@@ -252,6 +333,24 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
             raise ValueError('bounded-delay regression control was not detected')
         report['delay_control'] = {'status': 'PASS', 'samples_seconds': delayed, 'median_effect_seconds': effect,
             'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2}
+        if extended_runtime:
+            report['runtime_delay_controls'] = []
+            for family in FAMILIES:
+                workload = 'runtime-'+family+'-32'
+                delayed = []
+                for repetition in range(repetitions):
+                    row = run(f'delay-control-{family}-{repetition}',
+                              [*state['rows'][workload], '1'], state)
+                    delayed.append(semantic_result(Path(row['log']).read_text(), workload)['nanoseconds']/1e9)
+                ordinary = [row['work_seconds'] for row in report['samples']
+                    if row.get('workload') == workload and row['sdk_index'] == state['index'] and
+                    row.get('warmup') is False]
+                effect = statistics.median(delayed)-statistics.median(ordinary)
+                if effect < ROUNDS*0.001/2:
+                    raise ValueError('extended runtime delay control was not detected: '+family)
+                report['runtime_delay_controls'].append({'family': family, 'status': 'PASS',
+                    'samples_seconds': delayed, 'median_effect_seconds': effect,
+                    'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2})
         report['summaries'] = [{
             'sdk_index': state['index'], 'workload': name,
             'wall': summarize([row for row in report['samples'] if row.get('workload') == name and
@@ -290,6 +389,7 @@ def main():
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--baseline-sdk', type=Path)
     parser.add_argument('--repetitions', type=int, default=3)
+    parser.add_argument('--extended-runtime', action='store_true')
     result = measure(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'timing_decision': result['timing_decision']}))
 

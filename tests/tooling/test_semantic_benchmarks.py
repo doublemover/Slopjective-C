@@ -10,11 +10,13 @@ from scripts.objc3c_toolchain.semantic_benchmarks import (SCALES, expected_runti
     frontend_source, runtime_result, sample, summarize)
 
 
-def calibration_receipt(path, *, offset=0.0):
-    workloads = [phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES]
+def calibration_receipt(path, *, offset=0.0, version=1):
+    from scripts.objc3c_toolchain.semantic_benchmarks import workload_inventory, workload_names
+    from scripts.objc3c_toolchain.semantic_runtime_oracles import FAMILIES, expected_work
+    workloads = sorted(workload_names(version))
     samples, summaries = [], []
     for workload_index, workload in enumerate(workloads):
-        scale = int(workload.split('-')[1])
+        scale = int(workload.rsplit('-', 1)[1])
         rows = []
         for iteration in range(4):
             value = 0.01*(workload_index+1)+offset+iteration*0.0001
@@ -23,15 +25,18 @@ def calibration_receipt(path, *, offset=0.0):
                 'cpu_seconds': value/2, 'peak_process_rss_kib': 1024+workload_index}
             if workload.startswith('runtime-'):
                 nanoseconds = int(value*1e8)
+                family = workload.rsplit('-', 1)[0].removeprefix('runtime-')
+                semantic = expected_runtime(scale) if family == 'runtime' else expected_work(family, scale)
+                if family == 'generic-array': semantic.update(payload_copies=3*16*scale, destructions=3*16*scale)
                 row.update(work_seconds=nanoseconds/1e9,
-                           semantic_result={**expected_runtime(scale), 'nanoseconds': nanoseconds})
+                           semantic_result={**semantic, 'nanoseconds': nanoseconds})
             rows.append(row);samples.append(row)
         measured = rows[1:]
         summary = {'sdk_index': 0, 'workload': workload, 'wall': summarize(measured)}
         if workload.startswith('runtime-'): summary['work'] = summarize(measured, 'work_seconds')
         summaries.append(summary)
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'PASS', 'correctness': 'PASS',
-        'workload_version': 1, 'timing_decision': 'advisory-inconclusive-uncalibrated',
+        'workload_version': version, 'timing_decision': 'advisory-inconclusive-uncalibrated',
         'repetitions': 3, 'summaries': summaries, 'samples': samples,
         'delay_control': {'status': 'PASS', 'semantic_output_unchanged': True},
         'host': {'system': 'Linux-runner', 'kernel': 'kernel', 'cpu_model': 'cpu', 'cpu_quota': 'max',
@@ -40,6 +45,13 @@ def calibration_receipt(path, *, offset=0.0):
         'sdks': [{'seal_sha256': 'a'*64, 'source_build_id': 'matched-source', 'instrumentation': {}}],
         'inputs': {'/checkout/scripts/objc3c_toolchain/semantic_benchmarks.py': 'b'*64,
             '/checkout/tests/benchmarks/collections.cpp': 'c'*64}}
+    if version == 2:
+        report['workloads'] = workload_inventory(2)
+        report['inputs'].update({'/checkout/tests/benchmarks/runtime_workloads.cpp': 'd'*64,
+            '/checkout/scripts/objc3c_toolchain/semantic_runtime_oracles.py': 'e'*64})
+        report['runtime_delay_controls'] = [{'family': family, 'status': 'PASS',
+            'semantic_output_unchanged': True, 'minimum_control_effect_seconds': 0.008,
+            'median_effect_seconds': 0.016, 'samples_seconds': [0.016]*3} for family in FAMILIES]
     path.write_text(json.dumps(report))
     return report
 
@@ -89,19 +101,41 @@ def test_timeout_is_retained_as_failure_with_no_successful_timing_claim(tmp_path
     assert row['timed_out'] and row['exit_code'] < 0
 
 
+def test_interrupted_measurement_reaps_its_detached_process(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import semantic_benchmarks as owner
+    children = []
+    def interrupt(pid, flags):
+        children.append(pid)
+        raise KeyboardInterrupt('controlled interruption')
+    monkeypatch.setattr(owner.os, 'wait4', interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        sample([sys.executable, '-c', 'import time;time.sleep(30)'], cwd=tmp_path,
+               environment=dict(os.environ), log=tmp_path / 'interrupted.log')
+    assert len(children) == 1
+    with pytest.raises(ProcessLookupError): os.kill(children[0], 0)
+
+
 def test_distribution_reports_spread_without_an_invented_regression_budget():
     result = summarize([{'wall_seconds': value} for value in (1, 2, 3)])
     assert result == {'median': 2, 'minimum': 1, 'maximum': 3, 'median_absolute_deviation': 1, 'samples': 3}
 
 
+@pytest.mark.parametrize('value', [float('nan'), float('inf'), float('-inf')])
+def test_nonfinite_measurements_cannot_qualify(value):
+    with pytest.raises(ValueError, match='sample'):
+        summarize([{'wall_seconds': 1}, {'wall_seconds': value}, {'wall_seconds': 2}])
+
+
 @pytest.mark.parametrize('mutate_sdk', [False, True])
 @pytest.mark.parametrize('shared_compiler', [False, True])
+@pytest.mark.parametrize('extended_runtime', [False, True])
 def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
-        tmp_path, monkeypatch, mutate_sdk, shared_compiler):
+        tmp_path, monkeypatch, mutate_sdk, shared_compiler, extended_runtime):
     from scripts.objc3c_toolchain import semantic_benchmarks as owner
     repo, sdk = tmp_path / 'repo', tmp_path / 'sdk'
     (repo / 'tests/benchmarks').mkdir(parents=True)
     (repo / 'tests/benchmarks/collections.cpp').write_text('retained workload fixture')
+    (repo / 'tests/benchmarks/runtime_workloads.cpp').write_text('retained extended workload fixture')
     (sdk / 'lib/clang/23').mkdir(parents=True)
     calls = []
     def verify(prefix):
@@ -112,6 +146,13 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         if Path(argv[0]).name == 'collections':
             nanos = 16_000_000 if str(argv[-1]) == '1' else 1000
             log.write_text(json.dumps({**expected_runtime(int(argv[1])), 'nanoseconds': nanos}))
+        elif Path(argv[0]).name == 'runtime_workloads':
+            from scripts.objc3c_toolchain.semantic_runtime_oracles import expected_work
+            family, scale = argv[1], int(argv[2])
+            result = expected_work(family, scale)
+            if family == 'generic-array':
+                result.update(payload_copies=3*16*scale, destructions=3*16*scale)
+            log.write_text(json.dumps({**result, 'nanoseconds': 16_000_000 if len(argv) == 6 else 1000}))
         else:
             log.write_text('')
             if '-o' in argv:
@@ -134,14 +175,14 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
     output = repo / 'out/evidence'
     if mutate_sdk:
         with pytest.raises(ValueError, match='SDK changed'):
-            owner.measure(repo, output, sdk=sdk)
+            owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
         assert json.loads((output / 'qualification.json').read_text())['status'] == 'FAIL'
     else:
-        report = owner.measure(repo, output, sdk=sdk)
+        report = owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
         assert report['status'] == 'PASS' and report['correctness'] == 'PASS'
-        assert len(report['summaries']) == 9
+        assert len(report['summaries']) == (18 if extended_runtime else 9)
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
-        assert len([row for row in report['samples'] if row.get('semantic_result')]) == 12
+        assert len([row for row in report['samples'] if row.get('semantic_result')]) == (48 if extended_runtime else 12)
         assert report['delay_control']['status'] == 'PASS'
         from scripts.objc3c_assurance.evidence import suite_results
         import copy
@@ -149,7 +190,10 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         native_root = repo / 'out/native'
         destination = native_root / 'semantic-workloads/measurement';destination.parent.mkdir(parents=True)
         shutil.move(output, destination)
-        assert len(suite_results(native_root, 'semantic-workloads')) == 9
+        if not extended_runtime:
+            with pytest.raises(ValueError): suite_results(native_root, 'semantic-workloads')
+            return
+        assert len(suite_results(native_root, 'semantic-workloads')) == 18
         for mutation in ('summary', 'sample', 'delay', 'oracle'):
             broken = copy.deepcopy(report)
             if mutation == 'summary': broken['summaries'].pop()
@@ -205,20 +249,22 @@ def test_semantic_work_changes_select_the_existing_native_lane(path):
     assert 'semantic-work-count' in suite['execution'] and 'advisory-timing' in suite['execution']
 
 
-def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(tmp_path):
+@pytest.mark.parametrize('version', [1, 2])
+def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(tmp_path, version):
     from scripts.objc3c_toolchain.semantic_benchmark_calibration import calibrate
     repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
     first, second = tmp_path / 'first.json', tmp_path / 'second.json'
-    calibration_receipt(first)
-    calibration_receipt(second, offset=0.0002)
+    calibration_receipt(first, version=version)
+    calibration_receipt(second, offset=0.0002, version=version)
     report = calibrate(repo, [first, second], repo / 'out/calibration',
                        labels=['workflow-run-a', 'workflow-run-b'])
     assert report['status'] == 'PASS' and report['decision'] == 'calibrated-observation-advisory'
     assert report['independent_receipts'] == 2 and report['samples_per_workload'] == 6
-    assert len(report['observations']) == 9 and len(report['scaling']) == 3
+    assert len(report['observations']) == (9 if version == 1 else 18)
+    assert len(report['scaling']) == (3 if version == 1 else 6)
     assert all(row['pooled']['samples'] == 6 and row['decision'] == 'observed-runner-variance-only'
                for row in report['observations'])
-    assert report['measured_cost']['commands'] == 72
+    assert report['measured_cost']['commands'] == (72 if version == 1 else 144)
     assert 'do not define a product regression budget' in report['gate_policy']
     assert json.loads((repo / 'out/calibration/calibration.json').read_text()) == report
 
@@ -242,3 +288,19 @@ def test_calibration_rejects_reused_or_incompatible_or_corrupt_receipts(tmp_path
         second.write_text(json.dumps(report))
     with pytest.raises(ValueError):
         calibrate(repo, [first, second], repo / 'out/calibration')
+
+
+@pytest.mark.parametrize('fault', ['workload-contract', 'delay-control', 'payload-lifetime'])
+def test_extended_calibration_rechecks_the_expanded_contract_and_oracles(tmp_path, fault):
+    from scripts.objc3c_toolchain.semantic_benchmark_calibration import calibrate
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    first, second = tmp_path / 'first.json', tmp_path / 'second.json'
+    calibration_receipt(first, version=2)
+    report = calibration_receipt(second, version=2, offset=0.0002)
+    if fault == 'workload-contract': report['workloads'][0]['timeout_seconds'] = 0
+    elif fault == 'delay-control': report['runtime_delay_controls'].pop()
+    else:
+        next(row for row in report['samples'] if row['workload'] == 'runtime-generic-array-32')[
+            'semantic_result']['live_values'] = 1
+    second.write_text(json.dumps(report))
+    with pytest.raises(ValueError): calibrate(repo, [first, second], repo / 'out/calibration')
