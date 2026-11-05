@@ -22,6 +22,8 @@ from .sdk_example import dependencies
 from scripts.objc3c_assurance.evidence import junit
 
 LIMIT = 64 * 1024**2
+COMMAND_TIMEOUT = 900
+BUILD_TIMEOUT = 3600
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
@@ -188,10 +190,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
         write_json(output / 'qualification.json', report)
-    def run(name, argv, *, environment=env, expected=0, cwd=repo):
+    def run(name, argv, *, environment=env, expected=0, cwd=repo, timeout=COMMAND_TIMEOUT):
         if any(row['name'] == name for row in report['commands']): raise ValueError('duplicate coverage command')
         row = {'name': name, 'environment': environment, **command(argv, cwd=cwd, environment=environment,
-            log=output / 'logs' / (name+'.log'), timeout=900)}
+            log=output / 'logs' / (name+'.log'), timeout=timeout)}
         report['commands'].append(row);save()
         text = Path(row['log']).read_text(errors='replace')
         if row['timed_out'] or row['exit_code'] != expected:
@@ -248,7 +250,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 target = name+'_test'
                 common = ['objc3c_frontend_v2'] if component == 'frontend' else []
                 run(component+'-'+name+'-build', [plan['host_environment']['cmake_path'], '--build', build,
-                    '--target', target, *common, '--parallel', str(jobs)])
+                    '--target', target, *common, '--parallel', str(jobs)], timeout=BUILD_TIMEOUT)
                 graph = run(component+'-'+name+'-graph', [plan['host_environment']['ninja_path'], '-C', build,
                     '-t', 'commands', target, *common])
                 objects = compile_inventory(build, graph, required_flags=policy['compile_flags'])
