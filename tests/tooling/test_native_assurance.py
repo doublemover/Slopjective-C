@@ -10,8 +10,38 @@ import pytest
 from scripts.objc3c_assurance import evidence
 from scripts.objc3c_assurance.execution import checked_command, execute_ctest
 from scripts.objc3c_assurance.plan import from_checkout, select, validate
+from scripts.objc3c_assurance.runner import package_execution
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
+
+
+def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():
+    result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
+              'installed': {'prefix': '/content-addressed/sdk'},
+              'installed_qualification': {'status': 'PASS', 'commands': [
+                  {'name': 'compile', 'exit_code': 0}, {'name': 'execute', 'exit_code': 0}]}}
+    assert package_execution(result) == [{
+        'status': 'PASS', 'archive_sha256': 'a' * 64,
+        'installed_prefix': '/content-addressed/sdk', 'installed_consumer_commands': 2}]
+    source = (Path(__file__).resolve().parents[2] /
+              'scripts/objc3c_assurance/runner.py').read_text()
+    assert "command('archive-install'" not in source
+
+
+@pytest.mark.parametrize('fault', ['status', 'digest', 'install', 'qualification', 'commands', 'command'])
+def test_native_package_rejects_incomplete_sdk_pipeline_evidence(fault):
+    result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
+              'installed': {'prefix': '/content-addressed/sdk'},
+              'installed_qualification': {'status': 'PASS', 'commands': [
+                  {'name': 'execute', 'exit_code': 0}]}}
+    if fault == 'status': result['status'] = 'FAIL'
+    elif fault == 'digest': result['archive_sha256'] = ''
+    elif fault == 'install': result['installed'] = {}
+    elif fault == 'qualification': result['installed_qualification']['status'] = 'FAIL'
+    elif fault == 'commands': result['installed_qualification']['commands'] = []
+    else: result['installed_qualification']['commands'][0]['exit_code'] = 1
+    with pytest.raises(ValueError, match='installed archive qualification'):
+        package_execution(result)
 
 
 def test_failed_sdk_attempt_preserves_nested_native_logs_without_sdk_payloads(tmp_path):

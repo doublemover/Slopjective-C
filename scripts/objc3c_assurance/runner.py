@@ -26,6 +26,30 @@ UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/Modules', 'clang/test/Driver')
 
 
+def package_execution(result: dict) -> list[dict]:
+    """Admit the archive installation already performed by the SDK pipeline.
+
+    ``build_sdk`` qualifies the candidate through installed consumers, seals it,
+    installs that exact archive into the content-addressed SDK store and verifies
+    the installed bytes. Re-running the full distribution qualification here
+    repeated every installed/source consumer and could consume more than thirty
+    minutes without exercising a different product. Fresh-distribution archive
+    qualification remains owned by the release workflow.
+    """
+    qualification = result.get('installed_qualification')
+    installed = result.get('installed')
+    commands = qualification.get('commands') if isinstance(qualification, dict) else None
+    if (result.get('status') != 'PASS' or not result.get('archive_sha256') or
+            not isinstance(installed, dict) or not installed.get('prefix') or
+            not isinstance(commands, list) or not commands or
+            qualification.get('status') != 'PASS' or
+            any(row.get('exit_code') != 0 for row in commands)):
+        raise ValueError('SDK pipeline omitted its passing installed archive qualification')
+    return [{'status': 'PASS', 'archive_sha256': result['archive_sha256'],
+             'installed_prefix': installed['prefix'],
+             'installed_consumer_commands': len(commands)}]
+
+
 def run(repo: Path, plan: dict, output: Path) -> dict:
     validate(plan)
     if not plan['suites']:
@@ -210,12 +234,8 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             write_json(directory / 'release.json', result)
             if result['status'] != 'PASS':
                 raise ValueError('packaging qualification failed')
-            # Exercise the shipped artifact through the isolated installer/relocator,
-            # in this host distribution. The two-distribution matrix remains release CI.
-            command('archive-install', ['sh', repo / 'scripts/qualify_linux_archive.sh',
-                result['archive'], result['archive_sha256'], directory / 'isolated-install'])
             shared['release'] = result
-            return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]
+            return package_execution(result)
         if name == 'sanitizer-products':
             from scripts.objc3c_toolchain.sanitizer_products import qualify
             release = shared.get('release')
