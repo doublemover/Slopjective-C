@@ -4,9 +4,20 @@ import shlex
 
 import pytest
 
-from scripts.objc3c_toolchain.source_coverage import binary_ids, compile_inventory, raw_profiles, read_export
+from scripts.objc3c_toolchain.source_coverage import binary_ids, compile_inventory, profile_runtime, raw_profiles, read_export
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
+
+
+def test_profile_runtime_is_exact_nonempty_pinned_target_input(tmp_path):
+    runtime = tmp_path / 'lib/clang/23/lib/x86_64-unknown-linux-gnu/libclang_rt.profile.a'
+    runtime.parent.mkdir(parents=True);runtime.write_bytes(b'profile runtime')
+    resource, selected = profile_runtime(tmp_path, 'x86_64-unknown-linux-gnu')
+    assert resource == tmp_path / 'lib/clang/23'
+    assert selected == runtime
+    runtime.unlink()
+    with pytest.raises(ValueError, match='profile runtime'):
+        profile_runtime(tmp_path, 'x86_64-unknown-linux-gnu')
 
 
 def test_binary_identity_uses_the_pinned_tools_actual_unindented_format():

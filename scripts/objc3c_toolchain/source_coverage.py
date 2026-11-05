@@ -24,6 +24,16 @@ from scripts.objc3c_assurance.evidence import junit
 LIMIT = 64 * 1024**2
 
 
+def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
+    """Select the exact pinned compiler-rt profile runtime for covered clients."""
+    resource = bootstrap / 'lib/clang/23'
+    runtime = resource / 'lib' / target / 'libclang_rt.profile.a'
+    if (not runtime.is_file() or runtime.is_symlink() or not runtime.stat().st_size or
+            not runtime.resolve().is_relative_to(bootstrap.resolve())):
+        raise ValueError('pinned bootstrap profile runtime is missing or escaped')
+    return resource.resolve(), runtime.resolve()
+
+
 def compile_inventory(build, graph, *, required_flags):
     """The actual graph, including custom object edges, owns the denominator."""
     database = json.loads((build / 'compile_commands.json').read_text())
@@ -117,6 +127,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     plan = build_plans(repo, host='linux-x86_64',
                        instrumentation_profile='compiler-source-coverage')['configure']
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
+    resource, runtime = profile_runtime(bootstrap, plan['host_environment']['target_triple'])
     completed = json.loads((Path(plan['paths']['build']) / 'foundation-build-report.json').read_text())
     if (completed.get('status') != 'passed' or completed.get('source_identity') != plan['source_build_id'] or
             {row['phase'] for row in completed.get('phases', [])} != {'configure', 'build', 'test', 'stage'} or
@@ -163,6 +174,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'scope': 'First-party façade and standalone-runtime denominator linked to the exact isolated patched-compiler source-coverage profile.',
         'policy': policy, 'commands': [], 'suites': [], 'objects': {}, 'inputs': {}, 'eligible': {},
         'temporary_build_root': str(build_root), 'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission.',
+        'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
+            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'},
         'compiled_product_reuse': {'receipt': str(reuse_build_receipt), 'sha256': digest(reuse_build_receipt),
             'execution_reused': False} if reused else None,
         'exclusions': {'patched-clang-llvm': 'Measured by compiler_source_coverage.py from the same profile and reported as a separate denominator.',
@@ -170,7 +183,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             'language-and-fuzzer-coverage': 'Separate claims; not inferred from implementation percentages.'}}
     frozen = report['inputs']
     for path in [Path(__file__), policy_path, *sorted((repo / 'native/objc3c').rglob('*.cmake')),
-                 *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), *tools.values()]:
+                 *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), *tools.values(), runtime]:
         frozen[str(path)] = digest(path)
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
@@ -215,7 +228,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             configure = [plan['host_environment']['cmake_path'], '-S', source, '-B', build, '-G', 'Ninja',
                 '-DCMAKE_MAKE_PROGRAM='+plan['host_environment']['ninja_path'],
                 '-DCMAKE_CXX_COMPILER='+str(tools['clang++']), '-DCMAKE_BUILD_TYPE=Debug',
-                '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g0', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
+                '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g0 -resource-dir='+str(resource),
+                '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
                 '-DOBJC3C_SOURCE_COVERAGE=ON', '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
             if component == 'frontend':
                 configure += ['-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),

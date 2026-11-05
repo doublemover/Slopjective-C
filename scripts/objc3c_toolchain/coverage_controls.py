@@ -12,7 +12,7 @@ from .binary_packages import digest, write_json
 from .llvm_ir_execution import command
 from .core import build_plans
 from .sanitizer_policy import strict_environment
-from .source_coverage import raw_profiles, read_export
+from .source_coverage import profile_runtime, raw_profiles, read_export
 
 
 def qualify(repo, output):
@@ -22,14 +22,17 @@ def qualify(repo, output):
     plan = build_plans(repo, host='linux-x86_64',
                        instrumentation_profile='compiler-source-coverage')['configure']
     bootstrap, stage = Path(plan['host_environment']['bootstrap_root']), Path(plan['paths']['stage'])
+    resource, runtime = profile_runtime(bootstrap, plan['host_environment']['target_triple'])
     tools = {name: stage / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata')}
     source = repo / 'tests/tooling/fixtures/source_coverage'
-    inputs = {str(path): digest(path) for path in [Path(__file__), *tools.values(), *source.glob('*.cpp')]}
+    inputs = {str(path): digest(path) for path in [Path(__file__), runtime, *tools.values(), *source.glob('*.cpp')]}
     output.mkdir(parents=True)
     env = strict_environment(tools['clang++'], bootstrap / 'bin/llvm-symbolizer',
                              library_dirs=(stage / 'lib',))
     env['LLVM_PROFILE_FILE'] = os.devnull
-    report = {'schema': 'objc3c.source-coverage-controls.v1', 'status': 'running', 'commands': [], 'controls': [], 'inputs': inputs}
+    report = {'schema': 'objc3c.source-coverage-controls.v1', 'status': 'running', 'commands': [], 'controls': [], 'inputs': inputs,
+        'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
+            'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'}}
     started = time.monotonic()
     def save():
         report['seconds'] = round(time.monotonic()-started, 6);write_json(output / 'qualification.json', report)
@@ -42,7 +45,7 @@ def qualify(repo, output):
     try:
         binary, wrong = output / 'control', output / 'wrong'
         flags = ['-std=c++20', '-O0', '-g0', '-UNDEBUG', '-fuse-ld=lld', '-fprofile-instr-generate', '-fcoverage-mapping',
-            '-fprofile-update=atomic', '-Wl,--build-id=sha1']
+            '-fprofile-update=atomic', '-resource-dir='+str(resource), '-Wl,--build-id=sha1']
         for name, destination, extra in (('build', binary, []), ('wrong-build', wrong, ['-DWRONG_BINARY'])):
             run(name, [tools['clang++'], '--no-default-config', *flags, *extra,
                 source / 'control.cpp', source / 'unreached.cpp', '-o', destination])
