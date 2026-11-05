@@ -83,10 +83,14 @@ def test_export_uses_one_object_per_admitted_build_identity(tmp_path):
 
 
 def test_support_tool_profiles_are_excluded_from_compiler_denominator(tmp_path):
-    clang, library, support = (tmp_path / name for name in ('clang.profraw', 'library.profraw', 'support.profraw'))
+    lit = tmp_path / 'objc3-lit';unit = tmp_path / 'unit';lit.mkdir();unit.mkdir()
+    clang, library, support = (lit / name for name in ('clang.profraw', 'library.profraw', 'support.profraw'))
+    unit_clang = unit / 'clang.profraw'
     selected, excluded = select_coverage_profiles(
-        {clang: 'clang', library: 'library', support: 'support'}, {'clang', 'library'})
+        {clang: 'clang', library: 'library', support: 'support', unit_clang: 'clang'},
+        {'clang', 'library'}, suite='objc3-lit')
     assert selected == [clang, library]
-    assert excluded == [support]
+    assert excluded == [support, unit_clang]
     with pytest.raises(ValueError, match='binary identities'):
-        select_coverage_profiles({clang: 'clang', support: 'support'}, {'clang', 'library'})
+        select_coverage_profiles({clang: 'clang', support: 'support'},
+                                 {'clang', 'library'}, suite='objc3-lit')

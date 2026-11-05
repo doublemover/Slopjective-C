@@ -40,9 +40,11 @@ def unique_binary_paths(paths: list[Path], identities: dict[str, str]) -> list[P
     return result
 
 
-def select_coverage_profiles(profile_ids: dict[Path, str], expected_ids: set[str]) -> tuple[list[Path], list[Path]]:
+def select_coverage_profiles(profile_ids: dict[Path, str], expected_ids: set[str],
+                             *, suite: str) -> tuple[list[Path], list[Path]]:
     """Keep covered implementation modules separate from support-tool counters."""
-    selected = [path for path, identity in profile_ids.items() if identity in expected_ids]
+    selected = [path for path, identity in profile_ids.items()
+                if path.parent.name == suite and identity in expected_ids]
     selected_ids = {profile_ids[path] for path in selected}
     require_binary_ids(selected_ids, required=expected_ids, allowed=expected_ids,
                        kind='selected coverage profiles')
@@ -254,7 +256,9 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             if len(values) != 1: raise ValueError('instrumented support binary lacks one build identity')
             execution_binary_identity[str(binary)] = values[0]
         allowed_profile_ids = set(execution_binary_identity.values())
-        export_binaries = unique_binary_paths(binaries, binary_identity)
+        compiler_binaries = binaries[:3]
+        compiler_ids = {binary_identity[str(binary)] for binary in compiler_binaries}
+        export_binaries = unique_binary_paths(compiler_binaries, binary_identity)
         report['objects'] = compile_inventory(build, source, eligible)
         before = {row['object']: row['sha256'] for row in report['objects']}
         lit_json = output / 'lit-results.json'
@@ -285,17 +289,18 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         report['raw_profile_binary_ids'] = sorted(filename_ids);save()
         require_binary_ids(filename_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
                            kind='raw profiles')
-        selected_profiles, excluded_profiles = select_coverage_profiles(profile_ids, expected_ids)
+        selected_profiles, excluded_profiles = select_coverage_profiles(
+            profile_ids, compiler_ids, suite='objc3-lit')
         report['excluded_execution_profiles'] = {
             'count': len(excluded_profiles),
             'bytes': sum(profile.stat().st_size for profile in excluded_profiles),
             'binary_ids': sorted({profile_ids[profile] for profile in excluded_profiles}),
-            'reason': 'Instrumented lit support tools are identity-checked execution dependencies, not part of the compiler implementation denominator.'}
+            'reason': 'Instrumented lit support tools and statically linked unit binaries are identity-checked execution dependencies with retained suite outcomes. Their overlapping mappings are not merged into the shared compiler/DSO denominator.'}
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *selected_profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
         observed_ids = binary_ids(identifiers)
-        require_binary_ids(observed_ids, required=expected_ids, allowed=expected_ids,
+        require_binary_ids(observed_ids, required=compiler_ids, allowed=compiler_ids,
                            kind='merged profile')
         export = output / 'coverage-export.json'
         run('export', [tools['llvm-cov'], 'export', export_binaries[0],
@@ -314,7 +319,10 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
                                              for path in profiles}}
         for raw in profiles: raw.unlink()
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
-                      covered_binary_ids=binary_identity,
+                      covered_binary_ids={str(binary): binary_identity[str(binary)]
+                                          for binary in compiler_binaries},
+                      executed_unit_binary_ids={str(binary): binary_identity[str(binary)]
+                                                for binary in test_binaries},
                       executed_binary_ids=execution_binary_identity,
                       exported_binaries=[{'path': str(path),
                                           'build_id': execution_binary_identity[str(path)]}
