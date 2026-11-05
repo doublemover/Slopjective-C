@@ -54,9 +54,10 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         report['disk'] = {'total_bytes': disk.total, 'free_bytes': disk.free}
         write_json(output / 'result.json', report)
 
-    def command(label, argv):
+    def command(label, argv, *, environment_override=None):
         try:
-            checked_command(label, argv, repo=repo, environment=environment,
+            checked_command(label, argv, repo=repo,
+                            environment=environment if environment_override is None else environment_override,
                             directory=directory, records=report['commands'])
         finally:
             save()
@@ -75,13 +76,15 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         foundation = profile_foundation(profile)
         build = output / 'build' / key
         build.parent.mkdir(exist_ok=True)
+        profile_environment = {**environment, 'LD_LIBRARY_PATH': str(foundation / 'lib')}
         command(key+'-configure', ['cmake', '-S', repo / 'native/objc3c', '-B', build, '-G', 'Ninja',
             f'-DOBJC3C_CLANG_FOUNDATION_ROOT={foundation}',
             f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={profile}',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}', '-DCMAKE_BUILD_TYPE=Release',
-            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'])
+            '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld', f'-DPython3_EXECUTABLE={sys.executable}'],
+            environment_override=profile_environment)
         command(key+'-build', ['cmake', '--build', build, '--target', 'objc3c', 'objc3c_frontend_v2',
-                               '--parallel', '2'])
+                               '--parallel', '2'], environment_override=profile_environment)
         shared[key] = build
         return build
 
