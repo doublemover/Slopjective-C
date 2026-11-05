@@ -570,7 +570,8 @@ bool HasDeclarationConcept(const clang::NamedDecl *declaration) {
   struct References : clang::DynamicRecursiveASTVisitor {
     bool found = false;
     bool TraverseConceptReference(clang::ConceptReference *reference) override {
-      found |= reference != nullptr;
+      if (!reference) return true;
+      found = true;
       return clang::DynamicRecursiveASTVisitor::TraverseConceptReference(reference);
     }
   } visitor;

@@ -586,7 +586,8 @@ class TypeDependencyVisitor final
     CheckExpressionReference(expression->getMethodDecl()); return true;
   }
   bool TraverseConceptReference(clang::ConceptReference *reference) {
-    if (reference) CheckExpressionReference(reference->getNamedConcept());
+    if (!reference) return true;
+    CheckExpressionReference(reference->getNamedConcept());
     return clang::RecursiveASTVisitor<TypeDependencyVisitor>::TraverseConceptReference(reference);
   }
   bool TraverseRequiresExpr(clang::RequiresExpr *expression, DataRecursionQueue * = nullptr) {

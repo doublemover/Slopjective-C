@@ -988,7 +988,8 @@ public:
     Reference(expression->getMethodDecl()); return true;
   }
   bool TraverseConceptReference(clang::ConceptReference *reference) {
-    if (reference) Reference(reference->getNamedConcept());
+    if (!reference) return true;
+    Reference(reference->getNamedConcept());
     return clang::RecursiveASTVisitor<DeclarationExpressionIdentity>::TraverseConceptReference(reference);
   }
   void Reference(const clang::NamedDecl *declaration) {
