@@ -6,6 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain.compiler_source_coverage import (
     FLAGS, compile_inventory, merged_ranges, patched_inventory, read_export,
+    require_binary_ids,
 )
 
 
@@ -58,3 +59,12 @@ def test_export_retains_zero_hit_files_and_changed_region_evidence(tmp_path):
 
 def test_changed_range_normalization_is_stable():
     assert merged_ranges([[7, 9], [1, 2], [3, 5], [9, 12]]) == [[1, 5], [7, 12]]
+
+
+def test_profile_ids_require_mains_and_reject_foreign_modules():
+    require_binary_ids({'clang', 'llvm', 'clang-cpp'}, required={'clang'},
+                       allowed={'clang', 'llvm', 'clang-cpp'}, kind='profile')
+    for observed in ({'llvm', 'clang-cpp'}, {'clang', 'llvm', 'foreign'}):
+        with pytest.raises(ValueError, match='binary identities'):
+            require_binary_ids(observed, required={'clang'},
+                               allowed={'clang', 'llvm', 'clang-cpp'}, kind='profile')

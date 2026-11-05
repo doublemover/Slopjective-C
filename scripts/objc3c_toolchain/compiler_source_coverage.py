@@ -22,6 +22,12 @@ PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
 
 
+def require_binary_ids(observed: set[str], *, required: set[str], allowed: set[str], kind: str) -> None:
+    """Require all executed mains while admitting only covered loaded modules."""
+    if not required <= observed <= allowed:
+        raise ValueError(f'compiler {kind} differ from the executed binary identities')
+
+
 def patched_inventory(repo: Path, source: Path) -> tuple[dict, dict]:
     """Return immutable patched sources and new-line ranges from the patch stack."""
     files, ranges = {}, {}
@@ -239,14 +245,14 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             matched = re.fullmatch(r'([0-9a-f]{40})-.+\.profraw', profile.name)
             if not matched: raise ValueError('compiler raw profile omitted its executable build identity')
             filename_ids.add(matched[1])
-        if filename_ids != expected_profile_ids:
-            raise ValueError('compiler raw profiles differ from the executed binary identities')
+        require_binary_ids(filename_ids, required=expected_profile_ids, allowed=expected_ids,
+                           kind='raw profiles')
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
         observed_ids = binary_ids(identifiers)
-        if not expected_profile_ids <= observed_ids <= expected_ids:
-            raise ValueError('compiler profiles differ from the executed covered binaries')
+        require_binary_ids(observed_ids, required=expected_profile_ids, allowed=expected_ids,
+                           kind='merged profile')
         export = output / 'coverage-export.json'
         run('export', [tools['llvm-cov'], 'export', binaries[0],
             *('--object='+str(binary) for binary in binaries[1:]),
