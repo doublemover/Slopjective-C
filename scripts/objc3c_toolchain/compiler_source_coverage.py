@@ -256,7 +256,11 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             if len(values) != 1: raise ValueError('instrumented support binary lacks one build identity')
             execution_binary_identity[str(binary)] = values[0]
         allowed_profile_ids = set(execution_binary_identity.values())
-        compiler_binaries = binaries[:3]
+        # The patch-owned Clang implementation objects live in the shared
+        # clang-cpp DSO. Combining its mappings with the driver, LLVM, or
+        # statically linked unit binaries creates incompatible duplicate
+        # inline/template function hashes rather than a valid union.
+        compiler_binaries = [binaries[1]]
         compiler_ids = {binary_identity[str(binary)] for binary in compiler_binaries}
         export_binaries = unique_binary_paths(compiler_binaries, binary_identity)
         report['objects'] = compile_inventory(build, source, eligible)
@@ -295,7 +299,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             'count': len(excluded_profiles),
             'bytes': sum(profile.stat().st_size for profile in excluded_profiles),
             'binary_ids': sorted({profile_ids[profile] for profile in excluded_profiles}),
-            'reason': 'Instrumented lit support tools and statically linked unit binaries are identity-checked execution dependencies with retained suite outcomes. Their overlapping mappings are not merged into the shared compiler/DSO denominator.'}
+            'reason': 'The shared clang-cpp DSO owns the patch-compiled Clang implementation denominator. Driver, LLVM, support-tool, and statically linked unit profiles remain identity-checked execution evidence, but their duplicate inline/template mappings are not merged.'}
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *selected_profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
@@ -321,6 +325,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
                       covered_binary_ids={str(binary): binary_identity[str(binary)]
                                           for binary in compiler_binaries},
+                      coverage_owner='shared-clang-cpp-patched-implementation',
                       executed_unit_binary_ids={str(binary): binary_identity[str(binary)]
                                                 for binary in test_binaries},
                       executed_binary_ids=execution_binary_identity,
