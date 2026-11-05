@@ -43,7 +43,9 @@ without confusing coverage with correctness.
 Frontend witnesses link large instrumented Clang archives. Build products live
 in `/tmp`, with one linked witness resident at a time and a free-space preflight.
 Successful admission reclaims the temporary build; indexed profiles, compressed
-raw profiles, exports, diagnostics, commands and hashes remain under `out`.
+raw profiles, diagnostics, commands and hashes remain under `out`. The large raw
+LLVM JSON exports are parsed into the per-file report, hashed and size-recorded,
+then reclaimed; retaining both forms provided no additional replay value.
 Failed builds retain their temporary tree and receipt. A failed build may be
 reused only after checking its tool/source/header/object inputs; every test and
 profile collection runs anew. This is compiled-product reuse, not reused native

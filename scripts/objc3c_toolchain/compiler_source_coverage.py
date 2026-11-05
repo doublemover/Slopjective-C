@@ -14,7 +14,7 @@ import time
 
 from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
-from .source_coverage import binary_ids
+from .source_coverage import binary_ids, reclaim_indexed_export
 
 PROFILE = 'compiler-source-coverage'
 FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic')
@@ -315,6 +315,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         if (output / 'logs/export.stderr.log').read_text().strip():
             raise ValueError('compiler source coverage export emitted mismatch diagnostics')
         report['source_coverage'] = read_export(export, source=source, eligible=eligible, changed=changed)
+        report['indexed_export'] = reclaim_indexed_export(export)
         if not any(row['state'] == 'executed' for row in report['source_coverage'].values()):
             raise ValueError('patched compiler coverage has no executed source')
         if any(digest(Path(path)) != value for path, value in before.items()):

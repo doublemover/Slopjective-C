@@ -4,7 +4,7 @@ set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 setup_root="${OBJC3C_CLOUD_SETUP_ROOT:-/workspace/.cloud-setup/Slopjective-C}"
-cache_limit="${OBJC3C_CLOUD_CCACHE_MAXSIZE:-4G}"
+cache_limit="${OBJC3C_CLOUD_CCACHE_MAXSIZE:-1G}"
 [[ "$cache_limit" =~ ^[1-8]G$ ]] || { echo "Compiler cache limit must be 1G through 8G." >&2; exit 1; }
 export UV_CACHE_DIR="$setup_root/uv-cache"
 export UV_PYTHON_INSTALL_DIR="$setup_root/python"

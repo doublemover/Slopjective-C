@@ -6,7 +6,7 @@ import pytest
 
 from scripts.objc3c_toolchain.source_coverage import (
     binary_ids, compile_inventory, elf_build_id, profile_runtime, raw_profiles, read_export,
-    reclaim_raw_profiles, single_profile_binary_id, suite_timeout,
+    reclaim_indexed_export, reclaim_raw_profiles, single_profile_binary_id, suite_timeout,
 )
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
@@ -103,6 +103,19 @@ def test_raw_profiles_are_hashed_and_reclaimed_after_indexing(tmp_path):
         'two.profraw': {'sha256': '3fc4ccfe745870e2c0d99f71f30ff0656c8dedd41cc1d7d3d376b0dbe685e2f3', 'bytes': 3},
     }
     assert not one.exists() and not two.exists()
+
+
+def test_raw_coverage_export_is_hashed_and_reclaimed_after_indexing(tmp_path):
+    export = tmp_path / 'coverage-export.json'
+    export.write_bytes(b'large transient export')
+    record = reclaim_indexed_export(export)
+    assert record == {
+        'path': str(export),
+        'sha256': '45eb526b12364f60ebd817b62fc51a8236edce1ccf4d941b87f00cc2e3b81e77',
+        'bytes': 22,
+        'reclaimed': True,
+    }
+    assert not export.exists()
 
 
 def test_unreached_owned_sources_stay_in_inventory_and_system_headers_do_not(tmp_path):

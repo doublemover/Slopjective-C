@@ -26,9 +26,11 @@ def artifact(root: Path, path: Path) -> dict:
 def native_files(directory: Path) -> list[Path]:
     return sorted(path for path in directory.rglob('*') if path.is_file() and
                   (path.suffix in ('.json', '.xml', '.log') or
-                   (path.parent.name == 'blobs' and path.parent.parent.name == 'product-evidence' and
+                   ((path.parent.name == 'blobs' and path.parent.parent.name == 'product-evidence') or
+                    (path.parent.name == 'product-evidence-blobs' and
+                     path.parent.parent.is_relative_to(directory))) and
                     len(path.stem) == 64 and path.suffix == '.zst' and
-                    all(char in '0123456789abcdef' for char in path.stem))) and not any(
+                    all(char in '0123456789abcdef' for char in path.stem)) and not any(
                       part in ('build', 'isolated-install') for part in path.relative_to(directory).parts))
 
 
@@ -187,6 +189,9 @@ def suite_results(root: Path, name: str) -> list[dict]:
     if name == 'sanitizer-products':
         result = read('campaign/qualification.json')
         rows = result.get('owners', [])
+        store = result.get('product_evidence_store', {})
+        store_path = directory / 'campaign/product-evidence-blobs'
+        store_files = list(store_path.iterdir()) if store_path.is_dir() and not store_path.is_symlink() else []
         expected = {'structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
             *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
               for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))}
@@ -194,7 +199,18 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 any(row.get('status') != 'PASS' for row in rows) or
                 len(result.get('runtime_profiles', [])) != 6 or
                 result.get('expected_owners') != [row['name'] for row in rows] and
-                set(result.get('expected_owners', [])) != expected):
+                set(result.get('expected_owners', [])) != expected or
+                store.get('schema') != 'objc3c.product-evidence-shared-store.v1' or
+                store.get('owners') != len(expected) or not store.get('references') or
+                store.get('references') != len(store_files) or
+                store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
+                store.get('private_bytes', 0) <= store.get('stored_bytes', 0) or
+                store.get('deduplicated_bytes') != store['private_bytes'] - store['stored_bytes'] or
+                Path(store.get('path', '')).resolve() != store_path.resolve() or
+                any(not path.is_file() or path.is_symlink() or
+                    not path.name.endswith('.zst') or len(path.stem) != 64 or
+                    any(char not in '0123456789abcdef' for char in path.stem)
+                    for path in store_files)):
             raise ValueError('sanitizer product owner/profile matrix is incomplete')
         return sorted(rows, key=lambda row: row['name'])
     if name == 'runtime-schedules':

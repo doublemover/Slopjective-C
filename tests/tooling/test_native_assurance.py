@@ -78,14 +78,36 @@ def test_sdk_diagnostics_reject_run_identity_escaping_owned_output(tmp_path):
 
 
 def test_native_artifact_inventory_includes_retained_product_bytes(tmp_path):
-    root = tmp_path / 'sanitizers/structured/product-evidence'
-    blobs = root / 'blobs'
-    blobs.mkdir(parents=True)
-    blob = blobs / ('a'*64+'.zst')
-    blob.write_bytes(b'actual retained native input')
-    (root / 'qualification.json').write_text('{"status":"PASS"}')
-    assert blob in evidence.native_files(tmp_path / 'sanitizers')
-    assert evidence.artifact(tmp_path, blob)['bytes'] == len(b'actual retained native input')
+    root = tmp_path / 'sanitizers'
+    shared = root / 'campaign/product-evidence-blobs' / ('a'*64+'.zst')
+    private = root / 'structured/product-evidence/blobs' / ('b'*64+'.zst')
+    for blob in (shared, private):
+        blob.parent.mkdir(parents=True)
+        blob.write_bytes(b'actual retained native input')
+    inventory = evidence.native_files(root)
+    assert shared in inventory and private in inventory
+    assert all(evidence.artifact(tmp_path, blob)['bytes'] == len(b'actual retained native input')
+               for blob in (shared, private))
+
+
+def test_sanitizer_product_gate_requires_real_deduplicated_campaign_store(tmp_path):
+    campaign = tmp_path / 'sanitizer-products/campaign'
+    blobs = campaign / 'product-evidence-blobs';blobs.mkdir(parents=True)
+    blob = blobs / ('a'*64+'.zst');blob.write_bytes(b'x')
+    expected = {'structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
+        *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
+          for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))}
+    report = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in expected],
+        'expected_owners': list(expected), 'runtime_profiles': [{} for _ in range(6)],
+        'product_evidence_store': {
+            'schema': 'objc3c.product-evidence-shared-store.v1', 'owners': 13, 'references': 1,
+            'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': str(blobs)}}
+    receipt = campaign / 'qualification.json';receipt.write_text(json.dumps(report))
+    assert len(evidence.suite_results(tmp_path, 'sanitizer-products')) == 13
+    report['product_evidence_store']['deduplicated_bytes'] = 0
+    receipt.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match='owner/profile matrix'):
+        evidence.suite_results(tmp_path, 'sanitizer-products')
 
 
 @pytest.mark.parametrize('paths', [[], None, ['native/objc3c/src/runtime/x.cpp'],

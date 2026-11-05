@@ -11,6 +11,7 @@ import time
 from .binary_packages import digest, write_json
 from .package import verify_sdk
 from .runtime_instrumentation import RuntimeProfiles
+from .product_evidence import consolidate_campaign_blobs
 from . import qualify_native_async_sanitizers as native_async
 from . import qualify_task_coroutine_sanitizers as coroutines
 from . import qualify_structured_sanitizers as structured
@@ -96,6 +97,7 @@ def qualify(repo: Path, sdk: Path, compiler_root: Path, facade: Path, resource: 
         tasks.append(('installed-ownership', partial(ownership.qualify, sdk, resource)))
         report['expected_owners'] = [name for name, _ in tasks]
         execute_owners(tasks, output, report, jobs)
+        report['product_evidence_store'] = consolidate_campaign_blobs(output)
         if any(digest(Path(path)) != value for path, value in report['source_inputs'].items()):
             raise ValueError('sanitizer product campaign owner changed during execution')
         report.update(status='PASS', runtime_profiles=profiles.receipts(),

@@ -30,6 +30,70 @@ ARTIFACT = {'.o', '.pch', '.pcm', '.a', '.d', '.bc'}
 OUTPUT_FLAGS = {'-o', '--emit-object', '--emit-interface', '--emit-dependency-record'}
 
 
+def consolidate_campaign_blobs(campaign: Path) -> dict:
+    """Deduplicate completed per-owner blob stores without changing receipts.
+
+    Product owners deliberately retain exact replay bytes, but a campaign can
+    execute the same headers, compiler inputs and runtime products many times.
+    ZIP artifacts do not deduplicate identical files. Replace each completed
+    owner's private ``blobs`` directory with a link to one campaign-owned store
+    so durable evidence contains each content-addressed byte sequence once.
+    """
+    campaign = campaign.resolve(strict=True)
+    receipts = sorted(campaign.glob('*/product-evidence/qualification.json'))
+    if not receipts:
+        raise ValueError('product campaign has no completed evidence receipts')
+    store = campaign / 'product-evidence-blobs'
+    store.mkdir()
+    private_bytes = 0
+    references = set()
+    for receipt in receipts:
+        document = json.loads(receipt.read_text())
+        if (document.get('schema') != 'objc3c.sanitizer-product-evidence.v1' or
+                document.get('status') != 'PASS'):
+            raise ValueError('product campaign contains incomplete evidence')
+        private = receipt.parent / 'blobs'
+        if private.is_symlink() or not private.is_dir():
+            raise ValueError('product campaign private blob store is missing or linked')
+        for source in sorted(private.iterdir()):
+            if (not source.is_file() or source.is_symlink() or
+                    not re.fullmatch(r'[0-9a-f]{64}\.zst', source.name)):
+                raise ValueError('product campaign private blob store contains an invalid entry')
+            private_bytes += source.stat().st_size
+            target = store / source.name
+            if target.exists():
+                if (not target.is_file() or target.is_symlink() or
+                        target.stat().st_size != source.stat().st_size or digest(target) != digest(source)):
+                    raise ValueError('content-addressed product blob collision')
+            else:
+                try:
+                    target.hardlink_to(source)
+                except OSError:
+                    shutil.copyfile(source, target)
+            references.add(source.name)
+        shutil.rmtree(private)
+        private.symlink_to(Path('../..') / store.name, target_is_directory=True)
+        # Exercise every rewritten route after the old private store is gone.
+        def verify(value):
+            if isinstance(value, dict):
+                if 'blob' in value:
+                    blob_bytes(receipt.parent, value)
+                for child in value.values():
+                    verify(child)
+            elif isinstance(value, list):
+                for child in value:
+                    verify(child)
+        verify(document)
+    stored_bytes = sum(path.stat().st_size for path in store.iterdir())
+    if {path.name for path in store.iterdir()} != references:
+        raise ValueError('shared product blob store differs from receipt references')
+    return {'schema': 'objc3c.product-evidence-shared-store.v1',
+            'owners': len(receipts), 'references': len(references),
+            'private_bytes': private_bytes, 'stored_bytes': stored_bytes,
+            'deduplicated_bytes': private_bytes - stored_bytes,
+            'path': str(store)}
+
+
 def phase_of(name, argv):
     if name.endswith(('-execute', '-execution')):
         return 'execute'
@@ -326,8 +390,33 @@ class ProductCommands:
 
 
 def blob_bytes(root: Path, record):
-    blob = (root / record['blob']).resolve(strict=True)
-    if (not blob.is_relative_to(root / 'blobs') or record.get('encoding') != 'zstd' or
+    root = root.resolve(strict=True)
+    relative = Path(record['blob'])
+    if (relative.parent != Path('blobs') or
+            not re.fullmatch(r'[0-9a-f]{64}\.zst', relative.name)):
+        raise ValueError('retained product input/artifact changed or escaped its evidence root')
+    logical_store = root / 'blobs'
+    expected_store = root.parent.parent / 'product-evidence-blobs'
+    if logical_store.is_symlink():
+        if (root.name != 'product-evidence' or not expected_store.is_dir() or expected_store.is_symlink() or
+                expected_store.resolve(strict=True) != expected_store or
+                logical_store.resolve(strict=True) != expected_store.resolve(strict=True)):
+            raise ValueError('retained product shared blob store escaped its campaign')
+        store = logical_store.resolve(strict=True)
+    elif (not logical_store.exists() and root.name == 'product-evidence' and
+            expected_store.is_dir() and not expected_store.is_symlink() and
+            expected_store.resolve(strict=True) == expected_store):
+        # upload-artifact retains the campaign store but does not promise to
+        # preserve directory symlinks. The receipt's content-addressed name is
+        # therefore resolved against the only admitted campaign store after an
+        # artifact is extracted.
+        store = expected_store.resolve(strict=True)
+    elif logical_store.resolve(strict=True) != logical_store:
+        raise ValueError('retained product private blob store escaped its evidence root')
+    else:
+        store = logical_store
+    blob = store / relative.name
+    if (not blob.is_file() or blob.is_symlink() or record.get('encoding') != 'zstd' or
             record['bytes'] > 64 * 1024**2 or blob.stat().st_size != record['stored_bytes'] or
             blob.stat().st_size > 64 * 1024**2 or digest(blob) != record['stored_sha256']):
         raise ValueError('retained product input/artifact changed or escaped its evidence root')

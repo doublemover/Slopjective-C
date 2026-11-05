@@ -30,6 +30,14 @@ installed-tool/fixture preflight before building runtimes. Independent owner
 failures are retained while other selected owners complete. No SDK archive is
 built by this campaign.
 
+After all owners pass, their content-addressed blobs are consolidated into one
+campaign store. Repeated source, header and product bytes are retained once,
+while every owner receipt and its hash remain unchanged. Local receipts use a
+bounded relative link; extracted CI artifacts resolve the same hash through the
+campaign store because archive transports do not preserve directory links. The
+native gate verifies all thirteen owners, the shared file inventory, exact byte
+totals and a positive deduplication result before admitting the artifact.
+
 ```sh
 python3 -B -m scripts.objc3c_toolchain.sanitizer_products \
   --sdk /path/to/sealed-prefix --compiler-root /path/to/matched/compiler \

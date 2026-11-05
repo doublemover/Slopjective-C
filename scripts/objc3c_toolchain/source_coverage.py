@@ -138,6 +138,14 @@ def reclaim_raw_profiles(paths):
     return records
 
 
+def reclaim_indexed_export(path: Path) -> dict:
+    """Retain the parsed export's identity, then discard its bulky raw JSON."""
+    record = {'path': str(path), 'sha256': digest(path), 'bytes': path.stat().st_size}
+    path.unlink()
+    record['reclaimed'] = not path.exists()
+    return record
+
+
 def binary_ids(text):
     if text.count('Binary IDs:') != 1:
         raise ValueError('coverage profile omitted its actual binary identity')
@@ -257,7 +265,14 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         if profile is None:
             for obj in objects: args += ['--object='+obj['object']]
         run(name, args)
-        return read_export(output / 'logs' / (name+'.log'), repo=repo, build=build, eligible=report['eligible'])
+        path = output / 'logs' / (name+'.log')
+        result = read_export(path, repo=repo, build=build, eligible=report['eligible'])
+        row = report['commands'][-1]
+        if row['name'] != name or row['log_sha256'] != digest(path):
+            raise ValueError('coverage export command identity changed before indexing')
+        row['indexed_export'] = reclaim_indexed_export(path)
+        save()
+        return result
     try:
         for name, path in {'clang++': compiler, **tools}.items():
             version = run(name+'-version', [path, '--version'])
