@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 import re
 import shlex
+import shutil
 import subprocess
+import tempfile
 import time
 
 from .binary_packages import digest, write_json
@@ -147,7 +149,11 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             any(row.get('exit_code') != 0 for row in foundation['phases'])):
         raise ValueError('compiler source coverage requires a complete matching profile build/test/stage')
     eligible, changed = patched_inventory(repo, source)
-    output.mkdir(parents=True);(output / 'logs').mkdir();(output / 'profiles').mkdir()
+    output.mkdir(parents=True);(output / 'logs').mkdir()
+    profile_root = Path(tempfile.mkdtemp(prefix='objc3-compiler-coverage-'))
+    if profile_root.parent != Path('/tmp') or shutil.disk_usage(profile_root).free < 3 * 1024**3:
+        shutil.rmtree(profile_root)
+        raise ValueError('compiler source coverage needs 3 GiB of temporary profile storage')
     started = time.monotonic()
     tools = {name: stage / 'bin' / name for name in ('llvm-cov', 'llvm-profdata', 'llvm-readobj')}
     test_binaries = [build / relative for relative in plan['instrumentation']['test_binaries']]
@@ -160,6 +166,8 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         'eligible': eligible, 'eligible_sha256': __import__('hashlib').sha256(
             json.dumps(eligible, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
         'changed_ranges': changed, 'commands': [], 'suites': [], 'objects': [],
+        'temporary_profile_root': str(profile_root),
+        'profile_storage': 'Raw compiler profiles are isolated on /tmp and reclaimed after indexing.',
         'scope': 'Patched Clang whole-file plus patch-hunk views from the isolated compiler source-coverage profile. First-party façade/runtime, semantic coverage and fuzzer feedback remain separately labeled.',
         'exclusions': {'clang-tools-extra': 'Not linked into the current compiler/frontend qualification profile.',
                        'unpatched-upstream': 'Available in raw mappings but excluded from the patch-owned denominator.',
@@ -175,7 +183,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
     def run(name, argv, *, profile=True, timeout=900, stdout=None):
         if any(row['name'] == name for row in report['commands']):
             raise ValueError('duplicate compiler coverage command')
-        directory = output / 'profiles' / name
+        directory = profile_root / name
         if profile: directory.mkdir()
         case_env = {**env, **({'LLVM_PROFILE_FILE': str(directory / '%8m.profraw')} if profile else {})}
         log = Path(stdout) if stdout else output / 'logs' / (name+'.log')
@@ -215,7 +223,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
                 raise ValueError('covered compiler unit suite failed or omitted JUnit')
             report['suites'].append({'name': binary.name, 'status': 'PASS', 'result_sha256': digest(result)})
         profiles = []
-        for directory in sorted((output / 'profiles').iterdir()):
+        for directory in sorted(profile_root.iterdir()):
             profiles.extend(compiler_raw_profiles(directory))
         merged = output / 'compiler.profdata'
         run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', merged], profile=False)
@@ -241,13 +249,17 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         if any(digest(Path(path)) != value for path, value in before.items()):
             raise ValueError('compiler coverage object changed during execution')
         report['raw_profiles'] = {'count': len(profiles), 'bytes': sum(path.stat().st_size for path in profiles),
-                                  'sha256': {path.relative_to(output).as_posix(): digest(path) for path in profiles}}
+                                  'sha256': {path.relative_to(profile_root).as_posix(): digest(path)
+                                             for path in profiles}}
         for raw in profiles: raw.unlink()
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
                       artifact_bytes=sum(path.stat().st_size for path in output.rglob('*') if path.is_file()))
     except BaseException as error:
         report.update(status='FAIL', error=str(error));raise
-    finally: save()
+    finally:
+        if profile_root.exists(): shutil.rmtree(profile_root)
+        report['temporary_profile_root_reclaimed'] = not profile_root.exists()
+        save()
     return report
 
 
