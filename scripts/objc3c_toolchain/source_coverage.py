@@ -23,9 +23,8 @@ from scripts.objc3c_assurance.evidence import junit
 
 LIMIT = 64 * 1024**2
 COMMAND_TIMEOUT = 900
-# An instrumented Clang compiling the largest Clang-facing façade unit takes
-# substantially longer than execution/export while remaining CPU-bound.
-BUILD_TIMEOUT = 7200
+# Clang-facing façade units remain separately bounded from execution/export.
+BUILD_TIMEOUT = 3600
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
@@ -165,13 +164,14 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
     if __import__('shutil').disk_usage(build_root).free < 1536 * 1024**2:
         raise ValueError('source coverage needs at least 1.5 GiB free temporary build space')
     started = time.monotonic()
-    env = strict_environment(stage / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer',
+    compiler = bootstrap / 'bin/clang++'
+    env = strict_environment(compiler, bootstrap / 'bin/llvm-symbolizer',
                              library_dirs=(stage / 'lib',))
     env['LLVM_PROFILE_FILE'] = os.devnull
     env['PATH'] = os.pathsep.join([str(Path(plan['host_environment'][key]).parent)
         for key in ('cmake_path', 'ninja_path')]+[env['PATH']])
     env['OBJC3C_BOOTSTRAP_LLVM_ROOT'] = str(bootstrap)
-    tools = {name: stage / 'bin' / name for name in ('clang++', 'llvm-cov', 'llvm-profdata', 'llvm-readobj')}
+    tools = {name: stage / 'bin' / name for name in ('llvm-cov', 'llvm-profdata', 'llvm-readobj')}
     report = {'schema': 'objc3c.native-source-coverage.v1', 'status': 'running',
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'revision': subprocess.check_output(['git', '-C', repo, 'rev-parse', 'HEAD'], text=True).strip(),
@@ -180,6 +180,9 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'temporary_build_root': str(build_root), 'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission.',
         'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
             'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'},
+        'measurement_compiler': {'path': str(compiler), 'sha256': digest(compiler),
+            'provenance': 'pinned-bootstrap-llvm-23.1.3',
+            'subject': 'measurement-tool-not-covered-implementation'},
         'compiled_product_reuse': {'receipt': str(reuse_build_receipt), 'sha256': digest(reuse_build_receipt),
             'execution_reused': False} if reused else None,
         'exclusions': {'patched-clang-llvm': 'Measured by compiler_source_coverage.py from the same profile and reported as a separate denominator.',
@@ -187,7 +190,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             'language-and-fuzzer-coverage': 'Separate claims; not inferred from implementation percentages.'}}
     frozen = report['inputs']
     for path in [Path(__file__), policy_path, *sorted((repo / 'native/objc3c').rglob('*.cmake')),
-                 *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), *tools.values(), runtime]:
+                 *sorted((repo / 'native/objc3c').rglob('CMakeLists.txt')), compiler, *tools.values(), runtime]:
         frozen[str(path)] = digest(path)
     def save():
         report['seconds'] = round(time.monotonic()-started, 6)
@@ -214,7 +217,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         run(name, args)
         return read_export(output / 'logs' / (name+'.log'), repo=repo, build=build, eligible=report['eligible'])
     try:
-        for name, path in tools.items():
+        for name, path in {'clang++': compiler, **tools}.items():
             version = run(name+'-version', [path, '--version'])
             if '23.1.3' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
         libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
@@ -231,7 +234,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
             source = repo / ('native/objc3c' if component == 'frontend' else 'native/objc3c/src/runtime')
             configure = [plan['host_environment']['cmake_path'], '-S', source, '-B', build, '-G', 'Ninja',
                 '-DCMAKE_MAKE_PROGRAM='+plan['host_environment']['ninja_path'],
-                '-DCMAKE_CXX_COMPILER='+str(tools['clang++']), '-DCMAKE_BUILD_TYPE=Debug',
+                '-DCMAKE_CXX_COMPILER='+str(compiler), '-DCMAKE_BUILD_TYPE=Debug',
                 '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g0 -resource-dir='+str(resource),
                 '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
                 '-DOBJC3C_SOURCE_COVERAGE=ON', '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
