@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.analysis_checkpoint import run_unit, successful_action
+from scripts.objc3c_toolchain.analysis_checkpoint import run_unit, successful_action, tidy_diagnostics
 from scripts.objc3c_toolchain.binary_packages import digest
 
 
@@ -29,7 +29,7 @@ def checkpoint(tmp_path):
         {'file': str(source), 'directory': str(tmp_path), 'arguments': args}]))
     logs = root / 'logs';logs.mkdir();log = logs / (name+'.log');log.write_text('')
     command = {'name': name, 'argv': [str(tool), '-p', str(directory), str(source), '--config-file='+str(config),
-        '--warnings-as-errors=*', '--extra-arg=-resource-dir=/matched/resources',
+        '--warnings-as-errors=*', '--enable-check-profile', '--extra-arg=-resource-dir=/matched/resources',
         '--export-fixes='+str(directory / 'diagnostics.yaml')], 'exit_code': 0, 'expected_exit_code': 0,
         'timed_out': False, 'status': 'PASS', 'log': str(log), 'log_sha256': digest(log)}
     previous = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL', 'policy': {'checks': ['reviewed-check']},
@@ -80,4 +80,37 @@ def test_spawned_unit_process_retains_actual_command_failure(tmp_path):
     result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
         'name': 'native-control', 'timeout': 10, 'argv': [sys.executable, '-c', 'print("forced failure");raise SystemExit(1)']})
     assert result['status'] == 'FAIL' and commands[0]['exit_code'] == 1
+    assert result['diagnostics'] == []
     assert json.loads((tmp_path / 'qualification.json').read_text())['status'] == 'FAIL'
+
+
+def test_spawned_unit_process_rejects_zero_exit_blocker_diagnostic(tmp_path):
+    diagnostic = '/source/Lexer.cpp:9:2: warning: preprocessor may be null [clang-analyzer-core.CallAndMessage]'
+    result, commands = run_unit({'directory': str(tmp_path), 'environment': {}, 'identity': 'unit',
+        'name': 'native-control', 'timeout': 10,
+        'argv': [sys.executable, '-c', 'print('+repr(diagnostic)+')']})
+    assert commands[0]['exit_code'] == 0
+    assert result['status'] == 'FAIL' and result['classification'] == 'finding'
+    assert result['diagnostics'][0]['path'] == '/source/Lexer.cpp'
+    assert json.loads((tmp_path / 'qualification.json').read_text())['status'] == 'FAIL'
+
+
+def test_checkpoint_cannot_reuse_zero_exit_blocker_diagnostic(checkpoint):
+    receipt, previous, current, row, args, _, log = checkpoint
+    log.write_text('/source/Lexer.cpp:9:2: warning: null state [clang-analyzer-core.CallAndMessage]\n')
+    previous['commands'][0]['log_sha256'] = digest(log)
+    with pytest.raises(ValueError, match='blocker diagnostics'):
+        successful_action(receipt, previous, current, row, arguments=args)
+
+
+def test_blocker_diagnostics_retain_exact_checker_and_source_location():
+    text = ('/source/interface_emitter.cpp:73:9: error: moved-from attribute owner '
+            '[bugprone-use-after-move]\n'
+            '/source/Lexer.cpp:3868:3: warning: preprocessor may be null '
+            '[clang-analyzer-core.CallAndMessage]\n')
+    assert tidy_diagnostics(text) == [
+        {'path': '/source/interface_emitter.cpp', 'line': 73, 'column': 9, 'severity': 'error',
+         'message': 'moved-from attribute owner', 'check': 'bugprone-use-after-move'},
+        {'path': '/source/Lexer.cpp', 'line': 3868, 'column': 3, 'severity': 'warning',
+         'message': 'preprocessor may be null', 'check': 'clang-analyzer-core.CallAndMessage'},
+    ]

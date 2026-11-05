@@ -4,7 +4,9 @@ import shlex
 
 import pytest
 
-from scripts.objc3c_toolchain.implementation_analysis import dependencies, inventory, selected_variants, textual_pch
+from scripts.objc3c_toolchain.implementation_analysis import (
+    dependencies, inventory, matched_pch_arguments, selected_variants, textual_pch,
+)
 
 
 @pytest.fixture
@@ -90,3 +92,28 @@ def test_bootstrap_pch_is_replaced_only_by_its_already_forced_exact_wrapper(tmp_
     row['arguments'] = row['arguments'][:-4]
     with pytest.raises(ValueError, match='textual include counterpart'):
         textual_pch(row)
+
+
+def test_bootstrap_pch_is_rebuilt_by_matched_fork_with_exact_semantic_flags(tmp_path):
+    bootstrap, matched = tmp_path / 'bootstrap-clang++', tmp_path / 'matched-clang++'
+    bootstrap.touch();matched.touch()
+    pch, wrapper = tmp_path / 'cmake_pch.hxx.pch', tmp_path / 'cmake_pch.hxx'
+    pch.write_bytes(b'bootstrap serialization');wrapper.write_text('#include "contract.h"\n')
+    source, obj, dep = tmp_path / 'source.mm', tmp_path / 'source.o', tmp_path / 'source.d'
+    source.write_text('int value;\n')
+    forced = ['-Xclang', '-include', '-Xclang', str(wrapper)]
+    row = {'file': str(source), 'directory': str(tmp_path), 'arguments': [str(bootstrap),
+        '-DREAL_FEATURE=1', '-Ireal/include', '-x', 'objective-c++', '-MD', '-MF', str(dep),
+        '-Xclang', '-include-pch', '-Xclang', str(pch), *forced,
+        '-o', str(obj), '-c', str(source)]}
+    target = tmp_path / 'matched.pch'
+    command = matched_pch_arguments(row, matched, target)
+    assert command[0] == str(matched)
+    assert '-DREAL_FEATURE=1' in command and '-Ireal/include' in command
+    assert command[-5:] == ['-x', 'objective-c++-header', str(wrapper), '-o', str(target)]
+    assert all(str(path) not in command for path in (bootstrap, pch, source, obj, dep))
+    target.write_bytes(b'fork matched serialization')
+    projected, proof = textual_pch(row, replacement=target)
+    assert str(target) in projected and str(pch) not in projected
+    assert forced == projected[projected.index(str(target))+1:projected.index(str(target))+5]
+    assert proof[0]['matched_pch_sha256'] and proof[0]['bootstrap_pch'] == str(pch)

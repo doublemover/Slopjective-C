@@ -122,8 +122,8 @@ def selected_variants(rows, headers, changed):
     return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
 
 
-def textual_pch(row):
-    """Reprocess exact CMake wrapper text; never admit bootstrap serialized AST."""
+def textual_pch(row, *, replacement=None):
+    """Use exact wrapper text or a newly built fork-matched serialization."""
     original, result, projections = row['arguments'], [], []
     index = 0
     while index < len(original):
@@ -137,13 +137,55 @@ def textual_pch(row):
                 raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
             projections.append({'bootstrap_pch': str(pch), 'pch_sha256': digest(pch),
                 'textual_wrapper': str(wrapper), 'wrapper_sha256': digest(wrapper),
-                'reason': 'The matched fork cannot deserialize bootstrap PCH. Preserve the existing forced textual include, all TU defines and include order.'})
+                'reason': ('The matched fork cannot deserialize bootstrap PCH. Rebuild this exact wrapper with '
+                           'the admitted fork, or preserve the forced textual include as the fail-closed fallback.')})
+            if replacement is not None:
+                replacement = Path(replacement).resolve(strict=True)
+                if replacement.is_symlink() or replacement.suffix != '.pch':
+                    raise ValueError('analysis replacement PCH is not an owned regular serialization')
+                result.extend([*original[index:index+3], str(replacement)])
+                projections[-1].update(matched_pch=str(replacement), matched_pch_sha256=digest(replacement))
             index += 4
         elif original[index] == '-include-pch':
             raise ValueError('unreviewed analysis PCH invocation')
         else:
             result.append(original[index]);index += 1
     return result, projections
+
+
+def matched_pch_arguments(row, compiler, output):
+    """Rebuild a CMake PCH wrapper with the admitted fork and exact TU flags."""
+    original = _without_dependency_flags(arguments(row))
+    _, projections = textual_pch(row)
+    if len(projections) != 1:
+        raise ValueError('analysis matched PCH requires one exact bootstrap wrapper')
+    wrapper = projections[0]['textual_wrapper']
+    result, language, index = [str(Path(compiler).resolve(strict=True))], None, 1
+    while index < len(original):
+        if original[index:index+3] == ['-Xclang', '-include-pch', '-Xclang']:
+            index += 4
+            continue
+        if (original[index:index+3] == ['-Xclang', '-include', '-Xclang'] and
+                index+3 < len(original) and
+                (Path(row['directory']) / original[index+3]).resolve() == Path(wrapper)):
+            index += 4
+            continue
+        if original[index] in ('-c', '-o'):
+            if index+1 >= len(original):
+                raise ValueError('analysis PCH source/output option is incomplete')
+            index += 2
+            continue
+        if original[index] == '-x':
+            if index+1 >= len(original) or original[index+1] not in ('c++', 'objective-c++'):
+                raise ValueError('analysis PCH has an unreviewed source language')
+            language = original[index+1]+'-header'
+            index += 2
+            continue
+        result.append(original[index]);index += 1
+    source = Path(row['file'])
+    language = language or ('objective-c++-header' if source.suffix == '.mm' else 'c++-header')
+    result.extend(['-x', language, wrapper, '-o', str(output)])
+    return result
 
 
 def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=None):
@@ -169,6 +211,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
     if (policy.get('schema') != 'objc3c.implementation-analysis-policy.v1' or
             policy.get('host') != 'linux-x86_64' or policy.get('tool') != 'objc3-clang-tidy' or
             policy.get('warnings_as_errors') != '*' or policy.get('baseline') != [] or
+            policy.get('profile_checks') is not True or
             policy.get('translation_unit_timeout_seconds') != 600 or
             not policy.get('checks') or len(set(policy['checks'])) != len(policy['checks']) or
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
@@ -178,7 +221,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
     report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
-        'environment': environment, 'inventory': [], 'results': [], 'exclusions': [],
+        'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
         'repository_output': str(repo / 'out'),
         'parallel_workers': jobs,
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
@@ -231,10 +274,43 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         for row in records:
             report['inputs'][row['source']] = row['source_sha256']
             report['inputs'][row['object']] = row['sha256']
+        matched_pches = {}
+        matched_compiler = stage / 'bin/clang++'
+        report['inputs'][str(matched_compiler)] = digest(matched_compiler)
         def prepare_analysis(name, row):
             directory = output / name
             directory.mkdir()
             args, projection = textual_pch(row)
+            if projection:
+                prototype = matched_pch_arguments(row, matched_compiler, Path('/objc3c-analysis-pch'))
+                key = identity({'argv': prototype, 'compiler_sha256': digest(matched_compiler),
+                    'bootstrap_pch_sha256': projection[0]['pch_sha256'],
+                    'wrapper_sha256': projection[0]['wrapper_sha256']})
+                matched = matched_pches.get(key)
+                if matched is None:
+                    # Stable tool-owned paths let a later failed-campaign resume
+                    # compare the exact projected command. The content-derived
+                    # identity changes whenever compiler, wrapper, bootstrap PCH
+                    # or semantic flags change; every campaign still rebuilds it.
+                    matched = tool_build / 'matched-pches' / (key+'.pch')
+                    matched.parent.mkdir(exist_ok=True)
+                    if matched.parent.is_symlink() or not matched.parent.is_dir():
+                        raise ValueError('fork-matched implementation analysis PCH directory is not owned')
+                    matched.unlink(missing_ok=True)
+                    command = matched_pch_arguments(row, matched_compiler, matched)
+                    run('matched-pch-'+key[:16], command, outputs=(matched,))
+                    if not matched.is_file() or matched.is_symlink() or not matched.stat().st_size:
+                        raise ValueError('fork-matched implementation analysis PCH was not produced')
+                    matched_pches[key] = matched
+                    report['inputs'][str(matched)] = digest(matched)
+                    report['matched_pches'].append({'identity': key, 'path': str(matched),
+                        'sha256': digest(matched), 'bytes': matched.stat().st_size,
+                        'compiler': str(matched_compiler), 'argv': command,
+                        'bootstrap_pch': projection[0]['bootstrap_pch'],
+                        'bootstrap_pch_sha256': projection[0]['pch_sha256'],
+                        'textual_wrapper': projection[0]['textual_wrapper'],
+                        'wrapper_sha256': projection[0]['wrapper_sha256']})
+                args, projection = textual_pch(row, replacement=matched)
             row['analysis_arguments'], row['pch_projection'] = args, projection
             for item in projection:
                 report['inputs'][item['bootstrap_pch']] = item['pch_sha256']
@@ -242,7 +318,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             write_json(directory / 'compile_commands.json', [{'file': row['file'],
                 'directory': row['directory'], 'arguments': args}])
             return list(map(str, [tool, '-p', directory, row['file'], '--config-file='+str(config),
-                '--warnings-as-errors=*', '--extra-arg=-resource-dir='+str(bootstrap / 'lib/clang/23'),
+                '--warnings-as-errors=*', '--enable-check-profile',
+                '--extra-arg=-resource-dir='+str(bootstrap / 'lib/clang/23'),
                 '--export-fixes='+str(directory / 'diagnostics.yaml')]))
         def analyze(name, row, *, expected=0, contains=()):
             run(name, prepare_analysis(name, row), expected=expected, contains=contains)

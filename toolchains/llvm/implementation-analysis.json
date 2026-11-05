@@ -19,6 +19,7 @@
     "bugprone-use-after-move"
   ],
   "warnings_as_errors": "*",
+  "profile_checks": true,
   "translation_unit_timeout_seconds": 600,
   "baseline": [],
   "purpose": "Implementation defects in native sources and maintained Clang translation units; separate from ObjC3 language analyzer modeling"

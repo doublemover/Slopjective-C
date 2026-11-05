@@ -17,17 +17,22 @@ The runner preserves compilation variants and response-file bytes. It checks
 the real Ninja graph against each compilation database, retains actual header
 closures, and selects all affected translation units for a header edit. Missing
 commands, changed flags, parse errors, timeouts, crashes and findings fail.
-There is no diagnostic suppression baseline. Full selection includes native
+There is no diagnostic suppression baseline. Per-check timing is enabled on
+every action so a bounded failure identifies the expensive checker instead of
+leaving another opaque translation-unit timeout. Full selection includes native
 frontend/runtime variants, standalone runtime variants and all maintained
 patch-touched Clang implementation TUs; test/vendor/generated-only exclusions
 are reported explicitly.
 
 The matched analyzer cannot deserialize the foundation's bootstrap-produced
-CMake PCH. Analysis validates the exact PCH/wrapper pair, removes only that
-serialized-PCH argument and preserves its already-present forced textual
-include, TU definitions and include order. Both original and projected commands
-and input hashes are retained. PCH validation is never disabled. Each TU has a
-bounded ten-minute analysis allowance; a timeout remains a failed TU.
+CMake PCH. Analysis validates the exact PCH/wrapper pair and rebuilds the wrapper
+with the admitted fork using the real TU's definitions, include order, target,
+language and feature flags. Identical variants share a content-addressed matched
+PCH. The bootstrap serialization, wrapper, matched serialization, compiler and
+both original/projected commands and hashes are retained. The forced textual
+include remains in the projected command, and a missing or invalid matched PCH
+fails instead of disabling validation. Each TU has a bounded ten-minute analysis
+allowance; a timeout remains a failed TU.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.implementation_analysis \

@@ -3,10 +3,21 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 
 from .binary_packages import digest
 from .llvm_ir_execution import Execution, StageFailure
 from .sanitizer_policy import require_clean_diagnostic
+
+
+def tidy_diagnostics(text):
+    """Retain blocker locations/checkers without treating tool prose as data."""
+    pattern = re.compile(
+        r'^(?P<path>[^\n:]+):(?P<line>\d+):(?P<column>\d+): '
+        r'(?P<severity>warning|error): (?P<message>.*?) \[(?P<check>[A-Za-z0-9_.-]+)\]$', re.M)
+    return [{'path': match['path'], 'line': int(match['line']), 'column': int(match['column']),
+             'severity': match['severity'], 'message': match['message'], 'check': match['check']}
+            for match in pattern.finditer(text)]
 
 
 def run_unit(job):
@@ -22,6 +33,14 @@ def run_unit(job):
         report.update(status='FAIL', error=str(error))
         result.update(status='FAIL', classification=error.classification, error=str(error))
     finally:
+        executor.save()
+    commands = report['commands']
+    diagnostics = tidy_diagnostics(Path(commands[-1]['log']).read_text(errors='replace')) if commands else []
+    result['diagnostics'] = diagnostics
+    if diagnostics:
+        result.update(status='FAIL', classification='finding',
+                      error='implementation analysis reported blocker diagnostics')
+        report.update(status='FAIL', error=result['error'])
         executor.save()
     return result, report['commands']
 
@@ -73,7 +92,8 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
             config.read_bytes() != current_config.read_bytes()):
         raise ValueError('analysis checkpoint checker configuration changed')
     expected = [current['tool']['path'], '-p', str(directory), row['file'], '--config-file='+str(config),
-        '--warnings-as-errors=*', '--extra-arg=-resource-dir='+current['resource_directory'],
+        '--warnings-as-errors=*', '--enable-check-profile',
+        '--extra-arg=-resource-dir='+current['resource_directory'],
         '--export-fixes='+str(directory / 'diagnostics.yaml')]
     log = Path(command['log'])
     if (command.get('argv') != expected or command.get('exit_code') != 0 or command.get('timed_out') or
@@ -81,7 +101,10 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
             log.is_symlink() or not log.resolve(strict=True).is_relative_to(root) or
             digest(log) != command.get('log_sha256')):
         raise ValueError('analysis checkpoint command/log proof changed or did not complete')
-    require_clean_diagnostic(log.read_text(errors='replace'))
+    text = log.read_text(errors='replace')
+    require_clean_diagnostic(text)
+    if tidy_diagnostics(text):
+        raise ValueError('analysis checkpoint retained blocker diagnostics as a successful action')
     return {'identity': row['identity'], 'status': 'PASS', 'execution_reused': True,
         'checkpoint': str(checkpoint), 'checkpoint_sha256': digest(checkpoint),
         'native_command': command, 'database_sha256': digest(database), 'checker_sha256': digest(config)}
