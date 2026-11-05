@@ -61,7 +61,9 @@ def test_distribution_reports_spread_without_an_invented_regression_budget():
 
 
 @pytest.mark.parametrize('mutate_sdk', [False, True])
-def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(tmp_path, monkeypatch, mutate_sdk):
+@pytest.mark.parametrize('shared_compiler', [False, True])
+def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
+        tmp_path, monkeypatch, mutate_sdk, shared_compiler):
     from scripts.objc3c_toolchain import semantic_benchmarks as owner
     repo, sdk = tmp_path / 'repo', tmp_path / 'sdk'
     (repo / 'tests/benchmarks').mkdir(parents=True)
@@ -85,11 +87,16 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(tmp_path, 
     monkeypatch.setattr(owner, 'verify_sdk', verify)
     monkeypatch.setattr(owner, 'sample', command)
     monkeypatch.setattr(owner, 'host_context', lambda: {'cpu_quota': '4'})
-    monkeypatch.setattr(owner, 'loaded_graph', lambda *args, **kwargs: {'libraries': {}})
+    loader_inputs = []
+    def loaded_graph(*args, **kwargs):
+        loader_inputs.append(args[2])
+        return {'libraries': {}}
+    monkeypatch.setattr(owner, 'loaded_graph', loaded_graph)
     # Required paths are validated by the actual SDK owner in integration;
     # this subprocess-mocked test checks receipt completeness and final admission.
-    for name in ('libLLVM.so', 'libclang-cpp.so'):
-        (sdk / 'lib' / name).touch()
+    if shared_compiler:
+        for name in ('libLLVM.so', 'libclang-cpp.so'):
+            (sdk / 'lib' / name).touch()
     output = repo / 'out/evidence'
     if mutate_sdk:
         with pytest.raises(ValueError, match='SDK changed'):
@@ -120,6 +127,7 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(tmp_path, 
             (destination / 'qualification.json').write_text(json.dumps(broken))
             with pytest.raises(ValueError): suite_results(native_root, 'semantic-workloads')
     assert len(calls) == 2
+    assert bool(loader_inputs[0]) is shared_compiler
 
 
 def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path):
@@ -138,6 +146,20 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
     assert (stage / 'bin/clang').stat().st_ino == (prefix / 'bin/clang').stat().st_ino
     with pytest.raises(ValueError, match='fresh independent'):
         prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
+
+
+def test_development_benchmark_prefix_accepts_a_static_compiler_stage(tmp_path):
+    from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix
+    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+    for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libobjc.so.4.6',
+        'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
+        'include/objc3c/runtime/objc3_collections.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
+    result = prepare_prefix(stage, prefix, source_build_id='static-build', target='x86_64-unknown-linux-gnu')
+    assert result['source_build_id'] == 'static-build'
+    assert not (prefix / 'lib/libLLVM.so').exists()
+    assert not (prefix / 'lib/libclang-cpp.so').exists()
 
 
 @pytest.mark.parametrize('path', ['stdlib/include/objc3/ObjC3Map.h', 'native/objc3c/src/runtime/stdlib/collections_service.cpp',

@@ -11,7 +11,7 @@ import statistics
 import subprocess
 import time
 
-from .binary_packages import digest, installed_shared_library, write_json
+from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
@@ -119,9 +119,11 @@ def prepare_prefix(stage, prefix, *, source_build_id, target):
     for name in ('clang', 'clang++', 'ld.lld'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
-        source = (installed_shared_library(stage / 'lib', name)
+        source = (find_installed_shared_library(stage / 'lib', name)
                   if name in ('libLLVM.so', 'libclang-cpp.so')
                   else (stage / 'lib' / name).resolve(strict=True))
+        if source is None:
+            continue
         link(source, prefix / 'lib' / source.name)
         if source.name != name: (prefix / 'lib' / name).symlink_to(source.name)
     for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
@@ -179,20 +181,26 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3):
             # Record sanitizer markers in both implementation and runtime inputs.
             # These distinguish diagnostic compiler timings from ordinary builds.
             markers = {}
-            for name in ('libclang-cpp.so', 'libobjc3_runtime_services.a'):
+            compiler_libraries = [library for library in
+                (find_installed_shared_library(prefix / 'lib', candidate)
+                 for candidate in ('libLLVM.so', 'libclang-cpp.so')) if library is not None]
+            compiler_probe = (find_installed_shared_library(prefix / 'lib', 'libclang-cpp.so')
+                              or compiler)
+            for name, probe in (('libclang-cpp.so', compiler_probe),
+                                ('libobjc3_runtime_services.a', prefix / 'lib/libobjc3_runtime_services.a')):
                 probe = run(f'sdk-{index}-instrumentation-'+name.replace('.', '-'),
-                    ['/usr/bin/nm', *(['-D'] if name.endswith('.so') else []),
-                        '--undefined-only', prefix / 'lib' / name], state)
+                    ['/usr/bin/nm', *(['-D'] if name == 'libclang-cpp.so' and probe != compiler else []),
+                        '--undefined-only', probe], state)
                 text = Path(probe['log']).read_text()
                 markers[name] = sorted({kind for kind in ('asan', 'ubsan', 'tsan', 'llvm_profile') if '__'+kind in text})
             state['instrumentation'] = markers
-            report['sdks'][index].update(instrumentation=markers, environment=environment)
+            report['sdks'][index].update(instrumentation=markers, environment=environment,
+                                         compiler_instrumentation_probe=str(compiler_probe))
             if markers['libobjc3_runtime_services.a']:
                 raise ValueError('ordinary runtime timing cannot use an instrumented service archive')
             report['sdks'][index]['compiler_loader'] = loaded_graph(compiler,
                 Path('/lib64/ld-linux-x86-64.so.2').resolve(),
-                [prefix / 'lib/libLLVM.so', prefix / 'lib/libclang-cpp.so'],
-                required=tuple((prefix / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')),
+                compiler_libraries,
                 run=lambda name, argv: Path(run('sdk-'+str(index)+'-compiler-'+name, argv, state)['log']).read_text())
             runtime_source = root / 'collections.cpp';runtime_source.write_bytes(fixture.read_bytes())
             obj, binary = root / 'collections.o', root / 'collections'

@@ -148,6 +148,7 @@ def test_complete_consumer_protocol_fails_closed_at_real_admission_boundaries(tm
     fixture = repo / 'tests/foreign/swift_consumer'
     shutil.copytree(REPO / 'tests/foreign/swift_consumer', fixture)
     for root in (sdk, swift): root.mkdir()
+    (sdk / 'lib').mkdir()
     (swift / 'objc3-swift-consumer.json').write_text('test-only seal')
     symbolizer = tmp_path / 'llvm-symbolizer';symbolizer.touch()
     calls = []
@@ -245,3 +246,14 @@ def test_development_pilot_prefix_seals_only_current_native_tools_without_an_arc
     assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
     with pytest.raises(ValueError, match='fresh independent'):
         owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build', target='target')
+
+
+def test_development_pilot_prefix_accepts_a_static_compiler_stage(tmp_path):
+    stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
+    for relative in ('bin/clang', 'bin/objc3c', 'lib/clang/23/include/stddef.h'):
+        path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
+    value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='static-build',
+                                           target='x86_64-unknown-linux-gnu')
+    assert value['source_build_id'] == 'static-build'
+    assert not (prefix / 'lib/libLLVM.so').exists()
+    assert not (prefix / 'lib/libclang-cpp.so').exists()

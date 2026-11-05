@@ -44,8 +44,8 @@ def disjoint(output: Path, *protected: Path):
         raise ValueError('package output must be disjoint from the SDK and every input root')
 
 
-def installed_shared_library(directory: Path, name: str) -> Path:
-    """Resolve one installed ELF DSO with or without its development symlink."""
+def find_installed_shared_library(directory: Path, name: str) -> Path | None:
+    """Resolve an installed ELF DSO, while admitting a genuinely static stage."""
     directory = directory.resolve(strict=True)
     if (Path(name).name != name or not name.startswith('lib') or
             not name.endswith('.so')):
@@ -59,13 +59,31 @@ def installed_shared_library(directory: Path, name: str) -> Path:
     candidates = {}
     versioned = re.compile(re.escape(name) + r'(?:\.[0-9]+)+', re.ASCII)
     for path in directory.glob(name + '.*'):
-        if versioned.fullmatch(path.name) and path.is_file():
-            selected = path.resolve(strict=True)
-            if selected.is_relative_to(directory):
-                candidates[selected] = path
+        if not versioned.fullmatch(path.name):
+            continue
+        if not path.is_file():
+            if path.is_symlink():
+                raise ValueError('installed shared library has a broken link: ' + name)
+            continue
+        selected = path.resolve(strict=True)
+        if not selected.is_relative_to(directory):
+            raise ValueError('installed shared library escapes its owning directory')
+        candidates[selected] = path
+    if not candidates:
+        if link.is_symlink():
+            raise ValueError('installed shared library has a broken link: ' + name)
+        return None
     if len(candidates) != 1:
         raise ValueError('installed shared library is missing or ambiguous: ' + name)
     return next(iter(candidates))
+
+
+def installed_shared_library(directory: Path, name: str) -> Path:
+    """Require one installed ELF DSO with or without its development symlink."""
+    selected = find_installed_shared_library(directory, name)
+    if selected is None:
+        raise ValueError('installed shared library is missing or ambiguous: ' + name)
+    return selected
 
 
 @contextmanager

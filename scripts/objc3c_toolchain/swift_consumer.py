@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import shutil
 
-from .binary_packages import digest, installed_shared_library, write_json
+from .binary_packages import digest, find_installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import command
 from .package import SCHEMA, _digest, inventory, verify_sdk
@@ -38,7 +38,9 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
         os.link((stage / 'bin' / name).resolve(strict=True), prefix / 'bin' / name)
     (prefix / 'lib').mkdir()
     for name in ('libLLVM.so', 'libclang-cpp.so'):
-        source = installed_shared_library(stage / 'lib', name)
+        source = find_installed_shared_library(stage / 'lib', name)
+        if source is None:
+            continue
         os.link(source, prefix / 'lib' / source.name)
         if source.name != name:
             (prefix / 'lib' / name).symlink_to(source.name)
@@ -139,7 +141,10 @@ def qualify(repo, output, *, sdk, swift_root, symbolizer):
             raise ValueError('native compiler diagnostics require the pinned LLVM symbolizer')
         for name, binary, is_foreign in (('native', sdk / 'bin/clang', False),
                                          ('swift-driver', swiftc, True), ('swift-frontend', frontend, True)):
-            libraries = [sdk / 'lib/libLLVM.so', sdk / 'lib/libclang-cpp.so'] if not is_foreign else []
+            libraries = ([library for library in
+                (find_installed_shared_library(sdk / 'lib', candidate)
+                 for candidate in ('libLLVM.so', 'libclang-cpp.so')) if library is not None]
+                if not is_foreign else [])
             graph = loaded_graph(binary, loader, libraries,
                 run=lambda suffix, argv, name=name, is_foreign=is_foreign: run(name+'-'+suffix, argv, foreign=is_foreign))
             if is_foreign and any(Path(path).is_relative_to(sdk) for path in graph['libraries']):
