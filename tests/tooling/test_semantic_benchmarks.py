@@ -129,11 +129,11 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
         'lib/libobjc.so.4.6', 'lib/libobjc3_runtime_services.a', 'lib/clang/23/include/stddef.h',
         'include/objc3c/runtime/objc3_collections.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
-    for name, actual in (('libLLVM.so', 'libLLVM.so.23.1'), ('libclang-cpp.so', 'libclang-cpp.so.23.1'),
-                         ('libobjc.so', 'libobjc.so.4.6')):
-        (stage / 'lib' / name).symlink_to(actual)
+    (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
     result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
     assert result['source_build_id'] == 'current-build'
+    assert (prefix / 'lib/libLLVM.so').resolve() == prefix / 'lib/libLLVM.so.23.1'
+    assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
     assert (prefix / 'lib/libobjc.so').resolve() == prefix / 'lib/libobjc.so.4.6'
     assert (stage / 'bin/clang').stat().st_ino == (prefix / 'bin/clang').stat().st_ino
     with pytest.raises(ValueError, match='fresh independent'):

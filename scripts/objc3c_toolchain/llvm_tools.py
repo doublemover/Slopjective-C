@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import struct
 
-from .binary_packages import digest
+from .binary_packages import digest, installed_shared_library
 from .build import verify_effective_configuration
 from .compiler_instrumentation import (archive_owners, graph_records, loaded_graph,
     verify_owned_archives, verify_symbols)
@@ -105,7 +105,8 @@ def selected(repo: Path) -> tuple[dict, dict, dict]:
     # CMake changes only the owned RUNPATH during installation. Code and every
     # other byte must match; both actual loader graphs are independently bound.
     for name in ('libLLVM.so', 'libclang-cpp.so'):
-        verify_installation(build / 'lib' / name, stage / 'lib' / name, build)
+        verify_installation(build / 'lib' / name,
+                            installed_shared_library(stage / 'lib', name), build)
     bootstrap = Path(plan['host_environment']['bootstrap_root'])
     environment = strict_environment(tools['clang'], bootstrap / 'bin/llvm-symbolizer')
     return plan, tools, environment
@@ -170,6 +171,7 @@ def qualify(repo: Path, *, run, receipt: Path | None = None) -> tuple[dict, dict
     for name, tool in tools.items():
         library_root = build if name in document['build_targets'] else stage
         libraries = [(library_root / 'lib' / name).resolve(strict=True)
+                     if library_root == build else installed_shared_library(stage / 'lib', name)
                      for name in ('libLLVM.so', 'libclang-cpp.so')]
         # LLD is statically linked; all other tools use LLVM (Clang also uses
         # clang-cpp). The graph rejects unselected LLVM DSOs for either route.
@@ -182,9 +184,12 @@ def qualify(repo: Path, *, run, receipt: Path | None = None) -> tuple[dict, dict
         'inventory_sha256': digest(inventory), 'owner_sha256': digest(Path(__file__)),
         'foundation_receipt_sha256': digest(build / 'foundation-build-report.json'),
         'configuration': verify_effective_configuration(plan),
-        'install_transitions': {name: verify_installation(build / name, stage / name, build)
-            for name in [*('bin/'+name for name in document['foundation_tools']),
-                         'lib/libLLVM.so', 'lib/libclang-cpp.so']},
+        'install_transitions': {
+            **{name: verify_installation(build / name, stage / name, build)
+               for name in ('bin/'+name for name in document['foundation_tools'])},
+            **{name: verify_installation(build / name,
+                    installed_shared_library(stage / 'lib', Path(name).name), build)
+               for name in ('lib/libLLVM.so', 'lib/libclang-cpp.so')}},
         'tools': {name: {'path': str(path), 'sha256': digest(path), 'version': versions[name],
                          'loaded_graph': graphs[name]} for name, path in tools.items()},
         'objects': records, 'archives': owned,

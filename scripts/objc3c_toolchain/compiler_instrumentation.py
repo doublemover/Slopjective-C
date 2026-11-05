@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
 from .frontend_tests import qualify as frontend_tests
 from .sanitizer_policy import SanitizerQualification, require_clean_diagnostic, validate_detection
@@ -467,7 +467,8 @@ def qualify(repo: Path, output: Path, *, jobs=2, embedding_build: Path | None = 
         if ({**previous['host_environment'], 'ccache_path': None} !=
                 {**plan['host_environment'], 'ccache_path': None}):
             raise ValueError('reused embedding foundation/profile/bootstrap differs: host_environment')
-    libraries = [stage / 'lib/libclang-cpp.so', stage / 'lib/libLLVM.so']
+    libraries = [installed_shared_library(stage / 'lib', name)
+                 for name in ('libclang-cpp.so', 'libLLVM.so')]
     policy = SanitizerQualification(bootstrap / 'bin/clang++', bootstrap / 'lib/clang/23',
         output / 'detectors', 'address,undefined', libraries=libraries,
         additional_inputs=[foundation_report, Path(__file__),

@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .core import build_plans
 from .source_coverage import binary_ids
 
@@ -186,8 +186,9 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
     started = time.monotonic()
     tools = {name: stage / 'bin' / name for name in ('llvm-cov', 'llvm-profdata', 'llvm-readobj')}
     test_binaries = [build / relative for relative in plan['instrumentation']['test_binaries']]
-    binaries = [stage / 'bin/clang', stage / 'lib/libclang-cpp.so', stage / 'lib/libLLVM.so',
-                *test_binaries]
+    binaries = [stage / 'bin/clang',
+                installed_shared_library(stage / 'lib', 'libclang-cpp.so'),
+                installed_shared_library(stage / 'lib', 'libLLVM.so'), *test_binaries]
     report = {'schema': 'objc3c.compiler-source-coverage.v1', 'status': 'running',
         'profile': PROFILE, 'source_build_id': plan['source_build_id'],
         'build_config_digest': plan['build_config_digest'],

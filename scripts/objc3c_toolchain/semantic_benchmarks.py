@@ -11,7 +11,7 @@ import statistics
 import subprocess
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
@@ -119,7 +119,9 @@ def prepare_prefix(stage, prefix, *, source_build_id, target):
     for name in ('clang', 'clang++', 'ld.lld'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
-        source = (stage / 'lib' / name).resolve(strict=True)
+        source = (installed_shared_library(stage / 'lib', name)
+                  if name in ('libLLVM.so', 'libclang-cpp.so')
+                  else (stage / 'lib' / name).resolve(strict=True))
         link(source, prefix / 'lib' / source.name)
         if source.name != name: (prefix / 'lib' / name).symlink_to(source.name)
     for name in ('lib/clang/23/include', 'include/objc3c/runtime'):

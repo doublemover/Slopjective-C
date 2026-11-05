@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import (archive_owners, graph_records, loaded_graph,
     verify_owned_archives, verify_symbols)
 from .llvm_ir_execution import Execution
@@ -171,7 +171,8 @@ def qualify(repo: Path, output: Path, *, jobs=3, tools_receipt: Path | None = No
             owners=archive_owners(build, archives, Path(host['ninja_path']),
                 run=lambda name, cmd: run('debugger-'+name, cmd)))
         stage = Path(foundation['paths']['stage'])
-        libraries = [(stage / 'lib' / name).resolve() for name in ('libLLVM.so', 'libclang-cpp.so')]
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
         sanitizer = Path(configuration['sanitizer_library'])
         report['shared_sanitizer_controls'] = qualify_shared_sanitizer_route(output=output, run=run,
             compiler=bootstrap / 'bin/clang++', sanitizer=sanitizer, libraries=libraries)

@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import shutil
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import identity, selected, verify_receipt
@@ -89,14 +89,16 @@ class Campaign:
         self.inputs = {str(path): digest(path) for path in [Path(__file__),
             Path(__file__).with_name('semantic_model.py'), Path(__file__).with_name('semantic_sources.py'),
             self.facade, self.services, self.runtime, *self.tools.values(),
-            *(stage / 'lib' / name for name in ('libLLVM.so', 'libclang-cpp.so'))]}
+            *(installed_shared_library(stage / 'lib', name)
+              for name in ('libLLVM.so', 'libclang-cpp.so'))]}
         for name in ('llvm_ir_execution.py', 'compiler_instrumentation.py', 'llvm_tools.py',
                      'binary_packages.py', 'sanitizer_policy.py', 'sdk_example.py'):
             path = Path(__file__).with_name(name)
             self.inputs[str(path)] = digest(path)
         self.report['inputs'] = self.inputs
         self.observations = {}
-        libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
         self.report['compiler_graphs'] = {}
         for name, binary in (('clang', self.tools['clang++']), ('facade', self.facade)):
             graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,

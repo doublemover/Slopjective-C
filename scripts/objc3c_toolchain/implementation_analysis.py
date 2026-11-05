@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import shlex
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import _without_dependency_flags, graph_records, loaded_graph, verify_symbols
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
@@ -206,8 +206,11 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         for name in ('compiler_instrumentation', 'llvm_tools', 'llvm_ir_execution', 'sanitizer_policy', 'binary_packages', 'analysis_checkpoint'):
             path = Path(__file__).with_name(name+'.py')
             report['inputs'][str(path)] = digest(path)
-        libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
-        report['install_transitions'] = {name: verify_installation(build / 'lib' / name, stage / 'lib' / name, build)
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
+        report['install_transitions'] = {name: verify_installation(
+                                        build / 'lib' / name,
+                                        installed_shared_library(stage / 'lib', name), build)
                                         for name in ('libLLVM.so', 'libclang-cpp.so')}
         report['tool_graph'] = loaded_graph(tool, Path('/lib64/ld-linux-x86-64.so.2').resolve(), libraries,
             required=tuple(libraries), run=lambda name, argv: run('tool-'+name, argv))

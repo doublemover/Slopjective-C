@@ -13,7 +13,7 @@ import shutil
 import sys
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import Execution, StageFailure
 from .llvm_ir_inventory import stages, thinlto_modules, verify as verify_inventory
@@ -177,9 +177,10 @@ def qualify(repo: Path, output: Path, *, runtime: Path, objc_runtime: Path,
         report['tool_identity'] = tool_receipt['identity']
         report['controls'] = capability_controls(repo, output, tools, run)
         # Imported source runs inside the already qualified embedding facade.
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
         loaded_graph(facade, Path('/lib64/ld-linux-x86-64.so.2').resolve(),
-            [(stage / 'lib/libLLVM.so').resolve(), (stage / 'lib/libclang-cpp.so').resolve()],
-            required=((stage / 'lib/libLLVM.so').resolve(),),
+            libraries, required=(libraries[0],),
             run=lambda name, cmd: run('facade-'+name, cmd))
         headers = repo / 'native/objc3c/src/runtime/public'
         for case in document['cases']:

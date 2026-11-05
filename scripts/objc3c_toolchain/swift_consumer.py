@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import shutil
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph
 from .llvm_ir_execution import command
 from .package import SCHEMA, _digest, inventory, verify_sdk
@@ -38,7 +38,7 @@ def prepare_compiler_prefix(stage, prefix, *, source_build_id, target):
         os.link((stage / 'bin' / name).resolve(strict=True), prefix / 'bin' / name)
     (prefix / 'lib').mkdir()
     for name in ('libLLVM.so', 'libclang-cpp.so'):
-        source = (stage / 'lib' / name).resolve(strict=True)
+        source = installed_shared_library(stage / 'lib', name)
         os.link(source, prefix / 'lib' / source.name)
         if source.name != name:
             (prefix / 'lib' / name).symlink_to(source.name)

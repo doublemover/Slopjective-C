@@ -44,6 +44,30 @@ def disjoint(output: Path, *protected: Path):
         raise ValueError('package output must be disjoint from the SDK and every input root')
 
 
+def installed_shared_library(directory: Path, name: str) -> Path:
+    """Resolve one installed ELF DSO with or without its development symlink."""
+    directory = directory.resolve(strict=True)
+    if (Path(name).name != name or not name.startswith('lib') or
+            not name.endswith('.so')):
+        raise ValueError('installed shared-library name must be a plain lib*.so name')
+    link = directory / name
+    if link.is_file():
+        selected = link.resolve(strict=True)
+        if not selected.is_relative_to(directory):
+            raise ValueError('installed shared library escapes its owning directory')
+        return selected
+    candidates = {}
+    versioned = re.compile(re.escape(name) + r'(?:\.[0-9]+)+', re.ASCII)
+    for path in directory.glob(name + '.*'):
+        if versioned.fullmatch(path.name) and path.is_file():
+            selected = path.resolve(strict=True)
+            if selected.is_relative_to(directory):
+                candidates[selected] = path
+    if len(candidates) != 1:
+        raise ValueError('installed shared library is missing or ambiguous: ' + name)
+    return next(iter(candidates))
+
+
 @contextmanager
 def lock(root: Path, name: str):
     root.mkdir(parents=True, exist_ok=True)

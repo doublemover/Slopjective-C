@@ -13,6 +13,29 @@ import pytest
 from scripts.objc3c_toolchain import binary_packages as packages
 
 
+def test_installed_shared_library_accepts_one_versioned_soname_without_a_development_link(tmp_path):
+    library = tmp_path / 'libLLVM.so.23.1'
+    library.write_bytes(b'current LLVM')
+    assert packages.installed_shared_library(tmp_path, 'libLLVM.so') == library
+
+    (tmp_path / 'libLLVM.so.23').symlink_to(library.name)
+    assert packages.installed_shared_library(tmp_path, 'libLLVM.so') == library
+
+
+def test_installed_shared_library_rejects_ambiguous_missing_and_escaped_products(tmp_path):
+    with pytest.raises(ValueError, match='missing or ambiguous'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+    for version in ('23.1', '24.0'):
+        (tmp_path / ('libLLVM.so.' + version)).write_bytes(version.encode())
+    with pytest.raises(ValueError, match='missing or ambiguous'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+    outside = tmp_path.parent / 'libLLVM.so.25.0'
+    outside.write_bytes(b'outside')
+    (tmp_path / 'libLLVM.so').symlink_to(outside)
+    with pytest.raises(ValueError, match='escapes'):
+        packages.installed_shared_library(tmp_path, 'libLLVM.so')
+
+
 def package_cli(tmp_path, root_mode, command):
     repo = Path(__file__).resolve().parents[2]
     env = {**os.environ, 'PYTHONPATH': str(repo)}

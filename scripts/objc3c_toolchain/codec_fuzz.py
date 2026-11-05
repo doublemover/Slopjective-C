@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .build import verify_effective_configuration
 from .compiler_instrumentation import loaded_graph
 from .core import build_plans
@@ -300,7 +300,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         frozen[str(facade_plan_path)] = digest(facade_plan_path)
         foundation_feedback = {}
         for name in ('libclang-cpp.so', 'libLLVM.so'):
-            library = (stage / 'lib' / name).resolve(strict=True)
+            library = installed_shared_library(stage / 'lib', name)
             symbols = run('foundation-feedback-'+name.removeprefix('lib').removesuffix('.so'),
                           [bootstrap / 'bin/llvm-nm', '--undefined-only', library])
             foundation_feedback[name] = {'path': str(library), 'sha256': digest(library),
@@ -366,7 +366,8 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         for name, binary in binaries.items():
             frozen[str(binary)] = digest(binary)
             graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(),
-                [stage / 'lib/libLLVM.so', stage / 'lib/libclang-cpp.so'],
+                [installed_shared_library(stage / 'lib', name)
+                 for name in ('libLLVM.so', 'libclang-cpp.so')],
                 run=lambda suffix, argv, name=name: run(name+'-'+suffix, argv, environment=env))
             frozen.update(graph['libraries']);report.setdefault('loader_graphs', {})[name] = graph
         seeds = output / 'mandatory-seeds'

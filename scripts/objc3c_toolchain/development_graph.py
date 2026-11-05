@@ -8,7 +8,7 @@ from pathlib import Path
 import runpy
 import shutil
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .llvm_tools import foundation
 from .package import SCHEMA, _digest, inventory, verify_sdk
 from .qualify_source_graph import qualify, qualify_case
@@ -30,7 +30,7 @@ def prepare(repo: Path, prefix: Path, *, facade: Path, services: Path, objc_runt
         link(stage / 'bin' / name, prefix / 'bin' / name)
     link(facade, prefix / 'bin/objc3c')
     for name in ('libLLVM.so', 'libclang-cpp.so'):
-        actual = (stage / 'lib' / name).resolve(strict=True)
+        actual = installed_shared_library(stage / 'lib', name)
         link(actual, prefix / 'lib' / actual.name)
         (prefix / 'lib' / name).symlink_to(actual.name)
     actual = objc_runtime.resolve(strict=True)

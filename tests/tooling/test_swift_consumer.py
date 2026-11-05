@@ -237,11 +237,11 @@ def test_development_pilot_prefix_seals_only_current_native_tools_without_an_arc
     for relative in ('bin/clang', 'bin/objc3c', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
                      'lib/clang/23/include/stddef.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
-    for name in ('libLLVM', 'libclang-cpp'):
-        (stage / 'lib' / (name+'.so')).symlink_to(name+'.so.23.1')
     value = owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build',
                                            target='x86_64-unknown-linux-gnu')
     assert value['source_build_id'] == 'current-build'
     assert (prefix / 'bin/clang').stat().st_ino == (stage / 'bin/clang').stat().st_ino
+    assert (prefix / 'lib/libLLVM.so').resolve() == prefix / 'lib/libLLVM.so.23.1'
+    assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
     with pytest.raises(ValueError, match='fresh independent'):
         owner.prepare_compiler_prefix(stage, prefix, source_build_id='current-build', target='target')

@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import time
 
-from .binary_packages import digest, write_json
+from .binary_packages import digest, installed_shared_library, write_json
 from .compiler_instrumentation import loaded_graph, _without_dependency_flags
 from .llvm_ir_execution import command
 from .core import build_plans
@@ -261,7 +261,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         for name, path in {'clang++': compiler, **tools}.items():
             version = run(name+'-version', [path, '--version'])
             if '23.1.3' not in version: raise ValueError('coverage tool version differs from the admitted bootstrap')
-        libraries = [(stage / 'lib' / name).resolve(strict=True) for name in ('libLLVM.so', 'libclang-cpp.so')]
+        libraries = [installed_shared_library(stage / 'lib', name)
+                     for name in ('libLLVM.so', 'libclang-cpp.so')]
         frozen.update({str(path): digest(path) for path in libraries})
         library_identity = {str(library): elf_build_id(run('coverage-library-notes-'+str(index),
             [tools['llvm-readobj'], '--notes', library])) for index, library in enumerate(libraries)}
