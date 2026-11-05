@@ -9,6 +9,7 @@ import sys
 
 from scripts.objc3c_assurance.__main__ import event_revisions
 from scripts.objc3c_assurance.plan import sha
+from scripts.objc3c_toolchain.core import ToolchainError
 
 from .plan import from_checkout
 
@@ -48,7 +49,7 @@ def main(argv=None):
                 outcomes=json.loads(os.environ['ASSURANCE_OUTCOMES']), tested=revisions['tested'])
         print(json.dumps(report, indent=2))
         return 0
-    except (ValueError, KeyError, OSError) as error:
+    except (ValueError, KeyError, OSError, ToolchainError) as error:
         print('implementation-assurance: '+str(error), file=sys.stderr)
         return 1
 

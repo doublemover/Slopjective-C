@@ -15,9 +15,16 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
-from .analysis_checkpoint import run_unit, successful_action
+from .analysis_checkpoint import analysis_argv, run_unit, successful_action
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
+
+
+def checker_configuration(repo, source, policy):
+    return {'Checks': '-*,'+','.join(policy['checks']), 'WarningsAsErrors': '*',
+        'HeaderFilterRegex': '('+'|'.join(re.escape(str(path)) for path in
+            (repo / 'native', source / 'clang', repo / 'tests/tooling/fixtures/implementation_analysis'))+')/.*',
+        'SystemHeaders': False, 'FormatStyle': 'none'}
 
 
 def patch_units(repo):
@@ -89,7 +96,7 @@ def inventory(database, graph, selected_sources):
 
 def dependencies(text, *, build, selected_outputs=None):
     """Read Ninja's recorded actual header closure, rejecting stale/missing deps."""
-    records, current = {}, None
+    records, counts, current = {}, {}, None
     for line in text.splitlines():
         if line and not line.startswith(' '):
             if line.endswith(': deps not found'):
@@ -105,8 +112,11 @@ def dependencies(text, *, build, selected_outputs=None):
             if current in records or match[3] != 'VALID':
                 raise ValueError('duplicate or stale implementation dependency record')
             records[current] = []
+            counts[current] = int(match[2])
         elif line.strip() and current is not None:
             records[current].append(str((build / line.strip()).resolve(strict=True)))
+    if any(len(records[path]) != count for path, count in counts.items()):
+        raise ValueError('implementation dependency record is truncated or overfull')
     return records
 
 
@@ -132,7 +142,7 @@ def owner_changes(repo, owner, changed):
     """
     if not changed:
         return ()
-    repo = Path(repo).resolve(strict=True)
+    repo = Path(repo).resolve()
     paths = [Path(path).resolve() for path in changed]
     relatives = []
     for path in paths:
@@ -170,11 +180,16 @@ def textual_pch(row, *, replacement=None):
     index = 0
     while index < len(original):
         if original[index:index+3] == ['-Xclang', '-include-pch', '-Xclang']:
-            pch = (Path(row['directory']) / original[index+3]).resolve(strict=True)
+            if index+7 >= len(original):
+                raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
+            candidate = Path(row['directory']) / original[index+3]
+            if candidate.is_symlink():
+                raise ValueError('analysis bootstrap PCH is not an owned regular serialization')
+            pch = candidate.resolve(strict=True)
             wrapper = pch.with_suffix('')
-            if (pch.name != 'cmake_pch.hxx.pch' or not wrapper.is_file() or
+            if (pch.name != 'cmake_pch.hxx.pch' or not pch.is_file() or not pch.stat().st_size or
+                    not wrapper.is_file() or wrapper.is_symlink() or
                     original[index+4:index+7] != ['-Xclang', '-include', '-Xclang'] or
-                    index+7 >= len(original) or
                     (Path(row['directory']) / original[index+7]).resolve() != wrapper):
                 raise ValueError('analysis PCH lacks its exact CMake textual include counterpart')
             projections.append({'bootstrap_pch': str(pch), 'pch_sha256': digest(pch),
@@ -182,9 +197,11 @@ def textual_pch(row, *, replacement=None):
                 'reason': ('The matched fork cannot deserialize bootstrap PCH. Rebuild this exact wrapper with '
                            'the admitted fork, or preserve the forced textual include as the fail-closed fallback.')})
             if replacement is not None:
-                replacement = Path(replacement).resolve(strict=True)
-                if replacement.is_symlink() or replacement.suffix != '.pch':
+                replacement = Path(replacement)
+                if (replacement.is_symlink() or not replacement.is_file() or
+                        not replacement.stat().st_size or replacement.suffix != '.pch'):
                     raise ValueError('analysis replacement PCH is not an owned regular serialization')
+                replacement = replacement.resolve(strict=True)
                 result.extend([*original[index:index+3], str(replacement)])
                 projections[-1].update(matched_pch=str(replacement), matched_pch_sha256=digest(replacement))
             index += 4
@@ -230,6 +247,20 @@ def matched_pch_arguments(row, compiler, output):
     return result
 
 
+def dependency_arguments(row, depfile):
+    """Preprocess exact TU flags, expanding the forced PCH wrapper as text."""
+    args, _ = textual_pch({**row, 'arguments': _without_dependency_flags(row['arguments'])})
+    query, index = [args[0]], 1
+    while index < len(args):
+        if args[index] == '-o':
+            index += 2
+            continue
+        if args[index] != '-c':
+            query.append(args[index])
+        index += 1
+    return [*query, '-M', '-MF', str(depfile), '-MT', 'implementation-analysis']
+
+
 def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
@@ -265,6 +296,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
         'environment': environment, 'inventory': [], 'results': [], 'exclusions': [], 'matched_pches': [],
         'repository_output': str(repo / 'out'),
+        'changed_paths': [str(Path(path).resolve()) for path in changed],
         'parallel_workers': jobs,
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
@@ -305,10 +337,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         if not set(policy['checks']) <= available:
             raise ValueError('selected check is absent from the pinned implementation analyzer')
         config = output / 'checks.json'
-        write_json(config, {'Checks': '-*,'+','.join(policy['checks']), 'WarningsAsErrors': '*',
-            'HeaderFilterRegex': '('+'|'.join(re.escape(str(path)) for path in
-                (repo / 'native', source / 'clang', repo / 'tests/tooling/fixtures/implementation_analysis'))+')/.*',
-            'SystemHeaders': False, 'FormatStyle': 'none'})
+        write_json(config, checker_configuration(repo, source, policy))
         report['inputs'].update({str(tool): digest(tool), str(config): digest(config),
                                   **report['tool_graph']['libraries']})
         report['configuration'] = str(config)
@@ -325,7 +354,9 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             args, projection = textual_pch(row)
             if projection:
                 prototype = matched_pch_arguments(row, matched_compiler, Path('/objc3c-analysis-pch'))
-                key = identity({'argv': prototype, 'compiler_sha256': digest(matched_compiler),
+                key = identity({'argv': prototype, 'directory': row['directory'],
+                    'response_files': row.get('response_files', {}),
+                    'compiler_sha256': digest(matched_compiler),
                     'bootstrap_pch_sha256': projection[0]['pch_sha256'],
                     'wrapper_sha256': projection[0]['wrapper_sha256']})
                 matched = matched_pches.get(key)
@@ -340,7 +371,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                         raise ValueError('fork-matched implementation analysis PCH directory is not owned')
                     matched.unlink(missing_ok=True)
                     command = matched_pch_arguments(row, matched_compiler, matched)
-                    run('matched-pch-'+key[:16], command, outputs=(matched,))
+                    run('matched-pch-'+key[:16], command, cwd=Path(row['directory']), outputs=(matched,))
                     if not matched.is_file() or matched.is_symlink() or not matched.stat().st_size:
                         raise ValueError('fork-matched implementation analysis PCH was not produced')
                     matched_pches[key] = matched
@@ -348,6 +379,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                     report['matched_pches'].append({'identity': key, 'path': str(matched),
                         'sha256': digest(matched), 'bytes': matched.stat().st_size,
                         'compiler': str(matched_compiler), 'argv': command,
+                        'directory': row['directory'],
                         'bootstrap_pch': projection[0]['bootstrap_pch'],
                         'bootstrap_pch_sha256': projection[0]['pch_sha256'],
                         'textual_wrapper': projection[0]['textual_wrapper'],
@@ -359,10 +391,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 report['inputs'][item['textual_wrapper']] = item['wrapper_sha256']
             write_json(directory / 'compile_commands.json', [{'file': row['file'],
                 'directory': row['directory'], 'arguments': args}])
-            return list(map(str, [tool, '-p', directory, row['file'], '--config-file='+str(config),
-                '--warnings-as-errors=*', '--enable-check-profile',
-                '--extra-arg=-resource-dir='+str(bootstrap / 'lib/clang/23'),
-                '--export-fixes='+str(directory / 'diagnostics.yaml')]))
+            return analysis_argv(tool, directory, row['file'], config, bootstrap / 'lib/clang/23')
         def analyze(name, row, *, expected=0, contains=()):
             run(name, prepare_analysis(name, row), expected=expected, contains=contains)
         control = repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp'
@@ -404,25 +433,38 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             deps = dependencies(run(label+'-headers', [ninja, '-C', root, '-t', 'deps',
                 *(str(Path(row['output']).relative_to(root)) for row in rows)]),
                 build=root, selected_outputs={row['output'] for row in rows})
+            pch_headers = {}
             for row in rows:
+                _, projections = textual_pch(row)
+                # Object dependency records may stop at the serialized PCH.
+                # Follow its separate Ninja record so a shared-header edit also
+                # selects every TU that consumed that serialization.
+                for projection in projections:
+                    pch = projection['bootstrap_pch']
+                    if pch not in pch_headers:
+                        recorded = dependencies(run(label+'-pch-headers-'+identity(pch)[:16],
+                            [ninja, '-C', root, '-t', 'deps', pch]), build=root,
+                            selected_outputs={pch})
+                        pch_headers[pch] = recorded.get(pch, [])
                 if not deps.get(row['output']):
                     depfile = output / (label+'-'+identity(row['output'])[:16]+'.d')
-                    args, index = _without_dependency_flags(row['arguments']), 1
-                    query = [args[0]]
-                    while index < len(args):
-                        if args[index] == '-o':
-                            index += 2
-                            continue
-                        if args[index] != '-c':
-                            query.append(args[index])
-                        index += 1
                     run(label+'-discover-headers-'+identity(row['output'])[:16],
-                        [*query, '-M', '-MF', depfile, '-MT', 'implementation-analysis'],
+                        dependency_arguments(row, depfile),
                         cwd=Path(row['directory']))
                     deps[row['output']] = [str(path) for path in header_dependencies(depfile, Path(row['directory']))]
                     row['dependency_origin'] = 'fresh-original-compiler-preprocessing'
                 else:
                     row['dependency_origin'] = 'actual-ninja-compilation'
+                for projection in projections:
+                    pch = projection['bootstrap_pch']
+                    if not pch_headers[pch]:
+                        depfile = output / (label+'-pch-'+identity(pch)[:16]+'.d')
+                        run(label+'-discover-pch-headers-'+identity(pch)[:16],
+                            dependency_arguments(row, depfile), cwd=Path(row['directory']))
+                        pch_headers[pch] = [str(path) for path in header_dependencies(
+                            depfile, Path(row['directory']))]
+                    deps[row['output']] = sorted(set([*deps[row['output']], *pch_headers[pch],
+                        pch, projection['textual_wrapper']]))
                 if row['file'] not in deps[row['output']]:
                     raise ValueError('implementation variant lacks its actual header dependency closure')
             scoped_changes = owner_changes(repo, label, changed)
@@ -431,6 +473,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             report['inputs'][str(database)] = digest(database)
             for row in rows:
                 row.update(owner=label, identity=identity({'owner': label, **row}), dependencies=deps[row['output']])
+                row['selected'] = row in chosen
                 report['inputs'].update({path: digest(Path(path)) for path in row['dependencies']})
                 report['inputs'].update(row['response_files'])
                 report['inputs'].update(row['build_launcher'])
@@ -458,7 +501,10 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 for future in as_completed(futures):
                     result, commands = future.result()
                     report['results'].append(result);report['commands'].extend(commands);executor.save()
-        if not report['results'] or any(row['status'] != 'PASS' for row in report['results']):
+        selected = [row['identity'] for row in report['inventory'] if row['selected']]
+        completed = [row['identity'] for row in report['results']]
+        if (len(set(completed)) != len(completed) or set(selected) != set(completed) or
+                any(row['status'] != 'PASS' for row in report['results'])):
             raise ValueError('implementation analysis contains findings or incomplete translation units')
         if any(digest(Path(path)) != value for path, value in report['inputs'].items()):
             raise ValueError('implementation analysis inputs changed')

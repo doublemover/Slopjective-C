@@ -1,11 +1,14 @@
 """Keep implementation analysis complete across flags, variants and headers."""
 import json
 import shlex
+import shutil
+import subprocess
 
 import pytest
 
 from scripts.objc3c_toolchain.implementation_analysis import (
-    dependencies, inventory, matched_pch_arguments, owner_changes, selected_variants, textual_pch,
+    dependencies, dependency_arguments, inventory, matched_pch_arguments, owner_changes,
+    selected_variants, textual_pch,
 )
 
 
@@ -105,6 +108,8 @@ def test_dependency_closure_is_required_and_stale_selected_records_fail(tmp_path
     assert dependencies(text, build=tmp_path) == expected
     with pytest.raises(ValueError, match='stale'):
         dependencies(text.replace('VALID', 'STALE'), build=tmp_path)
+    with pytest.raises(ValueError, match='truncated'):
+        dependencies(text.replace('#deps 1', '#deps 2'), build=tmp_path)
     assert dependencies(text.replace('VALID', 'STALE'), build=tmp_path, selected_outputs=set()) == {}
 
 
@@ -146,3 +151,62 @@ def test_bootstrap_pch_is_rebuilt_by_matched_fork_with_exact_semantic_flags(tmp_
     assert str(target) in projected and str(pch) not in projected
     assert forced == projected[projected.index(str(target))+1:projected.index(str(target))+5]
     assert proof[0]['matched_pch_sha256'] and proof[0]['bootstrap_pch'] == str(pch)
+
+
+def test_dependency_discovery_expands_the_pch_wrapper_with_real_defines(tmp_path):
+    pch, wrapper = tmp_path / 'cmake_pch.hxx.pch', tmp_path / 'cmake_pch.hxx'
+    pch.write_bytes(b'serialized header');wrapper.write_text('#include "shared.h"\n')
+    row = {'directory': str(tmp_path), 'arguments': ['clang++', '-DREAL=1', '-x', 'objective-c++',
+        '-Xclang', '-include-pch', '-Xclang', str(pch),
+        '-Xclang', '-include', '-Xclang', str(wrapper),
+        '-MD', '-MF', 'old.d', '-c', 'source.cpp', '-o', 'source.o']}
+    argv = dependency_arguments(row, tmp_path / 'fresh.d')
+    assert str(pch) not in argv and '-include-pch' not in argv
+    assert argv[:4] == ['clang++', '-DREAL=1', '-x', 'objective-c++']
+    assert str(wrapper) in argv and 'source.cpp' in argv
+    assert '-c' not in argv and 'source.o' not in argv and 'old.d' not in argv
+    assert argv[-5:] == ['-M', '-MF', str(tmp_path / 'fresh.d'), '-MT', 'implementation-analysis']
+
+
+@pytest.mark.parametrize('fault', ['truncated', 'linked-bootstrap', 'linked-replacement', 'empty-replacement'])
+def test_pch_projection_rejects_missing_or_unowned_serializations(tmp_path, fault):
+    pch, wrapper, replacement = (tmp_path / name for name in
+                                 ('cmake_pch.hxx.pch', 'cmake_pch.hxx', 'matched.pch'))
+    pch.write_bytes(b'bootstrap');wrapper.write_text('header');replacement.write_bytes(b'matched')
+    row = {'directory': str(tmp_path), 'arguments': ['clang++',
+        '-Xclang', '-include-pch', '-Xclang', str(pch),
+        '-Xclang', '-include', '-Xclang', str(wrapper)]}
+    if fault == 'truncated': row['arguments'] = row['arguments'][:4]
+    elif fault == 'linked-bootstrap': pch.unlink();pch.symlink_to(replacement)
+    elif fault == 'linked-replacement': replacement.unlink();replacement.symlink_to(pch)
+    else: replacement.write_bytes(b'')
+    with pytest.raises(ValueError): textual_pch(row, replacement=replacement)
+
+
+def test_real_cmake_pch_dependency_discovery_keeps_shared_header_edits(tmp_path):
+    """Exercise the PCH mechanism with real tools; this is not fork qualification."""
+    compiler = shutil.which('clang++')
+    if not compiler: pytest.skip('Clang unavailable for native PCH mechanism control')
+    source = tmp_path / 'source';source.mkdir()
+    build = tmp_path / 'build'
+    header = source / 'shared.h';header.write_text('#pragma once\nconstexpr int shared = FEATURE;\n')
+    unit = source / 'unit.cpp';unit.write_text('int value() { return shared; }\n')
+    (source / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(pch_dependency_control LANGUAGES CXX)\n'
+        'set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n'
+        'add_library(control STATIC unit.cpp)\n'
+        'target_compile_definitions(control PRIVATE FEATURE=42)\n'
+        'target_precompile_headers(control PRIVATE shared.h)\n')
+    subprocess.run(['cmake', '-S', source, '-B', build, '-G', 'Ninja',
+                    '-DCMAKE_CXX_COMPILER='+compiler], check=True, capture_output=True)
+    subprocess.run(['cmake', '--build', build], check=True, capture_output=True)
+    rows = json.loads((build / 'compile_commands.json').read_text())
+    row = next(row for row in rows if row['file'] == str(unit))
+    row['arguments'] = shlex.split(row['command'])
+    depfile = tmp_path / 'expanded.d'
+    subprocess.run(dependency_arguments(row, depfile), cwd=build, check=True, capture_output=True)
+    from scripts.objc3c_toolchain.sdk_example import dependencies as header_dependencies
+    closure = [str(path) for path in header_dependencies(depfile, build)]
+    assert str(header) in closure and str(unit) in closure
+    assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
+        {'unit.o': closure}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]

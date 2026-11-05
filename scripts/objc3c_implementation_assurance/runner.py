@@ -8,34 +8,50 @@ import shutil
 import sys
 import time
 
-from scripts.objc3c_assurance.execution import checked_command
 from scripts.objc3c_toolchain.binary_packages import write_json
-from scripts.objc3c_toolchain.build import build_foundation
+from scripts.objc3c_toolchain.build import _build_foundation, foundation_lock
 from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.implementation_analysis import qualify
-from scripts.objc3c_toolchain.sanitizer_policy import strict_environment
+from scripts.objc3c_toolchain.llvm_ir_execution import command as execute_command
+from scripts.objc3c_toolchain.sanitizer_policy import require_clean_diagnostic, strict_environment
 
 from .evidence import SCHEMA, MAX_BYTES, analysis_results, artifact, evidence_files
-from .plan import validate
+from .plan import from_checkout, validate
 
 PROFILE = 'compiler-asan-ubsan'
+
+
+def owned_path(repo: Path, path: Path) -> Path:
+    """Reject linked output components before creating or deleting anything."""
+    path = path.absolute()
+    if '..' in path.parts or not path.is_relative_to(repo / 'out') or path == repo / 'out':
+        raise ValueError('implementation assurance output escaped repository out')
+    for component in (path, *path.parents):
+        if component == repo:
+            break
+        if component.is_symlink():
+            raise ValueError('implementation assurance output contains a symlink: '+str(component))
+    return path
 
 
 def run(repo: Path, plan: dict, output: Path) -> dict:
     validate(plan)
     if not plan['required']:
         raise ValueError('unaffected implementation assurance must not execute')
-    repo, output = repo.resolve(strict=True), output.resolve()
-    if output.exists() or not output.is_relative_to(repo / 'out'):
+    repo = repo.resolve(strict=True)
+    output = owned_path(repo, output)
+    # Keep the canonical lock through database preparation, analysis and cleanup.
+    # The locked builder is used below so it does not reacquire this same lock.
+    owned_path(repo, repo / 'out/toolchains/objc3-development/.foundation-build.lock')
+    with foundation_lock(repo):
+        return _run_locked(repo, plan, output)
+
+
+def _run_locked(repo: Path, plan: dict, output: Path) -> dict:
+    if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
+        raise ValueError('implementation assurance source changed before execution')
+    if output.exists():
         raise ValueError('implementation assurance requires fresh owned evidence')
-    output.mkdir(parents=True)
-    logs = output / 'build-logs'
-    logs.mkdir()
-    report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
-              'plan_sha256': plan['sha256'], 'analysis_paths': plan['analysis_paths'],
-              'commands': [], 'artifacts': [], 'temporary_builds_reclaimed': False}
-    started = time.monotonic()
-    configuration = None
     build_root = repo / 'out/implementation-assurance-builds'
     frontend_build = build_root / 'frontend'
     runtime_build = build_root / 'runtime'
@@ -44,6 +60,20 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
     foundation_build = foundation_root / ('build-linux-x86_64-'+PROFILE)
     temporary = [build_root, foundation_root / 'src', foundation_build,
                  foundation_root / ('stage-linux-x86_64-'+PROFILE)]
+    for path in temporary:
+        owned_path(repo, path)
+        if path.exists():
+            raise ValueError('implementation assurance requires a clean build root; preserving '+str(path))
+        if output.is_relative_to(path) or path.is_relative_to(output):
+            raise ValueError('implementation assurance evidence overlaps temporary build roots')
+    output.mkdir(parents=True)
+    logs = output / 'build-logs'
+    logs.mkdir()
+    report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
+              'plan_sha256': plan['sha256'], 'analysis_paths': plan['analysis_paths'],
+              'evidence_root': str(output),
+              'commands': [], 'artifacts': [], 'temporary_builds_reclaimed': False}
+    started = time.monotonic()
 
     def save():
         report['elapsed_seconds'] = round(time.monotonic() - started, 6)
@@ -51,8 +81,14 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
 
     def command(name, argv, environment):
         try:
-            checked_command(name, argv, repo=repo, environment=environment,
-                            directory=logs, records=report['commands'])
+            print('implementation assurance '+name+': '+str(logs / (name+'.log')), flush=True)
+            row = execute_command(argv, cwd=repo, environment=environment,
+                                  log=logs / (name+'.log'), timeout=1800)
+            row['name'] = name
+            report['commands'].append(row)
+            if row['timed_out'] or row['exit_code'] != 0:
+                raise ValueError('implementation assurance command failed: '+name)
+            require_clean_diagnostic(Path(row['log']).read_text(errors='replace'))
         finally:
             save()
 
@@ -67,11 +103,13 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         for index, phase in enumerate(saved.get('phases', [])):
             path = Path(phase.get('log', ''))
             if path.is_file():
+                if path.is_symlink() or not path.resolve().is_relative_to(foundation_build):
+                    raise ValueError('foundation diagnostic escaped its owned build')
                 shutil.copyfile(path, directory / ('phase-'+str(index)+'.log'))
 
     try:
         save()
-        foundation = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+        foundation = _build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
                                       instrumentation_profile=PROFILE,
                                       test_results=output / 'foundation')
         configuration = build_plans(repo, host='linux-x86_64',
@@ -96,6 +134,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         frontend_build.parent.mkdir(parents=True, exist_ok=True)
         command('frontend-configure', [cmake, '-S', repo / 'native/objc3c', '-B', frontend_build,
             '-G', 'Ninja', f'-DOBJC3C_CLANG_FOUNDATION_ROOT={stage}',
+            f'-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE={PROFILE}', '-DOBJC3C_LINK_CLANG_CPP=ON',
             f'-DCMAKE_CXX_COMPILER={bootstrap / "bin/clang++"}',
             f'-DPython3_EXECUTABLE={sys.executable}', '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
             '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_TESTING=ON'], environment)
@@ -114,6 +153,8 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         if qualification.get('status') != 'PASS':
             raise ValueError('fork-matched implementation analysis did not pass')
         results = analysis_results(output)
+        if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
+            raise ValueError('implementation assurance source changed during execution')
         report.update(status='PASS', analyzed_variants=len(results),
                       inventory_variants=qualification['inventory_variants'],
                       source_build_id=qualification['source_build_id'],
@@ -122,15 +163,24 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         report.update(status='FAIL', error=str(error))
         raise
     finally:
-        preserve_foundation()
-        roots = list(temporary)
-        if configuration is not None:
-            roots += [Path(configuration['paths'][key]) for key in ('build', 'stage', 'source')]
-        for path in roots:
-            path = path.resolve()
-            if path.is_relative_to(repo / 'out'):
-                shutil.rmtree(path, ignore_errors=True)
-        report['temporary_builds_reclaimed'] = not any(path.exists() for path in roots)
+        # Diagnostic retention failure must not skip cleanup or erase the original
+        # error. Delete only the exact roots this attempt admitted as absent.
+        try:
+            preserve_foundation()
+        except (OSError, ValueError) as error:
+            report.update(status='FAIL', diagnostic_error=str(error))
+        cleanup_errors = []
+        for path in temporary:
+            try:
+                owned_path(repo, path)
+                if path.exists():
+                    shutil.rmtree(path)
+            except (OSError, ValueError) as error:
+                cleanup_errors.append(str(error))
+        report['temporary_builds_reclaimed'] = not cleanup_errors and not any(
+            path.exists() or path.is_symlink() for path in temporary)
+        if cleanup_errors:
+            report.update(status='FAIL', cleanup_errors=cleanup_errors)
         report['artifacts'] = [artifact(output, path) for path in evidence_files(output)]
         size = sum(row['bytes'] for row in report['artifacts'])
         if report.get('status') == 'PASS' and (not report['temporary_builds_reclaimed'] or size > MAX_BYTES):

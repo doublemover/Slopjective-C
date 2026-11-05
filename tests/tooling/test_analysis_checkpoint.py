@@ -114,3 +114,32 @@ def test_blocker_diagnostics_retain_exact_checker_and_source_location():
         {'path': '/source/Lexer.cpp', 'line': 3868, 'column': 3, 'severity': 'warning',
          'message': 'preprocessor may be null', 'check': 'clang-analyzer-core.CallAndMessage'},
     ]
+
+
+@pytest.mark.parametrize('suffix,expected', [
+    (' [bugprone-use-after-move,-warnings-as-errors]', 'bugprone-use-after-move'),
+    (' [clang-diagnostic-error]', 'clang-diagnostic-error'),
+    ('', 'clang-diagnostic-error'),
+])
+def test_diagnostics_keep_promoted_and_plain_compiler_errors(suffix, expected):
+    diagnostic = '\x1b[1m/source/with:colon.cpp:5:3: \x1b[31merror: invalid argument'+suffix+'\x1b[0m\n'
+    assert tidy_diagnostics(diagnostic) == [{'path': '/source/with:colon.cpp', 'line': 5,
+        'column': 3, 'severity': 'error', 'message': 'invalid argument', 'check': expected}]
+
+
+@pytest.mark.parametrize('mutation', ['bootstrap', 'wrapper', 'matched', 'projection'])
+def test_checkpoint_cannot_reuse_changed_pch_bytes_or_projection(checkpoint, mutation):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    projection = {}
+    for name in ('bootstrap_pch', 'textual_wrapper', 'matched_pch'):
+        path = receipt.parent / (name+'.pch')
+        path.write_bytes(name.encode())
+        projection[name] = str(path)
+        previous['inputs'][str(path)] = digest(path)
+    previous['inventory'][0]['pch_projection'] = [copy.deepcopy(projection)]
+    row['pch_projection'] = [projection]
+    if mutation == 'projection': previous['inventory'][0]['pch_projection'][0]['reason'] = 'changed recipe'
+    else:
+        field = {'bootstrap': 'bootstrap_pch', 'wrapper': 'textual_wrapper', 'matched': 'matched_pch'}[mutation]
+        Path(projection[field]).write_bytes(b'new serialization or header')
+    assert successful_action(receipt, previous, current, row, arguments=args) is None

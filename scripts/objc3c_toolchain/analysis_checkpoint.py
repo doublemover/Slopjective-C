@@ -10,14 +10,30 @@ from .llvm_ir_execution import Execution, StageFailure
 from .sanitizer_policy import require_clean_diagnostic
 
 
+def analysis_argv(tool, directory, source, configuration, resource_directory):
+    directory = Path(directory)
+    return list(map(str, [tool, '-p', directory, source, '--config-file='+str(configuration),
+        '--warnings-as-errors=*', '--enable-check-profile',
+        '--extra-arg=-resource-dir='+str(resource_directory),
+        '--export-fixes='+str(directory / 'diagnostics.yaml')]))
+
+
 def tidy_diagnostics(text):
     """Retain blocker locations/checkers without treating tool prose as data."""
+    text = re.sub(r'\x1b\[[0-9;]*m', '', text)
     pattern = re.compile(
-        r'^(?P<path>[^\n:]+):(?P<line>\d+):(?P<column>\d+): '
-        r'(?P<severity>warning|error): (?P<message>.*?) \[(?P<check>[A-Za-z0-9_.-]+)\]$', re.M)
-    return [{'path': match['path'], 'line': int(match['line']), 'column': int(match['column']),
-             'severity': match['severity'], 'message': match['message'], 'check': match['check']}
-            for match in pattern.finditer(text)]
+        r'^(?P<path>[^\n]+?):(?P<line>\d+):(?P<column>\d+): '
+        r'(?P<severity>fatal error|warning|error): (?P<message>.*?)'
+        r'(?: \[(?P<checks>[A-Za-z0-9_., -]+)\])?$', re.M)
+    diagnostics = []
+    for match in pattern.finditer(text):
+        checks = [check.strip() for check in (match['checks'] or '').split(',')
+                  if check.strip() and check.strip() != '-warnings-as-errors']
+        for check in checks or ['clang-diagnostic-'+match['severity'].replace(' ', '-')]:
+            diagnostics.append({'path': match['path'], 'line': int(match['line']),
+                'column': int(match['column']), 'severity': match['severity'],
+                'message': match['message'], 'check': check})
+    return diagnostics
 
 
 def run_unit(job):
@@ -73,8 +89,11 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     for key in ('file', 'directory', 'arguments', 'output', 'response_files', 'build_launcher', 'dependencies'):
         if old.get(key) != row.get(key): return None
     if old.get('analysis_arguments') != arguments: return None
+    if old.get('pch_projection', []) != row.get('pch_projection', []): return None
     dependencies = [*row['dependencies'], *row['response_files'], *row['build_launcher'],
                     current['tool']['path'], *current['tool_graph']['libraries']]
+    for projection in row.get('pch_projection', []):
+        dependencies += [projection[key] for key in ('bootstrap_pch', 'textual_wrapper', 'matched_pch')]
     for path in dependencies:
         if previous.get('inputs', {}).get(path) != digest(Path(path)): return None
     name = row['owner']+'-'+row['identity'][:16]
@@ -91,10 +110,8 @@ def successful_action(checkpoint, previous, current, row, *, arguments, _depth=0
     if (config.is_symlink() or previous['inputs'].get(str(config)) != digest(config) or
             config.read_bytes() != current_config.read_bytes()):
         raise ValueError('analysis checkpoint checker configuration changed')
-    expected = [current['tool']['path'], '-p', str(directory), row['file'], '--config-file='+str(config),
-        '--warnings-as-errors=*', '--enable-check-profile',
-        '--extra-arg=-resource-dir='+current['resource_directory'],
-        '--export-fixes='+str(directory / 'diagnostics.yaml')]
+    expected = analysis_argv(current['tool']['path'], directory, row['file'], config,
+                             current['resource_directory'])
     log = Path(command['log'])
     if (command.get('argv') != expected or command.get('exit_code') != 0 or command.get('timed_out') or
             command.get('expected_exit_code') != 0 or command.get('status') != 'PASS' or

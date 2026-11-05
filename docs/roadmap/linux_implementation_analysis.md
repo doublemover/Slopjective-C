@@ -61,6 +61,26 @@ written. The retained artifact contains identities, commands, compilation
 databases, raw logs and structured diagnostics, with a 256 MiB upper bound; it
 does not retain another multi-gigabyte compiler tree.
 
+The isolated workflow holds the canonical foundation lock from its clean-root
+check through analysis and cleanup. Existing development trees are preserved;
+only roots created by that attempt are reclaimed. Source revision and tracked
+inputs are checked at both execution boundaries. Its frontend explicitly selects
+the same instrumentation profile and shared Clang library as the foundation.
+Configuration/build timeouts kill and reap the complete subprocess session.
+
+Terminal verification recomputes the selected variants from the retained header
+closures, requires an exact result for every selected identity, and checks each
+fresh native command, compilation database and hashed diagnostic log after
+artifact relocation. It also checks the effective checker configuration, the
+specific defective/corrected source diagnostics, native foundation test results
+and all four frontend/runtime configure/build actions. A valid incremental scan
+may select no affected variants; it must still retain the complete inventory and
+execute the detector controls. Periodic and release scans select every owned TU.
+PCH dependencies include the serialization's separate header closure, and missing
+records are rediscovered by preprocessing the exact forced textual wrapper.
+Matched PCH builds retain the real command working directory. Manual checkpoint
+reuse additionally verifies bootstrap, wrapper and matched-PCH bytes.
+
 The initial real scan rejected a LeakSanitizer report during embedded Clang AST
 teardown. `DependentDiagnostic` allocated `DiagnosticStorage` in the AST arena
 without registering destruction of its heap-owning strings and overflow vectors.
