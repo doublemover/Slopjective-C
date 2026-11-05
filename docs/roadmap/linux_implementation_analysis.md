@@ -82,6 +82,10 @@ PCH dependencies include the serialization's separate header closure, and missin
 records are rediscovered by preprocessing the exact forced textual wrapper.
 Matched PCH builds retain the real command working directory. Manual checkpoint
 reuse additionally verifies bootstrap, wrapper and matched-PCH bytes.
+Ninja dependency queries use build-relative PCH targets: an absolute filesystem
+path is not necessarily a Ninja target alias. A real CMake/PCH build checks the
+recorded serialization dependency and selects its consumer for a shared-header
+edit; out-of-build dependency targets are rejected.
 
 The initial real scan rejected a LeakSanitizer report during embedded Clang AST
 teardown. `DependentDiagnostic` allocated `DiagnosticStorage` in the AST arena

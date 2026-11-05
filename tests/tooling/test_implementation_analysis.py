@@ -203,6 +203,17 @@ def test_real_cmake_pch_dependency_discovery_keeps_shared_header_edits(tmp_path)
     rows = json.loads((build / 'compile_commands.json').read_text())
     row = next(row for row in rows if row['file'] == str(unit))
     row['arguments'] = shlex.split(row['command'])
+    from scripts.objc3c_toolchain.implementation_analysis import dependency_query
+    _, projections = textual_pch(row)
+    pch = projections[0]['bootstrap_pch']
+    query = dependency_query(shutil.which('ninja'), build, [pch])
+    recorded = subprocess.check_output(list(map(str, query)), text=True)
+    headers = dependencies(recorded, build=build, selected_outputs={pch})
+    assert str(header) in headers[pch]
+    assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
+        {'unit.o': headers[pch]}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]
+    with pytest.raises(ValueError, match='escaped'):
+        dependency_query(shutil.which('ninja'), build, [unit])
     depfile = tmp_path / 'expanded.d'
     subprocess.run(dependency_arguments(row, depfile), cwd=build, check=True, capture_output=True)
     from scripts.objc3c_toolchain.sdk_example import dependencies as header_dependencies

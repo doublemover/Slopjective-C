@@ -121,6 +121,17 @@ def dependencies(text, *, build, selected_outputs=None):
     return records
 
 
+def dependency_query(ninja, build, outputs):
+    build = Path(build).resolve(strict=True)
+    targets = []
+    for output in outputs:
+        path = (build / output).resolve()
+        if not path.is_relative_to(build):
+            raise ValueError('analysis dependency target escaped its owned Ninja build')
+        targets.append(str(path.relative_to(build)))
+    return [ninja, '-C', build, '-t', 'deps', *targets]
+
+
 def selected_variants(rows, headers, changed):
     """No changed-line filter: header edits select their complete dependent TUs."""
     if not changed:
@@ -451,7 +462,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                     pch = projection['bootstrap_pch']
                     if pch not in pch_headers:
                         recorded = dependencies(run(label+'-pch-headers-'+identity(pch)[:16],
-                            [ninja, '-C', root, '-t', 'deps', pch]), build=root,
+                            dependency_query(ninja, root, [pch])), build=root,
                             selected_outputs={pch})
                         pch_headers[pch] = recorded.get(pch, [])
                 if not deps.get(row['output']):
