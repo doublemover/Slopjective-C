@@ -137,3 +137,5 @@ def test_canonical_planner_isolates_all_profile_outputs_and_stamps(owned, monkey
     assert '-DCLANG_OBJC3_CONFIG_DIGEST=' + config['build_config_digest'] in config['command']
     assert all('-compiler-asan-ubsan/' in cmd[0]
                for cmd in instrumented['test']['follow_up_commands'])
+    assert instrumented['test']['command_environment']['LD_LIBRARY_PATH'] == (
+        instrumented['test']['paths']['build'] + '/lib')

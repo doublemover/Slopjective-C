@@ -502,8 +502,14 @@ def build_plans(repo: Path, *, manifest_path: Path | None = None,
         elif phase == "test":
             identity_payload["follow_up_commands"] = test_follow_ups
             # lit workers launch new Python processes, which do not inherit -B.
-            # Record the environment required to keep the sealed source unchanged.
+            # Record the environment required to keep the sealed source
+            # unchanged. Linux test binaries must resolve their matching
+            # build-tree LLVM/Clang DSOs even when the caller has an unrelated
+            # bootstrap or SDK in LD_LIBRARY_PATH.
             identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
+            if host == "linux-x86_64":
+                identity_payload["command_environment"]["LD_LIBRARY_PATH"] = (
+                    build_dir / "lib").as_posix()
         identity_payload["identity"] = hashlib.sha256(
             json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
