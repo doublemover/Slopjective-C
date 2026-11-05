@@ -6,10 +6,15 @@ on:
   schedule:
     - cron: '19 7 * * 0'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_sha:
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: linux-implementation-analysis-${{ github.event.pull_request.number || github.ref }}
+  group: linux-implementation-analysis-${{ inputs.source_sha || github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   plan:
@@ -21,20 +26,25 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - id: plan
         shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           periodic=()
-          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+          if [[ -n "$SOURCE_SHA" ]]; then
+            periodic=(--periodic-sha "$SOURCE_SHA")
+          elif [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
           python3 -B -m scripts.objc3c_implementation_assurance plan --plan out/implementation-assurance/plan.json "${periodic[@]}"
       - name: Preserve exact selection
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: implementation-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-plan-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/implementation-assurance/plan.json
           if-no-files-found: error
           retention-days: 7
@@ -55,11 +65,12 @@ jobs:
           apt-get install -y --no-install-recommends git curl ca-certificates gnupg python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev libxml2 libcurl4 libedit2 libsqlite3-0 libncurses6
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: implementation-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-plan-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/implementation-assurance/selection
       - name: Pinned host tools
         shell: bash
@@ -76,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: implementation-startup-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-startup-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: out/implementation-assurance/startup/
           if-no-files-found: error
           retention-days: 7
@@ -84,7 +95,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: implementation-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             out/implementation-assurance/results/**/*.json
             out/implementation-assurance/results/**/*.xml
@@ -102,27 +113,31 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Read exact selection
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: implementation-plan-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-plan-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: evidence/plan
       - name: Read implementation evidence
         if: needs.plan.outputs.analysis == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: implementation-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: implementation-results-${{ inputs.source_sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: evidence/results
       - name: Require exact-revision complete passing analysis
         if: always()
         env:
           ASSURANCE_OUTCOMES: '{"plan":"${{ needs.plan.result }}","analysis":"${{ needs.analysis.result }}"}'
+          SOURCE_SHA: ${{ inputs.source_sha }}
         shell: bash
         run: |
           periodic=()
-          if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+          if [[ -n "$SOURCE_SHA" ]]; then
+            periodic=(--periodic-sha "$SOURCE_SHA")
+          elif [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             periodic=(--periodic-sha "$GITHUB_SHA")
           fi
           python3 -B -m scripts.objc3c_implementation_assurance verify --plan evidence/plan/plan.json --output evidence/results "${periodic[@]}"
