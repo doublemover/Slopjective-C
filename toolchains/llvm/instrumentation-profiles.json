@@ -105,7 +105,7 @@
       },
       "build_target_groups": [
         {"name": "covered_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
-        {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "FileCheck", "count", "not", "clang-resource-headers"]},
+        {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "llvm-config", "FileCheck", "count", "not", "clang-resource-headers"]},
         {"name": "covered_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
       ],
       "test_binaries": [
@@ -118,7 +118,7 @@
         "clang/test/Index/objc3-native-expression-cursors.mm"
       ],
       "excluded_distribution_components": ["clangd", "clang-format", "lldb", "lldb-server", "liblldb"],
-      "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-cov", "llvm-profdata", "llvm-nm"],
+      "additional_distribution_components": ["LLVM", "clang-cpp", "llvm-cov", "llvm-profdata", "llvm-nm", "llvm-config"],
       "boundaries": [
         "This profile measures the actual patched Clang/LLVM compiler process and its first-party embedding graph; emitted-client/runtime coverage remains a separately labeled denominator.",
         "Raw profiles are revision, binary and LLVM-version specific and are never merged with sanitizer or ordinary build variants.",

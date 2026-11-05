@@ -79,6 +79,13 @@ def test_fuzzer_and_source_coverage_profiles_reject_weakened_instrumentation(own
         profiles.select(repo, COVERAGE_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
 
 
+def test_source_coverage_profile_owns_lit_configuration_tool(owned):
+    repo, manifest, sealed = owned
+    profile = profiles.select(repo, COVERAGE_NAME, 'linux-x86_64', manifest['build'], sealed, manifest['upstream'])
+    assert 'llvm-config' in profile['build']['build_targets']
+    assert 'llvm-config' in profile['build']['distribution_components']
+
+
 @pytest.mark.parametrize('mutation', ['recovery', 'disabled-asan', 'wrong-subject',
                                      'disabled-assertions', 'unknown-profile', 'duplicate-target'])
 def test_invalid_or_weakened_profile_is_rejected(owned, mutation):
