@@ -192,13 +192,16 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
             return result['cases']
         if name == 'semantic-workloads':
             from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix, measure
+            from scripts.objc3c_toolchain.semantic_import_benchmarks import measure as measure_imports
             prefix = directory / 'build/compiler-prefix'
             prepare_prefix(sdk, prefix, source_build_id=report['product']['source_build_id'],
-                           target=report['product']['host_environment']['target_triple'])
+                           target=report['product']['host_environment']['target_triple'], imports=True)
             result = measure(repo, directory / 'measurement', sdk=prefix, repetitions=3, extended_runtime=True)
+            imports = measure_imports(repo, directory / 'imports', sdk=prefix, repetitions=3,
+                                      scales=(32,), source_graph=True)
             # Correctness/completeness block the native gate. Timings have no
             # calibrated baseline here and cannot claim a performance pass.
-            return result['summaries']
+            return result['summaries'] + imports['summaries']
         if name == 'package':
             from scripts.objc3c_toolchain.linux_sdk import build_sdk
             from .package_evidence import preserve, snapshot

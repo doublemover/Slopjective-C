@@ -217,12 +217,12 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | ----- | --------------- |
 
 | [#8283](https://github.com/doublemover/Slopjective-C/issues/8283) | Native PR/periodic execution, revision-bound receipts and fail-closed aggregate implemented; live CI/cost and administrator acceptance pending ([details](linux_native_assurance.md)) |
-| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Checked executor lock pilot and shared warnings implemented; fork-matched analysis tool/TU coverage still open ([details](linux_checked_executor_locks.md)) |
-| [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Add bounded coverage-guided fuzzing for the current Clang frontend and paired semantic interfaces |
-| [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generate replayable task/group/actor schedules with independent lifetime and quiescence oracles |
-| [#8290](https://github.com/doublemover/Slopjective-C/issues/8290) | Measure current compiler and runtime source/branch coverage with complete provenance |
-| [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | Benchmark real ObjC3 semantic workloads beyond warm trivial-C command latency |
-| [#8292](https://github.com/doublemover/Slopjective-C/issues/8292) | Validate preserved Swift-facing metadata with a real, version-pinned Swift consumer |
+| [#8285](https://github.com/doublemover/Slopjective-C/issues/8285) | Matched analyzer, PCH dependency handling and PR/periodic/release owners implemented; full scan and findings acceptance pending ([details](linux_checked_executor_locks.md)) |
+| [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Frontend/paired-sidecar fuzzing, exact replay and controlled discovery implemented; live integrated CI acceptance pending |
+| [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generated histories plus maintained concurrency/failure scenarios and five semantic mutants implemented; expanded hosted execution pending |
+| [#8290](https://github.com/doublemover/Slopjective-C/issues/8290) | First-party and patched-compiler coverage owners implemented with instrumented pilots; live integrated CI acceptance pending |
+| [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | 27 frontend/runtime rows and a bounded 25-phase source/PCH/interface/cache pilot implemented; SDK execution, further ownership/generated-frame/build workloads and performance goals remain |
+| [#8292](https://github.com/doublemover/Slopjective-C/issues/8292) | Pinned independent Swift C consumer qualified and selected; broader Swift ABI/interoperability claims remain outside that contract |
 
 | [#8206](https://github.com/doublemover/Slopjective-C/issues/8206) | Platform And Toolchain Expansion |
 | [#8228](https://github.com/doublemover/Slopjective-C/issues/8228) | Linux x64 Support |
@@ -350,5 +350,6 @@ text metadata rejection before token publication, recursive carrier payload
 nullability identity, installed managed-example header freshness and successful
 activation reporting after cleanup failure. The [follow-up record](linux_acceptance_followups.md)
 preserves their evidence and boundaries. Issue #8282's actual-product sanitizer
-receipt contract remains open, alongside complete acceptance of the earlier
-reviewed repairs. The independent issue queue remains at ten.
+receipt contract has since been implemented and source-qualified, including
+relocated replay. Complete hosted acceptance of the reviewed repairs remains
+under #8283. The independent issue queue remains at ten.

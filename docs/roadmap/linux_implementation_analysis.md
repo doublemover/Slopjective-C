@@ -41,7 +41,9 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
   --output out/implementation-analysis/evidence
 ```
 
-The `Linux implementation analysis` workflow owns the durable gate. Pull
+The `Linux implementation analysis` workflow owns the durable gate. Its
+concurrency policy finishes the active cold build and queues the newest
+revision; newer pushes do not repeatedly discard an in-progress fork build. Pull
 requests run it only when the analyzer/toolchain, native implementation or
 compilation graph changes, and pass those exact changed paths to the dependency
 selector. Native source scopes independently select the integrated frontend and

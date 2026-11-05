@@ -47,6 +47,7 @@ test("implementation analysis has exact PR, periodic and release gates", () => {
 });
 
 for (const [name, workflowBefore, workflowAfter, releaseBefore, releaseAfter] of [
+  ["cancelled cold build", "  cancel-in-progress: false", "  cancel-in-progress: true"],
   ["missing aggregate", "  gate:", "  renamed:"],
   ["conditional aggregate", "    if: always()\n    needs:", "    if: success()\n    needs:"],
   ["path-filtered PR", "  pull_request:", '  pull_request:\n    paths: ["native/**"]'],

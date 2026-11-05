@@ -132,3 +132,13 @@ that `Linux native assurance gate` is required remain outstanding. The six-hour
 native job timeout is a ceiling, not a measured timing claim. No repository
 protection setting or billing/private-schedule variable was changed. Keep #8283
 open until those acceptance conditions are established.
+
+
+Native checked commands now use bounded subprocess sessions. Timeout and
+interruption kill compiler descendants even when they start separate process
+groups. Fresh logs and CTest XML are required before execution, so a previous
+success cannot satisfy a current command. Real child-process controls defend
+both cancellation paths. Semantic selection includes the canonical shared-pool
+workloads and bounded source/PCH/interface/cache pilot described in the
+[benchmark owner](linux_semantic_benchmarks.md); required import evidence is
+revalidated from retained logs/build snapshots after relocation.

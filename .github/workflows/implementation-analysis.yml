@@ -15,7 +15,7 @@ permissions:
   contents: read
 concurrency:
   group: linux-implementation-analysis-${{ inputs.source_sha || github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   plan:
     name: Select exact implementation revision

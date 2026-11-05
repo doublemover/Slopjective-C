@@ -221,10 +221,17 @@ def suite_results(root: Path, name: str) -> list[dict]:
                         raise ValueError('semantic workload throughput differs from completed work')
                 if summary.get('work') != summarize(measured, 'work_seconds'):
                     raise ValueError('semantic workload execution summary differs from native work')
-                if workload.startswith(('runtime-task-', 'runtime-worker-')) and summary.get(
+                if workload.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')) and summary.get(
                         'task_completions_per_second') != summarize(measured, 'task_completions_per_second'):
                     raise ValueError('semantic workload throughput summary differs from native work')
-        return summaries
+        from scripts.objc3c_toolchain.semantic_import_benchmarks import verify_report
+        imports = read('imports/qualification.json')
+        if (imports.get('scales') != [32] or imports.get('repetitions') != 3 or
+                imports.get('source_graph') is not True or imports.get('budget_seconds') != 600):
+            raise ValueError('native semantic imports require the bounded source/PCH/interface and reuse pilot')
+        if imports.get('sdk', {}).get('seal_sha256') != result['sdks'][0].get('seal_sha256'):
+            raise ValueError('native semantic imports used another SDK')
+        return summaries + verify_report(imports, directory / 'imports')
     if name == 'package':
         result = read('release.json')
         return package_execution(result)

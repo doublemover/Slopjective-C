@@ -51,15 +51,17 @@ def workload_inventory(version=CURRENT_WORKLOAD_VERSION):
                 '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fblocks'],
             'command_identity': 'Each sample retains complete argv, working directory and SDK/resource/loader identities.',
             'cache_state': 'fresh output artifacts; warm shared filesystem cache; no compiler cache launcher',
-            'measurement': 'steady-clock semantic work including teardown' if runtime else 'compiler command wall time',
-            'runtime_threads': 5 if family == 'worker-tasks' else 1 if runtime else None,
-            'worker_threads': 4 if family == 'worker-tasks' else 0,
+            'measurement': ('steady-state shared-pool tasks including frame teardown; canonical pool initialization/probe outside interval'
+                if family == 'shared-pool-tasks' else 'steady-clock semantic work including teardown'
+                if runtime else 'compiler command wall time'),
+            'runtime_threads': 5 if family in ('worker-tasks', 'shared-pool-tasks') else 1 if runtime else None,
+            'worker_threads': 4 if family in ('worker-tasks', 'shared-pool-tasks') else 0,
             'rounds': ROUNDS if runtime else None,
             'seed': SEED if runtime and family != 'text' else None,
             'maximum_admitted_task_batch': 256 if family in (
-                'task-group-actor', 'task-group-cancel', 'worker-tasks') else None,
-            'throughput': 'completed task callbacks per second including allocation, join and teardown'
-                if family in ('task-group-actor', 'task-group-cancel', 'worker-tasks') else None,
+                'task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks') else None,
+            'throughput': 'completed task callbacks per second including allocation, join and frame teardown'
+                if family in ('task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks') else None,
             'expected': (expected_runtime(scale) if phase == 'runtime' else
                          expected_work(family, scale) if runtime else {'compiler_exit_code': 0}),
             'oracle': 'independent checksum, completed-work and lifetime accounting' if runtime else
@@ -160,7 +162,7 @@ def host_context():
         'noise_limits': 'Shared runner; frequency/contention uncontrolled. Timing remains advisory.'}
 
 
-def prepare_prefix(stage, prefix, *, source_build_id, target):
+def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False):
     """Seal current compiler/runtime build products for the existing CI lane."""
     stage, prefix = stage.resolve(strict=True), prefix.resolve()
     if prefix.exists() or prefix.is_relative_to(stage):
@@ -181,6 +183,12 @@ def prepare_prefix(stage, prefix, *, source_build_id, target):
         if source.name != name: (prefix / 'lib' / name).symlink_to(source.name)
     for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
         shutil.copytree(stage / name, prefix / name, copy_function=os.link)
+    if imports:
+        link(stage / 'bin/objc3c', prefix / 'bin/objc3c')
+        shutil.copytree(stage / 'include/objc', prefix / 'include/objc', copy_function=os.link)
+        verifier = prefix / 'share/objc3c/verify-sdk.py'
+        verifier.parent.mkdir(parents=True)
+        shutil.copyfile(Path(__file__).with_name('package.py'), verifier)
     record = {'schema': SCHEMA, 'source_build_id': source_build_id, 'target': target,
         'purpose': 'Development-only semantic workload measurement; no SDK archive qualification', 'files': inventory(prefix)}
     record['seal_sha256'] = _digest(record)
@@ -369,7 +377,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             **({'task_completions_per_second': summarize([row for row in report['samples']
                 if row.get('workload') == name and row['sdk_index'] == state['index'] and
                 row.get('warmup') is False], 'task_completions_per_second')}
-                if name.startswith(('runtime-task-', 'runtime-worker-')) else {})
+                if name.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')) else {})
         } for state in states for name in state['rows']]
         report['comparisons'] = []
         if len(states) == 2:

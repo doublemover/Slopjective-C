@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def result(family, scale=32):
     row = {**expected_work(family, scale), 'nanoseconds': 1}
+    if family == 'shared-pool-tasks': row['worker_mask'] = 15
     if family == 'generic-array': row.update(payload_copies=3*16*scale, destructions=3*16*scale)
     return row
 
@@ -37,6 +38,13 @@ def test_generic_array_requires_balanced_and_bounded_native_copy_work():
         row = {**result('generic-array'), 'payload_copies': copies, 'destructions': destroys}
         with pytest.raises(ValueError, match='bounded chunk'):
             runtime_workload_result(json.dumps(row), 'generic-array', 32)
+
+
+@pytest.mark.parametrize('key,value', [('worker_mask', 0), ('worker_mask', 16),
+    ('worker_mask', True), ('pool_workers', 3)])
+def test_shared_pool_requires_admitted_physical_workers_and_four_way_parallel_probe(key, value):
+    row = {**result('shared-pool-tasks'), key: value}
+    with pytest.raises(ValueError): runtime_workload_result(json.dumps(row), 'shared-pool-tasks', 32)
 
 
 @pytest.fixture(scope='module', params=('release', 'asan-ubsan'))
@@ -102,6 +110,7 @@ def test_real_runtime_delay_control_preserves_work_and_adds_bounded_cost(native_
     ('task-group-actor', '++ledger.callbacks;', ''),
     ('task-group-cancel', '++ledger.cancelled;', ''),
     ('worker-tasks', 'frame->counts->callbacks.fetch_add(1, std::memory_order_relaxed);', ''),
+    ('shared-pool-tasks', 'frame->counts->callbacks.fetch_add(1, std::memory_order_relaxed);', ''),
 ])
 def test_native_missing_work_mutants_cannot_appear_faster(native_workloads, family, before, after):
     root, _, compile, environment = native_workloads

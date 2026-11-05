@@ -95,7 +95,7 @@ def _admit(path):
                 (workload.startswith('runtime-') and retained.get('work') != measured) or
                 (not workload.startswith('runtime-') and retained.get('wall') != measured)):
             raise ValueError('semantic benchmark retained summary differs from its raw samples')
-        if workload.startswith(('runtime-task-', 'runtime-worker-')) and retained.get(
+        if workload.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')) and retained.get(
                 'task_completions_per_second') != summarize(rows, 'task_completions_per_second'):
             raise ValueError('semantic benchmark throughput summary differs from completed work')
         observations[workload] = {'field': field, 'rows': rows, 'summary': measured}
@@ -148,7 +148,7 @@ def calibrate(repo, receipts, output, *, labels=()):
             'largest_observed_deviation_seconds': max(abs(sample[field]-pooled['median']) for sample in rows),
             'peak_process_rss_kib': {'median': statistics.median(rss), 'maximum': max(rss)},
             **({'task_completions_per_second': summarize(rows, 'task_completions_per_second')}
-               if workload.startswith(('runtime-task-', 'runtime-worker-')) else {}),
+               if workload.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')) else {}),
             'decision': 'observed-runner-variance-only'})
     scaling = []
     for phase in sorted({name.rsplit('-', 1)[0] for name in expected}):

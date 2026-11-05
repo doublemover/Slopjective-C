@@ -1,7 +1,7 @@
 # Current semantic workload benchmarks
 
-The current workload version **3** extends the original nine rows to **24**.
-It adds five public-runtime families at 32, 256 and 2,048 elements, with sixteen
+The current workload version **4** extends the original nine rows to **27**.
+It adds six public-runtime families at 32, 256 and 2,048 elements, with sixteen
 rounds per sample:
 
 - UTF-8 builder construction, exact scalar/byte counts, byte traversal, scalar
@@ -21,16 +21,22 @@ rounds per sample:
   Actual callback affinity proves all four destinations executed. Completed-task
   throughput includes executor startup, frame allocation, join, result consumption
   and worker shutdown, rather than measuring pending submissions.
+- Canonical global-pool tasks with stable executor identity across sixteen
+  rounds. A bounded probe proves four distinct workers execute simultaneously
+  before the timed interval. Steady-state timing then includes allocation, two
+  resumes, completion consumption and frame teardown. Actual callback thread
+  identities must belong to that admitted pool; scheduling fairness is not
+  invented as a per-sample requirement.
 
 The receipt inventories each row's inputs/generator, scale, compiler flags,
 seed/rounds, completed-work oracle, cache state, measurement boundary and timeout.
 Each new family has a paired bounded-delay control with unchanged semantic
-results. The native gate requires every actual warmup and repetition, all five
+results. The native gate requires every actual warmup and repetition, all six
 delay controls and complete lifetime counters. Calibration compares matching
-workload versions and produces separate scaling curves for all eight phases and
+workload versions and produces separate scaling curves for all nine phases and
 families. Compiler object samples remove the previous object before execution;
 timeouts and interruptions kill/reap the process session. Native regression
-controls compile and execute all fifteen new family/scale combinations in
+controls compile and execute all eighteen new family/scale combinations in
 ordinary and ASan/UBSan builds of the runtime and client. Wrong-checksum,
 missing-destruction, missing-callback and missing-cancellation implementations
 are rejected. Per-sample task throughput and its summaries are recomputed from
@@ -44,9 +50,9 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
 ```
 
 These local public-runtime controls do not replace qualification with the sealed
-SDK. Source/PCH/interface import costs, ARC/MRC object lifetimes, generated async
-frames, canonical shared-worker-pool behavior and cold build/install costs remain
-separate #8291 work. Timing remains advisory pending observed
+SDK. The source/PCH/interface and source-graph owner below is implemented, with
+sealed-SDK execution still pending. ARC/MRC object lifetimes, generated async
+frames and cold foundation/install costs remain separate #8291 work. Timing remains advisory pending observed
 runner variance and reviewed latency, throughput and memory goals.
 
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real
@@ -83,9 +89,9 @@ summaries retain spread and absolute/relative effects. Timings remain
 **advisory and inconclusive for regression gating** until runner-specific limits
 and noise are calibrated; no universal slowdown allowance is invented.
 
-This first selection does not measure cold builds, archive/install work,
-ARC/MRC object lifetimes, source/PCH/interface cache behavior or concurrent task
-throughput. Those dimensions require further workload definitions and measured
+The historical first selection did not measure cold builds, archive/install
+work, ARC/MRC object lifetimes, source/PCH/interface cache behavior or concurrent
+task throughput. Those dimensions require further workload definitions and measured
 cost before expanding the existing budgeted CI/release lanes. No new schedule or
 performance claim follows merely from successful measurement.
 
@@ -93,7 +99,7 @@ The original native CI selection used a three-repetition characterization
 for compiler, runtime, stdlib, workload, foundation and runner changes and its
 complete periodic/release selection. It seals only the required current compiler,
 linker, resources, runtime archive/dependency and headers; it builds no archive.
-The terminal gate checks all nine phase/scale summaries, each actual warmup and
+That original terminal gate checked all nine phase/scale summaries, each actual warmup and
 three measured samples, runtime work-count oracles and the paired delay control.
 Missing samples or wrong semantic results block correctness. Timings stay
 advisory, with no performance-pass claim and no automatically accepted baseline.
@@ -122,3 +128,53 @@ receipt cost. The output remains explicitly advisory: measured spread does not
 become a regression allowance. Promotion still requires reviewed per-workload
 absolute effects and memory goals. Further workload families remain open under
 #8291.
+
+## Import and incremental-build pilot
+
+The separate `semantic_import_benchmarks` owner generates actual ObjC3
+`Optional(int)` providers and guarded consumers. Every exported function must
+return its independent expected value; an actual completed-call counter and
+checksum bind the whole result. Source and PCH consumers compile separately
+from their provider. Interface consumers use the admitted fingerprint/package
+lock and a dependency record after the provider source/header directory has
+been deleted. PCH inputs remain available for Clang's ordinary validation.
+
+Source/PCH commands use the installed Clang driver; interface commands use
+the installed native facade, including its public import/serialization work.
+These are whole-command phase costs, not isolated parser-only timings.
+Each trial measures provider compilation, first and repeated consumer imports,
+linking and native execution separately. PCH serialization is another phase.
+Fresh objects prevent stale outputs from satisfying a sample. Fresh trial
+directories and module caches distinguish first from repeated imports; the host
+filesystem cache remains warm, so this is not a cold-filesystem claim.
+
+The source-graph experiment measures a fresh build, unchanged incremental build
+and equivalent private-leaf edit. It checks exact rebuilt/reused node sets and
+an unchanged public fingerprint, and retains each build report. Incremental
+builds still link and execute; their wall time is not labeled a zero-work build.
+A valid but incorrect provider must produce the declared semantic failure.
+Omitting the provider must fail with its unresolved exported symbol, rather than
+an unrelated link error.
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.semantic_import_benchmarks \
+  --sdk /path/to/candidate --source-graph --scale 32 \
+  --output out/semantic-import-measurement --repetitions 3
+```
+
+The existing semantic native lane selects a **32-declaration / 25-phase** pilot
+with one warmup, three repetitions and a **600-second total command budget**.
+It uses the same sealed development prefix as the 27 frontend/runtime rows,
+adding only the installed facade, Objective-C headers and standalone SDK verifier.
+No SDK archive or new cadence is introduced. Larger 256/2,048-declaration
+experiments are explicit CLI selections, pending measured cost.
+
+Terminal verification recomputes every phase, repetition, summary, product
+inventory, semantic output, reuse decision and paired provider control. It
+checks raw log hashes, source bytes, SDK identity and build snapshots after
+artifact relocation, without the original SDK/build tree. Reports retain
+instrumentation, compiler/runtime loader graphs, per-command wall/CPU/RSS and
+total command/storage cost. Timings remain advisory; a correctness failure or
+incomplete required experiment fails. Local controls cover orchestration and
+ordinary standard-C separate-provider/PCH mechanics. They do not qualify the
+unmodified ObjC3 workload with a sealed compiler fork.

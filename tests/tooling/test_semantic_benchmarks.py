@@ -28,6 +28,7 @@ def calibration_receipt(path, *, offset=0.0, version=1):
                 nanoseconds = int(value*1e8)
                 family = workload.rsplit('-', 1)[0].removeprefix('runtime-')
                 semantic = expected_runtime(scale) if family == 'runtime' else expected_work(family, scale)
+                if family == 'shared-pool-tasks': semantic['worker_mask'] = 15
                 if family == 'generic-array': semantic.update(payload_copies=3*16*scale, destructions=3*16*scale)
                 row.update(work_seconds=nanoseconds/1e9,
                            semantic_result={**semantic, 'nanoseconds': nanoseconds})
@@ -37,7 +38,7 @@ def calibration_receipt(path, *, offset=0.0, version=1):
         measured = rows[1:]
         summary = {'sdk_index': 0, 'workload': workload, 'wall': summarize(measured)}
         if workload.startswith('runtime-'): summary['work'] = summarize(measured, 'work_seconds')
-        if workload.startswith(('runtime-task-', 'runtime-worker-')):
+        if workload.startswith(('runtime-task-', 'runtime-worker-', 'runtime-shared-')):
             summary['task_completions_per_second'] = summarize(measured, 'task_completions_per_second')
         summaries.append(summary)
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'PASS', 'correctness': 'PASS',
@@ -155,6 +156,7 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
             from scripts.objc3c_toolchain.semantic_runtime_oracles import expected_work
             family, scale = argv[1], int(argv[2])
             result = expected_work(family, scale)
+            if family == 'shared-pool-tasks': result['worker_mask'] = 15
             if family == 'generic-array':
                 result.update(payload_copies=3*16*scale, destructions=3*16*scale)
             log.write_text(json.dumps({**result, 'nanoseconds': 16_000_000 if len(argv) == 6 else 1000}))
@@ -185,9 +187,9 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
     else:
         report = owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
         assert report['status'] == 'PASS' and report['correctness'] == 'PASS'
-        assert len(report['summaries']) == (24 if extended_runtime else 9)
+        assert len(report['summaries']) == (27 if extended_runtime else 9)
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
-        assert len([row for row in report['samples'] if row.get('semantic_result')]) == (72 if extended_runtime else 12)
+        assert len([row for row in report['samples'] if row.get('semantic_result')]) == (84 if extended_runtime else 12)
         assert report['delay_control']['status'] == 'PASS'
         from scripts.objc3c_assurance.evidence import suite_results
         import copy
@@ -198,7 +200,12 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         if not extended_runtime:
             with pytest.raises(ValueError): suite_results(native_root, 'semantic-workloads')
             return
-        assert len(suite_results(native_root, 'semantic-workloads')) == 24
+        from test_semantic_import_benchmarks import orchestration_receipt
+        imports_root = tmp_path / 'import-fixture';imports_root.mkdir()
+        imports, _, _ = orchestration_receipt(imports_root, monkeypatch)
+        imports_destination = destination.parent / 'imports'
+        shutil.copytree(imports_root / 'repo/out/measurement', imports_destination)
+        assert len(suite_results(native_root, 'semantic-workloads')) == 52
         for mutation in ('summary', 'sample', 'delay', 'oracle'):
             broken = copy.deepcopy(report)
             if mutation == 'summary': broken['summaries'].pop()
@@ -213,7 +220,8 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
     assert bool(loader_inputs[0]) is shared_compiler
 
 
-def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path):
+@pytest.mark.parametrize('imports', [False, True])
+def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path, imports):
     from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
@@ -221,7 +229,13 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
         'include/objc3c/runtime/objc3_collections.h'):
         path = stage / relative;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(relative)
     (stage / 'lib/libobjc.so').symlink_to('libobjc.so.4.6')
-    result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu')
+    if imports:
+        (stage / 'bin/objc3c').write_text('facade')
+        (stage / 'include/objc').mkdir()
+        (stage / 'include/objc/runtime.h').write_text('objc headers')
+    result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu', imports=imports)
+    assert (prefix / 'bin/objc3c').exists() is imports
+    assert (prefix / 'share/objc3c/verify-sdk.py').exists() is imports
     assert result['source_build_id'] == 'current-build'
     assert (prefix / 'lib/libLLVM.so').resolve() == prefix / 'lib/libLLVM.so.23.1'
     assert (prefix / 'lib/libclang-cpp.so').resolve() == prefix / 'lib/libclang-cpp.so.23.1'
@@ -246,7 +260,8 @@ def test_development_benchmark_prefix_accepts_a_static_compiler_stage(tmp_path):
 
 
 @pytest.mark.parametrize('path', ['stdlib/include/objc3/ObjC3Map.h', 'native/objc3c/src/runtime/stdlib/collections_service.cpp',
-    'tests/benchmarks/collections.cpp', 'scripts/objc3c_toolchain/semantic_benchmarks.py', 'toolchains/llvm/patches/change.patch'])
+    'tests/benchmarks/collections.cpp', 'scripts/objc3c_toolchain/semantic_benchmarks.py',
+    'scripts/objc3c_toolchain/semantic_import_benchmarks.py', 'toolchains/llvm/patches/change.patch'])
 def test_semantic_work_changes_select_the_existing_native_lane(path):
     from scripts.objc3c_assurance.plan import select
     plan = select([path], head='a'*40, base='b'*40, tested='c'*40)
@@ -265,11 +280,11 @@ def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(t
                        labels=['workflow-run-a', 'workflow-run-b'])
     assert report['status'] == 'PASS' and report['decision'] == 'calibrated-observation-advisory'
     assert report['independent_receipts'] == 2 and report['samples_per_workload'] == 6
-    assert len(report['observations']) == (9 if version == 1 else 24)
-    assert len(report['scaling']) == (3 if version == 1 else 8)
+    assert len(report['observations']) == (9 if version == 1 else 27)
+    assert len(report['scaling']) == (3 if version == 1 else 9)
     assert all(row['pooled']['samples'] == 6 and row['decision'] == 'observed-runner-variance-only'
                for row in report['observations'])
-    assert report['measured_cost']['commands'] == (72 if version == 1 else 192)
+    assert report['measured_cost']['commands'] == (72 if version == 1 else 216)
     assert 'do not define a product regression budget' in report['gate_policy']
     assert json.loads((repo / 'out/calibration/calibration.json').read_text()) == report
 

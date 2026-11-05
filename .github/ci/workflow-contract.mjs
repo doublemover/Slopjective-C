@@ -82,6 +82,9 @@ export function validateNativeGate(text) {
 
 export function validateImplementationGate(text, releaseText) {
   const workflow = yaml.load(text);
+  if (workflow.concurrency?.["cancel-in-progress"] !== false || !workflow.concurrency?.group) {
+    throw new Error("Implementation analysis must finish its active cold build and queue the newest revision");
+  }
   const events = workflow.on ?? {};
   if (
     !Object.hasOwn(events, "pull_request") ||

@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import shutil
 import zipfile
+import sys
+import time
 
 import pytest
 
@@ -15,6 +17,54 @@ from scripts.objc3c_assurance.plan import from_checkout, select, validate
 from scripts.objc3c_assurance.runner import package_execution
 
 REV = dict(head='a'*40, base='b'*40, tested='c'*40)
+
+
+@pytest.mark.parametrize('interrupted', [False, True])
+def test_native_timeout_and_interruption_kill_compiler_descendant_sessions(tmp_path, monkeypatch, interrupted):
+    """A compiler can launch a child in a separate process group, as Ninja does."""
+    from scripts.objc3c_assurance import execution
+    from scripts.objc3c_toolchain.binary_packages import digest
+    marker = tmp_path / 'child.pid'
+    child = ('import os,time;os.setpgrp();'
+             'open('+repr(str(marker))+',"w").write(str(os.getpid()));time.sleep(60)')
+    parent = ('import subprocess,sys,time;'
+              'subprocess.Popen([sys.executable,"-c",'+repr(child)+']);time.sleep(60)')
+    original_wait, calls = subprocess.Popen.wait, []
+    if interrupted:
+        def interrupt_once(process, *args, **kwargs):
+            if not calls:
+                calls.append(process.pid)
+                deadline = time.monotonic()+5
+                while not marker.exists() and time.monotonic() < deadline:
+                    time.sleep(.01)
+                assert marker.exists(), 'descendant failed to start before interruption'
+                raise KeyboardInterrupt('controlled native interruption')
+            return original_wait(process, *args, **kwargs)
+        monkeypatch.setattr(subprocess.Popen, 'wait', interrupt_once)
+    records = []
+    with pytest.raises(KeyboardInterrupt if interrupted else ValueError):
+        execution.checked_command('bounded-native', [sys.executable, '-c', parent],
+            repo=tmp_path, environment=dict(os.environ), directory=tmp_path,
+            records=records, timeout=5 if interrupted else .5)
+    assert marker.exists()
+    pid = int(marker.read_text())
+    # Grandchildren may briefly remain zombies under a container's PID 1;
+    # no compiler work may survive in either process group.
+    stat = Path('/proc') / str(pid) / 'stat'
+    assert not stat.exists() or stat.read_text().split(') ', 1)[1].startswith('Z ')
+    row = records[0]
+    assert row['elapsed_seconds'] > 0 and row['error']
+    if not interrupted:
+        assert row['exit_code'] == 124 and row['timed_out']
+        assert row['log_sha256'] == digest(Path(row['log']))
+
+
+@pytest.mark.parametrize('filename', ['fresh.log', 'fresh.xml'])
+def test_native_commands_reject_previous_log_and_ctest_results(tmp_path, filename):
+    (tmp_path / filename).write_text('previous success')
+    with pytest.raises(ValueError, match='fresh log and CTest'):
+        checked_command('fresh', ['ctest'], repo=tmp_path, environment=dict(os.environ),
+                        directory=tmp_path, records=[])
 
 
 def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_archive():

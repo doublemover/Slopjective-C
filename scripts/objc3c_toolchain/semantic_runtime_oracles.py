@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 import math
 
-CURRENT_WORKLOAD_VERSION = 3
-FAMILIES = ('text', 'generic-array', 'task-group-actor', 'task-group-cancel', 'worker-tasks')
+CURRENT_WORKLOAD_VERSION = 4
+FAMILIES = ('text', 'generic-array', 'task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks')
 
 
 def expected_work(family, scale, *, rounds=16, seed=17):
@@ -23,6 +23,7 @@ def expected_work(family, scale, *, rounds=16, seed=17):
             'destructions': rounds*scale, 'resumes': rounds*2*scale, 'callbacks': rounds*scale}
     if family == 'task-group-cancel': tasks['cancelled'] = rounds*scale
     elif family == 'worker-tasks': tasks['worker_mask'] = 15
+    elif family == 'shared-pool-tasks': tasks['pool_workers'] = 4
     return tasks
 
 
@@ -33,11 +34,14 @@ def runtime_workload_result(text, family, scale):
         raise ValueError('runtime workload omitted its semantic/lifetime oracle') from error
     expected = expected_work(family, scale)
     keys = {*expected, 'nanoseconds', 'payload_copies', 'destructions'}
+    if family == 'shared-pool-tasks': keys.add('worker_mask')
     if (not isinstance(result, dict) or set(result) != keys or
             any(type(value) is not int for value in result.values()) or
             any(result[key] != value for key, value in expected.items()) or
             result['nanoseconds'] <= 0):
         raise ValueError('runtime workload semantic work, lifetime or timer is invalid')
+    if family == 'shared-pool-tasks' and not 1 <= result['worker_mask'] <= 15:
+        raise ValueError('shared pool did not execute on its admitted workers')
     if family == 'generic-array' and (
             result['payload_copies'] != result['destructions'] or
             not 2*16*scale <= result['payload_copies'] <= 34*16*scale):

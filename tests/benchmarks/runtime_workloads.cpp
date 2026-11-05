@@ -5,10 +5,12 @@
 #include <objc3c/runtime/objc3_text.h>
 #include <chrono>
 #include <atomic>
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <mutex>
 #include <source_location>
 #include <thread>
 #include <vector>
@@ -263,13 +265,54 @@ static void cancellation_work(unsigned size, unsigned seed) {
 struct WorkerLedger {
   std::atomic<unsigned long long> checksum{0}, resumes{0}, callbacks{0}, destroys{0}, live{0}, mask{0};
 };
+static std::array<std::thread::id, 4> pool_threads;
+static uint64_t pool_identity = 0;
+struct PoolProbe {
+  std::atomic<unsigned> arrived{0}, finished{0};
+  std::mutex mutex;
+  const std::chrono::steady_clock::time_point deadline =
+      std::chrono::steady_clock::now() + std::chrono::seconds(5);
+};
+static void probe_pool(void *opaque) {
+  auto *probe = static_cast<PoolProbe *>(opaque);
+  {
+    std::lock_guard<std::mutex> lock(probe->mutex);
+    const auto index = probe->arrived.load();require(index < 4);
+    pool_threads[index] = std::this_thread::get_id();
+    probe->arrived.fetch_add(1);
+  }
+  // Four callbacks must occupy four actual workers simultaneously. This
+  // bounded admission probe runs outside the steady-state task interval.
+  while (probe->arrived.load() != 4) {
+    require(std::chrono::steady_clock::now() < probe->deadline);std::this_thread::yield();
+  }
+  probe->finished.fetch_add(1);
+}
+static void prepare_shared_pool() {
+  objc3_executor_t *executor = nullptr;checked(objc3_executor_get_global(&executor));
+  pool_identity = objc3_executor_identity(executor);require(pool_identity != 0);
+  PoolProbe probe;
+  for (unsigned i = 0; i < 4; ++i) checked(objc3_executor_enqueue(executor, probe_pool, &probe));
+  while (probe.finished.load() != 4) {
+    require(std::chrono::steady_clock::now() < probe.deadline);std::this_thread::yield();
+  }
+  for (unsigned i = 0; i < 4; ++i)
+    for (unsigned j = i + 1; j < 4; ++j) require(pool_threads[i] != pool_threads[j]);
+  objc3_executor_release(executor);
+}
 struct WorkerFrame {
-  WorkerLedger *counts;objc3_executor_t *executor;unsigned value, worker, phase = 0;
+  WorkerLedger *counts;objc3_executor_t *executor;unsigned value, worker, phase = 0;bool shared = false;
 };
 static void worker_resume(objc3_task_t *task, void *opaque) {
   auto *frame = static_cast<WorkerFrame *>(opaque);
   require(objc3_executor_is_current(frame->executor));
-  frame->counts->mask.fetch_or(1u << frame->worker, std::memory_order_relaxed);
+  unsigned worker = frame->worker;
+  if (frame->shared) {
+    for (worker = 0; worker < 4; ++worker)
+      if (pool_threads[worker] == std::this_thread::get_id()) break;
+    require(worker < 4 && objc3_executor_identity(frame->executor) == pool_identity);
+  }
+  frame->counts->mask.fetch_or(1u << worker, std::memory_order_relaxed);
   frame->counts->resumes.fetch_add(1, std::memory_order_relaxed);
   if (frame->phase++ == 0) {checked(objc3_task_schedule_resume(task));return;}
   require(frame->phase == 2);
@@ -288,16 +331,21 @@ static void worker_destroy(void *opaque) {
   require(frame->counts->live.fetch_sub(1, std::memory_order_relaxed) != 0);
   frame->counts->destroys.fetch_add(1, std::memory_order_relaxed);delete frame;
 }
-static void worker_work(unsigned size, unsigned seed) {
+static void worker_work(unsigned size, unsigned seed, bool shared = false) {
   WorkerLedger counts;
   objc3_executor_t *executors[4]{};
-  for (auto &executor : executors) checked(objc3_executor_create(0, &executor));
+  for (auto &executor : executors) {
+    if (shared) {
+      checked(objc3_executor_get_global(&executor));
+      require(objc3_executor_identity(executor) == pool_identity);
+    } else checked(objc3_executor_create(0, &executor));
+  }
   for (unsigned start = 0; start < size; start += 256) {
     const unsigned count = size - start < 256 ? size - start : 256;
     objc3_task_group_t *group = nullptr;checked(objc3_task_group_create(nullptr, &group));
     for (unsigned i = 0; i < count; ++i) {
       const unsigned worker = i % 4;
-      auto *frame = new WorkerFrame{&counts, executors[worker], start + i + seed, worker};
+      auto *frame = new WorkerFrame{&counts, executors[worker], start + i + seed, worker, 0, shared};
       counts.live.fetch_add(1, std::memory_order_relaxed);
       const objc3_task_start_options options{sizeof(objc3_task_start_options), OBJC3_SERVICE_ABI_VERSION,
         executors[worker], frame, worker_resume, worker_destroy, worker_completed, frame, nullptr, nullptr};
@@ -309,7 +357,8 @@ static void worker_work(unsigned size, unsigned seed) {
     consume_group(group, count, OBJC3_COMPLETION_SUCCESS);objc3_task_group_release(group);
   }
   for (auto *executor : executors) objc3_executor_release(executor);
-  require(counts.live.load() == 0 && counts.mask.load() == 15);
+  require(counts.live.load() == 0 && counts.mask.load() > 0 && counts.mask.load() <= 15);
+  if (!shared) require(counts.mask.load() == 15);
   ledger.checksum += counts.checksum.load();ledger.resumes += counts.resumes.load();
   ledger.callbacks += counts.callbacks.load();ledger.destroys += counts.destroys.load();
   ledger.operations += counts.resumes.load() + counts.callbacks.load() + counts.destroys.load();
@@ -326,6 +375,8 @@ int main(int argc, char **argv) {
   const unsigned size = argument(argv[2], 1, 2048), rounds = argument(argv[3], 1, 128);
   const unsigned seed = argument(argv[4], 0, 1024);
   const unsigned delay = argc == 6 ? argument(argv[5], 0, 1) : 0;
+  const bool shared = !std::strcmp(argv[1], "shared-pool-tasks");
+  if (shared) prepare_shared_pool();
   const auto started = std::chrono::steady_clock::now();
   for (unsigned round = 0; round < rounds; ++round) {
     if (!std::strcmp(argv[1], "text")) text_work(size);
@@ -333,6 +384,7 @@ int main(int argc, char **argv) {
     else if (!std::strcmp(argv[1], "task-group-actor")) task_work(size, seed);
     else if (!std::strcmp(argv[1], "task-group-cancel")) cancellation_work(size, seed);
     else if (!std::strcmp(argv[1], "worker-tasks")) worker_work(size, seed);
+    else if (shared) worker_work(size, seed, true);
     else return 2;
     // Bounded measurement control. The same completed semantic work and
     // lifetime oracles must hold with and without the extra timer cost.
@@ -345,6 +397,8 @@ int main(int argc, char **argv) {
     ledger.checksum, ledger.operations, static_cast<long long>(nanos), ledger.copies,
     ledger.destroys, ledger.resumes, ledger.callbacks, ledger.live);
   if (!std::strcmp(argv[1], "task-group-cancel")) std::printf(",\"cancelled\":%llu", ledger.cancelled);
-  if (!std::strcmp(argv[1], "worker-tasks")) std::printf(",\"worker_mask\":%llu", ledger.worker_mask);
+  if (!std::strcmp(argv[1], "worker-tasks") || shared)
+    std::printf(",\"worker_mask\":%llu", ledger.worker_mask);
+  if (shared) std::printf(",\"pool_workers\":%zu", pool_threads.size());
   std::printf("}\n");
 }
