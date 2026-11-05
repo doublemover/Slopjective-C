@@ -5,8 +5,8 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.codec_fuzz import (bounded_command, compact_coverage_log, frontend_replay_result,
-    frontend_target_coverage, patched_frontend_coverage, replay_result, target_coverage,
+from scripts.objc3c_toolchain.codec_fuzz import (bounded_command, compact_coverage_log, diagnostic_stream,
+    frontend_replay_result, frontend_target_coverage, patched_frontend_coverage, replay_result, target_coverage,
     tree_bytes, verify_feedback, verify_foundation_feedback)
 
 
@@ -108,3 +108,11 @@ def test_successful_coverage_log_compaction_retains_covered_rows_and_full_identi
     assert 'COVERED_FUNC:' in log.read_text()
     assert 'UNCOVERED_FUNC:' not in log.read_text()
     assert 'stat::number_of_executed_units: 42' in log.read_text()
+
+
+def test_coverage_inventory_names_cannot_spoof_a_sanitizer_finding():
+    metadata = ('UNCOVERED_FUNC: hits: 0 edges: 0/8 '
+                'llvm::AddressSanitizer::run() /src/AddressSanitizer.cpp:4\n')
+    assert diagnostic_stream(metadata, coverage_report=True) == ''
+    finding = '==42==ERROR: AddressSanitizer: heap-buffer-overflow\n'
+    assert finding in diagnostic_stream(metadata + finding, coverage_report=True)

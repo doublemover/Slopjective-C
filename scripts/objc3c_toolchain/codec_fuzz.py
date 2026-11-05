@@ -184,6 +184,14 @@ def compact_coverage_log(log, text, *, minimum_bytes=8 * 1024**2):
             'log_bytes': log.stat().st_size, 'log_sha256': digest(log)}
 
 
+def diagnostic_stream(text, *, coverage_report):
+    """Exclude libFuzzer inventory labels without hiding runtime diagnostics."""
+    if not coverage_report:
+        return text
+    return ''.join(line for line in text.splitlines(keepends=True)
+                   if not line.startswith('UNCOVERED_FUNC:'))
+
+
 def bounded_command(argv, *, cwd, environment, log, timeout, watched_root, byte_limit):
     """Run one discovery process with a live wall-clock and retained-byte cap."""
     args = list(map(str, argv));started = time.monotonic();timed_out = budget_exceeded = False
@@ -262,7 +270,9 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         if (row.get('budget_exceeded') or (row['timed_out'] and not bounded) or
                 (row['exit_code'] != expected and not bounded)):
             raise ValueError('codec campaign command failed: '+name+'; see '+row['log'])
-        if expected == 0 and not bounded: require_clean_diagnostic(text)
+        coverage_report = '-print_coverage=1' in map(str, argv)
+        if expected == 0 and not bounded:
+            require_clean_diagnostic(diagnostic_stream(text, coverage_report=coverage_report))
         if 'WARNING: unrecognized flag' in text: raise ValueError('fuzzer ignored an unreviewed option')
         # A fully instrumented LLVM/Clang graph has millions of counters.
         # libFuzzer prints every zero-hit function after the already-bounded
@@ -271,7 +281,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         # identity, then retain every operational/covered row while removing
         # only redundant zero-hit function lines from a successful report.
         log = Path(row['log'])
-        if '-print_coverage=1' in map(str, argv):
+        if coverage_report:
             compaction = compact_coverage_log(log, text)
             if compaction:
                 if compaction['full_log_sha256'] != row['log_sha256']:
