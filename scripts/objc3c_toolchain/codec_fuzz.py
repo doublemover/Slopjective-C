@@ -271,7 +271,7 @@ def qualify(repo, output, *, facade_build, seconds=5, jobs=1):
         # identity, then retain every operational/covered row while removing
         # only redundant zero-hit function lines from a successful report.
         log = Path(row['log'])
-        if '-print_coverage=1' in args:
+        if '-print_coverage=1' in map(str, argv):
             compaction = compact_coverage_log(log, text)
             if compaction:
                 if compaction['full_log_sha256'] != row['log_sha256']:
