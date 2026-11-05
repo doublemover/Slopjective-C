@@ -55,6 +55,13 @@ def test_missing_or_unowned_profiles_never_pass(tmp_path, mutation):
         raw_profiles(root)
 
 
+def test_raw_profile_size_override_remains_explicit_and_bounded(tmp_path):
+    root = tmp_path / 'raw';root.mkdir();profile = root / 'profile.profraw';profile.write_bytes(b'ab')
+    assert raw_profiles(root, limit=2) == [profile]
+    with pytest.raises(ValueError, match='raw coverage profiles'):
+        raw_profiles(root, limit=1)
+
+
 def test_unreached_owned_sources_stay_in_inventory_and_system_headers_do_not(tmp_path):
     repo, build = tmp_path / 'repo', tmp_path / 'build';repo.mkdir();build.mkdir()
     source = repo / 'native.cpp';source.write_text('int function() { return 42; }')

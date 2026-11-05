@@ -22,6 +22,7 @@ from .sdk_example import dependencies
 from scripts.objc3c_assurance.evidence import junit
 
 LIMIT = 64 * 1024**2
+FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
 COMMAND_TIMEOUT = 900
 # Clang-facing façade units remain separately bounded from execution/export.
 BUILD_TIMEOUT = 3600
@@ -105,9 +106,10 @@ def read_export(path, *, repo, build, eligible):
     return result
 
 
-def raw_profiles(root):
+def raw_profiles(root, *, limit=LIMIT):
     paths = sorted(root.glob('*.profraw'))
-    if (not paths or sum(path.stat().st_size for path in paths) > LIMIT or
+    if (type(limit) is not int or limit <= 0 or not paths or
+            sum(path.stat().st_size for path in paths) > limit or
             any(path.is_symlink() or not path.is_file() or not path.stat().st_size for path in paths) or
             any(path.suffix != '.profraw' for path in root.iterdir())):
         raise ValueError('missing, escaped, empty or excessive raw coverage profiles')
@@ -178,6 +180,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
         'scope': 'First-party façade and standalone-runtime denominator linked to the exact isolated patched-compiler source-coverage profile.',
         'policy': policy, 'commands': [], 'suites': [], 'objects': {}, 'inputs': {}, 'eligible': {},
         'temporary_build_root': str(build_root), 'build_storage': 'One linked witness resident; temporary build products reclaimed after successful admission.',
+        'raw_profile_limit_bytes_per_suite': FIRST_PARTY_PROFILE_LIMIT,
         'profile_runtime': {'path': str(runtime), 'sha256': digest(runtime),
             'resource_dir': str(resource), 'provenance': 'pinned-bootstrap-llvm-23.1.3'},
         'measurement_compiler': {'path': str(compiler), 'sha256': digest(compiler),
@@ -288,7 +291,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 run(component+'-'+name, ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
                     '-R', '^'+re.escape(name)+'$', '--timeout', '120', '--output-junit', result], environment=case_env)
                 executions = junit(result, expected={name})
-                profiles = raw_profiles(raw)
+                profiles = raw_profiles(raw, limit=FIRST_PARTY_PROFILE_LIMIT)
                 profile = work / 'merged.profdata'
                 run(component+'-'+name+'-merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', profile])
                 profile_ids = run(component+'-'+name+'-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', profile])
@@ -306,20 +309,27 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 if digest(binary) != binary_hash: raise ValueError('coverage test binary changed during execution/export')
                 if not any(row['state'] == 'executed' for row in rows.values()):
                     raise ValueError('coverage export has no executed first-party source mappings')
+                raw_records = {p.name: digest(p) for p in profiles}
+                compressed = {}
+                for raw_profile in profiles:
+                    archive = raw_profile.with_suffix('.profraw.zst')
+                    archive.write_bytes(zstd.compress(raw_profile.read_bytes(), level=3))
+                    compressed[archive.name] = {'sha256': digest(archive),
+                        'bytes': archive.stat().st_size, 'uncompressed_sha256': digest(raw_profile)}
+                    raw_profile.unlink()
                 report['suites'].append({'name': name, 'component': component, 'status': 'PASS',
                     'executions': executions, 'binary_sha256': digest(binary), 'binary_ids': profile_ids,
-                    'raw_profiles': {p.name: digest(p) for p in profiles}, 'profile_sha256': digest(profile),
+                    'raw_profiles': raw_records, 'profile_sha256': digest(profile),
+                    'compressed_raw_profiles': compressed,
                     'source_coverage': rows})
                 save()
                 binary.unlink()
-                # Keep exact compact indexed profile/export records; raw data is
-                # retained through admission and compressed after the final check.
+                # The indexed profile and compressed exact raw inputs remain;
+                # transient linked test binaries are reclaimed per shard.
         if len(report['suites']) != sum(len(policy[key]) for key in ('frontend_tests', 'runtime_tests')):
             raise ValueError('source coverage is missing a required suite/shard')
         if any(digest(Path(path)) != value for path, value in frozen.items()):
             raise ValueError('source coverage input/object/tool changed during execution')
-        for raw in output.glob('suites/*/raw/*.profraw'):
-            raw.with_suffix('.profraw.zst').write_bytes(zstd.compress(raw.read_bytes(), level=3));raw.unlink()
         report['status'] = 'PASS'
         __import__('shutil').rmtree(build_root)
         report['temporary_build_reclaimed'] = True
