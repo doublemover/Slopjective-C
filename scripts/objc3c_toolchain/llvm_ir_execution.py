@@ -22,6 +22,34 @@ class StageFailure(ValueError):
         self.stage, self.classification = name, classification
 
 
+def _kill_session(session: int) -> None:
+    """Kill every process in a Linux session, including Ninja job groups."""
+    proc = Path('/proc')
+    if not proc.is_dir():
+        os.killpg(session, signal.SIGKILL)
+        return
+    for _ in range(5):
+        members = []
+        for entry in proc.iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                value = (entry / 'stat').read_text()
+                fields = value[value.rfind(')') + 2:].split()
+                if int(fields[3]) == session:
+                    members.append(int(entry.name))
+            except (FileNotFoundError, ProcessLookupError, PermissionError, ValueError, IndexError):
+                continue
+        if not members:
+            return
+        for pid in members:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        time.sleep(.01)
+
+
 def classify(stage: str, code: int, text: str, *, timed_out=False) -> str:
     if timed_out:
         return 'timeout'
@@ -58,7 +86,7 @@ def command(argv, *, cwd: Path, environment: dict, log: Path, timeout: float) ->
                     code = process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     timed_out = True
-                    os.killpg(process.pid, signal.SIGKILL)
+                    _kill_session(process.pid)
                     process.wait()
                     code = 124
                     stream.write('\nTimed out after '+str(timeout)+' seconds.\n')

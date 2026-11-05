@@ -7,11 +7,12 @@ import os
 from pathlib import Path
 import struct
 import sys
+import time
 
 import pytest
 
 from scripts.objc3c_toolchain.llvm_ir import corpus, instruction_body, module_facts, pipeline_options
-from scripts.objc3c_toolchain.llvm_ir_execution import Execution, StageFailure, classify
+from scripts.objc3c_toolchain.llvm_ir_execution import Execution, StageFailure, classify, command
 from scripts.objc3c_toolchain.llvm_ir_inventory import stages, thinlto_modules, verify as verify_inventory
 from scripts.objc3c_toolchain.llvm_reduce import interesting, matches, validate
 from scripts.objc3c_toolchain.llvm_tools import verify_installation
@@ -100,6 +101,30 @@ def test_crashes_timeouts_unknown_passes_and_missing_tools_are_not_success(tmp_p
     assert classify('backend-verifier', -6, 'Bad machine code: bad PHI') == 'backend-verifier'
     assert classify('pass-verifier', -6, 'Broken module found') == 'pass-verifier'
     assert classify('input-verifier', 1, 'input module is broken') == 'invalid-ir'
+
+
+def test_timeout_kills_children_that_create_separate_ninja_style_process_groups(tmp_path):
+    child_pid = tmp_path / 'child.pid'
+    parent = ('import os,subprocess,sys,time;'
+        'p=subprocess.Popen([sys.executable,"-c","import time;time.sleep(60)"],'
+        'preexec_fn=lambda:os.setpgid(0,0));'
+        f'open({str(child_pid)!r},"w").write(str(p.pid));'
+        'time.sleep(60)')
+    row = command([sys.executable, '-c', parent], cwd=tmp_path,
+        environment={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'},
+        log=tmp_path / 'timeout.log', timeout=.5)
+    assert row['timed_out'] and row['exit_code'] == 124
+    pid = int(child_pid.read_text())
+    for _ in range(50):
+        try:
+            value = Path('/proc', str(pid), 'stat').read_text()
+            running = value[value.rfind(')') + 2:].split()[0] != 'Z'
+        except FileNotFoundError:
+            running = False
+        if not running:
+            break
+        time.sleep(.02)
+    assert not running
 
 
 def elf(runpath: str, capacity: int) -> bytes:
