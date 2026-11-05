@@ -48,10 +48,20 @@ and runtime identities, effective sanitizer controls, diagnostics, observations
 and compressed product bytes. The existing product-evidence CLI can restore and
 execute retained clients; the independent model remains the semantic oracle.
 
-This pilot deliberately closes one epoch before quiescent observation. Concurrent
-registration/cancellation/publication, global-pool multi-actor exclusion,
-nested/abandoned awaits, typed next-result mismatch, named-binding retirement,
-failure injection and unforced worker stress still need modeled families and
-controlled schedules. CI budget/cadence integration and additional semantic
-mutants remain open. No exhaustive scheduler, memory-model, compiler async,
-Swift concurrency or public actor-language claim follows. #8289 remains open.
+The integrated owner extends this original generated pilot with three maintained
+public-contract fixtures in each of the four sanitizer/client-optimization
+configurations. They cover concurrent registration/cancellation/publication,
+global-pool multi-actor exclusion, queued discard and named-binding retirement,
+nested/last-owner abandoned awaits, nonconsuming typed next-result mismatch,
+allocation/publication/copy failure injection and unforced worker stress.
+These twelve scenario executions supplement the generated model; they do not
+expand its twenty-transition denominator or imply deterministic stress traces.
+
+Five sanitizer-clean semantic mutants are now mandatory: missing frame
+destruction, duplicate waiter delivery, premature quiescence, overlapping actor
+jobs and consuming a type-mismatched next result. Exact reduction/replay remains
+attached to the generated destruction control. The existing native assurance
+lane selects this complete bounded owner; no new schedule is introduced.
+Expanded hosted execution and acceptance remain open under #8289/#8283. No
+exhaustive scheduler, memory-model, compiler async, Swift concurrency or public
+actor-language claim follows.

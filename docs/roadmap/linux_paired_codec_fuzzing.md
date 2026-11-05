@@ -8,4 +8,18 @@ Qualification generates ten reviewed boundary and semantic seeds, replays every 
 
 Two test-owned binaries prove useful failure detection. One aborts after a valid decode and digest check; the other performs a one-byte read beyond an exact source allocation. Each failure must have its expected symbolized class, reduce for a fixed 12-second budget to an exact artifact no larger than the original, reproduce twice from the unchanged reduced bytes and still reproduce from the original input afterward. This is bounded crash reduction, not a claim that the resulting bytes are globally minimal. An independently compiled production decoder without feedback must fail the instrumentation gate.
 
-This milestone is a paired-sidecar pilot. It does not cover full frontend syntax or code generation, instrument patched Clang/LLVM for engine feedback, qualify AFL++/CMPLOG, establish persistent frontend cleanup, expand all production-size boundaries or promote fuzzing into required CI. Those remain separate work under #8287.
+The integrated owner now also executes the production v2/v3 syntax/Sema
+embedding targets. Six first-party implementation translation units and the
+matched `compiler-fuzz-asan-ubsan` Clang/LLVM graph carry engine feedback and
+ASan/UBSan instrumentation. Admission requires actual feedback from production
+compile-session, patched parser and patched Sema functions, separately from
+paired decoder reach. First-party source coverage remains separately labeled.
+Exact frontend replay and repeated reset sequences check persistent cleanup;
+a controlled frontend result-cleanup defect must be detected, reduced and
+replayed. Missing decoder feedback remains an explicit rejecting control.
+
+The existing native assurance lane selects the frontend and two paired discovery
+strategies with bounded time, memory, retained bytes and durable diagnostics.
+Live integrated hosted acceptance remains under #8287/#8283. This does not
+qualify code generation, AFL++/CMPLOG, every production-size boundary or an
+exhaustive frontend grammar.

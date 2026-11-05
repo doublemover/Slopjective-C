@@ -48,7 +48,7 @@ standalone services as well; the additional ownership controls use the pinned
 ordinary GNUstep dependency. These are distinct instrumentation scopes. Wrong-checksum,
 missing-destruction, missing-callback and missing-cancellation implementations
 are rejected. Per-sample task throughput and its summaries are recomputed from
-native callback counts and work intervals. Thread counts are recorded per row;
+native completed-task/callback counts and work intervals. Thread counts are recorded per row;
 worker workloads use one caller plus four scheduling threads.
 
 ```sh
@@ -57,11 +57,17 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
   --output out/semantic-runtime-measurement --repetitions 3
 ```
 
-These local public-runtime controls do not replace qualification with the sealed
-SDK. The source/PCH/interface and source-graph owner below is implemented, with
-sealed-SDK execution still pending. The new generated-frame owner requires execution with the matched SDK; the [build/install cost owner](linux_semantic_build_costs.md) records work already
-selected by native CI. Its actual runner observations remain pending. Timing remains advisory pending observed
-runner variance and reviewed latency, throughput and memory goals.
+The 2026-11-05 matched-compiler checkpoint passes all 39 frontend/runtime rows,
+ten runtime delay controls, six generated-frame semantic mutants and the
+25-phase source/PCH/interface/cache pilot on one sealed development SDK.
+Independent SDK tests pass all fourteen generated-frame cases. The canonical
+terminal verifier accepts all 64 phase summaries from a copied evidence root.
+The compiler implementation carries ASan/UBSan; timed service clients and the
+GNUstep dependency are ordinary builds. This is development-stage execution;
+no release archive is built or qualified. Matching hosted observations and
+reviewed latency, throughput and memory goals remain before timing promotion.
+The [build/install cost owner](linux_semantic_build_costs.md) records work already
+selected by native CI without introducing another qualification cadence.
 
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real
 language/runtime work alongside the existing explicitly labeled warm command
@@ -218,11 +224,11 @@ after a zero native exit. Controls with an unrelated mismatch cannot qualify.
 
 The native gate requires all six generated-frame scale rows and all six fault
 controls. Calibration and terminal verification recompute the typed completion
-counts and control outcomes. The installed bootstrap lacks the bridge's
-qualified type-identity builtin: local oracle/control tests therefore do not
-claim execution of these workloads. Explicit SDK controls can be run with
+counts and control outcomes. The older bootstrap lacks the bridge's
+qualified type-identity builtin; the current matched compiler has it and passes
+all six scale rows, both delays and all six mutants. Explicit SDK controls run with
 `OBJC3_TEST_SEMANTIC_SDK=/path/to/sealed/sdk`; a mismatched supplied SDK fails
-rather than becoming an unsupported skip. Matched-SDK execution remains pending.
+rather than becoming an unsupported skip.
 
 Build and distribution costs use the [operational receipt owner](linux_semantic_build_costs.md).
 It records cold/incremental/invalidation foundation state and admitted archive
