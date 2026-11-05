@@ -38,6 +38,7 @@ def _workload_inputs(report):
     required = {'scripts/objc3c_toolchain/semantic_benchmarks.py', 'tests/benchmarks/collections.cpp'}
     if report.get('workload_version') == CURRENT_WORKLOAD_VERSION:
         required |= {'tests/benchmarks/runtime_workloads.cpp',
+                     'tests/benchmarks/ownership_workloads.mm',
                      'scripts/objc3c_toolchain/semantic_runtime_oracles.py'}
     for path, value in report.get('inputs', {}).items():
         normalized = str(path).replace('\\', '/')

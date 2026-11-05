@@ -1,7 +1,7 @@
 # Current semantic workload benchmarks
 
-The current workload version **4** extends the original nine rows to **27**.
-It adds six public-runtime families at 32, 256 and 2,048 elements, with sixteen
+The current workload version **5** extends the original nine rows to **33**.
+It adds eight public-runtime families at 32, 256 and 2,048 elements, with sixteen
 rounds per sample:
 
 - UTF-8 builder construction, exact scalar/byte counts, byte traversal, scalar
@@ -27,17 +27,25 @@ rounds per sample:
   resumes, completion consumption and frame teardown. Actual callback thread
   identities must belong to that admitted pool; scheduling fairness is not
   invented as a per-sample requirement.
+- ARC and MRC object allocation, retained alias creation/release, copied Block
+  capture/invocation/release, final destruction and weak zeroing. Both modes
+  perform the same observable work; counters describe explicit aliases and
+  lifetime boundaries, rather than optimizer-dependent raw retain/release calls.
+  Each iteration drains its autorelease pool and requires zero live objects.
+  MRC compilation explicitly enables weak support.
 
 The receipt inventories each row's inputs/generator, scale, compiler flags,
 seed/rounds, completed-work oracle, cache state, measurement boundary and timeout.
 Each new family has a paired bounded-delay control with unchanged semantic
-results. The native gate requires every actual warmup and repetition, all six
+results. The native gate requires every actual warmup and repetition, all eight
 delay controls and complete lifetime counters. Calibration compares matching
-workload versions and produces separate scaling curves for all nine phases and
+workload versions and produces separate scaling curves for all eleven phases and
 families. Compiler object samples remove the previous object before execution;
 timeouts and interruptions kill/reap the process session. Native regression
-controls compile and execute all eighteen new family/scale combinations in
-ordinary and ASan/UBSan builds of the runtime and client. Wrong-checksum,
+controls compile and execute all twenty-four new family/scale combinations in
+ordinary and ASan/UBSan client builds. The value/task controls instrument the
+standalone services as well; the additional ownership controls use the pinned
+ordinary GNUstep dependency. These are distinct instrumentation scopes. Wrong-checksum,
 missing-destruction, missing-callback and missing-cancellation implementations
 are rejected. Per-sample task throughput and its summaries are recomputed from
 native callback counts and work intervals. Thread counts are recorded per row;
@@ -51,7 +59,7 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
 
 These local public-runtime controls do not replace qualification with the sealed
 SDK. The source/PCH/interface and source-graph owner below is implemented, with
-sealed-SDK execution still pending. ARC/MRC object lifetimes, generated async
+sealed-SDK execution still pending. Generated async
 frames and cold foundation/install costs remain separate #8291 work. Timing remains advisory pending observed
 runner variance and reviewed latency, throughput and memory goals.
 
@@ -164,7 +172,7 @@ python3 -B -m scripts.objc3c_toolchain.semantic_import_benchmarks \
 
 The existing semantic native lane selects a **32-declaration / 25-phase** pilot
 with one warmup, three repetitions and a **600-second total command budget**.
-It uses the same sealed development prefix as the 27 frontend/runtime rows,
+It uses the same sealed development prefix as the 33 frontend/runtime rows,
 adding only the installed facade, Objective-C headers and standalone SDK verifier.
 No SDK archive or new cadence is introduced. Larger 256/2,048-declaration
 experiments are explicit CLI selections, pending measured cost.
@@ -178,3 +186,12 @@ total command/storage cost. Timings remain advisory; a correctness failure or
 incomplete required experiment fails. Local controls cover orchestration and
 ordinary standard-C separate-provider/PCH mechanics. They do not qualify the
 unmodified ObjC3 workload with a sealed compiler fork.
+
+The ownership loader inventory requires the selected SDK's actual GNUstep
+library. Ordinary runtime measurement rejects sanitizer/profiler markers in
+either the services archive or Objective-C runtime instead of mixing diagnostic
+and ordinary performance samples. Ownership fixture bytes, flags and counters
+join the current versioned workload/calibration identity; earlier expanded
+workload versions cannot be silently pooled with version 5. Local wrong-value,
+missing weak-observation and partial-round controls exit cleanly under client
+ASan/UBSan and still fail the independent oracle.

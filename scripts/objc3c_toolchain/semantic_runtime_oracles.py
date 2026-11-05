@@ -4,8 +4,17 @@ from __future__ import annotations
 import json
 import math
 
-CURRENT_WORKLOAD_VERSION = 4
-FAMILIES = ('text', 'generic-array', 'task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks')
+CURRENT_WORKLOAD_VERSION = 5
+OWNERSHIP_FAMILIES = ('arc-ownership', 'mrc-ownership')
+FAMILIES = ('text', 'generic-array', 'task-group-actor', 'task-group-cancel', 'worker-tasks',
+            'shared-pool-tasks', *OWNERSHIP_FAMILIES)
+
+
+def ownership_flags(family):
+    if family not in OWNERSHIP_FAMILIES:
+        raise ValueError('unreviewed ownership benchmark family')
+    return ['-x', 'objective-c++', '-fobjc-version=3', '-fobjc-runtime=gnustep-2.2',
+            '-fblocks', '-fobjc-weak', '-fobjc-arc' if family == 'arc-ownership' else '-fno-objc-arc']
 
 
 def expected_work(family, scale, *, rounds=16, seed=17):
@@ -18,6 +27,12 @@ def expected_work(family, scale, *, rounds=16, seed=17):
     if family == 'generic-array':
         return {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)),
                 'completed_operations': rounds*(2*scale+5)}
+    if family in OWNERSHIP_FAMILIES:
+        return {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)//2),
+            'completed_operations': rounds*8*scale, 'payload_copies': 0,
+            'destructions': rounds*scale, 'allocations': rounds*scale,
+            'retained_aliases': rounds*scale, 'released_aliases': rounds*scale,
+            'block_copies': rounds*scale, 'block_invocations': rounds*scale, 'weak_zeroed': rounds*scale}
     tasks = {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)//2),
             'completed_operations': rounds*4*scale, 'payload_copies': 0,
             'destructions': rounds*scale, 'resumes': rounds*2*scale, 'callbacks': rounds*scale}

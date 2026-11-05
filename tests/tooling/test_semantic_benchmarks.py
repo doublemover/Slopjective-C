@@ -54,6 +54,7 @@ def calibration_receipt(path, *, offset=0.0, version=1):
     if version == CURRENT_WORKLOAD_VERSION:
         report['workloads'] = workload_inventory(CURRENT_WORKLOAD_VERSION)
         report['inputs'].update({'/checkout/tests/benchmarks/runtime_workloads.cpp': 'd'*64,
+            '/checkout/tests/benchmarks/ownership_workloads.mm': 'f'*64,
             '/checkout/scripts/objc3c_toolchain/semantic_runtime_oracles.py': 'e'*64})
         report['runtime_delay_controls'] = [{'family': family, 'status': 'PASS',
             'semantic_output_unchanged': True, 'minimum_control_effect_seconds': 0.008,
@@ -135,23 +136,34 @@ def test_nonfinite_measurements_cannot_qualify(value):
 @pytest.mark.parametrize('mutate_sdk', [False, True])
 @pytest.mark.parametrize('shared_compiler', [False, True])
 @pytest.mark.parametrize('extended_runtime', [False, True])
+@pytest.mark.parametrize('instrumented_objc', [False, True])
 def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
-        tmp_path, monkeypatch, mutate_sdk, shared_compiler, extended_runtime):
+        tmp_path, monkeypatch, mutate_sdk, shared_compiler, extended_runtime, instrumented_objc):
     from scripts.objc3c_toolchain import semantic_benchmarks as owner
     repo, sdk = tmp_path / 'repo', tmp_path / 'sdk'
     (repo / 'tests/benchmarks').mkdir(parents=True)
     (repo / 'tests/benchmarks/collections.cpp').write_text('retained workload fixture')
     (repo / 'tests/benchmarks/runtime_workloads.cpp').write_text('retained extended workload fixture')
+    (repo / 'tests/benchmarks/ownership_workloads.mm').write_text('retained ownership workload fixture')
     (sdk / 'lib/clang/23').mkdir(parents=True)
+    (sdk / 'lib/libobjc.so').touch()
     calls = []
     def verify(prefix):
         calls.append(prefix)
         return {'target': 'x86_64-unknown-linux-gnu', 'seal_sha256': ('b' if mutate_sdk and len(calls)>1 else 'a')*64,
                 'source_build_id': 'test-only-compiler'}
     def command(argv, *, log, **configuration):
+        if instrumented_objc and '--undefined-only' in argv and str(argv[-1]).endswith('/libobjc.so'):
+            log.write_text('__asan_init\n')
+            return {'wall_seconds': 0.001, 'cpu_seconds': 0.0005, 'peak_process_rss_kib': 1024,
+                    'exit_code': 0, 'timed_out': False, 'log': str(log)}
         if Path(argv[0]).name == 'collections':
             nanos = 16_000_000 if str(argv[-1]) == '1' else 1000
             log.write_text(json.dumps({**expected_runtime(int(argv[1])), 'nanoseconds': nanos}))
+        elif Path(argv[0]).name in ('arc-ownership', 'mrc-ownership'):
+            from scripts.objc3c_toolchain.semantic_runtime_oracles import expected_work
+            result = expected_work(Path(argv[0]).name, int(argv[1]))
+            log.write_text(json.dumps({**result, 'nanoseconds': 16_000_000 if len(argv) == 5 else 1000}))
         elif Path(argv[0]).name == 'runtime_workloads':
             from scripts.objc3c_toolchain.semantic_runtime_oracles import expected_work
             family, scale = argv[1], int(argv[2])
@@ -180,6 +192,11 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         for name in ('libLLVM.so', 'libclang-cpp.so'):
             (sdk / 'lib' / name).touch()
     output = repo / 'out/evidence'
+    if instrumented_objc:
+        with pytest.raises(ValueError, match='instrumented service archive or Objective-C runtime'):
+            owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
+        assert json.loads((output / 'qualification.json').read_text())['status'] == 'FAIL'
+        return
     if mutate_sdk:
         with pytest.raises(ValueError, match='SDK changed'):
             owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
@@ -187,9 +204,9 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
     else:
         report = owner.measure(repo, output, sdk=sdk, extended_runtime=extended_runtime)
         assert report['status'] == 'PASS' and report['correctness'] == 'PASS'
-        assert len(report['summaries']) == (27 if extended_runtime else 9)
+        assert len(report['summaries']) == (33 if extended_runtime else 9)
         assert all(row['wall']['samples'] == 3 for row in report['summaries'])
-        assert len([row for row in report['samples'] if row.get('semantic_result')]) == (84 if extended_runtime else 12)
+        assert len([row for row in report['samples'] if row.get('semantic_result')]) == (108 if extended_runtime else 12)
         assert report['delay_control']['status'] == 'PASS'
         from scripts.objc3c_assurance.evidence import suite_results
         import copy
@@ -205,7 +222,7 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
         imports, _, _ = orchestration_receipt(imports_root, monkeypatch)
         imports_destination = destination.parent / 'imports'
         shutil.copytree(imports_root / 'repo/out/measurement', imports_destination)
-        assert len(suite_results(native_root, 'semantic-workloads')) == 52
+        assert len(suite_results(native_root, 'semantic-workloads')) == 58
         for mutation in ('summary', 'sample', 'delay', 'oracle'):
             broken = copy.deepcopy(report)
             if mutation == 'summary': broken['summaries'].pop()
@@ -280,11 +297,11 @@ def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(t
                        labels=['workflow-run-a', 'workflow-run-b'])
     assert report['status'] == 'PASS' and report['decision'] == 'calibrated-observation-advisory'
     assert report['independent_receipts'] == 2 and report['samples_per_workload'] == 6
-    assert len(report['observations']) == (9 if version == 1 else 27)
-    assert len(report['scaling']) == (3 if version == 1 else 9)
+    assert len(report['observations']) == (9 if version == 1 else 33)
+    assert len(report['scaling']) == (3 if version == 1 else 11)
     assert all(row['pooled']['samples'] == 6 and row['decision'] == 'observed-runner-variance-only'
                for row in report['observations'])
-    assert report['measured_cost']['commands'] == (72 if version == 1 else 216)
+    assert report['measured_cost']['commands'] == (72 if version == 1 else 264)
     assert 'do not define a product regression budget' in report['gate_policy']
     assert json.loads((repo / 'out/calibration/calibration.json').read_text()) == report
 

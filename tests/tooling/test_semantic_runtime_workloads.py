@@ -8,7 +8,7 @@ import subprocess
 import pytest
 
 from scripts.objc3c_toolchain.semantic_runtime_oracles import (
-    FAMILIES, expected_work, runtime_workload_result)
+    FAMILIES, OWNERSHIP_FAMILIES, expected_work, runtime_workload_result)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -84,7 +84,7 @@ def native_workloads(tmp_path_factory, request):
         shutil.rmtree(root)
 
 
-@pytest.mark.parametrize('family', FAMILIES)
+@pytest.mark.parametrize('family', [family for family in FAMILIES if family not in OWNERSHIP_FAMILIES])
 @pytest.mark.parametrize('scale', [32, 256, 2048])
 def test_real_runtime_workloads_complete_all_work_and_teardown(native_workloads, family, scale):
     _, binary, _, environment = native_workloads
@@ -95,7 +95,7 @@ def test_real_runtime_workloads_complete_all_work_and_teardown(native_workloads,
     assert row['live_values'] == 0 and row['nanoseconds'] > 0
 
 
-@pytest.mark.parametrize('family', FAMILIES)
+@pytest.mark.parametrize('family', [family for family in FAMILIES if family not in OWNERSHIP_FAMILIES])
 def test_real_runtime_delay_control_preserves_work_and_adds_bounded_cost(native_workloads, family):
     _, binary, _, environment = native_workloads
     completed = subprocess.run([binary, family, '32', '16', '17', '1'],

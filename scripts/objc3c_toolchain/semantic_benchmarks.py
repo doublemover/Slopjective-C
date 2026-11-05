@@ -15,7 +15,8 @@ from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
-from .semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, FAMILIES, expected_work, runtime_workload_result
+from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, FAMILIES, OWNERSHIP_FAMILIES,
+    expected_work, ownership_flags, runtime_workload_result)
 from .llvm_ir_execution import _kill_session
 from .sanitizer_policy import require_clean_diagnostic
 
@@ -45,10 +46,12 @@ def workload_inventory(version=CURRENT_WORKLOAD_VERSION):
         family = phase.removeprefix('runtime-')
         rows.append({'id': name, 'scale': scale, 'phase': 'native-execute' if runtime else phase,
             'source': ('tests/benchmarks/collections.cpp' if phase == 'runtime' else
+                       'tests/benchmarks/ownership_workloads.mm' if family in OWNERSHIP_FAMILIES else
                        'tests/benchmarks/runtime_workloads.cpp' if runtime else 'frontend_source(scale)'),
             'base_compiler_flags': ['--no-default-config', '-std=c++20', '-O2'], 'timeout_seconds': 120,
-            'frontend_flags': [] if runtime else ['-x', 'objective-c++', '-fobjc-version=3',
+            'frontend_flags': ownership_flags(family) if family in OWNERSHIP_FAMILIES else [] if runtime else ['-x', 'objective-c++', '-fobjc-version=3',
                 '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fblocks'],
+            'ownership': family.split('-', 1)[0] if family in OWNERSHIP_FAMILIES else None,
             'command_identity': 'Each sample retains complete argv, working directory and SDK/resource/loader identities.',
             'cache_state': 'fresh output artifacts; warm shared filesystem cache; no compiler cache launcher',
             'measurement': ('steady-state shared-pool tasks including frame teardown; canonical pool initialization/probe outside interval'
@@ -211,13 +214,14 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
     fixtures = [Path(__file__), fixture]
     if extended_runtime:
         fixtures += [repo / 'tests/benchmarks/runtime_workloads.cpp',
+                     repo / 'tests/benchmarks/ownership_workloads.mm',
                      Path(__file__).with_name('semantic_runtime_oracles.py')]
     frozen = {str(path): digest(path) for path in fixtures}
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'running', 'host': host_context(),
         'workload_version': CURRENT_WORKLOAD_VERSION if extended_runtime else 1, 'inputs': frozen,
         'workloads': workload_inventory(CURRENT_WORKLOAD_VERSION if extended_runtime else 1),
         'repetitions': repetitions, 'samples': [], 'order': [],
-        'scope': 'Warm frontend syntax/object generation and sustained concrete i32 map creation/insertion/lookup/count/teardown. No cold build or filesystem, archive, ARC object lifetime or full language claim.',
+        'scope': 'Warm frontend syntax/object generation and sustained concrete i32 map creation/insertion/lookup/count/teardown. No cold build/filesystem, archive or full language claim.',
         'timing_decision': 'advisory-inconclusive-uncalibrated', 'correctness': 'running',
         'cache_state': 'One unmeasured warmup per SDK/row; fresh output artifacts, warm shared OS caches; compiler cache launchers absent.',
         'sdks': [{'path': str(prefix), 'seal_sha256': value['seal_sha256'], 'source_build_id': value['source_build_id'],
@@ -227,7 +231,9 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             'generic-array bounded mutation and copy/destruction accounting; '
             'manual-executor actor suspension and dependency cancellation through group/frame quiescence; '
             'four private worker executors running suspended tasks through joined completion. '
-            'Worker timings include executor creation/shutdown. No compiler-generated async frame claim.')
+            'Private-worker timings include executor creation/shutdown; canonical shared-pool startup is outside its work interval. '
+            'ARC/MRC object allocation, explicit retained aliases, copied Block capture, invocation, destruction and weak zeroing. '
+            'No compiler-generated async frame claim.')
     states = []
     def run(label, args, state):
         log = output / (label+'.log')
@@ -261,17 +267,18 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             compiler_probe = (find_installed_shared_library(prefix / 'lib', 'libclang-cpp.so')
                               or compiler)
             for name, probe in (('libclang-cpp.so', compiler_probe),
-                                ('libobjc3_runtime_services.a', prefix / 'lib/libobjc3_runtime_services.a')):
+                                ('libobjc3_runtime_services.a', prefix / 'lib/libobjc3_runtime_services.a'),
+                                ('libobjc.so', prefix / 'lib/libobjc.so')):
                 probe = run(f'sdk-{index}-instrumentation-'+name.replace('.', '-'),
-                    ['/usr/bin/nm', *(['-D'] if name == 'libclang-cpp.so' and probe != compiler else []),
+                    ['/usr/bin/nm', *(['-D'] if name in ('libclang-cpp.so', 'libobjc.so') and probe != compiler else []),
                         '--undefined-only', probe], state)
                 text = Path(probe['log']).read_text()
                 markers[name] = sorted({kind for kind in ('asan', 'ubsan', 'tsan', 'llvm_profile') if '__'+kind in text})
             state['instrumentation'] = markers
             report['sdks'][index].update(instrumentation=markers, environment=environment,
                                          compiler_instrumentation_probe=str(compiler_probe))
-            if markers['libobjc3_runtime_services.a']:
-                raise ValueError('ordinary runtime timing cannot use an instrumented service archive')
+            if markers['libobjc3_runtime_services.a'] or markers['libobjc.so']:
+                raise ValueError('ordinary runtime timing cannot use an instrumented service archive or Objective-C runtime')
             report['sdks'][index]['compiler_loader'] = loaded_graph(compiler,
                 Path('/lib64/ld-linux-x86-64.so.2').resolve(),
                 compiler_libraries,
@@ -300,10 +307,28 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     run=lambda name, argv: Path(run('sdk-'+str(index)+'-extended-runtime-'+name,
                                                    argv, state)['log']).read_text())
                 frozen.update(report['sdks'][index]['extended_runtime_loader']['libraries'])
+                ownership_source = root / 'ownership_workloads.mm'
+                ownership_source.write_bytes((repo / 'tests/benchmarks/ownership_workloads.mm').read_bytes())
+                ownership_binaries = {}
+                report['sdks'][index]['ownership_loaders'] = {}
+                for family in OWNERSHIP_FAMILIES:
+                    obj, owned_binary = root / (family+'.o'), root / family
+                    run(f'sdk-{index}-{family}-object', [compiler, *flags, *ownership_flags(family),
+                        '-I'+str(prefix / 'include'), '-c', ownership_source, '-o', obj], state)
+                    run(f'sdk-{index}-{family}-link', [compiler, '--no-default-config', '-fuse-ld=lld',
+                        obj, prefix / 'lib/libobjc.so', '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'),
+                        '-o', owned_binary], state)
+                    graph = loaded_graph(owned_binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                        required=((prefix / 'lib/libobjc.so').resolve(strict=True),),
+                        run=lambda name, argv, family=family: Path(run(f'sdk-{index}-{family}-'+name, argv, state)['log']).read_text())
+                    report['sdks'][index]['ownership_loaders'][family] = graph
+                    frozen.update(graph['libraries']);ownership_binaries[family] = owned_binary
                 for family in FAMILIES:
                     for scale in SCALES:
-                        state['rows']['runtime-'+family+'-'+str(scale)] = [
-                            extra_binary, family, str(scale), str(ROUNDS), str(SEED)]
+                        state['rows']['runtime-'+family+'-'+str(scale)] = (
+                            [ownership_binaries[family], str(scale), str(ROUNDS), str(SEED)]
+                            if family in OWNERSHIP_FAMILIES else
+                            [extra_binary, family, str(scale), str(ROUNDS), str(SEED)])
             for graph in ('compiler_loader', 'runtime_loader'):
                 frozen.update(report['sdks'][index][graph]['libraries'])
             for scale in SCALES:
