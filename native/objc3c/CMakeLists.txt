@@ -5,6 +5,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
   message(FATAL_ERROR "The current compiler distribution targets native Linux.")
 endif()
 set(OBJC3C_CLANG_FOUNDATION_ROOT "" CACHE PATH "Qualified patched LLVM/Clang SDK root")
+option(OBJC3C_LINK_CLANG_CPP "Link the embedding facade through the shared clang-cpp DSO" OFF)
 set(OBJC3C_COMPILER_INSTRUMENTATION_PROFILE "" CACHE STRING
   "Owned compiler implementation instrumentation profile (isolated foundation required)")
 set_property(CACHE OBJC3C_COMPILER_INSTRUMENTATION_PROFILE PROPERTY STRINGS

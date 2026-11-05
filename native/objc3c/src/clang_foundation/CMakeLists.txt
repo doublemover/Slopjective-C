@@ -54,8 +54,15 @@ endforeach()
 configure_file(runtime_interface_header.h.in runtime_interface_header.h @ONLY)
 target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
-target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
-  clangTooling clangFrontend clangCodeGen clangIndex)
+if(OBJC3C_LINK_CLANG_CPP)
+  if(NOT TARGET clang-cpp)
+    message(FATAL_ERROR "The selected foundation does not provide clang-cpp")
+  endif()
+  target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto clang-cpp)
+else()
+  target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
+    clangTooling clangFrontend clangCodeGen clangIndex)
+endif()
 if(LLVM_LINK_LLVM_DYLIB)
   # Match Clang's shared LLVM dependency. Mixing component archives with that
   # dylib can duplicate LLVM globals and command-line option registrations.
@@ -307,7 +314,10 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/interface_emitter_test.cpp)
   target_include_directories(objc3_interface_emitter_test SYSTEM PRIVATE
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-  target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation clangTooling)
+  target_link_libraries(objc3_interface_emitter_test PRIVATE objc3c_clang_foundation)
+  if(NOT OBJC3C_LINK_CLANG_CPP)
+    target_link_libraries(objc3_interface_emitter_test PRIVATE clangTooling)
+  endif()
   target_compile_definitions(objc3_interface_emitter_test PRIVATE
     OBJC3_INTERFACE_TEST_PACKAGE_FIXTURES="${_objc3_repo}/tests/clang_foundation/native_async_packages"
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"

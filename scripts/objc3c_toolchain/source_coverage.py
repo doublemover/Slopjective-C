@@ -240,7 +240,8 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 '-DCMAKE_CXX_COMPILER='+str(compiler), '-DCMAKE_BUILD_TYPE=Debug',
                 '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g0 -resource-dir='+str(resource),
                 '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld',
-                '-DOBJC3C_SOURCE_COVERAGE=ON', '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
+                '-DOBJC3C_SOURCE_COVERAGE=ON', '-DOBJC3C_LINK_CLANG_CPP=ON',
+                '-DBUILD_TESTING=ON', '-DPython3_EXECUTABLE='+__import__('sys').executable]
             if component == 'frontend':
                 configure += ['-DOBJC3C_CLANG_FOUNDATION_ROOT='+str(stage),
                               '-DOBJC3C_COMPILER_INSTRUMENTATION_PROFILE=compiler-source-coverage']
@@ -284,6 +285,12 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     raise ValueError('built coverage test has no exact executable command')
                 binary = Path(current[0]['command'][0]).resolve(strict=True)
                 binary_hash = digest(binary)
+                loader_graph = None
+                if component == 'frontend':
+                    loader_graph = loaded_graph(binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(strict=True),
+                        libraries, required=libraries,
+                        run=lambda suffix, argv, name=name: run('frontend-'+name+'-'+suffix, argv))
+                    frozen.update(loader_graph['libraries'])
                 work = output / 'suites' / (component+'-'+name);work.mkdir(parents=True)
                 raw = work / 'raw';raw.mkdir()
                 case_env = {**env, 'LLVM_PROFILE_FILE': str(raw / '%p-%m.profraw')}
@@ -321,6 +328,7 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                     'executions': executions, 'binary_sha256': digest(binary), 'binary_ids': profile_ids,
                     'raw_profiles': raw_records, 'profile_sha256': digest(profile),
                     'compressed_raw_profiles': compressed,
+                    'loader_graph': loader_graph,
                     'source_coverage': rows})
                 save()
                 binary.unlink()
