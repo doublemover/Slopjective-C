@@ -331,9 +331,19 @@ def passing_bundle(tmp_path):
         root.mkdir()
         if suite['id'] == 'foundation':
             (root / 'foundation-0.json').write_text(json.dumps({'tests': [{'name': 'parser rejection', 'code': 'PASS'}]}))
-            source = {'status': 'passed', 'phases': [dict(phase=name, exit_code=0, **(
-                {'test_results': '/producer/foundation-0.json'} if name == 'test' else {}))
-                for name in ('configure', 'build', 'test', 'stage')]}
+            source = {'status': 'passed', 'source_identity': 'fixture', 'elapsed_seconds': 4.1,
+                'cost_context': {'schema': 'objc3c.foundation-cost-context.v1', 'build_config_digest': 'fixture',
+                    'instrumentation': None, 'host_environment': {'compiler': 'fixture'}, 'host': {'system': 'fixture'},
+                    'initial_state': 'cold-build-directory', 'initial_cache_files': {
+                        'CMakeCache.txt': None, 'build.ninja': None, '.ninja_log': None},
+                    'initial_entry_count': 0,
+                    'source_preparation': {'performed': True, 'seconds': .1}, 'cache_scope': 'shared caches'},
+                'phases': []}
+            for index, name in enumerate(('configure', 'build', 'test', 'stage')):
+                log = root / ('phase-'+str(index)+'.log');log.write_text('actual command fixture log')
+                source['phases'].append(dict(phase=name, exit_code=0, command=[name], plan_identity=name,
+                    log='/producer/'+name+'.log', log_sha256=evidence.digest(log), elapsed_seconds=1.0, **(
+                    {'test_results': '/producer/foundation-0.json'} if name == 'test' else {})))
             (root / 'foundation.json').write_text(json.dumps(source))
         elif suite['id'] == 'runtime':
             (root / 'runtime.json').write_text('{"status":"passed"}')
@@ -350,7 +360,11 @@ def passing_bundle(tmp_path):
                 'commands': [{'name': 'execute', 'exit_code': 0}]}))
         rows.append({'id': suite['id'], 'status': 'PASS', 'executions': evidence.suite_results(tmp_path, suite['id']),
                      'artifacts': [evidence.artifact(tmp_path, p) for p in sorted(root.rglob('*')) if p.is_file()]})
-    result = {'schema': evidence.SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
+    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+    costs = tmp_path / 'operational-costs.json'
+    costs.write_text(json.dumps(snapshot(foundations=[tmp_path / 'foundation/foundation.json'])))
+    result = {'operational_costs': evidence.artifact(tmp_path, costs),
+              'schema': evidence.SCHEMA, 'status': 'PASS', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'suites': rows, 'commands': [{'exit_code': 0}]}
     (tmp_path / 'result.json').write_text(json.dumps(result))
     return plan, result
@@ -471,3 +485,20 @@ def test_real_native_commands_and_ctest_fail_closed(tmp_path, fault):
     else:
         with pytest.raises(ValueError):
             execute_ctest(build, 'actual', output, command)
+
+
+@pytest.mark.parametrize('fault', ['missing-cost', 'changed-cost', 'false-decision', 'false-timing'])
+def test_native_aggregate_recomputes_operational_costs_from_qualified_owner_receipts(tmp_path, fault):
+    plan, result = passing_bundle(tmp_path)
+    path = tmp_path / 'operational-costs.json'
+    if fault == 'missing-cost': path.unlink()
+    else:
+        cost = json.loads(path.read_text())
+        if fault == 'false-decision': cost['decision'] = 'performance-PASS'
+        elif fault == 'false-timing': cost['records'][0]['phases_seconds']['build'] = 0
+        else: cost['groups'] = []
+        path.write_text(json.dumps(cost))
+        if fault != 'changed-cost':
+            result['operational_costs'] = evidence.artifact(tmp_path, path)
+            (tmp_path / 'result.json').write_text(json.dumps(result))
+    with pytest.raises(ValueError): verify(plan, tmp_path)

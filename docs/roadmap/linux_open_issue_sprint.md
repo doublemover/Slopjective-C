@@ -221,7 +221,7 @@ All **37 frontend suites** pass. Accepted SDK 2.62 remains unchanged.
 | [#8287](https://github.com/doublemover/Slopjective-C/issues/8287) | Frontend/paired-sidecar fuzzing, exact replay and controlled discovery implemented; live integrated CI acceptance pending |
 | [#8289](https://github.com/doublemover/Slopjective-C/issues/8289) | Generated histories plus maintained concurrency/failure scenarios and five semantic mutants implemented; expanded hosted execution pending |
 | [#8290](https://github.com/doublemover/Slopjective-C/issues/8290) | First-party and patched-compiler coverage owners implemented with instrumented pilots; live integrated CI acceptance pending |
-| [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | 39 frontend/runtime rows including ARC/MRC ownership and generated coroutine frames and a bounded 25-phase source/PCH/interface/cache pilot implemented; SDK execution, cold foundation/install costs and performance goals remain |
+| [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) | 39 frontend/runtime rows including ARC/MRC ownership and generated coroutine frames and a bounded 25-phase source/PCH/interface/cache pilot implemented; SDK execution, matching hosted observations and reviewed performance goals remain |
 | [#8292](https://github.com/doublemover/Slopjective-C/issues/8292) | Pinned independent Swift C consumer qualified and selected; broader Swift ABI/interoperability claims remain outside that contract |
 
 | [#8206](https://github.com/doublemover/Slopjective-C/issues/8206) | Platform And Toolchain Expansion |

@@ -286,7 +286,14 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
                 save()
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
+        from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+        costs = snapshot(foundations=[output / 'foundation/foundation.json'],
+            installations=[output / 'package/release.json'] if (output / 'package/release.json').is_file() else [])
+        cost_file = output / 'operational-costs.json'
+        write_json(cost_file, costs)
+        report['operational_costs'] = artifact(output, cost_file)
         size = sum(value['bytes'] for row in report['suites'] for value in row['artifacts'])
+        size += report['operational_costs']['bytes']
         if size > MAX_BYTES:
             raise ValueError('native evidence exceeds the 256 MiB artifact budget')
         report['status'] = 'PASS'

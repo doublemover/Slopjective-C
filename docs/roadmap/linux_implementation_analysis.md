@@ -99,3 +99,11 @@ proof is rejected. Prior aggregate failure remains failed, and reused actions
 are labeled separately from fresh execution. Spawned worker processes avoid
 forking a threaded process through the subprocess pre-exec hook. Parallelism is
 bounded to one through four workers; each TU keeps its own durable result.
+
+The first hosted run completed the instrumented foundation and native component
+builds, then exposed an isolated-environment configuration failure: the pinned
+Ninja directory was absent from the analyzer's strict PATH. The tool owner now
+binds `CMAKE_MAKE_PROGRAM` to the admitted Ninja executable and retains both
+CMake and Ninja directories. A real clean-PATH CMake/Ninja build defends that
+boundary. The matched local tool builds successfully; completion of the full
+analysis inventory remains required.

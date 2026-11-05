@@ -168,7 +168,7 @@ def host_context():
         'noise_limits': 'Shared runner; frequency/contention uncontrolled. Timing remains advisory.'}
 
 
-def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False):
+def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False, services_archive=None):
     """Seal current compiler/runtime build products for the existing CI lane."""
     stage, prefix = stage.resolve(strict=True), prefix.resolve()
     if prefix.exists() or prefix.is_relative_to(stage):
@@ -180,13 +180,16 @@ def prepare_prefix(stage, prefix, *, source_build_id, target, imports=False):
     for name in ('clang', 'clang++', 'ld.lld'):
         link(stage / 'bin' / name, prefix / 'bin' / name)
     for name in ('libLLVM.so', 'libclang-cpp.so', 'libobjc.so', 'libobjc3_runtime_services.a'):
-        source = (find_installed_shared_library(stage / 'lib', name)
+        source = (Path(services_archive).resolve(strict=True)
+                  if name == 'libobjc3_runtime_services.a' and services_archive is not None else
+                  find_installed_shared_library(stage / 'lib', name)
                   if name in ('libLLVM.so', 'libclang-cpp.so')
                   else (stage / 'lib' / name).resolve(strict=True))
         if source is None:
             continue
-        link(source, prefix / 'lib' / source.name)
-        if source.name != name: (prefix / 'lib' / name).symlink_to(source.name)
+        destination_name = name if name == 'libobjc3_runtime_services.a' else source.name
+        link(source, prefix / 'lib' / destination_name)
+        if destination_name != name: (prefix / 'lib' / name).symlink_to(destination_name)
     for name in ('lib/clang/23/include', 'include/objc3c/runtime'):
         shutil.copytree(stage / name, prefix / name, copy_function=os.link)
     if imports:

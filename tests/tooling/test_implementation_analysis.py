@@ -210,3 +210,38 @@ def test_real_cmake_pch_dependency_discovery_keeps_shared_header_edits(tmp_path)
     assert str(header) in closure and str(unit) in closure
     assert selected_variants([{'file': str(unit), 'output': 'unit.o'}],
         {'unit.o': closure}, [header]) == [{'file': str(unit), 'output': 'unit.o'}]
+
+
+def test_analysis_tool_configuration_uses_admitted_ninja_with_a_clean_path(tmp_path):
+    """Run real CMake/Ninja with the admitted Ninja outside the process PATH."""
+    import os
+    from pathlib import Path
+    from scripts.objc3c_toolchain.implementation_analysis import tool_configuration
+    compiler, cmake, ninja = map(shutil.which, ('clang++', 'cmake', 'ninja'))
+    if not all((compiler, cmake, ninja)):
+        pytest.skip('requires CMake, Clang and Ninja for clean-host tool control')
+    bootstrap = Path(compiler).resolve().parent.parent
+    if not (bootstrap / 'bin/clang++').exists(): pytest.skip('Clang installation root is unavailable')
+    owned = tmp_path / 'owned tools';owned.mkdir()
+    wrapper, observed = owned / 'ninja-owned', owned / 'observed'
+    wrapper.write_text('#!/bin/sh\nprintf "invoked\\n" >> '+shlex.quote(str(observed))+'\nexec '+
+                       shlex.quote(ninja)+' "$@"\n');wrapper.chmod(0o755)
+    source = tmp_path / 'repo/native/analysis';source.mkdir(parents=True)
+    (source / 'CMakeLists.txt').write_text('cmake_minimum_required(VERSION 3.24)\n'
+        'project(clean_host_analysis CXX)\nadd_executable(control main.cpp)\n')
+    (source / 'main.cpp').write_text('int main() { return 0; }\n')
+    build = tmp_path / 'build'
+    plan = {'host_environment': {'bootstrap_root': str(bootstrap), 'cmake_path': cmake,
+                                'ninja_path': str(wrapper)},
+            'paths': {'stage': str(tmp_path / 'stage'), 'source': str(tmp_path / 'llvm')}}
+    arguments, environment = tool_configuration(tmp_path / 'repo', build, plan)
+    assert str(owned) in environment['PATH'].split(os.pathsep)
+    assert '-DCMAKE_MAKE_PROGRAM='+str(wrapper) in arguments
+    environment['PATH'] = str(bootstrap / 'bin')+os.pathsep+os.defpath
+    assert str(owned) not in environment['PATH'].split(os.pathsep)
+    subprocess.run(list(map(str, arguments)), check=True, capture_output=True, env=environment, timeout=60)
+    subprocess.run([cmake, '--build', build, '--parallel', '1'], check=True, capture_output=True,
+                   env=environment, timeout=60)
+    assert observed.read_text().count('invoked') >= 1
+    cache = (build / 'CMakeCache.txt').read_text().splitlines()
+    assert next(line for line in cache if line.startswith('CMAKE_MAKE_PROGRAM:')).endswith('='+str(wrapper))

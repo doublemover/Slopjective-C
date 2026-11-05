@@ -350,6 +350,17 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     commands = receipt.get('commands', [])
     if any(row.get('exit_code') != 0 for row in commands):
         raise ValueError('native command evidence contains a failed execution')
+    from scripts.objc3c_toolchain.semantic_build_costs import snapshot
+    cost_file = root / 'operational-costs.json'
+    saved_costs = receipt.get('operational_costs', {})
+    if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
+        raise ValueError('native operational measurements are missing or changed')
+    observed = json.loads(cost_file.read_text())
+    expected_costs = snapshot(foundations=[root / 'foundation/foundation.json'],
+        installations=[root / 'package/release.json'] if 'package' in expected else [])
+    if observed != expected_costs:
+        raise ValueError('native operational measurements differ from actual owner receipts')
+    total += saved_costs['bytes']
     if total > MAX_BYTES:
         raise ValueError('native evidence exceeds the 256 MiB artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],

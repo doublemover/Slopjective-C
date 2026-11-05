@@ -259,7 +259,8 @@ def test_complete_receipt_keeps_workload_annotations_and_rechecks_sdk(
 
 
 @pytest.mark.parametrize('imports', [False, True])
-def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path, imports):
+@pytest.mark.parametrize('ordinary_services', [False, True])
+def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_headers(tmp_path, imports, ordinary_services):
     from scripts.objc3c_toolchain.semantic_benchmarks import prepare_prefix
     stage, prefix = tmp_path / 'stage', tmp_path / 'prefix'
     for relative in ('bin/clang', 'bin/clang++', 'bin/ld.lld', 'lib/libLLVM.so.23.1', 'lib/libclang-cpp.so.23.1',
@@ -271,7 +272,13 @@ def test_development_benchmark_prefix_keeps_exact_native_products_and_runtime_he
         (stage / 'bin/objc3c').write_text('facade')
         (stage / 'include/objc').mkdir()
         (stage / 'include/objc/runtime.h').write_text('objc headers')
-    result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu', imports=imports)
+    archive = tmp_path / 'ordinary-services.a'
+    archive.write_text('separately built ordinary runtime')
+    original = (stage / 'lib/libobjc3_runtime_services.a').read_bytes()
+    result = prepare_prefix(stage, prefix, source_build_id='current-build', target='x86_64-unknown-linux-gnu',
+                            imports=imports, services_archive=archive if ordinary_services else None)
+    assert (stage / 'lib/libobjc3_runtime_services.a').read_bytes() == original
+    assert (prefix / 'lib/libobjc3_runtime_services.a').read_bytes() == (archive.read_bytes() if ordinary_services else original)
     assert (prefix / 'bin/objc3c').exists() is imports
     assert (prefix / 'share/objc3c/verify-sdk.py').exists() is imports
     assert result['source_build_id'] == 'current-build'

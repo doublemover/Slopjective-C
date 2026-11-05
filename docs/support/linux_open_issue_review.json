@@ -1416,7 +1416,7 @@
     },
     "controls": "Real ordinary and ASan/UBSan standalone-runtime execution and ARC/MRC clients with the pinned ordinary GNUstep dependency; four-physical-worker probe; real standard-C provider/PCH controls; import orchestration/relocation/corruption checks.",
     "qualification_boundary": "Sealed-SDK execution, especially generated frames requiring the production type-identity builtin, and hosted variability/performance goals remain open. Local standard-C overlap is not an ObjC3 compiler qualification.",
-    "remaining_implementation": "Cold foundation/install costs; reviewed performance goals.",
+    "remaining_implementation": "Workload and operational owners are implemented; actual matched-SDK/hosted observations and reviewed performance goals remain before performance promotion.",
     "native_command_cleanup": "Session termination covers child process groups; current commands require fresh logs and CTest XML.",
     "tooling_imports": "Independent lookup/result helpers no longer eagerly resolve action-catalog PowerShell dependencies."
   },

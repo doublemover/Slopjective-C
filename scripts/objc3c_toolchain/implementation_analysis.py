@@ -5,6 +5,7 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
 import multiprocessing
+import os
 from pathlib import Path
 import re
 import shlex
@@ -261,6 +262,19 @@ def dependency_arguments(row, depfile):
     return [*query, '-M', '-MF', str(depfile), '-MT', 'implementation-analysis']
 
 
+def tool_configuration(repo, tool_build, plan):
+    bootstrap = Path(plan['host_environment']['bootstrap_root'])
+    cmake, ninja = (Path(plan['host_environment'][name+'_path']) for name in ('cmake', 'ninja'))
+    environment = strict_environment(bootstrap / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer')
+    environment['PATH'] = os.pathsep.join(dict.fromkeys((str(cmake.parent), str(ninja.parent),
+                                                       *environment['PATH'].split(os.pathsep))))
+    arguments = [cmake, '-S', repo / 'native/analysis', '-B', tool_build, '-G', 'Ninja',
+        '-DCMAKE_MAKE_PROGRAM='+str(ninja), '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
+        '-DOBJC3_ANALYSIS_FOUNDATION='+str(plan['paths']['stage']),
+        '-DOBJC3_ANALYSIS_SOURCE='+str(plan['paths']['source'])]
+    return arguments, environment
+
+
 def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=None):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
@@ -290,7 +304,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             any(not re.fullmatch(r'[a-zA-Z0-9_.-]+', check) for check in policy['checks'])):
         raise ValueError('unreviewed implementation analysis policy/baseline')
     output.mkdir(parents=True)
-    environment = strict_environment(bootstrap / 'bin/clang++', bootstrap / 'bin/llvm-symbolizer')
+    tool_arguments, environment = tool_configuration(repo, tool_build, plan)
     report = {'schema': 'objc3c.implementation-analysis.v1', 'status': 'running',
         'subject': 'native-and-maintained-clang-implementation', 'policy': policy,
         'source_build_id': plan['source_build_id'], 'build_config_digest': plan['build_config_digest'],
@@ -304,9 +318,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
     executor = Execution(output, environment, report, timeout=600)
     run = executor.run
     try:
-        run('configure-tool', [plan['host_environment']['cmake_path'], '-S', repo / 'native/analysis',
-            '-B', tool_build, '-G', 'Ninja', '-DCMAKE_CXX_COMPILER='+str(bootstrap / 'bin/clang++'),
-            '-DOBJC3_ANALYSIS_FOUNDATION='+str(stage), '-DOBJC3_ANALYSIS_SOURCE='+str(source)])
+        run('configure-tool', tool_arguments)
         run('build-tool', [plan['host_environment']['cmake_path'], '--build', tool_build, '--parallel', '2'])
         tool = tool_build / policy['tool']
         ninja = Path(plan['host_environment']['ninja_path'])

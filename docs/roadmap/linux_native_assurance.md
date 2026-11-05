@@ -142,3 +142,9 @@ both cancellation paths. Semantic selection includes the canonical shared-pool
 workloads and bounded source/PCH/interface/cache pilot described in the
 [benchmark owner](linux_semantic_benchmarks.md); required import evidence is
 revalidated from retained logs/build snapshots after relocation.
+
+The existing source gate also retains [operational build/install costs](linux_semantic_build_costs.md).
+Foundation and installer owners record actual phase timers and initial reuse
+state during their required execution. The aggregate checks the compact artifact
+and recomputes it from raw owner receipts/logs; timing remains advisory. This
+adds no archive build, qualification, schedule or paid runner.

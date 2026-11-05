@@ -59,8 +59,8 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
 
 These local public-runtime controls do not replace qualification with the sealed
 SDK. The source/PCH/interface and source-graph owner below is implemented, with
-sealed-SDK execution still pending. The new generated-frame owner requires execution with the matched SDK; cold
-foundation/install costs remain separate #8291 work. Timing remains advisory pending observed
+sealed-SDK execution still pending. The new generated-frame owner requires execution with the matched SDK; the [build/install cost owner](linux_semantic_build_costs.md) records work already
+selected by native CI. Its actual runner observations remain pending. Timing remains advisory pending observed
 runner variance and reviewed latency, throughput and memory goals.
 
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real
@@ -223,3 +223,10 @@ qualified type-identity builtin: local oracle/control tests therefore do not
 claim execution of these workloads. Explicit SDK controls can be run with
 `OBJC3_TEST_SEMANTIC_SDK=/path/to/sealed/sdk`; a mismatched supplied SDK fails
 rather than becoming an unsupported skip. Matched-SDK execution remains pending.
+
+Build and distribution costs use the [operational receipt owner](linux_semantic_build_costs.md).
+It records cold/incremental/invalidation foundation state and admitted archive
+installation phases from existing required execution. It performs no additional
+archive qualification. Native aggregate verification recomputes those observations
+from retained raw receipts/logs; performance promotion still requires measured
+variance and reviewed product goals.
