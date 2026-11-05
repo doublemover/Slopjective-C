@@ -44,8 +44,11 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
 The `Linux implementation analysis` workflow owns the durable gate. Pull
 requests run it only when the analyzer/toolchain, native implementation or
 compilation graph changes, and pass those exact changed paths to the dependency
-selector. Weekly and manually dispatched runs select the complete owned-TU
-inventory. The workflow builds the admitted `compiler-asan-ubsan` foundation,
+selector. Native source scopes independently select the integrated frontend and
+standalone runtime; they do not reanalyze maintained Clang TUs unless a shared
+fork/tool/checker input changed. Weekly and manually dispatched runs select the
+complete owned-TU inventory. The workflow builds the admitted
+`compiler-asan-ubsan` foundation,
 separate integrated-frontend and standalone-runtime databases, and the matched
 analysis tool in its own six-hour job so the already broad native qualification
 cannot consume the analyzer's time budget. A second job admits only the exact

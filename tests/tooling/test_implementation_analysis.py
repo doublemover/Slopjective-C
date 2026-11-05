@@ -5,7 +5,7 @@ import shlex
 import pytest
 
 from scripts.objc3c_toolchain.implementation_analysis import (
-    dependencies, inventory, matched_pch_arguments, selected_variants, textual_pch,
+    dependencies, inventory, matched_pch_arguments, owner_changes, selected_variants, textual_pch,
 )
 
 
@@ -66,6 +66,35 @@ def test_header_edit_selects_dependent_variants_without_a_changed_line_filter(da
     assert selected_variants(rows, headers, [header]) == rows[:1]
     assert selected_variants(rows, headers, [source]) == rows
     assert selected_variants(rows, headers, [path.parent / 'new-header.h']) == rows
+
+
+def test_changed_native_scopes_do_not_select_unaffected_implementation_owners(tmp_path):
+    repo = tmp_path / 'repo';repo.mkdir()
+    runtime = repo / 'native/objc3c/src/runtime/service.cpp'
+    frontend = repo / 'native/objc3c/src/clang_foundation/frontend.cpp'
+    cmake = repo / 'native/cmake/Objc3BuildWarnings.cmake'
+    assert owner_changes(repo, 'frontend', [runtime]) == (runtime,)
+    assert owner_changes(repo, 'standalone-runtime', [runtime]) == (runtime,)
+    assert owner_changes(repo, 'maintained-clang', [runtime]) is None
+    assert owner_changes(repo, 'frontend', [frontend]) == (frontend,)
+    assert owner_changes(repo, 'standalone-runtime', [frontend]) is None
+    assert owner_changes(repo, 'maintained-clang', [frontend]) is None
+    assert owner_changes(repo, 'frontend', [cmake]) == (cmake,)
+    assert owner_changes(repo, 'standalone-runtime', [cmake]) == (cmake,)
+
+
+@pytest.mark.parametrize('relative', [
+    'native/analysis/SelectedChecks.cpp',
+    'toolchains/llvm/implementation-analysis.json',
+    'scripts/objc3c_toolchain/implementation_analysis.py',
+    'scripts/objc3c_implementation_assurance/runner.py',
+    'unknown/build-owner.py',
+])
+def test_shared_or_unknown_analysis_changes_conservatively_select_every_owner(tmp_path, relative):
+    repo = tmp_path / 'repo';repo.mkdir()
+    changed = repo / relative
+    for owner in ('frontend', 'standalone-runtime', 'maintained-clang'):
+        assert owner_changes(repo, owner, [changed]) == ()
 
 
 def test_dependency_closure_is_required_and_stale_selected_records_fail(tmp_path):

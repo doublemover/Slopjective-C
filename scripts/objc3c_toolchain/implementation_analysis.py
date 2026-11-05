@@ -122,6 +122,48 @@ def selected_variants(rows, headers, changed):
     return [row for row in rows if row['file'] in paths or paths.intersection(headers.get(row['output'], []))]
 
 
+def owner_changes(repo, owner, changed):
+    """Return one owner's scoped edits, complete selection, or no selection.
+
+    ``()`` means an input shared by every owner changed and therefore requests a
+    complete selection. ``None`` means all edits are in recognized source scopes
+    that cannot affect this owner. A nonempty tuple retains dependency selection
+    within the owner. Unknown locations remain conservative and select all.
+    """
+    if not changed:
+        return ()
+    repo = Path(repo).resolve(strict=True)
+    paths = [Path(path).resolve() for path in changed]
+    relatives = []
+    for path in paths:
+        try:
+            relatives.append(path.relative_to(repo).as_posix())
+        except ValueError:
+            return ()
+    global_prefixes = ('.github/workflows/implementation-analysis.yml', 'native/analysis/',
+        'scripts/objc3c_implementation_assurance/',
+        'tests/tooling/fixtures/implementation_analysis/', 'toolchains/llvm/')
+    global_files = {'scripts/objc3c_toolchain/'+name+'.py' for name in (
+        'analysis_checkpoint', 'binary_packages', 'build', 'compiler_instrumentation', 'core',
+        'host', 'implementation_analysis', 'instrumentation_profiles', 'llvm_ir_execution',
+        'llvm_tools', 'sanitizer_policy', 'sdk_example')}
+    if any(path in global_files or path.startswith(global_prefixes) for path in relatives):
+        return ()
+    recognized = ('native/cmake/', 'native/objc3c/')
+    if any(not path.startswith(recognized) for path in relatives):
+        return ()
+    prefixes = {
+        'frontend': ('native/cmake/', 'native/objc3c/'),
+        'standalone-runtime': ('native/cmake/', 'native/objc3c/src/runtime/'),
+        'maintained-clang': (),
+    }
+    if owner not in prefixes:
+        raise ValueError('unknown implementation analysis owner')
+    relevant = tuple(path for path, relative in zip(paths, relatives)
+                     if relative.startswith(prefixes[owner]))
+    return relevant or None
+
+
 def textual_pch(row, *, replacement=None):
     """Use exact wrapper text or a newly built fork-matched serialization."""
     original, result, projections = row['arguments'], [], []
@@ -383,7 +425,9 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                     row['dependency_origin'] = 'actual-ninja-compilation'
                 if row['file'] not in deps[row['output']]:
                     raise ValueError('implementation variant lacks its actual header dependency closure')
-            chosen = selected_variants(rows, deps, changed)
+            scoped_changes = owner_changes(repo, label, changed)
+            chosen = ([] if scoped_changes is None else
+                      selected_variants(rows, deps, scoped_changes))
             report['inputs'][str(database)] = digest(database)
             for row in rows:
                 row.update(owner=label, identity=identity({'owner': label, **row}), dependencies=deps[row['output']])
@@ -393,7 +437,9 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
             report['inventory'].extend(rows)
             report['exclusions'].append({'owner': label, 'database_entries': len(json.loads(database.read_text())),
                 'selected_variants': len(rows), 'analyzed_variants': len(chosen),
-                'reason': 'Owned implementation TUs and every maintained Clang patch TU; vendor/test/generated-only TUs excluded. Unaffected variants omitted only for explicit dependency-based incremental selection.'})
+                'reason': ('Owned implementation TUs and every maintained Clang patch TU; '
+                           'vendor/test/generated-only TUs excluded. Unaffected owners and variants '
+                           'are omitted only by source ownership plus explicit dependency closure.')})
             executor.timeout = policy['translation_unit_timeout_seconds']
             with ProcessPoolExecutor(max_workers=jobs, mp_context=multiprocessing.get_context('spawn')) as workers:
                 futures = []
