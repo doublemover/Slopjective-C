@@ -16,7 +16,8 @@ from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
 from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, FAMILIES, OWNERSHIP_FAMILIES,
-    expected_work, ownership_flags, runtime_workload_result)
+    GENERATED_TASK_FAMILIES, TASK_FRAME_MUTATIONS, completed_task_count, expected_work,
+    ownership_flags, runtime_workload_result, task_frame_control_result)
 from .llvm_ir_execution import _kill_session
 from .sanitizer_policy import require_clean_diagnostic
 
@@ -46,10 +47,12 @@ def workload_inventory(version=CURRENT_WORKLOAD_VERSION):
         family = phase.removeprefix('runtime-')
         rows.append({'id': name, 'scale': scale, 'phase': 'native-execute' if runtime else phase,
             'source': ('tests/benchmarks/collections.cpp' if phase == 'runtime' else
+                       'tests/benchmarks/task_frame_workloads.cpp' if family in GENERATED_TASK_FAMILIES else
                        'tests/benchmarks/ownership_workloads.mm' if family in OWNERSHIP_FAMILIES else
                        'tests/benchmarks/runtime_workloads.cpp' if runtime else 'frontend_source(scale)'),
             'base_compiler_flags': ['--no-default-config', '-std=c++20', '-O2'], 'timeout_seconds': 120,
-            'frontend_flags': ownership_flags(family) if family in OWNERSHIP_FAMILIES else [] if runtime else ['-x', 'objective-c++', '-fobjc-version=3',
+            'frontend_flags': ownership_flags(family) if family in OWNERSHIP_FAMILIES else
+                ['-fcoro-aligned-allocation'] if family in GENERATED_TASK_FAMILIES else [] if runtime else ['-x', 'objective-c++', '-fobjc-version=3',
                 '-fobjc-runtime=gnustep-2.2', '-fobjc-arc', '-fblocks'],
             'ownership': family.split('-', 1)[0] if family in OWNERSHIP_FAMILIES else None,
             'command_identity': 'Each sample retains complete argv, working directory and SDK/resource/loader identities.',
@@ -62,9 +65,9 @@ def workload_inventory(version=CURRENT_WORKLOAD_VERSION):
             'rounds': ROUNDS if runtime else None,
             'seed': SEED if runtime and family != 'text' else None,
             'maximum_admitted_task_batch': 256 if family in (
-                'task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks') else None,
+                'task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks', *GENERATED_TASK_FAMILIES) else None,
             'throughput': 'completed task callbacks per second including allocation, join and frame teardown'
-                if family in ('task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks') else None,
+                if family in ('task-group-actor', 'task-group-cancel', 'worker-tasks', 'shared-pool-tasks', *GENERATED_TASK_FAMILIES) else None,
             'expected': (expected_runtime(scale) if phase == 'runtime' else
                          expected_work(family, scale) if runtime else {'compiler_exit_code': 0}),
             'oracle': 'independent checksum, completed-work and lifetime accounting' if runtime else
@@ -215,6 +218,7 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
     if extended_runtime:
         fixtures += [repo / 'tests/benchmarks/runtime_workloads.cpp',
                      repo / 'tests/benchmarks/ownership_workloads.mm',
+                     repo / 'tests/benchmarks/task_frame_workloads.cpp',
                      Path(__file__).with_name('semantic_runtime_oracles.py')]
     frozen = {str(path): digest(path) for path in fixtures}
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'running', 'host': host_context(),
@@ -233,7 +237,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             'four private worker executors running suspended tasks through joined completion. '
             'Private-worker timings include executor creation/shutdown; canonical shared-pool startup is outside its work interval. '
             'ARC/MRC object allocation, explicit retained aliases, copied Block capture, invocation, destruction and weak zeroing. '
-            'No compiler-generated async frame claim.')
+            'Production typed-bridge compiler-generated C++ coroutine frames through successful/cancelled completion, '
+            'move-only parameter destruction, typed result extraction and group quiescence. No public actor-language claim.')
     states = []
     def run(label, args, state):
         log = output / (label+'.log')
@@ -323,12 +328,24 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                         run=lambda name, argv, family=family: Path(run(f'sdk-{index}-{family}-'+name, argv, state)['log']).read_text())
                     report['sdks'][index]['ownership_loaders'][family] = graph
                     frozen.update(graph['libraries']);ownership_binaries[family] = owned_binary
+                task_source = root / 'task_frame_workloads.cpp'
+                task_source.write_bytes((repo / 'tests/benchmarks/task_frame_workloads.cpp').read_bytes())
+                task_object, task_binary = root / 'task_frame_workloads.o', root / 'task_frame_workloads'
+                run(f'sdk-{index}-task-frame-object', [compiler, *flags, '-fcoro-aligned-allocation',
+                    '-I'+str(prefix / 'include'), '-c', task_source, '-o', task_object], state)
+                run(f'sdk-{index}-task-frame-link', [compiler, '--no-default-config', '-fuse-ld=lld',
+                    task_object, prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
+                    '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', task_binary], state)
+                graph = loaded_graph(task_binary, Path('/lib64/ld-linux-x86-64.so.2').resolve(), [],
+                    run=lambda name, argv: Path(run(f'sdk-{index}-task-frame-'+name, argv, state)['log']).read_text())
+                report['sdks'][index]['generated_task_loader'] = graph;frozen.update(graph['libraries'])
                 for family in FAMILIES:
                     for scale in SCALES:
                         state['rows']['runtime-'+family+'-'+str(scale)] = (
                             [ownership_binaries[family], str(scale), str(ROUNDS), str(SEED)]
                             if family in OWNERSHIP_FAMILIES else
-                            [extra_binary, family, str(scale), str(ROUNDS), str(SEED)])
+                            [task_binary if family in GENERATED_TASK_FAMILIES else extra_binary,
+                             family, str(scale), str(ROUNDS), str(SEED)])
             for graph in ('compiler_loader', 'runtime_loader'):
                 frozen.update(report['sdks'][index][graph]['libraries'])
             for scale in SCALES:
@@ -355,8 +372,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     if name.startswith('runtime-'):
                         row['semantic_result'] = semantic_result(Path(row['log']).read_text(), name)
                         row['work_seconds'] = row['semantic_result']['nanoseconds']/1e9
-                        if row['semantic_result'].get('callbacks', 0):
-                            row['task_completions_per_second'] = row['semantic_result']['callbacks']/row['work_seconds']
+                        if completed_task_count(row['semantic_result']):
+                            row['task_completions_per_second'] = completed_task_count(row['semantic_result'])/row['work_seconds']
                     elif name.startswith('object-'):
                         artifact = Path(command[-1])
                         if not artifact.is_file() or not artifact.stat().st_size:
@@ -393,6 +410,26 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                 report['runtime_delay_controls'].append({'family': family, 'status': 'PASS',
                     'samples_seconds': delayed, 'median_effect_seconds': effect,
                     'semantic_output_unchanged': True, 'minimum_control_effect_seconds': ROUNDS*0.001/2})
+            report['task_frame_controls'] = []
+            for fault, (before, after) in TASK_FRAME_MUTATIONS.items():
+                text = (repo / 'tests/benchmarks/task_frame_workloads.cpp').read_text()
+                if text.count(before) != 1:
+                    raise ValueError('generated-frame control source contract changed: '+fault)
+                source = state['root'] / ('task-frame-'+fault+'.cpp');source.write_text(text.replace(before, after))
+                frozen[str(source)] = digest(source)
+                obj, binary = source.with_suffix('.o'), source.with_suffix('.bin')
+                prefix = state['prefix'];compiler = prefix / 'bin/clang++'
+                run('task-frame-control-'+fault+'-object', [compiler, '--no-default-config', '-std=c++20',
+                    '-O2', '-fcoro-aligned-allocation', '-I'+str(prefix / 'include'), '-c', source, '-o', obj], state)
+                run('task-frame-control-'+fault+'-link', [compiler, '--no-default-config', '-fuse-ld=lld',
+                    obj, prefix / 'lib/libobjc3_runtime_services.a', prefix / 'lib/libobjc.so',
+                    '-pthread', '-Wl,-rpath,'+str(prefix / 'lib'), '-o', binary], state)
+                for family in GENERATED_TASK_FAMILIES:
+                    row = run('task-frame-control-'+family+'-'+fault, [binary, family, '32', str(ROUNDS), str(SEED)], state)
+                    result = task_frame_control_result(Path(row['log']).read_text(), family, fault)
+                    report['task_frame_controls'].append({'family': family, 'fault': fault, 'status': 'PASS',
+                        'classification': 'semantic-mismatch', 'sample': row['name'], 'semantic_result': result,
+                        'source_sha256': digest(source)})
         report['summaries'] = [{
             'sdk_index': state['index'], 'workload': name,
             'wall': summarize([row for row in report['samples'] if row.get('workload') == name and

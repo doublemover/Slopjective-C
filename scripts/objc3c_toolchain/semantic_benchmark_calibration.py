@@ -9,7 +9,8 @@ import statistics
 
 from .binary_packages import digest, write_json
 from .semantic_benchmarks import SCALES, semantic_result, summarize, workload_inventory, workload_names
-from .semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, validate_delay_controls
+from .semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION, completed_task_count,
+    validate_delay_controls, validate_task_frame_controls)
 
 SCHEMA = 'objc3c.semantic-benchmark-calibration.v1'
 HOST_FIELDS = ('system', 'kernel', 'cpu_model', 'cpu_quota', 'cpuset', 'memory_limit',
@@ -39,6 +40,7 @@ def _workload_inputs(report):
     if report.get('workload_version') == CURRENT_WORKLOAD_VERSION:
         required |= {'tests/benchmarks/runtime_workloads.cpp',
                      'tests/benchmarks/ownership_workloads.mm',
+                     'tests/benchmarks/task_frame_workloads.cpp',
                      'scripts/objc3c_toolchain/semantic_runtime_oracles.py'}
     for path, value in report.get('inputs', {}).items():
         normalized = str(path).replace('\\', '/')
@@ -69,6 +71,7 @@ def _admit(path):
         if report.get('workloads') != workload_inventory(CURRENT_WORKLOAD_VERSION):
             raise ValueError('semantic benchmark receipt changed its workload contract')
         validate_delay_controls(report)
+        validate_task_frame_controls(report)
     observations = {}
     for workload in expected:
         workload_rows = [row for row in samples if row.get('workload') == workload and
@@ -87,8 +90,8 @@ def _admit(path):
                 semantic = semantic_result(json.dumps(row.get('semantic_result')), workload)
                 if row.get('work_seconds') != semantic['nanoseconds']/1e9:
                     raise ValueError('semantic benchmark runtime timer differs from its retained sample')
-                if semantic.get('callbacks', 0) and row.get('task_completions_per_second') != (
-                        semantic['callbacks']/row['work_seconds']):
+                if completed_task_count(semantic) and row.get('task_completions_per_second') != (
+                        completed_task_count(semantic)/row['work_seconds']):
                     raise ValueError('semantic benchmark throughput differs from completed callbacks')
         measured = summarize(rows, field)
         retained = next(row for row in summaries if row['workload'] == workload)

@@ -144,7 +144,7 @@
       "url": "https://github.com/doublemover/Slopjective-C/issues/8291",
       "category": "assurance",
       "body_sha256": "e0f44d8de2c63e3cc383ac6b989485c6a3b79f52fba7632957f662cdeb46d374",
-      "status": "runtime-workloads-v5-ownership-and-import-cache-pilot-implemented-sdk-execution-and-calibration-open",
+      "status": "runtime-workloads-v6-ownership-frames-and-import-cache-pilot-implemented-sdk-execution-and-calibration-open",
       "implementation": "docs/roadmap/linux_semantic_benchmarks.md"
     },
     {
@@ -1402,9 +1402,9 @@
     "decision": "Correctness/completeness block; timing stays advisory and uncalibrated. Trusted baseline governance and calibration remain open."
   },
   "semantic_workload_continuation": {
-    "workload_version": 5,
-    "frontend_runtime_rows": 33,
-    "runtime_families": 8,
+    "workload_version": 6,
+    "frontend_runtime_rows": 39,
+    "runtime_families": 10,
     "import_cache_pilot": {
       "declarations": 32,
       "phase_summaries": 25,
@@ -1415,8 +1415,8 @@
       "scope": "Source/PCH/source-free interface producers/consumers, native results, separate links and exact cold/unchanged/private-leaf reuse."
     },
     "controls": "Real ordinary and ASan/UBSan standalone-runtime execution and ARC/MRC clients with the pinned ordinary GNUstep dependency; four-physical-worker probe; real standard-C provider/PCH controls; import orchestration/relocation/corruption checks.",
-    "qualification_boundary": "Sealed-SDK execution and hosted variability/performance goals remain open. Local standard-C overlap is not an ObjC3 compiler qualification.",
-    "remaining_implementation": "Compiler-generated async-frame performance workloads; cold foundation/install costs; reviewed performance goals.",
+    "qualification_boundary": "Sealed-SDK execution, especially generated frames requiring the production type-identity builtin, and hosted variability/performance goals remain open. Local standard-C overlap is not an ObjC3 compiler qualification.",
+    "remaining_implementation": "Cold foundation/install costs; reviewed performance goals.",
     "native_command_cleanup": "Session termination covers child process groups; current commands require fresh logs and CTest XML.",
     "tooling_imports": "Independent lookup/result helpers no longer eagerly resolve action-catalog PowerShell dependencies."
   },

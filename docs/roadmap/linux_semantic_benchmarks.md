@@ -1,7 +1,7 @@
 # Current semantic workload benchmarks
 
-The current workload version **5** extends the original nine rows to **33**.
-It adds eight public-runtime families at 32, 256 and 2,048 elements, with sixteen
+The current workload version **6** extends the original nine rows to **39**.
+It adds ten public-runtime families at 32, 256 and 2,048 elements, with sixteen
 rounds per sample:
 
 - UTF-8 builder construction, exact scalar/byte counts, byte traversal, scalar
@@ -37,12 +37,12 @@ rounds per sample:
 The receipt inventories each row's inputs/generator, scale, compiler flags,
 seed/rounds, completed-work oracle, cache state, measurement boundary and timeout.
 Each new family has a paired bounded-delay control with unchanged semantic
-results. The native gate requires every actual warmup and repetition, all eight
+results. The native gate requires every actual warmup and repetition, all ten
 delay controls and complete lifetime counters. Calibration compares matching
-workload versions and produces separate scaling curves for all eleven phases and
+workload versions and produces separate scaling curves for all thirteen phases and
 families. Compiler object samples remove the previous object before execution;
 timeouts and interruptions kill/reap the process session. Native regression
-controls compile and execute all twenty-four new family/scale combinations in
+controls compile and execute the twenty-four value/task/ownership family/scale combinations in
 ordinary and ASan/UBSan client builds. The value/task controls instrument the
 standalone services as well; the additional ownership controls use the pinned
 ordinary GNUstep dependency. These are distinct instrumentation scopes. Wrong-checksum,
@@ -59,8 +59,8 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
 
 These local public-runtime controls do not replace qualification with the sealed
 SDK. The source/PCH/interface and source-graph owner below is implemented, with
-sealed-SDK execution still pending. Generated async
-frames and cold foundation/install costs remain separate #8291 work. Timing remains advisory pending observed
+sealed-SDK execution still pending. The new generated-frame owner requires execution with the matched SDK; cold
+foundation/install costs remain separate #8291 work. Timing remains advisory pending observed
 runner variance and reviewed latency, throughput and memory goals.
 
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real
@@ -172,7 +172,7 @@ python3 -B -m scripts.objc3c_toolchain.semantic_import_benchmarks \
 
 The existing semantic native lane selects a **32-declaration / 25-phase** pilot
 with one warmup, three repetitions and a **600-second total command budget**.
-It uses the same sealed development prefix as the 33 frontend/runtime rows,
+It uses the same sealed development prefix as the 39 frontend/runtime rows,
 adding only the installed facade, Objective-C headers and standalone SDK verifier.
 No SDK archive or new cadence is introduced. Larger 256/2,048-declaration
 experiments are explicit CLI selections, pending measured cost.
@@ -192,6 +192,34 @@ library. Ordinary runtime measurement rejects sanitizer/profiler markers in
 either the services archive or Objective-C runtime instead of mixing diagnostic
 and ordinary performance samples. Ownership fixture bytes, flags and counters
 join the current versioned workload/calibration identity; earlier expanded
-workload versions cannot be silently pooled with version 5. Local wrong-value,
+workload versions cannot be silently pooled with version 6. Local wrong-value,
 missing weak-observation and partial-round controls exit cleanly under client
 ASan/UBSan and still fail the independent oracle.
+
+## Compiler-generated frame workloads
+
+`task_frame_workloads.cpp` uses the production typed `objc3::task<unsigned>`
+bridge and actual C++ coroutine lowering, including its aligned-allocation
+contract. A move-only parameter lease remains owned by each coroutine frame
+until the runtime destroys it after final suspension. It is not a manually
+allocated callback frame. Two bounded families cover success and cancellation
+at a queued yield, with separate first/second resume counts, typed result or
+cancellation extraction, completed group results and final lease destruction.
+The manual scheduler runs batches of 256 and joins before accepting timing.
+
+The checksum observes frame arguments before suspension; successful results
+must also preserve them across suspension. Completed-task throughput derives
+from consumed completions, rather than claiming internal callbacks ran. Creation,
+resume, destruction, result/cancellation extraction and group consumption each
+have independent expected counts. Both families have paired delay controls.
+Three compiler-built semantic mutants alter the checksum, omit destruction
+accounting or omit completion accounting; both families must reject each mutant
+after a zero native exit. Controls with an unrelated mismatch cannot qualify.
+
+The native gate requires all six generated-frame scale rows and all six fault
+controls. Calibration and terminal verification recompute the typed completion
+counts and control outcomes. The installed bootstrap lacks the bridge's
+qualified type-identity builtin: local oracle/control tests therefore do not
+claim execution of these workloads. Explicit SDK controls can be run with
+`OBJC3_TEST_SEMANTIC_SDK=/path/to/sealed/sdk`; a mismatched supplied SDK fails
+rather than becoming an unsupported skip. Matched-SDK execution remains pending.

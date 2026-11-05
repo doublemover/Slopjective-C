@@ -188,7 +188,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
         return cases
     if name == 'semantic-workloads':
         from scripts.objc3c_toolchain.semantic_benchmarks import semantic_result, summarize, workload_inventory, workload_names
-        from scripts.objc3c_toolchain.semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, validate_delay_controls
+        from scripts.objc3c_toolchain.semantic_runtime_oracles import (CURRENT_WORKLOAD_VERSION,
+            completed_task_count, validate_delay_controls, validate_task_frame_controls)
         result = read('measurement/qualification.json')
         expected = workload_names(CURRENT_WORKLOAD_VERSION)
         summaries, samples = result.get('summaries', []), result.get('samples', [])
@@ -203,6 +204,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 any(row.get('exit_code') != 0 or row.get('timed_out') for row in samples)):
             raise ValueError('semantic workload correctness/sample/control inventory is incomplete')
         validate_delay_controls(result)
+        validate_task_frame_controls(result)
         for workload in expected:
             rows = [row for row in samples if row.get('workload') == workload]
             if len(rows) != 4 or len([row for row in rows if row.get('warmup') is False]) != 3:
@@ -216,8 +218,8 @@ def suite_results(root: Path, name: str) -> list[dict]:
                     semantic = semantic_result(json.dumps(row.get('semantic_result')), workload)
                     if row.get('work_seconds') != semantic['nanoseconds']/1e9:
                         raise ValueError('semantic workload timer differs from its native result')
-                    if semantic.get('callbacks', 0) and row.get('task_completions_per_second') != (
-                            semantic['callbacks']/row['work_seconds']):
+                    if completed_task_count(semantic) and row.get('task_completions_per_second') != (
+                            completed_task_count(semantic)/row['work_seconds']):
                         raise ValueError('semantic workload throughput differs from completed work')
                 if summary.get('work') != summarize(measured, 'work_seconds'):
                     raise ValueError('semantic workload execution summary differs from native work')
