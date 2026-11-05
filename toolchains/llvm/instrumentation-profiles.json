@@ -105,7 +105,7 @@
       },
       "build_target_groups": [
         {"name": "covered_compiler", "targets": ["clang", "clang-cpp", "LLVM", "lld"]},
-        {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "llvm-config", "FileCheck", "count", "not", "clang-resource-headers"]},
+        {"name": "coverage_tools", "targets": ["llvm-cov", "llvm-profdata", "llvm-readobj", "llvm-nm", "llvm-config", "FileCheck", "count", "not", "clang-resource-headers", "c-index-test"]},
         {"name": "covered_native_contracts", "targets": ["ObjC3TypeContractsTests", "ObjC3MatchersTests", "DynamicASTMatchersTests"]}
       ],
       "test_binaries": [
