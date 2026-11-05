@@ -15,7 +15,7 @@ from scripts.objc3c_toolchain.build import build_foundation
 from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
-from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files
+from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files, package_execution
 from .plan import from_checkout, validate
 from .execution import checked_command, execute_ctest
 
@@ -24,30 +24,6 @@ from .execution import checked_command, execute_ctest
 UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/CodeGenObjC', 'clang/test/CodeGenObjCXX', 'clang/test/PCH',
             'clang/test/Modules', 'clang/test/Driver')
-
-
-def package_execution(result: dict) -> list[dict]:
-    """Admit the archive installation already performed by the SDK pipeline.
-
-    ``build_sdk`` qualifies the candidate through installed consumers, seals it,
-    installs that exact archive into the content-addressed SDK store and verifies
-    the installed bytes. Re-running the full distribution qualification here
-    repeated every installed/source consumer and could consume more than thirty
-    minutes without exercising a different product. Fresh-distribution archive
-    qualification remains owned by the release workflow.
-    """
-    qualification = result.get('installed_qualification')
-    installed = result.get('installed')
-    commands = qualification.get('commands') if isinstance(qualification, dict) else None
-    if (result.get('status') != 'PASS' or not result.get('archive_sha256') or
-            not isinstance(installed, dict) or not installed.get('prefix') or
-            not isinstance(commands, list) or not commands or
-            qualification.get('status') != 'PASS' or
-            any(row.get('exit_code') != 0 for row in commands)):
-        raise ValueError('SDK pipeline omitted its passing installed archive qualification')
-    return [{'status': 'PASS', 'archive_sha256': result['archive_sha256'],
-             'installed_prefix': installed['prefix'],
-             'installed_consumer_commands': len(commands)}]
 
 
 def run(repo: Path, plan: dict, output: Path) -> dict:

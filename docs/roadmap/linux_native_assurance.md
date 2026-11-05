@@ -43,8 +43,11 @@ The stable source surface uses existing owners:
   ASan/UBSan and TSan O0/O2 runner, including paired detector controls and canonical
   runtime object/archive verification. This does not instrument the host compiler.
 - Packaging/installer changes additionally select the canonical SDK pipeline and
-  a shipped-archive install/relocation witness in the Linux job's distribution.
-  Debian/Ubuntu release qualification remains its separate workflow.
+  its already qualified content-addressed archive installation. The producer and
+  terminal verifier share one execution-record contract, including archive hash,
+  installed prefix and successful consumer-command count. The gate does not need
+  the SDK tree or another archive qualification. Fresh Debian/Ubuntu distribution
+  qualification remains in the release workflow.
 
 `Linux native assurance gate` always evaluates explicit plan/native job outcomes.
 Only an admitted prose-only plan permits a skipped native job. Missing artifacts,
@@ -74,6 +77,16 @@ the signature verifier uses its own pinned private libsodium dependency.
 Receipts report elapsed time, descendant peak RSS and available disk. Tooling CI
 also exports actual selected/deselected pytest node IDs, collection failures,
 per-phase outcomes, explicit skips and expected failures, plus JUnit and `-ra`.
+
+Sanitizer product stores use a campaign-relative namespace. Extraction under a
+different checkout cannot invalidate a complete result merely because the
+producer's absolute output path no longer exists. The shared store retains each
+compressed replay payload once; owner receipts resolve it locally even when the
+artifact omits their private directory symlinks. Native replay uses that same
+resolver and checks complete blob metadata before reusing a verified record.
+Regression controls perform real ZIP relocation, remove the producer tree and
+private links, verify producer/gate inventory equality, and replay an actual
+sanitized executable from the relocated shared store.
 
 The jobs use existing ephemeral Linux runners, read-only contents, SHA-pinned
 actions and checkout without persisted credentials. PR source never executes

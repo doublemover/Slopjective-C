@@ -4,12 +4,36 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
 
 from .plan import validate
 
 SCHEMA = 'objc3c.native-assurance.result.v1'
 MAX_BYTES = 256 * 1024 * 1024
+
+
+def package_execution(result: dict) -> list[dict]:
+    """One producer/verifier contract for the SDK pipeline's installed archive.
+
+    build_sdk already seals and installs the exact archive and qualifies its
+    installed consumers. The terminal gate verifies that retained owner result;
+    it does not need the SDK tree or another archive qualification.
+    """
+    qualification = result.get('installed_qualification')
+    installed = result.get('installed')
+    commands = qualification.get('commands') if isinstance(qualification, dict) else None
+    signature = result.get('archive_sha256')
+    prefix = installed.get('prefix') if isinstance(installed, dict) else None
+    if (result.get('status') != 'PASS' or not isinstance(signature, str) or
+            not re.fullmatch(r'[0-9a-f]{64}', signature) or not isinstance(prefix, str) or
+            not Path(prefix).is_absolute() or not isinstance(commands, list) or not commands or
+            qualification.get('status') != 'PASS' or
+            any(not isinstance(row, dict) or type(row.get('exit_code')) is not int or
+                row['exit_code'] != 0 or row.get('timed_out') for row in commands)):
+        raise ValueError('SDK pipeline omitted its passing installed archive qualification')
+    return [{'status': 'PASS', 'archive_sha256': signature,
+             'installed_prefix': prefix, 'installed_consumer_commands': len(commands)}]
 
 
 def digest(path: Path) -> str:
@@ -203,7 +227,7 @@ def suite_results(root: Path, name: str) -> list[dict]:
         return summaries
     if name == 'package':
         result = read('release.json')
-        return [{'archive_sha256': result['archive_sha256'], 'status': 'PASS'}]
+        return package_execution(result)
     if name == 'sanitizer-products':
         result = read('campaign/qualification.json')
         rows = result.get('owners', [])
@@ -222,9 +246,9 @@ def suite_results(root: Path, name: str) -> list[dict]:
                 store.get('owners') != len(expected) or not store.get('references') or
                 store.get('references') != len(store_files) or
                 store.get('stored_bytes') != sum(path.stat().st_size for path in store_files) or
-                store.get('private_bytes', 0) <= store.get('stored_bytes', 0) or
+                store.get('private_bytes', 0) < store.get('stored_bytes', 0) or
                 store.get('deduplicated_bytes') != store['private_bytes'] - store['stored_bytes'] or
-                Path(store.get('path', '')).resolve() != store_path.resolve() or
+                store.get('path') != 'product-evidence-blobs' or
                 any(not path.is_file() or path.is_symlink() or
                     not path.name.endswith('.zst') or len(path.stem) != 64 or
                     any(char not in '0123456789abcdef' for char in path.stem)

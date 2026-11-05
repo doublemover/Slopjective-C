@@ -73,6 +73,7 @@ def test_campaign_consolidates_duplicate_replay_bytes_without_rewriting_receipts
         receipts.append((receipt, receipt.read_bytes(), records, selected))
     result = consolidate_campaign_blobs(tmp_path)
     assert result['owners'] == 2 and result['references'] == 2
+    assert result['path'] == 'product-evidence-blobs'
     assert result['private_bytes'] > result['stored_bytes']
     assert len(list((tmp_path / 'product-evidence-blobs').iterdir())) == 2
     for receipt, original, records, selected in receipts:

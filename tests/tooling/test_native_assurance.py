@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import zipfile
 
 import pytest
 
@@ -28,7 +30,24 @@ def test_native_package_uses_the_sdk_pipeline_install_without_requalifying_the_a
     assert "command('archive-install'" not in source
 
 
-@pytest.mark.parametrize('fault', ['status', 'digest', 'install', 'qualification', 'commands', 'command'])
+def test_package_terminal_inventory_matches_producer_after_artifact_relocation(tmp_path):
+    result = {'status': 'PASS', 'archive_sha256': 'a'*64,
+        'installed': {'prefix': '/original/runner/content-addressed/sdk'},
+        'installed_qualification': {'status': 'PASS', 'commands': [
+            {'name': 'compile', 'exit_code': 0}, {'name': 'execute', 'exit_code': 0}]}}
+    producer = tmp_path / 'producer/package';producer.mkdir(parents=True)
+    (producer / 'release.json').write_text(json.dumps(result))
+    archive = tmp_path / 'package.zip'
+    with zipfile.ZipFile(archive, 'w') as packed:
+        packed.write(producer / 'release.json', 'package/release.json')
+    shutil.rmtree(producer.parent)
+    destination = tmp_path / 'different-gate-checkout'
+    with zipfile.ZipFile(archive) as packed: packed.extractall(destination)
+    assert evidence.suite_results(destination, 'package') == package_execution(result)
+
+
+@pytest.mark.parametrize('fault', ['status', 'digest', 'malformed-digest', 'install', 'relative-prefix',
+    'qualification', 'commands', 'command', 'timeout', 'boolean-exit'])
 def test_native_package_rejects_incomplete_sdk_pipeline_evidence(fault):
     result = {'status': 'PASS', 'archive_sha256': 'a' * 64,
               'installed': {'prefix': '/content-addressed/sdk'},
@@ -36,10 +55,14 @@ def test_native_package_rejects_incomplete_sdk_pipeline_evidence(fault):
                   {'name': 'execute', 'exit_code': 0}]}}
     if fault == 'status': result['status'] = 'FAIL'
     elif fault == 'digest': result['archive_sha256'] = ''
+    elif fault == 'malformed-digest': result['archive_sha256'] = 'not-an-archive-digest'
     elif fault == 'install': result['installed'] = {}
+    elif fault == 'relative-prefix': result['installed']['prefix'] = 'unowned/sdk'
     elif fault == 'qualification': result['installed_qualification']['status'] = 'FAIL'
     elif fault == 'commands': result['installed_qualification']['commands'] = []
-    else: result['installed_qualification']['commands'][0]['exit_code'] = 1
+    elif fault == 'command': result['installed_qualification']['commands'][0]['exit_code'] = 1
+    elif fault == 'timeout': result['installed_qualification']['commands'][0]['timed_out'] = True
+    else: result['installed_qualification']['commands'][0]['exit_code'] = False
     with pytest.raises(ValueError, match='installed archive qualification'):
         package_execution(result)
 
@@ -101,13 +124,60 @@ def test_sanitizer_product_gate_requires_real_deduplicated_campaign_store(tmp_pa
         'expected_owners': list(expected), 'runtime_profiles': [{} for _ in range(6)],
         'product_evidence_store': {
             'schema': 'objc3c.product-evidence-shared-store.v1', 'owners': 13, 'references': 1,
-            'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': str(blobs)}}
+            'private_bytes': 2, 'stored_bytes': 1, 'deduplicated_bytes': 1, 'path': 'product-evidence-blobs'}}
     receipt = campaign / 'qualification.json';receipt.write_text(json.dumps(report))
     assert len(evidence.suite_results(tmp_path, 'sanitizer-products')) == 13
     report['product_evidence_store']['deduplicated_bytes'] = 0
     receipt.write_text(json.dumps(report))
     with pytest.raises(ValueError, match='owner/profile matrix'):
         evidence.suite_results(tmp_path, 'sanitizer-products')
+
+
+def test_actual_shared_product_store_survives_upload_without_private_symlinks(tmp_path):
+    from compression import zstd
+    import hashlib
+    from scripts.objc3c_toolchain.product_evidence import blob_bytes, consolidate_campaign_blobs
+    producer = tmp_path / 'original-runner/results'
+    campaign = producer / 'sanitizer-products/campaign'
+    names = ['structured', 'native-async', 'coroutines', 'c-frame-bridge', 'installed-ownership',
+        *(kind+'-'+sanitizer+'-'+optimization for kind in ('features', 'factories')
+          for sanitizer in ('address-undefined', 'thread') for optimization in ('O0', 'O2'))]
+    payload = b'exact retained replay source bytes'
+    signature = hashlib.sha256(payload).hexdigest();packed = zstd.compress(payload)
+    record = {'blob': 'blobs/'+signature+'.zst', 'sha256': signature, 'bytes': len(payload),
+        'encoding': 'zstd', 'stored_bytes': len(packed), 'stored_sha256': hashlib.sha256(packed).hexdigest()}
+    for name in names:
+        root = campaign / name / 'product-evidence';(root / 'blobs').mkdir(parents=True)
+        (root / record['blob']).write_bytes(packed)
+        (root / 'qualification.json').write_text(json.dumps({
+            'schema': 'objc3c.sanitizer-product-evidence.v1', 'status': 'PASS', 'records': [record]}))
+    store = consolidate_campaign_blobs(campaign)
+    assert store['path'] == 'product-evidence-blobs'
+    report = {'status': 'PASS', 'owners': [{'name': name, 'status': 'PASS'} for name in names],
+        'expected_owners': names, 'runtime_profiles': [{} for _ in range(6)], 'product_evidence_store': store}
+    (campaign / 'qualification.json').write_text(json.dumps(report))
+    assert len(evidence.suite_results(producer, 'sanitizer-products')) == 13
+    archive = tmp_path / 'native-results.zip'
+    with zipfile.ZipFile(archive, 'w') as output:
+        for path in evidence.native_files(producer / 'sanitizer-products'):
+            output.write(path, path.relative_to(producer))
+    shutil.rmtree(producer.parent)
+    gate = tmp_path / 'relocated-gate/evidence'
+    with zipfile.ZipFile(archive) as contents: contents.extractall(gate)
+    assert len(evidence.suite_results(gate, 'sanitizer-products')) == 13
+    for name in names:
+        root = gate / 'sanitizer-products/campaign' / name / 'product-evidence'
+        assert not (root / 'blobs').exists()
+        assert blob_bytes(root, record) == payload
+    # An invalid namespace cannot redirect the reader even with outer hashes
+    # recomputed. The only admitted store is the local campaign-owned directory.
+    receipt = gate / 'sanitizer-products/campaign/qualification.json'
+    for path in ('../unowned', '/original/runner/product-evidence-blobs',
+                 'product-evidence-blobs/../unowned'):
+        report['product_evidence_store']['path'] = path
+        receipt.write_text(json.dumps(report))
+        with pytest.raises(ValueError, match='owner/profile matrix'):
+            evidence.suite_results(gate, 'sanitizer-products')
 
 
 @pytest.mark.parametrize('paths', [[], None, ['native/objc3c/src/runtime/x.cpp'],
