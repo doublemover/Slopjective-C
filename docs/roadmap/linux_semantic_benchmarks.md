@@ -54,5 +54,22 @@ samples. A separate two-SDK experiment compares the admitted 75cfe6c21f70 and
 616ca86288bb compiler checkpoints with eighty-seven retained samples. Both use
 instrumented compilers and ordinary runtime archives; the result is an
 uncalibrated diagnostic-build comparison, not an uninstrumented speedup claim.
-Trusted baseline governance, runner-specific noise/effect calibration, memory
-budgets and further workload families remain open under #8291.
+
+Independent hosted receipts can now be pooled without converting observed noise
+into an invented product limit:
+
+```sh
+python3 -B -m scripts.objc3c_toolchain.semantic_benchmark_calibration \
+  --receipt /path/to/run-a/qualification.json --label RUN_A_URL \
+  --receipt /path/to/run-b/qualification.json --label RUN_B_URL \
+  --output out/semantic-workload-calibration
+```
+
+Calibration rejects duplicate receipts and different host, SDK, workload,
+instrumentation or repetition contexts. It recomputes every summary from raw
+samples, rechecks runtime semantic work, then retains pooled and per-receipt
+medians, actual deviation, per-workload RSS, scaling points and total runner and
+receipt cost. The output remains explicitly advisory: measured spread does not
+become a regression allowance. Promotion still requires reviewed per-workload
+absolute effects and memory goals. Further workload families remain open under
+#8291.

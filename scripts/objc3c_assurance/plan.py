@@ -23,6 +23,7 @@ SWIFT = FOUNDATION + ('toolchains/swift/', 'tests/foreign/swift_consumer/',
     'native/objc3c/src/clang_foundation/interface_', 'native/objc3c/src/clang_foundation/module_',
     'native/objc3c/src/clang_foundation/objc3_cli_', '.github/workflows/native-assurance.yml')
 BENCHMARK = FOUNDATION + ('tests/benchmarks/', 'scripts/objc3c_toolchain/semantic_benchmarks.py',
+    'scripts/objc3c_toolchain/semantic_benchmark_calibration.py',
     'scripts/objc3c_assurance/', 'native/objc3c/', 'stdlib/', '.github/workflows/native-assurance.yml')
 SANITIZER_PRODUCTS = RUNTIME + PACKAGE + ('scripts/objc3c_toolchain/sanitizer_',
     'scripts/objc3c_toolchain/runtime_instrumentation.py',

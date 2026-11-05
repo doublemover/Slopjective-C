@@ -10,6 +10,40 @@ from scripts.objc3c_toolchain.semantic_benchmarks import (SCALES, expected_runti
     frontend_source, runtime_result, sample, summarize)
 
 
+def calibration_receipt(path, *, offset=0.0):
+    workloads = [phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES]
+    samples, summaries = [], []
+    for workload_index, workload in enumerate(workloads):
+        scale = int(workload.split('-')[1])
+        rows = []
+        for iteration in range(4):
+            value = 0.01*(workload_index+1)+offset+iteration*0.0001
+            row = {'workload': workload, 'sdk_index': 0, 'warmup': iteration == 0,
+                'exit_code': 0, 'timed_out': False, 'wall_seconds': value,
+                'cpu_seconds': value/2, 'peak_process_rss_kib': 1024+workload_index}
+            if workload.startswith('runtime-'):
+                nanoseconds = int(value*1e8)
+                row.update(work_seconds=nanoseconds/1e9,
+                           semantic_result={**expected_runtime(scale), 'nanoseconds': nanoseconds})
+            rows.append(row);samples.append(row)
+        measured = rows[1:]
+        summary = {'sdk_index': 0, 'workload': workload, 'wall': summarize(measured)}
+        if workload.startswith('runtime-'): summary['work'] = summarize(measured, 'work_seconds')
+        summaries.append(summary)
+    report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'PASS', 'correctness': 'PASS',
+        'workload_version': 1, 'timing_decision': 'advisory-inconclusive-uncalibrated',
+        'repetitions': 3, 'summaries': summaries, 'samples': samples,
+        'delay_control': {'status': 'PASS', 'semantic_output_unchanged': True},
+        'host': {'system': 'Linux-runner', 'kernel': 'kernel', 'cpu_model': 'cpu', 'cpu_quota': 'max',
+            'cpuset': '0-3', 'memory_limit': 'max', 'affinity': [0, 1, 2, 3], 'container': True,
+            'runtime_threads': 1, 'noise_limits': 'shared'},
+        'sdks': [{'seal_sha256': 'a'*64, 'source_build_id': 'matched-source', 'instrumentation': {}}],
+        'inputs': {'/checkout/scripts/objc3c_toolchain/semantic_benchmarks.py': 'b'*64,
+            '/checkout/tests/benchmarks/collections.cpp': 'c'*64}}
+    path.write_text(json.dumps(report))
+    return report
+
+
 @pytest.mark.parametrize('scale', SCALES)
 def test_frontend_workload_scales_real_carrier_guard_match_and_cleanup_forms(scale):
     text = frontend_source(scale)
@@ -169,3 +203,42 @@ def test_semantic_work_changes_select_the_existing_native_lane(path):
     plan = select([path], head='a'*40, base='b'*40, tested='c'*40)
     suite = next(row for row in plan['suites'] if row['id'] == 'semantic-workloads')
     assert 'semantic-work-count' in suite['execution'] and 'advisory-timing' in suite['execution']
+
+
+def test_independent_hosted_receipts_calibrate_observed_variance_and_cost_only(tmp_path):
+    from scripts.objc3c_toolchain.semantic_benchmark_calibration import calibrate
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    first, second = tmp_path / 'first.json', tmp_path / 'second.json'
+    calibration_receipt(first)
+    calibration_receipt(second, offset=0.0002)
+    report = calibrate(repo, [first, second], repo / 'out/calibration',
+                       labels=['workflow-run-a', 'workflow-run-b'])
+    assert report['status'] == 'PASS' and report['decision'] == 'calibrated-observation-advisory'
+    assert report['independent_receipts'] == 2 and report['samples_per_workload'] == 6
+    assert len(report['observations']) == 9 and len(report['scaling']) == 3
+    assert all(row['pooled']['samples'] == 6 and row['decision'] == 'observed-runner-variance-only'
+               for row in report['observations'])
+    assert report['measured_cost']['commands'] == 72
+    assert 'do not define a product regression budget' in report['gate_policy']
+    assert json.loads((repo / 'out/calibration/calibration.json').read_text()) == report
+
+
+@pytest.mark.parametrize('mutation', ['duplicate', 'host', 'sdk', 'summary', 'oracle', 'warmup'])
+def test_calibration_rejects_reused_or_incompatible_or_corrupt_receipts(tmp_path, mutation):
+    from scripts.objc3c_toolchain.semantic_benchmark_calibration import calibrate
+    repo = tmp_path / 'repo';(repo / 'out').mkdir(parents=True)
+    first, second = tmp_path / 'first.json', tmp_path / 'second.json'
+    calibration_receipt(first)
+    report = calibration_receipt(second, offset=0.0002)
+    if mutation == 'duplicate': second.write_text(json.dumps(json.loads(first.read_text()), indent=2))
+    elif mutation == 'host': report['host']['cpu_model'] = 'different';second.write_text(json.dumps(report))
+    elif mutation == 'sdk': report['sdks'][0]['seal_sha256'] = 'd'*64;second.write_text(json.dumps(report))
+    elif mutation == 'summary': report['summaries'][0]['wall']['median'] += 1;second.write_text(json.dumps(report))
+    elif mutation == 'oracle':
+        row = next(row for row in report['samples'] if row['workload'] == 'runtime-32')
+        row['semantic_result']['completed_operations'] = 0;second.write_text(json.dumps(report))
+    elif mutation == 'warmup':
+        next(row for row in report['samples'] if row['workload'] == 'syntax-32')['warmup'] = False
+        second.write_text(json.dumps(report))
+    with pytest.raises(ValueError):
+        calibrate(repo, [first, second], repo / 'out/calibration')
