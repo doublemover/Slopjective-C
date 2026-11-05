@@ -18,6 +18,7 @@ from .source_coverage import binary_ids
 
 PROFILE = 'compiler-source-coverage'
 FLAGS = ('-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic')
+EXPORT_FLAGS = ('--check-binary-ids', '--skip-expansions', '--skip-functions')
 PATCH_FILE = re.compile(r'^\+\+\+ b/((?:clang|llvm)/\S+)$')
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
 
@@ -26,6 +27,26 @@ def require_binary_ids(observed: set[str], *, required: set[str], allowed: set[s
     """Require all executed mains while admitting only covered loaded modules."""
     if not required <= observed <= allowed:
         raise ValueError(f'compiler {kind} differ from the executed binary identities')
+
+
+def unique_binary_paths(paths: list[Path], identities: dict[str, str]) -> list[Path]:
+    """Select one coverage object for every admitted ELF build identity."""
+    result, seen = [], set()
+    for path in paths:
+        identity = identities.get(str(path))
+        if not identity: raise ValueError('coverage export binary lacks an admitted identity')
+        if identity in seen: continue
+        seen.add(identity);result.append(path)
+    return result
+
+
+def select_coverage_profiles(profile_ids: dict[Path, str], expected_ids: set[str]) -> tuple[list[Path], list[Path]]:
+    """Keep covered implementation modules separate from support-tool counters."""
+    selected = [path for path, identity in profile_ids.items() if identity in expected_ids]
+    selected_ids = {profile_ids[path] for path in selected}
+    require_binary_ids(selected_ids, required=expected_ids, allowed=expected_ids,
+                       kind='selected coverage profiles')
+    return selected, [path for path in profile_ids if path not in selected]
 
 
 def patched_inventory(repo: Path, source: Path) -> tuple[dict, dict]:
@@ -233,6 +254,7 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
             if len(values) != 1: raise ValueError('instrumented support binary lacks one build identity')
             execution_binary_identity[str(binary)] = values[0]
         allowed_profile_ids = set(execution_binary_identity.values())
+        export_binaries = unique_binary_paths(binaries, binary_identity)
         report['objects'] = compile_inventory(build, source, eligible)
         before = {row['object']: row['sha256'] for row in report['objects']}
         lit_json = output / 'lit-results.json'
@@ -255,25 +277,33 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         for directory in sorted(profile_root.iterdir()):
             profiles.extend(compiler_raw_profiles(directory))
         filename_ids = set()
+        profile_ids = {}
         for profile in profiles:
             matched = re.fullmatch(r'([0-9a-f]{40})-.+\.profraw', profile.name)
             if not matched: raise ValueError('compiler raw profile omitted its executable build identity')
-            filename_ids.add(matched[1])
+            filename_ids.add(matched[1]);profile_ids[profile] = matched[1]
         report['raw_profile_binary_ids'] = sorted(filename_ids);save()
         require_binary_ids(filename_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
                            kind='raw profiles')
+        selected_profiles, excluded_profiles = select_coverage_profiles(profile_ids, expected_ids)
+        report['excluded_execution_profiles'] = {
+            'count': len(excluded_profiles),
+            'bytes': sum(profile.stat().st_size for profile in excluded_profiles),
+            'binary_ids': sorted({profile_ids[profile] for profile in excluded_profiles}),
+            'reason': 'Instrumented lit support tools are identity-checked execution dependencies, not part of the compiler implementation denominator.'}
         merged = output / 'compiler.profdata'
-        run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *profiles, '-o', merged], profile=False)
+        run('merge', [tools['llvm-profdata'], 'merge', '--sparse', *selected_profiles, '-o', merged], profile=False)
         identifiers = run('profile-binary-ids', [tools['llvm-profdata'], 'show', '--binary-ids', merged], profile=False).read_text()
         observed_ids = binary_ids(identifiers)
-        require_binary_ids(observed_ids, required=expected_profile_ids, allowed=allowed_profile_ids,
+        require_binary_ids(observed_ids, required=expected_ids, allowed=expected_ids,
                            kind='merged profile')
         export = output / 'coverage-export.json'
-        run('export', [tools['llvm-cov'], 'export', binaries[0],
-            *('--object='+str(binary) for binary in binaries[1:]),
-            '--check-binary-ids', '--instr-profile='+str(merged),
-            '--skip-expansions', '--compilation-dir='+str(build),
+        run('export', [tools['llvm-cov'], 'export', export_binaries[0],
+            *('--object='+str(binary) for binary in export_binaries[1:]),
+            *EXPORT_FLAGS, '--instr-profile='+str(merged), '--compilation-dir='+str(build),
             *(source / name for name in eligible)], profile=False, timeout=1800, stdout=export)
+        if (output / 'logs/export.stderr.log').read_text().strip():
+            raise ValueError('compiler source coverage export emitted mismatch diagnostics')
         report['source_coverage'] = read_export(export, source=source, eligible=eligible, changed=changed)
         if not any(row['state'] == 'executed' for row in report['source_coverage'].values()):
             raise ValueError('patched compiler coverage has no executed source')
@@ -286,6 +316,9 @@ def qualify(repo: Path, output: Path, *, jobs=2) -> dict:
         report.update(status='PASS', profile_sha256=digest(merged), binary_ids=sorted(observed_ids),
                       covered_binary_ids=binary_identity,
                       executed_binary_ids=execution_binary_identity,
+                      exported_binaries=[{'path': str(path),
+                                          'build_id': execution_binary_identity[str(path)]}
+                                         for path in export_binaries],
                       artifact_bytes=sum(path.stat().st_size for path in output.rglob('*') if path.is_file()))
     except BaseException as error:
         report.update(status='FAIL', error=str(error));raise

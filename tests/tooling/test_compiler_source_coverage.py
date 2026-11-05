@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from scripts.objc3c_toolchain.compiler_source_coverage import (
-    FLAGS, compile_inventory, merged_ranges, patched_inventory, read_export,
-    require_binary_ids,
+    EXPORT_FLAGS, FLAGS, compile_inventory, merged_ranges, patched_inventory, read_export,
+    require_binary_ids, select_coverage_profiles, unique_binary_paths,
 )
 
 
@@ -61,6 +61,10 @@ def test_changed_range_normalization_is_stable():
     assert merged_ranges([[7, 9], [1, 2], [3, 5], [9, 12]]) == [[1, 5], [7, 12]]
 
 
+def test_export_omits_unused_global_function_table():
+    assert EXPORT_FLAGS == ('--check-binary-ids', '--skip-expansions', '--skip-functions')
+
+
 def test_profile_ids_require_mains_and_reject_foreign_modules():
     require_binary_ids({'clang', 'llvm', 'clang-cpp'}, required={'clang'},
                        allowed={'clang', 'llvm', 'clang-cpp'}, kind='profile')
@@ -68,3 +72,21 @@ def test_profile_ids_require_mains_and_reject_foreign_modules():
         with pytest.raises(ValueError, match='binary identities'):
             require_binary_ids(observed, required={'clang'},
                                allowed={'clang', 'llvm', 'clang-cpp'}, kind='profile')
+
+
+def test_export_uses_one_object_per_admitted_build_identity(tmp_path):
+    clang, installed_clang, support = (tmp_path / name for name in ('clang', 'installed-clang', 'support'))
+    identities = {str(clang): 'compiler', str(installed_clang): 'compiler', str(support): 'support'}
+    assert unique_binary_paths([clang, installed_clang, support], identities) == [clang, support]
+    with pytest.raises(ValueError, match='admitted identity'):
+        unique_binary_paths([tmp_path / 'foreign'], identities)
+
+
+def test_support_tool_profiles_are_excluded_from_compiler_denominator(tmp_path):
+    clang, library, support = (tmp_path / name for name in ('clang.profraw', 'library.profraw', 'support.profraw'))
+    selected, excluded = select_coverage_profiles(
+        {clang: 'clang', library: 'library', support: 'support'}, {'clang', 'library'})
+    assert selected == [clang, library]
+    assert excluded == [support]
+    with pytest.raises(ValueError, match='binary identities'):
+        select_coverage_profiles({clang: 'clang', support: 'support'}, {'clang', 'library'})
