@@ -26,6 +26,20 @@ FIRST_PARTY_PROFILE_LIMIT = 256 * 1024**2
 COMMAND_TIMEOUT = 900
 # Clang-facing façade units remain separately bounded from execution/export.
 BUILD_TIMEOUT = 3600
+MAX_TEST_TIMEOUT = 900
+
+
+def suite_timeout(policy: dict, component: str, name: str) -> int:
+    """Return a reviewed, bounded timeout for an instrumented test shard."""
+    values = policy.get('test_timeouts_seconds')
+    selected = {f'{owner}:{test}' for owner in ('frontend', 'runtime')
+                for test in policy.get(owner+'_tests', [])}
+    if (type(values) is not dict or set(values) - ({'default'} | selected) or
+            type(values.get('default')) is not int or
+            any(type(value) is not int or not 1 <= value <= MAX_TEST_TIMEOUT
+                for value in values.values())):
+        raise ValueError('source coverage policy has invalid test timeout budgets')
+    return values.get(f'{component}:{name}', values['default'])
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
@@ -295,8 +309,10 @@ def qualify(repo, output, *, jobs=2, reuse_build_receipt=None):
                 raw = work / 'raw';raw.mkdir()
                 case_env = {**env, 'LLVM_PROFILE_FILE': str(raw / '%p-%m.profraw')}
                 result = work / 'tests.xml'
+                timeout = suite_timeout(policy, component, name)
                 run(component+'-'+name, ['ctest', '--test-dir', build, '--no-tests=error', '--output-on-failure',
-                    '-R', '^'+re.escape(name)+'$', '--timeout', '120', '--output-junit', result], environment=case_env)
+                    '-R', '^'+re.escape(name)+'$', '--timeout', str(timeout), '--output-junit', result],
+                    environment=case_env, timeout=timeout+30)
                 executions = junit(result, expected={name})
                 profiles = raw_profiles(raw, limit=FIRST_PARTY_PROFILE_LIMIT)
                 profile = work / 'merged.profdata'

@@ -4,9 +4,26 @@ import shlex
 
 import pytest
 
-from scripts.objc3c_toolchain.source_coverage import binary_ids, compile_inventory, profile_runtime, raw_profiles, read_export
+from scripts.objc3c_toolchain.source_coverage import (
+    binary_ids, compile_inventory, profile_runtime, raw_profiles, read_export,
+    suite_timeout,
+)
 
 FLAGS = ['-fprofile-instr-generate', '-fcoverage-mapping', '-fprofile-update=atomic']
+
+
+def test_instrumented_suite_timeouts_are_reviewed_and_bounded():
+    policy = {'frontend_tests': ['ordinary', 'heavy'], 'runtime_tests': [],
+              'test_timeouts_seconds': {'default': 120, 'frontend:heavy': 300}}
+    assert suite_timeout(policy, 'frontend', 'ordinary') == 120
+    assert suite_timeout(policy, 'frontend', 'heavy') == 300
+    for invalid in (
+            {'default': 0},
+            {'default': 120, 'frontend:unknown': 300},
+            {'default': 120, 'frontend:heavy': 901}):
+        policy['test_timeouts_seconds'] = invalid
+        with pytest.raises(ValueError, match='timeout budgets'):
+            suite_timeout(policy, 'frontend', 'heavy')
 
 
 def test_profile_runtime_is_exact_nonempty_pinned_target_input(tmp_path):

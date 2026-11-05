@@ -21,5 +21,9 @@
     "objc3_generic_associative_service",
     "objc3_generic_collection_ownership"
   ],
+  "test_timeouts_seconds": {
+    "default": 120,
+    "frontend:objc3_interface_emitter": 300
+  },
   "purpose": "Measured first-party and patched-compiler implementation coverage with separate denominators and patch-hunk views. No uncalibrated percentage threshold."
 }
