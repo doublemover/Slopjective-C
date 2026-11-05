@@ -1,7 +1,7 @@
 # Current semantic workload benchmarks
 
-The current workload version **2** extends the original nine rows to **18**.
-It adds three public-runtime families at 32, 256 and 2,048 elements, with sixteen
+The current workload version **3** extends the original nine rows to **24**.
+It adds five public-runtime families at 32, 256 and 2,048 elements, with sixteen
 rounds per sample:
 
 - UTF-8 builder construction, exact scalar/byte counts, byte traversal, scalar
@@ -13,17 +13,29 @@ rounds per sample:
   before group quiescence. Completion-order consumption checks every child.
   A manual executor admits batches of 256 below mailbox capacity; this measures
   sustained scheduling work rather than worker-pool throughput.
+- Dependency cancellation that suspends each task on a shared pending task,
+  cancels a bounded group, and verifies two resumes, one cancelled completion and
+  one frame destruction. The independent dependency remains uncancelled through
+  group quiescence and is disposed explicitly afterwards.
+- Four private worker executors running two-resume tasks in bounded groups.
+  Actual callback affinity proves all four destinations executed. Completed-task
+  throughput includes executor startup, frame allocation, join, result consumption
+  and worker shutdown, rather than measuring pending submissions.
 
 The receipt inventories each row's inputs/generator, scale, compiler flags,
 seed/rounds, completed-work oracle, cache state, measurement boundary and timeout.
 Each new family has a paired bounded-delay control with unchanged semantic
-results. The native gate requires every actual warmup and repetition, all three
+results. The native gate requires every actual warmup and repetition, all five
 delay controls and complete lifetime counters. Calibration compares matching
-workload versions and produces separate scaling curves for all six phases and
+workload versions and produces separate scaling curves for all eight phases and
 families. Compiler object samples remove the previous object before execution;
 timeouts and interruptions kill/reap the process session. Native regression
-controls compile and execute all nine new family/scale combinations and reject
-wrong-checksum, missing-destruction and missing-callback implementations.
+controls compile and execute all fifteen new family/scale combinations in
+ordinary and ASan/UBSan builds of the runtime and client. Wrong-checksum,
+missing-destruction, missing-callback and missing-cancellation implementations
+are rejected. Per-sample task throughput and its summaries are recomputed from
+native callback counts and work intervals. Thread counts are recorded per row;
+worker workloads use one caller plus four scheduling threads.
 
 ```sh
 python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
@@ -33,8 +45,8 @@ python3 -B -m scripts.objc3c_toolchain.semantic_benchmarks \
 
 These local public-runtime controls do not replace qualification with the sealed
 SDK. Source/PCH/interface import costs, ARC/MRC object lifetimes, generated async
-frames, cancellation workloads, worker-pool throughput and cold build/install
-costs remain separate #8291 work. Timing remains advisory pending observed
+frames, canonical shared-worker-pool behavior and cold build/install costs remain
+separate #8291 work. Timing remains advisory pending observed
 runner variance and reviewed latency, throughput and memory goals.
 
 Issue [#8291](https://github.com/doublemover/Slopjective-C/issues/8291) adds real

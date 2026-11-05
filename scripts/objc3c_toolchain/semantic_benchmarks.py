@@ -15,7 +15,7 @@ from .binary_packages import digest, find_installed_shared_library, write_json
 from .package import SCHEMA, _digest, inventory, verify_sdk
 import shutil
 from .compiler_instrumentation import loaded_graph
-from .semantic_runtime_oracles import FAMILIES, expected_work, runtime_workload_result
+from .semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, FAMILIES, expected_work, runtime_workload_result
 from .llvm_ir_execution import _kill_session
 from .sanitizer_policy import require_clean_diagnostic
 
@@ -24,11 +24,11 @@ ROUNDS, SEED = 16, 17
 
 
 def workload_names(version=1):
-    if type(version) is not int or version not in (1, 2):
+    if type(version) is not int or version not in (1, CURRENT_WORKLOAD_VERSION):
         raise ValueError('unreviewed semantic workload version')
     return {phase+'-'+str(scale) for phase in ('syntax', 'object', 'runtime') for scale in SCALES} | (
         {'runtime-'+family+'-'+str(scale) for family in FAMILIES for scale in SCALES}
-        if version == 2 else set())
+        if version == CURRENT_WORKLOAD_VERSION else set())
 
 
 def semantic_result(text, workload):
@@ -37,7 +37,7 @@ def semantic_result(text, workload):
             runtime_workload_result(text, name.removeprefix('runtime-'), int(scale)))
 
 
-def workload_inventory(version=2):
+def workload_inventory(version=CURRENT_WORKLOAD_VERSION):
     rows = []
     for name in sorted(workload_names(version)):
         phase, scale = name.rsplit('-', 1);scale = int(scale)
@@ -52,9 +52,14 @@ def workload_inventory(version=2):
             'command_identity': 'Each sample retains complete argv, working directory and SDK/resource/loader identities.',
             'cache_state': 'fresh output artifacts; warm shared filesystem cache; no compiler cache launcher',
             'measurement': 'steady-clock semantic work including teardown' if runtime else 'compiler command wall time',
-            'runtime_threads': 1 if runtime else None, 'rounds': ROUNDS if runtime else None,
+            'runtime_threads': 5 if family == 'worker-tasks' else 1 if runtime else None,
+            'worker_threads': 4 if family == 'worker-tasks' else 0,
+            'rounds': ROUNDS if runtime else None,
             'seed': SEED if runtime and family != 'text' else None,
-            'maximum_admitted_task_batch': 256 if family == 'task-group-actor' else None,
+            'maximum_admitted_task_batch': 256 if family in (
+                'task-group-actor', 'task-group-cancel', 'worker-tasks') else None,
+            'throughput': 'completed task callbacks per second including allocation, join and teardown'
+                if family in ('task-group-actor', 'task-group-cancel', 'worker-tasks') else None,
             'expected': (expected_runtime(scale) if phase == 'runtime' else
                          expected_work(family, scale) if runtime else {'compiler_exit_code': 0}),
             'oracle': 'independent checksum, completed-work and lifetime accounting' if runtime else
@@ -150,7 +155,8 @@ def host_context():
         'cpu_model': next(line.split(':', 1)[1].strip() for line in read('/proc/cpuinfo').splitlines() if line.startswith('model name')),
         'cpu_quota': read('/sys/fs/cgroup/cpu.max'), 'cpuset': read('/sys/fs/cgroup/cpuset.cpus.effective'),
         'memory_limit': read('/sys/fs/cgroup/memory.max'), 'affinity': sorted(os.sched_getaffinity(0)),
-        'container': Path('/.dockerenv').exists(), 'runtime_threads': 1,
+        'container': Path('/.dockerenv').exists(),
+        'runtime_threads': 'Per-workload inventory: one caller and zero or four scheduling workers.',
         'noise_limits': 'Shared runner; frequency/contention uncontrolled. Timing remains advisory.'}
 
 
@@ -200,8 +206,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                      Path(__file__).with_name('semantic_runtime_oracles.py')]
     frozen = {str(path): digest(path) for path in fixtures}
     report = {'schema': 'objc3c.semantic-benchmarks.v1', 'status': 'running', 'host': host_context(),
-        'workload_version': 2 if extended_runtime else 1, 'inputs': frozen,
-        'workloads': workload_inventory(2 if extended_runtime else 1),
+        'workload_version': CURRENT_WORKLOAD_VERSION if extended_runtime else 1, 'inputs': frozen,
+        'workloads': workload_inventory(CURRENT_WORKLOAD_VERSION if extended_runtime else 1),
         'repetitions': repetitions, 'samples': [], 'order': [],
         'scope': 'Warm frontend syntax/object generation and sustained concrete i32 map creation/insertion/lookup/count/teardown. No cold build or filesystem, archive, ARC object lifetime or full language claim.',
         'timing_decision': 'advisory-inconclusive-uncalibrated', 'correctness': 'running',
@@ -211,8 +217,9 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
     if extended_runtime:
         report['scope'] += (' Extended runtime: UTF-8 builder/scalar/byte/slice/concat/search and teardown; '
             'generic-array bounded mutation and copy/destruction accounting; '
-            'manual-executor actor task suspension, completion, group consumption and quiescence. '
-            'This does not measure worker-pool throughput or compiler-generated async frames.')
+            'manual-executor actor suspension and dependency cancellation through group/frame quiescence; '
+            'four private worker executors running suspended tasks through joined completion. '
+            'Worker timings include executor creation/shutdown. No compiler-generated async frame claim.')
     states = []
     def run(label, args, state):
         log = output / (label+'.log')
@@ -315,6 +322,8 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
                     if name.startswith('runtime-'):
                         row['semantic_result'] = semantic_result(Path(row['log']).read_text(), name)
                         row['work_seconds'] = row['semantic_result']['nanoseconds']/1e9
+                        if row['semantic_result'].get('callbacks', 0):
+                            row['task_completions_per_second'] = row['semantic_result']['callbacks']/row['work_seconds']
                     elif name.startswith('object-'):
                         artifact = Path(command[-1])
                         if not artifact.is_file() or not artifact.stat().st_size:
@@ -356,7 +365,11 @@ def measure(repo, output, *, sdk, baseline_sdk=None, repetitions=3, extended_run
             'wall': summarize([row for row in report['samples'] if row.get('workload') == name and
                 row['sdk_index'] == state['index'] and not row.get('warmup')]),
             **({'work': summarize([row for row in report['samples'] if row.get('workload') == name and
-                row['sdk_index'] == state['index'] and not row.get('warmup')], 'work_seconds')} if name.startswith('runtime-') else {})
+                row['sdk_index'] == state['index'] and not row.get('warmup')], 'work_seconds')} if name.startswith('runtime-') else {}),
+            **({'task_completions_per_second': summarize([row for row in report['samples']
+                if row.get('workload') == name and row['sdk_index'] == state['index'] and
+                row.get('warmup') is False], 'task_completions_per_second')}
+                if name.startswith(('runtime-task-', 'runtime-worker-')) else {})
         } for state in states for name in state['rows']]
         report['comparisons'] = []
         if len(states) == 2:

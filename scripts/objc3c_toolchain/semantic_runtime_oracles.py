@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 import math
 
-FAMILIES = ('text', 'generic-array', 'task-group-actor')
+CURRENT_WORKLOAD_VERSION = 3
+FAMILIES = ('text', 'generic-array', 'task-group-actor', 'task-group-cancel', 'worker-tasks')
 
 
 def expected_work(family, scale, *, rounds=16, seed=17):
@@ -17,9 +18,12 @@ def expected_work(family, scale, *, rounds=16, seed=17):
     if family == 'generic-array':
         return {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)),
                 'completed_operations': rounds*(2*scale+5)}
-    return {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)//2),
+    tasks = {**common, 'checksum': rounds*(scale*seed+scale*(scale-1)//2),
             'completed_operations': rounds*4*scale, 'payload_copies': 0,
             'destructions': rounds*scale, 'resumes': rounds*2*scale, 'callbacks': rounds*scale}
+    if family == 'task-group-cancel': tasks['cancelled'] = rounds*scale
+    elif family == 'worker-tasks': tasks['worker_mask'] = 15
+    return tasks
 
 
 def runtime_workload_result(text, family, scale):

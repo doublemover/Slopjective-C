@@ -163,13 +163,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
             execution_result(json.dumps(row.get('result')))
         return cases
     if name == 'semantic-workloads':
-        from scripts.objc3c_toolchain.semantic_benchmarks import semantic_result, workload_inventory, workload_names
-        from scripts.objc3c_toolchain.semantic_runtime_oracles import validate_delay_controls
+        from scripts.objc3c_toolchain.semantic_benchmarks import semantic_result, summarize, workload_inventory, workload_names
+        from scripts.objc3c_toolchain.semantic_runtime_oracles import CURRENT_WORKLOAD_VERSION, validate_delay_controls
         result = read('measurement/qualification.json')
-        expected = workload_names(2)
+        expected = workload_names(CURRENT_WORKLOAD_VERSION)
         summaries, samples = result.get('summaries', []), result.get('samples', [])
-        if (result.get('correctness') != 'PASS' or result.get('workload_version') != 2 or
-                result.get('workloads') != workload_inventory(2) or
+        if (result.get('correctness') != 'PASS' or result.get('workload_version') != CURRENT_WORKLOAD_VERSION or
+                result.get('workloads') != workload_inventory(CURRENT_WORKLOAD_VERSION) or
                 result.get('repetitions') != 3 or result.get('timing_decision') != 'advisory-inconclusive-uncalibrated' or
                 len(result.get('sdks', [])) != 1 or len(summaries) != len(expected) or
                 {row['workload'] for row in summaries} != expected or
@@ -183,8 +183,23 @@ def suite_results(root: Path, name: str) -> list[dict]:
             rows = [row for row in samples if row.get('workload') == workload]
             if len(rows) != 4 or len([row for row in rows if row.get('warmup') is False]) != 3:
                 raise ValueError('semantic workload omitted its actual warmup/repetition set')
+            measured = [row for row in rows if row.get('warmup') is False]
+            summary = next(row for row in summaries if row['workload'] == workload)
+            if summary['wall'] != summarize(measured):
+                raise ValueError('semantic workload summary differs from its actual samples')
             if workload.startswith('runtime-'):
-                for row in rows: semantic_result(json.dumps(row.get('semantic_result')), workload)
+                for row in rows:
+                    semantic = semantic_result(json.dumps(row.get('semantic_result')), workload)
+                    if row.get('work_seconds') != semantic['nanoseconds']/1e9:
+                        raise ValueError('semantic workload timer differs from its native result')
+                    if semantic.get('callbacks', 0) and row.get('task_completions_per_second') != (
+                            semantic['callbacks']/row['work_seconds']):
+                        raise ValueError('semantic workload throughput differs from completed work')
+                if summary.get('work') != summarize(measured, 'work_seconds'):
+                    raise ValueError('semantic workload execution summary differs from native work')
+                if workload.startswith(('runtime-task-', 'runtime-worker-')) and summary.get(
+                        'task_completions_per_second') != summarize(measured, 'task_completions_per_second'):
+                    raise ValueError('semantic workload throughput summary differs from native work')
         return summaries
     if name == 'package':
         result = read('release.json')

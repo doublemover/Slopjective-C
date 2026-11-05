@@ -4,6 +4,7 @@
 #include <objc3c/runtime/objc3_runtime_services.h>
 #include <objc3c/runtime/objc3_text.h>
 #include <chrono>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,7 @@
 struct Ledger {
   unsigned long long checksum = 0, operations = 0, copies = 0, destroys = 0;
   unsigned long long resumes = 0, callbacks = 0, live = 0;
+  unsigned long long cancelled = 0, worker_mask = 0;
 };
 static Ledger ledger;
 static void require(bool condition, const std::source_location site = std::source_location::current()) {
@@ -184,6 +186,136 @@ static void task_work(unsigned size, unsigned seed) {
   objc3_actor_release(actor);objc3_executor_release(executor);
 }
 
+static void consume_group(objc3_task_group_t *group, unsigned count, objc3_completion_kind kind) {
+  unsigned consumed = 0;
+  while (true) {
+    objc3_task_t *task = nullptr;
+    const auto status = objc3_task_group_next(group, &task);
+    if (status == OBJC3_SERVICE_CLOSED) break;
+    checked(status);require(task != nullptr);
+    objc3_completion completion{};checked(objc3_task_get_completion(task, &completion));
+    require(completion.kind == kind);
+    objc3_task_release(task);++consumed;
+  }
+  require(consumed == count);
+}
+
+struct CancelFrame { unsigned value; unsigned phase = 0; objc3_task_t *dependency; };
+static void blocked_resume(objc3_task_t *, void *) {}
+static void cancelled_resume(objc3_task_t *task, void *opaque) {
+  auto *frame = static_cast<CancelFrame *>(opaque);
+  ++ledger.resumes;++ledger.operations;
+  if (frame->phase++ == 0) {
+    require(!objc3_task_is_cancel_requested(task));
+    checked(objc3_task_await(task, frame->dependency));return;
+  }
+  require(frame->phase == 2 && objc3_task_is_cancel_requested(task));
+  const objc3_completion completion{sizeof(objc3_completion), OBJC3_SERVICE_ABI_VERSION,
+    OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+  checked(objc3_task_complete(task, &completion));
+}
+static void cancelled_completed(void *opaque, const objc3_completion *completion) {
+  auto *frame = static_cast<CancelFrame *>(opaque);
+  require(frame->phase == 2 && completion->kind == OBJC3_COMPLETION_CANCELLED);
+  ledger.checksum += frame->value;ledger.callbacks += 1;++ledger.operations;++ledger.cancelled;
+}
+static void cancelled_destroy(void *opaque) {
+  require(ledger.live != 0);--ledger.live;ledger.destroys += 1;++ledger.operations;
+  delete static_cast<CancelFrame *>(opaque);
+}
+static void cancellation_work(unsigned size, unsigned seed) {
+  objc3_executor_t *executor = nullptr;objc3_task_t *dependency = nullptr;
+  checked(objc3_executor_create(1, &executor));
+  const objc3_task_start_options blocked{sizeof(objc3_task_start_options), OBJC3_SERVICE_ABI_VERSION,
+    executor, nullptr, blocked_resume, nullptr, nullptr, nullptr, nullptr, nullptr};
+  checked(objc3_task_start(&blocked, &dependency));
+  for (unsigned start = 0; start < size; start += 256) {
+    const unsigned count = size - start < 256 ? size - start : 256;
+    objc3_task_group_t *group = nullptr;checked(objc3_task_group_create(nullptr, &group));
+    const auto initial_resumes = ledger.resumes;
+    for (unsigned i = 0; i < count; ++i) {
+      auto *frame = new CancelFrame{start + i + seed, 0, dependency};++ledger.live;
+      const objc3_task_start_options options{sizeof(objc3_task_start_options), OBJC3_SERVICE_ABI_VERSION,
+        executor, frame, cancelled_resume, cancelled_destroy, cancelled_completed, frame, nullptr, nullptr};
+      objc3_task_t *task = nullptr;checked(objc3_task_start(&options, &task));
+      checked(objc3_task_group_add(group, task));objc3_task_release(task);
+    }
+    unsigned pumps = 0;
+    while (ledger.resumes != initial_resumes + count) {
+      require(++pumps <= count * 4 + 32);
+      uint32_t executed = 0;checked(objc3_executor_pump(executor, 64, &executed));require(executed != 0);
+    }
+    checked(objc3_task_group_close(group));checked(objc3_task_group_cancel(group));
+    while (objc3_task_group_join(group) == OBJC3_SERVICE_NOT_READY) {
+      require(++pumps <= count * 4 + 32);
+      uint32_t executed = 0;checked(objc3_executor_pump(executor, 64, &executed));require(executed != 0);
+    }
+    checked(objc3_task_group_join(group));require(ledger.live == 0);
+    require(!objc3_task_is_cancel_requested(dependency));
+    consume_group(group, count, OBJC3_COMPLETION_CANCELLED);objc3_task_group_release(group);
+  }
+  const objc3_completion completion{sizeof(objc3_completion), OBJC3_SERVICE_ABI_VERSION,
+    OBJC3_COMPLETION_CANCELLED, 0, nullptr, nullptr, nullptr, nullptr};
+  checked(objc3_task_complete(dependency, &completion));objc3_task_release(dependency);
+  objc3_executor_release(executor);
+}
+
+struct WorkerLedger {
+  std::atomic<unsigned long long> checksum{0}, resumes{0}, callbacks{0}, destroys{0}, live{0}, mask{0};
+};
+struct WorkerFrame {
+  WorkerLedger *counts;objc3_executor_t *executor;unsigned value, worker, phase = 0;
+};
+static void worker_resume(objc3_task_t *task, void *opaque) {
+  auto *frame = static_cast<WorkerFrame *>(opaque);
+  require(objc3_executor_is_current(frame->executor));
+  frame->counts->mask.fetch_or(1u << frame->worker, std::memory_order_relaxed);
+  frame->counts->resumes.fetch_add(1, std::memory_order_relaxed);
+  if (frame->phase++ == 0) {checked(objc3_task_schedule_resume(task));return;}
+  require(frame->phase == 2);
+  const objc3_completion completion{sizeof(objc3_completion), OBJC3_SERVICE_ABI_VERSION,
+    OBJC3_COMPLETION_SUCCESS, 0, nullptr, nullptr, nullptr, nullptr};
+  checked(objc3_task_complete(task, &completion));
+}
+static void worker_completed(void *opaque, const objc3_completion *completion) {
+  auto *frame = static_cast<WorkerFrame *>(opaque);
+  require(frame->phase == 2 && completion->kind == OBJC3_COMPLETION_SUCCESS);
+  frame->counts->checksum.fetch_add(frame->value, std::memory_order_relaxed);
+  frame->counts->callbacks.fetch_add(1, std::memory_order_relaxed);
+}
+static void worker_destroy(void *opaque) {
+  auto *frame = static_cast<WorkerFrame *>(opaque);
+  require(frame->counts->live.fetch_sub(1, std::memory_order_relaxed) != 0);
+  frame->counts->destroys.fetch_add(1, std::memory_order_relaxed);delete frame;
+}
+static void worker_work(unsigned size, unsigned seed) {
+  WorkerLedger counts;
+  objc3_executor_t *executors[4]{};
+  for (auto &executor : executors) checked(objc3_executor_create(0, &executor));
+  for (unsigned start = 0; start < size; start += 256) {
+    const unsigned count = size - start < 256 ? size - start : 256;
+    objc3_task_group_t *group = nullptr;checked(objc3_task_group_create(nullptr, &group));
+    for (unsigned i = 0; i < count; ++i) {
+      const unsigned worker = i % 4;
+      auto *frame = new WorkerFrame{&counts, executors[worker], start + i + seed, worker};
+      counts.live.fetch_add(1, std::memory_order_relaxed);
+      const objc3_task_start_options options{sizeof(objc3_task_start_options), OBJC3_SERVICE_ABI_VERSION,
+        executors[worker], frame, worker_resume, worker_destroy, worker_completed, frame, nullptr, nullptr};
+      objc3_task_t *task = nullptr;checked(objc3_task_start(&options, &task));
+      checked(objc3_task_group_add(group, task));objc3_task_release(task);
+    }
+    checked(objc3_task_group_close(group));checked(objc3_task_group_join(group));
+    require(counts.live.load() == 0);
+    consume_group(group, count, OBJC3_COMPLETION_SUCCESS);objc3_task_group_release(group);
+  }
+  for (auto *executor : executors) objc3_executor_release(executor);
+  require(counts.live.load() == 0 && counts.mask.load() == 15);
+  ledger.checksum += counts.checksum.load();ledger.resumes += counts.resumes.load();
+  ledger.callbacks += counts.callbacks.load();ledger.destroys += counts.destroys.load();
+  ledger.operations += counts.resumes.load() + counts.callbacks.load() + counts.destroys.load();
+  ledger.worker_mask |= counts.mask.load();
+}
+
 static unsigned argument(const char *text, unsigned minimum, unsigned maximum) {
   char *end = nullptr;const auto value = std::strtoul(text, &end, 10);
   if (!*text || *end || value < minimum || value > maximum) std::exit(2);
@@ -199,6 +331,8 @@ int main(int argc, char **argv) {
     if (!std::strcmp(argv[1], "text")) text_work(size);
     else if (!std::strcmp(argv[1], "generic-array")) array_work(size, seed);
     else if (!std::strcmp(argv[1], "task-group-actor")) task_work(size, seed);
+    else if (!std::strcmp(argv[1], "task-group-cancel")) cancellation_work(size, seed);
+    else if (!std::strcmp(argv[1], "worker-tasks")) worker_work(size, seed);
     else return 2;
     // Bounded measurement control. The same completed semantic work and
     // lifetime oracles must hold with and without the extra timer cost.
@@ -207,7 +341,10 @@ int main(int argc, char **argv) {
   const auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::steady_clock::now() - started).count();
   std::printf("{\"checksum\":%llu,\"completed_operations\":%llu,\"nanoseconds\":%lld,"
-    "\"payload_copies\":%llu,\"destructions\":%llu,\"resumes\":%llu,\"callbacks\":%llu,\"live_values\":%llu}\n",
+    "\"payload_copies\":%llu,\"destructions\":%llu,\"resumes\":%llu,\"callbacks\":%llu,\"live_values\":%llu",
     ledger.checksum, ledger.operations, static_cast<long long>(nanos), ledger.copies,
     ledger.destroys, ledger.resumes, ledger.callbacks, ledger.live);
+  if (!std::strcmp(argv[1], "task-group-cancel")) std::printf(",\"cancelled\":%llu", ledger.cancelled);
+  if (!std::strcmp(argv[1], "worker-tasks")) std::printf(",\"worker_mask\":%llu", ledger.worker_mask);
+  std::printf("}\n");
 }
