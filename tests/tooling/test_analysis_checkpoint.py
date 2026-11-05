@@ -6,7 +6,8 @@ import sys
 
 import pytest
 
-from scripts.objc3c_toolchain.analysis_checkpoint import run_unit, successful_action, tidy_diagnostics
+from scripts.objc3c_toolchain.analysis_checkpoint import (
+    load_checkpoints, reusable_action, run_unit, successful_action, tidy_diagnostics)
 from scripts.objc3c_toolchain.binary_packages import digest
 
 
@@ -48,6 +49,55 @@ def test_failed_campaign_reuses_only_its_completed_identical_native_action(check
     assert result['status'] == 'PASS' and result['execution_reused'] is True
     assert result['checkpoint_sha256'] == digest(receipt)
     assert previous['status'] == 'FAIL'
+
+
+def test_complementary_terminal_attempts_reuse_only_verified_matching_actions(checkpoint, tmp_path):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    missing = copy.deepcopy(previous);missing['results'] = []
+    first = tmp_path / 'missing.json';first.write_text(json.dumps(missing))
+    result = reusable_action([(first, missing, digest(first)), (receipt, previous, digest(receipt))],
+                             current, row, arguments=args)
+    assert result['checkpoint'] == str(receipt) and result['execution_reused'] is True
+    assert previous['status'] == missing['status'] == 'FAIL'
+    assert reusable_action([(first, missing, digest(first))], current, row, arguments=args) is None
+
+
+def test_corrupt_earlier_action_is_rejected_before_trying_a_later_good_checkpoint(checkpoint):
+    receipt, previous, current, row, args, _, _ = checkpoint
+    corrupt = copy.deepcopy(previous);corrupt['commands'][0]['timed_out'] = True
+    with pytest.raises(ValueError, match='proof changed'):
+        reusable_action([(receipt, corrupt, digest(receipt)), (receipt, previous, digest(receipt))],
+                        current, row, arguments=args)
+
+
+@pytest.mark.parametrize('fault', ['running', 'outside', 'linked', 'duplicate', 'excessive', 'not-object'])
+def test_checkpoint_collection_rejects_mutable_unowned_duplicate_or_unbounded_inputs(tmp_path, fault):
+    root = tmp_path / 'out';root.mkdir()
+    receipt = root / 'qualification.json'
+    receipt.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': 'FAIL'}))
+    paths = [receipt]
+    if fault == 'running': receipt.write_text(receipt.read_text().replace('FAIL', 'running'))
+    elif fault == 'outside':
+        outside = tmp_path / 'outside.json';outside.write_bytes(receipt.read_bytes());paths = [outside]
+    elif fault == 'linked':
+        link = root / 'linked.json';link.symlink_to(receipt);paths = [link]
+    elif fault == 'duplicate': paths *= 2
+    elif fault == 'excessive': paths *= 9
+    else: receipt.write_text('[]')
+    with pytest.raises(ValueError): load_checkpoints(tmp_path, paths)
+
+
+def test_multiple_terminal_checkpoint_selection_retains_requested_order(tmp_path):
+    root = tmp_path / 'out';root.mkdir()
+    paths = [root / (str(index)+'.json') for index in range(2)]
+    for path, status in zip(paths, ('FAIL', 'PASS')):
+        path.write_text(json.dumps({'schema': 'objc3c.implementation-analysis.v1', 'status': status}))
+    admitted = load_checkpoints(tmp_path, paths)
+    assert [path for path, _, _ in admitted] == paths
+    assert [signature for path, _, signature in admitted] == list(map(digest, paths))
+    paths[0].write_text('{}')
+    with pytest.raises(ValueError, match='changed after admission'):
+        reusable_action(admitted, {}, {}, arguments=[])
 
 
 @pytest.mark.parametrize('mutation', ['header', 'flags', 'checker', 'tool', 'failed', 'missing-result'])

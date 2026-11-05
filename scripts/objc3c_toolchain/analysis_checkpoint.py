@@ -2,12 +2,47 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 import re
 
 from .binary_packages import digest
 from .llvm_ir_execution import Execution, StageFailure
 from .sanitizer_policy import require_clean_diagnostic
+
+
+def load_checkpoints(repo, paths):
+    paths = list(paths)
+    if len(paths) > 8:
+        raise ValueError('implementation analysis accepts at most eight checkpoints')
+    result, seen = [], set()
+    for candidate in paths:
+        candidate = Path(candidate).absolute()
+        if candidate.is_symlink():
+            raise ValueError('implementation analysis checkpoint must be an owned regular receipt')
+        path = candidate.resolve(strict=True)
+        if (not path.is_relative_to(repo / 'out') or not path.is_file() or
+                path.stat().st_size > 64*1024**2 or path in seen):
+            raise ValueError('implementation analysis checkpoint is duplicated or outside bounded owned output')
+        raw = path.read_bytes()
+        if len(raw) > 64*1024**2:
+            raise ValueError('implementation analysis checkpoint exceeded its byte bound')
+        previous = json.loads(raw)
+        if (not isinstance(previous, dict) or previous.get('schema') != 'objc3c.implementation-analysis.v1' or
+                previous.get('status') not in ('PASS', 'FAIL')):
+            raise ValueError('analysis checkpoint has no terminal source-owned attempt')
+        result.append((path, previous, hashlib.sha256(raw).hexdigest()));seen.add(path)
+    return result
+
+
+def reusable_action(checkpoints, current, row, *, arguments):
+    for path, previous, signature in checkpoints:
+        if digest(path) != signature:
+            raise ValueError('implementation analysis checkpoint changed after admission')
+        result = successful_action(path, previous, current, row, arguments=arguments)
+        if result is not None:
+            return result
+    return None
 
 
 def analysis_argv(tool, directory, source, configuration, resource_directory):

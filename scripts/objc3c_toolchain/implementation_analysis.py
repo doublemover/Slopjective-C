@@ -16,7 +16,7 @@ from .llvm_ir_execution import Execution, StageFailure
 from .llvm_tools import foundation, identity, verify_installation
 from .sanitizer_policy import strict_environment
 from .sdk_example import dependencies as header_dependencies
-from .analysis_checkpoint import analysis_argv, run_unit, successful_action
+from .analysis_checkpoint import analysis_argv, load_checkpoints, reusable_action, run_unit
 
 SUFFIXES = {'.cpp', '.cc', '.c', '.mm', '.m'}
 
@@ -275,17 +275,12 @@ def tool_configuration(repo, tool_build, plan):
     return arguments, environment
 
 
-def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=None):
+def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, changed=(), jobs=2, resume=()):
     repo, output = repo.resolve(strict=True), output.resolve()
     if output.exists() or not output.is_relative_to(repo / 'out'):
         raise ValueError('implementation analysis requires fresh owned evidence')
     if jobs not in (1, 2, 3, 4): raise ValueError('implementation analysis requires one to four worker processes')
-    previous = None
-    if resume:
-        resume = resume.resolve(strict=True)
-        if not resume.is_relative_to(repo / 'out') or resume.stat().st_size > 64*1024**2:
-            raise ValueError('implementation analysis checkpoint is outside bounded owned output')
-        previous = json.loads(resume.read_text())
+    checkpoints = load_checkpoints(repo, resume)
     plan, _ = foundation(repo)
     source, stage, build = (Path(plan['paths'][key]).resolve(strict=True)
                             for key in ('source', 'stage', 'build'))
@@ -315,6 +310,7 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
         'inputs': {str(path): digest(path) for path in (Path(__file__), policy_path,
             repo / 'native/analysis/CMakeLists.txt', repo / 'native/analysis/SelectedChecks.cpp',
             repo / 'tests/tooling/fixtures/implementation_analysis/control.cpp')}}
+    report['inputs'].update({str(path): signature for path, _, signature in checkpoints})
     executor = Execution(output, environment, report, timeout=600)
     run = executor.run
     try:
@@ -501,8 +497,8 @@ def qualify(repo, output, *, frontend_build, runtime_build, tool_build=None, cha
                 for row in chosen:
                     name = label+'-'+row['identity'][:16]
                     argv = prepare_analysis(name, row)
-                    cached = successful_action(resume, previous, report, row,
-                        arguments=row['analysis_arguments']) if previous else None
+                    cached = reusable_action(checkpoints, report, row,
+                        arguments=row['analysis_arguments'])
                     if cached:
                         report['results'].append(cached)
                     else:
@@ -539,7 +535,7 @@ def main():
     parser.add_argument('--tool-build', type=Path)
     parser.add_argument('--changed', nargs='*', type=Path, default=[])
     parser.add_argument('--jobs', type=int, choices=(1, 2, 3, 4), default=2)
-    parser.add_argument('--resume', type=Path)
+    parser.add_argument('--resume', type=Path, action='append', default=[])
     result = qualify(**vars(parser.parse_args()))
     print(json.dumps({'status': result['status'], 'analyzed_variants': result['analyzed_variants']}))
 

@@ -100,6 +100,14 @@ are labeled separately from fresh execution. Spawned worker processes avoid
 forking a threaded process through the subprocess pre-exec hook. Parallelism is
 bounded to one through four workers; each TU keeps its own durable result.
 
+Manual execution accepts up to eight ordered `--resume` receipts so a focused
+repair can complement a completed full scan. Each receipt must be terminal,
+owned, bounded, unique and unchanged after admission. Every reused action still
+passes the complete command/source/header/PCH/tool/configuration/log checks;
+a corrupt candidate fails instead of falling through to a later good one.
+Each action retains its actual origin, and prior aggregate failures remain
+failed. CI continues to require fresh execution of all selected actions.
+
 The first hosted run completed the instrumented foundation and native component
 builds, then exposed an isolated-environment configuration failure: the pinned
 Ninja directory was absent from the analyzer's strict PATH. The tool owner now
