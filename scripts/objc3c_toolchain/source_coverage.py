@@ -23,7 +23,9 @@ from scripts.objc3c_assurance.evidence import junit
 
 LIMIT = 64 * 1024**2
 COMMAND_TIMEOUT = 900
-BUILD_TIMEOUT = 3600
+# An instrumented Clang compiling the largest Clang-facing façade unit takes
+# substantially longer than execution/export while remaining CPU-bound.
+BUILD_TIMEOUT = 7200
 
 
 def profile_runtime(bootstrap: Path, target: str) -> tuple[Path, Path]:
