@@ -41,6 +41,23 @@ python3 -B -m scripts.objc3c_toolchain.implementation_analysis \
   --output out/implementation-analysis/evidence
 ```
 
+The `Linux implementation analysis` workflow owns the durable gate. Pull
+requests run it only when the analyzer/toolchain, native implementation or
+compilation graph changes, and pass those exact changed paths to the dependency
+selector. Weekly and manually dispatched runs select the complete owned-TU
+inventory. The workflow builds the admitted `compiler-asan-ubsan` foundation,
+separate integrated-frontend and standalone-runtime databases, and the matched
+analysis tool in its own six-hour job so the already broad native qualification
+cannot consume the analyzer's time budget. A second job admits only the exact
+revision, canonical plan, complete per-TU inventory, paired detector controls,
+clean diagnostics and content-hashed retained evidence.
+
+Compiler sources, instrumented build/stage products and temporary analyzer,
+frontend and runtime build trees are deleted before a passing receipt is
+written. The retained artifact contains identities, commands, compilation
+databases, raw logs and structured diagnostics, with a 256 MiB upper bound; it
+does not retain another multi-gigabyte compiler tree.
+
 The initial real scan rejected a LeakSanitizer report during embedded Clang AST
 teardown. `DependentDiagnostic` allocated `DiagnosticStorage` in the AST arena
 without registering destruction of its heap-owning strings and overflow vectors.
