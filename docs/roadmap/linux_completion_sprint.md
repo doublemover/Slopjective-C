@@ -611,3 +611,16 @@ initializers. Field operand snapshots preserve later argument expiry. Eighteen n
 C17/C++20/C++23 ARC/MRC source/PCH commands, all thirty borrowed compiler
 regressions and three affected source-free frontend groups pass. Unknown positions, indirect/global mutation, managed-field ownership,
 lazy/exceptional analysis and SDK consolidation remain open.
+
+## Independent ownership in copied record captures
+
+The [System 2.28 implementation](linux_borrowed_owned_records.md) follows copied
+ARC strong fields through record/base/array paths in Blocks and C++ lambdas.
+Future borrowing and existing loans with a proven matching identity retain
+independent field ownership, while weak/raw/reference/MRC boundaries stay
+explicit. Reference-field symbolic inputs preserve their future owner effects.
+Eighteen new source/PCH commands, all thirty-one borrowed compiler regressions
+and three affected frontend groups pass.
+Four ARC C17 O0/C++23 O2 native source/PCH configurations pass fourteen commands,
+including ASan/UBSan execution and exact object destruction counts. SDK delivery
+and wider manual/mutable/lazy/exceptional ownership remain open.

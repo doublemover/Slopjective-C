@@ -5,7 +5,9 @@ All 24 source/PCH configurations pass normally and under ASan/UBSan and TSan;
 the installed SDK feature gate also passes. Exact inputs and scope are recorded
 in the [integration receipt](../../../docs/support/linux_native_feature_integration_acceptance.json).
 
-- `runtime.h` / `main.m`: creation snapshots, unused/contextual captures,
+- `runtime.h` / `main.m`: independent ARC record-field owners and interior loans
+  through heap Block copies and C++ closure copies, with exact object destruction;
+  creation snapshots, unused/contextual captures,
   explicit `__block` snapshots, ARC/MRC ownership, weak zeroing and nested
   weak-to-strong promotion, resource heap
   copies (including distinct heap Blocks copied from one stack literal), address

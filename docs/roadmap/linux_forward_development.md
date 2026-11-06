@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.28 owned-record span](linux_borrowed_owned_records.md) recognizes
+independent ARC strong fields in copied Block/C++ record and array captures,
+including existing interior loans with a proven matching identity. Raw, weak,
+reference and MRC fields retain their boundaries. Four instrumented native
+source/PCH configurations pass fourteen commands. All thirty-one borrowed compiler
+regressions and three affected frontend groups pass, including eighteen new
+source/PCH commands. Wider ownership and SDK delivery remain open.
+
 The [System 2.27 stored-owner span](linux_borrowed_stored_owners.md) admits
 borrowed acquisitions through tracked fields/elements and preserves field-specific
 future owner requirements across aliases, copies and nested/initialized captures.

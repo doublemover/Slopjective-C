@@ -931,6 +931,51 @@ static void capture_cpp_suite(void) {
   CAPTURE_CHECK(capture_template(42) == 42);
 }
 #endif
+#if __has_feature(objc_arc)
+static borrowed const char *capture_record_bytes(CaptureObject *owner)
+    __attribute__((objc_returns_borrowed(owner_index=0)));
+__attribute__((objc_returns_borrowed(owner_index=0)))
+static borrowed const char *capture_record_bytes(CaptureObject *owner) {
+  static const char bytes[] = "owned";
+  CAPTURE_CHECK(owner && owner->value == 42);
+  return bytes;
+}
+static void capture_owned_record_suite(void) {
+  struct CaptureOwnerRecord { CaptureObject *owner; };
+  int before = capture_destroyed;
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    struct CaptureOwnerRecord record = {owner};
+    const char *loan = capture_record_bytes(owner);
+    CaptureVoidBlock work = capture_heap_copy_void(^{
+      CAPTURE_CHECK(capture_record_bytes(record.owner)[0] == 'o' && loan[0] == 'o');
+    });
+    owner = (id)0;
+    record.owner = (id)0;
+    work();
+    CAPTURE_CHECK(capture_destroyed == before);
+    work = (id)0;
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 1);
+#ifdef __cplusplus
+  {
+    CaptureObject *owner = [CaptureObject make:42];
+    CaptureOwnerRecord record = {owner};
+    const char *loan = capture_record_bytes(owner);
+    auto work = [record, loan] {
+      CAPTURE_CHECK(capture_record_bytes(record.owner)[0] == 'o' && loan[0] == 'o');
+    };
+    auto copy = work;
+    owner = (id)0;
+    record.owner = (id)0;
+    work();
+    copy();
+    CAPTURE_CHECK(capture_destroyed == before + 1);
+  }
+  CAPTURE_CHECK(capture_destroyed == before + 2);
+#endif
+}
+#endif
 static void capture_suite(void) {
   capture_scalar_suite();
   capture_plain_carrier_move_suite();
@@ -939,6 +984,7 @@ static void capture_suite(void) {
   capture_defer_suite();
 #if __has_feature(objc_arc)
   capture_carrier_move_suite();
+  capture_owned_record_suite();
 #endif
   capture_resource_suite();
   capture_resource_operations_suite();

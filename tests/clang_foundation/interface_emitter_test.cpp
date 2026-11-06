@@ -534,6 +534,7 @@ void TestBorrowedMemoryAliasReplay() {
       const std::string source=R"(
         typedef borrowed const char *MemoryLoan;
         MemoryLoan published_memory_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+        MemoryLoan published_memory_object_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
         void published_memory_use(const char *pointer __attribute__((noescape)));
         struct PublishedMemoryHolder {const char *pointer;};
         struct PublishedMemoryPair {struct PublishedMemoryHolder first,second;};
@@ -592,6 +593,14 @@ void TestBorrowedMemoryAliasReplay() {
           auto work=[box]{void *alias=box.pointer;published_memory_use(published_memory_bytes(alias));};
           work();
         }
+        #if __has_feature(objc_arc)
+        inline void published_memory_owned_record(id owner) {
+          struct OwnedMemoryRecord {id owner;};OwnedMemoryRecord record{owner};
+          const char *loan=published_memory_object_bytes(owner);
+          auto work=[record,loan]{published_memory_use(published_memory_object_bytes(record.owner));published_memory_use(loan);};
+          owner=0;record.owner=0;work();
+        }
+        #endif
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_joined_reference(void *owner,int choose) {
           const char *one=0,*two=0;
@@ -650,6 +659,9 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_stored_owner(owner));
           #ifdef __cplusplus
           published_memory_field_closure(owner);
+          #if __has_feature(objc_arc)
+          published_memory_owned_record((id)0);
+          #endif
           published_memory_immediate_reference(owner);
           published_memory_use(published_memory_reference_cell(owner));
           published_memory_use(published_memory_joined_reference(owner,choose));

@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..d7db4b268
+index 000000000..27d278d19
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,5189 @@
+@@ -0,0 +1,5258 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -44093,9 +44093,8 @@ index 000000000..d7db4b268
 +      if (carriesBorrowedValue(Type)) OpaqueBorrowedStorage[Location] = true;
 +      return;
 +    }
-+    const bool Reference = Type->isReferenceType();
 +    Type = Type.getNonReferenceType();
-+    if (path(Location) && !Reference && !isObjC3BorrowedType(Context, Type) &&
++    if (path(Location) && !isObjC3BorrowedType(Context, Type) &&
 +        (Type->isPointerType() || Type->isObjCObjectPointerType() || Type->isBlockPointerType()) &&
 +        !StorageOwnerRoots.count(Location))
 +      StorageOwnerRoots[Location] = OwnerCount++;
@@ -44341,8 +44340,11 @@ index 000000000..d7db4b268
 +    }
 +    if (const auto *Block = dyn_cast<BlockExpr>(Node)) {
 +      MightBorrow |= statementMayBorrow(Block->getBlockDecl()->getBody());
-+      if (!ClosureSlots.count(Block))
-+        ClosureSlots[Block] = ClosureSlots.size();
++      if (!ClosureSlots.count(Block)) ClosureSlots[Block] = ClosureSlots.size();
++      for (const auto &Capture : Block->getBlockDecl()->captures()) {
++        addVariable(Capture.getVariable());
++        if (const Expr *Init = Capture.getObjC3InitExpr()) collect(Init, Scope);
++      }
 +      return;
 +    }
 +    if (const auto *Lambda = dyn_cast<LambdaExpr>(Node)) {
@@ -44363,11 +44365,56 @@ index 000000000..d7db4b268
 +    for (const Stmt *Child : Node->children())
 +      collect(Child, Scope);
 +  }
++  bool ownsCapturedPath(const Expr *Closure, const CallableCapturePath &Path) const {
++    if (!Actions.getLangOpts().ObjCAutoRefCount || Path.Components.empty()) return false;
++    bool Copy = false;
++    if (const auto *Lambda = dyn_cast<LambdaExpr>(Closure)) {
++      for (const auto &Capture : Lambda->captures())
++        if (Capture.capturesVariable() && Capture.getCapturedVar() == Path.Variable)
++          Copy = Capture.getCaptureKind() == LCK_ByCopy;
++    } else if (const auto *Block = dyn_cast<BlockExpr>(Closure)) {
++      for (const auto &Capture : Block->getBlockDecl()->captures())
++        if (Capture.getVariable() == Path.Variable) Copy = !Capture.isByRef();
++    }
++    if (!Copy) return false;
++    // Copying a reference variable by value copies its object; reference members
++    // inside that object still designate external storage and own no snapshot.
++    QualType Type = Path.Variable->getType().getNonReferenceType();
++    for (const PathNode &Component : Path.Components) {
++      if (Type->isReferenceType()) return false;
++      if (Component.BaseRecord) {
++        Type = Context.getCanonicalTagType(Component.BaseRecord);
++      } else if (Component.Field) {
++        const auto *Record = Type->getAs<RecordType>();
++        const auto *Field = dyn_cast<FieldDecl>(Component.Field);
++        if (!Record || Record->getDecl()->isUnion() || !Field ||
++            Field->getParent()->getCanonicalDecl() != Record->getDecl()->getCanonicalDecl()) return false;
++        Type = Field->getType();
++      } else {
++        const auto *Array = Context.getAsArrayType(Type);
++        if (!Array) return false;
++        Type = Array->getElementType();
++      }
++    }
++    return !Type->isReferenceType() && Type->isObjCRetainableType() &&
++           !isObjC3BorrowedType(Context, Type) && Type.getObjCLifetime() == Qualifiers::OCL_Strong;
++  }
++  SmallVector<FutureStorageOwner, 4> owningClosurePaths(const Expr *Closure) const {
++    SmallVector<FutureStorageOwner, 4> Result;
++    for (const auto &Capture : closureCaptures(Closure))
++      for (const auto &[Location, Index] : StorageOwnerRoots) {
++        (void)Index;
++        if (Location.first != Capture.Variable || hasUnknownIndex(Location)) continue;
++        auto Path = capturePath(Location);
++        if (ownsCapturedPath(Closure, Path)) Result.push_back({std::move(Path), Capture.Initializer});
++      }
++    return Result;
++  }
 +  void prepareClosureLoans() {
 +    const unsigned Count = Origins.size();
 +    for (auto [Block, Slot] : ClosureSlots) {
 +      (void)Slot;
-+      const bool OwnsObject = !owningClosureCaptures(Block).empty();
++      const bool OwnsObject = !owningClosureCaptures(Block).empty() || !owningClosurePaths(Block).empty();
 +      if (!OwnsObject)
 +        continue;
 +      for (unsigned I = 0; I != Count; ++I) {
@@ -44786,6 +44833,9 @@ index 000000000..d7db4b268
 +        if (!llvm::any_of(Paths, [&](const auto &Other) {return sameCapturePath(Path, Other);})) Paths.push_back(Path);
 +      const auto Captures = closureCaptures(Closure);
 +      for (const auto &Path : Paths) {
++        const bool Consumes = llvm::any_of(Summary.ConsumedPaths,
++            [&](const auto &Other) {return sameCapturePath(Path, Other);});
++        if (!Consumes && ownsCapturedPath(Closure, Path)) continue;
 +        auto Capture = llvm::find_if(Captures, [&](const auto &Entry) {return Entry.Variable == Path.Variable;});
 +        if (Capture == Captures.end()) {UnstableFutureOwners.insert(Closure);continue;}
 +        const auto Keys = ownerKeys();
@@ -44875,6 +44925,25 @@ index 000000000..d7db4b268
 +          V.set(Held->second * 2);
 +        }
 +        break;
++      }
++    }
++    for (const auto &Owned : owningClosurePaths(Closure)) {
++      Value Identities(OwnerCount);bool Unowned = false;
++      if (!futureStorageOwnerFacts(Owned, State, Identities, Unowned) || Unowned || Identities.count() != 1) continue;
++      if (IsOwnerSummary) {
++        for (const auto &[Root, Index] : OwnerRoots)
++          if (Root && Identities.test(Index)) AcquiredOwnerRoots.insert(Root);
++        for (const auto &[Location, Index] : StorageOwnerRoots) {
++          (void)Location;
++          if (Identities.test(Index)) AcquiredStorageOwners.insert(Index);
++        }
++      }
++      for (int Bit = V.find_first(); Bit >= 0; Bit = V.find_next(Bit)) {
++        const Origin &O = Origins[Bit / 2];
++        if ((Bit & 1) || O.HeldByClosure || !Identities.test(ownerIndex(O))) continue;
++        if (auto Held = ClosureLoans.find({Closure, unsigned(Bit / 2)}); Held != ClosureLoans.end()) {
++          V.reset(Bit);V.set(Held->second * 2);
++        }
 +      }
 +    }
 +  }
@@ -60661,4 +60730,164 @@ index 000000000..5515ab7cb
 +  box.pointer=replacement;work();memory_consume(replacement);work();memory_consume(owner);
 +  work(); // expected-error {{after its owner lifetime ended}}
 +}
++#endif
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-owned-records.h b/clang/test/ObjC3/Sema/Inputs/borrowed-owned-records.h
+new file mode 100644
+index 000000000..3ef017dd0
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-owned-records.h
+@@ -0,0 +1,12 @@
++#ifndef OBJC3_BORROWED_OWNED_RECORDS_H
++#define OBJC3_BORROWED_OWNED_RECORDS_H
++#include "borrowed-memory-aliases.h"
++MemoryBytes memory_object_bytes(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++struct MemoryObjectRecord {id owner;};
++struct MemoryNestedObjectRecord {struct MemoryObjectRecord value;};
++struct MemoryUnsafeObjectRecord {__unsafe_unretained id owner;};
++typedef void (^MemoryRecordWork)(void);
++#ifdef __cplusplus
++struct MemoryObjectReference {id __strong &owner;};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-owned-records.mm b/clang/test/ObjC3/Sema/borrowed-owned-records.mm
+new file mode 100644
+index 000000000..0154e8c22
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-owned-records.mm
+@@ -0,0 +1,136 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-owned-records.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-owned-records.h"
++#endif
++void owned_record_block(id owner) {
++  struct MemoryObjectRecord box={owner};
++  MemoryRecordWork work=^{memory_use(memory_object_bytes(box.owner));};
++  owner=0;box.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_record_existing_loan(id owner) {
++  struct MemoryObjectRecord box={owner};const char *loan=memory_object_bytes(owner);
++  MemoryRecordWork work=^{(void)box.owner;memory_use(loan);};
++  owner=0;box.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_nested_record_block(id owner) {
++  struct MemoryNestedObjectRecord box={{owner}};
++  MemoryRecordWork work=^{memory_use(memory_object_bytes(box.value.owner));};owner=0;box.value.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void nonowning_record_block(id owner) {
++  struct MemoryUnsafeObjectRecord box={owner};
++  #if __has_feature(objc_arc)
++  MemoryRecordWork work=^{memory_use(memory_object_bytes(box.owner));}; // expected-error {{derived from a non-stable owner}}
++#else
++  MemoryRecordWork work=^{memory_use(memory_object_bytes(box.owner));};
++#endif
++  (void)work;
++}
++#ifdef __cplusplus
++void owned_record_lambda(id owner) {
++  MemoryObjectRecord box{owner};auto work=[box]{memory_use(memory_object_bytes(box.owner));};
++  owner=0;box.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_record_lambda_loan(id owner) {
++  MemoryObjectRecord box{owner};const char *loan=memory_object_bytes(owner);
++  auto work=[box,loan]{(void)box.owner;memory_use(loan);};owner=0;box.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_record_init_lambda(id owner) {
++  auto work=[box=MemoryObjectRecord{owner}]{memory_use(memory_object_bytes(box.owner));};owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_record_nested_lambda(id owner) {
++  MemoryNestedObjectRecord box{{owner}};
++  auto work=[box]{auto inner=[box]{memory_use(memory_object_bytes(box.value.owner));};inner();};
++  owner=0;box.value.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owned_record_array_lambda(id owner) {
++  MemoryObjectRecord boxes[2]={{0},{owner}};
++  auto work=[boxes]{memory_use(memory_object_bytes(boxes[1].owner));};owner=0;boxes[1].owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++void owner_reference_field(id owner) {
++  MemoryObjectReference box{owner};auto work=[box]{memory_use(memory_object_bytes(box.owner));}; // expected-error {{reference capture requiring an explicit lifetime contract}}
++  owner=0;
++  work(); // expected-error {{lifetime ended}}
++}
++void owned_record_reference_value(id owner) {
++  MemoryObjectRecord box{owner};MemoryObjectRecord &reference=box;
++  auto work=[reference]{memory_use(memory_object_bytes(reference.owner));};owner=0;box.owner=0;
++#if __has_feature(objc_arc)
++  work();
++#else
++  work(); // expected-error {{lifetime ended}}
++#endif
++}
++auto returned_owned_record(id owner) {
++  MemoryObjectRecord box{owner};
++#if __has_feature(objc_arc)
++  return [box]{memory_use(memory_object_bytes(box.owner));};
++#else
++  return [box]{memory_use(memory_object_bytes(box.owner));}; // expected-error {{return without a matching borrowed return}}
++#endif
++}
++#if __has_feature(objc_arc)
++void weak_record_owner(id owner) {
++  struct WeakRecord {__weak id owner;};WeakRecord box{owner};
++  auto work=[box]{memory_use(memory_object_bytes(box.owner));}; // expected-error {{derived from a non-stable owner}}
++  (void)work;
++}
++#endif
 +#endif
