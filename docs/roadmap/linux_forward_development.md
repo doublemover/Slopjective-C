@@ -16,6 +16,14 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.109 manual-factory span](linux_manual_frame_factories.md)
+admits physical-frame factories and ordinary C++ task function pointers without
+erasing capture checks. Spawn and lazy group adapters own copied Block
+environments before invocation and through frame teardown under ARC/MRC. Thirty
+focused compiler commands, sixty native ownership/error scenarios and four
+package-source modes pass. Two complete spawn configurations pass eleven commands. Matching frontend
+execution is in progress; source-free packages and SDK delivery remain pending.
+
 The [Concurrency 2.108 task-template span](linux_cxx_dependent_task_awaits.md)
 preserves native await identity and substitution through ordinary C++ task
 templates, including value-dependent scalar results and callback/custom/ADL

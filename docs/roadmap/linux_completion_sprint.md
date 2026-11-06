@@ -21,6 +21,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
 | Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Source authored; compiler/source-PCH/AST checks and 944-case storage witness pass; frontend/package execution pending |
+| Concurrency        | Manual raw-frame factories, ordinary task function pointers and MRC Block environment ownership across spawn/group calls       | Source authored; source/PCH, two focused native configurations and four package-source modes pass |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                                                         |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                                             |
@@ -491,3 +492,21 @@ custom awaiter and ADL controls use the compiler fixture's custom promise. Three
 frontend units pass syntax checks. Frontend/source-free package execution, wider
 runtime/sanitizer consolidation and SDK delivery remain pending. See the
 [2.108 contract](linux_cxx_dependent_task_awaits.md).
+
+## Manual frame factories and owned callable environments
+
+The [Concurrency 2.109 span](linux_manual_frame_factories.md) admits validated
+physical frame producers and ordinary C++ task function pointers as asynchronous
+work. Function designators retain their ordinary pointer decay; capture admission
+continues through literal and immutable Block proofs. Namespace lookalikes and
+scalar-returning producers fail.
+
+Spawn adapters own a stable callable before invoking it. ARC and MRC Block values
+receive an explicit heap copy whose release follows inner-frame destruction. Lazy
+group callbacks acquire the same ownership during the ordinary creation call,
+before their caller can return. A private coroutine retains the callback through
+its scope's final join. Thirty focused compiler commands, including eighteen new
+source/PCH commands, pass. Two native configurations pass thirty focused ownership
+and failure scenarios each, and four package-source modes pass. Two complete C++20/MRC/O0/source and C++23/ARC/O2/PCH spawn configurations
+also pass eleven commands. Matching frontend execution is in progress; source-free
+packages, wider instrumentation and SDK consolidation remain pending.

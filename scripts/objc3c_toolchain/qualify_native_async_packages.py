@@ -338,7 +338,7 @@ def check_cpp_metadata(metadata):
     dependent_awaits={row['qualified_name'] for row in metadata['declarations']
         if ';native-dependent-await:v1;' in row.get('canonical_type_identity','')}
     if ('objc3.native-dependent-await.v1' not in metadata.get('required_semantics',[]) or
-        not {'NativeExplicitStorage::generic','NativeExplicitStorage::member_generic','NativeExplicitStorage::task_generic'}<=dependent_awaits):
+        not {'NativeExplicitStorage::generic','NativeExplicitStorage::member_generic','NativeExplicitStorage::task_generic','NativeExplicitStorage::raw_factory_group'}<=dependent_awaits):
         raise ValueError('C++ package lost native dependent await identity')
     check_factory_metadata(metadata)
     local_factory_results={row['qualified_name'] for row in metadata['declarations']

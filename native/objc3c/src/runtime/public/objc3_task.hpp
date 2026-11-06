@@ -970,11 +970,48 @@ public:
 };
 
 namespace task_detail {
+// A coroutine callable can borrow its closure object until frame destruction.
+// Pin Block values before invoking them, including MRC factories whose returned
+// manual frame refers directly to fields in the copied Block environment.
+template<class Work, bool IsBlock =
+#ifdef __OBJC__
+    __objc3_is_block_pointer(Work)
+#else
+    false
+#endif
+    > class callable_storage {
+  Work work_;
+public:
+  explicit callable_storage(Work work):work_(std::move(work)) {
+    if constexpr (std::is_pointer_v<Work>)
+      if (!work_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+  }
+  callable_storage(const callable_storage &)=delete;
+  callable_storage(callable_storage &&)=default;
+  Work &get() noexcept {return work_;}
+};
+#ifdef __OBJC__
+template<class Work> class callable_storage<Work,true> {
+  void *work_;
+public:
+  explicit callable_storage(Work work):work_(nullptr) {
+    if (!work) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    work_=objc3_task_result_block_copy((__bridge const void *)work);
+    if (!work_) throw std::bad_alloc();
+  }
+  callable_storage(const callable_storage &)=delete;
+  callable_storage(callable_storage &&other) noexcept
+      :work_(std::exchange(other.work_,nullptr)) {}
+  ~callable_storage(){objc3_task_result_block_release(work_);}
+  Work get() const noexcept {return (__bridge Work)work_;}
+};
+#endif
+
 template<class Task,class Work> Task own_callable_as(Work work) {
   static_assert(std::is_nothrow_destructible_v<Work>,
       "spawned callable destruction must not throw");
   struct Context {
-    Work work;
+    callable_storage<Work> work;
     objc3_async_frame inner{};
     explicit Context(Work &&value):work(std::move(value)) {}
     ~Context(){(void)objc3_async_frame_dispose(&inner);}
@@ -989,9 +1026,9 @@ template<class Task,class Work> Task own_callable_as(Work work) {
     Context *pointer;
     ~Owner(){delete pointer;}
   } owner{context};
-  if constexpr(std::is_same_v<decltype(context->work()),objc3_async_frame>)
-    context->inner=context->work();
-  else context->inner=std::move(context->work()).release_native();
+  if constexpr(std::is_same_v<decltype(context->work.get()()),objc3_async_frame>)
+    context->inner=context->work.get()();
+  else context->inner=std::move(context->work.get()()).release_native();
   // Admission applies to the producer's carrier, before a valid wrapper can
   // hide its ABI fields. Malformed producers retain responsibility for their
   // unadmitted contexts: dispose intentionally refuses their callbacks.

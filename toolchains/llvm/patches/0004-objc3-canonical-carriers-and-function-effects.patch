@@ -47276,10 +47276,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..9ba81c494
+index 000000000..3dfec5c3d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1416 @@
+@@ -0,0 +1,1438 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47609,12 +47609,32 @@ index 000000000..9ba81c494
 +      return FT->getObjC3FunctionEffects().Async;
 +  return false;
 +}
++bool asyncWorkPrototype(Sema &S, const FunctionProtoType *Prototype) {
++  if (!Prototype) return false;
++  if (Prototype->getObjC3FunctionEffects().Async) return true;
++  QualType Result = Prototype->getReturnType();
++  const auto *Record = Result->getAsRecordDecl();
++  if (!Record) return false;
++  if (Record->getDeclContext()->getRedeclContext()->isTranslationUnit() &&
++      Record->getIdentifier() && Record->getName() == "objc3_async_frame") {
++    FunctionProtoType::ExtProtoInfo Info;
++    Info.ObjC3Effects.Async = Info.ObjC3Effects.AsyncFrame = true;
++    const auto *FrameFunction = S.Context.getFunctionType(
++        S.Context.VoidTy, {}, Info)->castAs<FunctionProtoType>();
++    QualType Frame = S.BuildObjC3AsyncTaskType(FrameFunction,
++        Record->getLocation(), false);
++    return !Frame.isNull() && S.Context.hasSameType(Result, Frame);
++  }
++  const auto *Class = dyn_cast<CXXRecordDecl>(Record);
++  return Class && Class->hasDefinition() &&
++      !Class->getDefinition()->lookup(&S.Context.Idents.get("promise_type")).empty();
++}
 +bool asyncWorkType(Sema &S,QualType Type) {
 +  Type=Type.getNonReferenceType();
 +  if(Type->isDependentType())return S.getLangOpts().CPlusPlus;
 +  if(Type->isBlockPointerType() || Type->isFunctionPointerType())
 +    if(const auto *Prototype=Type->getPointeeType()->getAs<FunctionProtoType>())
-+      return Prototype->getObjC3FunctionEffects().Async;
++      return asyncWorkPrototype(S, Prototype);
 +  const auto *Root=Type->getAsCXXRecordDecl();
 +  if(!Root)return false;
 +  llvm::SmallPtrSet<const CXXRecordDecl *,8> Seen;
@@ -47629,10 +47649,8 @@ index 000000000..9ba81c494
 +      if(!Function)continue;
 +      const auto *Prototype=Function->getType()->getAs<FunctionProtoType>();
 +      if(!Prototype)continue;
-+      if(Prototype->getObjC3FunctionEffects().Async ||
++      if(asyncWorkPrototype(S, Prototype) ||
 +          (Function->hasBody() && isa<CoroutineBodyStmt>(Function->getBody())))return true;
-+      if(const auto *Result=Prototype->getReturnType()->getAsCXXRecordDecl())
-+        if(Result->hasDefinition() && !Result->getDefinition()->lookup(&S.Context.Idents.get("promise_type")).empty())return true;
 +    }
 +    for(const auto &Base:Record->bases())
 +      if(const auto *Parent=Base.getType()->getAsCXXRecordDecl())Pending.push_back(Parent);
@@ -47802,6 +47820,10 @@ index 000000000..9ba81c494
 +    unsigned Index = 0;
 +    for (const Expr *Argument : Arguments) {
 +      QualType TransferType = transferSource(Argument)->getType();
++      // The source designator is a function lvalue; its transported value is
++      // the stable function address produced by the ordinary decay conversion.
++      if (TransferType->isFunctionType())
++        TransferType = S.Context.getPointerType(TransferType);
 +      if (TransferType->isBlockPointerType()) {
 +        // A null work item never transfers a capture environment. Its runtime
 +        // startup rejection remains available under strict checking.
@@ -57587,3 +57609,90 @@ index 000000000..7c14f3441
 +  defer {(void)__objc3_await work();} // expected-error {{cannot suspend from a defer}}
 +  return 42;
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/native-manual-frame-work.h b/clang/test/ObjC3/Sema/Inputs/native-manual-frame-work.h
+new file mode 100644
+index 000000000..4051ec282
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/native-manual-frame-work.h
+@@ -0,0 +1,31 @@
++#ifndef NATIVE_MANUAL_FRAME_WORK_H
++#define NATIVE_MANUAL_FRAME_WORK_H
++#ifdef __cplusplus
++extern "C" {
++#endif
++#include "../../CodeGen/Inputs/native-c-async-frame.h"
++#ifdef __cplusplus
++}
++#endif
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface ManualRoot @end
++@interface ManualSafe : ManualRoot <Sendable> @end
++@interface ManualMutable : ManualRoot @end
++typedef objc3_async_frame (*ManualFunction)(void);
++typedef objc3_async_frame (^ManualBlock)(void);
++int manual_function_spawn(ManualFunction) __attribute__((objc_task_spawn));
++int manual_block_detach(ManualBlock) __attribute__((objc_task_detached));
++objc3_async_frame manual_factory(void);
++#ifdef __cplusplus
++struct ManualTask {struct promise_type;};
++typedef ManualTask (*ManualTaskFactory)(void);
++int manual_task_factory_spawn(ManualTaskFactory) __attribute__((objc_task_spawn));
++template<class Work> int manual_callable_spawn(Work) __attribute__((objc_task_spawn));
++struct ManualFunctor {int number;objc3_async_frame operator()();};
++struct ManualBase {objc3_async_frame operator()();};
++struct ManualDerived:ManualBase {};
++struct ManualTaskFunctor {ManualTask operator()();};
++namespace WrongCarrier {struct objc3_async_frame {};}
++struct ManualWrong {WrongCarrier::objc3_async_frame operator()();};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/native-manual-frame-work.m b/clang/test/ObjC3/Sema/native-manual-frame-work.m
+new file mode 100644
+index 000000000..fe663f661
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-manual-frame-work.m
+@@ -0,0 +1,44 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-manual-frame-work.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-weak -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#ifndef FROM_PCH
++#include "Inputs/native-manual-frame-work.h"
++#endif
++void manual_work(ManualSafe *safe,ManualMutable *object,ManualBlock unknown) {
++  (void)manual_function_spawn(manual_factory);
++  (void)manual_function_spawn((ManualFunction)0);
++  (void)manual_block_detach(^objc3_async_frame { (void)safe;return manual_factory(); });
++  ManualBlock const immutable=^objc3_async_frame { (void)safe;return manual_factory(); };
++  (void)manual_block_detach(immutable);
++  (void)manual_block_detach(^objc3_async_frame { (void)object;return manual_factory(); }); // expected-error {{non-Sendable type}}
++  (void)manual_block_detach(unknown); // expected-error {{cannot prove Sendable captures}}
++  __block int shared=0;
++  (void)manual_block_detach(^objc3_async_frame { ++shared;return manual_factory(); }); // expected-error {{non-Sendable type}}
++}
++#ifdef __cplusplus
++void manual_cpp_work(ManualTaskFactory task,ManualMutable *object) {
++  (void)manual_task_factory_spawn(task);
++  (void)manual_callable_spawn(ManualFunctor{42});
++  (void)manual_callable_spawn(ManualDerived{});
++  (void)manual_callable_spawn(ManualTaskFunctor{});
++  (void)manual_callable_spawn([] {return manual_factory();});
++  (void)manual_callable_spawn([object] { (void)object;return manual_factory(); }); // expected-error {{non-Sendable type}}
++  (void)manual_callable_spawn(ManualWrong{}); // expected-error {{requires an async}}
++  (void)manual_callable_spawn([] {return 42;}); // expected-error {{requires an async}}
++}
++#endif

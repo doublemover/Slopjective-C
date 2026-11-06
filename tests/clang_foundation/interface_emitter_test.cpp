@@ -3642,6 +3642,12 @@ void TestNativeDependentAwaitReplay() {
         objc3::task<int> use_dependent_task_await(NativeExplicitStorage::Counts *counts) {
           return NativeExplicitStorage::task_generic(NativeExplicitStorage::Value(counts,42));
         }
+        objc3::task<int> use_manual_factory(NativeExplicitStorage::Counts *counts) {
+          return NativeExplicitStorage::raw_factory_group(NativeExplicitStorage::Value(counts,42));
+        }
+        objc3::task<int> use_task_function_factory() {
+          return NativeExplicitStorage::function_factory_group();
+        }
       )","native-dependent-await-consumer.mm");
       assert(valid && !valid->getDiagnostics().hasErrorOccurred());
     }

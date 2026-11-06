@@ -66,6 +66,25 @@ template<class T> inline int task_generic(T value) __objc3_async {
   }
   return receivers.live==0 && receivers.destroyed==1?number:0;
 }
+template<class T> inline int factory_frame(T value) __objc3_async_frame {
+  return value.number();
+}
+template<class T> struct __attribute__((objc_unsafe_sendable)) ManualFactory {
+  T value;
+  objc3_async_frame operator()(){return factory_frame(value);}
+};
+template<class T> inline int raw_factory_group(T value) __objc3_async
+    __attribute__((objc_task_group)) {
+  auto group=objc3::task_group_handle::current_scope();
+  auto child=group.spawn<int>(ManualFactory<T>{static_cast<T&&>(value)});
+  return __objc3_await child;
+}
+inline objc3::task<int> ordinary_task_factory(){co_return 42;}
+inline int function_factory_group() __objc3_async __attribute__((objc_task_group)) {
+  auto group=objc3::task_group_handle::current_scope();
+  auto child=group.spawn(ordinary_task_factory);
+  return __objc3_await child;
+}
 template<class T> inline int generic(T value) __objc3_async_frame {
   T result=__objc3_await Entries<T>::run(static_cast<T &&>(value));
   return result.number();

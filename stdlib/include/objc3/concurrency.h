@@ -35,12 +35,13 @@
 #include <objc3c/runtime/objc3_task.hpp>
 
 namespace objc3 {
+namespace task_detail {
 /* The callback returns a lazy task and receives an independently retained group
  * view. Keep its callable object in this frame through callback completion and
  * the final group join, including coroutine callbacks that borrow their closure.
  * Tasks added by the callback must be structured descendants. */
-template <class T = void, class Work>
-task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
+template <class T, class Storage>
+task<T> with_task_group_owned(Storage work) __attribute__((objc_task_group)) {
   auto scope = task_group_handle::current_scope();
   // User iteration/join must not include the callback itself. The private
   // scope joins both this child group and the callback's own frame cleanup.
@@ -48,11 +49,11 @@ task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
   // Awaiting completion alone does not join callback frame/callback cleanup.
   // Registration must precede dispatch, including failed-start paths.
   auto body = [&]() {
-    if constexpr (std::is_same_v<decltype(work(group)),objc3_async_frame>) {
-      auto frame=work(group);
+    if constexpr (std::is_same_v<decltype(work.get()(group)),objc3_async_frame>) {
+      auto frame=work.get()(group);
       try {return task<T>::from_native(&frame);}
       catch (...) {(void)objc3_async_frame_dispose(&frame);throw;}
-    } else return work(group);
+    } else return work.get()(group);
   }();
   auto callback = std::move(body).__objc3_start_group_body(scope);
   if constexpr (std::is_void_v<T>) {
@@ -61,6 +62,14 @@ task<T> with_task_group(Work work) __attribute__((objc_task_group)) {
   } else {
     co_return co_await callback;
   }
+}
+} // namespace task_detail
+// Pin the source callable during the ordinary call. A lazy coroutine body
+// cannot acquire a stack Block after its caller has already returned.
+template <class T = void, class Work>
+task<T> with_task_group(Work work) {
+  return task_detail::with_task_group_owned<T>(
+      task_detail::callable_storage<Work>(std::move(work)));
 }
 } // namespace objc3
 
