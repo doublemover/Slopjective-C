@@ -1,4 +1,5 @@
 #include "provider.h"
+#include "cf-contract.h"
 #include <assert.h>
 #include <sched.h>
 #include <string.h>
@@ -453,6 +454,73 @@ int main(void) {
         for (unsigned step = 0; step != 1000000 &&
              hop_destroyed() != before + expected_destroyed; ++step) sched_yield();
         assert(hop_destroyed() == before + expected_destroyed);
+      }
+    }
+
+    for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int kind = 0; kind != 2; ++kind) {
+        int before = hop_cf_destroyed();
+        hop_cf_reset(0);
+        frame = ownership ? hop_cf_arc_aux_roundtrip(kind, caller) : hop_cf_aux_roundtrip(kind, caller);
+        task = start(&frame);
+        assert(finish(task).kind == OBJC3_COMPLETION_SUCCESS);
+        assert(hop_cf_arguments() == 1 && hop_cf_entries() == 0);
+        objc3_task_release(task);
+        for (unsigned step = 0; step != 1000000 && hop_cf_live(); ++step) sched_yield();
+        assert(hop_cf_live() == 0 && hop_cf_destroyed() == before + 1);
+      }
+      for (int kind = 0; kind != 13; ++kind) {
+        int representation = kind >= 10 ? kind - 10 : kind % 3;
+        int outcomes = kind == 9 ? 2 : representation == 0 ? 3 : representation == 1 ? 6 : 5;
+        for (int outcome = 0; outcome != outcomes; ++outcome) {
+          int foreign_before = hop_cf_destroyed(), object_before = hop_destroyed();
+          int foreign_arguments = kind == 9 ? 0 : 1;
+          int object_arguments = kind >= 6 && kind <= 8;
+          hop_mrc_reset(0);
+          hop_cf_reset(outcome == 5 ? 2 : outcome == 2);
+          frame = ownership ? hop_cf_arc_roundtrip(kind, caller) : hop_cf_roundtrip(kind, caller);
+          type = frame.result_type;
+          task = start(&frame);
+          if (outcome == 1 || outcome == 3) {
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            assert(hop_cf_arguments() == foreign_arguments);
+            if (outcome == 3) {
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+              assert(hop_cf_entries() == 0);
+            }
+            objc3_task_request_cancel(task);
+          } else if (outcome == 4) {
+            for (unsigned step = 0; step != 1000 && hop_cf_entries() == 0; ++step) {
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+            }
+            assert(hop_cf_entries() == 1);
+            objc3_task_request_cancel(task);
+          }
+          objc3_completion completion = finish(task);
+          if (outcome == 0) {
+            assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+            result = -1;
+            assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+            assert(result == (kind == 9 ? 0 : 42));
+          } else if (outcome == 2 || outcome == 5) {
+            objc3_service_status service = OBJC3_SERVICE_OK;
+            assert(completion.kind == OBJC3_COMPLETION_ERROR);
+            assert(objc3_async_error_get_service(completion.error, &service) == OBJC3_SERVICE_OK &&
+                   service == OBJC3_SERVICE_OUT_OF_MEMORY);
+          } else {
+            assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+          }
+          assert(hop_cf_arguments() == foreign_arguments && hop_mrc_arguments() == object_arguments);
+          assert(hop_cf_entries() == (outcome == 0 || outcome == 4));
+          objc3_task_release(task);
+          for (unsigned step = 0; step != 1000000 &&
+               (hop_cf_live() || hop_destroyed() != object_before + object_arguments); ++step)
+            sched_yield();
+          assert(hop_cf_live() == 0 && hop_cf_destroyed() == foreign_before + foreign_arguments);
+          assert(hop_destroyed() == object_before + object_arguments);
+        }
       }
     }
 

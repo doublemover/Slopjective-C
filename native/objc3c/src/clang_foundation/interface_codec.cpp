@@ -472,6 +472,10 @@ llvm::Error ValidateForEncoding(
       kCxxAsyncDefinitionSemantic) != sidecar.required_semantics.end();
   if (has_async_definitions != async_definition_capability)
     return Invalid("C++ async definition identity and required capability must agree");
+  const bool consuming = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasAsyncConsumedOwnershipIdentity);
+  const bool consuming_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kAsyncConsumedOwnershipSemantic) != sidecar.required_semantics.end();
+  if (consuming != consuming_capability)
+    return Invalid("async consuming ownership identity and required capability must agree");
   const bool dependent_types = std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(), HasDependentKeyPathTypeIdentity);
   const bool dependent_type_capability = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), kDependentKeyPathTypeSemantic) != sidecar.required_semantics.end();
   const bool dependent_type_paths = std::find(sidecar.required_semantics.begin(), sidecar.required_semantics.end(), "objc3.typed-keypaths.v1") != sidecar.required_semantics.end();

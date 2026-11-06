@@ -447,6 +447,75 @@ void TestDependentKeyPathLiteralBodies() {
   }
 }
 
+void TestAsyncConsumedOwnershipCapability() {
+  for (const char *standard : {"c17", "c++20", "c++23"}) {
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args = {"-x", std::string(standard) == "c17" ? "objective-c" : "objective-c++",
+          std::string("-std=") + standard, "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
+          "--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      clang::tooling::FileContentMappings files;
+      AddRuntimeInterfaceFiles(files, args);
+      const std::string source = R"(
+        #include "objc3c/runtime/objc3_runtime_services.h"
+        typedef const void *CFRef;
+        CFRef body_source(void) __attribute__((nothrow,cf_returns_retained));
+        int sync_entry(__attribute__((cf_consumed)) CFRef) __attribute__((nothrow,objc_executor(main)));
+        int consume_signature(__attribute__((cf_consumed)) CFRef) __objc3_async_frame;
+        static inline int consume_body(void) __objc3_async_frame {
+          return __objc3_await sync_entry(body_source());
+        }
+        static int unpublished_body(void) __objc3_async_frame {
+          return __objc3_await sync_entry(body_source());
+        }
+        int plain(void);
+      )";
+      auto emit = [&](llvm::StringRef text, llvm::StringRef file, const std::vector<std::string> &exports) {
+        auto ast = clang::tooling::buildASTFromCodeWithArgs(text, args, file, "clang-tool",
+            std::make_shared<clang::PCHContainerOperations>(),
+            clang::tooling::getClangStripDependencyFileAdjuster(), files);
+        assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        auto result = EmitSemanticInterface(ast->getASTContext(), "fixture.async.ownership", "test", {}, {}, {}, exports);
+        for (const auto &diagnostic : result.diagnostics)
+          std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+        assert(result.success);
+        return result;
+      };
+      const std::vector<std::string> base = {"CFRef", "body_source", "sync_entry", "plain"};
+      auto plain = emit(source, "ownership-private.m", base);
+      assert(plain.sidecar_json.find(kAsyncConsumedOwnershipSemantic) == std::string::npos);
+      for (const std::string exported : {"consume_signature", "consume_body"}) {
+        auto exports = base; exports.push_back(exported);
+        auto result = emit(source, "ownership-provider.m", exports);
+        assert(result.sidecar_json.find(kAsyncConsumedOwnershipSemantic) != std::string::npos);
+        auto parsed = llvm::json::parse(result.sidecar_json);
+        assert(parsed && parsed->getAsObject());
+        const auto *required = parsed->getAsObject()->getArray("required_semantics"); assert(required);
+        std::vector<llvm::StringRef> supported;
+        for (const auto &item : *required) {assert(item.getAsString()); supported.push_back(*item.getAsString());}
+        auto decoded = DecodeSemanticInterfaceSidecar(result.sidecar_json, result.source_bytes, supported);
+        assert(decoded);
+        auto replayed = emit(result.source_bytes, "relocated/ownership-consumer.m", exports);
+        assert(replayed.identity.semantic_fingerprint == result.identity.semantic_fingerprint);
+        auto old = supported; std::erase(old, llvm::StringRef(kAsyncConsumedOwnershipSemantic));
+        auto unsupported = DecodeSemanticInterfaceSidecar(result.sidecar_json, result.source_bytes, old);
+        assert(!unsupported); llvm::consumeError(unsupported.takeError());
+        auto missing = *decoded; std::erase(missing.required_semantics, kAsyncConsumedOwnershipSemantic);
+        auto rejected = EncodeSemanticInterfaceSidecar(missing, supported);
+        assert(!rejected);
+        const auto missing_error = llvm::toString(rejected.takeError());
+        assert(llvm::StringRef(missing_error).contains("async consuming ownership identity"));
+        auto control = DecodeSemanticInterfaceSidecar(plain.sidecar_json, plain.source_bytes, supported);
+        assert(control); control->required_semantics.push_back(kAsyncConsumedOwnershipSemantic);
+        auto invented = EncodeSemanticInterfaceSidecar(*control, supported);
+        assert(!invented);
+        const auto invented_error = llvm::toString(invented.takeError());
+        assert(llvm::StringRef(invented_error).contains("async consuming ownership identity"));
+      }
+    }
+  }
+}
+
 void TestKeyPathSubscriptBodies() {
   for (const char *standard : {"c++20", "c++23"}) {
     for (bool arc : {false, true}) {
@@ -6058,6 +6127,7 @@ int main() {
   TestOpaqueKeyPathSignatureRoundTrips();
   TestKeyPathSubscriptBodies();
   TestDependentKeyPathLiteralBodies();
+  TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();
   TestUnmodeledAttributesFailClosed();
   TestCAsyncPhysicalABIRoundTrips();

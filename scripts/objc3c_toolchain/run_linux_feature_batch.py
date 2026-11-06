@@ -234,6 +234,15 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     arc_task_consuming = compile_source(case, work / "task-consuming.mm", work,
                         language="objective-c++", standard="c++20", ownership="arc",
                         output_name="arc-task-consuming.o")
+                    cf_runtime = compile_source(case, work / "cf-runtime.m", work,
+                        language="objective-c", standard="c17", ownership="mrc",
+                        output_name="cf-runtime.o")
+                    cf_consuming = compile_source(case, work / "cf-consuming.mm", work,
+                        language="objective-c++", standard="c++20", ownership="mrc",
+                        output_name="cf-consuming.o")
+                    cf_arc_consuming = compile_source(case, work / "cf-consuming.mm", work,
+                        language="objective-c++", standard="c++20", ownership="arc",
+                        output_name="cf-arc-consuming.o")
                     snapshots = compile_source(case, work / "snapshots.m", work,
                         language="objective-c", standard="c17", ownership=case.provider_ownership,
                         output_name="snapshots.o")
@@ -247,10 +256,13 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     (work / "consuming.m").unlink()
                     (work / "mrc-consuming.m").unlink()
                     (work / "task-consuming.mm").unlink()
+                    (work / "cf-runtime.m").unlink()
+                    (work / "cf-consuming.mm").unlink()
                     extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
                     client = compile_source(case, work / "client.m", work, extra=extra)
                     execute(case, [provider, owned_packet, cxx_packet, consuming, mrc_consuming,
                                    mrc_task_consuming, arc_task_consuming,
+                                   cf_runtime, cf_consuming, cf_arc_consuming,
                                    snapshots, automatic, client], work)
                 elif case.feature == "spawn":
                     extra = []

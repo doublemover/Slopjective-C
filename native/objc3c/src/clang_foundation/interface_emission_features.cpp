@@ -133,6 +133,46 @@ bool HasDeclarationNullableKeyPathWrite(const clang::NamedDecl *declaration) {
   });
 }
 
+bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
+  return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
+    struct Ownership : clang::DynamicRecursiveASTVisitor {
+      bool found = false;
+      bool VisitType(clang::Type *type) override {
+        if (const auto *function = llvm::dyn_cast<clang::FunctionProtoType>(type);
+            function && function->getObjC3FunctionEffects().Async)
+          for (unsigned i = 0; i != function->getNumParams(); ++i)
+            found |= function->isParamConsumed(i) ||
+                     function->getExtParameterInfo(i).isCFConsumed();
+        return true;
+      }
+      bool VisitFunctionDecl(clang::FunctionDecl *function) override {
+        found |= HasNativeAsyncConsumedCallable(function); return true;
+      }
+      bool VisitBlockDecl(clang::BlockDecl *block) override {
+        found |= HasNativeAsyncConsumedCallable(block); return true;
+      }
+      void NoteSource(const clang::Expr *source) {
+        if (!source) return;
+        source = source->IgnoreImplicit()->IgnoreParenImpCasts();
+        if (const auto *call = llvm::dyn_cast<clang::CallExpr>(source))
+          found |= HasNativeConsumedCallable(call->getDirectCallee());
+        if (const auto *message = llvm::dyn_cast<clang::ObjCMessageExpr>(source))
+          found |= HasNativeConsumedCallable(message->getMethodDecl());
+      }
+      bool VisitCoawaitExpr(clang::CoawaitExpr *await) override {
+        NoteSource(clang::getObjC3AwaitSourceExpression(await));
+        return true;
+      }
+      bool VisitPseudoObjectExpr(clang::PseudoObjectExpr *expression) override {
+        NoteSource(clang::getObjC3IsolationSourceSyntax(expression));
+        return true;
+      }
+    } visitor;
+    visitor.TraverseStmt(const_cast<clang::Stmt *>(statement));
+    return visitor.found;
+  });
+}
+
 bool HasDeclarationDependentKeyPathTypeBody(const clang::NamedDecl *declaration) {
   return HasPublishedExpression(declaration, [](const clang::Stmt *statement) {
     struct Types : clang::DynamicRecursiveASTVisitor {

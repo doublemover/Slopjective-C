@@ -4,9 +4,10 @@ This source span extends awaited isolation to MRC consumed object and Block
 parameters, consuming instance receivers, and synchronous init-family methods.
 It also supplies the ownership stages required by consumed MRC native-frame
 parameters and receivers. The following 2.96 source span also handles C++ task-ABI
-MRC consumption and ARC consuming task receivers. CF ownership and async
-initializers remain open. Extension ABI 22 and the runtime frame layout are
-unchanged by these lowering changes.
+MRC consumption and ARC consuming task receivers. The
+[2.97 CF span](linux_isolation_cf_consumption.md) adds consumed opaque CF arguments.
+CF result/NSObject-backed storage and async initializers remain open. Extension
+ABI 22 and the runtime frame layout are unchanged by these lowering changes.
 
 An MRC caller supplies one existing +1 for each consumed operand. The generated
 ramp adopts that claim with normal/EH cleanup before frame allocation or copying.

@@ -78,3 +78,13 @@ when a later await cancels. The client separately cancels before body entry and
 during its yield, destroys a task without starting it, and catches a throwing
 parameter move before promise construction. Every case checks exact body-entry,
 source-evaluation and object-destruction counts.
+
+The 2.97 source additions compile `cf-runtime.m` once and `cf-consuming.mm` under
+both ownership modes. The runtime fixture implements the standard CF retain and
+release ABI with separate live/destruction counters. Each configuration runs
+120 CF scenarios: functions, class methods, combined consuming receivers and CF
+arguments, synchronous/frame/task targets and function typedef declarations.
+Null inputs must skip generated CF retain/release operations. Unused tasks and
+throwing parameter moves add independent prologue cleanup checks. Other cases
+cancel before or between frames, cancel a suspended body, or fail either native
+allocation. These compiler ownership witnesses do not qualify a CF framework.

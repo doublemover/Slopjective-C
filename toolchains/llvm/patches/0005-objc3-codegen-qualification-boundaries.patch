@@ -4169,7 +4169,7 @@ index 7421733ef..fc98b6929 100644
      }
      fields.push_back(fieldType);
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..b3d6be5cf 100644
+index e84e05e8e..df3a54158 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,12 +11,22 @@
@@ -4881,10 +4881,14 @@ index e84e05e8e..b3d6be5cf 100644
        llvm::Value *V = Arg.isIndirect()
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
-@@ -2780,6 +3227,15 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2780,6 +3227,19 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
    llvm::Value *ArgVal = (DoStore ? Arg.getDirectValue() : nullptr);
  
    LValue lv = MakeAddrLValue(DeclPtr, Ty);
++  if (IsScalar && isObjC3CFConsumedAsyncParameter(CurCodeDecl, &D)) {
++    if (!ArgVal) ArgVal = Builder.CreateLoad(DeclPtr);
++    pushObjC3CFParameterCleanup(*this, ArgVal);
++  }
 +  if (IsScalar && !getLangOpts().ObjCAutoRefCount &&
 +      isObjC3ConsumedAsyncParameter(CurCodeDecl, &D)) {
 +    // The MRC caller transfers one claim when the entry ramp is invoked.
@@ -4898,7 +4902,7 @@ index e84e05e8e..b3d6be5cf 100644
    // The true implementation will take care of that.
    if (IsScalar && !CurFuncIsThunk) {
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..56b09cc1f 100644
+index 6a0d127fb..afc5af401 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -5090,12 +5094,21 @@ index 6a0d127fb..56b09cc1f 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7461,23 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7461,32 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
 -        opaqueData = OVMA::bind(CGF, ov, ov->getSourceExpr());
-+        if ((IsKeyPath || IsIsolation) && ov->getType()->isObjCRetainableType())
++        bool ForeignOperand = false;
++        if (IsIsolation)
++          for (unsigned I = 0; I != Entry->getNumArgs(); ++I)
++            if (Entry->getArg(I)->IgnoreParenImpCasts() == ov &&
++                Entry->getDirectCallee()->getParamDecl(I)->hasAttr<CFConsumedAttr>())
++              ForeignOperand = true;
++        if (ForeignOperand)
++          opaqueData = OVMA::bind(CGF, ov, RValue::get(
++              emitObjC3CFOperandSnapshot(CGF, ov->getSourceExpr())));
++        else if ((IsKeyPath || IsIsolation) && ov->getType()->isObjCRetainableType())
 +          opaqueData = OVMA::bind(CGF, ov, RValue::get(
 +              emitObjC3RetainableOperandSnapshot(CGF, ov->getSourceExpr())));
 +        else if (IsKeyPath && ov->getType()->isRecordType() &&
@@ -21646,7 +21659,7 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..9833df8db 100644
+index bf896f133..f9f33abfd 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
 @@ -1,3 +1,4 @@
@@ -21815,18 +21828,22 @@ index bf896f133..9833df8db 100644
      }
  
      ~ParamReferenceReplacerRAII() {
-@@ -898,6 +974,29 @@ struct GetReturnObjectManager {
+@@ -898,6 +974,33 @@ struct GetReturnObjectManager {
  
  static void emitBodyAndFallthrough(CodeGenFunction &CGF,
                                     const CoroutineBodyStmt &S, Stmt *Body) {
-+  if (!CGF.getLangOpts().ObjCAutoRefCount) {
++  if (const auto *Signature = getObjC3CallableFunctionType(CGF.CurCodeDecl);
++      Signature && Signature->getObjC3FunctionEffects().Async) {
 +    auto Handoff = [&](const VarDecl *Original) {
-+      if (!isObjC3ConsumedAsyncParameter(CGF.CurCodeDecl, Original)) return;
++      const bool Foreign = isObjC3CFConsumedAsyncParameter(CGF.CurCodeDecl, Original);
++      if (!Foreign && (CGF.getLangOpts().ObjCAutoRefCount ||
++          !isObjC3ConsumedAsyncParameter(CGF.CurCodeDecl, Original))) return;
 +      QualType T = Original->getType();
 +      LValue Slot = CGF.MakeAddrLValue(CGF.GetAddrOfLocalVar(Original), T);
 +      llvm::Value *Value = CGF.EmitLoadOfScalar(Slot, Original->getLocation());
-+      llvm::Value *Owned = T->isBlockPointerType()
-+          ? CGF.EmitARCRetainBlock(Value, true) : CGF.EmitARCRetainNonBlock(Value);
++      llvm::Value *Owned = Foreign ? emitObjC3CFRetain(CGF, Value)
++          : T->isBlockPointerType() ? CGF.EmitARCRetainBlock(Value, true)
++                                    : CGF.EmitARCRetainNonBlock(Value);
 +      CGF.EmitStoreOfScalar(Owned, Slot, true);
 +    };
 +    // This path is reached only after initial await_resume succeeds and its
@@ -21845,7 +21862,7 @@ index bf896f133..9833df8db 100644
    CGF.EmitStmt(Body);
    const bool CanFallthrough = CGF.Builder.GetInsertBlock();
    if (CanFallthrough)
-@@ -922,6 +1021,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -922,6 +1025,17 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
        {Builder.getInt32(NewAlign), NullPtr, NullPtr, NullPtr});
    createCoroData(*this, CurCoro, CoroId);
  
@@ -21863,31 +21880,36 @@ index bf896f133..9833df8db 100644
    GetReturnObjectManager GroManager(*this, S);
    CurCoro.Data->SuspendBB =
        GroManager.DirectEmit ? RetBB : createBasicBlock("pre.gvo.conv");
-@@ -1002,12 +1112,78 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
+@@ -1002,12 +1116,83 @@ void CodeGenFunction::EmitCoroutineBody(const CoroutineBodyStmt &S) {
      }
      for (auto *PM : S.getParamMoves()) {
        EmitStmt(PM);
 -      ParamReplacer.addCopy(cast<DeclStmt>(PM));
 +      const VarDecl *Original = ParamReplacer.addCopy(cast<DeclStmt>(PM));
-+      if (!getLangOpts().ObjCAutoRefCount &&
-+          isObjC3ConsumedAsyncParameter(CurCodeDecl, Original)) {
++      const bool Foreign = isObjC3CFConsumedAsyncParameter(CurCodeDecl, Original);
++      if (Foreign || (!getLangOpts().ObjCAutoRefCount &&
++          isObjC3ConsumedAsyncParameter(CurCodeDecl, Original))) {
 +        // A plain MRC parameter copy has no C++ destructor. Give the lazy
 +        // coroutine an independent pin before promise construction can throw.
 +        // The adopting entry parameter's cleanup stays outside this frame.
 +        QualType T = Original->getType();
 +        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(Original), T);
 +        llvm::Value *Value = EmitLoadOfScalar(Slot, Original->getLocation());
-+        llvm::Value *Owned = T->isBlockPointerType()
-+            ? EmitARCRetainBlock(Value, true) : EmitARCRetainNonBlock(Value);
++        llvm::Value *Owned = Foreign ? emitObjC3CFRetain(*this, Value)
++            : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
++                                      : EmitARCRetainNonBlock(Value);
 +        EmitStoreOfScalar(Owned, Slot, true);
 +        struct ReleaseManualParameter final : EHScopeStack::Cleanup {
 +          llvm::Value *Owner;
-+          explicit ReleaseManualParameter(llvm::Value *Owner) : Owner(Owner) {}
++          bool Foreign;
++          ReleaseManualParameter(llvm::Value *Owner, bool Foreign)
++              : Owner(Owner), Foreign(Foreign) {}
 +          void Emit(CodeGenFunction &CGF, Flags) override {
-+            CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
++            if (Foreign) emitObjC3CFRelease(CGF, Owner);
++            else CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
 +          }
 +        };
-+        EHStack.pushCleanup<ReleaseManualParameter>(NormalAndEHCleanup, Owned);
++        EHStack.pushCleanup<ReleaseManualParameter>(NormalAndEHCleanup, Owned, Foreign);
 +      }
        // TODO: if(CoroParam(...)) need to surround ctor and dtor
        // for the copy, so that llvm can elide it if the copy is
@@ -25540,10 +25562,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..98a69e921
+index 000000000..74b2bbe94
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1302 @@
+@@ -0,0 +1,1353 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25864,6 +25886,13 @@ index 000000000..98a69e921
 +    CGF.EmitARCRelease(Value, ARCPreciseLifetime);
 +  }
 +};
++struct ReleaseCFCapture final : EHScopeStack::Cleanup {
++  llvm::Value *Value;
++  explicit ReleaseCFCapture(llvm::Value *Value) : Value(Value) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    emitObjC3CFRelease(CGF, Value);
++  }
++};
 +struct FreeFrame final : EHScopeStack::Cleanup {
 +  llvm::Value *Id, *Frame;
 +  FreeFrame(llvm::Value *Id, llvm::Value *Frame) : Id(Id), Frame(Frame) {}
@@ -26135,6 +26164,39 @@ index 000000000..98a69e921
 +}
 +} // namespace
 +
++llvm::Value *clang::CodeGen::emitObjC3CFRetain(CodeGenFunction &CGF,
++                                              llvm::Value *Value) {
++  auto *Incoming = CGF.Builder.GetInsertBlock();
++  auto *Retain = CGF.createBasicBlock("objc3.cf.retain");
++  auto *Done = CGF.createBasicBlock("objc3.cf.retained");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Value), Retain, Done);
++  CGF.EmitBlock(Retain);
++  llvm::Value *Owned = call(CGF, "CFRetain", CGF.Int8PtrTy, {Value});
++  auto *Retained = CGF.Builder.GetInsertBlock();
++  CGF.EmitBranch(Done);
++  CGF.EmitBlock(Done);
++  auto *Result = CGF.Builder.CreatePHI(Value->getType(), 2, "objc3.cf.owner");
++  Result->addIncoming(Value, Incoming);
++  Result->addIncoming(Owned, Retained);
++  return Result;
++}
++
++void clang::CodeGen::emitObjC3CFRelease(CodeGenFunction &CGF,
++                                        llvm::Value *Value) {
++  auto *Release = CGF.createBasicBlock("objc3.cf.release");
++  auto *Done = CGF.createBasicBlock("objc3.cf.released");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Value), Release, Done);
++  CGF.EmitBlock(Release);
++  call(CGF, "CFRelease", CGF.VoidTy, {Value});
++  CGF.EmitBranch(Done);
++  CGF.EmitBlock(Done);
++}
++
++void clang::CodeGen::pushObjC3CFParameterCleanup(CodeGenFunction &CGF,
++                                                 llvm::Value *Value) {
++  CGF.EHStack.pushCleanup<ReleaseCFCapture>(NormalAndEHCleanup, Value);
++}
++
 +void clang::CodeGen::drainObjC3AsyncAutoreleasePools(
 +    CodeGenFunction &CGF, llvm::ArrayRef<Address> Pools) {
 +  for (Address Slot : llvm::reverse(Pools))
@@ -26400,9 +26462,15 @@ index 000000000..98a69e921
 +           (T->isObjCObjectPointerType() || T->isBlockPointerType())) ||
 +          (!getLangOpts().ObjCAutoRefCount &&
 +           isObjC3ConsumedFrameParameter(&Callable, P));
++      const bool ForeignConsumed = isObjC3CFConsumedAsyncParameter(&Callable, P);
 +      const bool ARCOwningSelf = Receiver &&
 +          getLangOpts().ObjCAutoRefCount && !P->isARCPseudoStrong();
-+      if (ARCOwningSelf) {
++      if (ForeignConsumed) {
++        auto *Value = EmitLoadOfScalar(MakeAddrLValue(Original, T), P->getLocation());
++        auto *Owned = emitObjC3CFRetain(*this, Value);
++        EmitStoreOfScalar(Owned, MakeAddrLValue(Copy, T), true);
++        pushObjC3CFParameterCleanup(*this, Owned);
++      } else if (ARCOwningSelf) {
 +        // Consuming self is a mutable strong local. Its cleanup must follow
 +        // the slot after reassignment rather than releasing the original SSA
 +        // pointer a second time. The ramp's adopted self remains independent.
@@ -26424,7 +26492,9 @@ index 000000000..98a69e921
 +      }
 +      LocalDeclMap.find(P)->second = Copy;
 +      BindCaptureDebugInfo(P, Copy);
-+      if (ARCOwningSelf) {
++      if (ForeignConsumed) {
++        // The foreign pin above owns this raw pointer slot in both ARC modes.
++      } else if (ARCOwningSelf) {
 +        pushDestroy(NormalAndEHCleanup, Copy, T,
 +                    destroyARCStrongPrecise, false);
 +      } else if (Receiver || TransferredReference) {
@@ -26469,19 +26539,22 @@ index 000000000..98a69e921
 +      EmitBlock(Entered);
 +    }
 +
-+    if (!getLangOpts().ObjCAutoRefCount &&
-+        !Callable.hasAttr<ObjC3IsolationThunkAttr>()) {
++    {
 +      // An MRC body balances its consumed arguments manually. Do not create
 +      // those handoff claims until the lazy body is actually entered: pre-entry
 +      // cancellation or destruction owns only the independently pinned frame.
 +      // The adopting ramp has already balanced the caller's original +1.
 +      for (const VarDecl *P : Parameters) {
-+        if (!isObjC3ConsumedFrameParameter(&Callable, P)) continue;
++        const bool Foreign = isObjC3CFConsumedAsyncParameter(&Callable, P);
++        if (!Foreign && (getLangOpts().ObjCAutoRefCount ||
++            Callable.hasAttr<ObjC3IsolationThunkAttr>() ||
++            !isObjC3ConsumedFrameParameter(&Callable, P))) continue;
 +        QualType T = P->getType();
 +        LValue Slot = MakeAddrLValue(GetAddrOfLocalVar(P), T);
 +        llvm::Value *Value = EmitLoadOfScalar(Slot, P->getLocation());
-+        llvm::Value *Owned = T->isBlockPointerType()
-+            ? EmitARCRetainBlock(Value, true) : EmitARCRetainNonBlock(Value);
++        llvm::Value *Owned = Foreign ? emitObjC3CFRetain(*this, Value)
++            : T->isBlockPointerType() ? EmitARCRetainBlock(Value, true)
++                                      : EmitARCRetainNonBlock(Value);
 +        EmitStoreOfScalar(Owned, Slot, true);
 +      }
 +    }
@@ -26848,10 +26921,10 @@ index 000000000..98a69e921
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3Async.h b/clang/lib/CodeGen/CGObjC3Async.h
 new file mode 100644
-index 000000000..13dbb4797
+index 000000000..a919ac350
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,43 @@
 +//===--- CGObjC3Async.h - Native C async checked continuation ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ASYNC_H
@@ -26869,6 +26942,11 @@ index 000000000..13dbb4797
 +namespace CodeGen {
 +class CodeGenFunction;
 +class Address;
++// Standard CF ownership operations skip null, which is valid optional storage
++// but is not a valid operand for the foreign runtime's CFRetain/CFRelease.
++llvm::Value *emitObjC3CFRetain(CodeGenFunction &, llvm::Value *);
++void emitObjC3CFRelease(CodeGenFunction &, llvm::Value *);
++void pushObjC3CFParameterCleanup(CodeGenFunction &, llvm::Value *);
 +// Dynamic native-frame storage never lives on the resuming thread's stack.
 +// An owner gives a VLA lexical lifetime; no owner gives builtin alloca lifetime.
 +llvm::Value *emitObjC3CAsyncStorage(CodeGenFunction &, llvm::Value *Bytes,
@@ -28353,14 +28431,15 @@ index 99dfaa80b..6d07d652a 100644
      incrementProfileCounter(C);
 diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.cpp b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
 new file mode 100644
-index 000000000..2d597d94f
+index 000000000..d438495b1
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3KeyPath.cpp
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,118 @@
 +//===--- CGObjC3KeyPath.cpp - Native key-path operand ownership ------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3KeyPath.h"
++#include "CGObjC3Async.h"
 +#include "CGObjC3BlockCaptures.h"
 +#include "CodeGenFunction.h"
 +#include "clang/AST/Attr.h"
@@ -28375,23 +28454,31 @@ index 000000000..2d597d94f
 +namespace {
 +struct ReleaseOperandSnapshot final : EHScopeStack::Cleanup {
 +  llvm::Value *Owner;
-+  explicit ReleaseOperandSnapshot(llvm::Value *Owner) : Owner(Owner) {}
++  bool Foreign;
++  ReleaseOperandSnapshot(llvm::Value *Owner, bool Foreign = false)
++      : Owner(Owner), Foreign(Foreign) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
-+    CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
++    if (Foreign) emitObjC3CFRelease(CGF, Owner);
++    else CGF.EmitARCRelease(Owner, ARCPreciseLifetime);
 +  }
 +};
 +
 +struct ReleasePendingOperandSnapshot final : EHScopeStack::Cleanup {
 +  Address Storage;
-+  explicit ReleasePendingOperandSnapshot(Address Storage) : Storage(Storage) {}
++  bool Foreign;
++  ReleasePendingOperandSnapshot(Address Storage, bool Foreign)
++      : Storage(Storage), Foreign(Foreign) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
-+    CGF.EmitARCRelease(CGF.Builder.CreateLoad(Storage), ARCPreciseLifetime);
++    llvm::Value *Value = CGF.Builder.CreateLoad(Storage);
++    if (Foreign) emitObjC3CFRelease(CGF, Value);
++    else CGF.EmitARCRelease(Value, ARCPreciseLifetime);
 +  }
 +};
 +
-+llvm::Value *acquireOperand(CodeGenFunction &CGF, const Expr *Source) {
++llvm::Value *acquireOperand(CodeGenFunction &CGF, const Expr *Source,
++                            bool Foreign = false) {
 +  if (const auto *Parens = dyn_cast<ParenExpr>(Source))
-+    return acquireOperand(CGF, Parens->getSubExpr());
++    return acquireOperand(CGF, Parens->getSubExpr(), Foreign);
 +  if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Source)) {
 +    // Acquire the snapshot before the operand's own temporary destruction.
 +    // Keep a rollback slot below that temporary stack so a throwing C++
@@ -28401,18 +28488,19 @@ index 000000000..2d597d94f
 +                                         "objc3.operand.pending");
 +    auto *Start = CGF.Builder.CreateStore(llvm::Constant::getNullValue(
 +        CGF.ConvertType(Source->getType())), Pending);
-+    CGF.EHStack.pushCleanup<ReleasePendingOperandSnapshot>(EHCleanup, Pending);
++    CGF.EHStack.pushCleanup<ReleasePendingOperandSnapshot>(EHCleanup, Pending, Foreign);
 +    auto Rollback = CGF.EHStack.stable_begin();
 +    llvm::Value *Owner;
 +    {
 +      ObjC3BlockCaptureFullExprScope Captures(CGF, Cleanups);
 +      CodeGenFunction::RunCleanupsScope Temporaries(CGF);
-+      Owner = acquireOperand(CGF, Cleanups->getSubExpr());
++      Owner = acquireOperand(CGF, Cleanups->getSubExpr(), Foreign);
 +      CGF.Builder.CreateStore(Owner, Pending);
 +    }
 +    CGF.DeactivateCleanupBlock(Rollback, Start);
 +    return Owner;
 +  }
++  if (Foreign) return emitObjC3CFRetain(CGF, CGF.EmitScalarExpr(Source));
 +  // ARC performs owned weak loads and consumes an already-owned production.
 +  // MRC acquires an independent retain even for a conventional +1 operand;
 +  // this snapshot must not consume the caller's original ownership claim.
@@ -28428,6 +28516,14 @@ index 000000000..2d597d94f
 +  assert(Source->getType()->isObjCRetainableType());
 +  llvm::Value *Owner = acquireOperand(CGF, Source);
 +  CGF.pushFullExprCleanup<ReleaseOperandSnapshot>(NormalAndEHCleanup, Owner);
++  return Owner;
++}
++
++llvm::Value *clang::CodeGen::emitObjC3CFOperandSnapshot(
++    CodeGenFunction &CGF, const Expr *Source) {
++  assert(Source->getType()->isPointerType());
++  llvm::Value *Owner = acquireOperand(CGF, Source, true);
++  CGF.pushFullExprCleanup<ReleaseOperandSnapshot>(NormalAndEHCleanup, Owner, true);
 +  return Owner;
 +}
 +
@@ -28459,10 +28555,10 @@ index 000000000..2d597d94f
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3KeyPath.h b/clang/lib/CodeGen/CGObjC3KeyPath.h
 new file mode 100644
-index 000000000..4cf95565e
+index 000000000..99f958861
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3KeyPath.h
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,22 @@
 +//===--- CGObjC3KeyPath.h - Native key-path operand ownership ----*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -28477,6 +28573,8 @@ index 000000000..4cf95565e
 +/// snapshot survives result construction and has precise normal/EH cleanup at
 +/// the enclosing full-expression, under both ARC and manual reference counting.
 +llvm::Value *emitObjC3RetainableOperandSnapshot(CodeGenFunction &, const Expr *);
++/// Acquire a standard CF pin before a later isolated-call operand executes.
++llvm::Value *emitObjC3CFOperandSnapshot(CodeGenFunction &, const Expr *);
 +/// Return a normalized +0 MRC getter result before precise receiver cleanup.
 +/// Null means the current return is outside a compiler-owned keypath getter.
 +llvm::Value *tryEmitObjC3KeyPathGetterReturn(CodeGenFunction &, const Expr *);
@@ -29774,5 +29872,114 @@ index 000000000..dfe4caddd
 +// CHECK-DAG: __objc3_isolation_entry_
 +// CHECK-DAG: @llvm.objc.retain
 +// CHECK-DAG: @llvm.objc.release
++// CHECK-DAG: call i32 @objc3_executor_get_main
++// CHECK-DAG: call i32 @objc3_task_hop
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-cf-consumption.h b/clang/test/ObjC3/CodeGen/Inputs/native-cf-consumption.h
+new file mode 100644
+index 000000000..7bcbabddd
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-cf-consumption.h
+@@ -0,0 +1,72 @@
++#ifndef NATIVE_CF_CONSUMPTION_H
++#define NATIVE_CF_CONSUMPTION_H
++#include "native-c-async-frame.h"
++#ifdef __cplusplus
++#include "native-async-task.h"
++template<class T> objc3_async_frame __objc3_async_to_frame(objc3::task<T>) noexcept;
++extern "C" {
++#endif
++typedef const struct __CFNativeObject *NativeCFRef;
++extern const void *CFRetain(const void *) __attribute__((nothrow));
++extern void CFRelease(const void *) __attribute__((nothrow));
++extern NativeCFRef cf_source(void) __attribute__((cf_returns_retained));
++extern int cf_sync(__attribute__((cf_consumed)) NativeCFRef)
++    __attribute__((nothrow,objc_executor(main)));
++#ifdef __cplusplus
++}
++#endif
++#ifdef __cplusplus
++typedef int CFConsumedSignature(__attribute__((cf_consumed)) NativeCFRef) noexcept;
++#else
++typedef int CFConsumedSignature(__attribute__((cf_consumed)) NativeCFRef);
++#endif
++extern CFConsumedSignature cf_type_entry __attribute__((nothrow,objc_executor(main)));
++#ifdef __cplusplus
++#define CF_NATIVE_NOEXCEPT noexcept
++#else
++#define CF_NATIVE_NOEXCEPT
++#endif
++static int cf_native(__attribute__((cf_consumed)) NativeCFRef value) CF_NATIVE_NOEXCEPT
++    __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++static int cf_native(__attribute__((cf_consumed)) NativeCFRef value) CF_NATIVE_NOEXCEPT __objc3_async_frame {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  return result;
++}
++#ifdef __cplusplus
++static int cf_task(__attribute__((cf_consumed)) NativeCFRef value)
++    noexcept __objc3_async __attribute__((objc_executor(main)));
++static int cf_task(__attribute__((cf_consumed)) NativeCFRef value) noexcept __objc3_async {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  return result;
++}
++#endif
++#ifdef __cplusplus
++typedef int CFAliasedFrame(__attribute__((cf_consumed)) NativeCFRef) noexcept __objc3_async_frame;
++typedef int CFAliasedTask(__attribute__((cf_consumed)) NativeCFRef) noexcept __objc3_async;
++static CFAliasedFrame cf_alias_frame __attribute__((objc_executor(main)));
++static CFAliasedTask cf_alias_task __attribute__((objc_executor(main)));
++static int cf_alias_frame(__attribute__((cf_consumed)) NativeCFRef value) noexcept __objc3_async_frame {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  return result;
++}
++static int cf_alias_task(__attribute__((cf_consumed)) NativeCFRef value) noexcept __objc3_async {
++  int result = value != 0;
++  if (value) CFRelease(value);
++  return result;
++}
++#endif
++static int cf_parent(void) __objc3_async_frame {
++  int result = __objc3_await cf_sync(cf_source());
++  result += __objc3_await cf_type_entry(cf_source());
++  result += __objc3_await cf_native(cf_source());
++#ifdef __cplusplus
++  result += __objc3_await cf_task(cf_source());
++  result += __objc3_await cf_alias_frame(cf_source());
++  result += __objc3_await cf_alias_task(cf_source());
++#endif
++  return result;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-cf-consumption.m b/clang/test/ObjC3/CodeGen/native-cf-consumption.m
+new file mode 100644
+index 000000000..d6a7bd078
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cf-consumption.m
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -emit-pch -o %t.c17.mrc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -include-pch %t.c17.mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -emit-pch -o %t.c17.arc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -include-pch %t.c17.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch -o %t.c++20.mrc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t.c++20.mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch -o %t.c++20.arc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t.c++20.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -emit-pch -o %t.c++23.mrc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -include-pch %t.c++23.mrc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -emit-pch -o %t.c++23.arc %S/Inputs/native-cf-consumption.h
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fcxx-exceptions -fobjc-arc -include-pch %t.c++23.arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-cf-consumption.h"
++objc3_async_frame use_foreign_entries(void) {return cf_parent();}
++// CHECK-DAG: call {{.*}} @CFRetain
++// CHECK-DAG: call void @CFRelease
++// CHECK-DAG: call {{.*}}i32 @cf_sync
 +// CHECK-DAG: call i32 @objc3_executor_get_main
 +// CHECK-DAG: call i32 @objc3_task_hop

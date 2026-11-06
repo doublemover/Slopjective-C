@@ -549,11 +549,17 @@ int class_cross(int value) { return [Counter classValue:value]; }
                   "int mrc_task_cross(void) __objc3_async {"
                   "return __objc3_await mrc_task_consume(mrc_task_source());}")));
   }
-  Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
+  Success(Compile(Make("typedef const struct __CFToken *CFTokenRef;\n"
               "int cf_consume(__attribute__((cf_consumed)) CFTokenRef value)" + NoThrow +
               " __attribute__((objc_executor(main)));\n"
-              "int cf_cross(CFTokenRef value) __objc3_async {"
-              "return __objc3_await cf_consume(value);}"),
+              "CFTokenRef cf_source(void) __attribute__((cf_returns_retained));\n"
+              "int cf_cross(void) __objc3_async {"
+              "return __objc3_await cf_consume(cf_source());}")));
+  Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
+              "CFTokenRef cf_result(void)" + NoThrow +
+              " __attribute__((cf_returns_retained,objc_executor(main)));\n"
+              "CFTokenRef cf_result_cross(void) __objc3_async {"
+              "return __objc3_await cf_result();}"),
          "awaited isolated entry requires");
   Success(
       Compile(Make("__attribute__((objc_executor(main), ns_returns_retained)) "

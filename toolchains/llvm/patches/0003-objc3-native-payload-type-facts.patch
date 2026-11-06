@@ -1665,10 +1665,10 @@ index 000000000..d2047cc0f
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..2ecb86763
+index 000000000..4ef81631b
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,197 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1693,6 +1693,30 @@ index 000000000..2ecb86763
 +  return nullptr;
 +}
 +
++/// Function typedefs can carry ownership without a repeated parameter
++/// attribute on their function declaration. Resolve the original logical slot,
++/// rather than depending on a synthetic parameter's optional scope index.
++inline FunctionProtoType::ExtParameterInfo
++getObjC3AsyncParameterInfo(const Decl *Callable, const VarDecl *Parameter) {
++  const auto *Signature = getObjC3CallableFunctionType(Callable);
++  if (!Signature) return {};
++  auto Find = [&](auto Parameters) -> FunctionProtoType::ExtParameterInfo {
++    unsigned Index = 0;
++    for (const ParmVarDecl *Candidate : Parameters) {
++      if (Candidate == Parameter)
++        return Index < Signature->getNumParams()
++            ? Signature->getExtParameterInfo(Index)
++            : FunctionProtoType::ExtParameterInfo();
++      ++Index;
++    }
++    return {};
++  };
++  if (const auto *FD = dyn_cast_or_null<FunctionDecl>(Callable)) return Find(FD->parameters());
++  if (const auto *MD = dyn_cast_or_null<ObjCMethodDecl>(Callable)) return Find(MD->parameters());
++  if (const auto *BD = dyn_cast_or_null<BlockDecl>(Callable)) return Find(BD->parameters());
++  return {};
++}
++
 +/// Whether an async entry must preserve a manually consumed object claim.
 +/// This predicate describes the ownership contract, independently of ARC mode.
 +inline bool isObjC3ConsumedAsyncParameter(const Decl *Callable,
@@ -1703,10 +1727,25 @@ index 000000000..2ecb86763
 +  QualType Type = Parameter->getType();
 +  if (!Type->isObjCObjectPointerType() && !Type->isBlockPointerType())
 +    return false;
-+  if (Parameter->hasAttr<NSConsumedAttr>()) return true;
++  if (Parameter->hasAttr<NSConsumedAttr>() ||
++      getObjC3AsyncParameterInfo(Callable, Parameter).isConsumed()) return true;
 +  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
 +  return Method && Parameter == Method->getSelfDecl() &&
 +         Method->hasAttr<NSConsumesSelfAttr>();
++}
++
++inline bool isObjC3CFConsumedAsyncParameter(const Decl *Callable,
++                                          const VarDecl *Parameter) {
++  const auto *Signature = getObjC3CallableFunctionType(Callable);
++  if (!Signature || !Signature->getObjC3FunctionEffects().Async ||
++      (!Parameter->hasAttr<CFConsumedAttr>() &&
++       !getObjC3AsyncParameterInfo(Callable, Parameter).isCFConsumed()))
++    return false;
++  QualType T = Parameter->getType();
++  return T->isPointerType() && !T->isObjCRetainableType() &&
++         !T->getPointeeType()->isFunctionType() &&
++         T.getAddressSpace() == LangAS::Default &&
++         T->getPointeeType().getAddressSpace() == LangAS::Default;
 +}
 +
 +inline bool isObjC3ConsumedFrameParameter(const Decl *Callable,

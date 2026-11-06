@@ -11,6 +11,7 @@
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/ObjC3Async.h"
 #include "clang/AST/ObjC3Borrowed.h"
 #include "clang/AST/ObjC3Isolation.h"
 #include "clang/AST/ObjC3KeyPath.h"
@@ -23,6 +24,33 @@ inline constexpr const char *kNativeOwnershipContractSemantic =
     "objc3.native-ownership-contracts.v1";
 inline constexpr const char *kNativeIsolationContractSemantic =
     "objc3.isolation-contracts.v1";
+
+inline bool HasNativeConsumedCallable(const clang::Decl *declaration) {
+  const auto *type = clang::getObjC3CallableFunctionType(declaration);
+  if (type)
+    for (unsigned i = 0; i != type->getNumParams(); ++i)
+      if (type->isParamConsumed(i) || type->getExtParameterInfo(i).isCFConsumed())
+        return true;
+  if (declaration && declaration->hasAttr<clang::NSConsumesSelfAttr>()) return true;
+  auto contains = [](auto parameters) {
+    for (const clang::ParmVarDecl *parameter : parameters)
+      if (parameter->hasAttr<clang::NSConsumedAttr>() ||
+          parameter->hasAttr<clang::CFConsumedAttr>()) return true;
+    return false;
+  };
+  if (const auto *function = llvm::dyn_cast_or_null<clang::FunctionDecl>(declaration))
+    return contains(function->parameters());
+  if (const auto *method = llvm::dyn_cast_or_null<clang::ObjCMethodDecl>(declaration))
+    return contains(method->parameters());
+  if (const auto *block = llvm::dyn_cast_or_null<clang::BlockDecl>(declaration))
+    return contains(block->parameters());
+  return false;
+}
+
+inline bool HasNativeAsyncConsumedCallable(const clang::Decl *declaration) {
+  const auto *type = clang::getObjC3CallableFunctionType(declaration);
+  return type && type->getObjC3FunctionEffects().Async && HasNativeConsumedCallable(declaration);
+}
 
 // Values, not source expressions or AST addresses, participate in contract
 // identity. All fields are length-delimited, including user-defined names.
@@ -143,6 +171,10 @@ inline void AppendNativeTypeContracts(std::string &out, clang::QualType type,
       for (unsigned index = 0; index < prototype->getNumParams(); ++index) {
         const auto parameter =
             position + ".parameter[" + std::to_string(index) + "]";
+        if (prototype->getObjC3FunctionEffects().Async &&
+            (prototype->isParamConsumed(index) ||
+             prototype->getExtParameterInfo(index).isCFConsumed()))
+          AppendNativeContractField(out, ";async-consuming-ownership:v1;");
         AppendNativeTypeContracts(out, prototype->getParamType(index), context,
                                   parameter, depth + 1);
         if (prototype->getExtParameterInfo(index).isNoEscape())
@@ -232,6 +264,8 @@ inline void ReadNativeDeclarationContracts(const clang::NamedDecl *declaration,
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
     for (unsigned i = 0; i < method->param_size(); ++i)
       parameter(method->getParamDecl(i), i);
+  if (HasNativeAsyncConsumedCallable(declaration))
+    AppendNativeContractField(ownership, ";async-consuming-ownership:v1;");
   if (!ownership.empty()) {
     if (!effects.ownership_identity.empty())
       effects.ownership_identity += ";";

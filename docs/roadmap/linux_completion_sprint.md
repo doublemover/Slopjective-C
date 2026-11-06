@@ -17,7 +17,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                               |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native verification in progress           |
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                   |
-| Isolation          | Remaining executor/actor crossings, CF consumption, async init-family forms and managed values                              | Open                                                               |
+| Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                   |
+| Isolation          | Remaining crossings, CF result/NSObject-backed storage, async init-family forms and managed values                          | Open                                                               |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
 | Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
@@ -129,8 +130,8 @@ allocation failure, consumed blocks and combined receiver/argument ownership.
 Initializer witnesses distinguish self, nil and replacement results. All twelve new C17/C++23 ARC/MRC source/PCH CodeGen commands pass. One
 C17/MRC/O0 source runtime configuration passes all synchronous/native-frame
 consumption scenarios and the ARC self-reassignment controls; consolidated
-matrices remain pending. CF consumption and async initializers remain separate
-open contracts.
+matrices remain pending. The following CF span covers consumed opaque pointer
+arguments; CF result/NSObject-backed storage and async initializers remain open.
 
 Source 2.96 extends adoption, frame pins and post-resume manual handoff to C++
 task parameters and consuming receivers. ARC consuming task self has its own
@@ -142,6 +143,29 @@ C++20/C++23 ARC/MRC source/PCH CodeGen commands pass. Three focused runtime
 configurations pass 37 commands: C17/MRC/O0/source, C++20/MRC/O2/source and
 C++23/ARC/O2/PCH, each compiling independent ARC and MRC task providers. Frontend execution and complete matrices remain
 pending.
+
+## Authored CF consumed arguments and source-free ownership
+
+The [2.97 CF span](linux_isolation_cf_consumption.md) supplies independent standard
+CF snapshots, ramp adoption, frame pins and post-entry manual handoff under both
+ARC and MRC. Function typedefs retain their consumption facts through admission
+and generated signatures. Combined consuming Objective-C receivers and CF
+arguments retain distinct owners. Generated CF operations skip null.
+
+All eighteen CF C17/C++20/C++23 ARC/MRC source/PCH CodeGen commands and six
+rejection controls pass. Three focused native configurations pass 46 commands,
+including 120 CF scenarios per configuration, alongside the preceding ownership
+witnesses. They check cancellation at successive entry/body stages, both native
+allocation failures, typedef-based calls, unused tasks and throwing parameter
+copies. The CF fixture implements the standard ownership ABI with independent
+destruction counters; it does not qualify a full CF framework.
+
+Async consuming signatures and published bodies now require
+`objc3.async-consuming-ownership.v1`. Native identities and every reader preserve
+that requirement; codec and contract checks reject missing/invented claims.
+Signature/body-only, private-body and replay controls are authored. All eight
+affected frontend units and expanded test sources pass syntax checks; frontend
+execution and complete instrumented/package matrices remain pending.
 
 ## Authored nullable key-path result policy
 

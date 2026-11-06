@@ -971,6 +971,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesKeyPathSubscripts())
     sidecar.required_semantics.push_back("objc3.keypath-subscripts.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (HasAsyncConsumedOwnershipIdentity(declaration))
+      sidecar.required_semantics.push_back(kAsyncConsumedOwnershipSemantic);
     if (HasDependentKeyPathTypeIdentity(declaration))
       sidecar.required_semantics.push_back(kDependentKeyPathTypeSemantic);
     if (HasDependentKeyPathLiteralIdentity(declaration))
@@ -1175,6 +1177,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kNullableKeyPathWriteSemantic,
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
+    kAsyncConsumedOwnershipSemantic,
     kDependentKeyPathTypeSemantic,
       "objc3.async-entry-abi.v1",
       "objc3.direct-dispatch.v1",
@@ -1356,6 +1359,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kNullableKeyPathWriteSemantic,
     kCheckedKeyPathReadSemantic,
     kDependentKeyPathLiteralSemantic,
+    kAsyncConsumedOwnershipSemantic,
     kDependentKeyPathTypeSemantic,
     "objc3.async-entry-abi.v1",
     "objc3.direct-dispatch.v1",
