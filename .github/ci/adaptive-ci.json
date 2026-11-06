@@ -25,9 +25,27 @@
       ],
       "expectedJobs": [
         {
-          "name": "compiler-closeout",
+          "name": "compiler-closeout (core)",
           "requiredSteps": [
             "^Build full native objc3c closeout surface$"
+          ]
+        },
+        {
+          "name": "compiler-closeout (frontend-fuzz)",
+          "requiredSteps": [
+            "^Build full native objc3c closeout surface$"
+          ]
+        },
+        {
+          "name": "compiler-closeout (source-coverage)",
+          "requiredSteps": [
+            "^Build full native objc3c closeout surface$"
+          ]
+        },
+        {
+          "name": "Verify exact-revision periodic evidence",
+          "requiredSteps": [
+            "^Verify all periodic execution shards$"
           ]
         }
       ]

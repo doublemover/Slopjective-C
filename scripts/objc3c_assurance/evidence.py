@@ -5,9 +5,11 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import os
+import shutil
 import xml.etree.ElementTree as ET
 
-from .plan import validate
+from .plan import execution_shards, foundation_receipts, selected_suites, validate
 
 SCHEMA = 'objc3c.native-assurance.result.v1'
 MAX_BYTES = 256 * 1024 * 1024
@@ -313,11 +315,13 @@ def suite_results(root: Path, name: str) -> list[dict]:
     raise ValueError('unrecognized native assurance suite')
 
 
-def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str,
+              shard: str | None = None) -> dict:
     validate(plan)
     if plan['revision']['tested'] != tested or outcomes.get('plan') != 'success':
         raise ValueError('selection failed or selected the wrong tested revision')
-    expected = {suite['id'] for suite in plan['suites']}
+    suites = selected_suites(plan, shard)
+    expected = {suite['id'] for suite in suites}
     if not expected:
         if plan['classification'] != 'prose-only' or outcomes.get('native') != 'skipped':
             raise ValueError('only justified prose-only changes may skip native execution')
@@ -328,6 +332,8 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     if (receipt.get('schema') != SCHEMA or receipt.get('status') != 'PASS' or
             receipt.get('revision') != plan['revision'] or receipt.get('plan_sha256') != plan['sha256']):
         raise ValueError('native result is incomplete, stale, failed or belongs to another revision')
+    if receipt.get('shard') != shard:
+        raise ValueError('native result belongs to a different execution shard')
     records = receipt.get('suites', [])
     if len(records) != len(expected) or {row['id'] for row in records} != expected:
         raise ValueError('native result differs from the exact required suite set')
@@ -356,7 +362,7 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
     if saved_costs.get('path') != 'operational-costs.json' or artifact(root, cost_file) != saved_costs:
         raise ValueError('native operational measurements are missing or changed')
     observed = json.loads(cost_file.read_text())
-    expected_costs = snapshot(foundations=[root / 'foundation/foundation.json'],
+    expected_costs = snapshot(foundations=foundation_receipts(root, suites),
         installations=[root / 'package/release.json'] if 'package' in expected else [])
     if observed != expected_costs:
         raise ValueError('native operational measurements differ from actual owner receipts')
@@ -365,3 +371,59 @@ def aggregate(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
         raise ValueError('native evidence exceeds the 256 MiB artifact budget')
     return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
             'suites': sorted(expected), 'artifact_bytes': total}
+
+
+def aggregate_shards(plan: dict, root: Path, *, outcomes: dict, tested: str) -> dict:
+    shards = execution_shards(plan)
+    if not shards:
+        return aggregate(plan, root, outcomes=outcomes, tested=tested)
+    if (not root.is_dir() or root.is_symlink() or
+            {path.name for path in root.iterdir()} != set(shards) or
+            any(not (root / name).is_dir() or (root / name).is_symlink() for name in shards)):
+        raise ValueError('native evidence has missing, extra or linked execution shards')
+    results = [aggregate(plan, root / shard, outcomes=outcomes, tested=tested, shard=shard)
+               for shard in shards]
+    suites = [name for result in results for name in result['suites']]
+    if (len(suites) != len(set(suites)) or
+            set(suites) != {row['id'] for row in plan['suites']}):
+        raise ValueError('native execution shards overlap or omit selected suites')
+    total = sum(row['artifact_bytes'] for row in results)
+    if total > MAX_BYTES:
+        raise ValueError('native evidence exceeds the 256 MiB artifact budget')
+    return {'status': 'PASS', 'classification': 'native', 'revision': plan['revision'],
+            'suites': sorted(suites), 'shards': shards, 'artifact_bytes': total}
+
+
+def publish(plan: dict, root: Path, destination: Path, *, shard: str | None = None) -> dict:
+    """Stage only durable evidence, preserving diagnostics from a failed job too.
+
+    Upload a directory containing the shard name so artifact merging cannot
+    overwrite another shard's root receipt. Never upload complete build trees or
+    follow the per-owner links to the deduplicated product stores.
+    """
+    suites = selected_suites(plan, shard)
+    root = root.resolve(strict=True)
+    destination = destination.absolute()
+    if destination.exists() or destination.is_symlink() or destination.is_relative_to(root):
+        raise ValueError('native evidence publication requires a fresh separate directory')
+    files = [root / name for name in ('result.json', 'operational-costs.json')
+             if (root / name).exists()]
+    for suite in suites:
+        files.extend(native_files(root / suite['id']))
+    if not files:
+        raise ValueError('native job produced no durable evidence to publish')
+    destination.mkdir(parents=True)
+    total = 0
+    for source in files:
+        saved = artifact(root, source)
+        target = destination / saved['path']
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(source, target)
+        except OSError:
+            shutil.copyfile(source, target)
+        if artifact(destination, target) != saved:
+            raise ValueError('native evidence changed during publication')
+        total += saved['bytes']
+    return {'files': len(files), 'bytes': total, 'shard': shard,
+            'scope': 'durable native receipts, logs and content-addressed replay inputs'}

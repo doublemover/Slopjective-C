@@ -95,6 +95,10 @@ for (const [name, before, after] of [
     'git config --global --add safe.directory "$GITHUB_WORKSPACE"',
     "echo missing-checkout-trust",
   ],
+  ["cancelled sibling shard", "      fail-fast: false", "      fail-fast: true"],
+  ["unsharded verification", "verify --sharded", "verify"],
+  ["unpartitioned execution", '--shard "$NATIVE_SHARD"', ""],
+  ["overwriting merged receipts", "merge-multiple: true", "merge-multiple: false"],
   ["floating action", "@3d3c42e5aac5ba805825da76410c181273ba90b1", "@main"],
 ]) {
   test(`native workflow rejects ${name}`, () => {
@@ -172,6 +176,30 @@ for (const [name, mutate] of [
       files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
         "scripts.objc3c_assurance verify",
         "echo pretending-to-verify",
+      );
+    },
+  ],
+  [
+    "missing coverage shard",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, frontend-fuzz]",
+      );
+    },
+  ],
+  [
+    "duplicate matrix names",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "shard: [core, frontend-fuzz, source-coverage]", "shard: [core, core, source-coverage]",
+      );
+    },
+  ],
+  [
+    "periodic aggregate without prerequisites",
+    (files) => {
+      files["adaptive-closeout.yml"] = files["adaptive-closeout.yml"].replace(
+        "needs: compiler-closeout", "needs: nonexistent",
       );
     },
   ],

@@ -57,6 +57,20 @@ export function validateNativeGate(text) {
     step.run?.includes("scripts.objc3c_assurance run"),
   );
   validateNativeContainer(workflow.jobs.native);
+  const nativeJob = workflow.jobs.native;
+  if (nativeJob.strategy?.["fail-fast"] !== false ||
+      nativeJob.strategy?.matrix?.shard !== "${{ fromJSON(needs.plan.outputs.shards) }}" ||
+      nativeJob.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
+      !execute?.run.includes('--shard "$NATIVE_SHARD"') ||
+      !(gate.steps ?? []).some((step) =>
+        step.run?.includes("scripts.objc3c_assurance verify --sharded") && step.if === "always()") ||
+      !(gate.steps ?? []).some((step) => step.uses?.startsWith("actions/download-artifact@") &&
+        step.with?.pattern?.startsWith("native-results-") && step.with?.["merge-multiple"] === true) ||
+      !(nativeJob.steps ?? []).some((step) => step.if === "always()" &&
+        step.run?.includes("scripts.objc3c_assurance publish") &&
+        step.run.includes('--destination "out/native-assurance/evidence/$NATIVE_SHARD"'))) {
+    throw new Error("Native compiler profiles require independent execution and a complete sharded receipt gate");
+  }
   if (!execute?.run.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"')) {
     throw new Error(
       "Activated container execution must trust only its exact checked-out workspace",
@@ -155,6 +169,27 @@ export function validateImplementationGate(text, releaseText) {
   }
 }
 
+function concreteJobNames(id, job) {
+  const name = job.name ?? id;
+  if (!name.includes("${{")) return [name];
+  const matrix = job.strategy?.matrix;
+  if (!matrix || typeof matrix !== "object" || Array.isArray(matrix))
+    throw new Error("Expected a bounded static workload matrix");
+  let names = [name];
+  for (const [key, values] of Object.entries(matrix)) {
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) || !Array.isArray(values) ||
+        values.length === 0 || values.length > 16 ||
+        values.some((value) => typeof value !== "string" || value.includes("${{")))
+      throw new Error("Invalid static workload matrix");
+    names = names.flatMap((value) => values.map((item) =>
+      value.replaceAll(`\${{ matrix.${key} }}`, item)));
+    if (names.length > 16) throw new Error("Workload matrix exceeds its reviewed bound");
+  }
+  if (names.some((value) => value.includes("${{")) || new Set(names).size !== names.length)
+    throw new Error("Unresolved or duplicate workload matrix names");
+  return names;
+}
+
 export async function validateWorkflowContracts(config, readWorkflow) {
   validateConfig(config);
   const dispatcher = yaml.load(await readWorkflow("adaptive-maintenance.yml"));
@@ -179,15 +214,19 @@ export async function validateWorkflowContracts(config, readWorkflow) {
     }
     for (const expected of suite.expectedJobs) {
       const jobs = Object.entries(workflow.jobs ?? {}).filter(
-        ([id, job]) => (job.name ?? id) === expected.name,
+        ([id, job]) => concreteJobNames(id, job).includes(expected.name),
       );
       if (jobs.length !== 1) throw new Error(`Missing or duplicate expected job ${expected.name}`);
-      const [, job] = jobs[0];
+      const [id, job] = jobs[0];
+      const receiptGate = job.if === "always()" && (job.steps ?? []).some(
+        (step) => step.run?.includes("scripts.objc3c_assurance verify --sharded") &&
+          step.if === "always()",
+      );
       if ((job.steps ?? []).some((step) => step.run?.includes("scripts.objc3c_assurance run"))) {
         validateNativeContainer(job);
       }
       if (
-        Object.hasOwn(job, "if") ||
+        (Object.hasOwn(job, "if") && !receiptGate) ||
         job["continue-on-error"] ||
         !(job["timeout-minutes"] > 0 && job["timeout-minutes"] <= 360)
       ) {
@@ -197,18 +236,30 @@ export async function validateWorkflowContracts(config, readWorkflow) {
       }
       for (const pattern of expected.requiredSteps) {
         const steps = (job.steps ?? []).filter((step) => new RegExp(pattern).test(step.name ?? ""));
-        if (steps.length !== 1 || !steps[0].run || steps[0].if || steps[0]["continue-on-error"]) {
+        if (steps.length !== 1 || !steps[0].run ||
+            (steps[0].if && !(receiptGate && steps[0].if === "always()")) ||
+            steps[0]["continue-on-error"]) {
           throw new Error(`Missing or conditional workload step ${pattern}`);
         }
       }
-      if (
-        !(job.steps ?? []).some(
-          (step) => step.run?.includes("scripts.objc3c_assurance verify") && step.if === "always()",
-        )
-      ) {
-        throw new Error(`Workload ${expected.name} lacks an always-running receipt verifier`);
+      if (!receiptGate) {
+        const gate = workflow.jobs.gate;
+        const needs = Array.isArray(gate?.needs) ? gate.needs : [gate?.needs];
+        if (job.strategy?.["fail-fast"] !== false ||
+            job.env?.NATIVE_SHARD !== "${{ matrix.shard }}" ||
+            !(job.steps ?? []).some((step) => step.run?.includes('run --periodic-sha "$SOURCE_SHA"') &&
+              step.run.includes('--shard "$NATIVE_SHARD"')) ||
+            gate?.if !== "always()" || !needs.includes(id) ||
+            !(gate.steps ?? []).some((step) => step.if === "always()" &&
+              step.run?.includes("scripts.objc3c_assurance verify --sharded"))) {
+          throw new Error(`Workload ${expected.name} lacks independent profiles and a complete receipt verifier`);
+        }
       }
     }
+    const actual = Object.entries(workflow.jobs ?? {}).flatMap(([id, job]) => concreteJobNames(id, job));
+    if (JSON.stringify(actual.toSorted()) !==
+        JSON.stringify(suite.expectedJobs.map((job) => job.name).toSorted()))
+      throw new Error("Configured workload inventory differs from the concrete native jobs");
   }
 }
 

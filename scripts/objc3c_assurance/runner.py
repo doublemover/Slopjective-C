@@ -16,7 +16,7 @@ from scripts.objc3c_toolchain.core import build_plans
 from scripts.objc3c_toolchain.frontend_tests import qualify as frontend_tests
 from scripts.objc3c_toolchain.qualify_installed import qualify_installed
 from .evidence import SCHEMA, MAX_BYTES, artifact, digest, junit, lit, native_files, package_execution
-from .plan import from_checkout, validate
+from .plan import foundation_receipts, from_checkout, selected_suites, validate
 from .execution import checked_command, execute_ctest
 
 # Existing Clang lit taxonomy, confined to touched compiler subsystems. Whole
@@ -26,9 +26,10 @@ UPSTREAM = ('clang/test/AST', 'clang/test/SemaObjC', 'clang/test/SemaObjCXX',
             'clang/test/Modules', 'clang/test/Driver')
 
 
-def run(repo: Path, plan: dict, output: Path) -> dict:
+def run(repo: Path, plan: dict, output: Path, *, shard: str | None = None) -> dict:
     validate(plan)
-    if not plan['suites']:
+    suites = selected_suites(plan, shard)
+    if not suites:
         raise ValueError('native execution requires a nonempty suite selection')
     output = output.resolve()
     # Stale receipts must never be overwritten into a new apparent success.
@@ -37,6 +38,8 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
     report = {'schema': SCHEMA, 'status': 'running', 'revision': plan['revision'],
               'plan_sha256': plan['sha256'], 'suites': [], 'commands': [],
               'cache': {'restored_build_products': False, 'reason': plan['cache_policy']}}
+    if shard is not None:
+        report['shard'] = shard
     environment = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1', 'CCACHE_COMPILERCHECK': 'content'}
     bootstrap = Path(environment['OBJC3C_BOOTSTRAP_LLVM_ROOT']).resolve(strict=True)
     sdk = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
@@ -64,8 +67,18 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
 
     def profile_foundation(profile):
         if profile not in shared:
-            shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
-                                               instrumentation_profile=profile)
+            evidence = directory / 'foundations' / profile
+            try:
+                shared[profile] = build_foundation(repo, host='linux-x86_64', fetch=True, stage=True,
+                    instrumentation_profile=profile, test_results=evidence)
+            finally:
+                receipt = (repo / 'out/toolchains/objc3-development' /
+                    ('build-linux-x86_64-'+profile) / 'foundation-build-report.json')
+                if receipt.is_file():
+                    saved = json.loads(receipt.read_text())
+                    write_json(evidence / 'foundation.json', saved)
+                    for index, phase in enumerate(saved['phases']):
+                        shutil.copyfile(phase['log'], evidence / ('phase-'+str(index)+'.log'))
         plan = build_plans(repo, host='linux-x86_64', instrumentation_profile=profile)['configure']
         return Path(plan['paths']['stage'])
 
@@ -262,7 +275,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
 
     try:
         save()
-        for suite in plan['suites']:
+        for suite in suites:
             directory = output / suite['id']
             directory.mkdir()
             row = {'id': suite['id'], 'status': 'running', 'executions': [], 'artifacts': []}
@@ -287,7 +300,7 @@ def run(repo: Path, plan: dict, output: Path) -> dict:
         if from_checkout(repo, **plan['revision'], periodic=plan['periodic']) != plan:
             raise ValueError('source revision or selection changed during native execution')
         from scripts.objc3c_toolchain.semantic_build_costs import snapshot
-        costs = snapshot(foundations=[output / 'foundation/foundation.json'],
+        costs = snapshot(foundations=foundation_receipts(output, suites),
             installations=[output / 'package/release.json'] if (output / 'package/release.json').is_file() else [])
         cost_file = output / 'operational-costs.json'
         write_json(cost_file, costs)

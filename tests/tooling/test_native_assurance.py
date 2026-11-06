@@ -375,6 +375,98 @@ def verify(selected_plan, tmp_path, **outcomes):
     return evidence.aggregate(selected_plan, tmp_path, outcomes={'plan': 'success', 'native': 'success', **outcomes}, tested=REV['tested'])
 
 
+def test_execution_shards_partition_all_selected_suites_and_profile_builds(tmp_path):
+    from scripts.objc3c_assurance.plan import execution_shards, selected_suites, foundation_receipts
+    plan = select(None, **REV, periodic=True)
+    assert execution_shards(plan) == ['core', 'frontend-fuzz', 'source-coverage']
+    groups = {name: selected_suites(plan, name) for name in execution_shards(plan)}
+    names = [row['id'] for suites in groups.values() for row in suites]
+    assert len(names) == len(set(names)) == len(plan['suites'])
+    assert set(names) == {row['id'] for row in plan['suites']}
+    core = [row['id'] for row in groups['core']]
+    assert core.index('package') < core.index('sanitizer-products') < core.index('runtime-schedules')
+    receipts = foundation_receipts(tmp_path, groups['core'])
+    assert receipts == [tmp_path / 'foundation/foundation.json',
+        tmp_path / 'sanitizer-products/foundations/compiler-asan-ubsan/foundation.json']
+    assert foundation_receipts(tmp_path, groups['frontend-fuzz']) == [
+        tmp_path / 'frontend-fuzz/foundations/compiler-fuzz-asan-ubsan/foundation.json']
+    with pytest.raises(ValueError, match='shard'):
+        selected_suites(select(['tests/tooling/contract.py'], **REV), 'frontend-fuzz')
+    with pytest.raises(ValueError, match='shard'):
+        selected_suites(plan, 'unknown')
+    assert execution_shards(select(['docs/roadmap/prose.md'], **REV)) == []
+
+
+@pytest.mark.parametrize('path', ['scripts/objc3c_assurance/runner.py',
+    '.github/workflows/native-assurance.yml', '.github/workflows/adaptive-closeout.yml'])
+def test_orchestration_edits_select_every_affected_native_owner(path):
+    full = {row['id'] for row in select(None, **REV, periodic=True)['suites']} - {'upstream'}
+    assert {row['id'] for row in select([path], **REV)['suites']} == full
+
+
+def test_sharded_published_bundle_retains_exact_native_evidence(tmp_path):
+    from scripts.objc3c_assurance.plan import foundation_receipts, selected_suites
+    producer = tmp_path / 'producer';producer.mkdir()
+    plan, receipt = passing_bundle(producer)
+    receipt['shard'] = 'core'
+    (producer / 'result.json').write_text(json.dumps(receipt))
+    # Build outputs and unrelated files never enter the upload, even with a
+    # durable-looking extension. The actual evidence remains byte-for-byte bound.
+    ignored = producer / 'frontend/build/compile_commands.json'
+    ignored.parent.mkdir();ignored.write_text('large transient graph')
+    (producer / 'unselected').mkdir()
+    (producer / 'unselected/transient.log').write_text('not selected')
+    destination = tmp_path / 'published/core'
+    published = evidence.publish(plan, producer, destination, shard='core')
+    assert published['files'] > len(plan['suites'])
+    assert not (destination / 'frontend/build').exists()
+    assert not (destination / 'unselected').exists()
+    assert (destination / 'result.json').read_bytes() == (producer / 'result.json').read_bytes()
+    result = evidence.aggregate_shards(plan, destination.parent,
+        outcomes={'plan': 'success', 'native': 'success'}, tested=REV['tested'])
+    assert result['status'] == 'PASS' and result['shards'] == ['core']
+    assert set(result['suites']) == {row['id'] for row in plan['suites']}
+    assert foundation_receipts(destination, selected_suites(plan, 'core')) == [
+        destination / 'foundation/foundation.json']
+    with pytest.raises(ValueError, match='fresh'):
+        evidence.publish(plan, producer, destination, shard='core')
+
+
+@pytest.mark.parametrize('fault', ['missing', 'extra', 'linked', 'wrong-shard', 'wrong-revision',
+    'cancelled', 'missing-suite', 'changed-log', 'changed-cost'])
+def test_sharded_terminal_gate_rejects_incomplete_or_substituted_evidence(tmp_path, fault):
+    producer = tmp_path / 'producer';producer.mkdir()
+    plan, receipt = passing_bundle(producer)
+    receipt['shard'] = 'core'
+    (producer / 'result.json').write_text(json.dumps(receipt))
+    root = tmp_path / 'published'
+    evidence.publish(plan, producer, root / 'core', shard='core')
+    outcomes = {'plan': 'success', 'native': 'success'}
+    if fault == 'missing':
+        (root / 'core').rename(root / 'omitted')
+    elif fault == 'extra':
+        (root / 'foreign').mkdir()
+    elif fault == 'linked':
+        (root / 'core').rename(root / 'saved')
+        (root / 'core').symlink_to(root / 'saved', target_is_directory=True)
+    elif fault == 'wrong-shard':
+        receipt['shard'] = 'frontend-fuzz'
+    elif fault == 'wrong-revision':
+        receipt['revision'] = {**receipt['revision'], 'tested': 'd'*40}
+    elif fault == 'cancelled':
+        outcomes['native'] = 'cancelled'
+    elif fault == 'missing-suite':
+        receipt['suites'].pop()
+    elif fault == 'changed-log':
+        (root / 'core/foundation/phase-0.log').write_text('substituted')
+    elif fault == 'changed-cost':
+        (root / 'core/operational-costs.json').write_text('{}')
+    if (root / 'core').is_dir():
+        (root / 'core/result.json').write_text(json.dumps(receipt))
+    with pytest.raises(ValueError):
+        evidence.aggregate_shards(plan, root, outcomes=outcomes, tested=REV['tested'])
+
+
 def test_complete_bundle_survives_producer_path_relocation(tmp_path):
     plan, _ = passing_bundle(tmp_path)
     assert verify(plan, tmp_path)['status'] == 'PASS'

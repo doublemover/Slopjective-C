@@ -76,6 +76,9 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
         'unknown/empty comparison requires native execution' if not paths else
         'non-prose changes require the stable cross-layer native surface']
     suites = []
+    complete_owners = periodic or not paths or any(path.startswith((
+        'scripts/objc3c_assurance/', '.github/workflows/native-assurance.yml',
+        '.github/workflows/adaptive-closeout.yml')) for path in paths)
 
     def add(name, execution, owner):
         suites.append({'id': name, 'execution': execution, 'owner': owner,
@@ -92,7 +95,7 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
             'scripts/objc3c_toolchain/qualify_installed.py')
         # Unknown sources, compiler changes and fixture changes can affect runtime
         # code generation even when no runtime implementation file changed.
-        sanitizer = periodic or not paths or any(
+        sanitizer = complete_owners or any(
             path.startswith(RUNTIME + FOUNDATION + ('tests/clang_foundation/', 'stdlib/', 'native/objc3c/', 'scripts/objc3c_assurance/')) or
             path.startswith('scripts/objc3c_toolchain/qualify_') for path in paths)
         if sanitizer:
@@ -100,27 +103,27 @@ def select(paths: list[str] | None, *, head: str, base: str, tested: str,
                 'scripts/objc3c_toolchain/qualify_structured_sanitizers.py')
         if periodic:
             add('upstream', ['native-compile', 'expected-rejection'], 'LLVM lit')
-        if periodic or not paths or any(path.startswith(SWIFT) for path in paths):
+        if complete_owners or any(path.startswith(SWIFT) for path in paths):
             add('swift-consumer', ['foreign-import', 'native-compile', 'native-execute', 'expected-rejection'],
                 'scripts/objc3c_toolchain/swift_consumer.py')
-        if periodic or not paths or any(path.startswith(BENCHMARK) for path in paths):
+        if complete_owners or any(path.startswith(BENCHMARK) for path in paths):
             add('semantic-workloads', ['native-compile', 'native-execute', 'semantic-work-count', 'advisory-timing'],
                 'scripts/objc3c_toolchain/semantic_benchmarks.py')
-        if (periodic or not paths or any(path.startswith(PACKAGE) for path in paths or []) or
+        if (complete_owners or any(path.startswith(PACKAGE) for path in paths or []) or
                 any(path.startswith(SANITIZER_PRODUCTS) for path in paths or [])):
             add('package', ['installed-package-qualification'], 'scripts/objc3c_toolchain/linux_sdk.py')
-        if periodic or not paths or any(path.startswith(SANITIZER_PRODUCTS) for path in paths or []):
+        if complete_owners or any(path.startswith(SANITIZER_PRODUCTS) for path in paths or []):
             add('sanitizer-products', ['paired-detector-controls', 'native-product-execute'],
                 'scripts/objc3c_toolchain/sanitizer_products.py')
-        if periodic or not paths or any(path.startswith(RUNTIME_SCHEDULES) for path in paths or []):
+        if complete_owners or any(path.startswith(RUNTIME_SCHEDULES) for path in paths or []):
             add('runtime-schedules', ['generated-history', 'manual-replay', 'worker-replay',
                 'semantic-mutant-rejection', 'asan-ubsan', 'tsan'],
                 'scripts/objc3c_toolchain/runtime_schedules.py')
-        if periodic or not paths or any(path.startswith(FUZZ) for path in paths or []):
+        if complete_owners or any(path.startswith(FUZZ) for path in paths or []):
             add('frontend-fuzz', ['exact-corpus-replay', 'coverage-guided-discovery',
                 'source-branch-feedback', 'fault-minimization'],
                 'scripts/objc3c_toolchain/codec_fuzz.py')
-        if periodic or not paths or any(path.startswith(COVERAGE) for path in paths or []):
+        if complete_owners or any(path.startswith(COVERAGE) for path in paths or []):
             add('source-coverage', ['first-party-source-coverage', 'patched-compiler-source-coverage',
                 'reader-fault-controls'], 'scripts/objc3c_toolchain/compiler_source_coverage.py')
     foundation_changes = not paths or any(path.startswith(FOUNDATION) for path in paths)
@@ -156,3 +159,47 @@ def validate(plan: dict) -> None:
     expected = select(plan['changed_paths'], **plan['revision'], periodic=plan['periodic'])
     if expected != plan:
         raise ValueError('native assurance plan differs from its canonical selection')
+
+
+# Keep independent instrumented compiler builds out of the ordinary source job.
+# Every selected suite still has exactly one owner in the terminal aggregate.
+SHARDS = ('core', 'frontend-fuzz', 'source-coverage')
+SUITE_SHARDS = {name: 'core' for name in (
+    'foundation', 'runtime', 'frontend', 'installed', 'sanitizers', 'upstream',
+    'swift-consumer', 'semantic-workloads', 'package', 'sanitizer-products',
+    'runtime-schedules')}
+SUITE_SHARDS.update({'frontend-fuzz': 'frontend-fuzz', 'source-coverage': 'source-coverage'})
+PROFILE_BUILDS = {'sanitizer-products': 'compiler-asan-ubsan',
+    'runtime-schedules': 'compiler-asan-ubsan', 'frontend-fuzz': 'compiler-fuzz-asan-ubsan',
+    'source-coverage': 'compiler-source-coverage'}
+
+
+def execution_shards(plan: dict) -> list[str]:
+    validate(plan)
+    if any(row['id'] not in SUITE_SHARDS for row in plan['suites']):
+        raise ValueError('native suite has no execution shard')
+    selected = {SUITE_SHARDS[row['id']] for row in plan['suites']}
+    return [name for name in SHARDS if name in selected]
+
+
+def selected_suites(plan: dict, shard: str | None = None) -> list[dict]:
+    available = execution_shards(plan)
+    if shard is None:
+        return plan['suites']
+    if shard not in available:
+        raise ValueError('execution shard is unknown or has no selected native suites')
+    return [row for row in plan['suites'] if SUITE_SHARDS[row['id']] == shard]
+
+
+def foundation_receipts(root: Path, suites: list[dict]) -> list[Path]:
+    """Each profile is built once, by its first selected consumer in this job."""
+    result, profiles = [], set()
+    for suite in suites:
+        name = suite['id']
+        if name == 'foundation':
+            result.append(root / name / 'foundation.json')
+        profile = PROFILE_BUILDS.get(name)
+        if profile and profile not in profiles:
+            result.append(root / name / 'foundations' / profile / 'foundation.json')
+            profiles.add(profile)
+    return result
