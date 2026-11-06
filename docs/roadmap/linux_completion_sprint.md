@@ -13,6 +13,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native frontend replay/identity controls pass; SDK verification pending                                  |
 | Native publication | Native allocator ownership, typed tags, expected formats and builtin diagnostic mappings                                    | Source authored; six source modes and focused syntax checks pass; native frontend replay passes; SDK consolidation pending |
 | Native publication | Declaration-only template functions/members/static data, semantic attributes, C inline bodies and SDK task promise projection  | Source authored; twelve development frontend groups and focused compiler controls pass; SDK consolidation pending |
+| Native publication | ISO C external-inline and inherited/redeclared inline providers with one native definition and source-free consumers       | Source authored; six native link configurations and focused frontend controls pass; SDK consolidation pending |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                                                         |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |
@@ -527,8 +528,7 @@ diagnose before indexing parameter storage.
 
 ISO C inline bodies now publish with `objc3.c-inline-definitions.v1`, distinct
 from the C++ definition contract. Source/identity, capability and owner checks
-reject missing/invented claims. C external inline definitions still need their
-single-provider definition projection and remain explicit implementation work.
+reject missing/invented claims. The following 2.111 span completes external-inline provider projection.
 
 Exact memory byte ranges recover tracked fields and array elements from native
 layout, complete local bases and constant offsets. Full copies preserve loans,
@@ -540,3 +540,21 @@ the current ABI 24 development headers/DSO and current runtime header identities
 This is development execution, not a resealed SDK qualification. Source-free
 package execution, wider native/instrumented matrices and final delivery remain
 pending.
+
+## Single-provider C inline definitions
+
+The [Concurrency 2.111 span](linux_c_inline_providers.md) gives public ISO C inline
+functions one module-owned provider definition. Canonical source normalizes all
+consumer redeclarations to ISO inline, including external definitions, later
+external declarations and inherited inline specifiers. Storage changes are scoped
+to backend observation; the source AST and publication identity retain their
+original declarations. Mutable local static/thread storage and GNU inline modes
+cannot acquire this ISO contract.
+
+The maintained native control passes six C/Objective-C ARC/MRC O0/O2 configurations.
+Each verifies four strong provider symbols, removes provider source, compiles two
+independent consumers, checks that they emit no duplicate external definitions,
+links/runs their calls and verifies shared function addresses. GNU rejection
+preserves output rollback, and ordinary non-module inline behavior is unchanged.
+Four affected frontend replay groups pass. Source-free package integration beyond
+these native controls, wider matrices and coordinated SDK delivery remain pending.

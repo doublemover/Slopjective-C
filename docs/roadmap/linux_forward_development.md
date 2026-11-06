@@ -16,6 +16,13 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.111 C-inline provider span](linux_c_inline_providers.md)
+completes external-inline projection with one provider-owned native definition
+and ISO inline consumer bodies. Six C/Objective-C ARC/MRC O0/O2 configurations
+verify four symbols, two source-free consumers, exact function addresses and
+GNU rejection/rollback; four affected frontend groups pass. Package integration,
+wider matrices and SDK consolidation remain pending.
+
 The [Concurrency 2.110 / System 2.22 publication span](linux_publication_and_byte_ranges.md)
 adds exact constant byte-range loan/callable propagation, complete public
 template declaration signatures and ISO C inline bodies with an explicit checked
@@ -24,7 +31,7 @@ dependencies. All twenty-five focused compiler regressions and twelve current
 development frontend control groups pass. The latter now execute previously
 authored overload, storage, borrowed-result, key-path, capture and native-await
 replay/consumer controls. Source-free package, wider matrix and SDK consolidation
-remain pending; external C inline definitions retain their own provider obligation.
+remain pending. The following C-inline provider span completes external definitions.
 
 The [Concurrency 2.109 manual-factory span](linux_manual_frame_factories.md)
 admits physical-frame factories and ordinary C++ task function pointers without

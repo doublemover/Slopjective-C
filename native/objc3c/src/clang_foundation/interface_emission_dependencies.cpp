@@ -305,6 +305,24 @@ class TypeDependencyVisitor final
                     definition->getQualifiedNameAsString());
       return;
     }
+    if (!context_.getLangOpts().CPlusPlus) {
+      struct CInlineStorage final : clang::DynamicRecursiveASTVisitor {
+        InterfaceEmissionArtifact &result;
+        const clang::FunctionDecl *function;
+        CInlineStorage(InterfaceEmissionArtifact &result,const clang::FunctionDecl *function)
+            :result(result),function(function) {}
+        bool VisitVarDecl(clang::VarDecl *variable) override {
+          if ((variable->isStaticLocal() || variable->getTLSKind()!=clang::VarDecl::TLS_None) &&
+              variable->isThisDeclarationADefinition()!=clang::VarDecl::DeclarationOnly &&
+              !variable->getType().isConstQualified())
+            AddDiagnostic(result,"O3IFC115",
+                "published C inline bodies require immutable local static/thread storage",
+                function->getQualifiedNameAsString());
+          return true;
+        }
+      } storage(result_,definition);
+      storage.TraverseStmt(const_cast<clang::Stmt *>(PublishedFunctionBody(definition)));
+    }
     body_function_ = definition;
     CheckDeclarationAttributes(definition);
     CheckCxxCoroutine(definition);

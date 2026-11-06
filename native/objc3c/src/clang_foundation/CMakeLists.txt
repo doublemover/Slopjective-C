@@ -285,6 +285,18 @@ if (BUILD_TESTING)
     ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_interface_module_names_test PRIVATE objc3c_frontend_v2)
   add_test(NAME objc3_interface_module_names COMMAND objc3_interface_module_names_test)
+  add_executable(objc3_c_inline_provider_test
+    ../../../../tests/clang_foundation/c_inline_provider_test.cpp)
+  target_include_directories(objc3_c_inline_provider_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_c_inline_provider_test PRIVATE objc3c_clang_foundation)
+  find_library(_c_inline_objc_runtime NAMES objc
+    PATHS "${OBJC3C_CLANG_FOUNDATION_ROOT}/lib" NO_DEFAULT_PATH NO_CACHE REQUIRED)
+  target_compile_definitions(objc3_c_inline_provider_test PRIVATE
+    OBJC3_C_INLINE_TEST_LINKER="${CMAKE_CXX_COMPILER}"
+    OBJC3_C_INLINE_TEST_OBJC_LIBRARY="${_c_inline_objc_runtime}")
+  add_test(NAME objc3_c_inline_provider COMMAND objc3_c_inline_provider_test)
+  set_tests_properties(objc3_c_inline_provider PROPERTIES TIMEOUT 90)
   add_executable(objc3_borrowed_pointers_test
     ../../../../tests/clang_foundation/borrowed_pointers_test.cpp)
   target_include_directories(objc3_borrowed_pointers_test SYSTEM PRIVATE

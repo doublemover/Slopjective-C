@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 110,
+        "minor": 111,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "ISO C inline and external-inline functions have one module-owned provider definition and normalized inline consumer bodies, including later external declarations and inherited inline specifiers; scoped backend storage changes preserve source identity, while GNU inline semantics and mutable local static/thread storage reject (source authored; six C/Objective-C ARC/MRC O0/O2 provider/two-consumer link configurations with source removal and stable function addresses, GNU rejection/rollback and four frontend replay groups pass; matched SDK consolidation pending)",
         "Native source publication preserves declaration-only function/member/static-data templates and existing lifetime/isolation attributes, canonical SDK task-promise dependencies, valid builtin/type-tag attribute spelling and empty effectful Block parameter lists; ISO C inline bodies carry a dedicated checked capability (source authored; twelve development frontend control groups and twenty-five focused compiler regressions pass; source-free package and SDK consolidation pending)",
         "Manual raw-frame factories and ordinary task function pointers retain canonical carrier admission and strict capture diagnostics; spawned Block environments are copied before invocation and owned through inner-frame teardown, and lazy group callbacks acquire callable ownership before initial suspension (source authored; eighteen new source/PCH commands, two focused native configurations with thirty ownership/error scenarios each and four package-source modes and two complete spawn configurations/eleven commands pass; frontend/package and wider-matrix consolidation pending)",
         "Persistent native await syntax in ordinary C++ task templates, AST/PCH/import/profile identity, substitution-time isolation/frame adaptation, value-dependent scalar awaits, ordinary co_await separation and source-free package metadata (source authored; extension ABI 24 rebuild, sixty-six focused compiler commands, five native AST controls, four package-source modes and the 944-case ARC/MRC storage witness pass; frontend/package execution and SDK consolidation pending)",

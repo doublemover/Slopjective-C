@@ -804,8 +804,12 @@ clang::NamedDecl *Representative(clang::NamedDecl *declaration) {
     return pattern->getMostRecentDecl();
   if (auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
     return space->getCanonicalDecl();
-  if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+  if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+    if (!function->getASTContext().getLangOpts().CPlusPlus)
+      if (auto *definition=function->getDefinition();definition && definition->isInlined())
+        return definition;
     return function->getMostRecentDecl();
+  }
   if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
     return variable->getDefinition() ? variable->getDefinition() : variable->getMostRecentDecl();
   if (auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
@@ -836,8 +840,7 @@ bool IsDefinition(const clang::NamedDecl *declaration) {
 bool PublishesFunctionBody(const clang::FunctionDecl *function) {
   if (!function || function->isDefaulted() || function->isDeleted()) return false;
   if (!function->getASTContext().getLangOpts().CPlusPlus)
-    return function->isInlineSpecified() && function->getDefinition() &&
-        !function->getDefinition()->isInlineDefinitionExternallyVisible();
+    return function->getDefinition() && function->getDefinition()->isInlined();
   return function->isInlined() || function->getDescribedFunctionTemplate() ||
       IsDetachedCallableTemplateDefinition(function->getDefinition());
 }

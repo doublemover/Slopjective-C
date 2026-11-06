@@ -2545,9 +2545,21 @@ void TestCInlineDefinitionContract() {
   auto control=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(control);
   control->required_semantics.push_back(kCInlineDefinitionSemantic);
   auto invented=EncodeSemanticInterfaceSidecar(*control,semantics);assert(!invented);llvm::consumeError(invented.takeError());
-  auto external=emit("extern inline int c_inline_external(int value){return value;}");
-  assert(!external.success && std::any_of(external.diagnostics.begin(),external.diagnostics.end(),
+  auto immutable=emit("extern inline int c_inline_const(void){static const int value=42;return value;}");
+  assert(immutable.success);
+  auto immutable_replay=emit(immutable.source_bytes);assert(immutable_replay.success);
+  assert(immutable.identity.semantic_fingerprint==immutable_replay.identity.semantic_fingerprint);
+  auto mutable_static=emit("extern inline int c_inline_mutable(void){static int value;return ++value;}");
+  assert(!mutable_static.success && std::any_of(mutable_static.diagnostics.begin(),mutable_static.diagnostics.end(),
       [](const auto &d){return d.code=="O3IFC115";}));
+  auto external=emit("extern inline int c_inline_external(int value){return value;}");
+  assert(external.success && external.source_bytes.find("extern inline")==std::string::npos);
+  auto external_replay=emit(external.source_bytes);assert(external_replay.success);
+  assert(external.identity.semantic_fingerprint==external_replay.identity.semantic_fingerprint);
+  auto redeclared=emit("inline int c_inline_redeclared(int value){return value;}extern int c_inline_redeclared(int);");
+  assert(redeclared.success);
+  auto redeclared_replay=emit(redeclared.source_bytes);assert(redeclared_replay.success);
+  assert(redeclared.identity.semantic_fingerprint==redeclared_replay.identity.semantic_fingerprint);
 }
 
 void TestDeclarationOnlyFunctionTemplates() {

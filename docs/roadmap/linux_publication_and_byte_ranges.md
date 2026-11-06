@@ -16,9 +16,9 @@ spelling and native attribute identity.
 ISO C inline definitions publish their written bodies with
 `objc3.c-inline-definitions.v1`. Their identity binds the body and ISO inline
 linkage. Codec and artifact readers require matching function owners and reject
-missing/invented capabilities. External C inline definitions remain rejected
-until their single-provider definition projection is implemented; consumer replay
-must not accidentally emit another external definition.
+missing/invented capabilities. The [2.111 provider span](linux_c_inline_providers.md) subsequently completes
+external-inline and inherited/redeclared inline projection with a single native
+provider definition; consumers do not emit another external definition.
 
 Canonical task-header promises remain SDK implementation dependencies during
 ordinary C++ coroutine publication. Promise types and protocol calls are skipped

@@ -255,10 +255,10 @@ class InterfaceCollector final
         return true;
       }
     }
-    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
-        function && !context_.getLangOpts().CPlusPlus && function->isInlineSpecified() &&
-        function->getDefinition() && function->getDefinition()->isInlineDefinitionExternallyVisible()) {
-      AddDiagnostic(result_, "O3IFC115", "C external inline definitions require a single provider definition contract",
+    if (const auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+        function && !context_.getLangOpts().CPlusPlus && function->isInlined() &&
+        context_.getLangOpts().GNUInline) {
+      AddDiagnostic(result_,"O3IFC115","semantic C inline interfaces require ISO inline semantics",
                     function->getQualifiedNameAsString());
       return true;
     }
@@ -503,6 +503,22 @@ void PrintUnscopedRootDeclaration(clang::NamedDecl *declaration,
                                           (variable && variable->isExternC()));
   if (c_linkage)
     out << "extern \"C\" {\n";
+  auto *c_inline=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+  const bool project_c_inline=!context.getLangOpts().CPlusPlus && PublishesFunctionBody(c_inline);
+  const auto c_inline_storage=c_inline?c_inline->getStorageClass():clang::SC_None;
+  const bool c_inline_specified=c_inline && c_inline->isInlineSpecified();
+  const bool c_inline_inherited=c_inline && c_inline->isInlined();
+  if(project_c_inline) {
+    c_inline->setStorageClass(clang::SC_None);
+    c_inline->setInlineSpecified(true);
+  }
+  auto restore_c_inline=llvm::scope_exit([&] {
+    if(project_c_inline) {
+      c_inline->setStorageClass(c_inline_storage);
+      c_inline->setInlineSpecified(c_inline_specified);
+      c_inline->setImplicitlyInline(c_inline_inherited);
+    }
+  });
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.PrintAsCanonical = false;
   policy.FullyQualifiedName = true;

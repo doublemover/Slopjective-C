@@ -7,6 +7,9 @@
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/interface_artifact_io.h"
 #include "clang_foundation/interface_source_import_bridge.h"
+#include "clang_foundation/module_names.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Attr.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangStandard.h"
@@ -250,6 +253,64 @@ private:
   clang::ASTContext *deferred_context_ = nullptr;
   bool waiting_for_runtime_ = false;
 };
+
+// A semantic module owns one provider definition for each public C inline
+// function. Consumers replay ISO inline bodies. Change storage only while the
+// backend observes the provider declaration, preserving the source AST seen by
+// Sema, identity generation and the other consumers.
+struct CInlineProviderState {
+  const CompileRequest &request;
+  clang::ASTContext *context=nullptr;
+  std::string source_root;
+  std::vector<std::vector<std::pair<clang::FunctionDecl *,clang::StorageClass>>> saved;
+  explicit CInlineProviderState(const CompileRequest &request):request(request) {}
+  void Initialize(clang::ASTContext &value) {
+    context=&value;
+    source_root=NormalizeModuleSourceRoot(value,request.module_source_root);
+  }
+  void Enter(clang::DeclGroupRef group) {
+    saved.emplace_back();
+    if (!context || context->getLangOpts().CPlusPlus || !request.module_owned_names ||
+        request.emit==EmitKind::Syntax) return;
+    for(auto *declaration:group) {
+      auto *function=llvm::dyn_cast<clang::FunctionDecl>(declaration);
+      if (!function || !function->doesThisDeclarationHaveABody() ||
+          !function->isInlined() || !function->isExternallyVisible() ||
+          !IsModuleOwnedSource(*context,function->getLocation(),source_root)) continue;
+      if (context->getLangOpts().GNUInline || function->hasAttr<clang::GNUInlineAttr>()) {
+        const auto id=context->getDiagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "semantic C inline providers require ISO inline semantics");
+        context->getDiagnostics().Report(function->getLocation(),id);
+        continue;
+      }
+      saved.back().emplace_back(function,function->getStorageClass());
+      function->setStorageClass(clang::SC_Extern);
+    }
+  }
+  void Leave() {
+    assert(!saved.empty());
+    for(auto [function,storage]:saved.back())function->setStorageClass(storage);
+    saved.pop_back();
+  }
+};
+
+class CInlineProviderConsumer final : public clang::ASTConsumer {
+  std::shared_ptr<CInlineProviderState> state_;
+  bool enter_;
+public:
+  CInlineProviderConsumer(std::shared_ptr<CInlineProviderState> state,bool enter)
+      :state_(std::move(state)),enter_(enter) {}
+  void Initialize(clang::ASTContext &context) override {
+    if(enter_)state_->Initialize(context);
+  }
+  bool HandleTopLevelDecl(clang::DeclGroupRef group) override {
+    if(enter_)state_->Enter(group);else state_->Leave();
+    return true;
+  }
+  void HandleInlineFunctionDefinition(clang::FunctionDecl *function) override {
+    if(enter_)state_->Enter(clang::DeclGroupRef(function));else state_->Leave();
+  }
+};
 template <typename NativeAction>
 class ContractAction final : public NativeAction {
  public:
@@ -287,7 +348,15 @@ class ContractAction final : public NativeAction {
       consumers.push_back(std::make_unique<InterfaceImportConsumer>(
           imports_, compiler, lookup_source_, request_, result_));
     consumers.push_back(MakeContractConsumer(request_, result_));
+    std::shared_ptr<CInlineProviderState> c_inline;
+    if(request_.module_owned_names && request_.emit!=EmitKind::Syntax &&
+        (request_.language==BaseLanguage::C || request_.language==BaseLanguage::ObjectiveC)) {
+      c_inline=std::make_shared<CInlineProviderState>(request_);
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(c_inline,true));
+    }
     consumers.push_back(std::move(native));
+    if(c_inline)
+      consumers.push_back(std::make_unique<CInlineProviderConsumer>(std::move(c_inline),false));
     return std::make_unique<clang::MultiplexConsumer>(std::move(consumers));
   }
  private:
