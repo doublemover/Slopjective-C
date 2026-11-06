@@ -34,11 +34,11 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Conditional/nested concurrent Block proofs, bounded alias graphs and explicit owned snapshots                                | Source authored; fifty-four focused compiler commands and two spawn runtime configurations pass |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                                                         |
 | Isolation          | Typed nil native-frame messages and consumed argument cleanup                                                               | Source authored; focused source/PCH/runtime execution passes                                 |
-| Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending                              |
-| Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending                              |
-| Key paths          | Dependent type constructors, deduction, partial ordering and typed generic package APIs                                     | Source authored; native compiler/PCH/package verification pending                            |
+| Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH and focused runtime pass; package verification pending                              |
+| Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH and focused runtime pass; package verification pending                              |
+| Key paths          | Dependent type constructors, deduction, partial ordering and typed generic package APIs                                     | Source authored; native compiler/PCH and focused runtime pass; package verification pending                            |
 | Key paths          | Effectful/isolated and ownership-bearing paths                                                                              | Open                                                                                         |
-| Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/runtime/PCH/package verification pending                           |
+| Key paths          | Nonnull/scalar/aggregate nullable-chain result policy and implementation                                                    | Source authored; compiler/PCH and focused runtime pass; package verification pending                           |
 | Language/library   | Remaining specified generic, property, reflection/metaprogramming and interoperability contracts                            | Open                                                                                         |
 | Profiles           | Core, Strict, Strict Concurrency and Strict System conformance                                                              | Open                                                                                         |
 
@@ -434,3 +434,21 @@ repeated identical conditional origins before capture checking. Fifty-four
 focused compiler commands and two complete spawn runtime configurations pass,
 including sixty-four new exact-lifetime cases. Frontend controls are authored and
 syntax-checked; their execution and final SDK consolidation remain pending.
+
+## Dependent and checked key-path execution checkpoint
+
+All twenty-seven native key-path compiler regressions now pass against the
+current development compiler, including dependent types, applications/packs,
+root literals and source/PCH replay. The checked-traversal IR oracle explicitly
+covers both GNUstep dispatch forms, C/C++ symbol spelling and the trap intrinsic's
+noreturn contract; LLVM 23 need not place an unreachable directly after the call.
+
+The current runtime services were rebuilt with this compiler before execution:
+the earlier service archive did not admit the new checked-read descriptor flag.
+The native descriptor unit test and complete C17 MRC O0 source/C++23 ARC O2 PCH
+key-path runtime configurations pass (twelve commands). These execute dependent
+application/type/literal helpers, present/missing writes, exact accessor counts,
+receiver cleanup and isolated child-process traps for missing scalar, record and
+nonnull object reads. Frontend/source-free package, other runtime/sanitizer
+configurations and coordinated SDK delivery remain pending. This checkpoint does
+not implement effectful/isolated or ownership-bearing key paths.

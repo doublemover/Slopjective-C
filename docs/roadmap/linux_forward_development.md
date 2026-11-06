@@ -16,6 +16,13 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+Dependent key-path types, applications/packs and literals plus checked nullable
+traversal now pass all twenty-seven native key-path regressions and two complete
+current-runtime configurations: C17 MRC O0 source and C++23 ARC O2 PCH (twelve
+commands). The descriptor unit test passes after rebuilding services with the
+current compiler. Frontend/package, wider runtime/sanitizer and SDK consolidation
+remain pending; effect/ownership path contracts stay open.
+
 The [Concurrency 2.106 Block-value span](linux_concurrent_block_values.md) proves
 conditional and nested immutable capture environments with bounded shared graph
 analysis. Explicit strong snapshots preserve their owned storage policy, and
