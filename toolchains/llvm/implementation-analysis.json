@@ -26,6 +26,10 @@
   "translation_unit_timeout_overrides_seconds": {
     "clang/lib/AST/ASTContext.cpp": 3600,
     "clang/lib/AST/ASTImporter.cpp": 3600,
-    "clang/lib/AST/ExprConstant.cpp": 3600
+    "clang/lib/AST/ExprConstant.cpp": 3600,
+    "clang/lib/Sema/SemaChecking.cpp": 3600,
+    "clang/lib/Sema/SemaDecl.cpp": 3600,
+    "clang/lib/Sema/SemaDeclCXX.cpp": 3600,
+    "clang/lib/Sema/SemaExpr.cpp": 3600
   }
 }

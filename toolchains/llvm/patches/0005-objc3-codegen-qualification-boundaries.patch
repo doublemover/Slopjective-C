@@ -4881,7 +4881,7 @@ index e84e05e8e..8fd1f6dc1 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..a4782e6d0 100644
+index 6a0d127fb..56b09cc1f 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,13 @@
@@ -4923,10 +4923,31 @@ index 6a0d127fb..a4782e6d0 100644
      RunCleanupsScope Scope(*this);
      LValue LV = EmitLValue(cleanups->getSubExpr(), IsKnownNonNull);
      if (LV.isSimple()) {
-@@ -6475,6 +6486,87 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -4000,8 +4011,8 @@ llvm::Constant *CodeGenFunction::EmitCheckTypeDescriptor(QualType T) {
+                                    getTarget().isBigEndian()
+                                        ? llvm::endianness::big
+                                        : llvm::endianness::little);
+-    StringRef Str = StringRef(S, sizeof(S) / sizeof(decltype(S[0])));
+-    Buffer.append(Str);
++    // The width suffix is a byte sequence, including both zero bytes.
++    Buffer.append(StringRef(S, sizeof S));
+   }
+ 
+   llvm::Constant *Components[] = {
+@@ -5019,6 +5030,8 @@ LValue CodeGenFunction::EmitArraySubscriptExpr(const ArraySubscriptExpr *E,
+     if (SanOpts.has(SanitizerKind::ArrayBounds))
+       EmitBoundsCheck(E, E->getBase(), Idx, IdxTy, Accessed);
+ 
++    // Sema admits only scalar indices; code generation must produce one.
++    assert(Idx && "Array subscript did not emit its scalar index");
+     // Extend or truncate the index type to 32 or 64-bits.
+     if (Promote && Idx->getType() != IntPtrTy)
+       Idx = Builder.CreateIntCast(Idx, IntPtrTy, IdxSigned, "idxprom");
+@@ -6475,10 +6488,94 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
+-  llvm::CallBase *CallOrInvokeStorage;
 +  QualType CalledType = E->getCallee()->getType();
 +  if (E->getCallee()->hasPlaceholderType(BuiltinType::BoundMember)) {
 +    QualType BoundType = Expr::findBoundMemberType(E->getCallee());
@@ -5008,10 +5029,17 @@ index 6a0d127fb..a4782e6d0 100644
 +    }
 +  }
 +
-   llvm::CallBase *CallOrInvokeStorage;
++  llvm::CallBase *CallOrInvokeStorage = nullptr;
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
-@@ -6702,6 +6794,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
+   }
++  // Builtins and recovery can return without emitting a native call. Clear
++  // caller storage too, so the exit action cannot decorate an earlier call.
++  *CallOrInvoke = nullptr;
+ 
+   llvm::scope_exit AddCoroElideSafeOnExit([&] {
+     if (E->isCoroElideSafe()) {
+@@ -6702,6 +6799,8 @@ LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
      return EmitPointerToDataMemberBinaryExpr(E);
  
    assert(E->getOpcode() == BO_Assign && "unexpected binary l-value");
@@ -5020,7 +5048,7 @@ index 6a0d127fb..a4782e6d0 100644
  
    // Create a Key Instructions source location atom group that covers both
    // LHS and RHS expressions. Nested RHS expressions may get subsequently
-@@ -7314,9 +7408,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7314,9 +7413,24 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
                                             bool forLValue,
                                             AggValueSlot slot) {
    SmallVector<CodeGenFunction::OpaqueValueMappingData, 4> opaques;
@@ -5045,7 +5073,7 @@ index 6a0d127fb..a4782e6d0 100644
    LValueOrRValue result;
  
    for (PseudoObjectExpr::const_semantics_iterator
-@@ -7347,7 +7456,23 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
+@@ -7347,7 +7461,23 @@ static LValueOrRValue emitPseudoObjectExpr(CodeGenFunction &CGF,
  
        // Otherwise, emit as normal.
        } else {
@@ -29381,3 +29409,19 @@ index 000000000..e4a06a631
 +// CHECK: br i1
 +// CHECK: call void @llvm.trap()
 +// CHECK-NEXT: unreachable
+diff --git a/clang/test/ObjC3/CodeGen/native-bitint-sanitizer-descriptor.c b/clang/test/ObjC3/CodeGen/native-bitint-sanitizer-descriptor.c
+new file mode 100644
+index 000000000..aa355edf7
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-bitint-sanitizer-descriptor.c
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c17 -fsanitize=signed-integer-overflow -emit-llvm -o - %s | FileCheck %s --check-prefix=LE
++// RUN: %clang_cc1 -triple powerpc64-unknown-linux-gnu -std=c17 -fsanitize=signed-integer-overflow -emit-llvm -o - %s | FileCheck %s --check-prefix=BE
++// The descriptor suffix stores a leading zero, the exact 32-bit width in
++// target byte order, and a terminating zero, before the array terminator.
++// Do not truncate embedded zeros.
++_BitInt(31) checked_bitint_sum(_BitInt(31) left, _BitInt(31) right) {
++  return left + right;
++}
++// LE: c"'_BitInt(31)'\00\1F\00\00\00\00\00"
++// BE: c"'_BitInt(31)'\00\00\00\00\1F\00\00"
