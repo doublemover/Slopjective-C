@@ -21,6 +21,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Aliased memory fills/copies, conditional payloads, returned destinations and partial-write target invalidation              | Source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass |
 | Ownership/System   | Constant byte-range memory operations on fields/arrays, aliases, returned destinations and callable effects                    | Source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and frontend controls pass |
 | Ownership/System   | Built-in pointer mutations, expression snapshots, bounded array cursor loops and partial direct representation writes | Source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions and frontend replay/consumer controls pass; SDK consolidation pending |
+| Ownership/System   | Stored byte cursors, exact typed representation lvalues and bounded position sets | Source authored; source/PCH matrices and six native frontend replay/consumer modes pass; SDK consolidation pending |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
@@ -567,3 +568,12 @@ pre/post results and actual cursor targets, invalidates stale proofs after parti
 writes, and bounds same-array walks using separate nonnull facts. Unknown strides,
 nullable endpoints and overlapping union storage retain conservative behavior.
 Stored byte cursors and broader alias/capture/exceptional contracts remain open.
+
+## Stored byte cursors and typed representation access
+
+The [System 2.24 implementation](linux_borrowed_byte_cursors.md) retains independent
+byte offsets through bindings, copies, joins and snapshots. Exact native range
+checks support typed loads/stores, subscripts and members while unknown/partial
+writes preserve obligations. Bounded proofs reject loss of alternatives at 65
+positions; current storage exposure avoids stale payload snapshots. General
+union/interprocedural, callable and exceptional ownership contracts remain open.

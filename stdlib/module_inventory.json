@@ -296,12 +296,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 23,
+        "minor": 24,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Independent stored byte-position facts through bindings, copies, joins, captures and evaluation snapshots; exact native-layout typed reads/writes and builtin ranges preserve current loan/callable exposure, with bounded 64-position proofs and conservative unknown/overflow/partial/union handling (source authored; new source/PCH matrices, all borrowed compiler regressions and six native frontend replay/consumer modes pass; SDK consolidation pending)",
         "Built-in pointer pre/post increments/decrements, compound and commuted offsets, conditional targets, bounded one-past and same-array cursor loops; partial character/scalar writes invalidate address/nonnull proofs while preserving loan/callable facts and expiring owner claims (source authored; eighteen new source/PCH commands and all twenty-two existing borrowed regressions pass; native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Constant byte-range memory operations recover complete tracked fields and array elements through native layout, typed aliases, constant/commuted/balanced offsets and conditional bases; exact copies preserve callable/loan facts and returned destinations while padding, partial/unknown ranges, dependent layouts and incomplete provenance remain conservative (source authored; eighteen new source/PCH commands, all twenty-two borrowed regressions and native frontend replay/consumer controls pass; SDK consolidation pending)",
         "Aliased builtin fills and representation copies preserve nested/conditional payloads, callable effects, owner identities and returned destination pointers; partial/open writes invalidate target proofs, incomplete may sets retain nonlocal alternatives and array addresses expose reachable siblings (source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass; frontend replay execution pending)",

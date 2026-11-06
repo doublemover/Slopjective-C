@@ -552,8 +552,9 @@ void TestBorrowedMemoryAliasReplay() {
         __attribute__((objc_returns_borrowed(owner_index=0)))
         inline MemoryLoan published_memory_byte_copy(void *owner) {
           struct PublishedMemoryPair source={{0},{published_memory_bytes(owner)}},target={{0},{0}};
-          __builtin_memcpy((char *)&target+sizeof target.first,
-              (const char *)&source+sizeof source.first,sizeof target.second);
+          char *to=(char *)&target;const char *from=(const char *)&source;
+          to+=sizeof target.first;from+=sizeof source.first;
+          __builtin_memcpy(to,from,sizeof target.second);
           return target.second.pointer;
         }
         __attribute__((objc_returns_borrowed(owner_index=0)))
@@ -572,10 +573,18 @@ void TestBorrowedMemoryAliasReplay() {
           const char *array[2]={published_memory_bytes(owner),0};const char **cursor=array;
           *cursor++=0;return array[0];
         }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_byte_typed_store(void *owner) {
+          struct PublishedMemoryPair target={{0},{0}};
+          char *bytes=(char *)&target;bytes+=sizeof target.first;
+          *(const char **)bytes=published_memory_bytes(owner);
+          return target.second.pointer;
+        }
         inline const char *published_memory_byte_clear(void *owner) {
           struct PublishedMemoryPair target={{0},{published_memory_bytes(owner)}};
-          __builtin_memset((char *)&target+__builtin_offsetof(struct PublishedMemoryPair,second),
-              0,sizeof target.second);
+          char *bytes=(char *)&target;
+          bytes+=__builtin_offsetof(struct PublishedMemoryPair,second);
+          __builtin_memset(bytes,0,sizeof target.second);
           return target.second.pointer;
         }
       )";
@@ -596,6 +605,7 @@ void TestBorrowedMemoryAliasReplay() {
           published_memory_use(published_memory_byte_clear(owner));
           published_memory_use(published_memory_cursor(owner));
           published_memory_use(published_memory_walk(owner));
+          published_memory_use(published_memory_byte_typed_store(owner));
           published_memory_use(published_memory_postfix_clear(owner));
           return published_memory_copy(owner,choose);
         }
@@ -616,6 +626,10 @@ void TestBorrowedMemoryAliasReplay() {
         const char *published_cursor_escape(void *owner) {return published_memory_cursor(owner);}
       )","memory-cursor-escaping-consumer.m");
       assert(cursor && cursor->getDiagnostics().hasErrorOccurred());
+      auto bytes=parse(first.source_bytes+R"(
+        const char *published_byte_cursor_escape(void *owner) {return published_memory_byte_typed_store(owner);}
+      )","memory-byte-cursor-escaping-consumer.m");
+      assert(bytes && bytes->getDiagnostics().hasErrorOccurred());
     }
   }
 }

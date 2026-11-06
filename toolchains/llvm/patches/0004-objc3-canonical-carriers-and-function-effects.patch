@@ -43326,10 +43326,10 @@ index 000000000..d3ae31385
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..2ee892556
+index 000000000..82161f394
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,4333 @@
+@@ -0,0 +1,4514 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43550,6 +43550,20 @@ index 000000000..2ee892556
 +    }
 +    static bool isEqual(const Storage &A, const Storage &B) { return A == B; }
 +  };
++  struct BytePosition {
++    Storage Base;
++    int64_t Offset;
++    bool operator==(const BytePosition &Other) const {
++      return Base == Other.Base && Offset == Other.Offset;
++    }
++  };
++  struct ByteFacts {
++    SmallVector<BytePosition, 4> Positions;
++    bool Complete = false;
++    bool operator==(const ByteFacts &Other) const {
++      return Complete == Other.Complete && Positions == Other.Positions;
++    }
++  };
 +  struct Facts {
 +    SmallVector<Value, 16> Values;
 +    SmallVector<Value, 16> Effects;
@@ -43559,6 +43573,7 @@ index 000000000..2ee892556
 +    SmallVector<unsigned, 16> ExtraOwnerClaims;
 +    SmallVector<Storage, 16> LocalTargets;
 +    SmallVector<Value, 16> MayTargets;
++    SmallVector<ByteFacts, 16> ByteTargets;
 +    // Every non-null target is represented in MayTargets. A partial may set
 +    // must never justify a definite referent or a finite local write.
 +    Value ClosedTargets;
@@ -43575,6 +43590,7 @@ index 000000000..2ee892556
 +    Value AcquisitionReady;
 +    SmallVector<Storage, 16> EvaluatedTargets;
 +    SmallVector<Value, 16> EvaluatedMayTargets;
++    SmallVector<ByteFacts, 16> EvaluatedByteTargets;
 +    Value EvaluatedClosedTargets;
 +    Value EvaluatedNonNullTargets;
 +    Value EvaluatedReady;
@@ -43635,6 +43651,7 @@ index 000000000..2ee892556
 +  llvm::DenseMap<Storage, Storage, StorageInfo> InheritedTargets;
 +  llvm::DenseMap<Storage, bool, StorageInfo> InheritedClosedTargets;
 +  llvm::DenseMap<Storage, bool, StorageInfo> InheritedNonNullTargets;
++  llvm::DenseMap<Storage, ByteFacts, StorageInfo> InheritedByteTargets;
 +  llvm::DenseMap<Storage, SmallVector<Storage, 2>, StorageInfo> InheritedMayTargets;
 +  SmallVector<Origin, 16> Origins;
 +  llvm::DenseMap<const Stmt *, SmallVector<unsigned, 2>> Acquisitions;
@@ -45134,7 +45151,7 @@ index 000000000..2ee892556
 +          (pathsMayAlias(path(Other), path(Destination)) ||
 +           within(Other, Destination) || overlapsUnion(Other, Destination))) {
 +        State.LocalTargets[Index] = {};
-+        State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
++        State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +      }
 +  }
 +  void setTargetFacts(Storage Destination, Storage Target, const Value &Targets,
@@ -45387,6 +45404,12 @@ index 000000000..2ee892556
 +        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
 +      return memoryWriteResult(Call, State);
 +    Storage Resolved = storage(E, &State);
++    SmallVector<Storage, 4> Exact;
++    if (!typedWriteTarget(Resolved, E->getType()) && typedByteLValueTargets(E, State, Exact)) {
++      Value Result = empty();
++      for (Storage Target : Exact) Result |= storedValue(Target, E->getType(), State);
++      return Result;
++    }
 +    if (Slots.count(Resolved) ||
 +        (Resolved.first && Resolved.Index >= 0 &&
 +         Slots.count({Resolved.first, Resolved.second, -2, Resolved.Parent})))
@@ -45717,12 +45740,12 @@ index 000000000..2ee892556
 +  }
 +  void copyStorageShape(const Stmt *Operation, Storage Destination,
 +                         Storage Source, Facts &State, bool Emit) {
-+    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; bool Complete; bool NonNull; };
++    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; bool Complete; bool NonNull; ByteFacts Bytes; };
 +    SmallVector<Copy, 16> Copies;
 +    for (auto [Location, Index] : Slots) {
 +      Storage Target = rebase(Location, Source, Destination);
 +      if (Target.first && Slots.count(Target))
-+        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index], State.ClosedTargets.test(Index), State.NonNullTargets.test(Index)});
++        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index], State.ClosedTargets.test(Index), State.NonNullTargets.test(Index), State.ByteTargets[Index]});
 +    }
 +    Value AncestorValue = empty(), AncestorEffects = empty();
 +    Value AncestorTargets(Slots.size());
@@ -45738,6 +45761,7 @@ index 000000000..2ee892556
 +            !hasUnknownIndex(Destination), &Entry.Effects);
 +      setTargetFacts(Entry.Destination, Entry.Target, Entry.Targets,
 +                     Entry.Complete, State, false, Entry.NonNull);
++      setByteFacts(Entry.Destination, Entry.Bytes, State);
 +    }
 +    if (AncestorValue.any() || AncestorEffects.any() || AncestorTargets.any())
 +      if (auto Root = Slots.find(Destination); Root != Slots.end()) {
@@ -45746,7 +45770,7 @@ index 000000000..2ee892556
 +        store(Operation, Destination, AncestorValue, State, Emit, false, &AncestorEffects);
 +        State.MayTargets[Root->second] |= AncestorTargets;
 +        State.LocalTargets[Root->second] = {};
-+        State.ClosedTargets.reset(Root->second);State.NonNullTargets.reset(Root->second);
++        State.ClosedTargets.reset(Root->second);State.NonNullTargets.reset(Root->second);State.ByteTargets[Root->second] = {};
 +      }
 +  }
 +  void initializeAggregate(const Stmt *Operation, Storage Destination,
@@ -45765,18 +45789,21 @@ index 000000000..2ee892556
 +      Storage Target = Type->isReferenceType() ? storage(Initializer, &State) : referent(Initializer, &State);
 +      Value Targets = possibleTargets(Initializer, State);
 +      bool Complete = closedTargets(Initializer, State);
++      ByteFacts Bytes = byteFacts(Initializer, State);
 +      if (Type->isReferenceType())
 +        if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +          Targets.reset(); Targets.set(Found->second);
 +          Complete = !hasUnknownIndex(Target);
 +        }
-+      if (Complete && Targets.any() && !hasUnknownIndex(Destination) &&
++      const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
++      if (LocalAddress && !hasUnknownIndex(Destination) &&
 +          !isObjC3BorrowedType(Context, Type))
 +        V = empty();
 +      Value Effects = effects(Initializer, State);
-+      if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Type)) Effects = empty();
++      if (LocalAddress && !isObjC3BorrowedType(Context, Type)) Effects = empty();
 +      store(Operation, Destination, V, State, Emit, false, &Effects);
 +      setTargetFacts(Destination, Target, Targets, Complete, State, true, Type->isReferenceType() || nonNullAddress(Initializer, State));
++      setByteFacts(Destination, Bytes, State);
 +      return;
 +    }
 +    const Expr *Written = Initializer;
@@ -45846,7 +45873,7 @@ index 000000000..2ee892556
 +              Value Cleared = empty();
 +              store(Operation, Location, Cleared, State, Emit, true, &Cleared);
 +              State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
-+              State.ClosedTargets[Index] = !hasUnknownIndex(Location);State.NonNullTargets.reset(Index);
++              State.ClosedTargets[Index] = !hasUnknownIndex(Location);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +            }
 +      for (Storage Element : Elements) {
 +        if (List && Element.Index == -2) {
@@ -45868,7 +45895,7 @@ index 000000000..2ee892556
 +            unsigned Current = path(Location), Prefix = path(Element);
 +            while (Current && Current != Prefix) Current = Paths[Current].Parent;
 +            if (Current == Prefix) {
-+              State.LocalTargets[Index] = {}; State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
++              State.LocalTargets[Index] = {}; State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +            }
 +          }
 +          continue;
@@ -45984,18 +46011,89 @@ index 000000000..2ee892556
 +    if (llvm::AddOverflow(*Offset, Delta, Result)) return std::nullopt;
 +    return Result;
 +  }
-+  struct BytePosition { Storage Base; int64_t Offset; };
++  ByteFacts byteFacts(const Expr *E, const Facts &State) const {
++    ByteFacts Result;
++    Result.Complete = memoryBytePositions(E, State, Result.Positions);
++    if (!Result.Complete) Result.Positions.clear();
++    return Result;
++  }
++  bool joinByteFacts(ByteFacts &Destination, const ByteFacts &Source) const {
++    ByteFacts Joined = Destination;
++    Joined.Complete &= Source.Complete;
++    if (Joined.Complete) {
++      for (const auto &Position : Source.Positions)
++        if (!llvm::is_contained(Joined.Positions, Position)) {
++          if (Joined.Positions.size() == 64) {Joined = {};break;}
++          Joined.Positions.push_back(Position);
++        }
++    } else Joined.Positions.clear();
++    if (Joined == Destination) return false;
++    Destination = std::move(Joined);
++    return true;
++  }
++  Value byteMayTargets(const ByteFacts &Bytes) const {
++    Value Targets(Slots.size());
++    if (Bytes.Complete)
++      for (const auto &Position : Bytes.Positions)
++        if (auto Found = Slots.find({Position.Base.first, nullptr}); Found != Slots.end())
++          Targets.set(Found->second);
++    return Targets;
++  }
++  void setByteFacts(Storage Destination, const ByteFacts &Bytes, Facts &State) const {
++    if (auto Found = Slots.find(Destination); Found != Slots.end()) {
++      unsigned I = Found->second;
++      State.ByteTargets[I] = hasUnknownIndex(Destination) ? ByteFacts{} : Bytes;
++      if (Bytes.Complete && !Bytes.Positions.empty() && !State.ClosedTargets.test(I))
++        State.MayTargets[I] |= byteMayTargets(Bytes);
++    }
++  }
++  ByteFacts offsetByteFacts(const Expr *Base, std::optional<int64_t> Count,
++                             const Facts &State, unsigned Depth = 0) const {
++    if (!Base || !Count || Depth > 32 || !Base->getType()->isPointerType()) return {};
++    QualType Element = Base->getType()->getPointeeType();
++    if (Element->isVoidType() || Element->isFunctionType() || Element->isDependentType() ||
++        Element->isIncompleteType() || Element->isVariablyModifiedType()) return {};
++    int64_t Bytes;
++    if (llvm::MulOverflow(*Count, Context.getTypeSizeInChars(Element).getQuantity(), Bytes)) return {};
++    ByteFacts Result;
++    Result.Complete = memoryBytePositions(Base, State, Result.Positions, Depth + 1);
++    if (!Result.Complete) return {};
++    for (auto &Position : Result.Positions)
++      if (llvm::AddOverflow(Position.Offset, Bytes, Position.Offset)) return {};
++    return Result;
++  }
 +  bool memoryBytePositions(const Expr *Expression, const Facts &State,
 +                           SmallVectorImpl<BytePosition> &Positions,
 +                           unsigned Depth = 0) const {
-+    if (!Expression || Depth > 32 || Positions.size() > 64) return false;
++    if (!Expression || Depth > 32 || Positions.size() > 64 ||
++        (!Expression->getType()->isPointerType() && !Expression->getType()->isArrayType())) return false;
 +    Expression = Expression->IgnoreParens();
++    auto Append = [&](const ByteFacts &Bytes) {
++      if (!Bytes.Complete) return false;
++      for (const auto &Position : Bytes.Positions)
++        if (!llvm::is_contained(Positions, Position)) {
++          if (Positions.size() == 64) return false;
++          Positions.push_back(Position);
++        }
++      return true;
++    };
++    if (auto Found = ExpressionSlots.find(Expression); Found != ExpressionSlots.end() &&
++        State.EvaluatedReady.test(Found->second))
++      return Append(State.EvaluatedByteTargets[Found->second]);
++    if (auto Found = Slots.find(storage(Expression, &State)); Found != Slots.end() &&
++        State.ByteTargets[Found->second].Complete && !Expression->HasSideEffects(Context))
++      return Append(State.ByteTargets[Found->second]);
 +    if (const auto *Cast = dyn_cast<CastExpr>(Expression))
-+      if ((Cast->getCastKind() == CK_NoOp || Cast->getCastKind() == CK_BitCast) &&
++      if ((Cast->getCastKind() == CK_NoOp || Cast->getCastKind() == CK_BitCast ||
++           Cast->getCastKind() == CK_LValueToRValue) &&
 +          Cast->getType()->isPointerType() && Cast->getSubExpr()->getType()->isPointerType())
 +        return memoryBytePositions(Cast->getSubExpr(), State, Positions, Depth + 1);
 +    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Expression))
 +      return memoryBytePositions(Cleanups->getSubExpr(), State, Positions, Depth + 1);
++    if (const auto *Statement = dyn_cast<StmtExpr>(Expression))
++      return memoryBytePositions(statementResult(Statement), State, Positions, Depth + 1);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(Expression))
++      return memoryBytePositions(Opaque->getSourceExpr(), State, Positions, Depth + 1);
 +    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Expression)) {
 +      bool Truth;
 +      if (!Conditional->getCond()->HasSideEffects(Context) &&
@@ -46005,30 +46103,19 @@ index 000000000..2ee892556
 +      return memoryBytePositions(Conditional->getTrueExpr(), State, Positions, Depth + 1) &&
 +             memoryBytePositions(Conditional->getFalseExpr(), State, Positions, Depth + 1);
 +    }
++    if (const auto *Unary = dyn_cast<UnaryOperator>(Expression);
++        Unary && Unary->isIncrementDecrementOp())
++      return Append(Unary->isPostfix() ? byteFacts(Unary->getSubExpr(), State)
++          : offsetByteFacts(Unary->getSubExpr(), Unary->isIncrementOp() ? 1 : -1, State, Depth + 1));
 +    if (const auto *Binary = dyn_cast<BinaryOperator>(Expression)) {
 +      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
 +        return memoryBytePositions(Binary->getRHS(), State, Positions, Depth + 1);
-+      if (Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) {
-+        const Expr *Pointer = Binary->getLHS(), *Amount = Binary->getRHS();
-+        if (Binary->getOpcode() == BO_Add && !Pointer->getType()->isPointerType())
-+          std::swap(Pointer, Amount);
-+        const auto *Type = Pointer->getType()->getAs<PointerType>();
-+        auto Integer = Amount->getIntegerConstantExpr(Context);
-+        if (!Type || !Integer || Integer->getSignificantBits() > 63) return false;
-+        QualType Element = Type->getPointeeType();
-+        if (Element->isVoidType() || Element->isFunctionType() || Element->isDependentType() ||
-+            Element->isIncompleteType() || Element->isVariablyModifiedType()) return false;
-+        int64_t Count = Integer->getSExtValue();
-+        if (Binary->getOpcode() == BO_Sub) Count = -Count;
-+        int64_t Bytes;
-+        if (llvm::MulOverflow(Count, Context.getTypeSizeInChars(Element).getQuantity(), Bytes)) return false;
-+        unsigned Begin = Positions.size();
-+        if (!memoryBytePositions(Pointer, State, Positions, Depth + 1)) return false;
-+        for (unsigned I = Begin; I != Positions.size(); ++I)
-+          if (llvm::AddOverflow(Positions[I].Offset, Bytes, Positions[I].Offset)) return false;
-+        return true;
-+      }
++      if (auto Offset = pointerOffset(Binary))
++        return Append(offsetByteFacts(Offset->Base, pointerDelta(Offset->Amount, Offset->Subtract), State, Depth + 1));
 +    }
++    if (const auto *Call = dyn_cast<CallExpr>(Expression);
++        Call && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++      return memoryBytePositions(memoryPointerArgument(Call->getArg(0)), State, Positions, Depth + 1);
 +    if (!closedTargets(Expression, State)) return false;
 +    Value Targets = possibleTargets(Expression, State);
 +    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
@@ -46052,8 +46139,14 @@ index 000000000..2ee892556
 +      return {Targets, false};
 +    uint64_t Bytes = Amount->getZExtValue();
 +    SmallVector<BytePosition, 8> Positions;
-+    if (!memoryBytePositions(memoryPointerArgument(Pointer), State, Positions) || Positions.empty())
-+      return {Targets, false};
++    if (!memoryBytePositions(memoryPointerArgument(Pointer), State, Positions)) return {Targets, false};
++    auto Exact = exactByteTargets(Positions, Bytes);
++    return Exact.second ? Exact : std::make_pair(Targets, false);
++  }
++  std::pair<Value, bool> exactByteTargets(ArrayRef<BytePosition> Positions,
++                                          uint64_t Bytes, QualType Expected = {}) const {
++    Value Targets(Slots.size());
++    if (!Bytes || Positions.empty() || Positions.size() > 64) return {Targets, false};
 +    Value Exact(Slots.size());
 +    for (const auto &Position : Positions) {
 +      auto Base = storageByteOffset(Position.Base);
@@ -46066,7 +46159,8 @@ index 000000000..2ee892556
 +      if (uint64_t(Offset) > Size || Bytes > Size - uint64_t(Offset)) return {Targets, false};
 +      Storage Selected;
 +      for (auto [Candidate, Index] : Slots) {
-+        if (Candidate.first != Position.Base.first || !memoryObjectSize(Candidate, Bytes)) continue;
++        if (Candidate.first != Position.Base.first || !memoryObjectSize(Candidate, Bytes) ||
++            (!Expected.isNull() && !Context.hasSameUnqualifiedType(storageType(Candidate), Expected))) continue;
 +        auto Start = storageByteOffset(Candidate);
 +        if (!Start || *Start != Offset) continue;
 +        if (!Selected.first || within(Selected, Candidate)) Selected = Candidate;
@@ -46131,7 +46225,7 @@ index 000000000..2ee892556
 +          if (Current != Prefix) continue;
 +          store(Call, Location, Cleared, Branch, Emit, true, &Cleared);
 +          Branch.LocalTargets[Index] = {};Branch.MayTargets[Index].reset();
-+          Branch.ClosedTargets[Index] = !hasUnknownIndex(Location);Branch.NonNullTargets.reset(Index);
++          Branch.ClosedTargets[Index] = !hasUnknownIndex(Location);Branch.NonNullTargets.reset(Index);Branch.ByteTargets[Index] = {};
 +        }
 +      }
 +      invalidateMemoryOwner(Affected, Branch);
@@ -46412,7 +46506,10 @@ index 000000000..2ee892556
 +                               unsigned Depth = 0) const {
 +    if (!E || Depth > 32) return false;
 +    E = E->IgnoreParens();
-+    if (Storage Known = storage(E, &State); Known.first) {
++    Storage Known = storage(E, &State);
++    if ((!Known.first || !typedWriteTarget(Known, E->getType())) &&
++        typedByteLValueTargets(E, State, Targets)) return true;
++    if (Known.first) {
 +      if (!Slots.count(Known)) {
 +        if (RequireComplete) return false;
 +        Known = {Known.first, nullptr};
@@ -46501,8 +46598,13 @@ index 000000000..2ee892556
 +              Address = {};Targets.reset();Complete = false;
 +            }
 +          }
-+          const bool HasTargets = Targets.any();
-+          if (Complete && Targets.any() && Target.first && Target.first->hasLocalStorage() &&
++          ByteFacts Bytes = Assignment->isCompoundAssignmentOp()
++              ? offsetByteFacts(Assignment->getLHS(), pointerOffset(Assignment)
++                  ? pointerDelta(Assignment->getRHS(), Assignment->getOpcode() == BO_SubAssign)
++                  : std::nullopt, State)
++              : byteFacts(Assignment->getRHS(), State);
++          const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
++          if (LocalAddress && Target.first && Target.first->hasLocalStorage() &&
 +              !hasUnknownIndex(Target) &&
 +              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
 +            V = empty();
@@ -46519,14 +46621,63 @@ index 000000000..2ee892556
 +            else State.UnownedOwners.reset(Slot);
 +          }
 +          setTargetFacts(Target, Address, Targets, Complete, State, true, NonNull);
++          setByteFacts(Target, Bytes, State);
 +          Value Effects = effects(Assignment->getRHS(), State);
-+          if (Complete && HasTargets && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
++          if (LocalAddress && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
 +          store(Assignment, Target, V, State, Emit, false, &Effects);
 +          if (Target.first && Slots.count(Target) &&
 +              (Assignment->getLHS()->getType()->isRecordType() ||
 +               Assignment->getLHS()->getType()->isArrayType()))
 +            initializeAggregate(Assignment, Target, Assignment->getLHS()->getType(),
 +                                Assignment->getRHS(), State, Emit);
++  }
++  ByteFacts lvalueByteFacts(const Expr *E, const Facts &State,
++                             unsigned Depth = 0) const {
++    if (!E || Depth > 32) return {};
++    E = E->IgnoreParens();
++    if (const auto *Unary = dyn_cast<UnaryOperator>(E)) {
++      if (Unary->getOpcode() == UO_Deref) return byteFacts(Unary->getSubExpr(), State);
++      if (Unary->isIncrementDecrementOp() && Unary->isPrefix() && E->isGLValue())
++        return lvalueByteFacts(Unary->getSubExpr(), State, Depth + 1);
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E);
++        Binary && Binary->isAssignmentOp() && E->isGLValue())
++      return lvalueByteFacts(Binary->getLHS(), State, Depth + 1);
++    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      if (!Cast->isGLValue() || (Cast->getCastKind() != CK_NoOp && Cast->getCastKind() != CK_LValueBitCast)) return {};
++      return lvalueByteFacts(Cast->getSubExpr(), State, Depth + 1);
++    }
++    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(E))
++      return offsetByteFacts(Subscript->getBase(), pointerDelta(Subscript->getIdx(), false), State);
++    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
++      const auto *Field = dyn_cast<FieldDecl>(Member->getMemberDecl());
++      if (!Field || Field->isBitField() || Field->getParent()->isUnion() ||
++          !Field->getParent()->getDefinition() || Field->getParent()->isDependentContext()) return {};
++      uint64_t Bits = Context.getASTRecordLayout(Field->getParent()->getDefinition()).getFieldOffset(Field->getFieldIndex());
++      if (Bits % Context.getCharWidth() || Bits / Context.getCharWidth() > INT64_MAX) return {};
++      ByteFacts Bases = Member->isArrow() ? byteFacts(Member->getBase(), State)
++          : lvalueByteFacts(Member->getBase(), State, Depth + 1);
++      for (auto &Position : Bases.Positions)
++        if (llvm::AddOverflow(Position.Offset, int64_t(Bits / Context.getCharWidth()), Position.Offset)) return {};
++      return Bases;
++    }
++    Storage Target = storage(E, &State);
++    if (Target.first && Target.first->hasLocalStorage() && Slots.count(Target) && storageByteOffset(Target))
++      return {{{Target, 0}}, true};
++    return {};
++  }
++  bool typedByteLValueTargets(const Expr *E, const Facts &State,
++                               SmallVectorImpl<Storage> &Targets) const {
++    QualType Type = E->getType();
++    if (Type->isDependentType() || Type->isIncompleteType() || Type->isVariablyModifiedType() ||
++        Type->isFunctionType()) return false;
++    ByteFacts Bytes = lvalueByteFacts(E, State);
++    if (!Bytes.Complete) return false;
++    auto Exact = exactByteTargets(Bytes.Positions, Context.getTypeSizeInChars(Type).getQuantity(), Type);
++    if (!Exact.second) return false;
++    for (int I = Exact.first.find_first(); I >= 0; I = Exact.first.find_next(I))
++      Targets.push_back(location(I));
++    return !Targets.empty();
 +  }
 +  bool typedWriteTarget(Storage Target, QualType WrittenType) const {
 +    QualType Type = storageType(Target);
@@ -46582,13 +46733,16 @@ index 000000000..2ee892556
 +    }
 +    auto Step = offsetTargets(Operand, Unary->isIncrementOp() ? 1 : -1, State);
 +    Value V = value(Operand, State), Effects = effects(Operand, State);
-+    if (Step.second && Step.first.any() && !isObjC3BorrowedType(Context, Operand->getType())) {
++    ByteFacts Bytes = offsetByteFacts(Operand, Unary->isIncrementOp() ? 1 : -1, State);
++    const bool LocalAddress = (Step.second && Step.first.any()) || (Bytes.Complete && !Bytes.Positions.empty());
++    if (LocalAddress && !isObjC3BorrowedType(Context, Operand->getType())) {
 +      V = empty();Effects = empty();
 +    }
 +    Storage Address = Step.second && Step.first.count() == 1 ? location(Step.first.find_first()) : Storage{};
 +    const bool NonNull = nonNullAddress(Operand, State);
 +    invalidateMemoryOwner(Target, State);
 +    setTargetFacts(Target, Address, Step.first, Step.second, State, true, NonNull);
++    setByteFacts(Target, Bytes, State);
 +    store(Unary, Target, V, State, Emit, false, &Effects);
 +  }
 +  template <typename Apply>
@@ -46601,6 +46755,10 @@ index 000000000..2ee892556
 +    if (Known.first && Complete) Alternatives.push_back(Known);
 +    for (Storage Target : Alternatives)
 +      Complete &= typedWriteTarget(Target, LValue->getType());
++    if (!Complete || Alternatives.empty()) {
++      Alternatives.clear();
++      Complete = typedByteLValueTargets(LValue, State, Alternatives);
++    }
 +    if (!Complete || Alternatives.empty()) {
 +      weakRepresentationWrite(Operation, LValue, Payload, State, Emit);
 +      return;
@@ -46745,7 +46903,7 @@ index 000000000..2ee892556
 +      for (auto [Other, Index] : Slots)
 +        if (Other.first == Target.first && within(Other, Target)) {
 +          State.LocalTargets[Index] = {};
-+          State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
++          State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +        }
 +    };
 +    const auto Formals = formalParameters(callee(Invocation));
@@ -46831,10 +46989,13 @@ index 000000000..2ee892556
 +          Storage Target = referent(Expression, &State);
 +          Value Targets = possibleTargets(Expression, State);
 +          const bool Complete = closedTargets(Expression, State);
-+          if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Expression->getType()))
-+            V = empty();
++          ByteFacts Bytes = byteFacts(Expression, State);
++          const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
++          if (LocalAddress && !isObjC3BorrowedType(Context, Expression->getType())) V = empty();
 +          Value Effects = effects(Expression, State);
-+          if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Expression->getType())) Effects = empty();
++          if (LocalAddress && !isObjC3BorrowedType(Context, Expression->getType())) Effects = empty();
++          if (!Complete) Targets |= byteMayTargets(Bytes);
++          State.EvaluatedByteTargets[Slot] = std::move(Bytes);
 +          State.EvaluatedEffects[Slot] = std::move(Effects);
 +          State.EvaluatedValues[Slot] = std::move(V);
 +          State.EvaluatedOwners[Slot] = std::move(Owner);
@@ -46873,18 +47034,21 @@ index 000000000..2ee892556
 +                                       : referent(Variable->getInit(), &State);
 +            Value Targets = possibleTargets(Variable->getInit(), State);
 +            bool Complete = closedTargets(Variable->getInit(), State);
++            ByteFacts Bytes = byteFacts(Variable->getInit(), State);
 +            if (Reference)
 +              if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +                Targets.reset();Targets.set(Found->second);
 +                Complete = !hasUnknownIndex(Target);
 +              }
-+            if (Complete && Targets.any() && Variable->hasLocalStorage() &&
++            const bool LocalAddress = (Complete && Targets.any()) || (Bytes.Complete && !Bytes.Positions.empty());
++            if (LocalAddress && Variable->hasLocalStorage() &&
 +                !isObjC3BorrowedType(Context, Variable->getType()))
 +              V = empty(); // Its address exposes the pointee's current facts.
 +            Value Effects = effects(Variable->getInit(), State);
-+            if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
++            if (LocalAddress && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
 +            store(Node, {Variable, nullptr}, V, State, Emit, false, &Effects);
 +            setTargetFacts({Variable, nullptr}, Target, Targets, Complete, State, true, Variable->getType()->isReferenceType() || nonNullAddress(Variable->getInit(), State));
++            setByteFacts({Variable, nullptr}, Bytes, State);
 +            State.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Owner);
 +            const unsigned OwnerSlot = Slots.lookup({Variable, nullptr});
 +            if (Unowned) State.UnownedOwners.set(OwnerSlot);
@@ -47042,6 +47206,7 @@ index 000000000..2ee892556
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
 +                Nested.InheritedClosedTargets[Location] = State.ClosedTargets.test(Index);
 +                Nested.InheritedNonNullTargets[Location] = State.NonNullTargets.test(Index);
++                Nested.InheritedByteTargets[Location] = State.ByteTargets[Index];
 +                if (!Location.second && !Location.BaseRecord && !Location.Parent && Location.Index == -1) {
 +                  Nested.InheritedOwners[Location.first] = State.OwnerIdentities[Index];
 +                  if (State.UnownedOwners.test(Index))
@@ -47061,6 +47226,7 @@ index 000000000..2ee892556
 +                    Nested.InheritedTargets[{Variable, nullptr}] = referent(Init, &State);
 +                    Nested.InheritedClosedTargets[{Variable, nullptr}] = closedTargets(Init, State);
 +                    Nested.InheritedNonNullTargets[{Variable, nullptr}] = nonNullAddress(Init, State);
++                    Nested.InheritedByteTargets[{Variable, nullptr}] = byteFacts(Init, State);
 +                    auto Targets = possibleTargets(Init, State);
 +                    for (int Target = Targets.find_first(); Target >= 0;
 +                         Target = Targets.find_next(Target))
@@ -47122,7 +47288,7 @@ index 000000000..2ee892556
 +                  State.Effects[Index] = empty();
 +                  State.LocalTargets[Index] = {};
 +                  State.MayTargets[Index].reset();
-+                  State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);
++                  State.ClosedTargets.reset(Index);State.NonNullTargets.reset(Index);State.ByteTargets[Index] = {};
 +                }
 +            }
 +        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation))
@@ -47201,6 +47367,14 @@ index 000000000..2ee892556
 +      // referent or change reachability when the analysis lacks that proof.
 +      State.MayTargets[Slot->second] = Targets;
 +      State.LocalTargets[Slot->second] = Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++      ByteFacts Bytes;Bytes.Complete = true;
++      for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++        Storage Target = location(I);
++        auto Offset = storageByteOffset(Target);
++        if (!Offset) {Bytes = {};break;}
++        Bytes.Positions.push_back({Target, 0});
++      }
++      State.ByteTargets[Slot->second] = std::move(Bytes);
 +    };
 +    Refine(Comparison->getLHS(), Comparison->getRHS());
 +    Refine(Comparison->getRHS(), Comparison->getLHS());
@@ -47239,6 +47413,7 @@ index 000000000..2ee892556
 +        return;
 +      }
 +      State.NonNullTargets.reset(Found->second);
++      State.ByteTargets[Found->second] = {{}, true};
 +      State.Values[Found->second] = empty();
 +      State.Effects[Found->second] = empty();
 +      State.LocalTargets[Found->second] = {};
@@ -47292,6 +47467,7 @@ index 000000000..2ee892556
 +      Targets |= Source.MayTargets[I];
 +      Changed |= Targets != Destination.MayTargets[I];
 +      Destination.MayTargets[I] = std::move(Targets);
++      Changed |= joinByteFacts(Destination.ByteTargets[I], Source.ByteTargets[I]);
 +      if (!(Destination.LocalTargets[I] == Source.LocalTargets[I]) &&
 +          Destination.LocalTargets[I].first) {
 +        Destination.LocalTargets[I] = {};
@@ -47317,6 +47493,7 @@ index 000000000..2ee892556
 +      Evaluated |= Source.EvaluatedValues[I];
 +      Changed |= Evaluated != Destination.EvaluatedValues[I];
 +      Destination.EvaluatedValues[I] = std::move(Evaluated);
++      Changed |= joinByteFacts(Destination.EvaluatedByteTargets[I], Source.EvaluatedByteTargets[I]);
 +      Value Acquisition = Destination.EvaluatedAcquisitions[I];
 +      Acquisition |= Source.EvaluatedAcquisitions[I];
 +      Changed |= Acquisition != Destination.EvaluatedAcquisitions[I];
@@ -47441,6 +47618,7 @@ index 000000000..2ee892556
 +    Initial.MayTargets.assign(Slots.size(), Value(Slots.size()));
 +    Initial.ClosedTargets.resize(Slots.size());
 +    Initial.NonNullTargets.resize(Slots.size());
++    Initial.ByteTargets.resize(Slots.size());
 +    Initial.CapturedValues.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedEffects.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedReferenceTargets.assign(ClosureSlots.size(), Value(Slots.size()));
@@ -47454,6 +47632,7 @@ index 000000000..2ee892556
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
 +    Initial.EvaluatedClosedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedNonNullTargets.resize(ExpressionSlots.size());
++    Initial.EvaluatedByteTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
 +    for (auto [Owner, Index] : OwnerRoots)
 +      if (auto Found = Slots.find({Owner, nullptr});
@@ -47478,6 +47657,8 @@ index 000000000..2ee892556
 +      Initial.ClosedTargets[Slots.lookup(Location)] = Complete;
 +    for (const auto &[Location, NonNull] : InheritedNonNullTargets)
 +      Initial.NonNullTargets[Slots.lookup(Location)] = NonNull;
++    for (const auto &[Location, Bytes] : InheritedByteTargets)
++      Initial.ByteTargets[Slots.lookup(Location)] = Bytes;
 +    for (const auto &[Location, Targets] : InheritedMayTargets)
 +      for (Storage Target : Targets)
 +        if (auto Found = Slots.find(Target); Found != Slots.end())
@@ -58635,4 +58816,429 @@ index 000000000..803bc3459
 +  unsigned char *bytes=(unsigned char *)&loan;
 +  bytes+=0;bytes[0]=0;
 +  memory_escape(loan); // expected-error {{argument without a non-escaping lifetime contract}}
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m b/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m
+new file mode 100644
+index 000000000..c4ca328e0
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-stored-byte-cursors.m
+@@ -0,0 +1,261 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++
++#ifndef FROM_PCH
++#include "Inputs/borrowed-byte-offset-memory.h"
++#endif
++void stored_byte_fill(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  unsigned char *bytes=(unsigned char *)&pair;
++  bytes+=__builtin_offsetof(struct MemoryPair,second);
++  __builtin_memset(bytes,0,sizeof pair.second);
++  memory_escape(pair.second.pointer);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_reverse(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  char *bytes=(char *)&pair+sizeof pair;
++  bytes-=sizeof pair.second;
++  __builtin_bzero(bytes,sizeof pair.second);
++  memory_escape(pair.second.pointer);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_incdec(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder;
++  ++bytes;bytes--;--bytes;++bytes;
++  __builtin_memset(bytes,0,sizeof holder);
++  memory_escape(holder.pointer);
++}
++void stored_byte_copy(void *owner) {
++  struct MemoryPair source={{0},{memory_bytes(owner)}},destination={{0},{0}};
++  char *to=(char *)&destination;const char *from=(const char *)&source;
++  to+=sizeof destination.first;from+=sizeof source.first;
++  __builtin_memcpy(to,from,sizeof destination.second);
++  memory_escape(destination.first.pointer);
++  memory_escape(destination.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_pointer_copy(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder,*saved=0;
++  __builtin_memcpy(&saved,&bytes,sizeof saved);
++  __builtin_memset(saved,0,sizeof holder);
++  memory_escape(holder.pointer);
++}
++void stored_byte_field_copy(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  struct ByteCursor {char *pointer;};
++  struct ByteCursor first={(char *)&holder},second={0};
++  second=first;
++  __builtin_bzero(second.pointer,sizeof holder);
++  memory_escape(holder.pointer);
++}
++void stored_byte_array_cursor(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  char *cursors[2]={(char *)&pair.first,(char *)&pair.second};
++  __builtin_memset(cursors[1],0,sizeof pair.second);
++  memory_escape(pair.second.pointer);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_cfg_join(void *owner,int choose) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  char *bytes;
++  if(choose)bytes=(char *)&pair.first;
++  else bytes=(char *)&pair.second;
++  __builtin_bzero(bytes,sizeof pair.first);
++  // The selected member alone is cleared; both loans remain possible.
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_conditional_copy(void *owner,int choose) {
++  struct MemoryHolder one={memory_bytes(owner)},two={0},target={0};
++  const char *from=choose?(const char *)&one:(const char *)&two;
++  char *to=(char *)&target;
++  __builtin_memcpy(to,from,sizeof target);
++  memory_escape(target.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_unknown_alternative(void *owner,void *unknown,int choose) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=choose?(char *)&holder:(char *)unknown;
++  __builtin_memset(bytes,0,sizeof holder);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_dynamic_offset(void *owner,int offset) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  char *bytes=(char *)&pair;
++  bytes+=offset;
++  __builtin_memset(bytes,0,sizeof pair.first);
++  memory_escape(pair.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_partial(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder;
++  __builtin_memset(bytes,0,sizeof holder-1);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_mutated_representation(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder;
++  ((unsigned char *)&bytes)[0]^=1;
++  __builtin_memset(bytes,0,sizeof holder);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void unknown_byte_cursor(char **cursor __attribute__((noescape)));
++void stored_byte_unknown_call(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder;
++  unknown_byte_cursor(&bytes);
++  __builtin_memset(bytes,0,sizeof holder);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_postfix_result(void *owner) {
++  struct MemoryHolder holder={memory_bytes(owner)};
++  char *bytes=(char *)&holder;
++  __builtin_memset(bytes++,0,sizeof holder);
++  memory_escape(holder.pointer);
++}
++void stored_byte_returned_destination(void *owner) {
++  struct MemoryPair pair={{memory_bytes(owner)},{memory_bytes(owner)}};
++  char *bytes=(char *)&pair;
++  bytes+=(sizeof pair.first);
++  char *returned=(char *)__builtin_memset(bytes,0,sizeof pair.second);
++  returned-=sizeof pair.first;
++  __builtin_bzero(returned,sizeof pair.first);
++  memory_escape(pair.first.pointer);memory_escape(pair.second.pointer);
++}
++void stored_byte_callable_copy(void *owner) {
++  struct MemoryCallback source={^{memory_consume(owner);}},destination={0};
++  char *to=(char *)&destination;const char *from=(const char *)&source;
++  __builtin_memcpy(to,from,sizeof destination);
++  const char *loan=memory_bytes(owner);
++  destination.work();
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void stored_byte_callable_clear(void *owner) {
++  struct MemoryCallback callback={^{memory_consume(owner);}};
++  char *bytes=(char *)&callback;
++  __builtin_bzero(bytes,sizeof callback);
++  const char *loan=memory_bytes(owner);
++  if(callback.work)callback.work();
++  memory_use(loan);
++}
++void stored_byte_partial_owner(void *owner) {
++  const char *loan=memory_bytes(owner);
++  char *bytes=(char *)&owner;
++  __builtin_memset(bytes,0,1);
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++
++void stored_byte_typed_store(void *owner) {
++  struct MemoryPair pair={{0},{0}};
++  char *bytes=(char *)&pair;
++  bytes+=sizeof pair.first;
++  *(const char **)bytes=memory_bytes(owner);
++  memory_escape(pair.first.pointer);
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(*(const char **)bytes); // expected-error {{argument without a non-escaping lifetime contract}}
++  *(const char **)bytes=0;
++  memory_escape(pair.second.pointer);
++}
++void stored_byte_typed_subscript(void *owner) {
++  struct MemoryHolder array[2]={{0},{0}};
++  char *bytes=(char *)array;
++  const char **cursor=(const char **)bytes;
++  cursor[1]=memory_bytes(owner);
++  memory_escape(array[0].pointer);
++  memory_escape(array[1].pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_typed_member(void *owner) {
++  struct MemoryPair pair={{0},{0}};
++  char *bytes=(char *)&pair;
++  bytes+=sizeof pair.first;
++  ((struct MemoryHolder *)bytes)->pointer=memory_bytes(owner);
++  memory_escape(pair.first.pointer);
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_typed_conditional(void *owner,int choose) {
++  struct MemoryHolder first={0},second={0};
++  char *bytes=choose?(char *)&first:(char *)&second;
++  *(const char **)bytes=memory_bytes(owner);
++  memory_escape(first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_wrong_type(void *owner) {
++  struct {long bits;} object={0};
++  char *bytes=(char *)&object;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void stored_byte_typed_out_of_bounds(void *owner) {
++  struct MemoryHolder object={0};
++  char *bytes=(char *)&object;
++  bytes+=sizeof object;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void stored_byte_typed_partial_offset(void *owner) {
++  struct MemoryHolder object={0};
++  char *bytes=(char *)&object;
++  ++bytes;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void stored_byte_typed_unknown(void *owner,void *unknown,int choose) {
++  struct MemoryHolder object={0};
++  char *bytes=choose?(char *)&object:(char *)unknown;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void stored_byte_typed_union(void *owner) {
++  union {const char *pointer;long other;} object={0};
++  char *bytes=(char *)&object;
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
++}
++void stored_byte_overflow(void *owner) {
++  struct MemoryHolder object={memory_bytes(owner)};
++  char *bytes=(char *)&object;
++  bytes+=__INT64_MAX__;
++  __builtin_bzero(bytes,sizeof object);
++  memory_escape(object.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void stored_byte_statement_result(void *owner) {
++  struct MemoryHolder object={memory_bytes(owner)};
++  char *bytes=({char *local=(char *)&object;local;});
++  __builtin_bzero(bytes,sizeof object);
++  memory_escape(object.pointer);
++}
++
++void stored_byte_current_payload(void *owner) {
++  struct MemoryHolder object={memory_bytes(owner)};
++  char *bytes=(char *)&object;
++  __builtin_bzero(bytes,sizeof object);
++  memory_escape_address(bytes);
++}
++void stored_byte_sibling_payload(void *owner) {
++  struct MemoryPair object={{0},{memory_bytes(owner)}};
++  char *bytes=(char *)&object.first;
++  bytes+=sizeof object.first;
++  memory_escape_address(bytes); // expected-error {{argument without a non-escaping lifetime contract}}
++  __builtin_bzero(bytes,sizeof object.second);
++  memory_escape_address(bytes);
++}
++void stored_byte_expired_payload_clear(void *owner) {
++  struct MemoryHolder object={memory_bytes(owner)};
++  owner=0;
++  char *bytes=(char *)&object;
++  __builtin_bzero(bytes,sizeof object);
++  memory_escape_address(bytes);
++}
+diff --git a/clang/test/ObjC3/Sema/borrowed-byte-target-bounds.m b/clang/test/ObjC3/Sema/borrowed-byte-target-bounds.m
+new file mode 100644
+index 000000000..704126b02
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-byte-target-bounds.m
+@@ -0,0 +1,152 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c17.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-byte-offset-memory.h -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-byte-offset-memory.h"
++#endif
++void stored_byte_bound_64(void *owner,int choose) {
++  struct MemoryHolder objects[64]={0};
++  char *bytes=(char *)&objects[0];
++  switch(choose) {
++  case 1:bytes=(char *)&objects[1];break;
++  case 2:bytes=(char *)&objects[2];break;
++  case 3:bytes=(char *)&objects[3];break;
++  case 4:bytes=(char *)&objects[4];break;
++  case 5:bytes=(char *)&objects[5];break;
++  case 6:bytes=(char *)&objects[6];break;
++  case 7:bytes=(char *)&objects[7];break;
++  case 8:bytes=(char *)&objects[8];break;
++  case 9:bytes=(char *)&objects[9];break;
++  case 10:bytes=(char *)&objects[10];break;
++  case 11:bytes=(char *)&objects[11];break;
++  case 12:bytes=(char *)&objects[12];break;
++  case 13:bytes=(char *)&objects[13];break;
++  case 14:bytes=(char *)&objects[14];break;
++  case 15:bytes=(char *)&objects[15];break;
++  case 16:bytes=(char *)&objects[16];break;
++  case 17:bytes=(char *)&objects[17];break;
++  case 18:bytes=(char *)&objects[18];break;
++  case 19:bytes=(char *)&objects[19];break;
++  case 20:bytes=(char *)&objects[20];break;
++  case 21:bytes=(char *)&objects[21];break;
++  case 22:bytes=(char *)&objects[22];break;
++  case 23:bytes=(char *)&objects[23];break;
++  case 24:bytes=(char *)&objects[24];break;
++  case 25:bytes=(char *)&objects[25];break;
++  case 26:bytes=(char *)&objects[26];break;
++  case 27:bytes=(char *)&objects[27];break;
++  case 28:bytes=(char *)&objects[28];break;
++  case 29:bytes=(char *)&objects[29];break;
++  case 30:bytes=(char *)&objects[30];break;
++  case 31:bytes=(char *)&objects[31];break;
++  case 32:bytes=(char *)&objects[32];break;
++  case 33:bytes=(char *)&objects[33];break;
++  case 34:bytes=(char *)&objects[34];break;
++  case 35:bytes=(char *)&objects[35];break;
++  case 36:bytes=(char *)&objects[36];break;
++  case 37:bytes=(char *)&objects[37];break;
++  case 38:bytes=(char *)&objects[38];break;
++  case 39:bytes=(char *)&objects[39];break;
++  case 40:bytes=(char *)&objects[40];break;
++  case 41:bytes=(char *)&objects[41];break;
++  case 42:bytes=(char *)&objects[42];break;
++  case 43:bytes=(char *)&objects[43];break;
++  case 44:bytes=(char *)&objects[44];break;
++  case 45:bytes=(char *)&objects[45];break;
++  case 46:bytes=(char *)&objects[46];break;
++  case 47:bytes=(char *)&objects[47];break;
++  case 48:bytes=(char *)&objects[48];break;
++  case 49:bytes=(char *)&objects[49];break;
++  case 50:bytes=(char *)&objects[50];break;
++  case 51:bytes=(char *)&objects[51];break;
++  case 52:bytes=(char *)&objects[52];break;
++  case 53:bytes=(char *)&objects[53];break;
++  case 54:bytes=(char *)&objects[54];break;
++  case 55:bytes=(char *)&objects[55];break;
++  case 56:bytes=(char *)&objects[56];break;
++  case 57:bytes=(char *)&objects[57];break;
++  case 58:bytes=(char *)&objects[58];break;
++  case 59:bytes=(char *)&objects[59];break;
++  case 60:bytes=(char *)&objects[60];break;
++  case 61:bytes=(char *)&objects[61];break;
++  case 62:bytes=(char *)&objects[62];break;
++  case 63:bytes=(char *)&objects[63];break;
++  default:break;
++  }
++  *(const char **)bytes=memory_bytes(owner);
++}
++void stored_byte_bound_65(void *owner,int choose) {
++  struct MemoryHolder objects[65]={0};
++  char *bytes=(char *)&objects[0];
++  switch(choose) {
++  case 1:bytes=(char *)&objects[1];break;
++  case 2:bytes=(char *)&objects[2];break;
++  case 3:bytes=(char *)&objects[3];break;
++  case 4:bytes=(char *)&objects[4];break;
++  case 5:bytes=(char *)&objects[5];break;
++  case 6:bytes=(char *)&objects[6];break;
++  case 7:bytes=(char *)&objects[7];break;
++  case 8:bytes=(char *)&objects[8];break;
++  case 9:bytes=(char *)&objects[9];break;
++  case 10:bytes=(char *)&objects[10];break;
++  case 11:bytes=(char *)&objects[11];break;
++  case 12:bytes=(char *)&objects[12];break;
++  case 13:bytes=(char *)&objects[13];break;
++  case 14:bytes=(char *)&objects[14];break;
++  case 15:bytes=(char *)&objects[15];break;
++  case 16:bytes=(char *)&objects[16];break;
++  case 17:bytes=(char *)&objects[17];break;
++  case 18:bytes=(char *)&objects[18];break;
++  case 19:bytes=(char *)&objects[19];break;
++  case 20:bytes=(char *)&objects[20];break;
++  case 21:bytes=(char *)&objects[21];break;
++  case 22:bytes=(char *)&objects[22];break;
++  case 23:bytes=(char *)&objects[23];break;
++  case 24:bytes=(char *)&objects[24];break;
++  case 25:bytes=(char *)&objects[25];break;
++  case 26:bytes=(char *)&objects[26];break;
++  case 27:bytes=(char *)&objects[27];break;
++  case 28:bytes=(char *)&objects[28];break;
++  case 29:bytes=(char *)&objects[29];break;
++  case 30:bytes=(char *)&objects[30];break;
++  case 31:bytes=(char *)&objects[31];break;
++  case 32:bytes=(char *)&objects[32];break;
++  case 33:bytes=(char *)&objects[33];break;
++  case 34:bytes=(char *)&objects[34];break;
++  case 35:bytes=(char *)&objects[35];break;
++  case 36:bytes=(char *)&objects[36];break;
++  case 37:bytes=(char *)&objects[37];break;
++  case 38:bytes=(char *)&objects[38];break;
++  case 39:bytes=(char *)&objects[39];break;
++  case 40:bytes=(char *)&objects[40];break;
++  case 41:bytes=(char *)&objects[41];break;
++  case 42:bytes=(char *)&objects[42];break;
++  case 43:bytes=(char *)&objects[43];break;
++  case 44:bytes=(char *)&objects[44];break;
++  case 45:bytes=(char *)&objects[45];break;
++  case 46:bytes=(char *)&objects[46];break;
++  case 47:bytes=(char *)&objects[47];break;
++  case 48:bytes=(char *)&objects[48];break;
++  case 49:bytes=(char *)&objects[49];break;
++  case 50:bytes=(char *)&objects[50];break;
++  case 51:bytes=(char *)&objects[51];break;
++  case 52:bytes=(char *)&objects[52];break;
++  case 53:bytes=(char *)&objects[53];break;
++  case 54:bytes=(char *)&objects[54];break;
++  case 55:bytes=(char *)&objects[55];break;
++  case 56:bytes=(char *)&objects[56];break;
++  case 57:bytes=(char *)&objects[57];break;
++  case 58:bytes=(char *)&objects[58];break;
++  case 59:bytes=(char *)&objects[59];break;
++  case 60:bytes=(char *)&objects[60];break;
++  case 61:bytes=(char *)&objects[61];break;
++  case 62:bytes=(char *)&objects[62];break;
++  case 63:bytes=(char *)&objects[63];break;
++  case 64:bytes=(char *)&objects[64];break;
++  default:break;
++  }
++  *(const char **)bytes=memory_bytes(owner); // expected-error {{indirect storage}}
 +}

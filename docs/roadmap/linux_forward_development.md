@@ -16,6 +16,13 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.24 byte-cursor span](linux_borrowed_byte_cursors.md) carries native
+byte offsets through bindings, copies, joins and snapshots. Typed loads/stores,
+member/subscript access and builtin ranges share exact layout/type/size checks.
+Current payload exposure and a 64-position proof bound preserve loan/callable
+obligations. Compiler source/PCH and six source-free frontend modes pass; SDK
+consolidation follows.
+
 The [System 2.23 pointer-mutation span](linux_borrowed_pointer_mutations.md)
 models pre/post cursor updates, compound/commuted offsets and bounded forward/reverse
 array loops. Partial representation writes preserve loans and callable effects,
