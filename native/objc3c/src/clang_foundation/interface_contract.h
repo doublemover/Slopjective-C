@@ -228,6 +228,10 @@ inline constexpr const char *kCxxUnnamedTemplateProjectionSemantic = "objc3.cxx-
 inline bool HasCxxUnnamedTemplateProjectionIdentity(const InterfaceDeclarationIdentity &d) {
   return d.canonical_type_identity.find(";cxx-unnamed-template-projections:v1;") != std::string::npos;
 }
+inline constexpr const char *kCxxStandardLibrarySpecializationSemantic = "objc3.cxx-standard-library-specializations.v1";
+inline bool HasCxxStandardLibrarySpecializationIdentity(const InterfaceDeclarationIdentity &d) {
+  return d.canonical_type_identity.find(";cxx-standard-library-specializations:v1;") != std::string::npos;
+}
 inline constexpr const char *kCxxStandardLibrarySemantic = "objc3.cxx-standard-library-headers.v1";
 inline constexpr const char *kCxxStandardLibraryMarker = ";cxx-standard-library-headers:v1;";
 inline bool IsStandardLibraryHeaderName(const std::string &name) {

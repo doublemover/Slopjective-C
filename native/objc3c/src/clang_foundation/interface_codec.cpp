@@ -530,6 +530,14 @@ llvm::Error ValidateForEncoding(
       [](const auto &d){return !HasCxxUnnamedTemplateProjectionIdentity(d) || d.kind!="Namespace";});
   if (unnamed_projections!=unnamed_projection_capability || !unnamed_projection_owners)
     return Invalid("unnamed template projection identities and required capability must agree");
+  const bool standard_specializations=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardLibrarySpecializationIdentity);
+  const bool standard_specialization_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardLibrarySpecializationSemantic)!=sidecar.required_semantics.end();
+  const bool standard_specialization_owners=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){
+    return !HasCxxStandardLibrarySpecializationIdentity(d) ||
+        (HasCxxStandardLibraryIdentity(d) && (d.kind=="ClassTemplateSpecialization" || d.kind=="ClassTemplatePartialSpecialization" ||
+         d.kind=="VarTemplateSpecialization" || d.kind=="VarTemplatePartialSpecialization"));});
+  if(standard_specializations!=standard_specialization_capability || !standard_specialization_owners)
+    return Invalid("standard-library specialization identity, native headers, owner kind and required capability must agree");
   const bool standard_library=std::any_of(sidecar.declarations.begin(),sidecar.declarations.end(),HasCxxStandardLibraryIdentity);
   const bool standard_library_capability=std::find(sidecar.required_semantics.begin(),sidecar.required_semantics.end(),kCxxStandardLibrarySemantic)!=sidecar.required_semantics.end();
   const bool standard_library_contracts=std::all_of(sidecar.declarations.begin(),sidecar.declarations.end(),[](const auto &d){

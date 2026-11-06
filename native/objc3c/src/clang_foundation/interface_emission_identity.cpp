@@ -1,3 +1,4 @@
+#include "standard_library_specializations.h"
 #include "standard_library_headers.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
@@ -1605,8 +1606,8 @@ struct ClassTemplatePublication {
 
 std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
                                     const clang::ASTContext &context) {
-  if (IsStandardCoroutineTraitsSpecialization(declaration)) {
-    const auto *record=llvm::cast<clang::ClassTemplateSpecializationDecl>(declaration);
+  if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
+      record && IsPublishedStandardSpecialization(record)) {
     std::string arguments;
     if (!ClassSpecializationArgumentKey(record,context,arguments)) return {};
     std::string text;llvm::raw_string_ostream stream(text);
@@ -1616,8 +1617,14 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     const auto qualifier=printed->getQualifierLoc();
     auto restore=llvm::scope_exit([&]{printed->setQualifierInfo(qualifier);});printed->setQualifierInfo({});
     printed->print(stream,policy);
-    return "coroutine-traits{arguments="+arguments+";definition="+ComputeInterfaceSourceSha256(text)+
-        "};cxx-coroutine-traits-specializations:v1;";
+    if(IsStandardCoroutineTraitsSpecialization(declaration))
+      return "coroutine-traits{arguments="+arguments+";definition="+ComputeInterfaceSourceSha256(text)+
+          "};cxx-coroutine-traits-specializations:v1;";
+    const auto *owner=StandardLibrarySpecializationOwner(record);
+    if(!owner)return {};
+    return "standard-specialization{primary="+ReadInterfaceDeclarationStableId(record->getSpecializedTemplate())+
+        ";owner="+ReadInterfaceDeclarationStableId(owner)+";arguments="+arguments+
+        ";definition="+ComputeInterfaceSourceSha256(text)+"};cxx-standard-library-specializations:v1;";
   }
   if (const auto *concept_decl = llvm::dyn_cast<clang::ConceptDecl>(declaration))
     return ConceptIdentity(concept_decl, context);
@@ -1879,7 +1886,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
 }
 
 std::string ExportRootName(const clang::NamedDecl *declaration) {
-  if (const auto *owner=CoroutineTraitsReturnOwner(declaration)) return ExportRootName(owner);
+  if (const auto *owner=PublishedStandardSpecializationOwner(declaration)) return ExportRootName(owner);
   if (const auto *owner = FriendOwner(declaration)) declaration = owner;
   while (declaration) {
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration);
@@ -2076,6 +2083,12 @@ std::string ReadInterfaceDeclarationStableId(
         ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+"@arguments@"+
         ComputeInterfaceSourceSha256(key);
   }
+  if (const auto *specialization=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration);
+      specialization && IsStandardLibrarySpecialization(specialization)) {
+    const auto key=VariablePartialArgumentKey(specialization,specialization->getASTContext());
+    return "c:@StandardVariablePartial@"+ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+
+        "@arguments@"+ComputeInterfaceSourceSha256(key);
+  }
   if (const auto *pattern=llvm::dyn_cast<clang::VarTemplateDecl>(declaration))
     return "c:@VariableTemplate@" + pattern->getQualifiedNameAsString();
   if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
@@ -2191,6 +2204,22 @@ bool ReadInterfaceDeclarationIdentity(
       !identity.native_symbol_name.empty())
     identity.canonical_type_identity+=";cxx-nominal-alias-templates:v1;owner="+
         identity.native_symbol_name+";";
+  if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(representative);
+      specialization && IsStandardLibrarySpecialization(specialization)) {
+    const auto *owner=StandardLibrarySpecializationOwner(specialization);if(!owner)return false;
+    std::string key;
+    if(const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(specialization))
+      key=VariablePartialArgumentKey(partial,context);
+    else for(const auto &argument:specialization->getTemplateArgs().asArray())
+      if(!GenericArgumentKey(argument,context,key))return false;
+    std::string text;llvm::raw_string_ostream stream(text);
+    clang::PrintingPolicy policy(context.getLangOpts());policy.PrintAsCanonical=true;policy.PolishForDeclaration=true;
+    specialization->print(stream,policy);
+    identity.canonical_type_identity+=";standard-variable-specialization{primary="+
+        ReadInterfaceDeclarationStableId(specialization->getSpecializedTemplate())+
+        ";owner="+ReadInterfaceDeclarationStableId(owner)+";arguments="+key+
+        ";definition="+ComputeInterfaceSourceSha256(text)+"};cxx-standard-library-specializations:v1;";
+  }
   if (const auto *specialization=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(representative);
       IsExplicitNamespaceVariableSpecialization(specialization)) {
     std::string key;

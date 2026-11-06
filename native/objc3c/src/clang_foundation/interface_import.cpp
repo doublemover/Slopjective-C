@@ -129,6 +129,7 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kCxxStandardLibrarySemantic,
+    kCxxStandardLibrarySpecializationSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -455,7 +456,9 @@ bool CheckExportCollisions(
       continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
-    const std::string lookup_key = HasCxxCoroutineTraitsSpecializationIdentity(decl)
+    const std::string lookup_key = HasCxxStandardLibrarySpecializationIdentity(decl)
+          ? "standard-library-specialization:" + decl.stable_id
+          : HasCxxCoroutineTraitsSpecializationIdentity(decl)
           ? "coroutine-traits-specialization:" + decl.stable_id
           : HasCxxVariableSpecializationIdentity(decl)
           ? "variable-specialization:" + decl.stable_id

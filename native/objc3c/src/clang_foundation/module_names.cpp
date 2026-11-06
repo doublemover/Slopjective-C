@@ -1,3 +1,4 @@
+#include "standard_library_specializations.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/module_names.h"
 #include "clang_foundation/interface_codec.h"
@@ -285,7 +286,7 @@ public:
         return true;
     // A traits customization belongs to its module-owned return type. The
     // standard primary's ABI must not acquire a package-specific tag.
-    if (IsStandardCoroutineTraitsSpecialization(record)) return true;
+    if (IsPublishedStandardSpecialization(decl)) return true;
     if (record && record->getDescribedClassTemplate()) {
       const auto expected = BuildModuleOwnedName(module_, package_,
           ReadInterfaceDeclarationStableId(record->getDescribedClassTemplate()));

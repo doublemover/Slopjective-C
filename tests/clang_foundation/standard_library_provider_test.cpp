@@ -69,7 +69,41 @@ void Run(const fs::path &root,const char *standard,int ownership,const char *opt
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <tuple>
+#include <limits>
+#include <ranges>
 namespace NativeStandard {
+struct Key {int value; constexpr bool operator==(const Key &) const=default;};
+struct View {int *first;int *last;int *begin()const{return first;}int *end()const{return last;}};
+template<class T>struct Box {T value;};
+}
+namespace std {
+template<>struct hash<NativeStandard::Key> {
+  size_t operator()(const NativeStandard::Key &key) const noexcept {return hash<int>{}(key.value);}
+};
+template<class T>struct hash<NativeStandard::Box<T>> {
+  size_t operator()(const NativeStandard::Box<T> &box) const {return hash<T>{}(box.value);}
+};
+template<>struct tuple_size<NativeStandard::Key>:integral_constant<size_t,1> {};
+template<>struct tuple_element<0,NativeStandard::Key> {using type=int;};
+template<>struct common_type<NativeStandard::Key,NativeStandard::Key> {using type=long;};
+template<>struct numeric_limits<NativeStandard::Key> {
+  static constexpr bool is_specialized=true;
+  static constexpr NativeStandard::Key min() noexcept {return {1};}
+};
+}
+namespace std::ranges {
+template<>inline constexpr bool enable_borrowed_range<NativeStandard::View> = true;
+template<class T>inline constexpr bool enable_view<NativeStandard::Box<T>> = true;
+}
+
+namespace NativeStandard {
+inline int keyed_total() {
+  std::unordered_map<Key,int> values;values[{1}]=19;values[{2}]=23;
+  return values.at({1})+values.at({2});
+}
+inline unsigned long boxed_hash(int value) {return std::hash<Box<int>>{}({value});}
 using Word=std::string;
 using Words=std::vector<Word>;
 Words words() {return {"one","three","seven"};}
@@ -102,6 +136,14 @@ inline constexpr T twice(T value) {return std::move(value)*2;}
   for(const char *name:{"a","b"}) {
     const auto path=root/(std::string("consumer-")+name+".mm");
     Write(path,"static_assert(NativeStandard::twice(21)==42);\nextern \"C\" int check_"+std::string(name)+R"(() {
+  static_assert(std::ranges::borrowed_range<NativeStandard::View>);
+  static_assert(std::ranges::enable_view<NativeStandard::Box<int>>);
+  static_assert(std::ranges::enable_view<NativeStandard::Box<long>>);
+  static_assert(std::tuple_size_v<NativeStandard::Key> == 1);
+  static_assert(std::is_same_v<std::tuple_element_t<0,NativeStandard::Key>,int>);
+  static_assert(std::is_same_v<std::common_type_t<NativeStandard::Key,NativeStandard::Key>,long>);
+  static_assert(std::numeric_limits<NativeStandard::Key>::min().value==1);
+  if(NativeStandard::keyed_total()!=42 || NativeStandard::boxed_hash(17)!=std::hash<int>{}(17))return 5;
   auto values=NativeStandard::words();
   if(values.size()!=3 || NativeStandard::score(values)!=13)return 1;
   auto present=NativeStandard::maybe_word(true),absent=NativeStandard::maybe_word(false);

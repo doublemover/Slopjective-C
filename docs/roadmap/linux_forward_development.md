@@ -16,12 +16,18 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.113 specialization span](linux_cxx_standard_specializations.md)
+adds public ownership, definition identity and native ABI publication for full/
+partial class and constexpr variable customizations, including argument packs.
+All six frontend profiles and two instrumented source-free native executables
+pass; broader configuration controls and libc++ import coverage are in progress.
+
 The [Concurrency 2.112 standard-header span](linux_cxx_standard_library_headers.md)
 adds native C++ library publication/import contracts, independent provider header
 checks and native header declaration reuse. Twelve existing frontend groups and
 two instrumented source-free GCC-library provider/two-consumer executables pass,
 alongside the direct C++20/23 overloaded-member AST import regression. Six-profile
-header controls and libc++ coverage are in progress.
+header controls also pass. Libc++ coverage is in progress.
 The replacement SDK and broader profile/implementation obligations remain open.
 
 The [System 2.30 field-pin span](linux_borrowed_field_pins.md) connects field,

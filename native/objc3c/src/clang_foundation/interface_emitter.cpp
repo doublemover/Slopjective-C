@@ -1,3 +1,4 @@
+#include "standard_library_specializations.h"
 #include "standard_coroutine_types.h"
 #include "standard_library_headers.h"
 #include "interface_reparse_options.h"
@@ -106,11 +107,11 @@ class InterfaceCollector final
     // The standard header supplies these namespace owners. Authored traits
     // customizations publish independently through their return-type root.
     if (const auto *space=llvm::dyn_cast<clang::NamespaceDecl>(declaration);
-        space && IsStandardCoroutineNamespace(space,context_)) {
+        space && (IsStandardCoroutineNamespace(space,context_) || IsStandardLibraryNamespace(space,context_))) {
       if (IsInMainFile(context_,space->getLocation()))
         for (const auto *attribute:space->attrs())
           if (!attribute->isImplicit() && !attribute->isInherited())
-            AddDiagnostic(result_,"O3IFC101","a package cannot change standard coroutine namespace attributes",space->getQualifiedNameAsString());
+            AddDiagnostic(result_,"O3IFC101","a package cannot change native standard-library namespace attributes",space->getQualifiedNameAsString());
       return true;
     }
     if (IsDetachedCallableTemplateRoot(declaration) || IsDetachedStaticDataTemplateRoot(declaration) ||
@@ -198,7 +199,8 @@ class InterfaceCollector final
         alias && alias->getDescribedAliasTemplate()) return true;
     if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
         variable && variable->getDescribedVarTemplate()) return true;
-    if (auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration)) {
+    if (auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(declaration);
+        partial && !IsStandardLibrarySpecialization(partial)) {
       if (IsTopLevel(partial) && IsInMainFile(context_,partial->getLocation()) && SelectedExport(partial,exports_))
         root_declarations_.push_back(partial);
       return true;
@@ -655,7 +657,7 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
       scopes.push_back(space);
   std::reverse(scopes.begin(), scopes.end());
   for (const auto *space : scopes) {
-    if (IsStandardCoroutineTraitsSpecialization(declaration))
+    if (IsPublishedStandardSpecialization(declaration))
       out << (space->isInline()?"inline namespace ":"namespace ") << space->getName();
     else PrintNamespaceHead(space, out, false);
     out << " {\n";
@@ -1076,6 +1078,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back(kCxxStandardCoroutineSemantic);
     if (HasCxxStandardLibraryIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxStandardLibrarySemantic);
+    if (HasCxxStandardLibrarySpecializationIdentity(declaration))
+      sidecar.required_semantics.push_back(kCxxStandardLibrarySpecializationSemantic);
     if (HasCxxCoroutineBodyIdentity(declaration))
       sidecar.required_semantics.push_back(kCxxCoroutineBodySemantic);
     if (HasForeignImportAttributeIdentity(declaration))
@@ -1296,6 +1300,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kCxxStandardLibrarySemantic,
+    kCxxStandardLibrarySpecializationSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,
@@ -1487,6 +1492,7 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     kCxxUnnamedTemplateProjectionSemantic,
     kCxxStandardCoroutineSemantic,
     kCxxStandardLibrarySemantic,
+    kCxxStandardLibrarySpecializationSemantic,
     kForeignImportAttributeSemantic,
     kCxxNestedFactoryTypeSemantic,
     kCxxLambdaFactoryResultSemantic,

@@ -5,6 +5,8 @@
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TargetInfo.h"
+#include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Lex/Lexer.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/MacroInfo.h"
@@ -141,12 +143,9 @@ inline std::string StandardHeaderMacroProfile(clang::Preprocessor &preprocessor,
     lexer.LexFromRawLexer(token);if(token.is(clang::tok::eof))break;
     if(!token.is(clang::tok::raw_identifier))continue;
     const auto name=token.getRawIdentifier();
-    if(name.starts_with("_GLIBCXX") || name.starts_with("_LIBCPP") ||
-        name.starts_with("__USE_") || name=="_GNU_SOURCE" ||
-        name=="_DEFAULT_SOURCE" || name=="_POSIX_C_SOURCE" ||
-        name=="_XOPEN_SOURCE" || name=="_FILE_OFFSET_BITS" ||
-        name=="_TIME_BITS" || name=="_FORTIFY_SOURCE" || name=="NDEBUG")
-      names.insert(name.str());
+    // Collect query names and possible compiler/caller configuration inputs.
+    // Ordinary identifiers have no macro definition to record.
+    names.insert(name.str());
   } while(true);
   std::string contents;
   const auto end=preprocessor.getSourceManager().getLocForEndOfFile(file);
@@ -156,6 +155,17 @@ inline std::string StandardHeaderMacroProfile(clang::Preprocessor &preprocessor,
     if(const auto *info=latest.getMacroInfo();info && info->isUsedForHeaderGuard())continue;
     const auto definition=preprocessor.getMacroDefinitionAtLoc(identifier,end);
     const auto *info=definition.getMacroInfo();if(!info || info->isBuiltinMacro())continue;
+    const auto location=info->getDefinitionLoc();
+    const bool implementation=name.starts_with("_GLIBCXX") || name.starts_with("_LIBCPP") ||
+        name.starts_with("__USE_") || name=="_GNU_SOURCE" || name=="_DEFAULT_SOURCE" ||
+        name=="_POSIX_C_SOURCE" || name=="_XOPEN_SOURCE" || name=="_FILE_OFFSET_BITS" ||
+        name=="_TIME_BITS" || name=="_FORTIFY_SOURCE" || name=="NDEBUG";
+    // System headers also publish feature-test and helper macros as outputs.
+    // Their presence can grow when independent headers are combined. Bind
+    // implementation configuration and every referenced compiler/caller macro,
+    // while declaration reuse separately checks native written definitions.
+    if(!implementation && location.isValid() &&
+        preprocessor.getSourceManager().isInSystemHeader(location))continue;
     std::string value=info->isFunctionLike()?"function:":"object:";
     value+=info->isC99Varargs()?"c99:":info->isGNUVarargs()?"gnu:":"fixed:";
     for(const auto *parameter:info->params())value+=parameter->getName().str()+",";
@@ -165,6 +175,30 @@ inline std::string StandardHeaderMacroProfile(clang::Preprocessor &preprocessor,
       value+=std::to_string(part.getKind())+":"+std::to_string(spelling.size())+":"+spelling;
     }
     const auto entry=name+"="+value;contents+=std::to_string(entry.size())+":"+entry;
+  }
+  // Feature-query macros are builtins without replacement tokens. Evaluate
+  // the header's referenced names through the pinned compiler's authority.
+  // Keep query state independent of template instantiation and AST printing.
+  if(names.count("__has_feature") || names.count("__has_extension")) {
+    using namespace clang;
+    const auto &PP=preprocessor;
+    const auto &LangOpts=PP.getLangOpts();
+    std::map<std::string,bool> features,extensions;
+    auto referenced=[&](const char *name) {
+      return names.count(name) || names.count(std::string("__")+name+"__");
+    };
+#define FEATURE(Name, Predicate) if(referenced(#Name))features[#Name]=bool(Predicate);
+#define EXTENSION(Name, Predicate) if(referenced(#Name))extensions[#Name]=bool(Predicate);
+#include "clang/Basic/Features.def"
+    std::set<std::string> queries;
+    for(const auto &[name,value]:features)queries.insert(name);
+    for(const auto &[name,value]:extensions)queries.insert(name);
+    const bool allow_extensions=PP.getDiagnostics().getExtensionHandlingBehavior()<diag::Severity::Error;
+    for(const auto &name:queries) {
+      if(names.count("__has_feature"))contents+=";feature:"+name+"="+std::to_string(features[name]);
+      if(names.count("__has_extension"))contents+=";extension:"+name+"="+
+          std::to_string(features[name] || (allow_extensions && extensions[name]));
+    }
   }
   return ComputeInterfaceSourceSha256(contents);
 }

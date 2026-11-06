@@ -1,3 +1,4 @@
+#include "standard_library_specializations.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/ast_effect_identity.h"
@@ -321,10 +322,13 @@ const clang::NamedDecl *TemplatePublicationOwner(const clang::NamedDecl *declara
   bool pattern=false;
   for (const clang::NamedDecl *current=declaration; current;
        current=llvm::dyn_cast<clang::NamedDecl>(current->getDeclContext())) {
-    if (IsStandardCoroutineTraitsSpecialization(current)) return current;
+    if (IsPublishedStandardSpecialization(current)) return current;
+    if (const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(current))
+      if (const auto *partial=variable->getSpecializedTemplateOrPartial().dyn_cast<clang::VarTemplatePartialSpecializationDecl *>();
+          partial && IsStandardLibrarySpecialization(partial))return partial;
     if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(current))
       if (const auto *partial=record->getSpecializedTemplateOrPartial().dyn_cast<clang::ClassTemplatePartialSpecializationDecl *>();
-          partial && IsStandardCoroutineTraitsSpecialization(partial)) return partial;
+          partial && IsPublishedStandardSpecialization(partial)) return partial;
     // Expression-local closures keep their lexical body contract. A generic
     // lambda's call template must never turn its implicit class into an owner.
     if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(current);
@@ -724,7 +728,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
 
   if (llvm::isa<clang::ClassTemplateDecl>(declaration)) return IsTopLevel(declaration);
-  if (IsStandardCoroutineTraitsSpecialization(declaration)) return IsTopLevel(declaration);
+  if (IsPublishedStandardSpecialization(declaration)) return IsTopLevel(declaration);
   if (TemplatePublicationOwner(declaration)) return false;
   if (IsTopLevel(declaration)) {
     if (llvm::isa<clang::ConceptDecl, clang::TypeAliasTemplateDecl>(declaration)) return true;

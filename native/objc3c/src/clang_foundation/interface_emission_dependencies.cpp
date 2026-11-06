@@ -1,3 +1,4 @@
+#include "standard_library_specializations.h"
 #include "standard_library_headers.h"
 #include "standard_coroutine_types.h"
 #include "clang_foundation/interface_emitter.h"
@@ -158,10 +159,10 @@ class TypeDependencyVisitor final
         for(const auto &argument:variable->getTemplateArgs().asArray())if(!CheckGenericArgument(argument))UnsupportedExpression();
       return;
     }
-    if (IsStandardCoroutineTraitsSpecialization(target)) {
+    if (IsPublishedStandardSpecialization(target)) {
       CheckVisibility(target);
       if (!IsInMainFile(context_,target->getLocation()) && !IsResolved(target))
-        AddDiagnostic(result_,"O3IFC112","coroutine traits requires its resolved public specialization",target->getQualifiedNameAsString());
+        AddDiagnostic(result_,"O3IFC112","native standard specialization requires its resolved public declaration",target->getQualifiedNameAsString());
       return;
     }
     // C++ default-initialization of the ABI's va_list array can reference its
@@ -396,13 +397,28 @@ class TypeDependencyVisitor final
       CheckTemplateRecord(specialization);
     }
   }
+  void CheckStandardVariable(const clang::VarTemplateSpecializationDecl *variable) {
+    const auto *owner=StandardLibrarySpecializationOwner(variable);
+    if(!owner || (!IsInMainFile(context_,owner->getLocation()) && !IsResolved(owner))) {
+      AddDiagnostic(result_,"O3IFC112","native standard variable specialization requires a public module owner",variable->getQualifiedNameAsString());return;
+    }
+    CheckExpressionReference(owner);
+    if(const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(variable)) {
+      CheckVariablePartial(partial);return;
+    }
+    CheckExpressionReference(variable->getSpecializedTemplate());
+    for(const auto &argument:variable->getTemplateArgs().asArray())
+      if(!CheckGenericArgument(argument))UnsupportedExpression();
+    TraverseType(variable->getType());
+    if(variable->hasInit())TraverseStmt(const_cast<clang::Expr *>(variable->getInit()));
+  }
   void CheckCoroutineTraits(const clang::ClassTemplateSpecializationDecl *record) {
     const auto locals=lambda_locals_;const bool previous=public_template_type_;
     auto restore=llvm::scope_exit([&]{lambda_locals_=locals;public_template_type_=previous;});
     public_template_type_=true;
-    const auto *owner=CoroutineTraitsReturnOwner(record);
+    const auto *owner=PublishedStandardSpecializationOwner(record);
     if (!owner || (!IsInMainFile(context_,owner->getLocation()) && !IsResolved(owner))) {
-      AddDiagnostic(result_,"O3IFC112","coroutine traits return type requires a public module owner",record->getQualifiedNameAsString());return;
+      AddDiagnostic(result_,"O3IFC112","native standard specialization requires a public module-owned type argument",record->getQualifiedNameAsString());return;
     }
     CheckExpressionReference(owner);
     if (const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record)) {
@@ -868,12 +884,6 @@ class TypeDependencyVisitor final
 
   bool VisitTagType(clang::TagType *type) {
     const auto *declaration = type->getDecl();
-    if(const auto *specialization=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
-        specialization && IsStandardLibraryDeclaration(specialization->getSpecializedTemplate(),context_) &&
-        !IsStandardLibraryDeclaration(declaration,context_) &&
-        (llvm::isa<clang::ClassTemplatePartialSpecializationDecl>(specialization) ||
-         specialization->getSpecializationKind()==clang::TSK_ExplicitSpecialization))
-      return UnsupportedExpression("user standard-library specializations require a published specialization contract");
     if (IsStandardCoroutineDeclaration(declaration,context_) || IsStandardLibraryDeclaration(declaration,context_)) {
       if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration))
         for (const auto &argument:record->getTemplateArgs().asArray())
@@ -923,7 +933,7 @@ class TypeDependencyVisitor final
       CheckEnclosingClassArguments(declaration);
       return true;
     }
-    if (const auto *owner=TemplatePublicationOwner(declaration);IsStandardCoroutineTraitsSpecialization(owner)) {
+    if (const auto *owner=TemplatePublicationOwner(declaration);IsPublishedStandardSpecialization(owner)) {
       CheckExpressionReference(owner);CheckEnclosingClassArguments(declaration);
       TraverseType(declaration->getUnderlyingType());return true;
     }
@@ -1104,7 +1114,9 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   if (const auto *pattern = llvm::dyn_cast<clang::ClassTemplateDecl>(declaration))
     visitor.CheckClassTemplate(pattern);
   if (const auto *record=llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(declaration);
-      IsStandardCoroutineTraitsSpecialization(record)) visitor.CheckCoroutineTraits(record);
+      IsPublishedStandardSpecialization(record)) visitor.CheckCoroutineTraits(record);
+  if(const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+      variable && IsStandardLibrarySpecialization(variable))visitor.CheckStandardVariable(variable);
   if (const auto *record=llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
       HasDirectMemberTemplates(record)) visitor.CheckTemplateRecord(record);
   for (const auto *pattern:ClosedParentPatterns(declaration)) {
@@ -1446,12 +1458,20 @@ bool IsBoundedClosedParentPatterns(const clang::NamedDecl *owner) {
 bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
                              InterfaceEmissionArtifact &result,
                              const std::vector<std::string> &exports) {
+  if(const auto *variable=llvm::dyn_cast<clang::VarTemplateSpecializationDecl>(declaration);
+      variable && IsStandardLibrarySpecialization(variable)) {
+    const auto *partial=llvm::dyn_cast<clang::VarTemplatePartialSpecializationDecl>(variable);
+    if(StandardLibrarySpecializationOwner(variable) && variable->isInline() && variable->isConstexpr() &&
+        variable->hasInit() && !variable->isStaticDataMember() &&
+        (!partial || IsBoundedVariablePartial(partial)))return true;
+    AddDiagnostic(result,"O3IFC101","native standard variable specialization requires an inline constexpr definition and named module owner",variable->getQualifiedNameAsString());return false;
+  }
   const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
-  if (IsStandardCoroutineTraitsSpecialization(record)) {
+  if (IsPublishedStandardSpecialization(record)) {
     const auto *partial=llvm::dyn_cast<clang::ClassTemplatePartialSpecializationDecl>(record);
-    if (record->isCompleteDefinition() && CoroutineTraitsReturnOwner(record) &&
+    if (record->isCompleteDefinition() && PublishedStandardSpecializationOwner(record) &&
         IsBoundedTemplateRecord(record) && (!partial || IsBoundedNestedTemplateParameters(partial->getTemplateParameters()))) return true;
-    AddDiagnostic(result,"O3IFC101","coroutine traits specialization requires a complete bounded definition and named return owner",record->getQualifiedNameAsString());return false;
+    AddDiagnostic(result,"O3IFC101","native standard specialization requires a complete bounded definition and named module owner",record->getQualifiedNameAsString());return false;
   }
   bool supported = IsBoundedClosedParentMembers(declaration) && IsBoundedClosedParentPatterns(declaration);
   if (record && record->isCompleteDefinition()) {

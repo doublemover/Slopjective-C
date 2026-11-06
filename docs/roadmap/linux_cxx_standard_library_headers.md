@@ -11,12 +11,15 @@ through a closed list of public C++ standard headers. Namespace spelling alone
 does not grant that status: main-file declarations in `std` retain ordinary
 publication checks. Template arguments and enclosing class arguments retain
 their own visibility requirements, including arguments of standard typedefs.
-User-authored specializations require a separate publication contract.
+The [specialization span](linux_cxx_standard_specializations.md) adds a separate
+publication contract for user-authored customizations.
 
 Each affected declaration binds the sorted public header set and a SHA-256
 inventory of the actual include closure, including C, target and configuration
 headers reached through it. Per-file preprocessing profiles bind implementation
 and platform configuration macros at each header's end, excluding header guards.
+Referenced compiler/caller macros and native feature-query predicates are included;
+helper and feature-test macros published by other system headers remain outputs.
 Their values remain independent of later template instantiation and source macro
 changes. Source locations and absolute installation paths do not participate.
 The canonical interface emits the checked includes before its
@@ -52,8 +55,8 @@ shared ownership, optional values, spans, tuples, variants, durations, integral
 constraints and inline algorithms. They exercise C++20/23 and Objective-C++
 ARC/MRC, source-free object consumers, combined providers, source-directed imports,
 location/include-order independence, private dependencies, malformed metadata,
-changed header bytes and incompatible library ABI selection. Their current run
-is in progress; this document does not count it as completed qualification.
+changed header bytes and incompatible library ABI selection. All six profiles pass in the instrumented development frontend. These results
+do not count as matched SDK qualification.
 
 Twelve existing frontend control groups pass. A maintained native executable test
 removes the provider source, compiles two consumers, links the three objects and

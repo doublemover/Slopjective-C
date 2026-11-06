@@ -3003,6 +3003,122 @@ void TestUnnamedTemplateProjections() {
   }
 }
 
+void TestStandardLibrarySpecializations() {
+  llvm::SmallString<256> temporary;
+  assert(!llvm::sys::fs::createUniqueDirectory("objc3-standard-specializations",temporary));
+  const auto root=std::filesystem::path(temporary.c_str());
+  auto cleanup=llvm::scope_exit([&]{std::filesystem::remove_all(root);});
+  const std::string source=R"(
+#include <functional>
+#include <limits>
+#include <ranges>
+#include <tuple>
+namespace NativeStandard {
+struct Key {int value;};
+struct Other {int value;};
+struct View {int *first;int *last;int *begin()const{return first;}int *end()const{return last;}};
+template<class T>struct Box {T value;};
+}
+namespace std {
+template<>struct hash<NativeStandard::Key> {
+  constexpr size_t operator()(NativeStandard::Key value) const noexcept {return value.value+100;}
+};
+template<>struct hash<NativeStandard::Other> {
+  constexpr size_t operator()(NativeStandard::Other value) const noexcept {return value.value+200;}
+};
+template<class T>struct hash<NativeStandard::Box<T>> {
+  size_t operator()(const NativeStandard::Box<T> &value) const {return hash<T>{}(value.value);}
+};
+template<>struct tuple_size<NativeStandard::Key>:integral_constant<size_t,1> {};
+template<>struct tuple_element<0,NativeStandard::Key> {using type=int;};
+template<>struct common_type<NativeStandard::Key,NativeStandard::Key> {using type=long;};
+template<>struct numeric_limits<NativeStandard::Key> {
+  static constexpr bool is_specialized=true;
+  static constexpr NativeStandard::Key min() noexcept {return {1};}
+};
+}
+namespace std::ranges {
+template<>inline constexpr bool enable_borrowed_range<NativeStandard::View> = true;
+template<class T>inline constexpr bool enable_view<NativeStandard::Box<T>> = true;
+}
+
+namespace NativeStandard {
+using Hash=std::hash<Key>;
+using Element=std::tuple_element_t<0,Key>;
+inline constexpr int total(Key value) {
+  return std::hash<Key>{}(value)+std::hash<Other>{}({value.value});
+}
+}
+)";
+  for(const char *standard:{"c++20","c++23"})for(int mode=0;mode!=3;++mode) {
+    const bool objc=mode!=0,arc=mode==2;
+    std::fprintf(stderr,"STANDARD SPECIALIZATIONS %s %d\n",standard,mode);
+    std::vector<std::string> flags={"-x",objc?"objective-c++":"c++",std::string("-std=")+standard,
+        "-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    if(objc)flags.insert(flags.end(),{"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",arc?"-fobjc-arc":"-fno-objc-arc"});
+    auto emit=[&](const std::string &text,const char *file="standard-specializations.mm") {
+      auto ast=clang::tooling::buildASTFromCodeWithArgs(text,flags,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),"fixture.standard_specializations","test",{}));
+      auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.standard_specializations","test",{},{},{},{"NativeStandard"},{},&ast->getPreprocessor());
+      for(const auto &d:result.diagnostics)std::fprintf(stderr,"STANDARD SPECIALIZATION %s: %s %s\n",d.code.c_str(),d.message.c_str(),d.subject.c_str());
+      return result;
+    };
+    auto first=emit(source);assert(first.success);
+    assert(first.sidecar_json.find(kCxxStandardLibrarySpecializationSemantic)!=std::string::npos);
+    auto replay=emit(first.source_bytes);assert(replay.success && replay.source_bytes==first.source_bytes && replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+    if(mode==0 && std::string(standard)=="c++20") {
+      auto moved=emit("\n\n"+source,"relocated-specializations.cpp");assert(moved.success && moved.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto changed=source;auto at=changed.find("value.value+100");assert(at!=std::string::npos);changed.replace(at,std::string("value.value+100").size(),"value.value+101");
+      auto different=emit(changed);assert(different.success && different.identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+      auto hidden=emit("#include <functional>\nnamespace Hidden {constexpr int value=42;} namespace NativeStandard {struct Key{int value;};} namespace std {template<>struct hash<NativeStandard::Key>{unsigned long operator()(NativeStandard::Key v)const{return v.value+Hidden::value;}};}");
+      assert(!hidden.success);
+      auto builtin=emit("#include <functional>\nnamespace std {template<>struct hash<void*>{unsigned long operator()(void*)const{return 0;}};} namespace NativeStandard {std::hash<void*> policy();}");
+      assert(!builtin.success);
+      auto parsed=llvm::json::parse(first.sidecar_json);assert(parsed);std::vector<llvm::StringRef> semantics;
+      for(const auto &value:*parsed->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
+      auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
+      for(int corruption=0;corruption!=3;++corruption) {
+        auto bad=*decoded;
+        if(corruption==0)std::erase(bad.required_semantics,kCxxStandardLibrarySpecializationSemantic);
+        else {
+          auto row=std::find_if(bad.declarations.begin(),bad.declarations.end(),HasCxxStandardLibrarySpecializationIdentity);assert(row!=bad.declarations.end());
+          if(corruption==1)row->kind="CXXRecord";
+          else {auto at=row->canonical_type_identity.find(kCxxStandardLibraryMarker);assert(at!=std::string::npos);row->canonical_type_identity.erase(at);}
+        }
+        auto rejected=EncodeSemanticInterfaceSidecar(bad,semantics);assert(!rejected);llvm::consumeError(rejected.takeError());
+      }
+    }
+    const auto name=std::string(standard)+"-"+std::to_string(mode);
+    const auto interface=root/(name+".objc3i");
+    {std::ofstream out(interface);out<<first.source_bytes;}
+    {std::ofstream out(interface.string()+".json");out<<first.sidecar_json;}
+    InterfaceImportInput input;input.source_path=interface.string();input.locked_identity=first.identity;
+    CompileRequest request;request.input_path=(root/(name+(objc?".mm":".cpp"))).string();
+    request.source_text=R"(
+static_assert(NativeStandard::total({1})==302);
+static_assert(std::ranges::borrowed_range<NativeStandard::View>);
+static_assert(std::ranges::enable_view<NativeStandard::Box<int>>);
+static_assert(std::ranges::enable_view<NativeStandard::Box<long>>);
+static_assert(std::tuple_size_v<NativeStandard::Key> == 1);
+static_assert(std::is_same_v<NativeStandard::Element,int>);
+static_assert(std::is_same_v<std::common_type_t<NativeStandard::Key,NativeStandard::Key>,long>);
+static_assert(std::numeric_limits<NativeStandard::Key>::min().value==1);
+unsigned long standard_specialization_client() {
+  return std::hash<NativeStandard::Box<int>>{}({41});
+}
+)";
+    request.language=objc?BaseLanguage::ObjectiveCxx:BaseLanguage::Cxx;request.objc3=objc;request.arc=arc;
+    if(objc)request.objc_runtime="gnustep-2.2";
+    request.target_triple="x86_64-unknown-linux-gnu";
+    request.arguments={std::string("-std=")+standard,"-resource-dir=" OBJC3_INTERFACE_TEST_RESOURCE_DIR};
+    request.imported_interfaces={input};request.emit=EmitKind::Object;request.output_path=(root/(name+".o")).string();
+    auto consumer=Compile(request);
+    if(!consumer.success)std::fprintf(stderr,"STANDARD SPECIALIZATION CONSUMER %s\n",consumer.failure.c_str());
+    for(const auto &d:consumer.diagnostics)std::fprintf(stderr,"%s\n",d.message.c_str());
+    assert(consumer.success);
+  }
+}
+
 void TestStandardLibraryHeaderContracts() {
   const std::string includes=R"(#include <algorithm>
 #include <any>
@@ -3116,7 +3232,8 @@ namespace NativeStandard {
     auto customization=emit("#include <functional>\nnamespace NativeStandard {struct Key{int value;};}\n"
         "namespace std {template<>struct hash<NativeStandard::Key>{unsigned long operator()(NativeStandard::Key v)const{return v.value;}};}\n"
         "namespace NativeStandard {std::hash<Key> policy();}");
-    assert(!customization.success);
+    assert(customization.success);
+    assert(customization.sidecar_json.find(kCxxStandardLibrarySpecializationSemantic)!=std::string::npos);
     }
     const auto suffix=std::string(standard)+"-"+std::to_string(mode);
     const auto interface=root/(suffix+".objc3i");
@@ -3176,6 +3293,13 @@ namespace NativeStandard {
       auto different_configuration=Compile(configuration);
       assert(!different_configuration.success && !std::filesystem::exists(configuration.output_path));
       assert(std::any_of(different_configuration.interface_import_diagnostics.begin(),different_configuration.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139" || d.code=="O3IFC183";}));
+      for(const char *flag:{"-fno-exceptions","-fno-rtti"}) {
+        auto feature=request;feature.arguments.push_back(flag);
+        feature.output_path=(root/(std::string("rejected-")+flag+".o")).string();
+        auto result=Compile(feature);
+        assert(!result.success && !std::filesystem::exists(feature.output_path));
+        assert(std::any_of(result.interface_import_diagnostics.begin(),result.interface_import_diagnostics.end(),[](const auto &d){return d.code=="O3IFC139" || d.code=="O3IFC183";}));
+      }
     }
   }
 }
@@ -7204,7 +7328,14 @@ void TestBoundedCxxSemanticInterfaces() {
 
 } // namespace
 
-int main() {
+int main(int argc,char **argv) {
+  if(argc==2) {
+    const std::string group=argv[1];
+    if(group=="standard-library-headers") {TestStandardLibraryHeaderContracts();return 0;}
+    if(group=="standard-library-specializations") {TestStandardLibrarySpecializations();return 0;}
+    return 2;
+  }
+  if(argc!=1)return 2;
   TestPrimitiveAndObjectiveCContractIdentity();
   TestOrdinaryCDeclarationsRoundTrip();
   TestStandardLibraryImportsAndInstancetype();
@@ -7270,7 +7401,6 @@ int main() {
   TestNativeDeclarationAttributes();
   TestCOverloadableInterfaces();
   TestUnnamedTemplateProjections();
-  TestStandardLibraryHeaderContracts();
   TestStandardCoroutineTypesAndTraits();
   TestCustomCoroutineBodies();
   TestForeignImportAttributes();

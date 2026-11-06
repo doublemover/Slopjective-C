@@ -351,6 +351,12 @@ if (BUILD_TESTING)
     OBJC3_INTERFACE_TEST_STDLIB_HEADERS="${_objc3_repo}/stdlib/include/objc3"
     OBJC3_INTERFACE_TEST_RESOURCE_DIR="${OBJC3C_FOUNDATION_RESOURCE_DIR}")
   add_test(NAME objc3_interface_emitter COMMAND objc3_interface_emitter_test)
+  add_test(NAME objc3_standard_library_headers
+    COMMAND objc3_interface_emitter_test standard-library-headers)
+  add_test(NAME objc3_standard_library_specializations
+    COMMAND objc3_interface_emitter_test standard-library-specializations)
+  set_tests_properties(objc3_standard_library_headers objc3_standard_library_specializations
+    PROPERTIES LABELS "native;standard-library;extended" TIMEOUT 1800)
   add_executable(objc3_isolation_contracts_test
     ../../../../tests/clang_foundation/isolation_contracts_test.cpp)
   target_include_directories(objc3_isolation_contracts_test SYSTEM PRIVATE
