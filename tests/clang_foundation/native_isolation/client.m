@@ -104,7 +104,7 @@ static int class_roundtrip(int kind, objc3_executor_t *destination)
 static void check_explicit_storage(objc3_executor_t *caller,objc3_executor_t *main_destination) {
   for(int ownership=0;ownership!=2;++ownership) {
     for(int route=0;route!=3;++route) {
-      for(int kind=0;kind!=8;++kind) {
+      for(int kind=0;kind!=26;++kind) {
         for(int outcome=0;outcome!=6;++outcome) {
           int before=hop_destroyed();
           if(ownership)hop_arc_explicit_storage_reset();else hop_explicit_storage_reset();
@@ -145,8 +145,9 @@ static void check_explicit_storage(objc3_executor_t *caller,objc3_executor_t *ma
             int done=ownership?hop_arc_explicit_storage_completed():hop_explicit_storage_completed();
             int objects=ownership?hop_arc_explicit_storage_created():hop_explicit_storage_created();
             assert(entered==(outcome!=1 && outcome!=5));
-            assert(done==(outcome==0 || outcome==3 || outcome==4 ||
-                (outcome==2 && (kind%4==0 || kind%4==3))));
+            const int entry_abi=kind<8?kind%4:4+(kind>=17?kind-17:kind-8);
+            const int async_body=entry_abi==1 || entry_abi==2 || entry_abi==5 || entry_abi==6;
+            assert(done==(outcome==0 || outcome==3 || outcome==4 || (outcome==2 && !async_body)));
             if(outcome==1)assert(objects==0);
             else if(outcome==5)assert(objects>=0 && objects<=1);
             else {

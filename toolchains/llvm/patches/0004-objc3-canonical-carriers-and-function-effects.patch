@@ -10941,18 +10941,22 @@ index 6a25a799a..fb09ef44b 100644
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..fd1637548 100644
+index b0669c602..851fb1d7b 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
-@@ -13,6 +13,7 @@
+@@ -11,8 +11,11 @@
+ //===----------------------------------------------------------------------===//
+ 
  #include "TypeLocBuilder.h"
++#include "SemaObjC3Isolation.h"
++#include "clang/AST/ObjC3Isolation.h"
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
 +#include "clang/AST/ObjC3TypeContracts.h"
  #include "clang/AST/ASTMutationListener.h"
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/CharUnits.h"
-@@ -5026,6 +5027,11 @@ static bool RefersToRValueRef(Expr *MemRef) {
+@@ -5026,6 +5029,11 @@ static bool RefersToRValueRef(Expr *MemRef) {
    return Referenced->getType()->isRValueReferenceType();
  }
  
@@ -10964,7 +10968,7 @@ index b0669c602..fd1637548 100644
  static bool
  BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
                                 ImplicitInitializerKind ImplicitInitKind,
-@@ -5114,6 +5120,15 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
+@@ -5114,6 +5122,15 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
    QualType FieldBaseElementType =
      SemaRef.Context.getBaseElementType(Field->getType());
  
@@ -10980,7 +10984,7 @@ index b0669c602..fd1637548 100644
    if (FieldBaseElementType->isRecordType()) {
      InitializedEntity InitEntity =
          Indirect ? InitializedEntity::InitializeMemberImplicit(Indirect)
-@@ -5164,7 +5179,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
+@@ -5164,7 +5181,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
      }
    }
  
@@ -10990,7 +10994,7 @@ index b0669c602..fd1637548 100644
      // ARC and Weak:
      //   Default-initialize Objective-C pointers to NULL.
      CXXMemberInit
-@@ -5398,6 +5414,25 @@ static void MarkFieldDestructorReferenced(Sema &S, SourceLocation Location,
+@@ -5398,6 +5416,25 @@ static void MarkFieldDestructorReferenced(Sema &S, SourceLocation Location,
  
    QualType FieldType = S.Context.getBaseElementType(Field->getType());
  
@@ -11016,7 +11020,7 @@ index b0669c602..fd1637548 100644
    auto *FieldClassDecl = FieldType->getAsCXXRecordDecl();
    if (!FieldClassDecl)
      return;
-@@ -7471,6 +7506,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+@@ -7471,6 +7508,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
    else if (Record->hasNonTrivialDestructor())
      Record->setParamDestroyedInCallee(CanPass);
  
@@ -11030,7 +11034,7 @@ index b0669c602..fd1637548 100644
    if (getLangOpts().ForceEmitVTables) {
      // If we want to emit all the vtables, we need to mark it as used.  This
      // is especially required for cases like vtable assumption loads.
-@@ -7685,6 +7727,12 @@ static bool defaultedSpecialMemberIsConstexpr(
+@@ -7685,6 +7729,12 @@ static bool defaultedSpecialMemberIsConstexpr(
    if (!S.getLangOpts().CPlusPlus11)
      return false;
  
@@ -11043,7 +11047,7 @@ index b0669c602..fd1637548 100644
    // C++11 [dcl.constexpr]p4:
    // In the definition of a constexpr constructor [...]
    bool Ctor = true;
-@@ -9809,7 +9857,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
+@@ -9809,7 +9859,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
    // The defaulted special functions are defined as deleted if this is a variant
    // member with a non-trivial ownership type, e.g., ObjC __strong or __weak
    // type under ARC.
@@ -11053,7 +11057,7 @@ index b0669c602..fd1637548 100644
      return false;
  
    // Don't make the defaulted default constructor defined as deleted if the
-@@ -9887,6 +9936,37 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
+@@ -9887,6 +9938,37 @@ bool SpecialMemberDeletionInfo::shouldDeleteForField(FieldDecl *FD) {
    QualType FieldType = S.Context.getBaseElementType(FD->getType());
    CXXRecordDecl *FieldRecord = FieldType->getAsCXXRecordDecl();
  
@@ -11091,7 +11095,7 @@ index b0669c602..fd1637548 100644
    if (inUnion() && shouldDeleteForVariantObjCPtrMember(FD, FieldType))
      return true;
  
-@@ -10426,6 +10506,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
+@@ -10426,6 +10508,17 @@ static bool checkTrivialClassMembers(Sema &S, CXXRecordDecl *RD,
        return false;
      }
  
@@ -11109,7 +11113,7 @@ index b0669c602..fd1637548 100644
      bool ConstRHS = ConstArg && !FI->isMutable();
      if (!checkTrivialSubobjectCall(S, FI->getLocation(), FieldType, ConstRHS,
                                     CSM, TSK_Field, TAH, Diagnose))
-@@ -10765,6 +10856,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+@@ -10765,6 +10858,20 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
      // Ill-formed if the field is an ObjectiveC pointer or of a type that is
      // non-trivial for the purpose of calls.
      QualType FT = FD->getType();
@@ -11130,7 +11134,7 @@ index b0669c602..fd1637548 100644
      if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
        PrintDiagAndRemoveAttr(4);
        return;
-@@ -11172,6 +11277,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -11172,6 +11279,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -11144,7 +11148,7 @@ index b0669c602..fd1637548 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11483,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11485,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -11158,7 +11162,7 @@ index b0669c602..fd1637548 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -14149,6 +14268,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+@@ -14149,6 +14270,28 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
  }
  
  bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
@@ -11187,7 +11191,7 @@ index b0669c602..fd1637548 100644
    if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
        FD->hasInClassInitializer()) {
      Expr *E = FD->getInClassInitializer();
-@@ -14218,6 +14359,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+@@ -14218,6 +14361,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
    //   An implicitly declared special member function (Clause 12) shall have an
    //   exception-specification. [...]
    SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
@@ -11199,10 +11203,24 @@ index b0669c602..fd1637548 100644
    if (ClassDecl->isInvalidDecl())
      return Info.ExceptSpec;
  
-@@ -18882,6 +19028,23 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -18882,6 +19030,37 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
++  if (getLangOpts().ObjC3) {
++    for (const auto *Other : New->overridden_methods())
++      if (!haveSameObjC3Isolation(Other, Old)) {
++        // Checking only the newest base would make inheritance depend on
++        // base traversal order when one virtual slot is unqualified.
++        Diag(New->getLocation(), diag::err_objc3_isolation_redeclaration) << New;
++        Diag(Other->getLocation(), diag::note_previous_declaration);
++        Diag(Old->getLocation(), diag::note_previous_declaration);
++        New->setInvalidDecl();
++        return true;
++      }
++    if (checkObjC3IsolationRedeclaration(*this, New, Old)) return true;
++  }
++
 +  // ObjC3 effects have exact override identity, independently of native C++
 +  // exception specifications and Clang's inferred FunctionEffects. Function
 +  // value widening does not change a virtual slot's declared error contract.
@@ -11223,7 +11241,7 @@ index b0669c602..fd1637548 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
-@@ -19001,6 +19164,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+@@ -19001,6 +19180,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
        NewTy->isDependentType() || OldTy->isDependentType())
      return false;
  
@@ -42807,7 +42825,7 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..2339fb7e5
+index 000000000..d3ae31385
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
 @@ -0,0 +1,355 @@
@@ -42952,7 +42970,7 @@ index 000000000..2339fb7e5
 +    Diag(Loc, diag::err_objc3_async_defer_suspend);
 +    return ExprError();
 +  }
-+  if (getLangOpts().CPlusPlus && Operand->isTypeDependent()) {
++  if (getLangOpts().CPlusPlus && Operand->isInstantiationDependent()) {
 +    // Native frame templates have no C++ promise. Their opaque protocol also
 +    // distinguishes this written await from ordinary dependent C++ co_await.
 +    auto *Common = new (Context) OpaqueValueExpr(Loc, Operand->getType(), VK_PRValue);
@@ -47143,10 +47161,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..f54177c94
+index 000000000..9ba81c494
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1363 @@
+@@ -0,0 +1,1416 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47618,7 +47636,7 @@ index 000000000..f54177c94
 +  }
 +  void checkCall(Expr *Site, const Decl *Target, ArrayRef<Expr *> Arguments,
 +                 const Expr *Receiver = nullptr, bool Super = false) {
-+    if (!Target || !Checked.insert(Site).second)
++    if (!Target || Site->isInstantiationDependent() || !Checked.insert(Site).second)
 +      return;
 +    // A private frame encapsulates the entry requirement. Its original source
 +    // argument/result transfers were checked before replacing the await
@@ -48223,6 +48241,28 @@ index 000000000..f54177c94
 +        Built->setSuper(Message->getSuperLoc(), Message->getSuperType(),
 +                        Message->getReceiverKind() == ObjCMessageExpr::SuperInstance);
 +      }
++    } else if (HasReceiver) {
++      const auto *Call = cast<CXXMemberCallExpr>(Source);
++      const auto *OriginalMember = cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts());
++      ExprResult Receiver = S.DefaultLvalueConversion(Arguments.front());
++      if (Receiver.isInvalid()) return nullptr;
++      ExprResult Object = S.CreateBuiltinUnaryOp(Loc, UO_Deref, Receiver.get());
++      if (Object.isInvalid()) return nullptr;
++      Expr *Base = Object.get();
++      if (!OriginalMember->isArrow() && OriginalMember->getBase()->isXValue())
++        Base = ImplicitCastExpr::Create(S.Context, Base->getType(), CK_NoOp,
++            Base, nullptr, VK_XValue, FPOptionsOverride());
++      // Selection/access checking already happened at the source call. Keep
++      // its exact declaration and qualifier so virtual versus qualified-base
++      // dispatch, private/protected access and template specialization agree.
++      Expr *Callee = S.BuildMemberExpr(Base, false, Loc,
++          OriginalMember->getQualifierLoc(), OriginalMember->getTemplateKeywordLoc(),
++          const_cast<CXXMethodDecl *>(cast<CXXMethodDecl>(Target)),
++          OriginalMember->getFoundDecl(), OriginalMember->hadMultipleCandidates(),
++          OriginalMember->getMemberNameInfo(), OriginalMember->getType(),
++          OriginalMember->getValueKind(), OriginalMember->getObjectKind());
++      Value = S.BuildCallExpr(nullptr, Callee, Loc,
++          MutableArrayRef<Expr *>(Arguments).drop_front(), Loc);
 +    } else {
 +      auto *Function = const_cast<FunctionDecl *>(cast<FunctionDecl>(Target));
 +      ExprResult Callee = S.BuildDeclRefExpr(Function, Function->getType(),
@@ -48324,6 +48364,9 @@ index 000000000..f54177c94
 +
 +ExprResult Sema::BuildObjC3IsolationAwaitOperand(SourceLocation Loc,
 +                                                 Expr *Operand) {
++  // A known class-template member can still have dependent parameter/result
++  // storage or a dependent receiver. Rebuild its entry after substitution.
++  if (getLangOpts().CPlusPlus && Operand->isInstantiationDependent()) return Operand;
 +  auto *Source = Operand->IgnoreImplicit()->IgnoreParenImpCasts();
 +  auto *Call = dyn_cast<CallExpr>(Source);
 +  auto *Message = dyn_cast<ObjCMessageExpr>(Source);
@@ -48356,6 +48399,22 @@ index 000000000..f54177c94
 +  }
 +  ObjCMethodDecl *SuperContext = nullptr;
 +  Expr *SourceReceiver = Message ? Message->getInstanceReceiver() : nullptr;
++  const auto *CxxMethod = dyn_cast_or_null<CXXMethodDecl>(Target);
++  const auto *MemberCall = dyn_cast_or_null<CXXMemberCallExpr>(Call);
++  const auto *Member = Call
++      ? dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts()) : nullptr;
++  const bool StaticMember = CxxMethod && CxxMethod->isStatic() && Member;
++  const bool CxxReceiver = CxxMethod && !CxxMethod->isStatic() && MemberCall && Member;
++  if (CxxReceiver) {
++    SourceReceiver = Member->getBase();
++    if (!Member->isArrow())
++      // The original call already materialized a temporary receiver. Its
++      // ordinary full-expression cleanup remains on the awaiting caller;
++      // the private frame borrows that exact object instead of copying it.
++      SourceReceiver = UnaryOperator::Create(Context, SourceReceiver, UO_AddrOf,
++          Context.getPointerType(SourceReceiver->getType()), VK_PRValue,
++          OK_Ordinary, Loc, false, FPOptionsOverride());
++  }
 +  if (Message && (Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
 +                  Message->getReceiverKind() == ObjCMessageExpr::SuperClass)) {
 +    SuperContext = getCurMethodDecl();
@@ -48373,6 +48432,8 @@ index 000000000..f54177c94
 +  IsolationBodyChecker Arguments(*this, Callable, true);
 +  if (SourceReceiver)
 +    Arguments.Visit(SourceReceiver);
++  else if (StaticMember)
++    Arguments.Visit(Member->getBase());
 +  for (auto *Argument : SourceArguments)
 +    Arguments.Visit(Argument);
 +  if (Arguments.failed())
@@ -48389,8 +48450,8 @@ index 000000000..f54177c94
 +    Shape &= isolationFrameValue(*this, T, false);
 +  if (Call) {
 +    const auto *Method = dyn_cast<CXXMethodDecl>(Target);
-+    Shape &= (!Method || Method->isStatic()) &&
-+             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts());
++    Shape &= CxxReceiver || StaticMember || ((!Method || Method->isStatic()) &&
++             isa<DeclRefExpr>(Call->getCallee()->IgnoreParenImpCasts()));
 +  } else {
 +    const bool Instance =
 +        Message->getReceiverKind() == ObjCMessageExpr::Instance ||
@@ -48416,7 +48477,10 @@ index 000000000..f54177c94
 +    return ExprError();
 +  }
 +  bool Failed = false;
-+  if (SourceReceiver && Message->getReceiverKind() != ObjCMessageExpr::SuperClass)
++  if (CxxReceiver)
++    Failed |= checkTransfer(*this, SourceReceiver->getType()->getPointeeType(),
++                            SourceReceiver->getExprLoc(), "shared isolated C++ receiver", Target, true);
++  else if (SourceReceiver && Message->getReceiverKind() != ObjCMessageExpr::SuperClass)
 +    Failed |= checkTransfer(*this, transferSource(SourceReceiver)->getType(),
 +                            SourceReceiver->getExprLoc(), "isolated receiver", Target);
 +  for (const Expr *Argument : SourceArguments)
@@ -48468,6 +48532,13 @@ index 000000000..f54177c94
 +    Captures.push_back(Opaque);
 +    return true;
 +  };
++  if (StaticMember) {
++    Expr *Base = Member->getBase();
++    // A static call through an object evaluates that base before its arguments,
++    // without copying it or transporting it to the destination executor.
++    Semantics.push_back(new (Context) OpaqueValueExpr(Base->getExprLoc(),
++        Base->getType(), Base->getValueKind(), Base->getObjectKind(), Base));
++  }
 +  if (SourceReceiver &&
 +      !Capture(isolationConsumesReceiver(Target)
 +                   ? uninitializeConsumedArgument(SourceReceiver)
@@ -48488,7 +48559,7 @@ index 000000000..f54177c94
 +}
 +
 +bool Sema::isObjC3NonSuspendingAwait(Expr *Operand) {
-+  if (!Operand || Operand->isTypeDependent())
++  if (!Operand || Operand->isInstantiationDependent())
 +    return false;
 +  if (getLangOpts().CPlusPlus) {
 +    QualType T = Operand->getType();
@@ -57286,3 +57357,56 @@ index 000000000..de8c59838
 +  const int local=3;
 +  return choose?&local:&local; // expected-warning 2 {{address of stack memory associated with local variable 'local' returned}}
 +}
+diff --git a/clang/test/ObjC3/Sema/native-cxx-member-isolation-errors.mm b/clang/test/ObjC3/Sema/native-cxx-member-isolation-errors.mm
+new file mode 100644
+index 000000000..7c61985c2
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-cxx-member-isolation-errors.mm
+@@ -0,0 +1,47 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-cxx-member-isolation.h -o %t-c++20-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++20-mrc.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/../CodeGen/Inputs/native-cxx-member-isolation.h -o %t-c++20-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++20-arc.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/../CodeGen/Inputs/native-cxx-member-isolation.h -o %t-c++23-mrc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++23-mrc.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -fsyntax-only -verify -verify-ignore-unexpected=note %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/../CodeGen/Inputs/native-cxx-member-isolation.h -o %t-c++23-arc.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++23-arc.pch -fsyntax-only -verify -verify-ignore-unexpected=note %s
++#include "../CodeGen/Inputs/native-cxx-member-isolation.h"
++struct PlainMemberEntry {
++  int run(int) noexcept __attribute__((objc_executor(main)));
++};
++static int rejects_plain_receiver(PlainMemberEntry &value) __objc3_async_frame {
++  return __objc3_await value.run(1); // expected-error {{non-Sendable type}}
++}
++static int rejects_missing_await(MemberEntry &value) __objc3_async_frame {
++  return value.run(1); // expected-error {{requires an explicit await}}
++}
++struct __attribute__((objc_unsafe_sendable)) BorrowedMemberEntry {
++  borrowed const char *pointer;
++  int run(int) noexcept __attribute__((objc_executor(main)));
++};
++static int rejects_borrowed_receiver(BorrowedMemberEntry &value) __objc3_async_frame {
++  return __objc3_await value.run(1); // expected-error {{non-Sendable type}}
++}
++struct IncompatibleExecutorOverride : MemberEntry {
++  int dispatch(int) noexcept __attribute__((objc_executor(global))) override; // expected-error {{does not match the previous declaration}}
++};
++struct PlainVirtualEntry { virtual int dispatch(int) noexcept; };
++struct StrengthenedVirtualEntry : PlainVirtualEntry {
++  int dispatch(int) noexcept __attribute__((objc_executor(main))) override; // expected-error {{does not match the previous declaration}}
++};
++struct MixedVirtualA : PlainVirtualEntry, MemberEntry {
++  int dispatch(int) noexcept override; // expected-error {{does not match the previous declaration}}
++};
++struct MixedVirtualB : MemberEntry, PlainVirtualEntry {
++  int dispatch(int) noexcept override; // expected-error {{does not match the previous declaration}}
++};
++struct MainVirtualEntry {virtual int run() noexcept __attribute__((objc_executor(main)));};
++struct GlobalVirtualEntry {virtual int run() noexcept __attribute__((objc_executor(global)));};
++struct ConflictingVirtualEntries : MainVirtualEntry, GlobalVirtualEntry {
++  int run() noexcept override; // expected-error {{does not match the previous declaration}}
++};

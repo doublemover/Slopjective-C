@@ -94,12 +94,13 @@
       "required_profile": "Core and above",
       "module_semver": {
         "major": 2,
-        "minor": 106,
+        "minor": 107,
         "patch": 0
       },
       "header": "include/objc3/concurrency.h",
       "status": "partial",
       "implemented": [
+        "Awaited C++ instance executor entries preserve receiver borrowing, cv/ref category, temporary lifetime, private access, virtual/qualified dispatch and exact receiver/argument/static-base evaluation; virtual contracts inherit or reject across all bases and native-frame member templates defer instantiation-dependent checks (source authored; twenty-four new source/PCH commands, four package-source modes and one complete native isolation configuration with 944 exact-lifetime cases pass; frontend execution and SDK consolidation pending)",
         "Concurrent Block value graphs preserve conditional/comma/assignment/statement results, null alternatives and nested immutable captures; bounded shared proofs reject cycles/unknown storage, explicit strong snapshots override unsafe source storage and native lifetime walks coalesce identical conditional sources (source authored; fifty-four focused compiler commands and two full spawn runtime configurations including sixty-four new exact-lifetime cases pass; frontend execution and SDK consolidation pending)",
         "task/frame ABI",
         "task groups",

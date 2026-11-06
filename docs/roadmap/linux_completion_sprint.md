@@ -20,6 +20,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
+| Concurrency        | Persistent native await syntax and instantiation through ordinary C++ task templates                                        | Open; native-frame templates are delivered separately |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                                                         |
 | Isolation          | MRC consumed object/Block parameters, consumed native-frame receivers and synchronous init-family crossings                 | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                                             |
@@ -27,6 +28,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass                                |
 | Isolation          | NSObject-backed CF/NS storage, strong/weak/unsafe captures and result ownership                                                | Source authored; three focused native configurations pass                                     |
 | Isolation          | Explicit C++ aggregate/union lifetimes, static member entries and dependent native-frame awaits                               | Source authored; focused source/PCH/native execution passes                                   |
+| Isolation          | C++ instance executor entries, virtual contract inheritance, receiver categories and dependent native-frame member awaits    | Source authored; source/PCH and focused native execution pass; package execution pending |
 | Isolation          | Remaining crossings and managed values                                                                                      | Open                                                                                         |
 | Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native source/PCH/runtime execution passes                          |
 | Isolation          | Task-ABI initializer/object/CF results and typed nil entries                                                                | Source authored; focused native execution passes                                             |
@@ -452,3 +454,17 @@ receiver cleanup and isolated child-process traps for missing scalar, record and
 nonnull object reads. Frontend/source-free package, other runtime/sanitizer
 configurations and coordinated SDK delivery remain pending. This checkpoint does
 not implement effectful/isolated or ownership-bearing key paths.
+
+## C++ instance executor entries
+
+The [Concurrency 2.107 span](linux_cxx_instance_entries.md) preserves exact source
+receivers, cv/ref/temporary lifetime, private access and virtual/qualified dispatch
+through isolated entry. Static-object calls retain their caller-side base work.
+Virtual metadata inherits or rejects across every base, and native-frame member
+templates defer dependent storage checks even with a known scalar result.
+Twenty-four new source/PCH commands, existing dependent-await controls, four
+package-source modes and a complete twenty-five-command isolation suite pass.
+Its explicit storage matrix now covers 944 cases, including 648 added member-entry
+cases. Frontend/package execution, optimized/instrumented matrices and coordinated
+SDK delivery remain pending; ordinary C++ task-template dependent await syntax is
+the next active implementation item.

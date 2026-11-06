@@ -372,6 +372,7 @@ static int explicit_storage_package_check(void) __objc3_async {
   {
     NativeExplicitStorage::Value source(&counts,42);
     if(__objc3_await NativeExplicitStorage::generic(static_cast<NativeExplicitStorage::Value &&>(source))!=42)return 0;
+    if(__objc3_await NativeExplicitStorage::member_generic(static_cast<NativeExplicitStorage::Value &&>(source))!=42)return 0;
   }
   return counts.live==0 && counts.copies>0 && counts.destroyed>0?result:0;
 }

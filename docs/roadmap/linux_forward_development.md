@@ -16,6 +16,15 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [Concurrency 2.107 instance-entry span](linux_cxx_instance_entries.md) preserves
+C++ receiver categories, borrowing/temporary lifetime, virtual/qualified dispatch,
+private access and source-order evaluation across executor hops. Virtual contracts
+inherit consistently across bases; native-frame member templates defer dependent
+checks. Twenty-four new source/PCH commands, four package-source modes and a
+complete isolation configuration pass, including 944 storage/lifetime cases.
+Frontend/package execution and SDK consolidation remain pending. Ordinary C++
+task-template dependent awaits remain the next implementation item.
+
 Dependent key-path types, applications/packs and literals plus checked nullable
 traversal now pass all twenty-seven native key-path regressions and two complete
 current-runtime configurations: C17 MRC O0 source and C++23 ARC O2 PCH (twelve

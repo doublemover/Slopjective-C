@@ -31,3 +31,8 @@ passes all 25 commands, compiling independent ARC/MRC providers. Four package
 source modes and affected frontend/test syntax checks pass. Replay, capability
 and source-free consumer controls are authored. Optimized, instrumented,
 frontend/package and final SDK consolidation remain pending; SDK 2.62 is unchanged.
+
+The [Concurrency 2.107 instance-entry span](linux_cxx_instance_entries.md) extends
+these values to C++ receiver entries, exact cv/ref/temporary lifetime and virtual/
+qualified dispatch. Its expanded matrix passes 944 cases in one full isolation
+configuration. Ordinary C++ task-template dependent awaits remain active work.

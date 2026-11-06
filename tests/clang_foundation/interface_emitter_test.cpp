@@ -3589,6 +3589,10 @@ void TestNativeDependentAwaitReplay() {
       for(const auto &value:*metadata->getAsObject()->getArray("required_semantics"))semantics.push_back(*value.getAsString());
       auto decoded=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,semantics);assert(decoded);
       assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),HasNativeDependentAwaitIdentity));
+      assert(first.source_bytes.find("MemberEntries")!=std::string::npos);
+      assert(std::any_of(decoded->declarations.begin(),decoded->declarations.end(),[](const auto &declaration) {
+        return declaration.qualified_name=="NativeExplicitStorage::member_generic";
+      }));
       auto missing=*decoded;std::erase(missing.required_semantics,kNativeDependentAwaitSemantic);
       auto absent=EncodeSemanticInterfaceSidecar(missing,semantics);assert(!absent);llvm::consumeError(absent.takeError());
       auto old=semantics;std::erase(old,llvm::StringRef(kNativeDependentAwaitSemantic));
@@ -3612,6 +3616,9 @@ void TestNativeDependentAwaitReplay() {
       auto valid=parse(first.source_bytes+R"(
         objc3_async_frame use_native_dependent_await(NativeExplicitStorage::Counts *counts) {
           return NativeExplicitStorage::generic(NativeExplicitStorage::Value(counts,42));
+        }
+        objc3_async_frame use_native_member_entries(NativeExplicitStorage::Counts *counts) {
+          return NativeExplicitStorage::member_generic(NativeExplicitStorage::Value(counts,42));
         }
       )","native-dependent-await-consumer.mm");
       assert(valid && !valid->getDiagnostics().hasErrorOccurred());

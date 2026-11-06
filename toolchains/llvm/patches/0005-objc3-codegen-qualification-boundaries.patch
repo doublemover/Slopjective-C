@@ -31062,3 +31062,100 @@ index 000000000..e66f22809
 +// CHECK-DAG: @objc3_task_copy_result
 +// CHECK-DAG: dependent_frame_parent
 +// CHECK-DAG: dependent_frame_callback
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-cxx-member-isolation.h b/clang/test/ObjC3/CodeGen/Inputs/native-cxx-member-isolation.h
+new file mode 100644
+index 000000000..8c2b3e936
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-cxx-member-isolation.h
+@@ -0,0 +1,55 @@
++#ifndef NATIVE_CXX_MEMBER_ISOLATION_H
++#define NATIVE_CXX_MEMBER_ISOLATION_H
++#include "native-explicit-cxx-storage.h"
++template<class T> objc3_async_frame __objc3_async_to_frame(objc3::task<T>);
++struct __attribute__((objc_unsafe_sendable)) MemberEntry {
++  int value;
++  MemberEntry();
++  MemberEntry(const MemberEntry &);
++  ~MemberEntry() noexcept;
++  int run(int) & noexcept __attribute__((objc_executor(main)));
++  int read(int) const & noexcept __attribute__((objc_executor(main)));
++  int take(int) && noexcept __attribute__((objc_executor(main)));
++  int frame(int) noexcept __objc3_async_frame __attribute__((objc_executor(main)));
++  int task(int) noexcept __objc3_async __attribute__((objc_executor(main)));
++  virtual int dispatch(int) noexcept __attribute__((objc_executor(main)));
++  static int static_entry(int) noexcept __attribute__((objc_executor(main)));
++  template<class T> T generic(T value) noexcept __attribute__((objc_executor(main))) {return value;}
++private:
++  int private_entry(int) noexcept __attribute__((objc_executor(main)));
++public:
++  int through_private(int value) __objc3_async_frame {return __objc3_await private_entry(value);}
++};
++struct __attribute__((objc_unsafe_sendable)) DerivedMemberEntry : MemberEntry {
++  int dispatch(int) noexcept override;
++};
++MemberEntry &member_receiver(int *evaluations);
++int member_argument(int *evaluations);
++static int member_native_calls(MemberEntry &object, const MemberEntry &readonly,
++    DerivedMemberEntry &derived, int *evaluations) __objc3_async_frame {
++  int result=__objc3_await object.run(1);
++  result+=__objc3_await readonly.read(2);
++  result+=__objc3_await static_cast<MemberEntry&&>(object).take(3);
++  result+=__objc3_await object.frame(4);
++  result+=__objc3_await object.task(5);
++  result+=__objc3_await derived.dispatch(6);
++  result+=__objc3_await derived.MemberEntry::dispatch(7);
++  result+=__objc3_await object.generic<int>(8);
++  result+=__objc3_await object.through_private(11);
++  result+=__objc3_await member_receiver(evaluations).run(member_argument(evaluations));
++  result+=__objc3_await member_receiver(evaluations).static_entry(member_argument(evaluations));
++  result+=__objc3_await MemberEntry().take(9);
++  return result;
++}
++static int member_task_calls(MemberEntry &object) __objc3_async {
++  return __objc3_await object.run(10);
++}
++template<class T> struct __attribute__((objc_unsafe_sendable)) DependentMemberEntry {
++  int entry(T value) noexcept __attribute__((objc_executor(main))) {return (int)value;}
++  int forward(T value) __objc3_async_frame {return __objc3_await entry(value);}
++};
++static int member_known_dependent_result(void) __objc3_async_frame {
++  DependentMemberEntry<int> receiver;
++  return __objc3_await receiver.forward(42);
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-cxx-member-isolation.mm b/clang/test/ObjC3/CodeGen/native-cxx-member-isolation.mm
+new file mode 100644
+index 000000000..b5407cada
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cxx-member-isolation.mm
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-cxx-member-isolation.h -o %t-c++20-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++20-0.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-cxx-member-isolation.h -o %t-c++20-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++20-1.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -emit-pch %S/Inputs/native-cxx-member-isolation.h -o %t-c++23-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -include-pch %t-c++23-0.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -emit-pch %S/Inputs/native-cxx-member-isolation.h -o %t-c++23-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -triple x86_64-unknown-linux-gnu -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-exceptions -fobjc3-strict-concurrency -fobjc-arc -include-pch %t-c++23-1.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-cxx-member-isolation.h"
++#endif
++objc3_async_frame member_export(MemberEntry &object,const MemberEntry &readonly,
++    DerivedMemberEntry &derived,int *evaluations) {
++  return member_native_calls(object,readonly,derived,evaluations);
++}
++objc3::task<int> member_task_export(MemberEntry &object) {return member_task_calls(object);}
++// CHECK-DAG: @objc3_task_hop
++// CHECK-DAG: MemberEntry3run
++// CHECK-DAG: MemberEntry4read
++// CHECK-DAG: MemberEntry4take
++// CHECK-DAG: MemberEntry5frame
++// CHECK-DAG: MemberEntry4task
++// CHECK-DAG: MemberEntry8dispatch
++// CHECK-DAG: member_receiver
++// CHECK-DAG: member_argument
++// CHECK-DAG: private_entry

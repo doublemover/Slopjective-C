@@ -21,6 +21,40 @@ union __attribute__((objc_unsafe_sendable)) Value {
 template<class T> struct Entries {
   static T run(T value) noexcept __attribute__((objc_executor(main))) {return value;}
 };
+inline int member_pause() __objc3_async {__objc3_await objc3::task_yield;return 0;}
+template<class T> struct __attribute__((objc_unsafe_sendable)) MemberEntries {
+  Counts *counts;
+  explicit MemberEntries(Counts *counts):counts(counts){++counts->live;}
+  MemberEntries(const MemberEntries &)=delete;
+  MemberEntries(MemberEntries &&)=delete;
+  virtual ~MemberEntries() noexcept {--counts->live;++counts->destroyed;}
+  T run(T value) const & noexcept __attribute__((objc_executor(main))) {return value;}
+  T frame(T value) const & noexcept __objc3_async_frame __attribute__((objc_executor(main))) {
+    __objc3_await member_pause();return value;
+  }
+  T task(T value) && noexcept __objc3_async __attribute__((objc_executor(main))) {
+    __objc3_await objc3::task_yield;return value;
+  }
+  virtual T virtual_entry(T value) noexcept __attribute__((objc_executor(main))) {return value;}
+};
+template<class T> struct __attribute__((objc_unsafe_sendable)) DerivedEntries : MemberEntries<T> {
+  explicit DerivedEntries(Counts *counts):MemberEntries<T>(counts){}
+  T virtual_entry(T value) noexcept override {return value;}
+};
+template<class T> inline int member_generic(T value) __objc3_async_frame {
+  Counts receivers;int number=0;
+  {
+    MemberEntries<T> receiver(&receivers);
+    T first=__objc3_await receiver.run(static_cast<T&&>(value));
+    T second=__objc3_await receiver.frame(static_cast<T&&>(first));
+    T third=__objc3_await static_cast<MemberEntries<T>&&>(receiver).task(static_cast<T&&>(second));
+    DerivedEntries<T> derived(&receivers);
+    MemberEntries<T> *base=&derived;
+    T result=__objc3_await base->virtual_entry(static_cast<T&&>(third));
+    number=result.number();
+  }
+  return receivers.live==0 && receivers.destroyed==2?number:0;
+}
 template<class T> inline int generic(T value) __objc3_async_frame {
   T result=__objc3_await Entries<T>::run(static_cast<T &&>(value));
   return result.number();
