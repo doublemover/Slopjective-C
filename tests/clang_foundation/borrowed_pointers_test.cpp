@@ -712,6 +712,11 @@ void TestIndependentStrongAliases() {
 void InheritedBorrowPersistenceCases(const fs::path &Root) {
   const std::string Provider = R"(
 typedef borrowed const char *ImportedBytes;
+ImportedBytes imported_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+void imported_use(const char *pointer __attribute__((noescape)));
+void imported_escape(const char *pointer);
+void imported_mutate(const char ***pointer __attribute__((noescape)));
+struct ImportedAddress { const char **cursor; };
 struct ImportedBase { ImportedBytes bytes; };
 struct ImportedDerived : ImportedBase {};
 struct ImportedLeft : ImportedBase {};
@@ -737,6 +742,9 @@ struct ImportedDiamond : ImportedLeft, ImportedRight {};
       Input.locked_identity = Emitted.interface_artifact->identity;
       Consumer.imported_interfaces = {Input};
       for (const char *Source : {
+          "void partial(void*o,int c,const char**external){const char*local=0;ImportedAddress a{c?&local:external};*a.cursor=imported_bytes(o);}",
+          "void mutated(void*o){const char*local=0;const char**p=&local;imported_mutate(&p);*p=imported_bytes(o);}",
+          "void escaping(void*o,int c){const char*one=0,*two=0;ImportedAddress a{c?&one:&two};ImportedAddress b=a;*b.cursor=imported_bytes(o);imported_escape(two);}",
           "ImportedDerived escape(ImportedDerived input) { return input; }",
           "ImportedDerived global; void save(ImportedDerived input) { global=input; }",
           "ImportedBase distinct(ImportedDiamond input) { static_cast<ImportedLeft&>(input).bytes=nullptr; return static_cast<ImportedRight&>(input); }",
@@ -746,6 +754,7 @@ struct ImportedDiamond : ImportedLeft, ImportedRight {};
         Expect(Consumer, false, "borrowed pointer escapes");
       }
       for (const char *Source : {
+          "void local_alias(void*o,int c){const char*one=0,*two=0;ImportedAddress a{c?&one:&two};ImportedAddress b=a;*b.cursor=imported_bytes(o);imported_use(one);imported_use(two);}",
           "ImportedBase cleared(ImportedDiamond input) { static_cast<ImportedLeft&>(input).bytes=nullptr; static_cast<ImportedRight&>(input).bytes=nullptr; return static_cast<ImportedRight&>(input); }",
           "ImportedDerived empty() { ImportedDerived local{{nullptr}}; return local; }",
           "int inspect(ImportedDerived input) { ImportedDerived local=input; return local.bytes!=nullptr; }"}) {

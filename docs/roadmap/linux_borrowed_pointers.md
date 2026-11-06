@@ -97,15 +97,16 @@ Remaining boundaries to keep explicit while development continues:
   unsafe syntax. Non-stable owners require explicit lifetime control, one of
   the alternatives expressly allowed by 8.7.1; automatic temporary-owner
   materialization with a warning is not implemented.
-- Multi-target indirect writes, unknown pointer offsets, exact union active
-  member changes, partial-copy byte offsets, and interprocedural owner effects
-  require further precision. Reads retain finite possible local targets;
-  unknown indirect stores fail closed. Unknown array writes preserve may-alias
+- Complete finite local alias writes, including record fields and tracked
+  constant offsets, are implemented in System 2.17. Unknown pointer offsets,
+  exact union active member changes, partial-copy byte offsets and
+  interprocedural owner effects require further precision. Partial may-target
+  sets never prove a local store; unknown indirect stores fail closed. Unknown array writes preserve may-alias
   facts, and union field reads conservatively preserve overlapping loans.
-- Owner-alias replacement can conservatively expire a loan even if another
-  independent strong alias keeps the same object alive. General MRC release
-  effects, mutable/reference/generic lambda precision, arbitrary constructor/operator effects, dynamic
-  allocation provenance, and callback invocation effects need more work.
+- Independent precise strong aliases preserve loans through owner rebinding.
+  Broader MRC/foreign count effects, mutable/reference/generic lambda precision,
+  arbitrary constructor/operator effects, dynamic allocation provenance and
+  interprocedural callback mutation effects need more work.
 - Indirect borrowed-result calls preserve their type obligation but cannot
   reconstruct a declaration-only owner-index relationship. No whole-program
   analyzer is required or substituted for the mandatory frontend pass.
@@ -159,3 +160,12 @@ propagates known closure consumption and ARC callback writeback facts.
 
 The [System 2.11.0 mutable capture span](linux_borrowed_mutable_captures.md)
 qualifies stable lifetime-sensitive storage alongside mutable scalar state.
+
+System 2.17 carries a separate complete-target proof through CFG joins, local
+aliases, aggregate copies, expression evaluation and nested captures. Both arms
+must be complete before a conditional/join target set authorizes indirect local
+writes. Record fields and tracked constant array offsets preserve exact paths;
+branch-specific writes join their resulting facts. Mutable foreign calls and
+union representation writes invalidate stale definite-target proofs. Eighteen
+C17/C++20/C++23 ARC/MRC source/PCH checks pass; imported getter/record/callback
+controls compile and await native frontend consolidation.

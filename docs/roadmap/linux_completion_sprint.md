@@ -12,6 +12,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Native publication | C/Objective-C C17 `overloadable` declarations, conditional overload identities, canonical attributes and source-free replay | Source authored; native replay and SDK verification pending        |
 | Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                               |
+| Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass               |
 | Ownership/System   | Indirect writes/aliases, borrowed results, mixed/generic/lazy captures and exceptional cleanup                              | Open                                                               |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                               |
 | Concurrency        | Remaining child/detached/group spawn and capture forms, abstract group contracts                                            | Open                                                               |
@@ -114,6 +115,25 @@ syntax cases. Integration repairs cover non-pointer nullability classification,
 unnamed/local linkage traversal, nested class partial-specialization parsing and
 writable-to-readonly deduction. Reference/pointer controls prevent widening
 ordinary C++ deduction or binding mutable references to readonly conversions.
+
+## Authored complete finite pointer-target proofs
+
+System source 2.17 distinguishes complete local target sets from partial may
+aliases. Completeness intersects at CFG joins and survives scalar aliases,
+structural aggregate copies, expression snapshots and nested capture seeding.
+A singleton partial may set cannot become a definite referent. Writes through
+complete local alternatives apply each destination in a separate state and join
+the resulting loans, effects and owner lifetimes. Record fields and tracked
+constant array offsets use the same path model.
+
+Unknown conditional/join alternatives, global targets, dynamic indices, union
+representation changes and mutable foreign calls cannot establish a local-write
+proof. A noescape parameter alone does not prove that its pointee is immutable.
+Tests distinguish weak multi-target clears from definite clears, borrowed escape
+and post-consumption use. All eighteen C17/C++20/C++23 ARC/MRC source/PCH commands
+pass, and all sixteen existing/new borrowed lit cases pass. Source-free imported record/getter/callback controls are authored and pass
+compile checks; native frontend execution remains pending. General unknown
+aliases, active union semantics and interprocedural mutation summaries remain open.
 
 ## Authored MRC isolation and initializer ownership
 

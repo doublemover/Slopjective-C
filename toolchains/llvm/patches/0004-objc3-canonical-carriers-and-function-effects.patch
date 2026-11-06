@@ -42716,10 +42716,10 @@ index 000000000..b1f400f38
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..c8ca45ea4
+index 000000000..c0bde3e08
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3400 @@
+@@ -0,0 +1,3659 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -42933,6 +42933,9 @@ index 000000000..c8ca45ea4
 +    SmallVector<Value, 16> OwnerIdentities;
 +    SmallVector<Storage, 16> LocalTargets;
 +    SmallVector<Value, 16> MayTargets;
++    // Every non-null target is represented in MayTargets. A partial may set
++    // must never justify a definite referent or a finite local write.
++    Value ClosedTargets;
 +    SmallVector<Value, 4> CapturedValues;
 +    SmallVector<Value, 4> CapturedEffects;
 +    SmallVector<Value, 4> CapturedReferenceTargets;
@@ -42945,6 +42948,7 @@ index 000000000..c8ca45ea4
 +    Value AcquisitionReady;
 +    SmallVector<Storage, 16> EvaluatedTargets;
 +    SmallVector<Value, 16> EvaluatedMayTargets;
++    Value EvaluatedClosedTargets;
 +    Value EvaluatedReady;
 +    // An active pin is an owning snapshot. Same additionally proves that the
 +    // source variable has not been reassigned since that snapshot was taken.
@@ -43001,6 +43005,7 @@ index 000000000..c8ca45ea4
 +  llvm::DenseMap<Storage, Value, StorageInfo> InheritedEffects;
 +  llvm::DenseMap<const VarDecl *, Value> InheritedOwners;
 +  llvm::DenseMap<Storage, Storage, StorageInfo> InheritedTargets;
++  llvm::DenseMap<Storage, bool, StorageInfo> InheritedClosedTargets;
 +  llvm::DenseMap<Storage, SmallVector<Storage, 2>, StorageInfo> InheritedMayTargets;
 +  SmallVector<Origin, 16> Origins;
 +  llvm::DenseMap<const Stmt *, SmallVector<unsigned, 2>> Acquisitions;
@@ -43188,7 +43193,8 @@ index 000000000..c8ca45ea4
 +      if (State && Variable->getType()->isReferenceType())
 +        if (auto Found = Slots.find(Object); Found != Slots.end()) {
 +          if (State->LocalTargets[Found->second].first) return State->LocalTargets[Found->second];
-+          if (State->MayTargets[Found->second].count() == 1)
++          if (State->ClosedTargets.test(Found->second) &&
++              State->MayTargets[Found->second].count() == 1)
 +            return location(State->MayTargets[Found->second].find_first());
 +        }
 +      return Object;
@@ -43223,6 +43229,10 @@ index 000000000..c8ca45ea4
 +    if (!E || Depth > 32)
 +      return {};
 +    E = E->IgnoreParens();
++    if (State)
++      if (auto Found = ExpressionSlots.find(E); Found != ExpressionSlots.end() &&
++          State->EvaluatedReady.test(Found->second))
++        return State->EvaluatedTargets[Found->second];
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      Storage Source = E->isGLValue() && E->getType()->isRecordType()
 +                           ? storage(Cast->getSubExpr(), State)
@@ -43266,7 +43276,8 @@ index 000000000..c8ca45ea4
 +      auto Found = Slots.find(Source);
 +      if (Found != Slots.end()) {
 +        Storage Target = State->LocalTargets[Found->second];
-+        if (!Target.first && State->MayTargets[Found->second].count() == 1)
++        if (!Target.first && State->ClosedTargets.test(Found->second) &&
++            State->MayTargets[Found->second].count() == 1)
 +          Target = location(State->MayTargets[Found->second].find_first());
 +        return Target;
 +      }
@@ -43984,6 +43995,7 @@ index 000000000..c8ca45ea4
 +    if (Type.isNull() || Components.size() > 32) return false;
 +    if (Type->isReferenceType())
 +      if (auto Slot = Slots.find(Source); Slot != Slots.end() && State.MayTargets[Slot->second].any()) {
++        if (!State.ClosedTargets.test(Slot->second)) return false;
 +        for (int Target = State.MayTargets[Slot->second].find_first(); Target >= 0;
 +             Target = State.MayTargets[Slot->second].find_next(Target))
 +          if (!readCallablePath(location(Target), Components, State, Result)) return false;
@@ -44117,6 +44129,12 @@ index 000000000..c8ca45ea4
 +        return effects(Operator->getArg(1), State);
 +    Value Result = contents(storage(E, &State), E->getType(), State, true);
 +    Result |= exposedEffects(possibleTargets(E, State), State);
++    SmallVector<Storage, 4> Alternatives;
++    if (localLValueAlternatives(E, State, Alternatives, false))
++      for (Storage Alternative : Alternatives) {
++        Result |= contents(Alternative, E->getType(), State, true);
++        Result |= exposedEffects(storageTargets(Alternative, E->getType(), State), State);
++      }
 +    return Result;
 +  }
 +  bool overlapsUnion(Storage Location, Storage Other) const {
@@ -44185,11 +44203,28 @@ index 000000000..c8ca45ea4
 +    }
 +    return Result;
 +  }
++  Storage constantTargetOffset(Storage Base, const Expr *Amount,
++                               bool Subtract = false) const {
++    if (!Base.first) return {};
++    auto Integer = Amount->getIntegerConstantExpr(Context);
++    if (!Integer || Integer->getSignificantBits() > 63) return {};
++    int64_t Delta = Integer->getSExtValue();
++    if (Subtract) Delta = -Delta;
++    if (!Delta) return Base;
++    if (Base.Index < 0 ||
++        (Delta > 0 && Base.Index > INT64_MAX - Delta) ||
++        (Delta < 0 && Delta < -Base.Index)) return {};
++    Base.Index += Delta;
++    return Slots.count(Base) ? Base : Storage{};
++  }
 +  Value possibleTargets(const Expr *E, const Facts &State) const {
 +    Value Targets(Slots.size());
 +    if (!E)
 +      return Targets;
 +    E = E->IgnoreParens();
++    if (auto Found = ExpressionSlots.find(E); Found != ExpressionSlots.end() &&
++        State.EvaluatedReady.test(Found->second))
++      return State.EvaluatedMayTargets[Found->second];
 +    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
 +      Storage Known = referent(Cast, &State);
 +      if (auto Found = Slots.find(Known); Found != Slots.end()) {
@@ -44215,9 +44250,19 @@ index 000000000..c8ca45ea4
 +      Targets |= possibleTargets(Conditional->getFalseExpr(), State);
 +      return Targets;
 +    }
-+    if (const auto *Binary = dyn_cast<BinaryOperator>(E))
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
 +      if (Binary->getOpcode() == BO_Comma || Binary->isAssignmentOp())
 +        return possibleTargets(Binary->getRHS(), State);
++      if (Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) {
++        Value Bases = possibleTargets(Binary->getLHS(), State);
++        for (int I = Bases.find_first(); I >= 0; I = Bases.find_next(I)) {
++          Storage Target = constantTargetOffset(location(I), Binary->getRHS(), Binary->getOpcode() == BO_Sub);
++          if (auto Found = Slots.find(Target); Found != Slots.end()) Targets.set(Found->second);
++          else Targets.set(I); // A partial target set cannot prove a write.
++        }
++        return Targets;
++      }
++    }
 +    Storage Target = referent(E, &State);
 +    if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +      Targets.set(Found->second);
@@ -44226,6 +44271,101 @@ index 000000000..c8ca45ea4
 +    if (auto Found = Slots.find(storage(E, &State)); Found != Slots.end())
 +      return State.MayTargets[Found->second];
 +    return Targets;
++  }
++  bool closedTargets(const Expr *E, const Facts &State,
++                     unsigned Depth = 0) const {
++    if (!E || Depth > 32) return false;
++    E = E->IgnoreParens();
++    if (auto Found = ExpressionSlots.find(E); Found != ExpressionSlots.end() &&
++        State.EvaluatedReady.test(Found->second))
++      return State.EvaluatedClosedTargets.test(Found->second);
++    if (E->isNullPointerConstant(Context, Expr::NPC_ValueDependentIsNotNull))
++      return true;
++    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      switch (Cast->getCastKind()) {
++      case CK_NoOp: case CK_LValueToRValue: case CK_ArrayToPointerDecay:
++      case CK_DerivedToBase: case CK_UncheckedDerivedToBase:
++        return closedTargets(Cast->getSubExpr(), State, Depth + 1);
++      default: return false;
++      }
++    }
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(E))
++      return closedTargets(Cleanups->getSubExpr(), State, Depth + 1);
++    if (const auto *Opaque = dyn_cast<OpaqueValueExpr>(E))
++      return closedTargets(Opaque->getSourceExpr(), State, Depth + 1);
++    if (const auto *Statement = dyn_cast<StmtExpr>(E))
++      return closedTargets(statementResult(Statement), State, Depth + 1);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(E)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return closedTargets(Truth ? Conditional->getTrueExpr() :
++                                    Conditional->getFalseExpr(), State, Depth + 1);
++      return closedTargets(Conditional->getTrueExpr(), State, Depth + 1) &&
++             closedTargets(Conditional->getFalseExpr(), State, Depth + 1);
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(E)) {
++      if (Binary->getOpcode() == BO_Comma || Binary->getOpcode() == BO_Assign)
++        return closedTargets(Binary->getRHS(), State, Depth + 1);
++      if ((Binary->getOpcode() == BO_Add || Binary->getOpcode() == BO_Sub) &&
++          closedTargets(Binary->getLHS(), State, Depth + 1)) {
++        Value Bases = possibleTargets(Binary->getLHS(), State);
++        for (int I = Bases.find_first(); I >= 0; I = Bases.find_next(I))
++          if (!constantTargetOffset(location(I), Binary->getRHS(), Binary->getOpcode() == BO_Sub).first)
++            return false;
++        return Bases.any();
++      }
++    }
++    if (const auto *Address = dyn_cast<UnaryOperator>(E);
++        Address && Address->getOpcode() == UO_AddrOf) {
++      Storage Target = storage(Address->getSubExpr(), &State);
++      return Target.first && Target.first->hasLocalStorage() &&
++             Slots.count(Target) && !hasUnknownIndex(Target);
++    }
++    Storage Source = storage(E, &State);
++    if (E->getType()->isArrayType())
++      return Source.first && Source.first->hasLocalStorage() &&
++             Slots.count(indexedStorage(Source, 0)) && !hasUnknownIndex(Source);
++    if (auto Found = Slots.find(Source); Found != Slots.end())
++      return State.ClosedTargets.test(Found->second);
++    return false;
++  }
++  bool finiteLocalTargets(const Expr *E, const Facts &State,
++                          SmallVectorImpl<Storage> &Targets) const {
++    if (!closedTargets(E, State)) return false;
++    Value Possible = possibleTargets(E, State);
++    for (int I = Possible.find_first(); I >= 0; I = Possible.find_next(I)) {
++      Storage Target = location(I);
++      if (!Target.first || !Target.first->hasLocalStorage() ||
++          hasUnknownIndex(Target)) return false;
++      Targets.push_back(Target);
++    }
++    return !Targets.empty();
++  }
++  // An overlapping write can change a pointer representation even when the
++  // written union member or aggregate has another storage slot.
++  void invalidateTargetProofs(Storage Destination, Facts &State) const {
++    for (auto [Other, Index] : Slots)
++      if (Other.first == Destination.first &&
++          (pathsMayAlias(path(Other), path(Destination)) ||
++           within(Other, Destination) || overlapsUnion(Other, Destination))) {
++        State.LocalTargets[Index] = {};
++        State.ClosedTargets.reset(Index);
++      }
++  }
++  void setTargetFacts(Storage Destination, Storage Target, const Value &Targets,
++                      bool Complete, Facts &State, bool Invalidate = true) const {
++    if (Invalidate) invalidateTargetProofs(Destination, State);
++    if (auto Found = Slots.find(Destination); Found != Slots.end()) {
++      unsigned I = Found->second;
++      if (hasUnknownIndex(Destination)) {
++        State.MayTargets[I] |= Targets;
++        return;
++      }
++      State.LocalTargets[I] = Complete ? Target : Storage{};
++      State.MayTargets[I] = Targets;
++      State.ClosedTargets[I] = Complete;
++    }
 +  }
 +  Value capturedTargets(const Expr *Initializer, const Facts &State) const {
 +    Value Targets(Slots.size());
@@ -44463,6 +44603,13 @@ index 000000000..c8ca45ea4
 +        (Resolved.first && Resolved.Index >= 0 &&
 +         Slots.count({Resolved.first, Resolved.second, -2, Resolved.Parent})))
 +      return storedValue(Resolved, E->getType(), State);
++    SmallVector<Storage, 4> Alternatives;
++    if (localLValueAlternatives(E, State, Alternatives, false)) {
++      Value Result = empty();
++      for (Storage Alternative : Alternatives)
++        Result |= storedValue(Alternative, E->getType(), State);
++      return Result;
++    }
 +    // A declaration-provided borrowed type with no tracked local definition
 +    // (e.g. a field, foreign function pointer, or imported declaration) cannot
 +    // silently become unborrowed merely because its acquisition is opaque.
@@ -44727,12 +44874,12 @@ index 000000000..c8ca45ea4
 +  }
 +  void copyStorageShape(const Stmt *Operation, Storage Destination,
 +                         Storage Source, Facts &State, bool Emit) {
-+    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; };
++    struct Copy { Storage Destination; Value Contents; Storage Target; Value Targets; Value Effects; bool Complete; };
 +    SmallVector<Copy, 16> Copies;
 +    for (auto [Location, Index] : Slots) {
 +      Storage Target = rebase(Location, Source, Destination);
 +      if (Target.first && Slots.count(Target))
-+        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index]});
++        Copies.push_back({Target, State.Values[Index], State.LocalTargets[Index], State.MayTargets[Index], State.Effects[Index], State.ClosedTargets.test(Index)});
 +    }
 +    Value AncestorValue = empty(), AncestorEffects = empty();
 +    Value AncestorTargets(Slots.size());
@@ -44742,11 +44889,12 @@ index 000000000..c8ca45ea4
 +        AncestorEffects |= State.Effects[Index];
 +        AncestorTargets |= State.MayTargets[Index];
 +      }
++    invalidateTargetProofs(Destination, State);
 +    for (Copy &Entry : Copies) {
 +      store(Operation, Entry.Destination, Entry.Contents, State, Emit,
 +            !hasUnknownIndex(Destination), &Entry.Effects);
-+      State.LocalTargets[Slots.lookup(Entry.Destination)] = Entry.Target;
-+      State.MayTargets[Slots.lookup(Entry.Destination)] = std::move(Entry.Targets);
++      setTargetFacts(Entry.Destination, Entry.Target, Entry.Targets,
++                     Entry.Complete, State, false);
 +    }
 +    if (AncestorValue.any() || AncestorEffects.any() || AncestorTargets.any())
 +      if (auto Root = Slots.find(Destination); Root != Slots.end()) {
@@ -44754,6 +44902,8 @@ index 000000000..c8ca45ea4
 +        AncestorEffects |= State.Effects[Root->second];
 +        store(Operation, Destination, AncestorValue, State, Emit, false, &AncestorEffects);
 +        State.MayTargets[Root->second] |= AncestorTargets;
++        State.LocalTargets[Root->second] = {};
++        State.ClosedTargets.reset(Root->second);
 +      }
 +  }
 +  void initializeAggregate(const Stmt *Operation, Storage Destination,
@@ -44771,9 +44921,11 @@ index 000000000..c8ca45ea4
 +      Value V = value(Initializer, State);
 +      Storage Target = Type->isReferenceType() ? storage(Initializer, &State) : referent(Initializer, &State);
 +      Value Targets = possibleTargets(Initializer, State);
++      bool Complete = closedTargets(Initializer, State);
 +      if (Type->isReferenceType())
 +        if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +          Targets.reset(); Targets.set(Found->second);
++          Complete = !hasUnknownIndex(Target);
 +        }
 +      if (Targets.any() && !hasUnknownIndex(Destination) &&
 +          !isObjC3BorrowedType(Context, Type))
@@ -44781,13 +44933,7 @@ index 000000000..c8ca45ea4
 +      Value Effects = effects(Initializer, State);
 +      if (Targets.any() && !isObjC3BorrowedType(Context, Type)) Effects = empty();
 +      store(Operation, Destination, V, State, Emit, false, &Effects);
-+      if (auto Found = Slots.find(Destination); Found != Slots.end()) {
-+        State.LocalTargets[Found->second] = Target;
-+        if (hasUnknownIndex(Destination))
-+          State.MayTargets[Found->second] |= Targets;
-+        else
-+          State.MayTargets[Found->second] = std::move(Targets);
-+      }
++      setTargetFacts(Destination, Target, Targets, Complete, State);
 +      return;
 +    }
 +    const Expr *Written = Initializer;
@@ -44857,6 +45003,7 @@ index 000000000..c8ca45ea4
 +              Value Cleared = empty();
 +              store(Operation, Location, Cleared, State, Emit, true, &Cleared);
 +              State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
++              State.ClosedTargets[Index] = !hasUnknownIndex(Location);
 +            }
 +      for (Storage Element : Elements) {
 +        if (List && Element.Index == -2) {
@@ -44877,7 +45024,9 @@ index 000000000..c8ca45ea4
 +            if (Location.first != Element.first) continue;
 +            unsigned Current = path(Location), Prefix = path(Element);
 +            while (Current && Current != Prefix) Current = Paths[Current].Parent;
-+            if (Current == Prefix) State.LocalTargets[Index] = {};
++            if (Current == Prefix) {
++              State.LocalTargets[Index] = {}; State.ClosedTargets.reset(Index);
++            }
 +          }
 +          continue;
 +        }
@@ -44974,6 +45123,7 @@ index 000000000..c8ca45ea4
 +      if (Current != Prefix) continue;
 +      store(Call, Location, Cleared, State, Emit, true, &Cleared);
 +      State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
++              State.ClosedTargets[Index] = !hasUnknownIndex(Location);
 +    }
 +    if (!path(Destination) && OwnerRoots.count(Destination.first)) {
 +      if (IsOwnerSummary && SummaryCaptures.count(Destination.first))
@@ -45149,23 +45299,68 @@ index 000000000..c8ca45ea4
 +        return false;
 +    return true;
 +  }
-+  bool finiteWrittenTargets(const Expr *E, SmallVectorImpl<Storage> &Targets,
-+                            unsigned Depth=0) const {
-+    if (!E || Depth>32) return false;
-+    E=E->IgnoreParenCasts();
-+    if (const auto *Conditional=dyn_cast<AbstractConditionalOperator>(E)) {
-+      bool Truth;
-+      if (!Conditional->getCond()->HasSideEffects(Context) &&
-+          Conditional->getCond()->EvaluateAsBooleanCondition(Truth,Context))
-+        return finiteWrittenTargets(Truth?Conditional->getTrueExpr():Conditional->getFalseExpr(),Targets,Depth+1);
-+      return finiteWrittenTargets(Conditional->getTrueExpr(),Targets,Depth+1) &&
-+             finiteWrittenTargets(Conditional->getFalseExpr(),Targets,Depth+1);
-+    }
-+    if (const auto *Address=dyn_cast<UnaryOperator>(E);Address && Address->getOpcode()==UO_AddrOf) {
-+      Storage Target=storage(Address->getSubExpr());
-+      if (!Target.first || !Target.first->hasLocalStorage() || !Slots.count(Target) || hasUnknownIndex(Target)) return false;
-+      if (!llvm::is_contained(Targets,Target)) Targets.push_back(Target);
++  bool localLValueAlternatives(const Expr *E, const Facts &State,
++                               SmallVectorImpl<Storage> &Targets,
++                               bool RequireComplete = true,
++                               unsigned Depth = 0) const {
++    if (!E || Depth > 32) return false;
++    E = E->IgnoreParens();
++    if (Storage Known = storage(E, &State); Known.first) {
++      if (!Slots.count(Known) || (RequireComplete &&
++          (!Known.first->hasLocalStorage() || hasUnknownIndex(Known)))) return false;
++      Targets.push_back(Known);
 +      return true;
++    }
++    auto PointerTargets = [&](const Expr *Pointer, SmallVectorImpl<Storage> &Result) {
++      if (RequireComplete) return finiteLocalTargets(Pointer, State, Result);
++      Value Possible = possibleTargets(Pointer, State);
++      for (int I = Possible.find_first(); I >= 0; I = Possible.find_next(I))
++        Result.push_back(location(I));
++      return !Result.empty();
++    };
++    SmallVector<Storage, 4> Bases;
++    if (const auto *Dereference = dyn_cast<UnaryOperator>(E);
++        Dereference && Dereference->getOpcode() == UO_Deref)
++      return PointerTargets(Dereference->getSubExpr(), Targets);
++    if (const auto *Member = dyn_cast<MemberExpr>(E)) {
++      if (Member->isArrow() ? !PointerTargets(Member->getBase(), Bases)
++          : !localLValueAlternatives(Member->getBase(), State, Bases, RequireComplete, Depth + 1))
++        return false;
++      for (Storage Base : Bases) {
++        Storage Field = fieldStorage(Base, Member->getMemberDecl());
++        if (!Slots.count(Field) || (RequireComplete && hasUnknownIndex(Field))) {
++          if (RequireComplete) return false;
++          continue;
++        }
++        if (!llvm::is_contained(Targets, Field)) Targets.push_back(Field);
++      }
++      return !Targets.empty();
++    }
++    if (const auto *Subscript = dyn_cast<ArraySubscriptExpr>(E)) {
++      if (!PointerTargets(Subscript->getBase(), Bases)) return false;
++      for (Storage Base : Bases) {
++        Storage Element = constantTargetOffset(Base, Subscript->getIdx());
++        if (!Element.first && !RequireComplete) {Element = Base;Element.Index = -2;}
++        if (!Element.first || !Slots.count(Element) || (RequireComplete && hasUnknownIndex(Element))) {
++          if (RequireComplete) return false;
++          continue;
++        }
++        if (!llvm::is_contained(Targets, Element)) Targets.push_back(Element);
++      }
++      return !Targets.empty();
++    }
++    if (const auto *Cast = dyn_cast<CastExpr>(E)) {
++      if (!Cast->isGLValue() || !localLValueAlternatives(Cast->getSubExpr(), State, Bases, RequireComplete, Depth + 1))
++        return false;
++      for (Storage Base : Bases) {
++        Storage Adjusted = adjustBaseStorage(Base, Cast);
++        if (!Adjusted.first || !Slots.count(Adjusted) || (RequireComplete && hasUnknownIndex(Adjusted))) {
++          if (RequireComplete) return false;
++          continue;
++        }
++        if (!llvm::is_contained(Targets, Adjusted)) Targets.push_back(Adjusted);
++      }
++      return !Targets.empty();
 +    }
 +    return false;
 +  }
@@ -45181,6 +45376,7 @@ index 000000000..c8ca45ea4
 +          Value Owner = ownerIdentity(Assignment->getRHS(), State);
 +          Storage Address = referent(Assignment->getRHS(), &State);
 +          Value Targets = possibleTargets(Assignment->getRHS(), State);
++          const bool Complete = closedTargets(Assignment->getRHS(), State);
 +          const bool HasTargets = Targets.any();
 +          if (Targets.any() && Target.first && Target.first->hasLocalStorage() &&
 +              !hasUnknownIndex(Target) &&
@@ -45198,13 +45394,7 @@ index 000000000..c8ca45ea4
 +            if (Unowned) State.UnownedOwners.set(Slot);
 +            else State.UnownedOwners.reset(Slot);
 +          }
-+          if (auto Found = Slots.find(Target); Found != Slots.end()) {
-+            State.LocalTargets[Found->second] = Address;
-+            if (hasUnknownIndex(Target))
-+              State.MayTargets[Found->second] |= Targets;
-+            else
-+              State.MayTargets[Found->second] = std::move(Targets);
-+          }
++          setTargetFacts(Target, Address, Targets, Complete, State);
 +          Value Effects = effects(Assignment->getRHS(), State);
 +          if (HasTargets && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
 +          store(Assignment, Target, V, State, Emit, false, &Effects);
@@ -45331,6 +45521,52 @@ index 000000000..c8ca45ea4
 +          diagnose(Argument, "a borrowed argument overlapping a consumed owner claim");
 +      }
 +  }
++  void invalidateCallTargetProofs(const Expr *Invocation, Facts &State) const {
++    if (modeledRecordCopy(callee(Invocation)) ||
++        copyingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) ||
++        fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation)))) return;
++    unsigned Count = 0;
++    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
++    else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Invocation)) Count = Message->getNumArgs();
++    else if (const auto *Construction = dyn_cast<CXXConstructExpr>(Invocation)) Count = Construction->getNumArgs();
++    auto Invalidate = [&](Storage Target) {
++      invalidateTargetProofs(Target, State);
++      // The representation is now unknown. Retain may facts to protect
++      // escape checks, but never reuse one as a definite referent.
++      for (auto [Other, Index] : Slots)
++        if (Other.first == Target.first && within(Other, Target)) {
++          State.LocalTargets[Index] = {};
++          State.ClosedTargets.reset(Index);
++        }
++    };
++    const auto Formals = formalParameters(callee(Invocation));
++    const auto *Prototype = callPrototype(Invocation);
++    for (unsigned I = 0; I != Count; ++I) {
++      const Expr *Argument = argument(Invocation, I);
++      unsigned Formal = formalIndex(Invocation, I);
++      QualType Type;
++      if (Formal < Formals.size()) Type = Formals[Formal]->getType();
++      else if (Prototype && Formal < Prototype->getNumParams()) Type = Prototype->getParamType(Formal);
++      if (!Type.isNull() && Type->isReferenceType()) {
++        QualType Object = Type->getPointeeType();
++        if (!Object.isConstQualified() || Object->isRecordType())
++          Invalidate(storage(Argument, &State));
++      } else if (Argument->getType()->isPointerType()) {
++        QualType Object = Argument->getType()->getPointeeType();
++        if (Object.isConstQualified() && !Object->isRecordType()) continue;
++        Value Targets = possibleTargets(Argument, State);
++        for (int Slot = Targets.find_first(); Slot >= 0; Slot = Targets.find_next(Slot))
++          Invalidate(location(Slot));
++      }
++    }
++    if (const auto *Call = dyn_cast<CXXMemberCallExpr>(Invocation))
++      Invalidate(storage(Call->getImplicitObjectArgument(), &State));
++    // A callable may modify a previously captured reference without receiving
++    // its address again as an explicit argument.
++    for (const Value &Targets : State.CapturedReferenceTargets)
++      for (int Slot = Targets.find_first(); Slot >= 0; Slot = Targets.find_next(Slot))
++        Invalidate(location(Slot));
++  }
 +  void observeCallbackWriteback(const Expr *Invocation, Facts &State) {
 +    unsigned Count = 0;
 +    if (const auto *Call = dyn_cast<CallExpr>(Invocation)) Count = Call->getNumArgs();
@@ -45393,6 +45629,7 @@ index 000000000..c8ca45ea4
 +          State.EvaluatedValues[Slot] = std::move(V);
 +          State.EvaluatedOwners[Slot] = std::move(Owner);
 +          State.EvaluatedTargets[Slot] = Target;
++          State.EvaluatedClosedTargets[Slot] = closedTargets(Expression, State);
 +          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
 +        }
@@ -45420,16 +45657,23 @@ index 000000000..c8ca45ea4
 +            Value Owner = ownerIdentity(Variable->getInit(), State);
 +            if (OwnerRoots.count(Variable) && Owner.none())
 +              Owner.set(OwnerRoots.lookup(Variable));
-+            Storage Target = referent(Variable->getInit(), &State);
++            const bool Reference = Variable->getType()->isReferenceType();
++            Storage Target = Reference ? storage(Variable->getInit(), &State)
++                                       : referent(Variable->getInit(), &State);
 +            Value Targets = possibleTargets(Variable->getInit(), State);
++            bool Complete = closedTargets(Variable->getInit(), State);
++            if (Reference)
++              if (auto Found = Slots.find(Target); Found != Slots.end()) {
++                Targets.reset();Targets.set(Found->second);
++                Complete = !hasUnknownIndex(Target);
++              }
 +            if (Targets.any() && Variable->hasLocalStorage() &&
 +                !isObjC3BorrowedType(Context, Variable->getType()))
 +              V = empty(); // Its address exposes the pointee's current facts.
 +            Value Effects = effects(Variable->getInit(), State);
 +            if (Targets.any() && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
 +            store(Node, {Variable, nullptr}, V, State, Emit, false, &Effects);
-+            State.LocalTargets[Slots.lookup({Variable, nullptr})] = Target;
-+            State.MayTargets[Slots.lookup({Variable, nullptr})] = std::move(Targets);
++            setTargetFacts({Variable, nullptr}, Target, Targets, Complete, State);
 +            State.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Owner);
 +            const unsigned OwnerSlot = Slots.lookup({Variable, nullptr});
 +            if (Unowned) State.UnownedOwners.set(OwnerSlot);
@@ -45456,9 +45700,7 @@ index 000000000..c8ca45ea4
 +        if (Assignment->isAssignmentOp()) {
 +          Storage Target=storage(Assignment->getLHS(), &State);
 +          SmallVector<Storage,4> WrittenTargets;
-+          const auto *Dereference=dyn_cast<UnaryOperator>(Assignment->getLHS()->IgnoreParenCasts());
-+          if (!Target.first && Dereference && Dereference->getOpcode()==UO_Deref &&
-+              finiteWrittenTargets(Dereference->getSubExpr(),WrittenTargets) && !WrittenTargets.empty()) {
++          if (!Target.first && localLValueAlternatives(Assignment->getLHS(), State, WrittenTargets)) {
 +            Facts Joined;bool First=true;
 +            for (Storage Destination:WrittenTargets) {
 +              Facts Branch=State;assignLocal(Assignment,Destination,Branch,Emit);
@@ -45581,6 +45823,7 @@ index 000000000..c8ca45ea4
 +                     Target = State.MayTargets[Index].find_next(Target))
 +                  Nested.InheritedMayTargets[Location].push_back(location(Target));
 +                Nested.InheritedTargets[Location] = State.LocalTargets[Index];
++                Nested.InheritedClosedTargets[Location] = State.ClosedTargets.test(Index);
 +                if (!Location.second && !Location.BaseRecord && !Location.Parent && Location.Index == -1) {
 +                  Nested.InheritedOwners[Location.first] = State.OwnerIdentities[Index];
 +                  if (State.UnownedOwners.test(Index))
@@ -45598,6 +45841,7 @@ index 000000000..c8ca45ea4
 +                    Nested.InheritedOwners[Variable] = ownerIdentity(Init, State);
 +                    if (ownerIsUnowned(Init, State)) Nested.InheritedUnownedOwners.insert(Variable);
 +                    Nested.InheritedTargets[{Variable, nullptr}] = referent(Init, &State);
++                    Nested.InheritedClosedTargets[{Variable, nullptr}] = closedTargets(Init, State);
 +                    auto Targets = possibleTargets(Init, State);
 +                    for (int Target = Targets.find_first(); Target >= 0;
 +                         Target = Targets.find_next(Target))
@@ -45659,6 +45903,7 @@ index 000000000..c8ca45ea4
 +                  State.Effects[Index] = empty();
 +                  State.LocalTargets[Index] = {};
 +                  State.MayTargets[Index].reset();
++                  State.ClosedTargets.reset(Index);
 +                }
 +            }
 +        if (const auto *Operator = dyn_cast<CXXOperatorCallExpr>(Invocation))
@@ -45673,6 +45918,7 @@ index 000000000..c8ca45ea4
 +        if (isa<CallExpr, ObjCMessageExpr, CXXConstructExpr>(Invocation)) {
 +          checkCall(Invocation, State, Emit);
 +          observeCallbackWriteback(Invocation, State);
++          invalidateCallTargetProofs(Invocation, State);
 +        }
 +        if (Emit)
 +          if (const auto *Pseudo = dyn_cast<PseudoObjectExpr>(Invocation)) {
@@ -45735,6 +45981,7 @@ index 000000000..c8ca45ea4
 +      State.Effects[Found->second] = empty();
 +      State.LocalTargets[Found->second] = {};
 +      State.MayTargets[Found->second].reset();
++      State.ClosedTargets.set(Found->second);
 +    }
 +  }
 +  bool join(Facts &Destination, const Facts &Source) const {
@@ -45743,6 +45990,14 @@ index 000000000..c8ca45ea4
 +      return true;
 +    }
 +    bool Changed = false;
++    Value Closed = Destination.ClosedTargets;
++    Closed &= Source.ClosedTargets;
++    Changed |= Closed != Destination.ClosedTargets;
++    Destination.ClosedTargets = std::move(Closed);
++    Value EvaluatedClosed = Destination.EvaluatedClosedTargets;
++    EvaluatedClosed &= Source.EvaluatedClosedTargets;
++    Changed |= EvaluatedClosed != Destination.EvaluatedClosedTargets;
++    Destination.EvaluatedClosedTargets = std::move(EvaluatedClosed);
 +    Value Unowned = Destination.UnownedOwners;
 +    Unowned |= Source.UnownedOwners;
 +    Changed |= Unowned != Destination.UnownedOwners;
@@ -45907,6 +46162,7 @@ index 000000000..c8ca45ea4
 +        Initial.UnownedOwners.set(Slot->second);
 +    Initial.LocalTargets.resize(Slots.size());
 +    Initial.MayTargets.assign(Slots.size(), Value(Slots.size()));
++    Initial.ClosedTargets.resize(Slots.size());
 +    Initial.CapturedValues.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedEffects.assign(ClosureSlots.size(), empty());
 +    Initial.CapturedReferenceTargets.assign(ClosureSlots.size(), Value(Slots.size()));
@@ -45918,6 +46174,7 @@ index 000000000..c8ca45ea4
 +    Initial.AcquisitionReady.resize(ExpressionSlots.size());
 +    Initial.EvaluatedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedMayTargets.assign(ExpressionSlots.size(), Value(Slots.size()));
++    Initial.EvaluatedClosedTargets.resize(ExpressionSlots.size());
 +    Initial.EvaluatedReady.resize(ExpressionSlots.size());
 +    for (auto [Owner, Index] : OwnerRoots)
 +      if (auto Found = Slots.find({Owner, nullptr});
@@ -45938,6 +46195,8 @@ index 000000000..c8ca45ea4
 +      if (auto Found = Slots.find(Target); Found != Slots.end())
 +        Initial.MayTargets[Slots.lookup(Location)].set(Found->second);
 +    }
++    for (const auto &[Location, Complete] : InheritedClosedTargets)
++      Initial.ClosedTargets[Slots.lookup(Location)] = Complete;
 +    for (const auto &[Location, Targets] : InheritedMayTargets)
 +      for (Storage Target : Targets)
 +        if (auto Found = Slots.find(Target); Found != Slots.end())
@@ -54524,3 +54783,159 @@ index 000000000..32e1c29b3
 +auto invalid_block = ^objc3::task<int>() __objc3_throws {
 +  co_return 1; // expected-error {{checked errors on a coroutine require an async callable contract}}
 +};
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-finite-targets.h b/clang/test/ObjC3/Sema/Inputs/borrowed-finite-targets.h
+new file mode 100644
+index 000000000..37916b180
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-finite-targets.h
+@@ -0,0 +1,12 @@
++#ifndef OBJC3_FINITE_TARGETS_H
++#define OBJC3_FINITE_TARGETS_H
++typedef borrowed const char *FiniteBytes;
++FiniteBytes finite_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void finite_use(const char *pointer __attribute__((noescape)));
++void finite_escape(const char *pointer);
++void finite_consume(void *owner __attribute__((cf_consumed)));
++void finite_mutate(const char ***cursor __attribute__((noescape)));
++struct FiniteHolder {const char *pointer;};
++struct FiniteAlias {const char **cursor;};
++union FiniteUnion {const char **cursor; void *opaque;};
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-finite-targets.m b/clang/test/ObjC3/Sema/borrowed-finite-targets.m
+new file mode 100644
+index 000000000..fe7933b92
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-finite-targets.m
+@@ -0,0 +1,132 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-finite-targets.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-finite-targets.h"
++#endif
++void through_pointer(void *owner, int choose) {
++  const char *one = 0, *two = 0;
++  const char **cursor = choose ? &one : &two;
++  *cursor = finite_bytes(owner);
++  finite_use(one); finite_use(two);
++  finite_escape(one); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void joined_pointer(void *owner, int choose) {
++  const char *one = 0, *two = 0;
++  const char **cursor = &one;
++  if (choose) cursor = &two;
++  const char **copy = cursor;
++  *copy = finite_bytes(owner);
++  finite_escape(one); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void copied_aggregate(void *owner, int choose) {
++  const char *one = 0, *two = 0;
++  struct FiniteAlias original = {choose ? &one : &two};
++  struct FiniteAlias copy = original;
++  *copy.cursor = finite_bytes(owner);
++  finite_escape(one); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void joined_record_fields(void *owner, int choose) {
++  struct FiniteHolder one = {0}, two = {0};
++  struct FiniteHolder *cursor = choose ? &one : &two;
++  cursor->pointer = finite_bytes(owner);
++  finite_use(one.pointer); finite_use(two.pointer);
++  finite_escape(cursor->pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(one.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void joined_array_elements(void *owner, int choose) {
++  const char *one[2] = {0,0}, *two[2] = {0,0};
++  const char **cursor = choose ? one : two;
++  cursor[1] = finite_bytes(owner);
++  finite_escape(cursor[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(one[0]); finite_escape(two[0]);
++  finite_escape(one[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void joined_pointer_offset(void *owner, int choose) {
++  const char *one[3] = {0,0,0}, *two[3] = {0,0,0};
++  const char **cursor = choose ? one : two;
++  cursor = cursor + 2;
++  *(cursor - 1) = finite_bytes(owner);
++  finite_escape(one[0]); finite_escape(two[2]);
++  finite_escape(one[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void partial_kill(void *owner, int choose) {
++  const char *one = finite_bytes(owner), *two = finite_bytes(owner);
++  const char **cursor = choose ? &one : &two;
++  *cursor = 0;
++  finite_escape(one); // expected-error {{argument without a non-escaping lifetime contract}}
++  finite_escape(two); // expected-error {{argument without a non-escaping lifetime contract}}
++  cursor = &one;
++  *cursor = 0;
++  finite_escape(one);
++  finite_escape(two); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void owner_consumed(void *owner, int choose) {
++  const char *one = 0, *two = 0;
++  const char **cursor = choose ? &one : &two;
++  *cursor = finite_bytes(owner);
++  finite_consume(owner);
++  finite_use(*cursor); // expected-error 2 {{after its owner lifetime ended}}
++}
++void unknown_conditional(void *owner, int choose, const char **external) {
++  const char *local = 0;
++  const char **cursor = choose ? &local : external;
++  *cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void unknown_join(void *owner, int choose, const char **external) {
++  const char *local = 0;
++  const char **cursor = &local;
++  if (choose) cursor = external;
++  *cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void global_conditional(void *owner, int choose) {
++  extern const char *finite_global;
++  const char *local = 0;
++  const char **cursor = choose ? &local : &finite_global;
++  *cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void uncertain_foreign_mutation(void *owner) {
++  const char *local = 0;
++  const char **cursor = &local;
++  finite_mutate(&cursor);
++  *cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void union_reinterpretation(void *owner, void *external) {
++  const char *local = 0;
++  union FiniteUnion target;
++  target.cursor = &local;
++  target.opaque = external;
++  *target.cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void unknown_index(void *owner, int index) {
++  const char *values[2] = {0,0};
++  const char **cursor = &values[index];
++  *cursor = finite_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++
++void partial_read(void *owner, int choose, const char **external) {
++  const char *loan = finite_bytes(owner);
++  const char **cursor = choose ? &loan : external;
++  finite_escape(*cursor); // expected-error {{argument without a non-escaping lifetime contract}}
++}
