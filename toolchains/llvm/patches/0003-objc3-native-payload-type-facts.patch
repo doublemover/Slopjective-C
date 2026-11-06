@@ -1753,10 +1753,10 @@ index 000000000..6fc826f57
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..d8461a262
+index 000000000..28c0b59a0
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,275 @@
+@@ -0,0 +1,277 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -2008,8 +2008,10 @@ index 000000000..d8461a262
 +/// execution details and do not belong in source/interface identities.
 +inline const Expr *getObjC3AwaitSourceExpression(const CoawaitExpr *Await) {
 +  const Expr *Operand = Await->getOperand();
-+  if (Await->isTypeDependent() && !Await->getReadyExpr() &&
-+      !Await->getSuspendExpr() && !Await->getResumeExpr()) return Operand;
++  if (Await->isTypeDependent() &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getReadyExpr()) &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getSuspendExpr()) &&
++      isa_and_nonnull<OpaqueValueExpr>(Await->getResumeExpr())) return Operand;
 +  if (const auto *Checked = getObjC3CheckedAsyncAdapterCall(Operand))
 +    Operand = Checked->getArg(0);
 +  const bool FrameAdapter = getObjC3FrameAdapterSource(Operand) !=

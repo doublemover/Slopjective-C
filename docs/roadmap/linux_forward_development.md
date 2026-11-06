@@ -45,6 +45,12 @@ arguments and dependent native-frame await substitution. Thirty-two new compiler
 commands and a 25-command native configuration pass, including 296 new lifetime
 scenarios. Frontend/package and final SDK consolidation remain pending.
 
+The [System 2.20 static-result span](linux_static_borrowed_results.md) accepts
+borrowed returns backed by proven immutable program storage and constexpr
+addresses, while retaining conservative mutation, TLS, union and cleanup
+boundaries. Eighteen new source/PCH commands and all twenty borrowed regressions
+pass; frontend replay and SDK consolidation remain pending.
+
 The [combined implementation sprint](linux_implementation_sprint.md) is
 source-validated through **2.87**, System **2.15** and keypath **2.5**. Its
 [receipt](../support/linux_implementation_sprint_progress.json) records the

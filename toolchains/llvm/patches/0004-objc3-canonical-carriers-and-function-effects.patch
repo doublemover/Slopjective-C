@@ -42807,10 +42807,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..b24802796
+index 000000000..2339fb7e5
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,350 @@
+@@ -0,0 +1,355 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -42952,10 +42952,15 @@ index 000000000..b24802796
 +    Diag(Loc, diag::err_objc3_async_defer_suspend);
 +    return ExprError();
 +  }
-+  if (getLangOpts().CPlusPlus && Operand->isTypeDependent())
-+    // Native frame templates have no C++ promise. Preserve the written await
-+    // until substitution resolves its callee and isolation/value contracts.
-+    return new (Context) CoawaitExpr(Loc, Context.DependentTy, Operand, Operand);
++  if (getLangOpts().CPlusPlus && Operand->isTypeDependent()) {
++    // Native frame templates have no C++ promise. Their opaque protocol also
++    // distinguishes this written await from ordinary dependent C++ co_await.
++    auto *Common = new (Context) OpaqueValueExpr(Loc, Operand->getType(), VK_PRValue);
++    auto *Ready = new (Context) OpaqueValueExpr(Loc, Context.BoolTy, VK_PRValue);
++    auto *Suspend = new (Context) OpaqueValueExpr(Loc, Context.VoidTy, VK_PRValue);
++    auto *Resume = new (Context) OpaqueValueExpr(Loc, Context.DependentTy, VK_PRValue);
++    return new (Context) CoawaitExpr(Loc, Operand, Operand, Ready, Suspend, Resume, Common);
++  }
 +  // Keep the source call and its logical function type. The call expression's
 +  // evaluated result is the common ABI carrier, not the logical await result.
 +  const auto *Function = getObjC3AsyncAwaitFunctionType(*this, Operand);
@@ -43163,10 +43168,10 @@ index 000000000..b24802796
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..3384a3c9f
+index 000000000..4f91f5c61
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3765 @@
+@@ -0,0 +1,3848 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -45825,6 +45830,84 @@ index 000000000..3384a3c9f
 +               isObjC3BorrowedType(Context, Prototype->getParamType(Index).getNonReferenceType());
 +    return false;
 +  }
++  bool stableStaticStorageType(QualType Type, unsigned Depth = 0) const {
++    if (Type.isNull() || Depth > 32 || Type.isVolatileQualified() ||
++        Type->isAtomicType() || Type->isDependentType() ||
++        Type.isDestructedType() != QualType::DK_none ||
++        getObjC3ResourceTypeContract(Context, Type).Cleanup ||
++        containsObjC3BorrowedType(Context, Type)) return false;
++    if (const auto *Array = Context.getAsArrayType(Type))
++      return stableStaticStorageType(Array->getElementType(), Depth + 1);
++    if (const auto *Record = Type->getAsRecordDecl()) {
++      Record = Record->getDefinition();
++      if (!Record || Record->isUnion()) return false;
++      for (const auto *Field : Record->fields())
++        if (Field->isMutable() || !stableStaticStorageType(Field->getType(), Depth + 1))
++          return false;
++      if (const auto *Class = dyn_cast<CXXRecordDecl>(Record))
++        for (const auto &Base : Class->bases())
++          if (!stableStaticStorageType(Base.getType(), Depth + 1)) return false;
++      return true;
++    }
++    return Type->isScalarType() || Type->isVectorType();
++  }
++  bool staticStorageResult(const Expr *Expression, unsigned Depth = 0) const {
++    if (!Expression || Depth > 32 || Expression->isTypeDependent() || Expression->isValueDependent())
++      return false;
++    Expression = Expression->IgnoreParens();
++    if (Expression->isNullPointerConstant(Context, Expr::NPC_ValueDependentIsNotNull))
++      return true;
++    if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Expression))
++      return staticStorageResult(Cleanups->getSubExpr(), Depth + 1);
++    if (const auto *Conditional = dyn_cast<AbstractConditionalOperator>(Expression)) {
++      bool Truth;
++      if (!Conditional->getCond()->HasSideEffects(Context) &&
++          Conditional->getCond()->EvaluateAsBooleanCondition(Truth, Context))
++        return staticStorageResult(Truth ? Conditional->getTrueExpr() :
++                                           Conditional->getFalseExpr(), Depth + 1);
++      return staticStorageResult(Conditional->getTrueExpr(), Depth + 1) &&
++             staticStorageResult(Conditional->getFalseExpr(), Depth + 1);
++    }
++    if (const auto *Binary = dyn_cast<BinaryOperator>(Expression)) {
++      if (Binary->getOpcode() == BO_Comma)
++        return staticStorageResult(Binary->getRHS(), Depth + 1);
++      if (Binary->getType()->isPointerType() && Binary->isAdditiveOp()) {
++        if (Binary->getLHS()->getType()->isPointerType() &&
++            Binary->getRHS()->getType()->isIntegerType())
++          return staticStorageResult(Binary->getLHS(), Depth + 1);
++        if (Binary->getOpcode() == BO_Add && Binary->getRHS()->getType()->isPointerType() &&
++            Binary->getLHS()->getType()->isIntegerType())
++          return staticStorageResult(Binary->getRHS(), Depth + 1);
++      }
++    }
++    if (const auto *Cast = dyn_cast<CastExpr>(Expression);
++        Cast && Cast->isPRValue() && Cast->getSubExpr()->isPRValue() &&
++        Cast->getType()->isPointerType() && Cast->getSubExpr()->getType()->isPointerType())
++      return staticStorageResult(Cast->getSubExpr(), Depth + 1);
++    // A pointer lvalue names its slot; only a complete rvalue load can prove
++    // the pointee. Treating &constantPointer as constantPointer is unsound.
++    if (!Expression->isPRValue()) return false;
++    Expr::EvalResult Result;
++    if (!Expression->EvaluateAsRValue(Result, Context) ||
++        Result.HasSideEffects || Result.HasUndefinedBehavior || !Result.Val.isLValue())
++      return false;
++    auto Base = Result.Val.getLValueBase();
++    if (const auto *Declaration = Base.dyn_cast<const ValueDecl *>()) {
++      const auto *Variable = dyn_cast<VarDecl>(Declaration);
++      return Variable && Variable->hasGlobalStorage() &&
++             Variable->getTLSKind() == VarDecl::TLS_None &&
++             Context.getBaseElementType(Variable->getType()).isConstQualified() &&
++             stableStaticStorageType(Variable->getType());
++    }
++    if (const auto *Value = Base.dyn_cast<const Expr *>()) {
++      if (isa<StringLiteral>(Value)) return true;
++      if (const auto *Compound = dyn_cast<CompoundLiteralExpr>(Value))
++        return Compound->isFileScope() &&
++               Context.getBaseElementType(Compound->getType()).isConstQualified() &&
++               stableStaticStorageType(Compound->getType());
++    }
++    return false;
++  }
 +  bool validReturn(const Value &V) const {
 +    if (!ReturnOwner || *ReturnOwner >= Parameters.size() || hasExpired(V))
 +      return false;
@@ -46252,9 +46335,14 @@ index 000000000..3384a3c9f
 +        // Recheck it after substitution; nondependent escapes and known wrong
 +        // owners still fail during the template's first semantic pass.
 +        if (Dependent && V.count() == 1 && V.test(0)) V.reset(0);
-+        const bool StaticLiteral = ReturnOwner && Returned &&
-+            isa<StringLiteral>(Returned->IgnoreImplicit()->IgnoreParenImpCasts());
-+        if (!Dependent && !StaticLiteral && Return->getRetValue() &&
++        // Static storage outlives the named owner. Prove the address with the
++        // native constant evaluator, including immutable aliases, subobjects,
++        // offsets and constexpr calls. Never erase a tracked live/expired loan.
++        // Return checking does not transfer state, so evaluate this proof only
++        // during the diagnostic pass rather than on every CFG iteration.
++        const bool StaticStorage = Emit && ReturnOwner && Returned && V.none() &&
++            staticStorageResult(Returned);
++        if (!Dependent && !StaticStorage && Return->getRetValue() &&
 +            (ReturnOwner || isObjC3BorrowedType(Context, ReturnType)) && V.none() &&
 +            !Return->getRetValue()->isNullPointerConstant(
 +                Context, Expr::NPC_ValueDependentIsNotNull))
@@ -56334,3 +56422,133 @@ index 000000000..5140052cc
 +  defer {(void)__objc3_await value();} // expected-error {{cannot suspend from a defer statement}}
 +  return 0;
 +}
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-static-results.h b/clang/test/ObjC3/Sema/Inputs/borrowed-static-results.h
+new file mode 100644
+index 000000000..a0f530c3f
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-static-results.h
+@@ -0,0 +1,43 @@
++#ifndef BORROWED_STATIC_RESULTS_H
++#define BORROWED_STATIC_RESULTS_H
++typedef borrowed const char *StaticBytes;
++#define STATIC_RESULT __attribute__((objc_returns_borrowed(owner_index=0)))
++static const char static_bytes[]="permanent";
++static const char other_bytes[]="other";
++extern const char external_bytes[];
++static const char *const static_alias=static_bytes;
++static const char *mutable_alias=static_bytes;
++static char mutable_bytes[]="mutable";
++#ifdef __cplusplus
++#define STATIC_TLS thread_local
++#else
++#define STATIC_TLS _Thread_local
++#endif
++static STATIC_TLS const char tls_bytes[]="thread";
++struct StaticRecord {char bytes[8];};
++static const struct StaticRecord static_record={{'s','t','a','t','i','c',0}};
++const char *static_external_source(void);
++#ifdef __cplusplus
++static const char *const unknown_alias=static_external_source();
++#else
++extern const char *const unknown_alias;
++#endif
++#ifdef __cplusplus
++constexpr const char *static_constexpr_source(){return static_bytes;}
++struct StaticConstexprRecord {
++  char bytes[8];constexpr const char *data() const {return bytes;}
++};
++static constexpr StaticConstexprRecord static_constexpr_record={{'c','x','x',0}};
++constexpr const char *static_constexpr_member(){return static_constexpr_record.data();}
++template<int Offset> constexpr const char *static_constexpr_offset(){return static_bytes+Offset;}
++struct StaticMutableRecord {mutable char bytes[8];};
++static const StaticMutableRecord static_mutable_record={{'m',0}};
++struct StaticDestroyedRecord {char bytes[8];~StaticDestroyedRecord(){}};
++static const StaticDestroyedRecord static_destroyed_record={{'d',0}};
++union StaticUnion {char bytes[8];long other;};
++static const StaticUnion static_union={{'u',0}};
++#else
++// C file-scope const compound literals have permanent immutable storage.
++static const char *const compound_alias=(const char[]){'c','o','m','p',0};
++#endif
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-static-results.m b/clang/test/ObjC3/Sema/borrowed-static-results.m
+new file mode 100644
+index 000000000..65ab32c27
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-static-results.m
+@@ -0,0 +1,51 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -include-pch %t-c17-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -include-pch %t-c++20-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -include-pch %t-c++23-False.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -emit-pch %S/Inputs/borrowed-static-results.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -Wno-return-stack-address -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-static-results.h"
++#endif
++STATIC_RESULT StaticBytes global_array(id owner){return static_bytes;}
++STATIC_RESULT StaticBytes global_alias(id owner){return static_alias;}
++STATIC_RESULT StaticBytes global_external(id owner){return external_bytes;}
++STATIC_RESULT StaticBytes global_subobject(id owner){return static_record.bytes+1;}
++STATIC_RESULT StaticBytes local_static(id owner){static const char bytes[]="local";return bytes;}
++STATIC_RESULT StaticBytes local_const_alias(id owner){const char *const pointer=static_bytes;return pointer;}
++STATIC_RESULT StaticBytes global_offset(id owner,int offset){return static_bytes+offset;}
++STATIC_RESULT StaticBytes global_commuted_offset(id owner,int offset){return offset+static_bytes;}
++STATIC_RESULT StaticBytes global_conditional(id owner,int choose){return choose?static_bytes:other_bytes;}
++STATIC_RESULT StaticBytes constant_conditional(id owner,const char *unknown){return 1?static_bytes:unknown;}
++STATIC_RESULT StaticBytes global_nullable(id owner,int choose){return choose?static_bytes:0;}
++STATIC_RESULT StaticBytes global_cast(id owner,int offset){return (const char *)(const void *)(static_bytes+offset);}
++STATIC_RESULT StaticBytes global_comma(id owner,int choose){return ((void)choose,static_bytes);}
++STATIC_RESULT StaticBytes mutable_global(id owner){return mutable_bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes mutable_pointer(id owner){return mutable_alias;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes unknown_pointer(id owner){return unknown_alias;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes thread_storage(id owner){return tls_bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes local_storage(id owner){const char bytes[]="automatic";return bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes mixed_unknown(id owner,int choose,const char *unknown){return choose?static_bytes:unknown;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes mutated_local(id owner,const char *unknown){const char *pointer=static_bytes;pointer=unknown;return pointer;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#ifdef __cplusplus
++STATIC_RESULT StaticBytes constexpr_global(id owner){return static_constexpr_source();}
++STATIC_RESULT StaticBytes constexpr_member(id owner){return static_constexpr_member();}
++STATIC_RESULT StaticBytes constexpr_offset(id owner){return static_constexpr_offset<2>();}
++STATIC_RESULT StaticBytes mutable_member(id owner){return static_mutable_record.bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes destroyed_member(id owner){return static_destroyed_record.bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++STATIC_RESULT StaticBytes union_member(id owner){return static_union.bytes;} // expected-error {{return without a matching borrowed return and owner parameter contract}}
++#else
++STATIC_RESULT StaticBytes file_compound(id owner){return compound_alias;}
++#endif
+diff --git a/clang/test/ObjC3/AST/native-dependent-await-spelling.mm b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
+new file mode 100644
+index 000000000..0d3c1c35b
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-dependent-await-spelling.mm
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %s -o %t-c++20.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++20.pch -ast-print -x objective-c++ /dev/null | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch %s -o %t-c++23.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t-c++23.pch -ast-print -x objective-c++ /dev/null | FileCheck %s
++#include "../CodeGen/Inputs/native-async-task.h"
++template<class Work> objc3::task<int> ordinary_dependent(Work work) {
++  co_await work;co_return 42;
++}
++template<class Work> int native_dependent(Work work) __objc3_async_frame {
++  return __objc3_await work();
++}
++// CHECK-LABEL: ordinary_dependent(Work work)
++// CHECK: co_await work;
++// CHECK-NOT: __objc3_await
++// CHECK-LABEL: native_dependent(Work work)
++// CHECK: __objc3_await work()

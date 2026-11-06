@@ -192,8 +192,10 @@ bool HasDeclarationNativeDependentAwait(const clang::NamedDecl *declaration) {
     struct Awaits : clang::DynamicRecursiveASTVisitor {
       bool found = false;
       bool VisitCoawaitExpr(clang::CoawaitExpr *expression) override {
-        found |= expression->isTypeDependent() && !expression->getReadyExpr() &&
-                 !expression->getSuspendExpr() && !expression->getResumeExpr() &&
+        found |= expression->isTypeDependent() &&
+                 llvm::isa_and_nonnull<clang::OpaqueValueExpr>(expression->getReadyExpr()) &&
+                 llvm::isa_and_nonnull<clang::OpaqueValueExpr>(expression->getSuspendExpr()) &&
+                 llvm::isa_and_nonnull<clang::OpaqueValueExpr>(expression->getResumeExpr()) &&
                  clang::getObjC3AwaitSourceExpression(expression);
         return true;
       }

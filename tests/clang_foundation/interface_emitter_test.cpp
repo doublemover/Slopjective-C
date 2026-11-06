@@ -512,6 +512,62 @@ void TestNSObjectStorageCapability() {
   }
 }
 
+void TestBorrowedStaticStorageReplay() {
+  for(const char *standard:{"c17","c++20","c++23"}) {
+    const bool cxx=std::string(standard)!="c17";
+    for(bool arc:{false,true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if(arc)args.push_back("-fobjc-arc");
+      auto parse=[&](const std::string &source,const char *file) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,file);
+      };
+      auto emit=[&](const std::string &source,const char *file) {
+        auto ast=parse(source,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                     "fixture.borrowed_static_storage","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_static_storage","test");
+        assert(result.success);return result;
+      };
+      const std::string source=R"(
+        typedef borrowed const char *StaticLoan;
+        extern const char static_program_data[8];
+        const char static_program_data[8]="program";
+        void static_consume(const char *value __attribute__((noescape)));
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_program_view(void *owner,int offset) {
+          return static_program_data+offset;
+        }
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline StaticLoan static_program_choice(void *owner,int choose) {
+          return choose?static_program_data:0;
+        }
+      )";
+      auto first=emit(source,"static-borrowed-results.m");
+      auto replay=emit(first.source_bytes,"replayed-static-borrowed-results.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-static-borrowed-results.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto changed=source;auto offset=changed.find("static_program_data+offset");assert(offset!=std::string::npos);
+      changed.replace(offset,std::string("static_program_data+offset").size(),"static_program_data+offset+1");
+      assert(emit(changed,"changed-static-borrowed-results.m").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+      auto valid=parse(first.source_bytes+R"(
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        StaticLoan static_forward(void *owner) {
+          static_consume(static_program_view(owner,1));
+          return static_program_choice(owner,1);
+        }
+      )","static-borrowed-consumer.m");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      auto invalid=parse(first.source_bytes+R"(
+        const char *static_escape(void *owner) {return static_program_view(owner,1);}
+      )","static-borrowed-escape.m");
+      assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestBorrowedCallableOwnerCapability() {
   for (const char *standard : {"c17", "c++20", "c++23"}) {
     const bool cxx = std::string(standard) != "c17";
@@ -3477,6 +3533,16 @@ void TestNativeDependentAwaitReplay() {
       auto old=semantics;std::erase(old,llvm::StringRef(kNativeDependentAwaitSemantic));
       auto old_reader=DecodeSemanticInterfaceSidecar(first.sidecar_json,first.source_bytes,old);
       assert(!old_reader);llvm::consumeError(old_reader.takeError());
+      auto ordinary=emit(R"(
+        #include <objc3c/runtime/objc3_task.hpp>
+        namespace NativeExplicitStorage {
+          template<class Work> objc3::task<int> ordinary(Work work) {
+            co_await work;co_return 42;
+          }
+        }
+      )","ordinary-dependent-await.mm");
+      assert(ordinary.success && ordinary.sidecar_json.find(kNativeDependentAwaitSemantic)==std::string::npos);
+      assert(ordinary.source_bytes.find("co_await work")!=std::string::npos);
       auto plain=emit("namespace NativeExplicitStorage{inline int plain(){return 1;}}","plain-native-await.mm");
       assert(plain.success);
       auto control=DecodeSemanticInterfaceSidecar(plain.sidecar_json,plain.source_bytes,semantics);assert(control);
@@ -6521,6 +6587,7 @@ int main() {
   TestKeyPathSubscriptBodies();
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();
+  TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAsyncConsumedOwnershipCapability();
   TestConsumedAndMethodOwnershipRoundTrips();

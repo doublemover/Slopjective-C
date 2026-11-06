@@ -15,6 +15,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Native publication | Remaining dependent lookup, declaration/predicate forms and standard-library publication                                    | Open                                                                                         |
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |
+| Ownership/System   | Borrowed results from proven immutable program storage, aliases, subobjects and constexpr calls                             | Source authored; eighteen source/PCH commands and all twenty borrowed regressions pass         |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
@@ -397,3 +398,14 @@ an explicit source-free capability. Thirty-two new compiler commands and 296
 native scenarios pass; the complete focused isolation configuration passes 25
 commands. Optimized/instrumented and frontend/package consolidation remain
 pending. Implicit C/resource union cleanup and other crossing forms stay open.
+
+## Immutable program storage and borrowed returns
+
+The [System 2.20 span](linux_static_borrowed_results.md) proves readonly program
+storage using native constant evaluation and bounded pointer/conditional
+composition. Automatic/TLS/mutable/union/destructible or unknown storage stays
+unproven; existing tracked loan expiry and public nonescaping obligations remain.
+Eighteen new source/PCH commands and all twenty borrowed regressions pass.
+Frontend replay/consumer controls are authored and compile. Native dependent
+awaits also retain a distinct opaque marker so ordinary C++ dependent `co_await`
+keeps its spelling and publication contract through source/PCH.
