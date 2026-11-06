@@ -2,6 +2,7 @@
 #include "cf-contract.h"
 #include <assert.h>
 #include <sched.h>
+#include <stdio.h>
 #include <string.h>
 #ifdef __cplusplus
 #include "objc3_task.hpp"
@@ -538,6 +539,130 @@ int main(void) {
     }
 
     for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int kind = 0; kind != 7; ++kind) {
+        for (int outcome = 0; outcome != 7; ++outcome) {
+          // Synchronous producers have no body suspension; the frame cases
+          // additionally cancel after entry and before result construction.
+          if (kind < 2 && (outcome == 3 || outcome == 4)) continue;
+          int destroyed_before = hop_cf_destroyed();
+          hop_cf_reset(0);
+          if (ownership) hop_cf_arc_result_reset(outcome == 2 ? 1 : outcome == 3 ? 2 : 0);
+          else hop_cf_result_reset(outcome == 2 ? 1 : outcome == 3 ? 2 : 0);
+          frame = ownership ? hop_cf_arc_result_roundtrip(kind, caller) : hop_cf_result_roundtrip(kind, caller);
+          type = frame.result_type;
+          task = start(&frame);
+          if (outcome == 1) {
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            objc3_task_request_cancel(task);
+          }
+          if (outcome == 4 || outcome >= 5) {
+            for (unsigned step = 0; step != 10000; ++step) {
+              int progress = outcome == 4 ? hop_cf_entries() :
+                  (ownership ? hop_cf_arc_result_completed() : hop_cf_result_completed());
+              if (progress) break;
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+            }
+            assert((outcome == 4 ? hop_cf_entries() :
+                (ownership ? hop_cf_arc_result_completed() : hop_cf_result_completed())) == 1);
+            if (outcome >= 5) {
+              // The producer's result frame must already own a +0 source even
+              // when the original foreign owner disappears before copy-out.
+              if (ownership) hop_cf_arc_result_release_owner(); else hop_cf_result_release_owner();
+              assert(hop_cf_live() == (kind == 6 ? 0 : 1));
+            }
+            if (outcome != 6) objc3_task_request_cancel(task);
+          }
+          objc3_completion completion = finish(task);
+          if (outcome == 0 || outcome == 6) {
+            assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+            result = -1;
+            assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+            assert(result == (kind == 6 ? 0 : 42));
+          } else if (outcome == 2 || outcome == 3) {
+            assert(completion.kind == OBJC3_COMPLETION_ERROR);
+            objc3_service_status service = OBJC3_SERVICE_OK;
+            assert(objc3_async_error_get_service(completion.error, &service) == OBJC3_SERVICE_OK &&
+                   service == OBJC3_SERVICE_OUT_OF_MEMORY);
+          } else assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+          int done = ownership ? hop_cf_arc_result_completed() : hop_cf_result_completed();
+          assert(hop_cf_entries() == (outcome == 0 || outcome == 4 || outcome >= 5));
+          assert(done == (outcome == 0 || outcome >= 5));
+          if (ownership) hop_cf_arc_result_release_owner(); else hop_cf_result_release_owner();
+          int expected = kind == 6 ? 0 : (kind == 1 || kind == 3 || kind == 5) ? 1 : done;
+          assert(hop_cf_arguments() == expected);
+          objc3_task_release(task);
+          for (unsigned step = 0; step != 1000000 && hop_cf_live(); ++step) sched_yield();
+          assert(hop_cf_live() == 0 && hop_cf_destroyed() == destroyed_before + expected);
+        }
+      }
+    }
+
+    for (int ownership = 0; ownership != 2; ++ownership) {
+      for (int kind = 0; kind != 6; ++kind) {
+        for (int outcome = 0; outcome != 7; ++outcome) {
+          int before = hop_destroyed();
+          if (ownership) hop_arc_initializing_reset(outcome == 3 ? 1 : outcome == 4 ? 2 : 0);
+          else hop_initializing_reset(outcome == 3 ? 1 : outcome == 4 ? 2 : 0);
+          frame = ownership ? hop_arc_initializing_roundtrip(kind, caller) :
+                              hop_initializing_roundtrip(kind, caller);
+          type = frame.result_type;
+          task = start(&frame);
+          if (outcome == 1) objc3_task_request_cancel(task);
+          if (outcome == 2) {
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            objc3_task_request_cancel(task);
+          }
+          if (outcome == 5 || outcome == 6) {
+            for (unsigned step = 0; step != 10000; ++step) {
+              int progress = outcome == 5 ?
+                  (ownership ? hop_arc_initializing_entries() : hop_initializing_entries()) :
+                  (ownership ? hop_arc_initializing_completed() : hop_initializing_completed());
+              if (progress) break;
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+            }
+            assert((outcome == 5 ?
+                (ownership ? hop_arc_initializing_entries() : hop_initializing_entries()) :
+                (ownership ? hop_arc_initializing_completed() : hop_initializing_completed())) == 1);
+            objc3_task_request_cancel(task);
+          }
+          objc3_completion completion = finish(task);
+          if (outcome == 0 && completion.kind != OBJC3_COMPLETION_SUCCESS) {
+            objc3_service_status failure = OBJC3_SERVICE_OK;
+            (void)objc3_async_error_get_service(completion.error, &failure);
+            fprintf(stderr, "initializer ownership=%d kind=%d completion=%u service=%d\n",
+                    ownership, kind, completion.kind, failure);
+          }
+          if (outcome == 0) {
+            assert(completion.kind == OBJC3_COMPLETION_SUCCESS);
+            result = -1;
+            assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+            assert(result == (kind == 1 ? 0 : 42));
+          } else if (outcome == 3 || outcome == 4) {
+            assert(completion.kind == OBJC3_COMPLETION_ERROR);
+            objc3_service_status service = OBJC3_SERVICE_OK;
+            assert(objc3_async_error_get_service(completion.error, &service) == OBJC3_SERVICE_OK &&
+                   service == OBJC3_SERVICE_OUT_OF_MEMORY);
+          } else assert(completion.kind == OBJC3_COMPLETION_CANCELLED);
+          int entered = ownership ? hop_arc_initializing_entries() : hop_initializing_entries();
+          int done = ownership ? hop_arc_initializing_completed() : hop_initializing_completed();
+          int objects = ownership ? hop_arc_initializing_created() : hop_initializing_created();
+          assert(entered == (outcome == 0 || outcome == 5 || outcome == 6));
+          assert(done == (outcome == 0 || outcome == 6));
+          int expected_objects = kind < 4 ? (outcome != 1) : done;
+          if (kind == 2) expected_objects += done;
+          if (kind == 3) expected_objects += entered;
+          assert(objects == expected_objects);
+          objc3_task_release(task);
+          for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + objects; ++step)
+            sched_yield();
+          assert(hop_destroyed() == before + objects);
+        }
+      }
+    }
+
+    for (int ownership = 0; ownership != 2; ++ownership) {
       for (int kind = 0; kind != 8; ++kind) {
         int before = hop_destroyed();
         hop_mrc_reset(0);
@@ -556,6 +681,53 @@ int main(void) {
         for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + 1; ++step)
           sched_yield();
         assert(hop_destroyed() == before + 1);
+      }
+      for (int kind = 0; kind != 5; ++kind) {
+        for (int outcome = 0; outcome != (kind == 4 ? 1 : 4); ++outcome) {
+          int before = hop_destroyed();
+          hop_mrc_reset(0);
+          if (ownership) hop_arc_initializing_reset(0); else hop_initializing_reset(0);
+          frame = ownership ? hop_arc_initializer_task_roundtrip(kind, caller) :
+                              hop_mrc_initializer_task_roundtrip(kind, caller);
+          type = frame.result_type;
+          task = start(&frame);
+          if (outcome == 1) {
+            assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK && count == 1);
+            objc3_task_request_cancel(task);
+          }
+          if (outcome >= 2) {
+            for (unsigned step = 0; step != 10000; ++step) {
+              int progress = outcome == 2 ?
+                  (ownership ? hop_arc_initializing_entries() : hop_initializing_entries()) :
+                  (ownership ? hop_arc_initializing_completed() : hop_initializing_completed());
+              if (progress) break;
+              assert(objc3_executor_pump(caller, 1, &count) == OBJC3_SERVICE_OK);
+              assert(objc3_executor_pump(main_destination, 1, &count) == OBJC3_SERVICE_OK);
+            }
+            assert((outcome == 2 ?
+                (ownership ? hop_arc_initializing_entries() : hop_initializing_entries()) :
+                (ownership ? hop_arc_initializing_completed() : hop_initializing_completed())) == 1);
+            objc3_task_request_cancel(task);
+          }
+          objc3_completion completion = finish(task);
+          assert(completion.kind == (outcome == 0 ? OBJC3_COMPLETION_SUCCESS : OBJC3_COMPLETION_CANCELLED));
+          if (outcome == 0) {
+            result = -1;
+            assert(objc3_task_copy_result(task, type, &int_ops, &result) == OBJC3_SERVICE_OK);
+            assert(result == (kind == 1 ? 0 : 42));
+          }
+          int entered = ownership ? hop_arc_initializing_entries() : hop_initializing_entries();
+          int done = ownership ? hop_arc_initializing_completed() : hop_initializing_completed();
+          int extra = ownership ? hop_arc_initializing_created() : hop_initializing_created();
+          assert(entered == (outcome != 1 && kind != 4));
+          assert(done == (kind != 4 && (outcome == 0 || outcome == 3)));
+          assert(extra == (kind == 2 ? done : kind == 3 ? entered : 0));
+          assert(hop_mrc_arguments() == 1);
+          objc3_task_release(task);
+          for (unsigned step = 0; step != 1000000 && hop_destroyed() != before + 1 + extra; ++step)
+            sched_yield();
+          assert(hop_destroyed() == before + 1 + extra);
+        }
       }
       for (int kind = 0; kind != (ownership ? 6 : 5); ++kind) {
         for (int outcome = 0; outcome != 5; ++outcome) {

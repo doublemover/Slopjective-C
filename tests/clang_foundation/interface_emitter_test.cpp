@@ -468,6 +468,16 @@ void TestAsyncConsumedOwnershipCapability() {
         static int unpublished_body(void) __objc3_async_frame {
           return __objc3_await sync_entry(body_source());
         }
+        __attribute__((objc_root_class)) @interface OwnershipInitializer
+        - (instancetype)initFrame __objc3_async_frame;
+        @end
+        id retained_signature(void) __objc3_async_frame __attribute__((ns_returns_retained));
+        static inline id retained_body(void) __objc3_async_frame {return __objc3_await retained_signature();}
+        CFRef retained_foreign_signature(void) __objc3_async_frame __attribute__((cf_returns_retained));
+        CFRef borrowed_foreign_signature(void) __objc3_async_frame __attribute__((cf_returns_not_retained));
+        static inline CFRef retained_foreign_body(void) __objc3_async_frame {
+          return __objc3_await retained_foreign_signature();
+        }
         int plain(void);
         #ifdef __cplusplus
         #include "objc3c/runtime/objc3_task.hpp"
@@ -498,7 +508,7 @@ void TestAsyncConsumedOwnershipCapability() {
       const std::vector<std::string> base = {"CFRef", "body_source", "sync_entry", "plain"};
       auto plain = emit(source, "ownership-private.m", base);
       assert(plain.sidecar_json.find(kAsyncConsumedOwnershipSemantic) == std::string::npos);
-      std::vector<std::string> consuming_exports = {"consume_signature", "consume_body"};
+      std::vector<std::string> consuming_exports = {"consume_signature", "consume_body", "retained_signature", "retained_body", "OwnershipInitializer", "retained_foreign_signature", "borrowed_foreign_signature", "retained_foreign_body"};
       if (std::string(standard) != "c17") {
         consuming_exports.push_back("ordinary_body");
         consuming_exports.push_back("ordinary_block_factory");
@@ -506,6 +516,8 @@ void TestAsyncConsumedOwnershipCapability() {
       for (const std::string &exported : consuming_exports) {
         auto exports = base; exports.push_back(exported);
         if (exported == "ordinary_body" || exported == "ordinary_block_factory") exports.push_back("CFRelease");
+        if (exported == "retained_body") exports.push_back("retained_signature");
+        if (exported == "retained_foreign_body") exports.push_back("retained_foreign_signature");
         auto result = emit(source, "ownership-provider.m", exports);
         assert(result.sidecar_json.find(kAsyncConsumedOwnershipSemantic) != std::string::npos);
         auto parsed = llvm::json::parse(result.sidecar_json);
@@ -518,6 +530,7 @@ void TestAsyncConsumedOwnershipCapability() {
         auto replayed = emit(result.source_bytes, "relocated/ownership-consumer.m", exports);
         assert(replayed.identity.semantic_fingerprint == result.identity.semantic_fingerprint);
         auto old = supported; std::erase(old, llvm::StringRef(kAsyncConsumedOwnershipSemantic));
+        old.push_back("objc3.async-consuming-ownership.v1");
         auto unsupported = DecodeSemanticInterfaceSidecar(result.sidecar_json, result.source_bytes, old);
         assert(!unsupported); llvm::consumeError(unsupported.takeError());
         auto missing = *decoded; std::erase(missing.required_semantics, kAsyncConsumedOwnershipSemantic);

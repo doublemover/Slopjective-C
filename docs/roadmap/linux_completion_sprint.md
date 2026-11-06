@@ -20,7 +20,8 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Isolation          | MRC consumed C++ task parameters/receivers and ARC mutable consuming task receivers                                         | Source authored; focused native execution passes                   |
 | Isolation          | Plain opaque CF consumed arguments across synchronous, native-frame and C++ task entries                                    | Source authored; focused native execution passes                   |
 | Isolation          | Ordinary C++ coroutine function, Objective-C++ method and Block consumed ownership                                          | Source authored; focused source/PCH and native execution pass      |
-| Isolation          | Remaining crossings, CF result/NSObject-backed storage, async init-family forms and managed values                          | Open                                                               |
+| Isolation          | Remaining crossings, task-ABI initializer/CF results, NSObject-backed storage and managed values                            | Open                                                               |
+| Isolation          | Native-frame initializers and retained object/opaque CF result ownership                                                    | Source authored; focused native verification in progress           |
 | Isolation          | Complete Sendable and Strict Concurrency enforcement                                                                        | Open                                                               |
 | Key paths          | Dependent applications and packs in generic functions, including source-free templates                                      | Source authored; native source/PCH/package verification pending    |
 | Key paths          | Dependent-root literals, qualified roots and packs, including source-free templates                                         | Source authored; native source/PCH/package verification pending    |
@@ -208,6 +209,30 @@ and MRC. Published consuming ordinary coroutine bodies and direct calls require
 the existing ownership capability; frontend replay controls are authored and
 pass compile checks. Full frontend/package/instrumented consolidation and the
 replacement SDK remain pending.
+
+## Authored initializer and result ownership
+
+The [2.99/2.100 result span](linux_isolation_result_ownership.md) adds native-frame
+initializers and retained object results under ARC/MRC, with concrete receiver-
+dependent logical await results. Physical entry ABI flags describe the frame
+carrier, while result storage adopts the source's transferred claim. Internal
+capture reads also support unused parameters without source-use assertions.
+
+Plain opaque retained/borrowed CF results use independent copy/move/destruction
+operations. Native await temporaries hold CF owners through the full expression;
+initialized frame slots preserve ownership across conditional/shared cleanup
+paths. Synchronous retained and native-frame +0 thunk results retain separate
+staging rules. Generated ownership operations skip null.
+
+Publication requires `objc3.async-consuming-ownership.v2`; v1-only readers fail
+admission. Compiler source/PCH controls and independent ARC/MRC native providers
+cover self/nil/replacement, borrowed CF owner removal, allocation failures and
+successive cancellation stages. All 36 new source/PCH CodeGen commands, six CF admission controls and 44 affected
+compiler regressions pass. Three native configurations pass 58 commands, with
+232 CF and 118 initializer/result scenarios each. All eight affected frontend
+units and expanded test sources compile; frontend execution, complete matrices
+and SDK delivery remain pending. Task-ABI initializer/CF results, nil receiver
+synthesis, NSObject-backed CF storage and managed unions remain explicit work.
 
 ## Authored nullable key-path result policy
 

@@ -228,6 +228,12 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     mrc_consuming = compile_source(case, work / "mrc-consuming.m", work,
                         language="objective-c", standard="c17", ownership="mrc",
                         output_name="mrc-consuming.o")
+                    mrc_initializing = compile_source(case, work / "initializing.m", work,
+                        language="objective-c", standard="c17", ownership="mrc",
+                        output_name="mrc-initializing.o")
+                    arc_initializing = compile_source(case, work / "initializing.m", work,
+                        language="objective-c", standard="c17", ownership="arc",
+                        output_name="arc-initializing.o")
                     mrc_task_consuming = compile_source(case, work / "task-consuming.mm", work,
                         language="objective-c++", standard="c++20", ownership="mrc",
                         output_name="mrc-task-consuming.o")
@@ -243,6 +249,12 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     cf_arc_consuming = compile_source(case, work / "cf-consuming.mm", work,
                         language="objective-c++", standard="c++20", ownership="arc",
                         output_name="cf-arc-consuming.o")
+                    cf_results = compile_source(case, work / "cf-results.m", work,
+                        language="objective-c", standard="c17", ownership="mrc",
+                        output_name="cf-results.o")
+                    cf_arc_results = compile_source(case, work / "cf-results.m", work,
+                        language="objective-c", standard="c17", ownership="arc",
+                        output_name="cf-arc-results.o")
                     snapshots = compile_source(case, work / "snapshots.m", work,
                         language="objective-c", standard="c17", ownership=case.provider_ownership,
                         output_name="snapshots.o")
@@ -255,14 +267,16 @@ def run_batch(sdk: Path, output: Path, *, compiler: Path | None = None,
                     (work / "cxx-packet.mm").unlink()
                     (work / "consuming.m").unlink()
                     (work / "mrc-consuming.m").unlink()
+                    (work / "initializing.m").unlink()
                     (work / "task-consuming.mm").unlink()
                     (work / "cf-runtime.m").unlink()
                     (work / "cf-consuming.mm").unlink()
+                    (work / "cf-results.m").unlink()
                     extra = pch(case, work / "provider.h", work) if case.transport == "pch" else []
                     client = compile_source(case, work / "client.m", work, extra=extra)
                     execute(case, [provider, owned_packet, cxx_packet, consuming, mrc_consuming,
-                                   mrc_task_consuming, arc_task_consuming,
-                                   cf_runtime, cf_consuming, cf_arc_consuming,
+                                   mrc_task_consuming, arc_task_consuming, mrc_initializing, arc_initializing,
+                                   cf_runtime, cf_consuming, cf_arc_consuming, cf_results, cf_arc_results,
                                    snapshots, automatic, client], work)
                 elif case.feature == "spawn":
                     extra = []

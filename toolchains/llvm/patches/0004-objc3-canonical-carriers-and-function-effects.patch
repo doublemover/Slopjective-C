@@ -1361,7 +1361,7 @@ index 7671f003c..44a30c6e2 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..8674c4693 100644
+index 2cb79b6ba..a1bc5777c 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -11,7 +11,135 @@
@@ -1454,7 +1454,7 @@ index 2cb79b6ba..8674c4693 100644
 +def err_objc3_async_c_frame_symbol : Error<
 +  "native Objective-C async frame declarations require an explicit asm name for a frame-returning C entry point">;
 +def err_objc3_async_c_frame_ownership : Error<
-+  "native Objective-C async frame entry cannot use object return ownership attributes">;
++  "native Objective-C async frame object return ownership requires a retainable logical result">;
 +def err_objc3_async_c_frame_noreturn : Error<
 +  "native Objective-C async frame entry returns a lazy frame and cannot be noreturn">;
 +def warn_objc3_unnecessary_c_await : Warning<
@@ -12770,10 +12770,10 @@ index 000000000..80bc420b7
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..25d31a7eb
+index 000000000..3572e6682
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,198 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -12870,9 +12870,10 @@ index 000000000..25d31a7eb
 +  if (!IsDefinition && !Function->hasAttr<AsmLabelAttr>() &&
 +      lookupRuntimeTypedef(S, "objc3_async_frame", Function->getLocation()).isNull())
 +    return false;
-+  if (Function->hasAttr<NSReturnsRetainedAttr>() ||
-+      Function->hasAttr<NSReturnsNotRetainedAttr>() ||
-+      Function->hasAttr<NSReturnsAutoreleasedAttr>()) {
++  if ((Function->hasAttr<NSReturnsRetainedAttr>() ||
++       Function->hasAttr<NSReturnsNotRetainedAttr>() ||
++       Function->hasAttr<NSReturnsAutoreleasedAttr>()) &&
++      !Type->getReturnType()->isObjCRetainableType()) {
 +    S.Diag(Function->getLocation(), diag::err_objc3_async_c_frame_ownership);
 +    return true;
 +  }
@@ -12927,7 +12928,7 @@ index 000000000..25d31a7eb
 +    return Context.DependentTy;
 +  if (Function->getObjC3FunctionEffects().AsyncFrame &&
 +      (Function->getExtInfo().getNoReturn() ||
-+       Function->getExtInfo().getProducesResult())) {
++       (Function->getExtInfo().getProducesResult() && !Result->isObjCRetainableType()))) {
 +    if (Diagnose)
 +      Diag(Loc, Function->getExtInfo().getNoReturn()
 +                    ? diag::err_objc3_async_c_frame_noreturn
@@ -38842,10 +38843,10 @@ index 1979117d4..ee6b0880c 100644
      if (C->capturesThis() || C->capturesVLAType())
 diff --git a/clang/lib/Sema/SemaObjC3Effects.h b/clang/lib/Sema/SemaObjC3Effects.h
 new file mode 100644
-index 000000000..de417476f
+index 000000000..7233a373d
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.h
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,21 @@
 +//===--- SemaObjC3Effects.h - ObjC3 callable effect boundaries ----*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3EFFECTS_H
@@ -38853,7 +38854,12 @@ index 000000000..de417476f
 +namespace clang {
 +class Decl;
 +class FunctionDecl;
++class FunctionProtoType;
 +class Sema;
++class Expr;
++/// Project the logical result of a native-frame message through its actual
++/// receiver, retaining the ordinary Objective-C instancetype/nullability rules.
++const FunctionProtoType *getObjC3AsyncAwaitFunctionType(Sema &S, const Expr *E);
 +class Stmt;
 +/// Validate the explicit native-C frame-entry boundary. Function effects retain
 +/// their logical result; only calls use the physical runtime frame carrier.
@@ -40418,7 +40424,7 @@ index 000000000..8e42f951a
 +}
 diff --git a/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
 new file mode 100644
-index 000000000..49eb1bf28
+index 000000000..dd89a3ef1
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-c-async-frame-boundaries.m
 @@ -0,0 +1,41 @@
@@ -40440,7 +40446,7 @@ index 000000000..49eb1bf28
 +#if CASE == 3
 +int unbound(void) __objc3_async;
 +int variadic(int, ...) __objc3_async __asm__("variadic_frame"); // expected-error {{require a non-variadic Linux x86-64}}
-+id owned(void) __objc3_async __asm__("owned_frame") __attribute__((ns_returns_retained)); // expected-error {{cannot use object return ownership attributes}}
++id owned(void) __objc3_async __asm__("owned_frame") __attribute__((ns_returns_retained));
 +_Noreturn void never(void) __objc3_async __asm__("never_frame"); // expected-error {{cannot be noreturn}}
 +#elif CASE == 4
 +// expected-no-diagnostics
@@ -42443,10 +42449,10 @@ index 9adba1943..76286b3f9 100644
          // is significant.  Allow non-dependent code to contain inappropriate
 diff --git a/clang/lib/Sema/SemaObjC3Async.cpp b/clang/lib/Sema/SemaObjC3Async.cpp
 new file mode 100644
-index 000000000..b1f400f38
+index 000000000..276fba0cb
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Async.cpp
-@@ -0,0 +1,267 @@
+@@ -0,0 +1,291 @@
 +//===--- SemaObjC3Async.cpp - Native C async definitions -------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Effects.h"
@@ -42466,19 +42472,38 @@ index 000000000..b1f400f38
 +#include "clang/Basic/DiagnosticParse.h"
 +#include "llvm/ADT/STLExtras.h"
 +#include "clang/Sema/Sema.h"
++#include "clang/Sema/SemaObjC.h"
 +
 +using namespace clang;
++
++const FunctionProtoType *clang::getObjC3AsyncAwaitFunctionType(Sema &S, const Expr *E) {
++  const auto *Type = getObjC3AsyncCalleeFunctionType(E);
++  const auto *Message = dyn_cast<ObjCMessageExpr>(getObjC3AsyncSourceCall(E));
++  if (!Type || !Type->getObjC3FunctionEffects().AsyncFrame || !Message ||
++      !Message->getMethodDecl()->hasRelatedResultType()) return Type;
++  bool Class = Message->getReceiverKind() == ObjCMessageExpr::Class ||
++               Message->getReceiverKind() == ObjCMessageExpr::SuperClass;
++  bool Super = Message->getReceiverKind() == ObjCMessageExpr::SuperInstance ||
++               Message->getReceiverKind() == ObjCMessageExpr::SuperClass;
++  QualType Result = S.ObjC().getMessageSendResultType(Message->getInstanceReceiver(),
++      Message->getReceiverType(), const_cast<ObjCMethodDecl *>(Message->getMethodDecl()), Class, Super);
++  return S.Context.getFunctionType(Result, Type->param_types(),
++                                  Type->getExtProtoInfo())->castAs<FunctionProtoType>();
++}
 +
 +ExprResult Sema::BuildObjC3CxxFrameAwaitOperand(SourceLocation Loc,
 +                                               Expr *Operand) {
 +  if (getObjC3FrameAdapterSource(Operand) != Operand->IgnoreImplicit())
 +    return Operand;
-+  const auto *Function = getObjC3AsyncCalleeFunctionType(Operand);
++  const auto *Declared = getObjC3AsyncCalleeFunctionType(Operand);
++  const auto *Function = getObjC3AsyncAwaitFunctionType(*this, Operand);
 +  if (!Function || !Function->getObjC3FunctionEffects().AsyncFrame)
 +    return Operand;
++  bool Related = Declared && !Context.hasSameType(Function->getReturnType(), Declared->getReturnType());
++  StringRef Name = Related ? "__objc3_async_related_frame" : "__objc3_async_from_frame";
 +  if (BuildObjC3AsyncTaskType(Function, Loc).isNull())
 +    return ExprError();
-+  LookupResult Hook(*this, &Context.Idents.get("__objc3_async_from_frame"),
++  LookupResult Hook(*this, &Context.Idents.get(Name),
 +                    Loc, LookupOrdinaryName);
 +  Hook.suppressDiagnostics();
 +  LookupQualifiedName(Hook, Context.getTranslationUnitDecl());
@@ -42492,6 +42517,11 @@ index 000000000..b1f400f38
 +  QualType Result = Function->getReturnType();
 +  Arguments.addArgument(TemplateArgumentLoc(
 +      TemplateArgument(Result), Context.getTrivialTypeSourceInfo(Result, Loc)));
++  if (Related) {
++    QualType Producer = Declared->getReturnType();
++    Arguments.addArgument(TemplateArgumentLoc(
++        TemplateArgument(Producer), Context.getTrivialTypeSourceInfo(Producer, Loc)));
++  }
 +  CXXScopeSpec SS;
 +  ExprResult Callee = BuildTemplateIdExpr(SS, SourceLocation(), Hook, false,
 +                                         &Arguments);
@@ -42510,7 +42540,7 @@ index 000000000..b1f400f38
 +  }
 +  // Keep the source call and its logical function type. The call expression's
 +  // evaluated result is the common ABI carrier, not the logical await result.
-+  const auto *Function = getObjC3AsyncCalleeFunctionType(Operand);
++  const auto *Function = getObjC3AsyncAwaitFunctionType(*this, Operand);
 +  const bool TaskABI = Function && getLangOpts().CPlusPlus &&
 +      Function->getObjC3FunctionEffects().Async &&
 +      !Function->getObjC3FunctionEffects().AsyncFrame;
@@ -46410,10 +46440,10 @@ index 000000000..d78d0e4c0
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3Isolation.cpp b/clang/lib/Sema/SemaObjC3Isolation.cpp
 new file mode 100644
-index 000000000..58d1feebb
+index 000000000..e8b30e17f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Isolation.cpp
-@@ -0,0 +1,1233 @@
+@@ -0,0 +1,1242 @@
 +//===--- SemaObjC3Isolation.cpp - Isolation and transfer checking
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -47303,6 +47333,14 @@ index 000000000..58d1feebb
 +      S.Context, ActorEntry,
 +      !Original->getObjC3FunctionEffects().Async &&
 +          isolationResultIsOwned(Target)));
++  if (hasObjC3CFResultOwnership(Target)) {
++    // A synchronous retained result transfers its source +1. An awaited
++    // native-frame result is a +0 expression rooted by its full expression.
++    if (!Original->getObjC3FunctionEffects().Async && Target->hasAttr<CFReturnsRetainedAttr>())
++      Thunk->addAttr(CFReturnsRetainedAttr::CreateImplicit(S.Context));
++    else
++      Thunk->addAttr(CFReturnsNotRetainedAttr::CreateImplicit(S.Context));
++  }
 +  if (Executor)
 +    Thunk->addAttr(Executor->clone(S.Context));
 +  SmallVector<ParmVarDecl *, 4> Params;
@@ -47481,11 +47519,14 @@ index 000000000..58d1feebb
 +                  (Executor && (!Current || Current->getExecutor() !=
 +                                                Executor->getExecutor()));
 +  const auto *FT = isolationCalleeFunctionType(*this, Target);
-+  if (Message && FT && !FT->getObjC3FunctionEffects().Async &&
-+      cast<ObjCMethodDecl>(Target)->hasRelatedResultType()) {
++  if (Message && FT && cast<ObjCMethodDecl>(Target)->hasRelatedResultType() &&
++      (!FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame)) {
 +    // Preserve the source send's instantiated class/generic result rather than
 +    // erasing instancetype to the method declaration's logical id spelling.
-+    FT = Context.getFunctionType(Message->getType(), FT->param_types(),
++    QualType Logical = Message->getType();
++    if (FT->getObjC3FunctionEffects().AsyncFrame)
++      Logical = getObjC3AsyncAwaitFunctionType(*this, Message)->getReturnType();
++    FT = Context.getFunctionType(Logical, FT->param_types(),
 +                                  FT->getExtProtoInfo())->castAs<FunctionProtoType>();
 +  }
 +  if (!Crossing || !FT ||
@@ -47543,18 +47584,16 @@ index 000000000..58d1feebb
 +          SourceReceiver->getType()->isObjCObjectPointerType()) ||
 +         (NamedClass && !isolationConsumesReceiver(Target))) &&
 +        (cast<ObjCMethodDecl>(Target)->getMethodFamily() != OMF_init ||
-+         !FT->getObjC3FunctionEffects().Async);
++         !FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame);
 +  }
 +  for (unsigned I = 0; I != FT->getNumParams(); ++I)
 +    Shape &= !unsupportedIsolatedConsumption(
 +        *this, FT->getParamType(I),
 +        I < TargetParameters.size() ? TargetParameters[I] : nullptr,
 +        FT->getExtParameterInfo(I));
-+  // A foreign result needs its own result-storage operations and copy-out
-+  // ownership contract. Consumed CF arguments do not turn raw result pointers
-+  // into frame-owned CF values implicitly.
-+  Shape &= !Target->hasAttr<CFReturnsRetainedAttr>() &&
-+           !Target->hasAttr<CFReturnsNotRetainedAttr>();
++  if (Target->hasAttr<CFReturnsRetainedAttr>() || Target->hasAttr<CFReturnsNotRetainedAttr>())
++    Shape &= hasObjC3CFResultOwnership(Target) &&
++        (!FT->getObjC3FunctionEffects().Async || FT->getObjC3FunctionEffects().AsyncFrame);
 +  if (!Shape) {
 +    Diag(Loc, diag::err_objc3_isolation_hop_shape);
 +    Diag(Target->getLocation(), diag::note_objc3_sendable_boundary);
@@ -54730,7 +54769,7 @@ index a179016d4..dbd6f2e4a 100644
  public:
 diff --git a/clang/test/ObjC3/Sema/native-cf-isolation-errors.m b/clang/test/ObjC3/Sema/native-cf-isolation-errors.m
 new file mode 100644
-index 000000000..4d41501aa
+index 000000000..2785bde70
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-cf-isolation-errors.m
 @@ -0,0 +1,24 @@
@@ -54743,14 +54782,14 @@ index 000000000..4d41501aa
 +#include "../CodeGen/Inputs/native-c-async-frame.h"
 +typedef const struct __CFAdmission *AdmissionCFRef;
 +AdmissionCFRef retained_foreign(void)
-+    __attribute__((nothrow,cf_returns_retained,objc_executor(main))); // expected-note@-1 {{concurrency boundary is declared here}}
++    __attribute__((nothrow,cf_returns_retained,objc_executor(main)));
 +AdmissionCFRef borrowed_foreign(void)
-+    __attribute__((nothrow,cf_returns_not_retained,objc_executor(main))); // expected-note@-1 {{concurrency boundary is declared here}}
++    __attribute__((nothrow,cf_returns_not_retained,objc_executor(main)));
 +AdmissionCFRef reject_retained_foreign(void) __objc3_async_frame {
-+  return __objc3_await retained_foreign(); // expected-error {{awaited isolated entry requires}}
++  return __objc3_await retained_foreign();
 +}
 +AdmissionCFRef reject_borrowed_foreign(void) __objc3_async_frame {
-+  return __objc3_await borrowed_foreign(); // expected-error {{awaited isolated entry requires}}
++  return __objc3_await borrowed_foreign();
 +}
 +typedef const struct __CFBridged *BridgedCFRef __attribute__((NSObject));
 +int bridged_foreign(__attribute__((cf_consumed)) BridgedCFRef)

@@ -3430,7 +3430,7 @@ index 0683a4937..ccfe1b2ae 100644
  
  /// Adjust the declaration of something from the blocks API.
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..829194fc2 100644
+index 08cb9860f..0e5166a49 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -3453,7 +3453,7 @@ index 08cb9860f..829194fc2 100644
  #include "llvm/ADT/StringExtras.h"
  #include "llvm/Analysis/ValueTracking.h"
  #include "llvm/IR/Assumptions.h"
-@@ -232,21 +238,75 @@ static void appendParameterTypes(
+@@ -232,21 +238,80 @@ static void appendParameterTypes(
  using ExtParameterInfoList =
      SmallVector<FunctionProtoType::ExtParameterInfo, 16>;
  
@@ -3470,6 +3470,11 @@ index 08cb9860f..829194fc2 100644
 +
 +static FunctionType::ExtInfo getObjC3ABIExtInfo(const FunctionType *FT) {
 +  auto Info = FT->getExtInfo();
++  if (const auto *Type = dyn_cast<FunctionProtoType>(FT);
++      Type && Type->getObjC3FunctionEffects().Async)
++    // Logical result ownership belongs to the promise/frame result. The
++    // physical entry returns a carrier, never a retained Objective-C object.
++    return Info.withProducesResult(false).withNoReturn(false);
 +  return usesObjC3CheckedReturn(FT) ? Info.withNoReturn(false) : Info;
 +}
 +
@@ -3530,7 +3535,7 @@ index 08cb9860f..829194fc2 100644
  }
  
  using CanQualTypeList = SmallVector<CanQualType, 16>;
-@@ -260,7 +320,7 @@ CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
+@@ -260,7 +325,7 @@ CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
                                     FTP);
  }
  
@@ -3539,7 +3544,7 @@ index 08cb9860f..829194fc2 100644
                                                 bool IsTargetDefaultMSABI) {
    // Set the appropriate calling convention for the Function.
    if (D->hasAttr<StdCallAttr>())
-@@ -353,6 +413,8 @@ const CGFunctionInfo &
+@@ -353,6 +418,8 @@ const CGFunctionInfo &
  CodeGenTypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
                                     const FunctionProtoType *FTP,
                                     const CXXMethodDecl *MD) {
@@ -3548,7 +3553,7 @@ index 08cb9860f..829194fc2 100644
    CanQualTypeList argTypes;
  
    // Add the 'this' pointer.
-@@ -408,6 +470,9 @@ bool CodeGenTypes::inheritingCtorHasParams(
+@@ -408,6 +475,9 @@ bool CodeGenTypes::inheritingCtorHasParams(
  const CGFunctionInfo &
  CodeGenTypes::arrangeCXXStructorDeclaration(GlobalDecl GD) {
    auto *MD = cast<CXXMethodDecl>(GD.getDecl());
@@ -3558,7 +3563,7 @@ index 08cb9860f..829194fc2 100644
  
    CanQualTypeList argTypes;
    ExtParameterInfoList paramInfos;
-@@ -575,6 +640,8 @@ CodeGenTypes::arrangeObjCMethodDeclaration(const ObjCMethodDecl *MD) {
+@@ -575,6 +645,8 @@ CodeGenTypes::arrangeObjCMethodDeclaration(const ObjCMethodDecl *MD) {
  const CGFunctionInfo &
  CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
                                                QualType receiverType) {
@@ -3567,7 +3572,7 @@ index 08cb9860f..829194fc2 100644
    CanQualTypeList argTys;
    ExtParameterInfoList extParamInfos(MD->isDirectMethod() ? 1 : 2);
    argTys.push_back(Context.getCanonicalParamType(receiverType));
-@@ -587,12 +654,19 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
+@@ -587,23 +659,32 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
      extParamInfos.push_back(extParamInfo);
    }
  
@@ -3587,8 +3592,10 @@ index 08cb9860f..829194fc2 100644
 +      getObjCMethodCallingConvention(MD, IsTargetDefaultMSABI));
  
    if (getContext().getLangOpts().ObjCAutoRefCount &&
-       MD->hasAttr<NSReturnsRetainedAttr>())
-@@ -601,9 +675,11 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
+-      MD->hasAttr<NSReturnsRetainedAttr>())
++      !MD->getObjC3FunctionEffects().Async && MD->hasAttr<NSReturnsRetainedAttr>())
+     einfo = einfo.withProducesResult(true);
+ 
    RequiredArgs required =
        (MD->isVariadic() ? RequiredArgs(argTys.size()) : RequiredArgs::All);
  
@@ -3603,7 +3610,7 @@ index 08cb9860f..829194fc2 100644
  }
  
  const CGFunctionInfo &
-@@ -682,6 +758,21 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+@@ -682,6 +763,21 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
        addExtParameterInfosForCall(paramInfos, proto, numExtraRequiredArgs,
                                    args.size());
  
@@ -3625,7 +3632,7 @@ index 08cb9860f..829194fc2 100644
    // If we don't have a prototype at all, but we're supposed to
    // explicitly use the variadic convention for unprototyped calls,
    // treat all of the arguments as required but preserve the nominal
-@@ -692,12 +783,34 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+@@ -692,12 +788,34 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
    }
  
    CanQualTypeList argTypes;
@@ -3665,7 +3672,7 @@ index 08cb9860f..829194fc2 100644
  }
  
  /// Figure out the rules for calling a function with the given formal
-@@ -722,13 +835,18 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
+@@ -722,13 +840,18 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
  const CGFunctionInfo &
  CodeGenTypes::arrangeBlockFunctionDeclaration(const FunctionProtoType *proto,
                                                const FunctionArgList &params) {
@@ -3687,7 +3694,7 @@ index 08cb9860f..829194fc2 100644
                                   RequiredArgs::forPrototypePlus(proto, 1));
  }
  
-@@ -779,6 +897,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+@@ -779,6 +902,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
      RequiredArgs required, unsigned numPrefixArgs) {
    assert(numPrefixArgs + 1 <= args.size() &&
           "Emitting a call with less args than the required prefix?");
@@ -3697,7 +3704,7 @@ index 08cb9860f..829194fc2 100644
    // Add one to account for `this`. It's a bit awkward here, but we don't count
    // `this` in similar places elsewhere.
    ExtParameterInfoList paramInfos =
-@@ -786,8 +907,11 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+@@ -786,8 +912,11 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
  
    CanQualTypeList argTypes = getArgTypesForCall(Context, args);
  
@@ -3711,7 +3718,7 @@ index 08cb9860f..829194fc2 100644
                                   FnInfoOpts::IsInstanceMethod, argTypes, info,
                                   paramInfos, required);
  }
-@@ -1023,6 +1147,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
+@@ -1023,6 +1152,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
    assert(llvm::all_of(argTypes,
                        [](CanQualType T) { return T.isCanonicalAsParam(); }));
  
@@ -3729,7 +3736,7 @@ index 08cb9860f..829194fc2 100644
    // Lookup or create unique function info.
    llvm::FoldingSetNodeID ID;
    bool isInstanceMethod =
-@@ -3150,8 +3285,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3150,8 +3290,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
            // This includes trivially-destructible objects, as well as objects
            // whose destruction / clean-up is carried out within the callee
            // (e.g., Obj-C ARC-managed structs, MSVC callee-destroyed objects).
@@ -3741,7 +3748,7 @@ index 08cb9860f..829194fc2 100644
              Attrs.addDeadOnReturnAttr(llvm::DeadOnReturnInfo());
          }
        }
-@@ -3325,6 +3461,17 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3325,6 +3466,17 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
    for (const llvm::AttrBuilder &Attrs : ArgAttrs)
      ArgAttrSets.push_back(llvm::AttributeSet::get(getLLVMContext(), Attrs));
  
@@ -3759,7 +3766,7 @@ index 08cb9860f..829194fc2 100644
    AttrList = llvm::AttributeList::get(
        getLLVMContext(), llvm::AttributeSet::get(getLLVMContext(), FuncAttrs),
        llvm::AttributeSet::get(getLLVMContext(), RetAttrs), ArgAttrSets);
-@@ -4369,6 +4516,38 @@ void CodeGenFunction::EmitFunctionEpilog(
+@@ -4369,6 +4521,38 @@ void CodeGenFunction::EmitFunctionEpilog(
  
    case ABIArgInfo::Extend:
    case ABIArgInfo::Direct:
@@ -3798,7 +3805,7 @@ index 08cb9860f..829194fc2 100644
      if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
          RetAI.getDirectOffset() == 0) {
        // The internal return value temp always will have pointer-to-return-type
-@@ -4998,7 +5177,7 @@ void CodeGenFunction::EmitCallArgs(
+@@ -4998,7 +5182,7 @@ void CodeGenFunction::EmitCallArgs(
      const auto *MD = dyn_cast<const ObjCMethodDecl *>(Prototype.P);
      if (MD) {
        IsVariadic = MD->isVariadic();
@@ -3807,7 +3814,7 @@ index 08cb9860f..829194fc2 100644
            MD, CGM.getTarget().getTriple().isOSWindows());
        ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                        MD->param_type_end());
-@@ -5121,6 +5300,17 @@ void CodeGenFunction::EmitCallArgs(
+@@ -5121,6 +5305,17 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
@@ -3825,7 +3832,7 @@ index 08cb9860f..829194fc2 100644
  }
  
  namespace {
-@@ -5205,6 +5395,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5400,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -3842,7 +3849,7 @@ index 08cb9860f..829194fc2 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5227,7 +5427,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5227,7 +5432,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      if (DestroyedInCallee)
        Slot.setExternallyDestructed();
  
@@ -3854,7 +3861,7 @@ index 08cb9860f..829194fc2 100644
      RValue RV = Slot.asRValue();
      args.add(RV, type);
  
-@@ -5577,6 +5780,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5785,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -3869,7 +3876,7 @@ index 08cb9860f..829194fc2 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5921,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5926,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -3912,7 +3919,7 @@ index 08cb9860f..829194fc2 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +6018,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +6023,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -3928,7 +3935,7 @@ index 08cb9860f..829194fc2 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +6038,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +6043,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -3937,7 +3944,7 @@ index 08cb9860f..829194fc2 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6167,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6172,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -6154,10 +6161,10 @@ index c724a063b..72c4a5478 100644
      DI->EmitLexicalBlockEnd(Builder, S.getRBracLoc());
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..8ad424a51
+index 000000000..65cc2709f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,244 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6315,13 +6322,22 @@ index 000000000..8ad424a51
 +    const auto *FPT =
 +        Method->getObjC3FunctionType()->castAs<FunctionProtoType>();
 +    const auto Effects = FPT->getObjC3FunctionEffects();
++    bool FrameFamily = false;
++    switch (Method->getMethodFamily()) {
++    case OMF_None: case OMF_init: case OMF_alloc: case OMF_new:
++    case OMF_copy: case OMF_mutableCopy: FrameFamily = true; break;
++    default: break;
++    }
++    const bool FrameReference = Effects.AsyncFrame && FrameFamily &&
++        FPT->getReturnType()->isObjCRetainableType();
 +    const bool Async = Effects.Async &&
 +                       (!CGM.getLangOpts().CPlusPlus || CGM.getLangOpts().CPlusPlus20) &&
-+                       Method->getMethodFamily() == OMF_None &&
-+                       !Method->hasRelatedResultType() &&
-+                       !Method->hasAttr<NSReturnsRetainedAttr>() &&
-+                       !Method->hasAttr<NSReturnsNotRetainedAttr>() &&
-+                       !Method->hasAttr<NSReturnsAutoreleasedAttr>() &&
++                       (Method->getMethodFamily() == OMF_None || FrameReference) &&
++                       (!Method->hasRelatedResultType() || FrameReference) &&
++                       (FrameReference ||
++                        (!Method->hasAttr<NSReturnsRetainedAttr>() &&
++                         !Method->hasAttr<NSReturnsNotRetainedAttr>() &&
++                         !Method->hasAttr<NSReturnsAutoreleasedAttr>())) &&
 +                       getObjCMethodCallingConvention(Method, false) == CC_C &&
 +                       !CGM.getContext()
 +                            .getObjC3AsyncReturnType(FPT)
@@ -12626,7 +12642,7 @@ index 313a364e8..38789c90e 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 55fe21658..bf0cc2a25 100644
+index 55fe21658..db030e246 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -1,3 +1,4 @@
@@ -12658,7 +12674,7 @@ index 55fe21658..bf0cc2a25 100644
  #include "llvm/IR/DataLayout.h"
  #include "llvm/IR/DerivedTypes.h"
  #include "llvm/IR/Module.h"
-@@ -299,9 +304,118 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
+@@ -299,9 +304,119 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
    }
  }
  
@@ -12688,7 +12704,8 @@ index 55fe21658..bf0cc2a25 100644
 +          FPT->getCallConv() == CC_C &&
 +          (Context.getLangOpts().CPlusPlus ||
 +           (!FPT->getExtInfo().getNoReturn() &&
-+            !FPT->getExtInfo().getProducesResult())) &&
++            (!FPT->getExtInfo().getProducesResult() ||
++             (Effects.AsyncFrame && FPT->getReturnType()->isObjCRetainableType())))) &&
 +          !Context.getObjC3AsyncReturnType(FPT).isNull() &&
 +          (Effects.Throws == ObjC3ThrowsKind::None ||
 +           Effects.Throws == ObjC3ThrowsKind::Untyped ||
@@ -12777,7 +12794,7 @@ index 55fe21658..bf0cc2a25 100644
    // First, check whether we can build the full function type.  If the
    // function type depends on an incomplete type (e.g. a struct or enum), we
    // cannot lower the function type.
-@@ -357,6 +471,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -357,6 +472,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
  
    const Type *Ty = T.getTypePtr();
  
@@ -12798,7 +12815,7 @@ index 55fe21658..bf0cc2a25 100644
    // For the device-side compilation, CUDA device builtin surface/texture types
    // may be represented in different types.
    if (Context.getLangOpts().CUDAIsDevice) {
-@@ -389,6 +517,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -389,6 +518,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
    // If we don't have it in the cache, convert it now.
    llvm::Type *ResultType = nullptr;
    switch (Ty->getTypeClass()) {
@@ -25561,10 +25578,10 @@ index 000000000..5c6d7f0fc
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Async.cpp b/clang/lib/CodeGen/CGObjC3Async.cpp
 new file mode 100644
-index 000000000..74b2bbe94
+index 000000000..3adba7496
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Async.cpp
-@@ -0,0 +1,1353 @@
+@@ -0,0 +1,1402 @@
 +//===--- CGObjC3Async.cpp - Native C async frames -------------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//
@@ -25610,6 +25627,7 @@ index 000000000..74b2bbe94
 +  Address ScopeEntered = Address::invalid();
 +  llvm::Value *ResultOps = nullptr;
 +  llvm::Value *ResultType = nullptr;
++  llvm::Instruction *AwaitOwnerInitialization = nullptr;
 +  QualType LogicalResult;
 +  CodeGenFunction::JumpDest Destroy;
 +  CodeGenFunction::JumpDest Final;
@@ -25669,7 +25687,7 @@ index 000000000..74b2bbe94
 +// The callbacks use native initialization/destruction, including nontrivial C
 +// records. A result owner is independent of both the frame and copy-out owner.
 +llvm::Function *valueOperation(CodeGenModule &CGM, QualType T, bool Destroy,
-+                                bool Move) {
++                                bool Move, bool Foreign = false) {
 +  auto &Ctx = CGM.getContext();
 +  FunctionArgList Args;
 +  for (unsigned I = 0; I != (Destroy ? 1u : 2u); ++I)
@@ -25698,7 +25716,19 @@ index 000000000..74b2bbe94
 +    CGF.EHStack.pushCatch(1)->setHandler(0, Info, Catch);
 +  }
 +  Address Dst = AddressOf(0);
-+  if (Destroy) {
++  if (Foreign) {
++    Address Src = Destroy ? Dst : AddressOf(1);
++    auto *Value = CGF.Builder.CreateLoad(Src);
++    if (Destroy) {
++      emitObjC3CFRelease(CGF, Value);
++      CGF.Builder.CreateStore(llvm::ConstantPointerNull::get(CGF.Int8PtrTy), Src);
++    } else {
++      auto *Owned = Move ? Value : emitObjC3CFRetain(CGF, Value);
++      CGF.Builder.CreateStore(Owned, Dst);
++      if (Move) CGF.Builder.CreateStore(llvm::ConstantPointerNull::get(CGF.Int8PtrTy), Src);
++      CGF.Builder.CreateStore(CGF.Builder.getInt32(0), CGF.ReturnValue);
++    }
++  } else if (Destroy) {
 +    if (!emitObjC3ManagedStorageCall(CGF, CGF.MakeAddrLValue(Dst, T),
 +                                    ObjC3StorageOperation::Destroy)) {
 +      auto DK = T.isDestructedType();
@@ -25765,7 +25795,7 @@ index 000000000..74b2bbe94
 +  llvm_unreachable("Sema did not instantiate explicit C++ frame storage hook");
 +}
 +
-+llvm::Value *valueOps(CodeGenFunction &CGF, QualType T) {
++llvm::Value *valueOps(CodeGenFunction &CGF, QualType T, bool Foreign = false) {
 +  unsigned Kind = resultKind(T);
 +  if (Kind == 3) return nullPtr(CGF);
 +  if (Kind == 1 || Kind == 2)
@@ -25776,8 +25806,8 @@ index 000000000..74b2bbe94
 +  if (hasCxxFrameStorage(CGF, T))
 +    return cxxFrameStorageCall(CGF, T, "__objc3_async_frame_value_ops", {})
 +        .getScalarVal();
-+  if (auto *Existing = CGM.ObjC3CAsyncValueOps.lookup(T))
-+    return Existing;
++  if (!Foreign)
++    if (auto *Existing = CGM.ObjC3CAsyncValueOps.lookup(T)) return Existing;
 +  auto *Type = llvm::StructType::get(CGF.Int32Ty, CGF.Int32Ty, CGF.Int64Ty,
 +                                     CGF.Int64Ty, CGF.Int8PtrTy, CGF.Int8PtrTy,
 +                                     CGF.Int8PtrTy);
@@ -25785,14 +25815,16 @@ index 000000000..74b2bbe94
 +      Type, {CGF.Builder.getInt32(48), CGF.Builder.getInt32(ValueOpsABI),
 +             CGF.Builder.getInt64(CGF.getContext().getTypeSizeInChars(T).getQuantity()),
 +             CGF.Builder.getInt64(CGF.getContext().getTypeAlignInChars(T).getQuantity()),
-+             valueOperation(CGM, T, false, false),
-+             valueOperation(CGM, T, false, true),
-+             valueOperation(CGM, T, true, false)});
++             valueOperation(CGM, T, false, false, Foreign),
++             valueOperation(CGM, T, false, true, Foreign),
++             valueOperation(CGM, T, true, false, Foreign)});
 +  auto *Ops = new llvm::GlobalVariable(
 +      CGM.getModule(), Type, true, llvm::GlobalValue::PrivateLinkage, Initializer,
 +      "__objc3_c_async_value_ops");
 +  Ops->setAlignment(llvm::Align(8));
-+  CGM.ObjC3CAsyncValueOps[T] = Ops;
++  // Ownership comes from the declaration, not the pointer type. Never reuse
++  // this table for an unowned pointer with the same physical representation.
++  if (!Foreign) CGM.ObjC3CAsyncValueOps[T] = Ops;
 +  return Ops;
 +}
 +llvm::Constant *resultDescriptor(CodeGenFunction &CGF, QualType T) {
@@ -25889,6 +25921,15 @@ index 000000000..74b2bbe94
 +  llvm::Value *Value;
 +  explicit ReleaseCFCapture(llvm::Value *Value) : Value(Value) {}
 +  void Emit(CodeGenFunction &CGF, Flags) override {
++    emitObjC3CFRelease(CGF, Value);
++  }
++};
++struct ReleaseCFAwaitSlot final : EHScopeStack::Cleanup {
++  Address Slot;
++  explicit ReleaseCFAwaitSlot(Address Slot) : Slot(Slot) {}
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    auto *Value = CGF.Builder.CreateLoad(Slot);
++    CGF.Builder.CreateStore(nullPtr(CGF), Slot);
 +    emitObjC3CFRelease(CGF, Value);
 +  }
 +};
@@ -26381,10 +26422,10 @@ index 000000000..74b2bbe94
 +    Builder.CreateStore(nullPtr(*this), Data.Owner);
 +    Builder.CreateStore(nullPtr(*this), Data.Error);
 +    Builder.CreateStore(Builder.getInt32(0), Data.Kind);
-+    Builder.CreateStore(Builder.getFalse(), Data.ResultLive);
++    Data.AwaitOwnerInitialization = Builder.CreateStore(Builder.getFalse(), Data.ResultLive);
 +    if (Data.ScopeEntered.isValid())
 +      Builder.CreateStore(Builder.getFalse(), Data.ScopeEntered);
-+    Data.ResultOps = valueOps(*this, Data.LogicalResult);
++    Data.ResultOps = valueOps(*this, Data.LogicalResult, hasObjC3CFResultOwnership(&Callable));
 +    EHStack.pushCleanup<DestroyResult>(NormalAndEHCleanup, Data.Result,
 +        Data.ResultLive, Data.Error, Data.ResultOps);
 +
@@ -26447,7 +26488,7 @@ index 000000000..74b2bbe94
 +      }
 +      auto *Reference = DeclRefExpr::Create(getContext(), NestedNameSpecifierLoc(),
 +          SourceLocation(), const_cast<VarDecl *>(P), false,
-+          P->getLocation(), T, VK_LValue);
++          SourceLocation(), T, VK_LValue);
 +      auto *Synthetic = VarDecl::Create(getContext(),
 +          const_cast<VarDecl *>(P)->getDeclContext(), P->getLocation(), P->getLocation(),
 +          nullptr, T, getContext().getTrivialTypeSourceInfo(T), SC_None);
@@ -26742,11 +26783,17 @@ index 000000000..74b2bbe94
 +    Address Source = CreateMemTemp(Data.LogicalResult, "objc3.return.source");
 +    const auto *Thunk = CurCodeDecl->getAttr<ObjC3IsolationThunkAttr>();
 +    bool OwnedReference = Data.LogicalResult->isObjCRetainableType() &&
-+        (getLangOpts().ObjCAutoRefCount || (Thunk && Thunk->getOwnedResult()));
-+    if (OwnedReference) {
++        (getLangOpts().ObjCAutoRefCount || (Thunk && Thunk->getOwnedResult()) ||
++         isObjC3OwnedFrameResult(CurCodeDecl));
++    if (hasObjC3CFResultOwnership(CurCodeDecl) && CurCodeDecl->hasAttr<CFReturnsRetainedAttr>()) {
++      auto *Owned = EmitScalarExpr(E);
++      EHStack.pushCleanup<ReleaseCFCapture>(NormalAndEHCleanup, Owned);
++      EmitStoreOfScalar(Owned, MakeAddrLValue(Source, Data.LogicalResult), true);
++    } else if (OwnedReference) {
 +      // ARC claims a natural +1 or retains/copies a +0 expression independently
 +      // of lexical/full-expression owners. An MRC isolation thunk instead
-+      // adopts exactly the original synchronous declaration's +1 result.
++      // adopts exactly a synchronous thunk or native-frame declaration's +1
++      // result, including the self/nil/replacement initializer contract.
 +      // Unsafe source storage has this explicit owner until resultOps copies;
 +      // success, service failure and native exception edges all balance it.
 +      llvm::Value *Owned = getLangOpts().ObjCAutoRefCount
@@ -26853,8 +26900,16 @@ index 000000000..74b2bbe94
 +  }
 +  EmitBlock(Success);
 +  QualType T = resultStorageType(getContext(), E.getType());
-+  llvm::Value *Descriptor = frameResultDescriptor(*this, T);
-+  llvm::Value *Ops = valueOps(*this, T);
++  QualType Producer = T;
++  if (const auto *Function = getObjC3AsyncCalleeFunctionType(E.getOperand());
++      Function && T->isObjCObjectPointerType() && Function->getReturnType()->isObjCObjectPointerType())
++    // instancetype refines the expression's static pointer type. Copy-out must
++    // still validate the actual producer descriptor, without weakening runtime
++    // identity equality for unrelated object-pointer results.
++    Producer = Function->getReturnType();
++  llvm::Value *Descriptor = frameResultDescriptor(*this, Producer);
++  const bool Foreign = hasObjC3CFResultOwnership(getObjC3AsyncResultOwner(E.getOperand()));
++  llvm::Value *Ops = valueOps(*this, T, Foreign);
 +  bool Temporary = T->isVoidType() || Slot.isIgnored();
 +  Address Result = T->isVoidType() ? Address::invalid()
 +      : Temporary ? Address(CreateMemTemp(T, "objc3.await.result"))
@@ -26878,6 +26933,17 @@ index 000000000..74b2bbe94
 +    auto *Pointer = Builder.CreateLoad(Result);
 +    Value = RValue::get(EmitARCAutorelease(Pointer));
 +  } else if (!T->isVoidType()) {
++    if (Foreign) {
++      // Shared cleanup dispatch can reach this slot from another switch arm
++      // or a cancellation edge. Initialize it with the frame, independently
++      // of the branch that computes this await, and reload instead of keeping
++      // a branch-local SSA value alive across cleanup continuations.
++      Address Owner = CreateTempAlloca(Int8PtrTy, getPointerAlign(), "objc3.await.cf.owner");
++      llvm::IRBuilder<> Initialization(Data.AwaitOwnerInitialization);
++      Initialization.CreateStore(nullPtr(*this), Owner.emitRawPointer(*this));
++      Builder.CreateStore(Builder.CreateLoad(Result), Owner);
++      EHStack.pushCleanup<ReleaseCFAwaitSlot>(NormalAndEHCleanup, Owner);
++    }
 +    if (getEvaluationKind(T) == TEK_Complex)
 +      Value = RValue::getComplex(EmitLoadOfComplex(MakeAddrLValue(Result, T), E.getExprLoc()));
 +    else if (getEvaluationKind(T) == TEK_Scalar)
@@ -30054,3 +30120,151 @@ index 000000000..a0be24f7d
 +// CHECK-DAG: @CFRelease
 +// CHECK-DAG: @llvm.objc.retain
 +// CHECK-DAG: @llvm.objc.release
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-isolation-initializer.h b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-initializer.h
+new file mode 100644
+index 000000000..f815eaaf9
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-isolation-initializer.h
+@@ -0,0 +1,40 @@
++#ifndef OBJC3_NATIVE_INITIALIZER_H
++#define OBJC3_NATIVE_INITIALIZER_H
++#include "native-c-async-frame.h"
++@protocol Sendable @end
++__attribute__((objc_root_class)) @interface InitializerRoot <Sendable>
++- (instancetype)initFrame:(int)kind __objc3_async_frame __attribute__((nothrow,objc_executor(main)));
++@end
++@interface InitializerChild : InitializerRoot @end
++@implementation InitializerRoot
++- (instancetype)initFrame:(int)kind __objc3_async_frame {return self;}
++@end
++static id retained_native_frame(void) __objc3_async_frame __attribute__((ns_returns_retained));
++static id retained_native_frame(void) __objc3_async_frame {return 0;}
++static id unretained_native_frame(void) __objc3_async_frame __attribute__((ns_returns_not_retained));
++static id unretained_native_frame(void) __objc3_async_frame {return 0;}
++static id autoreleased_native_frame(void) __objc3_async_frame __attribute__((ns_returns_autoreleased));
++static id autoreleased_native_frame(void) __objc3_async_frame {return 0;}
++static int unused_native_parameter(int unused) __objc3_async_frame {return 7;}
++static inline int initializer_cross(InitializerChild *object) __objc3_async_frame {
++#ifdef __cplusplus
++  auto value=__objc3_await [object initFrame:0];
++  static_assert(__is_same(__typeof__(*value),InitializerChild));
++#else
++  __auto_type value=__objc3_await [object initFrame:0];
++  _Static_assert(__builtin_types_compatible_p(__typeof__(*value),InitializerChild),"instancetype");
++#endif
++  return value!=0;
++}
++static inline int initializer_same_executor(InitializerChild *object) __objc3_async_frame __attribute__((objc_executor(main)));
++static inline int initializer_same_executor(InitializerChild *object) __objc3_async_frame {
++#ifdef __cplusplus
++  auto value=__objc3_await [object initFrame:0];
++  static_assert(__is_same(__typeof__(*value),InitializerChild));
++#else
++  __auto_type value=__objc3_await [object initFrame:0];
++  _Static_assert(__builtin_types_compatible_p(__typeof__(*value),InitializerChild),"instancetype");
++#endif
++  return value!=0;
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-isolation-initializer.m b/clang/test/ObjC3/CodeGen/native-isolation-initializer.m
+new file mode 100644
+index 000000000..05bc7322d
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-isolation-initializer.m
+@@ -0,0 +1,36 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-isolation-initializer.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-isolation-initializer.h"
++#endif
++int initializer_use(InitializerChild *object) __objc3_async_frame {
++  return __objc3_await initializer_cross(object);
++}
++int initializer_same_use(InitializerChild *object) __objc3_async_frame __attribute__((objc_executor(main)));
++int initializer_same_use(InitializerChild *object) __objc3_async_frame {
++  return __objc3_await initializer_same_executor(object);
++}
++// CHECK-DAG: @llvm.coro.begin
++// CHECK-DAG: @llvm.objc.retain
++// CHECK-DAG: @llvm.objc.release
++// CHECK-DAG: @objc3_async_reference_ops
++objc3_async_frame use_retained_frame(void) {return retained_native_frame();}
++objc3_async_frame use_unretained_frame(void) {return unretained_native_frame();}
++objc3_async_frame use_autoreleased_frame(void) {return autoreleased_native_frame();}
++objc3_async_frame use_unused_native_parameter(void) {return unused_native_parameter(1);}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-cf-results.h b/clang/test/ObjC3/CodeGen/Inputs/native-cf-results.h
+new file mode 100644
+index 000000000..f23514cae
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/native-cf-results.h
+@@ -0,0 +1,22 @@
++#ifndef OBJC3_NATIVE_CF_RESULTS_H
++#define OBJC3_NATIVE_CF_RESULTS_H
++#include "native-c-async-frame.h"
++typedef const struct CFResultOpaque *CFResultRef;
++#ifdef __cplusplus
++extern "C" {
++#endif
++const void *CFRetain(const void *) __attribute__((nothrow,cf_returns_retained));
++void CFRelease(const void *) __attribute__((nothrow));
++CFResultRef cf_result_source(void) __attribute__((nothrow,cf_returns_retained));
++CFResultRef cf_result_borrowed(void) __attribute__((nothrow,cf_returns_not_retained,objc_executor(main)));
++#ifdef __cplusplus
++}
++#endif
++static CFResultRef retained_frame_result(void) __objc3_async_frame
++    __attribute__((nothrow,cf_returns_retained,objc_executor(main)));
++static CFResultRef retained_frame_result(void) __objc3_async_frame {return cf_result_source();}
++static inline int cf_result_parent(void) __objc3_async_frame {
++  int retained=(__objc3_await retained_frame_result())!=0;
++  return retained+((__objc3_await cf_result_borrowed())!=0);
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-cf-results.m b/clang/test/ObjC3/CodeGen/native-cf-results.m
+new file mode 100644
+index 000000000..35e537b3e
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-cf-results.m
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-cf-results.h -o %t-c17-False.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c17-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-cf-results.h -o %t-c17-True.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c17-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-cf-results.h -o %t-c++20-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++20-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-cf-results.h -o %t-c++20-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++20-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-pch %S/Inputs/native-cf-results.h -o %t-c++23-False.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -include-pch %t-c++23-False.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch %S/Inputs/native-cf-results.h -o %t-c++23-True.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fexceptions -fobjc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t-c++23-True.pch -DFROM_PCH -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef FROM_PCH
++#include "Inputs/native-cf-results.h"
++#endif
++objc3_async_frame cf_result_use(void) {return cf_result_parent();}
++// CHECK-DAG: @CFRetain
++// CHECK-DAG: @CFRelease
++// CHECK-DAG: @llvm.coro.begin
++// CHECK-DAG: @objc3_task_copy_result

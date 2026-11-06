@@ -2319,7 +2319,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (HasDeclarationTemplateTemplateParameters(representative))
     identity.canonical_type_identity+=";cxx-template-template-parameters:v1;";
   if (HasDeclarationAsyncConsumedOwnership(representative))
-    identity.canonical_type_identity += ";async-consuming-ownership:v1;";
+    identity.canonical_type_identity += ";async-consuming-ownership:v2;";
   if (HasDeclarationDependentKeyPathTypeBody(representative))
     identity.canonical_type_identity += ";keypath-dependent-types:v1;";
   if (HasDeclarationDependentKeyPathLiteral(representative))

@@ -1665,10 +1665,10 @@ index 000000000..d2047cc0f
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..f07bc13b2
+index 000000000..b40cc4ef5
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,246 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1741,7 +1741,7 @@ index 000000000..f07bc13b2
 +      getObjC3AsyncParameterInfo(Callable, Parameter).isConsumed()) return true;
 +  const auto *Method = dyn_cast<ObjCMethodDecl>(Callable);
 +  return Method && Parameter == Method->getSelfDecl() &&
-+         Method->hasAttr<NSConsumesSelfAttr>();
++         (Method->hasAttr<NSConsumesSelfAttr>() || Method->getMethodFamily() == OMF_init);
 +}
 +
 +inline bool isObjC3CFConsumedAsyncParameter(const Decl *Callable,
@@ -1755,6 +1755,38 @@ index 000000000..f07bc13b2
 +         !T->getPointeeType()->isFunctionType() &&
 +         T.getAddressSpace() == LangAS::Default &&
 +         T->getPointeeType().getAddressSpace() == LangAS::Default;
++}
++
++/// Native-frame retained results transfer a manual +1 into result storage.
++/// This is distinct from the frame's own independent copy-out owner.
++inline bool isObjC3OwnedFrameResult(const Decl *Callable) {
++  const auto *Type = getObjC3CallableFunctionType(Callable);
++  if (!Type || !Type->getObjC3FunctionEffects().AsyncFrame ||
++      !Type->getReturnType()->isObjCRetainableType()) return false;
++  if (Callable->hasAttr<NSReturnsNotRetainedAttr>() ||
++      Callable->hasAttr<NSReturnsAutoreleasedAttr>()) return false;
++  if (Callable->hasAttr<NSReturnsRetainedAttr>() ||
++      Type->getExtInfo().getProducesResult()) return true;
++  if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable))
++    switch (Method->getMethodFamily()) {
++    case OMF_alloc: case OMF_new: case OMF_copy: case OMF_mutableCopy: case OMF_init:
++      return true;
++    default: break;
++    }
++  return false;
++}
++
++inline bool hasObjC3CFResultOwnership(const Decl *Callable) {
++  if (!Callable || (!Callable->hasAttr<CFReturnsRetainedAttr>() &&
++                    !Callable->hasAttr<CFReturnsNotRetainedAttr>())) return false;
++  QualType Result;
++  if (const auto *Type = getObjC3CallableFunctionType(Callable)) Result = Type->getReturnType();
++  else if (const auto *Method = dyn_cast<ObjCMethodDecl>(Callable)) Result = Method->getReturnType();
++  if (Result.isNull()) return false;
++  return Result->isPointerType() && !Result->isObjCRetainableType() &&
++         !Result->getPointeeType()->isFunctionType() &&
++         Result.getAddressSpace() == LangAS::Default &&
++         Result->getPointeeType().getAddressSpace() == LangAS::Default;
 +}
 +
 +inline bool isObjC3ConsumedFrameParameter(const Decl *Callable,
@@ -1797,6 +1829,7 @@ index 000000000..f07bc13b2
 +  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
 +  if (FD && FD->getIdentifier() &&
 +      (FD->getIdentifier()->isStr("__objc3_async_from_frame") ||
++       FD->getIdentifier()->isStr("__objc3_async_related_frame") ||
 +       FD->getIdentifier()->isStr("__objc3_async_to_frame")) &&
 +      Call->getNumArgs() == 1)
 +    return Call->getArg(0)->IgnoreImplicit()->IgnoreParenImpCasts();
@@ -1833,6 +1866,13 @@ index 000000000..f07bc13b2
 +  else if (const auto *Block = Type->getAs<BlockPointerType>())
 +    Type = Block->getPointeeType();
 +  return Type->getAs<FunctionProtoType>();
++}
++
++inline const Decl *getObjC3AsyncResultOwner(const Expr *E) {
++  E = getObjC3AsyncSourceCall(E);
++  if (const auto *Message = dyn_cast<ObjCMessageExpr>(E)) return Message->getMethodDecl();
++  if (const auto *Call = dyn_cast<CallExpr>(E)) return Call->getDirectCallee();
++  return nullptr;
 +}
 +
 +/// Source projection is separate from logical effect checking above: the

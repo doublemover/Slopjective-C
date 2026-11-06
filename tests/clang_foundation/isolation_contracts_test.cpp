@@ -536,6 +536,17 @@ int class_cross(int value) { return [Counter classValue:value]; }
       (Cxx ? "static_assert(__is_same(__typeof__(*value),Counter));"
            : "_Static_assert(__builtin_types_compatible_p(__typeof__(*value),Counter),\"instancetype\");") +
       "return value!=0;}")));
+  Success(Compile(Make(
+      "@interface Counter (FrameInitializing)\n"
+      "- (instancetype)initFrameOnMain __objc3_async_frame __attribute__((nothrow,objc_executor(main)));\n"
+      "@end\n"
+      "Counter *frame_init_source(void) __attribute__((ns_returns_retained));\n"
+      "int frame_init_cross(void) __objc3_async_frame {" +
+      std::string(Cxx ? "auto" : "__auto_type") +
+      " value=__objc3_await [frame_init_source() initFrameOnMain];" +
+      (Cxx ? "static_assert(__is_same(__typeof__(*value),Counter));"
+           : "_Static_assert(__builtin_types_compatible_p(__typeof__(*value),Counter),\"instancetype\");") +
+      "return value!=0;}")));
   if (!Arc) {
     Success(Compile(Make("int mrc_frame_consume(__attribute__((ns_consumed)) SafeMessage *value)" + NoThrow +
                 " __objc3_async_frame __attribute__((objc_executor(main)));\n"
@@ -555,12 +566,11 @@ int class_cross(int value) { return [Counter classValue:value]; }
               "CFTokenRef cf_source(void) __attribute__((cf_returns_retained));\n"
               "int cf_cross(void) __objc3_async {"
               "return __objc3_await cf_consume(cf_source());}")));
-  Reject(Make("typedef const struct __CFToken *CFTokenRef;\n"
+  Success(Compile(Make("typedef const struct __CFToken *CFTokenRef;\n"
               "CFTokenRef cf_result(void)" + NoThrow +
               " __attribute__((cf_returns_retained,objc_executor(main)));\n"
               "CFTokenRef cf_result_cross(void) __objc3_async {"
-              "return __objc3_await cf_result();}"),
-         "awaited isolated entry requires");
+              "return __objc3_await cf_result();}")));
   Success(
       Compile(Make("__attribute__((objc_executor(main), ns_returns_retained)) "
                    "SafeMessage *owned_result(void)" +

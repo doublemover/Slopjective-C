@@ -139,10 +139,13 @@ bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
       bool found = false;
       bool VisitType(clang::Type *type) override {
         if (const auto *function = llvm::dyn_cast<clang::FunctionProtoType>(type);
-            function && function->getObjC3FunctionEffects().Async)
+            function && function->getObjC3FunctionEffects().Async) {
+          found |= function->getObjC3FunctionEffects().AsyncFrame &&
+                   function->getExtInfo().getProducesResult();
           for (unsigned i = 0; i != function->getNumParams(); ++i)
             found |= function->isParamConsumed(i) ||
                      function->getExtParameterInfo(i).isCFConsumed();
+        }
         return true;
       }
       bool VisitFunctionDecl(clang::FunctionDecl *function) override {
@@ -161,9 +164,11 @@ bool HasDeclarationAsyncConsumedOwnership(const clang::NamedDecl *declaration) {
         if (!source) return;
         source = source->IgnoreImplicit()->IgnoreParenImpCasts();
         if (const auto *call = llvm::dyn_cast<clang::CallExpr>(source))
-          found |= HasNativeConsumedCallable(call->getDirectCallee());
+          found |= HasNativeConsumedCallable(call->getDirectCallee()) ||
+                   clang::hasObjC3CFResultOwnership(call->getDirectCallee());
         if (const auto *message = llvm::dyn_cast<clang::ObjCMessageExpr>(source))
-          found |= HasNativeConsumedCallable(message->getMethodDecl());
+          found |= HasNativeConsumedCallable(message->getMethodDecl()) ||
+                   clang::hasObjC3CFResultOwnership(message->getMethodDecl());
       }
       bool VisitCoawaitExpr(clang::CoawaitExpr *await) override {
         NoteSource(clang::getObjC3AwaitSourceExpression(await));

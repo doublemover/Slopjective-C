@@ -264,3 +264,32 @@ extern "C" int hop_mrc_ordinary_roundtrip(int kind, objc3_executor_t *caller)
   assert(objc3_executor_is_current(caller));
   return 42;
 }
+
+#if __has_feature(objc_arc)
+#define RelatedInitialization RelatedARCInitialization
+#define relatedInit initARCFrame
+#define hop_mrc_initializer_task_roundtrip hop_arc_initializer_task_roundtrip
+#else
+#define relatedInit initFrame
+#endif
+@interface HopObject (RelatedInitialization)
+- (instancetype)relatedInit:(int)kind __objc3_async_frame
+    __attribute__((nothrow, objc_executor(main)));
+@end
+static int related_initializer_task(__attribute__((ns_consumed)) HopObject *receiver, int kind)
+    noexcept __objc3_async __attribute__((objc_executor(main)));
+static int related_initializer_task(__attribute__((ns_consumed)) HopObject *receiver, int kind)
+    noexcept __objc3_async {
+  if (kind == 4) {
+    auto unused = __objc3_async_related_frame<HopObject *, id>([receiver relatedInit:0]);
+    (void)unused;
+    return 42;
+  }
+  auto value = __objc3_await [receiver relatedInit:kind];
+  static_assert(__is_same(__typeof__(*value), HopObject));
+  return value ? [value number] : 0;
+}
+extern "C" int hop_mrc_initializer_task_roundtrip(int kind, objc3_executor_t *caller)
+    __objc3_async_frame {
+  return __objc3_await related_initializer_task(hop_mrc_source(caller), kind);
+}

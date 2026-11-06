@@ -1039,6 +1039,24 @@ __objc3_async_task<T> __objc3_async_from_frame(objc3_async_frame frame) {
 
 
 #ifdef __OBJC__
+namespace objc3::task_detail {
+template<class To, class From>
+objc3::task<To> project_related_result(objc3::task<From> source) {
+  static_assert(__objc3_is_object_pointer(To) && __objc3_is_object_pointer(From));
+  co_return (To)(co_await std::move(source));
+}
+}
+// Sema establishes the receiver-dependent instancetype refinement. Adopt the
+// exact producer type first; the typed forwarding task publishes the refined
+// descriptor and owns its source through cancellation and unused destruction.
+template<class To, class From>
+__objc3_async_task<To> __objc3_async_related_frame(objc3_async_frame frame) {
+  return objc3::task_detail::project_related_result<To, From>(__objc3_async_from_frame<From>(frame));
+}
+#endif
+
+
+#ifdef __OBJC__
 template <class T>
 auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error) {
   return objc3::task_detail::checked_dependency<T>{std::move(dependency), error};
