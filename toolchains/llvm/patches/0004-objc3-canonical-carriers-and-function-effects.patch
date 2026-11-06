@@ -43168,10 +43168,10 @@ index 000000000..2339fb7e5
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Borrowed.cpp b/clang/lib/Sema/SemaObjC3Borrowed.cpp
 new file mode 100644
-index 000000000..4f91f5c61
+index 000000000..7db283ee6
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Borrowed.cpp
-@@ -0,0 +1,3848 @@
+@@ -0,0 +1,3940 @@
 +//===--- SemaObjC3Borrowed.cpp - Borrowed pointer semantic checking --------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "SemaObjC3Borrowed.h"
@@ -43733,8 +43733,9 @@ index 000000000..4f91f5c61
 +        return referent(Offset->getRHS(), State, Depth + 1);
 +    }
 +    if (const auto *Call = dyn_cast<CallExpr>(E))
-+      if (Call->getType()->isPointerType() && fillingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
-+        return directFillDestination(Call->getArg(0));
++      if (Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++        return State ? singleMemoryTarget(Call->getArg(0), *State)
++                     : directFillDestination(Call->getArg(0));
 +    Storage Source = storage(E, State);
 +    if (E->getType()->isArrayType() && Source.first)
 +      return indexedStorage(Source, 0);
@@ -44457,6 +44458,17 @@ index 000000000..4f91f5c61
 +    }
 +    return Result;
 +  }
++  Storage addressExposure(Storage Target) const {
++    // A pointer to an array element can reach its siblings by valid pointer
++    // arithmetic. Exposing that address exposes the whole containing array,
++    // while loading an element's stored pointer still reads only that slot.
++    if (Target.Index >= 0 || Target.Index == -2) {
++      Storage Parent = parentStorage(Target);
++      QualType Type = storageType(Parent);
++      if (!Type.isNull() && Type->isArrayType()) return Parent;
++    }
++    return Target;
++  }
 +  Value exposedEffects(const Value &Targets, const Facts &State) const {
 +    Value Result = empty(), Pending = Targets, Seen(Slots.size());
 +    while (Pending.any()) {
@@ -44464,7 +44476,7 @@ index 000000000..4f91f5c61
 +      Pending.reset(Index);
 +      if (Seen.test(Index)) continue;
 +      Seen.set(Index);
-+      Storage Location = location(Index);
++      Storage Location = addressExposure(location(Index));
 +      Result |= contents(Location, storageType(Location), State, true);
 +      Pending |= storageTargets(Location, storageType(Location), State);
 +      Pending.reset(Seen);
@@ -44679,7 +44691,7 @@ index 000000000..4f91f5c61
 +      if (Index < 0)
 +        break;
 +      Seen.set(Index);
-+      Storage Location = location(Index);
++      Storage Location = addressExposure(location(Index));
 +      Result |= contents(Location, storageType(Location), State);
 +      Pending |= storageTargets(Location, storageType(Location), State);
 +    }
@@ -44745,6 +44757,9 @@ index 000000000..4f91f5c61
 +        return Targets;
 +      }
 +    }
++    if (const auto *Call = dyn_cast<CallExpr>(E);
++        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++      return memoryTargets(Call->getArg(0), State);
 +    Storage Target = referent(E, &State);
 +    if (auto Found = Slots.find(Target); Found != Slots.end()) {
 +      Targets.set(Found->second);
@@ -44768,6 +44783,17 @@ index 000000000..4f91f5c61
 +      case CK_NoOp: case CK_LValueToRValue: case CK_ArrayToPointerDecay:
 +      case CK_DerivedToBase: case CK_UncheckedDerivedToBase:
 +        return closedTargets(Cast->getSubExpr(), State, Depth + 1);
++      case CK_BitCast: {
++        const auto *Pointer = Cast->getType()->getAs<PointerType>();
++        if (!Pointer || !Cast->getSubExpr()->getType()->isPointerType() ||
++            !closedTargets(Cast->getSubExpr(), State, Depth + 1)) return false;
++        Value Targets = possibleTargets(Cast->getSubExpr(), State);
++        for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++          QualType Type = storageType(location(I));
++          if (Type.isNull() || !Context.hasSameType(Type, Pointer->getPointeeType())) return false;
++        }
++        return Targets.any();
++      }
 +      default: return false;
 +      }
 +    }
@@ -44804,6 +44830,9 @@ index 000000000..4f91f5c61
 +      return Target.first && Target.first->hasLocalStorage() &&
 +             Slots.count(Target) && !hasUnknownIndex(Target);
 +    }
++    if (const auto *Call = dyn_cast<CallExpr>(E);
++        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++      return completeMemoryTargets(Call->getArg(0), State);
 +    Storage Source = storage(E, &State);
 +    if (E->getType()->isArrayType())
 +      return Source.first && Source.first->hasLocalStorage() &&
@@ -45074,16 +45103,9 @@ index 000000000..4f91f5c61
 +    }
 +    if (Acquisitions.count(E))
 +      return acquired(E, State);
-+    if (const auto *Call = dyn_cast<CallExpr>(E))
-+      if (fillingBuiltin(Call->getDirectCallee()) && Call->getNumArgs() && Call->getType()->isPointerType())
-+        return directFillDestination(Call->getArg(0)).first ? empty() : value(Call->getArg(0), State);
-+    if (const auto *Call = dyn_cast<CallExpr>(E))
-+      if (copyingBuiltin(Call->getDirectCallee()) && Call->getNumArgs()) {
-+        StringRef Name = Call->getDirectCallee()->getName();
-+        Name.consume_front("__builtin_");
-+        if (Name == "memcpy" || Name == "memmove")
-+          return value(Call->getArg(0), State);
-+      }
++    if (const auto *Call = dyn_cast<CallExpr>(E);
++        Call && Call->getType()->isPointerType() && memoryWritingBuiltin(Call->getDirectCallee()) && Call->getNumArgs())
++      return memoryWriteResult(Call, State);
 +    Storage Resolved = storage(E, &State);
 +    if (Slots.count(Resolved) ||
 +        (Resolved.first && Resolved.Index >= 0 &&
@@ -45468,11 +45490,11 @@ index 000000000..4f91f5c61
 +          Targets.reset(); Targets.set(Found->second);
 +          Complete = !hasUnknownIndex(Target);
 +        }
-+      if (Targets.any() && !hasUnknownIndex(Destination) &&
++      if (Complete && Targets.any() && !hasUnknownIndex(Destination) &&
 +          !isObjC3BorrowedType(Context, Type))
 +        V = empty();
 +      Value Effects = effects(Initializer, State);
-+      if (Targets.any() && !isObjC3BorrowedType(Context, Type)) Effects = empty();
++      if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Type)) Effects = empty();
 +      store(Operation, Destination, V, State, Emit, false, &Effects);
 +      setTargetFacts(Destination, Target, Targets, Complete, State);
 +      return;
@@ -45633,102 +45655,170 @@ index 000000000..4f91f5c61
 +    return Name == "memset" || Name == "memset_inline" ||
 +           Name == "__memset_chk" || Name == "bzero";
 +  }
++  const Expr *memoryPointerArgument(const Expr *Expression) const {
++    Expression = Expression->IgnoreParens();
++    // Strip only the builtin signature's conversion to (const) void*. User
++    // casts and byte-scaled arithmetic must not acquire a typed target proof.
++    if (const auto *Cast = dyn_cast<ImplicitCastExpr>(Expression);
++        Cast && Cast->getCastKind() == CK_BitCast &&
++        Cast->getType()->isVoidPointerType() && Cast->getSubExpr()->getType()->isPointerType())
++      return Cast->getSubExpr();
++    return Expression;
++  }
++  Value memoryTargets(const Expr *Pointer, const Facts &State) const {
++    return possibleTargets(memoryPointerArgument(Pointer), State);
++  }
++  bool completeMemoryTargets(const Expr *Pointer, const Facts &State) const {
++    return closedTargets(memoryPointerArgument(Pointer), State);
++  }
++  Storage singleMemoryTarget(const Expr *Pointer, const Facts &State) const {
++    if (!completeMemoryTargets(Pointer, State)) return {};
++    Value Targets = memoryTargets(Pointer, State);
++    return Targets.count() == 1 ? location(Targets.find_first()) : Storage{};
++  }
++  bool memoryObjectSize(Storage Location, uint64_t Bytes) const {
++    QualType Type = storageType(Location);
++    return !Type.isNull() && !Type->isIncompleteType() && !Type->isVariablyModifiedType() &&
++           Bytes == uint64_t(Context.getTypeSizeInChars(Type).getQuantity());
++  }
++  Storage memoryObject(Storage Location, uint64_t Bytes) const {
++    if (Location.Index == 0) {
++      Storage Array = Location;Array.Index = -1;
++      QualType Type = storageType(Array);
++      if (!Type.isNull() && Type->isArrayType() && memoryObjectSize(Array, Bytes)) return Array;
++    }
++    return Location;
++  }
++  void invalidateMemoryOwner(Storage Destination, Facts &State,
++                             const Value *Replacement = nullptr, bool Unowned = true) const {
++    if (path(Destination) || !OwnerRoots.count(Destination.first)) return;
++    auto Slot = Slots.find({Destination.first, nullptr});
++    if (Slot == Slots.end()) return;
++    if (!Replacement || Replacement->none() || *Replacement != State.OwnerIdentities[Slot->second])
++      expire(Destination.first, State);
++    if (Replacement) State.OwnerIdentities[Slot->second] = *Replacement;
++    if (Unowned) State.UnownedOwners.set(Slot->second);
++    else State.UnownedOwners.reset(Slot->second);
++  }
 +  void fillRepresentation(const CallExpr *Call, Facts &State, bool Emit) {
 +    StringRef Name = Call->getDirectCallee()->getName();Name.consume_front("__builtin_");
 +    unsigned AmountIndex = Name == "bzero" ? 1 : 2;
 +    if (Call->getNumArgs() <= AmountIndex) return;
 +    auto Amount = Call->getArg(AmountIndex)->getIntegerConstantExpr(Context);
-+    if (!Amount || Amount->isNegative() || Amount->getActiveBits() > 64 || Amount->isZero()) return;
-+    Storage Destination = directFillDestination(Call->getArg(0));
-+    if (!Destination.first || hasUnknownIndex(Destination)) return;
-+    auto HasExactSize = [&](Storage Location) {
-+      QualType Type = storageType(Location);
-+      return !Type.isNull() && !Type->isIncompleteType() && !Type->isVariablyModifiedType() &&
-+          Amount->getZExtValue() == uint64_t(Context.getTypeSizeInChars(Type).getQuantity());
-+    };
-+    // Array decay and &array[0] can denote the complete array, including a
-+    // nested array field. Other element addresses clear only that element.
-+    if (Destination.Index == 0) {
-+      Storage Array = Destination;Array.Index = -1;
-+      QualType Type = storageType(Array);
-+      if (!Type.isNull() && Type->isArrayType() && HasExactSize(Array)) Destination = Array;
++    if (Amount && Amount->isZero()) return;
++    Value Targets = memoryTargets(Call->getArg(0), State);
++    const bool Complete = completeMemoryTargets(Call->getArg(0), State);
++    const bool KnownSize = Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64;
++    Facts Joined;bool First = true;
++    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++      Facts Branch = State;
++      Storage Destination = location(I);
++      if (!Complete) Destination = {Destination.first, nullptr};
++      if (KnownSize) Destination = memoryObject(Destination, Amount->getZExtValue());
++      const bool Whole = Complete && KnownSize && !hasUnknownIndex(Destination) &&
++                         memoryObjectSize(Destination, Amount->getZExtValue());
++      Storage Affected = Whole ? Destination : Storage{Destination.first, nullptr};
++      invalidateTargetProofs(Affected, Branch);
++      // A partial or uncertain write destroys address proofs, but cannot erase
++      // untouched bytes, stored loans or callable effects. Broadening its
++      // invalidation never turns a suffix write into a complete-root overwrite.
++      if (Whole) {
++        Value Cleared = empty();
++        for (auto [Location, Index] : Slots) {
++          if (Location.first != Destination.first) continue;
++          unsigned Current = path(Location), Prefix = path(Destination);
++          while (Current && Current != Prefix) Current = Paths[Current].Parent;
++          if (Current != Prefix) continue;
++          store(Call, Location, Cleared, Branch, Emit, true, &Cleared);
++          Branch.LocalTargets[Index] = {};Branch.MayTargets[Index].reset();
++          Branch.ClosedTargets[Index] = !hasUnknownIndex(Location);
++        }
++      }
++      invalidateMemoryOwner(Affected, Branch);
++      if (First) {Joined = std::move(Branch);First = false;} else join(Joined, Branch);
 +    }
-+    if (!HasExactSize(Destination)) return;
-+    Value Cleared = empty();
-+    for (const auto &[Location, Index] : Slots) {
-+      if (Location.first != Destination.first) continue;
-+      unsigned Current = path(Location), Prefix = path(Destination);
-+      while (Current && Current != Prefix) Current = Paths[Current].Parent;
-+      // A wildcard array summary also describes untouched siblings. Only an
-+      // exact path prefix can justify discarding its provenance.
-+      if (Current != Prefix) continue;
-+      store(Call, Location, Cleared, State, Emit, true, &Cleared);
-+      State.LocalTargets[Index] = {};State.MayTargets[Index].reset();
-+              State.ClosedTargets[Index] = !hasUnknownIndex(Location);
-+    }
-+    if (!path(Destination) && OwnerRoots.count(Destination.first)) {
-+      if (IsOwnerSummary && SummaryCaptures.count(Destination.first))
-+        ConsumedOwnerRoots.insert(Destination.first);
-+      expire(Destination.first, State);
-+      State.UnownedOwners.set(Slots.lookup({Destination.first, nullptr}));
++    // Open alternatives include memory outside the known set. Preserve that
++    // branch instead of clearing every local represented in a partial may set.
++    if (!First) {
++      if (!Complete) join(Joined, State);
++      State = std::move(Joined);
 +    }
 +  }
-+  Storage pointedStorage(const Expr *Pointer, const Facts &State) const {
-+    return referent(Pointer, &State);
++  Value memoryWriteResult(const CallExpr *Call, const Facts &State) const {
++    Value Targets = memoryTargets(Call->getArg(0), State), Result = empty();
++    const bool Complete = completeMemoryTargets(Call->getArg(0), State);
++    for (int I = Targets.find_first(); I >= 0; I = Targets.find_next(I)) {
++      Storage Target = location(I);
++      if (!Complete) Target = {Target.first, nullptr};
++      Result |= exposedValue(Target, State);
++    }
++    if (!Complete || Targets.none()) Result |= value(Call->getArg(0), State);
++    return Result;
++  }
++  bool memoryWritingBuiltin(const FunctionDecl *Function) const {
++    if (fillingBuiltin(Function)) return true;
++    if (!copyingBuiltin(Function)) return false;
++    StringRef Name = Function->getName();Name.consume_front("__builtin_");
++    return Name == "memcpy" || Name == "memmove" || Name == "memcpy_inline" ||
++           Name == "__memcpy_chk" || Name == "__memmove_chk";
 +  }
 +  void copyRepresentation(const CallExpr *Call, Facts &State, bool Emit) {
-+    Storage Source = pointedStorage(Call->getArg(1), State);
-+    Storage Destination = pointedStorage(Call->getArg(0), State);
 +    auto Amount = Call->getArg(2)->getIntegerConstantExpr(Context);
-+    if (Amount && Amount->isZero())
-+      return; // No pointer representation is exposed by a zero-byte copy.
-+    Value Payload = exposedValue(Source, State);
-+    Value EffectPayload = contents(Source, storageType(Source), State, true);
-+    if (!Source.first) {
-+      // Copying characters from the borrowed region is owned data. The
-+      // pointer itself is checked independently as an ordinary noescape arg.
-+      return;
++    if (Amount && Amount->isZero()) return;
++    Value Sources = memoryTargets(Call->getArg(1), State);
++    Value Destinations = memoryTargets(Call->getArg(0), State);
++    const bool SourceComplete = completeMemoryTargets(Call->getArg(1), State);
++    const bool DestinationComplete = completeMemoryTargets(Call->getArg(0), State);
++    const bool KnownSize = Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64;
++    Value Payload = empty(), EffectPayload = empty(), Aliases(Slots.size());
++    for (int I = Sources.find_first(); I >= 0; I = Sources.find_next(I)) {
++      Storage Source = location(I);
++      if (SourceComplete && KnownSize) Source = memoryObject(Source, Amount->getZExtValue());
++      if (!SourceComplete || !KnownSize || !memoryObjectSize(Source, Amount->getZExtValue()))
++        Source = {Source.first, nullptr};
++      Payload |= exposedValue(Source, State);
++      EffectPayload |= contents(Source, storageType(Source), State, true);
++      Aliases |= storageTargets(Source, storageType(Source), State);
 +    }
-+    bool Whole = Destination.first && !Source.second && !Destination.second &&
-+                 !Source.Parent && !Destination.Parent &&
-+                 (Source.Index == -1 || Source.Index == 0) &&
-+                 (Destination.Index == -1 || Destination.Index == 0) &&
-+                 Context.hasSameType(Source.first->getType(),
-+                                     Destination.first->getType()) &&
-+                 Amount && !Amount->isNegative() && Amount->getActiveBits() <= 64 &&
-+                 !Source.first->getType()->isIncompleteType() &&
-+                 !Source.first->getType()->isVariableArrayType() &&
-+                 Amount->getZExtValue() == static_cast<uint64_t>(
-+                     Context.getTypeSizeInChars(Source.first->getType()).getQuantity());
-+    if (Whole) {
-+      // Diagnose exposed address payloads even if their direct slot is empty.
-+      if (Emit && Payload.any() && !Destination.first->hasLocalStorage())
-+        diagnose(Call, "global/static/thread-local storage through a representation copy");
-+      copyStorageShape(Call, {Destination.first, nullptr}, {Source.first, nullptr},
-+                       State, Emit);
-+      return;
-+    }
-+    // Unknown/partial copies weakly update local contents. Retaining previous
-+    // facts avoids claiming that untouched pointer fields were overwritten.
-+    if (auto Existing = Slots.find(Destination); Existing != Slots.end()) {
-+      Payload |= State.Values[Existing->second];
-+      EffectPayload |= State.Effects[Existing->second];
-+    }
-+    if (Payload.any() || EffectPayload.any()) {
-+      store(Call, Destination, Payload, State, Emit, false, &EffectPayload);
-+      QualType DestinationType = storageType(Destination);
-+      if (!DestinationType.isNull() &&
-+          (DestinationType->isRecordType() || DestinationType->isArrayType()))
-+        for (auto [Location, Index] : Slots)
-+          if (within(Location, Destination)) {
-+            QualType Leaf = storageType(Location);
-+            if (!Leaf.isNull() && !Leaf->isRecordType() && !Leaf->isArrayType()) {
-+              Value Contents = State.Values[Index];
-+              Contents |= Payload;
-+              Value Effects = State.Effects[Index]; Effects |= EffectPayload;
-+              store(Call, Location, Contents, State, Emit, false, &Effects);
-+            }
++    // Reading characters from an untracked borrowed region copies owned data;
++    // only known stored pointer/callable representations supply payload facts.
++    if (SourceComplete && DestinationComplete && Sources.count() == 1 &&
++        Destinations.count() == 1 && KnownSize) {
++      const uint64_t Bytes = Amount->getZExtValue();
++      Storage Source = memoryObject(location(Sources.find_first()), Bytes);
++      Storage Destination = memoryObject(location(Destinations.find_first()), Bytes);
++      if (memoryObjectSize(Source, Bytes) && memoryObjectSize(Destination, Bytes) &&
++          Context.hasSameType(storageType(Source), storageType(Destination))) {
++        if (StorageInfo::isEqual(Source, Destination)) return;
++        Value Owners(OwnerRoots.size());bool Unowned = true;
++        if (!path(Source))
++          if (auto Slot = Slots.find({Source.first, nullptr}); Slot != Slots.end()) {
++            Owners = State.OwnerIdentities[Slot->second];
++            Unowned = State.UnownedOwners.test(Slot->second);
 +          }
++        invalidateMemoryOwner(Destination, State, &Owners, Unowned);
++        copyStorageShape(Call, Destination, Source, State, Emit);
++        return;
++      }
++    }
++    if (!DestinationComplete && Payload.any() && Emit)
++      diagnose(Call, "heap, ivar, property, or indirect storage through a representation copy");
++    for (int I = Destinations.find_first(); I >= 0; I = Destinations.find_next(I)) {
++      Storage Destination = location(I);
++      if (DestinationComplete && KnownSize) Destination = memoryObject(Destination, Amount->getZExtValue());
++      if (!DestinationComplete || !KnownSize || !memoryObjectSize(Destination, Amount->getZExtValue()))
++        Destination = {Destination.first, nullptr};
++      invalidateTargetProofs(Destination, State);
++      invalidateMemoryOwner(Destination, State);
++      // Partial/multiple copies preserve old contents and conservatively expose
++      // each possible source through every possibly overwritten scalar leaf.
++      for (auto [Location, Index] : Slots) {
++        if (!within(Location, Destination)) continue;
++        Value Contents = State.Values[Index];Contents |= Payload;
++        Value Effects = State.Effects[Index];Effects |= EffectPayload;
++        store(Call, Location, Contents, State, Emit, false, &Effects);
++        State.MayTargets[Index] |= Aliases;
++      }
 +    }
 +  }
 +  bool copyingBuiltin(const FunctionDecl *Function) const {
@@ -45736,7 +45826,8 @@ index 000000000..4f91f5c61
 +      return false;
 +    StringRef Name = Function->getName();
 +    Name.consume_front("__builtin_");
-+    return Name == "memcpy" || Name == "memmove" || Name == "memcmp" ||
++    return Name == "memcpy" || Name == "memmove" || Name == "memcpy_inline" ||
++           Name == "__memcpy_chk" || Name == "__memmove_chk" || Name == "memcmp" ||
 +           Name == "bcmp" || Name == "strlen" || Name == "strnlen";
 +  }
 +  ArrayRef<ParmVarDecl *> formalParameters(const Decl *Callee) const {
@@ -45996,7 +46087,7 @@ index 000000000..4f91f5c61
 +          Value Targets = possibleTargets(Assignment->getRHS(), State);
 +          const bool Complete = closedTargets(Assignment->getRHS(), State);
 +          const bool HasTargets = Targets.any();
-+          if (Targets.any() && Target.first && Target.first->hasLocalStorage() &&
++          if (Complete && Targets.any() && Target.first && Target.first->hasLocalStorage() &&
 +              !hasUnknownIndex(Target) &&
 +              !isObjC3BorrowedType(Context, Assignment->getLHS()->getType()))
 +            V = empty();
@@ -46014,7 +46105,7 @@ index 000000000..4f91f5c61
 +          }
 +          setTargetFacts(Target, Address, Targets, Complete, State);
 +          Value Effects = effects(Assignment->getRHS(), State);
-+          if (HasTargets && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
++          if (Complete && HasTargets && !isObjC3BorrowedType(Context, Assignment->getLHS()->getType())) Effects = empty();
 +          store(Assignment, Target, V, State, Emit, false, &Effects);
 +          if (Target.first && Slots.count(Target) &&
 +              (Assignment->getLHS()->getType()->isRecordType() ||
@@ -46036,7 +46127,7 @@ index 000000000..4f91f5c61
 +      if (copyingBuiltin(Function) && Count >= 3) {
 +        StringRef Name = Function->getName();
 +        Name.consume_front("__builtin_");
-+        if (Name == "memcpy" || Name == "memmove") {
++        if (memoryWritingBuiltin(Function)) {
 +          copyRepresentation(Call, State, Emit);
 +        }
 +      }
@@ -46088,7 +46179,7 @@ index 000000000..4f91f5c61
 +        const Expr *Argument = argument(Invocation, I);
 +        Value V = value(Argument, State);
 +        if (I == 0 && fillingBuiltin(dyn_cast_or_null<FunctionDecl>(callee(Invocation))) &&
-+            directFillDestination(Argument).first) V = empty();
++            completeMemoryTargets(Argument, State) && memoryTargets(Argument, State).any()) V = empty();
 +        unsigned FormalIndex = formalIndex(Invocation, I);
 +        auto Formals = formalParameters(callee(Invocation));
 +        if ((FormalIndex < Formals.size() &&
@@ -46239,15 +46330,16 @@ index 000000000..4f91f5c61
 +          Value Owner = ownerIdentity(Expression, State);
 +          Storage Target = referent(Expression, &State);
 +          Value Targets = possibleTargets(Expression, State);
-+          if (Targets.any() && !isObjC3BorrowedType(Context, Expression->getType()))
++          const bool Complete = closedTargets(Expression, State);
++          if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Expression->getType()))
 +            V = empty();
 +          Value Effects = effects(Expression, State);
-+          if (Targets.any() && !isObjC3BorrowedType(Context, Expression->getType())) Effects = empty();
++          if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Expression->getType())) Effects = empty();
 +          State.EvaluatedEffects[Slot] = std::move(Effects);
 +          State.EvaluatedValues[Slot] = std::move(V);
 +          State.EvaluatedOwners[Slot] = std::move(Owner);
 +          State.EvaluatedTargets[Slot] = Target;
-+          State.EvaluatedClosedTargets[Slot] = closedTargets(Expression, State);
++          State.EvaluatedClosedTargets[Slot] = Complete;
 +          State.EvaluatedMayTargets[Slot] = std::move(Targets);
 +          State.EvaluatedReady.set(Slot);
 +        }
@@ -46285,11 +46377,11 @@ index 000000000..4f91f5c61
 +                Targets.reset();Targets.set(Found->second);
 +                Complete = !hasUnknownIndex(Target);
 +              }
-+            if (Targets.any() && Variable->hasLocalStorage() &&
++            if (Complete && Targets.any() && Variable->hasLocalStorage() &&
 +                !isObjC3BorrowedType(Context, Variable->getType()))
 +              V = empty(); // Its address exposes the pointee's current facts.
 +            Value Effects = effects(Variable->getInit(), State);
-+            if (Targets.any() && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
++            if (Complete && Targets.any() && !isObjC3BorrowedType(Context, Variable->getType())) Effects = empty();
 +            store(Node, {Variable, nullptr}, V, State, Emit, false, &Effects);
 +            setTargetFacts({Variable, nullptr}, Target, Targets, Complete, State);
 +            State.OwnerIdentities[Slots.lookup({Variable, nullptr})] = std::move(Owner);
@@ -56552,3 +56644,227 @@ index 000000000..0d3c1c35b
 +// CHECK-NOT: __objc3_await
 +// CHECK-LABEL: native_dependent(Work work)
 +// CHECK: __objc3_await work()
+diff --git a/clang/test/ObjC3/Sema/Inputs/borrowed-memory-aliases.h b/clang/test/ObjC3/Sema/Inputs/borrowed-memory-aliases.h
+new file mode 100644
+index 000000000..c22ac50e6
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/borrowed-memory-aliases.h
+@@ -0,0 +1,13 @@
++#ifndef OBJC3_MEMORY_ALIAS_INPUTS_H
++#define OBJC3_MEMORY_ALIAS_INPUTS_H
++typedef borrowed const char *MemoryBytes;
++MemoryBytes memory_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
++void memory_use(const char *pointer __attribute__((noescape)));
++void memory_escape(const char *pointer);
++void memory_escape_address(void *pointer);
++void memory_consume(void *owner __attribute__((cf_consumed)));
++struct MemoryHolder { const char *pointer; };
++struct MemoryPair { struct MemoryHolder first, second; };
++struct MemoryAlias { const char **cursor; };
++struct MemoryCallback { void (^__unsafe_unretained work)(void); };
++#endif
+diff --git a/clang/test/ObjC3/Sema/borrowed-memory-aliases.m b/clang/test/ObjC3/Sema/borrowed-memory-aliases.m
+new file mode 100644
+index 000000000..9233468fd
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/borrowed-memory-aliases.m
+@@ -0,0 +1,199 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c17-0.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c17-0.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c-header -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c17-1.pch
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c17-1.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++20-0.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++20-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++20-1.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-0.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -include-pch %t-c++23-0.pch -DFROM_PCH -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++-header -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -emit-pch %S/Inputs/borrowed-memory-aliases.h -o %t-c++23-1.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc3-profile=strict-system -fobjc-arc -include-pch %t-c++23-1.pch -DFROM_PCH -fsyntax-only -verify %s
++#ifndef FROM_PCH
++#include "Inputs/borrowed-memory-aliases.h"
++#endif
++void typed_fill_alias(void *owner) {
++  struct MemoryHolder holder = {memory_bytes(owner)};
++  struct MemoryHolder *target = &holder;
++  __builtin_memset(target, 0, sizeof holder);
++  memory_escape(holder.pointer);
++}
++void typed_bzero_alias(void *owner) {
++  const char *pointer = memory_bytes(owner);
++  const char **target = &pointer;
++  __builtin_bzero(target, sizeof pointer);
++  memory_escape(pointer);
++}
++void typed_checked_fill_alias(void *owner) {
++  struct MemoryHolder holder = {memory_bytes(owner)};
++  struct MemoryHolder *target = &holder;
++  __builtin___memset_chk(target, 0, sizeof holder, sizeof holder);
++  memory_escape(holder.pointer);
++}
++void nested_copy_clears_selected_field(void *owner) {
++  struct MemoryPair pair = {{memory_bytes(owner)}, {memory_bytes(owner)}};
++  struct MemoryHolder empty = {0};
++  struct MemoryHolder *target = &pair.first;
++  __builtin_memcpy(target, &empty, sizeof empty);
++  memory_escape(pair.first.pointer);
++  memory_escape(pair.second.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void nested_copy_propagates(void *owner) {
++  struct MemoryPair source = {{0}, {memory_bytes(owner)}}, target = {{0}, {0}};
++  __builtin_memmove(&target.first, &source.second, sizeof target.first);
++  memory_escape(target.first.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(target.second.pointer);
++}
++void conditional_source(void *owner, int choose) {
++  struct MemoryHolder one = {0}, two = {memory_bytes(owner)}, target = {0};
++  __builtin_memcpy(&target, choose ? &one : &two, sizeof target);
++  memory_escape(target.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void partial_source_set(void *owner, int choose, struct MemoryHolder *external) {
++  struct MemoryHolder source = {memory_bytes(owner)}, target = {0};
++  __builtin_memcpy(&target, choose ? &source : external, sizeof target);
++  memory_escape(target.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void open_destination(void *owner, int choose, struct MemoryHolder *external) {
++  struct MemoryHolder source = {memory_bytes(owner)}, target = {0};
++  __builtin_memcpy(choose ? &target : external, &source, sizeof source); // expected-error {{indirect storage through a representation copy}}
++}
++void character_copy_remains_owned(void *owner) {
++  char target[4];
++  __builtin_memcpy(target, memory_bytes(owner), sizeof target);
++  memory_escape(target);
++}
++void returned_copy_destination(void *owner) {
++  struct MemoryHolder source = {memory_bytes(owner)}, target = {0};
++  struct MemoryHolder *result = (struct MemoryHolder *)__builtin_memcpy(&target, &source, sizeof target);
++  memory_escape(result->pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape_address(result); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void returned_partial_fill_destination(void *owner) {
++  struct MemoryHolder target = {memory_bytes(owner)};
++  struct MemoryHolder *result = (struct MemoryHolder *)__builtin_memset(&target, 0, 1);
++  memory_escape(result->pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void returned_complete_fill_destination(void *owner) {
++  struct MemoryHolder target = {memory_bytes(owner)};
++  struct MemoryHolder *result = (struct MemoryHolder *)__builtin_memset(&target, 0, sizeof target);
++  memory_escape(result->pointer);
++  memory_escape_address(result);
++}
++void returned_destination_typed_write(void *owner) {
++  const char *target = 0;
++  const char **result = (const char **)__builtin_memset(&target, 0, sizeof target);
++  *result = memory_bytes(owner);
++  memory_escape(target); // expected-error {{argument without a non-escaping lifetime contract}}
++  *result = 0;
++  memory_escape(target);
++}
++void later_array_element_address_escape(void *owner) {
++  const char *array[2] = {0, memory_bytes(owner)};
++  memory_escape_address(&array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[0]);
++}
++void later_array_element_copy(void *owner) {
++  const char *source[2] = {0, memory_bytes(owner)}, *target[2] = {0, 0};
++  __builtin_memcpy(target, source, sizeof target);
++  memory_escape(target[0]);
++  memory_escape(target[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape_address(target); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void conditional_array_source(void *owner, int choose) {
++  const char *one[2] = {0, 0}, *two[2] = {0, memory_bytes(owner)}, *target[2] = {0, 0};
++  __builtin_memcpy(target, choose ? one : two, sizeof target);
++  memory_escape(target[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void mixed_pointer_initialization(void *owner, int choose) {
++  const char owned[2] = {0, 0};
++  const char *pointer = choose ? owned : memory_bytes(owner);
++  memory_escape(pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void mixed_pointer_assignment(void *owner, int choose) {
++  const char owned[2] = {0, 0};
++  const char *pointer = 0;
++  pointer = choose ? owned : memory_bytes(owner);
++  memory_escape(pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void mixed_pointer_aggregate(void *owner, int choose) {
++  const char owned[2] = {0, 0};
++  struct MemoryHolder holder = {choose ? owned : memory_bytes(owner)};
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void copied_pointer_alias(void *owner) {
++  const char *target = 0;
++  const char **source = &target, **copy = 0;
++  __builtin_memcpy(&copy, &source, sizeof copy);
++  *copy = memory_bytes(owner);
++  memory_escape(target); // expected-error {{argument without a non-escaping lifetime contract}}
++  *copy = 0;
++  memory_escape(target);
++}
++void partial_fill_invalidates_pointer_alias(void *owner) {
++  const char *target = 0;
++  const char **cursor = &target;
++  __builtin_memset(&cursor, 0, 1);
++  *cursor = memory_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void unknown_copy_invalidates_pointer_alias(void *owner, void *source, __SIZE_TYPE__ count) {
++  const char *target = 0;
++  const char **cursor = &target;
++  __builtin_memcpy(&cursor, source, count);
++  *cursor = memory_bytes(owner); // expected-error {{heap, ivar, property, or indirect storage}}
++}
++void byte_scaled_cast_does_not_clear_siblings(void *owner) {
++  const char *array[2] = {memory_bytes(owner), memory_bytes(owner)};
++  __builtin_memset((char *)array + 1, 0, sizeof array[0]);
++  memory_escape(array[0]); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(array[1]); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void copied_owner_replacement(void *owner, void *replacement) {
++  const char *loan = memory_bytes(owner);
++  __builtin_memcpy(&owner, &replacement, sizeof owner);
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void partial_owner_overwrite(void *owner) {
++  const char *loan = memory_bytes(owner);
++  __builtin_memset(&owner, 0, 1);
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void self_copy_preserves_loan(void *owner) {
++  struct MemoryHolder holder = {memory_bytes(owner)};
++  __builtin_memmove(&holder, &holder, sizeof holder);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void zero_copy_preserves_loan(void *owner) {
++  struct MemoryHolder holder = {memory_bytes(owner)}, empty = {0};
++  __builtin_memcpy(&holder, &empty, 0);
++  memory_escape(holder.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void checked_and_inline_copies(void *owner) {
++  struct MemoryHolder source = {memory_bytes(owner)}, one = {0}, two = {0}, three = {0};
++  __builtin___memcpy_chk(&one, &source, sizeof one, sizeof one);
++  __builtin___memmove_chk(&two, &source, sizeof two, sizeof two);
++  __builtin_memcpy_inline(&three, &source, sizeof three);
++  memory_escape(one.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(two.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++  memory_escape(three.pointer); // expected-error {{argument without a non-escaping lifetime contract}}
++}
++void copied_callback_effect(void *owner, int choose) {
++  const char *loan = memory_bytes(owner);
++  struct MemoryCallback source = {^{memory_consume(owner);}}, empty = {0}, target = {0};
++  __builtin_memcpy(&target, choose ? &source : &empty, sizeof target);
++  target.work();
++  memory_use(loan); // expected-error {{after its owner lifetime ended}}
++}
++void copying_callback_does_not_invoke(void *owner) {
++  const char *loan = memory_bytes(owner);
++  struct MemoryCallback source = {^{memory_consume(owner);}}, target = {0};
++  __builtin_memcpy(&target, &source, sizeof target);
++  memory_use(loan);
++}

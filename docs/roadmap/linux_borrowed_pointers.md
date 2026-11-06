@@ -205,3 +205,9 @@ and member calls. Generic/automatic deduction, template specialization, native
 symbols, AST import, PCH and source-free metadata preserve the contract. Nineteen
 borrowed compiler regressions and three focused native AST identity tests pass;
 frontend/package consolidation and SDK delivery remain pending.
+
+The [System 2.21 memory-alias span](linux_borrowed_memory_aliases.md) extends
+builtin fills and copies to typed aliases, nested fields, conditional target sets
+and returned destination pointers. Partial writes invalidate target proofs,
+incomplete may sets retain loans in unknown alternatives, and addresses of array
+elements expose reachable siblings. All twenty-one borrowed native regressions pass.

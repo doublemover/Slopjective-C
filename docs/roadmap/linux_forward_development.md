@@ -16,6 +16,13 @@ and keypath 2.4, including the ten template-publication milestones below.
 Semantic interface schema **2.2** is a hard cutover; regenerate dependent
 objects, PCH, interfaces and packages.
 
+The [System 2.21 memory-alias span](linux_borrowed_memory_aliases.md) preserves
+loans and callable/address/owner facts through aliased fills and nested/conditional
+representation copies. Partial writes invalidate target proofs, incomplete local
+sets preserve unknown alternatives, and returned destinations expose updated
+storage. Eighteen new source/PCH commands and all twenty-one borrowed compiler
+regressions pass; frontend execution and coordinated SDK delivery remain pending.
+
 The current [System 2.19 callback-result span](linux_borrowed_callable_results.md)
 preserves borrowed result/owner contracts through indirect calls, automatic and
 template deduction, native type/symbol identity and AST/PCH/interface persistence.

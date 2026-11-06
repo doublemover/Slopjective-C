@@ -16,6 +16,7 @@ compiler campaigns remain selectable and are required for final acceptance.
 | Ownership/System   | Complete finite local pointer-target sets through aliases, copies and joins                                                 | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | Type-carried borrowed callback results/owner indices, deduction, native identity, PCH and published interfaces              | Source authored; focused source/PCH/native identity checks pass                              |
 | Ownership/System   | Borrowed results from proven immutable program storage, aliases, subobjects and constexpr calls                             | Source authored; eighteen source/PCH commands and all twenty borrowed regressions pass         |
+| Ownership/System   | Aliased memory fills/copies, conditional payloads, returned destinations and partial-write target invalidation              | Source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass |
 | Ownership/System   | Remaining indirect writes/aliases, mutable/reference/generic/lazy captures and exceptional cleanup                          | Open                                                                                         |
 | Ownership/System   | Explicit MRC/family retained claims and exact known consumption counts                                                      | Source authored; focused source/PCH diagnostics pass                                         |
 | Ownership/System   | MRC/foreign ownership effects and complete Strict System diagnostics                                                        | Open                                                                                         |
@@ -409,3 +410,15 @@ Eighteen new source/PCH commands and all twenty borrowed regressions pass.
 Frontend replay/consumer controls are authored and compile. Native dependent
 awaits also retain a distinct opaque marker so ordinary C++ dependent `co_await`
 keeps its spelling and publication contract through source/PCH.
+
+## Aliased memory operations and incomplete target sets
+
+The [System 2.21 span](linux_borrowed_memory_aliases.md) preserves loans, callable
+effects and pointer/owner identities through typed aliases, nested and conditional
+representation copies and returned destination pointers. Partial/open writes
+invalidate target proofs, incomplete target sets retain their unknown alternatives,
+and element addresses include reachable array siblings. Eighteen new source/PCH
+commands and all twenty-one borrowed native regressions pass. Frontend replay and
+consumer controls are authored and syntax-checked; execution and SDK consolidation
+remain pending. General byte offsets, union active members and interprocedural
+mutation remain open.

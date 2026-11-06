@@ -290,12 +290,13 @@
       "required_profile": "Strict System",
       "module_semver": {
         "major": 2,
-        "minor": 20,
+        "minor": 21,
         "patch": 0
       },
       "header": "include/objc3/system.h",
       "status": "partial",
       "implemented": [
+        "Aliased builtin fills and representation copies preserve nested/conditional payloads, callable effects, owner identities and returned destination pointers; partial/open writes invalidate target proofs, incomplete may sets retain nonlocal alternatives and array addresses expose reachable siblings (source authored; eighteen new source/PCH commands and all twenty-one borrowed regressions pass; frontend replay execution pending)",
         "Borrowed owner-contracted results from proven immutable program storage, with native constant evaluation, stable aliases/subobjects/constexpr calls, bounded pointer/conditional composition and conservative TLS/mutable/union/destruction rejection; public loan obligations remain intact (source authored; eighteen source/PCH commands and all twenty borrowed regressions pass; frontend replay consolidation pending)",
         "Type-carried borrowed callback results and owner indices through indirect function/Block/member calls, aliases, auto/templates, native type/ODR/USR/overload identity and AST/PCH/interface persistence (source authored; focused native source/PCH/identity checks pass; frontend consolidation pending)",
         "Explicit MRC and retainable-family claim lower bounds through known aliases and CFG joins, retained-result alias identity, exact consumed-parameter multiplicity and conservative callable/deferred effects (source authored; focused source/PCH diagnostics pass)",

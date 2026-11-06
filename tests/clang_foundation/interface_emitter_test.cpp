@@ -512,6 +512,67 @@ void TestNSObjectStorageCapability() {
   }
 }
 
+void TestBorrowedMemoryAliasReplay() {
+  for (const char *standard : {"c17", "c++20", "c++23"}) {
+    const bool cxx = std::string(standard) != "c17";
+    for (bool arc : {false, true}) {
+      std::vector<std::string> args={"-x",cxx?"objective-c++":"objective-c",
+          std::string("-std=")+standard,"-fobjc-version=3","-fobjc-runtime=gnustep-2.2",
+          "-fobjc3-profile=strict-system","--target=x86_64-unknown-linux-gnu"};
+      if (arc) args.push_back("-fobjc-arc");
+      auto parse=[&](const std::string &source,const char *file) {
+        return clang::tooling::buildASTFromCodeWithArgs(source,args,file);
+      };
+      auto emit=[&](const std::string &source,const char *file) {
+        auto ast=parse(source,file);assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+        assert(ApplyModuleOwnedNames(ast->getASTContext(),ast->getASTContext().getTranslationUnitDecl(),
+                                     "fixture.borrowed_memory_aliases","test",{}));
+        auto result=EmitSemanticInterface(ast->getASTContext(),"fixture.borrowed_memory_aliases","test");
+        assert(result.success);return result;
+      };
+      const std::string source=R"(
+        typedef borrowed const char *MemoryLoan;
+        MemoryLoan published_memory_bytes(void *owner) __attribute__((objc_returns_borrowed(owner_index=0)));
+        void published_memory_use(const char *pointer __attribute__((noescape)));
+        struct PublishedMemoryHolder {const char *pointer;};
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        inline MemoryLoan published_memory_copy(void *owner,int choose) {
+          struct PublishedMemoryHolder one={published_memory_bytes(owner)},two={0},target={0};
+          __builtin_memcpy(&target,choose?&one:&two,sizeof target);
+          return target.pointer;
+        }
+        inline const char *published_memory_clear(void *owner) {
+          struct PublishedMemoryHolder target={published_memory_bytes(owner)};
+          struct PublishedMemoryHolder *alias=&target;
+          __builtin_memset(alias,0,sizeof target);
+          return target.pointer;
+        }
+      )";
+      auto first=emit(source,"memory-alias-provider.m");
+      auto replay=emit(first.source_bytes,"memory-alias-replay.m");
+      assert(replay.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto relocated=emit("\n\n"+source,"relocated-memory-alias-provider.m");
+      assert(relocated.identity.semantic_fingerprint==first.identity.semantic_fingerprint);
+      auto changed=source;auto at=changed.find("__builtin_memcpy");assert(at!=std::string::npos);
+      changed.replace(at,std::string("__builtin_memcpy").size(),"__builtin_memmove");
+      assert(emit(changed,"changed-memory-alias-provider.m").identity.semantic_fingerprint!=first.identity.semantic_fingerprint);
+      auto valid=parse(first.source_bytes+R"(
+        __attribute__((objc_returns_borrowed(owner_index=0)))
+        MemoryLoan published_memory_forward(void *owner,int choose) {
+          published_memory_use(published_memory_copy(owner,choose));
+          published_memory_use(published_memory_clear(owner));
+          return published_memory_copy(owner,choose);
+        }
+      )","memory-alias-consumer.m");
+      assert(valid && !valid->getDiagnostics().hasErrorOccurred());
+      auto invalid=parse(first.source_bytes+R"(
+        const char *published_memory_escape(void *owner) {return published_memory_copy(owner,1);}
+      )","memory-alias-escaping-consumer.m");
+      assert(invalid && invalid->getDiagnostics().hasErrorOccurred());
+    }
+  }
+}
+
 void TestBorrowedStaticStorageReplay() {
   for(const char *standard:{"c17","c++20","c++23"}) {
     const bool cxx=std::string(standard)!="c17";
@@ -6587,6 +6648,7 @@ int main() {
   TestKeyPathSubscriptBodies();
   TestDependentKeyPathLiteralBodies();
   TestNSObjectStorageCapability();
+  TestBorrowedMemoryAliasReplay();
   TestBorrowedStaticStorageReplay();
   TestBorrowedCallableOwnerCapability();
   TestAsyncConsumedOwnershipCapability();
